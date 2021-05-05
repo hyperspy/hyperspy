@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,6 +21,7 @@ import numpy as np
 
 from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 class Offset(Component):
@@ -94,7 +95,9 @@ class Offset(Component):
 
         if only_current is True:
             self.offset.value = signal()[i1:i2].mean()
-            if self.binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 self.offset.value /= axis.scale
             return True
         else:
@@ -105,7 +108,9 @@ class Offset(Component):
             gi[axis.index_in_array] = slice(i1, i2)
             self.offset.map['values'][:] = dc[tuple(
                 gi)].mean(axis.index_in_array)
-            if self.binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 self.offset.map['values'] /= axis.scale
             self.offset.map['is_set'][:] = True
             self.fetch_stored_values()

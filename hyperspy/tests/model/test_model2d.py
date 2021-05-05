@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -156,7 +156,8 @@ def test_Model2D_NotImplementedError_plot():
         with pytest.raises(NotImplementedError):
             _ = getattr(m, member_f)()
 
-    for member_f in ["_plot_component", "_connect_component_line"]:
+    for member_f in ["_plot_component", "_connect_component_line",
+                     "_disconnect_component_line"]:
         with pytest.raises(NotImplementedError):
             _ = getattr(m, member_f)(None)
 
@@ -176,15 +177,25 @@ def test_channelswitches_mask():
     im.axes_manager[1].scale = scale
     im.axes_manager[1].offset = -10
 
-    mask = (im<0.01).data
+    mask = (im < 0.01)
+
+    # Add another Gaussian to get different results if the mask is ignored
+    g2 = hs.model.components2D.Gaussian2D(
+        A=1, centre_x=5.0, centre_y=5.0, sigma_x=1.0, sigma_y=2.0
+    )
+    im += hs.signals.Signal2D(g2.function(X, Y))
 
     m = im.create_model()
-    gt = hs.model.components2D.Gaussian2D(centre_x=-4.5,
-                                          centre_y=-4.5,
-                                          sigma_x=0.5,
-                                          sigma_y=1.5)
+    gt = hs.model.components2D.Gaussian2D(centre_x=0.0,
+                                          centre_y=0.0,
+                                          sigma_x=50,
+                                          sigma_y=50)
     m.append(gt)
+    m.channel_switches = ~mask.data
     m.fit()
+
+    assert not m.channel_switches[0, 0]
+    assert m.channel_switches[50, 50]
 
     np.testing.assert_allclose(gt.centre_x.value, -5.)
     np.testing.assert_allclose(gt.centre_y.value, -5.)

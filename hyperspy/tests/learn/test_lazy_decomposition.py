@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -105,6 +105,42 @@ class TestLazyDecomposition:
             explained_variance_norm[: self.rank].sum(), 1.0, atol=1e-6
         )
 
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    def test_pca_mask(self):
+        s = self.s
+        sig_mask = (s.inav[0, 0].data < 1.0).compute()
+
+        s.decomposition(output_dimension=3,
+                        algorithm="PCA",
+                        signal_mask=sig_mask)
+        factors = s.learning_results.factors
+        loadings = s.learning_results.loadings
+        _ = loadings @ factors.T
+
+        # Check singular values
+        explained_variance = s.learning_results.explained_variance
+        explained_variance_norm = explained_variance / np.sum(explained_variance)
+        np.testing.assert_allclose(
+            explained_variance_norm[: self.rank].sum(), 1.0, atol=1e-6
+        )
+
+        nav_mask = (s.isig[0].data < 1.0).compute()
+
+        s.decomposition(output_dimension=3,
+                        algorithm="PCA",
+                        navigation_mask=nav_mask)
+        factors = s.learning_results.factors
+        loadings = s.learning_results.loadings
+        _ = loadings @ factors.T
+
+        # Check singular values
+        explained_variance = s.learning_results.explained_variance
+        explained_variance_norm = explained_variance / np.sum(explained_variance)
+        np.testing.assert_allclose(
+            explained_variance_norm[: self.rank].sum(), 1.0, atol=1e-6
+        )
+
+
     @pytest.mark.parametrize("normalize_poissonian_noise", [True, False])
     def test_orpca(self, normalize_poissonian_noise):
         self.s.decomposition(
@@ -203,3 +239,24 @@ class TestPrintInfo:
         self.s.decomposition(algorithm=algorithm, output_dimension=2, print_info=False)
         captured = capfd.readouterr()
         assert "Decomposition info:" not in captured.out
+
+    def test_decomposition_mask_SVD(self):
+        s = self.s
+        sig_mask = (s.inav[0].data < 0.5).compute()
+        with pytest.raises(NotImplementedError):
+            s.decomposition(algorithm="SVD", signal_mask=sig_mask)
+
+        nav_mask = (s.isig[0].data < 0.5).compute()
+        with pytest.raises(NotImplementedError):
+            s.decomposition(algorithm="SVD", navigation_mask=nav_mask)
+
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    def test_decomposition_mask_wrong_Shape(self):
+        s = self.s
+        sig_mask = (s.inav[0].data < 0.5).compute()[:-2]
+        with pytest.raises(ValueError):
+            s.decomposition(algorithm='PCA', signal_mask=sig_mask)
+
+        nav_mask = (s.isig[0].data < 0.5).compute()[:-2]
+        with pytest.raises(ValueError):
+            s.decomposition(algorithm='PCA', navigation_mask=nav_mask)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -22,6 +22,7 @@ from scipy.interpolate import interp1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 @add_gui_method(toolkey="hyperspy.ScalableFixedPattern_Component")
@@ -134,7 +135,9 @@ class ScalableFixedPattern(Component):
             result = yscale * self.f(x * xscale - shift)
         else:
             result = yscale * self.signal.data
-        if self.signal.metadata.Signal.binned is True:
+        if is_binned(self.signal) is True:
+        # in v2 replace by
+        #if self.signal.axes_manager.signal_axes[0].is_binned is True:
             return result / self.signal.axes_manager.signal_axes[0].scale
         else:
             return result

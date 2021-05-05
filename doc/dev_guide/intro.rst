@@ -1,4 +1,8 @@
-﻿﻿Introduction
+﻿﻿
+
+.. _dev_guide-label:
+
+Introduction
 =============
 
 This guide is intended to give people who want to start contributing
@@ -20,12 +24,11 @@ Getting started
 Probably you would not be interested in contributing to HyperSpy, if you were 
 not already a user, but, just in case: the best way to start understanding how
 HyperSpy works and to build a broad overview of the code as it stands is to
-use it -- so what are you waiting for? `Install HyperSpy
-<http://hyperspy.org/hyperspy-doc/current/user_guide/install.html>`_.
+use it -- so what are you waiting for? :ref:`Install HyperSpy <install-label>`!
 
-The `HyperSpy User-Guide <http://www.hyperspy.org/hyperspy-doc/current/index
-.html>`_ also provides a good overview of all the parts of the code that
-are currently implemented as well as much information about how everything
+The HyperSpy :ref:`User Guide <user_guide-label>` also provides a good overview
+of all the parts of the code that are currently implemented as well as much 
+information about how everything
 works -- so read it well.
 
 

@@ -234,10 +234,10 @@ Uniform data axis
 ^^^^^^^^^^^^^^^^^
 
 The most common case is the :py:class:`~.axes.UniformDataAxis`. Here, the axis
-is defined by the ``offset`` and ``scale`` parameters, which determine the
-`initial value` and `spacing`, respectively. The actual ``axis`` array is
-automatically calculated from these two values. The ``UniformDataAxis`` is a
-special case of the ``FunctionalDataAxis`` defined by the function
+is defined by the ``offset``, ``scale`` and ``size`` parameters, which determine
+the `initial value`, `spacing` and `length`, respectively. The actual ``axis``
+array is automatically calculated from these three values. The ``UniformDataAxis``
+is a special case of the ``FunctionalDataAxis`` defined by the function
 ``scale * x + offset``.
 
 Sample dictionary for a :py:class:`~.axes.UniformDataAxis`:
@@ -247,12 +247,13 @@ Sample dictionary for a :py:class:`~.axes.UniformDataAxis`:
     >>> dict0 = {'offset': 300, 'scale': 1, 'size': 500}
     >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
     >>> s.axes_manager[0].get_axis_dictionary()
-    {'name': <undefined>,
-    'units': <undefined>,
-    'navigate': False,
-    'size': 500,
-    'scale': 1.0,
-    'offset': 300.0}
+    {'_type': 'UniformDataAxis',
+     'name': <undefined>,
+     'units': <undefined>,
+     'navigate': False,
+     'size': 500,
+     'scale': 1.0,
+     'offset': 300.0}
 
 Corresponding output of :py:class:`~.axes.AxesManager`:
 
@@ -291,14 +292,21 @@ Sample dictionary for a :py:class:`~.axes.FunctionalDataAxis`:
     >>> dict0 = {'expression': 'a / (x + 1) + b', 'a': 100, 'b': 10, 'size': 500}
     >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
     >>> s.axes_manager[0].get_axis_dictionary()
-    {'name': <undefined>,
-    'units': <undefined>,
-    'navigate': False,
-    'expression': 'a / (x + 1) + b',
-    'size': 500,
-    'x': <Unnamed axis, size: 500>,
-    'a': 100,
-    'b': 10}
+    {'_type': 'FunctionalDataAxis',
+     'name': <undefined>,
+     'units': <undefined>,
+     'navigate': False,
+     'expression': 'a / (x + 1) + b',
+     'size': 500,
+     'x': {'_type': 'UniformDataAxis',
+      'name': <undefined>,
+      'units': <undefined>,
+      'navigate': <undefined>,
+      'size': 500,
+      'scale': 1.0,
+      'offset': 0.0},
+     'a': 100,
+     'b': 10}
 
 Corresponding output of :py:class:`~.axes.AxesManager`:
 
@@ -344,6 +352,8 @@ Initializing ``x`` as non-uniform :py:class:`~.axes.DataAxis`:
         14.        ,  12.77777778,  12.04081633,  11.5625    ,
         11.2345679 ])
 
+Initializing ``x`` with ``offset`` and ``scale``:
+
 
 (non-uniform) Data axis
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -360,10 +370,11 @@ Sample dictionary for a :py:class:`~.axes.DataAxis`:
     >>> dict0 = {'axis': np.arange(12)**2}
     >>> s = hs.signals.Signal1D(np.ones(12), axes=[dict0])
     >>> s.axes_manager[0].get_axis_dictionary()
-    {'name': <undefined>,
-    'units': <undefined>,
-    'navigate': False,
-    'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100, 121])}
+    {'_type': 'DataAxis',
+     'name': <undefined>,
+     'units': <undefined>,
+     'navigate': False,
+     'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100, 121])}
 
 Corresponding output of :py:class:`~.axes.AxesManager`:
 
@@ -385,6 +396,7 @@ automatically determines the type of axis by the given attributes:
 
 .. code-block:: python
 
+    >>> from hyperspy import axes
     >>> axis = axes.create_axis(offset=10,scale=0.5,size=20)
     >>> axis
     <Unnamed axis, size: 20>
@@ -394,6 +406,7 @@ directly:
 
 .. code-block:: python
 
+    >>> from hyperspy import axes
     >>> axis = axes.UniformDataAxis(offset=10,scale=0.5,size=20)
     >>> axis
     <Unnamed axis, size: 20>
@@ -404,15 +417,53 @@ method:
 .. code-block:: python
 
     >>> axis.get_axis_dictionary()
-    {'name': <undefined>,
-    'units': <undefined>,
-    'navigate': <undefined>,
-    'size': 20,
-    'scale': 0.5,
-    'offset': 10.0}
+    {'_type': 'UniformDataAxis',
+     'name': <undefined>,
+     'units': <undefined>,
+     'navigate': <undefined>,
+     'size': 20,
+     'scale': 0.5,
+     'offset': 10.0}
 
 This dictionary can be used, for example, in the :ref:`initilization of a new
 signal<signal_initialization>`.
+
+
+Adding/Removing axes to/from a signal
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Usually, the axes are directly added to a signal during :ref:`signal 
+initialization<signal_initialization>`. However, you may wish to add/remove
+axes from the `AxesManager` of a signal.
+
+Note that there is currently no consistency check whether a signal object has
+the right number of axes of the right dimensions. Most functions will however
+fail if you pass a signal object where the axes do not match the data 
+dimensions and shape.
+
+You can *add a set of axes* to the `AxesManager` by passing either a list of
+axes dictionaries to ``axes_manager.create_axes()``:
+
+.. code-block:: python
+
+    >>> dict0 = {'offset': 300, 'scale': 1, 'size': 500}
+    >>> dict1 = {'axis': np.arange(12)**2}
+    >>> s.axes_manager.create_axes([dict0,dict1])
+
+or a list of axes objects:
+
+.. code-block:: python
+
+    >>> from hyperspy.axes import UniformDataAxis, DataAxis
+    >>> axis0 = UniformDataAxis(offset=300,scale=1,size=500)
+    >>> axis1 = DataAxis(axis=np.arange(12)**2)
+    >>> s.axes_manager.create_axes([axis0,axis1])
+
+*Remove an axis* from the `AxesManager` using ``remove()``, e.g. for the last axis:
+
+.. code-block:: python
+
+    >>> s.axes_manager.remove(-1)
 
 
 .. _quantity_and_converting_units:
@@ -473,7 +524,7 @@ method of the :py:class:`~.axes.UniformDataAxis`:
     100.0 micrometer
 
 
-.. _Axes_storage_ordering
+.. _Axes_storage_ordering:
 
 Axes storage and ordering
 -------------------------
@@ -530,3 +581,69 @@ at least when printing. As an example:
 In the background, HyperSpy also takes care of storing the data in memory in
 a "machine-friendly" way, so that iterating over the navigation axes is always
 fast.
+
+.. _iterating_axesmanager:
+
+Iterating over the AxesManager
+------------------------------
+One can iterate over the AxesManager to produce indices to the navigation axes. Each iteration will yield a new tuple of indices, sorted according to the iteration path specified in :py:attr:`~.axes.AxesManager.iterpath`. Setting the :py:attr:`~.axes.AxesManager.indices` property to a new index will update the accompanying signal so that signal methods that operate at a specific navigation index will now use that index, like ``s.plot()``.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.zeros((2,3,10)))
+    >>> s.axes_manager.iterpath # check current iteration path
+    'flyback' # default until Hyperspy 2.0, then 'serpentine'
+    >>> for index in s.axes_manager:
+    ...     s.axes_manager.indices = i # s.plot() will change with this
+    ...     print(index)
+    (0, 0)
+    (1, 0)
+    (2, 0)
+    (0, 1)
+    (1, 1)
+    (2, 1)
+
+
+The ``AxesManager.iterpath`` specifies the strategy that the AxesManager should use to iterate over the navigation axes. Two built-in strategies exist: ``'flyback'`` and ``'serpentine'``. The flyback strategy starts at (0,0), continues down the row until the final column, "flies back" to the first column, and continues from (1,0). The serpentine strategy begins the same way, but when it reaches the final column (of index N), it continues from (1, N) along the next row, in the same way that a snake might slither, left and right.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.zeros((2,3,10)))
+    >>> s.axes_manager.iterpath = 'serpentine'
+    >>> for index in s.axes_manager:
+    ...     print(index)
+
+The iterpath can also be set to be a specific list of indices, like [(0,0), (0,1)], but can also be any generator of indices. Storing a high-dimensional set of indices as a list or array can take a significant amount of memory. By using a generator instead, one almost entirely removes such a memory footprint:
+
+.. code-block:: python
+
+    >>> s.axes_manager.iterpath = [(0,1), (1,1), (0,1)]
+    >>> for index in s.axes_manager:
+    ...     print(index)
+    (0, 1)
+    (1, 1)
+    (0, 1)
+
+    >>> def reverse_flyback_generator():
+    >>>     for i in reversed(range(3)):
+    ...         for j in reversed(range(2)):
+    ...             yield (i,j)
+
+    >>> s.axes_manager.iterpath = reverse_flyback_generator()
+    >>> for index in s.axes_manager:
+    ...     print(index)
+    (2, 1)
+    (2, 0)
+    (1, 1)
+    (1, 0)
+    (0, 1)
+    (0, 0)
+
+
+Since generators do not have a defined length, and does not need to include all navigation indices, a progressbar will be unable to determine how long it needs to be. To resolve this, a helper class can be imported that takes both a generator and a manually specified length as inputs:
+
+.. code-block:: python
+
+>>> from hyperspy.axes import GeneratorLen
+>>> gen = GeneratorLen(reverse_flyback_generator(), 6)
+>>> s.axes_manager.iterpath = gen

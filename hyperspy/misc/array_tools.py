@@ -1,4 +1,4 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,8 +20,10 @@ from collections import OrderedDict
 import math as math
 import logging
 
+import dask.array as da
 import numpy as np
 from numba import njit
+
 
 from hyperspy.misc.math_tools import anyfloatin
 
@@ -144,8 +146,8 @@ def rebin(a, new_shape=None, scale=None, crop=True):
     -----
     Fast re_bin function Adapted from scipy cookbook
     If rebin function fails with error stating that the function is 'not binned
-    and therefore cannot be rebinned', add binned to metadata with:
-    >>> s.metadata.Signal.binned = True
+    and therefore cannot be rebinned', add binned to axes parameters with:
+    >>> s.axes_manager[axis].is_binned = True
 
     """
     # Series of if statements to check that only one out of new_shape or scale
@@ -311,6 +313,9 @@ def _linear_bin(dat, scale, crop=True):
         # Set up the result np.array to have a new axis[0] size for after
         # cropping.
         result = np.zeros((dim,) + dat.shape[1:])
+        # Make sure that native endian is used
+        if not dat.dtype.isnative:
+            dat = dat.astype(dat.dtype.type)
         # Carry out binning over axis[0]
         _linear_bin_loop(result=result, data=dat, scale=s)
         # Swap axis[0] back to the original axis location.
@@ -373,7 +378,6 @@ def dict2sarray(dictionary, sarray=None, dtype=None):
     return sarray
 
 
-@njit(cache=True)
 def numba_histogram(data, bins, ranges):
     """
     Parameters
@@ -390,6 +394,17 @@ def numba_histogram(data, bins, ranges):
     hist : array
         The values of the histogram.
     """
+    # Make sure that native endian is used
+    if not data.dtype.isnative:
+        data = data.astype(data.dtype.type)
+    return _numba_histogram(data, bins, ranges)
+
+
+@njit(cache=True)
+def _numba_histogram(data, bins, ranges):
+    """
+    Numba histogram computation requiring native endian datatype.
+    """
     # Adapted from https://iscinumpy.gitlab.io/post/histogram-speeds-in-python/
     hist = np.zeros((bins,), dtype=np.intp)
     delta = 1 / ((ranges[1] - ranges[0]) / bins)
@@ -400,3 +415,39 @@ def numba_histogram(data, bins, ranges):
             hist[int(i)] += 1
 
     return hist
+
+
+def get_signal_chunk_slice(index, chunks):
+    """
+    Convenience function returning the chunk slice in signal space containing
+    the specified index.
+
+    Parameters
+    ----------
+    index : int or tuple of int
+        Index determining the wanted chunk.
+    chunks : tuple
+        Dask array chunks.
+
+    Returns
+    -------
+    slice
+        Slice containing the index x,y.
+
+    """
+    if not isinstance(index, (list, tuple)):
+        index = tuple(index)
+
+    chunk_slice_raw_list = da.core.slices_from_chunks(chunks[-len(index):])
+    chunk_slice_list = []
+    for chunk_slice_raw in chunk_slice_raw_list:
+        chunk_slice_list.append(list(chunk_slice_raw)[::-1])
+
+    for chunk_slice in chunk_slice_list:
+        _slice = chunk_slice
+        if _slice[0].start <= index[0] < _slice[0].stop:
+            if len(_slice) == 1:
+                return chunk_slice
+            elif _slice[1].start <= index[1] < _slice[1].stop:
+                return chunk_slice
+    raise ValueError("Index out of signal range.")

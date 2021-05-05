@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -26,7 +26,7 @@ from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.misc.utils import slugify
-
+from hyperspy.axes import GeneratorLen
 
 class TestModelJacobians:
     def setup_method(self, method):
@@ -132,7 +132,7 @@ class TestModelCallMethod:
         m = self.model
         m.convolved = False
         m.remove(1)
-        m.signal.metadata.Signal.binned = True
+        m.signal.axes_manager[-1].is_binned = True
         m.signal.axes_manager[-1].scale = 0.3
         r1 = m()
         np.testing.assert_allclose(m[0].function(0) * 0.3, r1)
@@ -826,3 +826,66 @@ def test_deprecated_private_functions():
 
     with pytest.warns(VisibleDeprecationWarning, match=r".* has been deprecated"):
         m.set_mpfit_parameters_info()
+
+
+def generate():
+    for i in range(3):
+        yield (i,i)
+
+
+class Test_multifit_iterpath():
+    def setup_method(self, method):
+        data = np.ones((3, 3, 10))
+        s = hs.signals.Signal1D(data)
+        ax = s.axes_manager
+        m = s.create_model()
+        G = hs.model.components1D.Gaussian()
+        m.append(G)
+        self.m = m
+        self.ax = ax
+
+    def test_custom_iterpath(self):
+        indices = np.array([(0,0), (1,1), (2,2)])
+        self.ax.iterpath = indices
+        self.m.multifit(iterpath=indices)
+        set_indices = np.array(np.where(self.m[0].A.map['is_set'])).T
+        np.testing.assert_array_equal(set_indices, indices[:,::-1])
+
+    def test_model_generator(self):
+        gen = generate()
+        self.m.axes_manager.iterpath = gen
+        self.m.multifit()
+
+    def test_model_GeneratorLen(self):
+        gen = GeneratorLen(generate(), 3)
+        self.m.axes_manager.iterpath = gen
+
+
+class TestSignalRange:
+    def setup_method(self, method):
+        s = hs.signals.Signal1D(np.random.rand(10, 10, 20))
+        s.axes_manager[-1].offset = 100
+        m = s.create_model()
+        self.s = s
+        self.m = m
+
+    def test_parse_value(self):
+        m = self.m
+        assert m._parse_signal_range_values(105, 110) == (5, 10)
+        with pytest.raises(ValueError):
+            m._parse_signal_range_values(89, 85)
+
+    def test_parse_value_negative_scale(self):
+        m = self.m
+        s = self.s
+        s.axes_manager[-1].scale = -1
+        assert m._parse_signal_range_values(89, 85) == (11, 15)
+        with pytest.raises(ValueError):
+            m._parse_signal_range_values(85, 89)
+        assert m._parse_signal_range_values(89, 20) == (11, 19)
+
+    def test_parse_roi(self):
+        m = self.m
+        roi = hs.roi.SpanROI(105, 110)
+        assert m._parse_signal_range_values(roi) == (5, 10)
+

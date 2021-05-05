@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,13 +18,18 @@
 
 from unittest import mock
 
-from numpy import arange, zeros
+from numpy import array, arange, zeros
 
-from hyperspy.axes import AxesManager
+from hyperspy.axes import AxesManager, _serpentine_iter, _flyback_iter, GeneratorLen
 from hyperspy.defaults_parser import preferences
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 
+import pytest
 
+def generator():
+    for i in range(3):
+        yield((0,0,i))
+        
 class TestAxesManager:
     def setup_method(self, method):
         axes_list = [
@@ -346,9 +351,44 @@ class TestIterPathScanPattern:
         s = Signal1D(zeros((3, 3, 3, 2)))
         self.am = s.axes_manager
 
+    def test_iterpath_property(self):
+        self.am._iterpath = "abc" # with underscore
+        assert self.am.iterpath == "abc"
+
+        with pytest.raises(ValueError):
+            self.am.iterpath = "blahblah" # w/o underscore
+        
+        path = "flyback"
+        self.am.iterpath = path
+        assert self.am.iterpath == path
+        assert self.am._iterpath == path
+
+        path = "serpentine"
+        self.am.iterpath = path
+        assert self.am.iterpath == path
+        assert self.am._iterpath == path
+            
+    def test_wrong_iterpath(self):
+        with pytest.raises(ValueError):
+            self.am.iterpath = ""
+
+    def test_wrong_custom_iterpath(self):
+        class A:
+            pass
+        with pytest.raises(TypeError):
+            self.am.iterpath = A()
+
+    def test_wrong_custom_iterpath2(self):
+        with pytest.raises(TypeError):
+            self.am.iterpath = [0,1,2,3,4,] # indices are not iterable
+
+    def test_wrong_custom_iterpath3(self):
+        with pytest.raises(ValueError):
+            self.am.iterpath = [(0,)] # not enough dimensions
+
     def test_flyback(self):
-        self.am._iterpath = "flyback"
-        for i, index in enumerate(self.am):
+        self.am.iterpath = "flyback"
+        for i, _ in enumerate(self.am):
             if i == 3:
                 assert self.am.indices == (0, 1, 0)
             # Hits a new layer on index 9
@@ -357,11 +397,103 @@ class TestIterPathScanPattern:
             break
 
     def test_serpentine(self):
-        self.am._iterpath = "serpentine"
-        for i, index in enumerate(self.am):
+        self.am.iterpath = "serpentine"
+        for i, _ in enumerate(self.am):
             if i == 3:
                 assert self.am.indices == (2, 1, 0)
             # Hits a new layer on index 9
             if i == 9:
                 assert self.am.indices == (2, 2, 1)
             break
+
+    def test_custom_iterpath(self):
+        iterpath = [(0,1,1), (1,1,1)]
+        self.am.iterpath = iterpath
+        assert self.am._iterpath == iterpath
+        assert self.am.iterpath == iterpath
+        assert self.am._iterpath_generator != iterpath
+
+        for i, _ in enumerate(self.am):
+            if i == 0:
+                assert self.am.indices == iterpath[0]
+            if i == 1:
+                assert self.am.indices == iterpath[1]
+            break
+
+    def test_custom_iterpath_generator(self):
+
+        iterpath = generator()
+        self.am.iterpath = iterpath
+        assert self.am._iterpath == iterpath
+        assert self.am.iterpath == iterpath
+        assert self.am._iterpath_generator == iterpath
+
+        for i, _ in enumerate(self.am):
+            if i == 0:
+                assert self.am.indices == (0,0,0)
+            if i == 1:
+                assert self.am.indices == (0,0,1)
+            break
+        
+    def test_get_iterpath_size1(self):
+        assert self.am._get_iterpath_size() == self.am.navigation_size
+        assert self.am._get_iterpath_size(masked_elements = 1) == self.am.navigation_size - 1
+
+    def test_get_iterpath_size2(self):
+        self.am.iterpath = generator()
+        assert self.am._get_iterpath_size() == None
+        assert self.am._get_iterpath_size(masked_elements = 1) == None
+
+    def test_get_iterpath_size3(self):
+        self.am.iterpath =[(0,0,0), (0,0,1)]
+        assert self.am._get_iterpath_size() == 2
+        assert self.am._get_iterpath_size(masked_elements = 1) == 2
+
+    def test_GeneratorLen(self):
+        gen = GeneratorLen(gen=generator(), length=3)
+        assert list(gen) == [(0,0,0),(0,0,1),(0,0,2)]
+
+    def test_GeneratorLen_iterpath(self):
+        gen = GeneratorLen(gen=generator(), length=3)
+        assert len(gen) == 3
+        self.am.iterpath = gen
+        assert self.am._get_iterpath_size() == 3
+
+class TestIterPathScanPatternSignal2D:
+    def setup_method(self, method):
+        s = Signal2D(zeros((3, 3, 3, 2, 1)))
+        self.am = s.axes_manager
+
+    def test_wrong_iterpath_signal2D(self):
+        with pytest.raises(ValueError):
+            self.am.iterpath = "blahblah"
+
+    def test_custom_iterpath_signal2D(self):
+        indices = [(0,1,1), (1,1,1)]
+        self.am.iterpath = indices
+        for i, _ in enumerate(self.am):
+            if i == 0:
+                assert self.am.indices == indices[0]
+            if i == 1:
+                assert self.am.indices == indices[1]
+            break
+
+    def test_serpentine_signal2D(self):
+        self.am.iterpath = "serpentine"
+        for i, _ in enumerate(self.am):
+            if i == 3:
+                assert self.am.indices == (2, 1, 0)
+            # Hits a new layer on index 9
+            if i == 9:
+                assert self.am.indices == (2, 2, 1)
+            break
+
+def test_iterpath_function_flyback():
+    for i, indices in enumerate(_flyback_iter((3,3,3))):
+        if i == 3:
+            assert indices == (0, 1, 0)
+
+def test_iterpath_function_serpentine():
+    for i, indices in enumerate(_serpentine_iter((3,3,3))):
+        if i == 3:
+            assert indices == (2, 1, 0)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -34,6 +34,8 @@ file_extensions = ['dens', 'DENS']
 default_extension = 0
 # Writing capabilities
 writes = False
+non_uniform_axis = False
+# ----------------------
 
 
 def _cnv_time(timestr):

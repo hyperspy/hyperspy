@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,10 +18,12 @@
 
 import numpy as np
 import dask.array as da
+import sympy
 
 from hyperspy._components.expression import Expression
+from hyperspy.misc.utils import is_binned # remove in v2.0
+
 from distutils.version import LooseVersion
-import sympy
 
 sqrt2pi = np.sqrt(2 * np.pi)
 
@@ -45,32 +47,20 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
         x0_shape = list(data.shape)
         x0_shape[i] = 1
 
-    if isinstance(data, da.Array):
-        _sum = da.sum
-        _sqrt = da.sqrt
-        _abs = abs
-        _argmin = da.argmin
-
-    else:
-        _sum = np.sum
-        _sqrt = np.sqrt
-        _abs = np.abs
-        _argmin = np.argmin
-
     a1 = np.sqrt(2 / np.pi)
     b1 = (4 / np.pi - 1) * a1
-    m1 = _sum(X.reshape(X_shape) * data, i) / _sum(data, i)
-    m2 = _abs(_sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 2 * data, i)
-              / _sum(data, i))
-    m3 = _abs(_sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 3 * data, i)
-              / _sum(data, i))
+    m1 = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
+    m2 = np.abs(np.sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 2 * data, i)
+              / np.sum(data, i))
+    m3 = np.abs(np.sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 3 * data, i)
+              / np.sum(data, i))
 
     x0 = m1 - a1 * (m3 / b1) ** (1 / 3)
-    scale = _sqrt(m2 + a1 ** 2 * (m3 / b1) ** (2 / 3))
-    delta = _sqrt(1 / (a1**2 + m2 * (b1 / m3) ** (2 / 3)))
-    shape = delta / _sqrt(1 - delta**2)
+    scale = np.sqrt(m2 + a1 ** 2 * (m3 / b1) ** (2 / 3))
+    delta = np.sqrt(1 / (a1**2 + m2 * (b1 / m3) ** (2 / 3)))
+    shape = delta / np.sqrt(1 - delta**2)
 
-    iheight = _argmin(_abs(X.reshape(X_shape) - x0.reshape(x0_shape)), i)
+    iheight = np.argmin(np.abs(X.reshape(X_shape) - x0.reshape(x0_shape)), i)
     # height is the value of the function at x0, shich has to be computed
     # differently for dask array (lazy) and depending on the dimension
     if isinstance(data, da.Array):
@@ -117,12 +107,12 @@ class SkewNormal(Expression):
 
 
     ============== =============
-    Variable        Parameter 
+    Variable        Parameter
     ============== =============
-    :math:`x_0`     x0 
-    :math:`A`       A 
-    :math:`\omega`  scale 
-    :math:`\alpha`  shape 
+    :math:`x_0`     x0
+    :math:`A`       A
+    :math:`\omega`  scale
+    :math:`\alpha`  shape
     ============== =============
 
 
@@ -151,9 +141,12 @@ class SkewNormal(Expression):
         if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
             raise ImportError("The `SkewNormal` component requires "
                               "SymPy >= 1.3")
+        # We use `_shape` internally because `shape` is already taken in sympy
+        # https://github.com/sympy/sympy/pull/20791
         super(SkewNormal, self).__init__(
-            expression="2 * A * normpdf * normcdf; normpdf = exp(- t ** 2 / 2) \
-                / sqrt(2 * pi); normcdf = (1 + erf(shape * t / sqrt(2))) / 2; \
+            expression="2 * A * normpdf * normcdf;\
+                normpdf = exp(- t ** 2 / 2) / sqrt(2 * pi);\
+                normcdf = (1 + erf(_shape * t / sqrt(2))) / 2;\
                 t = (x - x0) / scale",
             name="SkewNormal",
             x0=x0,
@@ -162,6 +155,7 @@ class SkewNormal(Expression):
             shape=shape,
             module=module,
             autodoc=False,
+            rename_pars={"_shape": "shape"},
             **kwargs,
         )
 
@@ -223,7 +217,9 @@ class SkewNormal(Expression):
             self.A.value = height * sqrt2pi
             self.scale.value = scale
             self.shape.value = shape
-            if self.binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 self.A.value /= axis.scale
             return True
         else:
@@ -231,7 +227,9 @@ class SkewNormal(Expression):
                 self._create_arrays()
             self.A.map['values'][:] = height * sqrt2pi
 
-            if self.binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 self.A.map['values'] /= axis.scale
             self.A.map['is_set'][:] = True
             self.x0.map['values'][:] = x0

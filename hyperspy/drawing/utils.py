@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -29,6 +29,8 @@ import warnings
 import numpy as np
 import logging
 from functools import partial
+from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import BASE_COLORS, to_rgba
 
 import hyperspy as hs
 from hyperspy.defaults_parser import preferences
@@ -139,8 +141,10 @@ def create_figure(window_title=None,
 
     Parameters
     ----------
-    window_title : {None, string}, optional
-    _on_figure_window_close : {None, function}, optional
+    window_title : None, string, optional
+        Default None.
+    _on_figure_window_close : None, function, optional
+        Default None.
     disable_xyscale_keys : bool, optional
         Disable the `k`, `l` and `L` shortcuts which toggle the x or y axis
         between linear and log scale. Default False.
@@ -160,7 +164,7 @@ def create_figure(window_title=None,
             window_title = window_title.replace(c, '')
         window_title = window_title.replace('\n', ' ')
         window_title = window_title.replace(':', ' -')
-        fig.canvas.set_window_title(window_title)
+        fig.canvas.manager.set_window_title(window_title)
     if disable_xyscale_keys and hasattr(fig.canvas, 'toolbar'):
         # hack the `key_press_handler` to disable the `k`, `l`, `L` shortcuts
         manager = fig.canvas.manager
@@ -200,7 +204,8 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
     Parameters
     ----------
     im_list : list of Signal2D instances
-    normalization : {'single', 'global'}, optional
+    normalization : 'single', 'global', optional
+        Default 'single'.
     dont_plot : bool, optional
         Default False.
 
@@ -277,18 +282,17 @@ def plot_signals(signal_list, sync=True, navigator="auto",
     signal_list : list of BaseSignal instances
         If sync is set to True, the signals must have the
         same navigation shape, but not necessarily the same signal shape.
-    sync : {True, False}, default "True", optional
-        If True: the signals will share navigation, all the signals
+    sync : True, False, optional
+        If True (default), the signals will share navigation. All the signals
         must have the same navigation shape for this to work, but not
         necessarily the same signal shape.
-    navigator : {"auto", None, "spectrum", "slider", BaseSignal}, optional,
-    default "auto"
-        See signal.plot docstring for full description.
-    navigator_list : {None, list of navigator arguments}, optional, default None
+    navigator : 'auto', None, 'spectrum', 'slider', BaseSignal, optional
+        Default 'auto'. See signal.plot docstring for full description.
+    navigator_list : None, list of navigator arguments, optional
         Set different navigator options for the signals. Must use valid
-        navigator arguments: "auto", None, "spectrum", "slider", or a
+        navigator arguments: 'auto', None, 'spectrum', 'slider', or a
         HyperSpy Signal. The list must have the same size as signal_list.
-        If None, the argument specified in navigator will be used.
+        If None (default), the argument specified in navigator will be used.
     **kwargs
         Any extra keyword arguments are passed to each signal `plot` method.
 
@@ -476,7 +480,7 @@ def plot_images(images,
                 suptitle=None,
                 suptitle_fontsize=18,
                 colorbar='multi',
-                centre_colormap="auto",
+                centre_colormap='auto',
                 scalebar=None,
                 scalebar_color='white',
                 axes_decor='all',
@@ -488,8 +492,14 @@ def plot_images(images,
                 fig=None,
                 vmin=None,
                 vmax=None,
+                overlay=False,
+                colors='auto',
+                alphas=1.0,
+                legend_picking=True,
+                legend_loc='upper right',
+                pixel_size_factor=1,
                 **kwargs):
-    """Plot multiple images as sub-images in one figure.
+    """Plot multiple images either as sub-images or overlayed in one figure.
 
     Parameters
     ----------
@@ -501,7 +511,7 @@ def plot_images(images,
         image.
         If any of the signal shapes is not suitable, a ValueError will be
         raised.
-    cmap : {matplotlib colormap, list, ``'mpl_colors'``}, optional
+    cmap : matplotlib colormap, list, 'mpl_colors', optional
         The colormap used for the images, by default uses the setting
         ``color map signal`` from the plot preferences. A list of colormaps can
         also be provided, and the images will cycle through them. Optionally,
@@ -514,7 +524,7 @@ def plot_images(images,
         If True, set nans to zero for plotting.
     per_row : int, optional
         The number of plots in each row.
-    label : {None, str, list of str}, optional
+    label : None, str, list of str, optional
         Control the title labeling of the plotted images.
         If None, no titles will be shown.
         If 'auto' (default), function will try to determine suitable titles
@@ -538,30 +548,30 @@ def plot_images(images,
         this parameter will override the automatically determined title.
     suptitle_fontsize : int, optional
         Font size to use for super title at top of figure.
-    colorbar : {'multi', None, 'single'}
+    colorbar : 'multi', None, 'single', optional
         Controls the type of colorbars that are plotted.
         If None, no colorbar is plotted.
         If 'multi' (default), individual colorbars are plotted for each
         (non-RGB) image
         If 'single', all (non-RGB) images are plotted on the same scale,
         and one colorbar is shown for all
-    centre_colormap : {"auto", True, False}
+    centre_colormap : 'auto', True, False, optional
         If True, the centre of the color scheme is set to zero. This is
-        particularly useful when using diverging color schemes. If "auto"
+        particularly useful when using diverging color schemes. If 'auto'
         (default), diverging color schemes are automatically centred.
-    scalebar : {None, 'all', list of ints}, optional
+    scalebar : None, 'all', list of ints, optional
         If None (or False), no scalebars will be added to the images.
         If 'all', scalebars will be added to all images.
         If list of ints, scalebars will be added to each image specified.
     scalebar_color : str, optional
         A valid MPL color string; will be used as the scalebar color.
-    axes_decor : {'all', 'ticks', 'off', None}, optional
+    axes_decor : 'all', 'ticks', 'off', None, optional
         Controls how the axes are displayed on each image; default is 'all'.
         If 'all', both ticks and axis labels will be shown.
         If 'ticks', no axis labels will be shown, but ticks/labels will.
         If 'off', all decorations and frame will be disabled.
         If None, no axis decorations will be shown, but ticks/frame will.
-    padding : {None, dict}, optional
+    padding : None, dict, optional
         This parameter controls the spacing between images.
         If None, default options will be used.
         Otherwise, supply a dictionary with the spacing options as
@@ -575,7 +585,7 @@ def plot_images(images,
         figure using matplotlib's tight_layout.
         If false, repositioning images inside the figure will be left as
         an exercise for the user.
-    aspect : {str, numeric}, optional
+    aspect : str, float, int, optional
         If 'auto', aspect ratio is auto determined, subject to min_asp.
         If 'square', image will be forced onto square display.
         If 'equal', aspect ratio of 1 will be enforced.
@@ -597,12 +607,32 @@ def plot_images(images,
         For example, for a vmin of '1th', 1% of the lowest will be ignored to
         estimate the minimum value. Similarly, for a vmax value of '1th', 1%
         of the highest value will be ignored in the estimation of the maximum
-        value. It must be in the range [0, 100]
+        value. It must be in the range [0, 100].
         See :py:func:`numpy.percentile` for more explanation.
         If None, use the percentiles value set in the preferences.
-        If float of integer, keep this value as bounds.
+        If float or integer, keep this value as bounds.
+        Note: vmin is ignored when overlaying images.
+    overlay : bool, optional
+        If True, overlays the images with different colors rather than plotting
+        each image as a subplot.
+    colors : 'auto', list of char, list of hex str, optional
+        If list, it must contains colors acceptable to matplotlib [1]_.
+        If ``'auto'``, colors will be taken from matplotlib.colors.BASE_COLORS.
+    alphas : float or list of floats, optional
+        Float value or a list of floats corresponding to the alpha value of
+        each color.
+    legend_picking: bool, optional
+        If True (default), a spectrum can be toggled on and off by clicking on
+        the legended line.
+    legend_loc : str, int, optional
+        This parameter controls where the legend is placed on the figure
+        see the :py:func:`matplotlib.pyplot.legend` docstring for valid values
+    pixel_size_factor : int or float, optional
+        Default value is 1. Sets the size of the figure when plotting an overlay image. The higher
+        the number the larger the figure and therefore a greater number of
+        pixels are used. This value will be ignored if a Figure is provided.
     **kwargs, optional
-        Additional keyword arguments passed to matplotlib.imshow()
+        Additional keyword arguments passed to :py:func:`matplotlib.pyplot.imshow`.
 
     Returns
     -------
@@ -614,6 +644,10 @@ def plot_images(images,
     plot_spectra : Plotting of multiple spectra
     plot_signals : Plotting of multiple signals
     plot_histograms : Compare signal histograms
+
+    References
+    ----------
+    .. [1] Matplotlib colors API: https://matplotlib.org/stable/api/colors_api.html.
 
     Notes
     -----
@@ -671,11 +705,12 @@ def plot_images(images,
     if cmap is None:
         cmap = [preferences.Plot.cmap_signal]
     elif cmap == 'mpl_colors':
-        for n_color, c in enumerate(mpl.rcParams['axes.prop_cycle']):
-            make_cmap(colors=['#000000', c['color']],
-                      name='mpl{}'.format(n_color))
-        cmap = ['mpl{}'.format(i) for i in
-                range(len(mpl.rcParams['axes.prop_cycle']))]
+        cycle = mpl.rcParams['axes.prop_cycle']
+        for n_color, c in enumerate(cycle):
+            name = f'mpl{n_color}'
+            if name not in plt.colormaps():
+                make_cmap(colors=['#000000', c['color']], name=name)
+        cmap = [f'mpl{i}' for i in range(len(cycle))]
         __check_single_colorbar(colorbar)
     # cmap is list, tuple, or something else iterable (but not string):
     elif hasattr(cmap, '__iter__') and not isinstance(cmap, str):
@@ -807,6 +842,7 @@ def plot_images(images,
     else:
         raise ValueError("Did not understand input of labels.")
 
+    # Start of non-overlay?
     # Determine appropriate number of images per row
     rows = int(np.ceil(n / float(per_row)))
     if n < per_row:
@@ -815,7 +851,13 @@ def plot_images(images,
     # Set overall figure size and define figure (if not pre-existing)
     if fig is None:
         k = max(plt.rcParams['figure.figsize']) / max(per_row, rows)
-        f = plt.figure(figsize=(tuple(k * i for i in (per_row, rows))))
+        if overlay:
+            shape = images[0].data.shape
+            dpi = 100
+            f = plt.figure(figsize=[pixel_size_factor*v/dpi for v in shape],
+                           dpi=dpi)
+        else:
+            f = plt.figure(figsize=(tuple(k * i for i in (per_row, rows))))
     else:
         f = fig
 
@@ -879,134 +921,218 @@ def plot_images(images,
     # Replot: create a list to store references to the images
     replot_ims = []
 
-    # Loop through each image, adding subplot for each one
-    for i, ims in enumerate(images):
-        # Get handles for the signal axes and axes_manager
-        axes_manager = ims.axes_manager
-        if axes_manager.navigation_dimension > 0:
-            ims = ims._deepcopy_with_new_data(ims.data)
-        for j, im in enumerate(ims):
-            ax = f.add_subplot(rows, per_row, idx + 1)
-            axes_list.append(ax)
-            data = im.data
+    def transparent_single_color_cmap(color):
+        """ Return a single color matplotlib cmap with the transparency increasing
+        linearly from 0 to 1."""
+        return LinearSegmentedColormap.from_list("", [to_rgba(color, 0), to_rgba(color, 1)])
+
+    #Below is for overlayed images
+    if overlay:
+
+        #Check if images all have same scale and therefore can be overlayed.
+        for im in images:
+            if (im.axes_manager[0].scale !=
+                images[0].axes_manager[0].scale):
+                raise ValueError("Images are not the same scale and so should"
+                                 "not be overlayed.")
+
+        _logger.warning('vmin is ignored when overlaying images.')
+
+        import matplotlib.patches as mpatches
+        if not suptitle and axes_decor == 'off':
+            ax = f.add_axes([0, 0, 1, 1])
+        elif not suptitle:
+            ax = f.add_axes([0.1, 0.1, 1, 1])
+        else:
+            ax = f.add_axes([0.1, 0.1, 0.9, 0.8])
+        patches = []
+
+        #If no colors are selected use BASE_COLORS
+        if colors == 'auto':
+            colors = []
+            for i in range(len(images)):
+                colors.append(list(BASE_COLORS)[i])
+
+        #If no alphas are selected use 1.0
+        if isinstance(alphas, float):
+            alphas_list = []
+            for i in range(len(images)):
+                alphas_list.append(alphas)
+            alphas=alphas_list
+
+        ax.imshow(np.zeros_like(images[0].data), cmap='gray')
+
+        #Loop through each image
+        for i, im in enumerate(images):
+
+            #Set vmin and vmax
             centre = next(centre_colormaps)   # get next value for centreing
+            data = im.data
+            _vmin = data.min()
+            _vmax = vmax[idx] if isinstance(vmax, (tuple, list)) else vmax
+            _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
+            if centre:
+                _logger.warning('Centering is ignored when overlaying images.')
 
-            # Enable RGB plotting
-            if rgb_tools.is_rgbx(data):
-                data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
-                _vmin, _vmax = None, None
-            elif colorbar != 'single':
-                _vmin = vmin[idx] if isinstance(vmin, (tuple, list)) else vmin
-                _vmax = vmax[idx] if isinstance(vmax, (tuple, list)) else vmax
-                _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
-                if centre:
-                    _vmin, _vmax = centre_colormap_values(_vmin, _vmax)
+            ax.imshow(im.data, vmin=_vmin, vmax=_vmax,
+                      cmap=transparent_single_color_cmap(colors[i]),
+                      alpha=alphas[i], **kwargs)
 
-            # Remove NaNs (if requested)
-            if no_nans:
-                data = np.nan_to_num(data)
+            if label is not None:
+                if shared_titles:
+                    legend_label = label_list[i][div_num - 1:]
+                else:
+                    legend_label = label_list[i]
 
+                patches.append(mpatches.Patch(color=colors[i],
+                                              label=legend_label))
+
+        if label is not None:
+            plt.legend(handles=patches, loc=legend_loc)
+            if legend_picking is True:
+                animate_legend(fig=f, ax=ax, plot_type='images')
+
+        set_axes_decor(ax, axes_decor)
+
+        if scalebar=='all':
+            axes = im.axes_manager.signal_axes
+            ax.scalebar = ScaleBar(
+                        ax=ax,
+                        units=im.axes_manager[0].units,
+                        color=scalebar_color,
+                    )
+        axes_list.append(ax)
+
+    #Below is for non-overlayed images
+    if not overlay:
+        # Loop through each image, adding subplot for each one
+        for i, ims in enumerate(images):
             # Get handles for the signal axes and axes_manager
-            axes_manager = im.axes_manager
-            axes = axes_manager.signal_axes
+            axes_manager = ims.axes_manager
+            if axes_manager.navigation_dimension > 0:
+                ims = ims._deepcopy_with_new_data(ims.data)
+            for j, im in enumerate(ims):
+                ax = f.add_subplot(rows, per_row, idx + 1)
+                axes_list.append(ax)
+                data = im.data
+                centre = next(centre_colormaps)   # get next value for centreing
 
-            # Set dimensions of images
-            xaxis = axes[0]
-            yaxis = axes[1]
+                # Enable RGB plotting
+                if rgb_tools.is_rgbx(data):
+                    data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+                    _vmin, _vmax = None, None
+                elif colorbar != 'single':
+                    _vmin = vmin[idx] if isinstance(vmin, (tuple, list)) else vmin
+                    _vmax = vmax[idx] if isinstance(vmax, (tuple, list)) else vmax
+                    _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
+                    if centre:
+                        _vmin, _vmax = centre_colormap_values(_vmin, _vmax)
 
-            extent = (
-                xaxis.low_value,
-                xaxis.high_value,
-                yaxis.high_value,
-                yaxis.low_value,
-            )
+                # Remove NaNs (if requested)
+                if no_nans:
+                    data = np.nan_to_num(data)
 
-            if not isinstance(aspect, (int, float)) and aspect not in [
-                    'auto', 'square', 'equal']:
-                _logger.warning("Did not understand aspect ratio input. "
-                                "Using 'auto' as default.")
-                aspect = 'auto'
+                # Get handles for the signal axes and axes_manager
+                axes_manager = im.axes_manager
+                axes = axes_manager.signal_axes
 
-            if aspect == 'auto':
-                if float(yaxis.size) / xaxis.size < min_asp:
-                    factor = min_asp * float(xaxis.size) / yaxis.size
-                elif float(yaxis.size) / xaxis.size > min_asp ** -1:
-                    factor = min_asp ** -1 * float(xaxis.size) / yaxis.size
-                else:
-                    factor = 1
-                asp = np.abs(factor * float(xaxis.scale) / yaxis.scale)
-            elif aspect == 'square':
-                asp = abs(extent[1] - extent[0]) / abs(extent[3] - extent[2])
-            elif aspect == 'equal':
-                asp = 1
-            elif isinstance(aspect, (int, float)):
-                asp = aspect
-            if 'interpolation' not in kwargs.keys():
-                kwargs['interpolation'] = 'nearest'
+                # Set dimensions of images
+                xaxis = axes[0]
+                yaxis = axes[1]
 
-            # Plot image data, using _vmin and _vmax to set bounds,
-            # or allowing them to be set automatically if using individual
-            # colorbars
-            kwargs.update({'cmap':next(cmap), 'extent':extent, 'aspect':asp})
-            axes_im = ax.imshow(data, vmin=_vmin, vmax=_vmax, **kwargs)
-            ax_im_list[i] = axes_im
-
-            # If an axis trait is undefined, shut off :
-            if (xaxis.units == t.Undefined or yaxis.units == t.Undefined or
-                xaxis.name == t.Undefined or yaxis.name == t.Undefined):
-                if axes_decor == 'all':
-                    _logger.warning(
-                        'Axes labels were requested, but one '
-                        'or both of the '
-                        'axes units and/or name are undefined. '
-                        'Axes decorations have been set to '
-                        '\'ticks\' instead.')
-                    axes_decor = 'ticks'
-            # If all traits are defined, set labels as appropriate:
-            else:
-                ax.set_xlabel(axes[0].name + " axis (" + axes[0].units + ")")
-                ax.set_ylabel(axes[1].name + " axis (" + axes[1].units + ")")
-
-            if label:
-                if all_match:
-                    title = ''
-                elif shared_titles:
-                    title = label_list[i][div_num - 1:]
-                else:
-                    if len(ims) == n:
-                        # This is true if we are plotting just 1
-                        # multi-dimensional Signal2D
-                        title = label_list[idx]
-                    elif user_labels:
-                        title = label_list[idx]
-                    else:
-                        title = label_list[i]
-
-                if ims.axes_manager.navigation_size > 1 and not user_labels:
-                    title += " %s" % str(ims.axes_manager.indices)
-
-                ax.set_title(textwrap.fill(title, labelwrap))
-
-            # Set axes decorations based on user input
-            set_axes_decor(ax, axes_decor)
-
-            # If using independent colorbars, add them
-            if colorbar == 'multi' and not isrgb[i]:
-                div = make_axes_locatable(ax)
-                cax = div.append_axes("right", size="5%", pad=0.05)
-                plt.colorbar(axes_im, cax=cax)
-
-            # Add scalebars as necessary
-            if (scalelist and idx in scalebar) or scalebar == 'all':
-                ax.scalebar = ScaleBar(
-                    ax=ax,
-                    units=axes[0].units,
-                    color=scalebar_color,
+                extent = (
+                    xaxis.low_value,
+                    xaxis.high_value,
+                    yaxis.high_value,
+                    yaxis.low_value,
                 )
-            # Replot: store references to the images
-            replot_ims.append(im)
 
-            idx += 1
+                if not isinstance(aspect, (int, float)) and aspect not in [
+                        'auto', 'square', 'equal']:
+                    _logger.warning("Did not understand aspect ratio input. "
+                                    "Using 'auto' as default.")
+                    aspect = 'auto'
+
+                if aspect == 'auto':
+                    if float(yaxis.size) / xaxis.size < min_asp:
+                        factor = min_asp * float(xaxis.size) / yaxis.size
+                    elif float(yaxis.size) / xaxis.size > min_asp ** -1:
+                        factor = min_asp ** -1 * float(xaxis.size) / yaxis.size
+                    else:
+                        factor = 1
+                    asp = np.abs(factor * float(xaxis.scale) / yaxis.scale)
+                elif aspect == 'square':
+                    asp = abs(extent[1] - extent[0]) / abs(extent[3] - extent[2])
+                elif aspect == 'equal':
+                    asp = 1
+                elif isinstance(aspect, (int, float)):
+                    asp = aspect
+                if 'interpolation' not in kwargs.keys():
+                    kwargs['interpolation'] = 'nearest'
+
+                # Plot image data, using _vmin and _vmax to set bounds,
+                # or allowing them to be set automatically if using individual
+                # colorbars
+                kwargs.update({'cmap':next(cmap), 'extent':extent, 'aspect':asp})
+                axes_im = ax.imshow(data, vmin=_vmin, vmax=_vmax, **kwargs)
+                ax_im_list[i] = axes_im
+
+                # If an axis trait is undefined, shut off :
+                if (xaxis.units == t.Undefined or yaxis.units == t.Undefined or
+                    xaxis.name == t.Undefined or yaxis.name == t.Undefined):
+                    if axes_decor == 'all':
+                        _logger.warning(
+                            'Axes labels were requested, but one '
+                            'or both of the '
+                            'axes units and/or name are undefined. '
+                            'Axes decorations have been set to '
+                            '\'ticks\' instead.')
+                        axes_decor = 'ticks'
+                # If all traits are defined, set labels as appropriate:
+                else:
+                    ax.set_xlabel(axes[0].name + " axis (" + axes[0].units + ")")
+                    ax.set_ylabel(axes[1].name + " axis (" + axes[1].units + ")")
+
+                if label:
+                    if all_match:
+                        title = ''
+                    elif shared_titles:
+                        title = label_list[i][div_num - 1:]
+                    else:
+                        if len(ims) == n:
+                            # This is true if we are plotting just 1
+                            # multi-dimensional Signal2D
+                            title = label_list[idx]
+                        elif user_labels:
+                            title = label_list[idx]
+                        else:
+                            title = label_list[i]
+
+                    if ims.axes_manager.navigation_size > 1 and not user_labels:
+                        title += " %s" % str(ims.axes_manager.indices)
+
+                    ax.set_title(textwrap.fill(title, labelwrap))
+
+                # Set axes decorations based on user input
+                set_axes_decor(ax, axes_decor)
+
+                # If using independent colorbars, add them
+                if colorbar == 'multi' and not isrgb[i]:
+                    div = make_axes_locatable(ax)
+                    cax = div.append_axes("right", size="5%", pad=0.05)
+                    plt.colorbar(axes_im, cax=cax)
+
+                # Add scalebars as necessary
+                if (scalelist and idx in scalebar) or scalebar == 'all':
+                    ax.scalebar = ScaleBar(
+                        ax=ax,
+                        units=axes[0].units,
+                        color=scalebar_color,
+                    )
+                # Replot: store references to the images
+                replot_ims.append(im)
+
+                idx += 1
 
     # If using a single colorbar, add it, and do tight_layout, ensuring that
     # a colorbar is only added based off of non-rgb Images:
@@ -1116,18 +1242,20 @@ def make_cmap(colors, name='my_colormap', position=None,
         list of either tuples containing rgb values, or html strings
         Colors should be arranged so that the first color is the lowest
         value for the colorbar and the last is the highest.
-    name : str
-        name of colormap to use when registering with matplotlib
-    position : {None, iterable}, optional
-        list containing the values (from [0,1]) that dictate the position
+    name : str, optional
+        Name of colormap to use when registering with matplotlib. Default
+        'my_colormap'.
+    position : None, iterable, optional
+        List containing the values (from [0,1]) that dictate the position
         of each color within the colormap. If None (default), the colors
         will be equally-spaced within the colorbar.
     bit : bool, optional
         True if RGB colors are given in 8-bit [0 to 255] or False if given
         in arithmetic basis [0 to 1] (default).
     register : bool, optional
-        Wwitch to control whether or not to register the custom colormap
+        Switch to control whether or not to register the custom colormap
         with matplotlib in order to enable use by just the name string.
+        Default True.
     """
     bit_rgb = np.linspace(0, 1, 256)
 
@@ -1182,40 +1310,41 @@ def plot_spectra(
         "mosaic", the spectra can have different size and axes. For `BaseSignal`
         with navigation dimensions 1 and signal dimension 0, the signal will be
         tranposed to form a `Signal1D`.
-    style : {'overlap', 'cascade', 'mosaic', 'heatmap'}
-        The style of the plot.
-    color : {None, matplotlib color, list of colors}, optional
+    style : 'overlap', 'cascade', 'mosaic', 'heatmap', optional
+        The style of the plot: 'overlap' (default), 'cascade', 'mosaic', or
+        'heatmap'.
+    color : None, matplotlib color, list of colors, optional
         Sets the color of the lines of the plots (no action on 'heatmap').
         For a list, if its length is less than the number of spectra to plot,
-        the colors will be cycled. If `None`, use default matplotlib color
-        cycle.
-    line_style: {None, matplotlib line style, list of line_styles}, optional
+        the colors will be cycled. If `None` (default), use default matplotlib
+        color cycle.
+    line_style: None, matplotlib line style, list of line_styles, optional
         Sets the line style of the plots (no action on 'heatmap').
         The main line style are '-','--','steps','-.',':'.
-        For a list, if its length is less than the number of
-        spectra to plot, line_style will be cycled. If
-        If `None`, use continuous lines, eg: ('-','--','steps','-.',':').
-    padding : float, optional, default 1.0
-        Option for "cascade". 1 guarantees that there is no overlapping.
+        For a list, if its length is less than the number of spectra
+        to plot, `line_style` will be cycled, eg. ('-','--','steps','-.',':').
+        If None (default), use continuous lines, eg. '-'.
+    padding : float, optional
+        Option for "cascade". 1.0 (default) guarantees that there is no overlapping.
         However, in many cases, a value between 0 and 1 can produce a tighter
         plot without overlapping. Negative values have the same effect but
         reverse the order of the spectra without reversing the order of the
         colors.
-    legend: {None, list of str, 'auto'}, optional
-       If list of string, legend for "cascade" or title for "mosaic" is
+    legend: None, list of str, 'auto', optional
+       If list of string, legend for 'cascade' or title for 'mosaic' is
        displayed. If 'auto', the title of each spectra (metadata.General.title)
-       is used.
+       is used. Default None.
     legend_picking: bool, optional
         If True (default), a spectrum can be toggled on and off by clicking on
         the legended line.
-    legend_loc : {str, int}, optional
+    legend_loc : str, int, optional
         This parameter controls where the legend is placed on the figure;
-        see the pyplot.legend docstring for valid values
-    fig : {None, matplotlib figure}, optional
-        If None, a default figure will be created. Specifying fig will
+        see the pyplot.legend docstring for valid values. Default 'upper right'.
+    fig : None, matplotlib figure, optional
+        If None (default), a default figure will be created. Specifying `fig` will
         not work for the 'heatmap' style.
-    ax : {none, matplotlib ax (subplot)}, optional
-        If None, a default ax will be created. Will not work for 'mosaic'
+    ax : none, matplotlib ax (subplot), optional
+        If None (default), a default ax will be created. Will not work for 'mosaic'
         or 'heatmap' style.
     auto_update : bool or None
         If True, the plot will update when the data are changed. Only supported
@@ -1238,7 +1367,7 @@ def plot_spectra(
     Returns
     -------
     ax: matplotlib axes or list of matplotlib axes
-        An array is returned when `style` is "mosaic".
+        An array is returned when `style` is 'mosaic'.
 
     """
     import hyperspy.signal
@@ -1253,7 +1382,7 @@ def plot_spectra(
         ----------
         ax_: matplotlib axes
 
-        legend_loc_: {str, int}
+        legend_loc_: str, int
             This parameter controls where the legend is placed on the
             figure; see the pyplot.legend docstring for valid values.
         """
@@ -1311,7 +1440,7 @@ def plot_spectra(
             ax.legend(legend, loc=legend_loc)
             _reverse_legend(ax, legend_loc)
             if legend_picking is True:
-                animate_legend(fig=fig, ax=ax)
+                animate_legend(fig=fig, ax=ax, plot_type='spectra')
     elif style == 'cascade':
         if fig is None:
             fig = plt.figure(**kwargs)
@@ -1384,7 +1513,7 @@ def plot_spectra(
     return ax
 
 
-def animate_legend(fig=None, ax=None):
+def animate_legend(fig=None, ax=None, plot_type='spectra'):
     """Animate the legend of a figure.
 
     A spectrum can be toggled on and off by clicking on the line in the legend.
@@ -1392,10 +1521,10 @@ def animate_legend(fig=None, ax=None):
     Parameters
     ----------
 
-    fig: {None, matplotlib.figure}, optional
-        If None pick the current figure using "plt.gcf".
+    fig: None, matplotlib.figure, optional
+        If None (default), pick the current figure using "plt.gcf".
     ax:  {None, matplotlib.axes}, optional
-        If None pick the current axes using "plt.gca".
+        If None (Default), pick the current axes using "plt.gca".
 
     Note
     ----
@@ -1407,11 +1536,21 @@ def animate_legend(fig=None, ax=None):
         fig = plt.gcf()
     if ax is None:
         ax = plt.gca()
-    lines = ax.lines[::-1]
-    lined = dict()
+
     leg = ax.get_legend()
-    for legline, origline in zip(leg.get_lines(), lines):
-        legline.set_pickradius(5)  # 5 pts tolerance
+
+    if plot_type=='spectra':
+        lines = ax.lines[::-1]
+        leglines = leg.get_lines()
+    elif plot_type=='images':
+        lines = ax.images[1:]
+        leglines = leg.get_patches()
+
+    lined = dict()
+
+    for legline, origline in zip(leglines, lines):
+        if plot_type=='spectra':
+            legline.set_pickradius(preferences.Plot.pick_tolerance)
         legline.set_picker(True)
         lined[legline] = origline
 
@@ -1450,35 +1589,34 @@ def plot_histograms(signal_list,
     Parameters
     ----------
     signal_list : iterable
-        Ordered list of spectra to plot. If `style` is "cascade" or "mosaic",
+        Ordered list of spectra to plot. If `style` is 'cascade' or 'mosaic',
         the spectra can have different size and axes.
-    bins : {int, list, str}, optional
+    bins : int, list, str, optional
         If bins is a string, then it must be one of:
         'knuth' : use Knuth's rule to determine bins,
         'scott' : use Scott's rule to determine bins,
-        'fd' : use the Freedman-diaconis rule to determine bins,
+        'fd' : use the Freedman-diaconis rule to determine bins (default),
         'blocks' : use bayesian blocks for dynamic bin widths.
-    range_bins : {None, tuple}, optional
+    range_bins : None, tuple, optional
         The minimum and maximum range for the histogram. If not specified,
-        it will be (x.min(), x.max()).
-    color : {None, valid matplotlib color, list of colors}, optional
+        it will be (x.min(), x.max()). Default None.
+    color : None, valid matplotlib color, list of colors, optional
         Sets the color of the lines of the plots. For a list, if its length is
         less than the number of spectra to plot, the colors will be cycled.
-        If `None`, use default matplotlib color cycle.
-    line_style: {None, valid matplotlib line style, list of line styles},
-    optional
+        If None (default), use default matplotlib color cycle.
+    line_style: None, valid matplotlib line style, list of line styles, optional
         The main line styles are '-','--','steps','-.',':'.
-        For a list, if its length is less than the number of
-        spectra to plot, line_style will be cycled.
-        If `None`, use continuous lines, eg: ('-','--','steps','-.',':')
-    legend: {None, list of str, 'auto'}, optional
-       Display a legend. If 'auto', the title of each spectra
+        For a list, if its length is less than the number of spectra
+        to plot, `line_style` will be cycled, eg. ('-','--','steps','-.',':').
+        If None, use continuous lines.
+    legend: None, list of str, 'auto', optional
+       Display a legend. If 'auto' (default), the title of each spectra
        (metadata.General.title) is used.
     legend_picking: bool, optional
-        If true, a spectrum can be toggled on and off by clicking on
+        If True, a spectrum can be toggled on and off by clicking on
         the line in the legend.
-    fig : {None, matplotlib figure}, optional
-        If None, a default figure will be created.
+    fig : None, matplotlib figure, optional
+        If None (default), a default figure will be created.
     **kwargs
         other keyword arguments (weight and density) are described in
         :py:func:`numpy.histogram`.
@@ -1494,7 +1632,7 @@ def plot_histograms(signal_list,
     Returns
     -------
     ax: matplotlib axes or list of matplotlib axes
-        An array is returned when `style` is "mosaic".
+        An array is returned when `style` is 'mosaic'.
 
     """
     hists = []
@@ -1515,4 +1653,3 @@ def picker_kwargs(value, kwargs={}):
         kwargs['picker'] = value
 
     return kwargs
-

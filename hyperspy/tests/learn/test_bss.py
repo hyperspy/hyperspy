@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,6 +18,7 @@
 
 import numpy as np
 import pytest
+from distutils.version import LooseVersion
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
@@ -286,6 +287,14 @@ class TestBSS1D:
         self.mask_nav = mask_nav
         self.mask_sig = mask_sig
 
+    def test_mask_error(self):
+        with pytest.raises(ValueError):
+            self.s.blind_source_separation(3, mask=self.mask_sig.data)
+
+    def test_mask_shape_error(self):
+        with pytest.raises(ValueError):
+            self.s.blind_source_separation(3, mask=self.mask_nav)
+
     def test_on_loadings(self):
         self.s.blind_source_separation(3, diff_order=0, fun="exp", on_loadings=False)
         s2 = self.s.as_signal1D(0)
@@ -343,6 +352,8 @@ class TestBSS2D:
         self.mask_nav = mask_nav
         self.mask_sig = mask_sig
 
+    @pytest.mark.skipif(LooseVersion(np.__version__) < LooseVersion("1.17"),
+                        reason="derivative of lazy signal isn't supported with numpy < 1.17.0")
     def test_diff_axes_string_with_mask(self):
         self.s.learning_results.factors[5, :] = np.nan
         factors = self.s.get_decomposition_factors().inav[:3]
@@ -380,6 +391,8 @@ class TestBSS2D:
             matrix, self.s.learning_results.unmixing_matrix, atol=1e-5
         )
 
+    @pytest.mark.skipif(LooseVersion(np.__version__) < LooseVersion("1.17"),
+                        reason="derivative of lazy signal isn't supported with numpy < 1.17.0")
     def test_diff_axes_string_without_mask(self):
         factors = self.s.get_decomposition_factors().inav[:3].derivative(
             axis="x", order=1)
@@ -394,6 +407,8 @@ class TestBSS2D:
             matrix, self.s.learning_results.unmixing_matrix, atol=1e-3
         )
 
+    @pytest.mark.skipif(LooseVersion(np.__version__) < LooseVersion("1.17"),
+                        reason="derivative of lazy signal isn't supported with numpy < 1.17.0")
     def test_diff_axes_without_mask(self):
         factors = self.s.get_decomposition_factors().inav[:3].derivative(
             axis="y", order=1)

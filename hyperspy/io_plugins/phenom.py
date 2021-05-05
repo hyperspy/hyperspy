@@ -60,6 +60,7 @@ reads_spectrum = True
 reads_spectrum_image = True
 # Writing features
 writes = False
+non_uniform_axis = False
 # ----------------------
 
 def element_symbol(z):
@@ -111,6 +112,7 @@ class ElidReader:
             raise Exception('unsupported ELID format')
         self._version = version
         self.dictionaries = self._read_Project()
+        self._file.close()
 
     def _read(self, size=1):
         data = self._decompressor.decompress(b'', size)

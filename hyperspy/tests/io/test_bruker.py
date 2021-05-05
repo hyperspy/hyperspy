@@ -88,6 +88,7 @@ def test_hyperspy_wrap():
     np.testing.assert_allclose(hype.axes_manager[2].scale, 0.009999)
     np.testing.assert_allclose(hype.axes_manager[2].offset, -0.47225277)
     assert hype.axes_manager[2].units == 'keV'
+    assert hype.axes_manager[2].is_binned == True
 
     md_ref = {
         'Acquisition_instrument': {
@@ -122,7 +123,6 @@ def test_hyperspy_wrap():
                            'O_Ka', 'P_Ka', 'Si_Ka', 'Sm_La', 'Th_Ma',
                            'Ti_Ka']},
         'Signal': {
-            'binned': True,
             'quantity': 'X-rays (Counts)',
             'signal_type': 'EDS_SEM'},
         '_HyperSpy': {
@@ -216,6 +216,7 @@ def test_decimal_regex():
     for j in dummy_xml_negative:
         assert b'.' not in fix_dec_patterns.sub(b'\\1.\\2', j)
 
+
 def test_all_spx_loads():
     for spxfile in spx_files:
         filename = os.path.join(my_path, 'bruker_data', spxfile)
@@ -223,8 +224,19 @@ def test_all_spx_loads():
         assert s.data.dtype == np.uint64
         assert s.metadata.Signal.signal_type == 'EDS_SEM'
 
+
 def test_stand_alone_spx():
     filename = os.path.join(my_path, 'bruker_data', 'bruker_nano.spx')
     s = load(filename)
     assert s.metadata.Sample.elements == ['Fe', 'S', 'Cu']
     assert s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time == 7.385
+
+
+def test_bruker_XRF():
+    # See https://github.com/hyperspy/hyperspy/issues/2689
+    # Bruker M6 Jetstream SPX
+    filename = os.path.join(my_path, 'bruker_data',
+                            'bruker_m6_jetstream_file_example.spx')
+    s = load(filename)
+    assert s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time == 28.046
+    assert s.metadata.Acquisition_instrument.TEM.beam_energy == 50

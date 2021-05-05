@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -367,9 +367,9 @@ class MVA:
             _logger.info("Performing decomposition analysis")
 
             if isinstance(navigation_mask, BaseSignal):
-                navigation_mask = navigation_mask.data
-            if hasattr(navigation_mask, "ravel"):
-                navigation_mask = navigation_mask.ravel()
+                navigation_mask = navigation_mask.data.ravel()
+            elif hasattr(navigation_mask, "ravel"):
+                navigation_mask = navigation_mask.T.ravel()
 
             if isinstance(signal_mask, BaseSignal):
                 signal_mask = signal_mask.data
@@ -804,9 +804,12 @@ class MVA:
                 if mask.axes_manager.signal_shape != ref_shape:
                     raise ValueError(
                         f"`mask` shape is not equal to {space} shape. "
-                        f"Mask shape: {mask.axes_manager.signal_shape}\t"
+                        f"Mask shape: {mask.axes_manager.signal_shape}; "
                         f"{space} shape: {ref_shape}"
                     )
+            else:
+                raise ValueError("`mask` must be a HyperSpy signal.")
+
             if hasattr(mask, "compute"):
                 # if the mask is lazy, we compute them, which should be fine
                 # since we already reduce the dimensionality of the data.

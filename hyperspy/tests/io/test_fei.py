@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -24,7 +24,7 @@ import traits.api as t
 
 from hyperspy.io import load
 from hyperspy.io_plugins.fei import load_ser_file
-from hyperspy.misc.test_utils import assert_warns
+
 
 MY_PATH = os.path.dirname(__file__)
 
@@ -451,20 +451,24 @@ class TestFEIReader():
         assert unit == 'meters'
 
         # objects is empty dictionary
-        with assert_warns(
-                message="The navigation axes units could not be determined.",
-                category=UserWarning):
+        with pytest.warns(
+                UserWarning,
+                match="The navigation axes units could not be determined."):
             unit = _guess_units_from_mode({}, header0)
         assert unit == 'meters'
 
-    def test_load_multisignal_stack(self):
+    @pytest.mark.parametrize('stack_metadata', [True, False, 0])
+    def test_load_multisignal_stack(self, stack_metadata):
         fname0 = os.path.join(
             self.dirpathnew, '16x16-line_profile_horizontal_5x128x128_EDS.emi')
-        s = load([fname0, fname0], stack=True)
+        s = load([fname0, fname0], stack=True, stack_metadata=stack_metadata)
         assert s[0].axes_manager.navigation_shape == (5, 2)
         assert s[0].axes_manager.signal_shape == (4000, )
         assert s[1].axes_manager.navigation_shape == (5, 2)
         assert s[1].axes_manager.signal_shape == (128, 128)
+
+        om = s[0].original_metadata
+        assert om.has_item('stack_elements') is (stack_metadata is True)
 
     def test_load_multisignal_stack_mismatch(self):
         fname0 = os.path.join(

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,14 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
-import numpy as np
-from matplotlib.widgets import SpanSelector
 import inspect
 import logging
 
+import numpy as np
+from matplotlib.widgets import SpanSelector
+
 from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
 from hyperspy.events import Events, Event
+from hyperspy.defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -61,20 +62,18 @@ class RangeWidget(ResizableDraggableWidgetBase):
         super(RangeWidget, self).__init__(axes_manager, alpha=alpha, **kwargs)
         self.span = None
 
-    def set_on(self, value):
-        if value is not self.is_on() and self.ax is not None:
+    def set_on(self, value, render_figure=True):
+        if value is not self.is_on and self.ax is not None:
             if value is True:
                 self._add_patch_to(self.ax)
                 self.connect(self.ax)
             elif value is False:
                 self.disconnect()
-            try:
-                self.ax.figure.canvas.draw_idle()
-            except BaseException:  # figure does not exist
-                pass
+            if render_figure:
+                self.draw_patch()
             if value is False:
                 self.ax = None
-        self.__is_on = value
+        self._is_on = value
 
     def _add_patch_to(self, ax):
         self.span = ModifiableSpanSelector(ax, **self._SpanSelector_kwargs)
@@ -85,7 +84,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self.span.can_switch = True
         self.span.events.changed.connect(self._span_changed, {'obj': 'widget'})
         self.span.step_ax = self.axes[0]
-        self.span.tolerance = 5
+        self.span.tolerance = preferences.Plot.pick_tolerance
         self.patch = [self.span.rect]
         self.patch[0].set_color(self.color)
         self.patch[0].set_alpha(self.alpha)
@@ -219,7 +218,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self._update_patch_geometry()
 
     def _update_patch_geometry(self):
-        if self.is_on() and self.span is not None:
+        if self.is_on and self.span is not None:
             self.span.range = self._get_range()
 
     def disconnect(self):
@@ -230,13 +229,15 @@ class RangeWidget(ResizableDraggableWidgetBase):
 
     def _set_snap_position(self, value):
         super(RangeWidget, self)._set_snap_position(value)
-        self.span.snap_position = value
-        self._update_patch_geometry()
+        if self.span is not None:
+            self.span.snap_position = value
+            self._update_patch_geometry()
 
     def _set_snap_size(self, value):
         super(RangeWidget, self)._set_snap_size(value)
-        self.span.snap_size = value
-        self._update_patch_size()
+        if self.span is not None:
+            self.span.snap_size = value
+            self._update_patch_size()
 
     def _validate_geometry(self, x1=None):
         """Make sure the entire patch always stays within bounds. First the
@@ -285,7 +286,7 @@ class ModifiableSpanSelector(SpanSelector):
         SpanSelector.__init__(self, ax, onselect, direction=direction,
                               useblit=useblit, span_stays=False, **kwargs)
         # The tolerance in points to pick the rectangle sizes
-        self.tolerance = 2
+        self.tolerance = preferences.Plot.pick_tolerance
         self.on_move_cid = None
         self._range = None
         self.step_ax = None
@@ -390,7 +391,6 @@ class ModifiableSpanSelector(SpanSelector):
         # And connect to the new ones
         self.connect_event('button_press_event', self.mm_on_press)
         self.connect_event('button_release_event', self.mm_on_release)
-        self.connect_event('draw_event', self.update_background)
 
         self.rect.set_visible(True)
         self.rect.contains = self.contains
@@ -398,17 +398,17 @@ class ModifiableSpanSelector(SpanSelector):
     def update(self, *args):
         # Override the SpanSelector `update` method to blit properly all
         # artirts before we go to "modify mode" in `set_initial`.
-        self.draw_patch()
+        self.set_visible(True)
 
     def draw_patch(self, *args):
         """Update the patch drawing.
         """
         try:
-            if self.useblit and hasattr(self.ax, 'hspy_fig'):
-                self.ax.hspy_fig._update_animated()
+            if hasattr(self.ax, 'hspy_fig'):
+                self.ax.hspy_fig.render_figure()
             elif self.ax.figure is not None:
                 self.ax.figure.canvas.draw_idle()
-        except AttributeError:
+        except AttributeError:  # pragma: no cover
             pass  # When figure is None, typically when closing
 
     def contains(self, mouseevent):
@@ -573,11 +573,12 @@ class ModifiableSpanSelector(SpanSelector):
         self.draw_patch()
 
     def move_rect(self, event):
-        if self._button_down is False or self.ignore(event):
+        if (self._button_down is False or self.ignore(event) or
+            self._get_mouse_position(event) is None):
             return
         x_increment = self._get_mouse_position(event) - self.pressv
         if self.step_ax is not None:
-            if (self.bounds_check  
+            if (self.bounds_check
                 and self._range[0] <= self.step_ax.low_value
                 and self._get_mouse_position(event) <= self.pressv):
                 return

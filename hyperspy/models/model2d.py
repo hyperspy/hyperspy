@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -95,12 +95,11 @@ class Model2D(BaseModel):
         self._plot_components = False
         self._suspend_update = False
         self._model_line = None
-        self._adjust_position_all = None
         self.xaxis, self.yaxis = np.meshgrid(
             self.axes_manager.signal_axes[0].axis,
             self.axes_manager.signal_axes[1].axis)
         self.axes_manager.events.indices_changed.connect(
-            self.fetch_stored_values, [])
+            self._on_navigating, [])
         self.channel_switches = np.ones(self.xaxis.shape, dtype=bool)
         self.chisq = signal2D._get_navigation_signal()
         self.chisq.change_dtype("float")
@@ -253,6 +252,10 @@ class Model2D(BaseModel):
 
     @staticmethod
     def _connect_component_line(component):
+        raise NotImplementedError
+
+    @staticmethod
+    def _disconnect_component_line(component):
         raise NotImplementedError
 
     def _plot_component(self, component):
