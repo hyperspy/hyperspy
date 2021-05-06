@@ -140,7 +140,8 @@ class GaussianHF(Expression):
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
-
+        scaling_factor = axis.scale if axis.is_uniform \
+                         else np.gradient(axis.axis)[axis.value2index(centre)]
         if only_current is True:
             self.centre.value = centre
             self.fwhm.value = sigma * sigma2fwhm
@@ -148,10 +149,7 @@ class GaussianHF(Expression):
             if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                if axis.is_uniform:
-                    self.height.value /= axis.scale
-                else:
-                    self.height.value /= np.gradient(axis.axis)[axis.value2index(centre)]
+                self.height.value /= scaling_factor
             return True
         else:
             if self.height.map is None:
@@ -160,10 +158,7 @@ class GaussianHF(Expression):
             if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                if axis.is_uniform:
-                    self.height.map['values'][:] /= axis.scale
-                else:
-                    self.height.map['values'][:] /= np.gradient(axis.axis)[axis.value2index(centre)]
+                self.height.map['values'][:] /= scaling_factor
             self.height.map['is_set'][:] = True
             self.fwhm.map['values'][:] = sigma * sigma2fwhm
             self.fwhm.map['is_set'][:] = True

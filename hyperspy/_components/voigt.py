@@ -161,7 +161,8 @@ class Voigt(Expression):
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
-
+        scaling_factor = axis.scale if axis.is_uniform \
+                         else np.gradient(axis.axis)[axis.value2index(centre)]
         if only_current is True:
             self.centre.value = centre
             self.sigma.value = sigma
@@ -169,10 +170,7 @@ class Voigt(Expression):
             if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                if axis.is_uniform:
-                    self.area.value /= axis.scale
-                else:
-                    self.area.value /= np.gradient(axis.axis)[axis.value2index(centre)]
+                self.area.value /= scaling_factor
             return True
         else:
             if self.area.map is None:
@@ -181,10 +179,7 @@ class Voigt(Expression):
             if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                if axis.is_uniform:
-                    self.area.map['values'][:] /= axis.scale
-                else:
-                    self.area.map['values'][:] /= np.gradient(axis.axis)[axis.value2index(centre)]
+                self.area.map['values'][:] /= scaling_factor
             self.area.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma
             self.sigma.map['is_set'][:] = True

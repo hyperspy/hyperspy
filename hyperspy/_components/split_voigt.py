@@ -194,7 +194,8 @@ class SplitVoigt(Component):
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
-
+        scaling_factor = axis.scale if axis.is_uniform \
+                         else np.gradient(axis.axis)[axis.value2index(centre)]
         if only_current is True:
             self.centre.value = centre
             self.sigma1.value = sigma
@@ -203,10 +204,7 @@ class SplitVoigt(Component):
             if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                if axis.is_uniform:
-                    self.A.value /= axis.scale
-                else:
-                    self.A.value /= np.gradient(axis.axis)[axis.value2index(centre)]
+                self.A.value /= scaling_factor
             return True
         else:
             if self.A.map is None:
@@ -215,10 +213,7 @@ class SplitVoigt(Component):
             if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                if axis.is_uniform:
-                    self.A.map['values'][:] /= axis.scale
-                else:
-                    self.A.map['values'][:] /= np.gradient(axis.axis)[axis.value2index(centre)]
+                self.A.map['values'][:] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.sigma1.map['values'][:] = sigma
             self.sigma1.map['is_set'][:] = True

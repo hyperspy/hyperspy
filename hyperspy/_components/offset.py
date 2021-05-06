@@ -89,16 +89,16 @@ class Offset(Component):
         super(Offset, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
-
+        # using the mean of the gradient for non-uniform axes is a best guess
+        # to the scaling of binned signals for the estimation
+        scaling_factor = axis.scale if axis.is_uniform \
+                         else np.mean(np.gradient(axis.axis))
         if only_current is True:
             self.offset.value = signal()[i1:i2].mean()
             if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                if axis.is_uniform:
-                    self.offset.value /= axis.scale
-                else:
-                    self.offset.value /= np.gradient(axis.axis)[(i1 + i2) // 2]
+                self.offset.value /= scaling_factor
             return True
         else:
             if self.offset.map is None:
@@ -111,10 +111,7 @@ class Offset(Component):
             if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                if axis.is_uniform:
-                    self.offset.map['values'] /= axis.scale
-                else:
-                    self.offset.map['values'] /= np.gradient(axis.axis)[(i1 + i2) // 2]
+                self.offset.map['values'] /= scaling_factor
             self.offset.map['is_set'][:] = True
             self.fetch_stored_values()
             return True

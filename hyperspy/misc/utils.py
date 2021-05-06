@@ -1012,18 +1012,15 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         if axis is not None:
             step_sizes = [s.axes_manager[axis_input].size for s in broadcasted_sigs]
             axis = broadcasted_sigs[0].axes_manager[axis_input]
-            if not axis.axes_manager[axis_input].is_uniform:
+            if not axis.is_uniform:
                 # stack axes if non-uniform (convert to DataAxis if FunctionalDataAxis)
                 if type(axis) is FunctionalDataAxis:
                     axis.axes_manager[axis_input].convert_to_non_uniform_axis()
-                for i, _s in enumerate(signal_list):
-                    if i == 0:
-                        pass
-                    elif (axis.axis[0] < axis.axis[-1] and axis.axis[-1] < \
-                            _s.axes_manager[axis_input].axis[0]) or \
-                            (axis.axis[-1] < axis.axis[0] and \
-                            _s.axes_manager[axis_input].axis[-1] < axis.axis[0]):
-                        axis.axis = np.concatenate((axis.axis, _s.axes_manager[axis_input].axis))
+                for _s in signal_list[1:]:
+                    _axis = _s.axes_manager[axis_input]
+                    if (axis.axis[0] < axis.axis[-1] and axis.axis[-1] < _axis.axis[0]) \
+                       or (axis.axis[-1] < axis.axis[0] and _axis.axis[-1] < axis.axis[0]):
+                        axis.axis = np.concatenate((axis.axis, _axis.axis))
                     else:
                         raise ValueError("Signals can only be stacked along a "
                             "non-uniform axes if the axis values do not overlap"

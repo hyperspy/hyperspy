@@ -92,6 +92,10 @@ class Polynomial(Expression):
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
+        # using the mean of the gradient for non-uniform axes is a best guess
+        # to the scaling of binned signals for the estimation
+        scaling_factor = axis.scale if axis.is_uniform \
+                         else np.mean(np.gradient(axis.axis))
         if only_current is True:
             estimation = np.polyfit(axis.axis[i1:i2],
                                     signal()[i1:i2],
@@ -100,10 +104,7 @@ class Polynomial(Expression):
             # in v2 replace by
             #if axis.is_binned:
                 for para, estim in zip(self.parameters[::-1], estimation):
-                    if axis.is_uniform:
-                        para.value = estim / axis.scale
-                    else:
-                        para.value = estim / np.gradient(axis.axis)[i1 + i2 // 2]
+                    para.value = estim / scaling_factor
             else:
                 for para, estim in zip(self.parameters[::-1], estimation):
                     para.value = estim
@@ -130,10 +131,7 @@ class Polynomial(Expression):
                 # in v2 replace by
                 #if axis.is_binned:
                     for i, para in enumerate(self.parameters[::-1]):
-                        if axis.is_uniform:
-                            para.map['values'][:] = fit[..., i] / axis.scale
-                        else:
-                            para.map['values'][:] = fit[..., i] / np.gradient(axis.axis)[i1 + i2 // 2]
+                        para.map['values'][:] = fit[..., i] / scaling_factor
                         para.map['is_set'][:] = True
                 else:
                     for i, para in enumerate(self.parameters[::-1]):

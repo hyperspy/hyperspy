@@ -273,7 +273,7 @@ class BaseDataAxis(t.HasTraits):
                  index_in_array=None,
                  name=t.Undefined,
                  units=t.Undefined,
-                 navigate=t.Undefined,
+                 navigate=False,
                  is_binned=False,
                  **kwargs):
         super(BaseDataAxis, self).__init__()
@@ -666,6 +666,7 @@ class BaseDataAxis(t.HasTraits):
     def convert_to_uniform_axis(self):
         scale = (self.high_value - self.low_value) / self.size
         d = self.get_axis_dictionary()
+        axes_manager = self.axes_manager
         del d["axis"]
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
@@ -673,6 +674,7 @@ class BaseDataAxis(t.HasTraits):
         d["_type"] = 'UniformDataAxis'
         self.__class__ = UniformDataAxis
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
+        self.axes_manager = axes_manager
 
     @property
     def _is_increasing_order(self):
@@ -726,7 +728,7 @@ class DataAxis(BaseDataAxis):
                  index_in_array=None,
                  name=t.Undefined,
                  units=t.Undefined,
-                 navigate=t.Undefined,
+                 navigate=False,
                  is_binned=False,
                  axis=[1],
                  **kwargs):
@@ -879,7 +881,7 @@ class FunctionalDataAxis(BaseDataAxis):
                  index_in_array=None,
                  name=t.Undefined,
                  units=t.Undefined,
-                 navigate=t.Undefined,
+                 navigate=False,
                  size=t.Undefined,
                  is_binned=False,
                  **parameters):
@@ -1061,7 +1063,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
                  index_in_array=None,
                  name=t.Undefined,
                  units=t.Undefined,
-                 navigate=t.Undefined,
+                 navigate=False,
                  size=1,
                  scale=1.,
                  offset=0.,

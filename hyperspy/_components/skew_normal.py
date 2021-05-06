@@ -209,6 +209,8 @@ class SkewNormal(Expression):
         axis = signal.axes_manager.signal_axes[0]
         x0, height, scale, shape = _estimate_skewnormal_parameters(signal, x1,
                                                                    x2, only_current)
+        scaling_factor = axis.scale if axis.is_uniform \
+                         else np.gradient(axis.axis)[axis.value2index(x0)]
         if only_current is True:
             self.x0.value = x0
             self.A.value = height * sqrt2pi
@@ -217,10 +219,7 @@ class SkewNormal(Expression):
             if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                if axis.is_uniform:
-                    self.A.value /= axis.scale
-                else:
-                    self.A.value /= np.gradient(axis.axis)[axis.value2index(x0)]
+                self.A.value /= scaling_factor
             return True
         else:
             if self.A.map is None:
@@ -230,10 +229,7 @@ class SkewNormal(Expression):
             if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                if axis.is_uniform:
-                    self.A.map['values'] /= axis.scale
-                else:
-                    self.A.map['values'] /= np.gradient(axis.axis)[axis.value2index(x0)]
+                self.A.map['values'] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.x0.map['values'][:] = x0
             self.x0.map['is_set'][:] = True

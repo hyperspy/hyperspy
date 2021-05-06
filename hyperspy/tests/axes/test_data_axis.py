@@ -27,6 +27,7 @@ import pytest
 
 from hyperspy.axes import (BaseDataAxis, DataAxis, FunctionalDataAxis,
                            UniformDataAxis, create_axis)
+from hyperspy.signals import Signal1D
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
@@ -40,7 +41,8 @@ class TestBaseDataAxis:
             assert self.axis.index_in_array is None
         assert self.axis.name is t.Undefined
         assert self.axis.units is t.Undefined
-        assert self.axis.navigate is t.Undefined
+        assert not self.axis.navigate
+        assert not self.axis.is_binned
         assert not self.axis.is_uniform
 
     def test_initialisation_BaseDataAxis(self):
@@ -153,17 +155,20 @@ class TestDataAxis:
         navigate = self.axis.navigate
         self.axis.name = "parrot"
         self.axis.units = "plumage"
-        self.axis.convert_to_uniform_axis()
-        assert isinstance(self.axis, UniformDataAxis)
-        assert self.axis.name == "parrot"
-        assert self.axis.units == "plumage"
-        assert self.axis.size == 16
-        assert self.axis.scale == scale
-        assert self.axis.offset == 0
-        assert self.axis.low_value == 0
-        assert self.axis.high_value == 15 * scale
-        assert is_binned == self.axis.is_binned
-        assert navigate == self.axis.navigate
+        s = Signal1D(np.arange(10), axes=[self.axis])
+        index_in_array = s.axes_manager[0].index_in_array
+        s.axes_manager[0].convert_to_uniform_axis()
+        assert isinstance(s.axes_manager[0], UniformDataAxis)
+        assert s.axes_manager[0].name == "parrot"
+        assert s.axes_manager[0].units == "plumage"
+        assert s.axes_manager[0].size == 16
+        assert s.axes_manager[0].scale == scale
+        assert s.axes_manager[0].offset == 0
+        assert s.axes_manager[0].low_value == 0
+        assert s.axes_manager[0].high_value == 15 * scale
+        assert index_in_array == s.axes_manager[0].index_in_array
+        assert is_binned == s.axes_manager[0].is_binned
+        assert navigate == s.axes_manager[0].navigate
 
     def test_value2index(self):
         assert self.axis.value2index(10.15) == 3
@@ -274,22 +279,25 @@ class TestFunctionalDataAxis:
         navigate = self.axis.navigate
         self.axis.name = "parrot"
         self.axis.units = "plumage"
-        self.axis.convert_to_non_uniform_axis()
-        assert isinstance(self.axis, DataAxis)
-        assert self.axis.name == "parrot"
-        assert self.axis.units == "plumage"
-        assert self.axis.size == 10
-        assert self.axis.low_value == 0
-        assert self.axis.high_value == 81
-        np.testing.assert_allclose(self.axis.axis, axis)
+        s = Signal1D(np.arange(10), axes=[self.axis])
+        index_in_array = s.axes_manager[0].index_in_array
+        s.axes_manager[0].convert_to_non_uniform_axis()
+        assert isinstance(s.axes_manager[0], DataAxis)
+        assert s.axes_manager[0].name == "parrot"
+        assert s.axes_manager[0].units == "plumage"
+        assert s.axes_manager[0].size == 10
+        assert s.axes_manager[0].low_value == 0
+        assert s.axes_manager[0].high_value == 81
+        np.testing.assert_allclose(s.axes_manager[0].axis, axis)
         with pytest.raises(AttributeError):
-            self.axis._expression
+            s.axes_manager[0]._expression
         with pytest.raises(AttributeError):
-            self.axis._function
+            s.axes_manager[0]._function
         with pytest.raises(AttributeError):
-            self.axis.x
-        assert is_binned == self.axis.is_binned
-        assert navigate == self.axis.navigate
+            s.axes_manager[0].x
+        assert index_in_array == s.axes_manager[0].index_in_array
+        assert is_binned == s.axes_manager[0].is_binned
+        assert navigate == s.axes_manager[0].navigate
 
     def test_update_from(self):
         ax2 = FunctionalDataAxis(size=2, units="nm", expression="x ** power", power=3)
@@ -510,20 +518,23 @@ class TestUniformDataAxis:
         navigate = self.axis.navigate
         self.axis.name = "parrot"
         self.axis.units = "plumage"
-        self.axis.convert_to_non_uniform_axis()
-        assert isinstance(self.axis, DataAxis)
-        assert self.axis.name == "parrot"
-        assert self.axis.units == "plumage"
-        assert self.axis.size == 10
-        assert self.axis.low_value == 10
-        assert self.axis.high_value == 10 + 0.1 * 9
-        np.testing.assert_allclose(self.axis.axis, axis)
+        s = Signal1D(np.arange(10), axes=[self.axis])
+        index_in_array = s.axes_manager[0].index_in_array
+        s.axes_manager[0].convert_to_non_uniform_axis()
+        assert isinstance(s.axes_manager[0], DataAxis)
+        assert s.axes_manager[0].name == "parrot"
+        assert s.axes_manager[0].units == "plumage"
+        assert s.axes_manager[0].size == 10
+        assert s.axes_manager[0].low_value == 10
+        assert s.axes_manager[0].high_value == 10 + 0.1 * 9
+        np.testing.assert_allclose(s.axes_manager[0].axis, axis)
         with pytest.raises(AttributeError):
-            self.axis.offset
+            s.axes_manager[0].offset
         with pytest.raises(AttributeError):
-            self.axis.scale
-        assert is_binned == self.axis.is_binned
-        assert navigate == self.axis.navigate
+            s.axes_manager[0].scale
+        assert index_in_array == s.axes_manager[0].index_in_array
+        assert is_binned == s.axes_manager[0].is_binned
+        assert navigate == s.axes_manager[0].navigate
 
     def test_convert_to_functional_data_axis(self):
         axis = np.copy(self.axis.axis)
@@ -531,22 +542,25 @@ class TestUniformDataAxis:
         navigate = self.axis.navigate
         self.axis.name = "parrot"
         self.axis.units = "plumage"
-        self.axis.convert_to_functional_data_axis(expression = 'x**2')
-        assert isinstance(self.axis, FunctionalDataAxis)
-        assert self.axis.name == "parrot"
-        assert self.axis.units == "plumage"
-        assert self.axis.size == 10
-        assert self.axis.low_value == 10**2
-        assert self.axis.high_value == (10 + 0.1 * 9)**2
-        assert self.axis._expression == 'x**2'
-        assert isinstance(self.axis.x, UniformDataAxis)
-        np.testing.assert_allclose(self.axis.axis, axis**2)
+        s = Signal1D(np.arange(10), axes=[self.axis])
+        index_in_array = s.axes_manager[0].index_in_array
+        s.axes_manager[0].convert_to_functional_data_axis(expression = 'x**2')
+        assert isinstance(s.axes_manager[0], FunctionalDataAxis)
+        assert s.axes_manager[0].name == "parrot"
+        assert s.axes_manager[0].units == "plumage"
+        assert s.axes_manager[0].size == 10
+        assert s.axes_manager[0].low_value == 10**2
+        assert s.axes_manager[0].high_value == (10 + 0.1 * 9)**2
+        assert s.axes_manager[0]._expression == 'x**2'
+        assert isinstance(s.axes_manager[0].x, UniformDataAxis)
+        np.testing.assert_allclose(s.axes_manager[0].axis, axis**2)
         with pytest.raises(AttributeError):
-            self.axis.offset
+            s.axes_manager[0].offset
         with pytest.raises(AttributeError):
-            self.axis.scale
-        assert is_binned == self.axis.is_binned
-        assert navigate == self.axis.navigate
+            s.axes_manager[0].scale
+        assert index_in_array == s.axes_manager[0].index_in_array
+        assert is_binned == s.axes_manager[0].is_binned
+        assert navigate == s.axes_manager[0].navigate
 
     @pytest.mark.parametrize("use_indices", (False, True))
     def test_crop(self, use_indices):

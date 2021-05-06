@@ -145,14 +145,15 @@ class Exponential(Expression):
                                 'with a "divide by zero" error (likely log of '
                                 'a zero or negative value).')
                 return False
-
             if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
                 if axis.is_uniform:
                     A /= axis.scale
                 else:
-                    A /= np.gradient(axis.axis)[i_mid]
+                    # using the mean of the gradient for non-uniform axes is a best
+                    # guess to the scaling of binned signals for the estimation
+                    A /= np.mean(np.gradient(axis.axis))
             if only_current is True:
                 self.A.value = A
                 self.tau.value = t
