@@ -1361,8 +1361,10 @@ some additional loading arguments are provided.
 Extra loading arguments
 +++++++++++++++++++++++
 
-- ``dataset_keys``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) or string(s) to search for in the path to find one or more datasets.
+- ``dataset_keys``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . String(s) to search for in the path to find one or more datasets.
+- ``dataset_paths``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) to search for in the path to find one or more datasets.
 - ``metadata_keys``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) or string(s) to search for in the path to find metadata.
+- ``skip_array_metadata``: ``bool`` - Default is False. Option to skip loading metadata that are arrays to avoid duplicating loading of data.
 - ``nxdata_only``: ``bool`` - Default is False. Option to only convert NXdata formatted data to signals.
 - ``hardlinks_only``: ``bool`` - Default is False. Option to ignore soft or External links in the file.
 - ``use_default``: ``bool`` - Default is False. Only load the ``default`` dataset, if defined, from the file. Otherwise load according to the other keyword options.
@@ -1391,16 +1393,16 @@ hdf datasets will be returned as signals:
 
 .. code-block:: python
 
-    >>> sig = hs.load("sample.nxs",nxdata_only=False)
+    >>> sig = hs.load("sample.nxs", nxdata_only=False)
 
-We can load a specific dataset using the ``dataset_keys`` keyword argument.
+We can load a specific dataset using the ``dataset_paths`` keyword argument.
 Setting it to the absolute path of the desired dataset will cause
 the single dataset to be loaded:
 
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.nxs", dataset_keys='/entry/experiment/EDS/data')
+    >>> hs.load("sample.nxs", dataset_paths="/entry/experiment/EDS/data")
 
 We can also choose to load datasets based on a search key using the
 ``dataset_keys`` keyword argument. This can also be used to load NXdata not
@@ -1431,6 +1433,12 @@ Metadata can also be filtered in the same way using ``metadata_keys``:
 
     The Nexus loader removes any NXdata blocks from the metadata.
 
+Metadata that are arrays can be skipped by using ``skip_array_metadata``:
+
+.. code-block:: python
+
+    >>> # Load data while skipping metadata that are arrays
+    >>> hs.load("sample.nxs", skip_array_metadata=True)
 
 Nexus files also support parameters or dimensions that have been varied
 non-linearly. Since HyperSpy Signals expect linear variation of parameters /
@@ -1439,7 +1447,8 @@ replaced with indices.
 Nexus and HDF can result in large metadata structures with large datasets within the loaded
 original_metadata. If lazy loading is used this may not be a concern but care must be taken
 when saving the data. To control whether large datasets are loaded or saved,
-use the ``metadata_keys`` to load only the most relevant information.
+use the ``metadata_keys`` to load only the most relevant information. Alternatively,
+set ``skip_array_metadata`` to ``True`` to avoid loading those large datasets in original_metadata.
 
 
 Writing
@@ -1450,6 +1459,7 @@ function.
 Extra saving arguments
 ++++++++++++++++++++++
 - ``save_original_metadata``: ``bool`` - Default is True, option to save the original_metadata when storing to file.
+- ``skip_metadata_keys``: ``bool`` - ``None``, ``str`` or ``list`` of strings - Default is ``None``. Option to skip certain metadata keys when storing to file.
 - ``use_default``: ``bool`` - Default is False. Set the ``default`` attribute for the Nexus file.
 
 .. code-block:: python
@@ -1476,6 +1486,12 @@ The original_metadata can be omitted using ``save_original_metadata``.
 .. code-block:: python
 
     >>> sig.save("output.nxs", save_original_metadata=False)
+
+If only certain metadata are to be ignored, use ``skip_metadata_keys``:
+
+.. code-block:: python
+
+    >>> sig.save("output.nxs", skip_metadata_keys=['xsp3', 'solstice_scan'])
 
 To save multiple signals, the file_writer method can be called directly.
 
