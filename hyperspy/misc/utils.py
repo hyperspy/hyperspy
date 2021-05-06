@@ -36,7 +36,6 @@ from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
 
-
 _logger = logging.getLogger(__name__)
 
 
@@ -964,6 +963,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
     """
     from hyperspy.signals import BaseSignal
+    from hyperspy.axes import FunctionalDataAxis
     import dask.array as da
     from numbers import Number
 
@@ -1007,14 +1007,14 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
     if len(signal_list) > 1:
         # Matching axis calibration is checked here
-        newlist = broadcast_signals(*signal_list, ignore_axis=axis_input)
+        broadcasted_sigs = broadcast_signals(*signal_list, ignore_axis=axis_input)
 
         if axis is not None:
-            step_sizes = [s.axes_manager[axis_input].size for s in newlist]
-            axis = newlist[0].axes_manager[axis_input]
+            step_sizes = [s.axes_manager[axis_input].size for s in broadcasted_sigs]
+            axis = broadcasted_sigs[0].axes_manager[axis_input]
             if not axis.axes_manager[axis_input].is_uniform:
-                # stack axes if non-uniform
-                if hasattr(axis.axes_manager[axis_input],'_expression'):
+                # stack axes if non-uniform (convert to DataAxis if FunctionalDataAxis)
+                if type(axis) is FunctionalDataAxis:
                     axis.axes_manager[axis_input].convert_to_non_uniform_axis()
                 for i, _s in enumerate(signal_list):
                     if i == 0:
@@ -1024,13 +1024,12 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
                             (axis.axis[-1] < axis.axis[0] and \
                             _s.axes_manager[axis_input].axis[-1] < axis.axis[0]):
                         axis.axis = np.concatenate((axis.axis, _s.axes_manager[axis_input].axis))
-                        print(axis.__class__)
                     else:
                         raise ValueError("Signals can only be stacked along a "
                             "non-uniform axes if the axis values do not overlap"
                             " and have the correct order.")
 
-        datalist = [s.data for s in newlist]
+        datalist = [s.data for s in broadcasted_sigs]
         newdata = (
             da.stack(datalist, axis=0)
             if axis is None
@@ -1039,7 +1038,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
         if axis_input is None:
             signal = first.__class__(newdata)
-            signal.axes_manager._axes[1:] = copy.deepcopy(newlist[0].axes_manager._axes)
+            signal.axes_manager._axes[1:] = copy.deepcopy(broadcasted_sigs[0].axes_manager._axes)
             axis_name = new_axis_name
             axis_names = [axis_.name for axis_ in signal.axes_manager._axes[1:]]
             j = 1
@@ -1050,7 +1049,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
             eaxis.name = axis_name
             eaxis.navigate = True  # This triggers _update_parameters
         else:
-            signal = newlist[0]._deepcopy_with_new_data(newdata)
+            signal = broadcasted_sigs[0]._deepcopy_with_new_data(newdata)
 
         signal._lazy = True
         signal._assign_subclass()

@@ -149,13 +149,21 @@ class TestDataAxis:
 
     def test_convert_to_uniform_axis(self):
         scale = (self.axis.high_value - self.axis.low_value) / self.axis.size
+        is_binned = self.axis.is_binned
+        navigate = self.axis.navigate
+        self.axis.name = "parrot"
+        self.axis.units = "plumage"
         self.axis.convert_to_uniform_axis()
         assert isinstance(self.axis, UniformDataAxis)
+        assert self.axis.name == "parrot"
+        assert self.axis.units == "plumage"
         assert self.axis.size == 16
         assert self.axis.scale == scale
         assert self.axis.offset == 0
         assert self.axis.low_value == 0
         assert self.axis.high_value == 15 * scale
+        assert is_binned == self.axis.is_binned
+        assert navigate == self.axis.navigate
 
     def test_value2index(self):
         assert self.axis.value2index(10.15) == 3
@@ -262,8 +270,14 @@ class TestFunctionalDataAxis:
 
     def test_convert_to_non_uniform_axis(self):
         axis = np.copy(self.axis.axis)
+        is_binned = self.axis.is_binned
+        navigate = self.axis.navigate
+        self.axis.name = "parrot"
+        self.axis.units = "plumage"
         self.axis.convert_to_non_uniform_axis()
         assert isinstance(self.axis, DataAxis)
+        assert self.axis.name == "parrot"
+        assert self.axis.units == "plumage"
         assert self.axis.size == 10
         assert self.axis.low_value == 0
         assert self.axis.high_value == 81
@@ -274,6 +288,8 @@ class TestFunctionalDataAxis:
             self.axis._function
         with pytest.raises(AttributeError):
             self.axis.x
+        assert is_binned == self.axis.is_binned
+        assert navigate == self.axis.navigate
 
     def test_update_from(self):
         ax2 = FunctionalDataAxis(size=2, units="nm", expression="x ** power", power=3)
@@ -490,8 +506,14 @@ class TestUniformDataAxis:
 
     def test_convert_to_non_uniform_axis(self):
         axis = np.copy(self.axis.axis)
+        is_binned = self.axis.is_binned
+        navigate = self.axis.navigate
+        self.axis.name = "parrot"
+        self.axis.units = "plumage"
         self.axis.convert_to_non_uniform_axis()
         assert isinstance(self.axis, DataAxis)
+        assert self.axis.name == "parrot"
+        assert self.axis.units == "plumage"
         assert self.axis.size == 10
         assert self.axis.low_value == 10
         assert self.axis.high_value == 10 + 0.1 * 9
@@ -500,9 +522,13 @@ class TestUniformDataAxis:
             self.axis.offset
         with pytest.raises(AttributeError):
             self.axis.scale
+        assert is_binned == self.axis.is_binned
+        assert navigate == self.axis.navigate
 
     def test_convert_to_functional_data_axis(self):
         axis = np.copy(self.axis.axis)
+        is_binned = self.axis.is_binned
+        navigate = self.axis.navigate
         self.axis.name = "parrot"
         self.axis.units = "plumage"
         self.axis.convert_to_functional_data_axis(expression = 'x**2')
@@ -519,6 +545,8 @@ class TestUniformDataAxis:
             self.axis.offset
         with pytest.raises(AttributeError):
             self.axis.scale
+        assert is_binned == self.axis.is_binned
+        assert navigate == self.axis.navigate
 
     @pytest.mark.parametrize("use_indices", (False, True))
     def test_crop(self, use_indices):
