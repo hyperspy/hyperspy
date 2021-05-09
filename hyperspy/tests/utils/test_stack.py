@@ -190,10 +190,19 @@ class TestUtilsStack:
         s2.axes_manager[2].axis = s2.axes_manager[2].axis[::-1]
         rs = utils.stack([s2, s], axis=2)
         assert rs.axes_manager[2].axis.size == rs.data.shape[2]
-        # Test stacking of functional data axes
+
+    def test_stack_functional_data_axis(self):
+        s = self.signal
+        s2 = s.deepcopy()
+        # Test stacking of functional data axes with uniform x vector
         s.axes_manager[0].convert_to_functional_data_axis(expression='x')
         s2.axes_manager[0].offset = 2
         s2.axes_manager[0].convert_to_functional_data_axis(expression='x')
+        rs = utils.stack([s, s2], axis=0)
+        assert rs.axes_manager[0].axis.size == rs.data.shape[1]
+        # Test stacking of functional data axes with uniform x vector
+        s.axes_manager[0].x.convert_to_non_uniform_axis()
+        s2.axes_manager[0].x.convert_to_non_uniform_axis()
         rs = utils.stack([s, s2], axis=0)
         assert rs.axes_manager[0].axis.size == rs.data.shape[1]
         

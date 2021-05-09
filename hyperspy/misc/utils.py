@@ -934,7 +934,8 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         stacking axis of the first signal is uniform, it is extended up to the
         new length; if it is non-uniform, the axes vectors of all signals are
         concatenated along this direction; if it is a `FunctionalDataAxis`,
-        it is converted to a non-uniform DataAxis and treated as such.
+        it is extended based on the expression of the first signal (and its sub
+        axis `x` is handled as above depending on whether it is uniform or not).
     new_axis_name : str
         The name of the new axis when `axis` is None.
         If an axis with this name already
@@ -963,7 +964,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
     """
     from hyperspy.signals import BaseSignal
-    from hyperspy.axes import FunctionalDataAxis
+    from hyperspy.axes import FunctionalDataAxis, UniformDataAxis, DataAxis
     import dask.array as da
     from numbers import Number
 
@@ -1009,18 +1010,32 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         # Matching axis calibration is checked here
         broadcasted_sigs = broadcast_signals(*signal_list, ignore_axis=axis_input)
 
-        if axis is not None:
+        if axis_input is not None:
             step_sizes = [s.axes_manager[axis_input].size for s in broadcasted_sigs]
             axis = broadcasted_sigs[0].axes_manager[axis_input]
-            if not axis.is_uniform:
-                # stack axes if non-uniform (convert to DataAxis if FunctionalDataAxis)
-                if type(axis) is FunctionalDataAxis:
-                    axis.axes_manager[axis_input].convert_to_non_uniform_axis()
+            # stack axes if non-uniform (DataAxis)
+            if type(axis) is DataAxis:
                 for _s in signal_list[1:]:
                     _axis = _s.axes_manager[axis_input]
                     if (axis.axis[0] < axis.axis[-1] and axis.axis[-1] < _axis.axis[0]) \
                        or (axis.axis[-1] < axis.axis[0] and _axis.axis[-1] < axis.axis[0]):
                         axis.axis = np.concatenate((axis.axis, _axis.axis))
+                    else:
+                        raise ValueError("Signals can only be stacked along a "
+                            "non-uniform axes if the axis values do not overlap"
+                            " and have the correct order.")
+            # stack axes if FunctionalDataAxis and its x axis is uniform
+            elif type(axis) is FunctionalDataAxis and \
+               type(axis.axes_manager[axis_input].x) is UniformDataAxis:
+                   axis.x.size = np.sum(step_sizes)
+            # stack axes if FunctionalDataAxis and its x axis is not uniform
+            elif type(axis) is FunctionalDataAxis and \
+               type(axis.axes_manager[axis_input].x) is DataAxis:
+                for _s in signal_list[1:]:
+                    _axis = _s.axes_manager[axis_input]
+                    if (axis.x.axis[0] < axis.x.axis[-1] and axis.x.axis[-1] < _axis.x.axis[0]) \
+                       or (axis.x.axis[-1] < axis.x.axis[0] and _axis.x.axis[-1] < axis.x.axis[0]):
+                        axis.x.axis = np.concatenate((axis.x.axis, _axis.x.axis))
                     else:
                         raise ValueError("Signals can only be stacked along a "
                             "non-uniform axes if the axis values do not overlap"
