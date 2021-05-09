@@ -360,6 +360,11 @@ class EELSSpectrum_mixin:
         %s
         %s
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Examples
         --------
         >>> s_ll = hs.signals.EELSSpectrum(np.zeros(1000))
@@ -844,6 +849,11 @@ class EELSSpectrum_mixin:
         -------
         An EELSSpectrum containing the current data deconvolved.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Notes
         -----
         For details see: Egerton, R. Electron Energy-Loss
@@ -934,6 +944,11 @@ class EELSSpectrum_mixin:
             first minimum after the ZLP centre.
         extrapolate_lowloss, extrapolate_coreloss : bool
             If True the signals are extrapolated using a power law,
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
 
         Notes
         -----
@@ -1040,6 +1055,11 @@ class EELSSpectrum_mixin:
         %s
         %s
         %s
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
 
         Notes
         -----
@@ -1332,6 +1352,8 @@ class EELSSpectrum_mixin:
         AttributeError
             If the beam_energy or the collection semi-angle are not defined in
             metadata.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
 
         Notes
         -----
@@ -1561,9 +1583,12 @@ class EELSSpectrum_mixin:
 
         Returns
         -------
-
         model : `EELSModel` instance.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         from hyperspy.models.eelsmodel import EELSModel
         if ll is not None and not self.axes_manager.signal_axes[0].is_uniform:

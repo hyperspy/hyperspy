@@ -203,6 +203,11 @@ class EDSModel(Model1D):
             those. If 'from_elements', add all lines from the elements contains
             in `metadata`. Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols. (eg. ('Al_Ka','Zn_Ka')).
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         # Test that signal axis is uniform
         if not self.axes_manager[-1].is_uniform:
@@ -494,6 +499,11 @@ class EDSModel(Model1D):
             The X-ray lines. If 'all_alpha', fit all using all alpha lines
         ref: list of float
             The centres, before fitting, of the X-ray lines included
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         # Test that signal axis is uniform
         if not self.axes_manager[-1].is_uniform:
@@ -553,6 +563,11 @@ class EDSModel(Model1D):
             The Xray lines. If 'all_alpha', fit all using all alpha lines
         ref: list of float
             The centres, before fitting, of the X-ray lines included
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         # Test that signal axis is uniform
         if not self.axes_manager[-1].is_uniform:

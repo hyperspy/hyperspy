@@ -107,6 +107,18 @@ class EELSModel(Model1D):
                 str(type(value)))
 
     def append(self, component):
+        """Append component to EELS model.
+
+        Parameters
+        ----------
+        component
+            HyperSpy component1D object.
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+        """
         super(EELSModel, self).append(component)
         if isinstance(component, EELSCLEdge):
             # Test that signal axis is uniform

@@ -3093,9 +3093,10 @@ class BaseSignal(FancySlicing,
         s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
             The resulting cropped signal.
 
-        Note
-        ----
-        Currently requires a uniform axis.
+        Raises
+        ------
+        NotImplementedError 
+            If trying to rebin over a non-uniform axis.
 
         Examples
         --------
@@ -3197,9 +3198,10 @@ class BaseSignal(FancySlicing,
             [<Signal1D, title: , dimensions: (3, 1|2)>,
             <Signal1D, title: , dimensions: (3, 2|2)>]
 
-        Note
-        ----
-        Requires a uniform axis.
+        Raises
+        ------
+        NotImplementedError 
+            If trying to split along a non-uniform axis.
 
         Returns
         -------
@@ -4126,6 +4128,11 @@ class BaseSignal(FancySlicing,
         s : :py:class:`~hyperspy._signals.complex_signal.ComplexSignal`
             A Signal containing the result of the FFT algorithm
 
+        Raises
+        ------
+        NotImplementedError 
+            If performing FFT along a non-uniform axis.
+
         Examples
         --------
         >>> im = hs.signals.Signal2D(scipy.misc.ascent())
@@ -4216,6 +4223,11 @@ class BaseSignal(FancySlicing,
         ------
         s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
             A Signal containing the result of the inverse FFT algorithm
+
+        Raises
+        ------
+        NotImplementedError 
+            If performing IFFT along a non-uniform axis.
 
         Examples
         --------

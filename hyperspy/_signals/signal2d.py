@@ -650,7 +650,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         Raises
         ------
         NotImplementedError
-            If one of the signal axes is not a linear axis.
+            If one of the signal axes is a non-uniform axis.
 
         See Also
         --------

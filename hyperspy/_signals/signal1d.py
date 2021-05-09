@@ -413,7 +413,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         SignalDimensionError
             If the signal dimension is not 1.
         NotImplementedError
-            If the signal axis is not a linear axis.
+            If the signal axis is a non-uniform axis.
         """
         if not np.any(shift_array):
             # Nothing to do, the shift array if filled with zeros
@@ -909,6 +909,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
         %s
         %s
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Notes
         -----
         More information about the filter in `scipy.signal.savgol_filter`.
@@ -1017,6 +1022,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         self._check_signal_dimension_equals_one()
         if not self.axes_manager.signal_axes[0].is_uniform:
@@ -1051,6 +1058,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         if not self.axes_manager.signal_axes[0].is_uniform:
             raise NotImplementedError(
@@ -1299,9 +1308,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         ValueError
             If FWHM is equal or less than zero.
-
         SignalDimensionError
             If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         self._check_signal_dimension_equals_one()
         for _axis in self.axes_manager.signal_axes:

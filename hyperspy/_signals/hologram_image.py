@@ -204,6 +204,11 @@ class HologramImage(Signal2D):
         -------
         Signal1D instance of sideband positions (y, x), referred to the unshifted FFT.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
+
         Examples
         --------
 
@@ -261,6 +266,11 @@ class HologramImage(Signal2D):
         -------
         sb_size : Signal1D
             Sideband size referred to the unshifted FFT.
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
 
         Examples
         --------
@@ -356,6 +366,11 @@ class HologramImage(Signal2D):
         wave : ComplexSignal2D
             Reconstructed electron wave. By default object wave is divided by
             reference wave.
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
 
         Examples
         --------
@@ -673,6 +688,11 @@ class HologramImage(Signal2D):
         -------
         statistics_dict :
             Dictionary with the statistics
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
 
         Examples
         --------
