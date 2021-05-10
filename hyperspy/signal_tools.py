@@ -1239,7 +1239,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     def __init__(self, signal, background_type='Power law', polynomial_order=2,
                  fast=True, plot_remainder=True, zero_fill=False,
                  show_progressbar=None, model=None):
-        super(BackgroundRemoval, self).__init__(signal)
+        super().__init__(signal)
         # setting the polynomial order will change the backgroud_type to
         # polynomial, so we set it before setting the background type
         self.bg_line = None
@@ -1248,7 +1248,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.fast = fast
         self.plot_remainder = plot_remainder
         if plot_remainder:
-            # When plotting the remainder on the right hand side axis, we 
+            # When plotting the remainder on the right hand side axis, we
             # adjust the layout here to avoid doing it later to avoid
             # corrupting the background when using blitting
             figure = signal._plot.signal_plot.figure
@@ -1270,6 +1270,10 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.set_background_estimator()
 
         self.signal.axes_manager.events.indices_changed.connect(self._fit, [])
+        # This is also disconnected when disabling the span selector but we
+        # disconnect also when closing the figure, because in this case,
+        # `on_disabling_span_selector` will not be called.
+        self.signal._plot.signal_plot.events.closed.connect(self.disconnect, [])
 
     def on_disabling_span_selector(self):
         # Disconnect event
@@ -1424,8 +1428,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
 
     def disconnect(self):
         axes_manager = self.signal.axes_manager
-        if self._fit in axes_manager.events.indices_changed.connected:
-            axes_manager.events.indices_changed.disconnect(self._fit)
+        for f in [self._fit, self.model._on_navigating]:
+            if f in axes_manager.events.indices_changed.connected:
+                axes_manager.events.indices_changed.disconnect(f)
 
 
 def _get_background_estimator(background_type, polynomial_order=1):
