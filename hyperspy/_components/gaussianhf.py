@@ -17,10 +17,10 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
-import numpy as np
 
 from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
+from hyperspy.component import _get_scaling_factor
 from hyperspy.misc.utils import is_binned # remove in v2.0
 
 sqrt2pi = math.sqrt(2 * math.pi)
@@ -136,12 +136,12 @@ class GaussianHF(Expression):
         >>> g.estimate_parameters(s, -10, 10, False)
         """
 
-        super(GaussianHF, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
-        scaling_factor = axis.scale if axis.is_uniform \
-                         else np.gradient(axis.axis)[axis.value2index(centre)]
+        scaling_factor = _get_scaling_factor(signal, axis, centre)
+
         if only_current is True:
             self.centre.value = centre
             self.fwhm.value = sigma * sigma2fwhm

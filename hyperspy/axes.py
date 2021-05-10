@@ -559,22 +559,33 @@ class BaseDataAxis(t.HasTraits):
         ------
         ValueError
             If any value is out of the axis limits.
-
+            If value is NaN
+            If value is an array containing at least 1 NaN value
+            If value is an array containing at least 1 out-of-bound value
         """
         if value is None:
             return None
-        if self.low_value <= value <= self.high_value:
-            return (np.abs(self.axis - value)).argmin()
+        #Should evaluate on both arrays and scalars. Raises error if there are
+        #nan values in array
+        if np.all((value >= self.low_value)*(value <= self.high_value)):
+            #initialise the index same dimension as input, force type to int
+            index = np.asarray(value).astype(int).copy()
+            #assign on flat, iterate on flat.
+            for i,v in enumerate(np.asarray(value).flat):
+                index.flat[i] = (np.abs(self.axis - v)).argmin()
+            #Squeezing to get a scalar out if scalar in. See squeeze doc
+            return np.squeeze(index)[()]
         else:
-            index = int(value)
-            if self.size > index >= 0:
-                return index
-            else:
-                raise ValueError(
-                    f'The value {value} is out of the limits '
-                    f'[{self.low_value:.3g}-{self.high_value:.3g}] of the '
-                    f'"{self._get_name()}" axis.'
-                    )
+            ### I commented out this because it seemed dangerous
+            # index = int(value)
+            # if self.size > index >= 0:
+            #     return index
+            # else:
+            raise ValueError(
+                f'The value {value} is out of the limits '
+                f'[{self.low_value:.3g}-{self.high_value:.3g}] of the '
+                f'"{self._get_name()}" axis.'
+                )
 
     def index2value(self, index):
         if isinstance(index, da.Array):
@@ -623,7 +634,6 @@ class BaseDataAxis(t.HasTraits):
                 i1 = self.value2index(v1)
             if v2 is not None and self.low_value < v2 <= self.high_value:
                 i2 = self.value2index(v2)
-
         return i1, i2
 
     def update_from(self, axis, attributes):
