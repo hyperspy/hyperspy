@@ -2148,8 +2148,8 @@ class BaseSignal(FancySlicing,
         data : :py:class:`numpy.ndarray`
            The signal data. It can be an array of any dimensions.
         axes : [dict/axes], optional
-            List of either dictionaries or axes objects to define the axes (see 
-            the documentation of the :py:class:`~hyperspy.axes.AxesManager` 
+            List of either dictionaries or axes objects to define the axes (see
+            the documentation of the :py:class:`~hyperspy.axes.AxesManager`
             class for more details).
         attributes : dict, optional
             A dictionary whose items are stored as attributes.
@@ -2655,7 +2655,13 @@ class BaseSignal(FancySlicing,
             navigator = self
             # Sum over all but the first navigation axis.
             am = navigator.axes_manager
-            navigator = navigator.sum(am.signal_axes + am.navigation_axes[1:])
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning,
+                                        module='hyperspy'
+                                        )
+                navigator = navigator.sum(
+                    am.signal_axes + am.navigation_axes[1:]
+                    )
             return np.nan_to_num(navigator.data).squeeze()
 
         def get_dynamic_explorer_wrapper(*args, **kwargs):
@@ -2676,7 +2682,7 @@ class BaseSignal(FancySlicing,
                 navigator = "slider"
             elif (self.axes_manager.navigation_dimension == 1 and
                     self.axes_manager.signal_dimension == 1):
-                if (self.axes_manager.navigation_axes[0].is_uniform and 
+                if (self.axes_manager.navigation_axes[0].is_uniform and
                         self.axes_manager.signal_axes[0].is_uniform):
                     navigator = "data"
                 else:
@@ -3095,7 +3101,7 @@ class BaseSignal(FancySlicing,
 
         Raises
         ------
-        NotImplementedError 
+        NotImplementedError
             If trying to rebin over a non-uniform axis.
 
         Examples
@@ -3200,7 +3206,7 @@ class BaseSignal(FancySlicing,
 
         Raises
         ------
-        NotImplementedError 
+        NotImplementedError
             If trying to split along a non-uniform axis.
 
         Returns
@@ -3965,7 +3971,7 @@ class BaseSignal(FancySlicing,
         proper :py:meth:`derivative` function instead. To avoid erroneous
         misuse of the `diff` function as derivative, it raises an error when
         when working with a non-uniform axis.
-        
+
         See also
         --------
         derivative, integrate1D, integrate_simpson
@@ -4130,7 +4136,7 @@ class BaseSignal(FancySlicing,
 
         Raises
         ------
-        NotImplementedError 
+        NotImplementedError
             If performing FFT along a non-uniform axis.
 
         Examples
@@ -4226,7 +4232,7 @@ class BaseSignal(FancySlicing,
 
         Raises
         ------
-        NotImplementedError 
+        NotImplementedError
             If performing IFFT along a non-uniform axis.
 
         Examples
@@ -4316,7 +4322,11 @@ class BaseSignal(FancySlicing,
         if is_binned(self, axis=axis):
         # in v2 replace by
         # self.axes_manager[axis].is_binned
-            return self.sum(axis=axis, out=out)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category= UserWarning,
+                                        module='hyperspy'
+                                        )
+                return self.sum(axis=axis, out=out)
         else:
             return self.integrate_simpson(axis=axis, out=out)
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
