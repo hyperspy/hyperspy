@@ -250,6 +250,11 @@ class EDSTEM_mixin:
             is divided by the number of pixel (spectrums), giving an
             average live time.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Examples
         --------
         >>> ref = hs.datasets.example_signals.EDS_TEM_Spectrum()
@@ -267,6 +272,10 @@ class EDSTEM_mixin:
         # Setup the axes_manager
         ax_m = self.axes_manager.signal_axes[0]
         ax_ref = ref.axes_manager.signal_axes[0]
+        for _axis in [ax_m, ax_ref]:
+            if not _axis.is_uniform:
+                raise NotImplementedError(
+                    "The function is not implemented for non-uniform axes.")
         ax_m.scale = ax_ref.scale
         ax_m.units = ax_ref.units
         ax_m.offset = ax_ref.offset

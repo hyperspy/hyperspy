@@ -430,10 +430,13 @@ class Model1D(BaseModel):
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[self.channel_switches]
-        if is_binned(self.signal) is True:
+        if is_binned(self.signal):
         # in v2 replace by
-        #if self.signal.axes_manager[-1].is_binned is True:
-            to_return *= self.signal.axes_manager[-1].scale
+        #if self.signal.axes_manager[-1].is_binned:
+            if self.signal.axes_manager[-1].is_uniform:
+                to_return *= self.signal.axes_manager[-1].scale
+            else:
+                to_return *= np.gradient(self.signal.axes_manager[-1].axis)
         return to_return
 
     def _errfunc(self, param, y, weights=None):
@@ -637,10 +640,13 @@ class Model1D(BaseModel):
 
             to_return = grad[1:, :] * weights
 
-        if is_binned(self.signal) is True:
+        if is_binned(self.signal):
         # in v2 replace by
-        #if self.signal.axes_manager[-1].is_binned is True:
-            to_return *= self.signal.axes_manager[-1].scale
+        #if self.signal.axes_manager[-1].is_binned:
+            if self.signal.axes_manager[-1].is_uniform:
+                to_return *= self.signal.axes_manager[-1].scale
+            else:
+                to_return *= np.gradient(self.signal.axes_manager[-1].axis)
 
         return to_return
 

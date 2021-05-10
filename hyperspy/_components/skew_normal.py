@@ -207,30 +207,29 @@ class SkewNormal(Expression):
 
         super(SkewNormal, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        if not axis.is_uniform and self.binned:
-            raise NotImplementedError(
-                "This operation is not implemented for non-uniform axes.")
         x0, height, scale, shape = _estimate_skewnormal_parameters(signal, x1,
                                                                    x2, only_current)
+        scaling_factor = axis.scale if axis.is_uniform \
+                         else np.gradient(axis.axis)[axis.value2index(x0)]
         if only_current is True:
             self.x0.value = x0
             self.A.value = height * sqrt2pi
             self.scale.value = scale
             self.shape.value = shape
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.A.value /= axis.scale
+                self.A.value /= scaling_factor
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * sqrt2pi
 
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.A.map['values'] /= axis.scale
+                self.A.map['values'] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.x0.map['values'][:] = x0
             self.x0.map['is_set'][:] = True

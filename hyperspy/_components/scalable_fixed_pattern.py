@@ -135,10 +135,13 @@ class ScalableFixedPattern(Component):
             result = yscale * self.f(x * xscale - shift)
         else:
             result = yscale * self.signal.data
-        if is_binned(self.signal) is True:
+        if is_binned(self.signal):
         # in v2 replace by
-        #if self.signal.axes_manager.signal_axes[0].is_binned is True:
-            return result / self.signal.axes_manager.signal_axes[0].scale
+        #if self.signal.axes_manager.signal_axes[0].is_binned:
+            if self.signal.axes_manager.signal_axes[0].is_uniform:
+                return result / self.signal.axes_manager.signal_axes[0].scale
+            else:
+                return result / np.gradient(self.signal.axes_manager.signal_axes[0].axis)
         else:
             return result
 

@@ -296,24 +296,25 @@ class PESVoigt(Component):
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, E1, E2,
                                                               only_current)
-
+        scaling_factor = axis.scale if axis.is_uniform \
+                         else np.gradient(axis.axis)[axis.value2index(centre)]
         if only_current is True:
             self.centre.value = centre
             self.FWHM.value = sigma * sigma2fwhm
             self.area.value = height * sigma * sqrt2pi
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.area.value /= axis.scale
+                self.area.value /= scaling_factor
             return True
         else:
             if self.area.map is None:
                 self._create_arrays()
             self.area.map['values'][:] = height * sigma * sqrt2pi
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.area.map['values'][:] /= axis.scale
+                self.area.map['values'][:] /= scaling_factor
             self.area.map['is_set'][:] = True
             self.FWHM.map['values'][:] = sigma * sigma2fwhm
             self.FWHM.map['is_set'][:] = True

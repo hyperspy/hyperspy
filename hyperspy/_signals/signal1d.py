@@ -413,7 +413,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         SignalDimensionError
             If the signal dimension is not 1.
         NotImplementedError
-            If the signal axis is not a linear axis.
+            If the signal axis is a non-uniform axis.
         """
         if not np.any(shift_array):
             # Nothing to do, the shift array if filled with zeros
@@ -909,6 +909,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
         %s
         %s
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Notes
         -----
         More information about the filter in `scipy.signal.savgol_filter`.
@@ -1017,6 +1022,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         self._check_signal_dimension_equals_one()
         if not self.axes_manager.signal_axes[0].is_uniform:
@@ -1051,6 +1058,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         if not self.axes_manager.signal_axes[0].is_uniform:
             raise NotImplementedError(
@@ -1073,9 +1082,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
             zero_fill=False, show_progressbar=None, model=None,
             return_model=False):
         """ See :py:meth:`~hyperspy._signal1d.signal1D.remove_background`. """
-        if fast and not self.axes_manager.signal_axes[0].is_uniform:
-            raise NotImplementedError(
-                "This operation with `fast=True` is not implemented for non-uniform axes.")
         if model is None:
             from hyperspy.models.model1d import Model1D
             model = Model1D(self)
@@ -1098,9 +1104,15 @@ class Signal1D(BaseSignal, CommonSignal1D):
         else:
             try:
                 axis = self.axes_manager.signal_axes[0]
-                scale_factor = axis.scale if is_binned(self) else 1
+                if is_binned(self):
                 # in v2 replace by
-                # scale_factor = axis.scale if axis.is_binned else 1
+                # if axis.is_binned:
+                    if axis.is_uniform:
+                        scale_factor = axis.scale
+                    else:
+                        scale_factor = np.gradient(axis.axis)
+                else:
+                    scale_factor = 1
                 bkg = background_estimator.function_nd(axis.axis) * scale_factor
                 result = self - bkg
             except MemoryError:
@@ -1296,9 +1308,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         ValueError
             If FWHM is equal or less than zero.
-
         SignalDimensionError
             If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         self._check_signal_dimension_equals_one()
         for _axis in self.axes_manager.signal_axes:

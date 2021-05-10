@@ -56,8 +56,9 @@ def test_height_attribute():
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
+@pytest.mark.parametrize(("uniform"), (True, False))
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-def test_estimate_parameters_binned(only_current, binned, lazy):
+def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
     s = Signal1D(np.empty((100,)))
     s.axes_manager.signal_axes[0].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
@@ -65,10 +66,17 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     axis.offset = -20
     g1 = SplitVoigt(A=20001.0, centre=10.0, sigma1=3.0, sigma2=3.0)
     s.data = g1.function(axis.axis)
+    if not uniform:
+        axis.convert_to_non_uniform_axis()
     if lazy:
         s = s.as_lazy()
     g2 = SplitVoigt()
-    factor = axis.scale if binned else 1
+    if binned and uniform:
+        factor = axis.scale
+    elif binned:
+        factor = np.gradient(axis.axis)
+    else:
+        factor = 1
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2._axes_manager[-1].is_binned == binned

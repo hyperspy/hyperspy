@@ -360,6 +360,11 @@ class EELSSpectrum_mixin:
         %s
         %s
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Examples
         --------
         >>> s_ll = hs.signals.EELSSpectrum(np.zeros(1000))
@@ -388,6 +393,10 @@ class EELSSpectrum_mixin:
         """
 
         def substract_from_offset(value, signals):
+            # Test that axes is uniform
+            if not self.axes_manager[-1].is_uniform:
+                raise NotImplementedError("Support for EELS signals with "
+                            "non-uniform signal axes is not yet implemented.")
             if isinstance(value, da.Array):
                 value = value.compute()
             for signal in signals:
@@ -840,6 +849,11 @@ class EELSSpectrum_mixin:
         -------
         An EELSSpectrum containing the current data deconvolved.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Notes
         -----
         For details see: Egerton, R. Electron Energy-Loss
@@ -930,6 +944,11 @@ class EELSSpectrum_mixin:
             first minimum after the ZLP centre.
         extrapolate_lowloss, extrapolate_coreloss : bool
             If True the signals are extrapolated using a power law,
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
 
         Notes
         -----
@@ -1036,6 +1055,11 @@ class EELSSpectrum_mixin:
         %s
         %s
         %s
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
 
         Notes
         -----
@@ -1214,9 +1238,9 @@ class EELSSpectrum_mixin:
         # If the signal is binned we need to bin the extrapolated power law
         # what, in a first approximation, can be done by multiplying by the
         # axis step size.
-        if is_binned(self) is True:
+        if is_binned(self):
         # in v2 replace by
-        # if self.axes_manager[-1].is_binned is True:
+        # if self.axes_manager[-1].is_binned:
             factor = s.axes_manager[-1].scale
         else:
             factor = 1
@@ -1328,6 +1352,8 @@ class EELSSpectrum_mixin:
         AttributeError
             If the beam_energy or the collection semi-angle are not defined in
             metadata.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
 
         Notes
         -----
@@ -1557,14 +1583,17 @@ class EELSSpectrum_mixin:
 
         Returns
         -------
-
         model : `EELSModel` instance.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         from hyperspy.models.eelsmodel import EELSModel
         if ll is not None and not self.axes_manager.signal_axes[0].is_uniform:
             raise NotImplementedError(
-                "Multiple scattering is not implemented for spectra with an non-uniform energy axis. "
+                "Multiple scattering is not implemented for spectra with a non-uniform energy axis. "
                 "To create a model that does not account for multiple-scattering do not set "
                 "the `ll` keyword.")
         model = EELSModel(self,

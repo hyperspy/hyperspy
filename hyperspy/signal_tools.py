@@ -1369,7 +1369,10 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         if is_binned(self.signal) is True:
         # in v2 replace by
         #if self.axis.is_binned is True:
-            to_return *= self.axis.scale
+            if self.axis.is_uniform:
+                to_return *= self.axis.scale
+            else:
+                to_return *= np.gradient(self.axis.axis)
         return to_return
 
     def rm_to_plot(self, axes_manager=None, fill_with=np.nan):
