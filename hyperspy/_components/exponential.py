@@ -88,9 +88,6 @@ class Exponential(Expression):
         """
         super(Exponential, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        if not axis.is_uniform and self.binned:
-            raise NotImplementedError(
-                "This operation is not implemented for non-uniform axes.")
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if i1 + 1 == i2:
             if i2 < axis.high_index:
@@ -148,11 +145,15 @@ class Exponential(Expression):
                                 'with a "divide by zero" error (likely log of '
                                 'a zero or negative value).')
                 return False
-
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                A /= axis.scale
+                if axis.is_uniform:
+                    A /= axis.scale
+                else:
+                    # using the mean of the gradient for non-uniform axes is a best
+                    # guess to the scaling of binned signals for the estimation
+                    A /= np.mean(np.gradient(axis.axis))
             if only_current is True:
                 self.A.value = A
                 self.tau.value = t

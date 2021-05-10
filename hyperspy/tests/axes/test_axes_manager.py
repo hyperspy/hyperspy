@@ -72,6 +72,10 @@ class TestAxesManager:
     def test_reprs(self):
         repr(self.am)
         self.am._repr_html_
+        self.am[0].convert_to_non_uniform_axis()
+        self.am[-1].convert_to_non_uniform_axis()
+        repr(self.am)
+        self.am._repr_html_
 
     def test_update_from(self):
         am = self.am
@@ -90,6 +94,25 @@ class TestAxesManager:
         assert am2[1].units == am[1].units
         assert am2[2].offset != am[2].offset
         assert am2[3].size != am[3].size
+
+    def test_create_axis_from_object(self):
+        am = self.am
+        axis = am[-1].copy()
+        am.create_axes([axis])
+        assert am[-3].offset == am[-1].offset
+        assert am[-3].scale == am[-1].scale
+
+    def test_set_axis(self):
+        am = self.am
+        axis = am[-1].copy()
+        am.set_axis(axis,2)
+        assert am[-2].offset == am[-1].offset
+        assert am[-2].scale == am[-1].scale
+
+    def test_all_uniform(self):
+        assert self.am.all_uniform == True
+        self.am[-1].convert_to_non_uniform_axis()
+        assert self.am.all_uniform == False
 
 
 class TestAxesManagerScaleOffset:

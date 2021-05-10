@@ -3037,7 +3037,7 @@ class BaseSignal(FancySlicing,
             for axis in self.axes_manager._axes:
                 if axis.is_uniform is False:
                     raise NotImplementedError(
-                            "rebinning of non-uniform axes is not yet implemented.")
+                            "Rebinning of non-uniform axes is not yet implemented.")
             new_shape_in_array = np.array([new_shape[axis.index_in_axes_manager]
                                            for axis in self.axes_manager._axes])
             factors = np.array(self.data.shape) / new_shape_in_array
@@ -3047,7 +3047,7 @@ class BaseSignal(FancySlicing,
             for axis in self.axes_manager._axes:
                 if axis.is_uniform is False:
                     raise NotImplementedError(
-                            "rebinning of non-uniform axes is not yet implemented.")
+                            "Rebinning of non-uniform axes is not yet implemented.")
             factors = np.array([scale[axis.index_in_axes_manager]
                                 for axis in self.axes_manager._axes])
         return factors  # Factors are in array order
@@ -3093,9 +3093,10 @@ class BaseSignal(FancySlicing,
         s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
             The resulting cropped signal.
 
-        Note
-        ----
-        Currently requires a uniform axis.
+        Raises
+        ------
+        NotImplementedError 
+            If trying to rebin over a non-uniform axis.
 
         Examples
         --------
@@ -3197,9 +3198,10 @@ class BaseSignal(FancySlicing,
             [<Signal1D, title: , dimensions: (3, 1|2)>,
             <Signal1D, title: , dimensions: (3, 2|2)>]
 
-        Note
-        ----
-        Requires a uniform axis.
+        Raises
+        ------
+        NotImplementedError 
+            If trying to split along a non-uniform axis.
 
         Returns
         -------
@@ -4126,6 +4128,11 @@ class BaseSignal(FancySlicing,
         s : :py:class:`~hyperspy._signals.complex_signal.ComplexSignal`
             A Signal containing the result of the FFT algorithm
 
+        Raises
+        ------
+        NotImplementedError 
+            If performing FFT along a non-uniform axis.
+
         Examples
         --------
         >>> im = hs.signals.Signal2D(scipy.misc.ascent())
@@ -4217,6 +4224,11 @@ class BaseSignal(FancySlicing,
         s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
             A Signal containing the result of the inverse FFT algorithm
 
+        Raises
+        ------
+        NotImplementedError 
+            If performing IFFT along a non-uniform axis.
+
         Examples
         --------
         >>> import scipy
@@ -4272,8 +4284,8 @@ class BaseSignal(FancySlicing,
 
         The integration is performed using
         `Simpson's rule <https://en.wikipedia.org/wiki/Simpson%%27s_rule>`_ if
-        `axis.is_binned` is ``False`` and simple summation over the
-        given axis if ``True``.
+        `axis.is_binned` is ``False`` and simple summation over the given axis 
+        if ``True``.
 
         Parameters
         ----------
@@ -4300,9 +4312,9 @@ class BaseSignal(FancySlicing,
         (64,64)
 
         """
-        if is_binned(self, axis=axis) is False:
+        if not is_binned(self, axis=axis):
         # in v2 replace by
-        #if self.axes_manager[axis].is_binned is False:
+        # not self.axes_manager[axis].is_binned
             return self.integrate_simpson(axis=axis, out=out)
         else:
             return self.sum(axis=axis, out=out)
