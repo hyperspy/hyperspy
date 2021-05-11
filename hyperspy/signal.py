@@ -4285,7 +4285,7 @@ class BaseSignal(FancySlicing,
         The integration is performed using
         `Simpson's rule <https://en.wikipedia.org/wiki/Simpson%%27s_rule>`_ if
         `axis.is_binned` is ``False`` and simple summation over the given axis 
-        if ``True`` (for binned signals, the detector already provides
+        if ``True`` (along binned axes, the detector already provides
         integrated counts per bin).
 
         Parameters
