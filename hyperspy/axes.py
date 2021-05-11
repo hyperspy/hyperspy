@@ -243,7 +243,7 @@ class UnitConversion:
 
 class BaseDataAxis(t.HasTraits):
     """Parent class defining common attributes for all DataAxis classes.
-    
+
     Parameters
     ----------
     name : str, optional
@@ -584,16 +584,6 @@ class BaseDataAxis(t.HasTraits):
         else:
             return self.axis[index]
 
-    def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
-        scale = (value_tuple[1] - value_tuple[0]) /\
-            (index_tuple[1] - index_tuple[0])
-        offset = value_tuple[0] - scale * index_tuple[0]
-        if modify_calibration is True:
-            self.offset = offset
-            self.scale = scale
-        else:
-            return offset, scale
-
     def value_range_to_indices(self, v1, v2):
         """Convert the given range to index range.
 
@@ -831,10 +821,10 @@ class DataAxis(BaseDataAxis):
 
 class FunctionalDataAxis(BaseDataAxis):
     """DataAxis class for a non-uniform axis defined through an ``expression``.
-    
+
     A `FunctionalDataAxis` is defined based on an ``expression`` that is
     evaluated to yield the axis points. The `expression` is a function defined
-    as a ``string`` using the `SymPy <https://docs.sympy.org/latest/tutorial/intro.html>`_ 
+    as a ``string`` using the `SymPy <https://docs.sympy.org/latest/tutorial/intro.html>`_
     text expression format. An example would be ``expression = a / x + b``.
     Any variables in the expression, in this case ``a`` and ``b`` must be
     defined as additional attributes of the axis. The property ``is_uniform``
@@ -1027,14 +1017,14 @@ class FunctionalDataAxis(BaseDataAxis):
 class UniformDataAxis(BaseDataAxis, UnitConversion):
     """DataAxis class for a uniform axis defined through a ``scale``, an
     ``offset`` and a ``size``.
-    
+
     The most common type of axis. It is defined by the ``offset``, ``scale``
     and ``size`` parameters, which determine the `initial value`, `spacing` and
     `length` of the axis, respectively. The actual ``axis`` array is
     automatically calculated from these three values. The ``UniformDataAxis``
     is a special case of the ``FunctionalDataAxis`` defined by the function
     ``scale * x + offset``.
-    
+
     Parameters
     ----------
     offset : float
@@ -1043,7 +1033,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         The spacing between axis points.
     size : int
         The number of points in the axis.
-    
+
     Examples
     --------
     Sample dictionary for a `UniformDataAxis`:
