@@ -4217,12 +4217,13 @@ class BaseSignal(FancySlicing,
         (64,64)
 
         """
-        if is_binned(self, axis=axis) is False:
+        if is_binned(self, axis=axis):
         # in v2 replace by
-        #if self.axes_manager[axis].is_binned is False:
-            return self.integrate_simpson(axis=axis, out=out)
-        else:
+        #if self.axes_manager[axis].is_binned:
             return self.sum(axis=axis, out=out)
+        else:
+            return self.integrate_simpson(axis=axis, out=out)
+
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def indexmin(self, axis, out=None, rechunk=True):
