@@ -14,12 +14,12 @@ ADD_POWERLAW_DOCSTRING = \
         If True, adds a powerlaw background to the spectrum. Default is False.
     """
 
-ADD_BASELINE_DOCSTING = \
+ADD_BASELINE_DOCSTRING = \
 """add_baseline : bool
         If true, adds a constant baseline to the spectrum. Conversion to
         energy representation will turn the constant baseline into inverse
         powerlaw.
-"""
+    """
 
 ADD_NOISE_DOCSTRING = \
 """add_noise : bool
@@ -376,12 +376,8 @@ def get_luminescence_spectrum_nonuniform(uniform=False, add_baseline=False, add_
     uniform: bool.
         return uniform (wavelength) or non-uniform (energy) spectrum
 
-    add_baseline: bool.
-        add a baseline or not
-
-    add_noise: bool.
-        add experimental noise to the data
-
+    %s
+    %s
     random_state: None or int
         initialise state of the random number generator
 
@@ -416,6 +412,7 @@ def get_luminescence_spectrum_nonuniform(uniform=False, add_baseline=False, add_
     """
     from hyperspy.signals import Signal1D
     from hyperspy import components1d
+    from hyperspy.axes import FunctionalDataAxis, UniformDataAxis
 
     #Initialisation of random number generator
     random_state = check_random_state(random_state)
@@ -433,7 +430,7 @@ def get_luminescence_spectrum_nonuniform(uniform=False, add_baseline=False, add_
         )
 
     #Artificial luminescence peak
-    gaussian_peak = components1d.Gaussian(A=5000, centre=666, sigma=25)
+    gaussian_peak = components1d.Gaussian(A=5000, centre=375, sigma=25)
 
     #Creating data array, possibly with noise and baseline
     data = gaussian_peak.function(nm_axis.axis)
@@ -443,7 +440,7 @@ def get_luminescence_spectrum_nonuniform(uniform=False, add_baseline=False, add_
         data += 350.
 
     #Creating the signal with axis and data
-    sig = hs.signals.Signal1D(data,axes=[nm_axis])
+    sig = Signal1D(data,axes=[nm_axis])
     sig.metadata.General.title = 'Artificial Luminescence Spectrum'
 
     #if not uniform, transformation into non-linear axis
@@ -459,12 +456,12 @@ def get_luminescence_spectrum_nonuniform(uniform=False, add_baseline=False, add_
                                   navigate=False)
 
         #Creating the signal, also with energy inverted
-        sig = hs.signals.Signal1D(data[::-1]*hc/evax.axis**2,axes=[evax])
+        sig = Signal1D(data[::-1]*hc/evax.axis**2,axes=[evax])
         sig.metadata.General.title = 'Artificial Luminescence Spectrum'
 
     return sig
 
-get_luminescence_spectrum_nonuniform.__doc__ %= (ADD_BASELINE_DOCSTING,
+get_luminescence_spectrum_nonuniform.__doc__ %= (ADD_BASELINE_DOCSTRING,
                                                  ADD_NOISE_DOCSTRING)
 
 def get_luminescence_map_nonuniform(uniform=False, add_baseline=False, add_noise=True,random_state=None):
@@ -477,13 +474,8 @@ def get_luminescence_map_nonuniform(uniform=False, add_baseline=False, add_noise
     ----------
     uniform: bool.
         return uniform (wavelength) or non-uniform (energy) spectrum
-
-    add_baseline: bool.
-        add a baseline or not
-
-    add_noise: bool.
-        add experimental noise to the data
-
+    %s
+    %s
     random_state: None or int
         initialise state of the random number generator
 
@@ -518,6 +510,8 @@ def get_luminescence_map_nonuniform(uniform=False, add_baseline=False, add_noise
     """
     from hyperspy.signals import Signal1D
     from hyperspy import components1d
+    from hyperspy.axes import FunctionalDataAxis,UniformDataAxis
+
 
     #Initialisation of random number generator
     random_state = check_random_state(random_state)
@@ -543,6 +537,7 @@ def get_luminescence_map_nonuniform(uniform=False, add_baseline=False, add_noise
         offset=0,
         is_binned=False,
     )
+
     spax_y = UniformDataAxis(index_in_array=None,
         name="Y",
         units="um",
@@ -554,7 +549,7 @@ def get_luminescence_map_nonuniform(uniform=False, add_baseline=False, add_noise
     )
 
     #Artificial luminescence peak
-    gaussian_peak = components1d.Gaussian(A=5000, centre=666, sigma=25)
+    gaussian_peak = components1d.Gaussian(A=5000, centre=375, sigma=25)
 
     #Creating data array
     data = np.zeros((100,1024))
@@ -569,7 +564,7 @@ def get_luminescence_map_nonuniform(uniform=False, add_baseline=False, add_noise
 
     #Creating the signal with axis and data
     data = data.reshape((10,10,1024))
-    sig = hs.signals.Signal1D(data,axes=[spax_y,spax_x,nm_axis])
+    sig = Signal1D(data,axes=[spax_y,spax_x,nm_axis])
     #sig.metadata.General.title = 'Artificial Luminescence map'
 
     #if not uniform, transformation into non-linear axis
@@ -589,10 +584,10 @@ def get_luminescence_map_nonuniform(uniform=False, add_baseline=False, add_noise
         evax_dict = evax.get_axis_dictionary()
 
         #Creating the signal, also with energy inverted
-        sig = hs.signals.Signal1D(data*hc/evax.axis**2,axes=[spax_y,spax_y,evax_dict])
+        sig = Signal1D(sig.isig[::-1]*hc/evax.axis**2,axes=[spax_y,spax_y,evax_dict])
         sig.metadata.General.title = 'Artificial Luminescence Spectrum'
 
     return sig
 
-get_luminescence_map_nonuniform.__doc__ %= (ADD_BASELINE_DOCSTING,
+get_luminescence_map_nonuniform.__doc__ %= (ADD_BASELINE_DOCSTRING,
                                             ADD_NOISE_DOCSTRING)
