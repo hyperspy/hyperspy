@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,9 +17,11 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
+import numpy as np
 
 from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -28,12 +30,12 @@ sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 class GaussianHF(Expression):
 
     r"""Normalized gaussian function component, with a `fwhm` parameter instead
-    of the sigma parameter, and a `height` parameter instead of the `A` 
-    parameter (scaling difference of :math:`\sigma \sqrt{\left(2\pi\right)}`). 
-    This makes the parameter vs. peak maximum independent of :math:`\sigma`, 
-    and thereby makes locking of the parameter more viable. As long as there 
-    is no binning, the `height` parameter corresponds directly to the peak 
-    maximum, if not, the value is scaled by a linear constant 
+    of the sigma parameter, and a `height` parameter instead of the `A`
+    parameter (scaling difference of :math:`\sigma \sqrt{\left(2\pi\right)}`).
+    This makes the parameter vs. peak maximum independent of :math:`\sigma`,
+    and thereby makes locking of the parameter more viable. As long as there
+    is no binning, the `height` parameter corresponds directly to the peak
+    maximum, if not, the value is scaled by a linear constant
     (`signal_axis.scale`).
 
     .. math::
@@ -42,11 +44,11 @@ class GaussianHF(Expression):
             \left(x-c\right)^{2}}{W^{2}}\right]}
 
     ============= =============
-     Variable      Parameter 
+     Variable      Parameter
     ============= =============
-     :math:`h`     height    
-     :math:`W`     fwhm 
-     :math:`c`     centre    
+     :math:`h`     height
+     :math:`W`     fwhm
+     :math:`c`     centre
     ============= =============
 
 
@@ -138,21 +140,25 @@ class GaussianHF(Expression):
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
-
+        scaling_factor = axis.scale if axis.is_uniform \
+                         else np.gradient(axis.axis)[axis.value2index(centre)]
         if only_current is True:
             self.centre.value = centre
             self.fwhm.value = sigma * sigma2fwhm
             self.height.value = float(height)
-            if self.binned:
-                self.height.value /= axis.scale
+            if is_binned(signal):
+            # in v2 replace by
+            #if axis.is_binned:
+                self.height.value /= scaling_factor
             return True
         else:
             if self.height.map is None:
                 self._create_arrays()
             self.height.map['values'][:] = height
-
-            if self.binned:
-                self.height.map['values'][:] /= axis.scale
+            if is_binned(signal):
+            # in v2 replace by
+            #if axis.is_binned:
+                self.height.map['values'][:] /= scaling_factor
             self.height.map['is_set'][:] = True
             self.fwhm.map['values'][:] = sigma * sigma2fwhm
             self.fwhm.map['is_set'][:] = True

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,12 +20,14 @@ import numpy as np
 import dask.array as da
 
 from hyperspy._components.expression import Expression
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
     axis = signal.axes_manager.signal_axes[0]
     i1, i2 = axis.value_range_to_indices(x1, x2)
     X = axis.axis[i1:i2]
+
     if only_current is True:
         data = signal()[i1:i2]
         i = 0
@@ -38,25 +40,16 @@ def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
         centre_shape = list(data.shape)
         centre_shape[i] = 1
 
-    if isinstance(data, da.Array):
-        _cumsum = da.cumsum
-        _max = da.max
-        _abs = da.fabs
-        _argmin = da.argmin
-    else:
-        _cumsum = np.cumsum
-        _max = np.max
-        _abs = np.abs
-        _argmin = np.argmin
+    cdf = np.cumsum(data,i)
+    cdfnorm = cdf/np.max(cdf, i).reshape(centre_shape)
 
-    cdf = _cumsum(data,i)
-    cdfnorm = cdf/_max(cdf, i).reshape(centre_shape)
+    icentre = np.argmin(np.abs(0.5 - cdfnorm), i)
+    igamma1 = np.argmin(np.abs(0.75 - cdfnorm), i)
+    igamma2 = np.argmin(np.abs(0.25 - cdfnorm), i)
 
-    icentre = _argmin(_abs(0.5 - cdfnorm), i)
-    igamma1 = _argmin(_abs(0.75 - cdfnorm), i)
-    igamma2 = _argmin(_abs(0.25 - cdfnorm), i)
     if isinstance(data, da.Array):
         icentre, igamma1, igamma2 = da.compute(icentre, igamma1, igamma2)
+
     centre = X[icentre]
     gamma = (X[igamma1] - X[igamma2]) / 2
     height = data.max(i)
@@ -126,11 +119,11 @@ class Lorentzian(Expression):
         self.convolved = True
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
-        """Estimate the Lorentzian by calculating the median (centre) and half 
+        """Estimate the Lorentzian by calculating the median (centre) and half
         the interquartile range (gamma).
-        
-        Note that an insufficient range will affect the accuracy of this 
-        method. 
+
+        Note that an insufficient range will affect the accuracy of this
+        method.
 
         Parameters
         ----------
@@ -169,25 +162,27 @@ class Lorentzian(Expression):
 
         super(Lorentzian, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        if not axis.is_uniform and self.binned:
-            raise NotImplementedError(
-                "This operation is not implemented for non-uniform axes.")
         centre, height, gamma = _estimate_lorentzian_parameters(signal, x1, x2,
                                                               only_current)
+        scaling_factor = axis.scale if axis.is_uniform \
+                         else np.gradient(axis.axis)[axis.value2index(centre)]
         if only_current is True:
             self.centre.value = centre
             self.gamma.value = gamma
             self.A.value = height * gamma * np.pi
-            if self.binned:
-                self.A.value /= axis.scale
+            if is_binned(signal):
+            # in v2 replace by
+            #if axis.is_binned:
+                self.A.value /= scaling_factor
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * gamma * np.pi
-
-            if self.binned:
-                self.A.map['values'] /= axis.scale
+            if is_binned(signal):
+            # in v2 replace by
+            #if axis.is_binned:
+                self.A.map['values'] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.gamma.map['values'][:] = gamma
             self.gamma.map['is_set'][:] = True

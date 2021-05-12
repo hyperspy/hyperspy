@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -38,6 +38,7 @@ file_extensions = ('msa', 'ems', 'mas', 'emsa', 'EMS', 'MAS', 'EMSA', 'MSA')
 default_extension = 0
 # Writing capabilities
 writes = [(1, 0), ]
+non_uniform_axis = False
 # ----------------------
 
 # For a description of the EMSA/MSA format, incluiding the meaning of the

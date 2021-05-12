@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -22,7 +22,7 @@ import traits.api as t
 
 from hyperspy.axes import (DataAxis, UniformDataAxis, AxesManager,
                            UnitConversion, _ureg)
-from hyperspy.misc.test_utils import assert_deep_almost_equal, assert_warns
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
 class TestUnitConversion:
@@ -50,17 +50,13 @@ class TestUnitConversion:
 
     def test_ignore_conversion(self):
         assert self.uc._ignore_conversion(t.Undefined)
-        with assert_warns(
-                message="not supported for conversion.",
-                category=UserWarning):
+        with pytest.warns(UserWarning, match="not supported for conversion."):
             assert self.uc._ignore_conversion('unit_not_supported')
         assert not self.uc._ignore_conversion('m')
 
     def test_converted_compact_scale_units(self):
         self.uc.units = 'toto'
-        with assert_warns(
-                message="not supported for conversion.",
-                category=UserWarning):
+        with pytest.warns(UserWarning, match="not supported for conversion."):
             self.uc._convert_compact_units()
         assert self.uc.units == 'toto'
         np.testing.assert_almost_equal(self.uc.scale, 1.0E-3)
@@ -186,6 +182,12 @@ class TestUnitConversion:
         assert self.uc.units == 'eV'
         assert self.uc.scale == 0.05
 
+    def test_get_set_quantity(self):
+        with pytest.raises(ValueError):
+            self.uc._get_quantity('size')
+        with pytest.raises(ValueError):
+            self.uc._set_quantity('size', 10)
+  
 
 class TestUniformDataAxis:
 
@@ -254,9 +256,7 @@ class TestUniformDataAxis:
     def test_units_not_supported_by_pint_warning_raised(self):
         # raising a warning, not converting scale
         self.axis.units = 'toto'
-        with assert_warns(
-                message="not supported for conversion.",
-                category=UserWarning):
+        with pytest.warns(UserWarning, match="not supported for conversion."):
             self.axis.convert_to_units('m')
         np.testing.assert_almost_equal(self.axis.scale, 12E-12)
         assert self.axis.units == 'toto'
@@ -264,9 +264,7 @@ class TestUniformDataAxis:
     def test_units_not_supported_by_pint_warning_raised2(self):
         # raising a warning, not converting scale
         self.axis.units = 'µm'
-        with assert_warns(
-                message="not supported for conversion.",
-                category=UserWarning):
+        with pytest.warns(UserWarning, match="not supported for conversion."):
             self.axis.convert_to_units('toto')
         np.testing.assert_almost_equal(self.axis.scale, 12E-12)
         assert self.axis.units == 'µm'
@@ -276,20 +274,26 @@ class TestAxesManager:
 
     def setup_method(self, method):
         self.axes_list = [
-            {'name': 'x',
+            {'_type': 'UniformDataAxis',
+             'name': 'x',
              'navigate': True,
+             'is_binned': False,
              'offset': 0.0,
              'scale': 1.5E-9,
              'size': 1024,
              'units': 'm'},
-            {'name': 'y',
+            {'_type': 'UniformDataAxis',
+             'name': 'y',
              'navigate': True,
+             'is_binned': False,
              'offset': 0.0,
              'scale': 0.5E-9,
              'size': 1024,
              'units': 'm'},
-            {'name': 'energy',
+            {'_type': 'UniformDataAxis',
+             'name': 'energy',
              'navigate': False,
+             'is_binned': False,
              'offset': 0.0,
              'scale': 5.0,
              'size': 4096,
@@ -300,18 +304,21 @@ class TestAxesManager:
         self.axes_list2 = [
             {'name': 'x',
              'navigate': True,
+             'is_binned': False,
              'offset': 0.0,
              'scale': 1.5E-9,
              'size': 1024,
              'units': 'm'},
             {'name': 'energy',
              'navigate': False,
+             'is_binned': False,
              'offset': 0.0,
              'scale': 2.5,
              'size': 4096,
              'units': 'eV'},
             {'name': 'energy2',
              'navigate': False,
+             'is_binned': False,
              'offset': 0.0,
              'scale': 5.0,
              'size': 4096,
@@ -378,6 +385,7 @@ class TestAxesManager:
         self.axes_list.insert(0,
                               {'name': 'time',
                                'navigate': True,
+                               'is_binned': False,
                                'offset': 0.0,
                                'scale': 1.5,
                                'size': 20,
@@ -444,9 +452,7 @@ class TestAxesManager:
 
     @pytest.mark.parametrize("same_units", (True, False))
     def test_convert_to_units_unsupported_units(self, same_units):
-        with assert_warns(
-                message="not supported for conversion.",
-                category=UserWarning):
+        with pytest.warns(UserWarning, match="not supported for conversion."):
             self.am.convert_units('navigation', units='toto',
                                   same_units=same_units)
         assert_deep_almost_equal(self.am._get_axes_dicts(),

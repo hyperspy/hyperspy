@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -41,8 +41,9 @@ description = ('Import/Export standard image formats Christoph Gohlke\'s '
 full_support = False
 file_extensions = ['tif', 'tiff']
 default_extension = 0  # tif
-# Writing features
+# Writing capabilities
 writes = [(2, 0), (2, 1)]
+non_uniform_axis = False
 # ----------------------
 
 
@@ -95,7 +96,7 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
             "because it is incompability with the 'ImageJ' tiff format")
     if export_scale:
         kwds.update(_get_tags_dict(signal, extratags=extratags))
-        _logger.debug("kwargs passed to tifffile.py imsave: {0}".format(kwds))
+        _logger.debug(f"kwargs passed to tifffile.py imsave: {kwds}")
 
         if 'metadata' not in kwds.keys():
             # Because we write the calibration to the ImageDescription tag
@@ -491,7 +492,9 @@ def _imagej_description(version='1.11a', **kwargs):
     for key, value in list(kwargs.items()):
         if value == 'µm':
             value = 'micron'
-        append.append('%s=%s' % (key.lower(), value))
+        if value == 'Å':
+            value = 'angstrom'
+        append.append(f'{key.lower()}={value}')
 
     return '\n'.join(result + append + [''])
 

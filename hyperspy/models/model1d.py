@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,6 +20,7 @@ import copy
 
 import numpy as np
 from scipy.special import huber
+import traits.api as t
 
 import hyperspy.drawing.signal1d
 from hyperspy.axes import generate_uniform_axis
@@ -31,14 +32,19 @@ from hyperspy.exceptions import SignalDimensionError, WrongObjectError
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT, add_gui_method
+from hyperspy.misc.utils import dummy_context_manager
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 @add_gui_method(toolkey="hyperspy.Model1D.fit_component")
 class ComponentFit(SpanSelectorInSignal1D):
+    only_current = t.Bool(True)
+    iterpath = t.Enum('flyback', 'serpentine', default='serpentine',
+                      desc='Define the iterating pattern over the navigation space.')
 
     def __init__(self, model, component, signal_range=None,
                  estimate_parameters=True, fit_independent=False,
-                 only_current=True, **kwargs):
+                 only_current=True, iterpath='flyback', **kwargs):
         if model.signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 model.signal.axes_manager.signal_dimension, 1)
@@ -53,6 +59,7 @@ class ComponentFit(SpanSelectorInSignal1D):
         self.fit_independent = fit_independent
         self.fit_kwargs = kwargs
         self.only_current = only_current
+        self.iterpath = iterpath
         if signal_range == "interactive":
             if (not hasattr(self.model, '_plot') or self.model._plot is None or
                     not self.model._plot.is_active):
@@ -90,24 +97,23 @@ class ComponentFit(SpanSelectorInSignal1D):
         only_current = self.only_current
         if self.estimate_parameters:
             if hasattr(self.component, 'estimate_parameters'):
-                if (self.signal_range != "interactive" and
-                        self.signal_range is not None):
-                    self.component.estimate_parameters(
-                        self.signal,
-                        self.signal_range[0],
-                        self.signal_range[1],
-                        only_current=only_current)
-                elif self.signal_range == "interactive":
+                if self.signal_range == "interactive":
                     self.component.estimate_parameters(
                         self.signal,
                         self.ss_left_value,
                         self.ss_right_value,
                         only_current=only_current)
+                elif self.signal_range is not None:
+                    self.component.estimate_parameters(
+                        self.signal,
+                        self.signal_range[0],
+                        self.signal_range[1],
+                        only_current=only_current)
 
         if only_current:
             self.model.fit(**self.fit_kwargs)
         else:
-            self.model.multifit(**self.fit_kwargs)
+            self.model.multifit(iterpath=self.iterpath, **self.fit_kwargs)
 
         # Restore the signal range
         if self.signal_range is not None:
@@ -149,7 +155,6 @@ class Model1D(BaseModel):
 
     Attributes
     ----------
-
     signal : Signal1D instance
         It contains the data to fit.
     chisq : A Signal of floats
@@ -165,13 +170,8 @@ class Model1D(BaseModel):
 
     Methods
     -------
-
-    append
-        Append one component to the model.
     extend
         Append multiple components to the model.
-    remove
-        Remove component from model.
     as_signal
         Generate a Signal1D instance (possible multidimensional)
         from the model.
@@ -190,8 +190,6 @@ class Model1D(BaseModel):
         full dataset.
     save_parameters2file, load_parameters_from_file
         Save/load the parameter values to/from a file.
-    plot
-        Plot the model and the data.
     enable_plot_components, disable_plot_components
         Plot each component separately. (Use after `plot`.)
     set_current_values_to
@@ -206,9 +204,6 @@ class Model1D(BaseModel):
     enable_adjust_position, disable_adjust_position
         Enable/disable interactive adjustment of the position of the components
         that have a well defined position. (Use after `plot`).
-    fit_component
-        Fit just the given component in the given signal range, that can be
-        set interactively.
     set_parameters_not_free, set_parameters_free
         Fit the `free` status of several components and parameters at once.
     set_parameters_value
@@ -265,10 +260,9 @@ class Model1D(BaseModel):
         self._plot_components = False
         self._suspend_update = False
         self._model_line = None
-        self._adjust_position_all = None
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.events.indices_changed.connect(
-            self.fetch_stored_values, [])
+            self._on_navigating, [])
         self.channel_switches = np.array([True] * len(self.axis.axis))
         self.chisq = signal1D._get_navigation_signal()
         self.chisq.change_dtype("float")
@@ -350,12 +344,22 @@ class Model1D(BaseModel):
                                                      dimension, knot_position)
 
     def append(self, thing):
-        super(Model1D, self).append(thing)
+        """Add component to Model.
+
+        Parameters
+        ----------
+        thing: `Component` instance.
+        """
+        cm = self.suspend_update if self._plot_active else dummy_context_manager
+        with cm(update_on_resume=False):
+            super(Model1D, self).append(thing)
         if self._plot_components:
             self._plot_component(thing)
         if self._adjust_position_all:
             self._make_position_adjuster(thing, self._adjust_position_all[0],
                                          self._adjust_position_all[1])
+        if self._plot_active:
+            self.signal._plot.signal_plot.update()
 
     def remove(self, things):
         things = self._get_component(things)
@@ -366,8 +370,8 @@ class Model1D(BaseModel):
             if parameter in self._position_widgets:
                 for pw in reversed(self._position_widgets[parameter]):
                     pw.close()
-            if hasattr(thing, '_model_plot_line'):
-                line = thing._model_plot_line
+            if hasattr(thing, '_component_line'):
+                line = thing._component_line
                 line.close()
         super(Model1D, self).remove(things)
         self._disconnect_parameters2update_plot(things)
@@ -426,8 +430,13 @@ class Model1D(BaseModel):
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[self.channel_switches]
-        if self.signal.metadata.Signal.binned is True:
-            to_return *= self.signal.axes_manager[-1].scale
+        if is_binned(self.signal):
+        # in v2 replace by
+        #if self.signal.axes_manager[-1].is_binned:
+            if self.signal.axes_manager[-1].is_uniform:
+                to_return *= self.signal.axes_manager[-1].scale
+            else:
+                to_return *= np.gradient(self.signal.axes_manager[-1].axis)
         return to_return
 
     def _errfunc(self, param, y, weights=None):
@@ -456,6 +465,17 @@ class Model1D(BaseModel):
         self.channel_switches[i1:i2] = True
         self.update_plot()
 
+    def _parse_signal_range_values(self, x1=None, x2=None):
+        """Parse signal range values to be used by the `set_signal_range`,
+        `add_signal_range` and `remove_signal_range` and return sorted indices
+        """
+        try:
+            x1, x2 = x1
+        except TypeError:
+            # It was not a ROI, we carry on
+            pass
+        return self.axis.value_range_to_indices(x1, x2)
+
     @interactive_range_selector
     def set_signal_range(self, x1=None, x2=None):
         """Use only the selected spectral range defined in its own units in the
@@ -463,17 +483,10 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        E1 : None or float
-        E2 : None or float
-
+        x1, x2 : None or float
         """
-        try:
-            x1, x2 = x1
-        except TypeError:
-            # It was not a ROI, we carry on
-            pass
-        i1, i2 = self.axis.value_range_to_indices(x1, x2)
-        self._set_signal_range_in_pixels(i1, i2)
+        indices = self._parse_signal_range_values(x1, x2)
+        self._set_signal_range_in_pixels(*indices)
 
     def _remove_signal_range_in_pixels(self, i1=None, i2=None):
         """Removes the data in the given range from the data range that
@@ -481,8 +494,7 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        x1 : None or float
-        x2 : None or float
+        i1, i2 : None or integer
         """
         if i2 is not None:
             i2 += 1
@@ -496,17 +508,10 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        x1 : None or float
-        x2 : None or float
-
+        x1, x2 : None or float
         """
-        try:
-            x1, x2 = x1
-        except TypeError:
-            # It was not a ROI, we carry on
-            pass
-        i1, i2 = self.axis.value_range_to_indices(x1, x2)
-        self._remove_signal_range_in_pixels(i1, i2)
+        indices = self._parse_signal_range_values(x1, x2)
+        self._remove_signal_range_in_pixels(*indices)
 
     def reset_signal_range(self):
         """Resets the data range"""
@@ -518,8 +523,7 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        x1 : None or float
-        x2 : None or float
+        i1, i2 : None or integer
         """
         if i2 is not None:
             i2 += 1
@@ -533,17 +537,10 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        x1 : None or float
-        x2 : None or float
-
+        x1, x2 : None or float
         """
-        try:
-            x1, x2 = x1
-        except TypeError:
-            # It was not a ROI, we carry on
-            pass
-        i1, i2 = self.axis.value_range_to_indices(x1, x2)
-        self._add_signal_range_in_pixels(i1, i2)
+        indices = self._parse_signal_range_values(x1, x2)
+        self._add_signal_range_in_pixels(*indices)
 
     def reset_the_signal_range(self):
         self.channel_switches[:] = True
@@ -643,8 +640,13 @@ class Model1D(BaseModel):
 
             to_return = grad[1:, :] * weights
 
-        if self.signal.metadata.Signal.binned is True:
-            to_return *= self.signal.axes_manager[-1].scale
+        if is_binned(self.signal):
+        # in v2 replace by
+        #if self.signal.axes_manager[-1].is_binned:
+            if self.signal.axes_manager[-1].is_uniform:
+                to_return *= self.signal.axes_manager[-1].scale
+            else:
+                to_return *= np.gradient(self.signal.axes_manager[-1].axis)
 
         return to_return
 
@@ -704,17 +706,16 @@ class Model1D(BaseModel):
         return s
 
     def plot(self, plot_components=False, **kwargs):
-        """Plots the current spectrum to the screen and a map with a
+        """Plot the current spectrum to the screen and a map with a
         cursor to explore the SI.
 
         Parameters
         ----------
         plot_components : bool
             If True, add a line per component to the signal figure.
-        kwargs:
-            All extra keyword arguements are passed to ``Signal1D.plot``
-
-
+        **kwargs : dict
+            All extra keyword arguements are passed to
+            :py:meth:`~._signals.signal1d.Signal1D.plot`
         """
 
         # If new coordinates are assigned
@@ -745,29 +746,25 @@ class Model1D(BaseModel):
 
     @staticmethod
     def _connect_component_line(component):
-        if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line._auto_update_line
+        if hasattr(component, "_component_line"):
+            f = component._component_line._auto_update_line
             component.events.active_changed.connect(f, [])
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(f, [])
 
     @staticmethod
     def _disconnect_component_line(component):
-        if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line._auto_update_line
+        if hasattr(component, "_component_line"):
+            f = component._component_line._auto_update_line
             component.events.active_changed.disconnect(f)
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(f)
 
-    def _connect_component_lines(self):
-        for component in self:
-            if component.active:
-                self._connect_component_line(component)
-
-    def _disconnect_component_lines(self):
-        for component in self:
-            if component.active:
-                self._disconnect_component_line(component)
+    @staticmethod
+    def _update_component_line(component):
+        if hasattr(component, "_component_line"):
+            component._component_line.update(render_figure=False,
+                                             update_ylimits=False)
 
     def _plot_component(self, component):
         line = hyperspy.drawing.signal1d.Signal1DLine()
@@ -775,30 +772,22 @@ class Model1D(BaseModel):
         # Add the line to the figure
         self._plot.signal_plot.add_line(line)
         line.plot()
-        component._model_plot_line = line
+        component._component_line = line
         self._connect_component_line(component)
-
-    @staticmethod
-    def _update_component_line(component):
-        if hasattr(component, "_model_plot_line"):
-            component._model_plot_line.update()
 
     def _disable_plot_component(self, component):
         self._disconnect_component_line(component)
-        if hasattr(component, "_model_plot_line"):
-            component._model_plot_line.close()
-            del component._model_plot_line
+        if hasattr(component, "_component_line"):
+            component._component_line.close()
+            del component._component_line
         self._plot_components = False
 
     def _close_plot(self):
-        if self._plot_components is True:
-            self.disable_plot_components()
         self.disable_adjust_position()
-        self._disconnect_parameters2update_plot(components=self)
-        self._model_line = None
+        super()._close_plot()
 
     def enable_plot_components(self):
-        if self._plot is None or self._plot_components:
+        if self._plot is None or self._plot_components:  # pragma: no cover
             return
         self._plot_components = True
         for component in [component for component in self if
@@ -807,7 +796,7 @@ class Model1D(BaseModel):
 
     def disable_plot_components(self):
         self._plot_components = False
-        if self._plot is None:
+        if self._plot is None:  # pragma: no cover
             return
         for component in self:
             self._disable_plot_component(component)

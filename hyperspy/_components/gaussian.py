@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -22,6 +22,7 @@ import numpy as np
 import dask.array as da
 
 from hyperspy._components.expression import Expression
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -31,6 +32,7 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
     axis = signal.axes_manager.signal_axes[0]
     i1, i2 = axis.value_range_to_indices(x1, x2)
     X = axis.axis[i1:i2]
+
     if only_current is True:
         data = signal()[i1:i2]
         X_shape = (len(X),)
@@ -46,20 +48,11 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
         centre_shape = list(data.shape)
         centre_shape[i] = 1
 
-    if isinstance(data, da.Array):
-        _sum = da.sum
-        _sqrt = da.sqrt
-        _abs = abs
-    else:
-        _sum = np.sum
-        _sqrt = np.sqrt
-        _abs = np.abs
-
-    centre = _sum(X.reshape(X_shape) * data, i) / _sum(data, i)
-
-    sigma = _sqrt(_abs(_sum((X.reshape(X_shape) - centre.reshape(
-        centre_shape)) ** 2 * data, i) / _sum(data, i)))
+    centre = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
+    sigma = np.sqrt(np.abs(np.sum((X.reshape(X_shape) - centre.reshape(
+        centre_shape)) ** 2 * data, i) / np.sum(data, i)))
     height = data.max(i)
+
     if isinstance(data, da.Array):
         return da.compute(centre, height, sigma)
     else:
@@ -87,11 +80,11 @@ class Gaussian(Expression):
     Parameters
     -----------
     A : float
-        Height scaled by :math:`\sigma\sqrt{(2\pi)}`. ``GaussianHF`` 
-        implements the Gaussian function with a height parameter 
+        Height scaled by :math:`\sigma\sqrt{(2\pi)}`. ``GaussianHF``
+        implements the Gaussian function with a height parameter
         corresponding to the peak height.
     sigma : float
-        Scale parameter of the Gaussian distribution. 
+        Scale parameter of the Gaussian distribution.
     centre : float
         Location of the Gaussian maximum (peak position).
     **kwargs
@@ -99,7 +92,7 @@ class Gaussian(Expression):
 
 
     For convenience the `fwhm` and `height` attributes can be used to get and set
-    the full-with-half-maximum and height of the distribution, respectively.
+    the full width at half maximum and height of the distribution, respectively.
 
 
     See also
@@ -169,25 +162,27 @@ class Gaussian(Expression):
 
         super(Gaussian, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        if not axis.is_uniform and self.binned:
-            raise NotImplementedError(
-                "This operation is not implemented for non-uniform axes.")
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
+        scaling_factor = axis.scale if axis.is_uniform \
+                         else np.gradient(axis.axis)[axis.value2index(centre)]
         if only_current is True:
             self.centre.value = centre
             self.sigma.value = sigma
             self.A.value = height * sigma * sqrt2pi
-            if self.binned:
-                self.A.value /= axis.scale
+            if is_binned(signal):
+            # in v2 replace by
+            #if axis.is_binned:
+                self.A.value /= scaling_factor
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * sigma * sqrt2pi
-
-            if self.binned:
-                self.A.map['values'] /= axis.scale
+            if is_binned(signal):
+            # in v2 replace by
+            #if axis.is_binned:
+                self.A.map['values'] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma
             self.sigma.map['is_set'][:] = True

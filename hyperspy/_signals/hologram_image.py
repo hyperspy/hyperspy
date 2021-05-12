@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -97,7 +97,6 @@ def _parse_sb_size(s, reference, sb_position, sb_size, parallel):
                 sb_size = BaseSignal(sb_size)
             if isinstance(sb_size.data, daArray):
                 sb_size = sb_size.as_lazy()
-
     if sb_size.axes_manager.navigation_size != s.axes_manager.navigation_size:
         if sb_size.axes_manager.navigation_size:
             raise ValueError('Sideband size dimensions do not match '
@@ -205,6 +204,11 @@ class HologramImage(Signal2D):
         -------
         Signal1D instance of sideband positions (y, x), referred to the unshifted FFT.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
+
         Examples
         --------
 
@@ -263,6 +267,11 @@ class HologramImage(Signal2D):
         sb_size : Signal1D
             Sideband size referred to the unshifted FFT.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
+
         Examples
         --------
         >>> import hyperspy.api as hs
@@ -302,7 +311,7 @@ class HologramImage(Signal2D):
         output_shape=None,
         plotting=False,
         store_parameters=True,
-        show_progressbar=False,        
+        show_progressbar=False,
         parallel=None,
         max_workers=None,
     ):
@@ -338,7 +347,7 @@ class HologramImage(Signal2D):
             The sideband position (y, x), referred to the non-shifted FFT. If
             None, sideband is determined automatically from FFT.
         high_cf : bool, optional
-            If False, the highest carrier frequency allowed for the sideband 
+            If False, the highest carrier frequency allowed for the sideband
             location is equal to half of the Nyquist frequency (Default: True).
         output_shape: tuple, None
             Choose a new output shape. Default is the shape of the input
@@ -357,6 +366,11 @@ class HologramImage(Signal2D):
         wave : ComplexSignal2D
             Reconstructed electron wave. By default object wave is divided by
             reference wave.
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
 
         Examples
         --------
@@ -490,9 +504,9 @@ class HologramImage(Signal2D):
         if output_shape is None:
             # Future improvement will give a possibility to choose
             # if sb_size.axes_manager.navigation_size > 0:
-            #     output_shape = (np.int(sb_size.inav[0].data*2), np.int(sb_size.inav[0].data*2))
+            #     output_shape = (int(sb_size.inav[0].data*2), int(sb_size.inav[0].data*2))
             # else:
-            #     output_shape = (np.int(sb_size.data*2), np.int(sb_size.data*2))
+            #     output_shape = (int(sb_size.data*2), int(sb_size.data*2))
             output_shape = self.axes_manager.signal_shape
             output_shape = output_shape[::-1]
 
@@ -652,7 +666,7 @@ class HologramImage(Signal2D):
               where I(k_0) is intensity of sideband and I(0) is the intensity of central band (FFT origin).
               This method delivers also reasonable estimation if the
               interference pattern do not cover full field of view.
-            * 'statistical': fringe contrast is estimated by dividing the 
+            * 'statistical': fringe contrast is estimated by dividing the
               standard deviation by the mean of the hologram intensity in real
               space. This algorithm relies on regularly spaced fringes and
               covering the entire field of view.
@@ -674,6 +688,11 @@ class HologramImage(Signal2D):
         -------
         statistics_dict :
             Dictionary with the statistics
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
 
         Examples
         --------

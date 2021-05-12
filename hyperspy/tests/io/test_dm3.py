@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -246,6 +246,94 @@ def test_read_EDS_metadata():
         md.Signal.Noise_properties.Variance_linear_model.gain_offset,
         0.0)
 
+def test_read_CL_pmt_metadata():
+    fname = os.path.join(MY_PATH, "dm4_1D_data", "test-CL_spectrum-pmt.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.format == "Spectrum"
+    assert md.Signal.quantity == "Intensity (Counts)"
+    assert md.General.date == "2020-10-27"
+    assert md.General.original_filename == "test-CL_spectrum-pmt.dm4"
+    assert md.General.title == "test-CL_spectrum-pmt"
+    assert md.Acquisition_instrument.CL.acquisition_mode == "Serial dispersive"
+    assert md.Acquisition_instrument.CL.detector_type == "linear"
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.dispersion_grating, 1200)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.dwell_time, 1.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.step_size, 0.5)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.start_wavelength, 166.233642578125)
+
+def test_read_CL_ccd_metadata():
+    fname = os.path.join(MY_PATH, "dm4_1D_data", "test-CL_spectrum-ccd.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.format == "Spectrum"
+    assert md.Signal.quantity == "Intensity (Counts)"
+    assert md.General.date == "2020-09-11"
+    assert md.General.time == "17:04:19"
+    assert md.General.original_filename == "test-CL_spectrum-ccd.dm4"
+    assert md.General.title == "test-CL_spectrum-ccd"
+    assert md.Acquisition_instrument.TEM.acquisition_mode == "SEM"
+    assert md.Acquisition_instrument.TEM.microscope == "Ultra55"
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 5.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.TEM.magnification, 10104.515625)
+    assert md.Acquisition_instrument.CL.acquisition_mode == "Parallel dispersive"
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.dispersion_grating, 300.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.exposure, 30.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.frame_number, 1.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.integration_time, 30.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.central_wavelength, 949.9741821289062)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.saturation_fraction, 0.01861908845603466)
+    assert md.Acquisition_instrument.CL.CCD.binning == (1, 100)
+    assert md.Acquisition_instrument.CL.CCD.processing == "Dark Subtracted"
+    assert md.Acquisition_instrument.CL.CCD.read_area == (0, 0, 100, 1336)
+
+def test_read_CL_SI_metadata():
+    fname = os.path.join(MY_PATH, "dm4_2D_data", "test-CL_spectrum-SI.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.format == "Spectrum image"
+    assert md.Signal.quantity == "Intensity (Counts)"
+    assert md.General.date == "2020-04-11"
+    assert md.General.time == "14:41:01"
+    assert md.General.original_filename == "test-CL_spectrum-SI.dm4"
+    assert md.General.title == "test-CL_spectrum-SI"
+    assert md.Acquisition_instrument.TEM.acquisition_mode == "SEM"
+    assert md.Acquisition_instrument.TEM.microscope == "Ultra55"
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 5.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.TEM.magnification, 31661.427734375)
+    assert md.Acquisition_instrument.CL.acquisition_mode == "Parallel dispersive"
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.dispersion_grating, 600.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.exposure, 0.05000000074505806)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.frame_number, 1)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.central_wavelength, 869.9838256835938)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.CL.saturation_fraction[0], 0.09676377475261688)
+    assert md.Acquisition_instrument.CL.CCD.binning == (1, 100)
+    assert md.Acquisition_instrument.CL.CCD.processing == "Dark Subtracted"
+    assert md.Acquisition_instrument.CL.CCD.read_area == (0, 0, 100, 1336)
+    assert md.Acquisition_instrument.CL.SI.drift_correction_periodicity == 1
+    assert md.Acquisition_instrument.CL.SI.drift_correction_units == "second(s)"
+    assert md.Acquisition_instrument.CL.SI.mode == "LineScan"
+
 
 def test_location():
     fname_list = ['Fei HAADF-DE_location.dm3', 'Fei HAADF-FR_location.dm3',
@@ -290,8 +378,7 @@ def test_multi_signal():
                     'date': '2019-12-10',
                     'time': '15:32:41',
                     'authors': 'JohnDoe'},
-        'Signal': {'binned': False,
-                   'signal_type': '',
+        'Signal': {'signal_type': '',
                    'quantity': 'Intensity',
                    'Noise_properties': {
                        'Variance_linear_model': {
@@ -326,7 +413,6 @@ def test_multi_signal():
             'title': 'Plot',
             'original_filename': 'multi_signal.dm3'},
         'Signal': {
-            'binned': False,
             'signal_type': '',
             'quantity': 'Intensity',
             'Noise_properties': {
@@ -342,6 +428,10 @@ def test_multi_signal():
     # rather than testing all of original metadata (huge), use length as a proxy
     assert len(json.dumps(s1.original_metadata.as_dictionary())) == 17779
     assert len(json.dumps(s2.original_metadata.as_dictionary())) == 15024
+    
+    # test axes
+    assert s1.axes_manager[-1].is_binned == False
+    assert s2.axes_manager[-1].is_binned == False
 
     # simple tests on the data itself:
     assert s1.data.sum() == 949490255

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -30,6 +30,7 @@ from hyperspy.io_plugins import (
     fei,
     hspy,
     image,
+    jeol,
     mrc,
     msa,
     nexus,
@@ -52,6 +53,7 @@ io_plugins = [
     fei,
     hspy,
     image,
+    jeol,
     mrc,
     msa,
     nexus,

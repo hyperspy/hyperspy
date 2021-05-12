@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -26,7 +26,6 @@ import traits.api as t
 from traits.trait_errors import TraitError
 import pint
 from sympy.utilities.lambdify import lambdify
-import itertools
 
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
@@ -35,8 +34,9 @@ from hyperspy.ui_registry import add_gui_method, get_gui
 from hyperspy.defaults_parser import preferences
 from hyperspy._components.expression import _parse_substitutions
 
-
 import warnings
+import inspect
+from collections.abc import Iterable
 
 _logger = logging.getLogger(__name__)
 _ureg = pint.UnitRegistry()
@@ -80,10 +80,10 @@ def generate_uniform_axis(offset, scale, size, offset_index=0):
                        size)
 
 
-def _create_axis(**kwargs):
-    """Creates a uniform, a non-uniform axis or a functional axis depending on 
+def create_axis(**kwargs):
+    """Creates a uniform, a non-uniform axis or a functional axis depending on
     the kwargs provided. If `axis` or  `expression` are provided, a non-uniform
-    or a functional axis is created, respectively. Otherwise a uniform axis is 
+    or a functional axis is created, respectively. Otherwise a uniform axis is
     created, which can be defined by `scale`, `size` and `offset`.
 
     Alternatively, the offset_index of the offset channel can be specified.
@@ -125,7 +125,7 @@ class UnitConversion:
         except pint.errors.UndefinedUnitError:
             warnings.warn('Unit "{}" not supported for conversion. Nothing '
                           'done.'.format(units),
-                          UserWarning)
+                          )
             return True
         return False
 
@@ -146,11 +146,16 @@ class UnitConversion:
 
     _convert_compact_units.__doc__ %= FACTOR_DOCSTRING
 
-    def _get_index_from_value_with_units(self, value):
+    def _get_value_from_value_with_units(self, value):
+        if self.units is t.Undefined:
+            raise ValueError("Units conversion can't be perfomed "
+                             f"because the axis '{self}' doesn't have "
+                             "units.")
         value = _ureg.parse_expression(value)
         if not hasattr(value, 'units'):
-            raise ValueError('"{}" should contains an units.'.format(value))
-        return self.value2index(value.to(self.units).magnitude)
+            raise ValueError(f"`{value}` should contain an units.")
+
+        return float(value.to(self.units).magnitude)
 
     def _convert_units(self, converted_units, inplace=True):
         if self._ignore_conversion(converted_units) or \
@@ -237,6 +242,19 @@ class UnitConversion:
 
 
 class BaseDataAxis(t.HasTraits):
+    """Parent class defining common attributes for all DataAxis classes.
+    
+    Parameters
+    ----------
+    name : str, optional
+        Name string by which the axis can be accessed. `<undefined>` if not set.
+    units : str, optional
+         String for the units of the axis vector. `<undefined>` if not set.
+    navigate : bool, optional
+        True for a navigation axis. Default False (signal axis).
+    is_binned : bool, optional
+        True if data along the axis is binned. Default False.
+    """
     name = t.Str()
     units = t.Str()
     size = t.CInt()
@@ -247,6 +265,7 @@ class BaseDataAxis(t.HasTraits):
     high_index = t.Int()
     slice = t.Instance(slice)
     navigate = t.Bool(t.Undefined)
+    is_binnned = t.Bool(t.Undefined)
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
 
@@ -254,10 +273,16 @@ class BaseDataAxis(t.HasTraits):
                  index_in_array=None,
                  name=t.Undefined,
                  units=t.Undefined,
-                 navigate=t.Undefined):
+                 navigate=False,
+                 is_binned=False,
+                 **kwargs):
         super(BaseDataAxis, self).__init__()
 
         self.events = Events()
+        if '_type' in kwargs:
+            if kwargs.get('_type') != self.__class__.__name__:
+                raise ValueError('The passed `_type` of axis is inconsistent '
+                                'with the given attributes')
         _name = self.__class__.__name__
         self.events.index_changed = Event("""
             Event that triggers when the index of the `{}` changes
@@ -288,11 +313,13 @@ class BaseDataAxis(t.HasTraits):
         self.units = units
         self.low_index = 0
         self.on_trait_change(self._update_slice, 'navigate')
+        self.on_trait_change(self._update_slice, 'is_binned')
         self.on_trait_change(self.update_index_bounds, 'size')
         self.on_trait_change(self._update_bounds, 'axis')
 
         self.index = 0
         self.navigate = navigate
+        self.is_binned = is_binned
         self.axes_manager = None
         self._is_uniform = False
 
@@ -366,11 +393,6 @@ class BaseDataAxis(t.HasTraits):
         else:
             return value
 
-    def _parse_string_for_slice(self, value):
-        if isinstance(value, str):
-            value = self._get_index_from_value_with_units(value)
-        return value
-
     def _get_array_slices(self, slice_):
         """Returns a slice to slice the corresponding data axis.
 
@@ -402,9 +424,9 @@ class BaseDataAxis(t.HasTraits):
             stop = start + 1
             step = None
 
-        start = self._parse_string_for_slice(start)
-        stop = self._parse_string_for_slice(stop)
-        step = self._parse_string_for_slice(step)
+        start = self._parse_value(start)
+        stop = self._parse_value(stop)
+        step = self._parse_value(step)
 
         if isfloat(step):
             step = int(round(step / self.scale))
@@ -481,9 +503,11 @@ class BaseDataAxis(t.HasTraits):
             self.slice = None
 
     def get_axis_dictionary(self):
-        return {'name': self.name,
+        return {'_type': self.__class__.__name__,
+                'name': self.name,
                 'units': self.units,
-                'navigate': self.navigate
+                'navigate': self.navigate,
+                'is_binned': self.is_binned,
                 }
 
     def copy(self):
@@ -496,13 +520,29 @@ class BaseDataAxis(t.HasTraits):
         cp = self.copy()
         return cp
 
-    def index2value(self, index):
-        if isinstance(index, da.Array):
-            index = index.compute()
-        if isinstance(index, np.ndarray):
-            return self.axis[index.ravel()].reshape(index.shape)
+    def _parse_value_from_string(self, value):
+        """Return calibrated value from a suitable string """
+        if len(value) == 0:
+            raise ValueError("Cannot index with an empty string")
+        # if first character is a digit, try unit conversion
+        # otherwise we don't support it
+        elif value[0].isdigit():
+            value = self._get_value_from_value_with_units(value)
         else:
-            return self.axis[index]
+            raise ValueError(f"`{value}` is not a suitable string for slicing.")
+
+        return value
+
+    def _parse_value(self, value):
+        """Convert the input to calibrated value if string, otherwise,
+        return the same value."""
+        if isinstance(value, str):
+            value = self._parse_value_from_string(value)
+        elif isinstance(value, (list, tuple, np.ndarray, da.Array)):
+            value = np.asarray(value)
+            if value.dtype.type is np.str_:
+                value = np.array([self._parse_value_from_string(v) for v in value])
+        return value
 
     def value2index(self, value, rounding=round):
         """Return the closest index to the given value if between the limit.
@@ -526,31 +566,74 @@ class BaseDataAxis(t.HasTraits):
         if self.low_value <= value <= self.high_value:
             return (np.abs(self.axis - value)).argmin()
         else:
-            raise ValueError("The value is out of the axis limits")
+            index = int(value)
+            if self.size > index >= 0:
+                return index
+            else:
+                raise ValueError(
+                    f'The value {value} is out of the limits '
+                    f'[{self.low_value:.3g}-{self.high_value:.3g}] of the '
+                    f'"{self._get_name()}" axis.'
+                    )
+
+    def index2value(self, index):
+        if isinstance(index, da.Array):
+            index = index.compute()
+        if isinstance(index, np.ndarray):
+            return self.axis[index.ravel()].reshape(index.shape)
+        else:
+            return self.axis[index]
+
+    def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
+        scale = (value_tuple[1] - value_tuple[0]) /\
+            (index_tuple[1] - index_tuple[0])
+        offset = value_tuple[0] - scale * index_tuple[0]
+        if modify_calibration is True:
+            self.offset = offset
+            self.scale = scale
+        else:
+            return offset, scale
 
     def value_range_to_indices(self, v1, v2):
         """Convert the given range to index range.
 
-        When an out of the axis limits, the endpoint is used instead.
+        When a value is out of the axis limits, the endpoint is used instead.
+        `v1` must be preceding `v2` in the axis values
+
+          - if the axis scale is positive, it means v1 < v2
+          - if the axis scale is negative, it means v1 > v2
 
         Parameters
         ----------
         v1, v2 : float
-            The end points of the interval in the axis units. v2 must be
-            greater than v1.
+            The end points of the interval in the axis units.
 
+        Returns
+        -------
+        i2, i2 : float
+            The indices corresponding to the interval [v1, v2]
         """
-        if v1 is not None and v2 is not None and v1 > v2:
-            raise ValueError("v2 must be greater than v1.")
+        i1, i2 = 0, self.size - 1
+        error_message = "Wrong order of the values: for axis with"
+        if self._is_increasing_order:
+            if v1 is not None and v2 is not None and v1 > v2:
+                raise ValueError(f"{error_message} increasing order, v2 ({v2}) "
+                                 f"must be greater than v1 ({v1}).")
 
-        if v1 is not None and self.low_value < v1 <= self.high_value:
-            i1 = self.value2index(v1)
+            if v1 is not None and self.low_value < v1 <= self.high_value:
+                i1 = self.value2index(v1)
+            if v2 is not None and self.high_value > v2 >= self.low_value:
+                i2 = self.value2index(v2)
         else:
-            i1 = 0
-        if v2 is not None and self.high_value > v2 >= self.low_value:
-            i2 = self.value2index(v2)
-        else:
-            i2 = self.size - 1
+            if v1 is not None and v2 is not None and v1 < v2:
+                raise ValueError(f"{error_message} decreasing order: v1 ({v1}) "
+                                 f"must be greater than v2 ({v2}).")
+
+            if v1 is not None and self.high_value > v1 >= self.low_value:
+                i1 = self.value2index(v1)
+            if v2 is not None and self.low_value < v2 <= self.high_value:
+                i2 = self.value2index(v2)
+
         return i1, i2
 
     def update_from(self, axis, attributes):
@@ -580,34 +663,87 @@ class BaseDataAxis(t.HasTraits):
             any_changes = True
         return any_changes
 
-    def calibrate(self, *args, **kwargs):
-        raise TypeError("This function works only for uniform axes.")
-
     def convert_to_uniform_axis(self):
         scale = (self.high_value - self.low_value) / self.size
         d = self.get_axis_dictionary()
+        axes_manager = self.axes_manager
         del d["axis"]
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
+        d["_type"] = 'UniformDataAxis'
         self.__class__ = UniformDataAxis
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
+        self.axes_manager = axes_manager
+
+    @property
+    def _is_increasing_order(self):
+        """
+        Determine if the axis has an increasing, decreasing order or no order
+        at all.
+
+        Returns
+        -------
+        True if order is increasing, False if order is decreasing, None
+        otherwise.
+
+        """
+        steps = self.axis[1:] - self.axis[:-1]
+        if np.all(steps > 0):
+            return True
+        elif np.all(steps < 0):
+            return False
+        else:
+            # the axis is not ordered
+            return None
 
 
 class DataAxis(BaseDataAxis):
+    """DataAxis class for a non-uniform axis defined through an ``axis`` array.
+
+    The most flexible type of axis, where the axis points are directly given by
+    an array named ``axis``. As this can be any array, the property
+    ``is_uniform`` is automatically set to ``False``.
+
+    Parameters
+    ----------
+    axis : numpy array or list
+        The array defining the axis points.
+
+    Examples
+    --------
+    Sample dictionary for a `DataAxis`:
+
+    >>> dict0 = {'axis': np.arange(11)**2}
+    >>> s = hs.signals.Signal1D(np.ones(12), axes=[dict0])
+    >>> s.axes_manager[0].get_axis_dictionary()
+    {'_type': 'DataAxis',
+     'name': <undefined>,
+     'units': <undefined>,
+     'navigate': False,
+     'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100])}
+    """
 
     def __init__(self,
                  index_in_array=None,
                  name=t.Undefined,
                  units=t.Undefined,
-                 navigate=t.Undefined,
-                 axis=[1]):
-        super().__init__(index_in_array, name, units, navigate)
+                 navigate=False,
+                 is_binned=False,
+                 axis=[1],
+                 **kwargs):
+        super().__init__(
+            index_in_array=index_in_array,
+            name=name,
+            units=units,
+            navigate=navigate,
+            is_binned=is_binned,
+            **kwargs)
         self.axis = axis
         self.update_axis()
 
     def _slice_me(self, slice_):
-        """Returns a slice to slice the corresponding data axis and set the 
+        """Returns a slice to slice the corresponding data axis and set the
         axis accordingly.
 
         Parameters
@@ -625,7 +761,7 @@ class DataAxis(BaseDataAxis):
         return my_slice
 
     def update_axis(self):
-        """Set the value of a axis. The axis values need to be ordered.
+        """Set the value of an axis. The axis values need to be ordered.
 
         Parameters
         ----------
@@ -639,9 +775,7 @@ class DataAxis(BaseDataAxis):
         if len(self.axis) > 1:
             if isinstance(self.axis, list):
                 self.axis = np.asarray(self.axis)
-            steps = self.axis[1:] - self.axis[:-1]
-            # check axis is ordered
-            if not (np.all(steps > 0) or np.all(steps < 0)):
+            if self._is_increasing_order is None:
                 raise ValueError('The non-uniform axis needs to be ordered.')
         self.size = len(self.axis)
 
@@ -649,6 +783,9 @@ class DataAxis(BaseDataAxis):
         d = super().get_axis_dictionary()
         d.update({'axis': self.axis})
         return d
+
+    def calibrate(self, *args, **kwargs):
+        raise TypeError("This function works only for uniform axes.")
 
     def update_from(self, axis, attributes=None):
         """Copy values of specified axes fields from the passed AxesManager.
@@ -693,25 +830,83 @@ class DataAxis(BaseDataAxis):
 
 
 class FunctionalDataAxis(BaseDataAxis):
-    x = t.Instance(BaseDataAxis)
+    """DataAxis class for a non-uniform axis defined through an ``expression``.
+    
+    A `FunctionalDataAxis` is defined based on an ``expression`` that is
+    evaluated to yield the axis points. The `expression` is a function defined
+    as a ``string`` using the `SymPy <https://docs.sympy.org/latest/tutorial/intro.html>`_ 
+    text expression format. An example would be ``expression = a / x + b``.
+    Any variables in the expression, in this case ``a`` and ``b`` must be
+    defined as additional attributes of the axis. The property ``is_uniform``
+    is automatically set to ``False``.
+
+    ``x`` itself is an instance of `BaseDataAxis`. By default, it will be a
+    `UniformDataAxis` with ``offset = 0`` and ``scale = 1`` of the given
+    ``size``. However, it can also be initialized with custom ``offset`` and
+    ``scale`` values. Alternatively, it can be a non-uniform `DataAxis`.
+
+    Parameters
+    ----------
+    expression: str
+        SymPy mathematical expression defining the axis.
+    x : BaseDataAxis
+        Defines x-values at which `expression` is evaluated.
+
+    Examples
+    --------
+    Sample dictionary for a FunctionalDataAxis:
+
+    >>> dict0 = {'expression': 'a / (x + 1) + b', 'a': 100, 'b': 10, 'size': 500}
+    >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
+    >>> s.axes_manager[0].get_axis_dictionary()
+    {'_type': 'FunctionalDataAxis',
+     'name': <undefined>,
+     'units': <undefined>,
+     'navigate': False,
+     'expression': 'a / (x + 1) + b',
+     'size': 500,
+     'x': {'_type': 'UniformDataAxis',
+      'name': <undefined>,
+      'units': <undefined>,
+      'navigate': <undefined>,
+      'size': 500,
+      'scale': 1.0,
+      'offset': 0.0},
+     'a': 100,
+     'b': 10}
+    """
     def __init__(self,
                  expression,
                  x=None,
                  index_in_array=None,
                  name=t.Undefined,
                  units=t.Undefined,
-                 navigate=t.Undefined,
+                 navigate=False,
                  size=t.Undefined,
+                 is_binned=False,
                  **parameters):
-        super().__init__(index_in_array, name, units, navigate)
+        super().__init__(
+            index_in_array=index_in_array,
+            name=name,
+            units=units,
+            navigate=navigate,
+            is_binned=is_binned,
+            **parameters)
+        # These trait needs to added dynamically to be removed when necessary
+        self.add_trait("x", t.Instance(BaseDataAxis))
         if x is None:
             if size is t.Undefined:
                 raise ValueError("Please provide either `x` or `size`.")
             self.x = UniformDataAxis(scale=1, offset=0, size=size)
         else:
-            self.x = x
-            self.size = self.x.size
+            if isinstance(x, dict):
+                self.x = create_axis(**x)
+            else:
+                self.x = x
+                self.size = self.x.size
         self._expression = expression
+        if '_type' in parameters:
+            del parameters['_type']
         # Compile function
         expr = _parse_substitutions(self._expression)
         variables = ["x"]
@@ -721,7 +916,6 @@ class FunctionalDataAxis(BaseDataAxis):
             raise ValueError(
                 "The values of the following expression parameters "
                 f"must be given as keywords: {set(expr_parameters) - set(parameters)}")
-
         self._function = lambdify(
             variables + expr_parameters, expr.evalf(), dummify=False)
         for parameter in parameters.keys():
@@ -759,19 +953,28 @@ class FunctionalDataAxis(BaseDataAxis):
             attributes = self.parameters_list
         return super().update_from(axis, attributes)
 
+    def calibrate(self, *args, **kwargs):
+        raise TypeError("This function works only for uniform axes.")
+
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
         d['expression'] = self._expression
         d.update({'size': self.size, })
-        d.update({'x': self.x.copy(), })
+        d.update({'x': self.x.get_axis_dictionary(), })
         for kwarg in self.parameters_list:
             d[kwarg] = getattr(self, kwarg)
         return d
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
+        axes_manager = self.axes_manager
+        d["_type"] = 'DataAxis'
         self.__class__ = DataAxis
         self.__init__(**d, axis=self.axis)
+        del self._expression
+        del self._function
+        self.remove_trait('x')
+        self.axes_manager = axes_manager
 
     def crop(self, start=None, end=None):
         """Crop the axis in place.
@@ -803,8 +1006,8 @@ class FunctionalDataAxis(BaseDataAxis):
     crop.__doc__ = DataAxis.crop.__doc__
 
     def _slice_me(self, slice_):
-        """Returns a slice to slice the corresponding data axis and
-        change the offset and scale of the UniformDataAxis accordingly.
+        """Returns a slice to slice the 'x' vector of the corresponding 
+        functional data axis and set the axis accordingly.
 
         Parameters
         ----------
@@ -822,23 +1025,61 @@ class FunctionalDataAxis(BaseDataAxis):
 
 
 class UniformDataAxis(BaseDataAxis, UnitConversion):
-    scale = t.CFloat(1)
-    offset = t.CFloat(0)
-    size = t.CInt(0)
+    """DataAxis class for a uniform axis defined through a ``scale``, an
+    ``offset`` and a ``size``.
+    
+    The most common type of axis. It is defined by the ``offset``, ``scale``
+    and ``size`` parameters, which determine the `initial value`, `spacing` and
+    `length` of the axis, respectively. The actual ``axis`` array is
+    automatically calculated from these three values. The ``UniformDataAxis``
+    is a special case of the ``FunctionalDataAxis`` defined by the function
+    ``scale * x + offset``.
+    
+    Parameters
+    ----------
+    offset : float
+        The first value of the axis vector.
+    scale : float
+        The spacing between axis points.
+    size : int
+        The number of points in the axis.
+    
+    Examples
+    --------
+    Sample dictionary for a `UniformDataAxis`:
+
+    >>> dict0 = {'offset': 300, 'scale': 1, 'size': 500}
+    >>> s = hs.signals.Signal1D(np.ones(500), axes=[dict0])
+    >>> s.axes_manager[0].get_axis_dictionary()
+    {'_type': 'UniformDataAxis',
+     'name': <undefined>,
+     'units': <undefined>,
+     'navigate': False,
+     'size': 500,
+     'scale': 1.0,
+     'offset': 300.0}
+    """
     def __init__(self,
                  index_in_array=None,
                  name=t.Undefined,
                  units=t.Undefined,
-                 navigate=t.Undefined,
-                 size=1.,
+                 navigate=False,
+                 size=1,
                  scale=1.,
-                 offset=0.):
+                 offset=0.,
+                 is_binned=False,
+                 **kwargs):
         super().__init__(
             index_in_array=index_in_array,
             name=name,
             units=units,
             navigate=navigate,
+            is_binned=is_binned,
+            **kwargs
             )
+        # These traits need to added dynamically to be removed when necessary
+        self.add_trait("scale", t.CFloat)
+        self.add_trait("offset", t.CFloat)
         self.scale = scale
         self.offset = offset
         self.size = size
@@ -877,12 +1118,36 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
                   'offset': self.offset})
         return d
 
+    def _parse_value_from_string(self, value):
+        """Return calibrated value from a suitable string """
+        if len(value) == 0:
+            raise ValueError("Cannot index with an empty string")
+        # Starting with 'rel', it must be relative slicing
+        elif value.startswith('rel'):
+            try:
+                relative_value = float(value[3:])
+            except ValueError:
+                raise ValueError("`rel` must be followed by a number in range [0, 1].")
+            if relative_value < 0 or relative_value > 1:
+                raise ValueError("Relative value must be in range [0, 1]")
+            value = self.low_value + relative_value * (self.high_value - self.low_value)
+        # if first character is a digit, try unit conversion
+        # otherwise we don't support it
+        elif value[0].isdigit():
+            value = self._get_value_from_value_with_units(value)
+        else:
+            raise ValueError(f"`{value}` is not a suitable string for slicing.")
+
+        return value
+
     def value2index(self, value, rounding=round):
-        """Return the closest index to the given value if between the limit.
+        """Return the closest index to the given value if between the axis limits.
 
         Parameters
         ----------
-        value : number or numpy array
+        value : number or string, or numpy array of number or string
+                if string, should either be a calibrated unit like "20nm"
+                or a relative slicing like "rel0.2".
 
         Returns
         -------
@@ -890,11 +1155,15 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
         Raises
         ------
-        ValueError if any value is out of the axis limits.
+        ValueError
+            If any value is out of the axis limits.
+            If the value is incorrectly formatted.
 
         """
         if value is None:
             return None
+
+        value = self._parse_value(value)
 
         if isinstance(value, (np.ndarray, da.Array)):
             if rounding is round:
@@ -1006,27 +1275,41 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
             d["name"] = name
         d.update(kwargs)
         this_kwargs = self.get_axis_dictionary()
+        self.remove_trait('scale')
+        self.remove_trait('offset')
         self.__class__ = FunctionalDataAxis
+        d["_type"] = 'FunctionalDataAxis'
         self.__init__(expression=expression, x=UniformDataAxis(**this_kwargs), **d)
         self.axes_manager = axes_manager
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
+        axes_manager = self.axes_manager
         self.__class__ = DataAxis
+        d["_type"] = 'DataAxis'
+        self.remove_trait('scale')
+        self.remove_trait('offset')
         self.__init__(**d, axis=self.axis)
+        self.axes_manager = axes_manager
 
-def serpentine_iter(shape):
+
+def _serpentine_iter(shape):
     '''Similar to np.ndindex, but yields indices
-    in serpentine pattern, like snake game
+    in serpentine pattern, like snake game.
+    Takes shape in hyperspy order, not numpy order.
 
     Code by Stackoverflow user Paul Panzer,
     from https://stackoverflow.com/questions/57366966/
+
+    Note that the [::-1] reversing is necessary to iterate first along
+    the x-direction on multidimensional navigators.
     '''
+    shape = shape[::-1]
     N = len(shape)
     idx = N*[0]
     drc = N*[1]
     while True:
-        yield (*idx,)
+        yield (*idx,)[::-1]
         for j in reversed(range(N)):
             if idx[j] + drc[j] not in (-1, shape[j]):
                 idx[j] += drc[j]
@@ -1034,6 +1317,16 @@ def serpentine_iter(shape):
             drc[j] *= -1
         else:  # pragma: no cover
             break
+
+def _flyback_iter(shape):
+    "Classic flyback scan pattern generator which yields indices in similar fashion to np.ndindex. Takes shape in hyperspy order, not numpy order."
+    shape = shape[::-1]
+    class ndindex_reversed(np.ndindex):
+        def __next__(self):
+            next(self._it)
+            return self._it.multi_index[::-1]
+
+    return ndindex_reversed(shape)
 
 @add_gui_method(toolkey="hyperspy.AxesManager")
 class AxesManager(t.HasTraits):
@@ -1054,7 +1347,6 @@ class AxesManager(t.HasTraits):
 
     Attributes
     ----------
-
     coordinates : tuple
         Get and set the current coordinates, if the navigation dimension
         is not 0. If the navigation dimension is 0, it raises
@@ -1065,6 +1357,10 @@ class AxesManager(t.HasTraits):
         AttributeError when attempting to set its value.
     signal_axes, navigation_axes : list
         Contain the corresponding DataAxis objects
+    iterpath : string or iterable
+        Sets the order of iterating through the indices in the navigation dimension.
+        Can be either "flyback" or "serpentine", or an iterable
+        of hyperspy navigation indices.
 
     Examples
     --------
@@ -1161,10 +1457,7 @@ class AxesManager(t.HasTraits):
 
         self._update_attributes()
         self._update_trait_handlers()
-        self._index = None  # index for the iterpath
-        # Can use serpentine or flyback scan pattern
-        # for the axes manager indexing
-        self._iterpath = 'flyback'
+        self.iterpath = 'flyback'
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes.index',
@@ -1325,8 +1618,10 @@ class AxesManager(t.HasTraits):
         return tuple(cslice)
 
     def create_axes(self, axes_list):
-        """Given a list of dictionaries defining the axes properties,
-        create the DataAxis instances and add them to the AxesManager.
+        """Given a list of either axes dictionaries or axes objects, these are
+        added to the AxesManager. In case dictionaries defining the axes
+        properties are passed, the DataAxis/UniformDataAxis/FunctionalDataAxis
+        instances are first created.
 
         The index of the axis in the array and in the `_axes` lists
         can be defined by the index_in_array keyword if given
@@ -1345,7 +1640,10 @@ class AxesManager(t.HasTraits):
         if len(indices) == len(axes_list):
             axes_list.sort(key=lambda x: x['index_in_array'])
         for axis_dict in axes_list:
-            self._append_axis(**axis_dict)
+            if isinstance(axis_dict,dict):
+                self._append_axis(**axis_dict)
+            else:
+                self._axes.append(axis_dict)
 
     def set_axis(self, axis, index_in_axes_manager):
         self._axes[index_in_axes_manager] = axis
@@ -1357,61 +1655,105 @@ class AxesManager(t.HasTraits):
         if self._max_index != 0:
             self._max_index -= 1
 
+    @property
+    def iterpath(self):
+        "Sets or returns the current iteration path through the axes indices"
+        return self._iterpath
+
+    @iterpath.setter
+    def iterpath(self, path):
+        if isinstance(path, str):
+            if path == 'serpentine':
+                self._iterpath = 'serpentine'
+                self._iterpath_generator = _serpentine_iter(self.navigation_shape)
+            elif path == 'flyback':
+                self._iterpath = 'flyback'
+                self._iterpath_generator = _flyback_iter(self.navigation_shape)
+            else:
+                raise ValueError(
+                    f'The iterpath scan pattern is set to `"{path}"`. '
+                    'It must be either "serpentine" or "flyback", or an iterable '
+                    'of navigation indices, and is set either as multifit '
+                    '`iterpath` argument or `axes_manager.iterpath`'
+                    )
+        else:
+            # Passing a custom indices iterator
+            try:
+                iter(path) # If this fails, its not an iterable and we raise TypeError
+            except TypeError as e:
+                raise TypeError(
+                    f'The iterpath `{path}` is not an iterable. '
+                    'Ensure it is an iterable like a list, array or generator.'
+                    ) from e
+            try:
+                if not (inspect.isgenerator(path) or type(path) is GeneratorLen):
+                # If iterpath is a generator, then we can't check its first value, have to trust it
+                    first_indices = path[0]
+                    if not isinstance(first_indices, Iterable):
+                        raise TypeError
+                    assert len(first_indices) == self.navigation_dimension
+            except TypeError as e:
+                raise TypeError(
+                    f"Each set of indices in the iterpath should be an iterable, e.g. `(0,)` or `(0,0,0)`. "
+                    f"The first entry currently looks like: `{first_indices}`, and does not satisfy this requirement."
+                    ) from e
+            except AssertionError as e:
+                raise ValueError(
+                    f"The current iterpath yields indices of length "
+                    f"{len(path)}. It should deliver incides with length "
+                    f"equal to the navigation dimension, which is {self.navigation_dimension}."
+                    ) from e
+            else:
+                self._iterpath = path
+                self._iterpath_generator = iter(self._iterpath)
+
+    def _get_iterpath_size(self, masked_elements=0):
+        "Attempts to get the iterpath size, returning None if it is unknown"
+        if isinstance(self.iterpath, str):
+            # flyback and serpentine have well-defined lengths <- navigation_size
+            maxval = self.navigation_size - masked_elements
+        else:
+            try:
+                maxval = len(self.iterpath)
+                if masked_elements:
+                    # Checking if mask indices exist in the iterpath could take a long time,
+                    # or may not be possible in the case of a generator.
+                    _logger.info(
+                    ("The progressbar length cannot be estimated when using both custom iterpath and a mask."
+                    "The progressbar may terminate before it appears complete. This can safely be ignored."),
+                    )
+            except TypeError:
+                # progressbar is shown, so user can monitor "iterations per second"
+                # but the length of the bar is unknown
+                maxval = None
+                _logger.info(
+                    ("The AxesManager `iterpath` is missing the `__len__` method, so does not have a known length. "
+                    "The progressbar will only show run time and iterations per second, but no actual progress indicator."),
+                    )
+        return maxval
+
     def __next__(self):
         """
-        Standard iterator method, updates the index and returns the
-        current coordinates
+        Standard iterator method, returns the current coordinates
 
         Returns
         -------
-        val : tuple of ints
+        self.indices : tuple of ints
             Returns a tuple containing the coordinates of the current
             iteration.
 
         """
-        if self._iterpath not in ['serpentine', 'flyback']:
-            raise ValueError('''The iterpath scan pattern is set to {}. \
-            It must be either "serpentine" or "flyback", and is set either \
-            as multifit `iterpath` argument or \
-            `axes_manager._iterpath`'''.format(self._iterpath))
-        if self._index is None:
-            self._index = 0
-            if self._iterpath == 'serpentine':
-                self._iterpath_generator = serpentine_iter(
-                    self._navigation_shape_in_array)
-                val = next(self._iterpath_generator)
-            else: # flyback
-                val = (0,) * self.navigation_dimension
-            self.indices = val
-        elif self._index >= self._max_index:
-            raise StopIteration
-        else:
-            self._index += 1
-            if self._iterpath == 'serpentine':
-                # In case we need to start further out in the generator
-                # for some reason. This is possibly expensive, as it needs
-                # to calculate all previous values first
-                # self._iterpath_generator = itertools.islice(
-                #     serpentine_iter(self._navigation_shape_in_array),
-                #     self._index,
-                #     None)
-                val = next(self._iterpath_generator)[::-1]
-            else:
-                val = np.unravel_index(
-                    self._index,
-                    tuple(self._navigation_shape_in_array)
-                )[::-1]
-            self.indices = val
-        return val
+        self.indices = next(self._iterpath_generator)
+        return self.indices
 
     def __iter__(self):
-        # Reset the _index that can have a value != None due to
-        # a previous iteration that did not hit a StopIteration
-        self._index = None
+        # re-initialize iterpath as it is set before correct data shape
+        # is created before data shape is known
+        self.iterpath = self._iterpath
         return self
 
     def _append_axis(self, **kwargs):
-        axis = _create_axis(**kwargs)
+        axis = create_axis(**kwargs)
         axis.axes_manager = self
         self._axes.append(axis)
 
@@ -1829,27 +2171,12 @@ class AxesManager(t.HasTraits):
 
     @property
     def coordinates(self):
-        """Get the coordinates of the navigation axes.
-
-        Returns
-        -------
-        list
-
-        """
+        # See class docstring
         return tuple([axis.value for axis in self.navigation_axes])
 
     @coordinates.setter
     def coordinates(self, coordinates):
-        """Set the coordinates of the navigation axes.
-
-        Parameters
-        ----------
-        coordinates : tuple
-            The len of the tuple must coincide with the navigation
-            dimension
-
-        """
-
+        # See class docstring
         if len(coordinates) != self.navigation_dimension:
             raise AttributeError(
                 "The number of coordinates must be equal to the "
@@ -1866,27 +2193,12 @@ class AxesManager(t.HasTraits):
 
     @property
     def indices(self):
-        """Get the index of the navigation axes.
-
-        Returns
-        -------
-        list
-
-        """
+        # See class docstring
         return tuple([axis.index for axis in self.navigation_axes])
 
     @indices.setter
     def indices(self, indices):
-        """Set the index of the navigation axes.
-
-        Parameters
-        ----------
-        indices : tuple
-            The len of the tuple must coincide with the navigation
-            dimension
-
-        """
-
+        # See class docstring
         if len(indices) != self.navigation_dimension:
             raise AttributeError(
                 "The number of indices must be equal to the "
@@ -1991,4 +2303,26 @@ class AxesManager(t.HasTraits):
         %s
         """
 
+class GeneratorLen:
+    """Helper class for creating a generator-like object with a known length.
+    Useful when giving a generator as input to the AxesManager iterpath, so that the
+    length is known for the progressbar.
 
+    Found at: https://stackoverflow.com/questions/7460836/how-to-lengenerator/7460986
+
+    Parameters
+        ----------
+        gen : generator
+            The Generator containing hyperspy navigation indices.
+        length : int
+            The manually-specified length of the generator.
+    """
+    def __init__(self, gen, length):
+        self.gen = gen
+        self.length = length
+
+    def __len__(self):
+        return self.length
+
+    def __iter__(self):
+        return self.gen

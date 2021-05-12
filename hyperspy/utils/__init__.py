@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -48,7 +48,7 @@ from hyperspy.misc.utils import stack, transpose
 
 
 def print_known_signal_types():
-    """Print all known `signal_type`\s
+    r"""Print all known `signal_type`\s
 
     This includes `signal_type`\s from all installed packages that
     extend HyperSpy.

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -170,6 +170,10 @@ class PlotConfig(t.HasTraits):
                                'ctrl+alt+shift'], label='Modifier key for 3rd and 4th dimensions')  # 0 elem is default
     modifier_dims_45 = t.Enum(['alt', 'ctrl', 'shift', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
                                'ctrl+alt+shift'], label='Modifier key for 5th and 6th dimensions')  # 0 elem is default
+    pick_tolerance = t.CFloat(7.5,
+                              label='Pick tolerance',
+                              desc='The pick tolerance of ROIs in screen pixels.'
+                              )
 
 
 class EDSConfig(t.HasTraits):

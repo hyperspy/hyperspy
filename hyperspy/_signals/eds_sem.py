@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -87,6 +87,11 @@ class EDSSEM_mixin:
             The live time (real time corrected from the "dead time")
             is divided by the number of pixel (spectrums), giving an
             average live time.
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
 
         Examples
         --------

@@ -3,30 +3,32 @@ channels:
 - defaults
 - conda-forge
 dependencies:
-- dask
+- dask-core >2.0
 - dill
 - h5py
 - imageio
 - ipyparallel
 - matplotlib-base
+- matplotlib-scalebar
 - mrcz
 - natsort
 - numba
 - numexpr
 - numpy
 - pint
-- PTable
+- prettytable
+- python
 - python-dateutil
-- pyusid
 - pyyaml
 - requests
 - scikit-image
 - scikit-learn
 - scipy
 - sparse
-- statsmodels
 - sympy
-- tifffile >=2019.07.26
-- traits
+- tifffile >=2019.07.26,!=2021.3.31
+- toolz
 - tqdm
+- traits
+
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -159,26 +159,81 @@ class TestPlotLine2DWidget():
         return self.im._plot.signal_plot.figure
 
 
+class TestPlotCircleWidget():
+
+    def setup_method(self, method):
+        # Create test image 100x100 pixels:
+        N = 100
+        im = Signal2D(np.arange(N**2).reshape([N]*2))
+        im.axes_manager[0].scale = 1.2
+        im.axes_manager[1].scale = 1.2
+        circle = widgets.CircleWidget(im.axes_manager)
+        self.im = im
+        self.circle = circle
+
+    def test_change_size_snap_size(self):
+        # Need to plot the signal to set the mpl axis to the widget
+        im = self.im
+        circle = self.circle
+        im.plot()
+        circle.set_mpl_ax(im._plot.signal_plot.ax)
+        circle.snap_all = True
+
+        circle.position = (10, 10)
+        circle.size = (5, 1.0)
+        assert circle.position == (9.6, 9.6)
+        np.testing.assert_allclose(circle.size, (5.4, 0.6))
+
+        circle.decrease_size()
+        np.testing.assert_allclose(circle.size, (4.2, 0.0))
+        circle.decrease_size()
+        np.testing.assert_allclose(circle.size, (3.0, 0.0))
+
+        circle.increase_size()
+        np.testing.assert_allclose(circle.size, (4.2, 0.0))
+
+        circle.size = (5, 1.0)
+        circle.increase_size()
+        np.testing.assert_allclose(circle.size, (6.6, 1.8))
+
+    def test_change_size(self):
+        im = self.im
+        circle = self.circle
+        im.plot()
+        circle.set_mpl_ax(im._plot.signal_plot.ax)
+        circle.snap_all = False
+
+        position, size = (10, 10), (5, 2.5)
+        circle.position = position
+        circle.size = size
+        assert circle.position == position
+        assert circle.size == size
+
+
 class TestPlotRangeWidget():
 
     def setup_method(self, method):
-        self.s = Signal1D(np.arange(50))
-        self.s.axes_manager[0].scale = 1.2
-        self.range = widgets.RangeWidget(self.s.axes_manager)
+        s = Signal1D(np.arange(50))
+        s.axes_manager[0].scale = 1.2
+        range_widget = widgets.RangeWidget(s.axes_manager)
+        self.s = s
+        self.range_widget = range_widget
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_range(self):
-        self.s.plot()
-        self.range.set_mpl_ax(self.s._plot.signal_plot.ax)
-        assert self.range.ax == self.s._plot.signal_plot.ax
-        assert self.range.color == 'red'  # default color
-        assert self.range.position == (0.0, )
-        assert self.range.size == (1.2, )
-        assert self.range.span.rect.get_alpha() == 0.5
+        s = self.s
+        range_widget = self.range_widget
+        s.plot()
+        range_widget.set_mpl_ax(s._plot.signal_plot.ax)
+        assert range_widget.ax == s._plot.signal_plot.ax
+        assert range_widget.color == 'red'  # default color
+        assert range_widget.position == (0.0, )
+        assert range_widget.size == (1.2, )
+        assert range_widget.span.rect.get_alpha() == 0.5
 
-        w = widgets.RangeWidget(self.s.axes_manager, color='blue')
-        w.set_mpl_ax(self.s._plot.signal_plot.ax)
+        w = widgets.RangeWidget(s.axes_manager, color='blue')
+        w.set_mpl_ax(s._plot.signal_plot.ax)
         w.set_ibounds(left=4, width=3)
         assert w.color == 'blue'
         color_rgba = matplotlib.colors.to_rgba('blue', alpha=0.5)
@@ -187,9 +242,9 @@ class TestPlotRangeWidget():
         np.testing.assert_allclose(w.position[0], 4.8)
         np.testing.assert_allclose(w.size[0], 3.6)
 
-        w2 = widgets.RangeWidget(self.s.axes_manager)
-        w2.set_mpl_ax(self.s._plot.signal_plot.ax)
-        assert w2.ax == self.s._plot.signal_plot.ax
+        w2 = widgets.RangeWidget(s.axes_manager)
+        w2.set_mpl_ax(s._plot.signal_plot.ax)
+        assert w2.ax == s._plot.signal_plot.ax
 
         w2.set_bounds(left=24.0, width=12.0)
         w2.color = 'green'
@@ -197,7 +252,29 @@ class TestPlotRangeWidget():
         w2.alpha = 0.25
         assert w2.alpha == 0.25
 
-        return self.s._plot.signal_plot.figure
+        return s._plot.signal_plot.figure
+
+    @pytest.mark.parametrize('render_figure', [True, False])
+    def test_set_on(self, render_figure):
+        s = self.s
+        range_widget = self.range_widget
+        s.plot()
+        range_widget.ax = s._plot.signal_plot.ax
+        range_widget._is_on = False
+
+        range_widget.set_on(True, render_figure=render_figure)
+        assert range_widget.span.visible
+
+        range_widget.set_on(False, render_figure=render_figure)
+        assert range_widget.span is None
+        assert range_widget.ax is None
+
+    def test_update(self):
+        s = self.s
+        range_widget = self.range_widget
+        s.plot()
+        range_widget.set_mpl_ax(s._plot.signal_plot.ax)
+        range_widget.span.update()
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
@@ -226,9 +303,10 @@ class TestPlotRangeWidget():
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_ModifiableSpanSelector(self):
-        self.s.plot()
+        s = self.s
+        s.plot()
         from hyperspy.drawing._widgets.range import ModifiableSpanSelector
-        ax = self.s._plot.signal_plot.ax
+        ax = s._plot.signal_plot.ax
         span_v = ModifiableSpanSelector(ax, direction='vertical')
         span_v.set_initial((15, 20))
         assert span_v.range == (15, 20)
@@ -249,4 +327,4 @@ class TestPlotRangeWidget():
         assert span_h.range == (40, 45)
         ax.figure.canvas.draw_idle()
 
-        return self.s._plot.signal_plot.figure
+        return s._plot.signal_plot.figure
