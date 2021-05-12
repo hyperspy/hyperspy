@@ -383,7 +383,7 @@ def get_luminescence_spectrum_nonuniform(uniform=False, add_baseline=False, add_
 
     Example
     -------
-    >>> import hs.datasets.artifical_data as ad
+    >>> import hyperspy.datasets.artifical_data as ad
     >>> s = ad.get_luminescence_spectrum_nonuniform()
     >>> s.plot()
 
@@ -481,7 +481,7 @@ def get_luminescence_map_nonuniform(uniform=False, add_baseline=False, add_noise
 
     Example
     -------
-    >>> import hs.datasets.artifical_data as ad
+    >>> import hyperspy.datasets.artifical_data as ad
     >>> s = ad.get_luminescence_map_nonuniform()
     >>> s.plot()
 
