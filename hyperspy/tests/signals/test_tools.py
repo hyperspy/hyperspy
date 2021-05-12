@@ -275,11 +275,16 @@ class TestOutArg:
         s = signals.Signal1D(np.arange(100))
         if mask:
             s.data = np.ma.masked_array(s.data, mask=(s < 50))
-        # Since s haven't any navigation axis, it returns the same signal as
-        # default
+        # Since s does not have any navigation axis, it returns the same signal
+        # as default
         np.testing.assert_array_equal(s, s.sum())
         # When we specify an axis, it actually takes the sum.
         np.testing.assert_array_equal(s.data.sum(), s.sum(axis=0))
+
+    def test_sum_non_uniform_unbinned(self):
+        self.s.axes_manager["E"].convert_to_non_uniform_axis()
+        with pytest.warns(UserWarning, match="You are summing over"):
+            self._run_single(self.s.sum, self.s, dict(axis=("E")))
 
     def test_masked_arrays_out(self):
         s = self.s

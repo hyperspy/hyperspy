@@ -2148,8 +2148,8 @@ class BaseSignal(FancySlicing,
         data : :py:class:`numpy.ndarray`
            The signal data. It can be an array of any dimensions.
         axes : [dict/axes], optional
-            List of either dictionaries or axes objects to define the axes (see 
-            the documentation of the :py:class:`~hyperspy.axes.AxesManager` 
+            List of either dictionaries or axes objects to define the axes (see
+            the documentation of the :py:class:`~hyperspy.axes.AxesManager`
             class for more details).
         attributes : dict, optional
             A dictionary whose items are stored as attributes.
@@ -2676,7 +2676,7 @@ class BaseSignal(FancySlicing,
                 navigator = "slider"
             elif (self.axes_manager.navigation_dimension == 1 and
                     self.axes_manager.signal_dimension == 1):
-                if (self.axes_manager.navigation_axes[0].is_uniform and 
+                if (self.axes_manager.navigation_axes[0].is_uniform and
                         self.axes_manager.signal_axes[0].is_uniform):
                     navigator = "data"
                 else:
@@ -3095,7 +3095,7 @@ class BaseSignal(FancySlicing,
 
         Raises
         ------
-        NotImplementedError 
+        NotImplementedError
             If trying to rebin over a non-uniform axis.
 
         Examples
@@ -3200,7 +3200,7 @@ class BaseSignal(FancySlicing,
 
         Raises
         ------
-        NotImplementedError 
+        NotImplementedError
             If trying to split along a non-uniform axis.
 
         Returns
@@ -3664,10 +3664,10 @@ class BaseSignal(FancySlicing,
 
         Note
         ----
-        If you intend to calculate the numerical integral, please use the
-        :py:meth:`integrate1D` function instead. To avoid erroneous misuse of the
-        `sum` function as integral, it raises a warning when working with 
-        a non-uniform axis.
+        If you intend to calculate the numerical integral of an unbinned signal,
+        please use the :py:meth:`integrate1D` function instead. To avoid
+        erroneous misuse of the `sum` function as integral, it raises a warning
+        when working with an unbinned, non-uniform axis.
 
         See also
         --------
@@ -3690,10 +3690,10 @@ class BaseSignal(FancySlicing,
         axes = self.axes_manager[axis]
         if not np.iterable(axes):
             axes = (axes,)
-        if any([not ax.is_uniform for ax in axes]):
-            warnings.warn("You are summing over a non-uniform axis. The result "
-                          "can not be used as an approximation of the "
-                          "integral of the signal. For this functionality, "
+        if any([(not ax.is_uniform and not ax.is_binned) for ax in axes]):
+            warnings.warn("You are summing over an unbinned, non-uniform axis. "
+                          "The result can not be used as an approximation of "
+                          "the integral of the signal. For this functionality, "
                           "use integrate1D instead.")
 
         return self._apply_function_on_data_and_remove_axis(
@@ -3965,7 +3965,7 @@ class BaseSignal(FancySlicing,
         proper :py:meth:`derivative` function instead. To avoid erroneous
         misuse of the `diff` function as derivative, it raises an error when
         when working with a non-uniform axis.
-        
+
         See also
         --------
         derivative, integrate1D, integrate_simpson
@@ -4130,7 +4130,7 @@ class BaseSignal(FancySlicing,
 
         Raises
         ------
-        NotImplementedError 
+        NotImplementedError
             If performing FFT along a non-uniform axis.
 
         Examples
@@ -4226,7 +4226,7 @@ class BaseSignal(FancySlicing,
 
         Raises
         ------
-        NotImplementedError 
+        NotImplementedError
             If performing IFFT along a non-uniform axis.
 
         Examples
@@ -4284,8 +4284,9 @@ class BaseSignal(FancySlicing,
 
         The integration is performed using
         `Simpson's rule <https://en.wikipedia.org/wiki/Simpson%%27s_rule>`_ if
-        `axis.is_binned` is ``False`` and simple summation over the given axis 
-        if ``True``.
+        `axis.is_binned` is ``False`` and simple summation over the given axis
+        if ``True`` (along binned axes, the detector already provides
+        integrated counts per bin).
 
         Parameters
         ----------
@@ -4312,12 +4313,12 @@ class BaseSignal(FancySlicing,
         (64,64)
 
         """
-        if not is_binned(self, axis=axis):
+        if is_binned(self, axis=axis):
         # in v2 replace by
-        # not self.axes_manager[axis].is_binned
-            return self.integrate_simpson(axis=axis, out=out)
-        else:
+        # self.axes_manager[axis].is_binned
             return self.sum(axis=axis, out=out)
+        else:
+            return self.integrate_simpson(axis=axis, out=out)
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def indexmin(self, axis, out=None, rechunk=True):
