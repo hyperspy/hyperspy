@@ -14,6 +14,12 @@ ADD_POWERLAW_DOCSTRING = \
         If True, adds a powerlaw background to the spectrum. Default is False.
     """
 
+ADD_BASELINE_DOCSTING = \
+"""add_baseline : bool
+        If true, adds a constant baseline to the spectrum. Conversion to
+        energy representation will turn the constant baseline into inverse
+        powerlaw.
+"""
 
 ADD_NOISE_DOCSTRING = \
 """add_noise : bool
@@ -28,6 +34,7 @@ RETURNS_DOCSTRING = \
     -------
     :py:class:`~hyperspy._signals.eels.EELSSpectrum`
     """
+
 
 
 def get_low_loss_eels_signal(add_noise=True, random_state=None):
@@ -356,3 +363,236 @@ def get_atomic_resolution_tem_signal2d():
 
     s = Signal2D(image)
     return s
+
+
+def get_luminescence_spectrum_nonuniform(uniform=False, add_baseline=False, add_noise=True,random_state=None):
+    """Get an artificial luminescence spectrum in wavelength (nm, uniform) or
+    energy (eV, non-uniform) scale, simulating luminescence data recorded with a
+    diffracting spectrometer. Some random noise is also added to the spectrum,
+    to simulate experimental noise.
+
+    Parameters
+    ----------
+    uniform: bool.
+        return uniform (wavelength) or non-uniform (energy) spectrum
+
+    add_baseline: bool.
+        add a baseline or not
+
+    add_noise: bool.
+        add experimental noise to the data
+
+    random_state: None or int
+        initialise state of the random number generator
+
+    Example
+    -------
+    >>> import hs.datasets.artifical_data as ad
+    >>> s = ad.get_luminescence_spectrum_nonuniform()
+    >>> s.plot()
+
+    With constant baseline
+
+    >>> s = ad.get_luminescence_spectrum_nonuniform(uniform=True, add_baseline=True)
+    >>> s.plot()
+
+    To make the noise the same for multiple spectra, which can
+    be useful for testing fitting routines
+
+    >>> s1 = ad.get_luminescence_spectrum_nonuniform(random_state=10)
+    >>> s2 = ad.get_luminescence_spectrum_nonuniform(random_state=10)
+    >>> (s1.data == s2.data).all()
+    True
+
+    See also
+    --------
+    get_low_loss_eels_signal,
+    get_core_loss_eels_signal,
+    get_low_loss_eels_line_scan_signal,
+    get_core_loss_eels_line_scan_signal,
+    get_core_loss_eels_model,
+    get_atomic_resolution_tem_signal2d,
+    get_luminescence_map_nonuniform
+    """
+    from hyperspy.signals import Signal1D
+    from hyperspy import components1d
+
+    #Initialisation of random number generator
+    random_state = check_random_state(random_state)
+
+    #Creating a uniform data axis, roughly similar to Horiba iHR320 with a 150 mm-1 grating
+    nm_axis = UniformDataAxis(
+        index_in_array=None,
+        name="Wavelength",
+        units="nm",
+        navigate=False,
+        size=1024,
+        scale=0.54,
+        offset=222.495,
+        is_binned=False,
+        )
+
+    #Artificial luminescence peak
+    gaussian_peak = components1d.Gaussian(A=5000, centre=666, sigma=25)
+
+    #Creating data array, possibly with noise and baseline
+    data = gaussian_peak.function(nm_axis.axis)
+    if add_noise:
+        data += (random_state.uniform(size=len(nm_axis.axis)) - 0.5)*1.4
+    if add_baseline:
+        data += 350.
+
+    #Creating the signal with axis and data
+    sig = hs.signals.Signal1D(data,axes=[nm_axis])
+    sig.metadata.General.title = 'Artificial Luminescence Spectrum'
+
+    #if not uniform, transformation into non-linear axis
+    if not uniform:
+        hc = 1239.84198 #nm/eV
+
+        #eV axis creation. Note how the slice is inverted to have low energy first
+        evax = FunctionalDataAxis(expression="a/x",
+                                  x=sig.isig[::-1].axes_manager[0],
+                                  a=hc,
+                                  name='Energy',
+                                  units='eV',
+                                  navigate=False)
+
+        #Creating the signal, also with energy inverted
+        sig = hs.signals.Signal1D(data[::-1]*hc/evax.axis**2,axes=[evax])
+        sig.metadata.General.title = 'Artificial Luminescence Spectrum'
+
+    return sig
+
+get_luminescence_spectrum_nonuniform.__doc__ %= (ADD_BASELINE_DOCSTING,
+                                                 ADD_NOISE_DOCSTRING)
+
+def get_luminescence_map_nonuniform(uniform=False, add_baseline=False, add_noise=True,random_state=None):
+    """Get an artificial luminescence 10-by-10 map in wavelength (nm, uniform)
+    or energy (eV, non-uniform) scale, simulating luminescence spectral maps
+    recorded with a diffracting spectrometer. Some random noise can also be
+    added to to simulate experimental noise.
+
+    Parameters
+    ----------
+    uniform: bool.
+        return uniform (wavelength) or non-uniform (energy) spectrum
+
+    add_baseline: bool.
+        add a baseline or not
+
+    add_noise: bool.
+        add experimental noise to the data
+
+    random_state: None or int
+        initialise state of the random number generator
+
+    Example
+    -------
+    >>> import hs.datasets.artifical_data as ad
+    >>> s = ad.get_luminescence_map_nonuniform()
+    >>> s.plot()
+
+    With constant baseline
+
+    >>> s = ad.get_luminescence_map_nonuniform(uniform=True, add_baseline=True)
+    >>> s.plot()
+
+    Make the noise the same for multiple spectra, which can
+    be useful for testing fitting routines
+
+    >>> s1 = ad.get_luminescence_map_nonuniform(random_state=10)
+    >>> s2 = ad.get_luminescence_map_nonuniform(random_state=10)
+    >>> (s1.data == s2.data).all()
+    True
+
+    See also
+    --------
+    get_low_loss_eels_signal,
+    get_core_loss_eels_signal,
+    get_low_loss_eels_line_scan_signal,
+    get_core_loss_eels_line_scan_signal,
+    get_core_loss_eels_model,
+    get_atomic_resolution_tem_signal2d,
+    get_luminescence_spectrum_nonuniform
+    """
+    from hyperspy.signals import Signal1D
+    from hyperspy import components1d
+
+    #Initialisation of random number generator
+    random_state = check_random_state(random_state)
+
+    #Creating a uniform data axis, roughly similar to Horiba iHR320 with a 150 mm-1 grating
+    nm_axis = UniformDataAxis(
+        index_in_array=None,
+        name="Wavelength",
+        units="nm",
+        navigate=False,
+        size=1024,
+        scale=0.54,
+        offset=222.495,
+        is_binned=False,
+        )
+    #Spatial axes
+    spax_x = UniformDataAxis(index_in_array=None,
+        name="X",
+        units="um",
+        navigate=False,
+        size=10,
+        scale=2.1,
+        offset=0,
+        is_binned=False,
+    )
+    spax_y = UniformDataAxis(index_in_array=None,
+        name="Y",
+        units="um",
+        navigate=False,
+        size=10,
+        scale=2.1,
+        offset=0,
+        is_binned=False,
+    )
+
+    #Artificial luminescence peak
+    gaussian_peak = components1d.Gaussian(A=5000, centre=666, sigma=25)
+
+    #Creating data array
+    data = np.zeros((100,1024))
+    #c-style works too!
+    for i in range(100):
+        #Creating data array, possibly with noise and baseline
+        data[i] = gaussian_peak.function(nm_axis.axis)
+        if add_noise:
+            data[i] += (random_state.uniform(size=len(nm_axis.axis)) - 0.5)*1.4
+        if add_baseline:
+            data[i] += 350.
+
+    #Creating the signal with axis and data
+    data = data.reshape((10,10,1024))
+    sig = hs.signals.Signal1D(data,axes=[spax_y,spax_x,nm_axis])
+    #sig.metadata.General.title = 'Artificial Luminescence map'
+
+    #if not uniform, transformation into non-linear axis
+    if not uniform:
+        hc = 1239.84198 #nm/eV
+
+        #eV axis creation. Note how the slice is inverted to have low energy first
+        evax = FunctionalDataAxis(expression="a/x",
+                                  x=sig.isig[::-1].axes_manager.signal_axes[0],
+                                  a=hc,
+                                  name='Energy',
+                                  units='eV',
+                                  navigate=False)
+
+        spax_x = spax_x.get_axis_dictionary()
+        spax_y = spax_y.get_axis_dictionary()
+        evax_dict = evax.get_axis_dictionary()
+
+        #Creating the signal, also with energy inverted
+        sig = hs.signals.Signal1D(data*hc/evax.axis**2,axes=[spax_y,spax_y,evax_dict])
+        sig.metadata.General.title = 'Artificial Luminescence Spectrum'
+
+    return sig
+
+get_luminescence_map_nonuniform.__doc__ %= (ADD_BASELINE_DOCSTING,
+                                            ADD_NOISE_DOCSTRING)
