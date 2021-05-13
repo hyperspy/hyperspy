@@ -1636,6 +1636,19 @@ class AxesManager(t.HasTraits):
                 self._axes.append(axis_dict)
 
     def set_axis(self, axis, index_in_axes_manager):
+        """Replace an axis of current signal with one given in argument.
+        Parameters
+        ----------
+        axis: BaseDataAxis axis to replace the current axis with
+
+        index_in_axes_manager: index of the axis in current signal to remplace
+            with axis passed in argument 
+
+        See also
+        --------
+        _append_axis
+
+        """
         self._axes[index_in_axes_manager] = axis
 
     def _update_max_index(self):
