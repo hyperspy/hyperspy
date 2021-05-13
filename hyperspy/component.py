@@ -26,7 +26,7 @@ from distutils.version import LooseVersion
 from pathlib import Path
 
 import hyperspy
-from hyperspy.misc.utils import slugify
+from hyperspy.misc.utils import slugify, is_binned
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
@@ -1216,3 +1216,38 @@ class Component(t.HasTraits):
         else:
             display_pretty(current_component_values(
                 self, only_free=only_free))
+
+
+def _get_scaling_factor(signal, axis, parameter):
+    """
+    Convenience function to get the scaling factor required to take into
+    account binned axis.
+
+    Parameters
+    ----------
+    signal : BaseSignal
+    axis : BaseDataAxis
+    parameter : float or numpy array
+        The parame
+
+    Returns
+    -------
+    scaling_factor
+
+    """
+
+    if is_binned(signal):
+    # in v2 replace by
+    #if axis.is_binned:
+        if axis.is_uniform:
+            scaling_factor = axis.scale
+        else:
+            if isinstance(parameter, (int, float)):
+                parameter_idx = axis.value2index(parameter)
+            else:
+                parameter_idx = [axis.value2index(p) for p in parameter]
+            scaling_factor = np.gradient(axis.axis)[parameter_idx]
+    else:
+        scaling_factor = 1
+
+    return scaling_factor

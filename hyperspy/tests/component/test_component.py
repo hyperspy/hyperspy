@@ -16,12 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import pytest
 from unittest import mock
 
 import numpy as np
 
 from hyperspy.axes import AxesManager
-from hyperspy.component import Component
+from hyperspy.component import Component, _get_scaling_factor
+from hyperspy._signals.signal1d import Signal1D
 
 
 class TestMultidimensionalActive:
@@ -263,3 +265,23 @@ class TestCallMethods:
         c.model.__call__.return_value = np.array([1.1, 1.3])
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=True)
         np.testing.assert_array_equal(res, np.array([1.1, np.nan, 1.3]))
+
+
+@pytest.mark.parametrize('is_binned', [True, False])
+@pytest.mark.parametrize('non_uniform', [True, False])
+@pytest.mark.parametrize('dim', [1, 2, 3])
+def test_get_scaling_parameter(is_binned, non_uniform, dim):
+    shape = [10 + i for i in range(dim)]
+    signal = Signal1D(np.arange(np.prod(shape)).reshape(shape[::-1]))
+    axis = signal.axes_manager.signal_axes[0]
+    axis.is_binned = is_binned
+    axis.scale = 0.5
+    if non_uniform:
+        axis.convert_to_non_uniform_axis()
+    centre = np.ones(shape[::-2])
+    scaling_factor = _get_scaling_factor(signal, axis, centre)
+
+    if is_binned:
+        assert scaling_factor == 0.5
+    else:
+        assert scaling_factor == 1

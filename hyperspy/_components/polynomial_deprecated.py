@@ -126,13 +126,18 @@ class Polynomial(Component):
         -------
         bool
         """
-        super(Polynomial, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
-        # using the mean of the gradient for non-uniform axes is a best guess
-        # to the scaling of binned signals for the estimation
-        scaling_factor = axis.scale if axis.is_uniform \
-                         else np.mean(np.gradient(axis.axis))
+
+        if is_binned(signal):
+        # in v2 replace by
+        #if axis.is_binned:
+            # using the mean of the gradient for non-uniform axes is a best
+            # guess to the scaling of binned signals for the estimation
+            scaling_factor = axis.scale if axis.is_uniform \
+                             else np.mean(np.gradient(axis.axis), axis=-1)
+
         if only_current is True:
             estimation = np.polyfit(axis.axis[i1:i2],
                                     signal()[i1:i2],

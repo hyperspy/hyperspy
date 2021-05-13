@@ -29,19 +29,19 @@ class Offset(Component):
     r"""Component to add a constant value in the y-axis.
 
     .. math::
-    
+
         f(x) = k
 
     ============ =============
-    Variable      Parameter 
+    Variable      Parameter
     ============ =============
-    :math:`k`     offset   
+    :math:`k`     offset
     ============ =============
 
     Parameters
     -----------
-    offset : float 
-        
+    offset : float
+
     """
 
     def __init__(self, offset=0.):
@@ -86,13 +86,17 @@ class Offset(Component):
         bool
 
         """
-        super(Offset, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
-        # using the mean of the gradient for non-uniform axes is a best guess
-        # to the scaling of binned signals for the estimation
-        scaling_factor = axis.scale if axis.is_uniform \
-                         else np.mean(np.gradient(axis.axis))
+        if is_binned(signal):
+        # in v2 replace by
+        #if axis.is_binned:
+            # using the mean of the gradient for non-uniform axes is a best
+            # guess to the scaling of binned signals for the estimation
+            scaling_factor = axis.scale if axis.is_uniform \
+                             else np.mean(np.gradient(axis.axis), axis=-1)
+
         if only_current is True:
             self.offset.value = signal()[i1:i2].mean()
             if is_binned(signal):
