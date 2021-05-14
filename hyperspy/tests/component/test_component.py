@@ -282,6 +282,6 @@ def test_get_scaling_parameter(is_binned, non_uniform, dim):
     scaling_factor = _get_scaling_factor(signal, axis, centre)
 
     if is_binned:
-        assert scaling_factor == 0.5
+        assert np.all(scaling_factor == 0.5)
     else:
         assert scaling_factor == 1

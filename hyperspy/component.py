@@ -1221,14 +1221,15 @@ class Component(t.HasTraits):
 def _get_scaling_factor(signal, axis, parameter):
     """
     Convenience function to get the scaling factor required to take into
-    account binned axis.
+    account binned and/or non uniform axes.
 
     Parameters
     ----------
     signal : BaseSignal
     axis : BaseDataAxis
     parameter : float or numpy array
-        The parame
+        The axis value at which scaling factor is evaluated (ignored if the axis
+        is uniform)
 
     Returns
     -------
@@ -1242,10 +1243,11 @@ def _get_scaling_factor(signal, axis, parameter):
         if axis.is_uniform:
             scaling_factor = axis.scale
         else:
-            if isinstance(parameter, (int, float)):
-                parameter_idx = axis.value2index(parameter)
-            else:
-                parameter_idx = [axis.value2index(p) for p in parameter]
+            # if isinstance(parameter, (int, float)):
+            #     parameter_idx = axis.value2index(parameter)
+            # else:
+                # parameter_idx = [axis.value2index(p) for p in parameter]
+            parameter_idx  = axis.value2index(parameter)
             scaling_factor = np.gradient(axis.axis)[parameter_idx]
     else:
         scaling_factor = 1
