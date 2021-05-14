@@ -19,6 +19,7 @@
 import numpy as np
 import dask.array as da
 
+from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
 from hyperspy.misc.utils import is_binned # remove in v2.0
 
@@ -160,12 +161,12 @@ class Lorentzian(Expression):
         >>> g.estimate_parameters(s, -10, 10, False)
         """
 
-        super(Lorentzian, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, gamma = _estimate_lorentzian_parameters(signal, x1, x2,
                                                               only_current)
-        scaling_factor = axis.scale if axis.is_uniform \
-                         else np.gradient(axis.axis)[axis.value2index(centre)]
+        scaling_factor = _get_scaling_factor(signal, axis, centre)
+
         if only_current is True:
             self.centre.value = centre
             self.gamma.value = gamma

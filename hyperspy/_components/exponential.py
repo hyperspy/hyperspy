@@ -52,7 +52,7 @@ class Exponential(Expression):
     """
 
     def __init__(self, A=1., tau=1., module="numexpr", **kwargs):
-        super(Exponential, self).__init__(
+        super().__init__(
             expression="A * exp(-x / tau)",
             name="Exponential",
             A=A,
@@ -86,7 +86,7 @@ class Exponential(Expression):
         bool
 
         """
-        super(Exponential, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if i1 + 1 == i2:

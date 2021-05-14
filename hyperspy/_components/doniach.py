@@ -19,6 +19,7 @@
 import math
 import numpy as np
 
+from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
 from hyperspy.misc.utils import is_binned # remove in v2.0
@@ -145,8 +146,8 @@ class Doniach(Expression):
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
-        scaling_factor = axis.scale if axis.is_uniform \
-                         else np.gradient(axis.axis)[axis.value2index(centre)]
+        scaling_factor = _get_scaling_factor(signal, axis, centre)
+
         if only_current is True:
             self.centre.value = centre
             self.sigma.value = sigma

@@ -20,6 +20,7 @@ import numpy as np
 import dask.array as da
 import sympy
 
+from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
 from hyperspy.misc.utils import is_binned # remove in v2.0
 
@@ -205,12 +206,13 @@ class SkewNormal(Expression):
         >>> g.estimate_parameters(s, -10, 10, False)
         """
 
-        super(SkewNormal, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        x0, height, scale, shape = _estimate_skewnormal_parameters(signal, x1,
-                                                                   x2, only_current)
-        scaling_factor = axis.scale if axis.is_uniform \
-                         else np.gradient(axis.axis)[axis.value2index(x0)]
+        x0, height, scale, shape = _estimate_skewnormal_parameters(
+            signal, x1, x2, only_current
+            )
+        scaling_factor = _get_scaling_factor(signal, axis, x0)
+
         if only_current is True:
             self.x0.value = x0
             self.A.value = height * sqrt2pi

@@ -2655,7 +2655,13 @@ class BaseSignal(FancySlicing,
             navigator = self
             # Sum over all but the first navigation axis.
             am = navigator.axes_manager
-            navigator = navigator.sum(am.signal_axes + am.navigation_axes[1:])
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning,
+                                        module='hyperspy'
+                                        )
+                navigator = navigator.sum(
+                    am.signal_axes + am.navigation_axes[1:]
+                    )
             return np.nan_to_num(navigator.data).squeeze()
 
         def get_dynamic_explorer_wrapper(*args, **kwargs):
@@ -4316,7 +4322,11 @@ class BaseSignal(FancySlicing,
         if is_binned(self, axis=axis):
         # in v2 replace by
         # self.axes_manager[axis].is_binned
-            return self.sum(axis=axis, out=out)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category= UserWarning,
+                                        module='hyperspy'
+                                        )
+                return self.sum(axis=axis, out=out)
         else:
             return self.integrate_simpson(axis=axis, out=out)
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
