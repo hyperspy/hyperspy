@@ -584,7 +584,7 @@ def get_luminescence_map_nonuniform(uniform=False, add_baseline=False, add_noise
         evax_dict = evax.get_axis_dictionary()
 
         #Creating the signal, also with energy inverted
-        sig = Signal1D(sig.isig[::-1]*hc/evax.axis**2,axes=[spax_y,spax_y,evax_dict])
+        sig = Signal1D(sig.isig[::-1]*hc/evax.axis**2,axes=[spax_y,spax_x,evax_dict])
         sig.metadata.General.title = 'Artificial Luminescence Spectrum'
 
     return sig
