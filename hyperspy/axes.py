@@ -559,7 +559,9 @@ class BaseDataAxis(t.HasTraits):
         ------
         ValueError
             If any value is out of the axis limits.
-
+            If value is NaN
+            If value is an array containing at least 1 NaN value
+            If value is an array containing at least 1 out-of-bound value
         """
         if value is None:
             return None

@@ -204,7 +204,7 @@ class TestDataAxis:
         assert axis.size == 12
         np.testing.assert_almost_equal(axis.axis[0], 4)
         np.testing.assert_almost_equal(axis.axis[-1], 169)
-    
+
     def test_error_DataAxis(self):
         with pytest.raises(ValueError):
             axis = DataAxis(axis=np.arange(16)**2, _type='UniformDataAxis')
@@ -259,7 +259,7 @@ class TestFunctionalDataAxis:
         with pytest.raises(ValueError, match="The values of"):
             self.axis = FunctionalDataAxis(
                 size=10,
-                expression=expression,)        
+                expression=expression,)
 
     @pytest.mark.parametrize("use_indices", (True, False))
     def test_crop(self, use_indices):
@@ -313,6 +313,46 @@ class TestFunctionalDataAxis:
     def test_calibrate(self):
         with pytest.raises(TypeError, match="only for uniform axes"):
             self.axis.calibrate(value_tuple=(11,12), index_tuple=(0,5))
+
+    def test_functional_value2index(self):
+        #Tests for value2index
+        #Works as intended
+        assert self.axis.value2index(44.7) == 7
+        #Input None --> output None
+        assert self.axis.value2index(None) == None
+        #NaN in --> error out
+        with pytest.raises(ValueError):
+            self.axis.value2index(np.nan)
+        #Values in out of bounds --> error out (both sides of axis)
+        with pytest.raises(ValueError):
+            self.axis.value2index(-2)
+        with pytest.raises(ValueError):
+            self.axis.value2index(111)
+        #str in --> error out
+        with pytest.raises(TypeError):
+            self.axis.value2index("69")
+        #Empty str in --> error out
+        with pytest.raises(TypeError):
+            self.axis.value2index("")
+
+        #Tests with array Input
+        #Array in --> array out
+        arval = np.array([[0,4],[16.,36.]])
+        assert np.all(self.axis.value2index(arval) == np.array([[0,2],[4,6]]))
+        #One value out of bound in array in --> error out (both sides)
+        arval[1,1] = 111
+        with pytest.raises(ValueError):
+            self.axis.value2index(arval)
+        arval[1,1] = -0.3
+        with pytest.raises(ValueError):
+            self.axis.value2index(arval)
+        #One NaN in array in --> error out
+        arval[1,1] = np.nan
+        with pytest.raises(ValueError):
+            self.axis.value2index(arval)
+        #Single-value-array-in --> scalar out
+        arval = np.array([1.0])
+        assert type(self.axis.value2index(arval)) == np.int32
 
 
 class TestReciprocalDataAxis:
