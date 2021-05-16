@@ -1243,10 +1243,6 @@ def _get_scaling_factor(signal, axis, parameter):
         if axis.is_uniform:
             scaling_factor = axis.scale
         else:
-            # if isinstance(parameter, (int, float)):
-            #     parameter_idx = axis.value2index(parameter)
-            # else:
-                # parameter_idx = [axis.value2index(p) for p in parameter]
             parameter_idx  = axis.value2index(parameter)
             scaling_factor = np.gradient(axis.axis)[parameter_idx]
     else:

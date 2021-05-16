@@ -569,7 +569,7 @@ class BaseDataAxis(t.HasTraits):
         #nan values in array
         if np.all((value >= self.low_value)*(value <= self.high_value)):
             #initialise the index same dimension as input, force type to int
-            index = np.asarray(value).astype(int).copy()
+            index = np.empty_like(value,dtype=int)
             #assign on flat, iterate on flat.
             for i,v in enumerate(np.asarray(value).flat):
                 index.flat[i] = (np.abs(self.axis - v)).argmin()
