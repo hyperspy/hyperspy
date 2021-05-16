@@ -352,7 +352,7 @@ class TestFunctionalDataAxis:
             self.axis.value2index(arval)
         #Single-value-array-in --> scalar out
         arval = np.array([1.0])
-        assert type(self.axis.value2index(arval)) == np.int32
+        assert np.isscalar(self.axis.value2index(arval))
 
 
 class TestReciprocalDataAxis:
