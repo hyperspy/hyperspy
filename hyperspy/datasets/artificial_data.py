@@ -357,8 +357,8 @@ def get_luminescence_signal(navigation_dimension=0,
                             add_baseline=False,
                             add_noise=True,
                             random_state=None):
-    """Get an artificial luminescence signal in wavelength (nm, uniform) or
-        energy (eV, non-uniform) scale, simulating luminescence data recorded with a
+    """Get an artificial luminescence signal in wavelength scale (nm, uniform) or
+        energy scale (eV, non-uniform), simulating luminescence data recorded with a
         diffracting spectrometer. Some random noise is also added to the spectrum,
         to simulate experimental noise.
 
@@ -406,6 +406,7 @@ def get_luminescence_signal(navigation_dimension=0,
         get_core_loss_eels_line_scan_signal,
         get_core_loss_eels_model,
         get_atomic_resolution_tem_signal2d,
+
         """
 
     #Initialisation of random number generator
