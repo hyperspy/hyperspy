@@ -16,13 +16,6 @@ ADD_POWERLAW_DOCSTRING = \
         If True, adds a powerlaw background to the spectrum. Default is False.
     """
 
-ADD_BASELINE_DOCSTRING = \
-"""add_baseline : bool
-        If true, adds a constant baseline to the spectrum. Conversion to
-        energy representation will turn the constant baseline into inverse
-        powerlaw.
-    """
-
 ADD_NOISE_DOCSTRING = \
 """add_noise : bool
         If True, add noise to the signal. See note to seed the noise to
@@ -369,14 +362,17 @@ def get_luminescence_signal(navigation_dimension=0,
             1 = linescan, 2 = spectral map etc...
         uniform: bool.
             return uniform (wavelength) or non-uniform (energy) spectrum
-        %s
+        add_baseline : bool
+                If true, adds a constant baseline to the spectrum. Conversion to
+                energy representation will turn the constant baseline into inverse
+                powerlaw.
         %s
         random_state: None or int
             initialise state of the random number generator
 
         Example
         -------
-        >>> import hyperspy.datasets.artifical_data as ad
+        >>> import hyperspy.datasets.artificial_data as ad
         >>> s = ad.get_luminescence_signal()
         >>> s.plot()
 
@@ -472,5 +468,4 @@ def get_luminescence_signal(navigation_dimension=0,
         sig *= hc/Eax**2
     return sig
 
-get_luminescence_signal.__doc__ %= (ADD_BASELINE_DOCSTRING,
-                                    ADD_NOISE_DOCSTRING)
+get_luminescence_signal.__doc__ %= (ADD_NOISE_DOCSTRING)

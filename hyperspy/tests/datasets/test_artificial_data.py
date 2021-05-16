@@ -67,19 +67,6 @@ def test_get_atomic_resolution_tem_signal2d():
     s = ad.get_atomic_resolution_tem_signal2d()
     assert s.axes_manager.signal_dimension == 2
 
-# @pytest.mark.parametrize("uniform",(True,False))
-# @pytest.mark.parametrize("add_baseline",(True,False))
-# @pytest.mark.parametrize("add_noise",(True,False))
-# def test_get_luminescence_map_nonuniform(uniform, add_baseline, add_noise):
-#     s = ad.get_luminescence_map_nonuniform(uniform, add_baseline, add_noise)
-#     assert s.axes_manager[1].name == 'Y'
-#     assert s.axes_manager[0].name == 'X'
-#     sax = s.axes_manager.signal_axes[0]
-#     assert sax.is_uniform == uniform
-#     if add_baseline:
-#         assert s.data.min()>340
-
-
 @pytest.mark.parametrize("navigation_dimension",(0,1,2,3))
 @pytest.mark.parametrize("uniform",(True,False))
 @pytest.mark.parametrize("add_baseline",(True,False))
