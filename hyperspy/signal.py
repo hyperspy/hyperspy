@@ -26,7 +26,8 @@ from pint import UnitRegistry, UndefinedUnitError
 from pathlib import Path
 
 import numpy as np
-import scipy as sp
+from scipy import integrate
+from scipy import signal as sp_signal
 import dask.array as da
 from matplotlib import pyplot as plt
 import traits.api as t
@@ -2148,8 +2149,8 @@ class BaseSignal(FancySlicing,
         data : :py:class:`numpy.ndarray`
            The signal data. It can be an array of any dimensions.
         axes : [dict/axes], optional
-            List of either dictionaries or axes objects to define the axes (see 
-            the documentation of the :py:class:`~hyperspy.axes.AxesManager` 
+            List of either dictionaries or axes objects to define the axes (see
+            the documentation of the :py:class:`~hyperspy.axes.AxesManager`
             class for more details).
         attributes : dict, optional
             A dictionary whose items are stored as attributes.
@@ -2676,7 +2677,7 @@ class BaseSignal(FancySlicing,
                 navigator = "slider"
             elif (self.axes_manager.navigation_dimension == 1 and
                     self.axes_manager.signal_dimension == 1):
-                if (self.axes_manager.navigation_axes[0].is_uniform and 
+                if (self.axes_manager.navigation_axes[0].is_uniform and
                         self.axes_manager.signal_axes[0].is_uniform):
                     navigator = "data"
                 else:
@@ -3095,7 +3096,7 @@ class BaseSignal(FancySlicing,
 
         Raises
         ------
-        NotImplementedError 
+        NotImplementedError
             If trying to rebin over a non-uniform axis.
 
         Examples
@@ -3200,7 +3201,7 @@ class BaseSignal(FancySlicing,
 
         Raises
         ------
-        NotImplementedError 
+        NotImplementedError
             If trying to split along a non-uniform axis.
 
         Returns
@@ -3965,7 +3966,7 @@ class BaseSignal(FancySlicing,
         proper :py:meth:`derivative` function instead. To avoid erroneous
         misuse of the `diff` function as derivative, it raises an error when
         when working with a non-uniform axis.
-        
+
         See also
         --------
         derivative, integrate1D, integrate_simpson
@@ -4086,8 +4087,8 @@ class BaseSignal(FancySlicing,
         """
         axis = self.axes_manager[axis]
         s = out or self._deepcopy_with_new_data(None)
-        data = sp.integrate.simps(y=self.data, x=axis.axis,
-                                  axis=axis.index_in_array)
+        data = integrate.simps(y=self.data, x=axis.axis,
+                               axis=axis.index_in_array)
         if out is not None:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
@@ -4130,7 +4131,7 @@ class BaseSignal(FancySlicing,
 
         Raises
         ------
-        NotImplementedError 
+        NotImplementedError
             If performing FFT along a non-uniform axis.
 
         Examples
@@ -4226,7 +4227,7 @@ class BaseSignal(FancySlicing,
 
         Raises
         ------
-        NotImplementedError 
+        NotImplementedError
             If performing IFFT along a non-uniform axis.
 
         Examples
@@ -4284,7 +4285,7 @@ class BaseSignal(FancySlicing,
 
         The integration is performed using
         `Simpson's rule <https://en.wikipedia.org/wiki/Simpson%%27s_rule>`_ if
-        `axis.is_binned` is ``False`` and simple summation over the given axis 
+        `axis.is_binned` is ``False`` and simple summation over the given axis
         if ``True`` (along binned axes, the detector already provides
         integrated counts per bin).
 
@@ -6146,7 +6147,7 @@ class BaseSignal(FancySlicing,
         elif window == 'hamming':
             def window_function(m): return np.hamming(m)
         elif window == 'tukey':
-            def window_function(m): return sp.signal.tukey(m, tukey_alpha)
+            def window_function(m): return sp_signal.tukey(m, tukey_alpha)
         else:
             raise ValueError('Wrong type parameter value.')
 

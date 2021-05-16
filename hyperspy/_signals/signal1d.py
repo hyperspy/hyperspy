@@ -23,9 +23,8 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 import dask.array as da
-import scipy.interpolate
-import scipy as sp
-from scipy.signal import savgol_filter
+from scipy import interpolate
+from scipy.signal import savgol_filter, medfilt
 from scipy.ndimage.filters import gaussian_filter1d
 
 from hyperspy.signal import BaseSignal
@@ -129,7 +128,7 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
         amp_thresh = 0.1 * y.max()
     peakgroup = np.round(peakgroup)
     if medfilt_radius:
-        d = np.gradient(scipy.signal.medfilt(y, medfilt_radius))
+        d = np.gradient(medfilt(y, medfilt_radius))
     else:
         d = np.gradient(y)
     n = np.round(peakgroup / 2 + 1)
@@ -222,7 +221,7 @@ def interpolate1D(number_of_interpolation_points, data):
     ch = len(data)
     old_ax = np.linspace(0, 100, ch)
     new_ax = np.linspace(0, 100, ch * ip - (ip - 1))
-    interpolator = scipy.interpolate.interp1d(old_ax, data)
+    interpolator = interpolate.interp1d(old_ax, data)
     return interpolator(new_ax)
 
 
@@ -253,11 +252,8 @@ def _shift1D(data, **kwargs):
         return data
     axis = np.linspace(offset, offset + scale * (size - 1), size)
 
-    si = sp.interpolate.interp1d(original_axis,
-                                 data,
-                                 bounds_error=False,
-                                 fill_value=fill_value,
-                                 kind=kind)
+    si = interpolate.interp1d(original_axis, data, bounds_error=False,
+                              fill_value=fill_value, kind=kind)
     offset = float(offset - shift)
     axis = np.linspace(offset, offset + scale * (size - 1), size)
     return si(axis)
@@ -422,7 +418,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
-        
+
         if not axis.is_uniform:
             raise NotImplementedError(
                 "This operation is not implemented for non-uniform axes.")
@@ -549,7 +545,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         i3 = int(np.clip(i2 + delta, 0, axis.size))
 
         def interpolating_function(dat):
-            dat_int = sp.interpolate.interp1d(
+            dat_int = interpolate.interp1d(
                 list(range(i0, i1)) + list(range(i2, i3)),
                 dat[i0:i1].tolist() + dat[i2:i3].tolist(),
                 **kwargs)
@@ -1560,7 +1556,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                     slice(vmax - window * 0.5, vmax + window * 0.5))
                 spectrum = spectrum[slices]
                 x = x[slices]
-            spline = scipy.interpolate.UnivariateSpline(
+            spline = interpolate.UnivariateSpline(
                 x,
                 spectrum - factor * spectrum.max(),
                 s=0)
