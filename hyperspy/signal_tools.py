@@ -21,7 +21,8 @@ import functools
 import copy
 
 import numpy as np
-import scipy as sp
+from scipy import interpolate
+from scipy import signal as sp_signal
 import matplotlib.colors
 import matplotlib.pyplot as plt
 import matplotlib.text as mpl_text
@@ -738,15 +739,15 @@ class ButterworthFilter(Smoothing):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):
-        b, a = sp.signal.butter(self.order, self.cutoff_frequency_ratio,
+        b, a = sp_signal.butter(self.order, self.cutoff_frequency_ratio,
                                 self.type)
-        smoothed = sp.signal.filtfilt(b, a, self.signal())
+        smoothed = sp_signal.filtfilt(b, a, self.signal())
         return smoothed
 
     def apply(self):
-        b, a = sp.signal.butter(self.order, self.cutoff_frequency_ratio,
+        b, a = sp_signal.butter(self.order, self.cutoff_frequency_ratio,
                                 self.type)
-        f = functools.partial(sp.signal.filtfilt, b, a)
+        f = functools.partial(sp_signal.filtfilt, b, a)
         self.signal.map(f)
 
 
@@ -1254,7 +1255,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.fast = fast
         self.plot_remainder = plot_remainder
         if plot_remainder:
-            # When plotting the remainder on the right hand side axis, we 
+            # When plotting the remainder on the right hand side axis, we
             # adjust the layout here to avoid doing it later to avoid
             # corrupting the background when using blitting
             figure = signal._plot.signal_plot.figure
@@ -1682,7 +1683,7 @@ class SpikesRemoval:
             # Interpolate
             x = np.hstack((axis.axis[ileft:left], axis.axis[right:iright]))
             y = np.hstack((data[ileft:left], data[right:iright]))
-            intp = sp.interpolate.interp1d(x, y, kind=self.kind)
+            intp = interpolate.interp1d(x, y, kind=self.kind)
             data[left:right] = intp(axis.axis[left:right])
 
         # Add noise

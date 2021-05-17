@@ -18,7 +18,6 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy as sp
 import numpy.ma as ma
 import dask.array as da
 import logging
@@ -222,7 +221,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
             # which was the previous implementation.
             # The size is fixed at 3 to be consistent
             # with the previous implementation.
-            im[:] = sp.ndimage.median_filter(im, size=3)
+            im[:] = ndimage.median_filter(im, size=3)
         if sobel is True:
             im[:] = sobel_filter(im)
 
