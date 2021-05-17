@@ -524,6 +524,15 @@ class BaseDataAxis(t.HasTraits):
         """Return calibrated value from a suitable string """
         if len(value) == 0:
             raise ValueError("Cannot index with an empty string")
+        # Starting with 'rel', it must be relative slicing
+        elif value.startswith('rel'):
+            try:
+                relative_value = float(value[3:])
+            except ValueError:
+                raise ValueError("`rel` must be followed by a number in range [0, 1].")
+            if relative_value < 0 or relative_value > 1:
+                raise ValueError("Relative value must be in range [0, 1]")
+            value = self.low_value + relative_value * (self.high_value - self.low_value)
         # if first character is a digit, try unit conversion
         # otherwise we don't support it
         elif value[0].isdigit():
@@ -996,7 +1005,7 @@ class FunctionalDataAxis(BaseDataAxis):
     crop.__doc__ = DataAxis.crop.__doc__
 
     def _slice_me(self, slice_):
-        """Returns a slice to slice the 'x' vector of the corresponding 
+        """Returns a slice to slice the 'x' vector of the corresponding
         functional data axis and set the axis accordingly.
 
         Parameters
@@ -1107,28 +1116,6 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
                   'scale': self.scale,
                   'offset': self.offset})
         return d
-
-    def _parse_value_from_string(self, value):
-        """Return calibrated value from a suitable string """
-        if len(value) == 0:
-            raise ValueError("Cannot index with an empty string")
-        # Starting with 'rel', it must be relative slicing
-        elif value.startswith('rel'):
-            try:
-                relative_value = float(value[3:])
-            except ValueError:
-                raise ValueError("`rel` must be followed by a number in range [0, 1].")
-            if relative_value < 0 or relative_value > 1:
-                raise ValueError("Relative value must be in range [0, 1]")
-            value = self.low_value + relative_value * (self.high_value - self.low_value)
-        # if first character is a digit, try unit conversion
-        # otherwise we don't support it
-        elif value[0].isdigit():
-            value = self._get_value_from_value_with_units(value)
-        else:
-            raise ValueError(f"`{value}` is not a suitable string for slicing.")
-
-        return value
 
     def value2index(self, value, rounding=round):
         """Return the closest index to the given value if between the axis limits.
@@ -1642,7 +1629,7 @@ class AxesManager(t.HasTraits):
         axis: BaseDataAxis axis to replace the current axis with
 
         index_in_axes_manager: index of the axis in current signal to remplace
-            with axis passed in argument 
+            with axis passed in argument
 
         See also
         --------

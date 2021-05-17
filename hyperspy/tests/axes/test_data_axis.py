@@ -178,6 +178,18 @@ class TestDataAxis:
         with pytest.raises(ValueError):
             self.axis.value2index(226)
 
+    def test_parse_value_from_relative_string(self):
+        ax = self.axis
+        assert ax._parse_value_from_string('rel0.0') == 0.0
+        assert ax._parse_value_from_string('rel0.5') == 112.5
+        assert ax._parse_value_from_string('rel1.0') == 225.0
+        with pytest.raises(ValueError):
+            ax._parse_value_from_string('rela0.5')
+        with pytest.raises(ValueError):
+            ax._parse_value_from_string('rel1.5')
+        with pytest.raises(ValueError):
+            ax._parse_value_from_string('abcd')
+
     @pytest.mark.parametrize("use_indices", (False, True))
     def test_crop(self, use_indices):
         axis = DataAxis(axis=self._axis)
@@ -204,7 +216,7 @@ class TestDataAxis:
         assert axis.size == 12
         np.testing.assert_almost_equal(axis.axis[0], 4)
         np.testing.assert_almost_equal(axis.axis[-1], 169)
-    
+
     def test_error_DataAxis(self):
         with pytest.raises(ValueError):
             axis = DataAxis(axis=np.arange(16)**2, _type='UniformDataAxis')
@@ -259,7 +271,7 @@ class TestFunctionalDataAxis:
         with pytest.raises(ValueError, match="The values of"):
             self.axis = FunctionalDataAxis(
                 size=10,
-                expression=expression,)        
+                expression=expression,)
 
     @pytest.mark.parametrize("use_indices", (True, False))
     def test_crop(self, use_indices):
@@ -626,12 +638,6 @@ class TestUniformDataAxis:
         assert ax._parse_value_from_string('rel0.0') == 10.0
         assert ax._parse_value_from_string('rel0.5') == 10.45
         assert ax._parse_value_from_string('rel1.0') == 10.9
-        with pytest.raises(ValueError):
-            ax._parse_value_from_string('rela0.5')
-        with pytest.raises(ValueError):
-            ax._parse_value_from_string('rel1.5')
-        with pytest.raises(ValueError):
-            ax._parse_value_from_string('abcd')
 
     def test_slice_empty_string(self):
         ax = self.axis
