@@ -190,6 +190,12 @@ class TestDataAxis:
         with pytest.raises(ValueError):
             ax._parse_value_from_string('abcd')
 
+    def test_parse_value_from_string_with_units(self):
+        ax = self.axis
+        ax.units = 'nm'
+        with pytest.raises(ValueError):
+            ax._parse_value_from_string('0.02 um')
+
     @pytest.mark.parametrize("use_indices", (False, True))
     def test_crop(self, use_indices):
         axis = DataAxis(axis=self._axis)
@@ -219,7 +225,7 @@ class TestDataAxis:
 
     def test_error_DataAxis(self):
         with pytest.raises(ValueError):
-            axis = DataAxis(axis=np.arange(16)**2, _type='UniformDataAxis')
+            _ = DataAxis(axis=np.arange(16)**2, _type='UniformDataAxis')
         with pytest.raises(AttributeError):
             self.axis.index_in_axes_manager()
         with pytest.raises(IndexError):

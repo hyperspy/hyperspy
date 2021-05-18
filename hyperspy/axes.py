@@ -536,7 +536,11 @@ class BaseDataAxis(t.HasTraits):
         # if first character is a digit, try unit conversion
         # otherwise we don't support it
         elif value[0].isdigit():
-            value = self._get_value_from_value_with_units(value)
+            if self.is_uniform:
+                value = self._get_value_from_value_with_units(value)
+            else:
+                raise ValueError("Unit conversion is only supported for "
+                                 "uniform axis.")
         else:
             raise ValueError(f"`{value}` is not a suitable string for slicing.")
 
