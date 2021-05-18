@@ -565,22 +565,39 @@ class BaseDataAxis(t.HasTraits):
         """
         if value is None:
             return None
+
         #Should evaluate on both arrays and scalars. Raises error if there are
         #nan values in array
         if np.all((value >= self.low_value)*(value <= self.high_value)):
+            #Only if all values will evaluate correctly do we implement rounding
+            #function. Rounding functions will strictly operate on numpy arrays
+            #and only evaluate self.axis - v input, v a scalar within value.
+            if rounding is round:
+                #Use argmin(abs) which will return the closest value
+                rounding_index = lambda x: np.abs(x).argmin()
+            elif rounding is math.ceil:
+                #Ceiling means finding index of the closest xi with xi - v >= 0
+                #we look for argmin of strictly non-negative part of self.axis-v.
+                #The trick is to replace strictly negative values with +np.inf
+                rounding_index = lambda x: np.where(x<0,+np.inf,x).argmin()
+            elif rounding is math.floor:
+                #flooring means finding index of the closest xi with xi - v <= 0
+                #we look for armgax of strictly non-positive part of self.axis-v.
+                #The trick is to replace strictly positive values with -np.inf
+                rounding_index = lambda x: np.where(x>0,-np.inf,x).argmax()
+            else:
+                raise ValueError(
+                    f'{rounding} is not a supported rounding function. Use '
+                    f'round, math.ceil or math.floor'
+                    )
             #initialise the index same dimension as input, force type to int
             index = np.empty_like(value,dtype=int)
             #assign on flat, iterate on flat.
             for i,v in enumerate(np.asarray(value).flat):
-                index.flat[i] = (np.abs(self.axis - v)).argmin()
+                index.flat[i] = rounding_index(self.axis - v)
             #Squeezing to get a scalar out if scalar in. See squeeze doc
             return np.squeeze(index)[()]
         else:
-            ### I commented out this because it seemed dangerous
-            # index = int(value)
-            # if self.size > index >= 0:
-            #     return index
-            # else:
             raise ValueError(
                 f'The value {value} is out of the limits '
                 f'[{self.low_value:.3g}-{self.high_value:.3g}] of the '
@@ -1006,7 +1023,7 @@ class FunctionalDataAxis(BaseDataAxis):
     crop.__doc__ = DataAxis.crop.__doc__
 
     def _slice_me(self, slice_):
-        """Returns a slice to slice the 'x' vector of the corresponding 
+        """Returns a slice to slice the 'x' vector of the corresponding
         functional data axis and set the axis accordingly.
 
         Parameters
@@ -1652,7 +1669,7 @@ class AxesManager(t.HasTraits):
         axis: BaseDataAxis axis to replace the current axis with
 
         index_in_axes_manager: index of the axis in current signal to remplace
-            with axis passed in argument 
+            with axis passed in argument
 
         See also
         --------
