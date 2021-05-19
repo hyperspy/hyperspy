@@ -17,20 +17,23 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from pathlib import Path
+import pytest
 
 from hyperspy.api import load
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 @lazifyTestClass
 class TestFindPeaks1DOhaver:
     def setup_method(self, method):
-        filepath = (
-            Path(__file__)
-            .resolve()
-            .parent.joinpath("data/test_find_peaks1D_ohaver.hdf5")
-        )
-        self.signal = load(filepath)
+        with pytest.warns(VisibleDeprecationWarning):
+            filepath = (
+                Path(__file__)
+                .resolve()
+                .parent.joinpath("data/test_find_peaks1D_ohaver.hdf5")
+            )
+            self.signal = load(filepath)
 
     def test_find_peaks1D_ohaver_high_amp_thres(self):
         signal1D = self.signal
