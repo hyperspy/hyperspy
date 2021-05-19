@@ -254,7 +254,7 @@ def _shift1D(data, **kwargs):
 
 
     #This is the interpolant function
-    si = interpolate.interp1d(original_axis, data, bounds_error=False,
+    si = sp.interpolate.interp1d(original_axis, data, bounds_error=False,
                               fill_value=fill_value, kind=kind)
 
     #Evaluate interpolated data at shifted positions
