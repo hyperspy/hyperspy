@@ -11,8 +11,8 @@ title_format = "v{version} ({project_date})"
 issue_format = "`#{issue} <https://github.com/hyperspy/hyperspy/issues/{issue}>`_"
 
   [[tool.towncrier.type]]
-  directory = "feature"
-  name = "Features"
+  directory = "new"
+  name = "New features"
   showcontent = true
 
   [[tool.towncrier.type]]
@@ -31,11 +31,11 @@ issue_format = "`#{issue} <https://github.com/hyperspy/hyperspy/issues/{issue}>`
   showcontent = true
 
   [[tool.towncrier.type]]
-  directory = "improvement"
-  name = "Improvements"
+  directory = "enhancements"
+  name = "Enhancements"
   showcontent = true
 
   [[tool.towncrier.type]]
-  directory = "breaking"
-  name = "Breaking Changes"
+  directory = "api"
+  name = "API changes"
   showcontent = true
