@@ -40,3 +40,8 @@ issue_format = "`#{issue} <https://github.com/hyperspy/hyperspy/issues/{issue}>`
   directory = "api"
   name = "API changes"
   showcontent = true
+
+  [[tool.towncrier.type]]
+  directory = "maintenance"
+  name = "Maintenance"
+  showcontent = true
