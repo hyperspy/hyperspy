@@ -242,16 +242,15 @@ def _estimate_shift1D(data, data_slice=slice(None), ref=None, ip=5,
 
 
 def _shift1D(data, **kwargs):
+    """Used to shift a data array by a specified amount in axes units. Axis must
+    be passed as a kwarg. """
     shift = kwargs.get('shift', 0.)
     original_axis = kwargs.get('original_axis', None)
     fill_value = kwargs.get('fill_value', np.nan)
     kind = kwargs.get('kind', 'linear')
-    offset = kwargs.get('offset', 0.)
-    scale = kwargs.get('scale', 1.)
-    size = kwargs.get('size', 2)
+
     if np.isnan(shift) or shift == 0:
         return data
-
 
     #This is the interpolant function
     si = sp.interpolate.interp1d(original_axis, data, bounds_error=False,
@@ -474,9 +473,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
                  original_axis=axis.axis,
                  fill_value=fill_value,
                  kind=interpolation_method,
-                 offset=axis.offset,
-                 scale=axis.scale,
-                 size=axis.size,
                  show_progressbar=show_progressbar,
                  parallel=parallel,
                  max_workers=max_workers,
