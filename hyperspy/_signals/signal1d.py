@@ -251,16 +251,14 @@ def _shift1D(data, **kwargs):
     size = kwargs.get('size', 2)
     if np.isnan(shift) or shift == 0:
         return data
-    axis = np.linspace(offset, offset + scale * (size - 1), size)
 
-    si = sp.interpolate.interp1d(original_axis,
-                                 data,
-                                 bounds_error=False,
-                                 fill_value=fill_value,
-                                 kind=kind)
-    offset = float(offset - shift)
-    axis = np.linspace(offset, offset + scale * (size - 1), size)
-    return si(axis)
+
+    #This is the interpolant function
+    si = interpolate.interp1d(original_axis, data, bounds_error=False,
+                              fill_value=fill_value, kind=kind)
+
+    #Evaluate interpolated data at shifted positions
+    return si(original_axis-shift)
 
 
 class Signal1D(BaseSignal, CommonSignal1D):
