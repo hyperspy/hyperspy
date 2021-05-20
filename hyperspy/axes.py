@@ -241,6 +241,7 @@ class UnitConversion:
         self._units = s
 
 
+@add_gui_method(toolkey="hyperspy.DataAxis")
 class BaseDataAxis(t.HasTraits):
     """Parent class defining common attributes for all DataAxis classes.
 
@@ -1316,6 +1317,7 @@ def _flyback_iter(shape):
             return self._it.multi_index[::-1]
 
     return ndindex_reversed(shape)
+
 
 @add_gui_method(toolkey="hyperspy.AxesManager")
 class AxesManager(t.HasTraits):
