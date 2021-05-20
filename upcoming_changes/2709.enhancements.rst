@@ -1,0 +1,3 @@
+Use ``importlib_metadata`` instead of ``pkg_resources`` for extensions
+registration to speed up the import process and making it possible to install
+extensions and use them without restarting the python session.

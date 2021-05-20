@@ -1,9 +1,8 @@
 What's new
 **********
 
-..
-  Add a single entry in the corresponding section below.
-  See https://keepachangelog.com for details
+.. towncrier release notes start
+
 
 RELEASE_next_minor (Unreleased)
 +++++++++++++++++++++++++++++++

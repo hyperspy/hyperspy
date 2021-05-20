@@ -5,8 +5,8 @@ Cut a Release
 Create a PR to the `RELEASE_next_patch` branch and go through the following steps:
 
 **Preparation**
-- Update and check changelog in `CHANGES.rst`
 - Bump version in `hyperspy/Release.py`
+- Update and check changelog in `CHANGES.rst`: run `towncrier build` (to preview, run `towncrier build --draft`)
 - (optional) check conda-forge and wheels build. Pushing a tag to a fork will run the release workflow without uploading to pypi
 - Let that PR collect comments for a day to ensure that other maintainers are comfortable with releasing
 
@@ -29,3 +29,4 @@ Follow-up
 
 - Tidy up and close corresponding milestone
 - A PR to the conda-forge feedstock will be created by the conda-forge bot
+
