@@ -16,7 +16,7 @@ A few sentences and/or a bulleted list to describe and motivate the change:
 - [ ] Change implemented (can be split into several points),
 - [ ] update docstring (if appropriate),
 - [ ] update user guide (if appropriate),
-- [ ] add entry to `CHANGES.rst` (if appropriate),
+- [ ] add an changelog entry in the `upcoming_changes` folder (see [`upcoming_changes/README.rst`](https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/upcoming_changes/README.rst)),
 - [ ] add tests,
 - [ ] ready for review.
 
