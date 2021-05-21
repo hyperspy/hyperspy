@@ -241,6 +241,7 @@ class UnitConversion:
         self._units = s
 
 
+@add_gui_method(toolkey="hyperspy.DataAxis")
 class BaseDataAxis(t.HasTraits):
     """Parent class defining common attributes for all DataAxis classes.
 
@@ -265,7 +266,7 @@ class BaseDataAxis(t.HasTraits):
     high_index = t.Int()
     slice = t.Instance(slice)
     navigate = t.Bool(t.Undefined)
-    is_binnned = t.Bool(t.Undefined)
+    is_binned = t.Bool(t.Undefined)
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
 
@@ -313,7 +314,6 @@ class BaseDataAxis(t.HasTraits):
         self.units = units
         self.low_index = 0
         self.on_trait_change(self._update_slice, 'navigate')
-        self.on_trait_change(self._update_slice, 'is_binned')
         self.on_trait_change(self.update_index_bounds, 'size')
         self.on_trait_change(self._update_bounds, 'axis')
 
@@ -1317,6 +1317,7 @@ def _flyback_iter(shape):
             return self._it.multi_index[::-1]
 
     return ndindex_reversed(shape)
+
 
 @add_gui_method(toolkey="hyperspy.AxesManager")
 class AxesManager(t.HasTraits):
