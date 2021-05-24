@@ -25,6 +25,7 @@ import traits.api as t
 import hyperspy.api as hs
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.io import load
 from hyperspy.io_plugins.nexus import (_byte_to_string, _fix_exclusion_keys,
                                        _is_int, _is_numeric_data, file_writer,
@@ -147,7 +148,8 @@ class TestDLSNexusNoAxes():
 class TestSavedSignalLoad():
 
     def setup_method(self, method):
-        self.s = load(file1, nxdata_only=True)
+        with pytest.warns(VisibleDeprecationWarning):
+            self.s = load(file1, nxdata_only=True)
 
     def test_string(self):
         assert self.s.original_metadata.instrument.\
@@ -177,8 +179,9 @@ class TestSavedSignalLoad():
 class TestSavedMultiSignalLoad():
 
     def setup_method(self, method):
-        self.s = load(file2, nxdata_only=True,
-                      hardlinks_only=True, use_default=False)
+        with pytest.warns(VisibleDeprecationWarning):
+            self.s = load(file2, nxdata_only=True,
+                          hardlinks_only=True, use_default=False)
 
     def test_signals(self):
         assert len(self.s) == 2
@@ -303,32 +306,39 @@ def test_saving_multi_signals(tmp_path):
 
 
 def test_read_file2_dataset_key_test():
-    s = hs.load(file2, nxdata_only=True, dataset_keys=["rocks"])
+    with pytest.warns(VisibleDeprecationWarning):
+        s = hs.load(file2, nxdata_only=True, dataset_keys=["rocks"])
     assert not isinstance(s, list)
 
 
 def test_read_file2_signal1():
-    s = hs.load(file2, nxdata_only=True, dataset_keys=["rocks"])
+    with pytest.warns(VisibleDeprecationWarning):
+        s = hs.load(file2, nxdata_only=True, dataset_keys=["rocks"])
     assert s.metadata.General.title == "rocks"
 
 
 def test_read_file2_default():
-    s = hs.load(file2, use_default=False, nxdata_only=True,
-                hardlinks_only=True, dataset_keys=["unnamed__1"])
+    with pytest.warns(VisibleDeprecationWarning):
+        s = hs.load(file2, use_default=False, nxdata_only=True,
+                    hardlinks_only=True, dataset_keys=["unnamed__1"])
     assert s.metadata.General.title == "unnamed__1"
-    s = hs.load(file2, use_default=True, nxdata_only=True,
-                hardlinks_only=True, dataset_keys=["unnamed__1"])
+    with pytest.warns(VisibleDeprecationWarning):
+        s = hs.load(file2, use_default=True, nxdata_only=True,
+                    hardlinks_only=True, dataset_keys=["unnamed__1"])
     assert s.metadata.General.title == "rocks"
 
 
 def test_read_file2_metadata_keys():
-    s = hs.load(file2, nxdata_only=True,
-                dataset_keys=["rocks"], metadata_keys=["energy"])
+    with pytest.warns(VisibleDeprecationWarning):
+        s = hs.load(file2, nxdata_only=True,
+                    dataset_keys=["rocks"], metadata_keys=["energy"])
     assert s.original_metadata.instrument.energy.value == 12.0
+
 
 def test_read_lazy_file():
     s = hs.load(file3, nxdata_only=True, lazy=True)
     assert s[0]._lazy and s[1]._lazy
+
 
 @pytest.mark.parametrize("verbose", [True, False])
 @pytest.mark.parametrize("dataset_keys", ["testdata", "nexustest"])

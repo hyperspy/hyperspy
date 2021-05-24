@@ -28,12 +28,12 @@ from inspect import isgenerator
 from pathlib import Path
 
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.io.tools import overwrite as overwrite_method
 from hyperspy.misc.utils import strlist2enumeration
 from hyperspy.misc.utils import stack as stack_method
 from hyperspy.io_plugins import io_plugins, default_write_ext
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import get_gui
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
@@ -516,7 +516,7 @@ def load_with_reader(
                 warnings.warn('Loading old file version. The binned attribute '
                               'has been moved from metadata.Signal to '
                               'axis.is_binned. Setting this attribute for all '
-                              'signal axes instead.', UserWarning)
+                              'signal axes instead.', VisibleDeprecationWarning)
             if convert_units:
                 signal.axes_manager.convert_units()
             if not load_original_metadata:

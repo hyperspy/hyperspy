@@ -31,6 +31,7 @@ import pytest
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
@@ -144,10 +145,11 @@ class TestExample1_11(Example1):
 class TestLoadingNewSavedMetadata:
 
     def setup_method(self, method):
-        self.s = load(os.path.join(
-            my_path,
-            "hdf5_files",
-            "with_lists_etc.hdf5"))
+        with pytest.warns(VisibleDeprecationWarning):
+            self.s = load(os.path.join(
+                my_path,
+                "hdf5_files",
+                "with_lists_etc.hdf5"))
 
     def test_signal_inside(self):
         np.testing.assert_array_almost_equal(self.s.data,
@@ -333,22 +335,14 @@ class TestSavingMetadataContainers:
 
 
 def test_none_metadata():
-    s = load(os.path.join(
-        my_path,
-        "hdf5_files",
-        "none_metadata.hdf5"))
+    s = load(os.path.join( my_path, "hdf5_files", "none_metadata.hdf5"))
     assert s.metadata.should_be_None is None
 
 
 def test_rgba16():
-    s = load(os.path.join(
-        my_path,
-        "hdf5_files",
-        "test_rgba16.hdf5"))
-    data = np.load(os.path.join(
-        my_path,
-        "npy_files",
-        "test_rgba16.npy"))
+    with pytest.warns(VisibleDeprecationWarning):
+        s = load(os.path.join(my_path, "hdf5_files", "test_rgba16.hdf5"))
+    data = np.load(os.path.join( my_path, "npy_files", "test_rgba16.npy"))
     assert (s.data == data).all()
 
 
@@ -667,10 +661,11 @@ class Test_permanent_markers_io:
     def test_load_unknown_marker_type(self):
         # test_marker_bad_marker_type.hdf5 has 5 markers,
         # where one of them has an unknown marker type
-        s = load(os.path.join(
-            my_path,
-            "hdf5_files",
-            "test_marker_bad_marker_type.hdf5"))
+        with pytest.warns(VisibleDeprecationWarning):
+            s = load(os.path.join(
+                my_path,
+                "hdf5_files",
+                "test_marker_bad_marker_type.hdf5"))
         assert len(s.metadata.Markers) == 4
 
     def test_load_missing_y2_value(self):
@@ -678,10 +673,11 @@ class Test_permanent_markers_io:
         # where one of them is missing the y2 value, however the
         # the point marker only needs the x1 and y1 value to work
         # so this should load
-        s = load(os.path.join(
-            my_path,
-            "hdf5_files",
-            "test_marker_point_y2_data_deleted.hdf5"))
+        with pytest.warns(VisibleDeprecationWarning):
+            s = load(os.path.join(
+                my_path,
+                "hdf5_files",
+                "test_marker_point_y2_data_deleted.hdf5"))
         assert len(s.metadata.Markers) == 5
 
 
