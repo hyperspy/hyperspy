@@ -178,36 +178,17 @@ class BaseModel(list):
 
     signal : BaseSignal instance
         It contains the data to fit.
-    chisq : A BaseSignal of floats
+    chisq : :py:class:`~.signal.BaseSignal` of float
         Chi-squared of the signal (or np.nan if not yet fit)
-    dof : A BaseSignal of integers
+    dof : :py:class:`~.signal.BaseSignal` of int
         Degrees of freedom of the signal (0 if not yet fit)
-    red_chisq : BaseSignal instance
-        Reduced chi-squared.
-    components : `ModelComponents` instance
+    components : :py:class:`~.model.ModelComponents` instance
         The components of the model are attributes of this class. This provides
         a convenient way to access the model components when working in IPython
         as it enables tab completion.
 
     Methods
     -------
-
-    append
-        Append one component to the model.
-    extend
-        Append multiple components to the model.
-    remove
-        Remove component from model.
-    as_signal
-        Generate a BaseSignal instance (possible multidimensional)
-        from the model.
-    store_current_values
-        Store the value of the parameters at the current position.
-    fetch_stored_values
-        Fetch stored values of the parameters.
-    update_plot
-        Force a plot update. (In most cases the plot should update
-        automatically.)
     set_signal_range, remove_signal range, reset_signal_range,
     add signal_range.
         Customize the signal range to fit.
@@ -223,12 +204,6 @@ class BaseModel(list):
     set_current_values_to
         Set the current value of all the parameters of the given component as
         the value for all the dataset.
-    export_results
-        Save the value of the parameters in separate files.
-    plot_results
-        Plot the value of all parameters at all positions.
-    print_current_values
-        Print the value of the parameters at the current position.
     enable_adjust_position, disable_adjust_position
         Enable/disable interactive adjustment of the position of the components
         that have a well defined position. (Use after `plot`).
@@ -237,15 +212,9 @@ class BaseModel(list):
         set interactively.
     set_parameters_not_free, set_parameters_free
         Fit the `free` status of several components and parameters at once.
-    set_parameters_value
-        Set the value of a parameter in components in a model to a specified
-        value.
-    as_dictionary
-        Exports the model to a dictionary that can be saved in a file.
 
     See also
     --------
-
     :py:class:`~hyperspy.models.model1d.Model1D`
     :py:class:`~hyperspy.models.model2d.Model2D`
 
@@ -312,10 +281,10 @@ class BaseModel(list):
 
             * _whitelist: a dictionary with keys used as references of save
               attributes, for more information, see
-              :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
+              :py:func:`~.misc.export_dictionary.load_from_dictionary`
             * components: a dictionary, with information about components of
               the model (see
-              :py:meth:`~hyperspy.component.Parameter.as_dictionary`
+              :py:meth:`~.component.Parameter.as_dictionary`
               documentation for more details)
             * any field from _whitelist.keys()
         """
@@ -409,6 +378,12 @@ class BaseModel(list):
             self.signal._plot.signal_plot.update()
 
     def extend(self, iterable):
+        """Append multiple components to the model.
+
+        Parameters
+        ----------
+        iterable: iterable of `Component` instances.
+        """
         for object in iterable:
             self.append(object)
 
@@ -509,7 +484,6 @@ class BaseModel(list):
                 axes=self.signal.axes_manager._get_axes_dicts())
             signal.metadata.General.title = (
                 self.signal.metadata.General.title + " from fitted model")
-            signal.metadata.Signal.binned = self.signal.metadata.Signal.binned
         else:
             signal = out
             data = signal.data
@@ -677,7 +651,8 @@ class BaseModel(list):
         self._plot_components = False
 
     def _set_p0(self):
-        self.p0 = ()
+        "(Re)sets the initial values for the parameters used in the curve fitting functions"
+        self.p0 = () # Stores the values and is fed as initial values to the fitter
         for component in self:
             if component.active:
                 for parameter in component.free_parameters:
@@ -808,16 +783,22 @@ class BaseModel(list):
 
     def store_current_values(self):
         """ Store the parameters of the current coordinates into the
-        parameters array.
+        `parameter.map` array and sets the `is_set` array attribute to True.
 
         If the parameters array has not being defined yet it creates it filling
-        it with the current parameters."""
+        it with the current parameters at the current indices in the array."""
         for component in self:
             if component.active:
                 component.store_current_parameters_in_map()
 
     def fetch_stored_values(self, only_fixed=False, update_on_resume=True):
-        """Fetch the value of the parameters that has been previously stored.
+        """Fetch the value of the parameters that have been previously stored
+        in `parameter.map['values']` if `parameter.map['is_set']` is `True` for
+        those indices.
+
+        If it is not previously stored, the current values from `parameter.value`
+        are used, which are typically from the fit in the previous pixel of a
+        multidimensional signal.
 
         Parameters
         ----------
@@ -847,6 +828,11 @@ class BaseModel(list):
         """Fetch the parameter values from the given array, optionally also
         fetching the standard deviations.
 
+        Places the parameter values into both `m.p0` (the initial values
+        for the optimizer routine) and `component.parameter.value` and
+        `...std`, for parameters in active components ordered by their
+        position in the model and component.
+
         Parameters
         ----------
         array : array
@@ -858,7 +844,8 @@ class BaseModel(list):
         self._fetch_values_from_p0(p_std=array_std)
 
     def _fetch_values_from_p0(self, p_std=None):
-        """Fetch the parameter values from the output of the optimizer `self.p0`
+        """Fetch the parameter values from the output of the optimizer `self.p0`,
+        placing them in their appropriate `component.parameter.value` and `...std`
 
         Parameters
         ----------
@@ -949,7 +936,8 @@ class BaseModel(list):
 
     @property
     def red_chisq(self):
-        """Reduced chi-squared. Calculated from self.chisq and self.dof
+        """:py:class:`~.signal.BaseSignal`: Reduced chi-squared.
+        Calculated from ``self.chisq`` and ``self.dof``.
         """
         tmp = self.chisq / (- self.dof + self.channel_switches.sum() - 1)
         tmp.metadata.General.title = self.signal.metadata.General.title + \
@@ -1431,9 +1419,10 @@ class BaseModel(list):
 
                     if np.any(~np.isfinite(de_b)):
                         raise ValueError(
-                            "Finite upper and lower bounds must be "
-                            "specified for every free parameter when "
-                            f"`optimizer='{optimizer}'`"
+                            "Finite upper and lower bounds must be specified "
+                            "using `bmin/bmax` for every free parameter and "
+                            "`bounded=True` needs to be set as argument of "
+                            f"`m.fit()` when using `optimizer='{optimizer}'`."
                         )
 
                     self.fit_output = _supported_global[optimizer](
@@ -1603,6 +1592,9 @@ class BaseModel(list):
                     for index in self.axes_manager:
                         with inner(update_on_resume=True):
                             if mask is None or not mask[index[::-1]]:
+                                # first check if model has set initial values in
+                                # parameters.map['values'][indices],
+                                # otherwise use values from previous fit
                                 self.fetch_stored_values(only_fixed=fetch_only_fixed)
                                 self.fit(**kwargs)
                                 i += 1

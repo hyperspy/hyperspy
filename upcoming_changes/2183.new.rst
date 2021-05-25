@@ -1,0 +1,1 @@
+Add `vacuum_mask` method for EELSSpectrum

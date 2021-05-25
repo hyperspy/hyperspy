@@ -40,6 +40,7 @@ from hyperspy.misc.label_position import SpectrumLabelPosition
 from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.misc.array_tools import numba_histogram
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 _logger = logging.getLogger(__name__)
@@ -813,9 +814,11 @@ class ImageContrastEditor(t.HasTraits):
         self.norm_original = copy.deepcopy(self.norm)
 
         self.span_selector = None
-        self.span_selector_switch(on=True)
-
         self.plot_histogram()
+
+        # After the figure have been rendered to follow the same pattern as
+        # for other tools
+        self.span_selector_switch(on=True)
 
         if self.image.axes_manager is not None:
             self.image.axes_manager.events.indices_changed.connect(
@@ -830,9 +833,6 @@ class ImageContrastEditor(t.HasTraits):
 
     def create_axis(self):
         self.ax = self.hspy_fig.figure.add_subplot(111)
-        animated = self.hspy_fig.figure.canvas.supports_blit
-        self.ax.yaxis.set_animated(animated)
-        self.ax.xaxis.set_animated(animated)
         self.hspy_fig.ax = self.ax
 
     def _gamma_changed(self, old, new):
@@ -923,10 +923,11 @@ class ImageContrastEditor(t.HasTraits):
 
     def _set_xaxis(self):
         self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
-        # Set this attribute to restrict the span selector to the xaxis
-        self.span_selector.step_ax = DataAxis(size=len(self.xaxis),
-                                              offset=self.xaxis[1],
-                                              scale=self.xaxis[1]-self.xaxis[0])
+        if self.span_selector is not None:
+            # Set this attribute to restrict the span selector to the xaxis
+            self.span_selector.step_ax = DataAxis(size=len(self.xaxis),
+                                                  offset=self.xaxis[1],
+                                                  scale=self.xaxis[1]-self.xaxis[0])
 
     def plot_histogram(self, max_num_bins=250):
         """Plot a histogram of the data.
@@ -968,10 +969,10 @@ class ImageContrastEditor(t.HasTraits):
         self.ax.set_ylim(0, self.hist_data.max())
         self.ax.set_xticks([])
         self.ax.set_yticks([])
-        self.line = self.ax.plot(*self._get_line(),
-                                       color='#ff7f0e')[0]
-        self.line.set_animated(self.ax.figure.canvas.supports_blit)
+        self.line = self.ax.plot(*self._get_line(), color='#ff7f0e',
+                                 animated=self.ax.figure.canvas.supports_blit)[0]
         plt.tight_layout(pad=0)
+        self.ax.figure.canvas.draw()
 
     plot_histogram.__doc__ %= HISTOGRAM_MAX_BIN_ARGS
 
@@ -1065,7 +1066,7 @@ class ImageContrastEditor(t.HasTraits):
         self.linscale = self.linscale_original
 
     def _get_current_range(self):
-        if self.span_selector._get_span_width() != 0:
+        if self.span_selector and self.span_selector._get_span_width() != 0:
             # if we have a span selector, use it to set the display
             return self.ss_left_value, self.ss_right_value
         else:
@@ -1078,8 +1079,7 @@ class ImageContrastEditor(t.HasTraits):
                 self.image.vmin = f"{self.vmin_percentile}th"
                 self.image.vmax = f"{self.vmax_percentile}th"
             else:
-                self.image.vmin = self._vmin
-                self.image.vmax = self._vmax
+                self.image.vmin, self.image.vmax = self._get_current_range()
             self.image.connect()
         self.hspy_fig.close()
 
@@ -1240,7 +1240,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     def __init__(self, signal, background_type='Power law', polynomial_order=2,
                  fast=True, plot_remainder=True, zero_fill=False,
                  show_progressbar=None, model=None):
-        super(BackgroundRemoval, self).__init__(signal)
+        super().__init__(signal)
         # setting the polynomial order will change the backgroud_type to
         # polynomial, so we set it before setting the background type
         self.bg_line = None
@@ -1248,6 +1248,12 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.background_estimator = None
         self.fast = fast
         self.plot_remainder = plot_remainder
+        if plot_remainder:
+            # When plotting the remainder on the right hand side axis, we
+            # adjust the layout here to avoid doing it later to avoid
+            # corrupting the background when using blitting
+            figure = signal._plot.signal_plot.figure
+            figure.tight_layout(rect=[0, 0, 0.95, 1])
         if model is None:
             from hyperspy.models.model1d import Model1D
             model = Model1D(signal)
@@ -1265,6 +1271,10 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.set_background_estimator()
 
         self.signal.axes_manager.events.indices_changed.connect(self._fit, [])
+        # This is also disconnected when disabling the span selector but we
+        # disconnect also when closing the figure, because in this case,
+        # `on_disabling_span_selector` will not be called.
+        self.signal._plot.signal_plot.events.closed.connect(self.disconnect, [])
 
     def on_disabling_span_selector(self):
         # Disconnect event
@@ -1331,7 +1341,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             color='green',
             type='line',
             scaley=False)
-        self.signal._plot.signal_plot.create_right_axis(color='green')
+        self.signal._plot.signal_plot.create_right_axis(color='green',
+                                                        adjust_layout=False)
         self.signal._plot.signal_plot.add_line(self.rm_line, ax='right')
         self.rm_line.plot()
 
@@ -1354,7 +1365,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                 self.axis.axis[from_index:to_index])
             to_return = bg_array
 
-        if self.signal.metadata.Signal.binned is True:
+        if is_binned(self.signal) is True:
+        # in v2 replace by
+        #if self.axis.is_binned is True:
             to_return *= self.axis.scale
         return to_return
 
@@ -1418,8 +1431,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
 
     def disconnect(self):
         axes_manager = self.signal.axes_manager
-        if self._fit in axes_manager.events.indices_changed.connected:
-            axes_manager.events.indices_changed.disconnect(self._fit)
+        for f in [self._fit, self.model._on_navigating]:
+            if f in axes_manager.events.indices_changed.connected:
+                axes_manager.events.indices_changed.disconnect(f)
 
 
 def _get_background_estimator(background_type, polynomial_order=1):
@@ -1899,7 +1913,7 @@ class PeaksFinder2D(t.HasTraits):
     # For "Laplacian of Gaussian" method
     log_min_sigma = t.Range(0, 2., value=1)
     log_max_sigma = t.Range(0, 100., value=50)
-    log_num_sigma = t.Range(0, 20., value=10)
+    log_num_sigma = t.Range(0, 20, value=10)
     log_threshold = t.Range(0, 0.4, value=0.2)
     log_overlap = t.Range(0, 1., value=0.5)
     log_log_scale = t.Bool(False)
@@ -1997,7 +2011,15 @@ class PeaksFinder2D(t.HasTraits):
         if 'template' in kwargs.keys():
             self.xc_template = kwargs['template']
         if method is not None:
-            self.method = method.capitalize().replace('_', ' ')
+            method_dict = {'local_max':'Local max',
+                           'max':'Max',
+                           'minmax':'Minmax',
+                           'zaefferer':'Zaefferer',
+                           'stat':'Stat',
+                           'laplacian_of_gaussian':'Laplacian of Gaussian',
+                           'difference_of_gaussian':'Difference of Gaussian',
+                           'template_matching':'Template matching'}
+            self.method = method_dict[method]
         self._parse_paramaters_initial_values(**kwargs)
         self._update_peak_finding()
 
@@ -2011,7 +2033,7 @@ class PeaksFinder2D(t.HasTraits):
 
     def _update_peak_finding(self, method=None):
         if method is None:
-            method = self.method.lower().replace(' ', '_')
+            method = self.method
         self._find_peaks_current_index(method=method)
         self._plot_markers()
 
@@ -2057,11 +2079,14 @@ class PeaksFinder2D(t.HasTraits):
         x_axis = self.signal.axes_manager.signal_axes[0]
         y_axis = self.signal.axes_manager.signal_axes[1]
 
-        marker_list = [Point(x=x_axis.index2value(x),
-                             y=y_axis.index2value(y),
-                             color=color,
-                             size=markersize)
-            for x, y in zip(self.peaks.data[:, 1], self.peaks.data[:, 0])]
+        if np.isnan(self.peaks.data).all():
+            marker_list = []
+        else:
+            marker_list = [Point(x=x_axis.index2value(int(round(x))),
+                                 y=y_axis.index2value(int(round(y))),
+                                 color=color,
+                                 size=markersize)
+                for x, y in zip(self.peaks.data[:, 1], self.peaks.data[:, 0])]
 
         return marker_list
 

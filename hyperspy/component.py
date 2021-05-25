@@ -78,7 +78,7 @@ class Parameter(t.HasTraits):
         parsed using sympy, so permitted values are any valid sympy expressions
         of one variable. If the function is invertible the twin inverse function
         is set automatically.
-    twin_inverse_function : str
+    twin_inverse_function_expr : str
         Expression of the ``twin_inverse_function`` that enables setting the
         value of the twin parameter. If ``twin`` is not
         ``None``, its value is set to the output of calling the
@@ -106,12 +106,6 @@ class Parameter(t.HasTraits):
 
     Methods
     -------
-    as_signal(field = 'values')
-        Get a parameter map as a signal object
-    plot()
-        Plots the value of the Parameter at all locations.
-    export(folder=None, name=None, format=None, save_std=False)
-        Saves the value of the parameter map to the specified format
     connect, disconnect(function)
         Call the functions connected when the value attribute changes.
 
@@ -506,8 +500,12 @@ class Parameter(t.HasTraits):
             self.map['std'][indices] = self.std
 
     def fetch(self):
-        """Fetch the stored value and std attributes.
-
+        """Fetch the stored value and std attributes from the
+        parameter.map['values'] and ...['std'] if
+        `parameter.map['is_set']` is True for that index. Updates
+        `parameter.value` and `parameter.std`.
+        If not stored, then .value and .std will remain from their
+        previous values, i.e. from a fit in a previous pixel.
 
         See Also
         --------
@@ -529,7 +527,11 @@ class Parameter(t.HasTraits):
             self.std = std
 
     def assign_current_value_to_all(self, mask=None):
-        """Assign the current value attribute to all the  indices
+        """Assign the current value attribute to all the indices,
+        setting parameter.map for all parameters in the component.
+
+        Takes the current `parameter.value` and sets it for all
+        indices in `parameter.map['values']`.
 
         Parameters
         ----------
@@ -749,7 +751,7 @@ class Component(t.HasTraits):
         self.init_parameters(parameter_name_list)
         self._update_free_parameters()
         self.active = True
-        self._active_array = None
+        self._active_array = None # only if active_is_multidimensional is True
         self.isbackground = False
         self.convolved = True
         self.parameters = tuple(self.parameters)
@@ -774,6 +776,10 @@ class Component(t.HasTraits):
 
     @property
     def active_is_multidimensional(self):
+        """In multidimensional signals it is possible to store the value of the
+        :py:attr:`~.component.Component.active` attribute at each navigation
+        index.
+        """
         return self._active_is_multidimensional
 
     @active_is_multidimensional.setter
@@ -903,6 +909,18 @@ class Component(t.HasTraits):
         self._update_free_parameters()
 
     def fetch_values_from_array(self, p, p_std=None, onlyfree=False):
+        """Fetch the parameter values from an array `p` and optionally standard
+        deviation from `p_std`. Places them `component.parameter.value` and
+        `...std`, according to their position in the component.
+
+        Parameters
+        ----------
+        p : array
+            array containing new values for the parameters in a component
+        p_std : array, optional
+            array containing the corresponding standard deviation.
+
+        """
         if onlyfree is True:
             parameters = self.free_parameters
         else:
@@ -1121,13 +1139,12 @@ class Component(t.HasTraits):
             _parameter.free = False
 
     def _estimate_parameters(self, signal):
-        self.binned = signal.metadata.Signal.binned
         if self._axes_manager != signal.axes_manager:
             self._axes_manager = signal.axes_manager
             self._create_arrays()
 
     def as_dictionary(self, fullcopy=True):
-        """Returns component as a dictionary. For more information on method 
+        """Returns component as a dictionary. For more information on method
         and conventions, see
         py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`
 
@@ -1171,7 +1188,7 @@ class Component(t.HasTraits):
             * _id_name: _id_name of the original parameter, used to create the
               dictionary. Has to match with the self._id_name
             * parameters: a list of dictionaries, one per parameter of the
-              component (see 
+              component (see
               :py:meth:`~hyperspy.component.Parameter.as_dictionary`
               documentation for more details)
             * _whitelist: a dictionary, which keys are used as keywords to
@@ -1188,7 +1205,7 @@ class Component(t.HasTraits):
         """
 
         if dic['_id_name'] == self._id_name:
-            if (self._id_name == "Polynomial" and 
+            if (self._id_name == "Polynomial" and
                     LooseVersion(hyperspy.__version__) >= LooseVersion("2.0")):
                 # in HyperSpy 2.0 the polynomial definition changed
                 from hyperspy._components.polynomial import convert_to_polynomial

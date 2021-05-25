@@ -22,6 +22,7 @@ from pathlib import Path
 
 import hyperspy.api as hs
 from hyperspy.components1d import Gaussian
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.signals import EELSSpectrum, Signal1D
 
 my_path = Path(__file__).resolve().parent
@@ -83,13 +84,14 @@ def create_sum_of_gaussians(convolved=False):
 def test_plot_gaussian_eelsmodel(convolved, plot_component, binned):
     s = create_sum_of_gaussians(convolved)
     s.set_signal_type('EELS')
+    s.axes_manager[-1].is_binned == binned
     s.metadata.General.title = 'Convolved: {}, plot_component: {}, binned: {}'.format(
         convolved, plot_component, binned)
 
     ll = create_ll_signal(1000) if convolved else None
 
     s.set_microscope_parameters(200, 20, 50)
-    s.metadata.Signal.binned = binned
+    s.axes_manager[-1].is_binned = binned
     m = s.create_model(auto_background=False, ll=ll)
 
     m.extend([Gaussian(), Gaussian(), Gaussian()])
@@ -130,10 +132,14 @@ def test_plot_gaussian_eelsmodel(convolved, plot_component, binned):
     baseline_dir=baseline_dir, tolerance=default_tol)
 def test_fit_EELS_convolved(convolved):
     dname = my_path.joinpath('data')
-    cl = hs.load(dname.joinpath('Cr_L_cl.hspy'))
-    cl.metadata.Signal.binned = False
+    with pytest.warns(VisibleDeprecationWarning):
+        cl = hs.load(dname.joinpath('Cr_L_cl.hspy'))
+    cl.axes_manager[-1].is_binned = False
     cl.metadata.General.title = 'Convolved: {}'.format(convolved)
-    ll = hs.load(dname.joinpath('Cr_L_ll.hspy')) if convolved else None
+    ll = None
+    if convolved:
+        with pytest.warns(VisibleDeprecationWarning):
+            ll = hs.load(dname.joinpath('Cr_L_ll.hspy'))
     m = cl.create_model(auto_background=False, ll=ll, GOS='hydrogenic')
     m.fit(kind='smart')
     m.plot(plot_components=True)

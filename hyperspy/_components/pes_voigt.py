@@ -21,7 +21,7 @@ import math
 
 from hyperspy.component import Component
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
-
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -84,7 +84,7 @@ def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
 class Voigt(Component):
     # Legacy class to be removed in v2.0
 
-    """This is the legacy Voigt profile component dedicated to photoemission
+    r"""This is the legacy Voigt profile component dedicated to photoemission
     spectroscopy data analysis that will renamed to `PESVoigt` in v2.0. To use
     the new Voigt lineshape component set `legacy=False`. See the
     documentation of :meth:`hyperspy._components.voigt.Voigt` for details on
@@ -158,7 +158,7 @@ class Voigt(Component):
 
 class PESVoigt(Component):
 
-    """ Voigt component for photoemission spectroscopy data analysis.
+    r"""Voigt component for photoemission spectroscopy data analysis.
 
     Voigt profile component with support for shirley background,
     non_isochromaticity, transmission_function corrections and spin orbit
@@ -301,14 +301,18 @@ class PESVoigt(Component):
             self.centre.value = centre
             self.FWHM.value = sigma * sigma2fwhm
             self.area.value = height * sigma * sqrt2pi
-            if self.binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 self.area.value /= axis.scale
             return True
         else:
             if self.area.map is None:
                 self._create_arrays()
             self.area.map['values'][:] = height * sigma * sqrt2pi
-            if self.binned:
+            if is_binned(signal) is True:
+            # in v2 replace by
+            #if axis.is_binned:
                 self.area.map['values'][:] /= axis.scale
             self.area.map['is_set'][:] = True
             self.FWHM.map['values'][:] = sigma * sigma2fwhm

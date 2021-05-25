@@ -163,10 +163,10 @@ order to increase responsiveness.
    >>> im.plot()
    >>> roi = hs.roi.RectangularROI(left=30, right=500, top=200, bottom=400)
    >>> im_roi = roi.interactive(im, color="red")
-   >>> roi_hist =hs.interactive(im_roi.get_histogram,
-   ...                          event=im_roi.axes_manager.events.\
-   ...                                any_axis_changed,
-   ...                          recompute_out_event=None)
+   >>> roi_hist = hs.interactive(im_roi.get_histogram,
+   ...                           event=roi.events.changed,
+                                 bins=150, # Set number of bins for `get_histogram`
+   ...                           recompute_out_event=None)
    >>> roi_hist.plot()
 
 

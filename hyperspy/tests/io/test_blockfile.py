@@ -91,44 +91,44 @@ ref_data2 = np.array(
 
 axes1 = {
     'axis-0': {
-        'name': 'y', 'navigate': True, 'offset': 0.0,
+        'name': 'y', 'navigate': True, 'is_binned': False, 'offset': 0.0,
         'scale': 12.8, 'size': 3, 'units': 'nm'},
     'axis-1': {
-        'name': 'x', 'navigate': True, 'offset': 0.0,
+        'name': 'x', 'navigate': True, 'is_binned': False, 'offset': 0.0,
         'scale': 12.8, 'size': 2, 'units': 'nm'},
     'axis-2': {
-        'name': 'dy', 'navigate': False, 'offset': 0.0,
+        'name': 'dy', 'navigate': False, 'is_binned': False, 'offset': 0.0,
         'scale': 0.016061676839061997, 'size': 144, 'units': 'cm'},
     'axis-3': {
-        'name': 'dx', 'navigate': False, 'offset': 0.0,
+        'name': 'dx', 'navigate': False, 'is_binned': False, 'offset': 0.0,
         'scale': 0.016061676839061997, 'size': 144, 'units': 'cm'}}
 
 axes2 = {
     'axis-0': {
-        'name': 'y', 'navigate': True, 'offset': 0.0,
+        'name': 'y', 'navigate': True, 'is_binned': False, 'offset': 0.0,
         'scale': 64.0, 'size': 2, 'units': 'nm'},
     'axis-1': {
-        'name': 'x', 'navigate': True, 'offset': 0.0,
+        'name': 'x', 'navigate': True, 'is_binned': False, 'offset': 0.0,
         'scale': 64.0, 'size': 3, 'units': 'nm'},
     'axis-2': {
-        'name': 'dy', 'navigate': False, 'offset': 0.0,
+        'name': 'dy', 'navigate': False, 'is_binned': False, 'offset': 0.0,
         'scale': 0.016061676839061997, 'size': 5, 'units': 'cm'},
     'axis-3': {
-        'name': 'dx', 'navigate': False, 'offset': 0.0,
+        'name': 'dx', 'navigate': False, 'is_binned': False, 'offset': 0.0,
         'scale': 0.016061676839061997, 'size': 5, 'units': 'cm'}}
 
 axes2_converted = {
     'axis-0': {
-        'name': 'y', 'navigate': True, 'offset': 0.0,
+        'name': 'y', 'navigate': True, 'is_binned': False, 'offset': 0.0,
         'scale': 64.0, 'size': 2, 'units': 'nm'},
     'axis-1': {
-        'name': 'x', 'navigate': True, 'offset': 0.0,
+        'name': 'x', 'navigate': True, 'is_binned': False, 'offset': 0.0,
         'scale': 64.0, 'size': 3, 'units': 'nm'},
     'axis-2': {
-        'name': 'dy', 'navigate': False, 'offset': 0.0,
+        'name': 'dy', 'navigate': False, 'is_binned': False, 'offset': 0.0,
         'scale': 160.61676839061997, 'size': 5, 'units': 'µm'},
     'axis-3': {
-        'name': 'dx', 'navigate': False, 'offset': 0.0,
+        'name': 'dx', 'navigate': False, 'is_binned': False, 'offset': 0.0,
         'scale': 160.61676839061997, 'size': 5, 'units': 'µm'}}
 
 
@@ -229,8 +229,6 @@ def test_load_readonly():
     mm = s.data.dask[k]
     assert isinstance(mm, np.memmap)
     assert not mm.flags["WRITEABLE"]
-    with pytest.raises(NotImplementedError):
-        s.data[:] = 23
 
 
 def test_load_inplace():

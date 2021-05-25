@@ -28,8 +28,8 @@ Caveats
 -------
 
 * Before creating a model verify that the
-  :py:attr:`~.signal.BaseSignal.metadata.Signal.binned` metadata
-  attribute of the signal is set to the correct value because the resulting
+  :py:attr:`~.signal.BaseSignal.axes_manager.signal_axes[0].is_binned` attribute
+  of the signal axis is set to the correct value because the resulting
   model depends on this parameter. See :ref:`signal.binned` for more details.
 * When importing data that has been binned using other software, in
   particular Gatan's DM, the stored values may be the averages of the
@@ -102,6 +102,7 @@ The following general components are currently available for one-dimensional mod
 * :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
 * :py:class:`~._components.skew_normal.SkewNormal`
 * :py:class:`~._components.voigt.Voigt`
+* :py:class:`~._components.split_voigt.SplitVoigt`
 * :py:class:`~._components.volume_plasmon_drude.VolumePlasmonDrude`
 
 The following components developed with specific signal types in mind are
@@ -1015,7 +1016,7 @@ on the ``centre`` parameter.
 
     >>> s = hs.signals.BaseSignal(np.random.normal(loc=10, scale=0.01,
     ... size=100000)).get_histogram()
-    >>> s.metadata.Signal.binned = True
+    >>> s.axes_manager[-1].is_binned = True
     >>> m = s.create_model()
     >>> g1 = hs.model.components1D.Gaussian()
     >>> m.append(g1)

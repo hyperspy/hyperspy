@@ -23,7 +23,7 @@ import copy
 import types
 from io import StringIO
 import codecs
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 import unicodedata
 from contextlib import contextmanager
 import importlib
@@ -34,6 +34,7 @@ import numpy as np
 from hyperspy.misc.signal_tools import broadcast_signals
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+from hyperspy.docstrings.utils import STACK_METADATA_ARG
 
 
 _logger = logging.getLogger(__name__)
@@ -207,7 +208,7 @@ def slugify(value, valid_variable_name=False):
     return value
 
 
-class DictionaryTreeBrowser(object):
+class DictionaryTreeBrowser:
 
     """A class to comfortably browse a dictionary using a CLI.
 
@@ -264,21 +265,54 @@ class DictionaryTreeBrowser(object):
 
     """
 
-    def __init__(self, dictionary=None, double_lines=False):
+    def __init__(self, dictionary=None, double_lines=False, lazy=True):
+        """When creating a DictionaryTreeBrowser lazily, the dictionary is
+        added to the `_lazy_attributes` attribute. The first time a lazy
+        attribute is called or the DictionaryTreeBrowser is printed, the
+        DictionaryTreeBrowser processes the lazy attributes with the
+        `process_lazy_attributes` method.
+        DictionaryTreeBrowser is lazy by default, using non-lazy instances
+        can be useful for debugging purposes.
+
+        """
+        self._lazy_attributes = {}
         self._double_lines = double_lines
-        if not dictionary:
+
+        if dictionary is None:
             dictionary = {}
-        super(DictionaryTreeBrowser, self).__init__()
-        self.add_dictionary(dictionary, double_lines=double_lines)
 
-    def add_dictionary(self, dictionary, double_lines=False):
-        """Add new items from dictionary.
+        if lazy:
+            self._lazy_attributes.update(dictionary)
+        else:
+            self._process_dictionary(dictionary, double_lines)
 
+    def _process_dictionary(self, dictionary, double_lines):
+        """Process the provided dictionary to set the attributes
         """
         for key, value in dictionary.items():
             if key == '_double_lines':
                 value = double_lines
             self.__setattr__(key, value)
+
+    def process_lazy_attributes(self):
+        """Run the DictionaryTreeBrowser machinery for the lazy attributes.
+        """
+        if len(self._lazy_attributes) > 0:
+            _logger.debug("Processing lazy attributes DictionaryBrowserTree")
+            self._process_dictionary(self._lazy_attributes, self._double_lines)
+        self._lazy_attributes = {}
+
+    def add_dictionary(self, dictionary, double_lines=False):
+        """Add new items from dictionary.
+        """
+        if len(self._lazy_attributes) > 0:
+            # To simplify merging lazy and non lazy attribute, we get self
+            # as a dictionary and update the dictionary with the attributes
+            d = self.as_dictionary()
+            nested_dictionary_merge(d, dictionary)
+            self.__init__(d, double_lines=double_lines, lazy=True)
+        else:
+            self._process_dictionary(dictionary, double_lines)
 
     def export(self, filename, encoding='utf8'):
         """Export the dictionary to a text file
@@ -332,7 +366,8 @@ class DictionaryTreeBrowser(object):
                                     else " <tuple>")
                             value = DictionaryTreeBrowser(
                                 {'[%d]' % i: v for i, v in enumerate(value)},
-                                double_lines=True)
+                                double_lines=True,
+                                lazy=False)
                         else:
                             string += "%s%s%s = %s\n" % (
                                 padding, symbol, key, strvalue)
@@ -380,7 +415,8 @@ class DictionaryTreeBrowser(object):
                                     else " <tuple>")
                             value = DictionaryTreeBrowser(
                                 {'[%d]' % i: v for i, v in enumerate(value)},
-                                double_lines=True)
+                                double_lines=True,
+                                lazy=False)
                         else:
                             string += add_key_value(key, strvalue)
                             continue # skips the next if-else
@@ -404,50 +440,85 @@ class DictionaryTreeBrowser(object):
         return string
 
     def __repr__(self):
+        self.process_lazy_attributes()
         return self._get_print_items()
 
     def _repr_html_(self):
+        self.process_lazy_attributes()
         return self._get_html_print_items()
 
     def __getitem__(self, key):
+        self.process_lazy_attributes()
         return self.__getattribute__(key)
 
     def __setitem__(self, key, value):
         self.__setattr__(key, value)
 
+    def __getattr__(self, name):
+        """__getattr__ is called when the default attribute access (
+        __getattribute__) fails with an AttributeError.
+
+        """
+        # Skip the attribute we are not interested in. This is also necessary
+        # to recursive loops.
+        if name.startswith("__"):
+            raise AttributeError(name)
+
+        # Attribute name are been slugified, so we need to do the same for
+        # the dictionary keys. Also check with `_sig_` prefix for signal attributes.
+        keys = [slugify(k) for k in self._lazy_attributes.keys()]
+        if name in keys or f"_sig_{name}" in keys:
+            # It is a lazy attribute, we need to process the lazy attribute
+            self.process_lazy_attributes()
+            return self.__dict__[name]['_dtb_value_']
+        else:
+            raise AttributeError(name)
+
     def __getattribute__(self, name):
         if isinstance(name, bytes):
             name = name.decode()
         name = slugify(name, valid_variable_name=True)
-        item = super(DictionaryTreeBrowser, self).__getattribute__(name)
+        item = super().__getattribute__(name)
+
         if isinstance(item, dict) and '_dtb_value_' in item and "key" in item:
             return item['_dtb_value_']
         else:
             return item
 
     def __setattr__(self, key, value):
+        if key in ['_double_lines', '_lazy_attributes']:
+            super().__setattr__(key, value)
+            return
+        if key == 'binned':
+            warnings.warn('Use of the `binned` attribute in metadata is '
+                          'going to be deprecated in v2.0. Set the '
+                          '`axis.is_binned` attribute instead. ', 
+                          VisibleDeprecationWarning)
+            
         if key.startswith('_sig_'):
             key = key[5:]
             from hyperspy.signal import BaseSignal
             value = BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
-            if self.has_item(slugified_key):
-                self.get_item(slugified_key).add_dictionary(
+            if slugified_key in self.__dict__.keys():
+                self.__dict__[slugified_key]['_dtb_value_'].add_dictionary(
                     value,
                     double_lines=self._double_lines)
                 return
             else:
                 value = DictionaryTreeBrowser(
                     value,
-                    double_lines=self._double_lines)
-        super(DictionaryTreeBrowser, self).__setattr__(
-            slugified_key,
-            {'key': key, '_dtb_value_': value})
+                    double_lines=self._double_lines,
+                    lazy=False)
+        super().__setattr__(slugified_key, {'key': key, '_dtb_value_': value})
 
     def __len__(self):
-        return len(
-            [key for key in self.__dict__.keys() if not key.startswith("_")])
+        if len(self._lazy_attributes) > 0:
+            d = self._lazy_attributes
+        else:
+            d = self.__dict__
+        return len([key for key in d.keys() if not key.startswith("_")])
 
     def keys(self):
         """Returns a list of non-private keys.
@@ -460,13 +531,18 @@ class DictionaryTreeBrowser(object):
         """Returns its dictionary representation.
 
         """
-        from hyperspy.signal import BaseSignal
+
+        if len(self._lazy_attributes) > 0:
+            return copy.deepcopy(self._lazy_attributes)
+
         par_dict = {}
+
+        from hyperspy.signal import BaseSignal
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
-                key = item_['key']
-                if key in ["_db_index", "_double_lines"]:
+                if key_ in ["_db_index", "_double_lines", "_lazy_attributes"]:
                     continue
+                key = item_['key']
                 if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
                     item = item_['_dtb_value_'].as_dictionary()
                 elif isinstance(item_['_dtb_value_'], BaseSignal):
@@ -476,7 +552,7 @@ class DictionaryTreeBrowser(object):
                     item = item_['_dtb_value_']._to_dictionary()
                 else:
                     item = item_['_dtb_value_']
-                par_dict.__setitem__(key, item)
+                par_dict.update({key:item})
         return par_dict
 
     def has_item(self, item_path):
@@ -534,18 +610,16 @@ class DictionaryTreeBrowser(object):
         default :
             The value to return if the path does not exist.
 
-
         Examples
         --------
-
         >>> dict = {'To' : {'be' : True}}
         >>> dict_browser = DictionaryTreeBrowser(dict)
-        >>> dict_browser.has_item('To')
+        >>> dict_browser.get_item('To')
+        └── be = True
+        >>> dict_browser.get_item('To.be')
         True
-        >>> dict_browser.has_item('To.be')
-        True
-        >>> dict_browser.has_item('To.be.or')
-        False
+        >>> dict_browser.get_item('To.be.or', 'default_value')
+        'default_value'
 
         """
         if isinstance(item_path, str):
@@ -628,13 +702,13 @@ class DictionaryTreeBrowser(object):
         dtb = self
         for key in keys:
             if dtb.has_item(key) is False:
-                dtb[key] = DictionaryTreeBrowser()
+                dtb[key] = DictionaryTreeBrowser(lazy=False)
             dtb = dtb[key]
 
     def __next__(self):
         """
         Standard iterator method, updates the index and returns the
-        current coordiantes
+        current coordinates
 
         Returns
         -------
@@ -652,6 +726,7 @@ class DictionaryTreeBrowser(object):
             raise StopIteration
         else:
             self._db_index += 1
+        self.process_lazy_attributes()
         key = list(self.keys())[self._db_index]
         return key, getattr(self, key)
 
@@ -865,7 +940,7 @@ def closest_power_of_two(n):
 
 
 def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
-          show_progressbar=None, **kwargs):
+          stack_metadata=True, show_progressbar=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
 
     The title is set to that of the first signal in the list.
@@ -880,7 +955,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         signals are stacked over the axis given by its integer index or
         its name. The data must have the same shape, except in the dimension
         corresponding to `axis`.
-    new_axis_name : string
+    new_axis_name : str
         The name of the new axis when `axis` is None.
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
@@ -888,6 +963,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
     lazy : {bool, None}
         Returns a LazySignal if True. If None, only returns lazy result if at
         least one is lazy.
+    %s
     %s
 
     Returns
@@ -962,10 +1038,9 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
             if axis is None
             else da.concatenate(datalist, axis=axis.index_in_array)
         )
+
         if axis_input is None:
             signal = first.__class__(newdata)
-            signal._lazy = True
-            signal._assign_subclass()
             signal.axes_manager._axes[1:] = copy.deepcopy(newlist[0].axes_manager._axes)
             axis_name = new_axis_name
             axis_names = [axis_.name for axis_ in signal.axes_manager._axes[1:]]
@@ -976,22 +1051,33 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
             eaxis = signal.axes_manager._axes[0]
             eaxis.name = axis_name
             eaxis.navigate = True  # This triggers _update_parameters
-            signal.metadata = copy.deepcopy(first.metadata)
-            # Get the title from 1st object
-            signal.metadata.General.title = f"Stack of {first.metadata.General.title}"
-            signal.original_metadata = DictionaryTreeBrowser({})
         else:
             signal = newlist[0]._deepcopy_with_new_data(newdata)
-            signal._lazy = True
-            signal._assign_subclass()
-        signal.get_dimensions_from_data()
-        signal.original_metadata.add_node("stack_elements")
 
-        for i, obj in enumerate(signal_list):
-            signal.original_metadata.stack_elements.add_node(f"element{i}")
-            node = signal.original_metadata.stack_elements[f"element{i}"]
-            node.original_metadata = obj.original_metadata.as_dictionary()
-            node.metadata = obj.metadata.as_dictionary()
+        signal._lazy = True
+        signal._assign_subclass()
+        signal.get_dimensions_from_data()
+        # Set the metadata, if an stack_metadata is an integer, the metadata
+        # will overwritten later
+        signal.metadata = first.metadata.deepcopy()
+        signal.metadata.General.title = f"Stack of {first.metadata.General.title}"
+
+        if isinstance(stack_metadata, bool):
+            if stack_metadata:
+                signal.original_metadata.add_node('stack_elements')
+                for i, obj in enumerate(signal_list):
+                    signal.original_metadata.stack_elements.add_node(f'element{i}')
+                    node = signal.original_metadata.stack_elements[f'element{i}']
+                    node.original_metadata = obj.original_metadata.deepcopy()
+                    node.metadata = obj.metadata.deepcopy()
+            else:
+                signal.original_metadata = DictionaryTreeBrowser({})
+        elif isinstance(stack_metadata, int):
+            obj = signal_list[stack_metadata]
+            signal.metadata = obj.metadata.deepcopy()
+            signal.original_metadata = obj.original_metadata.deepcopy()
+        else:
+            raise ValueError('`stack_metadata` must a boolean or an integer.')
 
         if axis_input is None:
             axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
@@ -1012,15 +1098,13 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
     else:
         signal = signal_list[0]
 
-    # Leave as lazy or compute
-    if lazy:
-        signal = signal.as_lazy()
-    else:
+    # compute if not lazy
+    if not lazy:
         signal.compute(False, show_progressbar=show_progressbar)
 
     return signal
 
-stack.__doc__ %= (SHOW_PROGRESSBAR_ARG)
+stack.__doc__ %= (STACK_METADATA_ARG, SHOW_PROGRESSBAR_ARG)
 
 
 def shorten_name(name, req_l):
@@ -1066,11 +1150,11 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
     from hyperspy.signal import BaseSignal
     from itertools import repeat
 
-    iterators = tuple(signal[1]._cycle_signal()
-                      if isinstance(signal[1], BaseSignal) else signal[1]
-                      for signal in iterating_kwargs)
+    iterators = tuple(iterating_kwargs[key]._cycle_signal()
+                      if isinstance(iterating_kwargs[key], BaseSignal) else iterating_kwargs[key]
+                      for key in iterating_kwargs)
     # make all kwargs iterating for simplicity:
-    iterating = tuple(key for key, value in iterating_kwargs)
+    iterating = tuple(key for key in iterating_kwargs)
     for k, v in kwargs.items():
         if k not in iterating:
             iterating += k,
@@ -1078,8 +1162,8 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
 
     def figure_out_kwargs(data):
         _kwargs = {k: v for k, v in zip(iterating, data[1:])}
-        for k, v in iterating_kwargs:
-            if (isinstance(v, BaseSignal) and
+        for k in iterating_kwargs:
+            if (isinstance(iterating_kwargs[k], BaseSignal) and
                 isinstance(_kwargs[k], np.ndarray) and
                     len(_kwargs[k]) == 1):
                 _kwargs[k] = _kwargs[k][0]
@@ -1091,6 +1175,100 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
 
     return func, iterators
 
+
+def process_function_blockwise(data,
+                               *args,
+                               function,
+                               nav_indexes=None,
+                               output_signal_size=None,
+                               block_info=None,
+                               arg_keys=None,
+                               **kwargs):
+    """
+    Function for processing the function blockwise...
+    This gets passed to map_blocks so that the function
+    only gets applied to the signal axes.
+
+    Parameters:
+    ------------
+    data: np.array
+        The data for one chunk
+    *args: tuple
+        Any signal the is iterated alongside the data in. In the
+        form ((key1, value1),(key2,value2)...)
+    function: function
+        The function to applied to the signal axis
+    nav_indexes: tuple
+        The indexes of the navigation axes for the dataset.
+    output_signal_shape: tuple
+        The shape of the output signal.  For a ragged signal
+        this is equal to 1.
+    block_info: dict
+        The block info as described by the `dask.array.map_blocks` function
+    arg_keys: tuple
+        The list of keys for the passed arguments (args).  Together this makes
+        a set of key:value pairs to be passed to the function.
+    **kwargs: dict
+        Any additional key value pairs to be used by the function
+        (Note that these are the constants that are applied.)
+
+    """
+    # Both of these values need to be passed in
+    dtype = block_info[None]["dtype"]
+    chunk_nav_shape = tuple([data.shape[i] for i in sorted(nav_indexes)])
+    output_shape = chunk_nav_shape + tuple(output_signal_size)
+    # Pre-allocating the output array
+    output_array = np.empty(output_shape, dtype=dtype)
+    if len(args) == 0:
+        # There aren't any BaseSignals for iterating
+        for nav_index in np.ndindex(chunk_nav_shape):
+            islice = np.s_[nav_index]
+            output_array[islice] = function(data[islice],
+                                            **kwargs)
+    else:
+        # There are BaseSignals which iterate alongside the data
+        for index in np.ndindex(chunk_nav_shape):
+            islice = np.s_[index]
+
+            iter_dict = {key: a[islice].squeeze() for key, a in zip(arg_keys,args)}
+            output_array[islice] = function(data[islice],
+                                            **iter_dict,
+                                            **kwargs)
+    try:
+        output_array = output_array.squeeze(-1)
+    except ValueError:
+        pass
+    return output_array
+
+
+def guess_output_signal_size(test_signal,
+                             function,
+                             ragged,
+                             **kwargs):
+    """This function is for guessing the output signal shape and size.
+    It will attempt to apply the function to some test signal and then output
+    the resulting signal shape and datatype.
+
+    Parameters
+    test_signal: BaseSignal
+        A test signal for the function to be applied to. A signal
+        with 0 navigation dimensions
+    function: function
+        The function to be applied to the dataset
+    ragged: bool
+        If the data is ragged then the output signal size is () and the
+        data type is 'object'
+    **kwargs: dict
+        Any other keyword arguments passed to the function.
+    """
+    if ragged:
+        output_dtype = object
+        output_signal_size = ()
+    else:
+        output = function(test_signal, **kwargs)
+        output_dtype = output.dtype
+        output_signal_size = output.shape
+    return output_signal_size, output_dtype
 
 def map_result_construction(signal,
                             inplace,
@@ -1226,3 +1404,26 @@ def is_hyperspy_signal(input_object):
     """
     from hyperspy.signals import BaseSignal
     return isinstance(input_object,BaseSignal)
+
+
+def nested_dictionary_merge(dict1, dict2):
+    """ Merge dict2 into dict1 recursively
+    """
+    for key, value in dict2.items():
+        if (key in dict1 and isinstance(dict1[key], dict)
+            and isinstance(dict2[key], Mapping)):
+            nested_dictionary_merge(dict1[key], dict2[key])
+        else:
+            dict1[key] = dict2[key]
+
+
+def is_binned(signal, axis=-1):
+    """Backwards compatibility check utility for is_binned attribute.
+
+    Can be removed in v2.0.
+    """
+    if signal.metadata.has_item('Signal.binned'):
+        return signal.metadata.Signal.binned
+    else:
+        return signal.axes_manager[axis].is_binned
+

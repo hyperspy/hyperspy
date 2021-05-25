@@ -63,7 +63,7 @@ class BlittedFigure(object):
     def _on_blit_draw(self, *args):
         fig = self.figure
         # As draw doesn't draw animated elements, in its current state the
-        # canvas only contains the backgroud. The following line simply stores
+        # canvas only contains the background. The following line simply stores
         # it for the consumption of _update_animated.
         self._background = fig.canvas.copy_from_bbox(fig.bbox)
         # draw does not draw animated elements, so we must draw them
@@ -137,7 +137,7 @@ class BlittedFigure(object):
         self._title = textwrap.fill(value, 60)
 
     def render_figure(self):
-        if self.figure.canvas.supports_blit:
+        if self.figure.canvas.supports_blit and self._background is not None:
             self._update_animated()
         else:
             self.figure.canvas.draw_idle()

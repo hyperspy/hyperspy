@@ -33,6 +33,7 @@ from hyperspy._signals.common_signal1d import CommonSignal1D
 from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
 from hyperspy.models.model1d import Model1D
 from hyperspy.misc.lowess_smooth import lowess
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.signal_tools import (
@@ -132,9 +133,9 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
     else:
         d = np.gradient(y)
     n = np.round(peakgroup / 2 + 1)
-    peak_dt = np.dtype([('position', np.float),
-                        ('height', np.float),
-                        ('width', np.float)])
+    peak_dt = np.dtype([('position', float),
+                        ('height', float),
+                        ('width', float)])
     P = np.array([], dtype=peak_dt)
     peak = 0
     for j in range(len(y) - 4):
@@ -225,42 +226,38 @@ def interpolate1D(number_of_interpolation_points, data):
     return interpolator(new_ax)
 
 
-def _estimate_shift1D(data, **kwargs):
-    mask = kwargs.get('mask', None)
-    ref = kwargs.get('ref', None)
-    interpolate = kwargs.get('interpolate', True)
-    ip = kwargs.get('ip', 5)
-    data_slice = kwargs.get('data_slice', slice(None))
+def _estimate_shift1D(data, data_slice=slice(None), ref=None, ip=5,
+                      interpolate=True, mask=None, **kwargs):
     if bool(mask):
-        # asarray is required for consistensy as argmax
+        # asarray is required for consistency as argmax
         # returns a numpy scalar array
         return np.asarray(np.nan)
     data = data[data_slice]
     if interpolate is True:
         data = interpolate1D(ip, data)
-    return np.argmax(np.correlate(ref, data, 'full')) - len(ref) + 1
+    # Normalise the data before the cross correlation
+    ref = ref - ref.mean()
+    data = data - data.mean()
+    return (np.argmax(np.correlate(ref, data, 'full')) - len(ref) + 1).astype(float)
 
 
 def _shift1D(data, **kwargs):
+    """Used to shift a data array by a specified amount in axes units. Axis must
+    be passed as a kwarg. """
     shift = kwargs.get('shift', 0.)
     original_axis = kwargs.get('original_axis', None)
     fill_value = kwargs.get('fill_value', np.nan)
     kind = kwargs.get('kind', 'linear')
-    offset = kwargs.get('offset', 0.)
-    scale = kwargs.get('scale', 1.)
-    size = kwargs.get('size', 2)
+
     if np.isnan(shift) or shift == 0:
         return data
-    axis = np.linspace(offset, offset + scale * (size - 1), size)
 
-    si = sp.interpolate.interp1d(original_axis,
-                                 data,
-                                 bounds_error=False,
-                                 fill_value=fill_value,
-                                 kind=kind)
-    offset = float(offset - shift)
-    axis = np.linspace(offset, offset + scale * (size - 1), size)
-    return si(axis)
+    #This is the interpolant function
+    si = sp.interpolate.interp1d(original_axis, data, bounds_error=False,
+                              fill_value=fill_value, kind=kind)
+
+    #Evaluate interpolated data at shifted positions
+    return si(original_axis-shift)
 
 
 class Signal1D(BaseSignal, CommonSignal1D):
@@ -386,8 +383,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        shift_array : numpy array
-            An array containing the shifting amount. It must have
+        shift_array : BaseSignal or np.array
+            An array containing the shifting amount. It must have the same
+            `axes_manager._navigation_shape`
             `axes_manager._navigation_shape_in_array` shape.
         interpolation_method : str or int
             Specifies the kind of interpolation as a string ('linear',
@@ -455,9 +453,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 post_array = da.full(tuple(post_shape),
                                      fill_value,
                                      chunks=tuple(post_chunks))
-
                 self.data = da.concatenate((pre_array, self.data, post_array),
-                                           axis=ind)
+                                           axis=ind).rechunk({ind:-1})
             else:
                 padding = []
                 for i in range(self.data.ndim):
@@ -470,18 +467,18 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                    constant_values=(fill_value,))
             axis.offset += minimum
             axis.size += axis.high_index - ihigh + 1 + ilow - axis.low_index
+        if isinstance(shift_array, np.ndarray):
+            shift_array = BaseSignal(shift_array.squeeze()).T
 
-        self._map_iterate(_shift1D, (('shift', shift_array.ravel()),),
-                          original_axis=axis.axis,
-                          fill_value=fill_value,
-                          kind=interpolation_method,
-                          offset=axis.offset,
-                          scale=axis.scale,
-                          size=axis.size,
-                          show_progressbar=show_progressbar,
-                          parallel=parallel,
-                          max_workers=max_workers,
-                          ragged=False)
+        self.map(_shift1D,
+                 shift=shift_array,
+                 original_axis=axis.axis,
+                 fill_value=fill_value,
+                 kind=interpolation_method,
+                 show_progressbar=show_progressbar,
+                 parallel=parallel,
+                 max_workers=max_workers,
+                 ragged=False)
 
         if crop and not expand:
             _logger.debug("Cropping %s from index %i to %i"
@@ -583,7 +580,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             axis index. If float they are taken as the axis value.
         reference_indices : tuple of ints or None
             Defines the coordinates of the spectrum that will be used
-            as eference. If None the spectrum at the current
+            as reference. If None the spectrum at the current
             coordinates is used for this purpose.
         max_shift : int
             "Saturation limit" for the shift.
@@ -631,12 +628,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         if interpolate is True:
             ref = interpolate1D(ip, ref)
-        iterating_kwargs = ()
-        if mask is not None:
-            iterating_kwargs += (('mask', mask),)
-        shift_signal = self._map_iterate(
+        shift_signal = self.map(
             _estimate_shift1D,
-            iterating_kwargs=iterating_kwargs,
+            mask=mask,
             data_slice=slice(i1, i2),
             ref=ref,
             ip=ip,
@@ -654,7 +648,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             shift_array.clip(-max_shift, max_shift)
         if interpolate is True:
             shift_array = shift_array / ip
-        shift_array *= axis.scale
+        shift_array = shift_array * axis.scale
         if self._lazy:
             # We must compute right now because otherwise any changes to the
             # axes_manager of the signal later in the workflow may result in
@@ -696,7 +690,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             axis index. If float they are taken as the axis value.
         reference_indices : tuple of ints or None
             Defines the coordinates of the spectrum that will be used
-            as eference. If None the spectrum at the current
+            as reference. If None the spectrum at the current
             coordinates is used for this purpose.
         max_shift : int
             "Saturation limit" for the shift.
@@ -748,7 +742,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             _logger.warning('In order to properly expand, the lazy '
                             'reference signal will be read twice (once to '
                             'estimate shifts, and second time to shift '
-                            'appropriatelly), which might take a long time. '
+                            'appropriately), which might take a long time. '
                             'Use expand=False to only pass through the data '
                             'once.')
         shift_array = self.estimate_shift1D(
@@ -1075,7 +1069,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
         else:
             try:
                 axis = self.axes_manager.signal_axes[0]
-                scale_factor = axis.scale if self.metadata.Signal.binned else 1
+                scale_factor = axis.scale if is_binned(self) else 1
+                # in v2 replace by
+                # scale_factor = axis.scale if axis.is_binned else 1
                 bkg = background_estimator.function_nd(axis.axis) * scale_factor
                 result = self - bkg
             except MemoryError:
@@ -1126,7 +1122,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         signal_range : "interactive", tuple of ints or floats, optional
             If this argument is not specified, the signal range has to be
             selected using a GUI. And the original spectrum will be replaced.
-            If tuple is given, the a spectrum will be returned.
+            If tuple is given, a spectrum will be returned.
         background_type : str
             The type of component which should be used to fit the background.
             Possible components: Doniach, Gaussian, Lorentzian, Offset,
@@ -1162,7 +1158,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         -------
         {None, signal, background_model or (signal, background_model)}
             If signal_range is not 'interactive', the signal with background
-            substracted is returned. If return_model is True, returns the
+            subtracted is returned. If return_model is True, returns the
             background model, otherwise, the GUI widget dictionary is returned
             if `display=False` - see the display parameter documentation.
 
@@ -1184,7 +1180,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         >>> s.remove_background(signal_range=(400,450), fast=False)
         <Signal1D, title: , dimensions: (|1000)>
 
-        Returns background substracted and the model:
+        Returns background subtracted and the model:
 
         >>> s.remove_background(signal_range=(400,450),
                                 fast=False,
@@ -1235,16 +1231,14 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        left_value, righ_value : int, float or None
+        left_value, right_value : int, float or None
             If int the values are taken as indices. If float they are
             converted to indices using the spectral axis calibration.
             If left_value is None crops from the beginning of the axis.
             If right_value is None crops up to the end of the axis. If
-            both are
-            None the interactive cropping interface is activated
-            enabling
-            cropping the spectrum using a span selector in the signal
-            plot.
+            both are None the interactive cropping interface is activated
+            enabling cropping the spectrum using a span selector in the
+            signal plot.
 
         Raises
         ------
@@ -1454,7 +1448,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         of the spectra at a given fraction of its maximum.
 
         It can be used with asymmetric peaks. For accurate results any
-        background must be previously substracted.
+        background must be previously subtracted.
         The estimation is performed by interpolation using cubic splines.
 
         Parameters

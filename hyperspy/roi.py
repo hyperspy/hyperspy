@@ -367,7 +367,7 @@ class BaseInteractiveROI(BaseROI):
         raise NotImplementedError()
 
     def interactive(self, signal, navigation_signal="same", out=None,
-                    color="green", **kwargs):
+                    color="green", snap=True, **kwargs):
         """Creates an interactively sliced Signal (sliced by this ROI) via
         hyperspy.interactive.
 
@@ -379,16 +379,19 @@ class BaseInteractiveROI(BaseROI):
             The signal the ROI will be added to, for navigation purposes
             only. Only the source signal will be sliced.
             If not None, it will automatically create a widget on
-            navigation_signal. Passing "same" is identical to passing the 
-            same signal to 'signal' and 'navigation_signal', but is less 
+            navigation_signal. Passing "same" is identical to passing the
+            same signal to 'signal' and 'navigation_signal', but is less
             ambigous, and allows "same" to be the default value.
         out : Signal
-            If not None, it will use 'out' as the output instead of 
+            If not None, it will use 'out' as the output instead of
             returning a new Signal.
         color : Matplotlib color specifier (default: 'green')
             The color for the widget. Any format that matplotlib uses should
-            be ok. This will not change the color fo any widget passed with 
+            be ok. This will not change the color fo any widget passed with
             the 'widget' argument.
+        snap : bool, optional
+            If True, the ROI will be snapped to the axes values. Default is
+            True.
         **kwargs
             All kwargs are passed to the roi __call__ method which is called
             interactively on any roi parameter change.
@@ -410,7 +413,7 @@ class BaseInteractiveROI(BaseROI):
             navigation_signal = signal
         if navigation_signal is not None:
             if navigation_signal not in self.signal_map:
-                self.add_widget(navigation_signal, color=color,
+                self.add_widget(navigation_signal, color=color, snap=snap,
                                 axes=kwargs.get("axes", None))
         if (self.update not in
                 signal.axes_manager.events.any_axis_changed.connected):
@@ -443,8 +446,8 @@ class BaseInteractiveROI(BaseROI):
         self._update_widgets(exclude=(widget,))
         self.events.changed.trigger(self)
 
-    def add_widget(self, signal, axes=None, widget=None,
-                   color='green', **kwargs):
+    def add_widget(self, signal, axes=None, widget=None, color='green',
+                   snap=True, **kwargs):
         """Add a widget to visually represent the ROI, and connect it so any
         changes in either are reflected in the other. Note that only one
         widget can be added per signal/axes combination.
@@ -475,6 +478,9 @@ class BaseInteractiveROI(BaseROI):
             The color for the widget. Any format that matplotlib uses should be
             ok. This will not change the color fo any widget passed with the
             'widget' argument.
+        snap : bool, optional
+            If True, the ROI will be snapped to the axes values. Default is
+            True.
         kwargs:
             All keyword argument are passed to the widget constructor.
         """
@@ -494,6 +500,12 @@ class BaseInteractiveROI(BaseROI):
         widget.axes = axes
         with widget.events.changed.suppress_callback(self._on_widget_change):
             self._apply_roi2widget(widget)
+            # We need to snap after the widget value have been set
+            if hasattr(widget, 'snap_all'):
+                widget.snap_all = snap
+            else:
+                widget.snap_position = snap
+
         if widget.ax is None:
             if signal._plot is None or signal._plot.signal_plot is None:
                 raise Exception(
@@ -672,7 +684,7 @@ class Point2DROI(BasePointROI):
     def __init__(self, x=None, y=None):
         super(Point2DROI, self).__init__()
         x, y = (
-            para if para is not None 
+            para if para is not None
             else t.Undefined for para in (x, y))
 
         self.x, self.y = x, y
@@ -728,11 +740,13 @@ class SpanROI(BaseInteractiveROI):
     _ndim = 1
 
     def __init__(self, left=None, right=None):
-        super(SpanROI, self).__init__()
+        super().__init__()
+        self._bounds_check = True   # Use responsibly!
+        if left is not None and right is not None and left >= right:
+            raise ValueError(f"`left` ({left}) must be smaller than `right` ({right}).")
         left, right = (
-            para if para is not None 
+            para if para is not None
             else t.Undefined for para in (left, right))
-        self._bounds_check = True   # Use reponsibly!
         self.left, self.right = left, right
 
     def _set_default_values(self, signal):
@@ -808,7 +822,7 @@ class RectangularROI(BaseInteractiveROI):
     def __init__(self, left=None, top=None, right=None, bottom=None):
         super(RectangularROI, self).__init__()
         left, top, right, bottom  = (
-            para if para is not None 
+            para if para is not None
             else t.Undefined for para in (left, top, right, bottom))
         self._bounds_check = True   # Use reponsibly!
         self.left, self.top, self.right, self.bottom = left, top, right, bottom
@@ -962,7 +976,7 @@ class CircleROI(BaseInteractiveROI):
     def __init__(self, cx=None, cy=None, r=None, r_inner=0):
         super(CircleROI, self).__init__()
         cx, cy, r = (
-            para if para is not None 
+            para if para is not None
             else t.Undefined for para in (cx, cy, r))
 
         self._bounds_check = True   # Use reponsibly!
@@ -1134,7 +1148,7 @@ class Line2DROI(BaseInteractiveROI):
     def __init__(self, x1=None, y1=None, x2=None, y2=None, linewidth=0):
         super(Line2DROI, self).__init__()
         x1, y1, x2, y2 = (
-            para if para is not None 
+            para if para is not None
             else t.Undefined for para in (x1, y1, x2, y2))
 
         self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
@@ -1233,8 +1247,8 @@ class Line2DROI(BaseInteractiveROI):
 
     @property
     def length(self):
-        p0 = np.array((self.x1, self.y1), dtype=np.float)
-        p1 = np.array((self.x2, self.y2), dtype=np.float)
+        p0 = np.array((self.x1, self.y1), dtype=float)
+        p1 = np.array((self.x2, self.y2), dtype=float)
         d_row, d_col = p1 - p0
         return np.hypot(d_row, d_col)
 

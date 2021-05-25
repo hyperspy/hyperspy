@@ -552,9 +552,19 @@ class EMD_NCEM:
             self.dictionaries.append(d)
 
     @classmethod
-    def find_dataset_paths(cls, file):
+    def find_dataset_paths(cls, file, supported_dataset=True):
         """
         Find the paths of all groups containing valid EMD data.
+
+        Parameters
+        ----------
+        file : hdf5 file handle
+        supported_dataset : bool, optional
+            If True (default), returns the paths of all supported datasets,
+            otherwise returns the path of the non-supported other dataset.
+            This is relevant for groups containing auxiliary dataset(s) which
+            are not supported by HyperSpy or described in the EMD NCEM dataset
+            specification.
 
         Returns
         -------
@@ -562,15 +572,20 @@ class EMD_NCEM:
             List of path to these group.
 
         """
-        def print_dataset_only(item_name, item):
-            if not os.path.basename(item_name).startswith(('dim', 'index_coords')):
+        def print_dataset_only(item_name, item, dataset_only):
+            if supported_dataset is os.path.basename(item_name).startswith(
+                    ('data', 'counted_datacube', 'datacube', 'diffractionslice',
+                     'realslice', 'pointlistarray', 'pointlist')):
                 if isinstance(item, h5py.Dataset):
                     grp = file.get(os.path.dirname(item_name))
                     if cls._get_emd_group_type(grp):
                         dataset_path.append(item_name)
 
+        f = lambda item_name, item: print_dataset_only(item_name, item,
+                                                       supported_dataset)
+
         dataset_path = []
-        file.visititems(print_dataset_only)
+        file.visititems(f)
 
         return dataset_path
 
@@ -1092,15 +1107,18 @@ class FeiEMDReader(object):
                      ('imagFloat', '<f4')]
         if h5data.dtype == fft_dtype or h5data.dtype == dpc_dtype:
             _logger.debug("Found an FFT or DPC, loading as Complex2DSignal")
-            if self.lazy:
-                _logger.warning("Lazy not supported for FFT or DPC")
-            data = np.empty(h5data.shape, h5data.dtype)
-            h5data.read_direct(data)
             real = h5data.dtype.descr[0][0]
             imag = h5data.dtype.descr[1][0]
-            data = data[real] + 1j * data[imag]
-            # Set the axes in frame, y, x order
-            data = np.rollaxis(data, axis=2)
+            if self.lazy:
+                data = da.from_array(h5data, chunks=h5data.chunks)
+                data = data[real] + 1j * data[imag]
+                data = da.transpose(data, axes=[2, 0, 1])
+            else:
+                data = np.empty(h5data.shape, h5data.dtype)
+                h5data.read_direct(data)
+                data = data[real] + 1j * data[imag]
+                # Set the axes in frame, y, x order
+                data = np.rollaxis(data, axis=2)
         else:
             if self.lazy:
                 data = da.transpose(
@@ -1458,7 +1476,7 @@ class FeiEMDReader(object):
         if units == t.Undefined:
             return value, units
         factor /= 2
-        v = np.float(value) * self.ureg(units)
+        v = float(value) * self.ureg(units)
         converted_v = (factor * v).to_compact()
         converted_value = float(converted_v.magnitude / factor)
         converted_units = '{:~}'.format(converted_v.units)

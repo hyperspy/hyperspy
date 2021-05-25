@@ -31,6 +31,7 @@ import pytest
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
@@ -144,10 +145,11 @@ class TestExample1_11(Example1):
 class TestLoadingNewSavedMetadata:
 
     def setup_method(self, method):
-        self.s = load(os.path.join(
-            my_path,
-            "hdf5_files",
-            "with_lists_etc.hdf5"))
+        with pytest.warns(VisibleDeprecationWarning):
+            self.s = load(os.path.join(
+                my_path,
+                "hdf5_files",
+                "with_lists_etc.hdf5"))
 
     def test_signal_inside(self):
         np.testing.assert_array_almost_equal(self.s.data,
@@ -297,7 +299,14 @@ class TestSavingMetadataContainers:
         l = load(fname)
         assert l.metadata.Signal.quantity == quantity
 
-    def test_metadata_update_to_v3_0(self):
+    def test_metadata_binned_deprecate(self):
+        with pytest.warns(UserWarning, match="Loading old file"):
+            s = load(os.path.join(my_path, "hdf5_files", 'example2_v2.2.hspy'))
+        assert s.metadata.has_item('Signal.binned') == False
+        assert s.axes_manager[-1].is_binned == False
+        
+
+    def test_metadata_update_to_v3_1(self):
         md = {'Acquisition_instrument': {'SEM': {'Stage': {'tilt_alpha': 5.0}},
                                          'TEM': {'Detector': {'Camera': {'exposure': 0.20000000000000001}},
                                                  'Stage': {'tilt_alpha': 10.0},
@@ -312,7 +321,6 @@ class TestSavingMetadataContainers:
                           'title': 'test_diffraction_pattern'},
               'Signal': {'Noise_properties': {'Variance_linear_model': {'gain_factor': 1.0,
                                                                         'gain_offset': 0.0}},
-                         'binned': False,
                          'quantity': 'Intensity',
                          'signal_type': ''},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,
@@ -322,27 +330,19 @@ class TestSavingMetadataContainers:
         s = load(os.path.join(
             my_path,
             "hdf5_files",
-            'example2_v2.2.hspy'))
+            'example2_v3.1.hspy'))
         assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 
 def test_none_metadata():
-    s = load(os.path.join(
-        my_path,
-        "hdf5_files",
-        "none_metadata.hdf5"))
+    s = load(os.path.join( my_path, "hdf5_files", "none_metadata.hdf5"))
     assert s.metadata.should_be_None is None
 
 
 def test_rgba16():
-    s = load(os.path.join(
-        my_path,
-        "hdf5_files",
-        "test_rgba16.hdf5"))
-    data = np.load(os.path.join(
-        my_path,
-        "npy_files",
-        "test_rgba16.npy"))
+    with pytest.warns(VisibleDeprecationWarning):
+        s = load(os.path.join(my_path, "hdf5_files", "test_rgba16.hdf5"))
+    data = np.load(os.path.join( my_path, "npy_files", "test_rgba16.npy"))
     assert (s.data == data).all()
 
 
@@ -410,6 +410,21 @@ class TestAxesConfiguration:
         assert s.axes_manager.navigation_axes[0].index_in_array == 4
         assert s.axes_manager.navigation_axes[1].index_in_array == 3
         assert s.axes_manager.signal_dimension == 3
+
+    def teardown_method(self, method):
+        remove(self.filename)
+
+class TestAxesConfigurationBinning:
+
+    def setup_method(self, method):
+        self.filename = 'testfile.hdf5'
+        s = BaseSignal(np.zeros((2, 2, 2)))
+        s.axes_manager.signal_axes[-1].is_binned = True
+        s.save(self.filename)
+
+    def test_axes_configuration(self):
+        s = load(self.filename)
+        assert s.axes_manager.signal_axes[-1].is_binned == True
 
     def teardown_method(self, method):
         remove(self.filename)
@@ -646,10 +661,11 @@ class Test_permanent_markers_io:
     def test_load_unknown_marker_type(self):
         # test_marker_bad_marker_type.hdf5 has 5 markers,
         # where one of them has an unknown marker type
-        s = load(os.path.join(
-            my_path,
-            "hdf5_files",
-            "test_marker_bad_marker_type.hdf5"))
+        with pytest.warns(VisibleDeprecationWarning):
+            s = load(os.path.join(
+                my_path,
+                "hdf5_files",
+                "test_marker_bad_marker_type.hdf5"))
         assert len(s.metadata.Markers) == 4
 
     def test_load_missing_y2_value(self):
@@ -657,10 +673,11 @@ class Test_permanent_markers_io:
         # where one of them is missing the y2 value, however the
         # the point marker only needs the x1 and y1 value to work
         # so this should load
-        s = load(os.path.join(
-            my_path,
-            "hdf5_files",
-            "test_marker_point_y2_data_deleted.hdf5"))
+        with pytest.warns(VisibleDeprecationWarning):
+            s = load(os.path.join(
+                my_path,
+                "hdf5_files",
+                "test_marker_point_y2_data_deleted.hdf5"))
         assert len(s.metadata.Markers) == 5
 
 
@@ -691,7 +708,8 @@ def test_save_ragged_array(tmp_path):
 
 def test_load_missing_extension(caplog):
     path = os.path.join(my_path, "hdf5_files", "hspy_ext_missing.hspy")
-    s = load(path)
+    with pytest.warns(UserWarning):
+        s = load(path)
     assert "This file contains a signal provided by the hspy_ext_missing" in caplog.text
     with pytest.raises(ImportError):
        _ = s.models.restore("a")

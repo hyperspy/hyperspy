@@ -25,39 +25,61 @@ import pytest
 
 from hyperspy.axes import DataAxis
 
-class TestDataAxis:
+class TestDataAxisValueRangeToIndices:
 
     def setup_method(self, method):
         self.axis = DataAxis(size=10, scale=0.1, offset=10, units='nm')
 
     def test_value_range_to_indices_in_range(self):
-        assert (
-            self.axis.value_range_to_indices(
-                10.1, 10.8) == (1, 8))
+        assert self.axis.value_range_to_indices(10.1, 10.8) == (1, 8)
 
     def test_value_range_to_indices_endpoints(self):
-        assert (
-            self.axis.value_range_to_indices(
-                10, 10.9) == (0, 9))
+        assert self.axis.value_range_to_indices(10, 10.9) == (0, 9)
 
     def test_value_range_to_indices_out(self):
-        assert (
-            self.axis.value_range_to_indices(
-                9, 11) == (0, 9))
+        assert self.axis.value_range_to_indices(9, 11) == (0, 9)
 
     def test_value_range_to_indices_None(self):
-        assert (
-            self.axis.value_range_to_indices(
-                None, None) == (0, 9))
+        assert self.axis.value_range_to_indices(None, None) == (0, 9)
 
     def test_value_range_to_indices_v1_greater_than_v2(self):
         with pytest.raises(ValueError):
             self.axis.value_range_to_indices(2, 1)
 
+
+class TestDataAxisValueRangeToIndicesNegativeScale:
+
+    def setup_method(self, method):
+        self.axis = DataAxis(size=10, scale=-0.1, offset=10)
+
+    def test_value_range_to_indices_in_range(self):
+        assert self.axis.value_range_to_indices(9.9, 9.2) == (1, 8)
+
+    def test_value_range_to_indices_endpoints(self):
+        assert self.axis.value_range_to_indices(10, 9.1) == (0, 9)
+
+    def test_value_range_to_indices_out(self):
+        assert self.axis.value_range_to_indices(11, 9) == (0, 9)
+
+    def test_value_range_to_indices_None(self):
+        assert self.axis.value_range_to_indices(None, None) == (0, 9)
+
+    def test_value_range_to_indices_v1_greater_than_v2(self):
+        with pytest.raises(ValueError):
+            self.axis.value_range_to_indices(1, 2)
+
+
+class TestDataAxis:
+
+    def setup_method(self, method):
+        self.axis = DataAxis(size=10, scale=0.1, offset=10)
+
     def test_deepcopy(self):
         ac = copy.deepcopy(self.axis)
         ac.offset = 100
         assert self.axis.offset != ac.offset
+        assert self.axis.navigate == ac.navigate
+        assert self.axis.is_binned == ac.is_binned
 
     def test_deepcopy_on_trait_change(self):
         ac = copy.deepcopy(self.axis)
@@ -111,15 +133,23 @@ class TestDataAxis:
             [1, 1])
 
     def test_calibrated_value2index_list_in(self):
+        axis = copy.deepcopy(self.axis)
+        axis.units = 'nm'
         np.testing.assert_allclose(
-            self.axis.value2index(['0.01um', '0.0101um', '0.0103um']),
+            axis.value2index(['0.01um', '0.0101um', '0.0103um']),
             np.array([0, 1, 3])
             )
         with pytest.raises(BaseException):
-            self.axis.value2index(["0.01uma", '0.0101uma', '0.0103uma'])
+            axis.value2index(["0.01uma", '0.0101uma', '0.0103uma'])
+
+    def test_calibrated_value2index_error_missing_units(self):
+        with pytest.raises(ValueError):
+            self.axis.value2index("0.0101um")
 
     def test_calibrated_value2index_in(self):
-        assert self.axis.value2index("0.0101um") == 1
+        axis = copy.deepcopy(self.axis)
+        axis.units = 'nm'
+        assert axis.value2index("0.0101um") == 1
 
     def test_relative_value2index_in(self):
         assert self.axis.value2index("rel0.5") == 4
@@ -181,7 +211,8 @@ class TestDataAxis:
         assert m.trigger_me.called
 
     def test_parse_value(self):
-        ax = self.axis
+        ax = copy.deepcopy(self.axis)
+        ax.units = 'nm'
         # slicing by index
         assert ax._parse_value(5) == 5
         assert type(ax._parse_value(5)) is int

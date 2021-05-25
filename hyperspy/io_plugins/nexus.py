@@ -100,7 +100,7 @@ def _parse_from_file(value, lazy=False):
         toreturn = toreturn[0]
     if isinstance(toreturn, bytes):
         toreturn = _byte_to_string(toreturn)
-    if isinstance(toreturn, (np.int, np.float)):
+    if isinstance(toreturn, (int, float)):
         toreturn = toreturn
     if isinstance(toreturn, (np.ndarray)) and toreturn.dtype.char == "U":
         toreturn = toreturn.astype("S")
@@ -554,8 +554,8 @@ def file_reader(filename, lazy=False, dataset_keys=None,
 def _is_linear_axis(data):
     """Check if the data is linearly incrementing.
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     data : dask or numpy array
 
     Returns
@@ -572,8 +572,8 @@ def _is_linear_axis(data):
 def _is_numeric_data(data):
     """Check that data contains numeric data.
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     data : dask or numpy array
 
     Returns
@@ -592,8 +592,8 @@ def _is_numeric_data(data):
 def _is_int(s):
     """Check that s in an integer.
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     s : python object to test
 
     Returns
@@ -789,11 +789,11 @@ def _fix_exclusion_keys(key):
     Signal and DictionaryBrowser break if a
     a key is a dict method - e.g. {"keys":2.0}.
 
-    This method prepends the key with "fix_" so the information is
+    This method prepends the key with ``fix_`` so the information is
     still present to work around this issue
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     key : str
 
     Returns

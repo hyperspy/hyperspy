@@ -116,7 +116,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         if ri > 0:
             self.patch.append(
                 plt.Circle(
-                    xy, radius=ro,
+                    xy, radius=ri,
                     fill=False,
                     lw=self.border_thickness,
                     ec=self.color,
@@ -140,7 +140,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         return np.array(self._size / self.axes[0].scale)
 
     def _update_patch_position(self):
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].center = self._get_patch_xy()
             if self.size[1] > 0:
                 self.patch[1].center = self.patch[0].center
@@ -148,7 +148,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
             self.draw_patch()
 
     def _update_patch_size(self):
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             ro, ri = self.size
             self.patch[0].radius = ro
             if ri > 0:
@@ -164,7 +164,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
             self.draw_patch()
 
     def _update_patch_geometry(self):
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             ro, ri = self.size
             self.patch[0].center = self._get_patch_xy()
             self.patch[0].radius = ro
@@ -195,7 +195,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
 
     def _get_resizer_pos(self):
         positions = []
-        indices = (0, 1) if self.size[1] > 0 else (0, )
+        indices = (0, 1) if len(self.size) > 1 else (0, )
         for i in indices:
             r = self._size[i]
             rsize = self._get_resizer_size() / 2
