@@ -24,27 +24,27 @@ class Logistic(Expression):
     r"""Logistic function (sigmoid or s-shaped curve) component.
 
     .. math::
-    
-        f(x) = \frac{a}{1 + b\cdot \mathrm{exp}\left[-c 
+
+        f(x) = \frac{a}{1 + b\cdot \mathrm{exp}\left[-c
             \left((x - x_0\right)\right]}
 
     ============== =============
-    Variable        Parameter 
+    Variable        Parameter
     ============== =============
-    :math:`A`       a 
-    :math:`b`       b 
-    :math:`c`       c 
-    :math:`x_0`     origin 
+    :math:`A`       a
+    :math:`b`       b
+    :math:`c`       c
+    :math:`x_0`     origin
     ============== =============
 
 
     Parameters
     -----------
     a : Float
-        The curve's maximum y-value,  
+        The curve's maximum y-value,
         :math:`\mathrm{lim}_{x\to\infty}\left(y\right) = a`
     b : Float
-        Additional parameter: 
+        Additional parameter:
         b>1 shifts origin to larger values;
         0<b<1 shifts origin to smaller values;
         b<0 introduces an asymptote
@@ -57,7 +57,7 @@ class Logistic(Expression):
     """
 
     def __init__(self, a=1., b=1., c=1., origin=0., module="numexpr", **kwargs):
-        super(Logistic, self).__init__(
+        super().__init__(
             expression="a / (1 + b * exp(-c * (x - origin)))",
             name="Logistic",
             a=a,

@@ -83,7 +83,7 @@ class Doniach(Expression):
 
     def __init__(self, centre=0., A=1., sigma=1., alpha=0.5,
                  module=["numpy", "scipy"], **kwargs):
-        super(Doniach, self).__init__(
+        super().__init__(
             expression="A*cos(0.5*pi*alpha+\
             ((1.0 - alpha) * arctan( (x-centre+offset)/sigma) ) )\
             /(sigma**2 + (x-centre+offset)**2)**(0.5 * (1.0 - alpha));\

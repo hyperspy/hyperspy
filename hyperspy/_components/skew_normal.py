@@ -144,7 +144,7 @@ class SkewNormal(Expression):
                               "SymPy >= 1.3")
         # We use `_shape` internally because `shape` is already taken in sympy
         # https://github.com/sympy/sympy/pull/20791
-        super(SkewNormal, self).__init__(
+        super().__init__(
             expression="2 * A * normpdf * normcdf;\
                 normpdf = exp(- t ** 2 / 2) / sqrt(2 * pi);\
                 normcdf = (1 + erf(_shape * t / sqrt(2))) / 2;\

@@ -95,7 +95,7 @@ class Voigt(Expression):
                               "SymPy >= 1.3")
         # We use `_gamma` internally to workaround the use of the `gamma`
         # function in sympy
-        super(Voigt, self).__init__(
+        super().__init__(
             expression="area * real(V); \
                 V = wofz(z) / (sqrt(2.0 * pi) * sigma); \
                 z = (x - centre + 1j * _gamma) / (sigma * sqrt(2.0))",
