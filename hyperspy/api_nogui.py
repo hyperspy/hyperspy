@@ -24,10 +24,10 @@ _logger = logging.getLogger(__name__)
 from hyperspy.logger import set_log_level
 from hyperspy.defaults_parser import preferences
 set_log_level(preferences.General.logging_level)
-from hyperspy import datasets
+from hyperspy import signals
 from hyperspy.utils import *
 from hyperspy.io import load
-from hyperspy import signals
+from hyperspy import datasets
 from hyperspy.Release import version as __version__
 from hyperspy import docstrings
 

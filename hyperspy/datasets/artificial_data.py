@@ -6,10 +6,11 @@ For use in things like docstrings or to test HyperSpy functionalities.
 
 import numpy as np
 
+from hyperspy import components1d, components2d
+from hyperspy import signals
 from hyperspy.misc.math_tools import check_random_state
-from hyperspy.signals import Signal1D,Signal2D,EELSSpectrum
-from hyperspy import components1d,components2d
-from hyperspy.axes import FunctionalDataAxis, UniformDataAxis
+from hyperspy.axes import UniformDataAxis
+
 
 ADD_POWERLAW_DOCSTRING = \
 """add_powerlaw : bool
@@ -69,7 +70,7 @@ def get_low_loss_eels_signal(add_noise=True, random_state=None):
     if add_noise:
         data += random_state.uniform(size=len(x)) * 0.7
 
-    s = EELSSpectrum(data)
+    s = signals.EELSSpectrum(data)
     s.axes_manager[0].offset = x[0]
     s.axes_manager[0].scale = x[1] - x[0]
     s.metadata.General.title = 'Artifical low loss EEL spectrum'
@@ -141,7 +142,7 @@ def get_core_loss_eels_signal(add_powerlaw=False, add_noise=True, random_state=N
         powerlaw = components1d.PowerLaw(A=10e8, r=3, origin=0)
         data += powerlaw.function(x)
 
-    s = EELSSpectrum(data)
+    s = signals.EELSSpectrum(data)
     s.axes_manager[0].offset = x[0]
     s.metadata.General.title = 'Artifical core loss EEL spectrum'
     s.axes_manager[0].name = 'Electron energy loss'
@@ -192,7 +193,7 @@ def get_low_loss_eels_line_scan_signal(add_noise=True, random_state=None):
         if add_noise:
             data[i] += random_state.uniform(size=len(x)) * 0.7
 
-    s = EELSSpectrum(data)
+    s = signals.EELSSpectrum(data)
     s.axes_manager.signal_axes[0].offset = x[0]
     s.axes_manager.signal_axes[0].scale = x[1] - x[0]
     s.metadata.General.title = 'Artifical low loss EEL spectrum'
@@ -262,7 +263,7 @@ def get_core_loss_eels_line_scan_signal(add_powerlaw=False, add_noise=True, rand
         powerlaw = components1d.PowerLaw(A=10e8, r=3, origin=0)
         data += powerlaw.function(x)
 
-    s = EELSSpectrum(data)
+    s = signals.EELSSpectrum(data)
     s.axes_manager.signal_axes[0].offset = x[0]
     s.metadata.General.title = 'Artifical core loss EEL spectrum'
     s.axes_manager.signal_axes[0].name = 'Electron energy loss'
@@ -341,7 +342,7 @@ def get_atomic_resolution_tem_signal2d():
             gaussian2d.centre_y.value = y
             image += gaussian2d.function(x_array, y_array)
 
-    s = Signal2D(image)
+    s = signals.Signal2D(image)
     return s
 
 
@@ -437,7 +438,7 @@ def get_luminescence_signal(navigation_dimension=0,
                 is_binned=False,
                 )  for i in range(navigation_dimension)]
         #Generate empty signal
-        sig = Signal1D(data,axes = spaxes + [nm_axis])
+        sig = signals.Signal1D(data,axes = spaxes + [nm_axis])
         sig.metadata.General.title = '{:d}d-map Artificial Luminescence Signal'\
                                         .format(navigation_dimension)
     else:
