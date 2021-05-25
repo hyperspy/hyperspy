@@ -66,6 +66,12 @@ class TestBaseDataAxis:
         with pytest.raises(ValueError):
             self.axis._parse_value_from_string('spam')
 
+    #Note: The following methods from BaseDataAxis rely on the self.axis.axis
+    #numpy array to be initialized, and are tested in the subclasses:
+    #BaseDataAxis.value2index --> tested in FunctionalDataAxis
+    #BaseDataAxis.index2value --> NOT EXPLICITLY TESTED
+    #BaseDataAxis.value_range_to_indices --> tested in UniformDataAxis
+    #BaseDataAxis.update_from --> tested in DataAxis and FunctionalDataAxis
 
 class TestDataAxis:
 
