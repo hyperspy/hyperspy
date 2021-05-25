@@ -1229,10 +1229,11 @@ def process_function_blockwise(data,
             output_array[islice] = function(data[islice],
                                             **iter_dict,
                                             **kwargs)
-    try:
-        output_array = output_array.squeeze(-1)
-    except ValueError:
-        pass
+    if not (chunk_nav_shape == output_array.shape):
+        try:
+            output_array = output_array.squeeze(-1)
+        except ValueError:
+            pass
     return output_array
 
 
