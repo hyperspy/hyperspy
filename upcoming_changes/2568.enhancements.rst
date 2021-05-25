@@ -1,0 +1,1 @@
+Lazy signals now caches the current data chunk when plotting, improving performance.
