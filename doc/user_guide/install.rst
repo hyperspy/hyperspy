@@ -179,7 +179,7 @@ dependencies required by specific functionalities:
 * ``tests`` to install required libraries to run HyperSpy's unit tests,
 * ``build-doc`` to install required libraries to build HyperSpy's documentation,
 * ``dev`` to install all the above,
-* ``all`` to install all the above expect the development requirements
+* ``all`` to install all the above except the development requirements
   (``tests``, ``build-doc`` and ``dev``).
 
 For example:
