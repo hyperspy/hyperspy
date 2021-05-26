@@ -17,13 +17,14 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import struct
 
 import numpy as np
 import pytest
 import traits.api as t
 
 import hyperspy.api as hs
+from hyperspy.io_plugins.empad import _parse_xml
+
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "empad_data")
 FILENAME_STACK_RAW = os.path.join(DATA_DIR, "series_x10.raw")
@@ -53,6 +54,7 @@ def teardown_module():
 
 @pytest.mark.parametrize("lazy", (False, True))
 def test_read_stack(lazy):
+    # xml file version 0.51 211118
     s = hs.load(os.path.join(DATA_DIR, "stack_images.xml"), lazy=lazy)
     assert s.data.dtype == "float32"
     ref_data = np.arange(166400).reshape((10, 130, 128))[..., :128, :]
@@ -77,6 +79,7 @@ def test_read_stack(lazy):
 
 @pytest.mark.parametrize("lazy", (False, True))
 def test_read_map(lazy):
+    # xml file version 0.51 211118
     s = hs.load(os.path.join(DATA_DIR, "map4x4.xml"), lazy=lazy)
     assert s.data.dtype == "float32"
     ref_data = np.arange(266240).reshape((4, 4, 130, 128))[..., :128, :]
@@ -99,3 +102,12 @@ def test_read_map(lazy):
     assert s.metadata.General.date == "2019-06-06"
     assert s.metadata.General.time == "13:30:00.164675"
     assert s.metadata.Signal.signal_type == "electron_diffraction"
+
+
+def test_parse_xml_1_2_0():
+    # xml file version 1.2.0 (2020-10-29)
+    filename = os.path.join(DATA_DIR, "map128x128_version1.2.0.xml")
+    om, info = _parse_xml(filename)
+    assert info['scan_x'] == 128
+    assert info['scan_y'] == 128
+    assert info['raw_filename'] == 'scan_x128_y128.raw'
