@@ -3697,7 +3697,7 @@ class BaseSignal(FancySlicing,
         axes = self.axes_manager[axis]
         if not np.iterable(axes):
             axes = (axes,)
-        if any([(not ax.is_uniform and not ax.is_binned) for ax in axes]):
+        if any([not ax.is_uniform and not is_binned(self, ax) for ax in axes]):
             warnings.warn("You are summing over an unbinned, non-uniform axis. "
                           "The result can not be used as an approximation of "
                           "the integral of the signal. For this functionality, "
@@ -4323,13 +4323,10 @@ class BaseSignal(FancySlicing,
         if is_binned(self, axis=axis):
         # in v2 replace by
         # self.axes_manager[axis].is_binned
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category= UserWarning,
-                                        module='hyperspy'
-                                        )
-                return self.sum(axis=axis, out=out)
+            return self.sum(axis=axis, out=out)
         else:
             return self.integrate_simpson(axis=axis, out=out)
+
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def indexmin(self, axis, out=None, rechunk=True):
