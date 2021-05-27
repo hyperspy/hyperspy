@@ -1,0 +1,1 @@
+Add `filter_zero_loss_peak` argument to the `spikes_removal_tool` method
