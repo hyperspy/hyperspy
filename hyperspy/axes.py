@@ -545,7 +545,7 @@ class BaseDataAxis(t.HasTraits):
         return value
 
     def value2index(self, value, rounding=round):
-        """Return the closest index to the given value if between the limit.
+        """Return the closest index to the given value if between the axis limits.
 
         Parameters
         ----------
@@ -558,10 +558,8 @@ class BaseDataAxis(t.HasTraits):
         Raises
         ------
         ValueError
-            If any value is out of the axis limits.
-            If value is NaN
-            If value is an array containing at least 1 NaN value
-            If value is an array containing at least 1 out-of-bound value
+            If value is out of bounds or contains out of bounds values (array).
+            If value is NaN or contains NaN values (array).
         """
         if value is None:
             return None
@@ -1173,10 +1171,12 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         Raises
         ------
         ValueError
-            If any value is out of the axis limits.
-            If the value is incorrectly formatted.
-
+            If value is out of bounds or contains out of bounds values (array).
+            If value is NaN or contains NaN values (array).
+            If value is incorrectly formatted str or contains incorrectly
+                formatted str (array).
         """
+
         if value is None:
             return None
 
