@@ -26,13 +26,17 @@ import traits.api as t
 from traits.trait_errors import TraitError
 import pint
 from sympy.utilities.lambdify import lambdify
-
 from hyperspy.events import Events, Event
+from hyperspy.misc.array_tools import numba_closest_index_round, \
+                                        numba_closest_index_floor, \
+                                        numba_closest_index_ceil
+
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 from hyperspy.ui_registry import add_gui_method, get_gui
 from hyperspy.defaults_parser import preferences
 from hyperspy._components.expression import _parse_substitutions
+
 
 import warnings
 import inspect
@@ -558,7 +562,7 @@ class BaseDataAxis(t.HasTraits):
         return value
 
     def value2index(self, value, rounding=round):
-        """Return the closest index to the given value if between the limit.
+        """Return the closest index to the given value if between the axis limits.
 
         Parameters
         ----------
@@ -571,23 +575,54 @@ class BaseDataAxis(t.HasTraits):
         Raises
         ------
         ValueError
-            If any value is out of the axis limits.
-
+            If value is out of bounds or contains out of bounds values (array).
+            If value is NaN or contains NaN values (array).
         """
         if value is None:
             return None
-        if self.low_value <= value <= self.high_value:
-            return (np.abs(self.axis - value)).argmin()
         else:
-            index = int(value)
-            if self.size > index >= 0:
-                return index
+            value = np.asarray(value)
+
+
+
+        #Should evaluate on both arrays and scalars. Raises error if there are
+        #nan values in array
+        if np.all((value >= self.low_value)*(value <= self.high_value)):
+            #Only if all values will evaluate correctly do we implement rounding
+            #function. Rounding functions will strictly operate on numpy arrays
+            #and only evaluate self.axis - v input, v a scalar within value.
+            if rounding is round:
+                #Use argmin(abs) which will return the closest value
+                # rounding_index = lambda x: np.abs(x).argmin()
+                index = numba_closest_index_round(self.axis,value)
+            elif rounding is math.ceil:
+                #Ceiling means finding index of the closest xi with xi - v >= 0
+                #we look for argmin of strictly non-negative part of self.axis-v.
+                #The trick is to replace strictly negative values with +np.inf
+                index = numba_closest_index_ceil(self.axis,value)
+            elif rounding is math.floor:
+                #flooring means finding index of the closest xi with xi - v <= 0
+                #we look for armgax of strictly non-positive part of self.axis-v.
+                #The trick is to replace strictly positive values with -np.inf
+                index = numba_closest_index_ceil(self.axis,value)
             else:
                 raise ValueError(
-                    f'The value {value} is out of the limits '
-                    f'[{self.low_value:.3g}-{self.high_value:.3g}] of the '
-                    f'"{self._get_name()}" axis.'
+                    f'Non-supported rounding function. Use '
+                    f'round, math.ceil or math.floor'
                     )
+            #initialise the index same dimension as input, force type to int
+            # index = np.empty_like(value,dtype=int)
+            #assign on flat, iterate on flat.
+            # for i,v in enumerate(value):
+                # index.flat[i] = rounding_index(self.axis - v)
+            #Squeezing to get a scalar out if scalar in. See squeeze doc
+            return np.squeeze(index)[()]
+        else:
+            raise ValueError(
+                f'The value {value} is out of the limits '
+                f'[{self.low_value:.3g}-{self.high_value:.3g}] of the '
+                f'"{self._get_name()}" axis.'
+                )
 
     def index2value(self, index):
         if isinstance(index, da.Array):
@@ -636,7 +671,6 @@ class BaseDataAxis(t.HasTraits):
                 i1 = self.value2index(v1)
             if v2 is not None and self.low_value < v2 <= self.high_value:
                 i2 = self.value2index(v2)
-
         return i1, i2
 
     def update_from(self, axis, attributes):
@@ -1137,10 +1171,12 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         Raises
         ------
         ValueError
-            If any value is out of the axis limits.
-            If the value is incorrectly formatted.
-
+            If value is out of bounds or contains out of bounds values (array).
+            If value is NaN or contains NaN values (array).
+            If value is incorrectly formatted str or contains incorrectly
+                formatted str (array).
         """
+
         if value is None:
             return None
 

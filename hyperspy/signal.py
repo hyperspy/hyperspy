@@ -2656,7 +2656,13 @@ class BaseSignal(FancySlicing,
             navigator = self
             # Sum over all but the first navigation axis.
             am = navigator.axes_manager
-            navigator = navigator.sum(am.signal_axes + am.navigation_axes[1:])
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning,
+                                        module='hyperspy'
+                                        )
+                navigator = navigator.sum(
+                    am.signal_axes + am.navigation_axes[1:]
+                    )
             return np.nan_to_num(navigator.data).squeeze()
 
         def get_dynamic_explorer_wrapper(*args, **kwargs):
@@ -3691,7 +3697,7 @@ class BaseSignal(FancySlicing,
         axes = self.axes_manager[axis]
         if not np.iterable(axes):
             axes = (axes,)
-        if any([(not ax.is_uniform and not ax.is_binned) for ax in axes]):
+        if any([not ax.is_uniform and not is_binned(self, ax) for ax in axes]):
             warnings.warn("You are summing over an unbinned, non-uniform axis. "
                           "The result can not be used as an approximation of "
                           "the integral of the signal. For this functionality, "
@@ -4320,6 +4326,7 @@ class BaseSignal(FancySlicing,
             return self.sum(axis=axis, out=out)
         else:
             return self.integrate_simpson(axis=axis, out=out)
+
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def indexmin(self, axis, out=None, rechunk=True):

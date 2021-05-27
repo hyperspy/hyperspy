@@ -66,6 +66,12 @@ class TestBaseDataAxis:
         with pytest.raises(ValueError):
             self.axis._parse_value_from_string('spam')
 
+    #Note: The following methods from BaseDataAxis rely on the self.axis.axis
+    #numpy array to be initialized, and are tested in the subclasses:
+    #BaseDataAxis.value2index --> tested in FunctionalDataAxis
+    #BaseDataAxis.index2value --> NOT EXPLICITLY TESTED
+    #BaseDataAxis.value_range_to_indices --> tested in UniformDataAxis
+    #BaseDataAxis.update_from --> tested in DataAxis and FunctionalDataAxis
 
 class TestDataAxis:
 
@@ -332,6 +338,46 @@ class TestFunctionalDataAxis:
         with pytest.raises(TypeError, match="only for uniform axes"):
             self.axis.calibrate(value_tuple=(11,12), index_tuple=(0,5))
 
+    def test_functional_value2index(self):
+        #Tests for value2index
+        #Works as intended
+        assert self.axis.value2index(44.7) == 7
+        #Input None --> output None
+        assert self.axis.value2index(None) == None
+        #NaN in --> error out
+        with pytest.raises(ValueError):
+            self.axis.value2index(np.nan)
+        #Values in out of bounds --> error out (both sides of axis)
+        with pytest.raises(ValueError):
+            self.axis.value2index(-2)
+        with pytest.raises(ValueError):
+            self.axis.value2index(111)
+        #str in --> error out
+        with pytest.raises(TypeError):
+            self.axis.value2index("69")
+        #Empty str in --> error out
+        with pytest.raises(TypeError):
+            self.axis.value2index("")
+
+        #Tests with array Input
+        #Array in --> array out
+        arval = np.array([[0,4],[16.,36.]])
+        assert np.all(self.axis.value2index(arval) == np.array([[0,2],[4,6]]))
+        #One value out of bound in array in --> error out (both sides)
+        arval[1,1] = 111
+        with pytest.raises(ValueError):
+            self.axis.value2index(arval)
+        arval[1,1] = -0.3
+        with pytest.raises(ValueError):
+            self.axis.value2index(arval)
+        #One NaN in array in --> error out
+        arval[1,1] = np.nan
+        with pytest.raises(ValueError):
+            self.axis.value2index(arval)
+        #Single-value-array-in --> scalar out
+        arval = np.array([1.0])
+        assert np.isscalar(self.axis.value2index(arval))
+
 
 class TestReciprocalDataAxis:
 
@@ -418,85 +464,81 @@ class TestUniformDataAxis:
         ac.offset = 100
         assert ac.axis[0] == ac.offset
 
-    def test_value2index_None(self):
-        assert self.axis.value2index(None) is None
-
-    def test_value2index_fail_string_in(self):
-        ax = self.axis
-        ax.units = 'nm'
+    def test_uniform_value2index(self):
+        #Tests for value2index
+        #Works as intended
+        assert self.axis.value2index(10.15) == 2
+        assert self.axis.value2index(10.17,rounding=math.floor) == 1
+        assert self.axis.value2index(10.13,rounding=math.ceil) == 2
+        #Endpoint left
+        assert self.axis.value2index(10.) == 0
+        #Endpoint right
+        assert self.axis.value2index(10.9) == 9
+        #Input None --> output None
+        assert self.axis.value2index(None) == None
+        #NaN in --> error out
         with pytest.raises(ValueError):
-            ax.value2index("10.15")
-
-    def test_value2index_fail_empty_string_in(self):
+            self.axis.value2index(np.nan)
+        #Values in out of bounds --> error out (both sides of axis)
+        with pytest.raises(ValueError):
+            self.axis.value2index(-2)
+        with pytest.raises(ValueError):
+            self.axis.value2index(111)
+        #str without unit in --> error out
+        with pytest.raises(ValueError):
+            self.axis.value2index("69")
+        #Empty str in --> error out
         with pytest.raises(ValueError):
             self.axis.value2index("")
-
-    def test_value2index_float_in(self):
-        assert self.axis.value2index(10.15) == 2
-
-    def test_value2index_float_end_point_left(self):
-        assert self.axis.value2index(10.) == 0
-
-    def test_value2index_float_end_point_right(self):
-        assert self.axis.value2index(10.9) == 9
-
-    def test_value2index_float_out(self):
+        #Value with unit when axis is unitless --> Error out
         with pytest.raises(ValueError):
-            self.axis.value2index(11)
+            self.axis.value2index("0.0101um")
 
-    def test_value2index_array_in(self):
-        assert (
-            self.axis.value2index(np.array([10.15, 10.15])).tolist() ==
-            [2, 2])
+        #Tests with array Input
+        #Arrays work as intended
+        arval = np.array([[10.15,10.15],[10.24,10.28]])
+        assert np.all(self.axis.value2index(arval) == np.array([[2,2],[2,3]]))
+        assert np.all(self.axis.value2index(arval,rounding=math.floor) \
+                        == np.array([[1,1],[2,2]]))
+        assert np.all(self.axis.value2index(arval,rounding=math.ceil)\
+                        == np.array([[2,2],[3,3]]))
+        #List in --> array out
+        assert np.all(self.axis.value2index(arval.tolist()) \
+                                            == np.array([[2,2],[2,3]]))
+        #One value out of bound in array in --> error out (both sides)
+        arval[1,1] = 111
+        with pytest.raises(ValueError):
+            self.axis.value2index(arval)
+        arval[1,1] = -0.3
+        with pytest.raises(ValueError):
+            self.axis.value2index(arval)
+        #One NaN in array in --> error out
+        arval[1,1] = np.nan
+        with pytest.raises(ValueError):
+            self.axis.value2index(arval)
 
-    def test_value2index_list_in(self):
-        assert (
-            self.axis.value2index([10.15, 10.15]).tolist() ==
-            [2, 2])
-
-    def test_value2index_array_in_ceil(self):
-        assert (
-            self.axis.value2index(np.array([10.14, 10.14]),
-                                  rounding=math.ceil).tolist() ==
-            [2, 2])
-
-    def test_value2index_array_in_floor(self):
-        assert (
-            self.axis.value2index(np.array([10.15, 10.15]),
-                                  rounding=math.floor).tolist() ==
-            [1, 1])
-
-    def test_calibrated_value2index_list_in(self):
+        #Copy of axis with units
         axis = copy.deepcopy(self.axis)
         axis.units = 'nm'
+
+        #Value with unit in --> OK out
+        assert axis.value2index("0.0101um") == 1
+        #Value with relative units in --> OK out
+        assert self.axis.value2index("rel0.5") == 4
+
+        #Works with arrays of values with units in
         np.testing.assert_allclose(
             axis.value2index(['0.01um', '0.0101um', '0.0103um']),
             np.array([0, 1, 3])
             )
+        #Raises errors if a weird unit is passed in
         with pytest.raises(BaseException):
             axis.value2index(["0.01uma", '0.0101uma', '0.0103uma'])
-
-    def test_calibrated_value2index_error_missing_units(self):
-        with pytest.raises(ValueError):
-            self.axis.value2index("0.0101um")
-
-    def test_calibrated_value2index_in(self):
-        axis = copy.deepcopy(self.axis)
-        axis.units = 'nm'
-        assert axis.value2index("0.0101um") == 1
-
-    def test_relative_value2index_in(self):
-        assert self.axis.value2index("rel0.5") == 4
-
-    def test_relative_value2index_list_in(self):
+        #Values
         np.testing.assert_allclose(
             self.axis.value2index(["rel0.0", "rel0.5", "rel1.0"]),
             np.array([0, 4, 9])
             )
-
-    def test_value2index_array_out(self):
-        with pytest.raises(ValueError):
-            self.axis.value2index(np.array([10, 11]))
 
     def test_slice_me(self):
         assert (
