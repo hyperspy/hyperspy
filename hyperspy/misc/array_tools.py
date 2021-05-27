@@ -451,3 +451,72 @@ def get_signal_chunk_slice(index, chunks):
             elif _slice[1].start <= index[1] < _slice[1].stop:
                 return chunk_slice
     raise ValueError("Index out of signal range.")
+
+@njit(cache=True)
+def numba_closest_index_round(axis_array,value_array):
+    """For each value in value_array, find the closest value in axis_array and
+        return the result as a numpy array of the same shape as value_array.
+        Parameters
+        ----------
+        axis_array : numpy array
+        value_array : numpy array
+
+        Returns
+        -------
+        numpy array
+
+    """
+    #initialise the index same dimension as input, force type to int
+    index_array = np.empty_like(value_array,dtype='uint')
+    #assign on flat, iterate on flat.
+    for i,v in enumerate(value_array.flat):
+        index_array.flat[i] = np.abs(axis_array - v).argmin()
+
+    return index_array
+
+@njit(cache=True)
+def numba_closest_index_floor(axis_array,value_array):
+    """For each value in value_array, find the closest smaller value in
+        axis_array and return the result as a numpy array of the same shape
+        as value_array.
+        Parameters
+        ----------
+        axis_array : numpy array
+        value_array : numpy array
+
+        Returns
+        -------
+        numpy array
+
+    """
+    #initialise the index same dimension as input, force type to int
+    index_array = np.empty_like(value_array,dtype='uint')
+    #assign on flat, iterate on flat.
+    for i,v in enumerate(value_array.flat):
+        x = axis_array - v
+        index_array.flat[i] = np.where(x>0,-np.inf,x).argmax()
+
+    return index_array
+
+@njit(cache=True)
+def numba_closest_index_ceil(axis_array,value_array):
+    """For each value in value_array, find the closest larger value in
+        axis_array and return the result as a numpy array of the same shape
+        as value_array.
+        Parameters
+        ----------
+        axis_array : numpy array
+        value_array : numpy array
+
+        Returns
+        -------
+        numpy array
+    """
+    #initialise the index same dimension as input, force type to int
+    index_array = np.empty_like(value_array,dtype='uint')
+    #assign on flat, iterate on flat.
+    for i,v in enumerate(value_array.flat):
+        x = axis_array - v
+        index_array.flat[i] = np.where(x<0,+np.inf,x).argmin()
+
+    return index_array

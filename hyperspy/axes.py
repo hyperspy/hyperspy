@@ -26,13 +26,17 @@ import traits.api as t
 from traits.trait_errors import TraitError
 import pint
 from sympy.utilities.lambdify import lambdify
-
 from hyperspy.events import Events, Event
+from hyperspy.misc.array_tools import numba_closest_index_round, \
+                                        numba_closest_index_floor, \
+                                        numba_closest_index_ceil
+
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 from hyperspy.ui_registry import add_gui_method, get_gui
 from hyperspy.defaults_parser import preferences
 from hyperspy._components.expression import _parse_substitutions
+
 
 import warnings
 import inspect
@@ -563,6 +567,10 @@ class BaseDataAxis(t.HasTraits):
         """
         if value is None:
             return None
+        else:
+            value = np.asarray(value)
+
+
 
         #Should evaluate on both arrays and scalars. Raises error if there are
         #nan values in array
@@ -572,27 +580,28 @@ class BaseDataAxis(t.HasTraits):
             #and only evaluate self.axis - v input, v a scalar within value.
             if rounding is round:
                 #Use argmin(abs) which will return the closest value
-                rounding_index = lambda x: np.abs(x).argmin()
+                # rounding_index = lambda x: np.abs(x).argmin()
+                index = numba_closest_index_round(self.axis,value)
             elif rounding is math.ceil:
                 #Ceiling means finding index of the closest xi with xi - v >= 0
                 #we look for argmin of strictly non-negative part of self.axis-v.
                 #The trick is to replace strictly negative values with +np.inf
-                rounding_index = lambda x: np.where(x<0,+np.inf,x).argmin()
+                index = numba_closest_index_ceil(self.axis,value)
             elif rounding is math.floor:
                 #flooring means finding index of the closest xi with xi - v <= 0
                 #we look for armgax of strictly non-positive part of self.axis-v.
                 #The trick is to replace strictly positive values with -np.inf
-                rounding_index = lambda x: np.where(x>0,-np.inf,x).argmax()
+                index = numba_closest_index_ceil(self.axis,value)
             else:
                 raise ValueError(
-                    f'{rounding} is not a supported rounding function. Use '
+                    f'Non-supported rounding function. Use '
                     f'round, math.ceil or math.floor'
                     )
             #initialise the index same dimension as input, force type to int
-            index = np.empty_like(value,dtype=int)
+            # index = np.empty_like(value,dtype=int)
             #assign on flat, iterate on flat.
-            for i,v in enumerate(np.asarray(value).flat):
-                index.flat[i] = rounding_index(self.axis - v)
+            # for i,v in enumerate(value):
+                # index.flat[i] = rounding_index(self.axis - v)
             #Squeezing to get a scalar out if scalar in. See squeeze doc
             return np.squeeze(index)[()]
         else:
