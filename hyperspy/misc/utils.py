@@ -1544,6 +1544,7 @@ def is_cupy_array(array):
     """
     Convenience function to determine if an array is a cupy array
 
+<<<<<<< HEAD
     Parameters
     ----------
     array : array
@@ -1639,3 +1640,20 @@ def display(obj):
         display.display(obj)
     except ImportError:
         print(obj)
+
+class TupleSA(tuple):
+    """A tuple that can set the attributes of its items
+    """
+    def __getitem__(self, *args, **kwargs):
+        return TupleSI(super().__getitem__(*args, **kwargs))
+
+    def __setattr__(self, name, value):
+        no_name = [item
+                   for item in self
+                   if not hasattr(item, name)]
+        if no_name:
+            raise AttributeError(
+                f"'The items {no_name} have not attribute '{name}'")
+        else:
+            for item in self:
+                setattr(item, name, value)
