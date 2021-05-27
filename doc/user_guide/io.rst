@@ -1412,8 +1412,18 @@ returned. The previous example could also be written as:
 
 .. code-block:: python
 
-    >>> # Loading a specific dataset
+    >>> # Loading datasets containing the string "EDS"
     >>> hs.load("sample.nxs", dataset_keys="EDS")
+
+The difference between ``dataset_paths`` and ``dataset_keys`` is illustrated
+here:
+
+.. code-block:: python
+
+    >>> # Only the dataset /entry/experiment/EDS/data will be loaded
+    >>> hs.load("sample.nxs", dataset_paths="/entry/experiment/EDS/data")
+    >>> # All datasets contain the entire string "/entry/experiment/EDS/data" will be loaded
+    >>> hs.load("sample.nxs", dataset_keys="/entry/experiment/EDS/data")
 
 Multiple datasets can be loaded by providing a number of keys:
 
