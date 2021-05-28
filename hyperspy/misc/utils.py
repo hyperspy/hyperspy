@@ -1655,8 +1655,12 @@ class TupleSA(tuple):
             raise AttributeError(
                 f"'The items {no_name} have not attribute '{name}'")
         else:
-            for item in self:
-                setattr(item, name, value)
+            if isiterable(value) and not isinstance(value, str):
+                for item, value_ in zip(self, value):
+                    setattr(item, name, value_)
+            else:
+                for item in self:
+                    setattr(item, name, value)
 
     def __add__(self, *args, **kwargs):
         return type(self)(super().__add__(*args, **kwargs))
