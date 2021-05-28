@@ -2121,12 +2121,12 @@ class AxesManager(t.HasTraits):
     @property
     def signal_axes(self):
         """The signal axes as a tuple."""
-        return self._signal_axes
+        return TupleSA(self._signal_axes)
 
     @property
     def navigation_axes(self):
         """The navigation axes as a tuple."""
-        return self._navigation_axes
+        return TupleSA(self._navigation_axes)
 
     @property
     def signal_shape(self):
@@ -2580,3 +2580,4 @@ def _parse_axis_attribute(value):
         return None
     else:
         return value
+
