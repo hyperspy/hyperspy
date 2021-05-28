@@ -27,7 +27,7 @@ import pint
 import logging
 
 from hyperspy.events import Events, Event
-from hyperspy.misc.utils import isiterable, ordinal
+from hyperspy.misc.utils import isiterable, ordinal, TupleSA
 from hyperspy.misc.math_tools import isfloat
 from hyperspy.ui_registry import add_gui_method, get_gui
 from hyperspy.defaults_parser import preferences
@@ -37,6 +37,7 @@ import warnings
 
 _logger = logging.getLogger(__name__)
 _ureg = pint.UnitRegistry()
+
 
 
 FACTOR_DOCSTRING = \
@@ -1238,8 +1239,8 @@ class AxesManager(t.HasTraits):
         if not self.signal_axes and self.navigation_axes:
             getitem_tuple[-1] = slice(axis.index, axis.index + 1)
 
-        self.signal_axes = self.signal_axes[::-1]
-        self.navigation_axes = self.navigation_axes[::-1]
+        self.signal_axes = TupleSA(self.signal_axes[::-1])
+        self.navigation_axes = TupleSA(self.navigation_axes[::-1])
         self._getitem_tuple = tuple(getitem_tuple)
         self.signal_dimension = len(self.signal_axes)
         self.navigation_dimension = len(self.navigation_axes)
