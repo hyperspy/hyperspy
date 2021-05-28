@@ -1657,3 +1657,9 @@ class TupleSA(tuple):
         else:
             for item in self:
                 setattr(item, name, value)
+
+    def __add__(self, *args, **kwargs):
+        return type(self)(super().__add__(*args, **kwargs))
+
+    def __mul__(self, *args, **kwargs):
+        return type(self)(super().__mul__(*args, **kwargs))
