@@ -1645,7 +1645,11 @@ class TupleSA(tuple):
     """A tuple that can set the attributes of its items
     """
     def __getitem__(self, *args, **kwargs):
-        return type(self)(super().__getitem__(*args, **kwargs))
+        item = super().__getitem__(*args, **kwargs)
+        try:
+            return type(self)(item)
+        except TypeError:
+            return item
 
     def __setattr__(self, name, value):
         no_name = [item
