@@ -1,8 +1,9 @@
-What's new
-**********
+Changelog
+*********
+
+.. towncrier-draft-entries:: |release| [UNRELEASED]
 
 .. towncrier release notes start
-
 
 .. _changes_1.6.2:
 
@@ -61,15 +62,6 @@ for details.
 * Fix SkewNormal component compatibility with sympy 1.8 (`#2701 <https://github.com/hyperspy/hyperspy/pull/2701>`_)
 
 
-Changelog
-*********
-
-We only cover here the main highlights, for a detailed list of all the changes
-see `the commits in the GITHUB milestones
-<https://github.com/hyperspy/hyperspy/milestones?state=closed>`__.
-
-
-
 .. _changes_1.6.1:
 
 v1.6.1
@@ -80,6 +72,7 @@ numerous bug fixes and enhancements.
 See `the issue tracker
 <https://github.com/hyperspy/hyperspy/milestone/41?closed=1>`__
 for details.
+
 
 .. _changes_1.6:
 
