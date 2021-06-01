@@ -1,6 +1,9 @@
 Changelog
 *********
 
+Changelog entries for the development version are available at
+https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
+
 .. towncrier-draft-entries:: |release| [UNRELEASED]
 
 .. towncrier release notes start
