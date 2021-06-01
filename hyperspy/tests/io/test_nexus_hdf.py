@@ -53,7 +53,7 @@ class TestDLSNexus():
 
     def setup_method(self, method):
         self.file = file3
-        self.s = load(file3, metadata_keys=None, dataset_keys=None,
+        self.s = load(file3, metadata_key=None, dataset_key=None,
                       nxdata_only=True, hardlinks_only=True)
 
     @pytest.mark.parametrize("nxdata_only", [True, False])
@@ -70,11 +70,11 @@ class TestDLSNexus():
         if nxdata_only is False and not hardlinks_only:
             assert len(s) == 16
 
-    @pytest.mark.parametrize("metadata_keys", ["m1_y", "xxxx"])
-    def test_metadata_keys(self, metadata_keys):
-        s = load(file3, nxdata_only=True, metadata_keys=metadata_keys)
+    @pytest.mark.parametrize("metadata_key", ["m1_y", "xxxx"])
+    def test_metadata_keys(self, metadata_key):
+        s = load(file3, nxdata_only=True, metadata_key=metadata_key)
         # hardlinks are false - soft linked data is loaded
-        if metadata_keys == "m1_y":
+        if metadata_key == "m1_y":
             assert s[1].original_metadata.alias_metadata.\
                 m1_y.attrs.units == "mm"
         else:
@@ -104,19 +104,31 @@ class TestDLSNexus():
         except:
             pytest.fail("unexpected error saving hdf5")
 
-    @pytest.mark.parametrize("dataset_paths",
+    @pytest.mark.parametrize("dataset_path",
                              ('/entry1/testdata/nexustest/data',
                                ['/entry1/testdata/nexustest/data', 'wrong']))
-    def test_dataset_paths(self, dataset_paths):
-        s = load(self.file, dataset_paths=dataset_paths)
+    def test_dataset_paths(self, dataset_path):
+        s = load(self.file, dataset_path=dataset_path)
         title = s.metadata.General.title
         assert title == 'entry1_testdata_nexustest_data'
 
     def test_skip_load_array_metadata(self):
         s = load(self.file, nxdata_only=True, hardlinks_only=True,
-                 metadata_keys='stage1_x', skip_array_metadata=True)
+                 metadata_key='stage1_x', skip_array_metadata=True)
         with pytest.raises(AttributeError):
             s.original_metadata.entry1.instrument.stage1_x.value_set.value
+
+    def test_deprecated_metadata_keys(self):
+        with pytest.warns(VisibleDeprecationWarning):
+            load(self.file, metadata_keys='stage1_x')
+
+    def test_deprecated_dataset_keys(self):
+        with pytest.warns(VisibleDeprecationWarning):
+            load(self.file, dataset_keys='rocks')
+
+    def test_deprecated_dataset_paths(self):
+        with pytest.warns(VisibleDeprecationWarning):
+            load(self.file, dataset_paths='/entry1/testdata/nexustest/data')
 
 
 class TestDLSNexusNoAxes():
@@ -126,11 +138,11 @@ class TestDLSNexusNoAxes():
         self.s = load(file4, hardlinks_only=True,
                       nxdata_only=True)
 
-    @pytest.mark.parametrize("metadata_keys", [None, "m1_x"])
-    def test_meta_keys(self, metadata_keys):
-        s = load(file3, nxdata_only=True, metadata_keys=metadata_keys)
+    @pytest.mark.parametrize("metadata_key", [None, "m1_x"])
+    def test_meta_keys(self, metadata_key):
+        s = load(file3, nxdata_only=True, metadata_key=metadata_key)
         # hardlinks are false - soft linked data is loaded
-        if metadata_keys is None:
+        if metadata_key is None:
             assert s[1].original_metadata.instrument.beamline.M1.\
                 m1_y.attrs.units == "mm"
         else:
@@ -300,7 +312,7 @@ class TestSavingMetadataContainers:
         s.original_metadata.set_item("testarray2", (1, 2, 3, 4, 5))
         s.original_metadata.set_item("testarray3", np.array([1, 2, 3, 4, 5]))
         fname = tmp_path / 'test.nxs'
-        s.save(fname, skip_metadata_keys='testarray2')
+        s.save(fname, skip_metadata_key='testarray2')
         lin = load(fname, nxdata_only=True)
         with pytest.raises(AttributeError):
             lin.original_metadata.testarray2
@@ -409,31 +421,31 @@ def test_saving_multi_signals(tmp_path):
 
 def test_read_file2_dataset_key_test():
     with pytest.warns(VisibleDeprecationWarning):
-        s = hs.load(file2, nxdata_only=True, dataset_keys=["rocks"])
+        s = hs.load(file2, nxdata_only=True, dataset_key=["rocks"])
     assert not isinstance(s, list)
 
 
 def test_read_file2_signal1():
     with pytest.warns(VisibleDeprecationWarning):
-        s = hs.load(file2, nxdata_only=True, dataset_keys=["rocks"])
+        s = hs.load(file2, nxdata_only=True, dataset_key=["rocks"])
     assert s.metadata.General.title == "rocks"
 
 
 def test_read_file2_default():
     with pytest.warns(VisibleDeprecationWarning):
         s = hs.load(file2, use_default=False, nxdata_only=True,
-                    hardlinks_only=True, dataset_keys=["unnamed__1"])
+                    hardlinks_only=True, dataset_key=["unnamed__1"])
     assert s.metadata.General.title == "unnamed__1"
     with pytest.warns(VisibleDeprecationWarning):
         s = hs.load(file2, use_default=True, nxdata_only=True,
-                    hardlinks_only=True, dataset_keys=["unnamed__1"])
+                    hardlinks_only=True, dataset_key=["unnamed__1"])
     assert s.metadata.General.title == "rocks"
 
 
 def test_read_file2_metadata_keys():
     with pytest.warns(VisibleDeprecationWarning):
         s = hs.load(file2, nxdata_only=True,
-                    dataset_keys=["rocks"], metadata_keys=["energy"])
+                    dataset_key=["rocks"], metadata_key=["energy"])
     assert s.original_metadata.instrument.energy.value == 12.0
 
 
@@ -443,25 +455,25 @@ def test_read_lazy_file():
 
 
 @pytest.mark.parametrize("verbose", [True, False])
-@pytest.mark.parametrize("dataset_keys", ["testdata", "nexustest", "xyz"])
-def test_list_datasets(verbose, dataset_keys):
+@pytest.mark.parametrize("dataset_key", ["testdata", "nexustest", "xyz"])
+def test_list_datasets(verbose, dataset_key):
     s = list_datasets_in_file(file3, verbose=verbose,
-                              dataset_keys=dataset_keys)
-    if dataset_keys == "testdata":
+                              dataset_key=dataset_key)
+    if dataset_key == "testdata":
         assert len(s[1]) == 3
-    elif dataset_keys == "nexustest":
+    elif dataset_key == "nexustest":
         assert len(s[1]) == 6
     else:
         assert len(s[0]) == 0
         assert len(s[1]) == 0
 
 
-@pytest.mark.parametrize("metadata_keys", [None, "xxxxx"])
-def test_read_metdata(metadata_keys):
+@pytest.mark.parametrize("metadata_key", [None, "xxxxx"])
+def test_read_metdata(metadata_key):
     s = read_metadata_from_file(file3, verbose=True,
-                                metadata_keys=metadata_keys)
+                                metadata_key=metadata_key)
     # hardlinks are false - soft linked data is loaded
-    if metadata_keys is None:
+    if metadata_key is None:
         assert s["alias_metadata"]["m1_y"]["attrs"]["units"] == "mm"
     else:
         with pytest.raises(KeyError):

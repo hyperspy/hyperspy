@@ -18,6 +18,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 #
 import logging
+import warnings
 import numpy as np
 import dask.array as da
 import os
@@ -25,7 +26,8 @@ import h5py
 import pprint
 import traits.api as t
 from hyperspy.io_plugins.hspy import overwrite_dataset, get_signal_chunks
-from hyperspy.misc.utils import DictionaryTreeBrowser, is_hyperspy_signal
+from hyperspy.misc.utils import DictionaryTreeBrowser
+from hyperspy.exceptions import VisibleDeprecationWarning
 _logger = logging.getLogger(__name__)
 # Plugin characteristics
 
@@ -411,8 +413,8 @@ def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
     return dictionary
 
 
-def file_reader(filename, lazy=False, dataset_keys=None, dataset_paths=None,
-                metadata_keys=None,
+def file_reader(filename, lazy=False, dataset_key=None, dataset_path=None,
+                metadata_key=None,
                 skip_array_metadata=False,
                 nxdata_only=False,
                 hardlinks_only=False,
@@ -423,7 +425,7 @@ def file_reader(filename, lazy=False, dataset_keys=None, dataset_paths=None,
     Note
     ----
     Loading all datasets can result in a large number of signals
-    Please review your datasets and use the dataset_keys to target
+    Please review your datasets and use the dataset_key to target
     the datasets of interest.
     "keys" is a special keywords and prepended with "fix" in the metadata
     structure to avoid any issues.
@@ -434,23 +436,23 @@ def file_reader(filename, lazy=False, dataset_keys=None, dataset_paths=None,
     ----------
     filename : str
         Input filename
-    dataset_keys  : None, str, list of strings, default : None
+    dataset_key  : None, str, list of strings, default : None
         If None all datasets are returned.
         If a string or list of strings is provided only items
         whose path contain the string(s) are returned. For example
-        dataset_keys = ["instrument", "Fe"] will return
+        dataset_key = ["instrument", "Fe"] will return
         data entries with instrument or Fe in their hdf path.
-    dataset_paths : None, str, list of strings, default : None
+    dataset_path : None, str, list of strings, default : None
         If None, no absolute path is searched.
         If a string or list of strings is provided items with the absolute
-        paths specified will be returned. For example, dataset_paths =
+        paths specified will be returned. For example, dataset_path =
         ['/data/spectrum/Mn'], it returns the exact dataset with this path.
-        It is not filtered by dataset_keys, i.e. with dataset_keys = ['Fe'],
+        It is not filtered by dataset_key, i.e. with dataset_key = ['Fe'],
         it still returns the specific dataset at '/data/spectrum/Mn'. It is
         empty if no dataset matching the absolute path provided is present.
-    metadata_keys: : None, str, list of strings, default : None
+    metadata_key: : None, str, list of strings, default : None
         Only return items from the original metadata whose path contain the
-        strings .e.g metadata_keys = ["instrument", "Fe"] will return
+        strings .e.g metadata_key = ["instrument", "Fe"] will return
         all metadata entries with "instrument" or "Fe" in their hdf path.
     skip_array_metadata : bool, default : False
         Whether to skip loading metadata with an array entry. This is useful
@@ -486,9 +488,24 @@ def file_reader(filename, lazy=False, dataset_keys=None, dataset_paths=None,
     fin = h5py.File(filename, "r")
     signal_dict_list = []
 
-    dataset_keys = _check_search_keys(dataset_keys)
-    dataset_paths = _check_search_keys(dataset_paths)
-    metadata_keys = _check_search_keys(metadata_keys)
+    if 'dataset_keys' in kwds:
+        warnings.warn("The `dataset_keys` keyword is deprecated. "
+                      "Use `dataset_key` instead.", VisibleDeprecationWarning)
+        dataset_key = kwds['dataset_keys']
+
+    if 'dataset_paths' in kwds:
+        warnings.warn("The `dataset_paths` keyword is deprecated. "
+                      "Use `dataset_path` instead.", VisibleDeprecationWarning)
+        dataset_path = kwds['dataset_paths']
+
+    if 'metadata_keys' in kwds:
+        warnings.warn("The `metadata_keys` keyword is deprecated. "
+                      "Use `metadata_key` instead.", VisibleDeprecationWarning)
+        metadata_key = kwds['metadata_keys']
+
+    dataset_key = _check_search_keys(dataset_key)
+    dataset_path = _check_search_keys(dataset_path)
+    metadata_key = _check_search_keys(metadata_key)
     original_metadata = _load_metadata(fin, lazy=lazy,
                                        skip_array_metadata=skip_array_metadata)
     # some default values...
@@ -521,9 +538,9 @@ def file_reader(filename, lazy=False, dataset_keys=None, dataset_paths=None,
     # if no default found then search for the data as normal
     if not nexus_data_paths and not hdf_data_paths:
         nexus_data_paths, hdf_data_paths = \
-            _find_data(fin, search_keys=dataset_keys,
+            _find_data(fin, search_keys=dataset_key,
                        hardlinks_only=hardlinks_only,
-                       absolute_path=dataset_paths)
+                       absolute_path=dataset_path)
 
     for data_path in nexus_data_paths:
         dictionary = _nexus_dataset_to_signal(fin, data_path, lazy=lazy)
@@ -531,13 +548,13 @@ def file_reader(filename, lazy=False, dataset_keys=None, dataset_paths=None,
         dictionary["mapping"] = mapping
         title = dictionary["metadata"]["General"]["title"]
         if entryname in original_metadata:
-            if metadata_keys is None:
+            if metadata_key is None:
                 dictionary["original_metadata"] = \
                     original_metadata[entryname]
             else:
                 dictionary["original_metadata"] = \
                     _find_search_keys_in_dict(original_metadata,
-                                              search_keys=metadata_keys)
+                                              search_keys=metadata_key)
             # test if it's a hyperspy_nexus format and update metadata
             # as appropriate.
             if "attrs" in original_metadata and \
@@ -553,14 +570,14 @@ def file_reader(filename, lazy=False, dataset_keys=None, dataset_paths=None,
                             dictionary["attributes"]["learning_results"] = \
                                 learning
                         if "original_metadata" in oma:
-                            if metadata_keys is None:
+                            if metadata_key is None:
                                 dictionary["original_metadata"] = \
                                     (oma["original_metadata"])
                             else:
                                 dictionary["original_metadata"] = \
                                     _find_search_keys_in_dict(
                                         (oma["original_metadata"]),
-                                        search_keys=metadata_keys)
+                                        search_keys=metadata_key)
                             # reconstruct the axes_list for axes_manager
                             for k, v in oma['original_metadata'].items():
                                 if k.startswith('_sig_'):
@@ -1022,7 +1039,7 @@ def _write_nexus_attr(dictionary, group, skip_keys=None):
                                       skip_keys=skip_keys)
 
 
-def read_metadata_from_file(filename, metadata_keys=None,
+def read_metadata_from_file(filename, metadata_key=None,
                             lazy=False, verbose=False,
                             skip_array_metadata=False):
     """Read the metadata from a nexus or hdf file.
@@ -1036,7 +1053,7 @@ def read_metadata_from_file(filename, metadata_keys=None,
     ----------
     filename : str
         path of the file to read
-    metadata_keys  : None,str or list_of_strings , default : None
+    metadata_key  : None,str or list_of_strings , default : None
         None will return all datasets found including linked data.
         Providing a string or list of strings will only return items
         which contain the string(s).
@@ -1062,7 +1079,7 @@ def read_metadata_from_file(filename, metadata_keys=None,
 
 
     """
-    search_keys = _check_search_keys(metadata_keys)
+    search_keys = _check_search_keys(metadata_key)
     fin = h5py.File(filename, "r")
     # search for NXdata sets...
     # strip out the metadata (basically everything other than NXdata)
@@ -1077,7 +1094,7 @@ def read_metadata_from_file(filename, metadata_keys=None,
     return stripped_metadata
 
 
-def list_datasets_in_file(filename, dataset_keys=None,
+def list_datasets_in_file(filename, dataset_key=None,
                           hardlinks_only=False,
                           verbose=True):
     """Read from a nexus or hdf file and return a list of the dataset paths.
@@ -1093,10 +1110,10 @@ def list_datasets_in_file(filename, dataset_keys=None,
     ----------
     filename : str
         path of the file to read
-    dataset_keys  : str, list of strings or None , default: None
+    dataset_key  : str, list of strings or None , default: None
         If a str or list of strings is provided only return items whose
         path contain the strings.
-        For example, dataset_keys = ["instrument", "Fe"] will only return
+        For example, dataset_key = ["instrument", "Fe"] will only return
         hdf entries with "instrument" or "Fe" somewhere in their hdf path.
     hardlinks_only : bool, default : False
         If true any links (soft or External) will be ignored when loading.
@@ -1118,7 +1135,7 @@ def list_datasets_in_file(filename, dataset_keys=None,
 
 
     """
-    search_keys = _check_search_keys(dataset_keys)
+    search_keys = _check_search_keys(dataset_key)
     fin = h5py.File(filename, "r")
     # search for NXdata sets...
     # strip out the metadata (basically everything other than NXdata)
@@ -1190,7 +1207,7 @@ def _write_signal(signal, nxgroup, signal_name, **kwds):
 def file_writer(filename,
                 signals,
                 save_original_metadata=True,
-                skip_metadata_keys=None,
+                skip_metadata_key=None,
                 use_default=False,
                 *args, **kwds):
     """Write the signal and metadata as a nexus file.
@@ -1209,7 +1226,7 @@ def file_writer(filename,
           Option to save hyperspy.original_metadata with the signal.
           A loaded Nexus file may have a large amount of data
           when loaded which you may wish to omit on saving
-    skip_metadata_keys : str or list of str, default : None
+    skip_metadata_key : str or list of str, default : None
         the key(s) to skip when it is saving original metadata. This is useful
         when some metadata's keys are to be ignored.
     use_default : bool , default : False
@@ -1279,9 +1296,9 @@ def file_writer(filename,
                     nxometa.attrs["NX_class"] = _parse_to_file("NXcollection")
                     # write the groups and structure
                     _write_nexus_groups(ometa, nxometa,
-                                        skip_keys=skip_metadata_keys, **kwds)
+                                        skip_keys=skip_metadata_key, **kwds)
                     _write_nexus_attr(ometa, nxometa,
-                                      skip_keys=skip_metadata_keys)
+                                      skip_keys=skip_metadata_key)
 
             if sig.metadata:
                 meta = sig.metadata.as_dictionary()
