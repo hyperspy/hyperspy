@@ -17,6 +17,7 @@ A few sentences and/or a bulleted list to describe and motivate the change:
 - [ ] update docstring (if appropriate),
 - [ ] update user guide (if appropriate),
 - [ ] add an changelog entry in the `upcoming_changes` folder (see [`upcoming_changes/README.rst`](https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/upcoming_changes/README.rst)),
+- [ ] Check formatting changelog entry in the `readthedocs` doc build of this PR (link in github checks)
 - [ ] add tests,
 - [ ] ready for review.
 
