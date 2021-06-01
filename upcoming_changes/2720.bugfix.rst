@@ -1,0 +1,1 @@
+Fix ROI snapping regression 
