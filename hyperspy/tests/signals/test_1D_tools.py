@@ -229,12 +229,12 @@ class TestInterpolateInBetween:
 
     def test_single_spectrum_in_units(self):
         s = self.s.inav[0]
-        s.axes_manager[-1].convert_to_non_uniform_axis()
         s.interpolate_in_between(0.8, 1.2)
         np.testing.assert_array_equal(s.data, np.arange(20))
 
     def test_single_spectrum_in_units_nonuniform(self):
         s = self.s.inav[0]
+        s.axes_manager[-1].convert_to_non_uniform_axis()
         s.interpolate_in_between(0.8, 1.2)
         np.testing.assert_array_equal(s.data, np.arange(20))
 
