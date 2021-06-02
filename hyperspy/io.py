@@ -801,8 +801,8 @@ def save(filename, signal, overwrite=None, **kwds):
         if writer.non_uniform_axis is False and nua is False:
             yes_we_can = [plugin.format_name for plugin in io_plugins
                           if plugin.non_uniform_axis is True]
-            raise OSError('Writing to this format is not supported for non '
-                          'uniform axes.'
+            raise OSError('Writing to this format is not supported for '
+                          'non-uniform axes.'
                           'Use one of the following formats: %s' %
                           strlist2enumeration(yes_we_can))
         ensure_directory(filename)

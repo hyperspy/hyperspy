@@ -42,7 +42,11 @@ def test_signal1d():
     s = Signal1D((1))
     s.axes_manager[0].convert_to_non_uniform_axis()
     with pytest.raises(NotImplementedError):
+        s.calibrate()
+    with pytest.raises(NotImplementedError):
         s.shift1D([1])
+    with pytest.raises(NotImplementedError):
+        s.estimate_shift1D([1])
     with pytest.raises(NotImplementedError):
         s.smooth_savitzky_golay()
     with pytest.raises(NotImplementedError):

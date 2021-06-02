@@ -79,7 +79,7 @@ version = "3.1"
 # CHANGES
 #
 # v3.1
-# - add read support for non-linear DataAxis defined by 'axis' vector
+# - add read support for non-uniform DataAxis defined by 'axis' vector
 # - move metadata.Signal.binned attribute to axes.is_binned parameter
 #
 # v3.0

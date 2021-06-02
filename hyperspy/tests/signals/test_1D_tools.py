@@ -218,7 +218,22 @@ class TestInterpolateInBetween:
         np.testing.assert_array_equal(s.data, np.arange(20))
         assert m.data_changed.called
 
+    def test_single_spectrum_nonuniform(self):
+        s = self.s.inav[0]
+        m = mock.Mock()
+        s.events.data_changed.connect(m.data_changed)
+        s.axes_manager[-1].convert_to_non_uniform_axis()
+        s.interpolate_in_between(8, 12)
+        np.testing.assert_array_equal(s.data, np.arange(20))
+        assert m.data_changed.called
+
     def test_single_spectrum_in_units(self):
+        s = self.s.inav[0]
+        s.axes_manager[-1].convert_to_non_uniform_axis()
+        s.interpolate_in_between(0.8, 1.2)
+        np.testing.assert_array_equal(s.data, np.arange(20))
+
+    def test_single_spectrum_in_units_nonuniform(self):
         s = self.s.inav[0]
         s.interpolate_in_between(0.8, 1.2)
         np.testing.assert_array_equal(s.data, np.arange(20))
@@ -248,8 +263,23 @@ class TestInterpolateInBetween:
         s.interpolate_in_between(8, 12, delta=0.31, kind='cubic')
         print(s.data[8:12])
         np.testing.assert_allclose(
-            s.data[8:12], np.array([45.09388598, 104.16170809,
-                                    155.48258721, 170.33564422]),
+            s.data[8:12], np.array([46.595205, 109.802805, 
+                                    164.512803, 178.615201]),
+            atol=1,
+        )
+
+    def test_delta_float_nonuniform(self):
+        s = self.s.inav[0]
+        s.change_dtype('float')
+        tmp = np.zeros(s.data.shape)
+        tmp[12] = s.data[12]
+        s.data += tmp * 9.
+        s.axes_manager[0].convert_to_non_uniform_axis()
+        s.interpolate_in_between(8, 12, delta=0.31, kind='cubic')
+        print(s.data[8:12])
+        np.testing.assert_allclose(
+            s.data[8:12], np.array([46.595205, 109.802805, 
+                                    164.512803, 178.615201]),
             atol=1,
         )
 
