@@ -1361,8 +1361,10 @@ some additional loading arguments are provided.
 Extra loading arguments
 +++++++++++++++++++++++
 
-- ``dataset_keys``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) or string(s) to search for in the path to find one or more datasets.
-- ``metadata_keys``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) or string(s) to search for in the path to find metadata.
+- ``dataset_key``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . String(s) to search for in the path to find one or more datasets.
+- ``dataset_path``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) to search for in the path to find one or more datasets.
+- ``metadata_key``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) or string(s) to search for in the path to find metadata.
+- ``skip_array_metadata``: ``bool`` - Default is False. Option to skip loading metadata that are arrays to avoid duplicating loading of data.
 - ``nxdata_only``: ``bool`` - Default is False. Option to only convert NXdata formatted data to signals.
 - ``hardlinks_only``: ``bool`` - Default is False. Option to ignore soft or External links in the file.
 - ``use_default``: ``bool`` - Default is False. Only load the ``default`` dataset, if defined, from the file. Otherwise load according to the other keyword options.
@@ -1391,46 +1393,62 @@ hdf datasets will be returned as signals:
 
 .. code-block:: python
 
-    >>> sig = hs.load("sample.nxs",nxdata_only=False)
+    >>> sig = hs.load("sample.nxs", nxdata_only=False)
 
-We can load a specific dataset using the ``dataset_keys`` keyword argument.
+We can load a specific dataset using the ``dataset_path`` keyword argument.
 Setting it to the absolute path of the desired dataset will cause
 the single dataset to be loaded:
 
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.nxs", dataset_keys='/entry/experiment/EDS/data')
+    >>> hs.load("sample.nxs", dataset_path="/entry/experiment/EDS/data")
 
 We can also choose to load datasets based on a search key using the
-``dataset_keys`` keyword argument. This can also be used to load NXdata not
+``dataset_key`` keyword argument. This can also be used to load NXdata not
 outside of the ``default`` version 3 rules. Instead of providing an absolute
 path, a string can be provided as well, and datasets with this key will be
 returned. The previous example could also be written as:
 
 .. code-block:: python
 
-    >>> # Loading a specific dataset
-    >>> hs.load("sample.nxs", dataset_keys="EDS")
+    >>> # Loading datasets containing the string "EDS"
+    >>> hs.load("sample.nxs", dataset_key="EDS")
+
+The difference between ``dataset_path`` and ``dataset_key`` is illustrated
+here:
+
+.. code-block:: python
+
+    >>> # Only the dataset /entry/experiment/EDS/data will be loaded
+    >>> hs.load("sample.nxs", dataset_path="/entry/experiment/EDS/data")
+    >>> # All datasets contain the entire string "/entry/experiment/EDS/data" will be loaded
+    >>> hs.load("sample.nxs", dataset_key="/entry/experiment/EDS/data")
 
 Multiple datasets can be loaded by providing a number of keys:
 
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.nxs", dataset_keys=["EDS", "Fe", "Ca"])
+    >>> hs.load("sample.nxs", dataset_key=["EDS", "Fe", "Ca"])
 
-Metadata can also be filtered in the same way using ``metadata_keys``:
+Metadata can also be filtered in the same way using ``metadata_key``:
 
 .. code-block:: python
 
-    >>> # Load data with metadata matching metadata_keys
-    >>> hs.load("sample.nxs", metadata_keys="entry/instrument")
+    >>> # Load data with metadata matching metadata_key
+    >>> hs.load("sample.nxs", metadata_key="entry/instrument")
 
 .. note::
 
     The Nexus loader removes any NXdata blocks from the metadata.
 
+Metadata that are arrays can be skipped by using ``skip_array_metadata``:
+
+.. code-block:: python
+
+    >>> # Load data while skipping metadata that are arrays
+    >>> hs.load("sample.nxs", skip_array_metadata=True)
 
 Nexus files also support parameters or dimensions that have been varied
 non-linearly. Since HyperSpy Signals expect linear variation of parameters /
@@ -1439,7 +1457,8 @@ replaced with indices.
 Nexus and HDF can result in large metadata structures with large datasets within the loaded
 original_metadata. If lazy loading is used this may not be a concern but care must be taken
 when saving the data. To control whether large datasets are loaded or saved,
-use the ``metadata_keys`` to load only the most relevant information.
+use the ``metadata_key`` to load only the most relevant information. Alternatively,
+set ``skip_array_metadata`` to ``True`` to avoid loading those large datasets in original_metadata.
 
 
 Writing
@@ -1450,6 +1469,7 @@ function.
 Extra saving arguments
 ++++++++++++++++++++++
 - ``save_original_metadata``: ``bool`` - Default is True, option to save the original_metadata when storing to file.
+- ``skip_metadata_key``: ``bool`` - ``None``, ``str`` or ``list`` of strings - Default is ``None``. Option to skip certain metadata keys when storing to file.
 - ``use_default``: ``bool`` - Default is False. Set the ``default`` attribute for the Nexus file.
 
 .. code-block:: python
@@ -1476,6 +1496,12 @@ The original_metadata can be omitted using ``save_original_metadata``.
 .. code-block:: python
 
     >>> sig.save("output.nxs", save_original_metadata=False)
+
+If only certain metadata are to be ignored, use ``skip_metadata_key``:
+
+.. code-block:: python
+
+    >>> sig.save("output.nxs", skip_metadata_key=['xsp3', 'solstice_scan'])
 
 To save multiple signals, the file_writer method can be called directly.
 
@@ -1533,11 +1559,11 @@ Inspecting
 Looking in a Nexus or HDF file for specific metadata is often useful - e.g. to find
 what position a specific stage was at. The methods ``read_metadata_from_file``
 and ``list_datasets_in_file`` can be used to load the file contents or
-list the hdf datasets contained in a file. The inspection methods use the same ``metadata_keys`` or ``dataset_keys`` as when loading.
+list the hdf datasets contained in a file. The inspection methods use the same ``metadata_key`` or ``dataset_key`` as when loading.
 For example to search for metadata in a file:
 
     >>> from hyperspy.io_plugins.nexus import read_metadata_from_file
-    >>> read_metadata_from_file("sample.hdf5",metadata_keys=["stage1_z"])
+    >>> read_metadata_from_file("sample.hdf5",metadata_key=["stage1_z"])
     {'entry': {'instrument': {'scannables': {'stage1': {'stage1_z': {'value': -9.871700000000002,
     'attrs': {'gda_field_name': 'stage1_z',
     'local_name': 'stage1.stage1_z',
