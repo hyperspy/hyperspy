@@ -1,6 +1,5 @@
 name: test_env
 channels:
-- defaults
 - conda-forge
 dependencies:
 - dask-core >2.0
@@ -16,7 +15,6 @@ dependencies:
 - numpy
 - pint
 - prettytable
-- python
 - python-dateutil
 - pyyaml
 - requests
