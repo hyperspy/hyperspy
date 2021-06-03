@@ -117,10 +117,10 @@ class TestNonUniformAxisCheck:
 
     def test_nonuniform_error(self):
         assert(self.s.axes_manager[0].is_uniform == False)
-        no_we_cant = [plugin.file_extensions[0] for plugin in io_plugins
-                      if (plugin.writes is True or plugin.writes is not False
-                      and (0, 1) in plugin.writes) and 
-                      plugin.non_uniform_axis is False]
+        no_we_cant = [plugin.file_extensions[plugin.default_extension] for
+                      plugin in io_pluginsif (plugin.writes is True or
+                      plugin.writes is not False and (1, 0) in plugin.writes)
+                      and plugin.non_uniform_axis is False]
         for ext in no_we_cant:
             with pytest.raises(OSError, match = "not supported for"):
                 filename = 'tmp.' + ext
