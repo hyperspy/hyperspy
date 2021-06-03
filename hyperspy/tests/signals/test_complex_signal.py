@@ -31,7 +31,7 @@ class TestComplexProperties:
     imag_ref = np.arange(9).reshape((3, 3)) + 9
     comp_ref = real_ref + 1j * imag_ref
     phase_ref = np.angle(comp_ref)
-    amplitude_ref = np.abs(comp_ref)
+    amplitude_ref = abs(comp_ref)
 
     def setup_method(self, method):
         test = self.real_ref + 1j * self.imag_ref
@@ -43,32 +43,72 @@ class TestComplexProperties:
 
     def test_set_real(self):
         real = np.random.random((3, 3))
-        self.s.real = real
-        np.testing.assert_allclose(self.s.real.data, real)
+        s = self.s
+        # Set with numpy array
+        s.real = real
+        np.testing.assert_allclose(s.real.data, real)
+        # Set with BaseSignal
+        s2 = hs.signals.ComplexSignal(self.comp_ref)
+        s2.real = s.real
+        np.testing.assert_allclose(s2.real.data, real)
+        np.testing.assert_allclose(s2.imag.data, self.imag_ref)
+        # Set with ComplexSignal
+        with pytest.raises(TypeError):
+            s2.real = s
 
     def test_get_imag(self):
         np.testing.assert_allclose(self.s.imag.data, self.imag_ref)
 
     def test_set_imag(self):
         imag = np.random.random((3, 3))
-        self.s.imag = imag
+        s = self.s
+        # Set with numpy array
+        s.imag = imag
         np.testing.assert_allclose(self.s.imag.data, imag)
+        # Set with BaseSignal
+        s2 = hs.signals.ComplexSignal(self.comp_ref)
+        s2.imag = s.imag
+        np.testing.assert_allclose(s2.imag.data, imag)
+        np.testing.assert_allclose(s2.real.data, self.real_ref)
+        # Set with ComplexSignal
+        with pytest.raises(TypeError):
+            s2.imag = s
 
     def test_get_amplitude(self):
         np.testing.assert_allclose(self.s.amplitude.data, self.amplitude_ref)
 
     def test_set_amplitude(self):
         amplitude = np.random.random((3, 3))
-        self.s.amplitude = amplitude
-        np.testing.assert_allclose(self.s.amplitude, amplitude)
+        s = self.s
+        # Set with numpy array
+        s.amplitude = amplitude
+        np.testing.assert_allclose(s.amplitude, amplitude)
+        # Set with BaseSignal
+        s2 = hs.signals.ComplexSignal(self.comp_ref)
+        s2.amplitude = s.amplitude
+        np.testing.assert_allclose(s2.amplitude.data, amplitude)
+        np.testing.assert_allclose(s2.phase.data, self.phase_ref)
+        # Set with ComplexSignal
+        with pytest.raises(TypeError):
+            s2.amplitude = s
 
     def test_get_phase(self):
         np.testing.assert_allclose(self.s.phase.data, self.phase_ref)
 
     def test_set_phase(self):
         phase = np.random.random((3, 3))
-        self.s.phase = phase
-        np.testing.assert_allclose(self.s.phase, phase)
+        s = self.s
+        # Set with numpy array
+        s.phase = phase
+        np.testing.assert_allclose(s.phase, phase)
+        # Set with BaseSignal
+        s2 = hs.signals.ComplexSignal(self.comp_ref)
+        s2.phase = s.phase
+        np.testing.assert_allclose(s2.phase.data, phase)
+        np.testing.assert_allclose(s2.amplitude.data, self.amplitude_ref)
+        # Set with ComplexSignal
+        with pytest.raises(TypeError):
+            s2.phase = s
 
     def test_angle(self):
         np.testing.assert_allclose(self.s.angle(deg=False), self.phase_ref)

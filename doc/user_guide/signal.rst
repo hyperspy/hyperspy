@@ -1149,7 +1149,7 @@ in the example above by using the ``power_spectum`` argument:
     >>> fft.plot(True)
 
 Where ``power_spectum`` is set to ``True`` since it is the first argument of the
-:py:meth:`~._signals.complex_signal.ComplexSignal_mixin.plot` method for complex signal.
+:py:meth:`~._signals.complex_signal.ComplexSignal.plot` method for complex signal.
 When ``power_spectrum=True``, the plot will be displayed on a log scale by default.
 
 
