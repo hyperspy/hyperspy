@@ -37,7 +37,7 @@ from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING_PARAMETERS,
 _logger = logging.getLogger(__name__)
 
 
-class EDS_mixin:
+class EDSSpectrum(Signal1D):
 
     _signal_type = "EDS"
 
@@ -1111,10 +1111,6 @@ class EDS_mixin:
             self.add_marker(line, render_figure=False)
         if render_figure:
             self._render_figure(plot=['signal_plot'])
-
-
-class EDSSpectrum(EDS_mixin, Signal1D):
-    pass
 
 
 class LazyEDSSpectrum(EDSSpectrum, LazySignal1D):

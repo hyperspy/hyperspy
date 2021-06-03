@@ -77,7 +77,7 @@ class EDSTEMParametersUI(BaseSetMetadataItems):
         'real_time', }
 
 
-class EDSTEM_mixin:
+class EDSTEMSpectrum(EDSSpectrum):
 
     _signal_type = "EDS_TEM"
 
@@ -923,10 +923,6 @@ class EDSTEM_mixin:
             elemental_mt = element_composition * thickness_map * density * 1E-8
             mass_thickness += elemental_mt
         return mass_thickness
-
-
-class EDSTEMSpectrum(EDSTEM_mixin, EDSSpectrum):
-    pass
 
 
 class LazyEDSTEMSpectrum(EDSTEMSpectrum, LazyEDSSpectrum):

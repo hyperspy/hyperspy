@@ -25,7 +25,7 @@ from hyperspy._signals.complex_signal1d import (ComplexSignal1D,
 from hyperspy.misc.eels.tools import eels_constant
 
 
-class DielectricFunction_mixin:
+class DielectricFunction(ComplexSignal1D):
 
     _signal_type = "DielectricFunction"
     _alias_signal_types = ["dielectric function"]
@@ -120,10 +120,6 @@ class DielectricFunction_mixin:
         s.metadata.General.title = ("EELS calculated from " +
                                     self.metadata.General.title)
         return s
-
-
-class DielectricFunction(DielectricFunction_mixin, ComplexSignal1D):
-    pass
 
 
 class LazyDielectricFunction(DielectricFunction, LazyComplexSignal1D):

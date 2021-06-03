@@ -352,7 +352,7 @@ The change of type is done using numpy "safe" rules, so no information is lost,
 as numbers are represented to full machine precision.
 
 This feature is particularly useful when using
-:py:meth:`~hyperspy._signals.eds.EDS_mixin.get_lines_intensity`:
+:py:meth:`~hyperspy._signals.eds.EDSSpectrum.get_lines_intensity`:
 
 .. code-block:: python
 

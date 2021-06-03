@@ -71,7 +71,7 @@ class EELSTEMParametersUI(BaseSetMetadataItems):
     }
 
 
-class EELSSpectrum_mixin:
+class EELSSpectrum(Signal1D):
 
     _signal_type = "EELS"
     _alias_signal_types = ["TEM EELS"]
@@ -1830,11 +1830,6 @@ class EELSSpectrum_mixin:
             mask.data = binary_erosion(mask.data, border_value=1)
             mask.data = binary_dilation(mask.data, border_value=0)
         return mask
-
-
-class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
-
-    pass
 
 
 class LazyEELSSpectrum(EELSSpectrum, LazySignal1D):
