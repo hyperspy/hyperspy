@@ -22,7 +22,7 @@ MYPATH = os.path.dirname(__file__)
 def test_write_unsupported_data_shape():
     data = np.arange(5 * 10 * 15 * 20).reshape((5, 10, 15, 20))
     s = signals.Signal1D(data)
-    with pytest.raises(IOError):
+    with pytest.raises(TypeError):
         s.save('test_write_unsupported_data_shape.rpl')
 
 
