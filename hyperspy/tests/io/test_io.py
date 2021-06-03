@@ -104,7 +104,7 @@ class TestNonUniformAxisCheck:
     def test_io_nonuniform(self):
         assert(self.s.axes_manager[0].is_uniform == False)
         self.s.save('tmp.hspy', overwrite = True)
-        with pytest.raises(AttributeError):
+        with pytest.raises(OSError):
             self.s.save('tmp.msa', overwrite = True)
 
     def test_nonuniform_writer_characteristic(self):
