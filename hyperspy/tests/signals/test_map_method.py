@@ -423,3 +423,21 @@ def test_map_ufunc(caplog):
     assert np.log(s) == s.map(np.log)
     np.testing.assert_allclose(s.data, np.log(data))
     assert "can direcly operate on hyperspy signals" in caplog.records[0].message
+
+
+class TestLazyNavChunkSize1:
+    @staticmethod
+    def afunction(input_data):
+        return np.array([1, 2, 3])
+
+    def test_signal2d(self):
+        dask_array = da.zeros((10, 15, 32, 32), chunks=(1, 1, 32, 32))
+        s = hs.signals.Signal2D(dask_array).as_lazy()
+        s_out = s.map(self.afunction, inplace=False, parallel=False, ragged=True)
+        s_out.compute()
+
+    def test_signal1d(self):
+        dask_array = da.zeros((10, 15, 32), chunks=(1, 1, 32))
+        s = hs.signals.Signal1D(dask_array).as_lazy()
+        s_out = s.map(self.afunction, inplace=False, parallel=False, ragged=True)
+        s_out.compute()

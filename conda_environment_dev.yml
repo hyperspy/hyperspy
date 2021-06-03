@@ -1,6 +1,5 @@
 name: test_env
 channels:
-- defaults
 - conda-forge
 dependencies:
 # We pin freetype and matplotlib for the image comparison

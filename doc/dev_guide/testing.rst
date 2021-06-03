@@ -177,9 +177,8 @@ The testing matrix is as follows:
   See ``.github/workflows/tests.yml`` in the HyperSpy repository for further details.
 - **Azure Pipeline**: test a range of Python versions on Linux, MacOS and Windows;
   all dependencies are installed from `Anaconda Cloud <https://anaconda.org/>`_
-  using the `Anaconda "defaults" <https://anaconda.org/anaconda>`_ and the
-  `"conda-forge" <https://anaconda.org/conda-forge>`_ channel (in this order of
-  priority). See ``azure-pipelines.yml`` in the HyperSpy repository for further details.
+  using the `"conda-forge" <https://anaconda.org/conda-forge>`_ channel.
+  See ``azure-pipelines.yml`` in the HyperSpy repository for further details.
 
 This testing matrix has been designed to be simple and easy to maintain, whilst
 ensuring that packages from PyPI and Anaconda cloud are not mixed in order to
