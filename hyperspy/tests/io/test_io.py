@@ -104,7 +104,7 @@ class TestNonUniformAxisCheck:
     def test_io_nonuniform(self):
         assert(self.s.axes_manager[0].is_uniform == False)
         self.s.save('tmp.hspy', overwrite = True)
-        with pytest.raises(IOError, match = "not supported for non-uniform"):
+        with pytest.raises(TypeError, match = "not supported for non-uniform"):
             self.s.save('tmp.msa', overwrite = True)
 
     def test_nonuniform_writer_characteristic(self):
@@ -122,7 +122,7 @@ class TestNonUniformAxisCheck:
                       plugin.writes is not False and (1, 0) in plugin.writes)
                       and plugin.non_uniform_axis is False]
         for ext in incompatible_writers:
-            with pytest.raises(IOError, match = "not supported for non-uniform"):
+            with pytest.raises(TypeError, match = "not supported for non-uniform"):
                 filename = 'tmp.' + ext
                 self.s.save(filename, overwrite = True)
 
