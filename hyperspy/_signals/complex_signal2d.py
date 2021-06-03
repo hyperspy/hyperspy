@@ -120,4 +120,5 @@ class ComplexSignal2D(ComplexSignal, CommonSignal2D):
 class LazyComplexSignal2D(ComplexSignal2D, LazyComplexSignal):
 
     """BaseSignal subclass for lazy complex 2-dimensional data."""
+
     pass

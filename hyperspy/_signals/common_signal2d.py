@@ -20,7 +20,7 @@
 from hyperspy.docstrings.signal import OPTIMIZE_ARG
 
 
-class CommonSignal2D(object):
+class CommonSignal2D:
 
     """Common functions for 2-dimensional signals."""
 

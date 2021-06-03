@@ -224,7 +224,7 @@ Note that, if you have :ref:`packages that extend HyperSpy
 <hyperspy_extensions-label>` installed in your system, there may
 be more specialised signals available to you. To print all available specialised
 :py:class:`~.signal.BaseSignal` subclasses installed in your system call the
-:py:func:`hyperspy.utils.print_known_signal_types`
+:py:func:`~.utils.print_known_signal_types`
 function as in the following example:
 
 .. code-block:: python
@@ -304,7 +304,7 @@ following table:
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | True   |
     +---------------------------------------------------------------+--------+
-    |           :py:class:`~._signals.eds_tem.EDSTEM`               | True   |
+    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | True   |
     +---------------------------------------------------------------+--------+
     |              :py:class:`~._signals.signal2d.Signal2D`         | False  |
     +---------------------------------------------------------------+--------+
@@ -312,7 +312,7 @@ following table:
     +---------------------------------------------------------------+--------+
     |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`    | False  |
     +---------------------------------------------------------------+--------+
-    |    :py:class:`~._signals.complex_signal2d.Complex2Dmixin`     | False  |
+    |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`    | False  |
     +---------------------------------------------------------------+--------+
 
 
@@ -1586,10 +1586,10 @@ operation.
 Handling complex data
 ---------------------
 
-The HyperSpy :py:class:`~.hyperspy.signals.ComplexSignal` signal class and its
-subclasses for 1-dimensional and 2-dimensional data allow the user to access
-complex properties like the `real` and `imag` parts of the data or the
-`amplitude` (also known as the modulus) and `phase` (also known as angle or
+The HyperSpy :py:class:`~._signals.complex_signal.ComplexSignal` signal class
+and its subclasses for 1-dimensional and 2-dimensional data allow the user to
+access complex properties like the ``real`` and ``imag`` parts of the data or the
+``amplitude`` (also known as the modulus) and ``phase`` (also known as angle or
 argument) directly. Getting and setting those properties can be done as
 follows:
 
@@ -1612,31 +1612,32 @@ To transform a real signal into a complex one use:
 
     >>> s.change_dtype(complex)
 
-Changing the `dtype` of a complex signal to something real is not clearly
-defined and thus not directly possible. Use the `real`, `imag`, `amplitude`
-or `phase` properties instead to extract the real data that is desired.
+Changing the ``dtype`` of a complex signal to something real is not clearly
+defined and thus not directly possible. Use the ``real``, ``imag``,
+``amplitude`` or ``phase`` properties instead to extract the real data that is
+desired.
 
 
 Calculate the angle / phase / argument
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:func:`~hyperspy.signals.ComplexSignal.angle` function can be used to
-calculate the angle, which is equivalent to using the `phase` property if no
-argument is used. If the data is real, the angle will be 0 for positive
-values and 2$\pi$ for negative values. If the `deg` parameter is set to
-`True`, the result will be given in degrees, otherwise in rad (default). The
-underlying function is the :py:func:`~numpy.angle` function.
-:py:func:`~hyperspy.signals.ComplexSignal.angle` will return an appropriate
-HyperSpy signal.
+The :py:meth:`~._signals.complex_signal.ComplexSignal.angle` function
+can be used to calculate the angle, which is equivalent to using the ``phase``
+property if no argument is used. If the data is real, the angle will be 0 for
+positive values and 2$\pi$ for negative values. If the `deg` parameter is set
+to ``True``, the result will be given in degrees, otherwise in rad (default).
+The underlying function is the :py:func:`numpy.angle` function.
+:py:meth:`~._signals.complex_signal.ComplexSignal.angle` will return
+an appropriate HyperSpy signal.
 
 
 Phase unwrapping
 ^^^^^^^^^^^^^^^^
 
-With the :py:func:`~hyperspy.signals.ComplexSignal.unwrapped_phase` method the
-complex phase of a signal can be unwrapped and returned as a new signal. The
-underlying method is :py:func:`~skimage.restoration.unwrap`, which uses the
-algorithm described in :ref:`[Herraez] <Herraez>`.
+With the :py:meth:`~._signals.complex_signal.ComplexSignal.unwrapped_phase`
+method the complex phase of a signal can be unwrapped and returned as a new signal.
+The underlying method is :py:func:`skimage.restoration.unwrap_phase`, which
+uses the algorithm described in :ref:`[Herraez] <Herraez>`.
 
 
 .. _complex.argand:
@@ -1646,13 +1647,12 @@ Calculate and display Argand diagram
 
 Sometimes it is convenient to visualize a complex signal as a plot of its
 imaginary part versus real one. In this case so called Argand diagrams can
-be calculated using :py:func:`~hyperspy.signals.ComplexSignal.argand_diagram`
-method, which returns the plot as a
-:py:class:`~._signals.complex_signal.Signal2D`. Optional arguments ``size``
-and ``display_range`` can be used to change the size (and therefore
-resolution) of the plot and to change the range for the display of the
-plot respectively. The last one is especially useful in order to zoom
-into specific regions of the plot or to limit the plot in case of noisy
+be calculated using :py:meth:`~hyperspy.signals.ComplexSignal.argand_diagram`
+method, which returns the plot as a :py:class:`~._signals.signal2d.Signal2D`.
+Optional arguments ``size`` and ``display_range`` can be used to change the
+size (and therefore resolution) of the plot and to change the range for the
+display of the plot respectively. The last one is especially useful in order to
+zoom into specific regions of the plot or to limit the plot in case of noisy
 data points.
 
 An example of calculation of Aragand diagram is :ref:`shown for electron
@@ -1663,9 +1663,9 @@ Add a linear phase ramp
 
 For 2-dimensional complex images, a linear phase ramp can be added to the
 signal via the
-:py:func:`~._signals.complex_signal2d.Complex2Dmixin.add_phase_ramp` method.
-The parameters `ramp_x` and `ramp_y` dictate the slope of the ramp in `x`-
-and `y` direction, while the offset is determined by the `offset` parameter.
+:py:meth:`~._signals.complex_signal2d.ComplexSignal2D.add_phase_ramp` method.
+The parameters ``ramp_x`` and ``ramp_y`` dictate the slope of the ramp in `x`-
+and `y` direction, while the offset is determined by the ``offset`` parameter.
 The fulcrum of the linear ramp is at the origin and the slopes are given in
 units of the axis with the according scale taken into account. Both are
 available via the :py:class:`~.axes.AxesManager` of the signal.
