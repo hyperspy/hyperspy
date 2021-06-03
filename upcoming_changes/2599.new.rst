@@ -1,1 +1,1 @@
-Plot overlayed images
+Plot overlayed images - see :ref:`plotting several images<plot.images>`

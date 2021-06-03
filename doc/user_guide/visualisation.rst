@@ -738,7 +738,7 @@ __ plot.spectra_
     ``button_press_event`` in the figure canvas is being used.
 
 It is also possible to plot multiple images overlayed on the same figure by 
-passing the argument `overlay=True` to the 
+passing the argument ``overlay=True`` to the 
 :py:func:`~.drawing.utils.plot_images` function. This should only be done when
 images have the same scale (eg. for elemental maps from the same dataset).
 Using the same data as above, the Fe and Pt signals can be plotted using
