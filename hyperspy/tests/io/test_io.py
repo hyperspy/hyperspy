@@ -118,7 +118,7 @@ class TestNonUniformAxisCheck:
     def test_nonuniform_error(self):
         assert(self.s.axes_manager[0].is_uniform == False)
         no_we_cant = [plugin.file_extensions[plugin.default_extension] for
-                      plugin in io_pluginsif (plugin.writes is True or
+                      plugin in io_plugins if (plugin.writes is True or
                       plugin.writes is not False and (1, 0) in plugin.writes)
                       and plugin.non_uniform_axis is False]
         for ext in no_we_cant:
