@@ -319,7 +319,7 @@ class Model1D(BaseModel):
                                  'navigation dimension as the core-loss.')
             if not value.axes_manager.signal_axes[0].is_uniform:
                 raise ValueError('Low loss convolution is not supported with '
-                                 'non linear signal axes.')
+                                 'non-uniform signal axes.')
             self._low_loss = value
             self.set_convolution_axis()
             self.convolved = True

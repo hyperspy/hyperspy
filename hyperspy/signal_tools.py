@@ -201,7 +201,7 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
         if not isinstance(self.axis, UniformDataAxis):
-            raise ValueError("The calibration tool supports only uniform axes.")
+            raise NotImplementedError("The calibration tool supports only uniform axes.")
         self.units = self.axis.units
         self.scale = self.axis.scale
         self.offset = self.axis.offset

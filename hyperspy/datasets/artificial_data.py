@@ -452,10 +452,10 @@ def get_luminescence_signal(navigation_dimension=0,
     if add_baseline:
         data += 350.
 
-    #if not uniform, transformation into non-linear axis
+    #if not uniform, transformation into non-uniform axis
     if not uniform:
         hc = 1239.84198 #nm/eV
-        #converting to non uniform axis
+        #converting to non-uniform axis
         sig.axes_manager.signal_axes[0].convert_to_functional_data_axis(\
                                                               expression="a/x",
                                                               name='Energy',

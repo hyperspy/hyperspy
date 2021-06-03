@@ -761,14 +761,22 @@ def save(filename, signal, overwrite=None, **kwds):
         )
 
     if writer.writes is not True and (sd, nd) not in writer.writes:
-        yes_we_can = [plugin.format_name for plugin in io_plugins
+        compatible_writers = [plugin.format_name for plugin in io_plugins
                       if plugin.writes is True or
                       plugin.writes is not False and
                       (sd, nd) in plugin.writes]
 
-        raise IOError(
+        raise TypeError(
             "This file format does not support this data. "
-            f"Please try one of {strlist2enumeration(yes_we_can)}"
+            f"Please try one of {strlist2enumeration(compatible_writers)}"
+        )
+
+    if not writer.non_uniform_axis and not signal.axes_manager.all_uniform:
+        compatible_writers = [plugin.format_name for plugin in io_plugins
+                      if plugin.non_uniform_axis is True]
+        raise TypeError("Writing to this format is not supported for "
+                      "non-uniform axes. Use one of the following "
+                      f"formats: {strlist2enumeration(compatible_writers)}"
         )
 
     # Create the directory if it does not exist
@@ -782,40 +790,8 @@ def save(filename, signal, overwrite=None, **kwds):
     elif overwrite is False and is_file:
         write = False  # Don't write the file
     else:
-        # Check if the writer can write
-        sd = signal.axes_manager.signal_dimension
-        nd = signal.axes_manager.navigation_dimension
-        nua = signal.axes_manager.all_uniform
-        if writer.writes is False:
-            raise ValueError('Writing to this format is not '
-                             'supported, supported file extensions are: %s ' %
-                             strlist2enumeration(default_write_ext))
-        if writer.writes is not True and (sd, nd) not in writer.writes:
-            yes_we_can = [plugin.format_name for plugin in io_plugins
-                          if plugin.writes is True or
-                          plugin.writes is not False and
-                          (sd, nd) in plugin.writes]
-            raise IOError('This file format cannot write this data. '
-                          'The following formats can: %s' %
-                          strlist2enumeration(yes_we_can))
-        if writer.non_uniform_axis is False and nua is False:
-            yes_we_can = [plugin.format_name for plugin in io_plugins
-                          if plugin.non_uniform_axis is True]
-            raise OSError('Writing to this format is not supported for non '
-                          'uniform axes.'
-                          'Use one of the following formats: %s' %
-                          strlist2enumeration(yes_we_can))
-        ensure_directory(filename)
-        is_file = os.path.isfile(filename)
-        if overwrite is None:
-            write = overwrite_method(filename)  # Ask what to do
-        elif overwrite is True or (overwrite is False and not is_file):
-            write = True  # Write the file
-        elif overwrite is False and is_file:
-            write = False  # Don't write the file
-        else:
-            raise ValueError("`overwrite` parameter can only be None, True or "
-                             "False.")
+        raise ValueError("`overwrite` parameter can only be None, True or "
+                         "False.")
     if write:
         # Pass as a string for now, pathlib.Path not
         # properly supported in io_plugins

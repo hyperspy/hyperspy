@@ -513,10 +513,12 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Parameters
         ----------
         start, end : int or float
-            The limits of the interval. If int they are taken as the
-            axis index. If float they are taken as the axis value.
+            The limits of the interval. If int, they are taken as the
+            axis index. If float, they are taken as the axis value.
         delta : int or float
-            The windows around the (start, end) to use for interpolation
+            The windows around the (start, end) to use for interpolation. If 
+            int, they are taken as index steps. If float, they are taken in
+            units of the axis value.
         %s
         %s
         %s
@@ -537,9 +539,15 @@ class Signal1D(BaseSignal, CommonSignal1D):
         i1 = axis._get_index(start)
         i2 = axis._get_index(end)
         if isinstance(delta, float):
-            delta = int(delta / axis.scale)
-        i0 = int(np.clip(i1 - delta, 0, np.inf))
-        i3 = int(np.clip(i2 + delta, 0, axis.size))
+            if isinstance(start, int):
+                start = axis.axis[start]
+            if isinstance(end, int):
+                end = axis.axis[end]
+            i0 = axis._get_index(start-delta) if start-delta < axis.low_value else 0
+            i3 = axis._get_index(end+delta) if end+delta > axis.high_value else axis.size
+        else:
+            i0 = int(np.clip(i1 - delta, 0, np.inf))
+            i3 = int(np.clip(i2 + delta, 0, axis.size))
 
         def interpolating_function(dat):
             dat_int = interpolate.interp1d(
@@ -616,12 +624,17 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         ip = number_of_interpolation_points + 1
         axis = self.axes_manager.signal_axes[0]
+        if not axis.is_uniform:
+            raise NotImplementedError(
+                "The function is not implemented for non-uniform signal axes.")
         self._check_navigation_mask(mask)
         # we compute for now
         if isinstance(start, da.Array):
@@ -863,6 +876,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
+        NotImplementedError
+            If called with a non-uniform axes.
         """
         self._check_signal_dimension_equals_one()
         calibration = Signal1DCalibration(self)

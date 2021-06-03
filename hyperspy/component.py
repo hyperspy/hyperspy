@@ -1245,7 +1245,7 @@ class Component(t.HasTraits):
 def _get_scaling_factor(signal, axis, parameter):
     """
     Convenience function to get the scaling factor required to take into
-    account binned and/or non uniform axes.
+    account binned and/or non-uniform axes.
 
     Parameters
     ----------

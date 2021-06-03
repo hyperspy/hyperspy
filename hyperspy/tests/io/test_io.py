@@ -87,6 +87,10 @@ class TestIOOverwriting:
             self.new_s.save(FULLFILENAME)
             assert not self._check_file_is_written(FULLFILENAME)
 
+    def test_io_overwriting_invalid_parameter(self):
+        with pytest.raises(ValueError, match="parameter can only be"):
+            self.new_s.save(FULLFILENAME, overwrite="spam")
+
     def teardown_method(self, method):
         self._clean_file()
 
@@ -100,7 +104,7 @@ class TestNonUniformAxisCheck:
     def test_io_nonuniform(self):
         assert(self.s.axes_manager[0].is_uniform == False)
         self.s.save('tmp.hspy', overwrite = True)
-        with pytest.raises(AttributeError):
+        with pytest.raises(TypeError, match = "not supported for non-uniform"):
             self.s.save('tmp.msa', overwrite = True)
 
     def test_nonuniform_writer_characteristic(self):
@@ -110,6 +114,17 @@ class TestNonUniformAxisCheck:
             except AttributeError:
                 print(plugin.format_name + ' IO-plugin is missing the '
                       'characteristic `non_uniform_axis`')
+
+    def test_nonuniform_error(self):
+        assert(self.s.axes_manager[0].is_uniform == False)
+        incompatible_writers = [plugin.file_extensions[plugin.default_extension]
+                      for plugin in io_plugins if (plugin.writes is True or
+                      plugin.writes is not False and (1, 0) in plugin.writes)
+                      and plugin.non_uniform_axis is False]
+        for ext in incompatible_writers:
+            with pytest.raises(TypeError, match = "not supported for non-uniform"):
+                filename = 'tmp.' + ext
+                self.s.save(filename, overwrite = True)
 
     def teardown_method(self):
         if os.path.exists('tmp.hspy'):

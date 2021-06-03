@@ -42,6 +42,8 @@ reads_spectrum = True
 reads_spectrum_image = True
 # Writing capabilities
 writes = False
+non_uniform_axis = False
+# ----------------------
 
 
 jTYPE = {
