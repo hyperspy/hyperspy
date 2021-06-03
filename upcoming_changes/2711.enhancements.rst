@@ -1,1 +1,1 @@
-Don't import hyperspy extensions when registering extensions.
+Don't import hyperspy extensions when registering extensions

@@ -1,13 +1,17 @@
-What's new
-**********
+Changelog
+*********
+
+Changelog entries for the development version are available at
+https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
+
+.. towncrier-draft-entries:: |release| [UNRELEASED]
 
 .. towncrier release notes start
-
 
 .. _changes_1.6.2:
 
 v1.6.2
-++++++
+======
 
 This is a maintenance release that adds support for python 3.9 and includes
 numerous bug fixes and enhancements.
@@ -15,65 +19,70 @@ See `the issue tracker
 <https://github.com/hyperspy/hyperspy/milestone/42?closed=1>`__
 for details.
 
-* Widgets plotting improvement and add ``pick_tolerance`` to plot preferences (`#2615 <https://github.com/hyperspy/hyperspy/pull/2615>`_)
-* Update external links in the loading data section of the user guide (`#2627 <https://github.com/hyperspy/hyperspy/pull/2627>`_)
-* Pass keyword argument to the image IO plugins (`#2627 <https://github.com/hyperspy/hyperspy/pull/2627>`_)
-* Drop support for numpy<1.16, in line with NEP 29 and fix protochip reader for numpy 1.20 (`#2616 <https://github.com/hyperspy/hyperspy/pull/2616>`_)
-* Run test suite against upstream dependencies (numpy, scipy, scikit-learn and scikit-image) (`#2616 <https://github.com/hyperspy/hyperspy/pull/2616>`_)
-* Improve error message when file not found (`#2597 <https://github.com/hyperspy/hyperspy/pull/2597>`_)
-* Add update instructions to user guide (`#2621 <https://github.com/hyperspy/hyperspy/pull/2621>`_)
+Bug Fixes
+---------
+
 * Fix disconnect event when closing navigator only plot (fixes `#996 <https://github.com/hyperspy/hyperspy/issues/996>`_), (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
-* Improve plotting navigator of lazy signals, add ``navigator`` setter to lazy signals (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
-* Use 'dask_auto' when rechunk=True in ``change_dtype`` for lazy signal (`#2645 <https://github.com/hyperspy/hyperspy/pull/2645>`_)
-* Use dask chunking when saving lazy signal instead of rechunking and leave the user to decide what is the suitable chunking (`#2629 <https://github.com/hyperspy/hyperspy/pull/2629>`_)
 * Fix incorrect chunksize when saving EMD NCEM file and specifying chunks (`#2629 <https://github.com/hyperspy/hyperspy/pull/2629>`_)
 * Fix ``find_peaks`` GUIs call with laplacian/difference of gaussian methods (`#2622 <https://github.com/hyperspy/hyperspy/issues/2622>`_ and `#2647 <https://github.com/hyperspy/hyperspy/pull/2647>`_)
-* Added lazy reading support for FFT and DPC datasets in FEI emd datasets (`#2651 <https://github.com/hyperspy/hyperspy/pull/2651>`_).
-* Fix various future and deprecation warnings from numpy and scikit-learn (`#2646 <https://github.com/hyperspy/hyperspy/pull/2646>`_)
-* Improve error message when initialising SpanROI with left >= right (`#2604 <https://github.com/hyperspy/hyperspy/pull/2604>`_)
-* Fix ``iterpath`` VisibleDeprecationWarning when using ``fit_component`` (`#2654 <https://github.com/hyperspy/hyperspy/pull/2654>`_)
 * Fix various bugs with ``CircleWidget`` and ``Line2DWidget`` (`#2625 <https://github.com/hyperspy/hyperspy/pull/2625>`_)
-* Allow running the test suite without the pytest-mpl plugin (`#2624 <https://github.com/hyperspy/hyperspy/pull/2624>`_)
-* Fix warnings when building documentation (`#2596 <https://github.com/hyperspy/hyperspy/pull/2596>`_)
-* Add Releasing guide (`#2595 <https://github.com/hyperspy/hyperspy/pull/2595>`_)
 * Fix setting signal range of model with negative axis scales (`#2656 <https://github.com/hyperspy/hyperspy/pull/2656>`_)
 * Fix and improve mask handling in lazy decomposition; Close `#2605 <https://github.com/hyperspy/hyperspy/issues/2605>`_ (`#2657 <https://github.com/hyperspy/hyperspy/pull/2657>`_)
 * Plot scalebar when the axis scales have different sign, fixes `#2557 <https://github.com/hyperspy/hyperspy/issues/2557>`_ (`#2657 <https://github.com/hyperspy/hyperspy/pull/2657>`_)
 * Fix align1D returning zeros shifts (`#2675 <https://github.com/hyperspy/hyperspy/pull/2675>`_)
-* Fix finding dataset path for EMD NCEM file containing more than one dataset in a  group `#2673 <https://github.com/hyperspy/hyperspy/pull/2673>`_
-* Add support for python 3.9, fix deprecation warning with matplotlib 3.4.0 and bump minimum requirement to numpy 1.17.1 and dask 2.1.0. (`#2663 <https://github.com/hyperspy/hyperspy/pull/2663>`_)
-* Add integration test suite documentation in the developer guide. (`#2663 <https://github.com/hyperspy/hyperspy/pull/2663>`_)
+* Fix finding dataset path for EMD NCEM file containing more than one dataset in a  group (`#2673 <https://github.com/hyperspy/hyperspy/pull/2673>`_)
 * Fix squeeze function for multiple zero-dimensional entries, improved docstring, added to user guide. (`#2676 <https://github.com/hyperspy/hyperspy/pull/2676>`_)
-* Use native endianess in numba jitted functions. (`#2678 <https://github.com/hyperspy/hyperspy/pull/2678>`_)
 * Fix error in Cliff-Lorimer quantification using absorption correction (`#2681 <https://github.com/hyperspy/hyperspy/pull/2681>`_)
 * Fix ``navigation_mask`` bug in decomposition when provided as numpy array (`#2679 <https://github.com/hyperspy/hyperspy/pull/2679>`_)
 * Fix closing image contrast tool and setting vmin/vmax values (`#2684 <https://github.com/hyperspy/hyperspy/pull/2684>`_)
 * Fix range widget with matplotlib 3.4 (`#2684 <https://github.com/hyperspy/hyperspy/pull/2684>`_)
 * Fix bug in `hs.interactive` with function returning `None`. Improve user guide example. (`#2686 <https://github.com/hyperspy/hyperspy/pull/2686>`_)
-* Add option not to snap ROI when calling the `interactive` method of a ROI (`#2686 <https://github.com/hyperspy/hyperspy/pull/2686>`_)
 * Fix broken events when changing signal type `#2683 <https://github.com/hyperspy/hyperspy/pull/2683>`_
-* Make DictionaryTreeBrowser lazy by default - see `#368 <https://github.com/hyperspy/hyperspy/issues/368>`_ (`#2623 <https://github.com/hyperspy/hyperspy/pull/2623>`_)
 * Fix setting offset in rebin: the offset was changed in the wrong axis (`#2690 <https://github.com/hyperspy/hyperspy/pull/2690>`_)
 * Fix reading XRF bruker file, close `#2689 <https://github.com/hyperspy/hyperspy/issues/2689>`_ (`#2694 <https://github.com/hyperspy/hyperspy/pull/2694>`_)
+
+
+Enhancements
+------------
+
+* Widgets plotting improvement and add ``pick_tolerance`` to plot preferences (`#2615 <https://github.com/hyperspy/hyperspy/pull/2615>`_)
+* Pass keyword argument to the image IO plugins (`#2627 <https://github.com/hyperspy/hyperspy/pull/2627>`_)
+* Improve error message when file not found (`#2597 <https://github.com/hyperspy/hyperspy/pull/2597>`_)
+* Add update instructions to user guide (`#2621 <https://github.com/hyperspy/hyperspy/pull/2621>`_)
+* Improve plotting navigator of lazy signals, add ``navigator`` setter to lazy signals (`#2631 <https://github.com/hyperspy/hyperspy/pull/2631>`_)
+* Use 'dask_auto' when rechunk=True in ``change_dtype`` for lazy signal (`#2645 <https://github.com/hyperspy/hyperspy/pull/2645>`_)
+* Use dask chunking when saving lazy signal instead of rechunking and leave the user to decide what is the suitable chunking (`#2629 <https://github.com/hyperspy/hyperspy/pull/2629>`_)
+* Added lazy reading support for FFT and DPC datasets in FEI emd datasets (`#2651 <https://github.com/hyperspy/hyperspy/pull/2651>`_).
+* Improve error message when initialising SpanROI with left >= right (`#2604 <https://github.com/hyperspy/hyperspy/pull/2604>`_)
+* Allow running the test suite without the pytest-mpl plugin (`#2624 <https://github.com/hyperspy/hyperspy/pull/2624>`_)
+* Add Releasing guide (`#2595 <https://github.com/hyperspy/hyperspy/pull/2595>`_)
+* Add support for python 3.9, fix deprecation warning with matplotlib 3.4.0 and bump minimum requirement to numpy 1.17.1 and dask 2.1.0. (`#2663 <https://github.com/hyperspy/hyperspy/pull/2663>`_)
+
+* Use native endianess in numba jitted functions. (`#2678 <https://github.com/hyperspy/hyperspy/pull/2678>`_)
+* Add option not to snap ROI when calling the `interactive` method of a ROI (`#2686 <https://github.com/hyperspy/hyperspy/pull/2686>`_)
+* Make DictionaryTreeBrowser lazy by default - see `#368 <https://github.com/hyperspy/hyperspy/issues/368>`_ (`#2623 <https://github.com/hyperspy/hyperspy/pull/2623>`_)
 * Speed up setting CI on azure pipeline (`#2694 <https://github.com/hyperspy/hyperspy/pull/2694>`_)
-* Fix performance issue with the lazy map method of lazy (`#2617 <https://github.com/hyperspy/hyperspy/pull/2617>`_)
+* Improve performance issue with the map method of lazy signal (`#2617 <https://github.com/hyperspy/hyperspy/pull/2617>`_)
 * Add option to copy/load original metadata in ``hs.stack`` and ``hs.load`` to avoid large ``original_metadata`` which can slowdown processing. Close `#1398 <https://github.com/hyperspy/hyperspy/issues/1398>`_, `#2045 <https://github.com/hyperspy/hyperspy/issues/2045>`_, `#2536 <https://github.com/hyperspy/hyperspy/issues/2536>`_ and `#1568 <https://github.com/hyperspy/hyperspy/issues/1568>`_. (`#2691 <https://github.com/hyperspy/hyperspy/pull/2691>`_)
+
+
+Maintenance
+-----------
+
+* Fix warnings when building documentation (`#2596 <https://github.com/hyperspy/hyperspy/pull/2596>`_)
+* Drop support for numpy<1.16, in line with NEP 29 and fix protochip reader for numpy 1.20 (`#2616 <https://github.com/hyperspy/hyperspy/pull/2616>`_)
+* Run test suite against upstream dependencies (numpy, scipy, scikit-learn and scikit-image) (`#2616 <https://github.com/hyperspy/hyperspy/pull/2616>`_)
+* Update external links in the loading data section of the user guide (`#2627 <https://github.com/hyperspy/hyperspy/pull/2627>`_)
+* Fix various future and deprecation warnings from numpy and scikit-learn (`#2646 <https://github.com/hyperspy/hyperspy/pull/2646>`_)
+* Fix ``iterpath`` VisibleDeprecationWarning when using ``fit_component`` (`#2654 <https://github.com/hyperspy/hyperspy/pull/2654>`_)
+* Add integration test suite documentation in the developer guide. (`#2663 <https://github.com/hyperspy/hyperspy/pull/2663>`_)
 * Fix SkewNormal component compatibility with sympy 1.8 (`#2701 <https://github.com/hyperspy/hyperspy/pull/2701>`_)
-
-
-Changelog
-*********
-
-We only cover here the main highlights, for a detailed list of all the changes
-see `the commits in the GITHUB milestones
-<https://github.com/hyperspy/hyperspy/milestones?state=closed>`__.
-
 
 
 .. _changes_1.6.1:
 
 v1.6.1
-++++++
+======
 
 This is a maintenance release that adds compatibility with h5py 3.0 and includes
 numerous bug fixes and enhancements.
@@ -81,10 +90,11 @@ See `the issue tracker
 <https://github.com/hyperspy/hyperspy/milestone/41?closed=1>`__
 for details.
 
+
 .. _changes_1.6:
 
 v1.6
-++++
+====
 
 NEW
 ---
@@ -252,7 +262,7 @@ API changes
 
 
 v1.5.2
-++++++
+======
 
 This is a maintenance release that adds compatibility with Numpy 1.17 and Dask
 2.3.0 and fixes a bug in the Bruker reader. See `the issue tracker
@@ -263,7 +273,7 @@ for details.
 .. _changes_1.5.1:
 
 v1.5.1
-++++++
+======
 
 This is a maintenance release that fixes some regressions introduced in v1.5.
 Follow the following links for details on all the `bugs fixed
@@ -273,7 +283,7 @@ Follow the following links for details on all the `bugs fixed
 .. _changes_1.5:
 
 v1.5
-++++
+====
 
 NEW
 ---
@@ -331,7 +341,7 @@ For developers
 .. _changes_1.4.2:
 
 v1.4.2
-++++++
+======
 
 This is a maintenance release. Among many other fixes and enhancements, this
 release fixes compatibility issues with Matplotlib v 3.1. Follow the
@@ -344,7 +354,7 @@ and `enhancements
 .. _changes_1.4.1:
 
 v1.4.1
-++++++
+======
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -358,7 +368,7 @@ This release fixes compatibility issues with Python 3.7.
 .. _changes_1.4:
 
 v1.4
-++++
+====
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
@@ -411,7 +421,7 @@ Enhancements
 .. _changes_1.3.2:
 
 v1.3.2
-++++++
+======
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -422,7 +432,7 @@ and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+mil
 .. _changes_1.3.1:
 
 v1.3.1
-++++++
+======
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -437,7 +447,7 @@ releases see https://github.com/hyperspy/hyperspy-bundle
 .. _changes_1.3:
 
 v1.3
-++++
+====
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
@@ -546,7 +556,7 @@ For developers
 .. _changes_1.2:
 
 v1.2
-++++
+====
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
@@ -598,7 +608,7 @@ For developers
 .. _changes_1.1.2:
 
 v1.1.2
-++++++
+======
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -609,7 +619,7 @@ and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+mil
 .. _changes_1.1.1:
 
 v1.1.1
-++++++
+======
 
 This is a maintenance release. Follow the following link for details on all
 the `bugs fixed
@@ -631,7 +641,7 @@ Enhancements
 .. _changes_1.1:
 
 v1.1
-++++
+====
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
@@ -657,7 +667,7 @@ Enhancements
 
 
 v1.0.1
-++++++
+======
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -665,7 +675,7 @@ the `bugs fixed
 
 
 v1.0
-++++
+====
 
 This is a major release. Here we only list the highlist. A detailed list of
 changes `is available in github
@@ -739,7 +749,7 @@ API changes
 
 
 v0.8.5
-++++++
+======
 
 
 This is a maintenance release. Follow the following links for details on all
@@ -774,13 +784,13 @@ deprecate `as_signal1D`, `as_signal2D`, `to_spectrum` and `to_image`. See `#963
 
 
 v0.8.4
-++++++
+======
 
 This release adds support for Python 3 and drops support for Python 2. In all
 other respects it is identical to v0.8.3.
 
 v0.8.3
-++++++
+======
 
 This is a maintenance release that includes fixes for multiple bugs, some
 enhancements, new features and API changes. This is set to be the last HyperSpy
@@ -807,14 +817,14 @@ Follow the following links for details on all the `bugs fixed
 .. _changes_0.8.2:
 
 v0.8.2
-++++++
+======
 
 This is a maintenance release that fixes an issue with the Python installers. Those who have successfully installed v0.8.1 do not need to upgrade.
 
 .. _changes_0.8.1:
 
 v0.8.1
-++++++
+======
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -869,7 +879,7 @@ API changes
 .. _changes_0.8:
 
 v0.8
-++++
+====
 
 New features
 ------------
@@ -925,7 +935,7 @@ API changes
     + ``add_axes`` -> ``set_mpl_ax``
 
 v0.7.3
-++++++
+======
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.3 milestone
@@ -935,7 +945,7 @@ in the github repository.
 .. _changes_0.7.2:
 
 v0.7.2
-++++++
+======
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.2 milestone
@@ -945,7 +955,7 @@ in the github repository.
 .. _changes_0.7.1:
 
 v0.7.1
-++++++
+======
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.1 milestone
@@ -959,7 +969,7 @@ New features
 * Add suspend/resume model plot updating. See :ref:`model.visualization`.
 
 v0.7
-++++
+====
 
 New features
 ------------
@@ -1102,7 +1112,7 @@ API changes
 .. _changes_0.6:
 
 v0.6
-++++
+====
 
 New features
 ------------
@@ -1186,7 +1196,7 @@ API changes
 .. _changes_0.5.1:
 
 v0.5.1
-++++++
+======
 
 New features
 ------------
@@ -1219,7 +1229,7 @@ API changes
 .. _changes_0.5:
 
 v0.5
-++++
+====
 
 New features
 ------------
@@ -1281,7 +1291,7 @@ API changes
 .. _changes_0.4.1:
 
 v0.4.1
-++++++
+======
 
 New features
 ------------
@@ -1312,7 +1322,7 @@ Syntax changes
 .. _changes_0.4:
 
 v0.4
-++++
+====
 
 New features
 ------------

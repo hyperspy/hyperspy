@@ -1,0 +1,1 @@
+Fix :py:meth:`~.signal.BaseSignal.map` regression of lazy signal with navigation chunks of size of 1
