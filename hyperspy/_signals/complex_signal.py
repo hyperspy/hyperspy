@@ -156,7 +156,7 @@ class ComplexSignal(BaseSignal):
         if np.issubdtype(dtype, np.complexfloating):
             self.data = self.data.astype(dtype)
         else:
-            raise AttributeError(
+            raise ValueError(
                 'Complex data can only be converted into other complex dtypes!')
 
     def unwrapped_phase(self, wrap_around=False, seed=None,

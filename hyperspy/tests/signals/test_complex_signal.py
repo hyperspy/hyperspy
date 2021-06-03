@@ -211,3 +211,15 @@ def test_argand_diagram():
     with pytest.raises(NotImplementedError):
         s1d = s1d.as_lazy()
         s1d.argand_diagram()
+
+
+def test_change_dtype():
+    real_ref = np.arange(9).reshape((3, 3))
+    imag_ref = np.arange(9).reshape((3, 3)) + 9
+    comp_ref = real_ref + 1j * imag_ref
+    s = hs.signals.ComplexSignal(comp_ref)
+    
+    s.change_dtype(np.complex64)
+    assert s.data.dtype is np.dtype(np.complex64)
+    with pytest.raises(ValueError):
+        s.change_dtype(float)      
