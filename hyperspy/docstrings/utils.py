@@ -29,3 +29,9 @@ STACK_METADATA_ARG = \
         returned signal. In this case, the ``metadata`` are copied from the
         first signal in the list.
         If False, the ``metadata`` and ``original_metadata`` are not copied."""
+
+
+REBIN_DTYPE_ARG = \
+    """dtype : {None, numpy.dtype, "same"}, default None
+        Specify the dtype of the output. If None, the dtype will be determined
+        by :py:func:`numpy.dtype`, if "same", the dtype will be kept the same."""

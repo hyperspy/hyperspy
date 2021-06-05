@@ -26,6 +26,7 @@ from numba import njit
 
 
 from hyperspy.misc.math_tools import anyfloatin
+from hyperspy.docstrings.utils import REBIN_DTYPE_ARG
 
 
 _logger = logging.getLogger(__name__)
@@ -98,7 +99,7 @@ def _requires_linear_rebin(arr, scale):
             np.asarray(scale)).any() or anyfloatin(scale)
 
 
-def rebin(a, new_shape=None, scale=None, crop=True):
+def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
     """Rebin array.
 
     rebin ndarray data into a smaller or larger array based on a linear
@@ -132,6 +133,7 @@ def rebin(a, new_shape=None, scale=None, crop=True):
         dimension may appear black, if a fractional number of pixels are left
         over. It can be removed but has been left to preserve total counts
         before and after binning.*
+    %s
 
     Returns
     -------
@@ -144,7 +146,7 @@ def rebin(a, new_shape=None, scale=None, crop=True):
 
     Notes
     -----
-    Fast re_bin function Adapted from scipy cookbook
+    Fast ``re_bin`` function Adapted from scipy cookbook
     If rebin function fails with error stating that the function is 'not binned
     and therefore cannot be rebinned', add binned to axes parameters with:
     >>> s.axes_manager[axis].is_binned = True
@@ -164,6 +166,15 @@ def rebin(a, new_shape=None, scale=None, crop=True):
     else:
         new_shape = new_shape
         scale = scale
+    if isinstance(dtype, str):
+        if dtype == 'same':
+            dtype = a.dtype
+        else:
+            raise ValueError(
+                '`dtype` argument can be None, a numpy dtype or '
+                'the string "same".'
+                )
+
     # check whether or not interpolation is needed.
     if _requires_linear_rebin(arr=a, scale=scale):
         _logger.debug("Using linear_bin")
@@ -191,25 +202,29 @@ def rebin(a, new_shape=None, scale=None, crop=True):
         scale = np.asarray(a.shape) // np.asarray(new_shape)
         if scale.max() < 2:
             return a.copy()
+
         if isinstance(a, np.ndarray):
             # most of the operations will fall here and dask is not imported
             rshape = ()
             for athing in zip(new_shape, scale):
                 rshape += athing
             return a.reshape(rshape).sum(axis=tuple(
-                2 * i + 1 for i in range(lenShape)))
+                2 * i + 1 for i in range(lenShape)), dtype=dtype)
         else:
             import dask.array as da
 
             try:
-                return da.coarsen(np.sum, a, {i: int(f)
-                                              for i, f in enumerate(scale)})
+                return da.coarsen(np.sum, a,
+                                  {i: int(f) for i, f in enumerate(scale)},
+                                  dtype=dtype)
             # we provide slightly better error message in hyperspy context
             except ValueError:
                 raise ValueError(
                     "Rebinning does not align with data dask chunks. "
                     "Rebin fewer dimensions at a time to avoid this error"
                 )
+
+rebin.__doc__ %= REBIN_DTYPE_ARG
 
 
 @njit(cache=True)

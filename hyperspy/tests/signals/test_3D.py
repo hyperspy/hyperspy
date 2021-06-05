@@ -141,10 +141,24 @@ class Test3D:
         new_s = self.signal.rebin(scale=(2, 2, 1))
         assert new_s.metadata.Signal.Noise_properties.variance == 0.3
 
-    def test_rebin_dtype(self):
+    def test_rebin_dtype_interpolation(self):
         s = Signal1D(np.arange(1000).reshape(10, 10, 10))
         s.change_dtype(np.uint8)
         s2 = s.rebin(scale=(3, 3, 1), crop=False)
+        assert s2.data.dtype == np.dtype('float')
+        assert s.sum() == s2.sum()
+
+    @pytest.mark.parametrize('dtype', [None, 'same', np.uint16])
+    def test_rebin_dtype(self, dtype):
+        s = Signal1D(np.arange(100).reshape(2, 5, 10))
+        s.change_dtype(np.uint8)
+        s2 = s.rebin(scale=(5, 2, 1), crop=False, dtype=dtype)
+        if dtype == None:
+            # np.sum default uses platform (un)signed interger (input dependent)
+            dtype = np.uint
+        elif dtype == 'same':
+            dtype = s.data.dtype
+        assert s2.data.dtype == dtype
         assert s.sum() == s2.sum()
 
     def test_rebin_errors(self):

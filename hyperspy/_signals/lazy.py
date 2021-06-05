@@ -361,7 +361,7 @@ class LazySignal(BaseSignal):
             return s
 
     def rebin(self, new_shape=None, scale=None,
-              crop=False, out=None, rechunk=True):
+              crop=False, dtype=None, out=None, rechunk=True):
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale)
@@ -378,8 +378,8 @@ class LazySignal(BaseSignal):
         axis = {ax.index_in_array: ax
                 for ax in self.axes_manager._axes}[factors.argmax()]
         self._make_lazy(axis=axis, rechunk=rechunk)
-        return super().rebin(new_shape=new_shape,
-                             scale=scale, crop=crop, out=out)
+        return super().rebin(new_shape=new_shape, scale=scale, crop=crop,
+                             dtype=dtype, out=out)
     rebin.__doc__ = BaseSignal.rebin.__doc__
 
     def __array__(self, dtype=None):

@@ -59,6 +59,7 @@ from hyperspy.docstrings.signal import (
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
                                       BASE_PLOT_DOCSTRING_PARAMETERS,
                                       PLOT2D_KWARGS_DOCSTRING)
+from hyperspy.docstrings.utils import REBIN_DTYPE_ARG
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
@@ -3037,7 +3038,8 @@ class BaseSignal(FancySlicing,
                                 for axis in self.axes_manager._axes])
         return factors  # Factors are in array order
 
-    def rebin(self, new_shape=None, scale=None, crop=True, out=None):
+    def rebin(self, new_shape=None, scale=None, crop=True, dtype=None,
+              out=None):
         """
         Rebin the signal into a smaller or larger shape, based on linear
         interpolation. Specify **either** `new_shape` or `scale`.
@@ -3072,6 +3074,7 @@ class BaseSignal(FancySlicing,
             over. It can be removed but has been left to preserve total counts
             before and after binning.
         %s
+        %s
 
         Returns
         -------
@@ -3099,7 +3102,7 @@ class BaseSignal(FancySlicing,
             scale=scale,)
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
         data = hyperspy.misc.array_tools.rebin(
-            self.data, scale=factors, crop=crop)
+            self.data, scale=factors, crop=crop, dtype=dtype)
 
         if out:
             if out._lazy:
@@ -3119,13 +3122,14 @@ class BaseSignal(FancySlicing,
                           BaseSignal):
                 var = s.metadata.Signal.Noise_properties.variance
                 s.metadata.Signal.Noise_properties.variance = var.rebin(
-                    new_shape=new_shape, scale=scale, crop=crop, out=out)
+                    new_shape=new_shape, scale=scale, crop=crop, out=out,
+                    dtype=dtype)
         if out is None:
             return s
         else:
             out.events.data_changed.trigger(obj=out)
 
-    rebin.__doc__ %= (OUT_ARG)
+    rebin.__doc__ %= (REBIN_DTYPE_ARG, OUT_ARG)
 
     def split(self,
               axis='auto',
