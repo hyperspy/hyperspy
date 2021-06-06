@@ -1192,7 +1192,7 @@ class LazySignal(BaseSignal):
         axes = [axis.index_in_array for axis in self.axes_manager.signal_axes]
         navigator = self.isig[isig_slice].sum(axes)
         navigator.compute(show_progressbar=show_progressbar)
-        navigator.original_metadata.set_item('sum_from', isig_slice)
+        navigator.original_metadata.set_item('sum_from', str(isig_slice))
 
         self.navigator = navigator.T
 
