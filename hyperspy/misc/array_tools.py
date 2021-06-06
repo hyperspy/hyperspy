@@ -17,9 +17,11 @@
 
 
 from collections import OrderedDict
+from distutils.version import LooseVersion
 import math as math
 import logging
 
+import dask
 import dask.array as da
 import numpy as np
 from numba import njit
@@ -166,24 +168,19 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
     else:
         new_shape = new_shape
         scale = scale
-    if isinstance(dtype, str):
-        if dtype == 'same':
-            dtype = a.dtype
-        else:
-            raise ValueError(
-                '`dtype` argument can be None, a numpy dtype or '
-                'the string "same".'
-                )
+    if isinstance(dtype, str) and dtype != 'same':
+        raise ValueError(
+            '`dtype` argument needs to be None, a numpy dtype or '
+            'the string "same".'
+            )
 
     # check whether or not interpolation is needed.
     if _requires_linear_rebin(arr=a, scale=scale):
         _logger.debug("Using linear_bin")
-        if np.issubdtype(a.dtype, np.integer):
-            # The _linear_bin function below requires a float dtype
-            # because of the default numpy casting rule ('same_kind').
-            a = a.astype("float", casting="safe", copy=False)
-        return _linear_bin(a, scale, crop)
+        return _linear_bin(a, scale, crop, dtype=dtype)
     else:
+        if dtype == 'same':
+            dtype = a.dtype
         _logger.debug("Using standard rebin with lazy support")
         # if interpolation is not needed run fast re_bin function.
         # Adapted from scipy cookbook.
@@ -211,12 +208,18 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
             return a.reshape(rshape).sum(axis=tuple(
                 2 * i + 1 for i in range(lenShape)), dtype=dtype)
         else:
-            import dask.array as da
-
             try:
+                kwargs = {}
+                if LooseVersion(dask.__version__) >= LooseVersion('2.11.0'):
+                    kwargs['dtype'] = dtype
+                elif dtype is not None:
+                    raise ValueError(
+                        'Using the dtype argument for lazy signal requires '
+                        'dask >= 2.11.0.'
+                        )
                 return da.coarsen(np.sum, a,
                                   {i: int(f) for i, f in enumerate(scale)},
-                                  dtype=dtype)
+                                  **kwargs)
             # we provide slightly better error message in hyperspy context
             except ValueError:
                 raise ValueError(
@@ -269,7 +272,7 @@ def _linear_bin_loop(result, data, scale):  # pragma: no cover
                 value += data[math.floor(x1)] * (x2 - x1)
 
 
-def _linear_bin(dat, scale, crop=True):
+def _linear_bin(dat, scale, crop=True, dtype=None):
     """Binning of the spectrum image by a non-integer pixel value.
 
     Parameters
@@ -306,6 +309,30 @@ def _linear_bin(dat, scale, crop=True):
             "dimensions specifically, simply set the value in shape to 1."
         )
 
+    # Unsuported dtype value argument
+    dtype_str_same_integer = (isinstance(dtype, str) and dtype == 'same' and
+                              np.issubdtype(dat.dtype, np.integer))
+    dtype_interger = (not isinstance(dtype, str) and
+                      np.issubdtype(dtype, np.integer))
+
+    if dtype_str_same_integer or dtype_interger:
+        raise ValueError(
+            "Linear interpolation requires `float` dtype, change the "
+            "dtype argument."
+            )
+
+    if np.issubdtype(dat.dtype, np.integer):
+        # The _linear_bin function below requires a float dtype
+        # because of the default numpy casting rule ('same_kind').
+        dtype = float
+    # Make sure that native endian is used as required by numba.jit
+    elif not dat.dtype.isnative:
+        dtype = dat.dtype.type
+
+    # If dtype is not None, it means that we need to change it
+    if dtype is not None:
+        dat = dat.astype(dtype, casting="safe", copy=False)
+
     for axis, s in enumerate(scale):
         # For each iteration of linear_bin the axis being interated over has to
         # be switched to axis[0] in order to carry out the interation loop.
@@ -328,9 +355,7 @@ def _linear_bin(dat, scale, crop=True):
         # Set up the result np.array to have a new axis[0] size for after
         # cropping.
         result = np.zeros((dim,) + dat.shape[1:])
-        # Make sure that native endian is used
-        if not dat.dtype.isnative:
-            dat = dat.astype(dat.dtype.type)
+
         # Carry out binning over axis[0]
         _linear_bin_loop(result=result, data=dat, scale=s)
         # Swap axis[0] back to the original axis location.
