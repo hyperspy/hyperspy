@@ -28,7 +28,7 @@ from numba import njit
 
 
 from hyperspy.misc.math_tools import anyfloatin
-from hyperspy.docstrings.utils import REBIN_DTYPE_ARG
+from hyperspy.docstrings.utils import REBIN_ARGS
 
 
 _logger = logging.getLogger(__name__)
@@ -102,39 +102,14 @@ def _requires_linear_rebin(arr, scale):
 
 
 def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
-    """Rebin array.
-
-    rebin ndarray data into a smaller or larger array based on a linear
-    interpolation. Specify either a new_shape or a scale. Scale of 1== no
+    """Rebin data into a smaller or larger array based on a linear
+    interpolation. Specify either a new_shape or a scale. Scale of 1 means no
     binning. Scale less than one results in up-sampling.
 
     Parameters
     ----------
     a : numpy array
-    new_shape : a list of floats or integer, default None
-        For each dimension specify the new_shape of the np.array. This will
-        then be converted into a scale.
-    scale : a list of floats or integer, default None
-        For each dimension specify the new:old pixel ratio, e.g. a ratio of 1
-        is no binning and a ratio of 2 means that each pixel in the new
-        spectrum is twice the size of the pixels in the old spectrum.
-        The length of the list should match the dimension of the numpy array.
-        ***Note : Only one of scale or new_shape should be specified otherwise
-        the function will not run***
-    crop: bool, default True
-        When binning by a non-integer number of pixels it is likely that
-        the final row in each dimension contains less than the full quota to
-        fill one pixel.
-
-        e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
-        pixels and one row containing only 0.8 pixels worth. Selection of
-        crop='True' or crop='False' determines whether or not this
-        'black' line is cropped from the final binned array or not.
-
-        *Please note that if crop=False is used, the final row in each
-        dimension may appear black, if a fractional number of pixels are left
-        over. It can be removed but has been left to preserve total counts
-        before and after binning.*
+        The array to rebin.
     %s
 
     Returns
@@ -227,7 +202,8 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
                     "Rebin fewer dimensions at a time to avoid this error"
                 )
 
-rebin.__doc__ %= REBIN_DTYPE_ARG
+# Replacing space is necessary to get the correct indentation
+rebin.__doc__ %= REBIN_ARGS.replace("        ", "    ")
 
 
 @njit(cache=True)
@@ -317,7 +293,7 @@ def _linear_bin(dat, scale, crop=True, dtype=None):
 
     if dtype_str_same_integer or dtype_interger:
         raise ValueError(
-            "Linear interpolation requires `float` dtype, change the "
+            "Linear interpolation requires float dtype, change the "
             "dtype argument."
             )
 

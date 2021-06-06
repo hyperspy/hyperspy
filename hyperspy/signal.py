@@ -59,7 +59,7 @@ from hyperspy.docstrings.signal import (
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
                                       BASE_PLOT_DOCSTRING_PARAMETERS,
                                       PLOT2D_KWARGS_DOCSTRING)
-from hyperspy.docstrings.utils import REBIN_DTYPE_ARG
+from hyperspy.docstrings.utils import REBIN_ARGS
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
@@ -3042,37 +3042,11 @@ class BaseSignal(FancySlicing,
               out=None):
         """
         Rebin the signal into a smaller or larger shape, based on linear
-        interpolation. Specify **either** `new_shape` or `scale`.
+        interpolation. Specify **either** `new_shape` or `scale`. Scale of 1
+        means no binning and scale less than one results in up-sampling.
 
         Parameters
         ----------
-        new_shape : list (of floats or integer) or None
-            For each dimension specify the new_shape. This will internally be
-            converted into a `scale` parameter.
-        scale : list (of floats or integer) or None
-            For each dimension, specify the new:old pixel ratio, e.g. a ratio
-            of 1 is no binning and a ratio of 2 means that each pixel in the new
-            spectrum is twice the size of the pixels in the old spectrum.
-            The length of the list should match the dimension of the
-            Signal's underlying data array.
-            *Note : Only one of `scale` or `new_shape` should be specified,
-            otherwise the function will not run*
-        crop : bool
-            Whether or not to crop the resulting rebinned data (default is
-            ``True``). When binning by a non-integer number of
-            pixels it is likely that the final row in each dimension will
-            contain fewer than the full quota to fill one pixel.
-
-                - e.g. a 5*5 array binned by 2.1 will produce two rows
-                  containing 2.1 pixels and one row containing only 0.8
-                  pixels. Selection of ``crop=True`` or ``crop=False``
-                  determines whether or not this `"black"` line is cropped
-                  from the final binned array or not.
-
-            Please note that if ``crop=False`` is used, the final row in each
-            dimension may appear black if a fractional number of pixels are left
-            over. It can be removed but has been left to preserve total counts
-            before and after binning.
         %s
         %s
 
@@ -3129,7 +3103,7 @@ class BaseSignal(FancySlicing,
         else:
             out.events.data_changed.trigger(obj=out)
 
-    rebin.__doc__ %= (REBIN_DTYPE_ARG, OUT_ARG)
+    rebin.__doc__ %= (REBIN_ARGS, OUT_ARG)
 
     def split(self,
               axis='auto',
