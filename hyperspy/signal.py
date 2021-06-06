@@ -3063,12 +3063,39 @@ class BaseSignal(FancySlicing,
         <EDXTEMSpectrum, title: dimensions: (4, 4|10)>
         >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
         Sum = 164.0
+
         >>> scale = [2, 2, 5]
         >>> test = spectrum.rebin(scale)
         >>> print(test)
         <EDSTEMSpectrum, title: dimensions (2, 2|2)>
         >>> print('Sum = ', sum(sum(sum(test.data))))
         Sum =  164.0
+
+        >>> s = hs.signals.Signal1D(np.ones((2, 5, 10), dtype=np.uint8)
+        >>> print(s)
+        <Signal1D, title: , dimensions: (5, 2|10)>
+        >>> print(s.data.dtype)
+        uint8
+
+        Use dtype=np.unit16 to specify a dtype
+
+        >>> s2 = s.rebin(scale=(5, 2, 1), dtype=np.uint16)
+        >>> print(s2.data.dtype)
+        uint16
+
+        Use dtype="same" to keep the same dtype
+
+        >>> s3 = s.rebin(scale=(5, 2, 1), dtype="same")
+        >>> print(s3.data.dtype)
+        uint8
+
+        By default `dtype=None`, the dtype is determined by the behaviour of
+        numpy.sum, in this case, unsigned integer of the same precision as
+        the platform interger
+
+        >>> s4 = s.rebin(scale=(5, 2, 1))
+        >>> print(s4.data.dtype)
+        uint64
 
         """
         factors = self._validate_rebin_args_and_get_factors(
