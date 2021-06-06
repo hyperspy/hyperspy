@@ -318,12 +318,17 @@ class TestRebinDtype:
         s = self.s
         if s._lazy:
             with pytest.raises(NotImplementedError):
-                s2 = s.rebin(scale=(3, 3, 1), crop=False, dtype=dtype)
+                _ = s.rebin(scale=(3, 3, 1), dtype=dtype)
             # exit test
             return
         s.change_dtype(np.uint8)
         with pytest.raises(ValueError):
-            s2 = s.rebin(scale=(3, 3, 1), crop=False, dtype=dtype)
+            _ = s.rebin(scale=(3, 3, 1), dtype=dtype)
+
+    def test_rebin_invalid_dtype_args(self):
+        s = self.s
+        with pytest.raises(ValueError):
+            _ = s.rebin(scale=(5, 2, 1), dtype='invalid_string')
 
     @pytest.mark.parametrize('dtype', [None, 'same', np.uint16])
     def test_rebin_dtype(self, dtype):
@@ -331,7 +336,7 @@ class TestRebinDtype:
         if s._lazy and LooseVersion(dask.__version__) < LooseVersion("2.11.0"):
             pytest.skip('dtype argument not supported with dask < 2.11.0')
         s.change_dtype(np.uint8)
-        s2 = s.rebin(scale=(5, 2, 1), crop=False, dtype=dtype)
+        s2 = s.rebin(scale=(5, 2, 1), dtype=dtype)
         if dtype == None:
             # np.sum default uses platform (un)signed interger (input dependent)
             dtype = np.uint
