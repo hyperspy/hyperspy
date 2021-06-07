@@ -164,6 +164,12 @@ class TestROIs():
             r._set_default_values(self.s_s)
             r.add_widget(self.s_s)
 
+    def test_add_widget_ROI_undefined(self):
+        s = self.s_i
+        s.plot()
+        line = Line2DROI()
+        line.add_widget(s)
+
     def test_span_spectrum_sig(self):
         s = self.s_s
         r = SpanROI(1, 3)
@@ -491,7 +497,7 @@ class TestROIs():
             r.angle(axis='z')
 
     def test_repr_None(self):
-        # Setting the args=None sets them as traits.Undefined, which didn't 
+        # Setting the args=None sets them as traits.Undefined, which didn't
         # have a string representation in the old %s style.
         for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI]:
             r = roi()
