@@ -225,7 +225,7 @@ class BaseROI(t.HasTraits):
 
         Parameters
         ----------
-        axes : specification of axes to use, default is None
+        axes : specification of axes to use
             The axes argument specifies which axes the ROI will be applied on.
             The axes in the collection can be either of the following:
 
@@ -354,7 +354,7 @@ class BaseInteractiveROI(BaseROI):
         """
         raise NotImplementedError()
 
-    def _set_default_values(self, signal):
+    def _set_default_values(self, signal, axes=None):
         """When the ROI is called interactively with Undefined parameters,
         use these values instead.
         """
@@ -482,11 +482,13 @@ class BaseInteractiveROI(BaseROI):
         kwargs:
             All keyword argument are passed to the widget constructor.
         """
-        # Undefined if roi initialised without specifying parameters
-        if t.Undefined in tuple(self):
-            self._set_default_values(signal)
 
         axes = self._parse_axes(axes, signal.axes_manager,)
+
+        # Undefined if roi initialised without specifying parameters
+        if t.Undefined in tuple(self):
+            self._set_default_values(signal, axes=axes)
+
         if widget is None:
             widget = self._get_widget_type(
                 axes, signal)(
@@ -625,14 +627,15 @@ class Point1DROI(BasePointROI):
     _ndim = 1
 
     def __init__(self, value=None):
-        super(Point1DROI, self).__init__()
+        super().__init__()
         value = value if value is not None else t.Undefined
         self.value = value
 
-    def _set_default_values(self, signal):
-        ax0, *_ = self._parse_axes(None, signal.axes_manager)
+    def _set_default_values(self, signal, axes=None):
+        if axes is None:
+            axes = self._parse_axes(None, signal.axes_manager)
         # If roi parameters are undefined, use center of axes
-        self.value = ax0._parse_value('rel0.5')
+        self.value = axes[0]._parse_value('rel0.5')
 
     @property
     def parameters(self):
@@ -684,18 +687,19 @@ class Point2DROI(BasePointROI):
     _ndim = 2
 
     def __init__(self, x=None, y=None):
-        super(Point2DROI, self).__init__()
+        super().__init__()
         x, y = (
             para if para is not None
             else t.Undefined for para in (x, y))
 
         self.x, self.y = x, y
 
-    def _set_default_values(self, signal):
-        ax0, ax1 = self._parse_axes(None, signal.axes_manager)
+    def _set_default_values(self, signal, axes=None):
+        if axes is None:
+            axes = self._parse_axes(None, signal.axes_manager)
         # If roi parameters are undefined, use center of axes
-        self.x = ax0._parse_value("rel0.5")
-        self.y = ax1._parse_value("rel0.5")
+        self.x = axes[0]._parse_value("rel0.5")
+        self.y = axes[1]._parse_value("rel0.5")
 
     @property
     def parameters(self):
@@ -751,10 +755,11 @@ class SpanROI(BaseInteractiveROI):
             else t.Undefined for para in (left, right))
         self.left, self.right = left, right
 
-    def _set_default_values(self, signal):
-        ax0, *_ = self._parse_axes(None, signal.axes_manager)
+    def _set_default_values(self, signal, axes=None):
+        if axes is None:
+            axes = self._parse_axes(None, signal.axes_manager)
         # If roi parameters are undefined, use center of axes
-        self.left, self.right = _get_central_half_limits_of_axis(ax0)
+        self.left, self.right = _get_central_half_limits_of_axis(axes[0])
 
     @property
     def parameters(self):
@@ -835,14 +840,16 @@ class RectangularROI(BaseInteractiveROI):
         _tuple = (self.left, self.right, self.top, self.bottom)
         return _tuple.__getitem__(*args, **kwargs)
 
-    def _set_default_values(self, signal):
+    def _set_default_values(self, signal, axes=None):
         # Need to turn of bounds checking or undefined values trigger error
         old_bounds_check = self._bounds_check
         self._bounds_check = False
-        ax0, ax1 = self._parse_axes(None, signal.axes_manager)
+        if axes is None:
+            axes = self._parse_axes(None, signal.axes_manager)
+
         # If roi parameters are undefined, use center of axes
-        self.left, self.right = _get_central_half_limits_of_axis(ax0)
-        self.top, self.bottom = _get_central_half_limits_of_axis(ax1)
+        self.left, self.right = _get_central_half_limits_of_axis(axes[0])
+        self.top, self.bottom = _get_central_half_limits_of_axis(axes[1])
         self._bounds_check = old_bounds_check
 
     @property
@@ -984,8 +991,11 @@ class CircleROI(BaseInteractiveROI):
         self._bounds_check = True   # Use reponsibly!
         self.cx, self.cy, self.r, self.r_inner = cx, cy, r, r_inner
 
-    def _set_default_values(self, signal):
-        ax0, ax1 = self._parse_axes(None, signal.axes_manager)
+    def _set_default_values(self, signal, axes=None):
+        if axes is None:
+            axes = self._parse_axes(None, signal.axes_manager)
+        ax0, ax1 = axes
+
         # If roi parameters are undefined, use center of axes
         self.cx = ax0._parse_value('rel0.5')
         self.cy = ax1._parse_value('rel0.5')
@@ -1148,7 +1158,7 @@ class Line2DROI(BaseInteractiveROI):
     _ndim = 2
 
     def __init__(self, x1=None, y1=None, x2=None, y2=None, linewidth=0):
-        super(Line2DROI, self).__init__()
+        super().__init__()
         x1, y1, x2, y2 = (
             para if para is not None
             else t.Undefined for para in (x1, y1, x2, y2))
@@ -1156,11 +1166,12 @@ class Line2DROI(BaseInteractiveROI):
         self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
         self.linewidth = linewidth
 
-    def _set_default_values(self, signal):
-        ax0, ax1 = self._parse_axes(None, signal.axes_manager)
+    def _set_default_values(self, signal, axes=None):
+        if axes is None:
+            axes = self._parse_axes(None, signal.axes_manager)
         # If roi parameters are undefined, use center of axes
-        self.x1, self.x2 = _get_central_half_limits_of_axis(ax0)
-        self.y1, self.y2 = _get_central_half_limits_of_axis(ax1)
+        self.x1, self.x2 = _get_central_half_limits_of_axis(axes[0])
+        self.y1, self.y2 = _get_central_half_limits_of_axis(axes[1])
 
     @property
     def parameters(self):
