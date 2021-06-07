@@ -594,17 +594,17 @@ class BaseDataAxis(t.HasTraits):
             if rounding is round:
                 #Use argmin(abs) which will return the closest value
                 # rounding_index = lambda x: np.abs(x).argmin()
-                index = numba_closest_index_round(self.axis,value)
+                index = numba_closest_index_round(self.axis,value).astype(int)
             elif rounding is math.ceil:
                 #Ceiling means finding index of the closest xi with xi - v >= 0
                 #we look for argmin of strictly non-negative part of self.axis-v.
                 #The trick is to replace strictly negative values with +np.inf
-                index = numba_closest_index_ceil(self.axis,value)
+                index = numba_closest_index_ceil(self.axis,value).astype(int)
             elif rounding is math.floor:
                 #flooring means finding index of the closest xi with xi - v <= 0
                 #we look for armgax of strictly non-positive part of self.axis-v.
                 #The trick is to replace strictly positive values with -np.inf
-                index = numba_closest_index_ceil(self.axis,value)
+                index = numba_closest_index_ceil(self.axis,value).astype(int)
             else:
                 raise ValueError(
                     f'Non-supported rounding function. Use '

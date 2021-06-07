@@ -179,6 +179,7 @@ class TestDataAxis:
     def test_value2index(self):
         assert self.axis.value2index(10.15) == 3
         assert self.axis.value2index(60) == 8
+        assert isinstance(self.axis.value2index(60), (int, np.integer))
 
     def test_value2index_error(self):
         with pytest.raises(ValueError):
@@ -342,6 +343,8 @@ class TestFunctionalDataAxis:
         #Tests for value2index
         #Works as intended
         assert self.axis.value2index(44.7) == 7
+        # Returns integer
+        assert isinstance(self.axis.value2index(45), (int, np.integer))
         #Input None --> output None
         assert self.axis.value2index(None) == None
         #NaN in --> error out
