@@ -604,7 +604,7 @@ class BaseDataAxis(t.HasTraits):
                 #flooring means finding index of the closest xi with xi - v <= 0
                 #we look for armgax of strictly non-positive part of self.axis-v.
                 #The trick is to replace strictly positive values with -np.inf
-                index = numba_closest_index_ceil(self.axis,value).astype(int)
+                index = numba_closest_index_floor(self.axis,value).astype(int)
             else:
                 raise ValueError(
                     f'Non-supported rounding function. Use '
