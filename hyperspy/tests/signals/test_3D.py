@@ -16,6 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from distutils.version import LooseVersion
+
+import dask
 import numpy as np
 import pytest
 
@@ -140,12 +143,6 @@ class Test3D:
         self.signal.metadata.set_item("Signal.Noise_properties.variance", 0.3)
         new_s = self.signal.rebin(scale=(2, 2, 1))
         assert new_s.metadata.Signal.Noise_properties.variance == 0.3
-
-    def test_rebin_dtype(self):
-        s = Signal1D(np.arange(1000).reshape(10, 10, 10))
-        s.change_dtype(np.uint8)
-        s2 = s.rebin(scale=(3, 3, 1), crop=False)
-        assert s.sum() == s2.sum()
 
     def test_rebin_errors(self):
         with pytest.raises(ValueError):
@@ -295,3 +292,60 @@ class Test3D:
     def test_get_signal_signal_given_dtype(self):
         s = self.signal
         assert s._get_signal_signal(dtype="bool").data.dtype.name == "bool"
+
+
+@lazifyTestClass
+class TestRebinDtype:
+
+    def setup_method(self, method):
+        s = Signal1D(np.arange(100).reshape(2, 5, 10))
+        self.s = s
+
+    @pytest.mark.parametrize('dtype', [None, np.float32])
+    def test_rebin_dtype_interpolation(self, dtype):
+        s = self.s
+        if s._lazy:
+            pytest.skip('Liner interpolation not supported for lazy signal.')
+        s.change_dtype(np.uint8)
+        s2 = s.rebin(scale=(3, 3, 1), crop=False, dtype=dtype)
+        if dtype != np.float16:
+            dtype = np.dtype('float')
+        assert s2.data.dtype == dtype
+        assert s.sum() == s2.sum()
+
+    @pytest.mark.parametrize('dtype', ['same', np.uint16])
+    def test_rebin_dtype_interpolation_same_integer(self, dtype):
+        s = self.s
+        if s._lazy:
+            with pytest.raises(NotImplementedError):
+                _ = s.rebin(scale=(3, 3, 1), dtype=dtype)
+            # exit to skip the rest of the test
+            return
+        s.change_dtype(np.uint8)
+        with pytest.raises(ValueError):
+            _ = s.rebin(scale=(3, 3, 1), dtype=dtype)
+
+    def test_rebin_invalid_dtype_args(self):
+        s = self.s
+        with pytest.raises(ValueError):
+            _ = s.rebin(scale=(5, 2, 1), dtype='invalid_string')
+
+    @pytest.mark.parametrize('dtype', [None, 'same', np.uint16])
+    def test_rebin_dtype(self, dtype):
+        s = self.s
+        s.change_dtype(np.uint8)
+        if s._lazy and LooseVersion(dask.__version__) < LooseVersion("2.11.0"):
+            if dtype is not None:
+                with pytest.raises(ValueError):
+                    _ = s.rebin(scale=(5, 2, 1), dtype=dtype)
+            # exit to skip the rest of the test
+            return
+
+        s2 = s.rebin(scale=(5, 2, 1), dtype=dtype)
+        if dtype == None:
+            # np.sum default uses platform (un)signed interger (input dependent)
+            dtype = np.uint
+        elif dtype == 'same':
+            dtype = s.data.dtype
+        assert s2.data.dtype == dtype
+        assert s.sum() == s2.sum()

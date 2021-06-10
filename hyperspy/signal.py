@@ -59,6 +59,7 @@ from hyperspy.docstrings.signal import (
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
                                       BASE_PLOT_DOCSTRING_PARAMETERS,
                                       PLOT2D_KWARGS_DOCSTRING)
+from hyperspy.docstrings.utils import REBIN_ARGS
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
@@ -3037,40 +3038,16 @@ class BaseSignal(FancySlicing,
                                 for axis in self.axes_manager._axes])
         return factors  # Factors are in array order
 
-    def rebin(self, new_shape=None, scale=None, crop=True, out=None):
+    def rebin(self, new_shape=None, scale=None, crop=True, dtype=None,
+              out=None):
         """
         Rebin the signal into a smaller or larger shape, based on linear
-        interpolation. Specify **either** `new_shape` or `scale`.
+        interpolation. Specify **either** `new_shape` or `scale`. Scale of 1
+        means no binning and scale less than one results in up-sampling.
 
         Parameters
         ----------
-        new_shape : list (of floats or integer) or None
-            For each dimension specify the new_shape. This will internally be
-            converted into a `scale` parameter.
-        scale : list (of floats or integer) or None
-            For each dimension, specify the new:old pixel ratio, e.g. a ratio
-            of 1 is no binning and a ratio of 2 means that each pixel in the new
-            spectrum is twice the size of the pixels in the old spectrum.
-            The length of the list should match the dimension of the
-            Signal's underlying data array.
-            *Note : Only one of `scale` or `new_shape` should be specified,
-            otherwise the function will not run*
-        crop : bool
-            Whether or not to crop the resulting rebinned data (default is
-            ``True``). When binning by a non-integer number of
-            pixels it is likely that the final row in each dimension will
-            contain fewer than the full quota to fill one pixel.
-
-                - e.g. a 5*5 array binned by 2.1 will produce two rows
-                  containing 2.1 pixels and one row containing only 0.8
-                  pixels. Selection of ``crop=True`` or ``crop=False``
-                  determines whether or not this `"black"` line is cropped
-                  from the final binned array or not.
-
-            Please note that if ``crop=False`` is used, the final row in each
-            dimension may appear black if a fractional number of pixels are left
-            over. It can be removed but has been left to preserve total counts
-            before and after binning.
+        %s
         %s
 
         Returns
@@ -3086,6 +3063,7 @@ class BaseSignal(FancySlicing,
         <EDXTEMSpectrum, title: dimensions: (4, 4|10)>
         >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
         Sum = 164.0
+
         >>> scale = [2, 2, 5]
         >>> test = spectrum.rebin(scale)
         >>> print(test)
@@ -3093,13 +3071,39 @@ class BaseSignal(FancySlicing,
         >>> print('Sum = ', sum(sum(sum(test.data))))
         Sum =  164.0
 
+        >>> s = hs.signals.Signal1D(np.ones((2, 5, 10), dtype=np.uint8)
+        >>> print(s)
+        <Signal1D, title: , dimensions: (5, 2|10)>
+        >>> print(s.data.dtype)
+        uint8
+
+        Use dtype=np.unit16 to specify a dtype
+
+        >>> s2 = s.rebin(scale=(5, 2, 1), dtype=np.uint16)
+        >>> print(s2.data.dtype)
+        uint16
+
+        Use dtype="same" to keep the same dtype
+
+        >>> s3 = s.rebin(scale=(5, 2, 1), dtype="same")
+        >>> print(s3.data.dtype)
+        uint8
+
+        By default `dtype=None`, the dtype is determined by the behaviour of
+        numpy.sum, in this case, unsigned integer of the same precision as
+        the platform interger
+
+        >>> s4 = s.rebin(scale=(5, 2, 1))
+        >>> print(s4.data.dtype)
+        uint64
+
         """
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale,)
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
         data = hyperspy.misc.array_tools.rebin(
-            self.data, scale=factors, crop=crop)
+            self.data, scale=factors, crop=crop, dtype=dtype)
 
         if out:
             if out._lazy:
@@ -3119,13 +3123,14 @@ class BaseSignal(FancySlicing,
                           BaseSignal):
                 var = s.metadata.Signal.Noise_properties.variance
                 s.metadata.Signal.Noise_properties.variance = var.rebin(
-                    new_shape=new_shape, scale=scale, crop=crop, out=out)
+                    new_shape=new_shape, scale=scale, crop=crop, out=out,
+                    dtype=dtype)
         if out is None:
             return s
         else:
             out.events.data_changed.trigger(obj=out)
 
-    rebin.__doc__ %= (OUT_ARG)
+    rebin.__doc__ %= (REBIN_ARGS, OUT_ARG)
 
     def split(self,
               axis='auto',
