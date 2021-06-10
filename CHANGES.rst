@@ -15,7 +15,7 @@ Bug Fixes
 ---------
 
 - Fix ROI snapping regression (`#2720 <https://github.com/hyperspy/hyperspy/issues/2720>`_)
-- Fix :py:meth:`~._signals.signal1d.Signal1D.shift1D` regression with navigation dimension larger than one (`#2729 <https://github.com/hyperspy/hyperspy/issues/2729>`_)
+- Fix :py:meth:`~._signals.signal1d.Signal1D.shift1D`, :py:meth:`~._signals.signal1d.Signal1D.align1D` and :py:meth:`~._signals.eels.EELSSpectrum.align_zero_loss_peak` regression with navigation dimension larger than one (`#2729 <https://github.com/hyperspy/hyperspy/issues/2729>`_)
 - Fix disconnecting events when closing figure and :py:meth:`~._signals.signal1d.Signal1D.remove_background` is active (`#2734 <https://github.com/hyperspy/hyperspy/issues/2734>`_)
 - Fix :py:meth:`~.signal.BaseSignal.map` regression of lazy signal with navigation chunks of size of 1 (`#2748 <https://github.com/hyperspy/hyperspy/issues/2748>`_)
 - Fix unclear error message when reading a hspy file saved using blosc compression and `hdf5plugin` hasn't been imported previously (`#2760 <https://github.com/hyperspy/hyperspy/issues/2760>`_)
