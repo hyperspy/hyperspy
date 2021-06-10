@@ -1,1 +1,0 @@
-Use towncrier to generate changelog automatically

@@ -1,1 +1,0 @@
-Fix saving ``navigator`` of lazy signal

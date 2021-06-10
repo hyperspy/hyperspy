@@ -1,1 +1,0 @@
-Fix latex doc build on github actions

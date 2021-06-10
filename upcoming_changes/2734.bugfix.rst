@@ -1,1 +1,0 @@
-Fix disconnecting events when closing figure and :py:meth:`~._signals.signal1d.Signal1D.remove_background` is active
