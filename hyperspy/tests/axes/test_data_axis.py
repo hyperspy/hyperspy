@@ -133,8 +133,10 @@ class TestDataAxis:
         ax.events.value_changed.connect(m.trigger_me)
         ax.value = ax.value
         assert not m.trigger_me.called
-        ax.value = ax.value + (ax.axis[1] - ax.axis[0]) / 2
+        ax.value = ax.value + (ax.axis[1] - ax.axis[0]) * 0.4
         assert not m.trigger_me.called
+        ax.value = ax.value + (ax.axis[1] - ax.axis[0]) / 2
+        assert m.trigger_me.called
         ax.value = ax.axis[1]
         assert m.trigger_me.called
 

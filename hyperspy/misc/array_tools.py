@@ -471,12 +471,7 @@ def numba_closest_index_round(axis_array,value_array):
     #assign on flat, iterate on flat.
     for i,v in enumerate(value_array.flat):
         vdiff_array = np.abs(axis_array - v)
-        index = vdiff_array.argmin()
-        if vdiff_array[index] == vdiff_array[index + 1]:
-            index_array.flat[i] = index + 1
-        else:
-            index_array.flat[i] = index
-
+        index_array.flat[i] = np.flatnonzero(vdiff_array == np.min(vdiff_array))[-1]
     return index_array
 
 @njit(cache=True)
