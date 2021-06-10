@@ -8,6 +8,43 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 
 .. towncrier release notes start
 
+Hyperspy 1.6.3 (2021-06-10)
+===========================
+
+Bug Fixes
+---------
+
+- Fix ROI snapping regression (`#2720 <https://github.com/hyperspy/hyperspy/issues/2720>`_)
+- Fix :py:meth:`~._signals.signal1d.Signal1D.shift1D`, :py:meth:`~._signals.signal1d.Signal1D.align1D` and :py:meth:`~._signals.eels.EELSSpectrum.align_zero_loss_peak` regression with navigation dimension larger than one (`#2729 <https://github.com/hyperspy/hyperspy/issues/2729>`_)
+- Fix disconnecting events when closing figure and :py:meth:`~._signals.signal1d.Signal1D.remove_background` is active (`#2734 <https://github.com/hyperspy/hyperspy/issues/2734>`_)
+- Fix :py:meth:`~.signal.BaseSignal.map` regression of lazy signal with navigation chunks of size of 1 (`#2748 <https://github.com/hyperspy/hyperspy/issues/2748>`_)
+- Fix unclear error message when reading a hspy file saved using blosc compression and `hdf5plugin` hasn't been imported previously (`#2760 <https://github.com/hyperspy/hyperspy/issues/2760>`_)
+- Fix saving ``navigator`` of lazy signal (`#2763 <https://github.com/hyperspy/hyperspy/issues/2763>`_)
+
+
+Enhancements
+------------
+
+- Use ``importlib_metadata`` instead of ``pkg_resources`` for extensions
+  registration to speed up the import process and making it possible to install
+  extensions and use them without restarting the python session (`#2709 <https://github.com/hyperspy/hyperspy/issues/2709>`_)
+- Don't import hyperspy extensions when registering extensions (`#2711 <https://github.com/hyperspy/hyperspy/issues/2711>`_)
+- Improve docstrings of various fitting methods (`#2724 <https://github.com/hyperspy/hyperspy/issues/2724>`_)
+- Improve speed of :py:meth:`~._signals.signal1d.Signal1D.shift1D` (`#2750 <https://github.com/hyperspy/hyperspy/issues/2750>`_)
+- Add support for recent EMPAD file; scanning size wasn't parsed. (`#2757 <https://github.com/hyperspy/hyperspy/issues/2757>`_)
+
+
+Maintenance
+-----------
+
+- Add drone CI to test arm64 platform (`#2713 <https://github.com/hyperspy/hyperspy/issues/2713>`_)
+- Fix latex doc build on github actions (`#2714 <https://github.com/hyperspy/hyperspy/issues/2714>`_)
+- Use towncrier to generate changelog automatically (`#2717 <https://github.com/hyperspy/hyperspy/issues/2717>`_)
+- Fix test suite to support dask 2021.4.1 (`#2722 <https://github.com/hyperspy/hyperspy/issues/2722>`_)
+- Generate changelog when building doc to keep the changelog of the development doc up to date on https://hyperspy.readthedocs.io/en/latest (`#2758 <https://github.com/hyperspy/hyperspy/issues/2758>`_)
+- Use mamba and conda-forge channel on azure pipeline (`#2759 <https://github.com/hyperspy/hyperspy/issues/2759>`_)
+
+
 .. _changes_1.6.2:
 
 v1.6.2

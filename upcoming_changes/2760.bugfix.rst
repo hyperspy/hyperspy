@@ -1,1 +1,0 @@
-Fix unclear error message when reading a hspy file saved using blosc compression and `hdf5plugin` hasn't been imported previously

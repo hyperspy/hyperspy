@@ -1,1 +1,0 @@
-Fix :py:meth:`~._signals.signal1d.Signal1D.shift1D` regression with navigation dimension larger than one

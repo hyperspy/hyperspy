@@ -1,1 +1,0 @@
-Generate changelog when building doc to keep the changelog of the development doc up to date on https://hyperspy.readthedocs.io/en/latest

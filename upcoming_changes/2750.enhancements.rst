@@ -1,1 +1,0 @@
-Improve speed of :py:meth:`~._signals.signal1d.Signal1D.shift1D`
