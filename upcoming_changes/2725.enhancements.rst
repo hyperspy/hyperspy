@@ -1,1 +1,1 @@
-NeXus file with more options when reading and writing
+:ref:`NeXus<nexus-format>` file with more options when reading and writing
