@@ -1,1 +1,0 @@
-Use mamba and conda-forge channel on azure pipeline
