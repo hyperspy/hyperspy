@@ -6475,12 +6475,39 @@ class BaseSignal(FancySlicing,
                              "`signal_shape`.")
 
     def to_gpu(self):
+        """
+        Transfer data array to GPU device memory using cupy.asarray. Lazy
+        signal will be converted to their non-lazy counterpart, which means
+        the GPU device needs to have enough memory to accomodate the whole
+        dataset.
+
+        Raises
+        ------
+        BaseException
+            Raise expecting if cupy is not installed.
+
+        Returns
+        -------
+        None.
+
+        """
         if not CUPY_INSTALLED:
             raise BaseException('cupy is required.')
         else:
             self.data = cp.asarray(self.data)
+            if self._lazy:
+                self._lazy = False
+                self._assign_subclass()
 
     def to_cpu(self):
+        """
+        Transfer data array to host memory
+
+        Returns
+        -------
+        None.
+
+        """
         self.data = to_numpy(self.data)
 
 

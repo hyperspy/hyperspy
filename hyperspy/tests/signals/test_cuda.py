@@ -97,3 +97,15 @@ class TestCupy:
         m = s.create_model()
         m.append(hs.model.components1D.Polynomial(legacy=False, order=1))
         m.fit()
+
+
+@pytest.mark.parametrize('lazy', [False, True])
+def test_to_gpu(lazy):
+    s = hs.signals.Signal1D(np.arange(10))
+    if lazy:
+        s = s.as_lazy()
+        assert isinstance(s, hs.hyperspy._signals.signal1d.LazySignal1D)
+
+    s.to_gpu()
+    assert isinstance(s, hs.signals.Signal1D)
+    assert isinstance(s.data, cp.ndarray)
