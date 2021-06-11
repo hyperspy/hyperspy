@@ -21,8 +21,9 @@ import logging
 
 from imageio import imread, imwrite
 from matplotlib.figure import Figure
-import traits.api as t
+import numpy as np
 import pint
+import traits.api as t
 
 from hyperspy.misc import rgb_tools
 
@@ -45,6 +46,7 @@ _logger = logging.getLogger(__name__)
 
 def file_writer(filename, signal, scalebar=False,
                 scalebar_kwds={'box_alpha':0.75, 'location':'lower left'},
+                output_size=None,
                 **kwds):
     """Writes data to any format supported by PIL
 
@@ -52,7 +54,7 @@ def file_writer(filename, signal, scalebar=False,
     ----------
     filename: {str, pathlib.Path, bytes, file}
         The resource to write the image to, e.g. a filename, pathlib.Path or
-        file object, see the docs for more info. The file format is defined by 
+        file object, see the docs for more info. The file format is defined by
         the file extension that is any one supported by imageio.
     signal: a Signal instance
     scalebar : bool, optional
@@ -78,8 +80,20 @@ def file_writer(filename, signal, scalebar=False,
             _logger.warning("Exporting image with scalebar requires the "
                             "matplotlib-scalebar library.")
         dpi = 100
-        fig = Figure(figsize=[v/dpi for v in signal.axes_manager.signal_shape],
-                     dpi=dpi)
+
+        if len(signal.axes_manager.signal_axes) == 2:
+            axes = signal.axes_manager.signal_axes
+        elif len(signal.axes_manager.navigation_axes) == 2:
+            # Try to use navigation axes
+            axes = signal.axes_manager.navigation_axes
+        else:
+            raise ValueError("Data not compatible with saving scale bar.")
+
+        if output_size is None:
+            # fall back to image size
+            output_size = [axis.size for axis in axes]
+
+        fig = Figure(figsize=[size / dpi for size in output_size], dpi=dpi)
 
         try:
             # List of format supported by matplotlib
@@ -98,8 +112,9 @@ def file_writer(filename, signal, scalebar=False,
         ax.axis('off')
         ax.imshow(data, cmap='gray')
 
+        # TODO: check that both axes are equal
         # Add scalebar
-        axis = signal.axes_manager.signal_axes[0]
+        axis = axes[0]
         if axis.units == t.Undefined:
             axis.units = "px"
             scalebar_kwds['dimension'] = "pixel-length"
