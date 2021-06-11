@@ -186,6 +186,10 @@ class TestDataAxis:
         assert self.axis.value2index(2.5,rounding=math.floor) == 1
         # Test that output is integer
         assert isinstance(self.axis.value2index(60), (int, np.integer))
+        self.axis.axis = self.axis.axis - 2
+        # test rounding on negative value
+        assert self.axis.value2index(-1.5,rounding=round) == 0
+        
 
     def test_value2index_error(self):
         with pytest.raises(ValueError):

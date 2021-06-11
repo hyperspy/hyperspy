@@ -583,8 +583,6 @@ class BaseDataAxis(t.HasTraits):
         else:
             value = np.asarray(value)
 
-
-
         #Should evaluate on both arrays and scalars. Raises error if there are
         #nan values in array
         if np.all((value >= self.low_value)*(value <= self.high_value)):
