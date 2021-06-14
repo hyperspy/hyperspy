@@ -8,7 +8,7 @@ The easiest way to install HyperSpy is to use the
 :ref:`HyperSpy Bundle <hyperspy-bundle>`, which is available on Windows, MacOS
 and Linux.
 
-Alternatively, hyperspy can be installed in an existing python distribution,
+Alternatively, HyperSpy can be installed in an existing python distribution,
 read the :ref:`conda installation <anaconda-install>` and
 :ref:`pip installation<install-with-pip>` sections for instructions.
 
@@ -67,15 +67,15 @@ or the `HyperSpy-bundle <https://github.com/hyperspy/hyperspy-bundle>`__.
 Since HyperSpy is packaged in the `conda-forge <https://conda-forge.org/>`__ channel,
 it can easily be installed using conda.
 
-To install hyperspy run the following from the Anaconda Prompt on Windows or
+To install HyperSpy run the following from the Anaconda Prompt on Windows or
 from a Terminal on Linux and Mac.
 
    .. code-block:: bash
 
        $ conda install hyperspy -c conda-forge
 
-This will install also install the optional GUI packages ``hyperspy_gui_ipywidgets``
-and ``hyperspy_gui_traitsui``. To install hyperspy without the GUI packages, use:
+This will also install the optional GUI packages ``hyperspy_gui_ipywidgets``
+and ``hyperspy_gui_traitsui``. To install HyperSpy without the GUI packages, use:
 
    .. code-block:: bash
 
@@ -84,7 +84,7 @@ and ``hyperspy_gui_traitsui``. To install hyperspy without the GUI packages, use
 .. note::
 
     Depending on how Anaconda has been installed, it is possible that the
-    ``conda`` command is not avaible from the Terminal, read the
+    ``conda`` command is not available from the Terminal, read the
     `Anaconda User Guide <https://docs.continuum.io/anaconda/>`_ for details.
 
 .. note::
@@ -115,9 +115,9 @@ solutions are:
 - use Miniconda instead of Anaconda, if you are installing a python
   distribution from scratch: Miniconda only installs very few packages so satisfying
   all dependencies is simple.
-- install hyperspy in a `new environment <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_.
+- install HyperSpy in a `new environment <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_.
   The following example illustrates how to create a new environment named ``hspy_environment``,
-  activate it and install hyperspy in the new environment.
+  activate it and install HyperSpy in the new environment.
 
   .. code-block:: bash
 
@@ -153,7 +153,7 @@ HyperSpy is listed in the `Python Package Index
 and installed  `pip <http://pypi.python.org/pypi/pip>`__. You may need to
 install pip for the following commands to run.
 
-To install all hyperspy functionalities, run:
+To install all of HyperSpy's functionalities, run:
 
   .. code-block:: bash
 
@@ -285,8 +285,8 @@ To get the development version from our git repository you need to install `git
     or run again the installation in development mode using ``pip`` as explained
     below.
 
-Installation in a Anaconda/Minconda distribution
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Installation in a Anaconda/Miniconda distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Install the runtime and development dependencies requirements using conda:
 
@@ -329,7 +329,7 @@ use the corresponding selector as explained in the :ref:`install-with-pip` secti
 Installation in a system Python distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When using a system Python distribution, it is recommanded to install the
+When using a system Python distribution, it is recommended to install the
 dependencies using your system package manager.
 
 From the root folder of your hyperspy repository (folder containing the
