@@ -562,11 +562,16 @@ class BaseDataAxis(t.HasTraits):
         return value
 
     def value2index(self, value, rounding=round):
-        """Return the closest index to the given value if between the axis limits.
+        """Return the closest index/indices to the given value(s) if between the axis limits.
 
         Parameters
         ----------
         value : number or numpy array
+        rounding : function
+                Handling of values intermediate between two axis points:
+                If `rounding=round`, use round-half-away-from-zero strategy to find closest value.
+                If `rounding=math.floor`, round to the next lower value.
+                If `round=math.ceil`, round to the next higher value.
 
         Returns
         -------
@@ -1154,13 +1159,18 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         return d
 
     def value2index(self, value, rounding=round):
-        """Return the closest index to the given value if between the axis limits.
+        """Return the closest index/indices to the given value(s) if between the axis limits.
 
         Parameters
         ----------
         value : number or string, or numpy array of number or string
                 if string, should either be a calibrated unit like "20nm"
                 or a relative slicing like "rel0.2".
+        rounding : function
+                Handling of values intermediate between two axis points:
+                If `rounding=round`, use python's standard round-half-to-even strategy to find closest value.
+                If `rounding=math.floor`, round to the next lower value.
+                If `round=math.ceil`, round to the next higher value.
 
         Returns
         -------
