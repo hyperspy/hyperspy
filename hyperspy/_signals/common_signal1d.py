@@ -21,7 +21,7 @@ from hyperspy.exceptions import DataDimensionError
 from hyperspy.docstrings.signal import OPTIMIZE_ARG
 
 
-class CommonSignal1D(object):
+class CommonSignal1D:
 
     """Common functions for 1-dimensional signals."""
 

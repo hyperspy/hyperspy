@@ -224,7 +224,7 @@ Note that, if you have :ref:`packages that extend HyperSpy
 <hyperspy_extensions-label>` installed in your system, there may
 be more specialised signals available to you. To print all available specialised
 :py:class:`~.signal.BaseSignal` subclasses installed in your system call the
-:py:func:`hyperspy.utils.print_known_signal_types`
+:py:func:`~.utils.print_known_signal_types`
 function as in the following example:
 
 .. code-block:: python
@@ -304,7 +304,7 @@ following table:
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | True   |
     +---------------------------------------------------------------+--------+
-    |           :py:class:`~._signals.eds_tem.EDSTEM`               | True   |
+    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | True   |
     +---------------------------------------------------------------+--------+
     |              :py:class:`~._signals.signal2d.Signal2D`         | False  |
     +---------------------------------------------------------------+--------+
@@ -312,7 +312,7 @@ following table:
     +---------------------------------------------------------------+--------+
     |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`    | False  |
     +---------------------------------------------------------------+--------+
-    |    :py:class:`~._signals.complex_signal2d.Complex2Dmixin`     | False  |
+    |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`    | False  |
     +---------------------------------------------------------------+--------+
 
 
@@ -1023,6 +1023,35 @@ cannot be performed lazily:
     NotImplementedError: Lazy rebin requires scale to be integer and divisor of the original signal shape
 
 
+The ``dtype``  argument can be used to specify the ``dtype`` of the returned
+signal:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.ones((2, 5, 10), dtype=np.uint8)
+    >>> print(s)
+    <Signal1D, title: , dimensions: (5, 2|10)>
+    >>> print(s.data.dtype)
+    uint8
+
+    # Use dtype=np.unit16 to specify a dtype
+    >>> s2 = s.rebin(scale=(5, 2, 1), dtype=np.uint16)
+    >>> print(s2.data.dtype)
+    uint16
+
+    # Use dtype="same" to keep the same dtype
+    >>> s3 = s.rebin(scale=(5, 2, 1), dtype="same")
+    >>> print(s3.data.dtype)
+    uint8
+
+    # By default `dtype=None`, the dtype is determined by the behaviour of
+    # numpy.sum, in this case, unsigned integer of the same precision as the 
+    # platform interger
+    >>> s4 = s.rebin(scale=(5, 2, 1))
+    >>> print(s4.data.dtype)
+    uint64
+
+
 .. _squeeze-label:
 
 Squeezing
@@ -1087,6 +1116,14 @@ with same dimension.
 
   Stacking example.
 
+.. note::
+
+    When stacking signals with large amount of
+    :py:attr:`~.signal.BaseSignal.original_metadata`, these metadata will be
+    stacked and this can lead to very large amount of metadata which can in
+    turn slow down processing. The ``stack_original_metadata`` argument can be
+    used to disable stacking :py:attr:`~.signal.BaseSignal.original_metadata`.
+
 An object can be split into several objects
 with the :py:meth:`~.signal.BaseSignal.split` method. This function can be used
 to reverse the :py:func:`~.utils.stack` function:
@@ -1108,13 +1145,13 @@ to reverse the :py:func:`~.utils.stack` function:
 Fast Fourier Transform (FFT)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The `fast Fourier transform <https://en.wikipedia.org/wiki/Fast_Fourier_transform>`_ 
-of a signal can be computed using the :py:meth:`~.signal.BaseSignal.fft` method. By default, 
-the FFT is calculated with the origin at (0, 0), which will be displayed at the 
-bottom left and not in the centre of the FFT. Conveniently, the ``shift`` argument of the 
-the :py:meth:`~.signal.BaseSignal.fft` method can be used to center the output of the FFT. 
-In the following example, the FFT of a hologram is computed using ``shift=True`` and its 
-output signal is displayed, which shows that the FFT results in a complex signal with a 
+The `fast Fourier transform <https://en.wikipedia.org/wiki/Fast_Fourier_transform>`_
+of a signal can be computed using the :py:meth:`~.signal.BaseSignal.fft` method. By default,
+the FFT is calculated with the origin at (0, 0), which will be displayed at the
+bottom left and not in the centre of the FFT. Conveniently, the ``shift`` argument of the
+the :py:meth:`~.signal.BaseSignal.fft` method can be used to center the output of the FFT.
+In the following example, the FFT of a hologram is computed using ``shift=True`` and its
+output signal is displayed, which shows that the FFT results in a complex signal with a
 real and an imaginary parts:
 
 .. code-block:: python
@@ -1127,11 +1164,11 @@ real and an imaginary parts:
   :align:   center
   :width:   800
 
-The strong features in the real and imaginary parts correspond to the lattice fringes of the 
+The strong features in the real and imaginary parts correspond to the lattice fringes of the
 hologram.
 
-For visual inspection of the FFT it is convenient to display its power spectrum 
-(i.e. the square of the absolute value of the FFT) rather than FFT itself as it is done 
+For visual inspection of the FFT it is convenient to display its power spectrum
+(i.e. the square of the absolute value of the FFT) rather than FFT itself as it is done
 in the example above by using the ``power_spectum`` argument:
 
 .. code-block:: python
@@ -1140,8 +1177,8 @@ in the example above by using the ``power_spectum`` argument:
     >>> fft = im.fft(True)
     >>> fft.plot(True)
 
-Where ``power_spectum`` is set to ``True`` since it is the first argument of the 
-:py:meth:`~._signals.complex_signal.ComplexSignal_mixin.plot` method for complex signal. 
+Where ``power_spectum`` is set to ``True`` since it is the first argument of the
+:py:meth:`~._signals.complex_signal.ComplexSignal.plot` method for complex signal.
 When ``power_spectrum=True``, the plot will be displayed on a log scale by default.
 
 
@@ -1149,7 +1186,7 @@ When ``power_spectrum=True``, the plot will be displayed on a log scale by defau
   :align:   center
   :width:   400
 
-The visualisation can be further improved by setting the minimum value to display to the 30-th 
+The visualisation can be further improved by setting the minimum value to display to the 30-th
 percentile; this can be done by using ``vmin="30th"`` in the plot function:
 
 .. code-block:: python
@@ -1162,12 +1199,12 @@ percentile; this can be done by using ``vmin="30th"`` in the plot function:
   :align:   center
   :width:   400
 
-The streaks visible in the FFT come from the edge of the image and can be removed by  
-applying an `apodization <https://en.wikipedia.org/wiki/Apodization>`_ function to the original 
-signal before the computation of the FFT. This can be done using the ``apodization`` argument of 
-the :py:meth:`~.signal.BaseSignal.fft` method and it is usually used for visualising FFT patterns 
-rather than for quantitative analyses. By default, the so-called ``hann`` windows is 
-used but different type of windows such as the ``hamming`` and ``tukey`` windows. 
+The streaks visible in the FFT come from the edge of the image and can be removed by
+applying an `apodization <https://en.wikipedia.org/wiki/Apodization>`_ function to the original
+signal before the computation of the FFT. This can be done using the ``apodization`` argument of
+the :py:meth:`~.signal.BaseSignal.fft` method and it is usually used for visualising FFT patterns
+rather than for quantitative analyses. By default, the so-called ``hann`` windows is
+used but different type of windows such as the ``hamming`` and ``tukey`` windows.
 
 .. code-block:: python
 
@@ -1185,8 +1222,8 @@ used but different type of windows such as the ``hamming`` and ``tukey`` windows
 Inverse Fast Fourier Transform (iFFT)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Inverse fast Fourier transform can be calculated from a complex signal by using the 
-:py:meth:`~.signal.BaseSignal.ifft` method. Similarly to the :py:meth:`~.signal.BaseSignal.fft` method, 
+Inverse fast Fourier transform can be calculated from a complex signal by using the
+:py:meth:`~.signal.BaseSignal.ifft` method. Similarly to the :py:meth:`~.signal.BaseSignal.fft` method,
 the ``shift`` argument can be provided to shift the origin of the iFFT when necessary:
 
 .. code-block:: python
@@ -1578,10 +1615,10 @@ operation.
 Handling complex data
 ---------------------
 
-The HyperSpy :py:class:`~.hyperspy.signals.ComplexSignal` signal class and its
-subclasses for 1-dimensional and 2-dimensional data allow the user to access
-complex properties like the `real` and `imag` parts of the data or the
-`amplitude` (also known as the modulus) and `phase` (also known as angle or
+The HyperSpy :py:class:`~._signals.complex_signal.ComplexSignal` signal class
+and its subclasses for 1-dimensional and 2-dimensional data allow the user to
+access complex properties like the ``real`` and ``imag`` parts of the data or the
+``amplitude`` (also known as the modulus) and ``phase`` (also known as angle or
 argument) directly. Getting and setting those properties can be done as
 follows:
 
@@ -1604,31 +1641,32 @@ To transform a real signal into a complex one use:
 
     >>> s.change_dtype(complex)
 
-Changing the `dtype` of a complex signal to something real is not clearly
-defined and thus not directly possible. Use the `real`, `imag`, `amplitude`
-or `phase` properties instead to extract the real data that is desired.
+Changing the ``dtype`` of a complex signal to something real is not clearly
+defined and thus not directly possible. Use the ``real``, ``imag``,
+``amplitude`` or ``phase`` properties instead to extract the real data that is
+desired.
 
 
 Calculate the angle / phase / argument
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:func:`~hyperspy.signals.ComplexSignal.angle` function can be used to
-calculate the angle, which is equivalent to using the `phase` property if no
-argument is used. If the data is real, the angle will be 0 for positive
-values and 2$\pi$ for negative values. If the `deg` parameter is set to
-`True`, the result will be given in degrees, otherwise in rad (default). The
-underlying function is the :py:func:`~numpy.angle` function.
-:py:func:`~hyperspy.signals.ComplexSignal.angle` will return an appropriate
-HyperSpy signal.
+The :py:meth:`~._signals.complex_signal.ComplexSignal.angle` function
+can be used to calculate the angle, which is equivalent to using the ``phase``
+property if no argument is used. If the data is real, the angle will be 0 for
+positive values and 2$\pi$ for negative values. If the `deg` parameter is set
+to ``True``, the result will be given in degrees, otherwise in rad (default).
+The underlying function is the :py:func:`numpy.angle` function.
+:py:meth:`~._signals.complex_signal.ComplexSignal.angle` will return
+an appropriate HyperSpy signal.
 
 
 Phase unwrapping
 ^^^^^^^^^^^^^^^^
 
-With the :py:func:`~hyperspy.signals.ComplexSignal.unwrapped_phase` method the
-complex phase of a signal can be unwrapped and returned as a new signal. The
-underlying method is :py:func:`~skimage.restoration.unwrap`, which uses the
-algorithm described in :ref:`[Herraez] <Herraez>`.
+With the :py:meth:`~._signals.complex_signal.ComplexSignal.unwrapped_phase`
+method the complex phase of a signal can be unwrapped and returned as a new signal.
+The underlying method is :py:func:`skimage.restoration.unwrap_phase`, which
+uses the algorithm described in :ref:`[Herraez] <Herraez>`.
 
 
 .. _complex.argand:
@@ -1638,13 +1676,12 @@ Calculate and display Argand diagram
 
 Sometimes it is convenient to visualize a complex signal as a plot of its
 imaginary part versus real one. In this case so called Argand diagrams can
-be calculated using :py:func:`~hyperspy.signals.ComplexSignal.argand_diagram`
-method, which returns the plot as a
-:py:class:`~._signals.complex_signal.Signal2D`. Optional arguments ``size``
-and ``display_range`` can be used to change the size (and therefore
-resolution) of the plot and to change the range for the display of the
-plot respectively. The last one is especially useful in order to zoom
-into specific regions of the plot or to limit the plot in case of noisy
+be calculated using :py:meth:`~hyperspy.signals.ComplexSignal.argand_diagram`
+method, which returns the plot as a :py:class:`~._signals.signal2d.Signal2D`.
+Optional arguments ``size`` and ``display_range`` can be used to change the
+size (and therefore resolution) of the plot and to change the range for the
+display of the plot respectively. The last one is especially useful in order to
+zoom into specific regions of the plot or to limit the plot in case of noisy
 data points.
 
 An example of calculation of Aragand diagram is :ref:`shown for electron
@@ -1655,9 +1692,9 @@ Add a linear phase ramp
 
 For 2-dimensional complex images, a linear phase ramp can be added to the
 signal via the
-:py:func:`~._signals.complex_signal2d.Complex2Dmixin.add_phase_ramp` method.
-The parameters `ramp_x` and `ramp_y` dictate the slope of the ramp in `x`-
-and `y` direction, while the offset is determined by the `offset` parameter.
+:py:meth:`~._signals.complex_signal2d.ComplexSignal2D.add_phase_ramp` method.
+The parameters ``ramp_x`` and ``ramp_y`` dictate the slope of the ramp in `x`-
+and `y` direction, while the offset is determined by the ``offset`` parameter.
 The fulcrum of the linear ramp is at the origin and the slopes are given in
 units of the axis with the according scale taken into account. Both are
 available via the :py:class:`~.axes.AxesManager` of the signal.

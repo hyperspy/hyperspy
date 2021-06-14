@@ -34,6 +34,7 @@ import numpy as np
 from hyperspy.misc.signal_tools import broadcast_signals
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+from hyperspy.docstrings.utils import STACK_METADATA_ARG
 
 
 _logger = logging.getLogger(__name__)
@@ -530,10 +531,12 @@ class DictionaryTreeBrowser:
         """Returns its dictionary representation.
 
         """
-        par_dict = {}
 
         if len(self._lazy_attributes) > 0:
-            par_dict.update(self._lazy_attributes)
+            return copy.deepcopy(self._lazy_attributes)
+
+        par_dict = {}
+
         from hyperspy.signal import BaseSignal
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
@@ -937,7 +940,7 @@ def closest_power_of_two(n):
 
 
 def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
-          show_progressbar=None, **kwargs):
+          stack_metadata=True, show_progressbar=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
 
     The title is set to that of the first signal in the list.
@@ -952,7 +955,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         signals are stacked over the axis given by its integer index or
         its name. The data must have the same shape, except in the dimension
         corresponding to `axis`.
-    new_axis_name : string
+    new_axis_name : str
         The name of the new axis when `axis` is None.
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
@@ -960,6 +963,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
     lazy : {bool, None}
         Returns a LazySignal if True. If None, only returns lazy result if at
         least one is lazy.
+    %s
     %s
 
     Returns
@@ -1034,10 +1038,9 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
             if axis is None
             else da.concatenate(datalist, axis=axis.index_in_array)
         )
+
         if axis_input is None:
             signal = first.__class__(newdata)
-            signal._lazy = True
-            signal._assign_subclass()
             signal.axes_manager._axes[1:] = copy.deepcopy(newlist[0].axes_manager._axes)
             axis_name = new_axis_name
             axis_names = [axis_.name for axis_ in signal.axes_manager._axes[1:]]
@@ -1048,22 +1051,33 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
             eaxis = signal.axes_manager._axes[0]
             eaxis.name = axis_name
             eaxis.navigate = True  # This triggers _update_parameters
-            signal.metadata = copy.deepcopy(first.metadata)
-            # Get the title from 1st object
-            signal.metadata.General.title = f"Stack of {first.metadata.General.title}"
-            signal.original_metadata = DictionaryTreeBrowser({})
         else:
             signal = newlist[0]._deepcopy_with_new_data(newdata)
-            signal._lazy = True
-            signal._assign_subclass()
-        signal.get_dimensions_from_data()
-        signal.original_metadata.add_node("stack_elements")
 
-        for i, obj in enumerate(signal_list):
-            signal.original_metadata.stack_elements.add_node(f"element{i}")
-            node = signal.original_metadata.stack_elements[f"element{i}"]
-            node.original_metadata = obj.original_metadata.as_dictionary()
-            node.metadata = obj.metadata.as_dictionary()
+        signal._lazy = True
+        signal._assign_subclass()
+        signal.get_dimensions_from_data()
+        # Set the metadata, if an stack_metadata is an integer, the metadata
+        # will overwritten later
+        signal.metadata = first.metadata.deepcopy()
+        signal.metadata.General.title = f"Stack of {first.metadata.General.title}"
+
+        if isinstance(stack_metadata, bool):
+            if stack_metadata:
+                signal.original_metadata.add_node('stack_elements')
+                for i, obj in enumerate(signal_list):
+                    signal.original_metadata.stack_elements.add_node(f'element{i}')
+                    node = signal.original_metadata.stack_elements[f'element{i}']
+                    node.original_metadata = obj.original_metadata.deepcopy()
+                    node.metadata = obj.metadata.deepcopy()
+            else:
+                signal.original_metadata = DictionaryTreeBrowser({})
+        elif isinstance(stack_metadata, int):
+            obj = signal_list[stack_metadata]
+            signal.metadata = obj.metadata.deepcopy()
+            signal.original_metadata = obj.original_metadata.deepcopy()
+        else:
+            raise ValueError('`stack_metadata` must a boolean or an integer.')
 
         if axis_input is None:
             axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
@@ -1084,15 +1098,13 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
     else:
         signal = signal_list[0]
 
-    # Leave as lazy or compute
-    if lazy:
-        signal = signal.as_lazy()
-    else:
+    # compute if not lazy
+    if not lazy:
         signal.compute(False, show_progressbar=show_progressbar)
 
     return signal
 
-stack.__doc__ %= (SHOW_PROGRESSBAR_ARG)
+stack.__doc__ %= (STACK_METADATA_ARG, SHOW_PROGRESSBAR_ARG)
 
 
 def shorten_name(name, req_l):
@@ -1138,11 +1150,11 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
     from hyperspy.signal import BaseSignal
     from itertools import repeat
 
-    iterators = tuple(signal[1]._cycle_signal()
-                      if isinstance(signal[1], BaseSignal) else signal[1]
-                      for signal in iterating_kwargs)
+    iterators = tuple(iterating_kwargs[key]._cycle_signal()
+                      if isinstance(iterating_kwargs[key], BaseSignal) else iterating_kwargs[key]
+                      for key in iterating_kwargs)
     # make all kwargs iterating for simplicity:
-    iterating = tuple(key for key, value in iterating_kwargs)
+    iterating = tuple(key for key in iterating_kwargs)
     for k, v in kwargs.items():
         if k not in iterating:
             iterating += k,
@@ -1150,8 +1162,8 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
 
     def figure_out_kwargs(data):
         _kwargs = {k: v for k, v in zip(iterating, data[1:])}
-        for k, v in iterating_kwargs:
-            if (isinstance(v, BaseSignal) and
+        for k in iterating_kwargs:
+            if (isinstance(iterating_kwargs[k], BaseSignal) and
                 isinstance(_kwargs[k], np.ndarray) and
                     len(_kwargs[k]) == 1):
                 _kwargs[k] = _kwargs[k][0]
@@ -1163,6 +1175,101 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
 
     return func, iterators
 
+
+def process_function_blockwise(data,
+                               *args,
+                               function,
+                               nav_indexes=None,
+                               output_signal_size=None,
+                               block_info=None,
+                               arg_keys=None,
+                               **kwargs):
+    """
+    Convenience function for processing a function blockwise. By design, its
+    output is used as an argument of the dask ``map_blocks`` so that the
+    function only gets applied to the signal axes.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The data for one chunk
+    *args : tuple
+        Any signal the is iterated alongside the data in. In the form
+        ((key1, value1), (key2, value2))
+    function : function
+        The function to applied to the signal axis
+    nav_indexes : tuple
+        The indexes of the navigation axes for the dataset.
+    output_signal_shape: tuple
+        The shape of the output signal. For a ragged signal, this is equal to 1
+    block_info : dict
+        The block info as described by the ``dask.array.map_blocks`` function
+    arg_keys : tuple
+        The list of keys for the passed arguments (args).  Together this makes
+        a set of key:value pairs to be passed to the function.
+    **kwargs : dict
+        Any additional key value pairs to be used by the function
+        (Note that these are the constants that are applied.)
+
+    """
+    # Both of these values need to be passed in
+    dtype = block_info[None]["dtype"]
+    chunk_nav_shape = tuple([data.shape[i] for i in sorted(nav_indexes)])
+    output_shape = chunk_nav_shape + tuple(output_signal_size)
+    # Pre-allocating the output array
+    output_array = np.empty(output_shape, dtype=dtype)
+    if len(args) == 0:
+        # There aren't any BaseSignals for iterating
+        for nav_index in np.ndindex(chunk_nav_shape):
+            islice = np.s_[nav_index]
+            output_array[islice] = function(data[islice],
+                                            **kwargs)
+    else:
+        # There are BaseSignals which iterate alongside the data
+        for index in np.ndindex(chunk_nav_shape):
+            islice = np.s_[index]
+
+            iter_dict = {key: a[islice].squeeze() for key, a in zip(arg_keys,args)}
+            output_array[islice] = function(data[islice],
+                                            **iter_dict,
+                                            **kwargs)
+    if not (chunk_nav_shape == output_array.shape):
+        try:
+            output_array = output_array.squeeze(-1)
+        except ValueError:
+            pass
+    return output_array
+
+
+def guess_output_signal_size(test_signal,
+                             function,
+                             ragged,
+                             **kwargs):
+    """This function is for guessing the output signal shape and size.
+    It will attempt to apply the function to some test signal and then output
+    the resulting signal shape and datatype.
+
+    Parameters
+    ----------
+    test_signal: BaseSignal
+        A test signal for the function to be applied to. A signal
+        with 0 navigation dimensions
+    function: function
+        The function to be applied to the data
+    ragged: bool
+        If the data is ragged then the output signal size is () and the
+        data type is 'object'
+    **kwargs: dict
+        Any other keyword arguments passed to the function.
+    """
+    if ragged:
+        output_dtype = object
+        output_signal_size = ()
+    else:
+        output = function(test_signal, **kwargs)
+        output_dtype = output.dtype
+        output_signal_size = output.shape
+    return output_signal_size, output_dtype
 
 def map_result_construction(signal,
                             inplace,

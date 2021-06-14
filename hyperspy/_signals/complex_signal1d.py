@@ -31,17 +31,10 @@ class ComplexSignal1D(ComplexSignal, CommonSignal1D):
         super().__init__(*args, **kwargs)
         if self.axes_manager.signal_dimension != 1:
             self.axes_manager.set_signal_dimension(1)
-        self.axes_manager.signal_axes[0].is_binned = False
 
 
 class LazyComplexSignal1D(ComplexSignal1D, LazyComplexSignal):
 
     """BaseSignal subclass for lazy complex 1-dimensional data."""
 
-    _signal_dimension = 1
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.axes_manager.signal_dimension != 1:
-            self.axes_manager.set_signal_dimension(1)
-        self.axes_manager.signal_axes[0].is_binned = False
+    pass

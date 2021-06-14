@@ -129,6 +129,11 @@ def file_reader(filename, backing_store=False,
         Load image lazily using dask
     **kwds, optional
     """
+    try:
+        # in case blosc compression is used
+        import hdf5plugin
+    except ImportError:
+        pass
     mode = kwds.pop('mode', 'r')
     f = h5py.File(filename, mode=mode, **kwds)
     # Getting the format version here also checks if it is a valid HSpy

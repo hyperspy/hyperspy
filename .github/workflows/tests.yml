@@ -11,30 +11,31 @@ jobs:
       MPLBACKEND: agg
       PIP_ARGS: --upgrade -e
       PYTEST_ARGS: --pyargs hyperspy --reruns 3 -n 2 --instafail
-      PYTEST_ARGS_COVERAGE: 
+      PYTEST_ARGS_COVERAGE:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu, windows, macos]
-        PYTHON_VERSION: [3.7, 3.8]
+        PYTHON_VERSION: [3.8, 3.9]
         PIP_SELECTOR: ['[all, tests]']
         DEPENDENCIES_DEV: [false]
         include:
-          # test oldest supported version of main dependencies on python 3.6 
+          # test oldest supported version of main dependencies on python 3.6
           - os: ubuntu
             PYTHON_VERSION: 3.6
             OLDEST_SUPPORTED_VERSION: true
-            DEPENDENCIES: matplotlib==2.2.3 numpy==1.17.1 scipy==1.1 imagecodecs==2019.12.3 dask==2.1.0
-            PIP_SELECTOR: '[all, tests]'
+            DEPENDENCIES: matplotlib==3.1.0 numpy==1.17.1 scipy==1.1 imagecodecs==2019.12.3 dask==2.1.0
+            PIP_SELECTOR: '[all, tests, coverage]'
+            PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
             LABEL: -oldest
           # test minimum requirement
           - os: ubuntu
-            PYTHON_VERSION: 3.7
+            PYTHON_VERSION: 3.8
             PIP_SELECTOR: '[tests]'
             LABEL: -minimum
           # Run coverage
           - os: ubuntu
-            PYTHON_VERSION: 3.7
+            PYTHON_VERSION: 3.8
             PIP_SELECTOR: '[all, tests, coverage]'
             PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
             LABEL: -coverage
@@ -46,12 +47,12 @@ jobs:
             DEPENDENCIES_DEV: true
             DEPENDENCIES: numpy scipy scikit-learn scikit-image
           - os: ubuntu
-            PYTHON_VERSION: 3.9
+            PYTHON_VERSION: 3.7
             PIP_SELECTOR: '[all, tests]'
         exclude:
-          # redundant build (same as coverage) 
+          # redundant build (same as coverage)
           - os: ubuntu
-            PYTHON_VERSION: 3.7
+            PYTHON_VERSION: 3.8
 
     steps:
       - uses: actions/checkout@v2
@@ -88,19 +89,23 @@ jobs:
           pytest ${{ env.PYTEST_ARGS }} ${{ matrix.PYTEST_ARGS_COVERAGE }}
 
       - name: Upload coverage to Codecov
-        if: ${{ always() }} && ${{ matrix.PYTEST_ARGS_COVERAGE }} 
+        if: ${{ always() }} && ${{ matrix.PYTEST_ARGS_COVERAGE }}
         uses: codecov/codecov-action@v1
 
   build_doc:
     name: Build doc
     runs-on: ubuntu-latest
+    env:
+      BUILD_DEPS: python3-dev build-essential graphviz
+      LATEX_DEPS: dvipng latexmk texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
 
     steps:
       - uses: actions/checkout@v2
 
       - uses: ammaraskar/sphinx-action@master
         with:
-          pre-build-command: "apt-get update -y && apt-get install -y python3-dev build-essential graphviz && pip install -e .[build-doc]"
+
+          pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }}  && pip install -e .[all,build-doc]"
           build-command: make html
           docs-folder: doc/
 

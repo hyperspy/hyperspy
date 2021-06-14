@@ -338,7 +338,7 @@ of a given function that is computed lazily depends on the value of the
 axes parameters that *may have changed* before the computation is requested.
 Therefore, in order to avoid such issues, it is reccomended to explicitly
 compute the result of all functions that are affected by the axes
-paramters. This is the reason why e.g. the result of
+parameters. This is the reason why e.g. the result of
 :py:meth:`~._signals.signal1d.Signal1D.shift1D` is not lazy.
 
 

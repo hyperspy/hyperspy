@@ -13,7 +13,7 @@ Welcome to HyperSpy's documentation!
    :caption: User Guide
 
    user_guide/intro.rst
-   user_guide/what_is_new.rst
+   user_guide/changes.rst
    user_guide/install.rst
    user_guide/getting_started.rst
    user_guide/signal.rst

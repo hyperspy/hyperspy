@@ -46,7 +46,7 @@ setup_path = os.path.dirname(__file__)
 
 
 install_req = ['scipy>=1.1',
-               'matplotlib>=2.2.3',
+               'matplotlib>=3.1.0',
                'numpy>=1.17.1',
                'traits>=4.5.0',
                'natsort',
@@ -69,6 +69,9 @@ install_req = ['scipy>=1.1',
                'prettytable',
                'tifffile>=2018.10.18',
                'numba',
+                # included in stdlib since v3.8, but this required version requires Python 3.10
+                # We can remove this requirement when the minimum supported version becomes Python 3.10
+               'importlib_metadata>=3.6',
                ]
 
 extras_require = {
@@ -84,7 +87,7 @@ extras_require = {
     "tests": ["pytest>=3.6", "pytest-mpl", "pytest-xdist", "pytest-rerunfailures", "pytest-instafail", "matplotlib>=3.1"],
     "coverage":["pytest-cov", "codecov"],
     # required to build the docs
-    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme", "sphinx-toggleprompt", "sphinxcontrib-mermaid"],
+    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme", "sphinx-toggleprompt", "sphinxcontrib-mermaid", "sphinxcontrib-towncrier"],
 }
 
 # Don't include "tests" and "docs" requirements since "all" is designed to be
