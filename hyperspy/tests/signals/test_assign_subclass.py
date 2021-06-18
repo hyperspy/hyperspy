@@ -87,6 +87,21 @@ def test_id_set_signal_type():
     assert id_om == id(s.original_metadata)
 
 
+class TestToBaseSignal:
+
+    def setup_method(self, method):
+        self.s = hs.signals.Signal1D(np.array([0]))
+
+    def test_simple(self):
+        self.s._assign_subclass()
+        assert isinstance(self.s, hs.signals.BaseSignal)
+
+    def test_lazy(self):
+        self.s._lazy = True
+        self.s._assign_subclass()
+        assert isinstance(self.s, _lazy_signals.LazySignal)
+
+
 class TestConvertBaseSignal:
 
     def setup_method(self, method):
