@@ -5367,9 +5367,13 @@ class BaseSignal(FancySlicing,
 
     def _assign_subclass(self):
         mp = self.metadata
+        if self.axes_manager.signal_shape == (1,):
+            signal_dimension = 0
+        else:
+            signal_dimension = self.axes_manager.signal_dimension
         self.__class__ = hyperspy.io.assign_signal_subclass(
             dtype=self.data.dtype,
-            signal_dimension=self.axes_manager.signal_dimension,
+            signal_dimension=signal_dimension,
             signal_type=mp.Signal.signal_type
             if "Signal.signal_type" in mp
             else self._signal_type,

@@ -122,7 +122,7 @@ class TestConvertBaseSignal:
 class TestConvertSignal1D:
 
     def setup_method(self, method):
-        self.s = hs.signals.Signal1D([0])
+        self.s = hs.signals.Signal1D([0, 1])
 
     def test_lazy_to_eels_and_back(self):
         self.s = self.s.as_lazy()
@@ -176,7 +176,7 @@ class TestConvertComplexSignal:
 class TestConvertComplexSignal1D:
 
     def setup_method(self, method):
-        self.s = hs.signals.ComplexSignal1D([0])
+        self.s = hs.signals.ComplexSignal1D([0, 1])
 
     def test_complex_to_dielectric_function(self):
         self.s.set_signal_type("DielectricFunction")
