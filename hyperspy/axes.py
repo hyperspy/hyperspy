@@ -1203,7 +1203,14 @@ class AxesManager(t.HasTraits):
         self.signal_axes = self.signal_axes[::-1]
         self.navigation_axes = self.navigation_axes[::-1]
         self._getitem_tuple = tuple(getitem_tuple)
-        self.signal_dimension = len(self.signal_axes)
+        if len(self.signal_axes) == 1:
+            if self.signal_axes[0].size == 1:
+                signal_dimension = 0
+            else:
+                signal_dimension = len(self.signal_axes)
+        else:
+            signal_dimension = len(self.signal_axes)
+        self.signal_dimension = signal_dimension
         self.navigation_dimension = len(self.navigation_axes)
         if self.navigation_dimension != 0:
             self.navigation_shape = tuple([

@@ -30,7 +30,7 @@ def _verify_test_sum_x_E(self, s):
     np.testing.assert_array_equal(self.signal.data.sum(), s.data)
     assert s.data.ndim == 1
     # Check that there is still one signal axis.
-    assert s.axes_manager.signal_dimension == 1
+    assert s.axes_manager.signal_dimension == 0
 
 
 @lazifyTestClass
