@@ -452,7 +452,6 @@ def get_signal_chunk_slice(index, chunks):
                 return chunk_slice
     raise ValueError("Index out of signal range.")
 
-@njit(cache=True)
 def numba_closest_index_round(axis_array,value_array):
     """For each value in value_array, find the closest value in axis_array and
         return the result as a numpy array of the same shape as value_array.
@@ -469,13 +468,14 @@ def numba_closest_index_round(axis_array,value_array):
     #initialise the index same dimension as input, force type to int
     index_array = np.empty_like(value_array,dtype='uint')
     #assign on flat, iterate on flat.
-    rtol=1e-12
-    machineepsilon = np.min(np.abs(np.diff(axis_array)))*rtol
     for i,v in enumerate(value_array.flat):
-        if v>= 0:
-            index_array.flat[i] = np.abs(axis_array - v - machineepsilon).argmin()
-        else:
-            index_array.flat[i] = np.abs(axis_array - v + machineepsilon).argmin()
+        vdiff_array = np.abs(axis_array - v)
+        index = vdiff_array.argmin()
+        index_array.flat[i] = index
+        if index + 1 < axis_array.size:
+            if vdiff_array[index] == vdiff_array[index + 1] and \
+               (int(repr(axis_array[index + 1])[-1]) % 2 == 0):
+                index_array.flat[i] = index + 1
     return index_array
 
 @njit(cache=True)

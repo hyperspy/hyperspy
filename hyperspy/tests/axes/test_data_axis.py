@@ -135,7 +135,7 @@ class TestDataAxis:
         assert not m.trigger_me.called
         ax.value = ax.value + (ax.axis[1] - ax.axis[0]) * 0.4
         assert not m.trigger_me.called
-        ax.value = ax.value + (ax.axis[1] - ax.axis[0]) / 2
+        ax.value = ax.value + (ax.axis[1] - ax.axis[0]) * 0.6
         assert m.trigger_me.called
         ax.value = ax.axis[1]
         assert m.trigger_me.called
@@ -180,6 +180,8 @@ class TestDataAxis:
 
     def test_value2index(self):
         assert self.axis.value2index(10.15) == 3
+        assert self.axis.value2index(2.5) == 2
+        assert self.axis.value2index(6.5) == 2
         assert self.axis.value2index(60) == 8
         assert self.axis.value2index(2.5,rounding=round) == 2
         assert self.axis.value2index(2.5,rounding=math.ceil) == 2
@@ -484,6 +486,7 @@ class TestUniformDataAxis:
         #Tests for value2index
         #Works as intended
         assert self.axis.value2index(10.15) == 2
+        assert self.axis.value2index(10.25) == 2
         assert self.axis.value2index(10.17,rounding=math.floor) == 1
         assert self.axis.value2index(10.13,rounding=math.ceil) == 2
         # Test that output is integer
