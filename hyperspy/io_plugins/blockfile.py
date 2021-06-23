@@ -19,6 +19,9 @@
 import os
 from traits.api import Undefined
 import numpy as np
+from skimage.exposure import rescale_intensity
+from skimage import dtype_limits
+from tqdm import tqdm
 import logging
 import warnings
 import datetime
@@ -109,8 +112,12 @@ def get_header_from_signal(signal, endianess='<'):
     # The navigation and signal units are 'nm' and 'cm', respectively, so we
     # convert the units accordingly before saving the signal
     axes_manager = signal.axes_manager.deepcopy()
-    axes_manager.convert_units('navigation', 'nm')
-    axes_manager.convert_units('signal', 'cm')
+    try:
+        axes_manager.convert_units('navigation', 'nm')
+        axes_manager.convert_units('signal', 'cm')
+    except Exception:
+        warnings.warn("Could not convert between units, scales in the "
+                      "blo file may be incorrect")
 
     if axes_manager.navigation_dimension == 2:
         NX, NY = axes_manager.navigation_shape
@@ -256,6 +263,36 @@ def file_reader(filename, endianess='<', mmap_mode=None,
 
 def file_writer(filename, signal, **kwds):
     endianess = kwds.pop('endianess', '<')
+    # intensity_scaling can be:
+    # None (default) = do not rescale, accept overflow but warn user if dtype != uint8
+    # "dtype" = take the extremes of the signal dtype and map linearly to 0-255. Warn for floats.
+    # "minmax" = calculate minimum and maximum of dataset to map linearly to 0 - 255
+    # "crop" = everything above 255 and below 0 gets set to 255 and 0 resp
+    # tuple of values = values in input image mapped linearly to 0 and 255
+    scale_strategy = kwds.pop("intensity_scaling", None)
+    if scale_strategy is None:
+        # to distinguish from the tuple case
+        if signal.data.dtype != "u1":
+            warnings.warn("Data does not have uint8 dtype: values outside the "
+                          "range 0-255 may result in overflow. To avoid this "
+                          "use the 'intensity_scaling' keyword argument.")
+    elif scale_strategy == "dtype":
+        original_scale = dtype_limits(signal.data)
+        if original_scale[1] == 1.:
+            raise ValueError("Signals with float dtype can not use 'dtype'")
+    elif scale_strategy == "minmax":
+        minimum = signal.data.min()
+        maximum = signal.data.max()
+        if signal._lazy:
+            minimum = minimum.compute()
+            maximum = maximum.compute()
+        original_scale = (minimum, maximum)
+    elif scale_strategy == "crop":
+        original_scale = (0, 255)
+    else:
+        # we leave the error checking for incorrect tuples to skimage
+        original_scale = scale_strategy
+
     header, note = get_header_from_signal(signal, endianess=endianess)
     with open(filename, 'wb') as f:
         # Write header
@@ -270,9 +307,13 @@ def file_writer(filename, signal, **kwds):
         # Write virtual bright field
         vbf = signal.mean(
             signal.axes_manager.signal_axes[
-                :2]).data.astype(
-            endianess +
-            'u1')
+                :2])
+        if signal._lazy:
+            vbf.compute()
+        vbf = vbf.data
+        if scale_strategy is not None:
+            vbf = rescale_intensity(vbf, in_range=original_scale, out_range=np.uint8)
+        vbf = vbf.astype(endianess + 'u1')
         vbf.tofile(f)
         # Zero pad until next data block
         if f.tell() > int(header['Data_offset_2']):
@@ -287,7 +328,12 @@ def file_writer(filename, signal, **kwds):
                                         ('ID', endianess + 'u4')])
         dp_head['MAGIC'] = 0x55AA
         # Write by loop:
-        for img in signal._iterate_signal():
+        for img in tqdm(signal._iterate_signal(),
+                        total=signal.data.shape[0] * signal.data.shape[1]):
+            # to ensure dask datasets, get a tofile method
             dp_head.tofile(f)
+            img = np.array(img)
+            if scale_strategy is not None:
+                img = rescale_intensity(img, in_range=original_scale, out_range=np.uint8)
             img.astype(endianess + 'u1').tofile(f)
             dp_head['ID'] += 1
