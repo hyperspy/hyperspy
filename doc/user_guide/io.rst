@@ -32,7 +32,7 @@ information. To list the signal types available on your local installation use:
 HyperSpy will try to guess the most likely data type for the corresponding
 file. However, you can force it to read the data as a particular data type by
 providing the ``signal_type`` keyword, which has to correspond to one of the
-available sublasses of signal, e.g.:
+available subclasses of signal, e.g.:
 
 .. code-block:: python
 
@@ -462,7 +462,7 @@ multi-threaded environment. The supported data types are:
 
 It supports arbitrary meta-data, which is serialized into JSON.
 
-MRCZ also supports asychronous reads and writes.
+MRCZ also supports asynchronous reads and writes.
 
 Repository: https://github.com/em-MRCZ
 PyPI:       https://pypi.python.org/pypi/mrcz
@@ -475,7 +475,7 @@ install the `mrcz` and optionally the `blosc` Python packages.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-- ``do_async``: currently supported within Hyperspy for writing only, this will
+- ``do_async``: currently supported within HyperSpy for writing only, this will
   save  the file in a background thread and return immediately. Defaults
   to `False`.
 
@@ -1009,7 +1009,7 @@ single spectra are loaded and if `spectrum_image` is selected, only the spectrum
 image will be loaded. The ``first_frame`` and ``last_frame`` parameters can be used
 to select the frame range of the EDS spectrum image to load. To load each individual
 EDS frame, use ``sum_frames=False`` and the EDS spectrum image will be loaded
-with an an extra navigation dimension corresponding to the frame index
+with an extra navigation dimension corresponding to the frame index
 (time axis). Use the ``sum_EDS_detectors=True`` parameter to load the signal of
 each individual EDS detector. In such a case, a corresponding number of distinct
 EDS signal is returned. The default is ``sum_EDS_detectors=True``, which loads the
@@ -1126,7 +1126,7 @@ If multiple datasets are present within the h5USID file and you try the same com
     [<Signal2D, title: HAADF, dimensions: (|128, 128)>,
     <Signal1D, title: EELS, dimensions: (|64, 64, 1024)>]
 
-We can load a specific dataset using the ``dataset_path`` keyword argument. setting it to the
+We can load a specific dataset using the ``dataset_path`` keyword argument. Setting it to the
 absolute path of the desired dataset will cause the single dataset to be loaded.
 
 .. code-block:: python
@@ -1196,7 +1196,7 @@ Nexus
 Background
 ^^^^^^^^^^
 
-`NeXus <https://www.nexusformat.org>`_ is a common data format orginally
+`NeXus <https://www.nexusformat.org>`_ is a common data format originally
 developed by the neutron, x-ray communities. It is still being developed as
 an international standard by scientists and programmers representing major
 scientific facilities in order to facilitate greater cooperation in the analysis
@@ -1240,9 +1240,9 @@ to inspect any hdf5 based file.
 Differences with respect to hspy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Hyperspy metadata structure stores arrays as hdf datasets without attributes
-and stores floats,ints and strings as attributes.
-Nexus formats typcial use hdf datasets attributes to store additional
+HyperSpy metadata structure stores arrays as hdf datasets without attributes
+and stores floats, ints and strings as attributes.
+Nexus formats typically use hdf datasets attributes to store additional
 information such as an indication of the units for an axis or the NX_class which
 the dataset structure follows. The metadata, hyperspy  or original_metadata,
 therefore needs to be able to indicate the values and attributes of a dataset.
@@ -1372,7 +1372,7 @@ hdf datasets will be returned as signals.
 
 .. code-block:: python
 
-    >>> sig = hs.load("sample.nxs",nxdata_only=False)
+    >>> sig = hs.load("sample.nxs", nxdata_only=False)
 
 We can load a specific datasets using the ``dataset_keys`` keyword argument.
 Setting it to the absolute path of the desired dataset will cause
@@ -1477,7 +1477,7 @@ The default signal is selected as the first signal in the list.
 
     >>> from hyperspy.io_plugins.nexus import file_writer
     >>> import hyperspy.api as hs
-    >>> file_writer("test.nxs", [signal1,signal2], use_default = True)
+    >>> file_writer("test.nxs", [signal1, signal2], use_default = True)
     >>> hs.load("test.nxs", use_default = True)
 
 The output will be arranged by signal name.
