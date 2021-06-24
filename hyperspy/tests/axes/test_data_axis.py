@@ -741,3 +741,17 @@ class TestUniformDataAxisValueRangeToIndicesNegativeScale:
     def test_value_range_to_indices_v1_greater_than_v2(self):
         with pytest.raises(ValueError):
             self.axis.value_range_to_indices(1, 2)
+
+
+def test_rounding_consistency_axis_type():
+    inax = [[-11.0, -10.9],
+            [-10.9, -11.0],
+            [+10.9, +11.0],
+            [+11.0, +10.9]]
+    inval = [-10.95, -10.95, 10.95, 10.95]
+
+    for i, j in zip(inax, inval):
+        ax = UniformDataAxis(scale=i[1]-i[0], offset=i[0], size=len(i))
+        nua_idx = super(type(ax),ax).value2index(j, rounding=round)
+        unif_idx = ax.value2index(j, rounding=round)
+        assert nua_idx == unif_idx

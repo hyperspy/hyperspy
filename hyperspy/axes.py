@@ -27,10 +27,12 @@ from traits.trait_errors import TraitError
 import pint
 from sympy.utilities.lambdify import lambdify
 from hyperspy.events import Events, Event
-from hyperspy.misc.array_tools import numba_closest_index_round, \
-                                        numba_closest_index_floor, \
-                                        numba_closest_index_ceil
-
+from hyperspy.misc.array_tools import (
+    numba_closest_index_round,
+    numba_closest_index_floor,
+    numba_closest_index_ceil,
+    round_half_towards_zero,
+)
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 from hyperspy.ui_registry import add_gui_method, get_gui
@@ -1190,13 +1192,12 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
         value = self._parse_value(value)
 
-        if isinstance(value, (np.ndarray, da.Array)):
-            if rounding is round:
-                rounding = np.round
-            elif rounding is math.ceil:
-                rounding = np.ceil
-            elif rounding is math.floor:
-                rounding = np.floor
+        if rounding is round:
+            rounding = round_half_towards_zero
+        elif rounding is math.ceil:
+            rounding = np.ceil
+        elif rounding is math.floor:
+            rounding = np.floor
 
         index = rounding((value - self.offset) / self.scale)
 

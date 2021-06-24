@@ -526,3 +526,24 @@ def numba_closest_index_ceil(axis_array,value_array):
         index_array.flat[i] = np.where(x<0,+np.inf,x).argmin()
 
     return index_array
+
+
+def round_half_towards_zero(array, decimals=0):
+    """
+    Round input array using "half towards zero" strategy
+
+    Parameters
+    ----------
+    array : ndarray
+        Input array.
+
+    decimals : int, optional
+        Number of decimal places to round to (default: 0).
+
+    Returns
+    -------
+    rounded_array : ndarray
+        An array of the same type as a, containing the rounded values.
+    """
+    multiplier = 10 ** decimals
+    return np.ceil(array * multiplier - 0.5) / multiplier

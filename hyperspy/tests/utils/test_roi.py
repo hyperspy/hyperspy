@@ -18,11 +18,13 @@
 
 import numpy as np
 import pytest
+import traits.api as t
 
+from hyperspy.misc.array_tools import round_half_towards_zero
 from hyperspy.roi import (CircleROI, Line2DROI, Point1DROI, Point2DROI,
                           RectangularROI, SpanROI, _get_central_half_limits_of_axis)
 from hyperspy.signals import Signal1D, Signal2D
-import traits.api as t
+
 
 class TestROIs():
 
@@ -182,8 +184,10 @@ class TestROIs():
         sr = r(s)
         scale0 = s.axes_manager[0].scale
         scale1 = s.axes_manager[1].scale
-        n = ((int(round(2.3 / scale0)), int(round(3.5 / scale0)),),
-             (int(round(5.6 / scale1)), int(round(12.2 / scale1)),))
+        n = ((int(round_half_towards_zero(2.3 / scale0)),
+              int(round_half_towards_zero(3.5 / scale0)),),
+             (int(round_half_towards_zero(5.6 / scale1)),
+              int(round_half_towards_zero(12.2 / scale1)),))
         assert (sr.axes_manager.navigation_shape ==
                 (n[0][1] - n[0][0], n[1][1] - n[1][0]))
         np.testing.assert_equal(
@@ -491,7 +495,7 @@ class TestROIs():
             r.angle(axis='z')
 
     def test_repr_None(self):
-        # Setting the args=None sets them as traits.Undefined, which didn't 
+        # Setting the args=None sets them as traits.Undefined, which didn't
         # have a string representation in the old %s style.
         for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI]:
             r = roi()
