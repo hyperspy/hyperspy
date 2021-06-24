@@ -455,15 +455,17 @@ def get_signal_chunk_slice(index, chunks):
 @njit(cache=True)
 def numba_closest_index_round(axis_array,value_array):
     """For each value in value_array, find the closest value in axis_array and
-        return the result as a numpy array of the same shape as value_array.
-        Parameters
-        ----------
-        axis_array : numpy array
-        value_array : numpy array
+    return the result as a numpy array of the same shape as value_array.
+    Use round half towards zero strategy for rounding float to interger.
 
-        Returns
-        -------
-        numpy array
+    Parameters
+    ----------
+    axis_array : numpy array
+    value_array : numpy array
+
+    Returns
+    -------
+    numpy array
 
     """
     #initialise the index same dimension as input, force type to int
@@ -471,11 +473,11 @@ def numba_closest_index_round(axis_array,value_array):
     #assign on flat, iterate on flat.
     rtol=1e-12
     machineepsilon = np.min(np.abs(np.diff(axis_array)))*rtol
-    for i,v in enumerate(value_array.flat):
-        if v>= 0:
-            index_array.flat[i] = np.abs(axis_array - v - machineepsilon).argmin()
-        else:
+    for i, v in enumerate(value_array.flat):
+        if v >= 0:
             index_array.flat[i] = np.abs(axis_array - v + machineepsilon).argmin()
+        else:
+            index_array.flat[i] = np.abs(axis_array - v - machineepsilon).argmin()
     return index_array
 
 @njit(cache=True)
