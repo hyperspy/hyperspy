@@ -117,7 +117,7 @@ def get_header_from_signal(signal, endianess='<'):
         axes_manager.convert_units('signal', 'cm')
     except Exception:
         warnings.warn("Could not convert between units, scales in the "
-                      "blo file may be incorrect")
+                      "blo file may be incorrect", UserWarning)
 
     if axes_manager.navigation_dimension == 2:
         NX, NY = axes_manager.navigation_shape
@@ -172,7 +172,8 @@ def file_reader(filename, endianess='<', mmap_mode=None,
     header = np.fromfile(f, dtype=get_header_dtype_list(endianess), count=1)
     if header['MAGIC'][0] not in magics:
         warnings.warn("Blockfile has unrecognized header signature. "
-                      "Will attempt to read, but correcteness not guaranteed!")
+                      "Will attempt to read, but correcteness not guaranteed!",
+                      UserWarning)
     header = sarray2dict(header)
     note = f.read(header['Data_offset_1'] - f.tell())
     # It seems it uses "\x00" for padding, so we remove it
@@ -289,7 +290,8 @@ def file_writer(filename, signal, **kwds):
         if signal.data.dtype != "u1":
             warnings.warn("Data does not have uint8 dtype: values outside the "
                           "range 0-255 may result in overflow. To avoid this "
-                          "use the 'intensity_scaling' keyword argument.")
+                          "use the 'intensity_scaling' keyword argument.",
+                          UserWarning)
     elif scale_strategy == "dtype":
         original_scale = dtype_limits(signal.data)
         if original_scale[1] == 1.:
