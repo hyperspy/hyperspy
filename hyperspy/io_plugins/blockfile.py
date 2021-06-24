@@ -262,13 +262,27 @@ def file_reader(filename, endianess='<', mmap_mode=None,
 
 
 def file_writer(filename, signal, **kwds):
+    """
+    Write signal to blockfile.
+
+    Parameters
+    ----------
+    file : str
+        Filename of the file to write to
+    signal : instance of hyperspy Signal2D
+        The signal to save.
+    endianess : str
+        '<' (default) or '>' determining how the bits are written to the file
+    intensity_scaling : str or 2-Tuple of float/int
+        If the signal datatype is not uint8 this argument provides intensity
+        linear scaling strategies. If 'dtype', the entire dtype range is mapped
+        to 0-255, if 'minmax' the range between the minimum and maximum intensity is
+        mapped to 0-255, if 'crop' the range between 0-255 is conserved without
+        overflow, if a tuple of values the values between this range is mapped
+        to 0-255. If None (default) no rescaling is performed and overflow is
+        permitted.
+    """
     endianess = kwds.pop('endianess', '<')
-    # intensity_scaling can be:
-    # None (default) = do not rescale, accept overflow but warn user if dtype != uint8
-    # "dtype" = take the extremes of the signal dtype and map linearly to 0-255. Warn for floats.
-    # "minmax" = calculate minimum and maximum of dataset to map linearly to 0 - 255
-    # "crop" = everything above 255 and below 0 gets set to 255 and 0 resp
-    # tuple of values = values in input image mapped linearly to 0 and 255
     scale_strategy = kwds.pop("intensity_scaling", None)
     if scale_strategy is None:
         # to distinguish from the tuple case

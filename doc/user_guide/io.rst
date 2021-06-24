@@ -797,6 +797,23 @@ loading the file using a different mode. However, note that lazy loading
 does not support in-place writing (i.e lazy loading and the "r+" mode
 are incompatible).
 
+Extra saving arguments
+^^^^^^^^^^^^^^^^^^^^^^
+
+- ``intensity_scaling`` : in case the dataset that needs to be saved does not
+  have the `np.uint8` data type, casting to this datatype without intensity
+  rescaling results in overflow errors (default behavior). This option allows
+  you to perform linear intensity scaling of the images prior to saving the 
+  data. The options are:
+  
+  - `'dtype'`: the limits of the datatype of the dataset, e.g. 0-65535 for 
+    `np.uint16`, are mapped onto 0-255 respectively. Does not work for `float`
+    data types.
+  - `'minmax'`: the minimum and maximum in the dataset are mapped to 0-255.
+  - `'crop'`: everything below 0 and above 255 is set to 0 and 255 respectively
+  - 2-tuple of `floats` or `ints`: the intensities between these values are
+    scaled between 0-255, everything below is 0 and everything above is 255.
+
 .. _dens-format:
 
 DENS heater log

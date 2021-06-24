@@ -23,6 +23,7 @@ import tempfile
 import warnings
 
 import numpy as np
+from skimage.exposure import rescale_intensity
 import pytest
 
 import hyperspy.api as hs
@@ -40,6 +41,16 @@ except NameError:
 DIRPATH = os.path.dirname(__file__)
 FILE1 = os.path.join(DIRPATH, 'blockfile_data', 'test1.blo')
 FILE2 = os.path.join(DIRPATH, 'blockfile_data', 'test2.blo')
+
+@pytest.fixture()
+def fake_signal():
+    fake_data = np.arange(300).reshape(3, 4, 5, 5)
+    fake_signal = hs.signals.Signal2D(fake_data)
+    fake_signal.axes_manager[0].scale_as_quantity = '1 mm'
+    fake_signal.axes_manager[1].scale_as_quantity = '1 mm'
+    fake_signal.axes_manager[2].scale_as_quantity = '1 mm'
+    fake_signal.axes_manager[3].scale_as_quantity = '1 mm'
+    return fake_signal
 
 
 @pytest.fixture()
@@ -194,6 +205,51 @@ def test_different_x_y_scale_units(save_path):
                     rtol=1E-5)
     np.testing.assert_allclose(sig_reload.axes_manager[2].scale, 0.0160616,
                     rtol=1E-5)
+
+
+def test_inconvertible_units(save_path, fake_signal):
+    fake_signal.axes_manager[2].units = "bla"
+    fake_signal.axes_manager[3].units = "bla"
+    fake_signal.change_dtype(np.uint8)
+    with pytest.warns(UserWarning):
+        fake_signal.save(save_path, overwrite=True)
+
+
+def test_overflow(save_path, fake_signal):
+    with pytest.warns(UserWarning):
+        fake_signal.save(save_path, overwrite=True)
+    sig_reload = hs.load(save_path)
+    np.testing.assert_allclose(sig_reload.data,
+                              fake_signal.data.astype(np.uint8))
+
+
+def test_dtype_lims(save_path, fake_signal):
+    fake_signal.change_dtype(np.uint16)
+    fake_signal.save(save_path, intensity_scaling="dtype", overwrite=True)
+    sig_reload = hs.load(save_path)
+    np.testing.assert_allclose(sig_reload.data, fake_signal.data/65535)
+
+
+def test_minmax_lims(save_path, fake_signal):
+    fake_signal.save(save_path, intensity_scaling="minmax", overwrite=True)
+    sig_reload = hs.load(save_path)
+    np.testing.assert_allclose(sig_reload.data,
+                               fake_signal.data/fake_signal.data.max())
+
+
+def test_crop_lims(save_path, fake_signal):
+    fake_signal.save(save_path, intensity_scaling="crop", overwrite=True)
+    sig_reload = hs.load(save_path)
+    compare = fake_signal.data
+    compare[compare > 255] = 255
+    np.testing.assert_allclose(sig_reload.data, compare)
+    
+
+def test_tuple_limits(save_path, fake_signal):
+    fake_signal.save(save_path, intensity_scaling=(5, 200), overwrite=True)
+    sig_reload = hs.load(save_path)
+    compare = rescale_intensity(fake_signal.data, in_range=(5, 200), out_range=np.uint8)
+    np.testing.assert_allclose(sig_reload.data, compare)
 
 
 def test_default_header():

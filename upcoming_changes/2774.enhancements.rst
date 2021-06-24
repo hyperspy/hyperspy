@@ -1,0 +1,3 @@
+When saving a dataset with a dtype other than `uint8` to a blockfile (blo) 
+it is now possible to provide the argument `intensity_scaling` to map the
+intensity values to the reduced range.
