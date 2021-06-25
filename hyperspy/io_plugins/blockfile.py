@@ -116,8 +116,7 @@ def get_header_from_signal(signal, endianess='<'):
         axes_manager.convert_units('navigation', 'nm')
         axes_manager.convert_units('signal', 'cm')
     except Exception:
-        warnings.warn("Could not convert between units, scales in the "
-                      "blo file may be incorrect", UserWarning)
+        warnings.warn("Could not convert between units, scales in the blo file may be incorrect", UserWarning)
 
     if axes_manager.navigation_dimension == 2:
         NX, NY = axes_manager.navigation_shape

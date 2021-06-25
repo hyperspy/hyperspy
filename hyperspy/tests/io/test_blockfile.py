@@ -286,8 +286,8 @@ def test_different_x_y_scale_units(save_path):
 
 
 def test_inconvertible_units(save_path, fake_signal):
-    fake_signal.axes_manager[2].units = "bla"
-    fake_signal.axes_manager[3].units = "bla"
+    fake_signal.axes_manager[2].units = "1/A"
+    fake_signal.axes_manager[3].units = "1/A"
     fake_signal.change_dtype(np.uint8)
     with pytest.warns(UserWarning):
         fake_signal.save(save_path, overwrite=True)
@@ -308,6 +308,12 @@ def test_dtype_lims(save_path, fake_signal):
     np.testing.assert_allclose(
         sig_reload.data, (fake_signal.data / 65535 * 255).astype(np.uint8)
     )
+
+
+def test_dtype_float_fail(save_path, fake_signal):
+    fake_signal.change_dtype(np.float32)
+    with pytest.raises(ValueError):
+        fake_signal.save(save_path, intensity_scaling="dtype", overwrite=True)
 
 
 def test_minmax_lims(save_path, fake_signal):
@@ -332,6 +338,13 @@ def test_tuple_limits(save_path, fake_signal):
     sig_reload = hs.load(save_path)
     compare = rescale_intensity(fake_signal.data, in_range=(5, 200), out_range=np.uint8)
     np.testing.assert_allclose(sig_reload.data, compare)
+
+
+def test_lazy_save(save_path, fake_signal):
+    fake_signal = fake_signal.as_lazy()
+    fake_signal.save(save_path, overwrite=True)
+    sig_reload = hs.load(save_path)
+    np.testing.assert_allclose(sig_reload.data, fake_signal.data % 256)
 
 
 def test_default_header():
