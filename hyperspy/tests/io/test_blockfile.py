@@ -342,9 +342,10 @@ def test_tuple_limits(save_path, fake_signal):
 
 def test_lazy_save(save_path, fake_signal):
     fake_signal = fake_signal.as_lazy()
-    fake_signal.save(save_path, overwrite=True)
+    fake_signal.save(save_path, intensity_scaling="minmax", overwrite=True)
     sig_reload = hs.load(save_path)
-    np.testing.assert_allclose(sig_reload.data, fake_signal.data % 256)
+    compare = (fake_signal.data / fake_signal.data.max() * 255).astype(np.uint8)
+    np.testing.assert_allclose(sig_reload.data, compare)
 
 
 def test_default_header():
