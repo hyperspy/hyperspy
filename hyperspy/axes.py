@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from contextlib import contextmanager
 import copy
 import math
 import logging
@@ -1804,6 +1805,33 @@ class AxesManager(t.HasTraits):
         # is created before data shape is known
         self.iterpath = self._iterpath
         return self
+
+    @contextmanager
+    def switch_iterpath(self, iterpath=None):
+        """
+        Context manager to change iterpath. The original iterpath is restored
+        when exiting the context.
+
+        Parameters
+        ----------
+        iterpath : str, optional
+            The iterpath to use. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
+        if iterpath is not None:
+            original_iterpath = self._iterpath
+            self._iterpath = iterpath
+        try:
+            yield
+        finally:
+            # if an error is raised when using this context manager, we
+            # reset the original value of _iterpath
+            if iterpath is not None:
+                self.iterpath = original_iterpath
 
     def _append_axis(self, **kwargs):
         axis = create_axis(**kwargs)

@@ -21,6 +21,7 @@ import warnings
 import inspect
 from contextlib import contextmanager
 from datetime import datetime
+from itertools import product
 import logging
 from pint import UnitRegistry, UndefinedUnitError
 from pathlib import Path
@@ -117,7 +118,6 @@ class ModelManager(object):
 
     def _save(self, name, dictionary):
 
-        from itertools import product
         _abc = 'abcdefghijklmnopqrstuvwxyz'
 
         def get_letter(models):
@@ -3496,37 +3496,32 @@ class BaseSignal(FancySlicing,
                          "for more information.".format(self))
             self.data = np.ascontiguousarray(self.data)
 
-    def _iterate_signal(self):
-        """Iterates over the signal data.
+    def _iterate_signal(self, iterpath=None):
+        """Iterates over the signal data. It is faster than using the signal
+        iterator.
 
-        It is faster than using the signal iterator.
+        Parameters
+        ----------
+        iterpath : None or str or iterable
+            Any valid iterpath supported by the axes_manager.
 
+        Returns
+        -------
+        numpy array when iterating over the navigation space
         """
-        if self.axes_manager.navigation_size < 2:
-            yield self()
-            return
-        self._make_sure_data_is_contiguous()
-        axes = [axis.index_in_array for
-                axis in self.axes_manager.signal_axes]
-        if axes:
-            unfolded_axis = (
-                self.axes_manager.navigation_axes[0].index_in_array)
-            new_shape = [1] * len(self.data.shape)
-            for axis in axes:
-                new_shape[axis] = self.data.shape[axis]
-            new_shape[unfolded_axis] = -1
-        else:  # signal_dimension == 0
-            new_shape = (-1, 1)
-            axes = [1]
-            unfolded_axis = 0
-        # Warning! if the data is not contigous it will make a copy!!
-        data = self.data.reshape(new_shape)
-        getitem = [0] * len(data.shape)
-        for axis in axes:
-            getitem[axis] = slice(None)
-        for i in range(data.shape[unfolded_axis]):
-            getitem[unfolded_axis] = i
-            yield(data[tuple(getitem)])
+        original_index = self.axes_manager.indices
+
+        if iterpath is None:
+            _logger.warning('The default iterpath will change in HyperSpy 2.0.')
+
+        with self.axes_manager.switch_iterpath(iterpath):
+            self.axes_manager.indices = tuple(
+                [0 for _ in self.axes_manager.navigation_axes]
+                )
+            for _ in self.axes_manager:
+                yield self()
+            # restore original index
+            self.axes_manager.indices = original_index
 
     def _cycle_signal(self):
         """Cycles over the signal data.
