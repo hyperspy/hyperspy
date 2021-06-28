@@ -360,7 +360,9 @@ def test_vbfs(save_path, fake_signal, vbf):
     fake_signal = fake_signal.as_lazy()
     if vbf == "navigator":
         fake_signal.compute_navigator()
-    fake_signal.save(save_path, intensity_scaling=None, vbf=vbf, overwrite=True)
+    fake_signal.save(
+        save_path, intensity_scaling=None, navigator_signal=vbf, overwrite=True
+    )
     sig_reload = hs.load(save_path)
     compare = (fake_signal.data % 256).astype(np.uint8)
     np.testing.assert_allclose(sig_reload.data, compare)
@@ -369,7 +371,9 @@ def test_vbfs(save_path, fake_signal, vbf):
 def test_invalid_vbf(save_path, fake_signal):
     with pytest.raises(ValueError):
         fake_signal.save(
-            save_path, vbf=hs.signals.Signal2D(np.zeros((10, 10))), overwrite=True
+            save_path,
+            navigator_signal=hs.signals.Signal2D(np.zeros((10, 10))),
+            overwrite=True,
         )
 
 
@@ -457,6 +461,16 @@ def test_write_data_am_mismatch(save_path):
     signal.axes_manager.navigation_axes[1].size = 4
     with pytest.raises(ValueError):
         signal.save(save_path, overwrite=True)
+
+
+def test_unrecognized_header_warning(save_path, fake_signal):
+    fake_signal.save(save_path, overwrite=True)
+    # change magic number
+    with open(save_path, "r+b") as f:
+        f.seek(6)
+        f.write((0xAFAF).to_bytes(2, byteorder="big", signed=False))
+    with pytest.warns(UserWarning, match=r"Blockfile has unrecognized .*"):
+        hs.load(save_path, mmap_mode="r+")
 
 
 def test_write_cutoff(save_path):

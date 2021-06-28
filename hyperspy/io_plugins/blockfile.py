@@ -315,7 +315,7 @@ def file_writer(filename, signal, **kwds):
         overflow, if a tuple of values the values between this range is mapped
         to 0-255. If None (default) no rescaling is performed and overflow is
         permitted.
-    vbf : str or Signal2D
+    navigator_signal : str or Signal2D
         A blo file also saves a virtual bright field image for navigation.
         This option determines what kind of data is stored for this image.
         The default option "navigator" uses the navigator image if it was
@@ -326,7 +326,7 @@ def file_writer(filename, signal, **kwds):
     """
     endianess = kwds.pop("endianess", "<")
     scale_strategy = kwds.pop("intensity_scaling", None)
-    vbf_strategy = kwds.pop("vbf", "navigator")
+    vbf_strategy = kwds.pop("navigator_signal", "navigator")
     show_progressbar = kwds.pop("show_progressbar", None)
     if scale_strategy is None:
         # to distinguish from the tuple case
