@@ -348,6 +348,31 @@ def test_lazy_save(save_path, fake_signal):
     np.testing.assert_allclose(sig_reload.data, compare)
 
 
+@pytest.mark.parametrize(
+    "vbf",
+    [
+        None,
+        "navigator",
+        hs.signals.Signal2D(np.zeros((3, 4))),
+    ],
+)
+def test_vbfs(save_path, fake_signal, vbf):
+    fake_signal = fake_signal.as_lazy()
+    if vbf == "navigator":
+        fake_signal.compute_navigator()
+    fake_signal.save(save_path, intensity_scaling=None, vbf=vbf, overwrite=True)
+    sig_reload = hs.load(save_path)
+    compare = (fake_signal.data % 256).astype(np.uint8)
+    np.testing.assert_allclose(sig_reload.data, compare)
+
+
+def test_invalid_vbf(save_path, fake_signal):
+    with pytest.raises(ValueError):
+        fake_signal.save(
+            save_path, vbf=hs.signals.Signal2D(np.zeros((10, 10))), overwrite=True
+        )
+
+
 def test_default_header():
     # Simply check that no exceptions are raised
     header = get_default_header()

@@ -221,11 +221,10 @@ def file_reader(filename, endianess="<", mmap_mode=None, lazy=False, **kwds):
 
     # Get data:
 
-    # A Virtual BF/DF is stored first
-    #    offset1 = header['Data_offset_1']
-    #    f.seek(offset1)
-    #    data_pre = np.array(f.read(NX*NY), dtype=endianess+'u1'
-    #        ).squeeze().reshape((NX, NY), order='C').T
+    # TODO A Virtual BF/DF is stored first, may be loaded as navigator in future
+    # offset1 = header['Data_offset_1']
+    # f.seek(offset1)
+    # navigator = np.fromfile(f, dtype=endianess+"u1", shape=(NX, NY)).T
 
     # Then comes actual blockfile
     offset2 = header["Data_offset_2"]
@@ -367,8 +366,8 @@ def file_writer(filename, signal, **kwds):
         np.zeros((zero_pad,), np.byte).tofile(f)
         # Write virtual bright field
         if vbf_strategy is None:
-            vbf = np.zeros(signal.data.shape[0], signal.data.shape[1])
-        elif vbf_strategy == "navigator":
+            vbf = np.zeros((signal.data.shape[0], signal.data.shape[1]))
+        elif isinstance(vbf_strategy, str) and (vbf_strategy == "navigator"):
             if signal.navigator is not None:
                 vbf = signal.navigator.data
             else:
@@ -382,11 +381,7 @@ def file_writer(filename, signal, **kwds):
         else:
             vbf = vbf_strategy.data
             # check that the shape is ok
-            if vbf.shape[::-1] == signal.axes_manager.navigation_shape or (
-                vbf.shape[::-1] == (1,) and signal.axes_manager.navigation_shape == ()
-            ):
-                pass
-            else:
+            if vbf.shape != signal.data.shape[:-2]:
                 raise ValueError(
                     "Size of the provided VBF does not match the "
                     "navigation dimensions of the dataset."
