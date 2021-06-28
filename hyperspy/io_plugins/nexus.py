@@ -311,6 +311,16 @@ def _extract_hdf_dataset(group, dataset, lazy=False):
     """
 
     data = group[dataset]
+
+    # exclude the dataset tagged by the signal attribute to avoid extracting
+    # duplicated dataset, which is already loaded when loading NeXus data
+    if 'signal' in data.parent.attrs.keys():
+        data_key = data.parent.attrs['signal']
+        if isinstance(data_key, bytes):
+            data_key = data_key.decode()
+        if dataset.split('/')[-1] == data_key:
+            return
+
     nav_list = _get_nav_list(data, data.parent)
 
     if lazy:
@@ -535,6 +545,7 @@ def file_reader(filename, lazy=False, dataset_key=None, dataset_path=None,
                 hdf_data_paths = []
                 nexus_data_paths = [nxpath for nxpath in nexus_data_paths
                                     if nxdata in nxpath]
+
     # if no default found then search for the data as normal
     if not nexus_data_paths and not hdf_data_paths:
         nexus_data_paths, hdf_data_paths = \
