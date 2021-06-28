@@ -136,7 +136,7 @@ class TestDataAxis:
         ax.value = ax.value + (ax.axis[1] - ax.axis[0]) * 0.4
         assert not m.trigger_me.called
         ax.value = ax.value + (ax.axis[1] - ax.axis[0]) / 2
-        assert m.trigger_me.called
+        assert not m.trigger_me.called
         ax.value = ax.axis[1]
         assert m.trigger_me.called
 
@@ -181,15 +181,15 @@ class TestDataAxis:
     def test_value2index(self):
         assert self.axis.value2index(10.15) == 3
         assert self.axis.value2index(60) == 8
-        assert self.axis.value2index(2.5,rounding=round) == 2
-        assert self.axis.value2index(2.5,rounding=math.ceil) == 2
-        assert self.axis.value2index(2.5,rounding=math.floor) == 1
+        assert self.axis.value2index(2.5, rounding=round) == 1
+        assert self.axis.value2index(2.5, rounding=math.ceil) == 2
+        assert self.axis.value2index(2.5, rounding=math.floor) == 1
         # Test that output is integer
         assert isinstance(self.axis.value2index(60), (int, np.integer))
         self.axis.axis = self.axis.axis - 2
         # test rounding on negative value
-        assert self.axis.value2index(-1.5,rounding=round) == 0
-        
+        assert self.axis.value2index(-1.5, rounding=round) == 1
+
 
     def test_value2index_error(self):
         with pytest.raises(ValueError):
@@ -353,9 +353,9 @@ class TestFunctionalDataAxis:
         #Tests for value2index
         #Works as intended
         assert self.axis.value2index(44.7) == 7
-        assert self.axis.value2index(2.5,rounding=round) == 2
-        assert self.axis.value2index(2.5,rounding=math.ceil) == 2
-        assert self.axis.value2index(2.5,rounding=math.floor) == 1
+        assert self.axis.value2index(2.5, rounding=round) == 1
+        assert self.axis.value2index(2.5, rounding=math.ceil) == 2
+        assert self.axis.value2index(2.5, rounding=math.floor) == 1
         # Returns integer
         assert isinstance(self.axis.value2index(45), (int, np.integer))
         #Input None --> output None
@@ -484,8 +484,8 @@ class TestUniformDataAxis:
         #Tests for value2index
         #Works as intended
         assert self.axis.value2index(10.15) == 2
-        assert self.axis.value2index(10.17,rounding=math.floor) == 1
-        assert self.axis.value2index(10.13,rounding=math.ceil) == 2
+        assert self.axis.value2index(10.17, rounding=math.floor) == 1
+        assert self.axis.value2index(10.13, rounding=math.ceil) == 2
         # Test that output is integer
         assert isinstance(self.axis.value2index(10.15), (int, np.integer))
         #Endpoint left
@@ -514,15 +514,16 @@ class TestUniformDataAxis:
 
         #Tests with array Input
         #Arrays work as intended
-        arval = np.array([[10.15,10.15],[10.24,10.28]])
-        assert np.all(self.axis.value2index(arval) == np.array([[2,2],[2,3]]))
-        assert np.all(self.axis.value2index(arval,rounding=math.floor) \
-                        == np.array([[1,1],[2,2]]))
-        assert np.all(self.axis.value2index(arval,rounding=math.ceil)\
-                        == np.array([[2,2],[3,3]]))
+        arval = np.array([[10.15, 10.15], [10.24, 10.28]])
+        assert np.all(self.axis.value2index(arval) \
+                        == np.array([[2, 2], [2, 3]]))
+        assert np.all(self.axis.value2index(arval, rounding=math.floor) \
+                        == np.array([[1, 1], [2, 2]]))
+        assert np.all(self.axis.value2index(arval, rounding=math.ceil)\
+                        == np.array([[2, 2], [3, 3]]))
         #List in --> array out
         assert np.all(self.axis.value2index(arval.tolist()) \
-                                            == np.array([[2,2],[2,3]]))
+                                            == np.array([[2, 2], [2, 3]]))
         #One value out of bound in array in --> error out (both sides)
         arval[1,1] = 111
         with pytest.raises(ValueError):
@@ -740,3 +741,17 @@ class TestUniformDataAxisValueRangeToIndicesNegativeScale:
     def test_value_range_to_indices_v1_greater_than_v2(self):
         with pytest.raises(ValueError):
             self.axis.value_range_to_indices(1, 2)
+
+
+def test_rounding_consistency_axis_type():
+    inax = [[-11.0, -10.9],
+            [-10.9, -11.0],
+            [+10.9, +11.0],
+            [+11.0, +10.9]]
+    inval = [-10.95, -10.95, 10.95, 10.95]
+
+    for i, j in zip(inax, inval):
+        ax = UniformDataAxis(scale=i[1]-i[0], offset=i[0], size=len(i))
+        nua_idx = super(type(ax),ax).value2index(j, rounding=round)
+        unif_idx = ax.value2index(j, rounding=round)
+        assert nua_idx == unif_idx
