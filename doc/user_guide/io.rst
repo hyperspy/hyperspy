@@ -813,6 +813,14 @@ Extra saving arguments
   - `'crop'`: everything below 0 and above 255 is set to 0 and 255 respectively
   - 2-tuple of `floats` or `ints`: the intensities between these values are
     scaled between 0-255, everything below is 0 and everything above is 255.
+- ``navigator_signal``: the BLO file also stores a virtual bright field (VBF) image which
+  behaves like a navigation signal in the ASTAR software. By default this is
+  set to `'navigator'`, which results in the default :py:attr:`navigator` signal to be used.
+  If this signal was not calculated before (e.g. by calling :py:meth:`~.signal.BaseSignal.plot`), it is 
+  calculated when :py:meth:`~.signal.BaseSignal.save` is called, which can be time consuming.
+  Alternatively, setting the argument to `None` will result in a correctly sized
+  zero array to be used. Finally, a custom ``Signal2D`` object can be passed,
+  but the shape must match the navigation dimensions.
 
 .. _dens-format:
 
