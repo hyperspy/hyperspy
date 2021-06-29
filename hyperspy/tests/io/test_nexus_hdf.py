@@ -66,9 +66,9 @@ class TestDLSNexus():
         if nxdata_only and hardlinks_only:
             assert not isinstance(s, list)
         if nxdata_only is False and hardlinks_only:
-            assert len(s) == 12
+            assert len(s) == 11
         if nxdata_only is False and not hardlinks_only:
-            assert len(s) == 16
+            assert len(s) == 14
 
     @pytest.mark.parametrize("metadata_key", ["m1_y", "xxxx"])
     def test_metadata_keys(self, metadata_key):
@@ -105,12 +105,12 @@ class TestDLSNexus():
             pytest.fail("unexpected error saving hdf5")
 
     @pytest.mark.parametrize("dataset_path",
-                             ('/entry1/testdata/nexustest/data',
-                               ['/entry1/testdata/nexustest/data', 'wrong']))
+                             ('/entry1/testdata/nexustest',
+                               ['/entry1/testdata/nexustest', 'wrong']))
     def test_dataset_paths(self, dataset_path):
         s = load(self.file, dataset_path=dataset_path)
         title = s.metadata.General.title
-        assert title == 'entry1_testdata_nexustest_data'
+        assert title == 'nexustest'
 
     def test_skip_load_array_metadata(self):
         s = load(self.file, nxdata_only=True, hardlinks_only=True,
