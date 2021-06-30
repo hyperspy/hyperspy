@@ -162,7 +162,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         # _set_axes overwrites self._size so we back it up
         size = self._size
         position = self._pos
-        super(Line2DWidget, self)._set_axes(axes)
+        super()._set_axes(axes)
         # Restore self._size
         self._size = size
         self._pos = position
