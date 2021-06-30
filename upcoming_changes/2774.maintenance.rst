@@ -1,0 +1,1 @@
+Fix image comparison failure with numpy 1.21.0
