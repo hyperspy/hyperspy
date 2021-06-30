@@ -13,6 +13,7 @@ Each file should be named like ``<ISSUE>.<TYPE>.rst``, where
 * ``deprecation``: feature deprecation.
 * ``enhancements``: improvement of existing functionality, usually without requiring user intervention.
 * ``api``: a change which may break existing script, such as feature removal or behavior change.
+* ``maintenance``: a change related to the test suite, packaging, etc.
 
 So for example: ``123.new.rst``, ``456.bugfix.rst``.
 
