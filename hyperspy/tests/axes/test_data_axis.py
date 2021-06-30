@@ -483,7 +483,7 @@ class TestUniformDataAxis:
     def test_uniform_value2index(self):
         #Tests for value2index
         #Works as intended
-        assert self.axis.value2index(10.15) == 2
+        assert self.axis.value2index(10.15) == 1
         assert self.axis.value2index(10.17, rounding=math.floor) == 1
         assert self.axis.value2index(10.13, rounding=math.ceil) == 2
         # Test that output is integer
@@ -516,14 +516,14 @@ class TestUniformDataAxis:
         #Arrays work as intended
         arval = np.array([[10.15, 10.15], [10.24, 10.28]])
         assert np.all(self.axis.value2index(arval) \
-                        == np.array([[2, 2], [2, 3]]))
+                        == np.array([[1, 1], [2, 3]]))
         assert np.all(self.axis.value2index(arval, rounding=math.floor) \
                         == np.array([[1, 1], [2, 2]]))
         assert np.all(self.axis.value2index(arval, rounding=math.ceil)\
                         == np.array([[2, 2], [3, 3]]))
         #List in --> array out
         assert np.all(self.axis.value2index(arval.tolist()) \
-                                            == np.array([[2, 2], [2, 3]]))
+                                            == np.array([[1, 1], [2, 3]]))
         #One value out of bound in array in --> error out (both sides)
         arval[1,1] = 111
         with pytest.raises(ValueError):
@@ -744,14 +744,29 @@ class TestUniformDataAxisValueRangeToIndicesNegativeScale:
 
 
 def test_rounding_consistency_axis_type():
-    inax = [[-11.0, -10.9],
-            [-10.9, -11.0],
-            [+10.9, +11.0],
-            [+11.0, +10.9]]
-    inval = [-10.95, -10.95, 10.95, 10.95]
+    scales = [0.1, -0.1, 0.1, -0.1]
+    offsets = [-11.0, -10.9, 10.9, 11.0]
+    values = [-10.95, -10.95, 10.95, 10.95]
 
-    for i, j in zip(inax, inval):
-        ax = UniformDataAxis(scale=i[1]-i[0], offset=i[0], size=len(i))
-        nua_idx = super(type(ax),ax).value2index(j, rounding=round)
-        unif_idx = ax.value2index(j, rounding=round)
-        assert nua_idx == unif_idx
+    for i, (scale, offset, value) in enumerate(zip(scales, offsets, values)):
+        ax = UniformDataAxis(scale=scale, offset=offset, size=3)
+        ua_idx = ax.value2index(value)
+        nua_idx = super(type(ax), ax).value2index(value)
+        print('scale', scale)
+        print('offset', offset)
+        print('Axis values:', ax.axis)
+        print(f"value: {value} --> uniform: {ua_idx}, non-uniform: {nua_idx}")
+        print("\n")
+        assert nua_idx == ua_idx
+
+
+@pytest.mark.parametrize('shift', (0.05, 0.025))
+def test_rounding_consistency_axis_type_half(shift):
+
+    axis = UniformDataAxis(size=20, scale=0.1, offset=-1.0);
+    test_vals = axis.axis[:-1] + shift
+
+    uaxis_indices = axis.value2index(test_vals)
+    nuaxis_indices = super(type(axis), axis).value2index(test_vals)
+
+    np.testing.assert_allclose(uaxis_indices, nuaxis_indices)

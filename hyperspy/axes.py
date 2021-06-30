@@ -32,6 +32,7 @@ from hyperspy.misc.array_tools import (
     numba_closest_index_floor,
     numba_closest_index_ceil,
     round_half_towards_zero,
+    round_half_away_from_zero,
 )
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
@@ -1192,14 +1193,26 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
         value = self._parse_value(value)
 
-        if rounding is round:
-            rounding = round_half_towards_zero
-        elif rounding is math.ceil:
-            rounding = np.ceil
-        elif rounding is math.floor:
-            rounding = np.floor
+        multiplier = 1E12
+        index = 1 / multiplier * np.trunc(
+            (value - self.offset) / self.scale * multiplier
+            )
 
-        index = rounding((value - self.offset) / self.scale)
+        if rounding is round:
+            # When value are negative, we need to use half away from zero
+            # approach on the index, because the index is always positive
+            index = np.where(
+                value >= 0 if np.sign(self.scale) > 0 else value < 0,
+                round_half_towards_zero(index, decimals=0),
+                round_half_away_from_zero(index, decimals=0),
+                )
+        else:
+            if rounding is math.ceil:
+                rounding = np.ceil
+            elif rounding is math.floor:
+                rounding = np.floor
+
+            index = rounding(index)
 
         if isinstance(value, np.ndarray):
             index = index.astype(int)

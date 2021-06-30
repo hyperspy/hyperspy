@@ -470,15 +470,12 @@ def numba_closest_index_round(axis_array, value_array):
     rtol = 1e-12
     machineepsilon = np.min(np.abs(np.diff(axis_array))) * rtol
     for i, v in enumerate(value_array.flat):
-        if v >= 0:
-            index_array.flat[i] = np.abs(axis_array - v + machineepsilon).argmin()
-        else:
-            index_array.flat[i] = np.abs(axis_array - v - machineepsilon).argmin()
+        index_array.flat[i] = np.abs(axis_array - v + np.sign(v) * machineepsilon).argmin()
     return index_array
 
 
 @njit(cache=True)
-def numba_closest_index_floor(axis_array, value_array):
+def numba_closest_index_floor(axis_array, value_array):  # pragma: no cover
     """For each value in value_array, find the closest smaller value in
     axis_array and return the result as a numpy array of the same shape
     as value_array.
@@ -504,7 +501,7 @@ def numba_closest_index_floor(axis_array, value_array):
 
 
 @njit(cache=True)
-def numba_closest_index_ceil(axis_array, value_array):
+def numba_closest_index_ceil(axis_array, value_array):  # pragma: no cover
     """For each value in value_array, find the closest larger value in
     axis_array and return the result as a numpy array of the same shape
     as value_array.
@@ -528,7 +525,8 @@ def numba_closest_index_ceil(axis_array, value_array):
     return index_array
 
 
-def round_half_towards_zero(array, decimals=0):
+@njit(cache=True)
+def round_half_towards_zero(array, decimals=0):  # pragma: no cover
     """
     Round input array using "half towards zero" strategy.
 
@@ -546,4 +544,34 @@ def round_half_towards_zero(array, decimals=0):
         An array of the same type as a, containing the rounded values.
     """
     multiplier = 10 ** decimals
-    return np.ceil(array * multiplier - 0.5) / multiplier
+
+    return np.where(array >= 0,
+                    np.ceil(array * multiplier - 0.5) / multiplier,
+                    np.floor(array * multiplier + 0.5) / multiplier
+                    )
+
+
+@njit(cache=True)
+def round_half_away_from_zero(array, decimals=0):  # pragma: no cover
+    """
+    Round input array using "half away from zero" strategy.
+
+    Parameters
+    ----------
+    array : ndarray
+        Input array.
+
+    decimals : int, optional
+        Number of decimal places to round to (default: 0).
+
+    Returns
+    -------
+    rounded_array : ndarray
+        An array of the same type as a, containing the rounded values.
+    """
+    multiplier = 10 ** decimals
+
+    return np.where(array >= 0,
+                    np.floor(array * multiplier + 0.5) / multiplier,
+                    np.ceil(array * multiplier - 0.5) / multiplier
+                    )
