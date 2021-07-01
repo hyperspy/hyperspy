@@ -334,7 +334,8 @@ def load(filenames=None,
             filenames = _escape_square_brackets(filenames)
 
         filenames = natsorted([f for f in glob.glob(filenames)
-                               if os.path.isfile(f)])
+                               if os.path.isfile(f) or os.path.isdir(f)])
+
 
         if not filenames:
             raise ValueError(f'No filename matches the pattern "{pattern}"')
@@ -449,7 +450,7 @@ def load_single_file(filename, **kwds):
         Data loaded from the file.
 
     """
-    if not os.path.isfile(filename):
+    if not os.path.isfile(filename) and not os.path.isdir(filename):
         raise FileNotFoundError(f"File: {filename} not found!")
 
     # File extension without "." separator

@@ -35,12 +35,12 @@ _logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
-format_name = 'ZARR'
+format_name = 'ZArr'
 description = \
     'The default file format for HyperSpy based on the zarr standard'
 full_support = False
 # Recognised file extension
-file_extensions = ['zarr', 'hdf5']
+file_extensions = ['zarr']
 default_extension = 0
 # Writing capabilities
 writes = True
@@ -100,28 +100,11 @@ current_file_version = None  # Format version of the file being read
 default_version = LooseVersion(version)
 
 
-def get_hspy_format_version(f):
-    if "file_format_version" in f.attrs:
-        version = f.attrs["file_format_version"]
-        if isinstance(version, bytes):
-            version = version.decode()
-        if isinstance(version, float):
-            version = str(round(version, 2))
-    elif "Experiments" in f:
-        # Chances are that this is a HSpy hdf5 file version 1.0
-        version = "1.0"
-    elif "Analysis" in f:
-        # Starting version 2.0 we have "Analysis" field as well
-        version = "2.0"
-    else:
-        raise IOError(not_valid_format)
-    return LooseVersion(version)
-
 
 def file_reader(filename,
                 lazy=False,
                 **kwds):
-    """Read data from hdf5 files saved with the hyperspy hdf5 format specification
+    """Read data from zarr files saved with the hyperspy zarr format specification
 
     Parameters
     ----------
@@ -131,7 +114,7 @@ def file_reader(filename,
     **kwds, optional
     """
     mode = kwds.pop('mode', 'r')
-    store = zarr.storage.NestedDirectoryStore(filename)
+    f = zarr.open(filename, mode=mode, **kwds)
     models_with_signals = []
     standalone_models = []
     if 'Analysis/models' in f:
@@ -141,14 +124,14 @@ def file_reader(filename,
                 if '_signal' in m_gr[model_name].attrs:
                     key = m_gr[model_name].attrs['_signal']
                     # del m_gr[model_name].attrs['_signal']
-                    res = hdfgroup2dict(
+                    res = zarrgroup2dict(
                         m_gr[model_name],
                         lazy=lazy)
                     del res['_signal']
                     models_with_signals.append((key, {model_name: res}))
                 else:
                     standalone_models.append(
-                        {model_name: hdfgroup2dict(
+                        {model_name: zarrgroup2dict(
                             m_gr[model_name], lazy=lazy)})
         except TypeError:
             raise IOError(not_valid_format)
@@ -157,13 +140,13 @@ def file_reader(filename,
     exp_dict_list = []
     if 'Experiments' in f:
         for ds in f['Experiments']:
-            if isinstance(f['Experiments'][ds], h5py.Group):
+            if isinstance(f['Experiments'][ds], zarr.Group):
                 if 'data' in f['Experiments'][ds]:
                     experiments.append(ds)
         # Parse the file
         for experiment in experiments:
             exg = f['Experiments'][experiment]
-            exp = hdfgroup2signaldict(exg, lazy)
+            exp = zarrgroup2signaldict(exg, lazy)
             # assign correct models, if found:
             _tmp = {}
             for (key, _dict) in reversed(models_with_signals):
@@ -179,41 +162,27 @@ def file_reader(filename,
 
     exp_dict_list.extend(standalone_models)
     if not len(exp_dict_list):
-        raise IOError('This is not a valid HyperSpy HDF5 file. '
-                      'You can still load the data using a hdf5 reader, '
-                      'e.g. h5py, and manually create a Signal. '
+        raise IOError('This is not a valid HyperSpy Zarr file. '
+                      'You can still load the data using zarr reader, '
+                      'e.g. zarr, and manually create a Signal. '
                       'Please, refer to the User Guide for details')
-    if not lazy:
-        f.close()
     return exp_dict_list
 
 
-def hdfgroup2signaldict(group, lazy=False):
+def zarrgroup2signaldict(group, lazy=False):
     global current_file_version
     global default_version
-    if current_file_version < LooseVersion("1.2"):
-        metadata = "mapped_parameters"
-        original_metadata = "original_parameters"
-    else:
-        metadata = "metadata"
-        original_metadata = "original_metadata"
+    metadata = "metadata"
+    original_metadata = "original_metadata"
 
-    exp = {'metadata': hdfgroup2dict(
+    exp = {'metadata': zarrgroup2dict(
         group[metadata], lazy=lazy),
-        'original_metadata': hdfgroup2dict(
+        'original_metadata': zarrgroup2dict(
             group[original_metadata], lazy=lazy),
         'attributes': {}
     }
-    if "package" in group.attrs:
-        # HyperSpy version is >= 1.5
-        exp["package"] = group.attrs["package"]
-        exp["package_version"] = group.attrs["package_version"]
-    else:
-        # Prior to v1.4 we didn't store the package information. Since there
-        # were already external package we cannot assume any package provider so
-        # we leave this empty.
-        exp["package"] = ""
-        exp["package_version"] = ""
+    exp["package"] = group.attrs["package"]
+    exp["package_version"] = group.attrs["package_version"]
 
     data = group['data']
     if lazy:
@@ -236,7 +205,7 @@ def hdfgroup2signaldict(group, lazy=False):
             break
     if len(axes) != len(exp['data'].shape):  # broke from the previous loop
         try:
-            axes = [i for k, i in sorted(iter(hdfgroup2dict(
+            axes = [i for k, i in sorted(iter(zarrgroup2dict(
                 group['_list_' + str(len(exp['data'].shape)) + '_axes'],
                 lazy=lazy).items()))]
         except KeyError:
@@ -244,12 +213,12 @@ def hdfgroup2signaldict(group, lazy=False):
     exp['axes'] = axes
     if 'learning_results' in group.keys():
         exp['attributes']['learning_results'] = \
-            hdfgroup2dict(
+            zarrgroup2dict(
                 group['learning_results'],
                 lazy=lazy)
     if 'peak_learning_results' in group.keys():
         exp['attributes']['peak_learning_results'] = \
-            hdfgroup2dict(
+            zarrgroup2dict(
                 group['peak_learning_results'],
                 lazy=lazy)
 
@@ -259,151 +228,10 @@ def hdfgroup2signaldict(group, lazy=False):
     if "General" in exp["metadata"] and "title" in exp["metadata"]["General"]:
         if '__unnamed__' == exp['metadata']['General']['title']:
             exp['metadata']["General"]['title'] = ''
-
-    if current_file_version < LooseVersion("1.1"):
-        # Load the decomposition results written with the old name,
-        # mva_results
-        if 'mva_results' in group.keys():
-            exp['attributes']['learning_results'] = hdfgroup2dict(
-                group['mva_results'], lazy=lazy)
-        if 'peak_mva_results' in group.keys():
-            exp['attributes']['peak_learning_results'] = hdfgroup2dict(
-                group['peak_mva_results'], lazy=lazy)
-        # Replace the old signal and name keys with their current names
-        if 'signal' in exp['metadata']:
-            if "Signal" not in exp["metadata"]:
-                exp["metadata"]["Signal"] = {}
-            exp['metadata']["Signal"]['signal_type'] = \
-                exp['metadata']['signal']
-            del exp['metadata']['signal']
-
-        if 'name' in exp['metadata']:
-            if "General" not in exp["metadata"]:
-                exp["metadata"]["General"] = {}
-            exp['metadata']['General']['title'] = \
-                exp['metadata']['name']
-            del exp['metadata']['name']
-
-    if current_file_version < LooseVersion("1.2"):
-        if '_internal_parameters' in exp['metadata']:
-            exp['metadata']['_HyperSpy'] = \
-                exp['metadata']['_internal_parameters']
-            del exp['metadata']['_internal_parameters']
-            if 'stacking_history' in exp['metadata']['_HyperSpy']:
-                exp['metadata']['_HyperSpy']["Stacking_history"] = \
-                    exp['metadata']['_HyperSpy']['stacking_history']
-                del exp['metadata']['_HyperSpy']["stacking_history"]
-            if 'folding' in exp['metadata']['_HyperSpy']:
-                exp['metadata']['_HyperSpy']["Folding"] = \
-                    exp['metadata']['_HyperSpy']['folding']
-                del exp['metadata']['_HyperSpy']["folding"]
-        if 'Variance_estimation' in exp['metadata']:
-            if "Noise_properties" not in exp["metadata"]:
-                exp["metadata"]["Noise_properties"] = {}
-            exp['metadata']['Noise_properties']["Variance_linear_model"] = \
-                exp['metadata']['Variance_estimation']
-            del exp['metadata']['Variance_estimation']
-        if "TEM" in exp["metadata"]:
-            if "Acquisition_instrument" not in exp["metadata"]:
-                exp["metadata"]["Acquisition_instrument"] = {}
-            exp["metadata"]["Acquisition_instrument"]["TEM"] = \
-                exp["metadata"]["TEM"]
-            del exp["metadata"]["TEM"]
-            tem = exp["metadata"]["Acquisition_instrument"]["TEM"]
-            if "EELS" in tem:
-                if "dwell_time" in tem:
-                    tem["EELS"]["dwell_time"] = tem["dwell_time"]
-                    del tem["dwell_time"]
-                if "dwell_time_units" in tem:
-                    tem["EELS"]["dwell_time_units"] = tem["dwell_time_units"]
-                    del tem["dwell_time_units"]
-                if "exposure" in tem:
-                    tem["EELS"]["exposure"] = tem["exposure"]
-                    del tem["exposure"]
-                if "exposure_units" in tem:
-                    tem["EELS"]["exposure_units"] = tem["exposure_units"]
-                    del tem["exposure_units"]
-                if "Detector" not in tem:
-                    tem["Detector"] = {}
-                tem["Detector"] = tem["EELS"]
-                del tem["EELS"]
-            if "EDS" in tem:
-                if "Detector" not in tem:
-                    tem["Detector"] = {}
-                if "EDS" not in tem["Detector"]:
-                    tem["Detector"]["EDS"] = {}
-                tem["Detector"]["EDS"] = tem["EDS"]
-                del tem["EDS"]
-            del tem
-        if "SEM" in exp["metadata"]:
-            if "Acquisition_instrument" not in exp["metadata"]:
-                exp["metadata"]["Acquisition_instrument"] = {}
-            exp["metadata"]["Acquisition_instrument"]["SEM"] = \
-                exp["metadata"]["SEM"]
-            del exp["metadata"]["SEM"]
-            sem = exp["metadata"]["Acquisition_instrument"]["SEM"]
-            if "EDS" in sem:
-                if "Detector" not in sem:
-                    sem["Detector"] = {}
-                if "EDS" not in sem["Detector"]:
-                    sem["Detector"]["EDS"] = {}
-                sem["Detector"]["EDS"] = sem["EDS"]
-                del sem["EDS"]
-            del sem
-
-        if "Sample" in exp["metadata"] and "Xray_lines" in exp[
-                "metadata"]["Sample"]:
-            exp["metadata"]["Sample"]["xray_lines"] = exp[
-                "metadata"]["Sample"]["Xray_lines"]
-            del exp["metadata"]["Sample"]["Xray_lines"]
-
-        for key in ["title", "date", "time", "original_filename"]:
-            if key in exp["metadata"]:
-                if "General" not in exp["metadata"]:
-                    exp["metadata"]["General"] = {}
-                exp["metadata"]["General"][key] = exp["metadata"][key]
-                del exp["metadata"][key]
-        for key in ["record_by", "signal_origin", "signal_type"]:
-            if key in exp["metadata"]:
-                if "Signal" not in exp["metadata"]:
-                    exp["metadata"]["Signal"] = {}
-                exp["metadata"]["Signal"][key] = exp["metadata"][key]
-                del exp["metadata"][key]
-
-    if current_file_version < LooseVersion("3.0"):
-        if "Acquisition_instrument" in exp["metadata"]:
-            # Move tilt_stage to Stage.tilt_alpha
-            # Move exposure time to Detector.Camera.exposure_time
-            if "TEM" in exp["metadata"]["Acquisition_instrument"]:
-                tem = exp["metadata"]["Acquisition_instrument"]["TEM"]
-                exposure = None
-                if "tilt_stage" in tem:
-                    tem["Stage"] = {"tilt_alpha": tem["tilt_stage"]}
-                    del tem["tilt_stage"]
-                if "exposure" in tem:
-                    exposure = "exposure"
-                # Digital_micrograph plugin was parsing to 'exposure_time'
-                # instead of 'exposure': need this to be compatible with
-                # previous behaviour
-                if "exposure_time" in tem:
-                    exposure = "exposure_time"
-                if exposure is not None:
-                    if "Detector" not in tem:
-                        tem["Detector"] = {"Camera": {
-                            "exposure": tem[exposure]}}
-                    tem["Detector"]["Camera"] = {"exposure": tem[exposure]}
-                    del tem[exposure]
-            # Move tilt_stage to Stage.tilt_alpha
-            if "SEM" in exp["metadata"]["Acquisition_instrument"]:
-                sem = exp["metadata"]["Acquisition_instrument"]["SEM"]
-                if "tilt_stage" in sem:
-                    sem["Stage"] = {"tilt_alpha": sem["tilt_stage"]}
-                    del sem["tilt_stage"]
-
     return exp
 
 
-def dict2hdfgroup(dictionary, group, **kwds):
+def dict2zarrgroup(dictionary, group, **kwds):
     "Recursive writer of dicts and signals"
 
     from hyperspy.misc.utils import DictionaryTreeBrowser
@@ -421,7 +249,7 @@ def dict2hdfgroup(dictionary, group, **kwds):
         except ValueError:
             tmp = np.array([[0]])
         if tmp.dtype == np.dtype('O') or tmp.ndim != 1:
-            dict2hdfgroup(dict(zip(
+            dict2zarrgroup(dict(zip(
                 [str(i) for i in range(len(value))], value)),
                 group.create_group(_type + str(len(value)) + '_' + key),
                 **kwds)
@@ -430,7 +258,7 @@ def dict2hdfgroup(dictionary, group, **kwds):
                 del group[_type + key]
             group.create_dataset(_type + key,
                                  tmp.shape,
-                                 dtype=h5py.special_dtype(vlen=str),
+                                 dtype=zarr.special_dtype(vlen=str),
                                  **kwds)
             group[_type + key][:] = tmp[:]
         else:
@@ -443,31 +271,31 @@ def dict2hdfgroup(dictionary, group, **kwds):
 
     for key, value in dictionary.items():
         if isinstance(value, dict):
-            dict2hdfgroup(value, group.create_group(key),
+            dict2zarrgroup(value, group.create_group(key),
                           **kwds)
         elif isinstance(value, DictionaryTreeBrowser):
-            dict2hdfgroup(value.as_dictionary(),
+            dict2zarrgroup(value.as_dictionary(),
                           group.create_group(key),
                           **kwds)
         elif isinstance(value, BaseSignal):
             kn = key if key.startswith('_sig_') else '_sig_' + key
             write_signal(value, group.require_group(kn))
-        elif isinstance(value, (np.ndarray, h5py.Dataset, da.Array)):
+        elif isinstance(value, (np.ndarray, zarr.Array, da.Array)):
             overwrite_dataset(group, value, key, **kwds)
         elif value is None:
             group.attrs[key] = '_None_'
         elif isinstance(value, bytes):
             try:
                 # binary string if has any null characters (otherwise not
-                # supported by hdf5)
+                # supported by zarr)
                 value.index(b'\x00')
-                group.attrs['_bs_' + key] = np.void(value)
+                group.attrs['_bs_' + key] = None
             except ValueError:
                 group.attrs[key] = value.decode()
         elif isinstance(value, str):
             group.attrs[key] = value
         elif isinstance(value, AxesManager):
-            dict2hdfgroup(value.as_dictionary(),
+            dict2zarrgroup(value.as_dictionary(),
                           group.create_group('_hspy_AxesManager_' + key),
                           **kwds)
         elif isinstance(value, list):
@@ -485,16 +313,18 @@ def dict2hdfgroup(dictionary, group, **kwds):
             continue
         else:
             try:
+                if isinstance(value, np.int64):
+                    value = int(value)
                 group.attrs[key] = value
             except BaseException:
                 _logger.exception(
-                    "The hdf5 writer could not write the following "
+                    "The zarr writer could not write the following "
                     "information in the file: %s : %s", key, value)
 
 
 def get_signal_chunks(shape, dtype, signal_axes=None):
-    """Function that calculates chunks for the signal, preferably at least one
-    chunk per signal space.
+    """Function that calculates chunks for the signal,
+     preferably at least one chunk per signal space.
 
     Parameters
     ----------
@@ -504,13 +334,16 @@ def get_signal_chunks(shape, dtype, signal_axes=None):
         the numpy dtype of the data
     signal_axes: {None, iterable of ints}
         the axes defining "signal space" of the dataset. If None, the default
-        h5py chunking is performed.
+        zarr chunking is performed.
     """
     typesize = np.dtype(dtype).itemsize
     if signal_axes is None:
-        return h5py._hl.filters.guess_chunk(shape, None, typesize)
-
-    # largely based on the guess_chunk in h5py
+        return None
+    # chunk size larger than 1 Mb https://zarr.readthedocs.io/en/stable/tutorial.html#chunk-optimizations
+    # shooting for 100 Mb chunks
+    total_size = np.prod(shape)*typesize
+    if total_size < 1e8:  # 1 mb
+        return None
     CHUNK_MAX = 1024 * 1024
     want_to_keep = multiply([shape[i] for i in signal_axes]) * typesize
     if want_to_keep >= CHUNK_MAX:
@@ -547,20 +380,17 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
             # If signal_axes=None, use automatic h5py chunking, otherwise
             # optimise the chunking to contain at least one signal per chunk
             chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
-
     if np.issubdtype(data.dtype, np.dtype('U')):
         # Saving numpy unicode type is not supported in h5py
         data = data.astype(np.dtype('S'))
     if data.dtype == np.dtype('O'):
         # For saving ragged array
-        # http://docs.h5py.org/en/stable/special.html#arbitrary-vlen-data
+        # https://zarr.readthedocs.io/en/stable/tutorial.html?highlight=ragged%20array#ragged-arrays
         group.require_dataset(key,
                               chunks,
-                              dtype=h5py.special_dtype(vlen=data[0].dtype),
+                              dtype='array:T',
                               **kwds)
         group[key][:] = data[:]
-
-    maxshape = tuple(None for _ in data.shape)
 
     got_data = False
     while not got_data:
@@ -569,9 +399,8 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
             these_kwds.update(dict(shape=data.shape,
                                    dtype=data.dtype,
                                    exact=True,
-                                   maxshape=maxshape,
                                    chunks=chunks,
-                                   shuffle=True,))
+                                   ))
 
             # If chunks is True, the `chunks` attribute of `dset` below
             # contains the chunk shape guessed by h5py
@@ -590,13 +419,11 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
             if data.chunks != dset.chunks:
                 data = data.rechunk(dset.chunks)
             da.store(data, dset)
-        elif data.flags.c_contiguous:
-            dset.write_direct(data)
         else:
             dset[:] = data
 
 
-def hdfgroup2dict(group, dictionary=None, lazy=False):
+def zarrgroup2dict(group, dictionary=None, lazy=False):
     if dictionary is None:
         dictionary = {}
     for key, value in group.attrs.items():
@@ -612,6 +439,8 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
             value = value.astype("U")
             if value.dtype.str.endswith("U1"):
                 value = value.tolist()
+        elif isinstance(value, np.int):
+            value = int(value)
         # skip signals - these are handled below.
         if key.startswith('_sig_'):
             pass
@@ -633,18 +462,18 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
             dictionary[key.replace("_datetime_", "")] = date_iso
         else:
             dictionary[key] = value
-    if not isinstance(group, h5py.Dataset):
+    if not isinstance(group, zarr.Array):
         for key in group.keys():
             if key.startswith('_sig_'):
                 from hyperspy.io import dict2signal
                 dictionary[key[len('_sig_'):]] = (
-                    dict2signal(hdfgroup2signaldict(
+                    dict2signal(zarrgroup2signaldict(
                         group[key], lazy=lazy)))
-            elif isinstance(group[key], h5py.Dataset):
+            elif isinstance(group[key], zarr.Array):
                 dat = group[key]
                 kn = key
                 if key.startswith("_list_"):
-                    if (h5py.check_string_dtype(dat.dtype) and
+                    if (zarr.check_string_dtype(dat.dtype) and
                         hasattr(dat, 'asstr')):
                         # h5py 3.0 and newer
                         # https://docs.h5py.org/en/3.0.0/strings.html
@@ -673,24 +502,24 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
             elif key.startswith('_hspy_AxesManager_'):
                 dictionary[key[len('_hspy_AxesManager_'):]] = AxesManager(
                     [i for k, i in sorted(iter(
-                        hdfgroup2dict(
+                        zarrgroup2dict(
                             group[key], lazy=lazy).items()
                     ))])
             elif key.startswith('_list_'):
                 dictionary[key[7 + key[6:].find('_'):]] = \
                     [i for k, i in sorted(iter(
-                        hdfgroup2dict(
+                        zarrgroup2dict(
                             group[key], lazy=lazy).items()
                     ))]
             elif key.startswith('_tuple_'):
                 dictionary[key[8 + key[7:].find('_'):]] = tuple(
                     [i for k, i in sorted(iter(
-                        hdfgroup2dict(
+                        zarrgroup2dict(
                             group[key], lazy=lazy).items()
                     ))])
             else:
                 dictionary[key] = {}
-                hdfgroup2dict(
+                zarrgroup2dict(
                     group[key],
                     dictionary[key],
                     lazy=lazy)
@@ -698,7 +527,7 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
 
 
 def write_signal(signal, group, **kwds):
-    "Writes a hyperspy signal to a hdf5 group"
+    "Writes a hyperspy signal to a zarr group"
 
     group.attrs.update(get_object_package_info(signal))
     if default_version < LooseVersion("1.2"):
@@ -715,7 +544,7 @@ def write_signal(signal, group, **kwds):
         axis_dict = axis.get_axis_dictionary()
         coord_group = group.create_group(
             'axis-%s' % axis.index_in_array)
-        dict2hdfgroup(axis_dict, coord_group, **kwds)
+        dict2zarrgroup(axis_dict, coord_group, **kwds)
     mapped_par = group.create_group(metadata)
     metadata_dict = signal.metadata.as_dictionary()
     overwrite_dataset(group, signal.data, 'data',
@@ -727,29 +556,29 @@ def write_signal(signal, group, **kwds):
     # Remove chunks from the kwds since it wouldn't have the same rank as the
     # dataset and can't be used
     kwds.pop('chunks', None)
-    dict2hdfgroup(metadata_dict, mapped_par, **kwds)
+    dict2zarrgroup(metadata_dict, mapped_par, **kwds)
     original_par = group.create_group(original_metadata)
-    dict2hdfgroup(signal.original_metadata.as_dictionary(), original_par,
+    dict2zarrgroup(signal.original_metadata.as_dictionary(), original_par,
                   **kwds)
     learning_results = group.create_group('learning_results')
-    dict2hdfgroup(signal.learning_results.__dict__,
+    dict2zarrgroup(signal.learning_results.__dict__,
                   learning_results, **kwds)
     if hasattr(signal, 'peak_learning_results'):
         peak_learning_results = group.create_group(
             'peak_learning_results')
-        dict2hdfgroup(signal.peak_learning_results.__dict__,
+        dict2zarrgroup(signal.peak_learning_results.__dict__,
                       peak_learning_results, **kwds)
 
     if len(signal.models):
         model_group = group.file.require_group('Analysis/models')
-        dict2hdfgroup(signal.models._models.as_dictionary(),
+        dict2zarrgroup(signal.models._models.as_dictionary(),
                       model_group, **kwds)
         for model in model_group.values():
             model.attrs['_signal'] = group.name
 
 
 def file_writer(filename, signal, *args, **kwds):
-    """Writes data to hyperspy's hdf5 format
+    """Writes data to hyperspy's zarr format
 
     Parameters
     ----------
@@ -760,15 +589,16 @@ def file_writer(filename, signal, *args, **kwds):
     """
     store = zarr.storage.NestedDirectoryStore(filename)
     f = zarr.group(store=store, overwrite=True)
-    f.attrs['file_format'] = "HyperSpy"
+    f.attrs['file_format'] = "Zarr"
     f.attrs['file_format_version'] = version
     exps = f.create_group('Experiments')
     group_name = signal.metadata.General.title if \
         signal.metadata.General.title else '__unnamed__'
     # / is a invalid character, see #942
+    print(group_name)
     if "/" in group_name:
         group_name = group_name.replace("/", "-")
-        expg = exps.create_group(group_name)
+    expg = exps.create_group(group_name)
 
     # Add record_by metadata for backward compatibility
     smd = signal.metadata.Signal
