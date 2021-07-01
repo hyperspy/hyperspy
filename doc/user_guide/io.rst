@@ -32,7 +32,7 @@ information. To list the signal types available on your local installation use:
 HyperSpy will try to guess the most likely data type for the corresponding
 file. However, you can force it to read the data as a particular data type by
 providing the ``signal_type`` keyword, which has to correspond to one of the
-available sublasses of signal, e.g.:
+available subclasses of signal, e.g.:
 
 .. code-block:: python
 
@@ -464,7 +464,7 @@ multi-threaded environment. The supported data types are:
 
 It supports arbitrary meta-data, which is serialized into JSON.
 
-MRCZ also supports asychronous reads and writes.
+MRCZ also supports asynchronous reads and writes.
 
 Repository: https://github.com/em-MRCZ
 PyPI:       https://pypi.python.org/pypi/mrcz
@@ -477,7 +477,7 @@ install the `mrcz` and optionally the `blosc` Python packages.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-- ``do_async``: currently supported within Hyperspy for writing only, this will
+- ``do_async``: currently supported within HyperSpy for writing only, this will
   save  the file in a background thread and return immediately. Defaults
   to `False`.
 
@@ -816,6 +816,31 @@ loading the file using a different mode. However, note that lazy loading
 does not support in-place writing (i.e lazy loading and the "r+" mode
 are incompatible).
 
+Extra saving arguments
+^^^^^^^^^^^^^^^^^^^^^^
+
+- ``intensity_scaling`` : in case the dataset that needs to be saved does not
+  have the `np.uint8` data type, casting to this datatype without intensity
+  rescaling results in overflow errors (default behavior). This option allows
+  you to perform linear intensity scaling of the images prior to saving the 
+  data. The options are:
+  
+  - `'dtype'`: the limits of the datatype of the dataset, e.g. 0-65535 for 
+    `np.uint16`, are mapped onto 0-255 respectively. Does not work for `float`
+    data types.
+  - `'minmax'`: the minimum and maximum in the dataset are mapped to 0-255.
+  - `'crop'`: everything below 0 and above 255 is set to 0 and 255 respectively
+  - 2-tuple of `floats` or `ints`: the intensities between these values are
+    scaled between 0-255, everything below is 0 and everything above is 255.
+- ``navigator_signal``: the BLO file also stores a virtual bright field (VBF) image which
+  behaves like a navigation signal in the ASTAR software. By default this is
+  set to `'navigator'`, which results in the default :py:attr:`navigator` signal to be used.
+  If this signal was not calculated before (e.g. by calling :py:meth:`~.signal.BaseSignal.plot`), it is 
+  calculated when :py:meth:`~.signal.BaseSignal.save` is called, which can be time consuming.
+  Alternatively, setting the argument to `None` will result in a correctly sized
+  zero array to be used. Finally, a custom ``Signal2D`` object can be passed,
+  but the shape must match the navigation dimensions.
+
 .. _dens-format:
 
 DENS heater log
@@ -1028,7 +1053,7 @@ single spectra are loaded and if `spectrum_image` is selected, only the spectrum
 image will be loaded. The ``first_frame`` and ``last_frame`` parameters can be used
 to select the frame range of the EDS spectrum image to load. To load each individual
 EDS frame, use ``sum_frames=False`` and the EDS spectrum image will be loaded
-with an an extra navigation dimension corresponding to the frame index
+with an extra navigation dimension corresponding to the frame index
 (time axis). Use the ``sum_EDS_detectors=True`` parameter to load the signal of
 each individual EDS detector. In such a case, a corresponding number of distinct
 EDS signal is returned. The default is ``sum_EDS_detectors=True``, which loads the
@@ -1145,7 +1170,7 @@ If multiple datasets are present within the h5USID file and you try the same com
     [<Signal2D, title: HAADF, dimensions: (|128, 128)>,
     <Signal1D, title: EELS, dimensions: (|64, 64, 1024)>]
 
-We can load a specific dataset using the ``dataset_path`` keyword argument. setting it to the
+We can load a specific dataset using the ``dataset_path`` keyword argument. Setting it to the
 absolute path of the desired dataset will cause the single dataset to be loaded.
 
 .. code-block:: python
@@ -1215,8 +1240,8 @@ Nexus
 Background
 ^^^^^^^^^^
 
-`NeXus <https://www.nexusformat.org>`_ is a common data format orginally
-developed by the neutron and x-ray science communities. It is still being
+`NeXus <https://www.nexusformat.org>`_ is a common data format originally
+developed by the neutron and x-ray science x-ray communities. It is still being
 developed as an international standard by scientists and programmers
 representing major scientific facilities in order to facilitate greater
 cooperation in the analysis and visualization of data.
@@ -1260,14 +1285,15 @@ flexible and can also be used to inspect any hdf5 based file.
 
 Differences with respect to hspy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The HyperSpy metadata structure stores arrays as hdf datasets without attributes
+
+HyperSpy metadata structure stores arrays as hdf datasets without attributes
 and stores floats, ints and strings as attributes.
-Nexus formats typically use hdf dataset attributes to store additional
-information such as an indication of the units for an axis or the ``NX_class`` which
-the dataset structure follows. Therefore, the metadata (hyperspy or
-original_metadata) needs to be able to indicate the values and attributes of a
-dataset. To implement this structure the ``value`` and ``attrs`` of a dataset
-can also be defined. The value of a dataset is set using a ``value`` key.
+Nexus formats typically use hdf datasets attributes to store additional
+information such as an indication of the units for an axis or the NX_class which
+the dataset structure follows. The metadata, hyperspy  or original_metadata,
+therefore needs to be able to indicate the values and attributes of a dataset.
+To implement this structure the ``value`` and ``attrs`` of a dataset can also be
+defined. The value of a dataset is set using a ``value`` key.
 The attributes of a dataset are defined by an ``attrs`` key.
 
 For example, to store an array called ``axis_x``, with a units attribute within
@@ -1519,7 +1545,7 @@ The default signal is selected as the first signal in the list:
 
     >>> from hyperspy.io_plugins.nexus import file_writer
     >>> import hyperspy.api as hs
-    >>> file_writer("test.nxs", [signal1,signal2], use_default = True)
+    >>> file_writer("test.nxs", [signal1, signal2], use_default = True)
     >>> hs.load("test.nxs", use_default = True)
 
 The output will be arranged by signal name:
