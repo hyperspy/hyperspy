@@ -10,5 +10,4 @@ The [issue tracker](https://github.com/hyperspy/hyperspy/issues) can be used to 
 
 ## Contribute
 
-If you want to contribute to the HyperSpy source code, you can send us a [pull requests](https://github.com/hyperspy/hyperspy/pulls). For more information, please read the [developer guide](http://hyperspy.org/hyperspy-doc/current/dev_guide/index.html).
-
+If you want to contribute to the HyperSpy source code, you can send us a [pull requests](https://github.com/hyperspy/hyperspy/pulls). For more information, please read the [developer guide](https://hyperspy.readthedocs.io/en/latest/dev_guide/intro.html).
