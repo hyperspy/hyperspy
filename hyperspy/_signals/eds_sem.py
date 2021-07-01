@@ -57,7 +57,7 @@ class EDSSEMParametersUI(BaseSetMetadataItems):
         'energy_resolution_MnKa', }
 
 
-class EDSSEM_mixin:
+class EDSSEMSpectrum(EDSSpectrum):
 
     _signal_type = "EDS_SEM"
 
@@ -304,10 +304,6 @@ class EDSSEM_mixin:
                             auto_add_lines=auto_add_lines,
                             *args, **kwargs)
         return model
-
-
-class EDSSEMSpectrum(EDSSEM_mixin, EDSSpectrum):
-    pass
 
 
 class LazyEDSSEMSpectrum(EDSSEMSpectrum, LazyEDSSpectrum):

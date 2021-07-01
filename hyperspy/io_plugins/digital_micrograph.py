@@ -804,14 +804,14 @@ class ImageObject(object):
             dt = dateutil.parser.parse(time)
             return dt.time().isoformat()
         except BaseException:
-            _logger.warning("Time string, %s,  could not be parsed", time)
+            _logger.warning(f"Time string '{time}' could not be parsed.")
 
     def _get_date(self, date):
         try:
             dt = dateutil.parser.parse(date)
             return dt.date().isoformat()
         except BaseException:
-            _logger.warning("Date string, %s,  could not be parsed", date)
+            _logger.warning(f"Date string '{date}' could not be parsed.")
 
     def _get_microscope_name(self, ImageTags):
         locations = (
@@ -826,9 +826,20 @@ class ImageObject(object):
         _logger.info("Microscope name not present")
         return None
 
-    def _parse_string(self, tag):
+    def _parse_string(self, tag, convert_to_float=False, tag_name=None):
         if len(tag) == 0:
             return None
+        elif convert_to_float:
+            try:
+                return float(tag)
+            # In case the string can't be converted to float
+            except BaseException:
+                if tag_name is None:
+                    warning = "Metadata could not be parsed."
+                else:
+                    warning = f"Metadata '{tag_name}' could not be parsed."
+                _logger.warning(warning)
+                return None
         else:
             return tag
 
@@ -958,7 +969,9 @@ class ImageObject(object):
                     None),
                 "{}.EELS_Spectrometer.Aperture_label".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.aperture_size",
-                    lambda string: float(string.replace('mm', ''))),
+                    lambda string: self._parse_string(string.replace('mm', ''),
+                                                      convert_to_float=True,
+                                                      tag_name='Aperture_label')),
                 "{}.EELS Spectrometer.Instrument name".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.spectrometer",
                     None),

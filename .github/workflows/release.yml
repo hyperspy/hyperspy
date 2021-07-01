@@ -10,6 +10,8 @@ on:
 
 jobs:
   create_release:
+    permissions:
+      contents: write
     name: Create Release
     runs-on: ubuntu-latest
     outputs: 

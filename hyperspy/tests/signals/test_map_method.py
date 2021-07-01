@@ -25,6 +25,7 @@ from scipy.ndimage import gaussian_filter, gaussian_filter1d, rotate
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 @lazifyTestClass(ragged=False)
@@ -355,8 +356,10 @@ class TestLazyMap:
         iter_array, _ = np.meshgrid(range(11), range(10))
         f = lambda a, b: a + b
         iterating_kwargs = {'b':iter_array.T}
-        s_out = s._map_iterate(function=f, iterating_kwargs=iterating_kwargs,
-                               inplace=False)
+        with pytest.warns(VisibleDeprecationWarning):
+            s_out = s._map_iterate(function=f,
+                                   iterating_kwargs=iterating_kwargs,
+                                   inplace=False)
         np.testing.assert_array_equal(s_out.mean(axis=(2, 3)).data, iter_array)
 
 
@@ -420,3 +423,21 @@ def test_map_ufunc(caplog):
     assert np.log(s) == s.map(np.log)
     np.testing.assert_allclose(s.data, np.log(data))
     assert "can direcly operate on hyperspy signals" in caplog.records[0].message
+
+
+class TestLazyNavChunkSize1:
+    @staticmethod
+    def afunction(input_data):
+        return np.array([1, 2, 3])
+
+    def test_signal2d(self):
+        dask_array = da.zeros((10, 15, 32, 32), chunks=(1, 1, 32, 32))
+        s = hs.signals.Signal2D(dask_array).as_lazy()
+        s_out = s.map(self.afunction, inplace=False, parallel=False, ragged=True)
+        s_out.compute()
+
+    def test_signal1d(self):
+        dask_array = da.zeros((10, 15, 32), chunks=(1, 1, 32))
+        s = hs.signals.Signal1D(dask_array).as_lazy()
+        s_out = s.map(self.afunction, inplace=False, parallel=False, ragged=True)
+        s_out.compute()

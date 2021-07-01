@@ -13,6 +13,7 @@ Each file should be named like ``<ISSUE>.<TYPE>.rst``, where
 * ``deprecation``: feature deprecation.
 * ``enhancements``: improvement of existing functionality, usually without requiring user intervention.
 * ``api``: a change which may break existing script, such as feature removal or behavior change.
+* ``maintenance``: a change related to the test suite, packaging, etc.
 
 So for example: ``123.new.rst``, ``456.bugfix.rst``.
 
@@ -23,7 +24,8 @@ changelog using that instead.
 If you are not sure what issue type to use, don't hesitate to ask in your PR.
 
 ``towncrier`` preserves multiple paragraphs and formatting (code blocks, lists, and so on), but for entries
-other than ``new`` it is usually better to stick to a single paragraph to keep it concise.
+other than ``new`` it is usually better to stick to a single paragraph to keep it concise. For ``new``,
+it is recommended to add hyperlink to the user guide.
 
 
 To previous a draft of the changelog, run from the command line:

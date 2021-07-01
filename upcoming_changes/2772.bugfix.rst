@@ -1,0 +1,1 @@
+Fix parsing EELS aperture label with unexpected value, for example 'Imaging' instead of '5 mm'

@@ -19,7 +19,6 @@
 from functools import wraps
 
 import numpy as np
-import dask.array as da
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal2d import Signal2D
@@ -31,6 +30,13 @@ from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_W
 from hyperspy.misc.utils import parse_quantity
 
 
+ERROR_MESSAGE_SETTER = ('Setting the {} with a complex signal is ambiguous, '
+                        'use a numpy array or a real signal.')
+
+
+PROPERTY_DOCSTRING_TEMPLATE = """Get/set the {} of the data."""
+
+
 def format_title(thing):
     def title_decorator(func):
         @wraps(func)
@@ -40,61 +46,17 @@ def format_title(thing):
                 title = signal.metadata.General.title
             else:
                 title = 'Untitled Signal'
-            signal.metadata.General.title = thing + '({})'.format(title)
+            signal.metadata.General.title = f'{thing}({title})'
             return signal
         return signal_wrapper
     return title_decorator
 
 
-class ComplexSignal_mixin:
+class ComplexSignal(BaseSignal):
 
     """BaseSignal subclass for complex data."""
 
     _dtype = "complex"
-
-    @format_title('real')
-    def _get_real(self):
-        real = self._deepcopy_with_new_data(self.data.real)
-        real._assign_subclass()
-        return real
-
-    real = property(lambda s: s._get_real(),
-                    lambda s, v: s._set_real(v),
-                    doc="""Get/set the real part of the data. Returns an
-                    appropriate HyperSpy signal."""
-                    )
-
-    @format_title('imag')
-    def _get_imag(self):
-        imag = self._deepcopy_with_new_data(self.data.imag)
-        imag._assign_subclass()
-        return imag
-
-    imag = property(lambda s: s._get_imag(),
-                    lambda s, v: s._set_imag(v),
-                    doc="""Get/set imaginary part of the data. Returns an
-                    appropriate HyperSpy signal."""
-                    )
-
-    def _get_amplitude(self, amplitude):
-        amplitude._assign_subclass()
-        return amplitude
-
-    amplitude = property(lambda s: s._get_amplitude(),
-                         lambda s, v: s._set_amplitude(v),
-                         doc="""Get/set the amplitude of the data. Returns an
-                         appropriate HyperSpy signal.""")
-
-    @format_title('phase')
-    def _get_phase(self, phase):
-        phase._assign_subclass()
-        return phase
-
-    phase = property(lambda s: s._get_phase(),
-                     lambda s, v: s._set_phase(v),
-                     doc="""Get/set the phase of the data. Returns an appropriate
-                     HyperSpy signal."""
-                     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -104,6 +66,82 @@ class ComplexSignal_mixin:
         self._plot_kwargs = {}
         if not np.issubdtype(self.data.dtype, np.complexfloating):
             self.data = self.data.astype(np.complex128)
+
+    @format_title('real')
+    def _get_real(self):
+        real = self._deepcopy_with_new_data(self.data.real)
+        real._assign_subclass()
+        return real
+
+    real = property(lambda s: s._get_real(),
+                    lambda s, v: s._set_real(v),
+                    doc=PROPERTY_DOCSTRING_TEMPLATE.format('real part')
+                    )
+
+    def _set_real(self, real):
+        if isinstance(real, self.__class__):
+            raise TypeError(ERROR_MESSAGE_SETTER.format('real part'))
+        elif isinstance(real, BaseSignal):
+            real = real.data
+        self.data = real + 1j * self.data.imag
+        self.events.data_changed.trigger(self)
+
+    @format_title('imag')
+    def _get_imag(self):
+        imag = self._deepcopy_with_new_data(self.data.imag)
+        imag._assign_subclass()
+        return imag
+
+    imag = property(lambda s: s._get_imag(),
+                    lambda s, v: s._set_imag(v),
+                    doc=PROPERTY_DOCSTRING_TEMPLATE.format('imaginary part')
+                    )
+
+    def _set_imag(self, imag):
+        if isinstance(imag, self.__class__):
+            raise TypeError(ERROR_MESSAGE_SETTER.format('imaginary part'))
+        elif isinstance(imag, BaseSignal):
+            imag = imag.data
+        self.data = self.data.real + 1j * imag
+        self.events.data_changed.trigger(self)
+
+    @format_title('amplitude')
+    def _get_amplitude(self):
+        amplitude = self._deepcopy_with_new_data(abs(self.data))
+        amplitude._assign_subclass()
+        return amplitude
+
+    amplitude = property(lambda s: s._get_amplitude(),
+                         lambda s, v: s._set_amplitude(v),
+                         doc=PROPERTY_DOCSTRING_TEMPLATE.format('amplitude')
+                         )
+
+    def _set_amplitude(self, amplitude):
+        if isinstance(amplitude, self.__class__):
+            raise TypeError(ERROR_MESSAGE_SETTER.format('amplitude'))
+        elif isinstance(amplitude, BaseSignal):
+            amplitude = amplitude.data.real
+        self.data = amplitude * np.exp(1j * np.angle(self.data))
+        self.events.data_changed.trigger(self)
+
+    @format_title('phase')
+    def _get_phase(self):
+        phase = self._deepcopy_with_new_data(np.angle(self.data))
+        phase._assign_subclass()
+        return phase
+
+    phase = property(lambda s: s._get_phase(),
+                     lambda s, v: s._set_phase(v),
+                     doc=PROPERTY_DOCSTRING_TEMPLATE.format('phase')
+                     )
+
+    def _set_phase(self, phase):
+        if isinstance(phase, self.__class__):
+            raise TypeError(ERROR_MESSAGE_SETTER.format('phase'))
+        elif isinstance(phase, BaseSignal):
+            phase = phase.data
+        self.data = abs(self.data) * np.exp(1j * phase)
+        self.events.data_changed.trigger(self)
 
     def change_dtype(self, dtype):
         """Change the data type.
@@ -118,28 +156,8 @@ class ComplexSignal_mixin:
         if np.issubdtype(dtype, np.complexfloating):
             self.data = self.data.astype(dtype)
         else:
-            raise AttributeError(
+            raise ValueError(
                 'Complex data can only be converted into other complex dtypes!')
-
-    @format_title('angle')
-    def angle(self, angle, deg=False):
-        r"""Return the angle (also known as phase or argument). If the data is real, the angle is 0
-        for positive values and :math:`2\pi` for negative values.
-
-        Parameters
-        ----------
-        deg : bool, optional
-            Return angle in degrees if True, radians if False (default).
-
-        Returns
-        -------
-        angle : HyperSpy signal
-            The counterclockwise angle from the positive real axis on the complex plane,
-            with dtype as numpy.float64.
-
-        """
-        angle.set_signal_type('')
-        return angle
 
     def unwrapped_phase(self, wrap_around=False, seed=None,
                         show_progressbar=None, parallel=None, max_workers=None):
@@ -179,8 +197,7 @@ class ComplexSignal_mixin:
         phase.map(unwrap_phase, wrap_around=wrap_around, seed=seed,
                   show_progressbar=show_progressbar, ragged=False,
                   parallel=parallel, max_workers=max_workers)
-        phase.metadata.General.title = 'unwrapped {}'.format(
-            phase.metadata.General.title)
+        phase.metadata.General.title = f'unwrapped {phase.metadata.General.title}'
         return phase  # Now unwrapped!
 
     unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
@@ -233,8 +250,8 @@ class ComplexSignal_mixin:
                 self.amplitude.plot(**kwargs)
                 self.phase.plot(**kwargs)
         else:
-            raise ValueError('{}'.format(representation) +
-                             'is not a valid input for representation (use "cartesian" or "polar")!')
+            raise ValueError(f'{representation} is not a valid input for '
+                             'representation (use "cartesian" or "polar")!')
 
         self._plot_kwargs = {'power_spectrum': power_spectrum,
                              'representation': representation,
@@ -244,49 +261,27 @@ class ComplexSignal_mixin:
     plot.__doc__ %= (BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING,
                      BASE_PLOT_DOCSTRING_PARAMETERS, PLOT2D_KWARGS_DOCSTRING)
 
-
-class ComplexSignal(ComplexSignal_mixin, BaseSignal):
-
-    def _get_phase(self):
-        phase = self._deepcopy_with_new_data(np.angle(self.data))
-        return super()._get_phase(phase)
-
-    def _get_amplitude(self):
-        amplitude = np.abs(self)
-        return super()._get_amplitude(amplitude)
-
-    def _set_real(self, real):
-        if isinstance(real, BaseSignal):
-            self.real.isig[:] = real
-        else:
-            self.data.real[:] = real
-        self.events.data_changed.trigger(self)
-
-    def _set_imag(self, imag):
-        if isinstance(imag, BaseSignal):
-            self.imag.isig[:] = imag
-        else:
-            self.data.imag[:] = imag
-        self.events.data_changed.trigger(self)
-
-    def _set_amplitude(self, amplitude):
-        if isinstance(amplitude, BaseSignal):
-            self.isig[:] = amplitude * np.exp(self.angle() * 1j)
-        else:
-            self.data[:] = amplitude * np.exp(1j * np.angle(self.data))
-        self.events.data_changed.trigger(self)
-
-    def _set_phase(self, phase):
-        if isinstance(phase, BaseSignal):
-            self.isig[:] = np.abs(self) * np.exp(phase * 1j)
-        else:
-            self.data[:] = np.abs(self.data) * np.exp(1j * phase)
-        self.events.data_changed.trigger(self)
-
+    @format_title('angle')
     def angle(self, deg=False):
+        r"""Return the angle (also known as phase or argument). If the data is real, the angle is 0
+        for positive values and :math:`2\pi` for negative values.
+
+        Parameters
+        ----------
+        deg : bool, optional
+            Return angle in degrees if True, radians if False (default).
+
+        Returns
+        -------
+        angle : HyperSpy signal
+            The counterclockwise angle from the positive real axis on the complex plane,
+            with dtype as numpy.float64.
+
+        """
         angle = self._deepcopy_with_new_data(np.angle(self.data, deg))
-        return super().angle(angle, deg=deg)
-    angle.__doc__ = ComplexSignal_mixin.angle.__doc__
+        angle.set_signal_type('')
+
+        return angle
 
     def argand_diagram(self, size=[256, 256], range=None):
         """
@@ -317,6 +312,12 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
         >>> w.argand_diagram(range=[-3, 3]).plot()
 
         """
+        if self._lazy:
+            raise NotImplementedError(
+                "Argand diagram is not implemented for lazy signals. Use "
+                "`compute()` to convert the signal to a regular one."
+                )
+
         for axis in self.axes_manager.signal_axes:
             if not axis.is_uniform:
                 raise NotImplementedError(
@@ -334,7 +335,7 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
         argand_diagram, real_edges, imag_edges = np.histogram2d(re, im, bins=size, range=range)
         argand_diagram = Signal2D(argand_diagram.T)
         argand_diagram.metadata = self.metadata.deepcopy()
-        argand_diagram.metadata.General.title = 'Argand diagram of {}'.format(self.metadata.General.title)
+        argand_diagram.metadata.General.title = f'Argand diagram of {self.metadata.General.title}'
 
         if self.real.metadata.Signal.has_item('quantity'):
             quantity_real, units_real = parse_quantity(self.real.metadata.Signal.quantity)
@@ -363,46 +364,4 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
 
 class LazyComplexSignal(ComplexSignal, LazySignal):
 
-    @format_title('absolute')
-    def _get_amplitude(self):
-        amplitude = abs(self)
-        return super(ComplexSignal, self)._get_amplitude(amplitude)
-
-    def _get_phase(self):
-        phase = self._deepcopy_with_new_data(da.angle(self.data))
-        return super(ComplexSignal, self)._get_phase(phase)
-
-    def _set_real(self, real):
-        if isinstance(real, BaseSignal):
-            real = real.data.real
-        self.data = 1j * self.data.imag + real
-        self.events.data_changed.trigger(self)
-
-    def _set_imag(self, imag):
-        if isinstance(imag, BaseSignal):
-            imag = imag.data.real
-        self.data = self.data.real + 1j * imag
-        self.events.data_changed.trigger(self)
-
-    def _set_amplitude(self, amplitude):
-        if isinstance(amplitude, BaseSignal):
-            amplitude = amplitude.data.real
-        self.data = amplitude * da.exp(1j * da.angle(self.data))
-        self.events.data_changed.trigger(self)
-
-    def _set_phase(self, phase):
-        if isinstance(phase, BaseSignal):
-            phase = phase.data.real
-        self.data = abs(self.data) * \
-            da.exp(1j * phase)
-        self.events.data_changed.trigger(self)
-
-    def angle(self, deg=False):
-        angle = self._deepcopy_with_new_data(da.angle(self.data, deg))
-        return super(ComplexSignal, self).angle(angle, deg=deg)
-    angle.__doc__ = ComplexSignal_mixin.angle.__doc__
-
-    def argand_diagram(self, *args, **kwargs):
-        raise NotImplementedError("Argand diagram is not implemented for lazy "
-                                  "signals. Use `compute()` to convert the "
-                                  "signal to a regular one.")
+    pass

@@ -159,12 +159,21 @@ class TestROIs():
         r = SpanROI(15, 30)
         assert tuple(r) == (15, 30)
 
-    def test_widget_initialisation(self):
-        self.s_s.plot()
-        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]:
+    @pytest.mark.parametrize('axes', [None, 'signal'])
+    def test_add_widget_ROI_undefined(self, axes):
+        s = self.s_i
+        s.plot()
+        if axes == 'signal':
+            axes = s.axes_manager.signal_axes
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI,
+                    CircleROI]:
             r = roi()
-            r._set_default_values(self.s_s)
-            r.add_widget(self.s_s)
+            r.add_widget(s, axes=axes)
+            if axes is None:
+                expected_axes = s.axes_manager.navigation_axes
+            else:
+                expected_axes = axes
+            r.signal_map[s][1][0] in expected_axes
 
     def test_span_spectrum_sig(self):
         s = self.s_s
@@ -525,10 +534,19 @@ class TestROIs():
                 r(self.s_s)
 
     def test_default_values_call(self):
-        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]:
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI,
+                    CircleROI]:
             r = roi()
             r._set_default_values(self.s_s)
             r(self.s_s)
+
+    def test_default_values_call_specify_signal_axes(self):
+        s = self.s_i
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI,
+                    CircleROI]:
+            r = roi()
+            r._set_default_values(s, axes=s.axes_manager.signal_axes)
+            r(s)
 
     def test_get_central_half_limits(self):
         ax = self.s_s.axes_manager[0]

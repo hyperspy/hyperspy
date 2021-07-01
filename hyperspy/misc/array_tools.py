@@ -17,15 +17,18 @@
 
 
 from collections import OrderedDict
+from distutils.version import LooseVersion
 import math as math
 import logging
 
+import dask
 import dask.array as da
 import numpy as np
 from numba import njit
 
 
 from hyperspy.misc.math_tools import anyfloatin
+from hyperspy.docstrings.utils import REBIN_ARGS
 
 
 _logger = logging.getLogger(__name__)
@@ -96,40 +99,16 @@ def _requires_linear_rebin(arr, scale):
     return (np.asarray(arr.shape) % np.asarray(scale)).any() or anyfloatin(scale)
 
 
-def rebin(a, new_shape=None, scale=None, crop=True):
-    """Rebin array.
-
-    rebin ndarray data into a smaller or larger array based on a linear
-    interpolation. Specify either a new_shape or a scale. Scale of 1== no
+def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
+    """Rebin data into a smaller or larger array based on a linear
+    interpolation. Specify either a new_shape or a scale. Scale of 1 means no
     binning. Scale less than one results in up-sampling.
 
     Parameters
     ----------
     a : numpy array
-    new_shape : a list of floats or integer, default None
-        For each dimension specify the new_shape of the np.array. This will
-        then be converted into a scale.
-    scale : a list of floats or integer, default None
-        For each dimension specify the new:old pixel ratio, e.g. a ratio of 1
-        is no binning and a ratio of 2 means that each pixel in the new
-        spectrum is twice the size of the pixels in the old spectrum.
-        The length of the list should match the dimension of the numpy array.
-        ***Note : Only one of scale or new_shape should be specified otherwise
-        the function will not run***
-    crop: bool, default True
-        When binning by a non-integer number of pixels it is likely that
-        the final row in each dimension contains less than the full quota to
-        fill one pixel.
-
-        e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
-        pixels and one row containing only 0.8 pixels worth. Selection of
-        crop='True' or crop='False' determines whether or not this
-        'black' line is cropped from the final binned array or not.
-
-        *Please note that if crop=False is used, the final row in each
-        dimension may appear black, if a fractional number of pixels are left
-        over. It can be removed but has been left to preserve total counts
-        before and after binning.*
+        The array to rebin.
+    %s
 
     Returns
     -------
@@ -142,7 +121,7 @@ def rebin(a, new_shape=None, scale=None, crop=True):
 
     Notes
     -----
-    Fast re_bin function Adapted from scipy cookbook
+    Fast ``re_bin`` function Adapted from scipy cookbook
     If rebin function fails with error stating that the function is 'not binned
     and therefore cannot be rebinned', add binned to axes parameters with:
     >>> s.axes_manager[axis].is_binned = True
@@ -162,15 +141,19 @@ def rebin(a, new_shape=None, scale=None, crop=True):
     else:
         new_shape = new_shape
         scale = scale
+    if isinstance(dtype, str) and dtype != 'same':
+        raise ValueError(
+            '`dtype` argument needs to be None, a numpy dtype or '
+            'the string "same".'
+            )
+
     # check whether or not interpolation is needed.
     if _requires_linear_rebin(arr=a, scale=scale):
         _logger.debug("Using linear_bin")
-        if np.issubdtype(a.dtype, np.integer):
-            # The _linear_bin function below requires a float dtype
-            # because of the default numpy casting rule ('same_kind').
-            a = a.astype("float", casting="safe", copy=False)
-        return _linear_bin(a, scale, crop)
+        return _linear_bin(a, scale, crop, dtype=dtype)
     else:
+        if dtype == 'same':
+            dtype = a.dtype
         _logger.debug("Using standard rebin with lazy support")
         # if interpolation is not needed run fast re_bin function.
         # Adapted from scipy cookbook.
@@ -189,23 +172,36 @@ def rebin(a, new_shape=None, scale=None, crop=True):
         scale = np.asarray(a.shape) // np.asarray(new_shape)
         if scale.max() < 2:
             return a.copy()
+
         if isinstance(a, np.ndarray):
             # most of the operations will fall here and dask is not imported
             rshape = ()
             for athing in zip(new_shape, scale):
                 rshape += athing
-            return a.reshape(rshape).sum(axis=tuple(2 * i + 1 for i in range(lenShape)))
+            return a.reshape(rshape).sum(axis=tuple(
+                2 * i + 1 for i in range(lenShape)), dtype=dtype)
         else:
-            import dask.array as da
-
             try:
-                return da.coarsen(np.sum, a, {i: int(f) for i, f in enumerate(scale)})
+                kwargs = {}
+                if LooseVersion(dask.__version__) >= LooseVersion('2.11.0'):
+                    kwargs['dtype'] = dtype
+                elif dtype is not None:
+                    raise ValueError(
+                        'Using the dtype argument for lazy signal requires '
+                        'dask >= 2.11.0.'
+                        )
+                return da.coarsen(np.sum, a,
+                                  {i: int(f) for i, f in enumerate(scale)},
+                                  **kwargs)
             # we provide slightly better error message in hyperspy context
             except ValueError:
                 raise ValueError(
                     "Rebinning does not align with data dask chunks. "
                     "Rebin fewer dimensions at a time to avoid this error"
                 )
+
+# Replacing space is necessary to get the correct indentation
+rebin.__doc__ %= REBIN_ARGS.replace("        ", "    ")
 
 
 @njit(cache=True)
@@ -250,7 +246,7 @@ def _linear_bin_loop(result, data, scale):  # pragma: no cover
                 value += data[math.floor(x1)] * (x2 - x1)
 
 
-def _linear_bin(dat, scale, crop=True):
+def _linear_bin(dat, scale, crop=True, dtype=None):
     """Binning of the spectrum image by a non-integer pixel value.
 
     Parameters
@@ -287,6 +283,30 @@ def _linear_bin(dat, scale, crop=True):
             "dimensions specifically, simply set the value in shape to 1."
         )
 
+    # Unsuported dtype value argument
+    dtype_str_same_integer = (isinstance(dtype, str) and dtype == 'same' and
+                              np.issubdtype(dat.dtype, np.integer))
+    dtype_interger = (not isinstance(dtype, str) and
+                      np.issubdtype(dtype, np.integer))
+
+    if dtype_str_same_integer or dtype_interger:
+        raise ValueError(
+            "Linear interpolation requires float dtype, change the "
+            "dtype argument."
+            )
+
+    if np.issubdtype(dat.dtype, np.integer):
+        # The _linear_bin function below requires a float dtype
+        # because of the default numpy casting rule ('same_kind').
+        dtype = float
+    # Make sure that native endian is used as required by numba.jit
+    elif not dat.dtype.isnative:
+        dtype = dat.dtype.type
+
+    # If dtype is not None, it means that we need to change it
+    if dtype is not None:
+        dat = dat.astype(dtype, casting="safe", copy=False)
+
     for axis, s in enumerate(scale):
         # For each iteration of linear_bin the axis being interated over has to
         # be switched to axis[0] in order to carry out the interation loop.
@@ -308,9 +328,7 @@ def _linear_bin(dat, scale, crop=True):
         # Set up the result np.array to have a new axis[0] size for after
         # cropping.
         result = np.zeros((dim,) + dat.shape[1:])
-        # Make sure that native endian is used
-        if not dat.dtype.isnative:
-            dat = dat.astype(dat.dtype.type)
+
         # Carry out binning over axis[0]
         _linear_bin_loop(result=result, data=dat, scale=s)
         # Swap axis[0] back to the original axis location.

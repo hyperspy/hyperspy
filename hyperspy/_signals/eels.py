@@ -71,7 +71,7 @@ class EELSTEMParametersUI(BaseSetMetadataItems):
     }
 
 
-class EELSSpectrum_mixin:
+class EELSSpectrum(Signal1D):
 
     _signal_type = "EELS"
     _alias_signal_types = ["TEM EELS"]
@@ -1813,11 +1813,13 @@ class EELSSpectrum_mixin:
 
         return complmt_edges
 
-    def rebin(self, new_shape=None, scale=None, crop=True, out=None):
+    def rebin(self, new_shape=None, scale=None, crop=True, dtype=None,
+              out=None):
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale)
-        m = super().rebin(new_shape=new_shape, scale=scale, crop=crop, out=out)
+        m = super().rebin(new_shape=new_shape, scale=scale, crop=crop,
+                          dtype=dtype, out=out)
         m = out or m
         time_factor = np.prod([factors[axis.index_in_array]
                                for axis in m.axes_manager.navigation_axes])
@@ -1880,11 +1882,6 @@ class EELSSpectrum_mixin:
             mask.data = binary_erosion(mask.data, border_value=1)
             mask.data = binary_dilation(mask.data, border_value=0)
         return mask
-
-
-class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
-
-    pass
 
 
 class LazyEELSSpectrum(EELSSpectrum, LazySignal1D):

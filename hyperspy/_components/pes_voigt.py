@@ -84,7 +84,7 @@ def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
 class Voigt(Component):
     # Legacy class to be removed in v2.0
 
-    """This is the legacy Voigt profile component dedicated to photoemission
+    r"""This is the legacy Voigt profile component dedicated to photoemission
     spectroscopy data analysis that will renamed to `PESVoigt` in v2.0. To use
     the new Voigt lineshape component set `legacy=False`. See the
     documentation of :meth:`hyperspy._components.voigt.Voigt` for details on
@@ -158,7 +158,7 @@ class Voigt(Component):
 
 class PESVoigt(Component):
 
-    """ Voigt component for photoemission spectroscopy data analysis.
+    r"""Voigt component for photoemission spectroscopy data analysis.
 
     Voigt profile component with support for shirley background,
     non_isochromaticity, transmission_function corrections and spin orbit

@@ -21,7 +21,6 @@ Create a PR to the `RELEASE_next_patch` branch and go through the following step
 **Post-release action**
 - Increment the version and set it back to dev: `vx.y.z.dev0`
 - Update version in other branches when necessary
-- Prepare `CHANGES.rst` for development
 - Merge the PR
 
 Follow-up
