@@ -27,10 +27,13 @@ from traits.trait_errors import TraitError
 import pint
 from sympy.utilities.lambdify import lambdify
 from hyperspy.events import Events, Event
-from hyperspy.misc.array_tools import numba_closest_index_round, \
-                                        numba_closest_index_floor, \
-                                        numba_closest_index_ceil
-
+from hyperspy.misc.array_tools import (
+    numba_closest_index_round,
+    numba_closest_index_floor,
+    numba_closest_index_ceil,
+    round_half_towards_zero,
+    round_half_away_from_zero,
+)
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 from hyperspy.ui_registry import add_gui_method, get_gui
@@ -562,11 +565,16 @@ class BaseDataAxis(t.HasTraits):
         return value
 
     def value2index(self, value, rounding=round):
-        """Return the closest index to the given value if between the axis limits.
+        """Return the closest index/indices to the given value(s) if between the axis limits.
 
         Parameters
         ----------
         value : number or numpy array
+        rounding : function
+                Handling of values intermediate between two axis points:
+                If `rounding=round`, use round-half-away-from-zero strategy to find closest value.
+                If `rounding=math.floor`, round to the next lower value.
+                If `round=math.ceil`, round to the next higher value.
 
         Returns
         -------
@@ -583,8 +591,6 @@ class BaseDataAxis(t.HasTraits):
         else:
             value = np.asarray(value)
 
-
-
         #Should evaluate on both arrays and scalars. Raises error if there are
         #nan values in array
         if np.all((value >= self.low_value)*(value <= self.high_value)):
@@ -594,17 +600,17 @@ class BaseDataAxis(t.HasTraits):
             if rounding is round:
                 #Use argmin(abs) which will return the closest value
                 # rounding_index = lambda x: np.abs(x).argmin()
-                index = numba_closest_index_round(self.axis,value)
+                index = numba_closest_index_round(self.axis,value).astype(int)
             elif rounding is math.ceil:
                 #Ceiling means finding index of the closest xi with xi - v >= 0
                 #we look for argmin of strictly non-negative part of self.axis-v.
                 #The trick is to replace strictly negative values with +np.inf
-                index = numba_closest_index_ceil(self.axis,value)
+                index = numba_closest_index_ceil(self.axis,value).astype(int)
             elif rounding is math.floor:
                 #flooring means finding index of the closest xi with xi - v <= 0
                 #we look for armgax of strictly non-positive part of self.axis-v.
                 #The trick is to replace strictly positive values with -np.inf
-                index = numba_closest_index_ceil(self.axis,value)
+                index = numba_closest_index_floor(self.axis,value).astype(int)
             else:
                 raise ValueError(
                     f'Non-supported rounding function. Use '
@@ -1156,13 +1162,18 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         return d
 
     def value2index(self, value, rounding=round):
-        """Return the closest index to the given value if between the axis limits.
+        """Return the closest index/indices to the given value(s) if between the axis limits.
 
         Parameters
         ----------
         value : number or string, or numpy array of number or string
                 if string, should either be a calibrated unit like "20nm"
                 or a relative slicing like "rel0.2".
+        rounding : function
+                Handling of values intermediate between two axis points:
+                If `rounding=round`, use python's standard round-half-to-even strategy to find closest value.
+                If `rounding=math.floor`, round to the next lower value.
+                If `round=math.ceil`, round to the next higher value.
 
         Returns
         -------
@@ -1182,15 +1193,26 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
         value = self._parse_value(value)
 
-        if isinstance(value, (np.ndarray, da.Array)):
-            if rounding is round:
-                rounding = np.round
-            elif rounding is math.ceil:
+        multiplier = 1E12
+        index = 1 / multiplier * np.trunc(
+            (value - self.offset) / self.scale * multiplier
+            )
+
+        if rounding is round:
+            # When value are negative, we need to use half away from zero
+            # approach on the index, because the index is always positive
+            index = np.where(
+                value >= 0 if np.sign(self.scale) > 0 else value < 0,
+                round_half_towards_zero(index, decimals=0),
+                round_half_away_from_zero(index, decimals=0),
+                )
+        else:
+            if rounding is math.ceil:
                 rounding = np.ceil
             elif rounding is math.floor:
                 rounding = np.floor
 
-        index = rounding((value - self.offset) / self.scale)
+            index = rounding(index)
 
         if isinstance(value, np.ndarray):
             index = index.astype(int)
