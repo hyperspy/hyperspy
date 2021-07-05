@@ -310,12 +310,12 @@ def _linear_bin(dat, scale, crop=True):
                 "Re-adjust your scale values or run code with "
                 "crop=False to avoid this error."
             )
-        # Set up the result np.array to have a new axis[0] size for after
-        # cropping.
-        result = np.zeros((dim,) + dat.shape[1:])
         # Make sure that native endian is used
         if not dat.dtype.isnative:
             dat = dat.astype(dat.dtype.type)
+        # Set up the result np.array to have a new axis[0] size for after
+        # cropping.
+        result = np.zeros((dim,) + dat.shape[1:], dtype=dat.dtype)
         # Carry out binning over axis[0]
         _linear_bin_loop(result=result, data=dat, scale=s)
         # Swap axis[0] back to the original axis location.
