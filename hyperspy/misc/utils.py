@@ -1428,3 +1428,33 @@ def is_binned(signal, axis=-1):
     else:
         return signal.axes_manager[axis].is_binned
 
+class TupleSA(tuple):
+    """A tuple that can set the attributes of its items
+    """
+    def __getitem__(self, *args, **kwargs):
+        item = super().__getitem__(*args, **kwargs)
+        try:
+            return type(self)(item)
+        except TypeError:
+            return item
+
+    def __setattr__(self, name, value):
+        no_name = [item
+                   for item in self
+                   if not hasattr(item, name)]
+        if no_name:
+            raise AttributeError(
+                f"'The items {no_name} have not attribute '{name}'")
+        else:
+            if isiterable(value) and not isinstance(value, str):
+                for item, value_ in zip(self, value):
+                    setattr(item, name, value_)
+            else:
+                for item in self:
+                    setattr(item, name, value)
+
+    def __add__(self, *args, **kwargs):
+        return type(self)(super().__add__(*args, **kwargs))
+
+    def __mul__(self, *args, **kwargs):
+        return type(self)(super().__mul__(*args, **kwargs))
