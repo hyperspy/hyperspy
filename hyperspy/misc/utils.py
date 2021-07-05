@@ -36,7 +36,6 @@ from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
 
-
 _logger = logging.getLogger(__name__)
 
 
@@ -76,28 +75,6 @@ def attrsetter(target, attrs, value):
     if where != -1:
         target = attrgetter(attrs[:where])(target)
     setattr(target, attrs[where + 1:], value)
-
-
-def generate_axis(origin, step, N, index=0):
-    """Creates an axis given the origin, step and number of channels
-
-    Alternatively, the index of the origin channel can be specified.
-
-    Parameters
-    ----------
-    origin : float
-    step : float
-    N : number of channels
-    index : int
-        index of origin
-
-    Returns
-    -------
-    Numpy array
-
-    """
-    return np.linspace(
-        origin - index * step, origin + step * (N - 1 - index), N)
 
 
 @contextmanager
@@ -943,7 +920,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
           stack_metadata=True, show_progressbar=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
 
-    The title is set to that of the first signal in the list.
+    The title is set to that of the first signal in the list. 
 
     Parameters
     ----------
@@ -951,10 +928,14 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         List of signals to stack.
     axis : {None, int, str}
         If None, the signals are stacked over a new axis. The data must
-        have the same dimensions. Otherwise the
-        signals are stacked over the axis given by its integer index or
-        its name. The data must have the same shape, except in the dimension
-        corresponding to `axis`.
+        have the same dimensions. Otherwise the signals are stacked over the
+        axis given by its integer index or its name. The data must have the
+        same shape, except in the dimension corresponding to `axis`. If the
+        stacking axis of the first signal is uniform, it is extended up to the
+        new length; if it is non-uniform, the axes vectors of all signals are
+        concatenated along this direction; if it is a `FunctionalDataAxis`,
+        it is extended based on the expression of the first signal (and its sub
+        axis `x` is handled as above depending on whether it is uniform or not).
     new_axis_name : str
         The name of the new axis when `axis` is None.
         If an axis with this name already
@@ -983,6 +964,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
     """
     from hyperspy.signals import BaseSignal
+    from hyperspy.axes import FunctionalDataAxis, UniformDataAxis, DataAxis
     import dask.array as da
     from numbers import Number
 
@@ -1026,13 +1008,40 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
     if len(signal_list) > 1:
         # Matching axis calibration is checked here
-        newlist = broadcast_signals(*signal_list, ignore_axis=axis_input)
+        broadcasted_sigs = broadcast_signals(*signal_list, ignore_axis=axis_input)
 
-        if axis is not None:
-            step_sizes = [s.axes_manager[axis].size for s in newlist]
-            axis = newlist[0].axes_manager[axis]
+        if axis_input is not None:
+            step_sizes = [s.axes_manager[axis_input].size for s in broadcasted_sigs]
+            axis = broadcasted_sigs[0].axes_manager[axis_input]
+            # stack axes if non-uniform (DataAxis)
+            if type(axis) is DataAxis:
+                for _s in signal_list[1:]:
+                    _axis = _s.axes_manager[axis_input]
+                    if (axis.axis[0] < axis.axis[-1] and axis.axis[-1] < _axis.axis[0]) \
+                       or (axis.axis[-1] < axis.axis[0] and _axis.axis[-1] < axis.axis[0]):
+                        axis.axis = np.concatenate((axis.axis, _axis.axis))
+                    else:
+                        raise ValueError("Signals can only be stacked along a "
+                            "non-uniform axes if the axis values do not overlap"
+                            " and have the correct order.")
+            # stack axes if FunctionalDataAxis and its x axis is uniform
+            elif type(axis) is FunctionalDataAxis and \
+               type(axis.axes_manager[axis_input].x) is UniformDataAxis:
+                   axis.x.size = np.sum(step_sizes)
+            # stack axes if FunctionalDataAxis and its x axis is not uniform
+            elif type(axis) is FunctionalDataAxis and \
+               type(axis.axes_manager[axis_input].x) is DataAxis:
+                for _s in signal_list[1:]:
+                    _axis = _s.axes_manager[axis_input]
+                    if (axis.x.axis[0] < axis.x.axis[-1] and axis.x.axis[-1] < _axis.x.axis[0]) \
+                       or (axis.x.axis[-1] < axis.x.axis[0] and _axis.x.axis[-1] < axis.x.axis[0]):
+                        axis.x.axis = np.concatenate((axis.x.axis, _axis.x.axis))
+                    else:
+                        raise ValueError("Signals can only be stacked along a "
+                            "non-uniform axes if the axis values do not overlap"
+                            " and have the correct order.")
 
-        datalist = [s.data for s in newlist]
+        datalist = [s.data for s in broadcasted_sigs]
         newdata = (
             da.stack(datalist, axis=0)
             if axis is None
@@ -1041,7 +1050,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
         if axis_input is None:
             signal = first.__class__(newdata)
-            signal.axes_manager._axes[1:] = copy.deepcopy(newlist[0].axes_manager._axes)
+            signal.axes_manager._axes[1:] = copy.deepcopy(broadcasted_sigs[0].axes_manager._axes)
             axis_name = new_axis_name
             axis_names = [axis_.name for axis_ in signal.axes_manager._axes[1:]]
             j = 1
@@ -1052,7 +1061,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
             eaxis.name = axis_name
             eaxis.navigate = True  # This triggers _update_parameters
         else:
-            signal = newlist[0]._deepcopy_with_new_data(newdata)
+            signal = broadcasted_sigs[0]._deepcopy_with_new_data(newdata)
 
         signal._lazy = True
         signal._assign_subclass()
@@ -1062,6 +1071,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         signal.metadata = first.metadata.deepcopy()
         signal.metadata.General.title = f"Stack of {first.metadata.General.title}"
 
+        # Stack metadata
         if isinstance(stack_metadata, bool):
             if stack_metadata:
                 signal.original_metadata.add_node('stack_elements')
@@ -1302,7 +1312,7 @@ def map_result_construction(signal,
         # add additional required axes
         for ind in range(
                 len(sig_shape) - sig.axes_manager.signal_dimension, 0, -1):
-            sig.axes_manager._append_axis(sig_shape[-ind], navigate=False)
+            sig.axes_manager._append_axis(size=sig_shape[-ind], navigate=False)
     if not ragged:
         sig.get_dimensions_from_data()
     if not sig.axes_manager._axes:

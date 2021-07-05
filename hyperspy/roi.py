@@ -52,7 +52,7 @@ import numpy as np
 
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
-from hyperspy.axes import DataAxis
+from hyperspy.axes import UniformDataAxis
 from hyperspy.drawing import widgets
 from hyperspy.ui_registry import add_gui_method
 
@@ -1080,7 +1080,10 @@ class CircleROI(BaseInteractiveROI):
             axes = self.signal_map[signal][1]
         else:
             axes = self._parse_axes(axes, signal.axes_manager)
-
+        for axis in axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                        "This ROI cannot operate on a non-uniform axis.")
         natax = signal.axes_manager._get_axes_in_natural_order()
         # Slice original data with a circumscribed rectangle
         cx = self.cx + 0.5001 * axes[0].scale
@@ -1335,11 +1338,13 @@ class Line2DROI(BaseInteractiveROI):
         cval : float, optional
             If `mode` is 'constant', what constant value to use outside the
             image.
+
         Returns
         -------
         return_value : array
             The intensity profile along the scan line. The length of the
             profile is the ceil of the computed length of the scan line.
+
         Examples
         --------
         >>> x = np.array([[1, 1, 1, 2, 2, 2]])
@@ -1352,12 +1357,18 @@ class Line2DROI(BaseInteractiveROI):
                [0, 0, 0, 0, 0, 0]])
         >>> profile_line(img, (2, 1), (2, 4))
         array([ 1.,  1.,  2.,  2.])
+
         Notes
         -----
         The destination point is included in the profile, in contrast to
-        standard numpy indexing.
+        standard numpy indexing. Requires uniform navigation axes.
 
         """
+        for axis in axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "Line profiles on data with non-uniform axes is not implemented.")
+
         import scipy.ndimage as nd
         # Convert points coordinates from axes units to pixels
         p0 = ((src[0] - axes[0].offset) / axes[0].scale,
@@ -1444,10 +1455,10 @@ class Line2DROI(BaseInteractiveROI):
             axm = signal.axes_manager.deepcopy()
             i0 = min(axes[0].index_in_array, axes[1].index_in_array)
             axm.remove([ax.index_in_array + 3j for ax in axes])
-            axis = DataAxis(profile.shape[i0],
-                            scale=length / profile.shape[i0],
-                            units=axes[0].units,
-                            navigate=axes[0].navigate)
+            axis = UniformDataAxis(size=profile.shape[i0],
+                                  scale=length / profile.shape[i0],
+                                  units=axes[0].units,
+                                  navigate=axes[0].navigate)
             axis.axes_manager = axm
             axm._axes.insert(i0, axis)
             from hyperspy.signals import BaseSignal

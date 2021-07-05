@@ -117,6 +117,7 @@ ref_data2 = np.array(
 
 axes1 = {
     "axis-0": {
+        "_type": "UniformDataAxis",
         "name": "y",
         "navigate": True,
         "offset": 0.0,
@@ -126,6 +127,7 @@ axes1 = {
         "is_binned": False,
     },
     "axis-1": {
+        "_type": "UniformDataAxis",
         "name": "x",
         "navigate": True,
         "offset": 0.0,
@@ -135,6 +137,7 @@ axes1 = {
         "is_binned": False,
     },
     "axis-2": {
+        "_type": "UniformDataAxis",
         "name": "dy",
         "navigate": False,
         "offset": 0.0,
@@ -144,6 +147,7 @@ axes1 = {
         "is_binned": False,
     },
     "axis-3": {
+        "_type": "UniformDataAxis",
         "name": "dx",
         "navigate": False,
         "offset": 0.0,
@@ -156,6 +160,7 @@ axes1 = {
 
 axes2 = {
     "axis-0": {
+        "_type": "UniformDataAxis",
         "name": "y",
         "navigate": True,
         "offset": 0.0,
@@ -165,6 +170,7 @@ axes2 = {
         "is_binned": False,
     },
     "axis-1": {
+        "_type": "UniformDataAxis",
         "name": "x",
         "navigate": True,
         "offset": 0.0,
@@ -174,6 +180,7 @@ axes2 = {
         "is_binned": False,
     },
     "axis-2": {
+        "_type": "UniformDataAxis",
         "name": "dy",
         "navigate": False,
         "offset": 0.0,
@@ -183,6 +190,7 @@ axes2 = {
         "is_binned": False,
     },
     "axis-3": {
+        "_type": "UniformDataAxis",
         "name": "dx",
         "navigate": False,
         "offset": 0.0,
@@ -195,6 +203,7 @@ axes2 = {
 
 axes2_converted = {
     "axis-0": {
+        "_type": "UniformDataAxis",
         "name": "y",
         "navigate": True,
         "offset": 0.0,
@@ -204,6 +213,7 @@ axes2_converted = {
         "is_binned": False,
     },
     "axis-1": {
+        "_type": "UniformDataAxis",
         "name": "x",
         "navigate": True,
         "offset": 0.0,
@@ -213,6 +223,7 @@ axes2_converted = {
         "is_binned": False,
     },
     "axis-2": {
+        "_type": "UniformDataAxis",
         "name": "dy",
         "navigate": False,
         "offset": 0.0,
@@ -222,6 +233,7 @@ axes2_converted = {
         "is_binned": False,
     },
     "axis-3": {
+        "_type": "UniformDataAxis",
         "name": "dx",
         "navigate": False,
         "offset": 0.0,

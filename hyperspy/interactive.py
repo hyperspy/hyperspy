@@ -118,10 +118,8 @@ class Interactive:
             self.out.data[:] = out.data[:]
         else:
             self.out.data = out.data
-        # The following may trigger an `any_axis_changed` event and, therefore,
-        # it must precede the `data_changed` trigger below.
         self.out.axes_manager.update_axes_attributes_from(
-            out.axes_manager._axes, attributes=["scale", "offset", "size"])
+            out.axes_manager._axes)
         self.out.events.data_changed.trigger(self.out)
 
     def update(self):

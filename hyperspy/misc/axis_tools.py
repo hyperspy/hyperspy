@@ -17,10 +17,11 @@
 
 
 import numpy as np
+from pint.unit import Unit
 
 
-def check_axes_calibration(ax1, ax2):
-    """Check if the calibration of two DataAxis objects matches.
+def check_axes_calibration(ax1, ax2, rtol=1e-7):
+    """Check if the calibration of two Axis objects matches.
 
     Raises a logger warning if there is a mismatch.
     ``scale`` and ``offset`` are compared as floats
@@ -29,7 +30,10 @@ def check_axes_calibration(ax1, ax2):
 
     Parameters
     ----------
-    ax1, ax2 : DataAxis objects
+    ax1, ax2 : Axis objects
+        Axes objects that should be compared.
+    rtol : float
+        Tolerance passed to `np.allclose` for comparison. Default 1e-7.
 
     Returns
     -------
@@ -37,13 +41,17 @@ def check_axes_calibration(ax1, ax2):
         If the two axes have identical calibrations.
 
     """
-    if not np.allclose(ax1.scale, ax2.scale, atol=0, rtol=1e-7):
-        return False
-
-    if not np.allclose(ax1.offset, ax2.offset, atol=0, rtol=1e-7):
-        return False
-
-    if ax1.units != ax2.units:
-        return False
-
-    return True
+    if ax1.size == ax2.size:
+        try:
+            unit1 = Unit(ax1.units)
+        except:
+            unit1 = ax1.units
+            pass
+        try:
+            unit2 = ax2.units
+            unit2 = Unit(ax2.units)
+        except:
+            pass
+        if np.allclose(ax1.axis, ax2.axis, atol=0, rtol=rtol) and unit1 == unit2:
+            return True
+    return False

@@ -45,9 +45,9 @@ description = ''
 full_support = True
 file_extensions = ('nc', 'NC')
 default_extension = 0
-# Writing features
+# Writing capabilities
 writes = False
-
+non_uniform_axis = False
 # ----------------------
 
 

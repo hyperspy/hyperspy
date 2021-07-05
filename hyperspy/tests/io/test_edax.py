@@ -111,7 +111,8 @@ class TestSpcSpectrum_v061_xrf:
         assert isinstance(TestSpcSpectrum_v061_xrf.spc, signals.EDSSEMSpectrum)
 
     def test_axes(self):
-        spc_ax_manager = {'axis-0': {'name': 'Energy',
+        spc_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
+                                     'name': 'Energy',
                                      'navigate': False,
                                      'is_binned': True,
                                      'offset': 0.0,
@@ -187,7 +188,8 @@ class TestSpcSpectrum_v070_eds:
         assert isinstance(TestSpcSpectrum_v070_eds.spc, signals.EDSSEMSpectrum)
 
     def test_axes(self):
-        spc_ax_manager = {'axis-0': {'name': 'Energy',
+        spc_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
+                                     'name': 'Energy',
                                      'navigate': False,
                                      'is_binned': True,
                                      'offset': 0.0,
@@ -284,21 +286,24 @@ class TestSpdMap_070_eds:
         assert isinstance(TestSpdMap_070_eds.spd, signals.EDSSEMSpectrum)
 
     def test_axes(self):
-        spd_ax_manager = {'axis-0': {'name': 'y',
+        spd_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
+                                     'name': 'y',
                                      'navigate': True,
                                      'is_binned': False,
                                      'offset': 0.0,
                                      'scale': 14.227345585823057,
                                      'size': 200,
                                      'units': 'nm'},
-                          'axis-1': {'name': 'x',
+                          'axis-1': {'_type': 'UniformDataAxis',
+                                     'name': 'x',
                                      'navigate': True,
                                      'is_binned': False,
                                      'offset': 0.0,
                                      'scale': 14.235896058380602,
                                      'size': 256,
                                      'units': 'nm'},
-                          'axis-2': {'name': 'Energy',
+                          'axis-2': {'_type': 'UniformDataAxis',
+                                     'name': 'Energy',
                                      'navigate': False,
                                      'is_binned': True,
                                      'offset': 0.0,
@@ -411,21 +416,24 @@ class TestSpdMap_061_xrf:
         assert isinstance(TestSpdMap_061_xrf.spd, signals.EDSSEMSpectrum)
 
     def test_axes(self):
-        spd_ax_manager = {'axis-0': {'name': 'y',
+        spd_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
+                                     'name': 'y',
                                      'navigate': True,
                                      'is_binned': False,
                                      'offset': 0.0,
                                      'scale': 0.5651920166015625,
                                      'size': 200,
                                      'units': 'mm'},
-                          'axis-1': {'name': 'x',
+                          'axis-1': {'_type': 'UniformDataAxis',
+                                     'name': 'x',
                                      'navigate': True,
                                      'is_binned': False,
                                      'offset': 0.0,
                                      'scale': 0.5651920166015625,
                                      'size': 256,
                                      'units': 'mm'},
-                          'axis-2': {'name': 'Energy',
+                          'axis-2': {'_type': 'UniformDataAxis',
+                                     'name': 'Energy',
                                      'navigate': False,
                                      'is_binned': True,
                                      'offset': 0.0,

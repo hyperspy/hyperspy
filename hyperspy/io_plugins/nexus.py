@@ -29,8 +29,9 @@ from hyperspy.io_plugins.hspy import overwrite_dataset, get_signal_chunks
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.exceptions import VisibleDeprecationWarning
 _logger = logging.getLogger(__name__)
-# Plugin characteristics
 
+# Plugin characteristics
+# ----------------------
 format_name = 'Nexus'
 description = \
     'Read NXdata sets from Nexus files and metadata. Data and metadata can '\
@@ -41,6 +42,8 @@ file_extensions = ['nxs', 'NXS']
 default_extension = 0
 # Writing capabilities:
 writes = True
+non_uniform_axis = False
+# ----------------------
 
 
 def _byte_to_string(value):

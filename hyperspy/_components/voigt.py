@@ -18,7 +18,9 @@
 
 import math
 import sympy
+import numpy as np
 
+from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
 from hyperspy.misc.utils import is_binned # remove in v2.0
@@ -93,7 +95,7 @@ class Voigt(Expression):
                               "SymPy >= 1.3")
         # We use `_gamma` internally to workaround the use of the `gamma`
         # function in sympy
-        super(Voigt, self).__init__(
+        super().__init__(
             expression="area * real(V); \
                 V = wofz(z) / (sqrt(2.0 * pi) * sigma); \
                 z = (x - centre + 1j * _gamma) / (sigma * sqrt(2.0))",
@@ -156,28 +158,29 @@ class Voigt(Expression):
         >>> g.estimate_parameters(s, -10, 10, False)
 
         """
-        super(Voigt, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
+        scaling_factor = _get_scaling_factor(signal, axis, centre)
 
         if only_current is True:
             self.centre.value = centre
             self.sigma.value = sigma
             self.area.value = height * sigma * sqrt2pi
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.area.value /= axis.scale
+                self.area.value /= scaling_factor
             return True
         else:
             if self.area.map is None:
                 self._create_arrays()
             self.area.map['values'][:] = height * sigma * sqrt2pi
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.area.map['values'][:] /= axis.scale
+                self.area.map['values'][:] /= scaling_factor
             self.area.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma
             self.sigma.map['is_set'][:] = True

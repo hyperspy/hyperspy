@@ -527,8 +527,10 @@ class BaseModel(list):
                             continue    # Keep active_map
                         component_.active_is_multidimensional = False
                     component_.active = active
-            maxval = self.axes_manager.navigation_size
-            enabled = show_progressbar and (maxval > 0)
+
+            maxval = self.axes_manager._get_iterpath_size()
+
+            enabled = show_progressbar and (maxval != 0)
             pbar = progressbar(total=maxval, disable=not enabled,
                                position=show_progressbar, leave=True)
             for index in self.axes_manager:
@@ -1559,20 +1561,22 @@ class BaseModel(list):
                 f"shape: {self.axes_manager._navigation_shape_in_array}"
             )
 
-        masked_elements = 0 if mask is None else mask.sum()
-        maxval = self.axes_manager.navigation_size - masked_elements
-        show_progressbar = show_progressbar and (maxval > 0)
-
         if iterpath is None:
-            self.axes_manager._iterpath = "flyback"
-            warnings.warn(
-                "The 'iterpath' default will change from 'flyback' to 'serpentine' "
-                "in HyperSpy version 2.0. Change 'iterpath' to other than None to "
-                "suppress this warning.",
-                VisibleDeprecationWarning,
-            )
+            if self.axes_manager.iterpath == "flyback":
+                # flyback is set by default in axes_manager.iterpath on signal creation
+                warnings.warn(
+                    "The `iterpath` default will change from 'flyback' to 'serpentine' "
+                    "in HyperSpy version 2.0. Change the 'iterpath' argument to other than "
+                    "None to suppress this warning.",
+                    VisibleDeprecationWarning,
+                )
+            # otherwise use whatever is set at m.axes_manager.iterpath
         else:
-            self.axes_manager._iterpath = iterpath
+            self.axes_manager.iterpath = iterpath
+
+        masked_elements = 0 if mask is None else mask.sum()
+        maxval = self.axes_manager._get_iterpath_size(masked_elements)
+        show_progressbar = show_progressbar and (maxval != 0)
 
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(

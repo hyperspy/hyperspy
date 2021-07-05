@@ -58,8 +58,9 @@ default_extension = 0
 reads_images = True
 reads_spectrum = True
 reads_spectrum_image = True
-# Writing features
+# Writing capabilities
 writes = True  # Only Berkeley emd
+non_uniform_axis = False
 EMD_VERSION = '0.2'
 # ----------------------
 
@@ -683,7 +684,7 @@ class EMD_NCEM:
                                    simu_om.get('cellDimension', 0)[0])
                 if not math.isclose(total_thickness, len(array_list) * scale,
                                     rel_tol=1e-4):
-                    _logger.warning("Depth axis is non uniform and its offset "
+                    _logger.warning("Depth axis is non-uniform and its offset "
                                     "and scale can't be set accurately.")
                     # When non-uniform/non-linear axis are implemented, adjust
                     # the final depth to the "total_thickness"
@@ -797,7 +798,7 @@ class EMD_NCEM:
             offset, scale = axis_data[0], np.diff(axis_data).mean()
         else:
             # This is a string, return default values
-            # When non-linear axis is supported we should be able to parse
+            # When non-uniform axis is supported we should be able to parse
             # string
             offset, scale = 0, 1
         return offset, scale

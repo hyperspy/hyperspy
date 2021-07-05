@@ -283,14 +283,17 @@ class WidgetBase(object):
 
     def _i2v(self, axis, i):
         """Wrapped version of DataAxis.index2value, which bounds the value
-        between axis.low_value and axis.high_value+axis.scale, and does not
-        raise a ValueError.
+        inbetween axis.low_value and axis.high_value + axis.scale when the axis
+        is uniform and does not raise a ValueError.
         """
         try:
             return axis.index2value(i)
         except ValueError:
             if i > axis.high_index:
-                return axis.high_value + axis.scale
+                if axis.is_uniform:
+                    return axis.high_value + axis.scale
+                else:
+                    return axis.high_value
             elif i < axis.low_index:
                 return axis.low_value
             else:
@@ -568,7 +571,17 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
     def _set_axes(self, axes):
         super(ResizableDraggableWidgetBase, self)._set_axes(axes)
         if self.axes:
-            self._size = np.array([ax.scale for ax in self.axes])
+            self._size = np.array([self._get_step(ax) for ax in self.axes])
+
+    def _get_step(self, axis):
+        # TODO: need to check if this is working fine, particularly with
+        """ Use to determine the size of the widget with support for non 
+        uniform axis.
+        """
+        if axis.index >= axis.size - 1:
+            return axis.index2value(axis.index) - axis.index2value(axis.index - 1)
+        else:
+            return axis.index2value(axis.index + 1) - axis.index2value(axis.index)
 
     def _get_size(self):
         """Getter for 'size' property. Returns the size as a tuple (to prevent
