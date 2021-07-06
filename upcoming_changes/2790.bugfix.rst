@@ -1,0 +1,2 @@
+Method `estimate_parameters` in `Polynomial` component now supports order
+greater than 10.
