@@ -308,16 +308,17 @@ class TestPolynomial:
         m_2d.multifit(iterpath='serpentine', grad='analytical')
         np.testing.assert_allclose(m_2d.red_chisq.data.sum(), 0.0, atol=1E-7)
 
+    @pytest.mark.parametrize(("order"), (2, 12))
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-    def test_estimate_parameters(self,  only_current, binned):
+    def test_estimate_parameters(self,  only_current, binned, order):
         self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal()
         s.metadata.Signal.binned = binned
-        p = hs.model.components1D.Polynomial(order=2, legacy=False)
+        p = hs.model.components1D.Polynomial(order=order, legacy=False)
         p.estimate_parameters(s, None, None, only_current=only_current)
-        np.testing.assert_allclose(p.a2.value, 0.5)
-        np.testing.assert_allclose(p.a1.value, 2)
-        np.testing.assert_allclose(p.a0.value, 3)
+        np.testing.assert_allclose(p.parameters[2].value, 0.5)
+        np.testing.assert_allclose(p.parameters[1].value, 2)
+        np.testing.assert_allclose(p.parameters[0].value, 3)
 
     def test_zero_order(self):
         m = self.m_offset
