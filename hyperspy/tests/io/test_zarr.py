@@ -27,6 +27,7 @@ import dask.array as da
 import h5py
 import numpy as np
 import pytest
+import zarr
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
@@ -702,3 +703,12 @@ def test_chunking_saving_lazy():
     s.save(filename3, chunks=chunks)
     s3 = load(filename3, lazy=True)
     assert tuple([c[0] for c in s3.data.chunks]) == chunks
+
+def test_data_lazy():
+    s = Signal2D(da.ones((5, 10, 10))).as_lazy()
+    s.data = s.data.rechunk([5, 2, 2])
+    with tempfile.TemporaryDirectory() as tmp:
+        filename = os.path.join(tmp, 'test_chunking_saving_lazy.zarr')
+    s.save(filename)
+    s1 = load(filename)
+    np.testing.assert_array_almost_equal(s1.data, s.data)

@@ -146,6 +146,7 @@ def file_reader(filename,
                     experiments.append(ds)
         # Parse the file
         for experiment in experiments:
+            print(experiment)
             exg = f['Experiments'][experiment]
             exp = zarrgroup2signaldict(exg, lazy)
             # assign correct models, if found:
@@ -186,7 +187,9 @@ def zarrgroup2signaldict(group, lazy=False):
     exp["package_version"] = group.attrs["package_version"]
 
     data = group['data']
+    print("file data", data[:])
     if lazy:
+        print(data)
         data = da.from_array(data, chunks=data.chunks)
         exp['attributes']['_lazy'] = True
     else:
@@ -419,7 +422,7 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
         if isinstance(data, da.Array):
             if data.chunks != dset.chunks:
                 data = data.rechunk(dset.chunks)
-            da.to_zarr(data, dset)  # add in compression etc
+            data.to_zarr(url=dset, overwrite=False)  # add in compression etc
         else:
             dset[:] = data
 
@@ -584,7 +587,7 @@ def file_writer(filename, signal, *args, **kwds):
     *args, optional
     **kwds, optional
     """
-    store = zarr.storage.NestedDirectoryStore(filename)
+    store = zarr.storage.NestedDirectoryStore(filename,)
     f = zarr.group(store=store, overwrite=True)
     f.attrs['file_format'] = "Zarr"
     f.attrs['file_format_version'] = version
@@ -592,7 +595,6 @@ def file_writer(filename, signal, *args, **kwds):
     group_name = signal.metadata.General.title if \
         signal.metadata.General.title else '__unnamed__'
     # / is a invalid character, see #942
-    print(group_name)
     if "/" in group_name:
         group_name = group_name.replace("/", "-")
     expg = exps.create_group(group_name)
@@ -611,3 +613,6 @@ def file_writer(filename, signal, *args, **kwds):
         raise
     finally:
         del smd.record_by
+    print(store.__dict__)
+    print(f["Experiments"]["__unnamed__"]["data"][:])
+
