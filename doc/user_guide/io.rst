@@ -599,6 +599,13 @@ documentation for more information.
     >>> s.save('file.jpg', scalebar=True)
     >>> s.save('file.jpg', scalebar=True, scalebar_kwds={'location':'lower right'})
 
+The number of pixel of the exported image can be adjusted:
+
+.. code-block:: python
+
+    >>> s.save('file.jpg', scalebar=True)
+    >>> s.save('file.jpg', scalebar=True, output_size=512)
+
 When saving an image, keyword arguments can be passed to the corresponding
 pillow file writer.
 
