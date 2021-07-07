@@ -21,7 +21,6 @@ import logging
 
 from imageio import imread, imwrite
 from matplotlib.figure import Figure
-import numpy as np
 import pint
 import traits.api as t
 
@@ -44,10 +43,8 @@ _ureg = pint.UnitRegistry()
 _logger = logging.getLogger(__name__)
 
 
-def file_writer(filename, signal, scalebar=False,
-                scalebar_kwds={'box_alpha':0.75, 'location':'lower left'},
-                output_size=None,
-                **kwds):
+def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
+                output_size=None, **kwds):
     """Writes data to any format supported by PIL
 
     Parameters
@@ -58,19 +55,33 @@ def file_writer(filename, signal, scalebar=False,
         the file extension that is any one supported by imageio.
     signal: a Signal instance
     scalebar : bool, optional
-        Export the image with a scalebar.
-    scalebar_kwds : dict
+        Export the image with a scalebar. Default is False
+    scalebar_kwds : dict, optional
         Dictionary of keyword arguments for the scalebar. Useful to set
         formattiong, location, etc. of the scalebar. See the documentation of
         the 'matplotlib-scalebar' library for more information.
-    **kwds: keyword arguments
+    output_size : tuple of length 2 or int
+        The output size of the image in pixel, if None, the size of the data
+        is used. Default is None.
+    **kwds : keyword arguments
         Allows to pass keyword arguments supported by the individual file
-        writers as documented at https://imageio.readthedocs.io/en/stable/formats.html
+        writers as documented at
+        https://imageio.readthedocs.io/en/stable/formats.html when exporting
+        image without scalebar. When exporting with a scalebar, the keyword
+        arguments are passed to the `pil_kwargs` dictionary of
+        :py:func:`matplotlib.pyplot.savefig`
 
     """
     data = signal.data
+    if scalebar_kwds is None:
+        scalebar_kwds = dict(box_alpha=0.75, location='lower left')
     if rgb_tools.is_rgbx(data):
         data = rgb_tools.rgbx2regular_array(data)
+
+    if output_size is not None and not scalebar:
+        _logger.warning("`output_size` is only used when exporting image "
+                        "with a scale bar.")
+
     if scalebar:
         try:
             from matplotlib_scalebar.scalebar import ScaleBar
@@ -89,9 +100,18 @@ def file_writer(filename, signal, scalebar=False,
         else:
             raise ValueError("Data not compatible with saving scale bar.")
 
+        # Sanety check of the axes
+        # This plugin doesn't support non-uniform axes, we don't need to check
+        # if the axes have a scale attribute
+        if axes[0].scale != axes[1].scale or axes[0].units != axes[1].units:
+            raise ValueError("Scale and units must be the same for each axes "
+                             "to export images with a scale bar.")
+
         if output_size is None:
             # fall back to image size
             output_size = [axis.size for axis in axes]
+        elif isinstance(output_size, (int, float)):
+            output_size = [output_size]*2
 
         fig = Figure(figsize=[size / dpi for size in output_size], dpi=dpi)
 
@@ -112,15 +132,15 @@ def file_writer(filename, signal, scalebar=False,
         ax.axis('off')
         ax.imshow(data, cmap='gray')
 
-        # TODO: check that both axes are equal
         # Add scalebar
         axis = axes[0]
-        if axis.units == t.Undefined:
-            axis.units = "px"
+        units = axis.units
+        if units == t.Undefined:
+            units = "px"
             scalebar_kwds['dimension'] = "pixel-length"
-        if _ureg.Quantity(axis.units).check('1/[length]'):
+        if _ureg.Quantity(units).check('1/[length]'):
             scalebar_kwds['dimension'] = "si-length-reciprocal"
-        scalebar = ScaleBar(axis.scale, axis.units, **scalebar_kwds)
+        scalebar = ScaleBar(axis.scale, units, **scalebar_kwds)
         ax.add_artist(scalebar)
         fig.savefig(filename, dpi=dpi, pil_kwargs=kwds)
     else:

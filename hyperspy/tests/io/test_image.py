@@ -81,6 +81,7 @@ def test_export_scalebar(ext):
     data = np.arange(1E6).reshape((1000, 1000))
     s = hs.signals.Signal2D(data)
     s.axes_manager[0].units = 'nm'
+    s.axes_manager[1].units = 'nm'
     filename = 'test.png'
     with tempfile.TemporaryDirectory() as tmpdir:
         filename = os.path.join(tmpdir, f'test_scalebar_export.{ext}')
@@ -113,3 +114,44 @@ def test_export_scalebar_undefined_units():
         s_reload = hs.load(filename)
         assert s.data.shape == s_reload.data.shape
 
+
+def test_non_uniform():
+    pixels = 16
+    s = hs.signals.Signal2D(np.arange(pixels**2).reshape((pixels, pixels)))
+    s.axes_manager[0].convert_to_non_uniform_axis()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        filename = os.path.join(tmpdir, 'test_export_size.jpg')
+        with pytest.raises(TypeError):
+            s.save(filename)
+
+
+def test_export_scalebar_different_scale_units():
+    pixels = 16
+    s = hs.signals.Signal2D(np.arange(pixels**2).reshape((pixels, pixels)))
+    s.axes_manager[0].scale = 2
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        filename = os.path.join(tmpdir, 'test_export_size.jpg')
+        with pytest.raises(ValueError):
+            s.save(filename, scalebar=True)
+
+    s = hs.signals.Signal2D(np.arange(pixels**2).reshape((pixels, pixels)))
+    s.axes_manager[0].units = 'nm'
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        filename = os.path.join(tmpdir, 'test_export_size.jpg')
+        with pytest.raises(ValueError):
+            s.save(filename, scalebar=True)
+
+
+@pytest.mark.parametrize('output_size', (512, [512, 512]))
+def test_export_output_size(output_size):
+    pixels = 16
+    s = hs.signals.Signal2D(np.arange(pixels**2).reshape((pixels, pixels)))
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        filename = os.path.join(tmpdir, 'test_export_size.jpg')
+        s.save(filename, scalebar=True, output_size=output_size)
+        s_reload = hs.load(filename)
+        assert s_reload.data.shape == (512, 512)
