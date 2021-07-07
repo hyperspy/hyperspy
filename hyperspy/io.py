@@ -343,7 +343,7 @@ def load(filenames=None,
     elif isinstance(filenames, Path):
         # Just convert to list for now, pathlib.Path not
         # fully supported in io_plugins
-        filenames = [f for f in [filenames] if f.is_file()]
+        filenames = [f for f in [filenames] if (f.is_file() or f.is_dir())]
 
     elif isgenerator(filenames):
         filenames = list(filenames)

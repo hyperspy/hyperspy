@@ -161,6 +161,7 @@ class TestSavingMetadataContainers:
         s.metadata.set_item('test', ['a', 'b', '\u6f22\u5b57'])
         fname = tmp_path / 'test.zarr'
         s.save(fname)
+        s.save("test.zarr")
         l = load(fname)
         assert isinstance(l.metadata.test[0], str)
         assert isinstance(l.metadata.test[1], str)
@@ -357,37 +358,26 @@ class TestPassingArgs:
 
 class TestAxesConfiguration:
 
-    def setup_method(self, method):
-        self.filename = 'testfile.zarr'
+    def test_axes_configuration(self, tmp_path):
+        self.filename = tmp_path / 'testfile.zarr'
         s = BaseSignal(np.zeros((2, 2, 2, 2, 2)))
         s.axes_manager.signal_axes[0].navigate = True
         s.axes_manager.signal_axes[0].navigate = True
         s.save(self.filename)
-
-    def test_axes_configuration(self):
         s = load(self.filename)
         assert s.axes_manager.navigation_axes[0].index_in_array == 4
         assert s.axes_manager.navigation_axes[1].index_in_array == 3
         assert s.axes_manager.signal_dimension == 3
 
-    def teardown_method(self, method):
-        remove(self.filename)
-
 
 class TestAxesConfigurationBinning:
-
-    def setup_method(self, method):
+    def test_axes_configuration(self):
         self.filename = 'testfile.zarr'
         s = BaseSignal(np.zeros((2, 2, 2)))
         s.axes_manager.signal_axes[-1].is_binned = True
         s.save(self.filename)
-
-    def test_axes_configuration(self):
         s = load(self.filename)
         assert s.axes_manager.signal_axes[-1].is_binned == True
-
-    def teardown_method(self, method):
-        remove(self.filename)
 
 
 class Test_permanent_markers_io:
@@ -625,7 +615,7 @@ class Test_permanent_markers_io:
             s = load(os.path.join(
                 my_path,
                 "zarr_files",
-                "test_marker_bad_marker_type.zarr"))
+                "test_bad_marker_type.zarr"))
         assert len(s.metadata.Markers) == 4
 
     def test_load_missing_y2_value(self):
@@ -636,7 +626,7 @@ class Test_permanent_markers_io:
         with pytest.warns(VisibleDeprecationWarning):
             s = load(os.path.join(
                 my_path,
-                "hdf5_files",
+                "zarr_files",
                 "test_marker_point_y2_data_deleted.zarr"))
         assert len(s.metadata.Markers) == 5
 

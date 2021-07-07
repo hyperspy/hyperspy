@@ -28,6 +28,7 @@ import dask.array as da
 from traits.api import Undefined
 from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
 from hyperspy.axes import AxesManager
+import numcodecs
 
 
 _logger = logging.getLogger(__name__)
@@ -257,10 +258,10 @@ def dict2zarrgroup(dictionary, group, **kwds):
             if _type + key in group:
                 del group[_type + key]
             group.create_dataset(_type + key,
-                                 tmp.shape,
-                                 dtype=zarr.special_dtype(vlen=str),
+                                 data=tmp,
+                                 dtype=object,
+                                 object_codec=numcodecs.JSON(),
                                  **kwds)
-            group[_type + key][:] = tmp[:]
         else:
             if _type + key in group:
                 del group[_type + key]
@@ -473,11 +474,7 @@ def zarrgroup2dict(group, dictionary=None, lazy=False):
                 dat = group[key]
                 kn = key
                 if key.startswith("_list_"):
-                    if (zarr.check_string_dtype(dat.dtype) and
-                        hasattr(dat, 'asstr')):
-                        # h5py 3.0 and newer
-                        # https://docs.h5py.org/en/3.0.0/strings.html
-                        dat = dat.asstr()[:]
+                    #dat = dat.asstr()[:]
                     ans = np.array(dat)
                     ans = ans.tolist()
                     kn = key[6:]
