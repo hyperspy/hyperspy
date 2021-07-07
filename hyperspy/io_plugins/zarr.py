@@ -419,7 +419,7 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
         if isinstance(data, da.Array):
             if data.chunks != dset.chunks:
                 data = data.rechunk(dset.chunks)
-            da.store(data, dset)
+            da.to_zarr(data, dset)  # add in compression etc
         else:
             dset[:] = data
 

@@ -132,13 +132,6 @@ class LazySignal(BaseSignal):
 
     compute.__doc__ %= SHOW_PROGRESSBAR_ARG
 
-    @property
-    def shape(self):
-        return self.data.shape
-
-    @property
-    def dtype(self):
-        return self.data.dtype
 
     def rechunk(self,
                 nav_chunks="auto",
