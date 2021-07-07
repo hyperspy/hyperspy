@@ -170,3 +170,11 @@ def test_export_output_size(output_size):
         s.save(filename, scalebar=True, output_size=output_size)
         s_reload = hs.load(filename)
         assert s_reload.data.shape == (512, 512)
+
+
+def test_save_image_navigation():
+    pixels = 16
+    s = hs.signals.Signal2D(np.arange(pixels**2).reshape((pixels, pixels)))
+    with tempfile.TemporaryDirectory() as tmpdir:
+        filename = os.path.join(tmpdir, 'test_save_image_navigation.jpg')
+        s.T.save(filename, scalebar=True)

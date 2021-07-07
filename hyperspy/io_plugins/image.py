@@ -35,7 +35,7 @@ file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg',
                    'msp', 'pcx', 'ppm', "pbm", "pgm", 'xbm', 'spi', ]
 default_extension = 0  # png
 # Writing capabilities
-writes = [(2, 0), ]
+writes = [(2, 0), (0, 2)]
 non_uniform_axis = False
 # ----------------------
 
@@ -92,10 +92,8 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
         if len(signal.axes_manager.signal_axes) == 2:
             axes = signal.axes_manager.signal_axes
         elif len(signal.axes_manager.navigation_axes) == 2:
-            # Try to use navigation axes
+            # Use navigation axes
             axes = signal.axes_manager.navigation_axes
-        else:
-            raise ValueError("Data not compatible with saving scale bar.")
 
         if output_size is None:
             # fall back to image size
