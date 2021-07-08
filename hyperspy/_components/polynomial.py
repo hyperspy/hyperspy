@@ -115,7 +115,7 @@ class Polynomial(Expression):
                     para.value = estim
             return True
         else:
-            if self.a0.map is None:
+            if self.parameters[0].map is None:
                 self._create_arrays()
 
             nav_shape = signal.axes_manager._navigation_shape_in_array
