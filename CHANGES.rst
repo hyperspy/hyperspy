@@ -15,12 +15,12 @@ Bug Fixes
 ---------
 
 - Fix parsing EELS aperture label with unexpected value, for example 'Imaging' instead of '5 mm' (`#2772 <https://github.com/hyperspy/hyperspy/issues/2772>`_)
-- Lazy datasets can now be saved out as blockfiles (blo). (`#2774 <https://github.com/hyperspy/hyperspy/issues/2774>`_)
+- Lazy datasets can now be saved out as blockfiles (blo) (`#2774 <https://github.com/hyperspy/hyperspy/issues/2774>`_)
 - ComplexSignals can now be rebinned without error (`#2789 <https://github.com/hyperspy/hyperspy/issues/2789>`_)
 - Method `estimate_parameters` in `Polynomial` component now supports order
-  greater than 10. (`#2790 <https://github.com/hyperspy/hyperspy/issues/2790>`_)
+  greater than 10 (`#2790 <https://github.com/hyperspy/hyperspy/issues/2790>`_)
 - Update minimal requirement of dependency importlib_metadata from
-  >= 1.6.0 to >= 3.6. (`#2793 <https://github.com/hyperspy/hyperspy/issues/2793>`_)
+  >= 1.6.0 to >= 3.6 (`#2793 <https://github.com/hyperspy/hyperspy/issues/2793>`_)
 
 
 Enhancements
@@ -29,7 +29,7 @@ Enhancements
 - When saving a dataset with a dtype other than
   `uint8 <https://numpy.org/doc/stable/user/basics.types.html>`_ to a blockfile
   (blo) it is now possible to provide the argument ``intensity_scaling`` to map
-  the intensity values to the reduced range. (`#2774 <https://github.com/hyperspy/hyperspy/issues/2774>`_)
+  the intensity values to the reduced range (`#2774 <https://github.com/hyperspy/hyperspy/issues/2774>`_)
 
 
 Maintenance
