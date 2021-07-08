@@ -24,7 +24,9 @@ from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy.components1d import EELSCLEdge, PowerLaw
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
+from hyperspy.misc.utils import dummy_context_manager
 from hyperspy.models.model1d import Model1D
+
 
 _logger = logging.getLogger(__name__)
 
@@ -350,12 +352,14 @@ class EELSModel(Model1D):
         * :py:meth:`~hyperspy.model.EELSModel.fit`
 
         """
-        # Fit background
-        self.fit_background(start_energy, **kwargs)
+        cm = self.suspend_update if self._plot_active else dummy_context_manager
+        with cm(update_on_resume=True):
+            # Fit background
+            self.fit_background(start_energy, **kwargs)
 
-        # Fit the edges
-        for i in range(0, len(self._active_edges)):
-            self._fit_edge(i, start_energy, **kwargs)
+            # Fit the edges
+            for i in range(0, len(self._active_edges)):
+                self._fit_edge(i, start_energy, **kwargs)
 
     smart_fit.__doc__ %= FIT_PARAMETERS_ARG
 
