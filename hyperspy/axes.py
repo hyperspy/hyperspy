@@ -1817,9 +1817,16 @@ class AxesManager(t.HasTraits):
         iterpath : str, optional
             The iterpath to use. The default is None.
 
-        Returns
-        -------
+        Yields
+        ------
         None.
+
+        Examples
+        --------
+        >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape([3, 2, 4]))
+        >>> with s.axes_manager.switch_iterpath('serpentine'):
+        >>>     for indices in s.axes_manager:
+        >>>         print(indices)
 
         """
         if iterpath is not None:
