@@ -738,11 +738,29 @@ class EELSModel(Model1D):
         self.resolve_fine_structure()
 
     def set_all_edges_intensities_positive(self):
+        """
+        Set all edges intensities positive by setting ``ext_force_positive``
+        and ``ext_bounded`` to ``True``.
+
+        Returns
+        -------
+        None.
+
+        """
         for edge in self._active_edges:
             edge.intensity.ext_force_positive = True
             edge.intensity.ext_bounded = True
 
     def unset_all_edges_intensities_positive(self):
+        """
+        Unset all edges intensities positive by setting ``ext_force_positive``
+        and ``ext_bounded`` to ``False``.
+
+        Returns
+        -------
+        None.
+
+        """
         for edge in self._active_edges:
             edge.intensity.ext_force_positive = False
             edge.intensity.ext_bounded = False

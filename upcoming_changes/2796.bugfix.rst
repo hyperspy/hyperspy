@@ -1,1 +1,1 @@
-Suspend plotting during smart_fit call
+Suspend plotting during :py:meth:`~.models.eelsmodel.EELSModel.smart_fit` call
