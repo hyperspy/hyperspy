@@ -314,7 +314,7 @@ class TestLoadingOOMReadOnly:
         s.save('tmp.zarr', overwrite=True)
         self.shape = (10000, 10000, 100)
         del s
-        f = h5py.File('tmp.hdf5', mode='r+')
+        f = h5py.File('tmp.zarr', mode='r+')
         s = f['Experiments/__unnamed__']
         del s['data']
         s.create_dataset(

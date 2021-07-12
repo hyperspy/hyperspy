@@ -181,10 +181,13 @@ def zarrgroup2signaldict(group, lazy=False):
         group[metadata], lazy=lazy),
         'original_metadata': zarrgroup2dict(
             group[original_metadata], lazy=lazy),
-        'attributes': {}
-    }
-    exp["package"] = group.attrs["package"]
-    exp["package_version"] = group.attrs["package_version"]
+        'attributes': {} }
+    if "package" in group.attrs:
+        exp["package"] = group.attrs["package"]
+        exp["package_version"] = group.attrs["package_version"]
+    else:
+        exp["package"] = ""
+        exp["package_version"] = ""
 
     data = group['data']
     print("file data", data[:])
@@ -390,9 +393,11 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
     if data.dtype == np.dtype('O'):
         # For saving ragged array
         # https://zarr.readthedocs.io/en/stable/tutorial.html?highlight=ragged%20array#ragged-arrays
+        if chunks is None:
+            chunks == 1
         group.require_dataset(key,
                               chunks,
-                              dtype='array:T',
+                              dtype=object,
                               **kwds)
         group[key][:] = data[:]
 
@@ -422,7 +427,8 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
         if isinstance(data, da.Array):
             if data.chunks != dset.chunks:
                 data = data.rechunk(dset.chunks)
-            data.to_zarr(url=dset, overwrite=False)  # add in compression etc
+            path = group._store.dir_path()+"/"+dset.path
+            data.to_zarr(url=path, overwrite=True)  # add in compression etc
         else:
             dset[:] = data
 
@@ -527,7 +533,7 @@ def zarrgroup2dict(group, dictionary=None, lazy=False):
 
 
 def write_signal(signal, group, **kwds):
-    "Writes a hyperspy signal to a zarr group"
+    """Writes a hyperspy signal to a zarr group"""
 
     group.attrs.update(get_object_package_info(signal))
     if default_version < LooseVersion("1.2"):
@@ -559,7 +565,7 @@ def write_signal(signal, group, **kwds):
     dict2zarrgroup(metadata_dict, mapped_par, **kwds)
     original_par = group.create_group(original_metadata)
     dict2zarrgroup(signal.original_metadata.as_dictionary(), original_par,
-                  **kwds)
+                   **kwds)
     learning_results = group.create_group('learning_results')
     dict2zarrgroup(signal.learning_results.__dict__,
                   learning_results, **kwds)
