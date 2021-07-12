@@ -33,7 +33,7 @@ class Polynomial(Expression):
     """n-order polynomial component.
 
     Polynomial component consisting of order + 1 parameters.
-    The parameters are named "a" followed by the corresponding order, 
+    The parameters are named "a" followed by the corresponding order,
     i.e.
 
     .. math::
@@ -60,10 +60,10 @@ class Polynomial(Expression):
             raise ValueError("Polynomial of order 0 is not supported.")
         coeff_list = ['{}'.format(o).zfill(len(list(str(order)))) for o in
                       range(order, -1, -1)]
-        expr = "+".join(["a{}*x**{}".format(c, o) for c, o in 
+        expr = "+".join(["a{}*x**{}".format(c, o) for c, o in
                          zip(coeff_list, range(order, -1, -1))])
         name = "{} order Polynomial".format(ordinal(order))
-        super().__init__(expression=expr, name=name, module=module, 
+        super().__init__(expression=expr, name=name, module=module,
              autodoc=False, **kwargs)
         self._id_name = "eab91275-88db-4855-917a-cdcbe7209592"
 
@@ -107,7 +107,7 @@ class Polynomial(Expression):
                     para.value = estim
             return True
         else:
-            if self.a0.map is None:
+            if self.parameters[0].map is None:
                 self._create_arrays()
 
             nav_shape = signal.axes_manager._navigation_shape_in_array
@@ -142,7 +142,7 @@ def convert_to_polynomial(poly_dict):
     """
     _logger.info("Converting the polynomial to the new definition")
     poly_order = poly_dict['order']
-    coeff_list = ['{}'.format(o).zfill(len(list(str(poly_dict['order'])))) 
+    coeff_list = ['{}'.format(o).zfill(len(list(str(poly_dict['order']))))
                   for o in range(poly_dict['order'], -1, -1)]
     poly2_dict = dict(poly_dict)
     coefficient_dict = poly_dict['parameters'][0]

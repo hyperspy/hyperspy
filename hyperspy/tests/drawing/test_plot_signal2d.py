@@ -498,8 +498,8 @@ def test_plot_with_non_finite_value():
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_log_negative_value(cmap):
-    s = hs.signals.Signal2D(np.arange(10*10).reshape(10, 10))
-    s -= 5*10
+    s = hs.signals.Signal2D(np.arange(10*10, dtype=float).reshape(10, 10))
+    s -= 49.5
     if cmap:
         s.plot(norm='log', cmap=cmap)
     else:

@@ -70,7 +70,7 @@ install_req = ['scipy>=1.1',
                'tifffile>=2018.10.18',
                'numba',
                 # included in stdlib since v3.8, but this required version requires Python 3.9
-               'importlib_metadata>=1.6.0',
+               'importlib_metadata>=3.6',
                ]
 
 extras_require = {

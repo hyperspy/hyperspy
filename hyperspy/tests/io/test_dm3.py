@@ -70,6 +70,11 @@ class TestImageObject():
         assert self.imageobject._parse_string("") is None
         assert self.imageobject._parse_string("string") == "string"
 
+    def test_parse_string_convert_float(self):
+        assert self.imageobject._parse_string("5", False) == '5'
+        assert self.imageobject._parse_string("5", True) == 5
+        assert self.imageobject._parse_string("Imaging", True) == None
+
 
 def test_missing_tag():
     fname = os.path.join(MY_PATH, "dm3_2D_data",
