@@ -1214,11 +1214,7 @@ class AxesManager(t.HasTraits):
         else:
             self.navigation_shape = ()
 
-        if self.signal_dimension != 0:
-            self.signal_shape = tuple([
-                axis.size for axis in self.signal_axes])
-        else:
-            self.signal_shape = ()
+        self.signal_shape = tuple([axis.size for axis in self.signal_axes])
         self.navigation_size = (np.cumprod(self.navigation_shape)[-1]
                                 if self.navigation_shape else 0)
         self.signal_size = (np.cumprod(self.signal_shape)[-1]

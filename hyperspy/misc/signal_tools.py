@@ -171,7 +171,7 @@ def broadcast_signals(*args, ignore_axis=None):
         for s in args:
             data = s._data_aligned_with_axes
             sam = s.axes_manager
-            sdim_diff = len(new_sig_axes) - sam.signal_dimension
+            sdim_diff = len(new_sig_axes) - len(sam.signal_axes)
             while sdim_diff > 0:
                 slices = (slice(None),) * sam.navigation_dimension
                 slices += (None, Ellipsis)
