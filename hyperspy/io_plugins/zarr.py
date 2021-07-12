@@ -146,7 +146,6 @@ def file_reader(filename,
                     experiments.append(ds)
         # Parse the file
         for experiment in experiments:
-            print(experiment)
             exg = f['Experiments'][experiment]
             exp = zarrgroup2signaldict(exg, lazy)
             # assign correct models, if found:
@@ -190,9 +189,7 @@ def zarrgroup2signaldict(group, lazy=False):
         exp["package_version"] = ""
 
     data = group['data']
-    print("file data", data[:])
     if lazy:
-        print(data)
         data = da.from_array(data, chunks=data.chunks)
         exp['attributes']['_lazy'] = True
     else:
@@ -619,6 +616,5 @@ def file_writer(filename, signal, *args, **kwds):
         raise
     finally:
         del smd.record_by
-    print(store.__dict__)
-    print(f["Experiments"]["__unnamed__"]["data"][:])
+
 
