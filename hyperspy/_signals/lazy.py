@@ -27,6 +27,7 @@ import dask
 from dask.diagnostics import ProgressBar
 from itertools import product
 from distutils.version import LooseVersion
+import math
 
 
 from hyperspy.signal import BaseSignal
@@ -169,6 +170,83 @@ class LazySignal(BaseSignal):
                                                                   **kwargs)
                                                 )
 
+    def _repr_html_(self):
+        table = self._repr_html_table()
+        try:
+            from dask import config
+            from dask.array.svg import svg
+            nav_grid = svg(chunks=self._get_navigation_chunk_size(),
+                           size=config.get("array.svg.size", 120))
+            sig_grid = svg(chunks=self._get_signal_chunk_size(),
+                           size=config.get("array.svg.size", 120))
+        except NotImplementedError:
+            nav_grid = ""
+            sig_grid = ""
+
+        both = [
+            "<table>",
+            "<tr>",
+            "<td>",
+            table,
+            "</td>",
+            "<td>",
+            "<div>",
+            "<b>Navigation Axis<b/>",
+            "<div/>",
+            nav_grid,
+            "</td>",
+            "<td>",
+            "<center>",
+            "<div>",
+            "<b>Signal Axis<b/>",
+            "<div/>",
+            sig_grid,
+            "<center/>",
+            "</td>",
+            "</tr>",
+            "</table>",
+        ]
+        return "\n".join(both)
+
+    def _repr_html_table(self):
+        if not math.isnan(self.data.nbytes):
+            from dask.utils import format_bytes
+            nbytes = format_bytes(self.data.nbytes)
+            cbytes = format_bytes(np.prod(self.data.chunksize) * self.data.dtype.itemsize)
+        else:
+            nbytes = "unknown"
+            cbytes = "unknown"
+
+        table = [
+            "<table>",
+            "  <thead>",
+            "    <tr><td> </td><th> Array </th><th> Chunk </th></tr>",
+            "  </thead>",
+            "  <tbody>",
+            "    <tr><th> Bytes </th><td> %s </td> <td> %s </td></tr>"
+            % (nbytes, cbytes)
+            if nbytes is not None
+            else "",
+            "    <tr><th> Nav_Shape </th><td> %s </td> <td> %s </td></tr>"
+            % (str(self.axes_manager.navigation_shape),
+               str(self.data.chunksize[:len(self.axes_manager.navigation_shape)][::-1])),
+            "    <tr><th> Sig_Shape </th><td> %s </td> <td> %s </td></tr>"
+            % (str(self.axes_manager.signal_shape),
+               str(self.data.chunksize[len(self.axes_manager.navigation_shape):][::-1])),
+            "    <tr><th> Count </th><td> %d Tasks </td><td> %d Chunks </td></tr>"
+            % (len(self.data.__dask_graph__()), self.data.npartitions),
+            "    <tr><th> Type </th><td> %s </td><td> %s.%s </td></tr>"
+            % (
+                self.data.dtype,
+                type(self.data._meta).__module__.split(".")[0],
+                type(self.data._meta).__name__,
+            ),
+            "    <tr><th> Signal Type </th><td> %s </td><td> %s </td></tr>"
+            % (str(self._signal_type), str(self._signal_type)),
+            "  </tbody>",
+            "</table>",
+        ]
+        return "\n".join(table)
 
     def close_file(self):
         """Closes the associated data file if any.
@@ -268,6 +346,11 @@ class LazySignal(BaseSignal):
         nav_axes = self.axes_manager.navigation_indices_in_array
         nav_chunks = tuple([self.data.chunks[i] for i in sorted(nav_axes)])
         return nav_chunks
+
+    def _get_signal_chunk_size(self):
+        sig_axes = self.axes_manager.signal_indices_in_array
+        sig_chunks = tuple([self.data.chunks[i] for i in sorted(sig_axes)])
+        return sig_chunks
 
     def _make_lazy(self, axis=None, rechunk=False, dtype=None):
         self.data = self._lazy_data(axis=axis, rechunk=rechunk, dtype=dtype)
