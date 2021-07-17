@@ -202,6 +202,7 @@ def zarrgroup2signaldict(group, lazy=False):
             axis = axes[-1]
             for key, item in axis.items():
                 if isinstance(item, np.bool_):
+                    print(key, ": ", item)
                     axis[key] = bool(item)
                 else:
                     axis[key] = ensure_unicode(item)
@@ -276,11 +277,11 @@ def dict2zarrgroup(dictionary, group, **kwds):
     for key, value in dictionary.items():
         if isinstance(value, dict):
             dict2zarrgroup(value, group.create_group(key),
-                          **kwds)
+                           **kwds)
         elif isinstance(value, DictionaryTreeBrowser):
             dict2zarrgroup(value.as_dictionary(),
-                          group.create_group(key),
-                          **kwds)
+                           group.create_group(key),
+                           **kwds)
         elif isinstance(value, BaseSignal):
             kn = key if key.startswith('_sig_') else '_sig_' + key
             write_signal(value, group.require_group(kn))
@@ -300,8 +301,8 @@ def dict2zarrgroup(dictionary, group, **kwds):
             group.attrs[key] = value
         elif isinstance(value, AxesManager):
             dict2zarrgroup(value.as_dictionary(),
-                          group.create_group('_hspy_AxesManager_' + key),
-                          **kwds)
+                           group.create_group('_hspy_AxesManager_' + key),
+                           **kwds)
         elif isinstance(value, list):
             if len(value):
                 parse_structure(key, group, value, '_list_', **kwds)
@@ -384,9 +385,6 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
             # If signal_axes=None, use automatic h5py chunking, otherwise
             # optimise the chunking to contain at least one signal per chunk
             chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
-    if np.issubdtype(data.dtype, np.dtype('U')):
-        # Saving numpy unicode type is not supported in h5py
-        data = data.astype(np.dtype('S'))
     if data.dtype == np.dtype('O'):
         # For saving ragged array
         # https://zarr.readthedocs.io/en/stable/tutorial.html?highlight=ragged%20array#ragged-arrays
@@ -425,21 +423,31 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
             if data.chunks != dset.chunks:
                 data = data.rechunk(dset.chunks)
             path = group._store.dir_path()+"/"+dset.path
-            data.to_zarr(url=path, overwrite=True)  # add in compression etc
+            data.to_zarr(url=path,
+                         overwrite=True,
+                         compressor=kwds["compression"],
+                         **kwds)  # add in compression etc
         else:
+            path = group._store.dir_path()+"/"+dset.path
+            dset = zarr.open_array(path,
+                                   mode="w",
+                                   shape=data.shape,
+                                   dtype=data.dtype,
+                                   **kwds)
             dset[:] = data
-
 
 def zarrgroup2dict(group, dictionary=None, lazy=False):
     if dictionary is None:
         dictionary = {}
     for key, value in group.attrs.items():
+        print(key, value)
         if isinstance(value, bytes):
             value = value.decode()
         if isinstance(value, (np.string_, str)):
             if value == '_None_':
                 value = None
-        elif isinstance(value, np.bool_):
+        elif isinstance(value, np.bool_) or isinstance(value, bool):
+            print(key, value)
             value = bool(value)
         elif isinstance(value, np.ndarray) and value.dtype.char == "S":
             # Convert strings to unicode
@@ -540,14 +548,17 @@ def write_signal(signal, group, **kwds):
         metadata = "metadata"
         original_metadata = "original_metadata"
 
-    if 'compression' not in kwds:
-        kwds['compression'] = 'gzip'
+    if 'compressor' not in kwds:
+        kwds['compressor'] = None
 
     for axis in signal.axes_manager._axes:
         axis_dict = axis.get_axis_dictionary()
+        print(axis_dict)
         coord_group = group.create_group(
             'axis-%s' % axis.index_in_array)
         dict2zarrgroup(axis_dict, coord_group, **kwds)
+        print(coord_group)
+        print(coord_group.attrs.__dict__)
     mapped_par = group.create_group(metadata)
     metadata_dict = signal.metadata.as_dictionary()
     overwrite_dataset(group, signal.data, 'data',

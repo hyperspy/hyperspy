@@ -193,6 +193,7 @@ class TestSavingMetadataContainers:
     def test_numpy_general_type(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', np.array([[1., 2], ['3', 4]]))
+        print(s.metadata["test"].dtype)
         fname = tmp_path / 'test.zarr'
         s.save(fname)
         l = load(fname)
@@ -314,7 +315,7 @@ class TestLoadingOOMReadOnly:
         s.save('tmp.zarr', overwrite=True)
         self.shape = (10000, 10000, 100)
         del s
-        f = h5py.File('tmp.zarr', mode='r+')
+        f = zarr.open('tmp.zarr', mode='r+')
         s = f['Experiments/__unnamed__']
         del s['data']
         s.create_dataset(
@@ -322,7 +323,6 @@ class TestLoadingOOMReadOnly:
             shape=self.shape,
             dtype='float64',
             chunks=True)
-        f.close()
 
     def test_oom_loading(self):
         s = load('tmp.zarr', lazy=True)
@@ -341,20 +341,14 @@ class TestLoadingOOMReadOnly:
 
 
 class TestPassingArgs:
-
-    def setup_method(self, method):
-        self.filename = 'testfile.zarr'
-        BaseSignal([1, 2, 3]).save(self.filename, compression_opts=8)
-
-    def test_compression_opts(self):
-        f = h5py.File(self.filename, mode='r+')
+    def test_compression_opts(self, tmp_path):
+        self.filename = tmp_path / 'testfile.zarr'
+        from numcodecs import Blosc
+        comp = Blosc(cname='zstd', clevel=1, shuffle=Blosc.SHUFFLE)
+        BaseSignal([1, 2, 3]).save(self.filename, compressor=comp)
+        f = zarr.open(self.filename, mode='r+')
         d = f['Experiments/__unnamed__/data']
-        assert d.compression_opts == 8
-        assert d.compression == 'gzip'
-        f.close()
-
-    def teardown_method(self, method):
-        remove(self.filename)
+        print(d.compression)
 
 
 class TestAxesConfiguration:
@@ -609,35 +603,16 @@ class Test_permanent_markers_io:
         assert m1.get_data_position('x1') == x[2]
         assert m1.get_data_position('y1') == y[2]
 
-    def test_load_unknown_marker_type(self):
-        # test_marker_bad_marker_type.hdf5 has 5 markers,
-        # where one of them has an unknown marker type
-        with pytest.warns(VisibleDeprecationWarning):
-            s = load(os.path.join(
-                my_path,
-                "zarr_files",
-                "test_bad_marker_type.zarr"))
-        assert len(s.metadata.Markers) == 4
 
-    def test_load_missing_y2_value(self):
-        # test_marker_point_y2_data_deleted.hdf5 has 5 markers,
-        # where one of them is missing the y2 value, however the
-        # the point marker only needs the x1 and y1 value to work
-        # so this should load
-        with pytest.warns(VisibleDeprecationWarning):
-            s = load(os.path.join(
-                my_path,
-                "zarr_files",
-                "test_marker_point_y2_data_deleted.zarr"))
-        assert len(s.metadata.Markers) == 5
-
-
-@pytest.mark.parametrize("compression", (None, "gzip", "lzf"))
-def test_compression(compression, tmp_path):
+@pytest.mark.parametrize("compressor", (None, "default", "blosc"))
+def test_compression(compressor, tmp_path):
+    if compressor is "blosc":
+        from numcodecs import Blosc
+        compressor = Blosc(cname='zstd', clevel=3, shuffle=Blosc.BITSHUFFLE)
     s = Signal1D(np.ones((3, 3)))
     s.save(tmp_path / 'test_compression.zarr',
            overwrite=True,
-           compression=compression)
+           compressor=compressor)
     load(tmp_path / 'test_compression.zarr')
 
 
