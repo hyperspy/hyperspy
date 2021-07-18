@@ -108,40 +108,6 @@ class Example1:
                 example1_original_metadata ==
                 self.s.original_metadata.as_dictionary())
 
-
-class TestLoadingNewSavedMetadata:
-
-    def setup_method(self, method):
-        with pytest.warns(VisibleDeprecationWarning):
-            self.s = load(os.path.join(
-                my_path,
-                "zarr_files",
-                "with_lists_etc.zarr"))
-
-    def test_signal_inside(self):
-        np.testing.assert_array_almost_equal(self.s.data,
-                                             self.s.metadata.Signal.Noise_properties.variance.data)
-
-    def test_empty_things(self):
-        assert self.s.metadata.test.empty_list == []
-        assert self.s.metadata.test.empty_tuple == ()
-
-    def test_simple_things(self):
-        assert self.s.metadata.test.list == [42]
-        assert self.s.metadata.test.tuple == (1, 2)
-
-    def test_inside_things(self):
-        assert (
-                self.s.metadata.test.list_inside_list == [
-            42, 137, [
-                0, 1]])
-        assert self.s.metadata.test.list_inside_tuple == (137, [42, 0])
-        assert (
-                self.s.metadata.test.tuple_inside_tuple == (137, (123, 44)))
-        assert (
-                self.s.metadata.test.tuple_inside_list == [
-            137, (123, 44)])
-
     @pytest.mark.xfail(
         reason="dill is not guaranteed to load across Python versions")
     def test_binary_string(self):
@@ -301,13 +267,6 @@ def test_none_metadata():
     assert s.metadata.should_be_None is None
 
 
-def test_rgba16():
-    with pytest.warns(VisibleDeprecationWarning):
-        s = load(os.path.join(my_path, "zarr_files", "test_rgba16.zarr"))
-    data = np.load(os.path.join(my_path, "npy_files", "test_rgba16.npy"))
-    assert (s.data == data).all()
-
-
 class TestLoadingOOMReadOnly:
 
     def setup_method(self, method):
@@ -346,9 +305,9 @@ class TestPassingArgs:
         from numcodecs import Blosc
         comp = Blosc(cname='zstd', clevel=1, shuffle=Blosc.SHUFFLE)
         BaseSignal([1, 2, 3]).save(self.filename, compressor=comp)
-        f = zarr.open(self.filename, mode='r+')
+        f = zarr.open(self.filename.__str__(), mode='r+')
         d = f['Experiments/__unnamed__/data']
-        print(d.compression)
+        assert (d.compressor == comp)
 
 
 class TestAxesConfiguration:
@@ -633,15 +592,6 @@ def test_save_ragged_array(tmp_path):
     assert s.__class__ == s1.__class__
 
 
-def test_load_missing_extension(caplog):
-    path = os.path.join(my_path, "zarr_files", "hspy_ext_missing.zarr")
-    with pytest.warns(UserWarning):
-        s = load(path)
-    assert "This file contains a signal provided by the hspy_ext_missing" in caplog.text
-    with pytest.raises(ImportError):
-        _ = s.models.restore("a")
-
-
 def test_save_chunks_signal_metadata():
     N = 10
     dim = 3
@@ -651,7 +601,7 @@ def test_save_chunks_signal_metadata():
     s.decomposition()
     with tempfile.TemporaryDirectory() as tmp:
         filename = os.path.join(tmp, 'test_save_chunks_signal_metadata.zarr')
-    chunks = (5, 5, 10)
+    chunks = (5, 2, 2)
     s.save(filename, chunks=chunks)
     s2 = load(filename, lazy=True)
     assert tuple([c[0] for c in s2.data.chunks]) == chunks
@@ -668,10 +618,9 @@ def test_chunking_saving_lazy():
     s1 = load(filename, lazy=True)
     assert s.data.chunks == s1.data.chunks
 
-    # with chunks=True, use h5py chunking
-    s.save(filename2, chunks=True)
+    s.save(filename2)
     s2 = load(filename2, lazy=True)
-    assert tuple([c[0] for c in s2.data.chunks]) == (7, 25, 25)
+    assert tuple([c[0] for c in s2.data.chunks]) == (50, 25, 25)
 
     # specify chunks
     chunks = (50, 10, 10)

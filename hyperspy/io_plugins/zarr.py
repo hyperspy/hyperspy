@@ -385,18 +385,22 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
             # If signal_axes=None, use automatic h5py chunking, otherwise
             # optimise the chunking to contain at least one signal per chunk
             chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
+    got_data = False
     if data.dtype == np.dtype('O'):
         # For saving ragged array
         # https://zarr.readthedocs.io/en/stable/tutorial.html?highlight=ragged%20array#ragged-arrays
         if chunks is None:
             chunks == 1
-        group.require_dataset(key,
-                              chunks,
-                              dtype=object,
-                              **kwds)
-        group[key][:] = data[:]
+        these_kwds = kwds.copy()
+        these_kwds.update(dict(dtype=object,
+                               exact=True,
+                               chunks=chunks))
+        dset = group.require_dataset(key,
+                                     data.shape,
+                                     object_codec=numcodecs.VLenArray(int),
+                                     **these_kwds)
+        got_data=True
 
-    got_data = False
     while not got_data:
         try:
             these_kwds = kwds.copy()
@@ -425,14 +429,17 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
             path = group._store.dir_path()+"/"+dset.path
             data.to_zarr(url=path,
                          overwrite=True,
-                         compressor=kwds["compression"],
                          **kwds)  # add in compression etc
+        elif data.dtype == np.dtype('O'):
+            group[key][:] = data[:]  # check lazy
         else:
             path = group._store.dir_path()+"/"+dset.path
+            print(kwds)
             dset = zarr.open_array(path,
                                    mode="w",
                                    shape=data.shape,
                                    dtype=data.dtype,
+                                   chunks=chunks,
                                    **kwds)
             dset[:] = data
 

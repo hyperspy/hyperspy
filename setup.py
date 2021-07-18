@@ -64,6 +64,7 @@ install_req = ['scipy>=1.1',
                'sparse',
                'imageio',
                'pyyaml',
+               'zarr',
                # prettytable and ptable are API compatible
                # prettytable is maintained and ptable is an unmaintained fork
                'prettytable',
