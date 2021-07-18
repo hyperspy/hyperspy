@@ -159,7 +159,6 @@ class TestSavingMetadataContainers:
     def test_numpy_general_type(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', np.array([[1., 2], ['3', 4]]))
-        print(s.metadata["test"].dtype)
         fname = tmp_path / 'test.zarr'
         s.save(fname)
         l = load(fname)

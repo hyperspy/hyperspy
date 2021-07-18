@@ -202,7 +202,6 @@ def zarrgroup2signaldict(group, lazy=False):
             axis = axes[-1]
             for key, item in axis.items():
                 if isinstance(item, np.bool_):
-                    print(key, ": ", item)
                     axis[key] = bool(item)
                 else:
                     axis[key] = ensure_unicode(item)
@@ -434,7 +433,6 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
             group[key][:] = data[:]  # check lazy
         else:
             path = group._store.dir_path()+"/"+dset.path
-            print(kwds)
             dset = zarr.open_array(path,
                                    mode="w",
                                    shape=data.shape,
@@ -447,14 +445,12 @@ def zarrgroup2dict(group, dictionary=None, lazy=False):
     if dictionary is None:
         dictionary = {}
     for key, value in group.attrs.items():
-        print(key, value)
         if isinstance(value, bytes):
             value = value.decode()
         if isinstance(value, (np.string_, str)):
             if value == '_None_':
                 value = None
         elif isinstance(value, np.bool_) or isinstance(value, bool):
-            print(key, value)
             value = bool(value)
         elif isinstance(value, np.ndarray) and value.dtype.char == "S":
             # Convert strings to unicode
@@ -560,12 +556,9 @@ def write_signal(signal, group, **kwds):
 
     for axis in signal.axes_manager._axes:
         axis_dict = axis.get_axis_dictionary()
-        print(axis_dict)
         coord_group = group.create_group(
             'axis-%s' % axis.index_in_array)
         dict2zarrgroup(axis_dict, coord_group, **kwds)
-        print(coord_group)
-        print(coord_group.attrs.__dict__)
     mapped_par = group.create_group(metadata)
     metadata_dict = signal.metadata.as_dictionary()
     overwrite_dataset(group, signal.data, 'data',
