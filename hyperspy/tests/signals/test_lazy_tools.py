@@ -83,10 +83,7 @@ def test_lazy_reduce_rechunk():
 
 def test_lazy_diff_rechunk():
     s = Signal1D(da.ones((10, 100), chunks=(1, 2))).as_lazy()
-    for rm in (s.derivative, s.diff):
-        # The data has been rechunked
-        assert rm(axis=-1).data.chunks == ((10,), (99,))
-        assert rm(axis=-1, rechunk=False).data.chunks == (
-            (1,) * 10,
-            (1,) * 99,
-        )  # The data has not been rechunked
+    # The data has been rechunked
+    assert s.diff(axis=-1).data.chunks == ((10,), (99,))
+    assert s.diff(axis=-1, rechunk=False).data.chunks == ((1,) *
+                                                      10, (1,) * 99)  # The data has not been rechunked

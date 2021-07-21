@@ -55,7 +55,7 @@ class Arctan(Expression):
         # Not to break scripts once we remove the legacy Arctan
         if "minimum_at_zero" in kwargs:
             del kwargs["minimum_at_zero"]
-        super(Arctan, self).__init__(
+        super().__init__(
             expression="A * arctan(k * (x - x0))",
             name="Arctan",
             A=A,

@@ -21,7 +21,8 @@ import functools
 import copy
 
 import numpy as np
-import scipy as sp
+from scipy import interpolate
+from scipy import signal as sp_signal
 import matplotlib.colors
 import matplotlib.pyplot as plt
 import matplotlib.text as mpl_text
@@ -30,7 +31,7 @@ import traits.api as t
 from hyperspy import drawing
 from hyperspy.docstrings.signal import HISTOGRAM_MAX_BIN_ARGS
 from hyperspy.exceptions import SignalDimensionError
-from hyperspy.axes import AxesManager, DataAxis
+from hyperspy.axes import AxesManager, UniformDataAxis
 from hyperspy.drawing.widgets import VerticalLineWidget
 from hyperspy import components1d
 from hyperspy.component import Component
@@ -199,6 +200,8 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
+        if not isinstance(self.axis, UniformDataAxis):
+            raise NotImplementedError("The calibration tool supports only uniform axes.")
         self.units = self.axis.units
         self.scale = self.axis.scale
         self.offset = self.axis.offset
@@ -564,8 +567,11 @@ class Smoothing(t.HasTraits):
             pass
 
     def diff_model2plot(self, axes_manager=None):
-        smoothed = np.diff(self.model2plot(axes_manager),
-                           self.differential_order)
+        n = self.differential_order
+        smoothed = self.model2plot(axes_manager)
+        while n:
+            smoothed = np.gradient(smoothed, self.axis)
+            n -= 1
         return smoothed
 
     def close(self):
@@ -733,15 +739,15 @@ class ButterworthFilter(Smoothing):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):
-        b, a = sp.signal.butter(self.order, self.cutoff_frequency_ratio,
+        b, a = sp_signal.butter(self.order, self.cutoff_frequency_ratio,
                                 self.type)
-        smoothed = sp.signal.filtfilt(b, a, self.signal())
+        smoothed = sp_signal.filtfilt(b, a, self.signal())
         return smoothed
 
     def apply(self):
-        b, a = sp.signal.butter(self.order, self.cutoff_frequency_ratio,
+        b, a = sp_signal.butter(self.order, self.cutoff_frequency_ratio,
                                 self.type)
-        f = functools.partial(sp.signal.filtfilt, b, a)
+        f = functools.partial(sp_signal.filtfilt, b, a)
         self.signal.map(f)
 
 
@@ -925,9 +931,9 @@ class ImageContrastEditor(t.HasTraits):
         self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
         if self.span_selector is not None:
             # Set this attribute to restrict the span selector to the xaxis
-            self.span_selector.step_ax = DataAxis(size=len(self.xaxis),
-                                                  offset=self.xaxis[1],
-                                                  scale=self.xaxis[1]-self.xaxis[0])
+            self.span_selector.step_ax = UniformDataAxis(size=len(self.xaxis),
+                                                         offset=self.xaxis[1],
+                                                         scale=self.xaxis[1]-self.xaxis[0])
 
     def plot_histogram(self, max_num_bins=250):
         """Plot a histogram of the data.
@@ -1368,7 +1374,10 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         if is_binned(self.signal) is True:
         # in v2 replace by
         #if self.axis.is_binned is True:
-            to_return *= self.axis.scale
+            if self.axis.is_uniform:
+                to_return *= self.axis.scale
+            else:
+                to_return *= np.gradient(self.axis.axis)
         return to_return
 
     def rm_to_plot(self, axes_manager=None, fill_with=np.nan):
@@ -1595,13 +1604,16 @@ class SpikesRemoval:
             self.noise_type = "shot noise"
 
     def detect_spike(self):
-        derivative = np.diff(self.signal())
+        axis = self.signal.axes_manager.signal_axes[-1].axis
+        derivative = np.gradient(self.signal(), axis)
         if self.signal_mask is not None:
-            derivative[self.signal_mask[:-1]] = 0
+            derivative[self.signal_mask] = 0
         if self.argmax is not None:
             left, right = self.get_interpolation_range()
-            self._temp_mask[left:right] = True
-            derivative[self._temp_mask[:-1]] = 0
+            # Don't search for spikes in the are where one has
+            # been found next time `find` is called.
+            self._temp_mask[left:right + 1] = True
+            derivative[self._temp_mask] = 0
         if abs(derivative.max()) >= self.threshold:
             self.argmax = derivative.argmax()
             self.derivmax = abs(derivative.max())
@@ -1676,7 +1688,7 @@ class SpikesRemoval:
             # Interpolate
             x = np.hstack((axis.axis[ileft:left], axis.axis[right:iright]))
             y = np.hstack((data[ileft:left], data[right:iright]))
-            intp = sp.interpolate.interp1d(x, y, kind=self.kind)
+            intp = interpolate.interp1d(x, y, kind=self.kind)
             data[left:right] = intp(axis.axis[left:right])
 
         # Add noise

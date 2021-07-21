@@ -389,6 +389,11 @@ class LazySignal(BaseSignal):
         self._make_lazy(rechunk=True)
 
     def diff(self, axis, order=1, out=None, rechunk=True):
+        if not self.axes_manager[axis].is_uniform:
+            raise NotImplementedError(
+            "Performing a numerical difference on a non-uniform axis "
+            "is not implemented. Consider using `derivative` instead."
+        )
         arr_axis = self.axes_manager[axis].index_in_array
 
         def dask_diff(arr, n, axis):
@@ -675,7 +680,8 @@ class LazySignal(BaseSignal):
             # add additional required axes
             for ind in range(
                     len(output_signal_size) - sig.axes_manager.signal_dimension, 0, -1):
-                sig.axes_manager._append_axis(output_signal_size[-ind], navigate=False)
+                sig.axes_manager._append_axis(size=output_signal_size[-ind],
+                                              navigate=False)
         if not ragged:
             sig.get_dimensions_from_data()
         return sig

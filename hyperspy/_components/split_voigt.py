@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from hyperspy.component import Component
+from hyperspy.component import Component, _get_scaling_factor
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 from hyperspy.misc.utils import is_binned # remove in v2.0
@@ -190,29 +190,30 @@ class SplitVoigt(Component):
         >>> g.estimate_parameters(s, -10,10, False)
 
         """
-        super(SplitVoigt, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
+        scaling_factor = _get_scaling_factor(signal, axis, centre)
 
         if only_current is True:
             self.centre.value = centre
             self.sigma1.value = sigma
             self.sigma2.value = sigma
             self.A.value = height * sigma * sqrt2pi
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.A.value /= axis.scale
+                self.A.value /= scaling_factor
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * sigma * sqrt2pi
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.A.map['values'][:] /= axis.scale
+                self.A.map['values'][:] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.sigma1.map['values'][:] = sigma
             self.sigma1.map['is_set'][:] = True

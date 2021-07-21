@@ -102,8 +102,7 @@ class MPL_HyperExplorer(object):
                 if hasattr(sl, key):
                     setattr(sl, key, kwargs.pop(key))
             sl.set_line_properties(color='blue',
-                                   type='step')
-
+                                   type='step' if axis.is_uniform else 'line')
             # Add the line to the figure
             sf.add_line(sl)
             sf.plot()

@@ -83,8 +83,7 @@ def homogenize_ndim(*args):
 
     max_len = max([len(ary.shape) for ary in args])
 
-    return [ary.reshape((1,) * (max_len - len(ary.shape)) + ary.shape)
-            for ary in args]
+    return [ary.reshape((1,) * (max_len - len(ary.shape)) + ary.shape) for ary in args]
 
 
 def _requires_linear_rebin(arr, scale):
@@ -97,8 +96,7 @@ def _requires_linear_rebin(arr, scale):
         rebinning factors
     """
 
-    return (np.asarray(arr.shape) %
-            np.asarray(scale)).any() or anyfloatin(scale)
+    return (np.asarray(arr.shape) % np.asarray(scale)).any() or anyfloatin(scale)
 
 
 def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
@@ -212,7 +210,7 @@ def _linear_bin_loop(result, data, scale):  # pragma: no cover
         # Begin by determining the upper and lower limits of a given new pixel.
         x1 = j * scale
         x2 = min((1 + j) * scale, data.shape[0])
-        value = result[j:j + 1]
+        value = result[j : j + 1]
 
         if (x2 - x1) >= 1:
             # When binning, the first part is to deal with the fractional pixel
@@ -319,8 +317,7 @@ def _linear_bin(dat, scale, crop=True, dtype=None):
         if not np.issubdtype(s, np.floating):
             s = float(s)
 
-        dim = (math.floor(dat.shape[0] / s) if crop
-               else math.ceil(dat.shape[0] / s))
+        dim = math.floor(dat.shape[0] / s) if crop else math.ceil(dat.shape[0] / s)
         # check function wont bin to zero.
         if dim == 0:
             raise ValueError(
@@ -328,9 +325,13 @@ def _linear_bin(dat, scale, crop=True, dtype=None):
                 "Re-adjust your scale values or run code with "
                 "crop=False to avoid this error."
             )
+
+        # Make sure that native endian is used
+        if dtype is None:
+            dtype = dat.dtype.type
         # Set up the result np.array to have a new axis[0] size for after
         # cropping.
-        result = np.zeros((dim,) + dat.shape[1:])
+        result = np.zeros((dim,) + dat.shape[1:], dtype=dtype)
 
         # Carry out binning over axis[0]
         _linear_bin_loop(result=result, data=dat, scale=s)
@@ -454,7 +455,7 @@ def get_signal_chunk_slice(index, chunks):
     if not isinstance(index, (list, tuple)):
         index = tuple(index)
 
-    chunk_slice_raw_list = da.core.slices_from_chunks(chunks[-len(index):])
+    chunk_slice_raw_list = da.core.slices_from_chunks(chunks[-len(index) :])
     chunk_slice_list = []
     for chunk_slice_raw in chunk_slice_raw_list:
         chunk_slice_list.append(list(chunk_slice_raw)[::-1])
@@ -467,3 +468,132 @@ def get_signal_chunk_slice(index, chunks):
             elif _slice[1].start <= index[1] < _slice[1].stop:
                 return chunk_slice
     raise ValueError("Index out of signal range.")
+
+
+@njit(cache=True)
+def numba_closest_index_round(axis_array, value_array):
+    """For each value in value_array, find the closest value in axis_array and
+    return the result as a numpy array of the same shape as value_array.
+    Use round half towards zero strategy for rounding float to interger.
+
+    Parameters
+    ----------
+    axis_array : numpy array
+    value_array : numpy array
+
+    Returns
+    -------
+    numpy array
+
+    """
+    # initialise the index same dimension as input, force type to int
+    index_array = np.empty_like(value_array, dtype="uint")
+    # assign on flat, iterate on flat.
+    rtol = 1e-12
+    machineepsilon = np.min(np.abs(np.diff(axis_array))) * rtol
+    for i, v in enumerate(value_array.flat):
+        index_array.flat[i] = np.abs(axis_array - v + np.sign(v) * machineepsilon).argmin()
+    return index_array
+
+
+@njit(cache=True)
+def numba_closest_index_floor(axis_array, value_array):  # pragma: no cover
+    """For each value in value_array, find the closest smaller value in
+    axis_array and return the result as a numpy array of the same shape
+    as value_array.
+
+    Parameters
+    ----------
+    axis_array : numpy array
+    value_array : numpy array
+
+    Returns
+    -------
+    numpy array
+
+    """
+    # initialise the index same dimension as input, force type to int
+    index_array = np.empty_like(value_array, dtype="uint")
+    # assign on flat, iterate on flat.
+    for i, v in enumerate(value_array.flat):
+        x = axis_array - v
+        index_array.flat[i] = np.where(x > 0, -np.inf, x).argmax()
+
+    return index_array
+
+
+@njit(cache=True)
+def numba_closest_index_ceil(axis_array, value_array):  # pragma: no cover
+    """For each value in value_array, find the closest larger value in
+    axis_array and return the result as a numpy array of the same shape
+    as value_array.
+
+    Parameters
+    ----------
+    axis_array : numpy array
+    value_array : numpy array
+
+    Returns
+    -------
+    numpy array
+    """
+    # initialise the index same dimension as input, force type to int
+    index_array = np.empty_like(value_array, dtype="uint")
+    # assign on flat, iterate on flat.
+    for i, v in enumerate(value_array.flat):
+        x = axis_array - v
+        index_array.flat[i] = np.where(x < 0, +np.inf, x).argmin()
+
+    return index_array
+
+
+@njit(cache=True)
+def round_half_towards_zero(array, decimals=0):  # pragma: no cover
+    """
+    Round input array using "half towards zero" strategy.
+
+    Parameters
+    ----------
+    array : ndarray
+        Input array.
+
+    decimals : int, optional
+        Number of decimal places to round to (default: 0).
+
+    Returns
+    -------
+    rounded_array : ndarray
+        An array of the same type as a, containing the rounded values.
+    """
+    multiplier = 10 ** decimals
+
+    return np.where(array >= 0,
+                    np.ceil(array * multiplier - 0.5) / multiplier,
+                    np.floor(array * multiplier + 0.5) / multiplier
+                    )
+
+
+@njit(cache=True)
+def round_half_away_from_zero(array, decimals=0):  # pragma: no cover
+    """
+    Round input array using "half away from zero" strategy.
+
+    Parameters
+    ----------
+    array : ndarray
+        Input array.
+
+    decimals : int, optional
+        Number of decimal places to round to (default: 0).
+
+    Returns
+    -------
+    rounded_array : ndarray
+        An array of the same type as a, containing the rounded values.
+    """
+    multiplier = 10 ** decimals
+
+    return np.where(array >= 0,
+                    np.floor(array * multiplier + 0.5) / multiplier,
+                    np.ceil(array * multiplier - 0.5) / multiplier
+                    )

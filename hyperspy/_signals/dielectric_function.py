@@ -112,6 +112,10 @@ class DielectricFunction(ComplexSignal1D):
         return neff1, neff2
 
     def get_electron_energy_loss_spectrum(self, zlp, t):
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "The function is not implemented for non-uniform axes.")
         data = ((-1 / self.data).imag * eels_constant(self, zlp, t).data *
                 self.axes_manager.signal_axes[0].scale)
         s = self._deepcopy_with_new_data(data)

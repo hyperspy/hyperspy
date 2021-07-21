@@ -18,11 +18,13 @@
 
 import numpy as np
 import pytest
+import traits.api as t
 
+from hyperspy.misc.array_tools import round_half_towards_zero
 from hyperspy.roi import (CircleROI, Line2DROI, Point1DROI, Point2DROI,
                           RectangularROI, SpanROI, _get_central_half_limits_of_axis)
 from hyperspy.signals import Signal1D, Signal2D
-import traits.api as t
+
 
 class TestROIs():
 
@@ -157,12 +159,21 @@ class TestROIs():
         r = SpanROI(15, 30)
         assert tuple(r) == (15, 30)
 
-    def test_widget_initialisation(self):
-        self.s_s.plot()
-        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]:
+    @pytest.mark.parametrize('axes', [None, 'signal'])
+    def test_add_widget_ROI_undefined(self, axes):
+        s = self.s_i
+        s.plot()
+        if axes == 'signal':
+            axes = s.axes_manager.signal_axes
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI,
+                    CircleROI]:
             r = roi()
-            r._set_default_values(self.s_s)
-            r.add_widget(self.s_s)
+            r.add_widget(s, axes=axes)
+            if axes is None:
+                expected_axes = s.axes_manager.navigation_axes
+            else:
+                expected_axes = axes
+            r.signal_map[s][1][0] in expected_axes
 
     def test_span_spectrum_sig(self):
         s = self.s_s
@@ -182,8 +193,10 @@ class TestROIs():
         sr = r(s)
         scale0 = s.axes_manager[0].scale
         scale1 = s.axes_manager[1].scale
-        n = ((int(round(2.3 / scale0)), int(round(3.5 / scale0)),),
-             (int(round(5.6 / scale1)), int(round(12.2 / scale1)),))
+        n = ((int(round_half_towards_zero(2.3 / scale0)),
+              int(round_half_towards_zero(3.5 / scale0)),),
+             (int(round_half_towards_zero(5.6 / scale1)),
+              int(round_half_towards_zero(12.2 / scale1)),))
         assert (sr.axes_manager.navigation_shape ==
                 (n[0][1] - n[0][0], n[1][1] - n[1][0]))
         np.testing.assert_equal(
@@ -491,7 +504,7 @@ class TestROIs():
             r.angle(axis='z')
 
     def test_repr_None(self):
-        # Setting the args=None sets them as traits.Undefined, which didn't 
+        # Setting the args=None sets them as traits.Undefined, which didn't
         # have a string representation in the old %s style.
         for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI]:
             r = roi()
@@ -521,10 +534,19 @@ class TestROIs():
                 r(self.s_s)
 
     def test_default_values_call(self):
-        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]:
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI,
+                    CircleROI]:
             r = roi()
             r._set_default_values(self.s_s)
             r(self.s_s)
+
+    def test_default_values_call_specify_signal_axes(self):
+        s = self.s_i
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI,
+                    CircleROI]:
+            r = roi()
+            r._set_default_values(s, axes=s.axes_manager.signal_axes)
+            r(s)
 
     def test_get_central_half_limits(self):
         ax = self.s_s.axes_manager[0]

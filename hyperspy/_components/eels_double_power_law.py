@@ -59,10 +59,10 @@ class DoublePowerLaw(Expression):
     the component will return 0.
     """
 
-    def __init__(self, A=1e-5, r=3., origin=0., shift=20., ratio=1., 
-                 left_cutoff=0.0, module="numexpr", compute_gradients=False, 
+    def __init__(self, A=1e-5, r=3., origin=0., shift=20., ratio=1.,
+                 left_cutoff=0.0, module="numexpr", compute_gradients=False,
                  **kwargs):
-        super(DoublePowerLaw, self).__init__(
+        super().__init__(
             expression="where(x > left_cutoff, \
                         A * (ratio * (x - origin - shift) ** -r \
                         + (x - origin) ** -r), 0)",
@@ -106,25 +106,25 @@ class DoublePowerLaw(Expression):
         return self.function(x) / self.A.value
 
     def grad_r(self, x):
-        return np.where(x > self.left_cutoff.value, -self.A.value * 
+        return np.where(x > self.left_cutoff.value, -self.A.value *
                         self.ratio.value * (x - self.origin.value -
                         self.shift.value) ** (-self.r.value) *
                         np.log(x - self.origin.value - self.shift.value) -
-                        self.A.value * (x - self.origin.value) ** 
+                        self.A.value * (x - self.origin.value) **
                         (-self.r.value) * np.log(x - self.origin.value), 0)
 
     def grad_origin(self, x):
         return np.where(x > self.left_cutoff.value, self.A.value * self.r.value
-                        * self.ratio.value * (x - self.origin.value - self.shift.value) 
+                        * self.ratio.value * (x - self.origin.value - self.shift.value)
                         ** (-self.r.value - 1) + self.A.value * self.r.value
                         * (x - self.origin.value) ** (-self.r.value - 1), 0)
 
     def grad_shift(self, x):
         return np.where(x > self.left_cutoff.value, self.A.value * self.r.value
-                        * self.ratio.value * (x - self.origin.value - 
+                        * self.ratio.value * (x - self.origin.value -
                         self.shift.value) ** (-self.r.value - 1), 0)
 
     def grad_ratio(self, x):
         return np.where(x > self.left_cutoff.value, self.A.value *
-                        (x - self.origin.value - self.shift.value) ** 
+                        (x - self.origin.value - self.shift.value) **
                         (-self.r.value), 0)

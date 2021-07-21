@@ -38,6 +38,9 @@ reads_spectrum = False
 reads_spectrum_image = False
 # Writing capabilities
 writes = False
+non_uniform_axis = False
+# ----------------------
+
 
 _logger = logging.getLogger(__name__)
 
@@ -177,9 +180,9 @@ class ProtochipsCSV(object):
         if self.time_units == 'Milliseconds':
             scale /= 1000
             max_diff /= 1000
-            # Once we support non-linear axis, don't forgot to update the
+            # Once we support non-uniform axis, don't forgot to update the
             # documentation of the protochips reader
-            _logger.warning("The time axis is not linear, the time step is "
+            _logger.warning("The time axis is not uniform, the time step is "
                             "thus extrapolated to {0} {1}. The maximal step in time step is {2} {1}".format(
                                 scale, units, max_diff))
         else:

@@ -553,13 +553,13 @@ class TestMultifit:
     def test_iterpath_none(self):
         with pytest.warns(
             VisibleDeprecationWarning,
-            match="'iterpath' default will change from 'flyback' to 'serpentine'",
+            match="default will change from 'flyback' to 'serpentine'",
         ):
             self.m.multifit()  # iterpath = None by default
 
         with pytest.warns(
             VisibleDeprecationWarning,
-            match="'iterpath' default will change from 'flyback' to 'serpentine'",
+            match="default will change from 'flyback' to 'serpentine'",
         ):
             self.m.multifit(iterpath=None)
 

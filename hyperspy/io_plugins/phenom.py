@@ -60,6 +60,7 @@ reads_spectrum = True
 reads_spectrum_image = True
 # Writing features
 writes = False
+non_uniform_axis = False
 # ----------------------
 
 def element_symbol(z):

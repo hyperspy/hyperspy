@@ -41,7 +41,6 @@ def test_get_core_loss_eels_signal():
     s3 = ad.get_core_loss_eels_signal(add_noise=True)
     assert (s2.data == s3.data).all()
 
-
 @pytest.mark.parametrize("add_noise", (True, False))
 def test_get_core_loss_eels_model(add_noise):
     m = ad.get_core_loss_eels_model(add_powerlaw=False, add_noise=add_noise)
@@ -67,3 +66,29 @@ def test_get_core_loss_eels_line_scan_signal(add_powerlaw, add_noise):
 def test_get_atomic_resolution_tem_signal2d():
     s = ad.get_atomic_resolution_tem_signal2d()
     assert s.axes_manager.signal_dimension == 2
+
+@pytest.mark.parametrize("navigation_dimension",(0,1,2,3))
+@pytest.mark.parametrize("uniform",(True,False))
+@pytest.mark.parametrize("add_baseline",(True,False))
+@pytest.mark.parametrize("add_noise",(True,False))
+def test_get_luminescence_signal(navigation_dimension, uniform, add_baseline, add_noise):
+    #Creating signal
+    s = ad.get_luminescence_signal(navigation_dimension,
+                                                uniform,
+                                                add_baseline,
+                                                add_noise)
+    #Checking that dimension initialisation works
+    assert tuple([10 for i in range(navigation_dimension)]+[1024]) == s.data.shape
+    #Verifying that both functional and uniform data axis work
+    sax = s.axes_manager.signal_axes[0]
+    assert sax.is_uniform == uniform
+    #Verifying that baseline works
+    if add_baseline:
+        assert s.data.min()>340
+    #Verification that noise works
+    #Case of baseline + energy axis is discarded because of
+    #jacobian transformation
+    if not(add_baseline and not uniform):
+        #Verify that adding noise works
+        noisedat = s.isig[:100].data
+        assert (noisedat.std()>0.1)==add_noise

@@ -164,3 +164,45 @@ class TestUtilsStack:
         s = self.signal
         rs = utils.stack([5, s], axis='E')
         np.testing.assert_array_equal(rs.isig[0].data, 5 * np.ones((3, 2)))
+
+    def test_stack_non_uniform_axis(self):
+        s = self.signal
+        s2 = s.deepcopy()
+        s2.axes_manager[2].offset = 2.5
+        s.axes_manager[1].convert_to_non_uniform_axis()
+        s.axes_manager[2].convert_to_non_uniform_axis()
+        s2.axes_manager[2].convert_to_non_uniform_axis()
+        # test error for overlapping axes
+        with pytest.raises(ValueError, match="Signals can only be stacked"):
+            rs = utils.stack([s, s], axis=2)
+        # test stacking along non-uniform axis
+        rs = utils.stack([s, s2], axis=2)
+        assert rs.axes_manager[2].axis.size == rs.data.shape[2]
+        # Test stacking without specified axis
+        rs = utils.stack([s, s])
+        assert rs.axes_manager.shape == (2, 3, 2, 5)
+        assert rs.axes_manager[0].axis.size == 2
+        # Test stacking along uniform axis
+        rs = utils.stack([s, s], axis=0)
+        assert rs.axes_manager[0].axis.size == 4
+        # Test stacking axes with inverse vectors
+        s.axes_manager[2].axis = s.axes_manager[2].axis[::-1]
+        s2.axes_manager[2].axis = s2.axes_manager[2].axis[::-1]
+        rs = utils.stack([s2, s], axis=2)
+        assert rs.axes_manager[2].axis.size == rs.data.shape[2]
+
+    def test_stack_functional_data_axis(self):
+        s = self.signal
+        s2 = s.deepcopy()
+        # Test stacking of functional data axes with uniform x vector
+        s.axes_manager[0].convert_to_functional_data_axis(expression='x')
+        s2.axes_manager[0].offset = 2
+        s2.axes_manager[0].convert_to_functional_data_axis(expression='x')
+        rs = utils.stack([s, s2], axis=0)
+        assert rs.axes_manager[0].axis.size == rs.data.shape[1]
+        # Test stacking of functional data axes with uniform x vector
+        s.axes_manager[0].x.convert_to_non_uniform_axis()
+        s2.axes_manager[0].x.convert_to_non_uniform_axis()
+        rs = utils.stack([s, s2], axis=0)
+        assert rs.axes_manager[0].axis.size == rs.data.shape[1]
+        

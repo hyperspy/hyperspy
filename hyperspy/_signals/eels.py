@@ -360,6 +360,11 @@ class EELSSpectrum(Signal1D):
         %s
         %s
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Examples
         --------
         >>> s_ll = hs.signals.EELSSpectrum(np.zeros(1000))
@@ -388,6 +393,10 @@ class EELSSpectrum(Signal1D):
         """
 
         def substract_from_offset(value, signals):
+            # Test that axes is uniform
+            if not self.axes_manager[-1].is_uniform:
+                raise NotImplementedError("Support for EELS signals with "
+                            "non-uniform signal axes is not yet implemented.")
             if isinstance(value, da.Array):
                 value = value.compute()
             for signal in signals:
@@ -674,7 +683,7 @@ class EELSSpectrum(Signal1D):
                                     window_length=window_length,
                                     differential_order=1)
         else:
-            s = s.diff(-1)
+            s = s.derivative(-1)
         if tol is None:
             tol = np.max(np.abs(s.data).min(axis.index_in_array))
         saxis = s.axes_manager[-1]
@@ -840,6 +849,11 @@ class EELSSpectrum(Signal1D):
         -------
         An EELSSpectrum containing the current data deconvolved.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Notes
         -----
         For details see: Egerton, R. Electron Energy-Loss
@@ -847,6 +861,9 @@ class EELSSpectrum(Signal1D):
 
         """
         self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes")
         s = self.deepcopy()
         zlp_size = zlp.axes_manager.signal_axes[0].size
         self_size = self.axes_manager.signal_axes[0].size
@@ -928,6 +945,11 @@ class EELSSpectrum(Signal1D):
         extrapolate_lowloss, extrapolate_coreloss : bool
             If True the signals are extrapolated using a power law,
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Notes
         -----
         For details see: Egerton, R. Electron Energy-Loss
@@ -935,6 +957,13 @@ class EELSSpectrum(Signal1D):
 
         """
         self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes.")
+        if not ll.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "The low-loss energy axis is non-uniform. "
+                "This operation is not yet implemented for non-uniform energy axes")
         orig_cl_size = self.axes_manager.signal_axes[0].size
 
         if threshold is None:
@@ -1027,6 +1056,11 @@ class EELSSpectrum(Signal1D):
         %s
         %s
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Notes
         -----
         For details on the algorithm see Gloter, A., A. Douiri,
@@ -1035,6 +1069,9 @@ class EELSSpectrum(Signal1D):
         Ultramicroscopy 96, no. 3–4 (September 2003): 385–400.
 
         """
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes.")
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
@@ -1201,9 +1238,9 @@ class EELSSpectrum(Signal1D):
         # If the signal is binned we need to bin the extrapolated power law
         # what, in a first approximation, can be done by multiplying by the
         # axis step size.
-        if is_binned(self) is True:
+        if is_binned(self):
         # in v2 replace by
-        # if self.axes_manager[-1].is_binned is True:
+        # if self.axes_manager[-1].is_binned:
             factor = s.axes_manager[-1].scale
         else:
             factor = 1
@@ -1315,6 +1352,8 @@ class EELSSpectrum(Signal1D):
         AttributeError
             If the beam_energy or the collection semi-angle are not defined in
             metadata.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
 
         Notes
         -----
@@ -1327,6 +1366,9 @@ class EELSSpectrum(Signal1D):
            Microscope", Springer-Verlag, 2011.
 
         """
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes.")
         output = {}
         if iterations == 1:
             # In this case s.data is not modified so there is no need to make
@@ -1541,11 +1583,19 @@ class EELSSpectrum(Signal1D):
 
         Returns
         -------
-
         model : `EELSModel` instance.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         from hyperspy.models.eelsmodel import EELSModel
+        if ll is not None and not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "Multiple scattering is not implemented for spectra with a non-uniform energy axis. "
+                "To create a model that does not account for multiple-scattering do not set "
+                "the `ll` keyword.")
         model = EELSModel(self,
                           ll=ll,
                           auto_background=auto_background,
