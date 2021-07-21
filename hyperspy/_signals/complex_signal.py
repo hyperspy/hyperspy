@@ -280,7 +280,7 @@ class ComplexSignal(BaseSignal):
         """
         angle = self._deepcopy_with_new_data(np.angle(self.data, deg))
         angle.set_signal_type('')
-        
+
         return angle
 
     def argand_diagram(self, size=[256, 256], range=None):
@@ -318,6 +318,10 @@ class ComplexSignal(BaseSignal):
                 "`compute()` to convert the signal to a regular one."
                 )
 
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "The function is not implemented for non-uniform axes.")
         im = self.imag.data.ravel()
         re = self.real.data.ravel()
 

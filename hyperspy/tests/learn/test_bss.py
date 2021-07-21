@@ -18,6 +18,7 @@
 
 import numpy as np
 import pytest
+from distutils.version import LooseVersion
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
@@ -338,6 +339,7 @@ class TestBSS2D:
 
         mask_sig = s._get_signal_signal(dtype="bool")
         mask_sig.unfold()
+        mask_sig.data[:] = False
         mask_sig.isig[5] = True
         mask_sig.fold()
 
@@ -350,6 +352,8 @@ class TestBSS2D:
         self.mask_nav = mask_nav
         self.mask_sig = mask_sig
 
+    @pytest.mark.skipif(LooseVersion(np.__version__) < LooseVersion("1.17"),
+                        reason="derivative of lazy signal isn't supported with numpy < 1.17.0")
     def test_diff_axes_string_with_mask(self):
         self.s.learning_results.factors[5, :] = np.nan
         factors = self.s.get_decomposition_factors().inav[:3]
@@ -372,12 +376,26 @@ class TestBSS2D:
             diff_axes=["x"],
             mask=self.mask_sig,
         )
+        matrix = self.s.learning_results.unmixing_matrix.copy()
+        self.mask_sig.change_dtype("float")
+        self.mask_sig.data[self.mask_sig.data == 1] = np.nan
+        self.mask_sig.fold()
+        self.mask_sig = self.mask_sig.derivative(axis="x")
+        self.mask_sig.data[np.isnan(self.mask_sig.data)] = 1
+        self.mask_sig.change_dtype("bool")
+        self.s.blind_source_separation(
+            3, diff_order=0, fun="exp", on_loadings=False,
+            factors=factors.derivative(axis="x", order=1),
+            mask=self.mask_sig)
         np.testing.assert_allclose(
             matrix, self.s.learning_results.unmixing_matrix, atol=1e-5
         )
 
+    @pytest.mark.skipif(LooseVersion(np.__version__) < LooseVersion("1.17"),
+                        reason="derivative of lazy signal isn't supported with numpy < 1.17.0")
     def test_diff_axes_string_without_mask(self):
-        factors = self.s.get_decomposition_factors().inav[:3].diff(axis="x", order=1)
+        factors = self.s.get_decomposition_factors().inav[:3].derivative(
+            axis="x", order=1)
         self.s.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=False, factors=factors
         )
@@ -389,8 +407,11 @@ class TestBSS2D:
             matrix, self.s.learning_results.unmixing_matrix, atol=1e-3
         )
 
+    @pytest.mark.skipif(LooseVersion(np.__version__) < LooseVersion("1.17"),
+                        reason="derivative of lazy signal isn't supported with numpy < 1.17.0")
     def test_diff_axes_without_mask(self):
-        factors = self.s.get_decomposition_factors().inav[:3].diff(axis="y", order=1)
+        factors = self.s.get_decomposition_factors().inav[:3].derivative(
+            axis="y", order=1)
         self.s.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=False, factors=factors
         )

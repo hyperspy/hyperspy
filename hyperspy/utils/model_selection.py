@@ -18,7 +18,6 @@
 
 import numpy as np
 
-from hyperspy import model
 from hyperspy.exceptions import NavigationSizeError
 
 

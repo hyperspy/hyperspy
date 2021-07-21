@@ -67,7 +67,7 @@ class Gaussian2D(Expression):
 
     def __init__(self, A=1., sigma_x=1., sigma_y=1., centre_x=0.,
                  centre_y=0, module="numexpr", **kwargs):
-        super(Gaussian2D, self).__init__(
+        super().__init__(
             expression="A * (1 / (sigma_x * sigma_y * 2 * pi)) * \
                        exp(-((x - centre_x) ** 2 / (2 * sigma_x ** 2) \
                        + (y - centre_y) ** 2 / (2 * sigma_y ** 2)))",

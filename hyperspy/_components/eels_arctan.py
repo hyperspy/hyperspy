@@ -87,7 +87,7 @@ class EELSArctan(Expression):
         # Not to break scripts once we remove the legacy Arctan
         if "minimum_at_zero" in kwargs:
             del kwargs["minimum_at_zero"]
-        super(EELSArctan, self).__init__(
+        super().__init__(
             expression="A * (pi /2 + arctan(k * (x - x0)))",
             name="Arctan",
             A=A,

@@ -40,8 +40,9 @@ def test_function():
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
+@pytest.mark.parametrize(("uniform"), (True, False))
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-def test_estimate_parameters_binned(only_current, binned, lazy):
+def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
     s = Signal1D(np.empty((200,)))
     s.axes_manager.signal_axes[0].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
@@ -52,7 +53,14 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     if lazy:
         s = s.as_lazy()
     g2 = Voigt(legacy=False)
-    factor = axis.scale if binned else 1
+    if not uniform:
+        axis.convert_to_non_uniform_axis()
+    if binned and uniform:
+        factor = axis.scale
+    elif binned:
+        factor = np.gradient(axis.axis)
+    else:
+        factor = 1
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2._axes_manager[-1].is_binned == binned

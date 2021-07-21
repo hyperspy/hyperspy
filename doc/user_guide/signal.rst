@@ -48,6 +48,9 @@ in the :py:attr:`~.signal.BaseSignal.metadata` attribute and the axes
 information (including calibration) can be accessed (and modified) in the
 :py:class:`~.axes.AxesManager` attribute.
 
+
+.. _signal_initialization:
+
 Signal initialization
 ---------------------
 
@@ -79,6 +82,9 @@ This also applies to the :py:attr:`~.signal.BaseSignal.metadata`.
     │   └── title = A BaseSignal title
     └── Signal
 	└── signal_type =
+
+Instead of using a list of *axes dictionaries* ``[dict0, dict1]`` during signal 
+initialization, you can also pass a list of *axes objects*: ``[axis0, axis1]``.
 
 
 The navigation and signal dimensions
@@ -272,9 +278,6 @@ The following example shows how to transform between different subclasses.
        <ComplexSignal1D, title: , dimensions: (20, 10|100)>
 
 
-
-
-
 .. _signal.binned:
 
 Binned and unbinned signals
@@ -282,7 +285,9 @@ Binned and unbinned signals
 
 Signals that are a histogram of a probability density function (pdf) should
 have the ``is_binned`` attribute of the signal axis set to ``True``. The reason
-is that some methods operate differently on signals that are *binned*.
+is that some methods operate differently on signals that are *binned*. An
+example of *binned* signals are EDS spectra, where the multichannel analyzer
+integrates the signal counts in every channel (=bin).
 Note that for 2D signals each signal axis has an ``is_binned``
 attribute that can be set independently. For example, for the first signal
 axis: ``signal.axes_manager.signal_axes[0].is_binned``.
@@ -326,6 +331,14 @@ To change the default value:
 .. versionchanged:: 1.7 The ``binned`` attribute from the metadata has been
     replaced by the axis attributes ``is_binned``.
 
+Integration of binned signals
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For binned axes, the detector already provides the per-channel integration of
+the signal. Therefore, in this case, :py:meth:`~.signal.BaseSignal.integrate1D`
+performs a simple summation along the given axis. In contrast, for unbinned
+axes, :py:meth:`~.signal.BaseSignal.integrate1D` calls the
+:py:meth:`~.signal.BaseSignal.integrate_simpson` method.
 
 
 Generic tools
@@ -437,6 +450,15 @@ array instead of a :py:class:`~.signal.BaseSignal` instance e.g.:
 
     >>> np.angle(s)
     array([ 0.,  0.])
+
+.. note::
+    For numerical **differentiation** and **integration**, use the proper
+    methods :py:meth:`~.signal.BaseSignal.derivative` and
+    :py:meth:`~.signal.BaseSignal.integrate1D`. In certain cases, particularly
+    when operating on a non-uniform axis, the approximations using the
+    :py:meth:`~.signal.BaseSignal.diff` and :py:meth:`~.signal.BaseSignal.sum`
+    methods will lead to erroneous results.
+
 
 .. _signal.indexing:
 

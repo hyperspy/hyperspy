@@ -96,8 +96,9 @@ full_support = True  # Hopefully?
 # Recognised file extension
 file_extensions = ('unf', 'UNF')
 default_extension = 0
-# Writing features
+# Writing capabilities
 writes = [(1, 0), (1, 1), (1, 2), (2, 0), (2, 1)]  # All up to 3D
+non_uniform_axis = False
 # ----------------------
 
 

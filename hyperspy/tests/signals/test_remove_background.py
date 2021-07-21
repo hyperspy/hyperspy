@@ -45,12 +45,14 @@ class TestRemoveBackground1DGaussian:
             gaussian.function(np.arange(0, 20, 0.02)))
         self.signal.axes_manager[0].scale = 0.01
 
-    @pytest.mark.parametrize('binning', (True, False))
+    @pytest.mark.parametrize('binning,uniform', [(True, False), (True, True), (False, True)])
     @pytest.mark.parametrize('fast', [False, True])
     @pytest.mark.parametrize('return_model', [False, True])
-    def test_background_remove(self, binning, fast, return_model):
+    def test_background_remove(self, binning, fast, return_model, uniform):
         signal = self.signal
         signal.axes_manager[-1].is_binned = binning
+        if not uniform:
+            signal.axes_manager[-1].convert_to_non_uniform_axis()
         out = signal.remove_background(
             signal_range=(None, None),
             background_type='Gaussian',

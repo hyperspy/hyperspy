@@ -126,17 +126,26 @@ class Polynomial(Component):
         -------
         bool
         """
-        super(Polynomial, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
+
+        if is_binned(signal):
+        # in v2 replace by
+        #if axis.is_binned:
+            # using the mean of the gradient for non-uniform axes is a best
+            # guess to the scaling of binned signals for the estimation
+            scaling_factor = axis.scale if axis.is_uniform \
+                             else np.mean(np.gradient(axis.axis), axis=-1)
+
         if only_current is True:
             estimation = np.polyfit(axis.axis[i1:i2],
                                     signal()[i1:i2],
                                     self.get_polynomial_order())
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.coefficients.value = estimation / axis.scale
+                self.coefficients.value = estimation / scaling_factor
             else:
                 self.coefficients.value = estimation
             return True
@@ -156,10 +165,10 @@ class Polynomial(Component):
                 # Shape needed to fit coefficients.map:
                 cmap_shape = nav_shape + (self.get_polynomial_order() + 1, )
                 self.coefficients.map['values'][:] = cmaps.reshape(cmap_shape)
-                if is_binned(signal) is True:
+                if is_binned(signal):
                 # in v2 replace by
                 #if axis.is_binned:
-                    self.coefficients.map["values"] /= axis.scale
+                    self.coefficients.map["values"] /= scaling_factor
                 self.coefficients.map['is_set'][:] = True
             self.fetch_stored_values()
             return True

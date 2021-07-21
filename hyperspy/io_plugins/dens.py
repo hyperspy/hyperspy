@@ -34,6 +34,8 @@ file_extensions = ['dens', 'DENS']
 default_extension = 0
 # Writing capabilities
 writes = False
+non_uniform_axis = False
+# ----------------------
 
 
 def _cnv_time(timestr):

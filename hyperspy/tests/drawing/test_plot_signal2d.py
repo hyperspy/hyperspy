@@ -227,6 +227,34 @@ class _TestIteratedSignal:
         return axes_manager
 
 
+class TestPlotNonLinearAxis:   
+    
+    def setup_method(self):
+        dict0 = {'axis': np.arange(10)**0.5, 'name':'Non uniform 0', 'units':'A',
+                 'navigate':True}
+        dict1 = {'axis': np.arange(10)**0.5, 'name':'Non uniform 1', 'units':'A',
+                 'navigate':False}
+        dict2 = {'size': 100, 'name':'Linear 2', 'units':'A', 'scale':0.2,
+                 'offset':1, 'navigate':False}
+        np.random.seed(1)
+        s = hs.signals.Signal2D(np.random.random((10, 10, 100)),
+                                axes=[dict0, dict1, dict2])
+        self.s = s
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_uniform_nav(self):
+        self.s.plot()
+        return self.s._plot.navigator_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_uniform_sig(self):
+        s2 = self.s.T
+        s2.plot(navigator=None)
+        return s2._plot.signal_plot.figure
+
+
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_images_default():
@@ -498,8 +526,8 @@ def test_plot_with_non_finite_value():
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_log_negative_value(cmap):
-    s = hs.signals.Signal2D(np.arange(10*10).reshape(10, 10))
-    s -= 5*10
+    s = hs.signals.Signal2D(np.arange(10*10, dtype=float).reshape(10, 10))
+    s -= 49.5
     if cmap:
         s.plot(norm='log', cmap=cmap)
     else:

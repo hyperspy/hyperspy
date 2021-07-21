@@ -495,7 +495,7 @@ class TestUSID2HSdtype:
                                      axes_to_spec=['Frequency', 'Bias'],
                                      compound_comp_name=comp_name)
 
-    def test_non_linear_dimension(self):
+    def test_non_uniform_dimension(self):
         pos_dims = [usid.Dimension('Y', 'um', np.linspace(0, 60, num=5)),
                     usid.Dimension('X', 'nm', [-250, 750])]
         spec_dims = [usid.Dimension('Bias', 'V',
@@ -514,7 +514,7 @@ class TestUSID2HSdtype:
                            slow_to_fast=True)
 
         with pytest.raises(ValueError):
-            _ = hs.load(file_path, ignore_non_linear_dims=False)
+            _ = hs.load(file_path, ignore_non_uniform_dims=False)
 
         with pytest.warns(UserWarning) as _:
             new_sig = hs.load(file_path)

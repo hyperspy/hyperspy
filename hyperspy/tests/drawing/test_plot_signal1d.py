@@ -192,6 +192,32 @@ class TestPlotSpectra():
         return ax.get_figure()
 
 
+class TestPlotNonLinearAxis:
+
+    def setup_method(self):
+        dict0 = {'size': 10, 'name': 'Axis0', 'units': 'A', 'scale': 0.2,
+                 'offset': 1, 'navigate': True}
+        dict1 = {'axis': np.arange(100)**3, 'name': 'Axis1', 'units': 'O',
+                 'navigate': False}
+        np.random.seed(1)
+        s = hs.signals.Signal1D(np.random.random((10, 100)),
+                                axes=[dict0, dict1])
+        self.s = s
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_uniform_sig(self):
+        self.s.plot()
+        return self.s._plot.signal_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_uniform_nav(self):
+        s2 = self.s.T
+        s2.plot()
+        return s2._plot.navigator_plot.figure
+
+
 @update_close_figure()
 def test_plot_nav0_close():
     test_plot = _TestPlot(ndim=0, sdim=1)

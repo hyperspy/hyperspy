@@ -48,6 +48,7 @@ file_extensions = ['rpl', 'RPL']
 default_extension = 0
 # Writing capabilities
 writes = [(1, 0), (1, 1), (1, 2), (2, 0), (2, 1), ]
+non_uniform_axis = False
 # ----------------------
 
 # The format only support the followng data types
