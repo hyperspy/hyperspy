@@ -44,6 +44,7 @@ full_support = False
 file_extensions = ['zspy']
 default_extension = 0
 # Writing capabilities
+non_uniform_axis = True
 writes = True
 version = "3.1"
 
