@@ -13,6 +13,18 @@ Working with big data
    HyperSpy releases. If you experience issues with HyperSpy's lazy features
    please report them to the developers.
 
+.. versionadded:: 1.7
+
+Data can now be saved using the py:``zarr` package(
+`see the zarr documentation <https://zarr.readthedocs.io/en/stable/>`_)
+
+This allows for:
+
+- Improved data compression (More options and faster methods than hdf5)
+- Ability to save and load data using py:``dask.distributed``
+- Read an array concurrently from multiple threads or processes.
+- Write to an array concurrently from multiple threads or processes.
+
 .. versionadded:: 1.2
 
 HyperSpy makes it possible to analyse data larger than the available memory by
@@ -440,4 +452,8 @@ offers a couple of advantages:
   `the dask documentation <https://distributed.readthedocs.io/en/latest/>`_) offers
   a straightforward way to expand the effective memory for computations to that
   of a cluster, which allows performing the operations significantly faster
-  than on a single machine.
+  than on a single machine. (Note that the default .hspy file format does not
+  work with :py:``dask.distributed`` due to some limitations with loading and
+  saving data in the hdf5 file format)
+
+
