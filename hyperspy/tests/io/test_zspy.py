@@ -126,9 +126,9 @@ class TestSavingMetadataContainers:
     def test_save_unicode(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', ['a', 'b', '\u6f22\u5b57'])
-        fname = tmp_path / 'test.zarr'
+        fname = tmp_path / 'test.zspy'
         s.save(fname)
-        s.save("test.zarr")
+        s.save("test.zspy")
         l = load(fname)
         assert isinstance(l.metadata.test[0], str)
         assert isinstance(l.metadata.test[1], str)
@@ -139,7 +139,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('long_list', list(range(10000)))
         start = time.time()
-        fname = tmp_path / 'test.zarr'
+        fname = tmp_path / 'test.zspy'
         s.save(fname)
         end = time.time()
         assert end - start < 1.0  # It should finish in less that 1 s.
@@ -147,7 +147,7 @@ class TestSavingMetadataContainers:
     def test_numpy_only_inner_lists(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ('3', 4)])
-        fname = tmp_path / 'test.zarr'
+        fname = tmp_path / 'test.zspy'
         s.save(fname)
         l = load(fname)
         assert isinstance(l.metadata.test, list)
@@ -159,7 +159,7 @@ class TestSavingMetadataContainers:
     def test_numpy_general_type(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', np.array([[1., 2], ['3', 4]]))
-        fname = tmp_path / 'test.zarr'
+        fname = tmp_path / 'test.zspy'
         s.save(fname)
         l = load(fname)
         np.testing.assert_array_equal(l.metadata.test, s.metadata.test)
@@ -169,7 +169,7 @@ class TestSavingMetadataContainers:
     def test_list_general_type(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ['3', 4]])
-        fname = tmp_path / 'test.zarr'
+        fname = tmp_path / 'test.zspy'
         s.save(fname)
         l = load(fname)
         assert isinstance(l.metadata.test[0][0], float)
@@ -182,7 +182,7 @@ class TestSavingMetadataContainers:
     def test_general_type_not_working(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', (BaseSignal([1]), 0.1, 'test_string'))
-        fname = tmp_path / 'test.zarr'
+        fname = tmp_path / 'test.zspy'
         s.save(fname)
         l = load(fname)
         assert isinstance(l.metadata.test, tuple)
@@ -193,7 +193,7 @@ class TestSavingMetadataContainers:
     def test_unsupported_type(self, tmp_path):
         s = self.s
         s.metadata.set_item('test', Point2DROI(1, 2))
-        fname = tmp_path / 'test.zarr'
+        fname = tmp_path / 'test.zspy'
         s.save(fname)
         l = load(fname)
         assert 'test' not in l.metadata
@@ -203,7 +203,7 @@ class TestSavingMetadataContainers:
         date, time = "2016-08-05", "15:00:00.450"
         s.metadata.General.date = date
         s.metadata.General.time = time
-        fname = tmp_path / 'test.zarr'
+        fname = tmp_path / 'test.zspy'
         s.save(fname)
         l = load(fname)
         assert l.metadata.General.date == date
@@ -217,7 +217,7 @@ class TestSavingMetadataContainers:
         s.metadata.General.notes = notes
         s.metadata.General.authors = authors
         s.metadata.General.doi = doi
-        fname = tmp_path / 'test.zarr'
+        fname = tmp_path / 'test.zspy'
         s.save(fname)
         l = load(fname)
         assert l.metadata.General.notes == notes
@@ -228,52 +228,19 @@ class TestSavingMetadataContainers:
         s = self.s
         quantity = "Intensity (electron)"
         s.metadata.Signal.quantity = quantity
-        fname = tmp_path / 'test.zarr'
+        fname = tmp_path / 'test.zspy'
         s.save(fname)
         l = load(fname)
         assert l.metadata.Signal.quantity == quantity
-
-    def test_metadata_update_to_v3_1(self):
-        md = {'Acquisition_instrument': {'SEM': {'Stage': {'tilt_alpha': 5.0}},
-                                         'TEM': {'Detector': {'Camera': {'exposure': 0.20000000000000001}},
-                                                 'Stage': {'tilt_alpha': 10.0},
-                                                 'acquisition_mode': 'TEM',
-                                                 'beam_current': 0.0,
-                                                 'beam_energy': 200.0,
-                                                 'camera_length': 320.00000000000006,
-                                                 'microscope': 'FEI Tecnai'}},
-              'General': {'date': '2014-07-09',
-                          'original_filename': 'test_diffraction_pattern.dm3',
-                          'time': '18:56:37',
-                          'title': 'test_diffraction_pattern'},
-              'Signal': {'Noise_properties': {'Variance_linear_model': {'gain_factor': 1.0,
-                                                                        'gain_offset': 0.0}},
-                         'quantity': 'Intensity',
-                         'signal_type': ''},
-              '_HyperSpy': {'Folding': {'original_axes_manager': None,
-                                        'original_shape': None,
-                                        'signal_unfolded': False,
-                                        'unfolded': False}}}
-        s = load(os.path.join(
-            my_path,
-            "zarr_files",
-            'example2_v3.1.zarr'))
-        assert_deep_almost_equal(s.metadata.as_dictionary(), md)
-
-
-def test_none_metadata():
-    s = load(os.path.join(my_path, "zarr_files", "none_metadata.zarr"))
-    assert s.metadata.should_be_None is None
-
 
 class TestLoadingOOMReadOnly:
 
     def setup_method(self, method):
         s = BaseSignal(np.empty((5, 5, 5)))
-        s.save('tmp.zarr', overwrite=True)
+        s.save('tmp.zspy', overwrite=True)
         self.shape = (10000, 10000, 100)
         del s
-        f = zarr.open('tmp.zarr', mode='r+')
+        f = zarr.open('tmp.zspy', mode='r+')
         s = f['Experiments/__unnamed__']
         del s['data']
         s.create_dataset(
@@ -283,7 +250,7 @@ class TestLoadingOOMReadOnly:
             chunks=True)
 
     def test_oom_loading(self):
-        s = load('tmp.zarr', lazy=True)
+        s = load('tmp.zspy', lazy=True)
         assert self.shape == s.data.shape
         assert isinstance(s.data, da.Array)
         assert s._lazy
@@ -292,7 +259,7 @@ class TestLoadingOOMReadOnly:
     def teardown_method(self, method):
         gc.collect()  # Make sure any memmaps are closed first!
         try:
-            remove('tmp.zarr')
+            remove('tmp.zspy')
         except BaseException:
             # Don't fail tests if we cannot remove
             pass
@@ -300,7 +267,7 @@ class TestLoadingOOMReadOnly:
 
 class TestPassingArgs:
     def test_compression_opts(self, tmp_path):
-        self.filename = tmp_path / 'testfile.zarr'
+        self.filename = tmp_path / 'testfile.zspy'
         from numcodecs import Blosc
         comp = Blosc(cname='zstd', clevel=1, shuffle=Blosc.SHUFFLE)
         BaseSignal([1, 2, 3]).save(self.filename, compressor=comp)
@@ -312,7 +279,7 @@ class TestPassingArgs:
 class TestAxesConfiguration:
 
     def test_axes_configuration(self, tmp_path):
-        self.filename = tmp_path / 'testfile.zarr'
+        self.filename = tmp_path / 'testfile.zspy'
         s = BaseSignal(np.zeros((2, 2, 2, 2, 2)))
         s.axes_manager.signal_axes[0].navigate = True
         s.axes_manager.signal_axes[0].navigate = True
@@ -325,7 +292,7 @@ class TestAxesConfiguration:
 
 class TestAxesConfigurationBinning:
     def test_axes_configuration(self):
-        self.filename = 'testfile.zarr'
+        self.filename = 'testfile.zspy'
         s = BaseSignal(np.zeros((2, 2, 2)))
         s.axes_manager.signal_axes[-1].is_binned = True
         s.save(self.filename)
@@ -340,7 +307,7 @@ class Test_permanent_markers_io:
         m = markers.point(x=5, y=5)
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
-            filename = tmp + '/testsavefile.zarr'
+            filename = tmp + '/testsavefile.zspy'
         s.save(filename)
 
     def test_save_load_empty_metadata_markers(self):
@@ -350,7 +317,7 @@ class Test_permanent_markers_io:
         s.add_marker(m, permanent=True)
         del s.metadata.Markers.test
         with tempfile.TemporaryDirectory() as tmp:
-            filename = tmp + '/testsavefile.zarr'
+            filename = tmp + '/testsavefile.zspy'
         s.save(filename)
         s1 = load(filename)
         assert len(s1.metadata.Markers) == 0
@@ -365,7 +332,7 @@ class Test_permanent_markers_io:
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
-            filename = tmp + '/testloadfile.zarr'
+            filename = tmp + '/testloadfile.zspy'
         s.save(filename)
         s1 = load(filename)
         assert s1.metadata.Markers.has_item(name)
@@ -392,7 +359,7 @@ class Test_permanent_markers_io:
         for m in m0_list:
             s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
-            filename = tmp + '/testallmarkersfile.zarr'
+            filename = tmp + '/testallmarkersfile.zspy'
         s.save(filename)
         s1 = load(filename)
         markers_dict = s1.metadata.Markers
@@ -416,7 +383,7 @@ class Test_permanent_markers_io:
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
-            filename = tmp + '/test_save_horizontal_line_marker.zarr'
+            filename = tmp + '/test_save_horizontal_line_marker.zspy'
         s.save(filename)
         s1 = load(filename)
         m1 = s1.metadata.Markers.get_item(name)
@@ -433,7 +400,7 @@ class Test_permanent_markers_io:
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
-            filename = tmp + '/test_save_horizontal_line_segment_marker.zarr'
+            filename = tmp + '/test_save_horizontal_line_segment_marker.zspy'
         s.save(filename)
         s1 = load(filename)
         m1 = s1.metadata.Markers.get_item(name)
@@ -449,7 +416,7 @@ class Test_permanent_markers_io:
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
-            filename = tmp + '/test_save_vertical_line_marker.zarr'
+            filename = tmp + '/test_save_vertical_line_marker.zspy'
         s.save(filename)
         s1 = load(filename)
         m1 = s1.metadata.Markers.get_item(name)
@@ -466,7 +433,7 @@ class Test_permanent_markers_io:
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
-            filename = tmp + '/test_save_vertical_line_segment_marker.zarr'
+            filename = tmp + '/test_save_vertical_line_segment_marker.zspy'
         s.save(filename)
         s1 = load(filename)
         m1 = s1.metadata.Markers.get_item(name)
@@ -483,7 +450,7 @@ class Test_permanent_markers_io:
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
-            filename = tmp + '/test_save_line_segment_marker.zarr'
+            filename = tmp + '/test_save_line_segment_marker.zspy'
         s.save(filename)
         s1 = load(filename)
         m1 = s1.metadata.Markers.get_item(name)
@@ -499,7 +466,7 @@ class Test_permanent_markers_io:
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
-            filename = tmp + '/test_save_point_marker.zarr'
+            filename = tmp + '/test_save_point_marker.zspy'
         s.save(filename)
         s1 = load(filename)
         m1 = s1.metadata.Markers.get_item(name)
@@ -516,7 +483,7 @@ class Test_permanent_markers_io:
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
-            filename = tmp + '/test_save_rectangle_marker.zarr'
+            filename = tmp + '/test_save_rectangle_marker.zspy'
         s.save(filename)
         s1 = load(filename)
         m1 = s1.metadata.Markers.get_item(name)
@@ -533,7 +500,7 @@ class Test_permanent_markers_io:
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
-            filename = tmp + '/test_save_text_marker.zarr'
+            filename = tmp + '/test_save_text_marker.zspy'
         s.save(filename)
         s1 = load(filename)
         m1 = s1.metadata.Markers.get_item(name)
@@ -547,7 +514,7 @@ class Test_permanent_markers_io:
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
-            filename = tmp + '/test_save_multidim_nav_marker.zarr'
+            filename = tmp + '/test_save_multidim_nav_marker.zspy'
         s.save(filename)
         s1 = load(filename)
         m1 = s1.metadata.Markers.get_item(name)
@@ -568,10 +535,10 @@ def test_compression(compressor, tmp_path):
         from numcodecs import Blosc
         compressor = Blosc(cname='zstd', clevel=3, shuffle=Blosc.BITSHUFFLE)
     s = Signal1D(np.ones((3, 3)))
-    s.save(tmp_path / 'test_compression.zarr',
+    s.save(tmp_path / 'test_compression.zspy',
            overwrite=True,
            compressor=compressor)
-    load(tmp_path / 'test_compression.zarr')
+    load(tmp_path / 'test_compression.zspy')
 
 
 def test_strings_from_py2():
@@ -583,7 +550,7 @@ def test_save_ragged_array(tmp_path):
     a = np.array([0, 1])
     b = np.array([0, 1, 2])
     s = BaseSignal(np.array([a, b], dtype=object)).T
-    fname = tmp_path / 'test_save_ragged_array.zarr'
+    fname = tmp_path / 'test_save_ragged_array.zspy'
     s.save(fname)
     s1 = load(fname)
     for i in range(len(s.data)):
@@ -599,7 +566,7 @@ def test_save_chunks_signal_metadata():
     s.change_dtype('float')
     s.decomposition()
     with tempfile.TemporaryDirectory() as tmp:
-        filename = os.path.join(tmp, 'test_save_chunks_signal_metadata.zarr')
+        filename = os.path.join(tmp, 'test_save_chunks_signal_metadata.zspy')
     chunks = (5, 2, 2)
     s.save(filename, chunks=chunks)
     s2 = load(filename, lazy=True)
@@ -610,9 +577,9 @@ def test_chunking_saving_lazy():
     s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
     s.data = s.data.rechunk([50, 25, 25])
     with tempfile.TemporaryDirectory() as tmp:
-        filename = os.path.join(tmp, 'test_chunking_saving_lazy.zarr')
-        filename2 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_True.zarr')
-        filename3 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_specified.zarr')
+        filename = os.path.join(tmp, 'test_chunking_saving_lazy.zspy')
+        filename2 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_True.zspy')
+        filename3 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_specified.zspy')
     s.save(filename)
     s1 = load(filename, lazy=True)
     assert s.data.chunks == s1.data.chunks
@@ -631,7 +598,7 @@ def test_data_lazy():
     s = Signal2D(da.ones((5, 10, 10))).as_lazy()
     s.data = s.data.rechunk([5, 2, 2])
     with tempfile.TemporaryDirectory() as tmp:
-        filename = os.path.join(tmp, 'test_chunking_saving_lazy.zarr')
+        filename = os.path.join(tmp, 'test_chunking_saving_lazy.zspy')
     s.save(filename)
     s1 = load(filename)
     np.testing.assert_array_almost_equal(s1.data, s.data)

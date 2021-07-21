@@ -156,3 +156,17 @@ def test_warning():
     assert sig._lazy == False
     thing = to_array(sig, chunks=None)
     assert isinstance(thing, np.ndarray)
+
+def test_display():
+    assert _lazy_signals.LazySignal1D(da.ones(10))._repr_html_()
+    assert _lazy_signals.LazySignal2D(da.ones((10, 10)))._repr_html_()
+    assert _lazy_signals.LazySignal2D(da.ones((10, 10, 10)))._repr_html_()
+    assert _lazy_signals.LazySignal2D(da.ones((10, 10, 10, 10)))._repr_html_()
+
+def test_get_signal_chunk_size(signal):
+    sig = signal
+    assert sig._get_signal_chunk_size() == ((7,), (11,))
+
+def test_get_nav_chunk_size(signal):
+    sig = signal
+    assert sig._get_navigation_chunk_size() == ((2, 1, 3), (4, 5))

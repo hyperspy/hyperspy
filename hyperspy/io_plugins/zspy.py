@@ -36,12 +36,12 @@ _logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
-format_name = 'ZArr'
+format_name = 'ZSpy'
 description = \
-    'The default file format for HyperSpy based on the zarr standard'
+    'A default file format for HyperSpy based on the zarr standard'
 full_support = False
 # Recognised file extension
-file_extensions = ['zarr']
+file_extensions = ['zspy']
 default_extension = 0
 # Writing capabilities
 writes = True
@@ -74,28 +74,11 @@ version = "3.1"
 # the experiments and that will be accessible as attributes of the
 # Experiments instance
 #
-# CHANGES
-#
 # v3.1
-# - move metadata.Signal.binned attribute to axes.is_binned parameter
+# - Track hspy versions to maintain consistancy
 #
-# v3.0
-# - add Camera and Stage node
-# - move tilt_stage to Stage.tilt_alpha
-#
-# v2.2
-# - store more metadata as string: date, time, notes, authors and doi
-# - store quantity for intensity axis
-#
-# v2.1
-# - Store the navigate attribute.
-# - record_by is stored only for backward compatibility but the axes navigate
-#   attribute takes precendence over record_by for files with version >= 2.1
-# v1.3
-# ----
-# - Added support for lists, tuples and binary strings
 
-not_valid_format = 'The file is not a valid HyperSpy zarr file'
+not_valid_format = 'The file is not a valid HyperSpy zspy file'
 
 current_file_version = None  # Format version of the file being read
 default_version = LooseVersion(version)
@@ -105,7 +88,7 @@ default_version = LooseVersion(version)
 def file_reader(filename,
                 lazy=False,
                 **kwds):
-    """Read data from zarr files saved with the hyperspy zarr format specification
+    """Read data from zspy files saved with the hyperspy zspy format specification
 
     Parameters
     ----------
@@ -322,7 +305,7 @@ def dict2zarrgroup(dictionary, group, **kwds):
                 group.attrs[key] = value
             except BaseException:
                 _logger.exception(
-                    "The zarr writer could not write the following "
+                    "The zspy writer could not write the following "
                     "information in the file: %s : %s", key, value)
 
 
@@ -603,7 +586,7 @@ def file_writer(filename, signal, *args, **kwds):
     """
     store = zarr.storage.NestedDirectoryStore(filename,)
     f = zarr.group(store=store, overwrite=True)
-    f.attrs['file_format'] = "Zarr"
+    f.attrs['file_format'] = "ZSpy"
     f.attrs['file_format_version'] = version
     exps = f.create_group('Experiments')
     group_name = signal.metadata.General.title if \
