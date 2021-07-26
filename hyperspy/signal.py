@@ -3498,7 +3498,8 @@ class BaseSignal(FancySlicing,
 
     def _iterate_signal(self, iterpath=None):
         """Iterates over the signal data. It is faster than using the signal
-        iterator.
+        iterator, because it avoids making deepcopy of metadata and other
+        attributes.
 
         Parameters
         ----------
