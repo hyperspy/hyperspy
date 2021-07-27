@@ -178,6 +178,13 @@ class TestMarkers:
             marker_list.append(markers.point(4, 8))
         s.add_marker(marker_list)
 
+    def test_check_if_plot_is_not_active(self):
+        s = Signal1D(np.arange(100).reshape([10,10]))
+        m = markers.vertical_line(np.arange(10))
+        s.add_marker(m)
+        s._plot.close()
+        s.add_marker(m)
+
 
 class Test_permanent_markers:
 

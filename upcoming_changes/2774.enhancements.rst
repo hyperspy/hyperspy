@@ -1,4 +1,0 @@
-When saving a dataset with a dtype other than
-`uint8 <https://numpy.org/doc/stable/user/basics.types.html>`_ to a blockfile
-(blo) it is now possible to provide the argument ``intensity_scaling`` to map
-the intensity values to the reduced range.

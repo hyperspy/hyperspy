@@ -5787,7 +5787,7 @@ class BaseSignal(FancySlicing,
                 raise ValueError("Markers can not be added to several signals")
             m._plot_on_signal = plot_on_signal
             if plot_marker:
-                if self._plot is None:
+                if self._plot is None or not self._plot.is_active:
                     self.plot()
                 if m._plot_on_signal:
                     self._plot.signal_plot.add_marker(m)
