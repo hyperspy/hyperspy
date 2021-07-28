@@ -599,6 +599,16 @@ documentation for more information.
     >>> s.save('file.jpg', scalebar=True)
     >>> s.save('file.jpg', scalebar=True, scalebar_kwds={'location':'lower right'})
 
+In the example above, the image is created using
+:py:func:`~.matplotlib.pyplot.imshow`, and additional keyword arguments can be
+pass to this function using ``imshow_kwds``. For example, this can be used to
+save an image displayed using a matplotlib colormap:
+
+.. code-block:: python
+
+    >>> s.save('file.jpg', imshow_kwds=dict(cmap='viridis'))
+
+
 The number of pixel of the exported image can be adjusted:
 
 .. code-block:: python
@@ -828,10 +838,10 @@ Extra saving arguments
 - ``intensity_scaling`` : in case the dataset that needs to be saved does not
   have the `np.uint8` data type, casting to this datatype without intensity
   rescaling results in overflow errors (default behavior). This option allows
-  you to perform linear intensity scaling of the images prior to saving the 
+  you to perform linear intensity scaling of the images prior to saving the
   data. The options are:
-  
-  - `'dtype'`: the limits of the datatype of the dataset, e.g. 0-65535 for 
+
+  - `'dtype'`: the limits of the datatype of the dataset, e.g. 0-65535 for
     `np.uint16`, are mapped onto 0-255 respectively. Does not work for `float`
     data types.
   - `'minmax'`: the minimum and maximum in the dataset are mapped to 0-255.
@@ -841,7 +851,7 @@ Extra saving arguments
 - ``navigator_signal``: the BLO file also stores a virtual bright field (VBF) image which
   behaves like a navigation signal in the ASTAR software. By default this is
   set to `'navigator'`, which results in the default :py:attr:`navigator` signal to be used.
-  If this signal was not calculated before (e.g. by calling :py:meth:`~.signal.BaseSignal.plot`), it is 
+  If this signal was not calculated before (e.g. by calling :py:meth:`~.signal.BaseSignal.plot`), it is
   calculated when :py:meth:`~.signal.BaseSignal.save` is called, which can be time consuming.
   Alternatively, setting the argument to `None` will result in a correctly sized
   zero array to be used. Finally, a custom ``Signal2D`` object can be passed,

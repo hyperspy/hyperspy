@@ -46,8 +46,8 @@ _logger = logging.getLogger(__name__)
 def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
                 output_size=None, imshow_kwds=None, **kwds):
     """Writes data to any format supported by pillow. When ``output_size``
-    or ``scalebar`` is used, :py:func:`~.matplotlib.pyplot.imshow` is used to
-    generate a figure.
+    or ``scalebar`` or ``imshow_kwds`` is used,
+    :py:func:`~.matplotlib.pyplot.imshow` is used to generate a figure.
 
     Parameters
     ----------
@@ -83,10 +83,6 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
     scalebar_kwds.setdefault('box_alpha', 0.75)
     scalebar_kwds.setdefault('location', 'lower left')
 
-    if imshow_kwds is None:
-        imshow_kwds = dict()
-    imshow_kwds.setdefault('cmap', 'gray')
-
     if rgb_tools.is_rgbx(data):
         data = rgb_tools.rgbx2regular_array(data)
 
@@ -98,8 +94,12 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
             _logger.warning("Exporting image with scalebar requires the "
                             "matplotlib-scalebar library.")
 
-    if scalebar or output_size:
+    if scalebar or output_size or imshow_kwds:
         dpi = 100
+
+        if imshow_kwds is None:
+            imshow_kwds = dict()
+        imshow_kwds.setdefault('cmap', 'gray')
 
         if len(signal.axes_manager.signal_axes) == 2:
             axes = signal.axes_manager.signal_axes
