@@ -516,7 +516,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             The limits of the interval. If int, they are taken as the
             axis index. If float, they are taken as the axis value.
         delta : int or float
-            The windows around the (start, end) to use for interpolation. If 
+            The windows around the (start, end) to use for interpolation. If
             int, they are taken as index steps. If float, they are taken in
             units of the axis value.
         %s
@@ -691,7 +691,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 fill_value=np.nan,
                 also_align=None,
                 mask=None,
-                show_progressbar=None):
+                show_progressbar=None,
+                iterpath="flyback"):
         """Estimate the shifts in the signal axis using
         cross-correlation and use the estimation to align the data in place.
         This method can only estimate the shift by comparing
@@ -765,23 +766,24 @@ class Signal1D(BaseSignal, CommonSignal1D):
                             'appropriately), which might take a long time. '
                             'Use expand=False to only pass through the data '
                             'once.')
-        shift_array = self.estimate_shift1D(
-            start=start,
-            end=end,
-            reference_indices=reference_indices,
-            max_shift=max_shift,
-            interpolate=interpolate,
-            number_of_interpolation_points=number_of_interpolation_points,
-            mask=mask,
-            show_progressbar=show_progressbar)
-        signals_to_shift = [self] + also_align
-        for signal in signals_to_shift:
-            signal.shift1D(shift_array=shift_array,
-                           interpolation_method=interpolation_method,
-                           crop=crop,
-                           fill_value=fill_value,
-                           expand=expand,
-                           show_progressbar=show_progressbar)
+        with self.axes_manager.switch_iterpath(iterpath):
+            shift_array = self.estimate_shift1D(
+                start=start,
+                end=end,
+                reference_indices=reference_indices,
+                max_shift=max_shift,
+                interpolate=interpolate,
+                number_of_interpolation_points=number_of_interpolation_points,
+                mask=mask,
+                show_progressbar=show_progressbar)
+            signals_to_shift = [self] + also_align
+            for signal in signals_to_shift:
+                signal.shift1D(shift_array=shift_array,
+                               interpolation_method=interpolation_method,
+                               crop=crop,
+                               fill_value=fill_value,
+                               expand=expand,
+                               show_progressbar=show_progressbar)
     align1D.__doc__ %= (CROP_PARAMETER_DOC, SHOW_PROGRESSBAR_ARG)
 
     def integrate_in_range(self, signal_range='interactive',

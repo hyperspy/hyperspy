@@ -55,7 +55,7 @@ Setting axis properties
 The axes are managed and stored by the :py:class:`~.axes.AxesManager` class
 that is stored in the :py:attr:`~.signal.BaseSignal.axes_manager` attribute of
 the signal class. The individual axes can be accessed by indexing the
-AxesManager, e.g.:
+:py:class:`~.axes.AxesManager`, e.g.:
 
 .. code-block:: python
 
@@ -434,14 +434,14 @@ Adding/Removing axes to/from a signal
 
 Usually, the axes are directly added to a signal during :ref:`signal 
 initialization<signal_initialization>`. However, you may wish to add/remove
-axes from the `AxesManager` of a signal.
+axes from the :py:class:`~.axes.AxesManager` of a signal.
 
 Note that there is currently no consistency check whether a signal object has
 the right number of axes of the right dimensions. Most functions will however
 fail if you pass a signal object where the axes do not match the data 
 dimensions and shape.
 
-You can *add a set of axes* to the `AxesManager` by passing either a list of
+You can *add a set of axes* to the :py:class:`~.axes.AxesManager` by passing either a list of
 axes dictionaries to ``axes_manager.create_axes()``:
 
 .. code-block:: python
@@ -459,7 +459,7 @@ or a list of axes objects:
     >>> axis1 = DataAxis(axis=np.arange(12)**2)
     >>> s.axes_manager.create_axes([axis0,axis1])
 
-*Remove an axis* from the `AxesManager` using ``remove()``, e.g. for the last axis:
+*Remove an axis* from the :py:class:`~.axes.AxesManager` using ``remove()``, e.g. for the last axis:
 
 .. code-block:: python
 
@@ -586,7 +586,12 @@ fast.
 
 Iterating over the AxesManager
 ------------------------------
-One can iterate over the AxesManager to produce indices to the navigation axes. Each iteration will yield a new tuple of indices, sorted according to the iteration path specified in :py:attr:`~.axes.AxesManager.iterpath`. Setting the :py:attr:`~.axes.AxesManager.indices` property to a new index will update the accompanying signal so that signal methods that operate at a specific navigation index will now use that index, like ``s.plot()``.
+One can iterate over the :py:class:`~.axes.AxesManager` to produce indices to
+the navigation axes. Each iteration will yield a new tuple of indices, sorted
+according to the iteration path specified in :py:attr:`~.axes.AxesManager.iterpath`.
+Setting the :py:attr:`~.axes.AxesManager.indices` property to a new index will
+update the accompanying signal so that signal methods that operate at a specific
+navigation index will now use that index, like ``s.plot()``.
 
 .. code-block:: python
 
@@ -604,7 +609,16 @@ One can iterate over the AxesManager to produce indices to the navigation axes. 
     (2, 1)
 
 
-The ``AxesManager.iterpath`` specifies the strategy that the AxesManager should use to iterate over the navigation axes. Two built-in strategies exist: ``'flyback'`` and ``'serpentine'``. The flyback strategy starts at (0,0), continues down the row until the final column, "flies back" to the first column, and continues from (1,0). The serpentine strategy begins the same way, but when it reaches the final column (of index N), it continues from (1, N) along the next row, in the same way that a snake might slither, left and right.
+The :py:attr:`~.axes.AxesManager.iterpath` attribute specifies the strategy that
+the :py:class:`~.axes.AxesManager` should use to iterate over the navigation axes.
+Two built-in strategies exist:
+
+- ``'flyback'``: starts at (0, 0), continues down the row until the final
+  column, "flies back" to the first column, and continues from (1, 0)
+- ``'serpentine'``: starts at (0, 0), but when it reaches the final column
+  (of index N), it continues from (1, N) along the next row, in the same way
+  that a snake might slither, left and right.
+
 
 .. code-block:: python
 
@@ -613,7 +627,21 @@ The ``AxesManager.iterpath`` specifies the strategy that the AxesManager should 
     >>> for index in s.axes_manager:
     ...     print(index)
 
-The iterpath can also be set to be a specific list of indices, like [(0,0), (0,1)], but can also be any generator of indices. Storing a high-dimensional set of indices as a list or array can take a significant amount of memory. By using a generator instead, one almost entirely removes such a memory footprint:
+The :py:attr:`~.axes.AxesManager.iterpath` can also be set using the
+:py:meth:`~.axes.AxesManager.switch_iterpath` context manager:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.zeros((2,3,10)))
+    >>> with s.axes_manager.switch_iterpath('serpentine'):
+    >>>     for index in s.axes_manager:
+    ...         print(index)
+
+
+The :py:attr:`~.axes.AxesManager.iterpath` can also be set to be a specific list of indices, like [(0,0), (0,1)],
+but can also be any generator of indices. Storing a high-dimensional set of
+indices as a list or array can take a significant amount of memory. By using a
+generator instead, one almost entirely removes such a memory footprint:
 
 .. code-block:: python
 
@@ -640,10 +668,14 @@ The iterpath can also be set to be a specific list of indices, like [(0,0), (0,1
     (0, 0)
 
 
-Since generators do not have a defined length, and does not need to include all navigation indices, a progressbar will be unable to determine how long it needs to be. To resolve this, a helper class can be imported that takes both a generator and a manually specified length as inputs:
+Since generators do not have a defined length, and does not need to include all
+navigation indices, a progressbar will be unable to determine how long it needs
+to be. To resolve this, a helper class can be imported that takes both a generator
+and a manually specified length as inputs:
 
 .. code-block:: python
 
->>> from hyperspy.axes import GeneratorLen
->>> gen = GeneratorLen(reverse_flyback_generator(), 6)
->>> s.axes_manager.iterpath = gen
+    >>> from hyperspy.axes import GeneratorLen
+    >>> gen = GeneratorLen(reverse_flyback_generator(), 6)
+    >>> s.axes_manager.iterpath = gen
+

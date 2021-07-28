@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from contextlib import contextmanager
 import copy
 import math
 import logging
@@ -1130,17 +1131,19 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         self._is_uniform = True
         self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
 
-    def _slice_me(self, slice_):
+    def _slice_me(self, _slice):
         """Returns a slice to slice the corresponding data axis and
         change the offset and scale of the UniformDataAxis accordingly.
+
         Parameters
         ----------
-        slice_ : {float, int, slice}
+        _slice : {float, int, slice}
+
         Returns
         -------
         my_slice : slice
         """
-        my_slice = self._get_array_slices(slice_)
+        my_slice = self._get_array_slices(_slice)
         start, step = my_slice.start, my_slice.step
 
         if start is None:
@@ -1387,20 +1390,10 @@ class AxesManager(t.HasTraits):
 
     Attributes
     ----------
-    coordinates : tuple
-        Get and set the current coordinates, if the navigation dimension
-        is not 0. If the navigation dimension is 0, it raises
-        AttributeError when attempting to set its value.
-    indices : tuple
-        Get and set the current indices, if the navigation dimension
-        is not 0. If the navigation dimension is 0, it raises
-        AttributeError when attempting to set its value.
     signal_axes, navigation_axes : list
         Contain the corresponding DataAxis objects
-    iterpath : string or iterable
-        Sets the order of iterating through the indices in the navigation dimension.
-        Can be either "flyback" or "serpentine", or an iterable
-        of hyperspy navigation indices.
+
+    coordinates, indices, iterpath
 
     Examples
     --------
@@ -1710,7 +1703,10 @@ class AxesManager(t.HasTraits):
 
     @property
     def iterpath(self):
-        "Sets or returns the current iteration path through the axes indices"
+        """Sets the order of iterating through the indices in the navigation
+        dimension. Can be either "flyback" or "serpentine", or an iterable
+        of navigation indices.
+        """
         return self._iterpath
 
     @iterpath.setter
@@ -1804,6 +1800,40 @@ class AxesManager(t.HasTraits):
         # is created before data shape is known
         self.iterpath = self._iterpath
         return self
+
+    @contextmanager
+    def switch_iterpath(self, iterpath=None):
+        """
+        Context manager to change iterpath. The original iterpath is restored
+        when exiting the context.
+
+        Parameters
+        ----------
+        iterpath : str, optional
+            The iterpath to use. The default is None.
+
+        Yields
+        ------
+        None.
+
+        Examples
+        --------
+        >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape([3, 2, 4]))
+        >>> with s.axes_manager.switch_iterpath('serpentine'):
+        >>>     for indices in s.axes_manager:
+        >>>         print(indices)
+
+        """
+        if iterpath is not None:
+            original_iterpath = self._iterpath
+            self._iterpath = iterpath
+        try:
+            yield
+        finally:
+            # if an error is raised when using this context manager, we
+            # reset the original value of _iterpath
+            if iterpath is not None:
+                self.iterpath = original_iterpath
 
     def _append_axis(self, **kwargs):
         axis = create_axis(**kwargs)
@@ -2224,7 +2254,11 @@ class AxesManager(t.HasTraits):
 
     @property
     def coordinates(self):
-        # See class docstring
+        """
+        Get and set the current coordinates, if the navigation dimension
+        is not 0. If the navigation dimension is 0, it raises
+        AttributeError when attempting to set its value.
+        """
         return tuple([axis.value for axis in self.navigation_axes])
 
     @coordinates.setter
@@ -2246,7 +2280,11 @@ class AxesManager(t.HasTraits):
 
     @property
     def indices(self):
-        # See class docstring
+        """
+        Get and set the current indices, if the navigation dimension
+        is not 0. If the navigation dimension is 0, it raises
+        AttributeError when attempting to set its value.
+        """
         return tuple([axis.index for axis in self.navigation_axes])
 
     @indices.setter
@@ -2357,18 +2395,19 @@ class AxesManager(t.HasTraits):
         """
 
 class GeneratorLen:
-    """Helper class for creating a generator-like object with a known length.
+    """
+    Helper class for creating a generator-like object with a known length.
     Useful when giving a generator as input to the AxesManager iterpath, so that the
     length is known for the progressbar.
 
     Found at: https://stackoverflow.com/questions/7460836/how-to-lengenerator/7460986
 
     Parameters
-        ----------
-        gen : generator
-            The Generator containing hyperspy navigation indices.
-        length : int
-            The manually-specified length of the generator.
+    ----------
+    gen : generator
+        The Generator containing hyperspy navigation indices.
+    length : int
+        The manually-specified length of the generator.
     """
     def __init__(self, gen, length):
         self.gen = gen

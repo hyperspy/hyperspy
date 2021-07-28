@@ -113,6 +113,7 @@ def test_align1D():
     shifts = np.random.random(len(s.axes_manager[0].axis)) * 2
     shifts[0] = 0
     s.shift1D(-shifts, show_progressbar=False)
+    s.axes_manager.indices = (0, )
     shifts2 = s.estimate_shift1D(show_progressbar=False)
     np.testing.assert_allclose(shifts, shifts2, rtol=0.5)
 
@@ -257,7 +258,7 @@ class TestInterpolateInBetween:
         s.interpolate_in_between(8, 12, delta=0.31, kind='cubic')
         print(s.data[8:12])
         np.testing.assert_allclose(
-            s.data[8:12], np.array([46.595205, 109.802805, 
+            s.data[8:12], np.array([46.595205, 109.802805,
                                     164.512803, 178.615201]),
             atol=1,
         )

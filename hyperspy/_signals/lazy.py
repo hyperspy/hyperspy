@@ -686,22 +686,6 @@ class LazySignal(BaseSignal):
             sig.get_dimensions_from_data()
         return sig
 
-    def _iterate_signal(self):
-        if self.axes_manager.navigation_size < 2:
-            yield self()
-            return
-        nav_dim = self.axes_manager.navigation_dimension
-        sig_dim = self.axes_manager.signal_dimension
-        nav_indices = self.axes_manager.navigation_indices_in_array[::-1]
-        nav_lengths = np.atleast_1d(
-            np.array(self.data.shape)[list(nav_indices)])
-        getitem = [slice(None)] * (nav_dim + sig_dim)
-        data = self._lazy_data()
-        for indices in product(*[range(l) for l in nav_lengths]):
-            for res, ind in zip(indices, nav_indices):
-                getitem[ind] = res
-            yield data[tuple(getitem)]
-
     def _block_iterator(self,
                         flat_signal=True,
                         get=dask.threaded.get,
