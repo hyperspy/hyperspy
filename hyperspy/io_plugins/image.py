@@ -45,7 +45,9 @@ _logger = logging.getLogger(__name__)
 
 def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
                 output_size=None, **kwds):
-    """Writes data to any format supported by PIL
+    """Writes data to any format supported by pillow. When ``output_size``
+    or ``scalebar`` is used, :py:func:`~.matplotlib.pyplot.imshow` is used to
+    generate a figure.
 
     Parameters
     ----------
@@ -62,7 +64,7 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
         the 'matplotlib-scalebar' library for more information.
     output_size : tuple of length 2 or int
         The output size of the image in pixel, if None, the size of the data
-        is used. Default is None.
+        is used. If int, define the width of the image. Default is None.
     **kwds : keyword arguments
         Allows to pass keyword arguments supported by the individual file
         writers as documented at
@@ -99,7 +101,8 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
             # fall back to image size
             output_size = [axis.size for axis in axes]
         elif isinstance(output_size, (int, float)):
-            output_size = [output_size]*2
+            aspect_ratio = data.shape[0] / data.shape[1]
+            output_size = [output_size, output_size * aspect_ratio]
 
         fig = Figure(figsize=[size / dpi for size in output_size], dpi=dpi)
 

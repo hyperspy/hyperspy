@@ -172,6 +172,21 @@ def test_export_output_size(output_size):
         assert s_reload.data.shape == (512, 512)
 
 
+@pytest.mark.parametrize('output_size', (512, (512, 512)))
+def test_export_output_size_non_square(output_size, tmp_path):
+    pixels = (8, 16)
+    s = hs.signals.Signal2D(np.arange(np.multiply(*pixels)).reshape(pixels))
+
+    fname = tmp_path / 'test_export_size_non_square.jpg'
+    s.save(fname, output_size=output_size)
+    s_reload = hs.load(fname)
+
+    if isinstance(output_size, int):
+       output_size = (output_size * np.divide(*pixels), output_size)
+
+    assert s_reload.data.shape == output_size
+
+
 def test_save_image_navigation():
     pixels = 16
     s = hs.signals.Signal2D(np.arange(pixels**2).reshape((pixels, pixels)))
