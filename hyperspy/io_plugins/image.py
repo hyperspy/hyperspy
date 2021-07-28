@@ -44,7 +44,7 @@ _logger = logging.getLogger(__name__)
 
 
 def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
-                output_size=None, **kwds):
+                output_size=None, imshow_kwds=None, **kwds):
     """Writes data to any format supported by pillow. When ``output_size``
     or ``scalebar`` is used, :py:func:`~.matplotlib.pyplot.imshow` is used to
     generate a figure.
@@ -65,6 +65,8 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
     output_size : tuple of length 2 or int
         The output size of the image in pixel, if None, the size of the data
         is used. If int, define the width of the image. Default is None.
+    imshow_kwds : dict, optional
+        Keyword arguments dictionary for :py:func:`~.matplotlib.pyplot.imshow`.
     **kwds : keyword arguments
         Allows to pass keyword arguments supported by the individual file
         writers as documented at
@@ -75,8 +77,16 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
 
     """
     data = signal.data
+
     if scalebar_kwds is None:
-        scalebar_kwds = dict(box_alpha=0.75, location='lower left')
+        scalebar_kwds = dict()
+    scalebar_kwds.setdefault('box_alpha', 0.75)
+    scalebar_kwds.setdefault('location', 'lower left')
+
+    if imshow_kwds is None:
+        imshow_kwds = dict()
+    imshow_kwds.setdefault('cmap', 'gray')
+
     if rgb_tools.is_rgbx(data):
         data = rgb_tools.rgbx2regular_array(data)
 
@@ -97,11 +107,15 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
             # Use navigation axes
             axes = signal.axes_manager.navigation_axes
 
-        if output_size is None:
-            # fall back to image size
-            output_size = [axis.size for axis in axes]
-        elif isinstance(output_size, (int, float)):
+        aspect_ratio = imshow_kwds.get('aspect', None)
+        if not isinstance(aspect_ratio, (int, float)):
             aspect_ratio = data.shape[0] / data.shape[1]
+
+        if output_size is None:
+            # fall back to image size taking into account aspect_ratio
+            ratio = (1,  aspect_ratio)
+            output_size = [axis.size * r for axis, r in zip(axes, ratio)]
+        elif isinstance(output_size, (int, float)):
             output_size = [output_size, output_size * aspect_ratio]
 
         fig = Figure(figsize=[size / dpi for size in output_size], dpi=dpi)
@@ -127,7 +141,7 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
     if scalebar or output_size:
         ax = fig.add_axes([0, 0, 1, 1])
         ax.axis('off')
-        ax.imshow(data, cmap='gray')
+        ax.imshow(data, **imshow_kwds)
 
         if scalebar:
             # Add scalebar

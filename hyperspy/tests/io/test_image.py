@@ -187,6 +187,21 @@ def test_export_output_size_non_square(output_size, tmp_path):
     assert s_reload.data.shape == output_size
 
 
+@pytest.mark.parametrize('output_size', (None, 512))
+@pytest.mark.parametrize('aspect', (1, 0.5))
+def test_export_output_size_aspect(aspect, output_size, tmp_path):
+    pixels = (256, 256)
+    s = hs.signals.Signal2D(np.arange(np.multiply(*pixels)).reshape(pixels))
+
+    fname = tmp_path / 'test_export_size_non_square_aspect.jpg'
+    s.save(fname, scalebar=True, output_size=output_size, imshow_kwds=dict(aspect=aspect))
+    s_reload = hs.load(fname)
+
+    if output_size is None:
+        output_size = s.data.shape[0]
+    assert s_reload.data.shape == (output_size * aspect, output_size)
+
+
 def test_save_image_navigation():
     pixels = 16
     s = hs.signals.Signal2D(np.arange(pixels**2).reshape((pixels, pixels)))
