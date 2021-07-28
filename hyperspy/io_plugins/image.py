@@ -78,18 +78,15 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
     if rgb_tools.is_rgbx(data):
         data = rgb_tools.rgbx2regular_array(data)
 
-    if output_size is not None and not scalebar:
-        _logger.warning("`output_size` is only used when exporting image "
-                        "with a scale bar.")
-
     if scalebar:
         try:
             from matplotlib_scalebar.scalebar import ScaleBar
-            export_scalebar = True
         except ImportError:  # pragma: no cover
-            export_scalebar = False
+            scalebar = False
             _logger.warning("Exporting image with scalebar requires the "
                             "matplotlib-scalebar library.")
+
+    if scalebar or output_size:
         dpi = 100
 
         if len(signal.axes_manager.signal_axes) == 2:
@@ -100,13 +97,6 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
         else:
             raise ValueError("Data not compatible with saving scale bar.")
 
-        # Sanety check of the axes
-        # This plugin doesn't support non-uniform axes, we don't need to check
-        # if the axes have a scale attribute
-        if axes[0].scale != axes[1].scale or axes[0].units != axes[1].units:
-            raise ValueError("Scale and units must be the same for each axes "
-                             "to export images with a scale bar.")
-
         if output_size is None:
             # fall back to image size
             output_size = [axis.size for axis in axes]
@@ -115,33 +105,42 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
 
         fig = Figure(figsize=[size / dpi for size in output_size], dpi=dpi)
 
-        try:
-            # List of format supported by matplotlib
-            supported_format = sorted(fig.canvas.get_supported_filetypes())
-            if os.path.splitext(filename)[1].replace('.', '') not in supported_format:
-                export_scalebar = False
-                _logger.warning("Exporting image with scalebar is supported "
-                                f"only with {', '.join(supported_format)}.")
-        except AttributeError:  # pragma: no cover
-            export_scalebar = False
-            _logger.warning("Exporting image with scalebar requires the "
-                            "matplotlib 3.1 or newer.")
+        # List of format supported by matplotlib
+        supported_format = sorted(fig.canvas.get_supported_filetypes())
+        if os.path.splitext(filename)[1].replace('.', '') not in supported_format:
+            if scalebar:
+                raise ValueError("Exporting image with scalebar is supported "
+                                 f"only with {', '.join(supported_format)}.")
+            if output_size:
+                raise ValueError("Setting the output size is only supported "
+                                 f"with {', '.join(supported_format)}.")
 
-    if scalebar and export_scalebar:
+    if scalebar:
+        # Sanety check of the axes
+        # This plugin doesn't support non-uniform axes, we don't need to check
+        # if the axes have a scale attribute
+        if axes[0].scale != axes[1].scale or axes[0].units != axes[1].units:
+            raise ValueError("Scale and units must be the same for each axes "
+                             "to export images with a scale bar.")
+
+    if scalebar or output_size:
         ax = fig.add_axes([0, 0, 1, 1])
         ax.axis('off')
         ax.imshow(data, cmap='gray')
 
-        # Add scalebar
-        axis = axes[0]
-        units = axis.units
-        if units == t.Undefined:
-            units = "px"
-            scalebar_kwds['dimension'] = "pixel-length"
-        if _ureg.Quantity(units).check('1/[length]'):
-            scalebar_kwds['dimension'] = "si-length-reciprocal"
-        scalebar = ScaleBar(axis.scale, units, **scalebar_kwds)
-        ax.add_artist(scalebar)
+        if scalebar:
+            # Add scalebar
+            axis = axes[0]
+            units = axis.units
+            if units == t.Undefined:
+                units = "px"
+                scalebar_kwds['dimension'] = "pixel-length"
+            if _ureg.Quantity(units).check('1/[length]'):
+                scalebar_kwds['dimension'] = "si-length-reciprocal"
+
+            scalebar = ScaleBar(axis.scale, units, **scalebar_kwds)
+            ax.add_artist(scalebar)
+
         fig.savefig(filename, dpi=dpi, pil_kwargs=kwds)
     else:
         imwrite(filename, data, **kwds)

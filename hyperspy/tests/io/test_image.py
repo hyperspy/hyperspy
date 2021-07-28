@@ -25,6 +25,13 @@ import pytest
 import hyperspy.api as hs
 
 
+try:
+    from matplotlib_scalebar.scalebar import ScaleBar
+    matplotlib_scalebar_installed = True
+except ImportError:  # pragma: no cover
+    matplotlib_scalebar_installed = False
+
+
 @pytest.mark.parametrize(("dtype"), ['uint8', 'uint32'])
 @pytest.mark.parametrize(("ext"), ['png', 'bmp', 'gif', 'jpg'])
 def test_save_load_cycle_grayscale(dtype, ext):
@@ -82,10 +89,16 @@ def test_export_scalebar(ext):
     s = hs.signals.Signal2D(data)
     s.axes_manager[0].units = 'nm'
     s.axes_manager[1].units = 'nm'
-    filename = 'test.png'
     with tempfile.TemporaryDirectory() as tmpdir:
         filename = os.path.join(tmpdir, f'test_scalebar_export.{ext}')
-        s.save(filename, scalebar=True)
+        if ext in ['bmp', 'gif'] and matplotlib_scalebar_installed:
+            with pytest.raises(ValueError):
+                s.save(filename, scalebar=True)
+            with pytest.raises(ValueError):
+                s.save(filename, output_size=512)
+            s.save(filename)
+        else:
+            s.save(filename, scalebar=True)
         s_reload = hs.load(filename)
         assert s.data.shape == s_reload.data.shape
 
@@ -126,6 +139,8 @@ def test_non_uniform():
             s.save(filename)
 
 
+@pytest.mark.skipif(not matplotlib_scalebar_installed,
+                    reason='matplotlib_scalebar is not installed')
 def test_export_scalebar_different_scale_units():
     pixels = 16
     s = hs.signals.Signal2D(np.arange(pixels**2).reshape((pixels, pixels)))
