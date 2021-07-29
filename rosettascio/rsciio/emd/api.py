@@ -1779,6 +1779,8 @@ def is_EMD_Velox(file):
 def file_reader(filename, lazy=False, **kwds):
     """
     Read EMD file, which can be a NCEM or a Velox variant of the EMD format.
+    Also reads Direct Electron's DE5 format, which is read as if it is the
+    NCEM format.
 
     Parameters
     ----------
