@@ -279,6 +279,8 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +-----------------------------------+--------+--------+--------+
     | EMD (Velox)                       |    Yes |    No  |    Yes |
     +-----------------------------------+--------+--------+--------+
+    | DE5                               |    Yes |    No  |    Yes |
+    +-----------------------------------+--------+--------+--------+
     | Protochips log                    |    Yes |    No  |    No  |
     +-----------------------------------+--------+--------+--------+
     | EDAX spc and spd                  |    Yes |    No  |    Yes |
@@ -1078,6 +1080,14 @@ correct the spatial drift in the spectrum image by using the STEM images.
     >>> hs.load("sample.emd", sum_frames=False, load_SI_image_stack=True, SI_dtype=np.int8, rebin_energy=4)
     [<Signal2D, title: HAADF, dimensions: (50|179, 161)>,
     <EDSSEMSpectrum, title: EDS, dimensions: (50, 179, 161|1024)>]
+
+
+
+DE5
+^^^
+This is a compliant version of the EMD format developed by Direct Electron to
+serve as an image format of their cameras. All DE5 files are read as if they are
+NCEM EMD files.
 
 
 
