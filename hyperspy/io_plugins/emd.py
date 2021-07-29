@@ -52,7 +52,7 @@ format_name = 'Electron Microscopy Data (EMD)'
 description = 'Read data from Berkeleys EMD files.'
 full_support = False  # Hopefully?
 # Recognised file extension
-file_extensions = ('emd', 'EMD')
+file_extensions = ('emd', 'de5', 'EMD', 'DE5')
 default_extension = 0
 # Reading capabilities
 reads_images = True
