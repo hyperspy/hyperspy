@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -22,6 +22,7 @@ from pathlib import Path
 
 import hyperspy.api as hs
 from hyperspy.components1d import Gaussian
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.signals import EELSSpectrum, Signal1D
 
 my_path = Path(__file__).resolve().parent
@@ -75,29 +76,22 @@ def create_sum_of_gaussians(convolved=False):
     return s
 
 
-def _generate_parameters():
-    parameters = []
-    for convolved in [True, False]:
-        for plot_component in [True, False]:
-            for binned in [True, False]:
-                parameters.append([convolved, plot_component, binned])
-    return parameters
-
-
-@pytest.mark.parametrize(("convolved", "plot_component", "binned"),
-                         _generate_parameters())
+@pytest.mark.parametrize("binned", [True, False])
+@pytest.mark.parametrize("plot_component", [True, False])
+@pytest.mark.parametrize("convolved", [True, False])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_gaussian_eelsmodel(convolved, plot_component, binned):
     s = create_sum_of_gaussians(convolved)
     s.set_signal_type('EELS')
+    s.axes_manager[-1].is_binned == binned
     s.metadata.General.title = 'Convolved: {}, plot_component: {}, binned: {}'.format(
         convolved, plot_component, binned)
 
     ll = create_ll_signal(1000) if convolved else None
 
     s.set_microscope_parameters(200, 20, 50)
-    s.metadata.Signal.binned = binned
+    s.axes_manager[-1].is_binned = binned
     m = s.create_model(auto_background=False, ll=ll)
 
     m.extend([Gaussian(), Gaussian(), Gaussian()])
@@ -138,11 +132,32 @@ def test_plot_gaussian_eelsmodel(convolved, plot_component, binned):
     baseline_dir=baseline_dir, tolerance=default_tol)
 def test_fit_EELS_convolved(convolved):
     dname = my_path.joinpath('data')
-    cl = hs.load(dname.joinpath('Cr_L_cl.hspy'))
-    cl.metadata.Signal.binned = False
+    with pytest.warns(VisibleDeprecationWarning):
+        cl = hs.load(dname.joinpath('Cr_L_cl.hspy'))
+    cl.axes_manager[-1].is_binned = False
     cl.metadata.General.title = 'Convolved: {}'.format(convolved)
-    ll = hs.load(dname.joinpath('Cr_L_ll.hspy')) if convolved else None
+    ll = None
+    if convolved:
+        with pytest.warns(VisibleDeprecationWarning):
+            ll = hs.load(dname.joinpath('Cr_L_ll.hspy'))
     m = cl.create_model(auto_background=False, ll=ll, GOS='hydrogenic')
     m.fit(kind='smart')
     m.plot(plot_components=True)
     return m._plot.signal_plot.figure
+
+
+def test_plot_component():
+    m = hs.signals.Signal1D(np.arange(100).reshape(2, 50)).create_model()
+    m.append(hs.model.components1D.Gaussian(A=250, sigma=5, centre=20))
+    m.plot(plot_components=True)
+    ax = m.signal._plot.signal_plot.ax
+    p = hs.model.components1D.Polynomial(order=1, legacy=False, a0=-10, a1=0)
+    m.append(p)
+    assert ax.get_ylim() == (-10.1, 49.0)
+    m.remove(0)
+    p.estimate_parameters(m.signal, 0, 50)
+    assert ax.get_ylim() == (-10.1, 49.0)
+    m.remove(0)
+    assert ax.get_ylim() == (-0.1, 49.0)
+    m.append(p)
+    m.signal._plot.close()

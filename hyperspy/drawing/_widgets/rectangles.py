@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -48,7 +48,6 @@ class SquareWidget(Widget2DBase):
         xs, ys = self.size
         self.patch = [plt.Rectangle(
             xy, xs, ys,
-            animated=self.blit,
             fill=False,
             lw=self.border_thickness,
             ec=self.color,
@@ -331,14 +330,14 @@ class RectangleWidget(SquareWidget, ResizersMixin):
 
     def _update_patch_position(self):
         # Override to include resizer positioning
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].set_xy(self._get_patch_xy())
             self._update_resizers()
             self.draw_patch()
 
     def _update_patch_geometry(self):
         # Override to include resizer positioning
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].set_bounds(*self._get_patch_bounds())
             self._update_resizers()
             self.draw_patch()

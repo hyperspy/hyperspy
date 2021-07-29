@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -58,7 +58,7 @@ class HeavisideStep(Expression):
 
     def __init__(self, A=1., n=0., module="numpy", compute_gradients=True,
                  **kwargs):
-        super(HeavisideStep, self).__init__(
+        super().__init__(
             expression="A*heaviside(x-n,0.5)",
             name="HeavisideStep",
             A=A,
@@ -71,4 +71,3 @@ class HeavisideStep(Expression):
 
         self.isbackground = True
         self.convolved = False
-

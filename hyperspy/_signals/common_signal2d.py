@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,7 +20,7 @@
 from hyperspy.docstrings.signal import OPTIMIZE_ARG
 
 
-class CommonSignal2D(object):
+class CommonSignal2D:
 
     """Common functions for 2-dimensional signals."""
 

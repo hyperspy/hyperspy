@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -24,6 +24,7 @@ import numpy as np
 
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.events import Events, Event
+from hyperspy.defaults_parser import preferences
 
 
 class WidgetBase(object):
@@ -32,7 +33,7 @@ class WidgetBase(object):
     maintains one or more matplotlib patches, and manages the interaction code
     so that the user can maniuplate it on the fly.
 
-    This base class implements functionality witch is common to all such
+    This base class implements functionality which is common to all such
     widgets, mainly the code that manages the patch, axes management, and
     sets up common events ('changed' and 'closed').
 
@@ -54,13 +55,13 @@ class WidgetBase(object):
         self._selected_artist = None
         self._size = 1.
         self._pos = np.array([0.])
-        self.__is_on = True
+        self._is_on = True
         self.background = None
         self.patch = []
         self.color = color
         self.alpha = alpha
         self.cids = list()
-        self.blit = True
+        self.blit = None
         self.events = Events()
         self.events.changed = Event(doc="""
             Event that triggers when the widget has a significant change.
@@ -98,19 +99,20 @@ class WidgetBase(object):
     axes = property(lambda s: s._get_axes(),
                     lambda s, v: s._set_axes(v))
 
+    @property
     def is_on(self):
         """Determines if the widget is set to draw if valid (turned on).
         """
-        return self.__is_on
+        return self._is_on
 
-    def set_on(self, value):
+    def set_on(self, value, render_figure=True):
         """Change the on state of the widget. If turning off, all patches will
         be removed from the matplotlib axes and the widget will disconnect from
         all events. If turning on, the patch(es) will be added to the
         matplotlib axes, and the widget will connect to its default events.
         """
         did_something = False
-        if value is not self.is_on() and self.ax is not None:
+        if value is not self.is_on and self.ax is not None:
             did_something = True
             if value is True:
                 self._add_patch_to(self.ax)
@@ -128,10 +130,11 @@ class WidgetBase(object):
         if hasattr(super(WidgetBase, self), 'set_on'):
             super(WidgetBase, self).set_on(value)
         if did_something:
-            self.draw_patch()
+            if render_figure:
+                self.draw_patch()
             if value is False:
                 self.ax = None
-        self.__is_on = value
+        self._is_on = value
 
     @property
     def color(self):
@@ -163,8 +166,8 @@ class WidgetBase(object):
     def _add_patch_to(self, ax):
         """Create and add the matplotlib patches to 'ax'
         """
-        self._set_patch()
         self.blit = hasattr(ax, 'hspy_fig') and ax.figure.canvas.supports_blit
+        self._set_patch()
         for p in self.patch:
             ax.add_artist(p)
             p.set_animated(self.blit)
@@ -179,14 +182,13 @@ class WidgetBase(object):
         if ax is self.ax:
             return  # Do nothing
         # Disconnect from previous axes if set
-        if self.ax is not None and self.is_on():
+        if self.ax is not None and self.is_on:
             self.disconnect()
         self.ax = ax
-        canvas = ax.figure.canvas
-        if self.is_on() is True:
+        if self.is_on is True:
             self._add_patch_to(ax)
             self.connect(ax)
-            canvas.draw_idle()
+            ax.figure.canvas.draw_idle()
             self.select()
 
     def select(self):
@@ -194,7 +196,7 @@ class WidgetBase(object):
         Cause this widget to be the selected widget in its MPL axes. This
         assumes that the widget has its patch added to the MPL axes.
         """
-        if not self.patch or not self.is_on() or not self.ax:
+        if not self.patch or not self.is_on or not self.ax:
             return
 
         canvas = self.ax.figure.canvas
@@ -246,19 +248,19 @@ class WidgetBase(object):
         if self._navigating:
             self.disconnect_navigate()
 
-    def close(self, window=None):
+    def close(self, window=None, render_figure=False):
         """Set the on state to off (removes patch and disconnects), and trigger
         events.closed.
         """
-        self.set_on(False)
+        self.set_on(False, render_figure=render_figure)
         self.events.closed.trigger(obj=self)
 
     def draw_patch(self, *args):
         """Update the patch drawing.
         """
         try:
-            if self.blit and hasattr(self.ax, 'hspy_fig'):
-                self.ax.hspy_fig._update_animated()
+            if hasattr(self.ax, 'hspy_fig'):
+                self.ax.hspy_fig.render_figure()
             elif self.ax.figure is not None:
                 self.ax.figure.canvas.draw_idle()
         except AttributeError:
@@ -266,7 +268,7 @@ class WidgetBase(object):
 
     def _v2i(self, axis, v):
         """Wrapped version of DataAxis.value2index, which bounds the index
-        inbetween axis.low_index and axis.high_index+1, and does not raise a
+        between axis.low_index and axis.high_index+1, and does not raise a
         ValueError.
         """
         try:
@@ -281,14 +283,17 @@ class WidgetBase(object):
 
     def _i2v(self, axis, i):
         """Wrapped version of DataAxis.index2value, which bounds the value
-        inbetween axis.low_value and axis.high_value+axis.scale, and does not
-        raise a ValueError.
+        inbetween axis.low_value and axis.high_value + axis.scale when the axis
+        is uniform and does not raise a ValueError.
         """
         try:
             return axis.index2value(i)
         except ValueError:
             if i > axis.high_index:
-                return axis.high_value + axis.scale
+                if axis.is_uniform:
+                    return axis.high_value + axis.scale
+                else:
+                    return axis.high_value
             elif i < axis.low_index:
                 return axis.low_value
             else:
@@ -401,7 +406,7 @@ class DraggableWidgetBase(WidgetBase):
         return pos
 
     def _get_position(self):
-        """Providies the position of the widget (by values) in a tuple.
+        """Provides the position of the widget (by values) in a tuple.
         """
         return tuple(
             self._pos.tolist())  # Don't pass reference, and make it clear
@@ -480,12 +485,12 @@ class DraggableWidgetBase(WidgetBase):
         pass
 
     def _update_patch_geometry(self):
-        """Updates all geometry of the patch on the plot.
+        """Updates all geometrical properties of the patch on the plot.
         """
         self._update_patch_position()
 
     def button_release(self, event):
-        """whenever a mouse button is released"""
+        """whenever a mouse button is released."""
         if event.button != 1:
             return
         if self.picked is True:
@@ -499,7 +504,7 @@ class Widget1DBase(DraggableWidgetBase):
     It sets the right dimensions for size and
     position, adds the 'border_thickness' attribute and initalizes the 'axes'
     attribute to the first two navigation axes if possible, if not, the two
-    first signal_axes are used. Other than that it mainly supplies common
+    first signal_axes are used. Other than that, it mainly supplies common
     utility functions for inheritors, and implements required functions for
     ResizableDraggableWidgetBase.
 
@@ -566,7 +571,17 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
     def _set_axes(self, axes):
         super(ResizableDraggableWidgetBase, self)._set_axes(axes)
         if self.axes:
-            self._size = np.array([ax.scale for ax in self.axes])
+            self._size = np.array([self._get_step(ax) for ax in self.axes])
+
+    def _get_step(self, axis):
+        # TODO: need to check if this is working fine, particularly with
+        """ Use to determine the size of the widget with support for non 
+        uniform axis.
+        """
+        if axis.index >= axis.size - 1:
+            return axis.index2value(axis.index) - axis.index2value(axis.index - 1)
+        else:
+            return axis.index2value(axis.index + 1) - axis.index2value(axis.index)
 
     def _get_size(self):
         """Getter for 'size' property. Returns the size as a tuple (to prevent
@@ -654,7 +669,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         self.size = s   # Use property to get full processing
 
     def get_centre(self):
-        """Get's the center indices. The default implementation is simply the
+        """Gets the center indices. The default implementation is simply the
         position + half the size in axes space, which should work for any
         symmetric widget, but more advanced widgets will need to decide whether
         to return the center of gravity or the geometrical center of the
@@ -663,7 +678,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         return self._pos + self._size() / 2.0
 
     def get_centre_index(self):
-        """Get's the center position (in index space). The default
+        """Gets the center position (in index space). The default
         implementation is simply the indices + half the size, which should
         work for any symmetric widget, but more advanced widgets will need to
         decide whether to return the center of gravity or the geometrical
@@ -702,7 +717,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
             self._drag_store = (self.position, self.size)
 
     def _apply_changes(self, old_size, old_position):
-        """Evalutes whether the widget has been moved/resized, and triggers
+        """Evaluates whether the widget has been moved/resized, and triggers
         the correct events and updates the patch geometry. This function has
         the advantage that the geometry is updated only once, preventing
         flickering, and the 'changed' event only fires once.
@@ -732,7 +747,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
                 self.events.changed.trigger(self)
 
     def button_release(self, event):
-        """whenever a mouse button is released"""
+        """whenever a mouse button is released."""
         picked = self.picked
         super(ResizableDraggableWidgetBase, self).button_release(event)
         if event.button != 1:
@@ -794,7 +809,7 @@ class Widget2DBase(ResizableDraggableWidgetBase):
         return (xy[0], xy[1], xs, ys)        # x,y,w,h
 
     def _update_patch_position(self):
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].set_xy(self._get_patch_xy())
             self.draw_patch()
 
@@ -802,7 +817,7 @@ class Widget2DBase(ResizableDraggableWidgetBase):
         self._update_patch_geometry()
 
     def _update_patch_geometry(self):
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].set_bounds(*self._get_patch_bounds())
             self.draw_patch()
 
@@ -836,7 +851,8 @@ class ResizersMixin(object):
         self.resizer_picked = False
         self.pick_offset = (0, 0)
         self.resize_color = 'lime'
-        self.resize_pixel_size = (5, 5)  # Set to None to make one data pixel
+        pick_tol = preferences.Plot.pick_tolerance
+        self.resize_pixel_size = (pick_tol, pick_tol)  # Set to None to make one data pixel
         self._resizers = resizers
         self._resizer_handles = []
         self._resizers_on = False
@@ -884,7 +900,6 @@ class ResizersMixin(object):
                         if r in container:
                             container.remove(r)
             self._resizers_on = value
-            self.draw_patch()
 
     def _get_resizer_size(self):
         """Gets the size of the resizer handles in axes coordinates. If
@@ -934,7 +949,7 @@ class ResizersMixin(object):
         return positions
 
     def _set_patch(self):
-        """Creates the resizer handles, irregardless of whether they will be
+        """Creates the resizer handles, regardless of whether they will be
         used or not.
         """
         if hasattr(super(ResizersMixin, self), '_set_patch'):
@@ -946,9 +961,8 @@ class ResizersMixin(object):
         rsize = self._get_resizer_size()
         pos = self._get_resizer_pos()
         for i in range(len(pos)):
-            r = plt.Rectangle(pos[i], rsize[0], rsize[1], animated=self.blit,
-                              fill=True, lw=0, fc=self.resize_color,
-                              picker=True,)
+            r = plt.Rectangle(pos[i], rsize[0], rsize[1], fill=True, lw=0,
+                              fc=self.resize_color, picker=True,)
             self._resizer_handles.append(r)
 
     def set_on(self, value):
@@ -961,7 +975,7 @@ class ResizersMixin(object):
 
     def onpick(self, event):
         """Picking of main patch is same as for widget base, but this also
-        handles picking of the resize handles. If a resize handles is picked,
+        handles picking of the resize handles. If a resize handle is picked,
         `picked` is set to `True`, and `resizer_picked` is set to an integer
         indicating which handle was picked (0-3 for top left, top right, bottom
         left, bottom right). It is set to `False` if another widget was picked.
@@ -978,6 +992,7 @@ class ResizersMixin(object):
         elif self.picked:
             if self.resizers and not self._resizers_on:
                 self._set_resizers(True, self.ax)
+                self.ax.figure.canvas.draw_idle()
             x = event.mouseevent.xdata
             y = event.mouseevent.ydata
             self.pick_offset = (x - self._pos[0], y - self._pos[1])

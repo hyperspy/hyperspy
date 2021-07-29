@@ -326,7 +326,7 @@ class TestHS2USIDlazy:
     def test_base_nd(self):
         sig = hs.signals.Signal2D(da.random.randint(0, high=100,
                                                     size=(2, 3, 5, 7),
-                                                    chunks='auto'))
+                                                    chunks='auto')).as_lazy()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_dask.h5'
         sig.save(file_path)
@@ -434,7 +434,8 @@ class TestUSID2HSbase:
                                  sig_type=hs.signals.BaseSignal,
                                  axes_to_spec=[])
 
-    def base_n_pos_m_spec(self, lazy, slow_to_fast=True):
+    @pytest.mark.parametrize('lazy', [True, False])
+    def test_base_n_pos_m_spec(self, lazy, slow_to_fast=True):
         phy_quant = 'Current'
         phy_unit = 'nA'
         ret_vals = gen_2pos_2spec(s2f_aux=slow_to_fast)
@@ -449,12 +450,6 @@ class TestUSID2HSbase:
         compare_signal_from_usid(file_path, ndata, new_sig,
                                  sig_type=hs.signals.BaseSignal,
                                  axes_to_spec=['Frequency', 'Bias'])
-
-    def test_n_pos_m_spec(self):
-        self.base_n_pos_m_spec(False)
-
-    def test_lazy_load(self):
-        self.base_n_pos_m_spec(True)
 
 
 @pytest.mark.filterwarnings("ignore:This dataset does not have an N-dimensional form:UserWarning")
@@ -500,7 +495,7 @@ class TestUSID2HSdtype:
                                      axes_to_spec=['Frequency', 'Bias'],
                                      compound_comp_name=comp_name)
 
-    def test_non_linear_dimension(self):
+    def test_non_uniform_dimension(self):
         pos_dims = [usid.Dimension('Y', 'um', np.linspace(0, 60, num=5)),
                     usid.Dimension('X', 'nm', [-250, 750])]
         spec_dims = [usid.Dimension('Bias', 'V',
@@ -519,7 +514,7 @@ class TestUSID2HSdtype:
                            slow_to_fast=True)
 
         with pytest.raises(ValueError):
-            _ = hs.load(file_path, ignore_non_linear_dims=False)
+            _ = hs.load(file_path, ignore_non_uniform_dims=False)
 
         with pytest.warns(UserWarning) as _:
             new_sig = hs.load(file_path)

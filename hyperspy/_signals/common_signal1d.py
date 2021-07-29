@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,7 +21,7 @@ from hyperspy.exceptions import DataDimensionError
 from hyperspy.docstrings.signal import OPTIMIZE_ARG
 
 
-class CommonSignal1D(object):
+class CommonSignal1D:
 
     """Common functions for 1-dimensional signals."""
 

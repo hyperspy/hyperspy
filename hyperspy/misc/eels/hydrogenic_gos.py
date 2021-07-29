@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,8 +20,7 @@ import math
 import logging
 
 import numpy as np
-import scipy as sp
-import scipy.interpolate
+from scipy import integrate, interpolate, constants
 
 from hyperspy.misc.eels.base_gos import GOSBase
 
@@ -36,7 +35,7 @@ XU = [
 # IE1=[118,149,189,229,270,320,377,438,500,564,628,695,769,846,
 # 926,1008,1096,1194,1142,1248,1359,1476,1596,1727]
 
-R = sp.constants.value("Rydberg constant times hc in eV")
+R = constants.value("Rydberg constant times hc in eV")
 
 
 class HydrogenicGOS(GOSBase):
@@ -140,12 +139,11 @@ class HydrogenicGOS(GOSBase):
 
             # dsbyde IS THE ENERGY-DIFFERENTIAL X-SECN (barn/eV/atom)
             qint[i] = 3.5166e8 * (R / T) * (R / E) * (
-                scipy.integrate.quad(
+                integrate.quad(
                     lambda x: self.gosfunc(E, np.exp(x)),
                     math.log(qa0sqmin), math.log(qa0sqmax))[0])
         self.qint = qint
-        return sp.interpolate.interp1d(self.energy_axis + energy_shift,
-                                       qint)
+        return interpolate.interp1d(self.energy_axis + energy_shift, qint)
 
     def gosfuncK(self, E, qa02):
         # gosfunc calculates (=DF/DE) which IS PER EV AND PER ATOM
@@ -193,7 +191,7 @@ class HydrogenicGOS(GOSBase):
             u = .1
         else:
             # Egerton's correction to the Hydrogenic XS
-            u = XU[np.int(iz)]
+            u = XU[int(iz)]
         el3 = self.onset_energy_L3 + self.energy_shift
         el1 = self.onset_energy_L1 + self.energy_shift
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -23,6 +23,7 @@ import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import logging
 import inspect
+from functools import partial
 
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
@@ -69,7 +70,20 @@ class Signal1DFigure(BlittedFigure):
         self.ax.xaxis.set_animated(animated)
         self.ax.hspy_fig = self
 
-    def create_right_axis(self, color='black'):
+    def create_right_axis(self, color='black', adjust_layout=True):
+        """
+        Add an axis on the right hand side of the figure.
+
+        Parameters
+        ----------
+        adjust_layout : bool, optional
+            Whether to call ``plt.tight_layout`` or not. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
         if self.ax is None:
             self.create_axis()
         if self.right_ax is None:
@@ -77,14 +91,30 @@ class Signal1DFigure(BlittedFigure):
             self.right_ax.hspy_fig = self
             self.right_ax.yaxis.set_animated(self.figure.canvas.supports_blit)
             self.right_ax.tick_params(axis='y', labelcolor=color)
-        plt.tight_layout()
+        if adjust_layout:
+            plt.tight_layout()
 
-    def close_right_axis(self):
+    def close_right_axis(self, adjust_layout=True):
+        """
+        Remove the axis on the right hand side of the figure
+
+        Parameters
+        ----------
+        adjust_layout : bool, optional
+            Whether to call ``plt.tight_layout`` or not. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
         if self.right_ax is not None:
             for lines in self.right_ax_lines:
                 lines.close()
             self.right_ax.axes.get_yaxis().set_visible(False)
             self.right_ax = None
+        if adjust_layout:
+            plt.tight_layout()
 
     def add_line(self, line, ax='left', connect_navigation=False):
         """
@@ -120,11 +150,11 @@ class Signal1DFigure(BlittedFigure):
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
         if connect_navigation:
-            line.axes_manager.events.indices_changed.connect(
-                line._auto_update_line, [])
+            f = partial(line._auto_update_line, update_ylimits=True)
+            line.axes_manager.events.indices_changed.connect(f, [])
             line.events.closed.connect(
-                lambda: line.axes_manager.events.indices_changed.disconnect(
-                    line._auto_update_line), [])
+                lambda: line.axes_manager.events.indices_changed.disconnect(f),
+                [])
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
@@ -201,10 +231,7 @@ class Signal1DFigure(BlittedFigure):
         if self.right_ax is not None:
             update_lines(self.right_ax, self.right_ax_lines)
 
-        if self.ax.figure.canvas.supports_blit:
-            self.ax.hspy_fig._update_animated()
-        else:
-            self.ax.figure.canvas.draw_idle()
+        self.render_figure()
 
 
 class Signal1DLine(object):
@@ -380,8 +407,8 @@ class Signal1DLine(object):
                              "'log' for Signal1D.")
         else:
             plot = self.ax.plot
-        self.line, = plot(self.axis.axis, data, **self.line_properties)
-        self.line.set_animated(self.ax.figure.canvas.supports_blit)
+        self.line, = plot(self.axis.axis, data, **self.line_properties,
+                          animated=self.ax.figure.canvas.supports_blit)
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
@@ -394,7 +421,7 @@ class Signal1DLine(object):
                                      color=self.line.get_color(),
                                      animated=self.ax.figure.canvas.supports_blit)
         self._y_min, self._y_max = self.ax.get_ylim()
-        self.ax.figure.canvas.draw_idle()
+        self.ax.hspy_fig.render_figure()
 
     def _get_data(self, real_part=False):
         if self._plot_imag and not real_part:
@@ -405,7 +432,7 @@ class Signal1DLine(object):
                                        **self.data_function_kwargs).real
         return ydata
 
-    def _auto_update_line(self, update_ylimits=True, **kwargs):
+    def _auto_update_line(self, update_ylimits=False, **kwargs):
         """Updates the line plot only if `auto_update` is `True`.
 
         This is useful to connect to events that automatically update the line.
@@ -423,8 +450,8 @@ class Signal1DLine(object):
                update_ylimits=False):
         """Update the current spectrum figure
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         force_replot : bool
             If True, close and open the figure. Default is False.
         render_figure : bool
@@ -495,10 +522,7 @@ class Signal1DLine(object):
             self.text.set_text(self.axes_manager.indices)
 
         if render_figure:
-            if self.ax.figure.canvas.supports_blit:
-                self.ax.hspy_fig._update_animated()
-            else:
-                self.ax.figure.canvas.draw_idle()
+            self.ax.hspy_fig.render_figure()
 
     def close(self):
         _logger.debug('Closing `Signal1DLine`.')

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -42,6 +42,8 @@ default_extension = 0
 
  # Writing capabilities:
 writes = False
+non_uniform_axis = False
+# ----------------------
 
 
 def _read_raw(info, fp, lazy=False):
@@ -74,13 +76,18 @@ def _parse_xml(filename):
             'height':128,
             'raw_height':130,
             'record-by':'image'}
-    if om.has_item('root.count'):
+    if om.has_item('root.scan_parameters.series_count'):
         # Stack of images
         info.update({'series_count':int(om.root.scan_parameters.series_count)})
     elif om.has_item('root.pix_x') and om.has_item('root.pix_y'):
         # 2D x 2D
         info.update({'scan_x':int(om.root.pix_x),
                      'scan_y':int(om.root.pix_y)})
+    # in case root.pix_x and root.pix_y are not available
+    elif (om.has_item('root.scan_parameters.scan_resolution_x') and 
+              om.has_item('root.scan_parameters.scan_resolution_y')):
+        info.update({'scan_x':int(om.root.scan_parameters.scan_resolution_x),
+                     'scan_y':int(om.root.scan_parameters.scan_resolution_y)})
     else:
         raise IOError("Unsupported Empad file: the scan parameters cannot "
                       "be imported.")
@@ -89,7 +96,7 @@ def _parse_xml(filename):
 
 
 def _convert_scale_units(value, units, factor=1):
-    v = np.float(value) * _ureg(units)
+    v = float(value) * _ureg(units)
     converted_v = (factor * v).to_compact()
     converted_value = converted_v.magnitude / factor
     converted_units = '{:~}'.format(converted_v.units)

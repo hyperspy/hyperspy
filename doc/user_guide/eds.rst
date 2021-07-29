@@ -122,7 +122,7 @@ You can also set these parameters directly:
     >>> s.metadata.Acquisition_instrument.SEM.beam_energy = 30
 
 or by using the
-:py:meth:`~._signals.eds_tem.EDSTEM_mixin.set_microscope_parameters` method:
+:py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` method:
 
 .. code-block:: python
 
@@ -197,7 +197,7 @@ Copying spectrum calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 All of the above parameters can be copied from one spectrum to another
-with the :py:meth:`~._signals.eds_tem.EDSTEM_mixin.get_calibration_from`
+with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.get_calibration_from`
 method.
 
 .. code-block:: python
@@ -241,8 +241,8 @@ Elements
 ^^^^^^^^
 
 The elements present in the sample can be defined using the
-:py:meth:`~._signals.eds.EDS_mixin.set_elements`  and
-:py:meth:`~._signals.eds.EDS_mixin.add_elements` methods.  Only element
+:py:meth:`~._signals.eds.EDSSpectrum.set_elements`  and
+:py:meth:`~._signals.eds.EDSSpectrum.add_elements` methods.  Only element
 abbreviations are accepted:
 
 .. code-block:: python
@@ -257,8 +257,8 @@ X-ray lines
 ^^^^^^^^^^^
 
 Similarly, the X-ray lines can be defined using the
-:py:meth:`~._signals.eds.EDS_mixin.set_lines` and
-:py:meth:`~._signals.eds.EDS_mixin.add_lines` methods. The corresponding
+:py:meth:`~._signals.eds.EDSSpectrum.set_lines` and
+:py:meth:`~._signals.eds.EDSSpectrum.add_lines` methods. The corresponding
 elements will be added automatically.
 Several lines per element can be defined at once.
 
@@ -364,7 +364,7 @@ Plotting
 --------
 
 You can visualize an EDS spectrum using the
-:py:meth:`~._signals.eds.EDS_mixin.plot` method (see
+:py:meth:`~._signals.eds.EDSSpectrum.plot` method (see
 :ref:`visualisation<visualization-label>`). For example:
 
 .. code-block:: python
@@ -388,9 +388,9 @@ Plotting X-ray lines
 ^^^^^^^^^^^^^^^^^^^^
 
 X-ray lines can be added as plot labels with
-:py:meth:`~._signals.eds.EDS_mixin.plot`. The lines are either retrieved
+:py:meth:`~._signals.eds.EDSSpectrum.plot`. The lines are either retrieved
 from `metadata.Sample.Xray_lines`, or selected with the same method as
-:py:meth:`~._signals.eds.EDS_mixin.add_lines` using the elements in
+:py:meth:`~._signals.eds.EDSSpectrum.add_lines` using the elements in
 `metadata.Sample.elements`.
 
 .. code-block:: python
@@ -471,7 +471,7 @@ for more information in setting plotting parameters.
    :width:   500
 
 Finally, the windows of integration can be visualised using
-:py:meth:`~._signals.eds.EDS_mixin.plot` method:
+:py:meth:`~._signals.eds.EDSSpectrum.plot` method:
 
 .. code-block:: python
 
@@ -491,12 +491,12 @@ Background subtraction
 ^^^^^^^^^^^^^^^^^^^^^^
 
 The background can be subtracted from the X-ray intensities with
-:py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity`.
+:py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`.
 The background value is obtained by averaging the intensity in two
 windows on each side of the X-ray line.
 The position of the windows can be estimated using
-:py:meth:`~._signals.eds.EDS_mixin.estimate_background_windows`, and
-can be plotted using :py:meth:`~._signals.eds.EDS_mixin.plot`:
+:py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows`, and
+can be plotted using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
 
 .. code-block:: python
 
@@ -531,7 +531,7 @@ set the beam energy:
     >>> s.set_microscope_parameters(beam_energy=10)
 
 Next, the model is created with
-:py:meth:`~._signals.eds_sem.EDSSEM_mixin.create_model`. One Gaussian is
+:py:meth:`~._signals.eds_sem.EDSSEMSpectrum.create_model`. One Gaussian is
 automatically created per X-ray line, along with a polynomial for the
 background.
 
@@ -664,9 +664,9 @@ absorption correction:
 * Ionization cross sections
 
 Quantification must be applied to the background-subtracted intensities, which
-can be found using :py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity`.
+can be found using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`.
 The quantification of these intensities can then be calculated using
-:py:meth:`~._signals.eds_tem.EDSTEM_mixin.quantification`.
+:py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`.
 
 The quantification method needs be specified as either 'CL', 'zeta', or
 'cross_section'. If no method is specified, the function will raise an
@@ -674,7 +674,7 @@ exception.
 
 A list of factors or cross sections should be supplied in the same order as
 the listed intensities (please note that HyperSpy intensities in
-:py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity` are in alphabetical
+:py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` are in alphabetical
 order).
 
 A set of k-factors can be usually found in the EDS manufacturer software
@@ -708,7 +708,7 @@ out as follows:
 
 The obtained composition is in atomic percent, by default. However, it can be
 transformed into weight percent either with the option
-:py:meth:`~._signals.eds_tem.EDSTEM_mixin.quantification`:
+:py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
 
 .. code-block:: python
 
@@ -811,13 +811,13 @@ composition maps for each element.
         >>>                  factors=factors, absorption_correction=True
         >>>                  thickness = 100.)
 
-At this stage absorption correction is only applicable for parallel-sided, 
-thin-film samples. Absorption correction is calculated on a pixel by pixel 
+At this stage absorption correction is only applicable for parallel-sided,
+thin-film samples. Absorption correction is calculated on a pixel by pixel
 basis after having determined a sample mass-thickness map. It therefore may
 be a source of error in particularly inhomogeneous specimens.
-  
+
 Absorption correction can also only be applied to spectra from a single EDS
-detector. For systems that consist of multiple detectors, such as the Thermo 
+detector. For systems that consist of multiple detectors, such as the Thermo
 Fisher Super-X, it is therefore necessary to load the spectra from each
 detector separately.
 
@@ -847,13 +847,13 @@ is available:
 Electron and X-ray range
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The electron and X-ray range in a bulk material can be estimated with 
+The electron and X-ray range in a bulk material can be estimated with
 :py:meth:`hs.eds.electron_range` and :py:meth:`hs.eds.xray_range`
 
 To calculate the X-ray range of Cu Ka in pure Copper at 30 kV in micron:
 
 .. code-block:: python
-    
+
     >>> hs.eds.xray_range('Cu_Ka', 30.)
     1.9361716759499248
 
@@ -871,4 +871,3 @@ To calculate the electron range in pure Copper at 30 kV in micron
 
     >>> hs.eds.electron_range('Cu', 30.)
     2.8766744984001607
-

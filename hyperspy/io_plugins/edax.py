@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -48,6 +48,9 @@ file_extensions = ['spd', 'SPD', 'spc', 'SPC']
 default_extension = 0
 # Writing capabilities
 writes = False
+non_uniform_axis = False
+# ----------------------
+
 
 spd_extensions = ('spd', 'SPD', 'Spd')
 spc_extensions = ('spc', 'SPC', 'Spc')

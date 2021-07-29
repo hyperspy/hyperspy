@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,9 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy._components.expression import Expression
 import numpy as np
 import logging
+
+from hyperspy._components.expression import Expression
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 _logger = logging.getLogger(__name__)
 
@@ -50,7 +52,7 @@ class Exponential(Expression):
     """
 
     def __init__(self, A=1., tau=1., module="numexpr", **kwargs):
-        super(Exponential, self).__init__(
+        super().__init__(
             expression="A * exp(-x / tau)",
             name="Exponential",
             A=A,
@@ -84,7 +86,7 @@ class Exponential(Expression):
         bool
 
         """
-        super(Exponential, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if i1 + 1 == i2:
@@ -143,9 +145,15 @@ class Exponential(Expression):
                                 'with a "divide by zero" error (likely log of '
                                 'a zero or negative value).')
                 return False
-
-            if self.binned:
-                A /= axis.scale
+            if is_binned(signal):
+            # in v2 replace by
+            #if axis.is_binned:
+                if axis.is_uniform:
+                    A /= axis.scale
+                else:
+                    # using the mean of the gradient for non-uniform axes is a best
+                    # guess to the scaling of binned signals for the estimation
+                    A /= np.mean(np.gradient(axis.axis))
             if only_current is True:
                 self.A.value = A
                 self.tau.value = t

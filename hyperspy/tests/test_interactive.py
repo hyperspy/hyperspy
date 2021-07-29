@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -151,3 +151,10 @@ class TestInteractive():
         s.data[:] = 1
         e2.trigger()
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
+
+    def test_interactive_function_return_None(self):
+        e = Event()
+        def function_return_None():
+            print('function called')
+        hs.interactive(function_return_None, e)
+        e.trigger()

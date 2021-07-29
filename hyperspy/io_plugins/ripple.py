@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -48,6 +48,7 @@ file_extensions = ['rpl', 'RPL']
 default_extension = 0
 # Writing capabilities
 writes = [(1, 0), (1, 1), (1, 2), (2, 0), (2, 1), ]
+non_uniform_axis = False
 # ----------------------
 
 # The format only support the followng data types

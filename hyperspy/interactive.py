@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -58,7 +58,7 @@ class Interactive:
             object are then copied over to the existing `out` object. Only
             useful for `Signal` or other objects that have an attribute
             `axes_manager`. If "auto" and `f` is a method of a Signal class
-            instance its `AxesManager` `any_axis_chaged` event is selected.
+            instance its `AxesManager` `any_axis_changed` event is selected.
             Otherwise the `Signal` `data_changed` event is selected.
             If None, `recompute_out` is not connected to any event.
             The default is "auto". It is also possible to pass an iterable of
@@ -111,15 +111,15 @@ class Interactive:
 
     def recompute_out(self):
         out = self.f(*self.args, **self.kwargs)
+        if out is None:
+            return
         if out.data.shape == self.out.data.shape:
             # Keep the same array if possible.
             self.out.data[:] = out.data[:]
         else:
             self.out.data = out.data
-        # The following may trigger an `any_axis_changed` event and, therefore,
-        # it must precede the `data_changed` trigger below.
         self.out.axes_manager.update_axes_attributes_from(
-            out.axes_manager._axes, attributes=["scale", "offset", "size"])
+            out.axes_manager._axes)
         self.out.events.data_changed.trigger(self.out)
 
     def update(self):

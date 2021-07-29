@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,7 +18,6 @@
 
 import numpy as np
 
-from hyperspy import model
 from hyperspy.exceptions import NavigationSizeError
 
 

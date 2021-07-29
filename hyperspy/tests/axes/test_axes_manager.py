@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,12 +18,17 @@
 
 from unittest import mock
 
-from numpy import arange, zeros
+import numpy as np
 
-from hyperspy.axes import AxesManager
+from hyperspy.axes import AxesManager, _serpentine_iter, _flyback_iter, GeneratorLen
 from hyperspy.defaults_parser import preferences
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 
+import pytest
+
+def generator():
+    for i in range(3):
+        yield((0,0,i))
 
 class TestAxesManager:
     def setup_method(self, method):
@@ -67,6 +72,10 @@ class TestAxesManager:
     def test_reprs(self):
         repr(self.am)
         self.am._repr_html_
+        self.am[0].convert_to_non_uniform_axis()
+        self.am[-1].convert_to_non_uniform_axis()
+        repr(self.am)
+        self.am._repr_html_
 
     def test_update_from(self):
         am = self.am
@@ -86,17 +95,36 @@ class TestAxesManager:
         assert am2[2].offset != am[2].offset
         assert am2[3].size != am[3].size
 
+    def test_create_axis_from_object(self):
+        am = self.am
+        axis = am[-1].copy()
+        am.create_axes([axis])
+        assert am[-3].offset == am[-1].offset
+        assert am[-3].scale == am[-1].scale
+
+    def test_set_axis(self):
+        am = self.am
+        axis = am[-1].copy()
+        am.set_axis(axis,2)
+        assert am[-2].offset == am[-1].offset
+        assert am[-2].scale == am[-1].scale
+
+    def test_all_uniform(self):
+        assert self.am.all_uniform == True
+        self.am[-1].convert_to_non_uniform_axis()
+        assert self.am.all_uniform == False
+
 
 class TestAxesManagerScaleOffset:
     def test_low_high_value(self):
-        data = arange(11)
+        data = np.arange(11)
         s = BaseSignal(data)
         axes = s.axes_manager[0]
         assert axes.low_value == data[0]
         assert axes.high_value == data[-1]
 
     def test_change_scale(self):
-        data = arange(132)
+        data = np.arange(132)
         s = BaseSignal(data)
         axes = s.axes_manager[0]
         scale_value_list = [0.07, 76, 1]
@@ -106,7 +134,7 @@ class TestAxesManagerScaleOffset:
             assert axes.high_value == data[-1] * scale_value
 
     def test_change_offset(self):
-        data = arange(81)
+        data = np.arange(81)
         s = BaseSignal(data)
         axes = s.axes_manager[0]
         offset_value_list = [12, -216, 1, 0]
@@ -116,7 +144,7 @@ class TestAxesManagerScaleOffset:
             assert axes.high_value == (data[-1] + offset_value)
 
     def test_change_offset_scale(self):
-        data = arange(11)
+        data = np.arange(11)
         s = BaseSignal(data)
         axes = s.axes_manager[0]
         scale, offset = 0.123, -314
@@ -128,7 +156,7 @@ class TestAxesManagerScaleOffset:
 
 class TestAxesManagerExtent:
     def test_1d_basesignal(self):
-        s = BaseSignal(arange(10))
+        s = BaseSignal(np.arange(10))
         assert len(s.axes_manager.signal_extent) == 2
         signal_axis = s.axes_manager.signal_axes[0]
         signal_extent = (signal_axis.low_value, signal_axis.high_value)
@@ -137,7 +165,7 @@ class TestAxesManagerExtent:
         assert () == s.axes_manager.navigation_extent
 
     def test_1d_signal1d(self):
-        s = Signal1D(arange(10))
+        s = Signal1D(np.arange(10))
         assert len(s.axes_manager.signal_extent) == 2
         signal_axis = s.axes_manager.signal_axes[0]
         signal_extent = (signal_axis.low_value, signal_axis.high_value)
@@ -146,7 +174,7 @@ class TestAxesManagerExtent:
         assert () == s.axes_manager.navigation_extent
 
     def test_2d_signal1d(self):
-        s = Signal1D(arange(100).reshape(10, 10))
+        s = Signal1D(np.arange(100).reshape(10, 10))
         assert len(s.axes_manager.signal_extent) == 2
         signal_axis = s.axes_manager.signal_axes[0]
         signal_extent = (signal_axis.low_value, signal_axis.high_value)
@@ -157,7 +185,7 @@ class TestAxesManagerExtent:
         assert nav_extent == s.axes_manager.navigation_extent
 
     def test_3d_signal1d(self):
-        s = Signal1D(arange(1000).reshape(10, 10, 10))
+        s = Signal1D(np.arange(1000).reshape(10, 10, 10))
         assert len(s.axes_manager.signal_extent) == 2
         signal_axis = s.axes_manager.signal_axes[0]
         signal_extent = (signal_axis.low_value, signal_axis.high_value)
@@ -174,7 +202,7 @@ class TestAxesManagerExtent:
         assert nav_extent == s.axes_manager.navigation_extent
 
     def test_2d_signal2d(self):
-        s = Signal2D(arange(100).reshape(10, 10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         assert len(s.axes_manager.signal_extent) == 4
         signal_axis0 = s.axes_manager.signal_axes[0]
         signal_axis1 = s.axes_manager.signal_axes[1]
@@ -189,7 +217,7 @@ class TestAxesManagerExtent:
         assert () == s.axes_manager.navigation_extent
 
     def test_3d_signal2d(self):
-        s = Signal2D(arange(1000).reshape(10, 10, 10))
+        s = Signal2D(np.arange(1000).reshape(10, 10, 10))
         assert len(s.axes_manager.signal_extent) == 4
         signal_axis0 = s.axes_manager.signal_axes[0]
         signal_axis1 = s.axes_manager.signal_axes[1]
@@ -206,7 +234,7 @@ class TestAxesManagerExtent:
         assert nav_extent == s.axes_manager.navigation_extent
 
     def test_changing_scale_offset(self):
-        s = Signal2D(arange(100).reshape(10, 10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         signal_axis0 = s.axes_manager.signal_axes[0]
         signal_axis1 = s.axes_manager.signal_axes[1]
         signal_extent = (
@@ -237,7 +265,7 @@ class TestAxesManagerExtent:
 
 
 def test_setting_indices_coordinates():
-    s = Signal1D(arange(1000).reshape(10, 10, 10))
+    s = Signal1D(np.arange(1000).reshape(10, 10, 10))
 
     m = mock.Mock()
     s.axes_manager.events.indices_changed.connect(m, [])
@@ -285,7 +313,7 @@ def test_setting_indices_coordinates():
 
 class TestAxesHotkeys:
     def setup_method(self, method):
-        s = Signal1D(zeros(7 * (5,)))
+        s = Signal1D(np.zeros(7 * (5,)))
         self.am = s.axes_manager
 
     def test_hotkeys_in_six_dimensions(self):
@@ -343,12 +371,47 @@ class TestAxesHotkeys:
 
 class TestIterPathScanPattern:
     def setup_method(self, method):
-        s = Signal1D(zeros((3, 3, 3, 2)))
+        s = Signal1D(np.zeros((3, 3, 3, 2)))
         self.am = s.axes_manager
 
+    def test_iterpath_property(self):
+        self.am._iterpath = "abc" # with underscore
+        assert self.am.iterpath == "abc"
+
+        with pytest.raises(ValueError):
+            self.am.iterpath = "blahblah" # w/o underscore
+
+        path = "flyback"
+        self.am.iterpath = path
+        assert self.am.iterpath == path
+        assert self.am._iterpath == path
+
+        path = "serpentine"
+        self.am.iterpath = path
+        assert self.am.iterpath == path
+        assert self.am._iterpath == path
+
+    def test_wrong_iterpath(self):
+        with pytest.raises(ValueError):
+            self.am.iterpath = ""
+
+    def test_wrong_custom_iterpath(self):
+        class A:
+            pass
+        with pytest.raises(TypeError):
+            self.am.iterpath = A()
+
+    def test_wrong_custom_iterpath2(self):
+        with pytest.raises(TypeError):
+            self.am.iterpath = [0,1,2,3,4,] # indices are not iterable
+
+    def test_wrong_custom_iterpath3(self):
+        with pytest.raises(ValueError):
+            self.am.iterpath = [(0,)] # not enough dimensions
+
     def test_flyback(self):
-        self.am._iterpath = "flyback"
-        for i, index in enumerate(self.am):
+        self.am.iterpath = "flyback"
+        for i, _ in enumerate(self.am):
             if i == 3:
                 assert self.am.indices == (0, 1, 0)
             # Hits a new layer on index 9
@@ -357,11 +420,121 @@ class TestIterPathScanPattern:
             break
 
     def test_serpentine(self):
-        self.am._iterpath = "serpentine"
-        for i, index in enumerate(self.am):
+        self.am.iterpath = "serpentine"
+        for i, _ in enumerate(self.am):
             if i == 3:
                 assert self.am.indices == (2, 1, 0)
             # Hits a new layer on index 9
             if i == 9:
                 assert self.am.indices == (2, 2, 1)
             break
+
+    def test_custom_iterpath(self):
+        iterpath = [(0,1,1), (1,1,1)]
+        self.am.iterpath = iterpath
+        assert self.am._iterpath == iterpath
+        assert self.am.iterpath == iterpath
+        assert self.am._iterpath_generator != iterpath
+
+        for i, _ in enumerate(self.am):
+            if i == 0:
+                assert self.am.indices == iterpath[0]
+            if i == 1:
+                assert self.am.indices == iterpath[1]
+            break
+
+    def test_custom_iterpath_generator(self):
+
+        iterpath = generator()
+        self.am.iterpath = iterpath
+        assert self.am._iterpath == iterpath
+        assert self.am.iterpath == iterpath
+        assert self.am._iterpath_generator == iterpath
+
+        for i, _ in enumerate(self.am):
+            if i == 0:
+                assert self.am.indices == (0,0,0)
+            if i == 1:
+                assert self.am.indices == (0,0,1)
+            break
+
+    def test_get_iterpath_size1(self):
+        assert self.am._get_iterpath_size() == self.am.navigation_size
+        assert self.am._get_iterpath_size(masked_elements = 1) == self.am.navigation_size - 1
+
+    def test_get_iterpath_size2(self):
+        self.am.iterpath = generator()
+        assert self.am._get_iterpath_size() == None
+        assert self.am._get_iterpath_size(masked_elements = 1) == None
+
+    def test_get_iterpath_size3(self):
+        self.am.iterpath =[(0,0,0), (0,0,1)]
+        assert self.am._get_iterpath_size() == 2
+        assert self.am._get_iterpath_size(masked_elements = 1) == 2
+
+    def test_GeneratorLen(self):
+        gen = GeneratorLen(gen=generator(), length=3)
+        assert list(gen) == [(0,0,0),(0,0,1),(0,0,2)]
+
+    def test_GeneratorLen_iterpath(self):
+        gen = GeneratorLen(gen=generator(), length=3)
+        assert len(gen) == 3
+        self.am.iterpath = gen
+        assert self.am._get_iterpath_size() == 3
+
+
+class TestIterPathScanPatternSignal2D:
+    def setup_method(self, method):
+        s = Signal2D(np.zeros((3, 3, 3, 2, 1)))
+        self.am = s.axes_manager
+        self.s = s
+
+    def test_wrong_iterpath_signal2D(self):
+        with pytest.raises(ValueError):
+            self.am.iterpath = "blahblah"
+
+    def test_custom_iterpath_signal2D(self):
+        indices = [(0,1,1), (1,1,1)]
+        self.am.iterpath = indices
+        for i, _ in enumerate(self.am):
+            if i == 0:
+                assert self.am.indices == indices[0]
+            if i == 1:
+                assert self.am.indices == indices[1]
+            break
+
+    def test_serpentine_signal2D(self):
+        self.am.iterpath = "serpentine"
+        for i, _ in enumerate(self.am):
+            if i == 3:
+                assert self.am.indices == (2, 1, 0)
+            # Hits a new layer on index 9
+            if i == 9:
+                assert self.am.indices == (2, 2, 1)
+            break
+
+    def test_switch_iterpath(self):
+        s = self.s
+        s.axes_manager.iterpath = "serpentine"
+        with s.axes_manager.switch_iterpath('flyback'):
+            assert s.axes_manager.iterpath == 'flyback'
+            for i, _ in enumerate(s.axes_manager):
+                if i == 3:
+                    assert self.am.indices == (0, 1, 0)
+                # Hits a new layer on index 9
+                if i == 9:
+                    assert self.am.indices == (0, 0, 1)
+                break
+        assert s.axes_manager.iterpath == 'serpentine'
+
+
+def test_iterpath_function_flyback():
+    for i, indices in enumerate(_flyback_iter((3,3,3))):
+        if i == 3:
+            assert indices == (0, 1, 0)
+
+
+def test_iterpath_function_serpentine():
+    for i, indices in enumerate(_serpentine_iter((3,3,3))):
+        if i == 3:
+            assert indices == (2, 1, 0)

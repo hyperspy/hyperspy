@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -49,7 +49,7 @@ class MPL_HyperExplorer(object):
         self.pointer = None
         self._pointer_nav_dim = None
 
-    def plot_signal(self):
+    def plot_signal(self, **kwargs):
         # This method should be implemented by the subclasses.
         # Doing nothing is good enough for signal_dimension==0 though.
         if self.axes_manager.signal_dimension == 0:
@@ -102,8 +102,7 @@ class MPL_HyperExplorer(object):
                 if hasattr(sl, key):
                     setattr(sl, key, kwargs.pop(key))
             sl.set_line_properties(color='blue',
-                                   type='step')
-
+                                   type='step' if axis.is_uniform else 'line')
             # Add the line to the figure
             sf.add_line(sl)
             sf.plot()

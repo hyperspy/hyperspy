@@ -13,51 +13,82 @@ Loading files: the load function
 ================================
 
 HyperSpy can read and write to multiple formats (see :ref:`supported-formats`).
-To load data use the :py:func:`~.io.load` command. For example, to load the
-image ascent.jpg you can type:
+To load data use the :py:func:`~.load` command. For example, to load the
+image spam.jpg you can type:
 
 .. code-block:: python
 
-    >>> s = hs.load("ascent.jpg")
+    >>> s = hs.load("spam.jpg")
 
-If loading was successful, the variable ``s`` contains a HyperSpy signal
-or a signal of the :ref:`HyperSpy extensions <hyperspy_extensions-label>`
+If loading was successful, the variable ``s`` contains a HyperSpy signal or any
+type of signal defined in on of the :ref:`HyperSpy extensions <hyperspy_extensions-label>`
 - see available :ref:`signal subclasses <transforming_signal-label>` for more
-information.
-If the loaded file contains several datasets, the :py:func:`~.io.load`
-functions will return a list of the corresponding signal.
+information. To list the signal types available on your local installation use:
 
-.. NOTE::
+.. code-block:: python
 
-    Note for Python programmers: the data is stored in a numpy array
-    in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
-    normally need to access it there.
+    >>> hs.print_known_signal_types()
 
 HyperSpy will try to guess the most likely data type for the corresponding
 file. However, you can force it to read the data as a particular data type by
-providing the ``signal`` keyword, which has to be one of: ``spectrum``,
-``image`` or ``EELS``, e.g.:
+providing the ``signal_type`` keyword, which has to correspond to one of the
+available subclasses of signal, e.g.:
 
 .. code-block:: python
 
     >>> s = hs.load("filename", signal_type="EELS")
 
-Some file formats store some extra information about the data, which can be
-stored in "attributes". If HyperSpy manages to read some extra information
-about the data it stores it in the
-:py:attr:`~.signal.BaseSignal.original_metadata` attribute. Also, it is
-possible that other information will be mapped by HyperSpy to a standard
-location where it can be used by some standard routines, the
-:py:attr:`~.signal.BaseSignal.metadata` attribute.
-
-To print the content of the parameters simply:
+If the loaded file contains several datasets, the :py:func:`~.io.load`
+functions will return a list of the corresponding signals:
 
 .. code-block:: python
 
+    >>> s = hs.load("spameggsandham.hspy")
+    >>> s
+    [<Signal1D, title: spam, dimensions: (32,32|1024)>,
+    <Signal1D, title: eggs, dimensions: (32,32|1024)>,
+    <Signal1D, title: ham, dimensions: (32,32|1024)>]
+
+.. note::
+
+    Note for python programmers: the data is stored in a numpy array
+    in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
+    normally need to access it there.
+
+HyperSpy will attempt to infer the appropriate file reader to use based on
+the file extension (for example. ``.hspy``, ``.emd`` and so on). You can
+override this using the ``reader`` keyword:
+
+.. code-block:: python
+
+    # Load a .hspy file with an unknown extension
+    >>> s = hs.load("filename.some_extension", reader="hspy")
+
+Some file formats store some extra information about the data (metadata) and
+HyperSpy reads most of them and stores them in the
+:py:attr:`~.signal.BaseSignal.original_metadata` attribute. Also, depending on
+the file format, a part of this information will be mapped by HyperSpy to the
+:py:attr:`~.signal.BaseSignal.metadata` attribute, where it can be used by
+e.g. routines operating on the signal. See :ref:`metadata structure
+<metadata_structure>` for details.
+
+.. note::
+
+    Extensive metadata can slow down loading and processing, and
+    loading the :py:attr:`~.signal.BaseSignal.original_metadata` can be disabled
+    using the ``load_original_metadata`` argument of the :py:func:`~.load`
+    function; in this case, the :py:attr:`~.signal.BaseSignal.metadata` will
+    still be populated.
+
+To print the content of the attributes simply use:
+
+.. code-block:: python
+
+    >>> s.original_metadata
     >>> s.metadata
 
 The :py:attr:`~.signal.BaseSignal.original_metadata` and
-:py:attr:`~.signal.BaseSignal.metadata` can be exported to  text files
+:py:attr:`~.signal.BaseSignal.metadata` can be exported to text files
 using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
 .. code-block:: python
@@ -74,21 +105,21 @@ using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 .. versionadd: 1.2
    ``lazy`` keyword argument.
 
-Almost all file readers support accessing the data without reading it to memory
-(see :ref:`supported-formats` for a list). This feature can be useful when
-analysing large files. To load a file without loading it to memory simply set
+Almost all file readers support `lazy` loading, which means accessing the data
+without loading it to memory (see :ref:`supported-formats` for a list). This
+feature can be useful when analysing large files. To use this feature set
 ``lazy`` to ``True`` e.g.:
-
-The units of the navigation and signal axes can be converted automatically
-during loading using the ``convert_units`` parameter. If `True`, the
-``convert_to_units`` method of the ``axes_manager`` will be used for the conversion
-and if set to `False`, the units will not be converted. The default is `False`.
 
 .. code-block:: python
 
     >>> s = hs.load("filename.hspy", lazy=True)
 
 More details on lazy evaluation support in :ref:`big-data-label`.
+
+The units of the navigation and signal axes can be converted automatically
+during loading using the ``convert_units`` parameter. If `True`, the
+``convert_to_units`` method of the ``axes_manager`` will be used for the conversion
+and if set to `False`, the units will not be converted (default).
 
 .. _load-multiple-label:
 
@@ -109,11 +140,19 @@ or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_:
 
     >>> s = hs.load("file*.hspy")
 
+Alternatively, regular expression type character classes can be used such as
+``[a-z]`` for lowercase letters or ``[0-9]`` for one digit integers:
+
+.. code-block:: python
+
+    >>> s = hs.load('file[0-9].hspy')
+
 .. note::
 
     Wildcards are implemented using ``glob.glob()``, which treats ``*``, ``[``
     and ``]`` as special characters for pattern matching. If your filename or
-    path contains square brackets, you may want to escape these characters first.
+    path contains square brackets, you may want to set
+    ``escape_square_brackets=True``:
 
     .. code-block:: python
 
@@ -140,20 +179,17 @@ objects, for example:
     >>> s = hs.load(p)
 
 By default HyperSpy will return a list of all the files loaded. Alternatively,
-HyperSpy can stack the data of the files contain data with exactly the same
-dimensions. If this is not the case an error is raised. If each file contains
-multiple (N) signals, N stacks will be created. Here, the numbers of signals
+by setting ``stack=True``, HyperSpy can be instructed to stack the data - given
+that the files contain data with exactly the same
+dimensions. If this is not the case, an error is raised. If each file contains
+multiple (N) signals, N stacks will be created. Here, the number of signals
 per file must also match, or an error will be raised.
-
-It is also possible to load multiple files with a single command without
-stacking them by passing the `stack=False` argument to the load function, in
-which case the function will return a list of objects, e.g.:
 
 .. code-block:: python
 
     >>> ls
-    CL1.raw  CL1.rpl~  CL2.rpl  CL3.rpl  CL4.rpl  LL3.raw  shift_map-          SI3.npy
-    CL1.rpl  CL2.raw   CL3.raw  CL4.raw  hdf5/    LL3.rpl
+    CL1.raw  CL1.rpl  CL2.raw  CL2.rpl  CL3.raw  CL3.rpl  CL4.raw  CL4.rpl
+    LL3.raw  LL3.rpl  shift_map-SI3.npy  hdf5/
     >>> s = hs.load('*.rpl')
     >>> s
     [<EELSSpectrum, title: CL1, dimensions: (64, 64, 1024)>,
@@ -173,7 +209,7 @@ Saving data to files
 
 To save data to a file use the :py:meth:`~.signal.BaseSignal.save` method. The
 first argument is the filename and the format is defined by the filename
-extension. If the filename does not contain the extension the default format
+extension. If the filename does not contain the extension, the default format
 (:ref:`hspy-format`) is used. For example, if the :py:const:`s` variable
 contains the :py:class:`~.signal.BaseSignal` that you want to write to a file,
 the following will write the data to a file called :file:`spectrum.hspy` in the
@@ -183,14 +219,13 @@ default :ref:`hspy-format` format:
 
     >>> s.save('spectrum')
 
-If you want to save in the :ref:`ripple format <ripple-format>` write
-instead:
+If you want to save to the :ref:`ripple format <ripple-format>` instead, write:
 
 .. code-block:: python
 
     >>> s.save('spectrum.rpl')
 
-Some formats take extra arguments. See the relevant subsection of
+Some formats take extra arguments. See the relevant subsections of
 :ref:`supported-formats` for more information.
 
 
@@ -216,7 +251,7 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +-----------------------------------+--------+--------+--------+
     | hspy                              |    Yes |    Yes |    Yes |
     +-----------------------------------+--------+--------+--------+
-    | Image: jpg                        |    Yes |    Yes |    Yes |
+    | Image: e.g. jpg, png, tif, ...    |    Yes |    Yes |    Yes |
     +-----------------------------------+--------+--------+--------+
     | TIFF                              |    Yes |    Yes |    Yes |
     +-----------------------------------+--------+--------+--------+
@@ -246,17 +281,19 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +-----------------------------------+--------+--------+--------+
     | Protochips log                    |    Yes |    No  |    No  |
     +-----------------------------------+--------+--------+--------+
-    | EDAX .spc and .spd                |    Yes |    No  |    Yes |
+    | EDAX spc and spd                  |    Yes |    No  |    Yes |
     +-----------------------------------+--------+--------+--------+
-    | h5USID .h5                        |    Yes |   Yes  |   Yes  |
+    | h5USID h5                         |    Yes |   Yes  |   Yes  |
     +-----------------------------------+--------+--------+--------+
-    | Phenom .elid                      |    Yes |    No  |    No  |
+    | Phenom elid                       |    Yes |    No  |    No  |
     +-----------------------------------+--------+--------+--------+
-    | DigitalSurf's .sur and .pro       |    Yes |    No  |    No  |
+    | DigitalSurf's sur and pro         |    Yes |    No  |    No  |
     +-----------------------------------+--------+--------+--------+
-    | Nexus .nxs                        |    Yes |   Yes  |   Yes  |
+    | Nexus nxs                         |    Yes |   Yes  |   Yes  |
     +-----------------------------------+--------+--------+--------+
-    | EMPAD .xml                        |    Yes |    No  |   Yes  |
+    | EMPAD xml                         |    Yes |    No  |   Yes  |
+    +-----------------------------------+--------+--------+--------+
+    | JEOL asw, map, img, pts, eds      |    Yes |    No  |    No  |
     +-----------------------------------+--------+--------+--------+
 
 .. _hspy-format:
@@ -315,8 +352,7 @@ The change of type is done using numpy "safe" rules, so no information is lost,
 as numbers are represented to full machine precision.
 
 This feature is particularly useful when using
-:py:meth:`~._signals.EDSSEMSpectrum.get_lines_intensity` (see :ref:`get lines
-intensity<get_lines_intensity>`):
+:py:meth:`~hyperspy._signals.eds.EDSSpectrum.get_lines_intensity`:
 
 .. code-block:: python
 
@@ -335,27 +371,51 @@ intensity<get_lines_intensity>`):
 .. versionadded:: 1.3.1
     ``chunks`` keyword argument
 
-By default, the data is saved in chunks that are optimised to contain at least one full signal. It is
-possible to customise the chunk shape using the ``chunks`` keyword. For example, to save the data with
-``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks for this signal:
+The hyperspy HDF5 format supports chunking the data into smaller pieces to make it possible to load only part
+of a dataset at a time. By default, the data is saved in chunks that are optimised to contain at least one
+full signal shape for non-lazy signal, while for lazy signal, the chunking of the dask is used. It is possible to
+customise the chunk shape using the ``chunks`` keyword.
+For example, to save the data with ``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks
+for this signal:
 
 .. code-block:: python
 
     >>> s = hs.signals.Signal1D(np.random.random((100, 100, 2048)))
-    >>> s.save("test_chunks", chunks=(20, 20, 256), overwrite=True)
+    >>> s.save("test_chunks", chunks=(20, 20, 256))
 
 Note that currently it is not possible to pass different customised chunk shapes to all signals and
 arrays contained in a signal and its metadata. Therefore, the value of ``chunks`` provided on saving
 will be applied to all arrays contained in the signal.
 
-By passing ``True`` to ``chunks`` the chunk shape is guessed using ``h5py``'s ``guess_chunks`` function
-what, for large signal spaces usually leads to smaller chunks as ``guess_chunks`` does not impose the
+By passing ``True`` to ``chunks`` the chunk shape is guessed using ``h5py``'s ``guess_chunk`` function
+what, for large signal spaces usually leads to smaller chunks as ``guess_chunk`` does not impose the
 constrain of storing at least one signal per chunks. For example, for the signal in the example above
 passing ``chunks=True`` results in ``(7, 7, 256)`` chunks.
 
+Choosing the correct chunk-size can significantly affect the speed of reading, writing and performance of many hyperspy algorithms.
+See the `chunking section <big_data.html#Chunking>`__ under `Working with big data <big_data.html>`__ for more information.
+
 Extra saving arguments
-^^^^^^^^^^^^^^^^^^^^^^^
-- ``compression`` : One of None, 'gzip', 'szip', 'lzf' (default is 'gzip').
+^^^^^^^^^^^^^^^^^^^^^^
+
+- ``compression``: One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``).
+  ``'szip'`` may be unavailable as it depends on the HDF5 installation including it.
+
+.. note::
+
+    HyperSpy uses h5py for reading and writing HDF5 files and, therefore, it
+    supports all `compression filters supported by h5py <https://docs.h5py.org/en/stable/high/dataset.html#dataset-compression>`_.
+    The default is ``'gzip'``. It is possible to enable other compression filters
+    such as ``blosc`` by installing e.g. `hdf5plugin <https://github.com/silx-kit/hdf5plugin>`_.
+    However, be aware that loading those files will require installing the package
+    providing the compression filter. If not available an error will be raised.
+
+    Compression can significantly increase the saving speed. If file size is not
+    an issue, it can be disabled by setting ``compression=None``. Notice that only
+    ``compression=None`` and ``compression='gzip'`` are available in all platforms,
+    see the `h5py documentation <https://docs.h5py.org/en/stable/faq.html#what-compression-processing-filters-are-supported>`_
+    for more details. Therefore, if you choose any other compression filter for
+    saving a file, be aware that it may not be possible to load it in some platforms.
 
 
 .. _netcdf-format:
@@ -404,7 +464,7 @@ multi-threaded environment. The supported data types are:
 
 It supports arbitrary meta-data, which is serialized into JSON.
 
-MRCZ also supports asychronous reads and writes.
+MRCZ also supports asynchronous reads and writes.
 
 Repository: https://github.com/em-MRCZ
 PyPI:       https://pypi.python.org/pypi/mrcz
@@ -417,7 +477,7 @@ install the `mrcz` and optionally the `blosc` Python packages.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-- ``do_async``: currently supported within Hyperspy for writing only, this will
+- ``do_async``: currently supported within HyperSpy for writing only, this will
   save  the file in a background thread and return immediately. Defaults
   to `False`.
 
@@ -462,7 +522,7 @@ EMSA/MSA
 --------
 
 This `open standard format
-<http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/XEDS/EMMFF/EMMFF.IBM/Emmff.Total>`__
+<https://www.microscopy.org/resources/scientific_data/index.cfm>`__
 is widely used to exchange single spectrum data, but it does not support
 multidimensional data. It can be used to exchange single spectra with Gatan's
 Digital Micrograph.
@@ -472,7 +532,7 @@ Digital Micrograph.
     the calibration read from the first spectrum and applied to all other spectra.
 
 Extra saving arguments
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 For the MSA format the ``format`` argument is used to specify whether the
 energy axis should also be saved with the data.  The default, 'Y' omits the
@@ -499,12 +559,12 @@ using the `encoding` argument, e.g.:
 Ripple
 ------
 
-This `open standard format
-<http://www.nist.gov/lispix/doc/image-file-formats/raw-file-format.htm>`__ is
-widely used to exchange multidimensional data. However, it only supports data of
-up to three dimensions. It can be used to exchange data with Bruker and `Lispix
-<http://www.nist.gov/lispix/>`_. Used in combination with the :ref:`import-rpl`
-it is very useful for exporting data to Gatan's Digital Micrograph.
+This *open standard format* developed at NIST as native format for
+`Lispix <http://www.nist.gov/lispix/>`_ is widely used to exchange
+multidimensional data. However, it only supports data of up to three
+dimensions. It can also be used to exchange data with Bruker and used in
+combination with the :ref:`import-rpl` it is very useful for exporting data
+to Gatan's Digital Micrograph.
 
 The default encoding is latin-1. It is possible to set a different encoding
 using the encoding argument, e.g.:
@@ -524,9 +584,23 @@ the "r+" mode are incompatible).
 Images
 ------
 
-HyperSpy is able to read and write data too all the image formats supported by
-`the Python Image Library <http://www.pythonware.com/products/pil/>`_ (PIL).
-This includes png, pdf, gif etc.
+HyperSpy can read and write data to `all the image formats
+<https://imageio.readthedocs.io/en/stable/formats.html>`_ supported by
+`imageio`, which uses the Python Image Library  (PIL/pillow).
+This includes png, pdf, gif, etc.
+
+When saving an image, a scalebar can be added to the image and the formatting,
+location, etc. of the scalebar can be set using the ``scalebar_kwds`` arguments
+- see the `matplotlib-scalebar <https://pypi.org/project/matplotlib-scalebar/>`_
+documentation for more information.
+
+.. code-block:: python
+
+    >>> s.save('file.jpg', scalebar=True)
+    >>> s.save('file.jpg', scalebar=True, scalebar_kwds={'location':'lower right'})
+
+When saving an image, keyword arguments can be passed to the corresponding
+pillow file writer.
 
 It is important to note that these image formats only support 8-bit files, and
 therefore have an insufficient dynamic range for most scientific applications.
@@ -602,16 +676,21 @@ Gatan Digital Micrograph
 ------------------------
 
 HyperSpy can read both dm3 and dm4 files but the reading features are not
-complete (and probably they will be unless Gatan releases the specifications of
-the format). That said, we understand that this is an important feature and if
-loading a particular Digital Micrograph file fails for you, please report it as
-an issue in the `issues tracker <https://github.com/hyperspy/hyperspy/issues>`__ to make
+complete (and probably they will remain so unless Gatan releases the
+specifications of the format). That said, we understand that this is an
+important feature and if loading a particular Digital Micrograph file fails for
+you, please report it as an issue in the `issues tracker
+<https://github.com/hyperspy/hyperspy/issues>`__ to make
 us aware of the problem.
+
+Some of the tags in the DM-files are added to the metadata of the signal
+object. This includes, microscope information and certain parameters for EELS,
+EDS and CL signals.
 
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-- `optimize`: bool, default is True. During loading, the data is replaced by its
+- ``optimize``: bool, default is True. During loading, the data is replaced by its
   :ref:`optimized copy <signal.transpose_optimize>` to speed up operations,
   e. g. iteration over navigation axes. The cost of this speed improvement is to
   double the memory requirement during data loading.
@@ -629,11 +708,11 @@ Extra loading arguments
 
 .. _edax-format:
 
-EDAX TEAM SPD and SPC
----------------------
+EDAX TEAM/Genesis SPD and SPC
+-----------------------------
 
 HyperSpy can read both ``.spd`` (spectrum image) and ``.spc`` (single spectra)
-files from the EDAX TEAM software.
+files from the EDAX TEAM software and its predecessor EDAX Genesis.
 If reading an ``.spd`` file, the calibration of the
 spectrum image is loaded from the corresponding ``.ipr`` and ``.spc`` files
 stored in the same directory, or from specific files indicated by the user.
@@ -662,9 +741,9 @@ Extra loading arguments for SPD file
 - ``**kwargs``: remaining arguments are passed to the Numpy ``memmap`` function.
 
 Extra loading arguments for SPD and SPC files
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- `load_all_spc` : bool, switch to control if all of the ``.spc`` header is
+- ``load_all_spc`` : bool, switch to control if all of the ``.spc`` header is
   read, or just the important parts for import into HyperSpy.
 
 
@@ -736,6 +815,31 @@ For blockfiles ``load`` takes the ``mmap_mode`` keyword argument enabling
 loading the file using a different mode. However, note that lazy loading
 does not support in-place writing (i.e lazy loading and the "r+" mode
 are incompatible).
+
+Extra saving arguments
+^^^^^^^^^^^^^^^^^^^^^^
+
+- ``intensity_scaling`` : in case the dataset that needs to be saved does not
+  have the `np.uint8` data type, casting to this datatype without intensity
+  rescaling results in overflow errors (default behavior). This option allows
+  you to perform linear intensity scaling of the images prior to saving the 
+  data. The options are:
+  
+  - `'dtype'`: the limits of the datatype of the dataset, e.g. 0-65535 for 
+    `np.uint16`, are mapped onto 0-255 respectively. Does not work for `float`
+    data types.
+  - `'minmax'`: the minimum and maximum in the dataset are mapped to 0-255.
+  - `'crop'`: everything below 0 and above 255 is set to 0 and 255 respectively
+  - 2-tuple of `floats` or `ints`: the intensities between these values are
+    scaled between 0-255, everything below is 0 and everything above is 255.
+- ``navigator_signal``: the BLO file also stores a virtual bright field (VBF) image which
+  behaves like a navigation signal in the ASTAR software. By default this is
+  set to `'navigator'`, which results in the default :py:attr:`navigator` signal to be used.
+  If this signal was not calculated before (e.g. by calling :py:meth:`~.signal.BaseSignal.plot`), it is 
+  calculated when :py:meth:`~.signal.BaseSignal.save` is called, which can be time consuming.
+  Alternatively, setting the argument to `None` will result in a correctly sized
+  zero array to be used. Finally, a custom ``Signal2D`` object can be passed,
+  but the shape must match the navigation dimensions.
 
 .. _dens-format:
 
@@ -856,6 +960,9 @@ Extra loading arguments
 - ``stack_group`` : bool, default is True. Stack datasets of groups with common
   path. Relevant for emd file version >= 0.5 where groups can be named
   'group0000', 'group0001', etc.
+- ``chunks`` : None, True or tuple. Determine the chunking of the dataset to save.
+  See the ``chunks`` arguments of the ``hspy`` file format for more details.
+
 
 For files containing several datasets, the `dataset_name` argument can be
 used to select a specific one:
@@ -901,11 +1008,20 @@ the data size in memory.
     [<Signal2D, title: HAADF, dimensions: (|179, 161)>,
     <EDSSEMSpectrum, title: EDS, dimensions: (179, 161|4096)>]
 
+.. note::
+
+    FFTs made in Velox are loaded in as-is as a HyperSpy ComplexSignal2D object.
+    The FFT is not centered and only positive frequencies are stored in the file.
+    Making FFTs with HyperSpy from the respective image datasets is recommended.
+
+.. note::
+
+    DPC data is loaded in as a HyperSpy ComplexSignal2D object.
 
 .. note::
 
     Currently only lazy uncompression rather than lazy loading is implemented.
-    This means that it is not currently possible to read EDS SI Veloz EMD files
+    This means that it is not currently possible to read EDS SI Velox EMD files
     with size bigger than the available memory.
 
 
@@ -937,7 +1053,7 @@ single spectra are loaded and if `spectrum_image` is selected, only the spectrum
 image will be loaded. The ``first_frame`` and ``last_frame`` parameters can be used
 to select the frame range of the EDS spectrum image to load. To load each individual
 EDS frame, use ``sum_frames=False`` and the EDS spectrum image will be loaded
-with an an extra navigation dimension corresponding to the frame index
+with an extra navigation dimension corresponding to the frame index
 (time axis). Use the ``sum_EDS_detectors=True`` parameter to load the signal of
 each individual EDS detector. In such a case, a corresponding number of distinct
 EDS signal is returned. The default is ``sum_EDS_detectors=True``, which loads the
@@ -978,7 +1094,7 @@ experiment. The reader returns a list of signal with each signal corresponding
 to a quantity. Since there is a small fluctuation in the step of the time axis,
 the reader assumes that the step is constant and takes its mean, which is a
 good approximation. Further release of HyperSpy will read the time axis more
-precisely by supporting non-linear axis.
+precisely by supporting non-uniform axis.
 
 
 .. _usid-format:
@@ -988,6 +1104,7 @@ USID
 
 Background
 ^^^^^^^^^^
+
 `Universal Spectroscopy and Imaging Data <https://pycroscopy.github.io/USID/about.html>`_
 (USID) is an open, community-driven, self-describing, and standardized schema for
 representing imaging and spectroscopy data of any size, dimensionality, precision,
@@ -1005,6 +1122,7 @@ the developers of pyUSID.
 
 Requirements
 ^^^^^^^^^^^^
+
 1. Reading and writing h5USID files require the
    `installation of pyUSID <https://pycroscopy.github.io/pyUSID/install.html>`_.
 2. Files must use the ``.h5`` file extension in order to use this io plugin.
@@ -1012,11 +1130,13 @@ Requirements
 
 Reading
 ^^^^^^^
+
 h5USID files can contain multiple USID datasets within the same file.
 HyperSpy supports reading in one or more USID datasets.
 
 Extra loading arguments
 +++++++++++++++++++++++
+
 - ``dataset_path``: str. Absolute path of USID Main HDF5 dataset.
   (default is ``None`` - all USID Main Datasets will be read)
 - ``ignore_non_linear_dims``: bool, default is True. If True, parameters that
@@ -1050,13 +1170,13 @@ If multiple datasets are present within the h5USID file and you try the same com
     [<Signal2D, title: HAADF, dimensions: (|128, 128)>,
     <Signal1D, title: EELS, dimensions: (|64, 64, 1024)>]
 
-We can load a specific dataset using the ``dset_path`` keyword argument. setting it to the
+We can load a specific dataset using the ``dataset_path`` keyword argument. Setting it to the
 absolute path of the desired dataset will cause the single dataset to be loaded.
 
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.h5", dset_path='/Measurement_004/Channel_003/Main_Data')
+    >>> hs.load("sample.h5", dataset_path='/Measurement_004/Channel_003/Main_Data')
     <Signal2D, title: HAADF, dimensions: (|128, 128)>
 
 h5USID files support the storage of HDF5 dataset with
@@ -1073,32 +1193,33 @@ signal for each named component in the dataset:
     Signal2D, title: blue, dimensions: (|128, 128)>,
     Signal2D, title: green, dimensions: (|128, 128)>]
 
-h5USID files also support parameters or dimensions that have been varied non-linearly.
+h5USID files also support parameters or dimensions that have been varied non-uniformly.
 This capability is important in several spectroscopy techniques where the bias is varied as a
 `bi-polar triangular waveform <https://pycroscopy.github.io/pyUSID/auto_examples/beginner/plot_usi_dataset.html#values-for-each-dimension>`_
-rather than linearly from the minimum value to the maximum value.
-Since HyperSpy Signals expect linear variation of parameters / axes, such non-linear information
+rather than uniformly from the minimum value to the maximum value.
+Since HyperSpy Signals expect uniform variation of parameters / axes, such non-uniform information
 would be lost in the axes manager. The USID plugin will default to a warning
-when it encounters a parameter that has been varied non-linearly:
+when it encounters a parameter that has been varied non-uniformly:
 
 .. code-block:: python
 
     >>> hs.load("sample.h5")
-    UserWarning: Ignoring non-linearity of dimension: Bias
+    UserWarning: Ignoring non-uniformity of dimension: Bias
     <BaseSignal, title: , dimensions: (|7, 3, 5, 2)>
 
 Obviously, the
 In order to prevent accidental misinterpretation of information downstream, the keyword argument
-``ignore_non_linear_dims`` can be set to ``False`` which will result in a ``ValueError`` instead.
+``ignore_non_uniform_dims`` can be set to ``False`` which will result in a ``ValueError`` instead.
 
 .. code-block:: python
 
     >>> hs.load("sample.h5")
-    ValueError: Cannot load provided dataset. Parameter: Bias was varied non-linearly.
-    Supply keyword argument "ignore_non_linear_dims=True" to ignore this error
+    ValueError: Cannot load provided dataset. Parameter: Bias was varied non-uniformly.
+    Supply keyword argument "ignore_non_uniform_dims=True" to ignore this error
 
 Writing
 ^^^^^^^
+
 Signals can be written to new h5USID files using the standard :py:meth:`~.signal.BaseSignal.save` function.
 Setting the ``overwrite`` keyword argument to ``True`` will append to the specified
 HDF5 file. All other keyword arguments will be passed to
@@ -1118,45 +1239,56 @@ Nexus
 
 Background
 ^^^^^^^^^^
-`NeXus <https://www.nexusformat.org>`_ is a common data format orginally
-developed by the neutron, x-ray communities. It is still being developed as
-an international standard by scientists and programmers representing major
-scientific facilities in order to facilitate greater cooperation in the analysis
-and visualization of data.
+
+`NeXus <https://www.nexusformat.org>`_ is a common data format originally
+developed by the neutron and x-ray science x-ray communities. It is still being
+developed as an international standard by scientists and programmers
+representing major scientific facilities in order to facilitate greater
+cooperation in the analysis and visualization of data.
 Nexus uses a variety of classes to record data, values,
 units and other experimental metadata associated with an experiment.
-For specific types of experiments an Application Definition may exist which
+For specific types of experiments an Application Definition may exist, which
 defines an agreed common layout that facilities can adhere to.
+
 Nexus metadata and data are stored in Hierarchical Data Format Files (HDF5) with
 a .nxs extension although standards HDF5 extensions are sometimes used.
 Files must use the ``.nxs`` file extension in order to use this io plugin.
-Using the ``.nxs`` extension will default to the Nexus loader
+Using the ``.nxs`` extension will default to the Nexus loader. If your file has
+a HDF5 extension, you can also explicitly set the Nexus file reader:
+
+.. code-block:: python
+
+    # Load a NeXus file with a .h5 extension
+    >>> s = hs.load("filename.h5", reader="nxs")
 
 The loader will follow version 3 of the
 `Nexus data rules <https://manual.nexusformat.org/datarules.html#version-3>`_.
-The signal type, Signal1D or Signal2D, will be inferred by the ``interpretation`` attribute,
-if this set to ``spectrum`` or ``image``, in the ``NXdata`` description. If the
-`interpretation <https://manual.nexusformat.org/design.html#design-attributes>`_
-attribute is not set the loader will return a ``BaseSignal`` which must then be
-converted to the appropriate signal type.
-Following the Nexus data rules if a  ``default`` dataset is not defined the loader will load NXdata
+The signal type, Signal1D or Signal2D, will be inferred by the ``interpretation``
+attribute, if this is set to ``spectrum`` or ``image``, in the ``NXdata``
+description. If the `interpretation
+<https://manual.nexusformat.org/design.html#design-attributes>`_ attribute is
+not set, the loader will return a ``BaseSignal``, which must then be converted
+to the appropriate signal type. Following the Nexus data rules, if a ``default``
+dataset is not defined, the loader will load NXdata
 and HDF datasets according to the keyword options in the reader.
-A number of the `Nexus examples <https://github.com/nexusformat/exampledata>`_ from large facilties
-don't use NXdata or use older versions of the Nexus implementation.
-Data can still be loaded from these files but information or associations may be missing.
-This missing information can however be recovered from
-within the ``original_metadata`` which contains the overall structure of the entry.
+A number of the `Nexus examples <https://github.com/nexusformat/exampledata>`_
+from large facilties do not use NXdata or use older versions of the Nexus
+implementation. Data can still be loaded from these files but information or
+associations may be missing. However, this missing information can be recovered
+from within the  ``original_metadata`` which contains the overall structure of
+the entry.
 
-As the Nexus format uses HDF5 and needs to read data and metadata structured
-in different ways the loader is written to quite flexible and can also be used
-to inspect any hdf5 based file.
+As the Nexus format uses the HDF5 format and needs to read both data and
+metadata structured in different ways, the loader is written to be quite
+flexible and can also be used to inspect any hdf5 based file.
 
 
 Differences with respect to hspy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Hyperspy metadata structure stores arrays as hdf datasets without attributes
-and stores floats,ints and strings as attributes.
-Nexus formats typcial use hdf datasets attributes to store additional
+
+HyperSpy metadata structure stores arrays as hdf datasets without attributes
+and stores floats, ints and strings as attributes.
+Nexus formats typically use hdf datasets attributes to store additional
 information such as an indication of the units for an axis or the NX_class which
 the dataset structure follows. The metadata, hyperspy  or original_metadata,
 therefore needs to be able to indicate the values and attributes of a dataset.
@@ -1164,8 +1296,8 @@ To implement this structure the ``value`` and ``attrs`` of a dataset can also be
 defined. The value of a dataset is set using a ``value`` key.
 The attributes of a dataset are defined by an ``attrs`` key.
 
-For example to store an array, called axis_x, with a units attribute within
-original_metadata the following structure would be used.
+For example, to store an array called ``axis_x``, with a units attribute within
+original_metadata, the following structure would be used:
 
 ::
 
@@ -1195,8 +1327,8 @@ To modify the axis information:
     >>> original_metadata.axis_x.value = [2.0,3.0,4.0,5.0,6.0]
     >>> original_metadata.axis_x.attrs.units = "um"
 
-To store data in a Nexus monochromator format the ``value``
-and ``attrs``  can define additional attributes.
+To store data in a Nexus monochromator format, ``value``
+and ``attrs`` keys can define additional attributes:
 
 ::
 
@@ -1208,8 +1340,8 @@ and ``attrs``  can define additional attributes.
     │   │   │   ├── NXclass : NXmonochromator
 
 
-The ``attrs`` key can also to define Nexus structures to define
-structures and relationships between data.
+The ``attrs`` key can also be used to define Nexus structures for the definition
+of structures and relationships between data:
 
 ::
 
@@ -1233,7 +1365,7 @@ and metadata values can also be set, read or modified in the normal way.
 
     >>> original_metadata.monochromator.energy = 12.5
 
-Hyperspy metadata is stored within the Nexus file and should be automatically
+HyperSpy metadata is stored within the Nexus file and should be automatically
 restored when a signal is loaded from a previously saved Nexus file.
 
 .. note::
@@ -1243,10 +1375,10 @@ restored when a signal is loaded from a previously saved Nexus file.
 
 Reading
 ^^^^^^^
-Nexus files can contain multiple datasets within the same file but the
+Nexus files can contain multiple datasets within the same file, but the
 ordering of datasets can vary depending on the setup of an experiment or
 processing step when the data was collected.
-For example in one experiment Fe, Ca, P, Pb were collected but in the next experiment
+For example, in one experiment Fe, Ca, P, Pb were collected but in the next experiment
 Ca, P, K, Fe, Pb were collected. HyperSpy supports reading in one or more datasets
 and returns a list of signals but in this example case the indexing is different.
 To control which data or metadata is loaded and in what order
@@ -1254,8 +1386,11 @@ some additional loading arguments are provided.
 
 Extra loading arguments
 +++++++++++++++++++++++
-- ``dataset_keys``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) or string(s) to search for in the path to find one or more datasets.
-- ``metadata_keys``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) or string(s) to search for in the path to find metadata.
+
+- ``dataset_key``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . String(s) to search for in the path to find one or more datasets.
+- ``dataset_path``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) to search for in the path to find one or more datasets.
+- ``metadata_key``: ``None``, ``str`` or ``list`` of strings - Default is ``None`` . Absolute path(s) or string(s) to search for in the path to find metadata.
+- ``skip_array_metadata``: ``bool`` - Default is False. Option to skip loading metadata that are arrays to avoid duplicating loading of data.
 - ``nxdata_only``: ``bool`` - Default is False. Option to only convert NXdata formatted data to signals.
 - ``hardlinks_only``: ``bool`` - Default is False. Option to ignore soft or External links in the file.
 - ``use_default``: ``bool`` - Default is False. Only load the ``default`` dataset, if defined, from the file. Otherwise load according to the other keyword options.
@@ -1263,7 +1398,7 @@ Extra loading arguments
 .. note::
 
     Given that HDF5 files can accommodate very large datasets, setting ``lazy=True``
-    is strongly recommended if the contents of the HDF5 file are not known apriori.
+    is strongly recommended if the content of the HDF5 file is not known apriori.
     This prevents issues with regard to loading datasets far larger than memory.
 
     Also note that setting ``lazy=True`` leaves the file handle to the HDF5 file open
@@ -1271,70 +1406,85 @@ Extra loading arguments
     or when using :py:meth:`~._signals.lazy.LazySignal.compute` with ``close_file=True``.
 
 
-Reading a Nexus file a single Nexus dataset:
+Reading a Nexus file (a single Nexus dataset):
 
 .. code-block:: python
 
     >>> sig = hs.load("sample.nxs")
 
-By default the loader will look for stored NXdata objects.
-If there are hdf datasets which are not stored as NXdata but which
-should be loaded as signals set the ``nxdata_only`` keyword to False and all
-hdf datasets will be returned as signals.
+By default, the loader will look for stored NXdata objects.
+If there are hdf datasets which are not stored as NXdata, but which
+should be loaded as signals, set the ``nxdata_only`` keyword to False and all
+hdf datasets will be returned as signals:
 
 .. code-block:: python
 
-    >>> sig = hs.load("sample.nxs",nxdata_only=False)
+    >>> sig = hs.load("sample.nxs", nxdata_only=False)
 
-We can load a specific datasets using the ``dataset_keys`` keyword argument.
+We can load a specific dataset using the ``dataset_path`` keyword argument.
 Setting it to the absolute path of the desired dataset will cause
-the single dataset to be loaded.
+the single dataset to be loaded:
 
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.nxs", dataset_keys='/entry/experiment/EDS/data')
+    >>> hs.load("sample.nxs", dataset_path="/entry/experiment/EDS/data")
 
 We can also choose to load datasets based on a search key using the
-``dataset_keys`` keyword argument. This can also be used to load NXdata not
-outside of the ``default`` version 3 rules. Instead of providing an absolute path
-a strings to can be provided and datasets with this key will be returned.
-The previous example could also be written as:
+``dataset_key`` keyword argument. This can also be used to load NXdata not
+outside of the ``default`` version 3 rules. Instead of providing an absolute
+path, a string can be provided as well, and datasets with this key will be
+returned. The previous example could also be written as:
 
 .. code-block:: python
 
-    >>> # Loading a specific dataset
-    >>> hs.load("sample.nxs", dataset_keys="EDS")
+    >>> # Loading datasets containing the string "EDS"
+    >>> hs.load("sample.nxs", dataset_key="EDS")
+
+The difference between ``dataset_path`` and ``dataset_key`` is illustrated
+here:
+
+.. code-block:: python
+
+    >>> # Only the dataset /entry/experiment/EDS/data will be loaded
+    >>> hs.load("sample.nxs", dataset_path="/entry/experiment/EDS/data")
+    >>> # All datasets contain the entire string "/entry/experiment/EDS/data" will be loaded
+    >>> hs.load("sample.nxs", dataset_key="/entry/experiment/EDS/data")
 
 Multiple datasets can be loaded by providing a number of keys:
 
 .. code-block:: python
 
     >>> # Loading a specific dataset
-    >>> hs.load("sample.nxs", dataset_keys=["EDS", "Fe", "Ca"])
+    >>> hs.load("sample.nxs", dataset_key=["EDS", "Fe", "Ca"])
 
-Metadata can also be filtered in the same way using ``metadata_keys``
+Metadata can also be filtered in the same way using ``metadata_key``:
 
 .. code-block:: python
 
-    >>> # Load data with metadata matching metadata_keys
-    >>> hs.load("sample.nxs", metadata_keys="entry/instrument")
+    >>> # Load data with metadata matching metadata_key
+    >>> hs.load("sample.nxs", metadata_key="entry/instrument")
 
 .. note::
 
     The Nexus loader removes any NXdata blocks from the metadata.
 
+Metadata that are arrays can be skipped by using ``skip_array_metadata``:
+
+.. code-block:: python
+
+    >>> # Load data while skipping metadata that are arrays
+    >>> hs.load("sample.nxs", skip_array_metadata=True)
 
 Nexus files also support parameters or dimensions that have been varied
-non-linearly.
-Since HyperSpy Signals expect linear variation of parameters / axes, such
-non-linear information would be lost in the axes manager and replaced with
-indices.
+non-linearly. Since HyperSpy Signals expect linear variation of parameters /
+axes, such non-linear information would be lost in the axes manager and
+replaced with indices.
 Nexus and HDF can result in large metadata structures with large datasets within the loaded
 original_metadata. If lazy loading is used this may not be a concern but care must be taken
-when saving the data.
-To control whether large datasets are loaded or saved  the
-use the ``metadata_keys`` to load only the most relevant information.
+when saving the data. To control whether large datasets are loaded or saved,
+use the ``metadata_key`` to load only the most relevant information. Alternatively,
+set ``skip_array_metadata`` to ``True`` to avoid loading those large datasets in original_metadata.
 
 
 Writing
@@ -1344,7 +1494,8 @@ function.
 
 Extra saving arguments
 ++++++++++++++++++++++
-- ``save_original_metadata``: ``bool`` - Default is True, Option to save the original_metadata when storing to file.
+- ``save_original_metadata``: ``bool`` - Default is True, option to save the original_metadata when storing to file.
+- ``skip_metadata_key``: ``bool`` - ``None``, ``str`` or ``list`` of strings - Default is ``None``. Option to skip certain metadata keys when storing to file.
 - ``use_default``: ``bool`` - Default is False. Set the ``default`` attribute for the Nexus file.
 
 .. code-block:: python
@@ -1372,26 +1523,32 @@ The original_metadata can be omitted using ``save_original_metadata``.
 
     >>> sig.save("output.nxs", save_original_metadata=False)
 
-To save multiple signals the file_writer method can be called directly.
+If only certain metadata are to be ignored, use ``skip_metadata_key``:
+
+.. code-block:: python
+
+    >>> sig.save("output.nxs", skip_metadata_key=['xsp3', 'solstice_scan'])
+
+To save multiple signals, the file_writer method can be called directly.
 
 .. code-block:: python
 
     >>> from hyperspy.io_plugins.nexus import file_writer
     >>> file_writer("test.nxs",[signal1,signal2])
 
-When saving multiple signals a default signal can be defined. This can be used when storing
+When saving multiple signals, a default signal can be defined. This can be used when storing
 associated data or processing steps along with a final result. All signals can be saved but
-a single signal can be marked as the default for easier loading in hyperspy or plotting with Nexus tools.
-The default signal is selected as the first signal in the list.
+a single signal can be marked as the default for easier loading in HyperSpy or plotting with Nexus tools.
+The default signal is selected as the first signal in the list:
 
 .. code-block:: python
 
     >>> from hyperspy.io_plugins.nexus import file_writer
     >>> import hyperspy.api as hs
-    >>> file_writer("test.nxs", [signal1,signal2], use_default = True)
+    >>> file_writer("test.nxs", [signal1, signal2], use_default = True)
     >>> hs.load("test.nxs", use_default = True)
 
-The output will be arranged by signal name.
+The output will be arranged by signal name:
 
 ::
 
@@ -1420,19 +1577,19 @@ The output will be arranged by signal name.
     will be restored. Model information is not currently stored.
     Nexus does not store how the data should be displayed.
     To preserve the signal details an additional navigation attribute
-    is added to each axis to indicate if is a navigation axis.
+    is added to each axis to indicate if it is a navigation axis.
 
 
 Inspecting
 ^^^^^^^^^^
-Looking in a Nexus or HDF file for specific metadata is often useful - .e.g to find
+Looking in a Nexus or HDF file for specific metadata is often useful - e.g. to find
 what position a specific stage was at. The methods ``read_metadata_from_file``
 and ``list_datasets_in_file`` can be used to load the file contents or
-list the hdf datasets contained in a file. The inspection methods use the same ``metadata_keys`` or ``dataset_keys`` as when loading.
+list the hdf datasets contained in a file. The inspection methods use the same ``metadata_key`` or ``dataset_key`` as when loading.
 For example to search for metadata in a file:
 
     >>> from hyperspy.io_plugins.nexus import read_metadata_from_file
-    >>> read_metadata_from_file("sample.hdf5",metadata_keys=["stage1_z"])
+    >>> read_metadata_from_file("sample.hdf5",metadata_key=["stage1_z"])
     {'entry': {'instrument': {'scannables': {'stage1': {'stage1_z': {'value': -9.871700000000002,
     'attrs': {'gda_field_name': 'stage1_z',
     'local_name': 'stage1.stage1_z',
@@ -1460,15 +1617,15 @@ SUR and PRO format
 ------------------
 
 This is a format developed by the digitalsurf company to handle various types of
-scientific measurements data such as profilometer,SEM,AFM,RGB(A) images, multilayer
+scientific measurements data such as profilometer, SEM, AFM, RGB(A) images, multilayer
 surfaces and profiles. Even though it is essentially a surfaces format, 1D signals
-are supported for spectra and spectral maps. Metadata parsing is supported, including
-user-customised metadata, as well as the loading of files containing multiple objects
-packed together.
+are supported for spectra and spectral maps. Specifically, this file format is used
+by Attolight SA for its scanning electron microscope cathodoluminescence
+(SEM-CL) hyperspectral maps. Metadata parsing is supported, including user-specific
+metadata, as well as the loading of files containing multiple objects packed together.
 
-The plugin was developed based on the MountainsMap software documentation which
+The plugin was developed based on the MountainsMap software documentation, which
 contains a description of the binary format.
-
 
 .. _empad-format:
 
@@ -1507,6 +1664,58 @@ The current implementation supports ELID files created with Element Identificati
 3.8.0 and later. You can convert older ELID files by loading the file into a recent Element
 Identification release and then save the ELID file into the newer file format.
 
+.. _jeol_format-label:
+
+JEOL ASW format
+---------------
+
+This is the file format used by the `JEOL Analysist Station software` for which
+hyperspy can read the ``asw``, ``pts``, ``map`` and ``eds`` format. To read the
+calibration, it is required to load the ``asw`` file, which will load all others
+files automatically.
+
+Extra loading arguments
+^^^^^^^^^^^^^^^^^^^^^^^
+
+- ``rebin_energy`` : Factor used to rebin the energy dimension. It must be a
+  multiple of the number of channels, typically 4096. (default 1)
+- ``sum_frames`` : If False, each individual frame (sweep in JEOL software jargon)
+  is loaded. Be aware that loading each individual will use a lot of memory,
+  however, it can be used in combination with ``rebin_energy``, ``cutoff_at_kV``
+  and ``downsample`` to reduce memory usage.
+  (default True).
+- ``SI_dtype`` : set dtype of the eds dataset. Useful to adjust memory usage
+  and maximum number of X-rays per channel. (default np.unit8)
+- ``cutoff_at_kV`` : if set (can be int or float >= 0), use to crop the energy
+  range up the specified energy. If ``None``, the whole energy range is loaded.
+  Useful to reduce memory usage. (default None).
+- ``downsample`` : the downsample ratio of the navigation dimension of EDS
+  dataset, it can be integer or a tuple of length 2 to define ``x`` and ``y``
+  separetely and it must be a mutiple of the size of the navigation dimension.
+  (default 1).
+
+Example of loading data downsampled, and with energy range cropped with the
+original navigation dimension 512 x 512 and the EDS range 40 keV over 4096
+channels:
+
+.. code-block:: python
+
+    >>> hs.load("sample40kv.asw", downsample=8, cutoff_at_kV=10)
+    [<Signal2D, title: IMG1, dimensions: (|512, 512)>,
+     <Signal2D, title: C K, dimensions: (|512, 512)>,
+     <Signal2D, title: O K, dimensions: (|512, 512)>,
+     <EDSTEMSpectrum, title: EDX, dimensions: (64, 64|1096)>]
+
+load the same file without extra arguments:
+
+.. code-block:: python
+
+    >>> hs.load("sample40kv.asw")
+    [<Signal2D, title: IMG1, dimensions: (|512, 512)>,
+     <Signal2D, title: C K, dimensions: (|512, 512)>,
+     <Signal2D, title: O K, dimensions: (|512, 512)>,
+     <EDSTEMSpectrum, title: EDX, dimensions: (512, 512|4096)>]
+
 
 Reading data generated by HyperSpy using other software packages
 ================================================================
@@ -1514,11 +1723,11 @@ Reading data generated by HyperSpy using other software packages
 The following scripts may help reading data generated by HyperSpy using
 other software packages.
 
+
 .. _import-rpl:
 
 ImportRPL Digital Micrograph plugin
 -----------------------------------
-
 
 This Digital Micrograph plugin is designed to import Ripple files into Digital Micrograph.
 It is used to ease data transit between DigitalMicrograph and HyperSpy without losing
@@ -1540,10 +1749,10 @@ HDF5 reader plugin for Digital Micrograph
 -----------------------------------------
 
 This Digital Micrograph plugin is designed to import HDF5 files and like the
-`ImportRPL` script above, it can used to easily transfer data from HyperSpy to
+`ImportRPL` script above, it can be used to easily transfer data from HyperSpy to
 Digital Micrograph by using the HDF5 hyperspy format (``hspy`` extension).
 
-Download ``gms_plugin_hdf5`` from its `Github repository <https://github.com/niermann/gms_plugin_hdf5>`_.
+Download ``gms_plugin_hdf5`` from its `Github repository <https://github.com/niermann/gms_plugin_hdf5>`__.
 
 
 .. _hyperspy-matlab:
@@ -1555,5 +1764,4 @@ This MATLAB script is designed to import HyperSpy's saved HDF5 files (``.hspy`` 
 Like the Digital Micrograph script above, it is used to easily transfer data
 from HyperSpy to MATLAB, while retaining spatial calibration information.
 
-Download ``readHyperSpyH5`` from its `Github repository <https://github.com/jat255/readHyperSpyH5>`_.
-
+Download ``readHyperSpyH5`` from its `Github repository <https://github.com/jat255/readHyperSpyH5>`__.

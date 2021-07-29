@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -330,8 +330,6 @@ class FancySlicing(object):
                     pass
         # _obj.get_dimensions_from_data() # replots, so we do it manually:
         dc = _obj.data
-        for axis in _obj.axes_manager._axes:
-            axis.size = int(dc.shape[axis.index_in_array])
         if out is None:
             return _obj
         else:

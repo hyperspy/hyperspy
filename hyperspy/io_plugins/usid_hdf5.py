@@ -31,12 +31,13 @@ writes_spectrum = True
 writes_spectrum_image = True
 # Writing capabilities
 writes = True
+non_uniform_axis = False
 version = usid.__version__
 
 # ######### UTILITIES THAT SIMPLIFY READING FROM H5USID FILES #################
 
 
-def _get_dim_dict(labels, units, val_func, ignore_non_linear_dims=True):
+def _get_dim_dict(labels, units, val_func, ignore_non_uniform_dims=True):
     """
     Gets a list of dictionaries that correspond to axes for HyperSpy Signal
     objects
@@ -49,9 +50,9 @@ def _get_dim_dict(labels, units, val_func, ignore_non_linear_dims=True):
         List of strings denoting the units for the dimensions
     val_func : callable
         Function that will return the values over which a dimension was varied
-    ignore_non_linear_dims : bool, Optional. Default = True
+    ignore_non_uniform_dims : bool, Optional. Default = True
         If set to True, a warning will be raised instead of a ValueError when a
-        dimension is encountered which was non-linearly.
+        dimension is encountered which was non-uniformly.
 
     Returns
     -------
@@ -62,14 +63,14 @@ def _get_dim_dict(labels, units, val_func, ignore_non_linear_dims=True):
     Notes
     -----
     For a future release of HyperSpy:
-    If a dimension was varied non-linearly, one would need to set the
+    If a dimension was varied non-uniformly, one would need to set the
     appropriate quantity in the quantity equal to dim_vals. At that point,
     the typical offset and scale parameters would be (hopefully) ignored.
     """
     dim_dict = dict()
     for dim_name, units in zip(labels, units):
         # dim_vals below contains the full 1D tensor that shows how a dimension
-        # was varied. If the parameter was varied linearly, the offset, size,
+        # was varied. If the parameter was varied uniformly, the offset, size,
         # and scale can be extracted easily.
         dim_vals = val_func(dim_name)
         if len(dim_vals) == 1:
@@ -79,17 +80,17 @@ def _get_dim_dict(labels, units, val_func, ignore_non_linear_dims=True):
             try:
                 step_size = sidpy.base.num_utils.get_slope(dim_vals)
             except ValueError:
-                # Non-linear dimension! - see notes above
-                if ignore_non_linear_dims:
-                    warn('Ignoring non-linearity of dimension: '
+                # non-uniform dimension! - see notes above
+                if ignore_non_uniform_dims:
+                    warn('Ignoring non-uniformity of dimension: '
                          '{}'.format(dim_name))
                     step_size = 1
                     dim_vals[0] = 0
                 else:
                     raise ValueError('Cannot load provided dataset. '
                                      'Parameter: {} was varied '
-                                     'non-linearly. Supply keyword '
-                                     'argument "ignore_non_linear_dims='
+                                     'non-uniformly. Supply keyword '
+                                     'argument "ignore_non_uniform_dims='
                                      'True" to ignore this '
                                      'error'.format(dim_name))
 
@@ -211,7 +212,7 @@ def _convert_to_signal_dict(ndim_form, quantity, units, dim_dict_list,
     return sig
 
 
-def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True, lazy=True,
+def _usidataset_to_signal(h5_main, ignore_non_uniform_dims=True, lazy=True,
                           *kwds):
     """
     Converts a single specified USIDataset object to one or more Signal objects
@@ -220,11 +221,11 @@ def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True, lazy=True,
     ----------
     h5_main : pyUSID.USIDataset object
         USID Main dataset
-    ignore_non_linear_dims : bool, Optional
-        If True, parameters that were varied non-linearly in the desired
+    ignore_non_uniform_dims : bool, Optional
+        If True, parameters that were varied non-uniformly in the desired
         dataset will result in Exceptions.
-        Else, all such non-linearly varied parameters will be treated as
-        linearly varied parameters and
+        Else, all such non-uniformly varied parameters will be treated as
+        uniformly varied parameters and
         a Signal object will be generated.
     lazy : bool, Optional
         If set to True, data will be read as a Dask array.
@@ -244,12 +245,12 @@ def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True, lazy=True,
                              usid.hdf_utils.get_attr(h5_main.h5_pos_inds,
                                                      'units'),
                              h5_main.get_pos_values,
-                             ignore_non_linear_dims=ignore_non_linear_dims)
+                             ignore_non_uniform_dims=ignore_non_uniform_dims)
     spec_dict = _get_dim_dict(h5_main.spec_dim_labels,
                               usid.hdf_utils.get_attr(h5_main.h5_spec_inds,
                                                       'units'),
                               h5_main.get_spec_values,
-                              ignore_non_linear_dims=ignore_non_linear_dims)
+                              ignore_non_uniform_dims=ignore_non_uniform_dims)
 
     num_spec_dims = len(spec_dict)
     num_pos_dims = len(pos_dict)
@@ -356,8 +357,7 @@ def _axes_list_to_dimensions(axes_list, data_shape, is_spec):
     # for dim_ind, (dim_size, dim) in enumerate(zip(data_shape, axes_list)):
     # we are going by data_shape for order (slowest to fastest)
     # so the order in axes_list does not matter
-    for dim_ind in range(len(data_shape)):
-        dim_size = data_shape[len(data_shape) - 1 - dim_ind]
+    for dim_ind, dim in enumerate(axes_list):
         dim = axes_list[dim_ind]
         dim_name = dim_type + '_Dim_' + str(dim_ind)
         if isinstance(dim.name, str):
@@ -371,11 +371,9 @@ def _axes_list_to_dimensions(axes_list, data_shape, is_spec):
                 dim_units = temp
                 # use REAL dimension size rather than what is presented in the
                 # axes manager
-        dim_list.append(usid.Dimension(dim_name, dim_units,
-                                       np.arange(dim.offset,
-                                                 dim.offset + dim_size *
-                                                 dim.scale,
-                                                 dim.scale)))
+        dim_size = data_shape[len(data_shape) - 1 - dim_ind]
+        ar = np.arange(dim_size) * dim.scale + dim.offset
+        dim_list.append(usid.Dimension(dim_name, dim_units, ar))
     if len(dim_list) == 0:
         return usid.Dimension('Arb', 'a. u.', 1)
     return dim_list[::-1]
@@ -383,8 +381,8 @@ def _axes_list_to_dimensions(axes_list, data_shape, is_spec):
 # ####### REQUIRED FUNCTIONS FOR AN IO PLUGIN #################################
 
 
-def file_reader(filename, dataset_path=None, ignore_non_linear_dims=True,
-                **kwds):
+def file_reader(filename, dataset_path=None, ignore_non_uniform_dims=True,
+                lazy=False, **kwds):
     """
     Reads a USID Main dataset present in an HDF5 file into a HyperSpy Signal
 
@@ -399,11 +397,11 @@ def file_reader(filename, dataset_path=None, ignore_non_linear_dims=True,
         recommended.
         If a string like ``'/Measurement_000/Channel_000/My_Dataset'`` is
         provided, the specific dataset will be loaded.
-    ignore_non_linear_dims : bool, Optional
-        If True, parameters that were varied non-linearly in the desired
+    ignore_non_uniform_dims : bool, Optional
+        If True, parameters that were varied non-uniformly in the desired
         dataset will result in Exceptions.
-        Else, all such non-linearly varied parameters will be treated as
-        linearly varied parameters and a Signal object will be generated.
+        Else, all such non-uniformly varied parameters will be treated as
+        uniformly varied parameters and a Signal object will be generated.
 
     Returns
     -------
@@ -416,33 +414,29 @@ def file_reader(filename, dataset_path=None, ignore_non_linear_dims=True,
 
     # Need to keep h5 file handle open indefinitely if lazy
     # Using "with" will cause the file to be closed
-    # with h5py.File(filename, mode='r') as h5_f:
-    h5_f = h5py.File(filename, mode='r')
+    h5_f = h5py.File(filename, 'r')
     if dataset_path is None:
-        """
-        if not kwds.get('lazy', True):
-            warn('In order to safely load multiple large datasets to memory, '
-                 'please consider setting the kwarg lazy=True')
-        """
         all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
         signals = []
         for h5_dset in all_main_dsets:
             # Note that the function returns a list already.
             # Should not append
             signals += _usidataset_to_signal(h5_dset,
-                                             ignore_non_linear_dims=
-                                             ignore_non_linear_dims, **kwds)
+                                             ignore_non_uniform_dims=
+                                             ignore_non_uniform_dims,
+                                             lazy=lazy, **kwds)
         return signals
     else:
         if not isinstance(dataset_path, str):
             raise TypeError("'dataset_path' should be a string")
         h5_dset = h5_f[dataset_path]
         return _usidataset_to_signal(h5_dset,
-                                     ignore_non_linear_dims=
-                                     ignore_non_linear_dims, **kwds)
+                                     ignore_non_uniform_dims=
+                                     ignore_non_uniform_dims,
+                                     lazy=lazy, **kwds)
 
     # At least close the file handle if not lazy load
-    if not kwds.get('lazy', True):
+    if not lazy:
         h5_f.close()
 
 
@@ -505,6 +499,8 @@ def file_writer(filename, object2save, **kwds):
     phy_quant = 'Unknown Quantity'
     phy_units = 'Unknown Units'
     dset_name = 'Raw_Data'
+
+
 
     if not append:
         tran = usid.NumpyTranslator()

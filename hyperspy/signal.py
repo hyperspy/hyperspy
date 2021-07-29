@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,12 +21,14 @@ import warnings
 import inspect
 from contextlib import contextmanager
 from datetime import datetime
+from itertools import product
 import logging
 from pint import UnitRegistry, UndefinedUnitError
 from pathlib import Path
 
 import numpy as np
-import scipy as sp
+from scipy import integrate
+from scipy import signal as sp_signal
 import dask.array as da
 from matplotlib import pyplot as plt
 import traits.api as t
@@ -51,6 +53,7 @@ from hyperspy.drawing.utils import animate_legend
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
+from hyperspy.misc.utils import is_binned # remove in v2.0
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
     RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
@@ -58,6 +61,7 @@ from hyperspy.docstrings.signal import (
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
                                       BASE_PLOT_DOCSTRING_PARAMETERS,
                                       PLOT2D_KWARGS_DOCSTRING)
+from hyperspy.docstrings.utils import REBIN_ARGS
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
@@ -114,7 +118,6 @@ class ModelManager(object):
 
     def _save(self, name, dictionary):
 
-        from itertools import product
         _abc = 'abcdefghijklmnopqrstuvwxyz'
 
         def get_letter(models):
@@ -1682,8 +1685,8 @@ class MVATools(object):
     def get_cluster_labels(self, merged=False):
         """Return cluster labels as a Signal.
 
-        Parameters:
-        --------
+        Parameters
+        ----------
         merged : bool
             If False the cluster label signal has a navigation axes of length
             number_of_clusters and the signal along the the navigation
@@ -1698,7 +1701,7 @@ class MVATools(object):
         get_cluster_signals
 
         Returns
-        --------
+        -------
         signal Hyperspy signal of cluster labels
         """
         if self.learning_results.cluster_labels is None:
@@ -1732,12 +1735,12 @@ class MVATools(object):
     def get_cluster_signals(self, signal="mean"):
         """Return the cluster centers as a Signal.
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         %s
 
         See Also
-        -------
+        --------
         get_cluster_labels
 
         """
@@ -1757,7 +1760,7 @@ class MVATools(object):
         get_cluster_signals
 
         Returns
-        --------
+        -------
         signal
             Hyperspy signal of cluster distances
 
@@ -2146,9 +2149,10 @@ class BaseSignal(FancySlicing,
         ----------
         data : :py:class:`numpy.ndarray`
            The signal data. It can be an array of any dimensions.
-        axes : dict, optional
-            Dictionary to define the axes (see the documentation of the
-            :py:class:`~hyperspy.axes.AxesManager` class for more details).
+        axes : [dict/axes], optional
+            List of either dictionaries or axes objects to define the axes (see
+            the documentation of the :py:class:`~hyperspy.axes.AxesManager`
+            class for more details).
         attributes : dict, optional
             A dictionary whose items are stored as attributes.
         metadata : dict, optional
@@ -2162,28 +2166,33 @@ class BaseSignal(FancySlicing,
             imported from the original data file.
 
         """
-        self._create_metadata()
-        self.models = ModelManager(self)
-        self.learning_results = LearningResults()
-        kwds['data'] = data
-        self._load_dictionary(kwds)
-        self._plot = None
-        self.inav = SpecialSlicersSignal(self, True)
-        self.isig = SpecialSlicersSignal(self, False)
-        self.events = Events()
-        self.events.data_changed = Event("""
-            Event that triggers when the data has changed
+        # the 'full_initialisation' keyword is private API to be used by the
+        # _assign_subclass method. Purposely not exposed as public API.
+        # Its purpose is to avoid creating new attributes, which breaks events
+        # and to reduce overhead when changing 'signal_type'.
+        if kwds.get('full_initialisation', True):
+            self._create_metadata()
+            self.models = ModelManager(self)
+            self.learning_results = LearningResults()
+            kwds['data'] = data
+            self._load_dictionary(kwds)
+            self._plot = None
+            self.inav = SpecialSlicersSignal(self, True)
+            self.isig = SpecialSlicersSignal(self, False)
+            self.events = Events()
+            self.events.data_changed = Event("""
+                Event that triggers when the data has changed
 
-            The event trigger when the data is ready for consumption by any
-            process that depend on it as input. Plotted signals automatically
-            connect this Event to its `BaseSignal.plot()`.
+                The event trigger when the data is ready for consumption by any
+                process that depend on it as input. Plotted signals automatically
+                connect this Event to its `BaseSignal.plot()`.
 
-            Note: The event only fires at certain specific times, not everytime
-            that the `BaseSignal.data` array changes values.
+                Note: The event only fires at certain specific times, not everytime
+                that the `BaseSignal.data` array changes values.
 
-            Arguments:
-                obj: The signal that owns the data.
-            """, arguments=['obj'])
+                Arguments:
+                    obj: The signal that owns the data.
+                """, arguments=['obj'])
 
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
@@ -2197,7 +2206,6 @@ class BaseSignal(FancySlicing,
         folding.signal_unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
-        mp.Signal.binned = False
         self.original_metadata = DictionaryTreeBrowser()
         self.tmp_parameters = DictionaryTreeBrowser()
 
@@ -2280,7 +2288,9 @@ class BaseSignal(FancySlicing,
         if self.axes_manager.signal_dimension != 2:
             raise SignalDimensionError(self.axes_manager.signal_dimension, 2)
 
-    def _deepcopy_with_new_data(self, data=None, copy_variance=False):
+    def _deepcopy_with_new_data(self, data=None, copy_variance=False,
+                                copy_navigator=False,
+                                copy_learning_results=False):
         """Returns a deepcopy of itself replacing the data.
 
         This method has an advantage over the default :py:func:`copy.deepcopy`
@@ -2291,6 +2301,10 @@ class BaseSignal(FancySlicing,
         data : None or :py:class:`numpy.ndarray`
         copy_variance : bool
             Whether to copy the variance of the signal to the new copy
+        copy_navigator : bool
+            Whether to copy the navigator of the signal to the new copy
+        copy_learning_results : bool
+            Whether to copy the learning_results of the signal to the new copy
 
         Returns
         -------
@@ -2299,6 +2313,8 @@ class BaseSignal(FancySlicing,
 
         """
         old_np = None
+        old_navigator = None
+        old_learning_results = None
         try:
             old_data = self.data
             self.data = None
@@ -2308,6 +2324,12 @@ class BaseSignal(FancySlicing,
             if not copy_variance and "Noise_properties" in self.metadata.Signal:
                 old_np = self.metadata.Signal.Noise_properties
                 del self.metadata.Signal.Noise_properties
+            if not copy_navigator and self.metadata.has_item('_HyperSpy.navigator'):
+                old_navigator = self.metadata._HyperSpy.navigator
+                del self.metadata._HyperSpy.navigator
+            if not copy_learning_results:
+                old_learning_results = self.learning_results
+                del self.learning_results
             self.models._models = DictionaryTreeBrowser()
             ns = self.deepcopy()
             ns.data = data
@@ -2318,8 +2340,13 @@ class BaseSignal(FancySlicing,
             self.models._models = old_models
             if old_np is not None:
                 self.metadata.Signal.Noise_properties = old_np
+            if old_navigator is not None:
+                self.metadata._HyperSpy.navigator = old_navigator
+            if old_learning_results is not None:
+                self.learning_results = old_learning_results
 
-    def as_lazy(self, copy_variance=True):
+    def as_lazy(self, copy_variance=True, copy_navigator=True,
+                copy_learning_results=True):
         """
         Create a copy of the given Signal as a
         :py:class:`~hyperspy._signals.lazy.LazySignal`.
@@ -2328,15 +2355,25 @@ class BaseSignal(FancySlicing,
         ----------
         copy_variance : bool
             Whether or not to copy the variance from the original Signal to
-            the new lazy version
+            the new lazy version. Default is True.
+        copy_navigator : bool
+            Whether or not to copy the navigator from the original Signal to
+            the new lazy version. Default is True.
+        copy_learning_results : bool
+            Whether to copy the learning_results from the original signal to
+            the new lazy version. Default is True.
 
         Returns
         -------
         res : :py:class:`~hyperspy._signals.lazy.LazySignal`
             The same signal, converted to be lazy
         """
-        res = self._deepcopy_with_new_data(self.data,
-                                           copy_variance=copy_variance)
+        res = self._deepcopy_with_new_data(
+            self.data,
+            copy_variance=copy_variance,
+            copy_navigator=copy_navigator,
+            copy_learning_results=copy_learning_results
+            )
         res._lazy = True
         res._assign_subclass()
         return res
@@ -2473,25 +2510,46 @@ class BaseSignal(FancySlicing,
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array
         and the axes. See :py:func:`numpy.squeeze` for more details.
+
+        Returns
+        -------
+        s : signal
+            A new signal object with single-entry dimensions removed
+
+        Examples
+        --------
+        >>> s = hs.signals.Signal2D(np.random.random((2,1,1,6,8,8)))
+        <Signal2D, title: , dimensions: (6, 1, 1, 2|8, 8)>
+        >>> s = s.squeeze()
+        >>> s
+        <Signal2D, title: , dimensions: (6, 2|8, 8)>
         """
         # We deepcopy everything but data
         self = self._deepcopy_with_new_data(self.data)
-        for axis in self.axes_manager._axes:
-            if axis.size == 1:
-                self._remove_axis(axis.index_in_axes_manager)
+        for ax in (self.axes_manager.signal_axes, self.axes_manager.navigation_axes):
+            for axis in reversed(ax):
+                if axis.size == 1:
+                    self._remove_axis(axis.index_in_axes_manager)
         self.data = self.data.squeeze()
         return self
 
-    def _to_dictionary(self, add_learning_results=True, add_models=False):
+    def _to_dictionary(self, add_learning_results=True, add_models=False,
+                       add_original_metadata=True):
         """Returns a dictionary that can be used to recreate the signal.
 
         All items but `data` are copies.
 
         Parameters
         ----------
-        add_learning_results : bool
+        add_learning_results : bool, optional
             Whether or not to include any multivariate learning results in
-            the outputted dictionary
+            the outputted dictionary. Default is True.
+        add_models : bool, optional
+            Whether or not to include any models in the outputted dictionary.
+            Default is False
+        add_original_metadata : bool
+            Whether or not to include the original_medata in the outputted
+            dictionary. Default is True.
 
         Returns
         -------
@@ -2501,13 +2559,14 @@ class BaseSignal(FancySlicing,
         """
         dic = {'data': self.data,
                'axes': self.axes_manager._get_axes_dicts(),
-               'metadata': self.metadata.deepcopy().as_dictionary(),
-               'original_metadata':
-               self.original_metadata.deepcopy().as_dictionary(),
-               'tmp_parameters':
-               self.tmp_parameters.deepcopy().as_dictionary(),
+               'metadata': copy.deepcopy(self.metadata.as_dictionary()),
+               'tmp_parameters': self.tmp_parameters.as_dictionary(),
                'attributes': {'_lazy': self._lazy},
                }
+        if add_original_metadata:
+            dic['original_metadata'] = copy.deepcopy(
+                self.original_metadata.as_dictionary()
+                )
         if add_learning_results and hasattr(self, 'learning_results'):
             dic['learning_results'] = copy.deepcopy(
                 self.learning_results.__dict__)
@@ -2532,6 +2591,14 @@ class BaseSignal(FancySlicing,
             value = np.fft.fftshift(value)
         return value
 
+    @property
+    def navigator(self):
+        return self.metadata.get_item('_HyperSpy.navigator')
+
+    @navigator.setter
+    def navigator(self, navigator):
+        self.metadata.set_item('_HyperSpy.navigator', navigator)
+
     def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
              **kwargs):
         """%s
@@ -2542,8 +2609,7 @@ class BaseSignal(FancySlicing,
         if self._plot is not None:
             self._plot.close()
         if 'power_spectrum' in kwargs:
-            from hyperspy._signals.complex_signal import ComplexSignal
-            if not isinstance(self, ComplexSignal):
+            if not np.issubdtype(self.data.dtype, np.complexfloating):
                 raise ValueError('The parameter `power_spectrum` required a '
                                  'signal with complex data type.')
                 del kwargs['power_spectrum']
@@ -2582,13 +2648,22 @@ class BaseSignal(FancySlicing,
             self._plot.signal_title = self.tmp_parameters.filename
 
         def get_static_explorer_wrapper(*args, **kwargs):
-            return navigator()
+            if np.issubdtype(navigator.data.dtype, np.complexfloating):
+                return np.abs(navigator())
+            else:
+                return navigator()
 
         def get_1D_sum_explorer_wrapper(*args, **kwargs):
             navigator = self
             # Sum over all but the first navigation axis.
             am = navigator.axes_manager
-            navigator = navigator.sum(am.signal_axes + am.navigation_axes[1:])
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning,
+                                        module='hyperspy'
+                                        )
+                navigator = navigator.sum(
+                    am.signal_axes + am.navigation_axes[1:]
+                    )
             return np.nan_to_num(navigator.data).squeeze()
 
         def get_dynamic_explorer_wrapper(*args, **kwargs):
@@ -2601,9 +2676,19 @@ class BaseSignal(FancySlicing,
                 return navigator()
 
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
-            if (self.axes_manager.navigation_dimension == 1 and
+            if self.navigator is not None:
+                navigator = self.navigator
+            elif (self.axes_manager.navigation_dimension > 1 and
+                    np.any(np.array([not axis.is_uniform for axis in
+                                     self.axes_manager.navigation_axes]))):
+                navigator = "slider"
+            elif (self.axes_manager.navigation_dimension == 1 and
                     self.axes_manager.signal_dimension == 1):
-                navigator = "data"
+                if (self.axes_manager.navigation_axes[0].is_uniform and
+                        self.axes_manager.signal_axes[0].is_uniform):
+                    navigator = "data"
+                else:
+                    navigator = "spectrum"
             elif self.axes_manager.navigation_dimension > 0:
                 if self.axes_manager.signal_dimension == 0:
                     navigator = self.deepcopy()
@@ -2631,23 +2716,29 @@ class BaseSignal(FancySlicing,
             # check first if we have a signal to avoid comparion of signal with
             # string
             if isinstance(navigator, BaseSignal):
-                # Dynamic navigator
-                if (axes_manager.navigation_shape ==
-                        navigator.axes_manager.signal_shape +
-                        navigator.axes_manager.navigation_shape):
-                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
-
-                elif (axes_manager.navigation_shape ==
-                        navigator.axes_manager.signal_shape or
-                        axes_manager.navigation_shape[:2] ==
-                        navigator.axes_manager.signal_shape or
-                        (axes_manager.navigation_shape[0],) ==
-                        navigator.axes_manager.signal_shape):
+                def is_shape_compatible(navigation_shape, shape):
+                    return (navigation_shape == shape or
+                            navigation_shape[:2] == shape or
+                            (navigation_shape[0],) == shape
+                            )
+                # Static navigator
+                if is_shape_compatible(axes_manager.navigation_shape,
+                                       navigator.axes_manager.signal_shape):
                     self._plot.navigator_data_function = get_static_explorer_wrapper
+                # Static transposed navigator
+                elif is_shape_compatible(axes_manager.navigation_shape,
+                                         navigator.axes_manager.navigation_shape):
+                    navigator = navigator.T
+                    self._plot.navigator_data_function = get_static_explorer_wrapper
+                # Dynamic navigator
+                elif (axes_manager.navigation_shape ==
+                      navigator.axes_manager.signal_shape +
+                      navigator.axes_manager.navigation_shape):
+                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
                 else:
                     raise ValueError(
-                        "The navigator dimensions are not compatible with "
-                        "those of self.")
+                        "The dimensions of the provided (or stored) navigator "
+                        "are not compatible with this signal.")
             elif navigator == "slider":
                 self._plot.navigator_data_function = "slider"
             elif navigator is None:
@@ -2667,10 +2758,11 @@ class BaseSignal(FancySlicing,
 
         self._plot.plot(**kwargs)
         self.events.data_changed.connect(self.update_plot, [])
-        if self._plot.signal_plot:
-            self._plot.signal_plot.events.closed.connect(
-                lambda: self.events.data_changed.disconnect(self.update_plot),
-                [])
+
+        p = self._plot.signal_plot if self._plot.signal_plot else self._plot.navigator_plot
+        p.events.closed.connect(
+            lambda: self.events.data_changed.disconnect(self.update_plot),
+            [])
 
         if plot_markers:
             if self.metadata.has_item('Markers'):
@@ -2726,6 +2818,23 @@ class BaseSignal(FancySlicing,
             i) the filename
             ii)  `Signal.tmp_parameters.extension`
             iii) ``'hspy'`` (the default extension)
+        chunks : tuple or True or None (default)
+            HyperSpy, Nexus and EMD NCEM format only. Define chunks used when
+            saving. The chunk shape should follow the order of the array
+            (``s.data.shape``), not the shape of the ``axes_manager``.
+            If None and lazy signal, the dask array chunking is used.
+            If None and non-lazy signal, the chunks are estimated automatically
+            to have at least one chunk per signal space.
+            If True, the chunking is determined by the the h5py ``guess_chunk``
+            function.
+        save_original_metadata : bool , default : False
+            Nexus file only. Option to save hyperspy.original_metadata with
+            the signal. A loaded Nexus file may have a large amount of data
+            when loaded which you may wish to omit on saving
+        use_default : bool , default : False
+            Nexus file only. Define the default dataset in the file.
+            If set to True the signal or first signal in the list of signals
+            will be defined as the default (following Nexus v3 data rules).
 
         """
         if filename is None:
@@ -2803,15 +2912,13 @@ class BaseSignal(FancySlicing,
         if i1 is not None and i2 is not None and not i1 != i2:
             raise ValueError("The `start` and `end` values need to be "
                              "different.")
-        if i1 is not None:
-            new_offset = axis.axis[i1]
+
         # We take a copy to guarantee the continuity of the data
         self.data = self.data[
             (slice(None),) * axis.index_in_array + (slice(i1, i2),
                                                     Ellipsis)]
 
-        if i1 is not None:
-            axis.offset = new_offset
+        axis.crop(i1, i2)
         self.get_dimensions_from_data()
         self.squeeze()
         self.events.data_changed.trigger(obj=self)
@@ -2845,6 +2952,7 @@ class BaseSignal(FancySlicing,
         c2 = am._axes[axis2]
         c1.slice, c2.slice = c2.slice, c1.slice
         c1.navigate, c2.navigate = c2.navigate, c1.navigate
+        c1.is_binned, c2.is_binned = c2.is_binned, c1.is_binned
         am._axes[axis1] = c2
         am._axes[axis2] = c1
         am._update_attributes()
@@ -2934,56 +3042,45 @@ class BaseSignal(FancySlicing,
         elif new_shape:
             if len(new_shape) != len(self.data.shape):
                 raise ValueError("Wrong new_shape size")
+            for axis in self.axes_manager._axes:
+                if axis.is_uniform is False:
+                    raise NotImplementedError(
+                            "Rebinning of non-uniform axes is not yet implemented.")
             new_shape_in_array = np.array([new_shape[axis.index_in_axes_manager]
                                            for axis in self.axes_manager._axes])
             factors = np.array(self.data.shape) / new_shape_in_array
         else:
             if len(scale) != len(self.data.shape):
                 raise ValueError("Wrong scale size")
+            for axis in self.axes_manager._axes:
+                if axis.is_uniform is False:
+                    raise NotImplementedError(
+                            "Rebinning of non-uniform axes is not yet implemented.")
             factors = np.array([scale[axis.index_in_axes_manager]
                                 for axis in self.axes_manager._axes])
         return factors  # Factors are in array order
 
-    def rebin(self, new_shape=None, scale=None, crop=True, out=None):
+    def rebin(self, new_shape=None, scale=None, crop=True, dtype=None,
+              out=None):
         """
         Rebin the signal into a smaller or larger shape, based on linear
-        interpolation. Specify **either** `new_shape` or `scale`.
+        interpolation. Specify **either** `new_shape` or `scale`. Scale of 1
+        means no binning and scale less than one results in up-sampling.
 
         Parameters
         ----------
-        new_shape : list (of floats or integer) or None
-            For each dimension specify the new_shape. This will internally be
-            converted into a `scale` parameter.
-        scale : list (of floats or integer) or None
-            For each dimension, specify the new:old pixel ratio, e.g. a ratio
-            of 1 is no binning and a ratio of 2 means that each pixel in the new
-            spectrum is twice the size of the pixels in the old spectrum.
-            The length of the list should match the dimension of the
-            Signal's underlying data array.
-            *Note : Only one of `scale` or `new_shape` should be specified,
-            otherwise the function will not run*
-        crop : bool
-            Whether or not to crop the resulting rebinned data (default is
-            ``True``). When binning by a non-integer number of
-            pixels it is likely that the final row in each dimension will
-            contain fewer than the full quota to fill one pixel.
-
-                - e.g. a 5*5 array binned by 2.1 will produce two rows
-                  containing 2.1 pixels and one row containing only 0.8
-                  pixels. Selection of ``crop=True`` or ``crop=False``
-                  determines whether or not this `"black"` line is cropped
-                  from the final binned array or not.
-
-            Please note that if ``crop=False`` is used, the final row in each
-            dimension may appear black if a fractional number of pixels are left
-            over. It can be removed but has been left to preserve total counts
-            before and after binning.
+        %s
         %s
 
         Returns
         -------
         s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
             The resulting cropped signal.
+
+        Raises
+        ------
+        NotImplementedError
+            If trying to rebin over a non-uniform axis.
 
         Examples
         --------
@@ -2993,6 +3090,7 @@ class BaseSignal(FancySlicing,
         <EDXTEMSpectrum, title: dimensions: (4, 4|10)>
         >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
         Sum = 164.0
+
         >>> scale = [2, 2, 5]
         >>> test = spectrum.rebin(scale)
         >>> print(test)
@@ -3000,13 +3098,42 @@ class BaseSignal(FancySlicing,
         >>> print('Sum = ', sum(sum(sum(test.data))))
         Sum =  164.0
 
+        >>> s = hs.signals.Signal1D(np.ones((2, 5, 10), dtype=np.uint8)
+        >>> print(s)
+        <Signal1D, title: , dimensions: (5, 2|10)>
+        >>> print(s.data.dtype)
+        uint8
+
+        Use dtype=np.unit16 to specify a dtype
+
+        >>> s2 = s.rebin(scale=(5, 2, 1), dtype=np.uint16)
+        >>> print(s2.data.dtype)
+        uint16
+
+        Use dtype="same" to keep the same dtype
+
+        >>> s3 = s.rebin(scale=(5, 2, 1), dtype="same")
+        >>> print(s3.data.dtype)
+        uint8
+
+        By default `dtype=None`, the dtype is determined by the behaviour of
+        numpy.sum, in this case, unsigned integer of the same precision as
+        the platform interger
+
+        >>> s4 = s.rebin(scale=(5, 2, 1))
+        >>> print(s4.data.dtype)
+        uint64
+
         """
+        # TODO: Adapt so that it works if a non_uniform_axis exists, but is not
+        # changed; for new_shape, a non_uniform_axis should be interpolated to a
+        # linear grid
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale,)
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
         data = hyperspy.misc.array_tools.rebin(
-            self.data, scale=factors, crop=crop)
+            self.data, scale=factors, crop=crop, dtype=dtype)
 
         if out:
             if out._lazy:
@@ -3016,24 +3143,24 @@ class BaseSignal(FancySlicing,
         else:
             s.data = data
         s.get_dimensions_from_data()
-        for i, factor in enumerate(factors):
-            s.axes_manager[i].offset += ((factor - 1)
-                                         * s.axes_manager[i].scale) / 2
         for axis, axis_src in zip(s.axes_manager._axes,
                                   self.axes_manager._axes):
-            axis.scale = axis_src.scale * factors[axis.index_in_array]
+            factor = factors[axis.index_in_array]
+            axis.scale = axis_src.scale * factor
+            axis.offset = axis_src.offset + (factor - 1) * axis_src.scale / 2
         if s.metadata.has_item('Signal.Noise_properties.variance'):
             if isinstance(s.metadata.Signal.Noise_properties.variance,
                           BaseSignal):
                 var = s.metadata.Signal.Noise_properties.variance
                 s.metadata.Signal.Noise_properties.variance = var.rebin(
-                    new_shape=new_shape, scale=scale, crop=crop, out=out)
+                    new_shape=new_shape, scale=scale, crop=crop, out=out,
+                    dtype=dtype)
         if out is None:
             return s
         else:
             out.events.data_changed.trigger(obj=out)
 
-    rebin.__doc__ %= (OUT_ARG)
+    rebin.__doc__ %= (REBIN_ARGS, OUT_ARG)
 
     def split(self,
               axis='auto',
@@ -3049,7 +3176,7 @@ class BaseSignal(FancySlicing,
         ----------
         axis %s
             If ``'auto'`` and if the object has been created with
-            :py:func:`~hyperspy.misc.utils.stack`,
+            :py:func:`~hyperspy.misc.utils.stack` (and ``stack_metadata=True``),
             this method will return the former list of signals (information
             stored in `metadata._HyperSpy.Stacking_history`).
             If it was not created with :py:func:`~hyperspy.misc.utils.stack`,
@@ -3083,6 +3210,11 @@ class BaseSignal(FancySlicing,
             [<Signal1D, title: , dimensions: (3, 1|2)>,
             <Signal1D, title: , dimensions: (3, 2|2)>]
 
+        Raises
+        ------
+        NotImplementedError
+            If trying to split along a non-uniform axis.
+
         Returns
         -------
         splitted : list
@@ -3112,6 +3244,9 @@ class BaseSignal(FancySlicing,
 
         axis = self.axes_manager[axis_in_manager].index_in_array
         len_axis = self.axes_manager[axis_in_manager].size
+        if self.axes_manager[axis].is_uniform is False:
+            raise NotImplementedError(
+                    "Splitting of signals over a non-uniform axis is not implemented")
 
         if number_of_parts == 'auto' and step_sizes == 'auto':
             step_sizes = 1
@@ -3193,8 +3328,7 @@ class BaseSignal(FancySlicing,
             return
 
         # We need to store the original shape and coordinates to be used
-        # by
-        # the fold function only if it has not been already stored by a
+        # by the fold function only if it has not been already stored by a
         # previous unfold
         folding = self.metadata._HyperSpy.Folding
         if folding.unfolded is False:
@@ -3362,37 +3496,33 @@ class BaseSignal(FancySlicing,
                          "for more information.".format(self))
             self.data = np.ascontiguousarray(self.data)
 
-    def _iterate_signal(self):
-        """Iterates over the signal data.
+    def _iterate_signal(self, iterpath=None):
+        """Iterates over the signal data. It is faster than using the signal
+        iterator, because it avoids making deepcopy of metadata and other
+        attributes.
 
-        It is faster than using the signal iterator.
+        Parameters
+        ----------
+        iterpath : None or str or iterable
+            Any valid iterpath supported by the axes_manager.
 
+        Returns
+        -------
+        numpy array when iterating over the navigation space
         """
-        if self.axes_manager.navigation_size < 2:
-            yield self()
-            return
-        self._make_sure_data_is_contiguous()
-        axes = [axis.index_in_array for
-                axis in self.axes_manager.signal_axes]
-        if axes:
-            unfolded_axis = (
-                self.axes_manager.navigation_axes[0].index_in_array)
-            new_shape = [1] * len(self.data.shape)
-            for axis in axes:
-                new_shape[axis] = self.data.shape[axis]
-            new_shape[unfolded_axis] = -1
-        else:  # signal_dimension == 0
-            new_shape = (-1, 1)
-            axes = [1]
-            unfolded_axis = 0
-        # Warning! if the data is not contigous it will make a copy!!
-        data = self.data.reshape(new_shape)
-        getitem = [0] * len(data.shape)
-        for axis in axes:
-            getitem[axis] = slice(None)
-        for i in range(data.shape[unfolded_axis]):
-            getitem[unfolded_axis] = i
-            yield(data[tuple(getitem)])
+        original_index = self.axes_manager.indices
+
+        if iterpath is None:
+            _logger.warning('The default iterpath will change in HyperSpy 2.0.')
+
+        with self.axes_manager.switch_iterpath(iterpath):
+            self.axes_manager.indices = tuple(
+                [0 for _ in self.axes_manager.navigation_axes]
+                )
+            for _ in self.axes_manager:
+                yield self()
+            # restore original index
+            self.axes_manager.indices = original_index
 
     def _cycle_signal(self):
         """Cycles over the signal data.
@@ -3540,6 +3670,13 @@ class BaseSignal(FancySlicing,
             A new Signal containing the sum of the provided Signal along the
             specified axes.
 
+        Note
+        ----
+        If you intend to calculate the numerical integral of an unbinned signal,
+        please use the :py:meth:`integrate1D` function instead. To avoid
+        erroneous misuse of the `sum` function as integral, it raises a warning
+        when working with an unbinned, non-uniform axis.
+
         See also
         --------
         max, min, mean, std, var, indexmax, indexmin, valuemax, valuemin
@@ -3554,8 +3691,19 @@ class BaseSignal(FancySlicing,
         (64,64)
 
         """
+
         if axis is None:
             axis = self.axes_manager.navigation_axes
+
+        axes = self.axes_manager[axis]
+        if not np.iterable(axes):
+            axes = (axes,)
+        if any([not ax.is_uniform and not is_binned(self, ax) for ax in axes]):
+            warnings.warn("You are summing over an unbinned, non-uniform axis. "
+                          "The result can not be used as an approximation of "
+                          "the integral of the signal. For this functionality, "
+                          "use integrate1D instead.")
+
         return self._apply_function_on_data_and_remove_axis(
             np.sum, axis, out=out, rechunk=rechunk)
     sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
@@ -3745,6 +3893,14 @@ class BaseSignal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
+        axes = self.axes_manager[axis]
+        if not np.iterable(axes):
+            axes = (axes,)
+        if any([not ax.is_uniform for ax in axes]):
+            warnings.warn("You are summing over a non-uniform axis. The result "
+                          "can not be used as an approximation of the "
+                          "integral of the signal. For this functionaliy, "
+                          "use integrate1D instead.")
         return self._apply_function_on_data_and_remove_axis(
             np.nansum, axis, out=out, rechunk=rechunk)
     nansum.__doc__ %= (NAN_FUNC.format('sum'))
@@ -3811,6 +3967,13 @@ class BaseSignal(FancySlicing,
             the given ``order``. `i.e.` if ``axis`` is ``"x"`` and ``order`` is
             2, the `x` dimension is N, ``der``'s `x` dimension is N - 2.
 
+        Note
+        ----
+        If you intend to calculate the numerical derivative, please use the
+        proper :py:meth:`derivative` function instead. To avoid erroneous
+        misuse of the `diff` function as derivative, it raises an error when
+        when working with a non-uniform axis.
+
         See also
         --------
         derivative, integrate1D, integrate_simpson
@@ -3824,6 +3987,11 @@ class BaseSignal(FancySlicing,
         >>> s.diff(-1).data.shape
         (64,64,1023)
         """
+        if not self.axes_manager[axis].is_uniform:
+            raise NotImplementedError(
+            "Performing a numerical difference on a non-uniform axis "
+            "is not implemented. Consider using `derivative` instead."
+        )
         s = out or self._deepcopy_with_new_data(None)
         data = np.diff(self.data, n=order,
                        axis=self.axes_manager[axis].index_in_array)
@@ -3841,7 +4009,7 @@ class BaseSignal(FancySlicing,
             out.events.data_changed.trigger(obj=out)
     diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def derivative(self, axis, order=1, out=None, rechunk=True):
+    def derivative(self, axis, order=1, out=None, **kwargs):
         r"""Calculate the numerical derivative along the given axis,
         with respect to the calibrated units of that axis.
 
@@ -3858,7 +4026,8 @@ class BaseSignal(FancySlicing,
         order: int
             The order of the derivative.
         %s
-        %s
+        **kwargs : dict
+            All extra keyword arguments are passed to :py:func:`numpy.gradient`
 
         Returns
         -------
@@ -3867,21 +4036,32 @@ class BaseSignal(FancySlicing,
             the given ``order``. `i.e.` if ``axis`` is ``"x"`` and ``order`` is
             2, if the `x` dimension is N, then ``der``'s `x` dimension is N - 2.
 
+        Notes
+        -----
+        This function uses numpy.gradient to perform the derivative. See its
+        documentation for implementation details.
+
         See also
         --------
-        diff, integrate1D, integrate_simpson
+        integrate1D, integrate_simpson
 
         """
-
-        der = self.diff(order=order, axis=axis, out=out, rechunk=rechunk)
-        der = out or der
-        axis = self.axes_manager[axis]
-        der.data /= axis.scale ** order
-        if out is None:
-            return der
-        else:
+        # rechunk was a valid keyword up to HyperSpy 1.6
+        if "rechunk" in kwargs:
+            del kwargs["rechunk"]
+        n = order
+        der_data = self.data
+        while n:
+            der_data = np.gradient(
+                der_data, self.axes_manager[axis].axis,
+                axis=self.axes_manager[axis].index_in_array, **kwargs)
+            n -= 1
+        if out:
+            out.data = der_data
             out.events.data_changed.trigger(obj=out)
-    derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
+        else:
+            return self._deepcopy_with_new_data(der_data)
+    derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def integrate_simpson(self, axis, out=None):
         """Calculate the integral of a Signal along an axis using
@@ -3900,7 +4080,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        diff, derivative, integrate1D
+        derivative, integrate1D
 
         Examples
         --------
@@ -3914,8 +4094,8 @@ class BaseSignal(FancySlicing,
         """
         axis = self.axes_manager[axis]
         s = out or self._deepcopy_with_new_data(None)
-        data = sp.integrate.simps(y=self.data, x=axis.axis,
-                                  axis=axis.index_in_array)
+        data = integrate.simps(y=self.data, x=axis.axis,
+                               axis=axis.index_in_array)
         if out is not None:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
@@ -3956,6 +4136,11 @@ class BaseSignal(FancySlicing,
         s : :py:class:`~hyperspy._signals.complex_signal.ComplexSignal`
             A Signal containing the result of the FFT algorithm
 
+        Raises
+        ------
+        NotImplementedError
+            If performing FFT along a non-uniform axis.
+
         Examples
         --------
         >>> im = hs.signals.Signal2D(scipy.misc.ascent())
@@ -3967,8 +4152,8 @@ class BaseSignal(FancySlicing,
 
         Note
         ----
-        For further information see the documentation of
-        :py:func:`numpy.fft.fftn`
+        Requires a uniform axis. For further information see the documentation
+        of :py:func:`numpy.fft.fftn`
         """
 
         if self.axes_manager.signal_dimension == 0:
@@ -3982,33 +4167,22 @@ class BaseSignal(FancySlicing,
             im_fft = self
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
-
+        if any([not axs.is_uniform for axs in self.axes_manager[axes]]):
+            raise NotImplementedError(
+                    "Not implemented for non-uniform axes.")
         use_real_fft = real_fft_only and (self.data.dtype.kind != 'c')
 
-        if isinstance(self.data, da.Array):
-            if use_real_fft:
-                fft_f = da.fft.rfftn
-            else:
-                fft_f = da.fft.fftn
-
-            if shift:
-                im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
-                    fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
-            else:
-                im_fft = self._deepcopy_with_new_data(
-                    fft_f(self.data, axes=axes, **kwargs))
+        if use_real_fft:
+            fft_f = np.fft.rfftn
         else:
-            if use_real_fft:
-                fft_f = np.fft.rfftn
-            else:
-                fft_f = np.fft.fftn
+            fft_f = np.fft.fftn
 
-            if shift:
-                im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
-                    fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
-            else:
-                im_fft = self._deepcopy_with_new_data(
-                    fft_f(self.data, axes=axes, **kwargs))
+        if shift:
+            im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
+                fft_f(im_fft.data, axes=axes, **kwargs), axes=axes))
+        else:
+            im_fft = self._deepcopy_with_new_data(
+                fft_f(self.data, axes=axes, **kwargs))
 
         im_fft.change_dtype("complex")
         im_fft.metadata.General.title = 'FFT of {}'.format(
@@ -4058,6 +4232,11 @@ class BaseSignal(FancySlicing,
         s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
             A Signal containing the result of the inverse FFT algorithm
 
+        Raises
+        ------
+        NotImplementedError
+            If performing IFFT along a non-uniform axis.
+
         Examples
         --------
         >>> import scipy
@@ -4068,32 +4247,26 @@ class BaseSignal(FancySlicing,
 
         Note
         ----
-        For further information see the documentation of
-        :py:func:`numpy.fft.ifftn`
+        Requires a uniform axis. For further information see the documentation
+        of :py:func:`numpy.fft.ifftn`
         """
 
         if self.axes_manager.signal_dimension == 0:
             raise AttributeError("Signal dimension must be at least one.")
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
+        if any([not axs.is_uniform for axs in self.axes_manager[axes]]):
+            raise NotImplementedError(
+                    "Not implemented for non-uniform axes.")
         if shift is None:
             shift = self.metadata.get_item('Signal.FFT.shifted', False)
 
-        if isinstance(self.data, da.Array):
-            if shift:
-                fft_data_shift = da.fft.ifftshift(self.data, axes=axes)
-                im_ifft = self._deepcopy_with_new_data(
-                    da.fft.ifftn(fft_data_shift, axes=axes, **kwargs))
-            else:
-                im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(
-                    self.data, axes=axes, **kwargs))
+        if shift:
+            im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
+                np.fft.ifftshift(self.data, axes=axes), axes=axes, **kwargs))
         else:
-            if shift:
-                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
-                    np.fft.ifftshift(self.data, axes=axes), axes=axes, **kwargs))
-            else:
-                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
-                    self.data, axes=axes, **kwargs))
+            im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
+                self.data, axes=axes, **kwargs))
 
         im_ifft.metadata.General.title = 'iFFT of {}'.format(
             im_ifft.metadata.General.title)
@@ -4119,8 +4292,9 @@ class BaseSignal(FancySlicing,
 
         The integration is performed using
         `Simpson's rule <https://en.wikipedia.org/wiki/Simpson%%27s_rule>`_ if
-        `metadata.Signal.binned` is ``False`` and simple summation over the
-        given axis if ``True``.
+        `axis.is_binned` is ``False`` and simple summation over the given axis
+        if ``True`` (along binned axes, the detector already provides
+        integrated counts per bin).
 
         Parameters
         ----------
@@ -4135,7 +4309,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        integrate_simpson, diff, derivative
+        integrate_simpson, derivative
 
         Examples
         --------
@@ -4147,10 +4321,13 @@ class BaseSignal(FancySlicing,
         (64,64)
 
         """
-        if self.metadata.Signal.binned is False:
-            return self.integrate_simpson(axis=axis, out=out)
-        else:
+        if is_binned(self, axis=axis):
+        # in v2 replace by
+        # self.axes_manager[axis].is_binned
             return self.sum(axis=axis, out=out)
+        else:
+            return self.integrate_simpson(axis=axis, out=out)
+
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def indexmin(self, axis, out=None, rechunk=True):
@@ -4369,9 +4546,9 @@ class BaseSignal(FancySlicing,
             hist_spec.axes_manager[0].size = hist.shape[-1]
 
         hist_spec.axes_manager[0].name = 'value'
+        hist_spec.axes_manager[0].is_binned = True
         hist_spec.metadata.General.title = (self.metadata.General.title +
                                             " histogram")
-        hist_spec.metadata.Signal.binned = True
         if out is None:
             return hist_spec
         else:
@@ -4387,6 +4564,8 @@ class BaseSignal(FancySlicing,
         max_workers=None,
         inplace=True,
         ragged=None,
+        output_signal_size=None,
+        output_dtype=None,
         **kwargs
     ):
         """Apply a function to the signal data at all the navigation
@@ -4454,25 +4633,46 @@ class BaseSignal(FancySlicing,
         >>> sigmas = hs.signals.BaseSignal(np.linspace(2,5,10)).T
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
-        """
-        # Sepate ndkwargs
-        ndkwargs = ()
-        for key, value in list(kwargs.items()):
-            if isinstance(value, BaseSignal):
-                ndkwargs += ((key, value),)
+        Note
+        ----
+        Currently requires a uniform axis.
 
-        # Check if the signal axes have inhomogeneous scales and/or units and
-        # display in warning if yes.
-        scale = set()
-        units = set()
-        for i in range(len(self.axes_manager.signal_axes)):
-            scale.add(self.axes_manager.signal_axes[i].scale)
-            units.add(self.axes_manager.signal_axes[i].units)
-        if len(units) != 1 or len(scale) != 1:
+        """
+        if self.axes_manager.navigation_shape == () and self._lazy:
+            _logger.info("Converting signal to a non-lazy signal because there are no nav dimensions")
+            self.compute()
+
+        # Sepate ndkwargs depending on if they are BaseSignals.
+        ndkwargs = {}
+        ndkeys = [key for key in kwargs if isinstance(kwargs[key], BaseSignal)]
+        for key in ndkeys:
+            if kwargs[key].axes_manager.navigation_shape == self.axes_manager.navigation_shape:
+                ndkwargs[key] = kwargs.pop(key)
+            elif kwargs[key].axes_manager.navigation_shape == () or kwargs[key].axes_manager.navigation_shape == (1,):
+                kwargs[key] = np.squeeze(kwargs[key].data)  # this really isn't an iterating signal.
+            else:
+                raise ValueError(f'The size of the navigation_shape for the kwarg {key} '
+                                 f'(<{kwargs[key].axes_manager.navigation_shape}> must be consistent'
+                                 f'with the size of the mapped signal '
+                                 f'<{self.axes_manager.navigation_shape}>')
+        # TODO: Consider support for non-uniform signal axis
+        if any([not ax.is_uniform for ax in self.axes_manager.signal_axes]):
             _logger.warning(
-                "The function you applied does not take into "
-                "account the difference of units and of scales in-between"
-                " axes.")
+                "At least one axis of the signal is non-uniform. Can your "
+                "`function` operate on non-uniform axes?")
+        else:
+            # Check if the signal axes have inhomogeneous scales and/or units and
+            # display in warning if yes.
+            scale = set()
+            units = set()
+            for i in range(len(self.axes_manager.signal_axes)):
+                scale.add(self.axes_manager.signal_axes[i].scale)
+                units.add(self.axes_manager.signal_axes[i].units)
+            if len(units) != 1 or len(scale) != 1:
+                _logger.warning(
+                    "The function you applied does not take into "
+                    "account the difference of units and of scales in-between"
+                    " axes.")
         # If the function has an axis argument and the signal dimension is 1,
         # we suppose that it can operate on the full array and we don't
         # iterate over the coordinates.
@@ -4504,11 +4704,16 @@ class BaseSignal(FancySlicing,
                                     self.axes_manager.signal_axes])
             res = self._map_all(function, inplace=inplace, **kwargs)
         else:
+            if self._lazy:
+                kwargs["output_signal_size"] = output_signal_size
+                kwargs["output_dtype"] = output_dtype
             # Iteration over coordinates.
             res = self._map_iterate(function, iterating_kwargs=ndkwargs,
                                     show_progressbar=show_progressbar,
-                                    parallel=parallel, max_workers=max_workers,
-                                    ragged=ragged, inplace=inplace,
+                                    parallel=parallel,
+                                    max_workers=max_workers,
+                                    ragged=ragged,
+                                    inplace=inplace,
                                     **kwargs)
         if inplace:
             self.events.data_changed.trigger(obj=self)
@@ -4548,7 +4753,9 @@ class BaseSignal(FancySlicing,
             A tuple with structure (('key1', value1), ('key2', value2), ..)
             where the key-value pairs will be passed as kwargs for the
             function to be mapped, and the values will be iterated together
-            with the signal navigation.
+            with the signal navigation. The value needs to be a signal
+            instance because passing array can be ambigous and will be removed
+            in HyperSpy 2.0.
         %s
         %s
         %s
@@ -4608,6 +4815,9 @@ class BaseSignal(FancySlicing,
 
         if parallel is None:
             parallel = preferences.General.parallel
+
+        if isinstance(iterating_kwargs, (tuple, list)):
+            iterating_kwargs = dict((k, v) for k, v in iterating_kwargs)
 
         size = max(1, self.axes_manager.navigation_size)
         func, iterators = create_map_objects(function, size, iterating_kwargs, **kwargs)
@@ -4707,6 +4917,10 @@ class BaseSignal(FancySlicing,
         standard library's :py:func:`~copy.copy` function. Note: this will
         return a copy of the signal, but it will not duplicate the underlying
         data in memory, and both Signals will reference the same data.
+
+        See Also
+        --------
+        :py:meth:`~hyperspy.signal.BaseSignal.deepcopy`
         """
         try:
             backup_plot = self._plot
@@ -4745,6 +4959,10 @@ class BaseSignal(FancySlicing,
         Return a "deep copy" of this Signal using the
         standard library's :py:func:`~copy.deepcopy` function. Note: this means
         the underlying data structure will be duplicated in memory.
+
+        See Also
+        --------
+        :py:meth:`~hyperspy.signal.BaseSignal.copy`
         """
         return copy.deepcopy(self)
 
@@ -5276,7 +5494,7 @@ class BaseSignal(FancySlicing,
             lazy=self._lazy)
         if self._alias_signal_types:  # In case legacy types exist:
             mp.Signal.signal_type = self._signal_type  # set to default!
-        self.__init__(**self._to_dictionary(add_models=True))
+        self.__init__(self.data, full_initialisation=False)
         if self._lazy:
             self._make_lazy()
 
@@ -5565,7 +5783,7 @@ class BaseSignal(FancySlicing,
                 raise ValueError("Markers can not be added to several signals")
             m._plot_on_signal = plot_on_signal
             if plot_marker:
-                if self._plot is None:
+                if self._plot is None or not self._plot.is_active:
                     self.plot()
                 if m._plot_on_signal:
                     self._plot.signal_plot.add_marker(m)
@@ -5600,10 +5818,7 @@ class BaseSignal(FancySlicing,
         for p in plot:
             if hasattr(self._plot, p):
                 p = getattr(self._plot, p)
-                if p.figure.canvas.supports_blit:
-                    p.ax.hspy_fig._update_animated()
-                else:
-                    p.ax.hspy_fig._draw_animated()
+                p.render_figure()
 
     def _plot_permanent_markers(self):
         marker_name_list = self.metadata.Markers.keys()
@@ -5845,7 +6060,8 @@ class BaseSignal(FancySlicing,
             ax.index_in_array for ax in navigation_axes)
         array_order += tuple(ax.index_in_array for ax in signal_axes)
         newdata = self.data.transpose(array_order)
-        res = self._deepcopy_with_new_data(newdata, copy_variance=True)
+        res = self._deepcopy_with_new_data(newdata, copy_variance=True,
+                                           copy_learning_results=True)
 
         # reconfigure the axes of the axesmanager:
         ram = res.axes_manager
@@ -5887,21 +6103,6 @@ class BaseSignal(FancySlicing,
         parameters as a property of a Signal.
         """
         return self.transpose()
-
-
-    def _check_navigation_mask(self, mask):
-        if mask is not None:
-            if (mask.axes_manager.navigation_shape !=
-                self.axes_manager.navigation_shape):
-                raise ValueError("mask must be a signal with the same "
-                                 "navigation shape as the current signal.")
-
-    def _check_signal_mask(self, mask):
-        if mask is not None:
-            if (mask.axes_manager.signal_shape !=
-                self.axes_manager.signal_shape):
-                raise ValueError("mask must be a signal with the same "
-                                 "signal shape as the current signal.")
 
     def apply_apodization(self, window='hann',
                           hann_order=None, tukey_alpha=0.5, inplace=False):
@@ -5954,7 +6155,7 @@ class BaseSignal(FancySlicing,
         elif window == 'hamming':
             def window_function(m): return np.hamming(m)
         elif window == 'tukey':
-            def window_function(m): return sp.signal.tukey(m, tukey_alpha)
+            def window_function(m): return sp_signal.tukey(m, tukey_alpha)
         else:
             raise ValueError('Wrong type parameter value.')
 
@@ -5991,6 +6192,71 @@ class BaseSignal(FancySlicing,
             self.events.data_changed.trigger(obj=self)
         else:
             return self * window_nd
+
+    def _check_navigation_mask(self, mask):
+        """
+        Check the shape of the navigation mask.
+
+        Parameters
+        ----------
+        mask : numpy array or BaseSignal.
+            Mask to check the shape.
+
+        Raises
+        ------
+        ValueError
+            If shape doesn't match the shape of the navigation dimension.
+
+        Returns
+        -------
+        None.
+
+        """
+        if isinstance(mask, BaseSignal):
+            if mask.axes_manager.signal_dimension != 0:
+                raise ValueError("The navigation mask signal must have the "
+                                 "`signal_dimension` equal to 0.")
+            elif (mask.axes_manager.navigation_shape !=
+                  self.axes_manager.navigation_shape):
+                raise ValueError("The navigation mask signal must have the "
+                                 "same `navigation_shape` as the current "
+                                 "signal.")
+        if isinstance(mask, np.ndarray) and (
+                mask.shape != self.axes_manager.navigation_shape):
+            raise ValueError("The shape of the navigation mask array must "
+                             "match `navigation_shape`.")
+
+    def _check_signal_mask(self, mask):
+        """
+        Check the shape of the signal mask.
+
+        Parameters
+        ----------
+        mask : numpy array or BaseSignal.
+            Mask to check the shape.
+
+        Raises
+        ------
+        ValueError
+            If shape doesn't match the shape of the signal dimension.
+
+        Returns
+        -------
+        None.
+
+        """
+        if isinstance(mask, BaseSignal):
+            if mask.axes_manager.navigation_dimension != 0:
+                raise ValueError("The signal mask signal must have the "
+                                 "`navigation_dimension` equal to 0.")
+            elif (mask.axes_manager.signal_shape !=
+                  self.axes_manager.signal_shape):
+                raise ValueError("The signal mask signal must have the same "
+                                 "`signal_shape` as the current signal.")
+        if isinstance(mask, np.ndarray) and (
+                mask.shape != self.axes_manager.signal_shape):
+            raise ValueError("The shape of signal mask array must match "
+                             "`signal_shape`.")
 
 
 ARITHMETIC_OPERATORS = (

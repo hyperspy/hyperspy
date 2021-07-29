@@ -1,0 +1,116 @@
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  run_test_site:
+    name: ${{ matrix.os }}-py${{ matrix.PYTHON_VERSION }}${{ matrix.LABEL }}
+    runs-on: ${{ matrix.os }}-latest
+    timeout-minutes: 30
+    env:
+      MPLBACKEND: agg
+      PIP_ARGS: --upgrade -e
+      PYTEST_ARGS: --pyargs hyperspy --reruns 3 -n 2 --instafail
+      PYTEST_ARGS_COVERAGE:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, windows, macos]
+        PYTHON_VERSION: [3.8, 3.9]
+        PIP_SELECTOR: ['[all, tests]']
+        DEPENDENCIES_DEV: [false]
+        include:
+          # test oldest supported version of main dependencies on python 3.6
+          - os: ubuntu
+            PYTHON_VERSION: 3.6
+            OLDEST_SUPPORTED_VERSION: true
+            DEPENDENCIES: matplotlib==3.1.0 numpy==1.17.1 scipy==1.1 imagecodecs==2019.12.3 dask==2.1.0
+            PIP_SELECTOR: '[all, tests, coverage]'
+            PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
+            LABEL: -oldest
+          # test minimum requirement
+          - os: ubuntu
+            PYTHON_VERSION: 3.8
+            PIP_SELECTOR: '[tests]'
+            LABEL: -minimum
+          # Run coverage
+          - os: ubuntu
+            PYTHON_VERSION: 3.8
+            PIP_SELECTOR: '[all, tests, coverage]'
+            PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
+            LABEL: -coverage
+          # Run test suite against dependencies development version
+          - os: ubuntu
+            PYTHON_VERSION: 3.8
+            PIP_SELECTOR: '[all, tests]'
+            LABEL: -dependencies_dev
+            DEPENDENCIES_DEV: true
+            DEPENDENCIES: numpy scipy scikit-learn scikit-image
+          - os: ubuntu
+            PYTHON_VERSION: 3.7
+            PIP_SELECTOR: '[all, tests]'
+        exclude:
+          # redundant build (same as coverage)
+          - os: ubuntu
+            PYTHON_VERSION: 3.8
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        name: Install Python
+        with:
+          python-version: ${{ matrix.PYTHON_VERSION }}
+
+      - name: Display version
+        run: |
+          python --version
+          pip --version
+
+      - name: Install
+        shell: bash
+        run: |
+          pip install ${{ env.PIP_ARGS }} .'${{ matrix.PIP_SELECTOR }}'
+
+      - name: Install oldest supported version
+        if: ${{ matrix.OLDEST_SUPPORTED_VERSION }}
+        run: |
+          pip install ${{ matrix.DEPENDENCIES }}
+
+      - name: Install dependencies development version
+        if: ${{ matrix.DEPENDENCIES_DEV }}
+        run: |
+          pip install --upgrade --no-deps --pre \
+            -i https://pypi.anaconda.org/scipy-wheels-nightly/simple \
+            ${{ matrix.DEPENDENCIES }}
+
+      - name: Run test suite
+        run: |
+          pytest ${{ env.PYTEST_ARGS }} ${{ matrix.PYTEST_ARGS_COVERAGE }}
+
+      - name: Upload coverage to Codecov
+        if: ${{ always() }} && ${{ matrix.PYTEST_ARGS_COVERAGE }}
+        uses: codecov/codecov-action@v1
+
+  build_doc:
+    name: Build doc
+    runs-on: ubuntu-latest
+    env:
+      BUILD_DEPS: python3-dev build-essential graphviz
+      LATEX_DEPS: dvipng latexmk texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: ammaraskar/sphinx-action@master
+        with:
+
+          pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }}  && pip install -e .[all,build-doc]"
+          build-command: make html
+          docs-folder: doc/
+
+      - uses: actions/upload-artifact@v2
+        with:
+          path: ./doc/_build/html/
+          name: doc_build
+

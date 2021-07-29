@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -74,7 +74,7 @@ if import_sklearn.sklearn_installed:
 def _get_derivative(signal, diff_axes, diff_order):
     """Calculate the derivative of a signal."""
     if signal.axes_manager.signal_dimension == 1:
-        signal = signal.diff(order=diff_order, axis=-1)
+        signal = signal.derivative(order=diff_order, axis=-1)
     else:
         # n-d signal case.
         # Compute the differences for each signal axis, unfold the
@@ -152,10 +152,10 @@ class MVA:
         auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
             Only used by the "SVD" algorithm.
-        navigation_mask : boolean numpy array
+        navigation_mask : boolean numpy array or BaseSignal
             The navigation locations marked as True are not used in the
             decomposition.
-        signal_mask : boolean numpy array
+        signal_mask : boolean numpy array or BaseSignal
             The signal locations marked as True are not used in the
             decomposition.
         var_array : numpy array
@@ -347,6 +347,11 @@ class MVA:
             f"  centre={centre}",
         ]
 
+        from hyperspy.signal import BaseSignal
+
+        self._check_navigation_mask(navigation_mask)
+        self._check_signal_mask(signal_mask)
+
         # Backup the original data (on by default to
         # mimic previous behaviour)
         if copy:
@@ -360,12 +365,14 @@ class MVA:
         self._unfolded4decomposition = self.unfold()
         try:
             _logger.info("Performing decomposition analysis")
-            if isinstance(navigation_mask, BaseSignal):
-                self._check_navigation_mask(mask=navigation_mask)
-                navigation_mask = navigation_mask.data
-            if hasattr(navigation_mask, "ravel"):
-                navigation_mask = navigation_mask.ravel()
 
+            if isinstance(navigation_mask, BaseSignal):
+                navigation_mask = navigation_mask.data.ravel()
+            elif hasattr(navigation_mask, "ravel"):
+                navigation_mask = navigation_mask.T.ravel()
+
+            if isinstance(signal_mask, BaseSignal):
+                signal_mask = signal_mask.data
             if hasattr(signal_mask, "ravel"):
                 signal_mask = signal_mask.ravel()
 
@@ -407,6 +414,8 @@ class MVA:
             # input masks
 
             data_ = dc[:, signal_mask][navigation_mask, :]
+            if data_.size == 0:
+                raise ValueError("All the data are masked, change the mask.")
 
             # Reset the explained_variance which is not set by all the
             # algorithms
@@ -795,9 +804,12 @@ class MVA:
                 if mask.axes_manager.signal_shape != ref_shape:
                     raise ValueError(
                         f"`mask` shape is not equal to {space} shape. "
-                        f"Mask shape: {mask.axes_manager.signal_shape}\t"
+                        f"Mask shape: {mask.axes_manager.signal_shape}; "
                         f"{space} shape: {ref_shape}"
                     )
+            else:
+                raise ValueError("`mask` must be a HyperSpy signal.")
+
             if hasattr(mask, "compute"):
                 # if the mask is lazy, we compute them, which should be fine
                 # since we already reduce the dimensionality of the data.
@@ -888,8 +900,8 @@ class MVA:
             )
             if mask is not None:
                 # The following is a little trick to dilate the mask as
-                # required when operation on the differences. It exploits the
-                # fact that np.diff autimatically "dilates" nans. The trick has
+                # required when operating on differences. It exploits the
+                # fact that np.diff automatically "dilates" nans. The trick has
                 # a memory penalty which should be low compare to the total
                 # memory required for the core application in most cases.
                 mask_diff_axes = (
@@ -1620,6 +1632,9 @@ class MVA:
             else:
                 signal_mask = ~signal_mask
 
+            if dc[:, signal_mask][navigation_mask, :].size == 0:
+                raise ValueError("All the data are masked, change the mask.")
+
             # Check non-negative
             if dc[:, signal_mask][navigation_mask, :].min() < 0.0:
                 raise ValueError(
@@ -1662,13 +1677,13 @@ class MVA:
         # Deal with masks
         if hasattr(mask, 'ravel'):
             mask = mask.ravel()
-    
+
         # Transform the None masks in slices to get the right behaviour
         if mask is None:
             mask = slice(None)
         else:
             mask = ~mask
-    
+
         return mask
 
     def _scale_data_for_clustering(self,
@@ -1683,7 +1698,7 @@ class MVA:
         ----------
         cluster_signal : {"bss", "decomposition", "signal", Signal}
             If "bss" the blind source separation results are used
-            If "decomposition" the decomposition results are used 
+            If "decomposition" the decomposition results are used
             if "signal" the signal data is used (signal should be unfolded)
         preprocessing : {"standard","norm","minmax",None or scikit learn preprocessing method}
             default: 'norm'
@@ -1705,7 +1720,7 @@ class MVA:
         * :py:meth:`~.learn.mva.MVA.clusters_analysis`,
         * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
         * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,        
+        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,
         * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
         * :py:meth:`~.signal.MVATools.plot_cluster_results`
         * :py:meth:`~.signal.MVATools.plot_cluster_signals`
@@ -1720,24 +1735,24 @@ class MVA:
         """
 
 
-        preprocessing_algorithm = self._get_cluster_preprocessing_algorithm(preprocessing,**preprocessing_kwargs)                        
-            
-        
-        
+        preprocessing_algorithm = self._get_cluster_preprocessing_algorithm(preprocessing,**preprocessing_kwargs)
+
+
+
         if preprocessing_algorithm is None:
             return cluster_signal
         else:
             return preprocessing_algorithm.fit_transform(cluster_signal)
 
-        
+
     def _get_number_of_components_for_clustering(self):
         """
-        Returns the number of components 
-        """        
+        Returns the number of components
+        """
         if self.learning_results.number_significant_components is None:
             raise ValueError("A cluster source has been set to `decomposition` "
                              "or `bss` but no decomposition results are available. "
-                             "Please run a decomposition method first.")        
+                             "Please run a decomposition method first.")
         else:
             number_of_components = self.learning_results.number_significant_components
         return number_of_components
@@ -1753,22 +1768,22 @@ class MVA:
         n_clusters : int
             Number of clusters to find.
         scaled_data : numpy array - (number_of_samples,number_of_features)
-        algorithm: scikit learn clustering object 
+        algorithm: scikit learn clustering object
         **kwargs
             Additional parameters passed to the clustering algorithm.
             This may include `n_init`, the number of times the algorithm is
             restarted to optimize results.
 
-            
+
         Returns
         -------
         alg
             return the sklearn.cluster object
- 
+
         """
 
         algorithm.fit(scaled_data)
-        
+
         # We need the labels_ to proceed
         if not hasattr(algorithm, "labels_"):
             raise AttributeError(
@@ -1781,17 +1796,17 @@ class MVA:
     def plot_cluster_metric(self):
         """Plot the cluster metrics calculated
            using evaluate_number_of_clusters method
-           
+
         See Also
         --------
         * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
-        * :py:meth:`~.learn.mva.MVA.cluster_analysis`,        
+        * :py:meth:`~.learn.mva.MVA.cluster_analysis`,
         * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,        
+        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,
         * :py:meth:`~.signal.MVATools.plot_cluster_results`
         * :py:meth:`~.signal.MVATools.plot_cluster_signals`
         * :py:meth:`~.signal.MVATools.plot_cluster_labels`
-           
+
 
         """
         target = self.learning_results
@@ -1844,21 +1859,21 @@ class MVA:
                             navigation_mask=None,
                             signal_mask=None,):
         """A cluster source can be an external signal, the signal data
-        or the decomposition or bss results  
+        or the decomposition or bss results
         Return a flatten version of the data, nav and signal mask
-    
+
         Parameters
         ----------
         cluster_source : str or BaseSignal
-            "decomposition", "bss", "signal" or a Signal 
+            "decomposition", "bss", "signal" or a Signal
         number_of_components : int, optional
             Number of components to use with decomposition sources.
             The default is None.
         navigation_mask : ndarray, optional
-            mask used to select regions of the cluster_source to use. 
+            mask used to select regions of the cluster_source to use.
             The default is None.
         signal_mask : ndarray, optional
-            mask used to select regions of the cluster_source signal. 
+            mask used to select regions of the cluster_source signal.
             For decomposition or bss this is not used.
             The default is None.
         reproject : bool, optional
@@ -1866,15 +1881,15 @@ class MVA:
             the loadings are returned. If True the factor @ loadings result
             is used. The default is False.
 
- 
+
         Returns
         -------
         toreturn : ndarray
-            Returns an unfolded dataset from 
+            Returns an unfolded dataset from
             the selected cluster_source
 
         """
-                
+
         toreturn=None
         # Is it a signal - i.e. BaseSignal
         if type(cluster_source) is str and cluster_source=="signal":
@@ -1884,26 +1899,26 @@ class MVA:
            if cluster_source.axes_manager.navigation_size != self.axes_manager.navigation_size:
                 raise ValueError("cluster_source does not have the same "
                                  "navigation size as the this signal")
-        else: 
+        else:
             if cluster_source not in ("bss", "decomposition", "signal"):
                 if not is_hyperspy_signal(cluster_source):
                     raise ValueError("cluster source needs to be set "
                                      "to `decomposition` , `signal` , `bss` "
                                      "or a suitable Signal")
-        
+
             if cluster_source == "decomposition":
                 if self.learning_results.factors is None:
                     raise ValueError("A cluster source has been set to decomposition "
                                      "but no decomposition results found. "
                                      "Please run decomposition method first")
-    
+
             if cluster_source == "bss":
                 if self.learning_results.bss_factors is None:
                     raise ValueError("A cluster source has been set to bss "
                                      " but no blind source separation results found. "
                                      " Please run blind source separation method first")
 
- 
+
             if cluster_source in ("decomposition","bss") and number_of_components is None:
                 number_of_components = self._get_number_of_components_for_clustering()
 
@@ -1954,18 +1969,18 @@ class MVA:
         ----------
         cluster_source : {"bss", "decomposition", "signal", BaseSignal}
             If "bss" the blind source separation results are used
-            If "decomposition" the decomposition results are used 
-            if "signal" the signal data is used 
-            Note that using the signal or BaseSignal can be memory intensive 
+            If "decomposition" the decomposition results are used
+            if "signal" the signal data is used
+            Note that using the signal or BaseSignal can be memory intensive
             and is only recommended if the Signal dimension is small
             BaseSignal must have the same navigation dimensions as the signal.
         source_for_centers : {None,"decomposition","bss","signal",BaseSignal},
             default : None
             If None the cluster_source is used
             If "bss" the blind source separation results are used
-            If "decomposition" the decomposition results are used 
-            if "signal" the signal data is used 
-            BaseSignal must have the same navigation dimensions as the signal.            
+            If "decomposition" the decomposition results are used
+            if "signal" the signal data is used
+            BaseSignal must have the same navigation dimensions as the signal.
         preprocessing : {"standard","norm","minmax",None or scikit learn preprocessing method}
             default: 'norm'
             Preprocessing the data before cluster analysis requires preprocessing
@@ -2152,7 +2167,7 @@ class MVA:
     def _get_cluster_algorithm(self,algorithm,**kwargs):
 
         """Convenience method to lookup cluster algorithm if algorithm is a string
-        and instantiates it with n_clusters or if it's an object check that 
+        and instantiates it with n_clusters or if it's an object check that
         the object has a fit method
         """
         algorithms_sklearn = list(cluster_algorithms.keys())
@@ -2251,15 +2266,15 @@ class MVA:
         ----------
         cluster_source : {"bss", "decomposition", "signal" or Signal}
             If "bss" the blind source separation results are used
-            If "decomposition" the decomposition results are used 
-            if "signal" the signal data is used 
-            Note that using the signal can be memory intensive 
+            If "decomposition" the decomposition results are used
+            if "signal" the signal data is used
+            Note that using the signal can be memory intensive
             and is only recommended if the Signal dimension is small.
             Input Signal must have the same navigation dimensions as the
             signal instance.
         max_clusters : int, default 10
             Max number of clusters to use. The method will scan from 2 to
-            max_clusters. 
+            max_clusters.
         preprocessing : {"standard","norm","minmax" or sklearn-like preprocessing object}
             default: 'norm'
             Preprocessing the data before cluster analysis requires preprocessing
@@ -2306,26 +2321,26 @@ class MVA:
         **kwargs : dict {}  default empty
             Parameters passed to the clustering algorithm.
 
-        
-        Other Parameters        
-        ----------------        
+
+        Other Parameters
+        ----------------
         n_clusters : int
             Number of clusters to find using the one of the pre-defined methods
             "kmeans","agglomerative","minibatchkmeans","spectralclustering"
-            See sklearn.cluster for details 
+            See sklearn.cluster for details
 
 
         Returns
         -------
         best_k : int
             Estimate of the best cluster size
-        
+
         See Also
         --------
         * :py:meth:`~.learn.mva.MVA.cluster_analysis`,
         * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
         * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_distances`,        
+        * :py:meth:`~.learn.mva.MVA.get_cluster_distances`,
         * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
         * :py:meth:`~.signal.MVATools.plot_cluster_results`
         * :py:meth:`~.signal.MVATools.plot_cluster_signals`
@@ -2589,7 +2604,7 @@ class MVA:
         distance = np.nan_to_num(numer / denom)
         elbow_position = np.argmax(distance)
 
-        return elbow_position        
+        return elbow_position
 
 class LearningResults(object):
     """Stores the parameters and results from a decomposition."""
@@ -2783,4 +2798,4 @@ class LearningResults(object):
             self.bss_loadings,
             self.bss_factors,
         )
-        
+

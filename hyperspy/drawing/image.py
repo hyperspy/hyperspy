@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -50,7 +50,7 @@ class ImagePlot(BlittedFigure):
 
     Attributes
     ----------
-    data_fuction : function or method
+    data_function : function or method
         A function that returns a 2D array when called without any
         arguments.
     %s
@@ -69,7 +69,7 @@ class ImagePlot(BlittedFigure):
 
         # Attribute matching the arguments of
         # `hyperspy._signal.signal2d.signal2D.plot`
-        self.autoscale = "z"
+        self.autoscale = "v"
         self.saturated_pixels = None
         self.norm = "auto"
         self.vmin = None
@@ -201,7 +201,9 @@ class ImagePlot(BlittedFigure):
         xaxis = self.xaxis
         yaxis = self.yaxis
 
-        if (xaxis.units == yaxis.units) and (xaxis.scale == yaxis.scale):
+        if (xaxis.is_uniform and yaxis.is_uniform and
+                (xaxis.units == yaxis.units) and
+                (abs(xaxis.scale) == abs(yaxis.scale))):
             self._auto_scalebar = True
             self._auto_axes_ticks = False
             self.pixel_units = xaxis.units
@@ -219,10 +221,17 @@ class ImagePlot(BlittedFigure):
             self._ylabel += ' ({})'.format(yaxis.units)
 
         # Calibrate the axes of the navigator image
-        self._extent = [xaxis.axis[0] - xaxis.scale / 2.,
-                        xaxis.axis[-1] + xaxis.scale / 2.,
-                        yaxis.axis[-1] + yaxis.scale / 2.,
-                        yaxis.axis[0] - yaxis.scale / 2.]
+        if xaxis.is_uniform and yaxis.is_uniform:
+            xaxis_half_px = xaxis.scale / 2.
+            yaxis_half_px = yaxis.scale / 2.
+        else:
+            xaxis_half_px = 0
+            yaxis_half_px = 0
+        # Calibrate the axes of the navigator image
+        self._extent = [xaxis.axis[0] - xaxis_half_px,
+                        xaxis.axis[-1] + xaxis_half_px,
+                        yaxis.axis[-1] + yaxis_half_px,
+                        yaxis.axis[0] - yaxis_half_px]
         self._calculate_aspect()
         if self.saturated_pixels is not None:
             from hyperspy.exceptions import VisibleDeprecationWarning
@@ -248,7 +257,10 @@ class ImagePlot(BlittedFigure):
                 factor = min_asp ** -1 * xaxis.size / yaxis.size
                 self._auto_scalebar = False
                 self._auto_axes_ticks = True
-        self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
+        if xaxis.is_uniform and yaxis.is_uniform:
+            self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
+        else:
+            self._aspect = 1.0
 
     def _calculate_vmin_max(self, data, auto_contrast=False,
                             vmin=None, vmax=None):
@@ -384,9 +396,12 @@ class ImagePlot(BlittedFigure):
 
     def _update_data(self):
         # self._current_data caches the displayed data.
-        self._current_data =  self.data_function(
-                axes_manager=self.axes_manager,
+        data = self.data_function(axes_manager=self.axes_manager,
                 **self.data_function_kwargs)
+        # the colorbar of matplotlib ~< 3.2 doesn't support bool array
+        if data.dtype == bool:
+            data = data.astype(int)
+        self._current_data = data
 
     def update(self, data_changed=True, auto_contrast=None, vmin=None,
                vmax=None, **kwargs):
@@ -470,7 +485,7 @@ class ImagePlot(BlittedFigure):
                 vmin, vmax = self._calculate_vmin_max(data, auto_contrast,
                                                       vmin, vmax)
             else:
-                # use the value store internally when not explicitely defined
+                # use the value store internally when not explicitly defined
                 if vmin is None:
                     vmin = old_vmin
                 if vmax is None:
@@ -511,7 +526,7 @@ class ImagePlot(BlittedFigure):
             elif inspect.isclass(norm) and issubclass(norm, Normalize):
                 norm = norm(vmin=vmin, vmax=vmax)
             elif norm not in ['auto', 'linear']:
-                raise ValueError("`norm` paramater should be 'auto', 'linear', "
+                raise ValueError("`norm` parameter should be 'auto', 'linear', "
                                 "'log', 'symlog' or a matplotlib Normalize  "
                                 "instance or subclass.")
             else:
@@ -557,8 +572,7 @@ class ImagePlot(BlittedFigure):
             else:
                 self.figure.canvas.draw_idle()
         else:  # no signal have been drawn yet
-            new_args = {'interpolation': 'nearest',
-                        'extent': self._extent,
+            new_args = {'extent': self._extent,
                         'aspect': self._aspect,
                         'animated': self.figure.canvas.supports_blit,
                         }
@@ -582,7 +596,7 @@ class ImagePlot(BlittedFigure):
     def gui_adjust_contrast(self, display=True, toolkit=None):
         if self._is_rgb:
             raise NotImplementedError(
-                "Constrast adjustment of RGB images is not implemented")
+                "Contrast adjustment of RGB images is not implemented")
         ceditor = ImageContrastEditor(self)
         return ceditor.gui(display=display, toolkit=toolkit)
     gui_adjust_contrast.__doc__ = \

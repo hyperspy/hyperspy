@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,9 +19,9 @@
 import numpy as np
 import math
 
-from hyperspy.component import Component
+from hyperspy.component import Component, _get_scaling_factor
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
-
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -84,7 +84,7 @@ def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
 class Voigt(Component):
     # Legacy class to be removed in v2.0
 
-    """This is the legacy Voigt profile component dedicated to photoemission
+    r"""This is the legacy Voigt profile component dedicated to photoemission
     spectroscopy data analysis that will renamed to `PESVoigt` in v2.0. To use
     the new Voigt lineshape component set `legacy=False`. See the
     documentation of :meth:`hyperspy._components.voigt.Voigt` for details on
@@ -158,7 +158,7 @@ class Voigt(Component):
 
 class PESVoigt(Component):
 
-    """ Voigt component for photoemission spectroscopy data analysis.
+    r"""Voigt component for photoemission spectroscopy data analysis.
 
     Voigt profile component with support for shirley background,
     non_isochromaticity, transmission_function corrections and spin orbit
@@ -292,24 +292,29 @@ class PESVoigt(Component):
         >>> g.estimate_parameters(s, -10, 10, False)
 
         """
-        super(PESVoigt, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, E1, E2,
                                                               only_current)
+        scaling_factor = _get_scaling_factor(signal, axis, centre)
 
         if only_current is True:
             self.centre.value = centre
             self.FWHM.value = sigma * sigma2fwhm
             self.area.value = height * sigma * sqrt2pi
-            if self.binned:
-                self.area.value /= axis.scale
+            if is_binned(signal):
+            # in v2 replace by
+            #if axis.is_binned:
+                self.area.value /= scaling_factor
             return True
         else:
             if self.area.map is None:
                 self._create_arrays()
             self.area.map['values'][:] = height * sigma * sqrt2pi
-            if self.binned:
-                self.area.map['values'][:] /= axis.scale
+            if is_binned(signal):
+            # in v2 replace by
+            #if axis.is_binned:
+                self.area.map['values'][:] /= scaling_factor
             self.area.map['is_set'][:] = True
             self.FWHM.map['values'][:] = sigma * sigma2fwhm
             self.FWHM.map['is_set'][:] = True

@@ -53,3 +53,4 @@ hyperspy/tests/io/edax_files.zip
 .vscode/
 tsconfig.json
 jsconfig.json
+*egg-info*

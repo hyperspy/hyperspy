@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -52,11 +52,14 @@ import numpy as np
 
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
-from hyperspy.axes import DataAxis
+from hyperspy.axes import UniformDataAxis
 from hyperspy.drawing import widgets
 from hyperspy.ui_registry import add_gui_method
 
-
+not_set_error_msg = (
+        "Some ROI parameters have not yet been set. "
+        "Set them before slicing a signal."
+        )
 class BaseROI(t.HasTraits):
 
     """Base class for all ROIs.
@@ -83,8 +86,25 @@ class BaseROI(t.HasTraits):
             """, arguments=['roi'])
         self.signal_map = dict()
 
+    def __getitem__(self, *args, **kwargs):
+        return tuple(self.parameters.values()).__getitem__(*args, **kwargs)
+
+    def __repr__(self):
+        para = []
+        for name, value in self.parameters.items():
+            if value is t.Undefined:
+                para.append(f"{name}={value}")
+            else:
+                # otherwise format value with the General specifer
+                para.append(f"{name}={value:G}")
+        return f"{self.__class__.__name__}({', '.join(para)})"
+
     _ndim = 0
     ndim = property(lambda s: s._ndim)
+
+    @property
+    def parameters(self):
+        raise NotImplementedError()
 
     def is_valid(self):
         """
@@ -93,7 +113,7 @@ class BaseROI(t.HasTraits):
         This is typically determined by all the coordinates being defined,
         and that the values makes sense relative to each other.
         """
-        raise NotImplementedError()
+        return t.Undefined not in tuple(self)
 
     def update(self):
         """Function responsible for updating anything that depends on the ROI.
@@ -173,6 +193,8 @@ class BaseROI(t.HasTraits):
               space can fit the right number of axis, and use that if it
               fits. If not, it will try the signal space.
         """
+        if not self.is_valid():
+            raise ValueError(not_set_error_msg)
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
         else:
@@ -203,7 +225,7 @@ class BaseROI(t.HasTraits):
 
         Parameters
         ----------
-        axes : specification of axes to use, default is None
+        axes : specification of axes to use
             The axes argument specifies which axes the ROI will be applied on.
             The axes in the collection can be either of the following:
 
@@ -242,7 +264,6 @@ class BaseROI(t.HasTraits):
                 raise ValueError("Could not find valid axes configuration.")
 
         return axes_out
-
 
 def _get_mpl_ax(plot, axes):
     """
@@ -333,6 +354,12 @@ class BaseInteractiveROI(BaseROI):
         """
         raise NotImplementedError()
 
+    def _set_default_values(self, signal, axes=None):
+        """When the ROI is called interactively with Undefined parameters,
+        use these values instead.
+        """
+        raise NotImplementedError()
+
     def _set_from_widget(self, widget):
         """Sets the internal representation of the ROI from the passed widget,
         without doing anything to events.
@@ -340,7 +367,7 @@ class BaseInteractiveROI(BaseROI):
         raise NotImplementedError()
 
     def interactive(self, signal, navigation_signal="same", out=None,
-                    color="green", **kwargs):
+                    color="green", snap=True, **kwargs):
         """Creates an interactively sliced Signal (sliced by this ROI) via
         hyperspy.interactive.
 
@@ -349,20 +376,25 @@ class BaseInteractiveROI(BaseROI):
         signal : Signal
             The source signal to slice
         navigation_signal : Signal, None or "same" (default)
+            The signal the ROI will be added to, for navigation purposes
+            only. Only the source signal will be sliced.
             If not None, it will automatically create a widget on
-            navigation_signal. Passing "same" is identical to passing the same
-            signal to 'signal' and 'navigation_signal', but is less ambigous,
-            and allows "same" to be the default value.
+            navigation_signal. Passing "same" is identical to passing the
+            same signal to 'signal' and 'navigation_signal', but is less
+            ambigous, and allows "same" to be the default value.
         out : Signal
-            If not None, it will use 'out' as the output instead of returning
-            a new Signal.
+            If not None, it will use 'out' as the output instead of
+            returning a new Signal.
         color : Matplotlib color specifier (default: 'green')
-            The color for the widget. Any format that matplotlib uses should be
-            ok. This will not change the color fo any widget passed with the
-            'widget' argument.
+            The color for the widget. Any format that matplotlib uses should
+            be ok. This will not change the color fo any widget passed with
+            the 'widget' argument.
+        snap : bool, optional
+            If True, the ROI will be snapped to the axes values. Default is
+            True.
         **kwargs
             All kwargs are passed to the roi __call__ method which is called
-            interactively on any roi attribute change.
+            interactively on any roi parameter change.
 
         """
         if hasattr(signal, '_plot_kwargs'):
@@ -374,11 +406,12 @@ class BaseInteractiveROI(BaseROI):
                     'fft_shift', False):
                 raise NotImplementedError('ROIs are not supported when data '
                                           'are shifted during plotting.')
+
         if isinstance(navigation_signal, str) and navigation_signal == "same":
             navigation_signal = signal
         if navigation_signal is not None:
             if navigation_signal not in self.signal_map:
-                self.add_widget(navigation_signal, color=color,
+                self.add_widget(navigation_signal, color=color, snap=snap,
                                 axes=kwargs.get("axes", None))
         if (self.update not in
                 signal.axes_manager.events.any_axis_changed.connected):
@@ -411,8 +444,8 @@ class BaseInteractiveROI(BaseROI):
         self._update_widgets(exclude=(widget,))
         self.events.changed.trigger(self)
 
-    def add_widget(self, signal, axes=None, widget=None,
-                   color='green', **kwargs):
+    def add_widget(self, signal, axes=None, widget=None, color='green',
+                   snap=True, **kwargs):
         """Add a widget to visually represent the ROI, and connect it so any
         changes in either are reflected in the other. Note that only one
         widget can be added per signal/axes combination.
@@ -420,8 +453,8 @@ class BaseInteractiveROI(BaseROI):
         Arguments
         ---------
         signal : Signal
-            The signal to witch the widget is added. This is used to determine
-            with plot to add the widget to, and it supplies the axes_manager
+            The signal to which the widget is added. This is used to determine
+            which plot to add the widget to, and it supplies the axes_manager
             for the widget.
         axes : specification of axes to use, default = None
             The axes argument specifies which axes the ROI will be applied on.
@@ -443,23 +476,40 @@ class BaseInteractiveROI(BaseROI):
             The color for the widget. Any format that matplotlib uses should be
             ok. This will not change the color fo any widget passed with the
             'widget' argument.
+        snap : bool, optional
+            If True, the ROI will be snapped to the axes values. Default is
+            True.
         kwargs:
             All keyword argument are passed to the widget constructor.
         """
+
         axes = self._parse_axes(axes, signal.axes_manager,)
+
+        # Undefined if roi initialised without specifying parameters
+        if t.Undefined in tuple(self):
+            self._set_default_values(signal, axes=axes)
+
         if widget is None:
             widget = self._get_widget_type(
                 axes, signal)(
                 signal.axes_manager, **kwargs)
             widget.color = color
 
-        # Remove existing ROI, if it exsists and axes match
+        # Remove existing ROI, if it exists and axes match
         if signal in self.signal_map and \
                 self.signal_map[signal][1] == axes:
             self.remove_widget(signal)
 
         # Set DataAxes
         widget.axes = axes
+        with widget.events.changed.suppress_callback(self._on_widget_change):
+            self._apply_roi2widget(widget)
+            # We need to snap after the widget value have been set
+            if hasattr(widget, 'snap_all'):
+                widget.snap_all = snap
+            else:
+                widget.snap_position = snap
+
         if widget.ax is None:
             if signal._plot is None or signal._plot.signal_plot is None:
                 raise Exception(
@@ -468,8 +518,6 @@ class BaseInteractiveROI(BaseROI):
 
             ax = _get_mpl_ax(signal._plot, axes)
             widget.set_mpl_ax(ax)
-        with widget.events.changed.suppress_callback(self._on_widget_change):
-            self._apply_roi2widget(widget)
 
         # Connect widget changes to on_widget_change
         widget.events.changed.connect(self._on_widget_change,
@@ -480,10 +528,10 @@ class BaseInteractiveROI(BaseROI):
         self.signal_map[signal] = (widget, axes)
         return widget
 
-    def _remove_widget(self, widget):
+    def _remove_widget(self, widget, render_figure=True):
         widget.events.closed.disconnect(self._remove_widget)
         widget.events.changed.disconnect(self._on_widget_change)
-        widget.close()
+        widget.close(render_figure=render_figure)
         for signal, w in self.signal_map.items():
             if w[0] == widget:
                 self.signal_map.pop(signal)
@@ -491,14 +539,32 @@ class BaseInteractiveROI(BaseROI):
             # disconnect events which has been added when
             if self.update in signal.axes_manager.events.any_axis_changed.connected:
                 signal.axes_manager.events.any_axis_changed.disconnect(
-                    self.update,
-                    [])
+                    self.update)
 
+    def remove_widget(self, signal, render_figure=True):
+        """
+        Removing a widget from a signal consists in two tasks:
+            1. Disconnect the interactive operations associated with this ROI
+               and the specified signal `signal`.
+            2. Removing the widget from the plot.
 
-    def remove_widget(self, signal):
+        Parameters
+        ----------
+        signal : BaseSignal
+            The signal from the which the interactive operations will be
+            disconnected.
+        render_figure : bool, optional
+            If False, the figure will not be rendered after removing the widget
+            in order to save redraw events. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
         if signal in self.signal_map:
             w = self.signal_map.pop(signal)[0]
-            self._remove_widget(w)
+            self._remove_widget(w, render_figure)
 
 
 class BasePointROI(BaseInteractiveROI):
@@ -515,7 +581,6 @@ class BasePointROI(BaseInteractiveROI):
         s = super(BasePointROI, self).__call__(signal=signal, out=out,
                                                axes=axes)
         return s
-
 
 def guess_vertical_or_horizontal(axes, signal):
     # Figure out whether to use horizontal or vertical line:
@@ -540,7 +605,6 @@ def guess_vertical_or_horizontal(axes, signal):
         raise ValueError(
             "Could not find valid widget type for the given `axes` value")
 
-
 @add_gui_method(toolkey="hyperspy.Point1DROI")
 class Point1DROI(BasePointROI):
 
@@ -562,17 +626,20 @@ class Point1DROI(BasePointROI):
     value = t.CFloat(t.Undefined)
     _ndim = 1
 
-    def __init__(self, value):
-        super(Point1DROI, self).__init__()
+    def __init__(self, value=None):
+        super().__init__()
+        value = value if value is not None else t.Undefined
         self.value = value
 
-    def __getitem__(self, *args, **kwargs):
-        _tuple = (self.value,)
-        return _tuple.__getitem__(*args, **kwargs)
+    def _set_default_values(self, signal, axes=None):
+        if axes is None:
+            axes = self._parse_axes(None, signal.axes_manager)
+        # If roi parameters are undefined, use center of axes
+        self.value = axes[0]._parse_value('rel0.5')
 
-
-    def is_valid(self):
-        return self.value != t.Undefined
+    @property
+    def parameters(self):
+        return {"value" : self.value}
 
     def _value_changed(self, old, new):
         self.update()
@@ -580,7 +647,6 @@ class Point1DROI(BasePointROI):
     def _get_ranges(self):
         ranges = ((self.value,),)
         return ranges
-
 
     def _set_from_widget(self, widget):
         self.value = widget.position[0]
@@ -596,11 +662,6 @@ class Point1DROI(BasePointROI):
             return widgets.HorizontalLineWidget
         else:
             raise ValueError("direction must be either horizontal or vertical")
-
-    def __repr__(self):
-        return "%s(value=%g)" % (
-            self.__class__.__name__,
-            self.value)
 
 
 @add_gui_method(toolkey="hyperspy.Point2DROI")
@@ -625,17 +686,24 @@ class Point2DROI(BasePointROI):
     x, y = (t.CFloat(t.Undefined),) * 2
     _ndim = 2
 
-    def __init__(self, x, y):
-        super(Point2DROI, self).__init__()
+    def __init__(self, x=None, y=None):
+        super().__init__()
+        x, y = (
+            para if para is not None
+            else t.Undefined for para in (x, y))
+
         self.x, self.y = x, y
 
-    def __getitem__(self, *args, **kwargs):
-        _tuple = (self.x, self.y)
-        return _tuple.__getitem__(*args, **kwargs)
+    def _set_default_values(self, signal, axes=None):
+        if axes is None:
+            axes = self._parse_axes(None, signal.axes_manager)
+        # If roi parameters are undefined, use center of axes
+        self.x = axes[0]._parse_value("rel0.5")
+        self.y = axes[1]._parse_value("rel0.5")
 
-
-    def is_valid(self):
-        return t.Undefined not in (self.x, self.y)
+    @property
+    def parameters(self):
+        return {"x":self.x, "y":self.y}
 
     def _x_changed(self, old, new):
         self.update()
@@ -655,11 +723,6 @@ class Point2DROI(BasePointROI):
 
     def _get_widget_type(self, axes, signal):
         return widgets.SquareWidget
-
-    def __repr__(self):
-        return "%s(x=%g, y=%g)" % (
-            self.__class__.__name__,
-            self.x, self.y)
 
 
 @add_gui_method(toolkey="hyperspy.SpanROI")
@@ -682,19 +745,28 @@ class SpanROI(BaseInteractiveROI):
     left, right = (t.CFloat(t.Undefined),) * 2
     _ndim = 1
 
-    def __init__(self, left, right):
-        super(SpanROI, self).__init__()
-        self._bounds_check = True   # Use reponsibly!
+    def __init__(self, left=None, right=None):
+        super().__init__()
+        self._bounds_check = True   # Use responsibly!
+        if left is not None and right is not None and left >= right:
+            raise ValueError(f"`left` ({left}) must be smaller than `right` ({right}).")
+        left, right = (
+            para if para is not None
+            else t.Undefined for para in (left, right))
         self.left, self.right = left, right
 
-    def __getitem__(self, *args, **kwargs):
-        _tuple = (self.left, self.right)
-        return _tuple.__getitem__(*args, **kwargs)
+    def _set_default_values(self, signal, axes=None):
+        if axes is None:
+            axes = self._parse_axes(None, signal.axes_manager)
+        # If roi parameters are undefined, use center of axes
+        self.left, self.right = _get_central_half_limits_of_axis(axes[0])
 
-
+    @property
+    def parameters(self):
+        return {"left":self.left, "right":self.right}
 
     def is_valid(self):
-        return (t.Undefined not in (self.left, self.right) and
+        return (t.Undefined not in tuple(self) and
                 self.right >= self.left)
 
     def _right_changed(self, old, new):
@@ -731,11 +803,6 @@ class SpanROI(BaseInteractiveROI):
         else:
             raise ValueError("direction must be either horizontal or vertical")
 
-    def __repr__(self):
-        return "%s(left=%g, right=%g)" % (
-            self.__class__.__name__,
-            self.left,
-            self.right)
 
 
 @add_gui_method(toolkey="hyperspy.RectangularROI")
@@ -759,19 +826,38 @@ class RectangularROI(BaseInteractiveROI):
     top, bottom, left, right = (t.CFloat(t.Undefined),) * 4
     _ndim = 2
 
-    def __init__(self, left, top, right, bottom):
+    def __init__(self, left=None, top=None, right=None, bottom=None):
         super(RectangularROI, self).__init__()
+        left, top, right, bottom  = (
+            para if para is not None
+            else t.Undefined for para in (left, top, right, bottom))
         self._bounds_check = True   # Use reponsibly!
-        self.top, self.bottom, self.left, self.right = top, bottom, left, right
+        self.left, self.top, self.right, self.bottom = left, top, right, bottom
 
     def __getitem__(self, *args, **kwargs):
+        # Note: RectangularROI is currently indexed in a different way
+        # than it is initialised. This should be fixed properly in a PR.
         _tuple = (self.left, self.right, self.top, self.bottom)
         return _tuple.__getitem__(*args, **kwargs)
 
+    def _set_default_values(self, signal, axes=None):
+        # Need to turn of bounds checking or undefined values trigger error
+        old_bounds_check = self._bounds_check
+        self._bounds_check = False
+        if axes is None:
+            axes = self._parse_axes(None, signal.axes_manager)
+
+        # If roi parameters are undefined, use center of axes
+        self.left, self.right = _get_central_half_limits_of_axis(axes[0])
+        self.top, self.bottom = _get_central_half_limits_of_axis(axes[1])
+        self._bounds_check = old_bounds_check
+
+    @property
+    def parameters(self):
+        return {"left":self.left, "top":self.top, "right":self.right, "bottom":self.bottom}
 
     def is_valid(self):
-        return (t.Undefined not in (self.top, self.bottom,
-                                    self.left, self.right) and
+        return (not t.Undefined in tuple(self) and
                 self.right >= self.left and self.bottom >= self.top)
 
     def _top_changed(self, old, new):
@@ -882,48 +968,56 @@ class RectangularROI(BaseInteractiveROI):
     def _get_widget_type(self, axes, signal):
         return widgets.RectangleWidget
 
-    def __repr__(self):
-        return "%s(left=%g, top=%g, right=%g, bottom=%g)" % (
-            self.__class__.__name__,
-            self.left,
-            self.top,
-            self.right,
-            self.bottom)
-
 
 @add_gui_method(toolkey="hyperspy.CircleROI")
 class CircleROI(BaseInteractiveROI):
     """Selects a circular or annular region in a 2D space. The coordinates of
-    the center of the circle are stored in the 'cx' and 'cy' attributes. The
-    radious in the `r` attribute. If an internal radious is defined using the
-    `r_inner` attribute, then an annular region is selected instead.
+    the center of the circle are stored in the 'cx' and 'cy' parameters and the
+    radius in the `r` parameter. If an internal radius is defined using the
+    `r_inner` parameter, then an annular region is selected instead.
     `CircleROI` can be used in place of a tuple containing `(cx, cy, r)`, `(cx,
     cy, r, r_inner)` when `r_inner` is not `None`.
     """
 
-    cx, cy, r, r_inner = (t.CFloat(t.Undefined),) * 4
+    cx, cy, r, r_inner = (t.CFloat(t.Undefined),) * 3 + (t.CFloat(0.),)
     _ndim = 2
 
-    def __init__(self, cx, cy, r, r_inner=None):
+    def __init__(self, cx=None, cy=None, r=None, r_inner=0):
         super(CircleROI, self).__init__()
+        cx, cy, r = (
+            para if para is not None
+            else t.Undefined for para in (cx, cy, r))
+
         self._bounds_check = True   # Use reponsibly!
-        self.cx, self.cy, self.r = cx, cy, r
-        if r_inner:
-            self.r_inner = r_inner
+        self.cx, self.cy, self.r, self.r_inner = cx, cy, r, r_inner
 
-    def __getitem__(self, *args, **kwargs):
-        if self.r_inner and self.r_inner is not t.Undefined:
-            _tuple = (self.cx, self.cy, self.r, self.r_inner)
-        else:
-            _tuple = (self.cx, self.cy, self.r)
-        return _tuple.__getitem__(*args, **kwargs)
+    def _set_default_values(self, signal, axes=None):
+        if axes is None:
+            axes = self._parse_axes(None, signal.axes_manager)
+        ax0, ax1 = axes
 
+        # If roi parameters are undefined, use center of axes
+        self.cx = ax0._parse_value('rel0.5')
+        self.cy = ax1._parse_value('rel0.5')
+
+        rx = (ax0.high_value - ax0.low_value)/2
+        ry = (ax1.high_value - ax1.low_value)/2
+        self.r = min(rx,ry)
+
+    @property
+    def parameters(self):
+        return {
+            "cx":self.cx,
+            "cy":self.cy,
+            "r": self.r,
+            "r_inner": self.r_inner
+            }
 
     def is_valid(self):
-        return (t.Undefined not in (self.cx, self.cy, self.r,) and
-                (self.r_inner is t.Undefined or
-                 t.Undefined not in (self.r, self.r_inner) and
-                 self.r >= self.r_inner))
+        return (
+            t.Undefined not in tuple(self)
+            and self.r >= self.r_inner
+            )
 
     def _cx_changed(self, old, new):
         self.update()
@@ -932,8 +1026,7 @@ class CircleROI(BaseInteractiveROI):
         self.update()
 
     def _r_changed(self, old, new):
-        if self._bounds_check and \
-                self.r_inner is not t.Undefined and new < self.r_inner:
+        if self._bounds_check and new < self.r_inner:
             self.r = old
         else:
             self.update()
@@ -954,8 +1047,7 @@ class CircleROI(BaseInteractiveROI):
 
     def _apply_roi2widget(self, widget):
         widget.position = (self.cx, self.cy)
-        inner = self.r_inner if self.r_inner != t.Undefined else 0.0
-        widget.size = (self.r, inner)
+        widget.size = (self.r, self.r_inner)
 
     def _get_widget_type(self, axes, signal):
         return widgets.CircleWidget
@@ -982,13 +1074,16 @@ class CircleROI(BaseInteractiveROI):
                   space can fit the right number of axis, and use that if it
                   fits. If not, it will try the signal space.
         """
-
-
+        if not self.is_valid():
+            raise ValueError(not_set_error_msg)
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
         else:
             axes = self._parse_axes(axes, signal.axes_manager)
-
+        for axis in axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                        "This ROI cannot operate on a non-uniform axis.")
         natax = signal.axes_manager._get_axes_in_natural_order()
         # Slice original data with a circumscribed rectangle
         cx = self.cx + 0.5001 * axes[0].scale
@@ -1003,8 +1098,7 @@ class CircleROI(BaseInteractiveROI):
         gx, gy = np.meshgrid(vx, vy)
         gr = gx**2 + gy**2
         mask = gr > self.r**2
-        if self.r_inner != t.Undefined:
-            mask |= gr < self.r_inner**2
+        mask |= gr < self.r_inner**2
         tiles = []
         shape = []
         chunks = []
@@ -1054,45 +1148,37 @@ class CircleROI(BaseInteractiveROI):
         else:
             out.events.data_changed.trigger(out)
 
-    def __repr__(self):
-        if self.r_inner == t.Undefined:
-            return "%s(cx=%g, cy=%g, r=%g)" % (
-                self.__class__.__name__,
-                self.cx,
-                self.cy,
-                self.r)
-        else:
-            return "%s(cx=%g, cy=%g, r=%g, r_inner=%g)" % (
-                self.__class__.__name__,
-                self.cx,
-                self.cy,
-                self.r,
-                self.r_inner)
-
 
 @add_gui_method(toolkey="hyperspy.Line2DROI")
 class Line2DROI(BaseInteractiveROI):
-    """Selects a line of a given width in 2D space. The coordinates of the end points of the line are stored in the `x1`, `y1`, `x2`, `y2` attributes.
-    The length is available in the `length` attribute and the method `angle` computes the angle of the line with the axes.
+    """Selects a line of a given width in 2D space. The coordinates of the end points of the line are stored in the `x1`, `y1`, `x2`, `y2` parameters.
+    The length is available in the `length` parameter and the method `angle` computes the angle of the line with the axes.
 
     `Line2DROI` can be used in place of a tuple containing the coordinates of the two end-points of the line and the linewdith `(x1, y1, x2, y2, linewidth)`.
     """
 
-    x1, y1, x2, y2, linewidth = (t.CFloat(t.Undefined),) * 5
+    x1, y1, x2, y2, linewidth = (t.CFloat(t.Undefined),) * 4 + (t.CFloat(0.),)
     _ndim = 2
 
-    def __init__(self, x1, y1, x2, y2, linewidth=0):
-        super(Line2DROI, self).__init__()
+    def __init__(self, x1=None, y1=None, x2=None, y2=None, linewidth=0):
+        super().__init__()
+        x1, y1, x2, y2 = (
+            para if para is not None
+            else t.Undefined for para in (x1, y1, x2, y2))
+
         self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
         self.linewidth = linewidth
 
-    def __getitem__(self, *args, **kwargs):
-        _tuple = (self.x1, self.y1, self.x2, self.y2, self.linewidth)
-        return _tuple.__getitem__(*args, **kwargs)
+    def _set_default_values(self, signal, axes=None):
+        if axes is None:
+            axes = self._parse_axes(None, signal.axes_manager)
+        # If roi parameters are undefined, use center of axes
+        self.x1, self.x2 = _get_central_half_limits_of_axis(axes[0])
+        self.y1, self.y2 = _get_central_half_limits_of_axis(axes[1])
 
-
-    def is_valid(self):
-        return t.Undefined not in (self.x1, self.y1, self.x2, self.y2)
+    @property
+    def parameters(self):
+        return {"x1":self.x1, "y1":self.y1, "x2":self.x2, "y2":self.y2, "linewidth":self.linewidth}
 
     def _x1_changed(self, old, new):
         self.update()
@@ -1177,8 +1263,8 @@ class Line2DROI(BaseInteractiveROI):
 
     @property
     def length(self):
-        p0 = np.array((self.x1, self.y1), dtype=np.float)
-        p1 = np.array((self.x2, self.y2), dtype=np.float)
+        p0 = np.array((self.x1, self.y1), dtype=float)
+        p1 = np.array((self.x2, self.y2), dtype=float)
         d_row, d_col = p1 - p0
         return np.hypot(d_row, d_col)
 
@@ -1252,11 +1338,13 @@ class Line2DROI(BaseInteractiveROI):
         cval : float, optional
             If `mode` is 'constant', what constant value to use outside the
             image.
+
         Returns
         -------
         return_value : array
             The intensity profile along the scan line. The length of the
             profile is the ceil of the computed length of the scan line.
+
         Examples
         --------
         >>> x = np.array([[1, 1, 1, 2, 2, 2]])
@@ -1269,12 +1357,18 @@ class Line2DROI(BaseInteractiveROI):
                [0, 0, 0, 0, 0, 0]])
         >>> profile_line(img, (2, 1), (2, 4))
         array([ 1.,  1.,  2.,  2.])
+
         Notes
         -----
         The destination point is included in the profile, in contrast to
-        standard numpy indexing.
+        standard numpy indexing. Requires uniform navigation axes.
 
         """
+        for axis in axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "Line profiles on data with non-uniform axes is not implemented.")
+
         import scipy.ndimage as nd
         # Convert points coordinates from axes units to pixels
         p0 = ((src[0] - axes[0].offset) / axes[0].scale,
@@ -1342,6 +1436,8 @@ class Line2DROI(BaseInteractiveROI):
             profile. 0 means nearest-neighbor interpolation, and is both the
             default and the fastest.
         """
+        if not self.is_valid():
+            raise ValueError(not_set_error_msg)
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
         else:
@@ -1359,10 +1455,10 @@ class Line2DROI(BaseInteractiveROI):
             axm = signal.axes_manager.deepcopy()
             i0 = min(axes[0].index_in_array, axes[1].index_in_array)
             axm.remove([ax.index_in_array + 3j for ax in axes])
-            axis = DataAxis(profile.shape[i0],
-                            scale=length / profile.shape[i0],
-                            units=axes[0].units,
-                            navigate=axes[0].navigate)
+            axis = UniformDataAxis(size=profile.shape[i0],
+                                  scale=length / profile.shape[i0],
+                                  units=axes[0].units,
+                                  navigate=axes[0].navigate)
             axis.axes_manager = axm
             axm._axes.insert(i0, axis)
             from hyperspy.signals import BaseSignal
@@ -1384,11 +1480,7 @@ class Line2DROI(BaseInteractiveROI):
                 ax.scale = length / len(profile)
             out.events.data_changed.trigger(out)
 
-    def __repr__(self):
-        return "%s(x1=%g, y1=%g, x2=%g, y2=%g, linewidth=%g)" % (
-            self.__class__.__name__,
-            self.x1,
-            self.y1,
-            self.x2,
-            self.y2,
-            self.linewidth)
+
+def _get_central_half_limits_of_axis(ax):
+    "Return indices of the central half of a DataAxis"
+    return ax._parse_value("rel0.25"), ax._parse_value("rel0.75")

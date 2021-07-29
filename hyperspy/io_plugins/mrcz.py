@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -32,6 +32,8 @@ file_extensions = ['mrc', 'MRC', 'mrcz', 'MRCZ']
 default_extension = 2
 # Writing capabilities:
 writes = True
+non_uniform_axis = False
+# ----------------------
 
 
 _POP_FROM_HEADER = ['compressor', 'MRCtype', 'C3', 'dimensions', 'dtype',

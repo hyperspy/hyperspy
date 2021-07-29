@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -107,8 +107,24 @@ class EELSModel(Model1D):
                 str(type(value)))
 
     def append(self, component):
+        """Append component to EELS model.
+
+        Parameters
+        ----------
+        component
+            HyperSpy component1D object.
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+        """
         super(EELSModel, self).append(component)
         if isinstance(component, EELSCLEdge):
+            # Test that signal axis is uniform
+            if not self.axes_manager[-1].is_uniform:
+                raise NotImplementedError("This operation is not yet implemented "
+                                          "for non-uniform energy axes")
             tem = self.signal.metadata.Acquisition_instrument.TEM
             component.set_microscope_parameters(
                 E0=tem.beam_energy,

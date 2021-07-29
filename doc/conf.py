@@ -13,11 +13,9 @@
 
 from hyperspy import Release
 import sys
-import os
 from datetime import datetime
 
 sys.path.append('../')
-sys.path.append(os.path.abspath('sphinxext'))
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -39,6 +37,7 @@ extensions = [
     'sphinx.ext.graphviz',
     'sphinx.ext.autosummary',
     'sphinx_toggleprompt',
+    'sphinxcontrib.towncrier',
 ]
 
 try:
@@ -227,7 +226,6 @@ latex_documents = [
 # If false, no module index is generated.
 #latex_domain_indices = True
 
-
 # -- Options for manual page output --------------------------------------
 
 # One entry per manual page. List of tuples
@@ -236,6 +234,15 @@ man_pages = [
     ('index', 'hyperspy', 'HyperSpy Documentation',
      ['The HyperSpy developers'], 1)
 ]
+
+
+# -- Options for towncrier_draft extension -----------------------------------
+
+# Options: draft/sphinx-version/sphinx-release
+towncrier_draft_autoversion_mode = 'draft'
+towncrier_draft_include_empty = False
+towncrier_draft_working_directory = ".."
+
 
 # Add the hyperspy website to the intersphinx domains
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
@@ -252,20 +259,21 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
 graphviz_output_format = "svg"
 
 
-# -- Options for Sphinx API doc ----------------------------------------------
-# Adapted from https://github.com/isogeo/isogeo-api-py-minsdk/blob/master/docs/conf.py
-# run api doc
-
-
 def run_apidoc(_):
+    # https://www.sphinx-doc.org/en/master/man/sphinx-apidoc.html
+    # https://www.sphinx-doc.org/es/1.2/ext/autodoc.html
+    import os
+    os.environ['SPHINX_APIDOC_OPTIONS'] = 'members,private-members,no-undoc-members,show-inheritance,ignore-module-all'
+
     from sphinx.ext.apidoc import main
 
     cur_dir = os.path.normpath(os.path.dirname(__file__))
     output_path = os.path.join(cur_dir, 'api')
     modules = os.path.normpath(os.path.join(cur_dir, "../hyperspy"))
-    exclude_pattern = "../hyperspy/tests"
-    exclude_pattern2 = "../hyperspy/external"
-    main(['-e', '-f', '-P', '-o', output_path, modules, exclude_pattern, exclude_pattern2])
+    exclude_pattern = ["../hyperspy/tests",
+                       "../hyperspy/external",
+                       "../hyperspy/io_plugins/unbcf_fast.pyx"]
+    main(['-e', '-f', '-P', '-o', output_path, modules, *exclude_pattern])
 
 
 def setup(app):

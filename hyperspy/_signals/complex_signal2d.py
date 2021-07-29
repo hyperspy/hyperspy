@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -24,7 +24,7 @@ from hyperspy.docstrings.plot import (
     COMPLEX_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
 
-class Complex2Dmixin:
+class ComplexSignal2D(ComplexSignal, CommonSignal2D):
 
     """BaseSignal subclass for complex 2-dimensional data."""
 
@@ -117,13 +117,8 @@ class Complex2Dmixin:
                      PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
 
-class ComplexSignal2D(Complex2Dmixin, ComplexSignal, CommonSignal2D):
-
-    """BaseSignal subclass for complex 2-dimensional data."""
-    pass
-
-
 class LazyComplexSignal2D(ComplexSignal2D, LazyComplexSignal):
 
     """BaseSignal subclass for lazy complex 2-dimensional data."""
+
     pass

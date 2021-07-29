@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -28,14 +28,17 @@ from inspect import isgenerator
 from pathlib import Path
 
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.io.tools import overwrite as overwrite_method
 from hyperspy.misc.utils import strlist2enumeration
 from hyperspy.misc.utils import stack as stack_method
 from hyperspy.io_plugins import io_plugins, default_write_ext
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import get_gui
 from hyperspy.extensions import ALL_EXTENSIONS
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+from hyperspy.docstrings.utils import STACK_METADATA_ARG
+
 
 _logger = logging.getLogger(__name__)
 
@@ -45,6 +48,42 @@ f_error_fmt = (
     "\tFile %d:\n"
     "\t\t%d signals\n"
     "\t\tPath: %s")
+
+
+def _infer_file_reader(extension):
+    """Return a file reader from the plugins list based on the file extension.
+
+    If the extension is not found or understood, returns
+    the Python imaging library as the file reader.
+
+    Parameters
+    ----------
+    extension : str
+        File extension, without initial "." separator
+
+    Returns
+    -------
+    reader : func
+        The inferred file reader.
+
+    """
+    rdrs = [rdr for rdr in io_plugins if extension.lower() in rdr.file_extensions]
+
+    if not rdrs:
+        # Try to load it with the python imaging library
+        _logger.warning(
+            f"Unable to infer file type from extension '{extension}'. "
+            "Will attempt to load the file with the Python imaging library."
+        )
+
+        from hyperspy.io_plugins import image
+
+        reader = image
+    else:
+        # Just take the first match for now
+        reader = rdrs[0]
+
+    return reader
 
 
 def _escape_square_brackets(text):
@@ -84,10 +123,13 @@ def load(filenames=None,
          signal_type=None,
          stack=False,
          stack_axis=None,
-         new_axis_name="stack_element",
+         new_axis_name='stack_element',
          lazy=False,
          convert_units=False,
          escape_square_brackets=False,
+         stack_metadata=True,
+         load_original_metadata=True,
+         show_progressbar=None,
          **kwds):
     """Load potentially multiple supported files into HyperSpy.
 
@@ -103,103 +145,115 @@ def load(filenames=None,
 
     Parameters
     ----------
-    filenames :  None or str or list(str) or pathlib.Path or list(pathlib.Path)
+    filenames :  None, str, list(str), pathlib.Path, list(pathlib.Path)
         The filename to be loaded. If None, a window will open to select
-        a file to load. If a valid filename is passed in that single
+        a file to load. If a valid filename is passed, that single
         file is loaded. If multiple file names are passed in
-        a list, a list of objects or a single object containing the data
-        of the individual files stacked are returned. This behaviour is
-        controlled by the `stack` parameter (see bellow). Multiple
+        a list, a list of objects or a single object containing multiple
+        datasets, a list of signals or a stack of signals is returned. This
+        behaviour is controlled by the `stack` parameter (see below). Multiple
         files can be loaded by using simple shell-style wildcards,
-        e.g. 'my_file*.msa' loads all the files that starts
-        by 'my_file' and has the '.msa' extension.
-    signal_type : {None, "EELS", "EDS_SEM", "EDS_TEM", "", str}
-        The acronym that identifies the signal type.
-        The value provided may determine the Signal subclass assigned to the
-        data.
-        If None the value is read/guessed from the file. Any other value
-        overrides the value stored in the file if any.
-        For electron energy-loss spectroscopy use "EELS".
-        For energy dispersive x-rays use "EDS_TEM"
-        if acquired from an electron-transparent sample — as it is usually
-        the case in a transmission electron  microscope (TEM) —,
-        "EDS_SEM" if acquired from a non electron-transparent sample
-        — as it is usually the case in a scanning electron  microscope (SEM).
-        If "" (empty string) the value is not read from the file and is
+        e.g. 'my_file*.msa' loads all the files that start
+        by 'my_file' and have the '.msa' extension. Alternatively, regular
+        expression type character classes can be used (e.g. ``[a-z]`` matches
+        lowercase letters). See also the `escape_square_brackets` parameter.
+    signal_type : None, str, '', optional
+        The acronym that identifies the signal type. May be any signal type
+        provided by HyperSpy or by installed extensions as listed by
+        `hs.print_known_signal_types()`. The value provided may determines the
+        Signal subclass assigned to the data.
+        If None (default), the value is read/guessed from the file.
+        Any other value would override the value potentially stored in the file.
+        For example, for electron energy-loss spectroscopy use 'EELS'.
+        If '' (empty string) the value is not read from the file and is
         considered undefined.
-    stack : bool
-        If True and multiple filenames are passed in, stacking all
+    stack : bool, optional
+        Default False. If True and multiple filenames are passed, stacking all
         the data into a single object is attempted. All files must match
         in shape. If each file contains multiple (N) signals, N stacks will be
         created, with the requirement that each file contains the same number
         of signals.
-    stack_axis : {None, int, str}
-        If None, the signals are stacked over a new axis. The data must
-        have the same dimensions. Otherwise the
-        signals are stacked over the axis given by its integer index or
-        its name. The data must have the same shape, except in the dimension
-        corresponding to `axis`.
-    new_axis_name : string
-        The name of the new axis when `axis` is None.
-        If an axis with this name already
-        exists it automatically append '-i', where `i` are integers,
-        until it finds a name that is not yet in use.
-    lazy : {None, bool}
+    stack_axis : None, int, str, optional
+        If None (default), the signals are stacked over a new axis. The data
+        must have the same dimensions. Otherwise, the signals are stacked over
+        the axis given by its integer index or its name. The data must have the
+        same shape, except in the dimension corresponding to `axis`.
+    new_axis_name : str, optional
+        The name of the new axis (default 'stack_element'), when `axis` is None.
+        If an axis with this name already exists, it automatically appends '-i',
+        where `i` are integers, until it finds a name that is not yet in use.
+    lazy : None, bool, optional
         Open the data lazily - i.e. without actually reading the data from the
         disk until required. Allows opening arbitrary-sized datasets. The default
-        is `False`.
-    convert_units : {bool}
+        is False.
+    convert_units : bool, optional
         If True, convert the units using the `convert_to_units` method of
-        the `axes_manager`. If False, does nothing. The default is False.
+        the `axes_manager`. If False (default), does nothing.
     escape_square_brackets : bool, default False
         If True, and ``filenames`` is a str containing square brackets,
         then square brackets are escaped before wildcard matching with
         ``glob.glob()``. If False, square brackets are used to represent
-        character classes (e.g. ``[a-z]`` matches lowercase letters.
-    print_info: bool
-        For SEMPER unf- and EMD (Berkeley)-files, if True (default is False)
-        additional information read during loading is printed for a quick
-        overview.
-    downsample : int (1–4095)
-        For Bruker bcf files, if set to integer (>=2) (default 1)
+        character classes (e.g. ``[a-z]`` matches lowercase letters).
+    %s
+    %s Only used with ``stack=True``.
+    load_original_metadata : bool
+        If ``True``, all metadata contained in the input file will be added
+        to ``original_metadata``.
+        This does not affect parsing the metadata to ``metadata``.
+    reader : None, str, custom file reader object, optional
+        Specify the file reader to use when loading the file(s). If None
+        (default), will use the file extension to infer the file type and
+        appropriate reader. If str, will select the appropriate file reader
+        from the list of available readers in HyperSpy. If a custom reader
+        object, it should implement the ``file_reader`` function, which returns
+        a dictionary containing the data and metadata for conversion to
+        a HyperSpy signal.
+    print_info: bool, optional
+        For SEMPER unf- and EMD (Berkeley)-files. If True, additional
+        information read during loading is printed for a quick overview.
+        Default False.
+    downsample : int (1–4095), optional
+        For Bruker bcf files, if set to integer (>=2) (default 1),
         bcf is parsed into down-sampled size array by given integer factor,
         multiple values from original bcf pixels are summed forming downsampled
         pixel. This allows to improve signal and conserve the memory with the
         cost of lower resolution.
-    cutoff_at_kV : {None, int, float}
-        For Bruker bcf files, if set to numerical (default is None)
+    cutoff_at_kV : None, int, float, optional
+        For Bruker bcf files, if set to numerical (default is None),
         bcf is parsed into array with depth cutoff at coresponding given energy.
-        This allows to conserve the memory, with cutting-off unused spectra's
-        tail, or force enlargement of the spectra size.
-    select_type : {'spectrum_image', 'image', 'single_spectrum', None}
-        If `None` (default), all data are loaded.
+        This allows to conserve the memory by cutting-off unused spectral
+        tails, or force enlargement of the spectra size.
+    select_type : 'spectrum_image', 'image', 'single_spectrum', None, optional
+        If None (default), all data are loaded.
         For Bruker bcf and Velox emd files: if one of 'spectrum_image', 'image'
-        or 'single_spectrum', the loader return single_spectrumns either only
-        the spectrum image or only the images (including EDS map for Velox emd
-        files) or only the single spectra (for Velox emd files).
-    first_frame : int (default 0)
+        or 'single_spectrum', the loader returns either only the spectrum image,
+        only the images (including EDS map for Velox emd files), or only
+        the single spectra (for Velox emd files).
+    first_frame : int, optional
         Only for Velox emd files: load only the data acquired after the
-        specified fname.
-    last_frame : None or int (default None)
+        specified fname. Default 0.
+    last_frame : None, int, optional
         Only for Velox emd files: load only the data acquired up to specified
-        fname. If None, load up the data to the end.
-    sum_frames : bool (default is True)
+        fname. If None (default), load the data up to the end.
+    sum_frames : bool, optional
         Only for Velox emd files: if False, load each EDS frame individually.
-    sum_EDS_detectors : bool (default is True)
-        Only for Velox emd files: if True, the signal from the different
-        detector are summed. If False, a distinct signal is returned for each
-        EDS detectors.
-    rebin_energy : int, a multiple of the length of the energy dimension (default 1)
+        Default is True.
+    sum_EDS_detectors : bool, optional
+        Only for Velox emd files: if True (default), the signals from the
+        different detectors are summed. If False, a distinct signal is returned
+        for each EDS detectors.
+    rebin_energy : int, optional
         Only for Velox emd files: rebin the energy axis by the integer provided
-        during loading in order to save memory space.
-    SI_dtype : numpy.dtype
+        during loading in order to save memory space. Needs to be a multiple of
+        the length of the energy dimension (default 1).
+    SI_dtype : numpy.dtype, None, optional
         Only for Velox emd files: set the dtype of the spectrum image data in
         order to save memory space. If None, the default dtype from the Velox emd
         file is used.
-    load_SI_image_stack : bool (default False)
+    load_SI_image_stack : bool, optional
         Only for Velox emd files: if True, load the stack of STEM images
-        acquired simultaneously as the EDS spectrum image.
-    dataset_path : None, str or list of str, optional
+        acquired simultaneously as the EDS spectrum image. Default is False.
+    dataset_path : None, str, list of str, optional
         For filetypes which support several datasets in the same file, this
         will only load the specified dataset. Several datasets can be loaded
         by using a list of strings. Only for EMD (NCEM) and hdf5 (USID) files.
@@ -207,13 +261,13 @@ def load(filenames=None,
         Only for EMD NCEM. Stack datasets of groups with common name. Relevant
         for emd file version >= 0.5 where groups can be named 'group0000',
         'group0001', etc.
-    ignore_non_linear_dims : bool, default is True
-        Only for HDF5 USID. If True, parameters that were varied non-linearly
-        in the desired dataset will result in Exceptions.
+    ignore_non_linear_dims : bool, optional
+        Only for HDF5 USID files: if True (default), parameters that were varied
+        non-linearly in the desired dataset will result in Exceptions.
         Else, all such non-linearly varied parameters will be treated as
         linearly varied parameters and a Signal object will be generated.
     only_valid_data : bool, optional
-        Only for FEI emi/ser file in case of series or linescan with the
+        Only for FEI emi/ser files in case of series or linescan with the
         acquisition stopped before the end: if True, load only the acquired
         data. If False, fill empty data with zeros. Default is False and this
         default value will change to True in version 2.0.
@@ -230,20 +284,28 @@ def load(filenames=None,
 
     Loading multiple files:
 
-    >>> d = hs.load('file1.dm3','file2.dm3')
+    >>> d = hs.load(['file1.hspy','file2.hspy'])
 
     Loading multiple files matching the pattern:
 
-    >>> d = hs.load('file*.dm3')
+    >>> d = hs.load('file*.hspy')
 
-    Loading multiple files containing square brackets:
+    Loading multiple files containing square brackets in the filename:
 
-    >>> d = hs.load('file[*].dm3', escape_square_brackets=True)
+    >>> d = hs.load('file[*].hspy', escape_square_brackets=True)
+
+    Loading multiple files containing character classes (regular expression):
+
+    >>> d = hs.load('file[0-9].hspy')
 
     Loading (potentially larger than the available memory) files lazily and
     stacking:
 
     >>> s = hs.load('file*.blo', lazy=True, stack=True)
+
+    Specify the file reader to use
+
+    >>> s = hs.load('a_nexus_file.h5', reader='nxs')
 
     """
     deprecated = ['mmap_dir', 'load_to_memory']
@@ -255,6 +317,7 @@ def load(filenames=None,
             del kwds[k]
     kwds['signal_type'] = signal_type
     kwds['convert_units'] = convert_units
+    kwds['load_original_metadata'] = load_original_metadata
     if filenames is None:
         from hyperspy.signal_tools import Load
         load_ui = Load()
@@ -266,6 +329,7 @@ def load(filenames=None,
             raise ValueError("No file provided to reader")
 
     if isinstance(filenames, str):
+        pattern = filenames
         if escape_square_brackets:
             filenames = _escape_square_brackets(filenames)
 
@@ -273,7 +337,7 @@ def load(filenames=None,
                                if os.path.isfile(f)])
 
         if not filenames:
-            raise ValueError('No filename matches this pattern')
+            raise ValueError(f'No filename matches the pattern "{pattern}"')
 
     elif isinstance(filenames, Path):
         # Just convert to list for now, pathlib.Path not
@@ -347,6 +411,8 @@ def load(filenames=None,
                 axis=stack_axis,
                 new_axis_name=new_axis_name,
                 lazy=lazy,
+                stack_metadata=stack_metadata,
+                show_progressbar=show_progressbar,
             )
             signal.metadata.General.title = Path(filenames[0]).parent.stem
             _logger.info('Individual files loaded correctly')
@@ -361,51 +427,74 @@ def load(filenames=None,
 
     return objects
 
+load.__doc__ %= (STACK_METADATA_ARG, SHOW_PROGRESSBAR_ARG)
+
 
 def load_single_file(filename, **kwds):
-    """
-    Load any supported file into an HyperSpy structure
+    """Load any supported file into an HyperSpy structure.
+
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
     Bruker bcf, FEI ser and emi, EDAX spc and spd, hspy (HDF5), and SEMPER unf.
 
     Parameters
     ----------
     filename : string
-        File name (including the extension)
+        File name including the extension.
+    **kwds
+        Keyword arguments passed to specific file reader.
+
+    Returns
+    -------
+    object
+        Data loaded from the file.
 
     """
     if not os.path.isfile(filename):
         raise FileNotFoundError(f"File: {filename} not found!")
 
-    extension = os.path.splitext(filename)[1][1:]
-    i = 0
+    # File extension without "." separator
+    file_ext = os.path.splitext(filename)[1][1:]
+    reader = kwds.pop("reader", None)
 
-    while extension.lower() not in io_plugins[i].file_extensions and \
-            i < len(io_plugins) - 1:
-        i += 1
-
-    if i == len(io_plugins):
-        # Try to load it with the python imaging library
-        try:
-            from hyperspy.io_plugins import image
-            reader = image
-            return load_with_reader(filename, reader, **kwds)
-        except BaseException as e:
-            raise IOError(
-                "If the file format is supported, "
-                f"please report this error:\n{e}"
-            )
+    if reader is None:
+        # Infer file reader based on extension
+        reader = _infer_file_reader(file_ext)
+    elif isinstance(reader, str):
+        # Infer file reader based on provided kwarg string
+        reader = _infer_file_reader(reader)
+    elif hasattr(reader, "file_reader"):
+        # Implies the user has passed their own file reader
+        pass
     else:
-        reader = io_plugins[i]
+        raise ValueError(
+            "`reader` should be one of None, str, "
+            "or a custom file reader object"
+        )
+
+    try:
+        # Try and load the file
         return load_with_reader(filename=filename, reader=reader, **kwds)
 
+    except BaseException:
+        _logger.error(
+            "If this file format is supported, please "
+            "report this error to the HyperSpy developers."
+        )
+        raise
 
-def load_with_reader(filename, reader, signal_type=None, convert_units=False,
-                     **kwds):
+
+def load_with_reader(
+        filename,
+        reader,
+        signal_type=None,
+        convert_units=False,
+        load_original_metadata=True,
+        **kwds
+    ):
+    """Load a supported file with a given reader."""
     lazy = kwds.get('lazy', False)
-    file_data_list = reader.file_reader(filename,
-                                        **kwds)
-    objects = []
+    file_data_list = reader.file_reader(filename, **kwds)
+    signal_list = []
 
     for signal_dict in file_data_list:
         if 'metadata' in signal_dict:
@@ -413,25 +502,39 @@ def load_with_reader(filename, reader, signal_type=None, convert_units=False,
                 signal_dict["metadata"]["Signal"] = {}
             if signal_type is not None:
                 signal_dict['metadata']["Signal"]['signal_type'] = signal_type
-            objects.append(dict2signal(signal_dict, lazy=lazy))
+            signal = dict2signal(signal_dict, lazy=lazy)
             folder, filename = os.path.split(os.path.abspath(filename))
             filename, extension = os.path.splitext(filename)
-            objects[-1].tmp_parameters.folder = folder
-            objects[-1].tmp_parameters.filename = filename
-            objects[-1].tmp_parameters.extension = extension.replace('.', '')
+            signal.tmp_parameters.folder = folder
+            signal.tmp_parameters.filename = filename
+            signal.tmp_parameters.extension = extension.replace('.', '')
+            # test if binned attribute is still in metadata
+            if signal.metadata.has_item('Signal.binned'):
+                for axis in signal.axes_manager.signal_axes:
+                    axis.is_binned = signal.metadata.Signal.binned
+                del signal.metadata.Signal.binned
+                warnings.warn('Loading old file version. The binned attribute '
+                              'has been moved from metadata.Signal to '
+                              'axis.is_binned. Setting this attribute for all '
+                              'signal axes instead.', VisibleDeprecationWarning)
             if convert_units:
-                objects[-1].axes_manager.convert_units()
+                signal.axes_manager.convert_units()
+            if not load_original_metadata:
+                signal.original_metadata = type(signal.original_metadata)()
+            signal_list.append(signal)
         else:
             # it's a standalone model
             continue
 
-    if len(objects) == 1:
-        objects = objects[0]
-    return objects
+    if len(signal_list) == 1:
+        signal_list = signal_list[0]
+
+    return signal_list
 
 
 def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
-    """Given dtype, signal_dimension and signal_type, return the matching Signal subclass.
+    """Given dtype, signal_dimension and signal_type, return the matching
+    Signal subclass.
 
     See `hs.print_known_signal_types()` for a list of known signal_types,
     and the developer guide for details on how to add new signal_types.
@@ -442,14 +545,14 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
         Signal dtype
     signal_dimension : int
         Signal dimension
-    signal_type : str, default ""
-        Signal type. Optional. Will log a warning if it is unknown to HyperSpy.
-    lazy : bool, default False
-        If True, returns the matching LazySignal subclass.
+    signal_type : str, optional
+        Signal type. Default ''. Will log a warning if it is unknown to HyperSpy.
+    lazy : bool, optional
+        If True, returns the matching LazySignal subclass. Default is False.
 
     Returns
     -------
-    Signal or subclass
+    Signal class or subclass
 
     """
     # Check if parameter values are allowed:
@@ -462,7 +565,7 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
     else:
         raise ValueError(f'Data type "{dtype.name}" not understood!')
     if not isinstance(signal_dimension, int) or signal_dimension < 0:
-        raise ValueError("signal_dimension must be a positive interger")
+        raise ValueError("signal_dimension must be a positive integer")
 
     signals = {key: value for key, value in ALL_EXTENSIONS["signals"].items()
                if value["lazy"] == lazy}
@@ -491,8 +594,9 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
         if signal_type not in set(valid_signal_types):
             _logger.warning(
                 f"`signal_type='{signal_type}'` not understood. "
-                f"See `hs.print_known_signal_types()` for a list of known signal types, "
-                f"and the developer guide for details on how to add new signal_types."
+                "See `hs.print_known_signal_types()` for a list of installed "
+                "signal types or https://github.com/hyperspy/hyperspy-extensions-list "
+                "for the list of all hyperspy extensions providing signals."
             )
 
         # If the following dict is not empty, only signal_dimension and dtype match.
@@ -522,8 +626,9 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
 
         return signal_class
 
+
 def dict2signal(signal_dict, lazy=False):
-    """Create a signal (or subclass) instance defined by a dictionary
+    """Create a signal (or subclass) instance defined by a dictionary.
 
     Parameters
     ----------
@@ -539,12 +644,12 @@ def dict2signal(signal_dict, lazy=False):
             importlib.import_module(signal_dict["package"])
         except ImportError:
             _logger.warning(
-                f"This file contains a signal provided by the " +
-                f'{signal_dict["package"]} Python package that is not ' +
-                f'currently installed. The signal will be loaded into a '
-                f'generic HyperSpy signal. Consider installing ' +
+                "This file contains a signal provided by the "
+                f'{signal_dict["package"]} Python package that is not '
+                'currently installed. The signal will be loaded into a '
+                'generic HyperSpy signal. Consider installing '
                 f'{signal_dict["package"]} to load this dataset into its '
-                f'original signal class.')
+                'original signal class.')
     signal_dimension = -1  # undefined
     signal_type = ""
     if "metadata" in signal_dict:
@@ -611,14 +716,14 @@ def save(filename, signal, overwrite=None, **kwds):
 
     Parameters
     ----------
-    filename : None or str or pathlib.Path
+    filename : None, str, pathlib.Path
         The filename to save the signal to.
     signal : Hyperspy signal
-        The signal to be saved to file.
-    overwrite : None or bool, default None
-        If None and a file exists the user will be prompted to on whether to
-        overwrite. If False and a file exists the file will not be written.
-        If True and a file exists the file will be overwritten without
+        The signal to be saved to the file.
+    overwrite : None, bool, optional
+        If None (default) and a file exists, the user will be prompted whether
+        to overwrite. If False and a file exists, the file will not be written.
+        If True and a file exists, the file will be overwritten without
         prompting
 
     Returns
@@ -656,14 +761,22 @@ def save(filename, signal, overwrite=None, **kwds):
         )
 
     if writer.writes is not True and (sd, nd) not in writer.writes:
-        yes_we_can = [plugin.format_name for plugin in io_plugins
+        compatible_writers = [plugin.format_name for plugin in io_plugins
                       if plugin.writes is True or
                       plugin.writes is not False and
                       (sd, nd) in plugin.writes]
 
-        raise IOError(
+        raise TypeError(
             "This file format does not support this data. "
-            "Please try one of {strlist2enumeration(yes_we_can)}"
+            f"Please try one of {strlist2enumeration(compatible_writers)}"
+        )
+
+    if not writer.non_uniform_axis and not signal.axes_manager.all_uniform:
+        compatible_writers = [plugin.format_name for plugin in io_plugins
+                      if plugin.non_uniform_axis is True]
+        raise TypeError("Writing to this format is not supported for "
+                      "non-uniform axes. Use one of the following "
+                      f"formats: {strlist2enumeration(compatible_writers)}"
         )
 
     # Create the directory if it does not exist
@@ -677,10 +790,8 @@ def save(filename, signal, overwrite=None, **kwds):
     elif overwrite is False and is_file:
         write = False  # Don't write the file
     else:
-        raise ValueError(
-            "`overwrite` parameter can only be None, True or False."
-        )
-
+        raise ValueError("`overwrite` parameter can only be None, True or "
+                         "False.")
     if write:
         # Pass as a string for now, pathlib.Path not
         # properly supported in io_plugins
