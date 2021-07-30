@@ -28,5 +28,6 @@ dependencies:
 - toolz
 - tqdm
 - traits
+- zarr
 
 
