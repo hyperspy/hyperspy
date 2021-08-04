@@ -57,21 +57,21 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
         the file extension that is any one supported by imageio.
     signal: a Signal instance
     scalebar : bool, optional
-        Export the image with a scalebar. Default is False
+        Export the image with a scalebar. Default is False.
     scalebar_kwds : dict, optional
         Dictionary of keyword arguments for the scalebar. Useful to set
         formattiong, location, etc. of the scalebar. See the documentation of
         the 'matplotlib-scalebar' library for more information.
     output_size : tuple of length 2 or int
-        The output size of the image in pixel, if None, the size of the data
-        is used. If int, define the width of the image. Default is None.
+        The output size of the image in pixels, if None, the size of the data
+        is used. If int, defines the width of the image. Default is None.
     imshow_kwds : dict, optional
         Keyword arguments dictionary for :py:func:`~.matplotlib.pyplot.imshow`.
     **kwds : keyword arguments
         Allows to pass keyword arguments supported by the individual file
         writers as documented at
         https://imageio.readthedocs.io/en/stable/formats.html when exporting
-        image without scalebar. When exporting with a scalebar, the keyword
+        an image without scalebar. When exporting with a scalebar, the keyword
         arguments are passed to the `pil_kwargs` dictionary of
         :py:func:`matplotlib.pyplot.savefig`
 
@@ -131,7 +131,7 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
                                  f"with {', '.join(supported_format)}.")
 
     if scalebar:
-        # Sanety check of the axes
+        # Sanity check of the axes
         # This plugin doesn't support non-uniform axes, we don't need to check
         # if the axes have a scale attribute
         if axes[0].scale != axes[1].scale or axes[0].units != axes[1].units:

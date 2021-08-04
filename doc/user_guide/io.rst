@@ -601,15 +601,15 @@ documentation for more information.
 
 In the example above, the image is created using
 :py:func:`~.matplotlib.pyplot.imshow`, and additional keyword arguments can be
-pass to this function using ``imshow_kwds``. For example, this can be used to
-save an image displayed using a matplotlib colormap:
+passed to this function using ``imshow_kwds``. For example, this can be used
+to save an image displayed using a matplotlib colormap:
 
 .. code-block:: python
 
     >>> s.save('file.jpg', imshow_kwds=dict(cmap='viridis'))
 
 
-The number of pixel of the exported image can be adjusted:
+The number of pixels of the exported image can be adjusted:
 
 .. code-block:: python
 
