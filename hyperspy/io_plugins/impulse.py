@@ -148,7 +148,7 @@ class impulseCSV:
         notes_section = False
         
         if "_Synchronized data" in str(self.filename) or "raw" in str(self.filename):  # Check if Impulse filename formatting is intact
-            metadata_file = ("".join(str(self.filename).split("_")[:-1]) + "_Metadata.log").replace("\\", "/")
+            metadata_file = ("_".join(str(self.filename).split("_")[:-1]) + "_Metadata.log").replace("\\", "/")
             if os.path.isfile(metadata_file):
                 with open(metadata_file, newline='') as csvfile:
                     metadata_file_reader = csv.reader(csvfile, delimiter=',')
