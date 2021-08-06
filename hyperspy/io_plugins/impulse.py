@@ -36,15 +36,12 @@ invalid_file_error = (
 )
 invalid_filenaming_error = {
     "No _Metadata file detected in filepath, please"
-    " make sure that the Metadata file is included."    
-    
+    " make sure that the Metadata file is included."
 }
 no_metadata_file_error = {
     "No _Metadata file detected in filepath, please"
-    " make sure that the Metadata file is included."    
-    
+    " make sure that the Metadata file is included."
 }
-
 
 
 def file_reader(filename, *args, **kwds):
@@ -118,7 +115,7 @@ class impulseCSV:
             .replace("#", "No")
             .replace(" ", "_")
             for name in self.column_names
-            ]
+        ]
         data = np.genfromtxt(
             self.filename,
             delimiter=",",
@@ -132,10 +129,16 @@ class impulseCSV:
         for i, name, name_dtype in zip(range(len(names)), self.column_names, names):
             if name == "Experiment time":
                 self.time_axis = data[name_dtype]
-            elif name == "MixValve": # Convert to a single integer of which each digit indicates the flowpath of the inlet gases. 3 means reactor, 2 means exhaust, 1 means bypass.
-                mixvalvedatachanged = data[name_dtype]            
+            elif (
+                name == "MixValve"
+            ):  # Convert to a single integer of which each digit indicates the flowpath of the inlet gases. 3 means reactor, 2 means exhaust, 1 means bypass.
+                mixvalvedatachanged = data[name_dtype]
                 for index, item in enumerate(data[name_dtype]):
-                    mixvalvedatachanged[index]=int(int(item.split(";")[0])+2)*100 + (int(item.split(";")[1])+2)*10 + (int(item.split(";")[2])+2)
+                    mixvalvedatachanged[index] = (
+                        int(int(item.split(";")[0]) + 2) * 100
+                        + (int(item.split(";")[1]) + 2) * 10
+                        + (int(item.split(";")[2]) + 2)
+                    )
                 mixvalvedatachangedint = np.array(mixvalvedatachanged, dtype=np.int32)
                 self._data_dictionary[name] = mixvalvedatachangedint
             else:
@@ -146,12 +149,16 @@ class impulseCSV:
         self.original_metadata = {}
         notes = []
         notes_section = False
-        
-        if "_Synchronized data" in str(self.filename) or "raw" in str(self.filename):  # Check if Impulse filename formatting is intact
-            metadata_file = ("_".join(str(self.filename).split("_")[:-1]) + "_Metadata.log").replace("\\", "/")
+
+        if "_Synchronized data" in str(self.filename) or "raw" in str(
+            self.filename
+        ):  # Check if Impulse filename formatting is intact
+            metadata_file = (
+                "_".join(str(self.filename).split("_")[:-1]) + "_Metadata.log"
+            ).replace("\\", "/")
             if os.path.isfile(metadata_file):
-                with open(metadata_file, newline='') as csvfile:
-                    metadata_file_reader = csv.reader(csvfile, delimiter=',')
+                with open(metadata_file, newline="") as csvfile:
+                    metadata_file_reader = csv.reader(csvfile, delimiter=",")
                     for row in metadata_file_reader:
                         if notes_section:
                             notes.append(row[0])
@@ -160,19 +167,19 @@ class impulseCSV:
                             notes = [row[1].strip()]
                         else:
                             self.original_metadata[row[0]] = row[1].strip()
-                    self.original_metadata['Notes']=notes
+                    self.original_metadata["Notes"] = notes
                     self.start_datetime = np.datetime64(
                         dt.strptime(
-                            self.original_metadata["Experiment date"] + self.original_metadata["Experiment time"],
+                            self.original_metadata["Experiment date"]
+                            + self.original_metadata["Experiment time"],
                             "%d-%m-%Y%H:%M:%S",
                         )
                     )
-                    
+
             else:
                 raise IOError(no_metadata_file_error)
         else:
             raise IOError(invalid_filenaming_error)
-
 
     def _get_axes(self):
         scale = np.diff(self.time_axis[1:-1]).mean()
@@ -237,7 +244,7 @@ class impulseCSV:
             "E-Field setpoint": "",
             "Resistance": "Ohm",
             "Compliance limit voltage": "V",
-            "Compliance limit current": "A"
+            "Compliance limit current": "A",
         }
         if quantity in parsUnits:
             quantityUnit = parsUnits[quantity]
