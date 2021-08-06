@@ -63,6 +63,12 @@ class TestPlotROI():
         p.add_widget(signal=self.im, axes=[0, ], color="cyan")
         return self.im._plot.navigator_plot.figure
 
+    def test_plot_point1D_axis_0_non_iterable(self):
+        self.im.plot()
+        p = roi.Point1DROI(0.5)
+        p.add_widget(signal=self.im, axes=0, color="cyan")
+        return self.im._plot.navigator_plot.figure
+
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
     def test_plot_point1D_axis_1(self):

@@ -225,9 +225,7 @@ class BaseROI(t.HasTraits):
         :py:class:`~hyperspy.axes.DataAxis`
         """
         nd = self.ndim
-        if isinstance(axes, (tuple, list)):
-            axes_out = axes_manager[axes[:nd]]
-        else:
+        if axes is None:
             if axes_manager.navigation_dimension >= nd:
                 axes_out = axes_manager.navigation_axes[:nd]
             elif axes_manager.signal_dimension >= nd:
@@ -240,6 +238,10 @@ class BaseROI(t.HasTraits):
                             axes_manager.navigation_axes[0]]
             else:
                 raise ValueError("Could not find valid axes configuration.")
+        elif isinstance(axes, (tuple, list)):
+            axes_out = axes_manager[axes[:nd]]
+        else:
+            axes_out = [axes_manager[axes]]
 
         return axes_out
 
