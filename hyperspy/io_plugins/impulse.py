@@ -93,8 +93,8 @@ class impulseCSV:
             "General": {
                 "original_filename": os.path.split(self.filename)[1],
                 "title": "%s" % quantity,
-                "date": self.original_metadata["Experiment date"],
-                "time": self.original_metadata["Experiment time"],
+                "date": self.original_metadata["Experiment_date"],
+                "time": self.original_metadata["Experiment_time"],
             },
             "Signal": {"signal_type": "", "quantity": self._parse_quantity_units(quantity)},
         }
@@ -113,7 +113,7 @@ class impulseCSV:
 
     def _read_data(self):
         names = [
-            name.replace(" ", "_").replace("°C","C").replace("(","").replace(")","").replace("/","_").replace("%","Perc")
+            name.replace(" ", "_").replace("°C","C").replace("#","No").replace("(","").replace(")","").replace("/","_").replace("%","Perc")
             for name in self.column_names
         ]
         data = np.genfromtxt(
@@ -163,12 +163,12 @@ class impulseCSV:
                             notes_section = True
                             notes = [row[1].strip()]
                         else:
-                            self.original_metadata[row[0]] = row[1].strip()
+                            self.original_metadata[row[0].replace(" ","_")] = row[1].strip()
                     self.original_metadata["Notes"] = notes
                     self.start_datetime = np.datetime64(
                         dt.strptime(
-                            self.original_metadata["Experiment date"]
-                            + self.original_metadata["Experiment time"],
+                            self.original_metadata["Experiment_date"]
+                            + self.original_metadata["Experiment_time"],
                             "%d-%m-%Y%H:%M:%S",
                         )
                     )
