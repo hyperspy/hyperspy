@@ -12,7 +12,7 @@ format_name = "Impulse"
 description = "Reads DENSsolutions Impulse log files"
 full_support = False
 # Recognised file extension
-file_extensions = ["csv", "CSV"]
+file_extensions = ["csv", "CSV", "impulse"]
 default_extension = 0
 # Reading capabilities
 reads_images = False
@@ -85,7 +85,6 @@ class impulseCSV:
             "data": self._data_dictionary[quantity],
             "axes": self._get_axes(),
             "metadata": self._get_metadata(quantity),
-            "mapping": self._get_mapping(),
             "original_metadata": {"Impulse_header": self.original_metadata},
         }
 
@@ -93,27 +92,28 @@ class impulseCSV:
         return {
             "General": {
                 "original_filename": os.path.split(self.filename)[1],
-                "title": "%s (%s)" % (quantity, self._get_quantity_units(quantity)),
+                "title": "%s" % quantity,
                 "date": self.original_metadata["Experiment date"],
                 "time": self.original_metadata["Experiment time"],
             },
-            "Signal": {"signal_type": "", "quantity": quantity},
+            "Signal": {"signal_type": "", "quantity": self._parse_quantity_units(quantity)},
         }
 
-    def _get_mapping(self):
-        mapping = {}
-        return mapping
 
+    def _parse_quantity_units(self, quantity):
+        quantity_split = quantity.strip().split(" ")
+        if len(quantity_split) >1:
+            if quantity_split[-1][0]=="(" and quantity_split[-1][-1]==")":
+                return quantity_split[-1]
+            else: return "NA"
+        else: return "NA"
+        
     def _get_metadata_time_axis(self):
         return {"value": self.time_axis, "units": self.time_units}
 
     def _read_data(self):
         names = [
-            name.replace("(", "")
-            .replace(")", "")
-            .replace("%", "PCT")
-            .replace("#", "No")
-            .replace(" ", "_")
+            name.replace(" ", "_").replace("°C","C").replace("(","").replace(")","").replace("/","_").replace("%","Perc")
             for name in self.column_names
         ]
         data = np.genfromtxt(
@@ -124,14 +124,11 @@ class impulseCSV:
             skip_header=1,
             encoding="latin1",
         )
-
         self._data_dictionary = dict()
         for i, name, name_dtype in zip(range(len(names)), self.column_names, names):
             if name == "Experiment time":
                 self.time_axis = data[name_dtype]
-            elif (
-                name == "MixValve"
-            ):  # Convert to a single integer of which each digit indicates the flowpath of the inlet gases. 3 means reactor, 2 means exhaust, 1 means bypass.
+            elif name == "MixValve":
                 mixvalvedatachanged = data[name_dtype]
                 for index, item in enumerate(data[name_dtype]):
                     mixvalvedatachanged[index] = (
@@ -197,57 +194,3 @@ class impulseCSV:
                 "navigate": False,
             }
         ]
-
-    def _get_quantity_units(self, quantity):
-        parsUnits = {
-            "Experiment time": "s",
-            "Temperature Setpoint": "°C",
-            "Temperature Measured": "°C",
-            "Measured power": "mW",
-            "Relative power reference": "mW",
-            "Relative power": "mW",
-            "MFC1 Measured": "mln/min",
-            "MFC1 Setpoint": "mln/min",
-            "MFC2 Measured": "mln/min",
-            "MFC2 Setpoint": "mln/min",
-            "MFC3 Measured": "mln/min",
-            "MFC3 Setpoint": "mln/min",
-            "Pin Measured": "mbar",
-            "Pin Setpoint": "mbar",
-            "Pout Measured": "mbar",
-            "Pout Setpoint": "mbar",
-            "Pnr (Calculated from Pin Pout)": "mln/min",
-            "Fnr": "mln/min",
-            "Pnr Setpoint": "mbar",
-            "Fnr Setpoint": "mln/min",
-            "% Gas1 Measured": "%",
-            "% Gas2 Measured": "%",
-            "% Gas3 Measured": "%",
-            "% Gas1 Setpoint": "%",
-            "% Gas2 Setpoint": "%",
-            "PumpRotation": "Hz",
-            "Pvac": "mbar",
-            "Channel#1": "mbar",
-            "Channel#2": "mbar",
-            "Channel#3": "mbar",
-            "Channel#4": "mbar",
-            "Channel#5": "mbar",
-            "Channel#6": "mbar",
-            "Channel#7": "mbar",
-            "Channel#8": "mbar",
-            "Channel#9": "mbar",
-            "Channel#10": "mbar",
-            "Voltage Setpoint": "V",
-            "Voltage Process value": "V",
-            "Current setpoint": "A",
-            "Current Process value": "A",
-            "E-Field setpoint": "",
-            "Resistance": "Ohm",
-            "Compliance limit voltage": "V",
-            "Compliance limit current": "A",
-        }
-        if quantity in parsUnits:
-            quantityUnit = parsUnits[quantity]
-        else:
-            quantityUnit = ""
-        return quantityUnit
