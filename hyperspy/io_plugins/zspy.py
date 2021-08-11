@@ -104,7 +104,7 @@ def file_reader(filename,
     standalone_models = []
     if 'Analysis/models' in f:
         try:
-            m_gr = f.require_group('Analysis/models')
+            m_gr = f['Analysis/models']
             for model_name in m_gr:
                 if '_signal' in m_gr[model_name].attrs:
                     key = m_gr[model_name].attrs['_signal']
@@ -332,32 +332,6 @@ def get_signal_chunks(shape, dtype, signal_axes=None):
     total_size = np.prod(shape)*typesize
     if total_size < 1e8:  # 1 mb
         return None
-    CHUNK_MAX = 1024 * 1024
-    want_to_keep = multiply([shape[i] for i in signal_axes]) * typesize
-    if want_to_keep >= CHUNK_MAX:
-        chunks = [1 for _ in shape]
-        for i in signal_axes:
-            chunks[i] = shape[i]
-        return tuple(chunks)
-
-    chunks = [i for i in shape]
-    idx = 0
-    navigation_axes = tuple(i for i in range(len(shape)) if i not in
-                            signal_axes)
-    nchange = len(navigation_axes)
-    while True:
-        chunk_bytes = multiply(chunks) * typesize
-
-        if chunk_bytes < CHUNK_MAX:
-            break
-
-        if multiply([chunks[i] for i in navigation_axes]) == 1:
-            break
-        change = navigation_axes[idx % nchange]
-        chunks[change] = np.ceil(chunks[change] / 2.0)
-        idx += 1
-    return tuple(int(x) for x in chunks)
-
 
 def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
     if chunks is None:
@@ -382,7 +356,7 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
                                      data.shape,
                                      object_codec=numcodecs.VLenArray(int),
                                      **these_kwds)
-        got_data=True
+        got_data = True
 
     while not got_data:
         try:
@@ -524,7 +498,7 @@ def zarrgroup2dict(group, dictionary=None, lazy=False):
     return dictionary
 
 
-def write_signal(signal, group, **kwds):
+def write_signal(signal, group, f,  **kwds):
     """Writes a hyperspy signal to a zarr group"""
 
     group.attrs.update(get_object_package_info(signal))
@@ -568,7 +542,7 @@ def write_signal(signal, group, **kwds):
                       peak_learning_results, **kwds)
 
     if len(signal.models):
-        model_group = group.file.require_group('Analysis/models')
+        model_group = f.require_group('Analysis/models')
         dict2zarrgroup(signal.models._models.as_dictionary(),
                       model_group, **kwds)
         for model in model_group.values():
@@ -597,6 +571,8 @@ def file_writer(filename, signal, *args, **kwds):
         group_name = group_name.replace("/", "-")
     expg = exps.create_group(group_name)
 
+
+
     # Add record_by metadata for backward compatibility
     smd = signal.metadata.Signal
     if signal.axes_manager.signal_dimension == 1:
@@ -606,7 +582,7 @@ def file_writer(filename, signal, *args, **kwds):
     else:
         smd.record_by = ""
     try:
-        write_signal(signal, expg, **kwds)
+        write_signal(signal, expg, f, **kwds)
     except BaseException:
         raise
     finally:

@@ -39,6 +39,7 @@ from hyperspy.misc.test_utils import sanitize_dict as san_dict
 from hyperspy.roi import Point2DROI
 from hyperspy.signal import BaseSignal
 from hyperspy.utils import markers
+import hyperspy.api as hs
 
 my_path = os.path.dirname(__file__)
 
@@ -489,6 +490,33 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
+    def test_metadata_update_to_v3_1(self):
+        md = {'Acquisition_instrument': {'SEM': {'Stage': {'tilt_alpha': 5.0}},
+                                         'TEM': {'Detector': {'Camera': {'exposure': 0.20000000000000001}},
+                                                 'Stage': {'tilt_alpha': 10.0},
+                                                 'acquisition_mode': 'TEM',
+                                                 'beam_current': 0.0,
+                                                 'beam_energy': 200.0,
+                                                 'camera_length': 320.00000000000006,
+                                                 'microscope': 'FEI Tecnai'}},
+              'General': {'date': '2014-07-09',
+                          'original_filename': 'test_diffraction_pattern.dm3',
+                          'time': '18:56:37',
+                          'title': 'test_diffraction_pattern'},
+              'Signal': {'Noise_properties': {'Variance_linear_model': {'gain_factor': 1.0,
+                                                                        'gain_offset': 0.0}},
+                         'quantity': 'Intensity',
+                         'signal_type': ''},
+              '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                        'original_shape': None,
+                                        'signal_unfolded': False,
+                                        'unfolded': False}}}
+        s = load(os.path.join(
+            my_path,
+            "hdf5_files",
+            'example2_v3.1.hspy'))
+        assert_deep_almost_equal(s.metadata.as_dictionary(), md)
+
     def test_save_load_text_marker(self):
         x, y = 3, 9.5
         color = 'brown'
@@ -527,6 +555,8 @@ class Test_permanent_markers_io:
         s1.axes_manager.navigation_axes[0].index = 2
         assert m1.get_data_position('x1') == x[2]
         assert m1.get_data_position('y1') == y[2]
+
+
 
 
 @pytest.mark.parametrize("compressor", (None, "default", "blosc"))
@@ -602,3 +632,23 @@ def test_data_lazy():
     s.save(filename)
     s1 = load(filename)
     np.testing.assert_array_almost_equal(s1.data, s.data)
+
+
+class TestZspy:
+    @pytest.fixture
+    def signal(self):
+        data = np.ones((10,10,10,10))
+        s = Signal1D(data)
+        return s
+
+    def test_save_load_model(self, signal):
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/testmodels.zspy'
+        m = signal.create_model()
+        m.append(hs.model.components1D.Gaussian())
+        m.store("test")
+        signal.save(filename)
+        signal2 = hs.load(filename)
+        m2 = signal2.models.restore("test")
+        assert m.signal == m2.signal
+
