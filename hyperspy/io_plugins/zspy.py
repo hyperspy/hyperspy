@@ -498,7 +498,7 @@ def zarrgroup2dict(group, dictionary=None, lazy=False):
     return dictionary
 
 
-def write_signal(signal, group, f,  **kwds):
+def write_signal(signal, group, f=None,  **kwds):
     """Writes a hyperspy signal to a zarr group"""
 
     group.attrs.update(get_object_package_info(signal))
@@ -541,7 +541,7 @@ def write_signal(signal, group, f,  **kwds):
         dict2zarrgroup(signal.peak_learning_results.__dict__,
                       peak_learning_results, **kwds)
 
-    if len(signal.models):
+    if len(signal.models) and f is not None:
         model_group = f.require_group('Analysis/models')
         dict2zarrgroup(signal.models._models.as_dictionary(),
                       model_group, **kwds)
