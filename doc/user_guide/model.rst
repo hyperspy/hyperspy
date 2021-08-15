@@ -200,7 +200,7 @@ following template to suit your needs:
 
             # Optionally we can set the initial values
             self.parameter_1.value = parameter_1
-            self.parameter_1.value = parameter_1
+            self.parameter_2.value = parameter_2
 
             # The units (optional)
             self.parameter_1.units = 'Tesla'
