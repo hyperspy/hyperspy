@@ -559,6 +559,9 @@ def file_writer(filename, signal, *args, **kwds):
     *args, optional
     **kwds, optional
     """
+    if "compressor" not in kwds:
+        from numcodecs import Blosc
+        kwds["compressor"] = Blosc(cname='zstd', clevel=1)
     store = zarr.storage.NestedDirectoryStore(filename,)
     f = zarr.group(store=store, overwrite=True)
     f.attrs['file_format'] = "ZSpy"
