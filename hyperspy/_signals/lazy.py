@@ -678,7 +678,7 @@ class LazySignal(BaseSignal):
             old_sig = self.rechunk(inplace=False)
         else:
             old_sig = self
-        autodetermine = (output_signal_size is None or output_dtype is None) # try to guess output dtype and sig size?
+        autodetermine = (output_signal_size is None or output_dtype is None)  # try to guess output dtype and sig size?
         nav_chunks = old_sig._get_navigation_chunk_size()
         args = ()
         arg_keys = ()
