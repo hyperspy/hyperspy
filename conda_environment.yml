@@ -4,6 +4,7 @@ channels:
 dependencies:
 - dask-core >2.0
 - dill
+- ffspec
 - h5py
 - imageio
 - ipyparallel
