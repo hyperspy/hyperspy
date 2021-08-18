@@ -33,6 +33,7 @@ from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.axes import AxesManager
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
@@ -233,6 +234,41 @@ class TestSavingMetadataContainers:
         s.save(fname)
         l = load(fname)
         assert l.metadata.Signal.quantity == quantity
+
+    def test_title(self, tmp_path):
+        s = self.s
+        fname = tmp_path / 'test.zspy'
+        s.metadata.General.title = '__unnamed__'
+        s.save(fname)
+        l = load(fname)
+        assert l.metadata.General.title is ""
+
+    def test_save_bytes(self, tmp_path):
+        s = self.s
+        byte_message = bytes("testing", 'utf-8')
+        s.metadata.set_item('test', byte_message)
+        fname = tmp_path / 'test.zspy'
+        s.save(fname)
+        l = load(fname)
+        assert l.metadata.test == s.metadata.test.decode()
+
+    def test_save_empty_tuple(self, tmp_path):
+        s = self.s
+        s.metadata.set_item('test', ())
+        fname = tmp_path / 'test.zspy'
+        s.save(fname)
+        l = load(fname)
+        #strange becuase you need the encoding...
+        assert l.metadata.test == s.metadata.test
+
+    def test_save_axes_manager(self, tmp_path):
+        s = self.s
+        s.metadata.set_item('test', s.axes_manager)
+        fname = tmp_path / 'test.zspy'
+        s.save(fname)
+        l = load(fname)
+        #strange becuase you need the encoding...
+        assert isinstance(l.metadata.test, AxesManager)
 
 class TestLoadingOOMReadOnly:
 

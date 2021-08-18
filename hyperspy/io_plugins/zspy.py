@@ -204,11 +204,6 @@ def zarrgroup2signaldict(group, lazy=False):
             zarrgroup2dict(
                 group['learning_results'],
                 lazy=lazy)
-    if 'peak_learning_results' in group.keys():
-        exp['attributes']['peak_learning_results'] = \
-            zarrgroup2dict(
-                group['peak_learning_results'],
-                lazy=lazy)
 
     # If the title was not defined on writing the Experiment is
     # then called __unnamed__. The next "if" simply sets the title
@@ -502,12 +497,8 @@ def write_signal(signal, group, f=None,  **kwds):
     """Writes a hyperspy signal to a zarr group"""
 
     group.attrs.update(get_object_package_info(signal))
-    if default_version < LooseVersion("1.2"):
-        metadata = "mapped_parameters"
-        original_metadata = "original_parameters"
-    else:
-        metadata = "metadata"
-        original_metadata = "original_metadata"
+    metadata = "metadata"
+    original_metadata = "original_metadata"
 
     if 'compressor' not in kwds:
         kwds['compressor'] = None
@@ -522,9 +513,6 @@ def write_signal(signal, group, f=None,  **kwds):
     overwrite_dataset(group, signal.data, 'data',
                       signal_axes=signal.axes_manager.signal_indices_in_array,
                       **kwds)
-    if default_version < LooseVersion("1.2"):
-        metadata_dict["_internal_parameters"] = \
-            metadata_dict.pop("_HyperSpy")
     # Remove chunks from the kwds since it wouldn't have the same rank as the
     # dataset and can't be used
     kwds.pop('chunks', None)
@@ -535,11 +523,6 @@ def write_signal(signal, group, f=None,  **kwds):
     learning_results = group.create_group('learning_results')
     dict2zarrgroup(signal.learning_results.__dict__,
                   learning_results, **kwds)
-    if hasattr(signal, 'peak_learning_results'):
-        peak_learning_results = group.create_group(
-            'peak_learning_results')
-        dict2zarrgroup(signal.peak_learning_results.__dict__,
-                      peak_learning_results, **kwds)
 
     if len(signal.models) and f is not None:
         model_group = f.require_group('Analysis/models')
@@ -573,8 +556,6 @@ def file_writer(filename, signal, *args, **kwds):
     if "/" in group_name:
         group_name = group_name.replace("/", "-")
     expg = exps.create_group(group_name)
-
-
 
     # Add record_by metadata for backward compatibility
     smd = signal.metadata.Signal
