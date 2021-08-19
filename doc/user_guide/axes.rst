@@ -10,7 +10,7 @@ functions operate on the *signal* axes and iterate over the *navigation* axes.
 Take an EELS spectrum image as specific example. It is a 2D array of spectra
 and has three dimensions: X, Y and energy-loss. In HyperSpy, X and Y are the
 *navigation* dimensions and the energy-loss is the *signal* dimension. To make
-this distinction more explicit, the representation of the object includes a 
+this distinction more explicit, the representation of the object includes a
 separator ``|`` between the navigation and signal dimensions. In analogy, the
 *signal* dimension in EDX would be the X-ray energy, in optical spectra the
 wavelength axis, etc. However, HyperSpy can also handle data with more than one
@@ -68,7 +68,7 @@ the signal class. The individual axes can be accessed by indexing the
     >>> s.axes_manager[0]
     <Unnamed 0th axis, size: 20, index: 0>
 
-The navigation axes come first, followed by the signal axes. Alternatively, 
+The navigation axes come first, followed by the signal axes. Alternatively,
 it is possible to selectively access the navigation or signal dimensions:
 
 .. code-block:: python
@@ -189,10 +189,10 @@ Types of data axes
 ------------------
 
 HyperSpy supports different *data axis types*, which differ in how the axis is
-defined: 
+defined:
 
-* :py:class:`~.axes.DataAxis` defined by an array ``axis``, 
-* :py:class:`~.axes.FunctionalDataAxis` defined by a function ``expression`` or 
+* :py:class:`~.axes.DataAxis` defined by an array ``axis``,
+* :py:class:`~.axes.FunctionalDataAxis` defined by a function ``expression`` or
 * :py:class:`~.axes.UniformDataAxis` defined by the initial value ``offset``
   and spacing ``scale``.
 
@@ -202,7 +202,7 @@ axis is **uniform**, where the data points are equidistantly spaced, or
 when, e.g., a spectrum recorded over a *wavelength* axis is converted to a
 *wavenumber* or *energy* scale, where the conversion is based on a ``1/x``
 dependence so that the axis spacing of the new axis varies along the length
-of the axis. Whether an axis is uniform or not can be queried through the 
+of the axis. Whether an axis is uniform or not can be queried through the
 property ``is_uniform`` (bool) of the axis.
 
 Every axis of a signal object may be of a different type. For example, it is
@@ -223,11 +223,18 @@ following table.
     |           :py:class:`~.axes.FunctionalDataAxis`                   |      expression        |  False      |
     +-------------------------------------------------------------------+------------------------+-------------+
     |             :py:class:`~.axes.UniformDataAxis`                    |    offset, scale       |  True       |
-    +-------------------------------------------------------------------+------------------------+-------------+    
+    +-------------------------------------------------------------------+------------------------+-------------+
 
 .. NOTE::
 
     Not all features are implemented for non-uniform axes.
+
+
+.. warning::
+
+    Non-uniform axes are in beta state and its API may change in a minor release.
+    Not all hyperspy features are compatible with non-uniform axes and support
+    will be added in future releases.
 
 
 Uniform data axis
@@ -264,7 +271,7 @@ Corresponding output of :py:class:`~.axes.AxesManager`:
                 Name |   size |  offset |   scale |  units
     ================ | ====== | ======= | ======= | ======
     ---------------- | ------ | ------- | ------- | ------
-                     |    500 |     300 |       1 |       
+                     |    500 |     300 |       1 |
 
 
 Functional data axis
@@ -279,7 +286,7 @@ expression, in this case ``a`` and ``b`` must be defined as additional
 attributes of the axis. The property ``is_uniform`` is automatically set to
 ``False``.
 
-``x`` itself is an instance of :py:class:`~.axes.BaseDataAxis`. By default, 
+``x`` itself is an instance of :py:class:`~.axes.BaseDataAxis`. By default,
 it will be a :py:class:`~.axes.UniformDataAxis` with ``offset = 0`` and
 ``scale = 1`` of the given ``size``. However, it can also be initialized with
 custom ``offset`` and ``scale`` values. Alternatively, it can be a non
@@ -317,7 +324,7 @@ Corresponding output of :py:class:`~.axes.AxesManager`:
                 Name |   size |           offset |            scale |  units
     ================ | ====== | ================ | ================ | ======
     ---------------- | ------ | ---------------- | ---------------- | ------
-                     |    500 | non-uniform axis | non-uniform axis |       
+                     |    500 | non-uniform axis | non-uniform axis |
 
 
 Initializing ``x`` with ``offset`` and ``scale``:
@@ -385,7 +392,7 @@ Corresponding output of :py:class:`~.axes.AxesManager`:
                 Name |   size |           offset |            scale |  units
     ================ | ====== | ================ | ================ | ======
     ---------------- | ------ | ---------------- | ---------------- | ------
-                     |     12 | non-uniform axis | non-uniform axis |       
+                     |     12 | non-uniform axis | non-uniform axis |
 
 
 Defining a new axis
@@ -400,7 +407,7 @@ automatically determines the type of axis by the given attributes:
     >>> axis = axes.create_axis(offset=10,scale=0.5,size=20)
     >>> axis
     <Unnamed axis, size: 20>
-    
+
 Alternatively, the creator of the different types of axes can be called
 directly:
 
@@ -410,7 +417,7 @@ directly:
     >>> axis = axes.UniformDataAxis(offset=10,scale=0.5,size=20)
     >>> axis
     <Unnamed axis, size: 20>
-    
+
 The dictionary defining the axis is returned by the ``get_axis_dictionary()``
 method:
 
@@ -432,13 +439,13 @@ signal<signal_initialization>`.
 Adding/Removing axes to/from a signal
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Usually, the axes are directly added to a signal during :ref:`signal 
+Usually, the axes are directly added to a signal during :ref:`signal
 initialization<signal_initialization>`. However, you may wish to add/remove
 axes from the :py:class:`~.axes.AxesManager` of a signal.
 
 Note that there is currently no consistency check whether a signal object has
 the right number of axes of the right dimensions. Most functions will however
-fail if you pass a signal object where the axes do not match the data 
+fail if you pass a signal object where the axes do not match the data
 dimensions and shape.
 
 You can *add a set of axes* to the :py:class:`~.axes.AxesManager` by passing either a list of
@@ -482,15 +489,15 @@ can be set and retrieved as quantity.
     >>> s.axes_manager[0].scale_as_quantity = '2.5 µm'
     >>> s.axes_manager
     <Axes manager, axes: (|10)>
-                Name |   size |  index |  offset |   scale |  units 
-    ================ | ====== | ====== | ======= | ======= | ====== 
-    ---------------- | ------ | ------ | ------- | ------- | ------ 
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+    ---------------- | ------ | ------ | ------- | ------- | ------
          <undefined> |     10 |        |       0 |     2.5 |     µm
     >>> s.axes_manager[0].offset_as_quantity = '2.5 nm'
     <Axes manager, axes: (|10)>
-                Name |   size |  index |  offset |   scale |  units 
-    ================ | ====== | ====== | ======= | ======= | ====== 
-    ---------------- | ------ | ------ | ------- | ------- | ------ 
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+    ---------------- | ------ | ------ | ------- | ------- | ------
          <undefined> |     10 |        |     2.5 | 2.5e+03 |     nm
 
 

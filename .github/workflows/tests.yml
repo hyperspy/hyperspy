@@ -102,7 +102,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: ammaraskar/sphinx-action@master
+      - uses: ericpre/sphinx-action@latest_sphinx
         with:
 
           pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }}  && pip install -e .[all,build-doc]"
