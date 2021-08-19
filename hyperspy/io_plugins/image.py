@@ -62,12 +62,13 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
         Dictionary of keyword arguments for the scalebar. Useful to set
         formattiong, location, etc. of the scalebar. See the documentation of
         the 'matplotlib-scalebar' library for more information.
-    output_size : tuple of length 2 or int
-        The output size of the image in pixels, if None, the size of the data
-        is used. If int, defines the width of the image. Default is None.
+    output_size : {tuple of length 2, int, None}, optional
+        The output size of the image in pixels (width, height). If int, defines 
+        the width of the image. If None, the size of the data is used. Default is 
+        None.
     imshow_kwds : dict, optional
         Keyword arguments dictionary for :py:func:`~.matplotlib.pyplot.imshow`.
-    **kwds : keyword arguments
+    **kwds : keyword arguments, optional
         Allows to pass keyword arguments supported by the individual file
         writers as documented at
         https://imageio.readthedocs.io/en/stable/formats.html when exporting
