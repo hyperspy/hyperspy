@@ -41,11 +41,8 @@ def get_low_loss_eels_signal(add_noise=True, random_state=None):
     Parameters
     ----------
     %s
-    %s
 
-    Returns
-    -------
-    artificial_low_loss_signal : :py:class:`~hyperspy._signals.eels.EELSSpectrum`
+    %s
 
     Example
     -------
@@ -84,7 +81,8 @@ get_low_loss_eels_signal.__doc__ %= (ADD_NOISE_DOCSTRING,
                                      RETURNS_DOCSTRING)
 
 
-def get_core_loss_eels_signal(add_powerlaw=False, add_noise=True, random_state=None):
+def get_core_loss_eels_signal(add_powerlaw=False, add_noise=True,
+                              random_state=None):
     """Get an artificial core loss electron energy loss spectrum.
 
     Similar to a Mn-L32 edge from a perovskite oxide.
@@ -209,7 +207,8 @@ get_low_loss_eels_line_scan_signal.__doc__ %= (ADD_NOISE_DOCSTRING,
                                                RETURNS_DOCSTRING)
 
 
-def get_core_loss_eels_line_scan_signal(add_powerlaw=False, add_noise=True, random_state=None):
+def get_core_loss_eels_line_scan_signal(add_powerlaw=False, add_noise=True,
+                                        random_state=None):
     """Get an artificial core loss electron energy loss line scan spectrum.
 
     Similar to a Mn-L32 and Fe-L32 edge from a perovskite oxide.
@@ -279,7 +278,8 @@ get_core_loss_eels_line_scan_signal.__doc__ %= (ADD_POWERLAW_DOCSTRING,
                                                 RETURNS_DOCSTRING)
 
 
-def get_core_loss_eels_model(add_powerlaw=False, add_noise=True, random_state=None):
+def get_core_loss_eels_model(add_powerlaw=False, add_noise=True,
+                             random_state=None):
     """Get an artificial core loss electron energy loss model.
 
     Similar to a Mn-L32 edge from a perovskite oxide.
@@ -364,12 +364,10 @@ def get_luminescence_signal(navigation_dimension=0,
     uniform: bool.
         return uniform (wavelength) or non-uniform (energy) spectrum
     add_baseline : bool
-            If true, adds a constant baseline to the spectrum. Conversion to
-            energy representation will turn the constant baseline into inverse
-            powerlaw.
+        If true, adds a constant baseline to the spectrum. Conversion to
+        energy representation will turn the constant baseline into inverse
+        powerlaw.
     %s
-    random_state: None or int
-        initialise state of the random number generator
 
     Example
     -------
