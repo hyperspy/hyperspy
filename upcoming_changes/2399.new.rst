@@ -1,1 +1,1 @@
-Implement non-uniform axes, not all hyperspy functionalities support non-uniform axes, see this [tracking issue](https://github.com/hyperspy/hyperspy/issues/2398) for progress.
+Implement non-uniform axes, not all hyperspy functionalities support non-uniform axes, see this `tracking issue <https://github.com/hyperspy/hyperspy/issues/2398>`_ for progress.
