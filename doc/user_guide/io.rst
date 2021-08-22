@@ -603,17 +603,17 @@ Extra saving arguments
   scalebar. Useful to set formattiong, location, etc. of the scalebar. See the
   `matplotlib-scalebar <https://pypi.org/project/matplotlib-scalebar/>`_
   documentation for more information.
-- ``output_size`` : (int, tuple of length 2 or None): the output size of the
-  image in pixels:
+- ``output_size`` : (int, tuple of length 2 or None, optional): the output size 
+  of the image in pixels:
 
   * if ``int``, defines the width of the image, the height is
-    determined from the aspec ratio of the image
+    determined from the aspect ratio of the image.
   * if ``tuple`` of length 2, defines the width and height of the
     image. Padding with white pixels is used to maintain the aspect
     ratio of the image.
   * if ``None``, the size of the data is used.
 
-  For output size larger than the data size, "nearest" interpolation is
+  For output sizes larger than the data size, "nearest" interpolation is
   used by default and this behaviour can be changed through the
   ``imshow_kwds`` dictionary.
 
@@ -646,7 +646,7 @@ to save an image displayed using a matplotlib colormap:
     >>> s.save('file.jpg', imshow_kwds=dict(cmap='viridis'))
 
 
-The number of pixels of the exported image can be adjusted:
+The resolution of the exported image can be adjusted:
 
 .. code-block:: python
 
