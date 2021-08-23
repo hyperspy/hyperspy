@@ -209,13 +209,14 @@ class BaseROI(t.HasTraits):
 
             * a tuple of:
 
-              * :py:class:`~hyperspy.axes.DataAxis`. These will not be checked
-                with signal.axes_manager.
-              * anything that will index the signal
-                :py:class:`~hyperspy.axes.AxesManager`
-            * For any other value, it will check whether the navigation
-              space can fit the right number of axis, and use that if it
-              fits. If not, it will try the signal space.
+                - DataAxis. These will not be checked with signal.axes_manager.
+                - anything that will index signal.axes_manager
+            * Anything that can index signal.axes_manager
+            * ``None``, it will check whether the widget can be added to the
+              navigator, i.e. if dimensionality matches, and use it if
+              possible, otherwise it will try the signal space. If none of the
+              two attempts works, an error message will be raised.
+
         axes_manager : :py:class:`~hyperspy.axes.AxesManager`
             The AxesManager to use for parsing axes, if axes is not already a
             tuple of DataAxis.
@@ -428,7 +429,7 @@ class BaseInteractiveROI(BaseROI):
             The signal to witch the widget is added. This is used to determine
             with plot to add the widget to, and it supplies the axes_manager
             for the widget.
-        axes : specification of axes to use, default = None
+        axes : specification of axes to use, default is None
             The axes argument specifies which axes the ROI will be applied on.
             The DataAxis in the collection can be either of the following:
 
@@ -436,10 +437,11 @@ class BaseInteractiveROI(BaseROI):
 
                 - DataAxis. These will not be checked with signal.axes_manager.
                 - anything that will index signal.axes_manager
-
-            * For any other value, it will check whether the navigation
-              space can fit the right number of axis, and use that if it
-              fits. If not, it will try the signal space.
+            * Anything that can index signal.axes_manager
+            * ``None``, it will check whether the widget can be added to the
+              navigator, i.e. if dimensionality matches, and use it if
+              possible, otherwise it will try the signal space. If none of the
+              two attempts works, an error message will be raised.
 
         widget : Widget or None (default)
             If specified, this is the widget that will be added. If None, the
