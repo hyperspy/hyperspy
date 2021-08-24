@@ -1196,10 +1196,11 @@ def plot_spectra(
         cycle.
     line_style : {None, matplotlib line style, list of line_styles}, optional
         Sets the line style of the plots (no action on 'heatmap').
-        The main line style are '-','--','-.',':'.
+        The main line style are ``'-'``, ``'--'``, ``'-.'``, ``':'``.
         For a list, if its length is less than the number of
         spectra to plot, line_style will be cycled. If
-        If `None`, use continuous lines, eg: ('-','--','-.',':').
+        If `None`, use continuous lines, eg: ``'-'``, ``'--'``, ``'-.'``,
+        ``':'``.
     drawstyle : {'default', 'steps', 'steps-pre', 'steps-mid', 'steps-post'},
         default: 'default'
         The drawstyle determines how the points are connected, no action with
@@ -1458,32 +1459,34 @@ def plot_histograms(signal_list,
     """Plot the histogram of every signal in the list in one figure.
 
     This function creates a histogram for each signal and plots the list with
-    the `utils.plot.plot_spectra` function.
+    the :py:func:`~.drawing.utils.plot_spectra` function.
 
     Parameters
     ----------
     signal_list : iterable
-        Ordered list of spectra to plot. If `style` is "cascade" or "mosaic",
-        the spectra can have different size and axes.
+        Ordered list of spectra to plot. If ``style`` is ``"cascade"`` or
+        ``"mosaic"``, the spectra can have different size and axes.
     bins : {int, list, str}, optional
         If bins is a string, then it must be one of:
-        'knuth' : use Knuth's rule to determine bins,
-        'scott' : use Scott's rule to determine bins,
-        'fd' : use the Freedman-diaconis rule to determine bins,
-        'blocks' : use bayesian blocks for dynamic bin widths.
+
+         - ``'knuth'`` : use Knuth's rule to determine bins,
+         - ``'scott'`` : use Scott's rule to determine bins,
+         - ``'fd'`` : use the Freedman-diaconis rule to determine bins,
+         - ``'blocks'`` : use bayesian blocks for dynamic bin widths.
     range_bins : {None, tuple}, optional
         The minimum and maximum range for the histogram. If not specified,
-        it will be (x.min(), x.max()).
+        it will be (``x.min()``, ``x.max()``).
     color : {None, valid matplotlib color, list of colors}, optional
         Sets the color of the lines of the plots. For a list, if its length is
         less than the number of spectra to plot, the colors will be cycled.
         If `None`, use default matplotlib color cycle.
-    line_style: {None, valid matplotlib line style, list of line styles},
+    line_style: {None, valid matplotlib line style, list of line styles}, \
         optional
-        The main line styles are '-','--','-.',':'.
+        The main line styles are ``'-'``, ``'--'``, ``'-.'``, ``':'``.
         For a list, if its length is less than the number of
         spectra to plot, line_style will be cycled.
-        If `None`, use continuous lines, eg: ('-','--','-.',':')
+        If `None`, use continuous lines, eg: ``'-'``, ``'--'``, ``'-.'``,
+        ``':'``.
     legend: {None, list of str, 'auto'}, optional
        Display a legend. If 'auto', the title of each spectra
        (metadata.General.title) is used.
