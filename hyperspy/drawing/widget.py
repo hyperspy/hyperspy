@@ -17,7 +17,10 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
+from packaging.version import Version
 
+
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backend_bases import MouseEvent
 import numpy as np
@@ -125,7 +128,10 @@ class WidgetBase(object):
                         self.ax.texts]:
                     for p in self.patch:
                         if p in container:
-                            container.remove(p)
+                            if Version(matplotlib.__version__) >= Version('3.5') :
+                                p.remove()
+                            else:
+                                container.remove(p)
                 self.disconnect()
         if hasattr(super(WidgetBase, self), 'set_on'):
             super(WidgetBase, self).set_on(value)
@@ -575,7 +581,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
 
     def _get_step(self, axis):
         # TODO: need to check if this is working fine, particularly with
-        """ Use to determine the size of the widget with support for non 
+        """ Use to determine the size of the widget with support for non
         uniform axis.
         """
         if axis.index >= axis.size - 1:
@@ -898,7 +904,7 @@ class ResizersMixin(object):
                         ax.texts]:
                     for r in self._resizer_handles:
                         if r in container:
-                            container.remove(r)
+                            r.remove()
             self._resizers_on = value
 
     def _get_resizer_size(self):

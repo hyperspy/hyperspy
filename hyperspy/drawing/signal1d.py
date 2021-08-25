@@ -530,9 +530,9 @@ class Signal1DLine(object):
     def close(self):
         _logger.debug('Closing `Signal1DLine`.')
         if self.line in self.ax.lines:
-            self.ax.lines.remove(self.line)
+            self.line.remove()
         if self.text and self.text in self.ax.texts:
-            self.ax.texts.remove(self.text)
+            self.text.remove()
         if self.sf_lines and self in self.sf_lines:
             self.sf_lines.remove(self)
         self.events.closed.trigger(obj=self)

@@ -156,7 +156,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
                 if len(self.patch) == 1:
                     # Need to remove the previous patch before using
                     # `_add_patch_to`
-                    self.ax.artists.remove(self.patch[0])
+                    self.patch[0].remove()
                     self.patch = []
                     self._add_patch_to(self.ax)
                 self.patch[1].radius = ri
