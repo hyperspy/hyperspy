@@ -200,12 +200,11 @@ Load the core-loss and low-loss spectra
     ...                         spectrum_type="lowloss")[0]
 
 
-Set some important experimental information that is missing from the original
-core-loss file
+Set some important experimental information, the beam energy and experimental angles :
 
 .. code-block:: python
 
-    >>> s.set_microscope_parameters(beam_energy=100,
+    >>> s.set_microscope_parameters(beam_energy=300,
     ...                             convergence_angle=0.2,
     ...                             collection_angle=2.55)
 
@@ -221,6 +220,8 @@ Define the chemical composition of the sample
 
     >>> s.add_elements(('B', 'N'))
 
+It is worth noting that in this case the experimental parameters and the list of elements are actually automatically imported from the EELS Data Base.
+However, with real life data, these must often be added by hand.
 
 In order to include the effect of plural scattering, the model is convolved with the loss loss spectrum in which case the low loss spectrum needs to be provided to :py:meth:`~._signals.eels.EELSSpectrum.create_model`:
 
