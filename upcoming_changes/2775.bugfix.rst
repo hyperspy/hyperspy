@@ -1,0 +1,1 @@
+:py:func:`~.misc.material.density_of_mixture` now throws a Value error when the density of an element is unknown

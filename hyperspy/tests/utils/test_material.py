@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import pytest
 
 import hyperspy.api as hs
 from hyperspy.misc.elements import elements_db
@@ -76,6 +77,12 @@ def test_density_of_mixture():
     wt = np.array([[[88] * 2] * 3, [[12] * 2] * 3])
     np.testing.assert_allclose(
         density, hs.material.density_of_mixture(wt, elements)[0, 0])
+
+    # Testing whether the correct exception is raised upon unknown density
+    elements = ("Cu", "Sn", "At")
+    wt = (87., 12., 1.)
+    with pytest.raises(ValueError):
+        hs.material.density_of_mixture(wt,elements)
 
 
 def test_mac():
