@@ -23,11 +23,14 @@ import datetime
 import ast
 
 import h5py
+import zarr
 import numpy as np
 import dask.array as da
 from traits.api import Undefined
 from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
 from hyperspy.axes import AxesManager
+
+from h5py import Dataset, File, Group
 
 
 _logger = logging.getLogger(__name__)
@@ -122,8 +125,10 @@ def get_hspy_format_version(f):
     return LooseVersion(version)
 
 
-def file_reader(filename, backing_store=False,
-                lazy=False, **kwds):
+def file_reader(filename,
+                backing_store=False,
+                lazy=False,
+                **kwds):
     """Read data from hdf5 files saved with the hyperspy hdf5 format specification
 
     Parameters
@@ -139,7 +144,7 @@ def file_reader(filename, backing_store=False,
     except ImportError:
         pass
     mode = kwds.pop('mode', 'r')
-    f = h5py.File(filename, mode=mode, **kwds)
+    f = File(filename, mode=mode, **kwds)
     # Getting the format version here also checks if it is a valid HSpy
     # hdf5 file, so the following two lines must not be deleted or moved
     # elsewhere.
@@ -157,7 +162,7 @@ def file_reader(filename, backing_store=False,
     standalone_models = []
     if 'Analysis/models' in f:
         try:
-            m_gr = f.require_group('Analysis/models')
+            m_gr = f['Analysis/models']
             for model_name in m_gr:
                 if '_signal' in m_gr[model_name].attrs:
                     key = m_gr[model_name].attrs['_signal']
@@ -178,7 +183,7 @@ def file_reader(filename, backing_store=False,
     exp_dict_list = []
     if 'Experiments' in f:
         for ds in f['Experiments']:
-            if isinstance(f['Experiments'][ds], h5py.Group):
+            if isinstance(f['Experiments'][ds], Group):
                 if 'data' in f['Experiments'][ds]:
                     experiments.append(ds)
         # Parse the file
@@ -473,7 +478,7 @@ def dict2hdfgroup(dictionary, group, **kwds):
         elif isinstance(value, BaseSignal):
             kn = key if key.startswith('_sig_') else '_sig_' + key
             write_signal(value, group.require_group(kn))
-        elif isinstance(value, (np.ndarray, h5py.Dataset, da.Array)):
+        elif isinstance(value, (np.ndarray, Dataset, da.Array)):
             overwrite_dataset(group, value, key, **kwds)
         elif value is None:
             group.attrs[key] = '_None_'
@@ -559,7 +564,12 @@ def get_signal_chunks(shape, dtype, signal_axes=None):
     return tuple(int(x) for x in chunks)
 
 
-def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
+def overwrite_dataset(group,
+                      data,
+                      key,
+                      signal_axes=None,
+                      chunks=None,
+                      **kwds):
     if chunks is None:
         if isinstance(data, da.Array):
             # For lazy dataset, by default, we use the current dask chunking
@@ -568,53 +578,58 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
             # If signal_axes=None, use automatic h5py chunking, otherwise
             # optimise the chunking to contain at least one signal per chunk
             chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
-
     if np.issubdtype(data.dtype, np.dtype('U')):
         # Saving numpy unicode type is not supported in h5py
         data = data.astype(np.dtype('S'))
     if data.dtype == np.dtype('O'):
-        # For saving ragged array
-        # http://docs.h5py.org/en/stable/special.html#arbitrary-vlen-data
-        group.require_dataset(key,
-                              chunks,
-                              dtype=h5py.special_dtype(vlen=data[0].dtype),
-                              **kwds)
-        group[key][:] = data[:]
+        dset = get_object_dset(group, data, key, chunks, **kwds)
+    else:
+        got_data=False
+        maxshape = tuple(None for _ in data.shape)
+        while not got_data:
+            try:
+                these_kwds = kwds.copy()
+                these_kwds.update(dict(shape=data.shape,
+                                       dtype=data.dtype,
+                                       exact=True,
+                                       maxshape=maxshape,
+                                       chunks=chunks,
+                                       shuffle=True, ))
 
-    maxshape = tuple(None for _ in data.shape)
-
-    got_data = False
-    while not got_data:
-        try:
-            these_kwds = kwds.copy()
-            these_kwds.update(dict(shape=data.shape,
-                                   dtype=data.dtype,
-                                   exact=True,
-                                   maxshape=maxshape,
-                                   chunks=chunks,
-                                   shuffle=True,))
-
-            # If chunks is True, the `chunks` attribute of `dset` below
-            # contains the chunk shape guessed by h5py
-            dset = group.require_dataset(key, **these_kwds)
-            got_data = True
-        except TypeError:
-            # if the shape or dtype/etc do not match,
-            # we delete the old one and create new in the next loop run
-            del group[key]
+                # If chunks is True, the `chunks` attribute of `dset` below
+                # contains the chunk shape guessed by h5py
+                dset = group.require_dataset(key, **these_kwds)
+                got_data = True
+            except TypeError:
+                # if the shape or dtype/etc do not match,
+                # we delete the old one and create new in the next loop run
+                del group[key]
     if dset == data:
         # just a reference to already created thing
         pass
     else:
         _logger.info(f"Chunks used for saving: {dset.chunks}")
-        if isinstance(data, da.Array):
-            if data.chunks != dset.chunks:
-                data = data.rechunk(dset.chunks)
-            da.store(data, dset)
-        elif data.flags.c_contiguous:
-            dset.write_direct(data)
-        else:
-            dset[:] = data
+        store_data(data, dset, group, key, chunks, **kwds)
+
+
+def get_object_dset(group, data, key, chunks, **kwds):
+    # For saving ragged array
+    # http://docs.h5py.org/en/stable/special.html#arbitrary-vlen-data
+    dset = group.require_dataset(key,
+                                 chunks,
+                                 dtype=h5py.special_dtype(vlen=data[0].dtype),
+                                 **kwds)
+    return dset
+
+def store_data(data, dset, group, key, chunks, **kwds):
+    if isinstance(data, da.Array):
+        if data.chunks != dset.chunks:
+            data = data.rechunk(dset.chunks)
+        da.store(data, dset)
+    elif data.flags.c_contiguous:
+        dset.write_direct(data)
+    else:
+        dset[:] = data
 
 
 def hdfgroup2dict(group, dictionary=None, lazy=False):
@@ -654,19 +669,19 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
             dictionary[key.replace("_datetime_", "")] = date_iso
         else:
             dictionary[key] = value
-    if not isinstance(group, h5py.Dataset):
+    if not isinstance(group, Dataset):
         for key in group.keys():
             if key.startswith('_sig_'):
                 from hyperspy.io import dict2signal
                 dictionary[key[len('_sig_'):]] = (
                     dict2signal(hdfgroup2signaldict(
                         group[key], lazy=lazy)))
-            elif isinstance(group[key], h5py.Dataset):
+            elif isinstance(group[key], Dataset):
                 dat = group[key]
                 kn = key
                 if key.startswith("_list_"):
                     if (h5py.check_string_dtype(dat.dtype) and
-                        hasattr(dat, 'asstr')):
+                            hasattr(dat, 'asstr')):
                         # h5py 3.0 and newer
                         # https://docs.h5py.org/en/3.0.0/strings.html
                         dat = dat.asstr()[:]
@@ -715,8 +730,8 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
                     group[key],
                     dictionary[key],
                     lazy=lazy)
-    return dictionary
 
+    return dictionary
 
 def write_signal(signal, group, **kwds):
     "Writes a hyperspy signal to a hdf5 group"
