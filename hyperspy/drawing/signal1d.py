@@ -41,7 +41,7 @@ class Signal1DFigure(BlittedFigure):
     """
 
     def __init__(self, title=""):
-        super(Signal1DFigure, self).__init__()
+        super().__init__()
         self.figure = None
         self.ax = None
         self.right_ax = None
@@ -188,7 +188,6 @@ class Signal1DFigure(BlittedFigure):
             lambda: self.axes_manager.events.indices_changed.disconnect(
                 self.update), [])
 
-        self.ax.figure.canvas.draw_idle()
         if hasattr(self.figure, 'tight_layout'):
             try:
                 self.figure.tight_layout()
@@ -196,7 +195,7 @@ class Signal1DFigure(BlittedFigure):
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
                 pass
-        self.figure.canvas.draw()
+        self.render_figure()
 
     def _on_close(self):
         _logger.debug('Closing Signal1DFigure.')

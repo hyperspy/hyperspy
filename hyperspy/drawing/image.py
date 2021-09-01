@@ -382,7 +382,7 @@ class ImagePlot(BlittedFigure):
                 pass
 
         self.connect()
-        self.figure.canvas.draw()
+        self.render_figure()
 
     def _add_colorbar(self):
         # Bug extend='min' or extend='both' and power law norm
@@ -567,10 +567,7 @@ class ImagePlot(BlittedFigure):
                 )
             else:
                 ims[0].changed()
-            if self.figure.canvas.supports_blit:
-                self._update_animated()
-            else:
-                self.figure.canvas.draw_idle()
+            self.render_figure()
         else:  # no signal have been drawn yet
             new_args = {'extent': self._extent,
                         'aspect': self._aspect,
@@ -583,7 +580,6 @@ class ImagePlot(BlittedFigure):
                     new_args['norm'] = norm
             new_args.update(kwargs)
             self.ax.imshow(data, **new_args)
-            self.figure.canvas.draw_idle()
 
         if self.axes_ticks == 'off':
             self.ax.set_axis_off()
