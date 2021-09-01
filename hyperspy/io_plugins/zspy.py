@@ -30,7 +30,7 @@ import dask.array as da
 from traits.api import Undefined
 from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
 from hyperspy.axes import AxesManager
-from hyperspy.io_plugins.hspy import hdfgroup2signaldict, file_reader, write_signal, overwrite_dataset, get_signal_chunks
+from hyperspy.io_plugins.hspy import hdfgroup2signaldict, dict2hdfgroup, file_reader, write_signal, overwrite_dataset, get_signal_chunks
 import numcodecs
 
 from hyperspy.io_plugins.hspy import version
@@ -136,6 +136,45 @@ def get_signal_chunks(shape, dtype, signal_axes=None):
     total_size = np.prod(shape)*typesize
     if total_size < 1e8:  # 1 mb
         return None
+
+def write_signal(signal, group, f=None,  **kwds):
+    """Writes a hyperspy signal to a zarr group"""
+
+    group.attrs.update(get_object_package_info(signal))
+    metadata = "metadata"
+    original_metadata = "original_metadata"
+
+    if 'compressor' not in kwds:
+        kwds['compressor'] = None
+
+    for axis in signal.axes_manager._axes:
+        axis_dict = axis.get_axis_dictionary()
+        coord_group = group.create_group(
+            'axis-%s' % axis.index_in_array)
+        dict2hdfgroup(axis_dict, coord_group, **kwds)
+    mapped_par = group.create_group(metadata)
+    metadata_dict = signal.metadata.as_dictionary()
+    overwrite_dataset(group, signal.data, 'data',
+                      signal_axes=signal.axes_manager.signal_indices_in_array,
+                      **kwds)
+    # Remove chunks from the kwds since it wouldn't have the same rank as the
+    # dataset and can't be used
+    kwds.pop('chunks', None)
+    dict2hdfgroup(metadata_dict, mapped_par, **kwds)
+    original_par = group.create_group(original_metadata)
+    dict2hdfgroup(signal.original_metadata.as_dictionary(), original_par,
+                   **kwds)
+    learning_results = group.create_group('learning_results')
+    dict2hdfgroup(signal.learning_results.__dict__,
+                  learning_results, **kwds)
+
+    if len(signal.models) and f is not None:
+        model_group = f.require_group('Analysis/models')
+        dict2hdfgroup(signal.models._models.as_dictionary(),
+                      model_group, **kwds)
+        for model in model_group.values():
+            model.attrs['_signal'] = group.name
+
 def file_writer(filename, signal, *args, **kwds):
     """Writes data to hyperspy's zarr format
     Parameters

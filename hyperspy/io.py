@@ -334,7 +334,7 @@ def load(filenames=None,
             filenames = _escape_square_brackets(filenames)
 
         filenames = natsorted([f for f in glob.glob(filenames)
-                               if os.path.isfile(f)])
+                               if os.path.isfile(f) or os.path.isdir(f)])
 
         if not filenames:
             raise ValueError(f'No filename matches the pattern "{pattern}"')
@@ -342,7 +342,7 @@ def load(filenames=None,
     elif isinstance(filenames, Path):
         # Just convert to list for now, pathlib.Path not
         # fully supported in io_plugins
-        filenames = [f for f in [filenames] if f.is_file()]
+        filenames = [f for f in [filenames] if f.is_file() or f.is_dir()]
 
     elif isgenerator(filenames):
         filenames = list(filenames)
@@ -449,7 +449,7 @@ def load_single_file(filename, **kwds):
         Data loaded from the file.
 
     """
-    if not os.path.isfile(filename):
+    if not os.path.isfile(filename) and not os.path.isdir(filename):
         raise FileNotFoundError(f"File: {filename} not found!")
 
     # File extension without "." separator

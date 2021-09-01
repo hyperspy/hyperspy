@@ -40,6 +40,7 @@ from hyperspy.io_plugins import (
     semper_unf,
     sur,
     tiff,
+    zspy,
 )
 
 io_plugins = [
@@ -63,6 +64,7 @@ io_plugins = [
     semper_unf,
     sur,
     tiff,
+    zspy,
 ]
 
 
