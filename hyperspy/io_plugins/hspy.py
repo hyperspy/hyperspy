@@ -520,7 +520,8 @@ class HyperspyWriter:
         self.signal = signal
         self.expg = expg
         self.kwds = kwds
-        self.Dataset= Dataset
+        self.Dataset = Dataset
+        self.unicode_kwds = {"dtype":h5py.special_dtype(vlen=str)}
 
     def write(self):
         self.write_signal(self.signal,
@@ -538,8 +539,7 @@ class HyperspyWriter:
             metadata = "metadata"
             original_metadata = "original_metadata"
 
-        if 'compression' not in kwds:
-            kwds['compression'] = 'gzip'
+
 
         for axis in signal.axes_manager._axes:
             axis_dict = axis.get_axis_dictionary()
@@ -571,7 +571,7 @@ class HyperspyWriter:
                           peak_learning_results, **kwds)
 
         if len(signal.models):
-            model_group = group.file.require_group('Analysis/models')
+            model_group = self.file.require_group('Analysis/models')
             self.dict2hdfgroup(signal.models._models.as_dictionary(),
                           model_group, **kwds)
             for model in model_group.values():
@@ -769,9 +769,11 @@ class HyperspyWriter:
         elif tmp.dtype.type is np.unicode_:
             if _type + key in group:
                 del group[_type + key]
+            print(self.unicode_kwds)
+            print(kwds)
             group.create_dataset(_type + key,
                                  tmp.shape,
-                                 dtype=h5py.special_dtype(vlen=str),
+                                 dtype = self.unicode_kwds["dtype"],
                                  **kwds)
             group[_type + key][:] = tmp[:]
         else:
@@ -780,7 +782,6 @@ class HyperspyWriter:
             group.create_dataset(_type + key,
                                  data=tmp,
                                  **kwds)
-
 
 
 def file_reader(
@@ -829,6 +830,8 @@ def file_writer(filename, signal, *args, **kwds):
     *args, optional
     **kwds, optional
     """
+    if 'compression' not in kwds:
+        kwds['compression'] = 'gzip'
     with h5py.File(filename, mode='w') as f:
         f.attrs['file_format'] = "HyperSpy"
         f.attrs['file_format_version'] = version

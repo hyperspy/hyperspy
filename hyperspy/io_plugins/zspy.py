@@ -16,20 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from distutils.version import LooseVersion
 import warnings
 import logging
-import datetime
-import ast
+
 
 import zarr
 from zarr import Array, Group
-from zarr import open as File
 import numpy as np
 import dask.array as da
-from traits.api import Undefined
-from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
-from hyperspy.axes import AxesManager
+from hyperspy.misc.utils import get_object_package_info
 from hyperspy.io_plugins.hspy import HyperspyReader, HyperspyWriter
 import numcodecs
 
@@ -86,48 +81,7 @@ class ZspyWriter(HyperspyWriter):
                  expg, **kwargs):
         super().__init__(file, signal, expg, **kwargs)
         self.Dataset = Array
-
-    def write_signal(self,
-                     signal,
-                     group,
-                     **kwds):
-        """Overrides the hyperspy store data function for using zarr as the backend
-        """
-
-        group.attrs.update(get_object_package_info(signal))
-        metadata = "metadata"
-        original_metadata = "original_metadata"
-
-        if 'compressor' not in kwds:
-            kwds['compressor'] = None
-
-        for axis in signal.axes_manager._axes:
-            axis_dict = axis.get_axis_dictionary()
-            coord_group = group.create_group(
-                'axis-%s' % axis.index_in_array)
-            self.dict2hdfgroup(axis_dict, coord_group, **kwds)
-        mapped_par = group.create_group(metadata)
-        metadata_dict = signal.metadata.as_dictionary()
-        self.overwrite_dataset(group, signal.data, 'data',
-                          signal_axes=signal.axes_manager.signal_indices_in_array,
-                          **kwds)
-        # Remove chunks from the kwds since it wouldn't have the same rank as the
-        # dataset and can't be used
-        kwds.pop('chunks', None)
-        self.dict2hdfgroup(metadata_dict, mapped_par, **kwds)
-        original_par = group.create_group(original_metadata)
-        self.dict2hdfgroup(signal.original_metadata.as_dictionary(), original_par,
-                      **kwds)
-        learning_results = group.create_group('learning_results')
-        self.dict2hdfgroup(signal.learning_results.__dict__,
-                      learning_results, **kwds)
-
-        if len(signal.models):
-            model_group = self.file.require_group('Analysis/models')
-            self.dict2hdfgroup(signal.models._models.as_dictionary(),
-                               model_group, **kwds)
-            for model in model_group.values():
-                model.attrs['_signal'] = group.name
+        self.unicode_kwds = {"dtype" : object, "object_codec" : numcodecs.JSON()}
 
     def store_data(self,
                    data,
@@ -220,8 +174,7 @@ class ZspyWriter(HyperspyWriter):
             group.create_dataset(_type + key,
                                  data=tmp,
                                  dtype=object,
-                                 object_codec=numcodecs.JSON(),
-                                 **kwds)
+                                 object_codec=numcodecs.JSON(),                                     **kwds)
         else:
             if _type + key in group:
                 del group[_type + key]
