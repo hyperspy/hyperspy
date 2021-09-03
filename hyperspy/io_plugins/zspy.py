@@ -30,7 +30,7 @@ import dask.array as da
 from traits.api import Undefined
 from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
 from hyperspy.axes import AxesManager
-from hyperspy.io_plugins.hspy import hdfgroup2signaldict, dict2hdfgroup, file_reader, write_signal, overwrite_dataset, get_signal_chunks
+#from hyperspy.io_plugins.hspy import hdfgroup2signaldict, dict2hdfgroup, file_reader, write_signal, overwrite_dataset, get_signal_chunks
 import numcodecs
 
 from hyperspy.io_plugins.hspy import version

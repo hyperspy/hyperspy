@@ -25,7 +25,7 @@ import os
 import h5py
 import pprint
 import traits.api as t
-from hyperspy.io_plugins.hspy import overwrite_dataset, get_signal_chunks
+#from hyperspy.io_plugins.hspy import overwrite_dataset, get_signal_chunks
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.exceptions import VisibleDeprecationWarning
 _logger = logging.getLogger(__name__)
