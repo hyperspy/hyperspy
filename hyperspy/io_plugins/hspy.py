@@ -105,10 +105,14 @@ not_valid_format = 'The file is not a valid HyperSpy hdf5 file'
 current_file_version = None  # Format version of the file being read
 default_version = LooseVersion(version)
 
+
 class HyperspyReader:
-    def __init__(self, file):
+    def __init__(self, file, Group, Dataset):
         self.file = file
         self.version = self.get_hspy_format_version()
+        self.Dataset = Dataset
+        self.Group = Group
+
 
     def get_hspy_format_version(self):
         if "file_format_version" in self.file.attrs:
@@ -152,11 +156,15 @@ class HyperspyReader:
         exp_dict_list = []
         if 'Experiments' in self.file:
             for ds in self.file['Experiments']:
-                if isinstance(self.file['Experiments'][ds], Group):
+                print(type(self.file['Experiments'][ds]))
+                print(self.Group)
+                if isinstance(self.file['Experiments'][ds], self.Group):
                     if 'data' in self.file['Experiments'][ds]:
                         experiments.append(ds)
             # Parse the file
+            print(experiments)
             for experiment in experiments:
+
                 exg = self.file['Experiments'][experiment]
                 exp = self.hdfgroup2signaldict(exg, lazy)
                 # assign correct models, if found:
@@ -178,8 +186,6 @@ class HyperspyReader:
                           'You can still load the data using a hdf5 reader, '
                           'e.g. h5py, and manually create a Signal. '
                           'Please, refer to the User Guide for details')
-        if not lazy:
-            self.file.close()
         return exp_dict_list
 
     def hdfgroup2signaldict(self,
@@ -437,14 +443,14 @@ class HyperspyReader:
                 dictionary[key.replace("_datetime_", "")] = date_iso
             else:
                 dictionary[key] = value
-        if not isinstance(group, Dataset):
+        if not isinstance(group, self.Dataset):
             for key in group.keys():
                 if key.startswith('_sig_'):
                     from hyperspy.io import dict2signal
                     dictionary[key[len('_sig_'):]] = (
                         dict2signal(self.hdfgroup2signaldict(
                             group[key], lazy=lazy)))
-                elif isinstance(group[key], Dataset):
+                elif isinstance(group[key], self.Dataset):
                     dat = group[key]
                     kn = key
                     if key.startswith("_list_"):
@@ -514,6 +520,7 @@ class HyperspyWriter:
         self.signal = signal
         self.expg = expg
         self.kwds = kwds
+        self.Dataset= Dataset
 
     def write(self):
         self.write_signal(self.signal,
@@ -587,7 +594,7 @@ class HyperspyWriter:
             elif isinstance(value, BaseSignal):
                 kn = key if key.startswith('_sig_') else '_sig_' + key
                 self.write_signal(value, group.require_group(kn))
-            elif isinstance(value, (np.ndarray, Dataset, da.Array)):
+            elif isinstance(value, (np.ndarray, self.Dataset, da.Array)):
                 self.overwrite_dataset(group, value, key, **kwds)
             elif value is None:
                 group.attrs[key] = '_None_'
@@ -720,7 +727,7 @@ class HyperspyWriter:
             # just a reference to already created thing
             pass
         else:
-            _logger.info(f"Chunks used for saving: {dset.chunks}")
+            _logger.info(f"Chunks used for saving: {chunks}")
             self.store_data(data, dset, group, key, chunks, **kwds)
 
     def get_object_dset(self, group, data, key, chunks, **kwds):
@@ -799,14 +806,17 @@ def file_reader(
     # Getting the format version here also checks if it is a valid HSpy
     # hdf5 file, so the following two lines must not be deleted or moved
     # elsewhere.
-    reader = HyperspyReader(f)
+    reader = HyperspyReader(f, Group, Dataset)
     if reader.version > version:
         warnings.warn(
             "This file was written using a newer version of the "
             "HyperSpy hdf5 file format. I will attempt to load it, but, "
             "if I fail, it is likely that I will be more successful at "
             "this and other tasks if you upgrade me.")
-    return reader.read(lazy=lazy)
+    exp_dict_list = reader.read(lazy=lazy)
+    if not lazy:
+        f.close()
+    return exp_dict_list
 
 
 def file_writer(filename, signal, *args, **kwds):

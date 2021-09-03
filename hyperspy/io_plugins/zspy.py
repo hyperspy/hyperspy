@@ -23,14 +23,14 @@ import datetime
 import ast
 
 import zarr
-from zarr import Array as Dataset
+from zarr import Array, Group
 from zarr import open as File
 import numpy as np
 import dask.array as da
 from traits.api import Undefined
 from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
 from hyperspy.axes import AxesManager
-#from hyperspy.io_plugins.hspy import hdfgroup2signaldict, dict2hdfgroup, file_reader, write_signal, overwrite_dataset, get_signal_chunks
+from hyperspy.io_plugins.hspy import HyperspyReader, HyperspyWriter
 import numcodecs
 
 from hyperspy.io_plugins.hspy import version
@@ -78,102 +78,158 @@ writes = True
 # the experiments and that will be accessible as attributes of the
 # Experiments instance
 
-def get_object_dset(group, data, key, chunks, **kwds):
-    if data.dtype == np.dtype('O'):
-        # For saving ragged array
-        # https://zarr.readthedocs.io/en/stable/tutorial.html?highlight=ragged%20array#ragged-arrays
-        if chunks is None:
-            chunks == 1
-        these_kwds = kwds.copy()
-        these_kwds.update(dict(dtype=object,
-                               exact=True,
-                               chunks=chunks))
-        dset = group.require_dataset(key,
-                                     data.shape,
-                                     object_codec=numcodecs.VLenArray(int),
-                                     **these_kwds)
-        return data, dset
 
+class ZspyWriter(HyperspyWriter):
+    def __init__(self,
+                 file,
+                 signal,
+                 expg, **kwargs):
+        super().__init__(file, signal, expg, **kwargs)
+        self.Dataset = Array
 
-def store_data(data, dset, group, key, chunks, **kwds):
-    if isinstance(data, da.Array):
-        if data.chunks != dset.chunks:
-            data = data.rechunk(dset.chunks)
-        path = group._store.dir_path() + "/" + dset.path
-        data.to_zarr(url=path,
-                     overwrite=True,
-                     **kwds)  # add in compression etc
-    elif data.dtype == np.dtype('O'):
-        group[key][:] = data[:]  # check lazy
-    else:
-        path = group._store.dir_path() + "/" + dset.path
-        dset = zarr.open_array(path,
-                               mode="w",
-                               shape=data.shape,
-                               dtype=data.dtype,
-                               chunks=chunks,
-                               **kwds)
-        dset[:] = data
+    def write_signal(self,
+                     signal,
+                     group,
+                     **kwds):
+        """Overrides the hyperspy store data function for using zarr as the backend
+        """
 
-def get_signal_chunks(shape, dtype, signal_axes=None):
-    """Function that calculates chunks for the signal,
-     preferably at least one chunk per signal space.
-    Parameters
-    ----------
-    shape : tuple
-        the shape of the dataset to be sored / chunked
-    dtype : {dtype, string}
-        the numpy dtype of the data
-    signal_axes: {None, iterable of ints}
-        the axes defining "signal space" of the dataset. If None, the default
-        zarr chunking is performed.
-    """
-    typesize = np.dtype(dtype).itemsize
-    if signal_axes is None:
-        return None
-    # chunk size larger than 1 Mb https://zarr.readthedocs.io/en/stable/tutorial.html#chunk-optimizations
-    # shooting for 100 Mb chunks
-    total_size = np.prod(shape)*typesize
-    if total_size < 1e8:  # 1 mb
-        return None
+        group.attrs.update(get_object_package_info(signal))
+        metadata = "metadata"
+        original_metadata = "original_metadata"
 
-def write_signal(signal, group, f=None,  **kwds):
-    """Writes a hyperspy signal to a zarr group"""
+        if 'compressor' not in kwds:
+            kwds['compressor'] = None
 
-    group.attrs.update(get_object_package_info(signal))
-    metadata = "metadata"
-    original_metadata = "original_metadata"
-
-    if 'compressor' not in kwds:
-        kwds['compressor'] = None
-
-    for axis in signal.axes_manager._axes:
-        axis_dict = axis.get_axis_dictionary()
-        coord_group = group.create_group(
-            'axis-%s' % axis.index_in_array)
-        dict2hdfgroup(axis_dict, coord_group, **kwds)
-    mapped_par = group.create_group(metadata)
-    metadata_dict = signal.metadata.as_dictionary()
-    overwrite_dataset(group, signal.data, 'data',
-                      signal_axes=signal.axes_manager.signal_indices_in_array,
+        for axis in signal.axes_manager._axes:
+            axis_dict = axis.get_axis_dictionary()
+            coord_group = group.create_group(
+                'axis-%s' % axis.index_in_array)
+            self.dict2hdfgroup(axis_dict, coord_group, **kwds)
+        mapped_par = group.create_group(metadata)
+        metadata_dict = signal.metadata.as_dictionary()
+        self.overwrite_dataset(group, signal.data, 'data',
+                          signal_axes=signal.axes_manager.signal_indices_in_array,
+                          **kwds)
+        # Remove chunks from the kwds since it wouldn't have the same rank as the
+        # dataset and can't be used
+        kwds.pop('chunks', None)
+        self.dict2hdfgroup(metadata_dict, mapped_par, **kwds)
+        original_par = group.create_group(original_metadata)
+        self.dict2hdfgroup(signal.original_metadata.as_dictionary(), original_par,
                       **kwds)
-    # Remove chunks from the kwds since it wouldn't have the same rank as the
-    # dataset and can't be used
-    kwds.pop('chunks', None)
-    dict2hdfgroup(metadata_dict, mapped_par, **kwds)
-    original_par = group.create_group(original_metadata)
-    dict2hdfgroup(signal.original_metadata.as_dictionary(), original_par,
-                   **kwds)
-    learning_results = group.create_group('learning_results')
-    dict2hdfgroup(signal.learning_results.__dict__,
-                  learning_results, **kwds)
+        learning_results = group.create_group('learning_results')
+        self.dict2hdfgroup(signal.learning_results.__dict__,
+                      learning_results, **kwds)
 
-    if len(signal.models) and f is not None:
-        model_group = f.require_group('Analysis/models')
-        dict2hdfgroup(signal.models._models.as_dictionary(),
-                      model_group, **kwds)
-        for model in model_group.values():
-            model.attrs['_signal'] = group.name
+        if len(signal.models):
+            model_group = self.file.require_group('Analysis/models')
+            self.dict2hdfgroup(signal.models._models.as_dictionary(),
+                               model_group, **kwds)
+            for model in model_group.values():
+                model.attrs['_signal'] = group.name
+
+    def store_data(self,
+                   data,
+                   dset,
+                   group,
+                   key,
+                   chunks,
+                   **kwds):
+        """Overrides the hyperspy store data function for using zarr as the backend
+        """
+        if isinstance(data, da.Array):
+            if data.chunks != dset.chunks:
+                data = data.rechunk(dset.chunks)
+            path = group._store.dir_path() + "/" + dset.path
+            data.to_zarr(url=path,
+                         overwrite=True,
+                         **kwds)  # add in compression etc
+        elif data.dtype == np.dtype('O'):
+            group[key][:] = data[:]  # check lazy
+        else:
+            path = group._store.dir_path() + "/" + dset.path
+            dset = zarr.open_array(path,
+                                   mode="w",
+                                   shape=data.shape,
+                                   dtype=data.dtype,
+                                   chunks=chunks,
+                                   **kwds)
+            dset[:] = data
+
+    def get_object_dset(self, group, data, key, chunks, **kwds):
+        """Overrides the hyperspy get object dset function for using zarr as the backend
+        """
+        if data.dtype == np.dtype('O'):
+            # For saving ragged array
+            # https://zarr.readthedocs.io/en/stable/tutorial.html?highlight=ragged%20array#ragged-arrays
+            if chunks is None:
+                chunks == 1
+            these_kwds = kwds.copy()
+            these_kwds.update(dict(dtype=object,
+                                   exact=True,
+                                   chunks=chunks))
+            dset = group.require_dataset(key,
+                                         data.shape,
+                                         object_codec=numcodecs.VLenArray(int),
+                                         **these_kwds)
+            return data, dset
+
+    def get_signal_chunks(self, shape, dtype, signal_axes=None):
+        """Function that calculates chunks for the signal,
+         preferably at least one chunk per signal space.
+        Parameters
+        ----------
+        shape : tuple
+            the shape of the dataset to be sored / chunked
+        dtype : {dtype, string}
+            the numpy dtype of the data
+        signal_axes: {None, iterable of ints}
+            the axes defining "signal space" of the dataset. If None, the default
+            zarr chunking is performed.
+        """
+        typesize = np.dtype(dtype).itemsize
+        if signal_axes is None:
+            return None
+        # chunk size larger than 1 Mb https://zarr.readthedocs.io/en/stable/tutorial.html#chunk-optimizations
+        # shooting for 100 Mb chunks
+        total_size = np.prod(shape) * typesize
+        if total_size < 1e8:  # 1 mb
+            return None
+
+    def parse_structure(self, key, group, value, _type, **kwds):
+        from hyperspy.signal import BaseSignal
+        try:
+            # Here we check if there are any signals in the container, as
+            # casting a long list of signals to a numpy array takes a very long
+            # time. So we check if there are any, and save numpy the trouble
+            if np.any([isinstance(t, BaseSignal) for t in value]):
+                tmp = np.array([[0]])
+            else:
+                tmp = np.array(value)
+        except ValueError:
+            tmp = np.array([[0]])
+        if tmp.dtype == np.dtype('O') or tmp.ndim != 1:
+            self.dict2hdfgroup(dict(zip(
+                [str(i) for i in range(len(value))], value)),
+                group.create_group(_type + str(len(value)) + '_' + key),
+                **kwds)
+        elif tmp.dtype.type is np.unicode_:
+            if _type + key in group:
+                del group[_type + key]
+            group.create_dataset(_type + key,
+                                 data=tmp,
+                                 dtype=object,
+                                 object_codec=numcodecs.JSON(),
+                                 **kwds)
+        else:
+            if _type + key in group:
+                del group[_type + key]
+            group.create_dataset(
+                _type + key,
+                data=tmp,
+                **kwds)
+
 
 def file_writer(filename, signal, *args, **kwds):
     """Writes data to hyperspy's zarr format
@@ -208,8 +264,32 @@ def file_writer(filename, signal, *args, **kwds):
     else:
         smd.record_by = ""
     try:
-        write_signal(signal, expg, f, **kwds)
+        writer = ZspyWriter(f, signal, expg, **kwds)
+        writer.write()
     except BaseException:
         raise
     finally:
         del smd.record_by
+
+
+def file_reader(filename,
+                lazy=False,
+                **kwds):
+    """Read data from zspy files saved with the hyperspy zspy format specification
+    Parameters
+    ----------
+    filename: str
+    lazy: bool
+        Load image lazily using dask
+    **kwds, optional
+    """
+    mode = kwds.pop('mode', 'r')
+    f = zarr.open(filename, mode=mode, **kwds)
+    reader = HyperspyReader(f, Group, Dataset=Array)
+    if reader.version > version:
+        warnings.warn(
+            "This file was written using a newer version of the "
+            "HyperSpy zspy file format. I will attempt to load it, but, "
+            "if I fail, it is likely that I will be more successful at "
+            "this and other tasks if you upgrade me.")
+    return reader.read(lazy=lazy)
