@@ -26,8 +26,7 @@ import dask.delayed as dd
 import dask
 from dask.diagnostics import ProgressBar
 from itertools import product
-from distutils.version import LooseVersion
-
+from packaging.version import Version
 
 from hyperspy.signal import BaseSignal
 from hyperspy.defaults_parser import preferences
@@ -1175,7 +1174,7 @@ class LazySignal(BaseSignal):
             # Needs to reverse the chunks list to match dask chunking order
             signal_chunks = list(signal_chunks)[::-1]
             navigation_chunks = ['auto'] * len(self.axes_manager.navigation_shape)
-            if LooseVersion(dask.__version__) >= LooseVersion("2.30.0"):
+            if Version(dask.__version__) >= Version("2.30.0"):
                 kwargs = {'balance':True}
             else:
                 kwargs = {}

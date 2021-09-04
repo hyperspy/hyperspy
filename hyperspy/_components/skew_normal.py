@@ -20,7 +20,7 @@ import numpy as np
 import dask.array as da
 
 from hyperspy._components.expression import Expression
-from distutils.version import LooseVersion
+from packaging.version import Version
 import sympy
 
 sqrt2pi = np.sqrt(2 * np.pi)
@@ -136,7 +136,7 @@ class SkewNormal(Expression):
 
     def __init__(self, x0=0., A=1., scale=1., shape=0.,
                  module=['numpy', 'scipy'], **kwargs):
-        if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
+        if Version(sympy.__version__) < Version("1.3"):
             raise ImportError("The `SkewNormal` component requires "
                               "SymPy >= 1.3")
         # We use `_shape` internally because `shape` is already taken in sympy

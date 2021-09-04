@@ -4,7 +4,7 @@ import tempfile
 import numpy as np
 import pytest
 import traits.api as t
-from distutils.version import LooseVersion
+from packaging.version import Version
 import tifffile
 
 
@@ -637,7 +637,7 @@ def test_save_angstrom_units():
         fname = os.path.join(tmpdir, 'save_angstrom_units.tif')
         s.save(fname)
         s2 = hs.load(fname)
-        if LooseVersion(tifffile.__version__) >= LooseVersion("2020.7.17"):
+        if Version(tifffile.__version__) >= Version("2020.7.17"):
             assert s2.axes_manager[0].units == s.axes_manager[0].units
         assert s2.axes_manager[0].scale == s.axes_manager[0].scale
         assert s2.axes_manager[0].offset == s.axes_manager[0].offset
