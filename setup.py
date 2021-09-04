@@ -68,7 +68,7 @@ install_req = ['scipy>=1.1',
                # prettytable and ptable are API compatible
                # prettytable is maintained and ptable is an unmaintained fork
                'prettytable',
-               'tifffile>=2018.10.18',
+               'tifffile>=2019.12.3',
                'numba',
                 # included in stdlib since v3.8, but this required version requires Python 3.9
                'importlib_metadata>=3.6',
