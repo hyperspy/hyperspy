@@ -22,7 +22,7 @@ from hyperspy._components.expression import Expression
 class RC(Expression):
 
     r"""
-    RC function component (based on the time-domain capacitor voltage response 
+    RC function component (based on the time-domain capacitor voltage response
     of an RC-circuit)
 
     .. math::
@@ -31,18 +31,18 @@ class RC(Expression):
             -\frac{x}{\tau}\right)\right]
 
     ====================== =============
-    Variable                Parameter 
+    Variable                Parameter
     ====================== =============
-    :math:`V_\mathrm{max}`  Vmax 
-    :math:`V_\mathrm{0}`    V0 
-    :math:`\tau`            tau 
+    :math:`V_\mathrm{max}`  Vmax
+    :math:`V_\mathrm{0}`    V0
+    :math:`\tau`            tau
     ====================== =============
 
 
     Parameters
     -----------
     Vmax : float
-        maximum voltage, asymptote of the function for 
+        maximum voltage, asymptote of the function for
         :math:`\mathrm{lim}_{x\to\infty}`
     V0 : float
         vertical offset
@@ -54,7 +54,7 @@ class RC(Expression):
     """
 
     def __init__(self, Vmax=1., V0=0., tau=1., module="numexpr", **kwargs):
-        super(RC, self).__init__(
+        super().__init__(
             expression="V0 + Vmax * (1 - exp(-x / tau))",
             name="RC",
             Vmax=Vmax,

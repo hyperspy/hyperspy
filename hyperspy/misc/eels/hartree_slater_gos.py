@@ -16,13 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import math
 import logging
+import math
+from pathlib import Path
 
 import numpy as np
-import scipy as sp
-
-from pathlib import Path
+from scipy import constants, integrate, interpolate
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.eels.base_gos import GOSBase
@@ -30,11 +29,11 @@ from hyperspy.misc.elements import elements
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary, load_from_dictionary)
 
+
 _logger = logging.getLogger(__name__)
 
-
-R = sp.constants.value("Rydberg constant times hc in eV")
-a0 = sp.constants.value("Bohr radius")
+R = constants.value("Rydberg constant times hc in eV")
+a0 = constants.value("Bohr radius")
 
 
 class HartreeSlaterGOS(GOSBase):
@@ -183,10 +182,10 @@ class HartreeSlaterGOS(GOSBase):
             # Perform the integration in a log grid
             qaxis, gos = self.get_qaxis_and_gos(i, qmin, qmax)
             logsqa0qaxis = np.log((a0 * qaxis) ** 2)
-            qint[i] = sp.integrate.simps(gos, logsqa0qaxis)
+            qint[i] = integrate.simps(gos, logsqa0qaxis)
         E = self.energy_axis + energy_shift
         # Energy differential cross section in (barn/eV/atom)
         qint *= (4.0 * np.pi * a0 ** 2.0 * R ** 2 / E / T *
                  self.subshell_factor) * 1e28
         self.qint = qint
-        return sp.interpolate.interp1d(E, qint, kind=3)
+        return interpolate.interp1d(E, qint, kind=3)

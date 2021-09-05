@@ -28,6 +28,9 @@ import h5py
 import numpy as np
 import pytest
 
+from hyperspy.io import load
+from hyperspy.axes import DataAxis, UniformDataAxis, FunctionalDataAxis
+from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
@@ -346,6 +349,34 @@ def test_rgba16():
     assert (s.data == data).all()
 
 
+def test_nonuniformaxis():
+    data = np.arange(10)
+    axis = DataAxis(axis = 1/np.arange(1,data.size+1), navigate = False)
+    s = Signal1D(data, axes = (axis.get_axis_dictionary(), ))
+    s.save('tmp.hdf5', overwrite = True)
+    s2 = load('tmp.hdf5')
+    np.testing.assert_array_almost_equal(s.axes_manager[0].axis, 
+                                         s2.axes_manager[0].axis)
+    assert(s2.axes_manager[0].is_uniform == False)
+    assert(s2.axes_manager[0].navigate == False)
+    assert(s2.axes_manager[0].size == data.size)
+
+
+def test_nonuniformFDA():
+    data = np.arange(10)
+    x0 = UniformDataAxis(size=data.size, offset=1)
+    axis = FunctionalDataAxis(expression = '1/x', x = x0, navigate = False)
+    s = Signal1D(data, axes = (axis.get_axis_dictionary(), ))
+    print(axis.get_axis_dictionary())
+    s.save('tmp.hdf5', overwrite = True)
+    s2 = load('tmp.hdf5')
+    np.testing.assert_array_almost_equal(s.axes_manager[0].axis, 
+                                         s2.axes_manager[0].axis)
+    assert(s2.axes_manager[0].is_uniform == False)
+    assert(s2.axes_manager[0].navigate == False)
+    assert(s2.axes_manager[0].size == data.size)    
+
+   
 class TestLoadingOOMReadOnly:
 
     def setup_method(self, method):
@@ -398,14 +429,15 @@ class TestPassingArgs:
 
 class TestAxesConfiguration:
 
+    
     def setup_method(self, method):
-        self.filename = 'testfile.hdf5'
-        s = BaseSignal(np.zeros((2, 2, 2, 2, 2)))
-        s.axes_manager.signal_axes[0].navigate = True
-        s.axes_manager.signal_axes[0].navigate = True
-        s.save(self.filename)
+        self.s = BaseSignal(np.zeros((2, 2, 2, 2, 2)))
+        self.s.axes_manager.signal_axes[0].navigate = True
+        self.s.axes_manager.signal_axes[0].navigate = True
 
     def test_axes_configuration(self):
+        self.filename = 'testfile.hdf5'
+        self.s.save(self.filename, overwrite = True)
         s = load(self.filename)
         assert s.axes_manager.navigation_axes[0].index_in_array == 4
         assert s.axes_manager.navigation_axes[1].index_in_array == 3

@@ -26,7 +26,7 @@ from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.misc.utils import slugify
-
+from hyperspy.axes import GeneratorLen
 
 class TestModelJacobians:
     def setup_method(self, method):
@@ -620,6 +620,25 @@ class TestModelPrintCurrentValues:
         self.m.print_current_values(component_list=list(self.m))
 
 
+class TestModelUniformBinned:
+    def setup_method(self, method):
+        self.m = hs.signals.Signal1D(np.arange(10)).create_model()
+        self.o = hs.model.components1D.Offset()
+        self.m.append(self.o)
+
+    @pytest.mark.parametrize("uniform", [True, False])
+    @pytest.mark.parametrize("binned", [True, False])
+    def test_binned_uniform(self, binned, uniform):
+        m = self.m
+        if binned:
+            m.signal.axes_manager[-1].is_binned = True
+        m.signal.axes_manager[-1].scale = 0.3
+        if uniform:
+            m.signal.axes_manager[-1].convert_to_non_uniform_axis()
+        np.testing.assert_allclose(m[0].function(0) * 0.3, m())
+        self.m.print_current_values()
+
+
 class TestStoreCurrentValues:
     def setup_method(self, method):
         self.m = hs.signals.Signal1D(np.arange(10)).create_model()
@@ -828,6 +847,39 @@ def test_deprecated_private_functions():
         m.set_mpfit_parameters_info()
 
 
+def generate():
+    for i in range(3):
+        yield (i,i)
+
+
+class Test_multifit_iterpath():
+    def setup_method(self, method):
+        data = np.ones((3, 3, 10))
+        s = hs.signals.Signal1D(data)
+        ax = s.axes_manager
+        m = s.create_model()
+        G = hs.model.components1D.Gaussian()
+        m.append(G)
+        self.m = m
+        self.ax = ax
+
+    def test_custom_iterpath(self):
+        indices = np.array([(0,0), (1,1), (2,2)])
+        self.ax.iterpath = indices
+        self.m.multifit(iterpath=indices)
+        set_indices = np.array(np.where(self.m[0].A.map['is_set'])).T
+        np.testing.assert_array_equal(set_indices, indices[:,::-1])
+
+    def test_model_generator(self):
+        gen = generate()
+        self.m.axes_manager.iterpath = gen
+        self.m.multifit()
+
+    def test_model_GeneratorLen(self):
+        gen = GeneratorLen(generate(), 3)
+        self.m.axes_manager.iterpath = gen
+
+
 class TestSignalRange:
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.random.rand(10, 10, 20))
@@ -855,3 +907,4 @@ class TestSignalRange:
         m = self.m
         roi = hs.roi.SpanROI(105, 110)
         assert m._parse_signal_range_values(roi) == (5, 10)
+

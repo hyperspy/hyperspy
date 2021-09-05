@@ -218,19 +218,23 @@ def _density_of_mixture(weight_percent,
         [elements_db[element]['Physical_properties']['density (g/cm^3)']
             for element in elements])
     sum_densities = np.zeros_like(weight_percent, dtype='float')
-    if mean == 'harmonic':
-        for i, weight in enumerate(weight_percent):
-            sum_densities[i] = weight / densities[i]
-        sum_densities = sum_densities.sum(axis=0)
-        density = np.sum(weight_percent, axis=0) / sum_densities
-        return np.where(sum_densities == 0.0, 0.0, density)
-    elif mean == 'weighted':
-        for i, weight in enumerate(weight_percent):
-            sum_densities[i] = weight * densities[i]
-        sum_densities = sum_densities.sum(axis=0)
-        sum_weight = np.sum(weight_percent, axis=0)
-        density = sum_densities / sum_weight
-        return np.where(sum_weight == 0.0, 0.0, density)
+    try : 
+        if mean == 'harmonic':
+            for i, weight in enumerate(weight_percent):
+                sum_densities[i] = weight / densities[i]
+            sum_densities = sum_densities.sum(axis=0)
+            density = np.sum(weight_percent, axis=0) / sum_densities
+            return np.where(sum_densities == 0.0, 0.0, density)
+        elif mean == 'weighted':
+            for i, weight in enumerate(weight_percent):
+                sum_densities[i] = weight * densities[i]
+            sum_densities = sum_densities.sum(axis=0)
+            sum_weight = np.sum(weight_percent, axis=0)
+            density = sum_densities / sum_weight
+            return np.where(sum_weight == 0.0, 0.0, density)
+    except TypeError : 
+        raise ValueError(
+            'The density of one of the elements is unknown (Probably At or Fr).')
 
 
 def density_of_mixture(weight_percent,

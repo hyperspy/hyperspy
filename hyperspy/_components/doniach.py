@@ -19,6 +19,7 @@
 import math
 import numpy as np
 
+from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
 from hyperspy.misc.utils import is_binned # remove in v2.0
@@ -82,7 +83,7 @@ class Doniach(Expression):
 
     def __init__(self, centre=0., A=1., sigma=1., alpha=0.5,
                  module=["numpy", "scipy"], **kwargs):
-        super(Doniach, self).__init__(
+        super().__init__(
             expression="A*cos(0.5*pi*alpha+\
             ((1.0 - alpha) * arctan( (x-centre+offset)/sigma) ) )\
             /(sigma**2 + (x-centre+offset)**2)**(0.5 * (1.0 - alpha));\
@@ -145,24 +146,25 @@ class Doniach(Expression):
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
+        scaling_factor = _get_scaling_factor(signal, axis, centre)
 
         if only_current is True:
             self.centre.value = centre
             self.sigma.value = sigma
             self.A.value = height * 1.3
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.A.value /= axis.scale
+                self.A.value /= scaling_factor
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * 1.3
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.A.map['values'][:] /= axis.scale
+                self.A.map['values'][:] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma
             self.sigma.map['is_set'][:] = True

@@ -178,6 +178,7 @@ class TestFindPeaks2D:
 
     def test_return_peaks(self):
         sig = self.sparse_nav2d_shifted
+        sig.axes_manager.indices = (0, 0)
         axes_dict = sig.axes_manager._get_axes_dicts(
             sig.axes_manager.navigation_axes)
         peaks = BaseSignal(np.empty(sig.axes_manager.navigation_shape),

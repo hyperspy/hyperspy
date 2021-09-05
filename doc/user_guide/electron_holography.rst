@@ -38,7 +38,7 @@ Fourier based reconstruction of off-axis holograms (includes
 finding a side band in FFT, isolating and filtering it, recenter and
 calculate inverse Fourier transform) can be performed using the
 :meth:`~._signals.hologram_image.HologramImage.reconstruct_phase` method
-which returns a :py:class:`~._signals.complex_signal2d.Complex2D` class,
+which returns a :py:class:`~._signals.complex_signal2d.ComplexSignal2D` class,
 containing the reconstructed electron wave.
 The :meth:`~._signals.hologram_image.HologramImage.reconstruct_phase` method
 takes sideband position and size as parameters:
@@ -86,7 +86,7 @@ hologram should be provided to the method either as Hyperspy's
 Using the reconstructed wave, one can access its amplitude and phase (also
 unwrapped phase) using
 ``amplitude`` and ``phase`` properties
-(also the :meth:`~._signals.complex_signal.ComplexSignal_mixin.unwrapped_phase`
+(also the :meth:`~._signals.complex_signal.ComplexSignal.unwrapped_phase`
 method):
 
 .. code-block:: python

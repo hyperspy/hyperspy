@@ -1,1 +1,1 @@
-Support for relative slicing
+Support for :ref:`relative slicing <signal.indexing>`

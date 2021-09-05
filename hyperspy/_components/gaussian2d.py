@@ -63,13 +63,11 @@ class Gaussian2D(Expression):
     fwhm_x, fwhm_y : float
         Convenience attributes to get and set the full width at half maximum along
         the two axes.
-    height : float
-        Convenience attribute to get height of the Gaussian.
     """
 
     def __init__(self, A=1., sigma_x=1., sigma_y=1., centre_x=0.,
                  centre_y=0, module="numexpr", **kwargs):
-        super(Gaussian2D, self).__init__(
+        super().__init__(
             expression="A * (1 / (sigma_x * sigma_y * 2 * pi)) * \
                        exp(-((x - centre_x) ** 2 / (2 * sigma_x ** 2) \
                        + (y - centre_y) ** 2 / (2 * sigma_y ** 2)))",

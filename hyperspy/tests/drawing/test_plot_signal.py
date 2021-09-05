@@ -314,3 +314,15 @@ def test_plot_autoscale(sdim):
 
     s.change_dtype(bool)
     s.plot()
+
+
+def test_plot_complex_representation():
+    real_ref = np.arange(9).reshape((3, 3))
+    imag_ref = np.arange(9).reshape((3, 3)) + 9
+    comp_ref = real_ref + 1j * imag_ref
+    s = hs.signals.ComplexSignal1D(comp_ref)
+    s.plot(representation='polar', same_axes=True)
+    s.plot(representation='polar', same_axes=False)
+    with pytest.raises(ValueError):
+        s.plot(representation='unsupported_argument')
+    

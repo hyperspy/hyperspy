@@ -405,7 +405,7 @@ class LazySignal(BaseSignal):
         return value
 
     def rebin(self, new_shape=None, scale=None,
-              crop=False, out=None, rechunk=True):
+              crop=False, dtype=None, out=None, rechunk=True):
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale)
@@ -422,8 +422,8 @@ class LazySignal(BaseSignal):
         axis = {ax.index_in_array: ax
                 for ax in self.axes_manager._axes}[factors.argmax()]
         self._make_lazy(axis=axis, rechunk=rechunk)
-        return super().rebin(new_shape=new_shape,
-                             scale=scale, crop=crop, out=out)
+        return super().rebin(new_shape=new_shape, scale=scale, crop=crop,
+                             dtype=dtype, out=out)
     rebin.__doc__ = BaseSignal.rebin.__doc__
 
     def __array__(self, dtype=None):
@@ -433,6 +433,11 @@ class LazySignal(BaseSignal):
         self._make_lazy(rechunk=True)
 
     def diff(self, axis, order=1, out=None, rechunk=True):
+        if not self.axes_manager[axis].is_uniform:
+            raise NotImplementedError(
+            "Performing a numerical difference on a non-uniform axis "
+            "is not implemented. Consider using `derivative` instead."
+        )
         arr_axis = self.axes_manager[axis].index_in_array
 
         def dask_diff(arr, n, axis):
@@ -719,26 +724,11 @@ class LazySignal(BaseSignal):
             # add additional required axes
             for ind in range(
                     len(output_signal_size) - sig.axes_manager.signal_dimension, 0, -1):
-                sig.axes_manager._append_axis(output_signal_size[-ind], navigate=False)
+                sig.axes_manager._append_axis(size=output_signal_size[-ind],
+                                              navigate=False)
         if not ragged:
             sig.get_dimensions_from_data()
         return sig
-
-    def _iterate_signal(self):
-        if self.axes_manager.navigation_size < 2:
-            yield self()
-            return
-        nav_dim = self.axes_manager.navigation_dimension
-        sig_dim = self.axes_manager.signal_dimension
-        nav_indices = self.axes_manager.navigation_indices_in_array[::-1]
-        nav_lengths = np.atleast_1d(
-            np.array(self.data.shape)[list(nav_indices)])
-        getitem = [slice(None)] * (nav_dim + sig_dim)
-        data = self._lazy_data()
-        for indices in product(*[range(l) for l in nav_lengths]):
-            for res, ind in zip(indices, nav_indices):
-                getitem[ind] = res
-            yield data[tuple(getitem)]
 
     def _block_iterator(self,
                         flat_signal=True,
@@ -1236,7 +1226,7 @@ class LazySignal(BaseSignal):
         axes = [axis.index_in_array for axis in self.axes_manager.signal_axes]
         navigator = self.isig[isig_slice].sum(axes)
         navigator.compute(show_progressbar=show_progressbar)
-        navigator.original_metadata.set_item('sum_from', isig_slice)
+        navigator.original_metadata.set_item('sum_from', str(isig_slice))
 
         self.navigator = navigator.T
 

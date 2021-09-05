@@ -1,0 +1,1 @@
+Add option to set output size when :ref:`exporting images<image-format>`

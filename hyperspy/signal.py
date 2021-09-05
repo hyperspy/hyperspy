@@ -21,12 +21,14 @@ import warnings
 import inspect
 from contextlib import contextmanager
 from datetime import datetime
+from itertools import product
 import logging
 from pint import UnitRegistry, UndefinedUnitError
 from pathlib import Path
 
 import numpy as np
-import scipy as sp
+from scipy import integrate
+from scipy import signal as sp_signal
 import dask.array as da
 from matplotlib import pyplot as plt
 import traits.api as t
@@ -59,6 +61,7 @@ from hyperspy.docstrings.signal import (
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
                                       BASE_PLOT_DOCSTRING_PARAMETERS,
                                       PLOT2D_KWARGS_DOCSTRING)
+from hyperspy.docstrings.utils import REBIN_ARGS
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
@@ -115,7 +118,6 @@ class ModelManager(object):
 
     def _save(self, name, dictionary):
 
-        from itertools import product
         _abc = 'abcdefghijklmnopqrstuvwxyz'
 
         def get_letter(models):
@@ -2147,9 +2149,10 @@ class BaseSignal(FancySlicing,
         ----------
         data : :py:class:`numpy.ndarray`
            The signal data. It can be an array of any dimensions.
-        axes : dict, optional
-            Dictionary to define the axes (see the documentation of the
-            :py:class:`~hyperspy.axes.AxesManager` class for more details).
+        axes : [dict/axes], optional
+            List of either dictionaries or axes objects to define the axes (see
+            the documentation of the :py:class:`~hyperspy.axes.AxesManager`
+            class for more details).
         attributes : dict, optional
             A dictionary whose items are stored as attributes.
         metadata : dict, optional
@@ -2656,7 +2659,13 @@ class BaseSignal(FancySlicing,
             navigator = self
             # Sum over all but the first navigation axis.
             am = navigator.axes_manager
-            navigator = navigator.sum(am.signal_axes + am.navigation_axes[1:])
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning,
+                                        module='hyperspy'
+                                        )
+                navigator = navigator.sum(
+                    am.signal_axes + am.navigation_axes[1:]
+                    )
             return np.nan_to_num(navigator.data).squeeze()
 
         def get_dynamic_explorer_wrapper(*args, **kwargs):
@@ -2671,9 +2680,17 @@ class BaseSignal(FancySlicing,
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
             if self.navigator is not None:
                 navigator = self.navigator
+            elif (self.axes_manager.navigation_dimension > 1 and
+                    np.any(np.array([not axis.is_uniform for axis in
+                                     self.axes_manager.navigation_axes]))):
+                navigator = "slider"
             elif (self.axes_manager.navigation_dimension == 1 and
                     self.axes_manager.signal_dimension == 1):
-                navigator = "data"
+                if (self.axes_manager.navigation_axes[0].is_uniform and
+                        self.axes_manager.signal_axes[0].is_uniform):
+                    navigator = "data"
+                else:
+                    navigator = "spectrum"
             elif self.axes_manager.navigation_dimension > 0:
                 if self.axes_manager.signal_dimension == 0:
                     navigator = self.deepcopy()
@@ -2897,15 +2914,13 @@ class BaseSignal(FancySlicing,
         if i1 is not None and i2 is not None and not i1 != i2:
             raise ValueError("The `start` and `end` values need to be "
                              "different.")
-        if i1 is not None:
-            new_offset = axis.axis[i1]
+
         # We take a copy to guarantee the continuity of the data
         self.data = self.data[
             (slice(None),) * axis.index_in_array + (slice(i1, i2),
                                                     Ellipsis)]
 
-        if i1 is not None:
-            axis.offset = new_offset
+        axis.crop(i1, i2)
         self.get_dimensions_from_data()
         self.squeeze()
         self.events.data_changed.trigger(obj=self)
@@ -3029,56 +3044,45 @@ class BaseSignal(FancySlicing,
         elif new_shape:
             if len(new_shape) != len(self.data.shape):
                 raise ValueError("Wrong new_shape size")
+            for axis in self.axes_manager._axes:
+                if axis.is_uniform is False:
+                    raise NotImplementedError(
+                            "Rebinning of non-uniform axes is not yet implemented.")
             new_shape_in_array = np.array([new_shape[axis.index_in_axes_manager]
                                            for axis in self.axes_manager._axes])
             factors = np.array(self.data.shape) / new_shape_in_array
         else:
             if len(scale) != len(self.data.shape):
                 raise ValueError("Wrong scale size")
+            for axis in self.axes_manager._axes:
+                if axis.is_uniform is False:
+                    raise NotImplementedError(
+                            "Rebinning of non-uniform axes is not yet implemented.")
             factors = np.array([scale[axis.index_in_axes_manager]
                                 for axis in self.axes_manager._axes])
         return factors  # Factors are in array order
 
-    def rebin(self, new_shape=None, scale=None, crop=True, out=None):
+    def rebin(self, new_shape=None, scale=None, crop=True, dtype=None,
+              out=None):
         """
         Rebin the signal into a smaller or larger shape, based on linear
-        interpolation. Specify **either** `new_shape` or `scale`.
+        interpolation. Specify **either** `new_shape` or `scale`. Scale of 1
+        means no binning and scale less than one results in up-sampling.
 
         Parameters
         ----------
-        new_shape : list (of floats or integer) or None
-            For each dimension specify the new_shape. This will internally be
-            converted into a `scale` parameter.
-        scale : list (of floats or integer) or None
-            For each dimension, specify the new:old pixel ratio, e.g. a ratio
-            of 1 is no binning and a ratio of 2 means that each pixel in the new
-            spectrum is twice the size of the pixels in the old spectrum.
-            The length of the list should match the dimension of the
-            Signal's underlying data array.
-            *Note : Only one of `scale` or `new_shape` should be specified,
-            otherwise the function will not run*
-        crop : bool
-            Whether or not to crop the resulting rebinned data (default is
-            ``True``). When binning by a non-integer number of
-            pixels it is likely that the final row in each dimension will
-            contain fewer than the full quota to fill one pixel.
-
-                - e.g. a 5*5 array binned by 2.1 will produce two rows
-                  containing 2.1 pixels and one row containing only 0.8
-                  pixels. Selection of ``crop=True`` or ``crop=False``
-                  determines whether or not this `"black"` line is cropped
-                  from the final binned array or not.
-
-            Please note that if ``crop=False`` is used, the final row in each
-            dimension may appear black if a fractional number of pixels are left
-            over. It can be removed but has been left to preserve total counts
-            before and after binning.
+        %s
         %s
 
         Returns
         -------
         s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
             The resulting cropped signal.
+
+        Raises
+        ------
+        NotImplementedError
+            If trying to rebin over a non-uniform axis.
 
         Examples
         --------
@@ -3088,6 +3092,7 @@ class BaseSignal(FancySlicing,
         <EDXTEMSpectrum, title: dimensions: (4, 4|10)>
         >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
         Sum = 164.0
+
         >>> scale = [2, 2, 5]
         >>> test = spectrum.rebin(scale)
         >>> print(test)
@@ -3095,13 +3100,42 @@ class BaseSignal(FancySlicing,
         >>> print('Sum = ', sum(sum(sum(test.data))))
         Sum =  164.0
 
+        >>> s = hs.signals.Signal1D(np.ones((2, 5, 10), dtype=np.uint8)
+        >>> print(s)
+        <Signal1D, title: , dimensions: (5, 2|10)>
+        >>> print(s.data.dtype)
+        uint8
+
+        Use dtype=np.unit16 to specify a dtype
+
+        >>> s2 = s.rebin(scale=(5, 2, 1), dtype=np.uint16)
+        >>> print(s2.data.dtype)
+        uint16
+
+        Use dtype="same" to keep the same dtype
+
+        >>> s3 = s.rebin(scale=(5, 2, 1), dtype="same")
+        >>> print(s3.data.dtype)
+        uint8
+
+        By default `dtype=None`, the dtype is determined by the behaviour of
+        numpy.sum, in this case, unsigned integer of the same precision as
+        the platform interger
+
+        >>> s4 = s.rebin(scale=(5, 2, 1))
+        >>> print(s4.data.dtype)
+        uint64
+
         """
+        # TODO: Adapt so that it works if a non_uniform_axis exists, but is not
+        # changed; for new_shape, a non_uniform_axis should be interpolated to a
+        # linear grid
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale,)
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
         data = hyperspy.misc.array_tools.rebin(
-            self.data, scale=factors, crop=crop)
+            self.data, scale=factors, crop=crop, dtype=dtype)
 
         if out:
             if out._lazy:
@@ -3121,13 +3155,14 @@ class BaseSignal(FancySlicing,
                           BaseSignal):
                 var = s.metadata.Signal.Noise_properties.variance
                 s.metadata.Signal.Noise_properties.variance = var.rebin(
-                    new_shape=new_shape, scale=scale, crop=crop, out=out)
+                    new_shape=new_shape, scale=scale, crop=crop, out=out,
+                    dtype=dtype)
         if out is None:
             return s
         else:
             out.events.data_changed.trigger(obj=out)
 
-    rebin.__doc__ %= (OUT_ARG)
+    rebin.__doc__ %= (REBIN_ARGS, OUT_ARG)
 
     def split(self,
               axis='auto',
@@ -3177,6 +3212,11 @@ class BaseSignal(FancySlicing,
             [<Signal1D, title: , dimensions: (3, 1|2)>,
             <Signal1D, title: , dimensions: (3, 2|2)>]
 
+        Raises
+        ------
+        NotImplementedError
+            If trying to split along a non-uniform axis.
+
         Returns
         -------
         splitted : list
@@ -3206,6 +3246,9 @@ class BaseSignal(FancySlicing,
 
         axis = self.axes_manager[axis_in_manager].index_in_array
         len_axis = self.axes_manager[axis_in_manager].size
+        if self.axes_manager[axis].is_uniform is False:
+            raise NotImplementedError(
+                    "Splitting of signals over a non-uniform axis is not implemented")
 
         if number_of_parts == 'auto' and step_sizes == 'auto':
             step_sizes = 1
@@ -3287,8 +3330,7 @@ class BaseSignal(FancySlicing,
             return
 
         # We need to store the original shape and coordinates to be used
-        # by
-        # the fold function only if it has not been already stored by a
+        # by the fold function only if it has not been already stored by a
         # previous unfold
         folding = self.metadata._HyperSpy.Folding
         if folding.unfolded is False:
@@ -3456,37 +3498,33 @@ class BaseSignal(FancySlicing,
                          "for more information.".format(self))
             self.data = np.ascontiguousarray(self.data)
 
-    def _iterate_signal(self):
-        """Iterates over the signal data.
+    def _iterate_signal(self, iterpath=None):
+        """Iterates over the signal data. It is faster than using the signal
+        iterator, because it avoids making deepcopy of metadata and other
+        attributes.
 
-        It is faster than using the signal iterator.
+        Parameters
+        ----------
+        iterpath : None or str or iterable
+            Any valid iterpath supported by the axes_manager.
 
+        Returns
+        -------
+        numpy array when iterating over the navigation space
         """
-        if self.axes_manager.navigation_size < 2:
-            yield self()
-            return
-        self._make_sure_data_is_contiguous()
-        axes = [axis.index_in_array for
-                axis in self.axes_manager.signal_axes]
-        if axes:
-            unfolded_axis = (
-                self.axes_manager.navigation_axes[0].index_in_array)
-            new_shape = [1] * len(self.data.shape)
-            for axis in axes:
-                new_shape[axis] = self.data.shape[axis]
-            new_shape[unfolded_axis] = -1
-        else:  # signal_dimension == 0
-            new_shape = (-1, 1)
-            axes = [1]
-            unfolded_axis = 0
-        # Warning! if the data is not contigous it will make a copy!!
-        data = self.data.reshape(new_shape)
-        getitem = [0] * len(data.shape)
-        for axis in axes:
-            getitem[axis] = slice(None)
-        for i in range(data.shape[unfolded_axis]):
-            getitem[unfolded_axis] = i
-            yield(data[tuple(getitem)])
+        original_index = self.axes_manager.indices
+
+        if iterpath is None:
+            _logger.warning('The default iterpath will change in HyperSpy 2.0.')
+
+        with self.axes_manager.switch_iterpath(iterpath):
+            self.axes_manager.indices = tuple(
+                [0 for _ in self.axes_manager.navigation_axes]
+                )
+            for _ in self.axes_manager:
+                yield self()
+            # restore original index
+            self.axes_manager.indices = original_index
 
     def _cycle_signal(self):
         """Cycles over the signal data.
@@ -3634,6 +3672,13 @@ class BaseSignal(FancySlicing,
             A new Signal containing the sum of the provided Signal along the
             specified axes.
 
+        Note
+        ----
+        If you intend to calculate the numerical integral of an unbinned signal,
+        please use the :py:meth:`integrate1D` function instead. To avoid
+        erroneous misuse of the `sum` function as integral, it raises a warning
+        when working with an unbinned, non-uniform axis.
+
         See also
         --------
         max, min, mean, std, var, indexmax, indexmin, valuemax, valuemin
@@ -3648,8 +3693,19 @@ class BaseSignal(FancySlicing,
         (64,64)
 
         """
+
         if axis is None:
             axis = self.axes_manager.navigation_axes
+
+        axes = self.axes_manager[axis]
+        if not np.iterable(axes):
+            axes = (axes,)
+        if any([not ax.is_uniform and not is_binned(self, ax) for ax in axes]):
+            warnings.warn("You are summing over an unbinned, non-uniform axis. "
+                          "The result can not be used as an approximation of "
+                          "the integral of the signal. For this functionality, "
+                          "use integrate1D instead.")
+
         return self._apply_function_on_data_and_remove_axis(
             np.sum, axis, out=out, rechunk=rechunk)
     sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
@@ -3839,6 +3895,14 @@ class BaseSignal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
+        axes = self.axes_manager[axis]
+        if not np.iterable(axes):
+            axes = (axes,)
+        if any([not ax.is_uniform for ax in axes]):
+            warnings.warn("You are summing over a non-uniform axis. The result "
+                          "can not be used as an approximation of the "
+                          "integral of the signal. For this functionaliy, "
+                          "use integrate1D instead.")
         return self._apply_function_on_data_and_remove_axis(
             np.nansum, axis, out=out, rechunk=rechunk)
     nansum.__doc__ %= (NAN_FUNC.format('sum'))
@@ -3905,6 +3969,13 @@ class BaseSignal(FancySlicing,
             the given ``order``. `i.e.` if ``axis`` is ``"x"`` and ``order`` is
             2, the `x` dimension is N, ``der``'s `x` dimension is N - 2.
 
+        Note
+        ----
+        If you intend to calculate the numerical derivative, please use the
+        proper :py:meth:`derivative` function instead. To avoid erroneous
+        misuse of the `diff` function as derivative, it raises an error when
+        when working with a non-uniform axis.
+
         See also
         --------
         derivative, integrate1D, integrate_simpson
@@ -3918,6 +3989,11 @@ class BaseSignal(FancySlicing,
         >>> s.diff(-1).data.shape
         (64,64,1023)
         """
+        if not self.axes_manager[axis].is_uniform:
+            raise NotImplementedError(
+            "Performing a numerical difference on a non-uniform axis "
+            "is not implemented. Consider using `derivative` instead."
+        )
         s = out or self._deepcopy_with_new_data(None)
         data = np.diff(self.data, n=order,
                        axis=self.axes_manager[axis].index_in_array)
@@ -3935,7 +4011,7 @@ class BaseSignal(FancySlicing,
             out.events.data_changed.trigger(obj=out)
     diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def derivative(self, axis, order=1, out=None, rechunk=True):
+    def derivative(self, axis, order=1, out=None, **kwargs):
         r"""Calculate the numerical derivative along the given axis,
         with respect to the calibrated units of that axis.
 
@@ -3952,7 +4028,8 @@ class BaseSignal(FancySlicing,
         order: int
             The order of the derivative.
         %s
-        %s
+        **kwargs : dict
+            All extra keyword arguments are passed to :py:func:`numpy.gradient`
 
         Returns
         -------
@@ -3961,21 +4038,32 @@ class BaseSignal(FancySlicing,
             the given ``order``. `i.e.` if ``axis`` is ``"x"`` and ``order`` is
             2, if the `x` dimension is N, then ``der``'s `x` dimension is N - 2.
 
+        Notes
+        -----
+        This function uses numpy.gradient to perform the derivative. See its
+        documentation for implementation details.
+
         See also
         --------
-        diff, integrate1D, integrate_simpson
+        integrate1D, integrate_simpson
 
         """
-
-        der = self.diff(order=order, axis=axis, out=out, rechunk=rechunk)
-        der = out or der
-        axis = self.axes_manager[axis]
-        der.data /= axis.scale ** order
-        if out is None:
-            return der
-        else:
+        # rechunk was a valid keyword up to HyperSpy 1.6
+        if "rechunk" in kwargs:
+            del kwargs["rechunk"]
+        n = order
+        der_data = self.data
+        while n:
+            der_data = np.gradient(
+                der_data, self.axes_manager[axis].axis,
+                axis=self.axes_manager[axis].index_in_array, **kwargs)
+            n -= 1
+        if out:
+            out.data = der_data
             out.events.data_changed.trigger(obj=out)
-    derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
+        else:
+            return self._deepcopy_with_new_data(der_data)
+    derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def integrate_simpson(self, axis, out=None):
         """Calculate the integral of a Signal along an axis using
@@ -3994,7 +4082,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        diff, derivative, integrate1D
+        derivative, integrate1D
 
         Examples
         --------
@@ -4008,8 +4096,8 @@ class BaseSignal(FancySlicing,
         """
         axis = self.axes_manager[axis]
         s = out or self._deepcopy_with_new_data(None)
-        data = sp.integrate.simps(y=self.data, x=axis.axis,
-                                  axis=axis.index_in_array)
+        data = integrate.simps(y=self.data, x=axis.axis,
+                               axis=axis.index_in_array)
         if out is not None:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
@@ -4050,6 +4138,11 @@ class BaseSignal(FancySlicing,
         s : :py:class:`~hyperspy._signals.complex_signal.ComplexSignal`
             A Signal containing the result of the FFT algorithm
 
+        Raises
+        ------
+        NotImplementedError
+            If performing FFT along a non-uniform axis.
+
         Examples
         --------
         >>> im = hs.signals.Signal2D(scipy.misc.ascent())
@@ -4061,8 +4154,8 @@ class BaseSignal(FancySlicing,
 
         Note
         ----
-        For further information see the documentation of
-        :py:func:`numpy.fft.fftn`
+        Requires a uniform axis. For further information see the documentation
+        of :py:func:`numpy.fft.fftn`
         """
 
         if self.axes_manager.signal_dimension == 0:
@@ -4076,7 +4169,9 @@ class BaseSignal(FancySlicing,
             im_fft = self
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
-
+        if any([not axs.is_uniform for axs in self.axes_manager[axes]]):
+            raise NotImplementedError(
+                    "Not implemented for non-uniform axes.")
         use_real_fft = real_fft_only and (self.data.dtype.kind != 'c')
 
         if use_real_fft:
@@ -4139,6 +4234,11 @@ class BaseSignal(FancySlicing,
         s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
             A Signal containing the result of the inverse FFT algorithm
 
+        Raises
+        ------
+        NotImplementedError
+            If performing IFFT along a non-uniform axis.
+
         Examples
         --------
         >>> import scipy
@@ -4149,14 +4249,17 @@ class BaseSignal(FancySlicing,
 
         Note
         ----
-        For further information see the documentation of
-        :py:func:`numpy.fft.ifftn`
+        Requires a uniform axis. For further information see the documentation
+        of :py:func:`numpy.fft.ifftn`
         """
 
         if self.axes_manager.signal_dimension == 0:
             raise AttributeError("Signal dimension must be at least one.")
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
+        if any([not axs.is_uniform for axs in self.axes_manager[axes]]):
+            raise NotImplementedError(
+                    "Not implemented for non-uniform axes.")
         if shift is None:
             shift = self.metadata.get_item('Signal.FFT.shifted', False)
 
@@ -4191,8 +4294,9 @@ class BaseSignal(FancySlicing,
 
         The integration is performed using
         `Simpson's rule <https://en.wikipedia.org/wiki/Simpson%%27s_rule>`_ if
-        `axis.is_binned` is ``False`` and simple summation over the
-        given axis if ``True``.
+        `axis.is_binned` is ``False`` and simple summation over the given axis
+        if ``True`` (along binned axes, the detector already provides
+        integrated counts per bin).
 
         Parameters
         ----------
@@ -4207,7 +4311,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        integrate_simpson, diff, derivative
+        integrate_simpson, derivative
 
         Examples
         --------
@@ -4219,12 +4323,13 @@ class BaseSignal(FancySlicing,
         (64,64)
 
         """
-        if is_binned(self, axis=axis) is False:
+        if is_binned(self, axis=axis):
         # in v2 replace by
-        #if self.axes_manager[axis].is_binned is False:
-            return self.integrate_simpson(axis=axis, out=out)
-        else:
+        # self.axes_manager[axis].is_binned
             return self.sum(axis=axis, out=out)
+        else:
+            return self.integrate_simpson(axis=axis, out=out)
+
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def indexmin(self, axis, out=None, rechunk=True):
@@ -4530,6 +4635,10 @@ class BaseSignal(FancySlicing,
         >>> sigmas = hs.signals.BaseSignal(np.linspace(2,5,10)).T
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
+        Note
+        ----
+        Currently requires a uniform axis.
+
         """
         if self.axes_manager.navigation_shape == () and self._lazy:
             _logger.info("Converting signal to a non-lazy signal because there are no nav dimensions")
@@ -4548,18 +4657,24 @@ class BaseSignal(FancySlicing,
                                  f'(<{kwargs[key].axes_manager.navigation_shape}> must be consistent'
                                  f'with the size of the mapped signal '
                                  f'<{self.axes_manager.navigation_shape}>')
-        # Check if the signal axes have inhomogeneous scales and/or units and
-        # display in warning if yes.
-        scale = set()
-        units = set()
-        for i in range(len(self.axes_manager.signal_axes)):
-            scale.add(self.axes_manager.signal_axes[i].scale)
-            units.add(self.axes_manager.signal_axes[i].units)
-        if len(units) != 1 or len(scale) != 1:
+        # TODO: Consider support for non-uniform signal axis
+        if any([not ax.is_uniform for ax in self.axes_manager.signal_axes]):
             _logger.warning(
-                "The function you applied does not take into "
-                "account the difference of units and of scales in-between"
-                " axes.")
+                "At least one axis of the signal is non-uniform. Can your "
+                "`function` operate on non-uniform axes?")
+        else:
+            # Check if the signal axes have inhomogeneous scales and/or units and
+            # display in warning if yes.
+            scale = set()
+            units = set()
+            for i in range(len(self.axes_manager.signal_axes)):
+                scale.add(self.axes_manager.signal_axes[i].scale)
+                units.add(self.axes_manager.signal_axes[i].units)
+            if len(units) != 1 or len(scale) != 1:
+                _logger.warning(
+                    "The function you applied does not take into "
+                    "account the difference of units and of scales in-between"
+                    " axes.")
         # If the function has an axis argument and the signal dimension is 1,
         # we suppose that it can operate on the full array and we don't
         # iterate over the coordinates.
@@ -5670,7 +5785,7 @@ class BaseSignal(FancySlicing,
                 raise ValueError("Markers can not be added to several signals")
             m._plot_on_signal = plot_on_signal
             if plot_marker:
-                if self._plot is None:
+                if self._plot is None or not self._plot.is_active:
                     self.plot()
                 if m._plot_on_signal:
                     self._plot.signal_plot.add_marker(m)
@@ -6042,7 +6157,7 @@ class BaseSignal(FancySlicing,
         elif window == 'hamming':
             def window_function(m): return np.hamming(m)
         elif window == 'tukey':
-            def window_function(m): return sp.signal.tukey(m, tukey_alpha)
+            def window_function(m): return sp_signal.tukey(m, tukey_alpha)
         else:
             raise ValueError('Wrong type parameter value.')
 

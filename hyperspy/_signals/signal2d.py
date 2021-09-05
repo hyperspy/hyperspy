@@ -18,7 +18,6 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy as sp
 import numpy.ma as ma
 import dask.array as da
 import logging
@@ -222,7 +221,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
             # which was the previous implementation.
             # The size is fixed at 3 to be consistent
             # with the previous implementation.
-            im[:] = sp.ndimage.median_filter(im, size=3)
+            im[:] = ndimage.median_filter(im, size=3)
         if sobel is True:
             im[:] = sobel_filter(im)
 
@@ -647,12 +646,22 @@ class Signal2D(BaseSignal, CommonSignal2D):
         shifts : np.array
             The estimated shifts are returned only if ``shifts`` is None
 
+        Raises
+        ------
+        NotImplementedError
+            If one of the signal axes is a non-uniform axis.
+
         See Also
         --------
         * :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`
 
         """
         self._check_signal_dimension_equals_two()
+
+        for _axis in self.axes_manager.signal_axes:
+            if not _axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not implememented for non-uniform axes")
 
         return_shifts = False
 

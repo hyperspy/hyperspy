@@ -31,12 +31,8 @@ Subpackages:
         Tools for plotting.
     eds
         Tools for energy-dispersive X-ray data analysis.
-    example_signals
-        A few example of signal
-
 
 """
-import hyperspy.datasets.example_signals
 import hyperspy.utils.eds
 import hyperspy.utils.material
 import hyperspy.utils.model

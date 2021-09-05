@@ -23,9 +23,8 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 import dask.array as da
-import scipy.interpolate
-import scipy as sp
-from scipy.signal import savgol_filter
+from scipy import interpolate
+from scipy.signal import savgol_filter, medfilt
 from scipy.ndimage.filters import gaussian_filter1d
 
 from hyperspy.signal import BaseSignal
@@ -129,7 +128,7 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
         amp_thresh = 0.1 * y.max()
     peakgroup = np.round(peakgroup)
     if medfilt_radius:
-        d = np.gradient(scipy.signal.medfilt(y, medfilt_radius))
+        d = np.gradient(medfilt(y, medfilt_radius))
     else:
         d = np.gradient(y)
     n = np.round(peakgroup / 2 + 1)
@@ -222,7 +221,7 @@ def interpolate1D(number_of_interpolation_points, data):
     ch = len(data)
     old_ax = np.linspace(0, 100, ch)
     new_ax = np.linspace(0, 100, ch * ip - (ip - 1))
-    interpolator = scipy.interpolate.interp1d(old_ax, data)
+    interpolator = interpolate.interp1d(old_ax, data)
     return interpolator(new_ax)
 
 
@@ -253,7 +252,7 @@ def _shift1D(data, **kwargs):
         return data
 
     #This is the interpolant function
-    si = sp.interpolate.interp1d(original_axis, data, bounds_error=False,
+    si = interpolate.interp1d(original_axis, data, bounds_error=False,
                               fill_value=fill_value, kind=kind)
 
     #Evaluate interpolated data at shifted positions
@@ -275,11 +274,13 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                              **kwargs):
         self._check_signal_dimension_equals_one()
         dc = self.data
+        axis = self.axes_manager.signal_axes[0].axis
         if signal_mask is not None:
             dc = dc[..., ~signal_mask]
+            axis = axis[~signal_mask]
         if navigation_mask is not None:
             dc = dc[~navigation_mask, :]
-        der = np.abs(np.diff(dc, 1, -1))
+        der = np.abs(np.gradient(dc, axis, axis=-1))
         n = ((~navigation_mask).sum() if navigation_mask else
              self.axes_manager.navigation_size)
 
@@ -407,6 +408,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         if not np.any(shift_array):
             # Nothing to do, the shift array if filled with zeros
@@ -415,6 +418,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
+
+        if not axis.is_uniform:
+            raise NotImplementedError(
+                "This operation is not implemented for non-uniform axes.")
 
         # Figure out min/max shifts, and translate to shifts in index as well
         minimum, maximum = np.nanmin(shift_array), np.nanmax(shift_array)
@@ -506,10 +513,12 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Parameters
         ----------
         start, end : int or float
-            The limits of the interval. If int they are taken as the
-            axis index. If float they are taken as the axis value.
+            The limits of the interval. If int, they are taken as the
+            axis index. If float, they are taken as the axis value.
         delta : int or float
-            The windows around the (start, end) to use for interpolation
+            The windows around the (start, end) to use for interpolation. If
+            int, they are taken as index steps. If float, they are taken in
+            units of the axis value.
         %s
         %s
         %s
@@ -530,12 +539,18 @@ class Signal1D(BaseSignal, CommonSignal1D):
         i1 = axis._get_index(start)
         i2 = axis._get_index(end)
         if isinstance(delta, float):
-            delta = int(delta / axis.scale)
-        i0 = int(np.clip(i1 - delta, 0, np.inf))
-        i3 = int(np.clip(i2 + delta, 0, axis.size))
+            if isinstance(start, int):
+                start = axis.axis[start]
+            if isinstance(end, int):
+                end = axis.axis[end]
+            i0 = axis._get_index(start-delta) if start-delta < axis.low_value else 0
+            i3 = axis._get_index(end+delta) if end+delta > axis.high_value else axis.size
+        else:
+            i0 = int(np.clip(i1 - delta, 0, np.inf))
+            i3 = int(np.clip(i2 + delta, 0, axis.size))
 
         def interpolating_function(dat):
-            dat_int = sp.interpolate.interp1d(
+            dat_int = interpolate.interp1d(
                 list(range(i0, i1)) + list(range(i2, i3)),
                 dat[i0:i1].tolist() + dat[i2:i3].tolist(),
                 **kwargs)
@@ -609,12 +624,17 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         ip = number_of_interpolation_points + 1
         axis = self.axes_manager.signal_axes[0]
+        if not axis.is_uniform:
+            raise NotImplementedError(
+                "The function is not implemented for non-uniform signal axes.")
         self._check_navigation_mask(mask)
         # we compute for now
         if isinstance(start, da.Array):
@@ -671,7 +691,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 fill_value=np.nan,
                 also_align=None,
                 mask=None,
-                show_progressbar=None):
+                show_progressbar=None,
+                iterpath="flyback"):
         """Estimate the shifts in the signal axis using
         cross-correlation and use the estimation to align the data in place.
         This method can only estimate the shift by comparing
@@ -745,23 +766,24 @@ class Signal1D(BaseSignal, CommonSignal1D):
                             'appropriately), which might take a long time. '
                             'Use expand=False to only pass through the data '
                             'once.')
-        shift_array = self.estimate_shift1D(
-            start=start,
-            end=end,
-            reference_indices=reference_indices,
-            max_shift=max_shift,
-            interpolate=interpolate,
-            number_of_interpolation_points=number_of_interpolation_points,
-            mask=mask,
-            show_progressbar=show_progressbar)
-        signals_to_shift = [self] + also_align
-        for signal in signals_to_shift:
-            signal.shift1D(shift_array=shift_array,
-                           interpolation_method=interpolation_method,
-                           crop=crop,
-                           fill_value=fill_value,
-                           expand=expand,
-                           show_progressbar=show_progressbar)
+        with self.axes_manager.switch_iterpath(iterpath):
+            shift_array = self.estimate_shift1D(
+                start=start,
+                end=end,
+                reference_indices=reference_indices,
+                max_shift=max_shift,
+                interpolate=interpolate,
+                number_of_interpolation_points=number_of_interpolation_points,
+                mask=mask,
+                show_progressbar=show_progressbar)
+            signals_to_shift = [self] + also_align
+            for signal in signals_to_shift:
+                signal.shift1D(shift_array=shift_array,
+                               interpolation_method=interpolation_method,
+                               crop=crop,
+                               fill_value=fill_value,
+                               expand=expand,
+                               show_progressbar=show_progressbar)
     align1D.__doc__ %= (CROP_PARAMETER_DOC, SHOW_PROGRESSBAR_ARG)
 
     def integrate_in_range(self, signal_range='interactive',
@@ -856,6 +878,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
+        NotImplementedError
+            If called with a non-uniform axes.
         """
         self._check_signal_dimension_equals_one()
         calibration = Signal1DCalibration(self)
@@ -895,11 +919,20 @@ class Signal1D(BaseSignal, CommonSignal1D):
         %s
         %s
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Notes
         -----
         More information about the filter in `scipy.signal.savgol_filter`.
         """
         self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+            "This functionality is not implement for signals with non-uniform axes. ")
+            "Consider using `smooth_lowess` instead."
         if (polynomial_order is not None and
                 window_length is not None):
             axis = self.axes_manager.signal_axes[0]
@@ -999,8 +1032,14 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+            "This functionality is not implement for signals with non-uniform axes. ")
+            "Consider using `smooth_lowess` instead."
         if smoothing_parameter is None:
             smoother = SmoothingTV(self)
             return smoother.gui(display=display, toolkit=toolkit)
@@ -1029,7 +1068,13 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError
             If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+            "This functionality is not implement for signals with non-uniform axes. ")
+            "Consider using `smooth_lowess` instead."
         self._check_signal_dimension_equals_one()
         smoother = ButterworthFilter(self)
         if cutoff_frequency_ratio is not None:
@@ -1069,9 +1114,15 @@ class Signal1D(BaseSignal, CommonSignal1D):
         else:
             try:
                 axis = self.axes_manager.signal_axes[0]
-                scale_factor = axis.scale if is_binned(self) else 1
+                if is_binned(self):
                 # in v2 replace by
-                # scale_factor = axis.scale if axis.is_binned else 1
+                # if axis.is_binned:
+                    if axis.is_uniform:
+                        scale_factor = axis.scale
+                    else:
+                        scale_factor = np.gradient(axis.axis)
+                else:
+                    scale_factor = 1
                 bkg = background_estimator.function_nd(axis.axis) * scale_factor
                 result = self - bkg
             except MemoryError:
@@ -1267,11 +1318,16 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         ValueError
             If FWHM is equal or less than zero.
-
         SignalDimensionError
             If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         self._check_signal_dimension_equals_one()
+        for _axis in self.axes_manager.signal_axes:
+            if not _axis.is_uniform:
+                raise NotImplementedError(
+                    "The function is not implemented for non-uniform axes.")
         if FWHM <= 0:
             raise ValueError(
                 "FWHM must be greater than zero")
@@ -1514,7 +1570,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                     slice(vmax - window * 0.5, vmax + window * 0.5))
                 spectrum = spectrum[slices]
                 x = x[slices]
-            spline = scipy.interpolate.UnivariateSpline(
+            spline = interpolate.UnivariateSpline(
                 x,
                 spectrum - factor * spectrum.max(),
                 s=0)

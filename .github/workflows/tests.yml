@@ -25,7 +25,8 @@ jobs:
             PYTHON_VERSION: 3.6
             OLDEST_SUPPORTED_VERSION: true
             DEPENDENCIES: matplotlib==3.1.0 numpy==1.17.1 scipy==1.1 imagecodecs==2019.12.3 dask==2.1.0
-            PIP_SELECTOR: '[all, tests]'
+            PIP_SELECTOR: '[all, tests, coverage]'
+            PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
             LABEL: -oldest
           # test minimum requirement
           - os: ubuntu
@@ -101,7 +102,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: ammaraskar/sphinx-action@master
+      - uses: ericpre/sphinx-action@latest_sphinx
         with:
 
           pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }}  && pip install -e .[all,build-doc]"

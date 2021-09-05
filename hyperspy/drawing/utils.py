@@ -32,7 +32,6 @@ from functools import partial
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.colors import BASE_COLORS, to_rgba
 
-import hyperspy as hs
 from hyperspy.defaults_parser import preferences
 
 
@@ -418,8 +417,7 @@ def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
         spectrum = _transpose_if_required(spectrum, 1)
         ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style)
         set_xaxis_lims(ax, x_axis)
-    _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.BaseSignal)
-                         else spectra[-1], ax)
+    _set_spectrum_xlabel(spectra, ax)
     ax.set_ylabel('Intensity')
     ax.autoscale(tight=True)
 
@@ -444,8 +442,7 @@ def _make_cascade_subplot(
                         float(max_value) + spectrum_index * padding)
         ax.plot(x_axis.axis, data_to_plot, color=color, ls=line_style)
         set_xaxis_lims(ax, x_axis)
-    _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.BaseSignal)
-                         else spectra[-1], ax)
+    _set_spectrum_xlabel(spectra, ax)
     ax.set_yticks([])
     ax.autoscale(tight=True)
 
@@ -457,7 +454,8 @@ def _plot_spectrum(spectrum, ax, color="blue", line_style='-'):
 
 
 def _set_spectrum_xlabel(spectrum, ax):
-    x_axis = spectrum.axes_manager.signal_axes[0]
+    s = spectrum[-1] if isinstance(spectrum, (list, tuple)) else spectrum
+    x_axis = s.axes_manager.signal_axes[0]
     ax.set_xlabel("%s (%s)" % (x_axis.name, x_axis.units))
 
 
