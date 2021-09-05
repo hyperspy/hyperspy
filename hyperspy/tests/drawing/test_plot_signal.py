@@ -325,4 +325,9 @@ def test_plot_complex_representation():
     s.plot(representation='polar', same_axes=False)
     with pytest.raises(ValueError):
         s.plot(representation='unsupported_argument')
-    
+
+
+def test_plot_signal_scalar():
+    s = hs.signals.BaseSignal([1.0])
+    s.plot()
+    assert s._plot is None

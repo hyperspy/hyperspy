@@ -17,14 +17,15 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
-import sympy
 import numpy as np
+from packaging.version import Version
+import sympy
 
 from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
 from hyperspy.misc.utils import is_binned # remove in v2.0
-from distutils.version import LooseVersion
+
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -90,7 +91,7 @@ class Voigt(Expression):
         # Not to break scripts once we remove the legacy Voigt
         if "legacy" in kwargs:
             del kwargs["legacy"]
-        if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
+        if Version(sympy.__version__) < Version("1.3"):
             raise ImportError("The `Voigt` component requires "
                               "SymPy >= 1.3")
         # We use `_gamma` internally to workaround the use of the `gamma`

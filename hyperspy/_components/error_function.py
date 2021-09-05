@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from hyperspy._components.expression import Expression
-from distutils.version import LooseVersion
+from packaging.version import Version
 import sympy
 
 
@@ -51,7 +51,7 @@ class Erf(Expression):
 
     def __init__(self, A=1., sigma=1., origin=0., module=["numpy", "scipy"],
                  **kwargs):
-        if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
+        if Version(sympy.__version__) < Version("1.3"):
             raise ImportError("The `ErrorFunction` component requires "
                               "SymPy >= 1.3")
         super().__init__(

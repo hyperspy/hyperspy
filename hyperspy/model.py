@@ -23,7 +23,7 @@ import os
 import tempfile
 import warnings
 from contextlib import contextmanager
-from distutils.version import LooseVersion
+from packaging.version import Version
 from functools import partial
 
 import dill
@@ -1125,7 +1125,7 @@ class BaseModel(list):
         }
 
         if optimizer in ["Dual Annealing", "SHGO"]:
-            if LooseVersion(scipy.__version__) < LooseVersion("1.2.0"):
+            if Version(scipy.__version__) < Version("1.2.0"):
                 raise ValueError(f"`optimizer='{optimizer}'` requires scipy >= 1.2.0")
 
             from scipy.optimize import dual_annealing, shgo

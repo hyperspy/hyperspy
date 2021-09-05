@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from distutils.version import LooseVersion
+from packaging.version import Version
 import numpy as np
 import pytest
 import scipy
@@ -77,7 +77,7 @@ class TestSVDPCA:
         elif centre == "samples":
             np.testing.assert_allclose(mean, self.X_mean_0)
 
-    @pytest.mark.xfail(LooseVersion(scipy.__version__) < LooseVersion("1.4.0"),
+    @pytest.mark.xfail(Version(scipy.__version__) < Version("1.4.0"),
                        raises=ValueError,
                        reason="This test requires Scipy >= 1.4.0")
     @pytest.mark.parametrize("output_dimension", [None, 3])

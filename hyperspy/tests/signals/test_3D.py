@@ -183,7 +183,7 @@ class Test3D:
         s = self.signal
         s = s.transpose(signal_axes=3)
         ns = s._get_navigation_signal()
-        assert ns.axes_manager.signal_dimension == 1
+        assert ns.axes_manager.signal_dimension == 0
         assert ns.axes_manager.signal_size == 1
         assert ns.axes_manager.navigation_dimension == 0
 
@@ -233,7 +233,7 @@ class Test3D:
         ns = s._get_signal_signal()
         assert ns.axes_manager.navigation_dimension == 0
         assert ns.axes_manager.navigation_size == 0
-        assert ns.axes_manager.signal_dimension == 1
+        assert ns.axes_manager.signal_dimension == 0
 
     def test_get_signal_signal_nav_dim1(self):
         s = self.signal
