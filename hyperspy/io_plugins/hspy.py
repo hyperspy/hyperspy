@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from distutils.version import LooseVersion
+from packaging.version import Version
 import warnings
 import logging
 import datetime
@@ -94,7 +94,7 @@ version = "3.0"
 not_valid_format = 'The file is not a valid HyperSpy hdf5 file'
 
 current_file_version = None  # Format version of the file being read
-default_version = LooseVersion(version)
+default_version = Version(version)
 
 
 def get_hspy_format_version(f):
@@ -112,7 +112,7 @@ def get_hspy_format_version(f):
         version = "2.0"
     else:
         raise IOError(not_valid_format)
-    return LooseVersion(version)
+    return Version(version)
 
 
 def file_reader(filename, backing_store=False,
@@ -205,7 +205,7 @@ def file_reader(filename, backing_store=False,
 def hdfgroup2signaldict(group, lazy=False):
     global current_file_version
     global default_version
-    if current_file_version < LooseVersion("1.2"):
+    if current_file_version < Version("1.2"):
         metadata = "mapped_parameters"
         original_metadata = "original_parameters"
     else:
@@ -274,7 +274,7 @@ def hdfgroup2signaldict(group, lazy=False):
         if '__unnamed__' == exp['metadata']['General']['title']:
             exp['metadata']["General"]['title'] = ''
 
-    if current_file_version < LooseVersion("1.1"):
+    if current_file_version < Version("1.1"):
         # Load the decomposition results written with the old name,
         # mva_results
         if 'mva_results' in group.keys():
@@ -298,7 +298,7 @@ def hdfgroup2signaldict(group, lazy=False):
                 exp['metadata']['name']
             del exp['metadata']['name']
 
-    if current_file_version < LooseVersion("1.2"):
+    if current_file_version < Version("1.2"):
         if '_internal_parameters' in exp['metadata']:
             exp['metadata']['_HyperSpy'] = \
                 exp['metadata']['_internal_parameters']
@@ -384,7 +384,7 @@ def hdfgroup2signaldict(group, lazy=False):
                 exp["metadata"]["Signal"][key] = exp["metadata"][key]
                 del exp["metadata"][key]
 
-    if current_file_version < LooseVersion("3.0"):
+    if current_file_version < Version("3.0"):
         if "Acquisition_instrument" in exp["metadata"]:
             # Move tilt_stage to Stage.tilt_alpha
             # Move exposure time to Detector.Camera.exposure_time
@@ -715,7 +715,7 @@ def write_signal(signal, group, **kwds):
     "Writes a hyperspy signal to a hdf5 group"
 
     group.attrs.update(get_object_package_info(signal))
-    if default_version < LooseVersion("1.2"):
+    if default_version < Version("1.2"):
         metadata = "mapped_parameters"
         original_metadata = "original_parameters"
     else:
@@ -735,7 +735,7 @@ def write_signal(signal, group, **kwds):
     overwrite_dataset(group, signal.data, 'data',
                       signal_axes=signal.axes_manager.signal_indices_in_array,
                       **kwds)
-    if default_version < LooseVersion("1.2"):
+    if default_version < Version("1.2"):
         metadata_dict["_internal_parameters"] = \
             metadata_dict.pop("_HyperSpy")
     # Remove chunks from the kwds since it wouldn't have the same rank as the

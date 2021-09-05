@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from hyperspy._components.expression import Expression
-from distutils.version import LooseVersion
+from packaging.version import Version
 import sympy
 
 
@@ -27,16 +27,16 @@ class Erf(Expression):
 
     .. math::
 
-        f(x) = \frac{A}{2}~\mathrm{erf}\left[\frac{(x - x_0)}{\sqrt{2} 
+        f(x) = \frac{A}{2}~\mathrm{erf}\left[\frac{(x - x_0)}{\sqrt{2}
             \sigma}\right]
 
 
     ============== =============
-    Variable        Parameter 
+    Variable        Parameter
     ============== =============
-    :math:`A`       A 
-    :math:`\sigma`  sigma 
-    :math:`x_0`     origin 
+    :math:`A`       A
+    :math:`\sigma`  sigma
+    :math:`x_0`     origin
     ============== =============
 
     Parameters
@@ -48,10 +48,10 @@ class Erf(Expression):
         origin : float
             Position of the zero crossing.
     """
-    
+
     def __init__(self, A=1., sigma=1., origin=0., module=["numpy", "scipy"],
                  **kwargs):
-        if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
+        if Version(sympy.__version__) < Version("1.3"):
             raise ImportError("The `ErrorFunction` component requires "
                               "SymPy >= 1.3")
         super(Erf, self).__init__(
