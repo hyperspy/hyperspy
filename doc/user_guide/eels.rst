@@ -75,13 +75,13 @@ more information about the edges.
     +-------+-------------------+-----------+-----------------------------+
 
 The method :py:meth:`~._signals.eels.EELSSpectrum_mixin.edges_at_energy` allows
-inspecting different sections of the signal for interactive edge 
-identification (the default). A region can be selected by dragging the mouse 
-across the signal and after clicking the `Update` button, edges with onset 
-energies within the selected energy range will be displayed. By toggling the 
-edge buttons, it will put or remove the corresponding edges on the signal. When 
-the `Complementary edge` box is ticked, edges outside the selected range with 
-the same element of edges within the selected energy range will be shown as well 
+inspecting different sections of the signal for interactive edge
+identification (the default). A region can be selected by dragging the mouse
+across the signal and after clicking the `Update` button, edges with onset
+energies within the selected energy range will be displayed. By toggling the
+edge buttons, it will put or remove the corresponding edges on the signal. When
+the `Complementary edge` box is ticked, edges outside the selected range with
+the same element of edges within the selected energy range will be shown as well
 to aid identification of edges.
 
 .. code-block:: python
@@ -94,7 +94,7 @@ to aid identification of edges.
    :width:   500
 
    Labels of edges can be put or remove by toggling the edge buttons.
-    
+
 
 .. _eels_thickness-label:
 
@@ -259,8 +259,9 @@ We must enable them to accurately fit this spectrum.
     >>> m.enable_fine_structure()
 
 
-We use smart_fit instead of standard fit method because smart_fit is optimized
-to fit EELS core-loss spectra
+We use :py:meth:`~.models.eelsmodel.EELSModel.smart_fit` instead of standard
+fit method because :py:meth:`~.models.eelsmodel.EELSModel.smart_fit` is
+optimized to fit EELS core-loss spectra
 
 .. code-block:: python
 
@@ -276,12 +277,15 @@ image
 
 .. NOTE::
 
-    `m.smart_fit()` and `m.multifit(kind='smart')` are methods specific to the EELS model.
-    The fitting procedure acts in iterative manner along the energy-loss-axis.
-    First it fits only the background up to the first edge. It continues by deactivating all edges except the first one, then performs the fit.
-    Then it only activates the the first two, fits, and repeats this until all edges are fitted simultanously.
+    `m.smart_fit()` and `m.multifit(kind='smart')` are methods specific to the
+    EELS model. The fitting procedure acts in iterative manner along the
+    energy-loss-axis. First it fits only the background up to the first edge.
+    It continues by deactivating all edges except the first one, then performs
+    the fit. Then it only activates the the first two, fits, and repeats this
+    until all edges are fitted simultanously.
 
-    Other, non-EELSCLEdge components, are never deactivated, and fitted on every iteration.
+    Other, non-EELSCLEdge components, are never deactivated, and fitted on every
+    iteration.
 
 Print the result of the fit
 

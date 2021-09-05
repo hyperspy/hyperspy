@@ -18,7 +18,7 @@
 
 import copy
 import itertools
-from distutils.version import LooseVersion
+from packaging.version import Version
 import textwrap
 import traits.api as t
 import matplotlib.pyplot as plt
@@ -1510,7 +1510,7 @@ def plot_histograms(signal_list,
 
 def picker_kwargs(value, kwargs={}):
     # picker is deprecated in favor of pickradius
-    if LooseVersion(mpl.__version__) >= LooseVersion("3.3.0"):
+    if Version(mpl.__version__) >= Version("3.3.0"):
         kwargs.update({'pickradius': value, 'picker':True})
     else:
         kwargs['picker'] = value
