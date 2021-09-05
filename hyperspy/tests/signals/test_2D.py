@@ -23,14 +23,16 @@ import numpy as np
 import pytest
 
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.signal import BaseSignal
 from hyperspy.signals import Signal1D, Signal2D
 
 
 def _verify_test_sum_x_E(self, s):
     np.testing.assert_array_equal(self.signal.data.sum(), s.data)
     assert s.data.ndim == 1
-    # Check that there is still one signal axis.
-    assert s.axes_manager.signal_dimension == 1
+    # Check that the signal dimension is now 0
+    assert s.axes_manager.signal_dimension == 0
+    assert isinstance(s, BaseSignal)
 
 
 @lazifyTestClass

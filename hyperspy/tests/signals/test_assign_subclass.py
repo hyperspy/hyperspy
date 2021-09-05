@@ -24,6 +24,7 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy import _lazy_signals
+from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.io import assign_signal_subclass
 
@@ -87,6 +88,21 @@ def test_id_set_signal_type():
     assert id_om == id(s.original_metadata)
 
 
+@lazifyTestClass
+class TestToBaseSignalScalar:
+
+    def setup_method(self, method):
+        self.s = hs.signals.Signal1D(np.array([0]))
+
+    def test_simple(self):
+        self.s._assign_subclass()
+        assert isinstance(self.s, hs.signals.BaseSignal)
+        assert self.s.axes_manager.signal_dimension == 0
+        assert self.s.axes_manager.signal_shape == (1, )
+        if self.s._lazy:
+            assert isinstance(self.s, _lazy_signals.LazySignal)
+
+
 class TestConvertBaseSignal:
 
     def setup_method(self, method):
@@ -122,7 +138,7 @@ class TestConvertBaseSignal:
 class TestConvertSignal1D:
 
     def setup_method(self, method):
-        self.s = hs.signals.Signal1D([0])
+        self.s = hs.signals.Signal1D([0, 1])
 
     def test_lazy_to_eels_and_back(self):
         self.s = self.s.as_lazy()
@@ -176,7 +192,7 @@ class TestConvertComplexSignal:
 class TestConvertComplexSignal1D:
 
     def setup_method(self, method):
-        self.s = hs.signals.ComplexSignal1D([0])
+        self.s = hs.signals.ComplexSignal1D([0, 1])
 
     def test_complex_to_dielectric_function(self):
         self.s.set_signal_type("DielectricFunction")
