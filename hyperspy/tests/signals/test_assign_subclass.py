@@ -24,6 +24,7 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy import _lazy_signals
+from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.io import assign_signal_subclass
 
@@ -87,7 +88,8 @@ def test_id_set_signal_type():
     assert id_om == id(s.original_metadata)
 
 
-class TestToBaseSignal:
+@lazifyTestClass
+class TestToBaseSignalScalar:
 
     def setup_method(self, method):
         self.s = hs.signals.Signal1D(np.array([0]))
@@ -95,11 +97,10 @@ class TestToBaseSignal:
     def test_simple(self):
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.BaseSignal)
-
-    def test_lazy(self):
-        self.s._lazy = True
-        self.s._assign_subclass()
-        assert isinstance(self.s, _lazy_signals.LazySignal)
+        assert self.s.axes_manager.signal_dimension == 0
+        assert self.s.axes_manager.signal_shape == (1, )
+        if self.s._lazy:
+            assert isinstance(self.s, _lazy_signals.LazySignal)
 
 
 class TestConvertBaseSignal:
