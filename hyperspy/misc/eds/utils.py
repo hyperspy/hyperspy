@@ -442,11 +442,9 @@ def quantification_cliff_lorimer(intensities,
         return intens
     else:
         index = np.where(intensities > min_intensity)[0]
-        if absorption_correction is not None:
-            absorption_correction = absorption_correction
-        else:
+        if absorption_correction is None:
             # default to ones
-            absorption_correction = np.ones_like(intens, dtype='float')
+            absorption_correction = np.ones_like(intensities, dtype='float')
         if len(index) > 1:
             ref_index, ref_index2 = index[:2]
             intens = _quantification_cliff_lorimer(
@@ -543,9 +541,7 @@ def quantification_zeta_factor(intensities,
     A numpy.array containing the weight fraction with the same
     shape as intensities and mass thickness in kg/m^2.
     """
-    if absorption_correction is not None:
-        absorption_correction = absorption_correction
-    else:
+    if absorption_correction is None:
         # default to ones
         absorption_correction = np.ones_like(intensities, dtype='float')
 
@@ -616,9 +612,7 @@ def quantification_cross_section(intensities,
     """
 
 
-    if absorption_correction is not None:
-        absorption_correction = absorption_correction
-    else:
+    if absorption_correction is None:
         # default to ones
         absorption_correction = np.ones_like(intensities, dtype='float')
 
