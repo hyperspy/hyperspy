@@ -30,6 +30,7 @@ from traits.trait_errors import TraitError
 
 from hyperspy.api_nogui import _ureg
 from hyperspy.events import Events, Event
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.array_tools import (
     numba_closest_index_round,
     numba_closest_index_floor,
@@ -2079,23 +2080,24 @@ class AxesManager(t.HasTraits):
 
     @signal_dimension.setter
     def signal_dimension(self, value):
-        if len(self._axes) == 0:
+        if len(self._axes) == 0 or self._signal_dimension == value:
+            # Nothing to be done
             return
         elif self.ragged and value > 0:
             raise ValueError("Signal containing ragged array "
                              "must have zero signal dimension.")
         elif value > len(self._axes):
             raise ValueError(
-                "The signal dimension cannot be greater"
-                " than the number of axes which is %i" % len(self._axes))
+                "The signal dimension cannot be greater "
+                f"than the number of axes which is {len(self._axes)}")
         elif value < 0:
             raise ValueError(
                 "The signal dimension must be a positive integer")
 
+        # Figure out which axis needs navigate=True
         tl = [True] * len(self._axes)
         if value != 0:
             tl[-value:] = (False,) * value
-
         for axis in self._axes:
             # Changing navigate attribute will update the axis._slice
             # which in turn will trigger _on_slice_changed and call
@@ -2119,6 +2121,9 @@ class AxesManager(t.HasTraits):
             If value if greater than the number of axes or is negative.
 
         """
+        warnings.warn(("Using `set_signal_dimension` is deprecated, set the "
+                       "`signal_dimension` attribute instead."),
+                      VisibleDeprecationWarning)
         self.signal_dimension = value
 
     def key_navigator(self, event):
@@ -2211,7 +2216,6 @@ class AxesManager(t.HasTraits):
                 self.navigation_axes[::-1]]
 
     def show(self):
-        from hyperspy.exceptions import VisibleDeprecationWarning
         msg = (
             "The `AxesManager.show` method is deprecated and will be removed "
             "in v2.0. Use `gui` instead.")
