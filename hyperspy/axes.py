@@ -61,7 +61,7 @@ FACTOR_DOCSTRING = \
 class ndindex_nat(np.ndindex):
 
     def __next__(self):
-        return super(ndindex_nat, self).__next__()[::-1]
+        return super().__next__()[::-1]
 
 
 def generate_uniform_axis(offset, scale, size, offset_index=0):
@@ -2007,8 +2007,8 @@ class AxesManager(t.HasTraits):
     def _update_attributes(self):
         getitem_tuple = []
         values = []
-        self.signal_axes = ()
-        self.navigation_axes = ()
+        signal_axes = ()
+        navigation_axes = ()
         for axis in self._axes:
             # Until we find a better place, take property of the axes
             # here to avoid difficult to debug bugs.
@@ -2016,33 +2016,72 @@ class AxesManager(t.HasTraits):
             if axis.slice is None:
                 getitem_tuple += axis.index,
                 values.append(axis.value)
-                self.navigation_axes += axis,
+                navigation_axes += axis,
             else:
                 getitem_tuple += axis.slice,
-                self.signal_axes += axis,
-        if not self.signal_axes and self.navigation_axes:
+                signal_axes += axis,
+        if not signal_axes and navigation_axes:
             getitem_tuple[-1] = slice(axis.index, axis.index + 1)
 
-        self.signal_axes = self.signal_axes[::-1]
-        self.navigation_axes = self.navigation_axes[::-1]
+        self._signal_axes = signal_axes[::-1]
+        self._navigation_axes = navigation_axes[::-1]
         self._getitem_tuple = tuple(getitem_tuple)
-        if len(self.signal_axes) == 1 and self.signal_axes[0].size == 1:
-            self.signal_dimension = 0
-        else:
-            self.signal_dimension = len(self.signal_axes)
-        self.navigation_dimension = len(self.navigation_axes)
-        if self.navigation_dimension != 0:
-            self.navigation_shape = tuple([
-                axis.size for axis in self.navigation_axes])
-        else:
-            self.navigation_shape = ()
 
-        self.signal_shape = tuple([axis.size for axis in self.signal_axes])
-        self.navigation_size = (np.cumprod(self.navigation_shape)[-1]
-                                if self.navigation_shape else 0)
-        self.signal_size = (np.cumprod(self.signal_shape)[-1]
-                            if self.signal_shape else 0)
+        if len(self.signal_axes) == 1 and self.signal_axes[0].size == 1:
+            self._signal_dimension = 0
+        else:
+            self._signal_dimension = len(self.signal_axes)
+        self._navigation_dimension = len(self.navigation_axes)
+
+        self._signal_size = (np.prod(self.signal_shape)
+                             if self.signal_shape else 0)
+        self._navigation_size = (np.prod(self.navigation_shape)
+                                 if self.navigation_shape else 0)
+
         self._update_max_index()
+
+    @property
+    def signal_axes(self):
+        """The signal axes as a tuple."""
+        return self._signal_axes
+
+    @property
+    def navigation_axes(self):
+        """The navigation axes as a tuple."""
+        return self._navigation_axes
+
+    @property
+    def signal_shape(self):
+        """The shape of the signal space."""
+        return tuple([axis.size for axis in self._signal_axes])
+
+    @property
+    def navigation_shape(self):
+        """The shape of the navigation space."""
+        if self.navigation_dimension != 0:
+            return tuple([axis.size for axis in self._navigation_axes])
+        else:
+            return ()
+
+    @property
+    def signal_size(self):
+        """The size of the signal space."""
+        return self._signal_size
+
+    @property
+    def navigation_size(self):
+        """The size of the navigation space."""
+        return self._navigation_size
+
+    @property
+    def navigation_dimension(self):
+        """The dimension of the navigation space."""
+        return self._navigation_dimension
+
+    @property
+    def signal_dimension(self):
+        """The dimension of the signal space."""
+        return self._signal_dimension
 
     def set_signal_dimension(self, value):
         """Set the dimension of the signal.

@@ -85,9 +85,7 @@ class TestCreateEELSModel:
         assert m.convolved
 
     def test_low_loss_bad_shape(self):
-        ll = self.s.deepcopy()
-        ll.axes_manager[-1].offset = -20
-        ll.axes_manager.navigation_shape = (123,)
+        ll = hs.stack([self.s] * 2)
         with pytest.raises(ValueError):
             _ = self.s.create_model(ll=ll)
 
