@@ -274,7 +274,7 @@ class BaseDataAxis(t.HasTraits):
     low_index = t.Int(0)
     high_index = t.Int()
     slice = t.Instance(slice)
-    navigate = t.Bool(t.Undefined)
+    navigate = t.Bool(False)
     is_binned = t.Bool(t.Undefined)
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
@@ -1487,12 +1487,6 @@ class AxesManager(t.HasTraits):
         if self._axes:
             self.remove(self._axes)
         self.create_axes(axes_list)
-        # set_signal_dimension is called only if there is no current
-        # view. It defaults to spectrum
-        navigates = [i.navigate for i in self._axes]
-        if t.Undefined in navigates:
-            # Default to Signal1D view if the view is not fully defined
-            self.set_signal_dimension(len(axes_list))
 
         self._update_attributes()
         self._update_trait_handlers()
@@ -2083,24 +2077,13 @@ class AxesManager(t.HasTraits):
         """The dimension of the signal space."""
         return self._signal_dimension
 
-    def set_signal_dimension(self, value):
-        """Set the dimension of the signal.
-
-        Attributes
-        ----------
-        value : int
-
-        Raises
-        ------
-        ValueError
-            If value if greater than the number of axes or is negative.
-
-        """
-        if self.ragged and value > 0:
-            raise ValueError("Signal containing ragged array must have zero "
-                             "signal dimension.")
+    @signal_dimension.setter
+    def signal_dimension(self, value):
         if len(self._axes) == 0:
             return
+        elif self.ragged and value > 0:
+            raise ValueError("Signal containing ragged array "
+                             "must have zero signal dimension.")
         elif value > len(self._axes):
             raise ValueError(
                 "The signal dimension cannot be greater"
@@ -2114,7 +2097,29 @@ class AxesManager(t.HasTraits):
             tl[-value:] = (False,) * value
 
         for axis in self._axes:
+            # Changing navigate attribute will update the axis._slice
+            # which in turn will trigger _on_slice_changed and call
+            # _update_attribute
             axis.navigate = tl.pop(0)
+
+    @navigation_dimension.setter
+    def navigation_dimension(self, value):
+        self.signal_dimension = len(self._axes) - value
+
+    def set_signal_dimension(self, value):
+        """Set the dimension of the signal.
+
+        Attributes
+        ----------
+        value : int
+
+        Raises
+        ------
+        ValueError
+            If value if greater than the number of axes or is negative.
+
+        """
+        self.signal_dimension = value
 
     def key_navigator(self, event):
         'Set hotkeys for controlling the indices of the navigator plot'

@@ -204,3 +204,41 @@ class TestConvertComplexSignal1D:
 def test_create_lazy_signal():
     # Check that this syntax is working
     _ = hs.signals.BaseSignal([0, 1, 2], attributes={'_lazy': True})
+
+
+@pytest.mark.parametrize('signal_dim', (0, 1, 2, 4))
+@pytest.mark.parametrize('set_signal_dim', [True, False])
+def test_setting_signal_dimension(signal_dim, set_signal_dim):
+    s = hs.signals.BaseSignal(np.random.random(size=(10, 20, 30, 40)))
+    nav_dim = s.data.ndim - signal_dim
+
+    if set_signal_dim:
+        s.axes_manager.signal_dimension = signal_dim
+    else:
+        s.axes_manager.navigation_dimension = nav_dim
+
+    if signal_dim == 0:
+        expected_sig_shape = ()
+        expected_nav_shape = s.data.shape[::-1]
+    else:
+        expected_sig_shape = s.data.shape[-signal_dim:][::-1]
+        expected_nav_shape = s.data.shape[:-signal_dim][::-1]
+
+    def expected_size(expected_shape):
+        return np.prod(expected_shape) if expected_shape else 0
+
+    assert s.axes_manager.signal_dimension == signal_dim
+    assert s.axes_manager.navigation_dimension == nav_dim
+    assert len(s.axes_manager.signal_axes) == signal_dim
+    assert len(s.axes_manager.navigation_axes) == nav_dim
+    assert s.axes_manager.signal_shape == expected_sig_shape
+    assert s.axes_manager.navigation_shape == expected_nav_shape
+    assert s.axes_manager.signal_size == expected_size(expected_sig_shape)
+    assert s.axes_manager.navigation_size == expected_size(expected_nav_shape)
+
+    s._assign_subclass()
+    class_mapping = {0:hs.signals.BaseSignal,
+                     1:hs.signals.Signal1D,
+                     2:hs.signals.Signal2D,
+                     4:hs.signals.BaseSignal}
+    assert isinstance(s, class_mapping[signal_dim])
