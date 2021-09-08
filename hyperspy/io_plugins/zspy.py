@@ -19,16 +19,14 @@
 import warnings
 import logging
 
-
 import zarr
 from zarr import Array, Group
 import numpy as np
 import dask.array as da
-from hyperspy.misc.utils import get_object_package_info
-from hyperspy.io_plugins.hspy import HyperspyReader, HyperspyWriter
+from hyperspy.io_plugins.hspy import version
 import numcodecs
 
-from hyperspy.io_plugins.hspy import version
+from hyperspy.io_plugins.hierarchical import HierarchicalWriter, HierarchicalReader
 
 _logger = logging.getLogger(__name__)
 
@@ -74,14 +72,23 @@ writes = True
 # Experiments instance
 
 
-class ZspyWriter(HyperspyWriter):
+class ZspyReader(HierarchicalReader):
+    def __init__(self, file):
+        super(ZspyReader, self).__init__(file)
+        self.Dataset = Array
+        self.Group = Group
+
+class ZspyWriter(HierarchicalWriter):
     def __init__(self,
                  file,
                  signal,
                  expg, **kwargs):
         super().__init__(file, signal, expg, **kwargs)
         self.Dataset = Array
-        self.unicode_kwds = {"dtype" : object, "object_codec" : numcodecs.JSON()}
+        self.unicode_kwds = {"dtype": object, "object_codec": numcodecs.JSON()}
+        self.ragged_kwds = {"dtype": object,
+                            "object_codec": numcodecs.VLenArray(int),
+                            "exact":  True}
 
     def store_data(self,
                    data,
@@ -111,23 +118,18 @@ class ZspyWriter(HyperspyWriter):
                                    **kwds)
             dset[:] = data
 
-    def get_object_dset(self, group, data, key, chunks, **kwds):
+    def get_object_dset(self, group,data_shape, key, chunks, **kwds):
         """Overrides the hyperspy get object dset function for using zarr as the backend
         """
-        if data.dtype == np.dtype('O'):
-            # For saving ragged array
-            # https://zarr.readthedocs.io/en/stable/tutorial.html?highlight=ragged%20array#ragged-arrays
-            if chunks is None:
-                chunks == 1
-            these_kwds = kwds.copy()
-            these_kwds.update(dict(dtype=object,
-                                   exact=True,
-                                   chunks=chunks))
-            dset = group.require_dataset(key,
-                                         data.shape,
-                                         object_codec=numcodecs.VLenArray(int),
-                                         **these_kwds)
-            return data, dset
+        these_kwds = kwds.copy()
+        these_kwds.update(dict(dtype=object,
+                               exact=True,
+                               chunks=chunks))
+        dset = group.require_dataset(key,
+                                     data_shape,
+                                     object_codec=numcodecs.VLenArray(int),
+                                     **these_kwds)
+            return dset
 
     def get_signal_chunks(self, shape, dtype, signal_axes=None):
         """Function that calculates chunks for the signal,
@@ -150,38 +152,6 @@ class ZspyWriter(HyperspyWriter):
         total_size = np.prod(shape) * typesize
         if total_size < 1e8:  # 1 mb
             return None
-
-    def parse_structure(self, key, group, value, _type, **kwds):
-        from hyperspy.signal import BaseSignal
-        try:
-            # Here we check if there are any signals in the container, as
-            # casting a long list of signals to a numpy array takes a very long
-            # time. So we check if there are any, and save numpy the trouble
-            if np.any([isinstance(t, BaseSignal) for t in value]):
-                tmp = np.array([[0]])
-            else:
-                tmp = np.array(value)
-        except ValueError:
-            tmp = np.array([[0]])
-        if tmp.dtype == np.dtype('O') or tmp.ndim != 1:
-            self.dict2hdfgroup(dict(zip(
-                [str(i) for i in range(len(value))], value)),
-                group.create_group(_type + str(len(value)) + '_' + key),
-                **kwds)
-        elif tmp.dtype.type is np.unicode_:
-            if _type + key in group:
-                del group[_type + key]
-            group.create_dataset(_type + key,
-                                 data=tmp,
-                                 dtype=object,
-                                 object_codec=numcodecs.JSON(),                                     **kwds)
-        else:
-            if _type + key in group:
-                del group[_type + key]
-            group.create_dataset(
-                _type + key,
-                data=tmp,
-                **kwds)
 
 
 def file_writer(filename, signal, *args, **kwds):
@@ -238,7 +208,7 @@ def file_reader(filename,
     """
     mode = kwds.pop('mode', 'r')
     f = zarr.open(filename, mode=mode, **kwds)
-    reader = HyperspyReader(f, Group, Dataset=Array)
+    reader = ZspyReader(f)
     if reader.version > version:
         warnings.warn(
             "This file was written using a newer version of the "

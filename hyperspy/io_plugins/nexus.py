@@ -25,7 +25,7 @@ import os
 import h5py
 import pprint
 import traits.api as t
-#from hyperspy.io_plugins.hspy import overwrite_dataset, get_signal_chunks
+from hyperspy.io_plugins.hspy import HyperspyReader, HyperspyWriter
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.exceptions import VisibleDeprecationWarning
 _logger = logging.getLogger(__name__)
@@ -44,6 +44,11 @@ default_extension = 0
 writes = True
 non_uniform_axis = False
 # ----------------------
+
+
+class NexusReader(HyperspyReader):
+
+class NexusWriter(HyperspyWriter):
 
 
 def _byte_to_string(value):
@@ -96,7 +101,7 @@ def _parse_from_file(value, lazy=False):
                 if value.chunks:
                     toreturn = da.from_array(value, value.chunks)
                 else:
-                    chunks = get_signal_chunks(value.shape, value.dtype)
+                    chunks = self.get_signal_chunks(value.shape, value.dtype)
                     toreturn = da.from_array(value, chunks)
             else:
                 toreturn = np.array(value)
@@ -965,58 +970,7 @@ def _find_search_keys_in_dict(tree, search_keys=None):
     return metadata_dict
 
 
-def _write_nexus_groups(dictionary, group, skip_keys=None, **kwds):
-    """Recursively iterate throuh dictionary and write groups to nexus.
 
-    Parameters
-    ----------
-    dictionary : dict
-        dictionary contents to store to hdf group
-    group : hdf group
-        location to store dictionary
-    skip_keys : str or list of str
-        the key(s) to skip when writing into the group
-    **kwds : additional keywords
-       additional keywords to pass to h5py.create_dataset method
-
-    """
-    if skip_keys is None:
-        skip_keys = []
-    elif isinstance(skip_keys, str):
-        skip_keys = [skip_keys]
-
-    for key, value in dictionary.items():
-        if key == 'attrs' or key in skip_keys:
-            # we will handle attrs later... and skip unwanted keys
-            continue
-        if isinstance(value, dict):
-            if "attrs" in value:
-                if "NX_class" in value["attrs"] and \
-                        value["attrs"]["NX_class"] == "NXdata":
-                    continue
-            if 'value' in value.keys() \
-                and not isinstance(value["value"], dict) \
-                    and len(set(list(value.keys()) + ["attrs", "value"])) == 2:
-                value = value["value"]
-            else:
-                _write_nexus_groups(value, group.require_group(key),
-                                    skip_keys=skip_keys, **kwds)
-        if isinstance(value, (list, tuple, np.ndarray, da.Array)):
-            if all(isinstance(v, dict) for v in value):
-                # a list of dictionary is from the axes of HyperSpy signal
-                for i, ax_dict in enumerate(value):
-                    ax_key = '_axes_' + str(i)
-                    _write_nexus_groups(ax_dict, group.require_group(ax_key),
-                                        skip_keys=skip_keys, **kwds)
-            else:
-                data = _parse_to_file(value)
-                overwrite_dataset(group, data, key, chunks=None, **kwds)
-        elif isinstance(value, (int, float, str, bytes)):
-            group.create_dataset(key, data=_parse_to_file(value))
-        else:
-            if value is not None and value != t.Undefined and key not in group:
-                _write_nexus_groups(value, group.require_group(key),
-                                    skip_keys=skip_keys, **kwds)
 
 
 def _write_nexus_attr(dictionary, group, skip_keys=None):
