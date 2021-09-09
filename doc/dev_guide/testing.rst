@@ -222,7 +222,7 @@ tests. The reference images are located in the folder defined by the argument
 
 To run plot tests, you simply need to add the option ``--mpl``:
 
-:: code:: bash
+.. code:: bash
 
     $ pytest --mpl
 
