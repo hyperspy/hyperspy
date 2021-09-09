@@ -179,6 +179,8 @@ The testing matrix is as follows:
   all dependencies are installed from `Anaconda Cloud <https://anaconda.org/>`_
   using the `"conda-forge" <https://anaconda.org/conda-forge>`_ channel.
   See ``azure-pipelines.yml`` in the HyperSpy repository for further details.
+- The testing of **HyperSpy extensions** is described in the 
+  :ref:`integration test suite <integration_test_suite-label>` section.
 
 This testing matrix has been designed to be simple and easy to maintain, whilst
 ensuring that packages from PyPI and Anaconda cloud are not mixed in order to
@@ -220,7 +222,7 @@ tests. The reference images are located in the folder defined by the argument
 
 To run plot tests, you simply need to add the option ``--mpl``:
 
-:: code:: bash
+.. code:: bash
 
     $ pytest --mpl
 
