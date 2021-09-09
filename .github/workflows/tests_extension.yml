@@ -58,9 +58,10 @@ jobs:
       - name: Install Extension Dev
         if: contains(matrix.EXTENSION_VERSION, 'dev')
         run: |
-          pip install https://github.com/lumispy/lumispy/archive/main.zip --no-deps
-          pip install https://github.com/pyxem/kikuchipy/archive/main.zip --no-deps
-          pip install https://github.com/pyxem/pyxem/archive/master.zip --no-deps
+          pip install https://github.com/lumispy/lumispy/archive/main.zip
+          pip install https://github.com/pyxem/kikuchipy/archive/main.zip
+          pip install https://github.com/pyxem/pyxem/archive/master.zip
+          pip install https://https://gitlab.com/atomap/atomap/-/archive/master/atomap-master.zip
 
       - name: Run Kikuchipy Test Suite
         if: ${{ always() }}
@@ -76,3 +77,9 @@ jobs:
         if: ${{ always() }}
         run: |
           python -m pytest --pyargs pyxem
+
+      # atomap test suite doesn't run headless 
+      #- name: Run atomap Test Suite
+      #  if: ${{ always() }}
+      #  run: |
+      #    python -m pytest --pyargs atomap
