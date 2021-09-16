@@ -397,6 +397,14 @@ Other minor differences
   convenience, ``nansum``, ``nanmean`` and other ``nan*`` signal methods were
   added to mimic the workflow as closely as possible.
 
+Saving Big Data
+^^^^^^^^^^^^^^^^^
+
+* **Zspy Format** When saving big data the hdf5 format struggles to compress,
+save, load and operate on datasets > 50 GB.  A better option is to use the
+:ref:`zspy-format`.
+
+This also allows for smooth interaction with dask-distributed for efficient scaling.
 
 .. _lazy_details:
 
