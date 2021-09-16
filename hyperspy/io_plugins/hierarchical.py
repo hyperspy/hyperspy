@@ -150,13 +150,10 @@ class HierarchicalReader:
         exp_dict_list = []
         if 'Experiments' in self.file:
             for ds in self.file['Experiments']:
-                print(type(self.file['Experiments'][ds]))
-                print(self.Group)
                 if isinstance(self.file['Experiments'][ds], self.Group):
                     if 'data' in self.file['Experiments'][ds]:
                         experiments.append(ds)
             # Parse the file
-            print(experiments)
             for experiment in experiments:
 
                 exg = self.file['Experiments'][experiment]

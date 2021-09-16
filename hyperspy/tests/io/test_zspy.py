@@ -25,6 +25,7 @@ from os import remove
 
 import dask.array as da
 import h5py
+import lmdb
 import numpy as np
 import pytest
 import zarr
@@ -687,3 +688,21 @@ class TestZspy:
         signal2 = hs.load(filename)
         m2 = signal2.models.restore("test")
         assert m.signal == m2.signal
+
+    def test_save_N5_type(self,signal):
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/testmodels.zspy'
+        store = zarr.N5Store(path=filename)
+        signal.save(store.path, write_to_storage=True)
+        signal2 = hs.load(filename)
+        np.testing.assert_array_equal(signal2.data, signal.data)
+
+    @pytest.mark.skip(reason="lmdb must be installed to test")
+    def test_save_lmdb_type(self, signal):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.mkdir(tmp+"/testmodels.zspy")
+            filename = tmp + '/testmodels.zspy/'
+            store = zarr.LMDBStore(path=filename)
+            signal.save(store.path, write_to_storage=True)
+            signal2 = hs.load(store.path)
+            np.testing.assert_array_equal(signal2.data, signal.data)

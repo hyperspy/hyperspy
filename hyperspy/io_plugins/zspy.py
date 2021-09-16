@@ -19,6 +19,7 @@
 import warnings
 import logging
 from functools import partial
+from collections import MutableMapping
 
 import zarr
 from zarr import Array, Group
@@ -166,7 +167,10 @@ class ZspyWriter(HierarchicalWriter):
         self.overwrite_dataset = overwrite_dataset
 
 
-def file_writer(filename, signal, *args, **kwds):
+def file_writer(filename,
+                signal,
+                *args,
+                **kwds):
     """Writes data to hyperspy's zarr format
     Parameters
     ----------
@@ -178,8 +182,11 @@ def file_writer(filename, signal, *args, **kwds):
     if "compressor" not in kwds:
         from numcodecs import Blosc
         kwds["compressor"] = Blosc(cname='zstd', clevel=1)
-    store = zarr.storage.NestedDirectoryStore(filename,)
-    f = zarr.group(store=store, overwrite=True)
+    if "write_to_storage" in kwds and kwds["write_to_storage"]:
+        f = zarr.open(filename)
+    else:
+        store = zarr.storage.NestedDirectoryStore(filename,)
+        f = zarr.group(store=store, overwrite=True)
     f.attrs['file_format'] = "ZSpy"
     f.attrs['file_format_version'] = version
     exps = f.create_group('Experiments')
