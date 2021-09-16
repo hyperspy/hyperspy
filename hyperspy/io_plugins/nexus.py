@@ -25,7 +25,7 @@ import os
 import h5py
 import pprint
 import traits.api as t
-from hyperspy.io_plugins.hspy import HyperspyReader, HyperspyWriter
+from hyperspy.io_plugins.hspy import HyperspyReader, HierarchicalWriter
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.exceptions import VisibleDeprecationWarning
 _logger = logging.getLogger(__name__)
@@ -47,9 +47,232 @@ non_uniform_axis = False
 
 
 class NexusReader(HyperspyReader):
+    def get_format_version(self):
+        pass
+    def read(self,
+             lazy,
+             dataset_key=None,
+             dataset_path=None,
+             metadata_key=None,
+             skip_array_metadata=False,
+             nxdata_only=False,
+             hardlinks_only=False,
+             use_default=False,
+             **kwds):
+        signal_dict_list = []
+        if 'dataset_keys' in kwds:
+            warnings.warn("The `dataset_keys` keyword is deprecated. "
+                          "Use `dataset_key` instead.", VisibleDeprecationWarning)
+            dataset_key = kwds['dataset_keys']
 
-class NexusWriter(HyperspyWriter):
+        if 'dataset_paths' in kwds:
+            warnings.warn("The `dataset_paths` keyword is deprecated. "
+                          "Use `dataset_path` instead.", VisibleDeprecationWarning)
+            dataset_path = kwds['dataset_paths']
 
+        if 'metadata_keys' in kwds:
+            warnings.warn("The `metadata_keys` keyword is deprecated. "
+                          "Use `metadata_key` instead.", VisibleDeprecationWarning)
+            metadata_key = kwds['metadata_keys']
+
+        dataset_key = _check_search_keys(dataset_key)
+        dataset_path = _check_search_keys(dataset_path)
+        metadata_key = _check_search_keys(metadata_key)
+        original_metadata = _load_metadata(fin,
+                                           lazy=lazy,
+                                           skip_array_metadata=skip_array_metadata)
+        # some default values...
+        nexus_data_paths = []
+        hdf_data_paths = []
+        # check if a default dataset is defined
+        if use_default:
+            nexus_data_paths, hdf_data_paths = _find_data(fin,
+                                                          search_keys=None,
+                                                          hardlinks_only=False)
+            nxentry = None
+            nxdata = None
+            if "attrs" in original_metadata:
+                if "default" in original_metadata["attrs"]:
+                    nxentry = original_metadata["attrs"]["default"]
+                else:
+                    rootlist = list(original_metadata.keys())
+                    rootlist.remove("attrs")
+                    if rootlist and len(rootlist) == 1:
+                        nxentry == rootlist[0]
+                if nxentry:
+                    if "default" in original_metadata[nxentry]["attrs"]:
+                        nxdata = original_metadata[nxentry]["attrs"]["default"]
+                if nxentry and nxdata:
+                    nxdata = "/" + nxentry + "/" + nxdata
+                if nxdata:
+                    hdf_data_paths = []
+                    nexus_data_paths = [nxpath for nxpath in nexus_data_paths
+                                        if nxdata in nxpath]
+
+        # if no default found then search for the data as normal
+        if not nexus_data_paths and not hdf_data_paths:
+            nexus_data_paths, hdf_data_paths = \
+                _find_data(fin, search_keys=dataset_key,
+                           hardlinks_only=hardlinks_only,
+                           absolute_path=dataset_path)
+
+        for data_path in nexus_data_paths:
+            dictionary = _nexus_dataset_to_signal(fin, data_path, lazy=lazy)
+            entryname = _text_split(data_path, "/")[0]
+            dictionary["mapping"] = mapping
+            title = dictionary["metadata"]["General"]["title"]
+            if entryname in original_metadata:
+                if metadata_key is None:
+                    dictionary["original_metadata"] = \
+                        original_metadata[entryname]
+                else:
+                    dictionary["original_metadata"] = \
+                        _find_search_keys_in_dict(original_metadata,
+                                                  search_keys=metadata_key)
+                # test if it's a hyperspy_nexus format and update metadata
+                # as appropriate.
+                if "attrs" in original_metadata and \
+                        "file_writer" in original_metadata["attrs"]:
+                    if original_metadata["attrs"]["file_writer"] == \
+                            "hyperspy_nexus_v3":
+                        orig_metadata = original_metadata[entryname]
+                        if "auxiliary" in orig_metadata:
+                            oma = orig_metadata["auxiliary"]
+                            if "learning_results" in oma:
+                                learning = oma["learning_results"]
+                                dictionary["attributes"] = {}
+                                dictionary["attributes"]["learning_results"] = \
+                                    learning
+                            if "original_metadata" in oma:
+                                if metadata_key is None:
+                                    dictionary["original_metadata"] = \
+                                        (oma["original_metadata"])
+                                else:
+                                    dictionary["original_metadata"] = \
+                                        _find_search_keys_in_dict(
+                                            (oma["original_metadata"]),
+                                            search_keys=metadata_key)
+                                # reconstruct the axes_list for axes_manager
+                                for k, v in oma['original_metadata'].items():
+                                    if k.startswith('_sig_'):
+                                        hyper_ax = [ax_v for ax_k, ax_v in v.items()
+                                                    if ax_k.startswith('_axes')]
+                                        oma['original_metadata'][k]['axes'] = hyper_ax
+                            if "hyperspy_metadata" in oma:
+                                hyper_metadata = oma["hyperspy_metadata"]
+                                hyper_metadata.update(dictionary["metadata"])
+                                dictionary["metadata"] = hyper_metadata
+            else:
+                dictionary["original_metadata"] = {}
+
+            signal_dict_list.append(dictionary)
+
+        if not nxdata_only:
+            for data_path in hdf_data_paths:
+                datadict = _extract_hdf_dataset(fin, data_path, lazy=lazy)
+                if datadict:
+                    title = data_path[1:].replace('/', '_')
+                    basic_metadata = {'General':
+                                          {'original_filename':
+                                               os.path.split(filename)[1],
+                                           'title': title}}
+                    datadict["metadata"].update(basic_metadata)
+                    signal_dict_list.append(datadict)
+
+        return signal_dict_list
+
+
+class NexusWriter(HeirachicalWriter):
+    def write_signal(self,
+                     signals,
+                     expg,
+                     save_original_metadata=True,
+                     skip_metadata_key=None,
+                     use_default=False,
+                     **kwds):
+        """Write the signal and metadata as a nexus file.
+
+        This will save the signal in NXdata format in the file.
+        As the form of the metadata can vary and is not validated it will
+        be stored as an NXcollection (an unvalidated collection)
+
+        Parameters
+        ----------
+        filename : str
+            Path of the file to write
+        signals : signal or list of signals
+            Signal(s) to be written
+        save_original_metadata : bool , default : False
+              Option to save hyperspy.original_metadata with the signal.
+              A loaded Nexus file may have a large amount of data
+              when loaded which you may wish to omit on saving
+        skip_metadata_key : str or list of str, default : None
+            the key(s) to skip when it is saving original metadata. This is useful
+            when some metadata's keys are to be ignored.
+        use_default : bool , default : False
+              Option to define the default dataset in the file.
+              If set to True the signal or first signal in the list of signals
+              will be defined as the default (following Nexus v3 data rules).
+
+        See Also
+        --------
+        * :py:meth:`~.io_plugins.nexus.file_reader`
+        * :py:meth:`~.io_plugins.nexus.list_datasets_in_file`
+        * :py:meth:`~.io_plugins.nexus.read_metadata_from_file`
+
+        """
+        for i, sig in enumerate(signals):
+            nxentry = f.create_group("entry%d" % (i + 1))
+            nxentry.attrs["NX_class"] = _parse_to_file("NXentry")
+            if isinstance(sig.metadata, dict):
+                sig.metadata = DictionaryTreeBrowser(sig.metadata)
+            if isinstance(sig.original_metadata, dict):
+                sig.original_metadata = DictionaryTreeBrowser(
+                    sig.original_metadata)
+
+            signal_name = sig.metadata.General.title \
+            if sig.metadata.General.title else 'unnamed__%d' % i
+                if "/" in signal_name:
+                    signal_name = signal_name.replace("/", "_")
+            if signal_name.startswith("__"):
+                signal_name = signal_name[2:]
+
+            if i == 0 and use_default:
+                nxentry.attrs["default"] = signal_name
+
+            nxaux = nxentry.create_group("auxiliary")
+            nxaux.attrs["NX_class"] = _parse_to_file("NXentry")
+            _write_signal(sig, nxentry, signal_name, **kwds)
+
+            if sig.learning_results:
+                nxlearn = nxaux.create_group('learning_results')
+                nxlearn.attrs["NX_class"] = _parse_to_file("NXcollection")
+                learn = sig.learning_results.__dict__
+                _write_nexus_groups(learn, nxlearn, **kwds)
+                _write_nexus_attr(learn, nxlearn)
+                #
+                # write metadata
+                #
+                if save_original_metadata:
+                    if sig.original_metadata:
+                        ometa = sig.original_metadata.as_dictionary()
+
+                        nxometa = nxaux.create_group('original_metadata')
+                        nxometa.attrs["NX_class"] = _parse_to_file("NXcollection")
+                        # write the groups and structure
+                        _write_nexus_groups(ometa, nxometa,
+                                            skip_keys=skip_metadata_key, **kwds)
+                        _write_nexus_attr(ometa, nxometa,
+                                          skip_keys=skip_metadata_key)
+
+                if sig.metadata:
+                    meta = sig.metadata.as_dictionary()
+
+                    nxometa = nxaux.create_group('hyperspy_metadata')
+                    nxometa.attrs["NX_class"] = _parse_to_file("NXcollection")
+                    # write the groups and structure
+                    _write_nexus_groups(meta, nxometa, **kwds)
+                    _write_nexus_attr(meta, nxometa)
 
 def _byte_to_string(value):
     """Decode a byte string.
@@ -505,126 +728,6 @@ def file_reader(filename, lazy=False, dataset_key=None, dataset_path=None,
     learning = {}
     fin = h5py.File(filename, "r")
     signal_dict_list = []
-
-    if 'dataset_keys' in kwds:
-        warnings.warn("The `dataset_keys` keyword is deprecated. "
-                      "Use `dataset_key` instead.", VisibleDeprecationWarning)
-        dataset_key = kwds['dataset_keys']
-
-    if 'dataset_paths' in kwds:
-        warnings.warn("The `dataset_paths` keyword is deprecated. "
-                      "Use `dataset_path` instead.", VisibleDeprecationWarning)
-        dataset_path = kwds['dataset_paths']
-
-    if 'metadata_keys' in kwds:
-        warnings.warn("The `metadata_keys` keyword is deprecated. "
-                      "Use `metadata_key` instead.", VisibleDeprecationWarning)
-        metadata_key = kwds['metadata_keys']
-
-    dataset_key = _check_search_keys(dataset_key)
-    dataset_path = _check_search_keys(dataset_path)
-    metadata_key = _check_search_keys(metadata_key)
-    original_metadata = _load_metadata(fin, lazy=lazy,
-                                       skip_array_metadata=skip_array_metadata)
-    # some default values...
-    nexus_data_paths = []
-    hdf_data_paths = []
-    # check if a default dataset is defined
-    if use_default:
-        nexus_data_paths, hdf_data_paths = _find_data(fin,
-                                                      search_keys=None,
-                                                      hardlinks_only=False)
-        nxentry = None
-        nxdata = None
-        if "attrs" in original_metadata:
-            if "default" in original_metadata["attrs"]:
-                nxentry = original_metadata["attrs"]["default"]
-            else:
-                rootlist = list(original_metadata.keys())
-                rootlist.remove("attrs")
-                if rootlist and len(rootlist) == 1:
-                    nxentry == rootlist[0]
-            if nxentry:
-                if "default" in original_metadata[nxentry]["attrs"]:
-                    nxdata = original_metadata[nxentry]["attrs"]["default"]
-            if nxentry and nxdata:
-                nxdata = "/"+nxentry+"/"+nxdata
-            if nxdata:
-                hdf_data_paths = []
-                nexus_data_paths = [nxpath for nxpath in nexus_data_paths
-                                    if nxdata in nxpath]
-
-    # if no default found then search for the data as normal
-    if not nexus_data_paths and not hdf_data_paths:
-        nexus_data_paths, hdf_data_paths = \
-            _find_data(fin, search_keys=dataset_key,
-                       hardlinks_only=hardlinks_only,
-                       absolute_path=dataset_path)
-
-    for data_path in nexus_data_paths:
-        dictionary = _nexus_dataset_to_signal(fin, data_path, lazy=lazy)
-        entryname = _text_split(data_path, "/")[0]
-        dictionary["mapping"] = mapping
-        title = dictionary["metadata"]["General"]["title"]
-        if entryname in original_metadata:
-            if metadata_key is None:
-                dictionary["original_metadata"] = \
-                    original_metadata[entryname]
-            else:
-                dictionary["original_metadata"] = \
-                    _find_search_keys_in_dict(original_metadata,
-                                              search_keys=metadata_key)
-            # test if it's a hyperspy_nexus format and update metadata
-            # as appropriate.
-            if "attrs" in original_metadata and \
-                    "file_writer" in original_metadata["attrs"]:
-                if original_metadata["attrs"]["file_writer"] == \
-                        "hyperspy_nexus_v3":
-                    orig_metadata = original_metadata[entryname]
-                    if "auxiliary" in orig_metadata:
-                        oma = orig_metadata["auxiliary"]
-                        if "learning_results" in oma:
-                            learning = oma["learning_results"]
-                            dictionary["attributes"] = {}
-                            dictionary["attributes"]["learning_results"] = \
-                                learning
-                        if "original_metadata" in oma:
-                            if metadata_key is None:
-                                dictionary["original_metadata"] = \
-                                    (oma["original_metadata"])
-                            else:
-                                dictionary["original_metadata"] = \
-                                    _find_search_keys_in_dict(
-                                        (oma["original_metadata"]),
-                                        search_keys=metadata_key)
-                            # reconstruct the axes_list for axes_manager
-                            for k, v in oma['original_metadata'].items():
-                                if k.startswith('_sig_'):
-                                    hyper_ax = [ax_v for ax_k, ax_v in v.items()
-                                                if ax_k.startswith('_axes')]
-                                    oma['original_metadata'][k]['axes'] = hyper_ax
-                        if "hyperspy_metadata" in oma:
-                            hyper_metadata = oma["hyperspy_metadata"]
-                            hyper_metadata.update(dictionary["metadata"])
-                            dictionary["metadata"] = hyper_metadata
-        else:
-            dictionary["original_metadata"] = {}
-
-        signal_dict_list.append(dictionary)
-
-    if not nxdata_only:
-        for data_path in hdf_data_paths:
-            datadict = _extract_hdf_dataset(fin, data_path, lazy=lazy)
-            if datadict:
-                title = data_path[1:].replace('/', '_')
-                basic_metadata = {'General':
-                                  {'original_filename':
-                                   os.path.split(filename)[1],
-                                   'title': title}}
-                datadict["metadata"].update(basic_metadata)
-                signal_dict_list.append(datadict)
-
-    return signal_dict_list
 
 
 def _is_linear_axis(data):
@@ -1219,60 +1322,12 @@ def file_writer(filename,
             kwds['compression'] = 'gzip'
         if use_default:
             f.attrs["default"] = "entry1"
-        #
-        # write the signals
-        #
 
-        for i, sig in enumerate(signals):
-            nxentry = f.create_group("entry%d" % (i + 1))
-            nxentry.attrs["NX_class"] = _parse_to_file("NXentry")
-
-            if isinstance(sig.metadata, dict):
-                sig.metadata = DictionaryTreeBrowser(sig.metadata)
-            if isinstance(sig.original_metadata, dict):
-                sig.original_metadata = DictionaryTreeBrowser(
-                    sig.original_metadata)
-
-            signal_name = sig.metadata.General.title \
-                if sig.metadata.General.title else 'unnamed__%d' % i
-            if "/" in signal_name:
-                signal_name = signal_name.replace("/", "_")
-            if signal_name.startswith("__"):
-                signal_name = signal_name[2:]
-
-            if i == 0 and use_default:
-                nxentry.attrs["default"] = signal_name
-
-            nxaux = nxentry.create_group("auxiliary")
-            nxaux.attrs["NX_class"] = _parse_to_file("NXentry")
-            _write_signal(sig, nxentry, signal_name, **kwds)
-
-            if sig.learning_results:
-                nxlearn = nxaux.create_group('learning_results')
-                nxlearn.attrs["NX_class"] = _parse_to_file("NXcollection")
-                learn = sig.learning_results.__dict__
-                _write_nexus_groups(learn, nxlearn, **kwds)
-                _write_nexus_attr(learn, nxlearn)
-            #
-            # write metadata
-            #
-            if save_original_metadata:
-                if sig.original_metadata:
-                    ometa = sig.original_metadata.as_dictionary()
-
-                    nxometa = nxaux.create_group('original_metadata')
-                    nxometa.attrs["NX_class"] = _parse_to_file("NXcollection")
-                    # write the groups and structure
-                    _write_nexus_groups(ometa, nxometa,
-                                        skip_keys=skip_metadata_key, **kwds)
-                    _write_nexus_attr(ometa, nxometa,
-                                      skip_keys=skip_metadata_key)
-
-            if sig.metadata:
-                meta = sig.metadata.as_dictionary()
-
-                nxometa = nxaux.create_group('hyperspy_metadata')
-                nxometa.attrs["NX_class"] = _parse_to_file("NXcollection")
-                # write the groups and structure
-                _write_nexus_groups(meta, nxometa, **kwds)
-                _write_nexus_attr(meta, nxometa)
+        writer = NexusWriter(f,
+                             signals,
+                             save_original_metadata=True,
+                             skip_metadata_key=None,
+                             use_default=False,
+                             *args,
+                             **kwds)
+        writer.write_signal()

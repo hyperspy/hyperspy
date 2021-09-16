@@ -129,7 +129,7 @@ class ZspyWriter(HierarchicalWriter):
                                      data_shape,
                                      object_codec=numcodecs.VLenArray(int),
                                      **these_kwds)
-            return dset
+        return dset
 
     def get_signal_chunks(self, shape, dtype, signal_axes=None):
         """Function that calculates chunks for the signal,
