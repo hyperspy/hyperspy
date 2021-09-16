@@ -19,10 +19,14 @@
 from distutils.version import LooseVersion
 import warnings
 import logging
+from functools import partial
 import h5py
+import numpy as np
+import dask.array as da
 from h5py import Dataset, File, Group
 
-from hyperspy.io_plugins.hierarchical import HierarchicalWriter, HierarchicalReader
+from hyperspy.io_plugins.hierarchical import HierarchicalWriter, HierarchicalReader, _overwrite_dataset
+from hyperspy.misc.utils import multiply
 
 _logger = logging.getLogger(__name__)
 
@@ -98,6 +102,96 @@ current_file_version = None  # Format version of the file being read
 default_version = LooseVersion(version)
 
 
+def get_signal_chunks(shape,
+                      dtype,
+                      signal_axes=None):
+    """Function that calculates chunks for the signal, preferably at least one
+    chunk per signal space.
+
+    Parameters
+    ----------
+    shape : tuple
+        the shape of the dataset to be sored / chunked
+    dtype : {dtype, string}
+        the numpy dtype of the data
+    signal_axes: {None, iterable of ints}
+        the axes defining "signal space" of the dataset. If None, the default
+        h5py chunking is performed.
+        """
+    typesize = np.dtype(dtype).itemsize
+    if signal_axes is None:
+        return h5py._hl.filters.guess_chunk(shape, None, typesize)
+
+    # largely based on the guess_chunk in h5py
+    CHUNK_MAX = 1024 * 1024
+    want_to_keep = multiply([shape[i] for i in signal_axes]) * typesize
+    if want_to_keep >= CHUNK_MAX:
+        chunks = [1 for _ in shape]
+        for i in signal_axes:
+            chunks[i] = shape[i]
+        return tuple(chunks)
+
+    chunks = [i for i in shape]
+    idx = 0
+    navigation_axes = tuple(i for i in range(len(shape)) if i not in
+                            signal_axes)
+    nchange = len(navigation_axes)
+    while True:
+        chunk_bytes = multiply(chunks) * typesize
+
+        if chunk_bytes < CHUNK_MAX:
+            break
+
+        if multiply([chunks[i] for i in navigation_axes]) == 1:
+            break
+        change = navigation_axes[idx % nchange]
+        chunks[change] = np.ceil(chunks[change] / 2.0)
+        idx += 1
+    return tuple(int(x) for x in chunks)
+
+
+def _get_object_dset(group, data, key, chunks, **kwds):
+    """Creates a Dataset or Zarr Array object for saving ragged data
+    Parameters
+    ----------
+    self
+    group
+    data
+    key
+    chunks
+    kwds
+
+    Returns
+    -------
+
+    """
+    # For saving ragged array
+    if chunks is None:
+        chunks = 1
+    dset = group.require_dataset(key,
+                                 chunks,
+                                 dtype=h5py.special_dtype(vlen=data[0].dtype),
+                                 **kwds)
+    return dset
+
+
+def _store_data(data, dset, group, key, chunks, **kwds):
+    if isinstance(data, da.Array):
+        if data.chunks != dset.chunks:
+            data = data.rechunk(dset.chunks)
+        da.store(data, dset)
+    elif data.flags.c_contiguous:
+        dset.write_direct(data)
+    else:
+        dset[:] = data
+
+
+overwrite_dataset = partial(_overwrite_dataset,
+                            get_signal_chunks=get_signal_chunks,
+                            get_object_dset=_get_object_dset,
+                            store_data=_store_data)
+
+
 class HyperspyReader(HierarchicalReader):
     def __init__(self, file):
         super().__init__(file)
@@ -123,6 +217,7 @@ class HyperspyWriter(HierarchicalWriter):
         self.Group = Group
         self.unicode_kwds = {"dtype": h5py.special_dtype(vlen=str)}
         self.ragged_kwds = {"dtype": h5py.special_dtype(vlen=signal.data[0].dtype)}
+        self.overwrite_dataset = overwrite_dataset
 
 def file_reader(
                 filename,

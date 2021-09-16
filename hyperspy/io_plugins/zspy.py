@@ -18,6 +18,7 @@
 
 import warnings
 import logging
+from functools import partial
 
 import zarr
 from zarr import Array, Group
@@ -26,7 +27,8 @@ import dask.array as da
 from hyperspy.io_plugins.hspy import version
 import numcodecs
 
-from hyperspy.io_plugins.hierarchical import HierarchicalWriter, HierarchicalReader
+
+from hyperspy.io_plugins.hierarchical import HierarchicalWriter, HierarchicalReader, _overwrite_dataset
 
 _logger = logging.getLogger(__name__)
 
@@ -72,11 +74,83 @@ writes = True
 # Experiments instance
 
 
+def get_object_dset(group, data, key, chunks, **kwds):
+    """Overrides the hyperspy get object dset function for using zarr as the backend
+    """
+    these_kwds = kwds.copy()
+    these_kwds.update(dict(dtype=object,
+                           exact=True,
+                           chunks=chunks))
+    dset = group.require_dataset(key,
+                                 data.shape,
+                                 object_codec=numcodecs.VLenArray(int),
+                                 **these_kwds)
+    return dset
+
+
+def _get_signal_chunks(shape, dtype, signal_axes=None):
+    """Function that calculates chunks for the signal,
+     preferably at least one chunk per signal space.
+    Parameters
+    ----------
+    shape : tuple
+        the shape of the dataset to be sored / chunked
+    dtype : {dtype, string}
+        the numpy dtype of the data
+    signal_axes: {None, iterable of ints}
+        the axes defining "signal space" of the dataset. If None, the default
+        zarr chunking is performed.
+    """
+    typesize = np.dtype(dtype).itemsize
+    if signal_axes is None:
+        return None
+    # chunk size larger than 1 Mb https://zarr.readthedocs.io/en/stable/tutorial.html#chunk-optimizations
+    # shooting for 100 Mb chunks
+    total_size = np.prod(shape) * typesize
+    if total_size < 1e8:  # 1 mb
+        return None
+
+
+def _store_data(data,
+                dset,
+                group,
+                key,
+                chunks,
+                **kwds):
+    """Overrides the hyperspy store data function for using zarr as the backend
+    """
+    if isinstance(data, da.Array):
+        if data.chunks != dset.chunks:
+            data = data.rechunk(dset.chunks)
+        path = group._store.dir_path() + "/" + dset.path
+        data.to_zarr(url=path,
+                     overwrite=True,
+                        **kwds)  # add in compression etc
+    elif data.dtype == np.dtype('O'):
+        group[key][:] = data[:]  # check lazy
+    else:
+        path = group._store.dir_path() + "/" + dset.path
+        dset = zarr.open_array(path,
+                               mode="w",
+                               shape=data.shape,
+                                dtype=data.dtype,
+                                chunks=chunks,
+                                **kwds)
+        dset[:] = data
+
+
+overwrite_dataset = partial(_overwrite_dataset,
+                            get_signal_chunks=_get_signal_chunks,
+                            get_object_dset=get_object_dset,
+                            store_data=_store_data)
+
+
 class ZspyReader(HierarchicalReader):
     def __init__(self, file):
         super(ZspyReader, self).__init__(file)
         self.Dataset = Array
         self.Group = Group
+
 
 class ZspyWriter(HierarchicalWriter):
     def __init__(self,
@@ -89,69 +163,7 @@ class ZspyWriter(HierarchicalWriter):
         self.ragged_kwds = {"dtype": object,
                             "object_codec": numcodecs.VLenArray(int),
                             "exact":  True}
-
-    def store_data(self,
-                   data,
-                   dset,
-                   group,
-                   key,
-                   chunks,
-                   **kwds):
-        """Overrides the hyperspy store data function for using zarr as the backend
-        """
-        if isinstance(data, da.Array):
-            if data.chunks != dset.chunks:
-                data = data.rechunk(dset.chunks)
-            path = group._store.dir_path() + "/" + dset.path
-            data.to_zarr(url=path,
-                         overwrite=True,
-                         **kwds)  # add in compression etc
-        elif data.dtype == np.dtype('O'):
-            group[key][:] = data[:]  # check lazy
-        else:
-            path = group._store.dir_path() + "/" + dset.path
-            dset = zarr.open_array(path,
-                                   mode="w",
-                                   shape=data.shape,
-                                   dtype=data.dtype,
-                                   chunks=chunks,
-                                   **kwds)
-            dset[:] = data
-
-    def get_object_dset(self, group,data_shape, key, chunks, **kwds):
-        """Overrides the hyperspy get object dset function for using zarr as the backend
-        """
-        these_kwds = kwds.copy()
-        these_kwds.update(dict(dtype=object,
-                               exact=True,
-                               chunks=chunks))
-        dset = group.require_dataset(key,
-                                     data_shape,
-                                     object_codec=numcodecs.VLenArray(int),
-                                     **these_kwds)
-        return dset
-
-    def get_signal_chunks(self, shape, dtype, signal_axes=None):
-        """Function that calculates chunks for the signal,
-         preferably at least one chunk per signal space.
-        Parameters
-        ----------
-        shape : tuple
-            the shape of the dataset to be sored / chunked
-        dtype : {dtype, string}
-            the numpy dtype of the data
-        signal_axes: {None, iterable of ints}
-            the axes defining "signal space" of the dataset. If None, the default
-            zarr chunking is performed.
-        """
-        typesize = np.dtype(dtype).itemsize
-        if signal_axes is None:
-            return None
-        # chunk size larger than 1 Mb https://zarr.readthedocs.io/en/stable/tutorial.html#chunk-optimizations
-        # shooting for 100 Mb chunks
-        total_size = np.prod(shape) * typesize
-        if total_size < 1e8:  # 1 mb
-            return None
+        self.overwrite_dataset = overwrite_dataset
 
 
 def file_writer(filename, signal, *args, **kwds):

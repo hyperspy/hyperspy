@@ -27,6 +27,7 @@ def _overwrite_dataset(group,
                       chunks=None,
                       get_signal_chunks=None,
                       get_object_dset=None,
+                      store_data=None,
                       **kwds):
     """Overwrites some dataset in a hirarchical dataset.
 
@@ -94,86 +95,6 @@ def _overwrite_dataset(group,
         _logger.info(f"Chunks used for saving: {chunks}")
         store_data(data, dset, group, key, chunks, **kwds)
 
-    def get_signal_chunks(self,
-                          shape,
-                          dtype,
-                          signal_axes=None):
-        """Function that calculates chunks for the signal, preferably at least one
-        chunk per signal space.
-
-        Parameters
-        ----------
-        shape : tuple
-            the shape of the dataset to be sored / chunked
-        dtype : {dtype, string}
-            the numpy dtype of the data
-        signal_axes: {None, iterable of ints}
-            the axes defining "signal space" of the dataset. If None, the default
-            h5py chunking is performed.
-        """
-        typesize = np.dtype(dtype).itemsize
-        if signal_axes is None:
-            return h5py._hl.filters.guess_chunk(shape, None, typesize)
-
-        # largely based on the guess_chunk in h5py
-        CHUNK_MAX = 1024 * 1024
-        want_to_keep = multiply([shape[i] for i in signal_axes]) * typesize
-        if want_to_keep >= CHUNK_MAX:
-            chunks = [1 for _ in shape]
-            for i in signal_axes:
-                chunks[i] = shape[i]
-            return tuple(chunks)
-
-        chunks = [i for i in shape]
-        idx = 0
-        navigation_axes = tuple(i for i in range(len(shape)) if i not in
-                                signal_axes)
-        nchange = len(navigation_axes)
-        while True:
-            chunk_bytes = multiply(chunks) * typesize
-
-            if chunk_bytes < CHUNK_MAX:
-                break
-
-            if multiply([chunks[i] for i in navigation_axes]) == 1:
-                break
-            change = navigation_axes[idx % nchange]
-            chunks[change] = np.ceil(chunks[change] / 2.0)
-            idx += 1
-        return tuple(int(x) for x in chunks)
-
-def _get_object_dset( group, key, chunks, **kwds):
-    """Creates a Dataset or Zarr Array object for saving ragged data
-    Parameters
-    ----------
-    self
-    group
-    data
-    key
-    chunks
-    kwds
-
-    Returns
-    -------
-
-    """
-    # For saving ragged array
-    if chunks is None:
-        chunks = 1
-    dset = group.require_dataset(key,
-                                 **kwds)
-    return dset
-
-def _store_data(data, dset, group, key, chunks, **kwds):
-    if isinstance(data, da.Array):
-        if data.chunks != dset.chunks:
-            data = data.rechunk(dset.chunks)
-        da.store(data, dset)
-    elif data.flags.c_contiguous:
-        dset.write_direct(data)
-    else:
-        dset[:] = data
-
 
 class HierarchicalReader:
     """A generic Reader class for reading data from hierarchical file types."""
@@ -185,8 +106,6 @@ class HierarchicalReader:
         self.Group = None
         self.unicode_kwds = None
         self.ragged_kwds = None
-        self.store_data
-        self.get_object_dset
 
 
     def get_format_version(self):
@@ -598,6 +517,7 @@ class HierarchicalWriter:
         self.unicode_kwds = None
         self.ragged_kwds = None
         self.kwds = kwds
+        self.overwrite_dataset=None
 
     def write(self):
         self.write_signal(self.signal,
@@ -621,29 +541,31 @@ class HierarchicalWriter:
             axis_dict = axis.get_axis_dictionary()
             coord_group = group.create_group(
                 'axis-%s' % axis.index_in_array)
-            self.dict2hdfgroup(axis_dict, coord_group, **kwds)
+            self.dict2group(axis_dict, coord_group, **kwds)
         mapped_par = group.create_group(metadata)
         metadata_dict = signal.metadata.as_dictionary()
-        self.overwrite_dataset(group, signal.data, 'data',
-                          signal_axes=signal.axes_manager.signal_indices_in_array,
-                          **kwds)
+        self.overwrite_dataset(group,
+                               signal.data,
+                               'data',
+                               signal_axes=signal.axes_manager.signal_indices_in_array,
+                               **kwds)
         if default_version < LooseVersion("1.2"):
             metadata_dict["_internal_parameters"] = \
                 metadata_dict.pop("_HyperSpy")
         # Remove chunks from the kwds since it wouldn't have the same rank as the
         # dataset and can't be used
         kwds.pop('chunks', None)
-        self.dict2hdfgroup(metadata_dict, mapped_par, **kwds)
+        self.dict2group(metadata_dict, mapped_par, **kwds)
         original_par = group.create_group(original_metadata)
-        self.dict2hdfgroup(signal.original_metadata.as_dictionary(), original_par,
+        self.dict2group(signal.original_metadata.as_dictionary(), original_par,
                       **kwds)
         learning_results = group.create_group('learning_results')
-        self.dict2hdfgroup(signal.learning_results.__dict__,
+        self.dict2group(signal.learning_results.__dict__,
                       learning_results, **kwds)
         if hasattr(signal, 'peak_learning_results'):
             peak_learning_results = group.create_group(
                 'peak_learning_results')
-            self.dict2hdfgroup(signal.peak_learning_results.__dict__,
+            self.dict2group(signal.peak_learning_results.__dict__,
                           peak_learning_results, **kwds)
 
         if len(signal.models):
@@ -661,10 +583,10 @@ class HierarchicalWriter:
 
         for key, value in dictionary.items():
             if isinstance(value, dict):
-                self.dict2hdfgroup(value, group.create_group(key),
+                self.dict2group(value, group.create_group(key),
                               **kwds)
             elif isinstance(value, DictionaryTreeBrowser):
-                self.dict2hdfgroup(value.as_dictionary(),
+                self.dict2group(value.as_dictionary(),
                               group.create_group(key),
                               **kwds)
             elif isinstance(value, BaseSignal):
@@ -685,7 +607,7 @@ class HierarchicalWriter:
             elif isinstance(value, str):
                 group.attrs[key] = value
             elif isinstance(value, AxesManager):
-                self.dict2hdfgroup(value.as_dictionary(),
+                self.dict2group(value.as_dictionary(),
                               group.create_group('_hspy_AxesManager_' + key),
                               **kwds)
             elif isinstance(value, list):
@@ -709,9 +631,6 @@ class HierarchicalWriter:
                         "The hdf5 writer could not write the following "
                         "information in the file: %s : %s", key, value)
 
-
-
-
     def parse_structure(self, key, group, value, _type, **kwds):
         from hyperspy.signal import BaseSignal
         try:
@@ -725,7 +644,7 @@ class HierarchicalWriter:
         except ValueError:
             tmp = np.array([[0]])
         if tmp.dtype == np.dtype('O') or tmp.ndim != 1:
-            self.dict2hdfgroup(dict(zip(
+            self.dict2group(dict(zip(
                 [str(i) for i in range(len(value))], value)),
                 group.create_group(_type + str(len(value)) + '_' + key),
                 **kwds)
