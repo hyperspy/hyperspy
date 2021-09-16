@@ -24,8 +24,6 @@ import time
 from os import remove
 
 import dask.array as da
-import h5py
-import lmdb
 import numpy as np
 import pytest
 import zarr
