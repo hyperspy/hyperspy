@@ -55,6 +55,7 @@ install_req = ['scipy>=1.1',
                'sympy',
                'dill',
                'h5py>=2.3',
+               'packaging',
                'python-dateutil>=2.5.0',
                'ipyparallel',
                'dask[array]>2.1.0',
@@ -67,7 +68,7 @@ install_req = ['scipy>=1.1',
                # prettytable and ptable are API compatible
                # prettytable is maintained and ptable is an unmaintained fork
                'prettytable',
-               'tifffile>=2018.10.18',
+               'tifffile>=2019.12.3',
                'numba',
                 # included in stdlib since v3.8, but this required version requires Python 3.10
                 # We can remove this requirement when the minimum supported version becomes Python 3.10

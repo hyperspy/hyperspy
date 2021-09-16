@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from distutils.version import LooseVersion
+from packaging.version import Version
 import warnings
 import logging
 from functools import partial
@@ -99,7 +99,7 @@ version = "3.1"
 not_valid_format = 'The file is not a valid HyperSpy hdf5 file'
 
 current_file_version = None  # Format version of the file being read
-default_version = LooseVersion(version)
+default_version = Version(version)
 
 
 def get_signal_chunks(shape,
@@ -117,7 +117,7 @@ def get_signal_chunks(shape,
     signal_axes: {None, iterable of ints}
         the axes defining "signal space" of the dataset. If None, the default
         h5py chunking is performed.
-        """
+    """
     typesize = np.dtype(dtype).itemsize
     if signal_axes is None:
         return h5py._hl.filters.guess_chunk(shape, None, typesize)
@@ -294,5 +294,3 @@ def file_writer(filename, signal, *args, **kwds):
             raise
         finally:
             del smd.record_by
-
-

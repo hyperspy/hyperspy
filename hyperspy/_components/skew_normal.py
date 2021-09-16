@@ -16,15 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
 import dask.array as da
+import numpy as np
+from packaging.version import Version
 import sympy
 
 from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
 from hyperspy.misc.utils import is_binned # remove in v2.0
 
-from distutils.version import LooseVersion
 
 sqrt2pi = np.sqrt(2 * np.pi)
 
@@ -139,7 +139,7 @@ class SkewNormal(Expression):
 
     def __init__(self, x0=0., A=1., scale=1., shape=0.,
                  module=['numpy', 'scipy'], **kwargs):
-        if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
+        if Version(sympy.__version__) < Version("1.3"):
             raise ImportError("The `SkewNormal` component requires "
                               "SymPy >= 1.3")
         # We use `_shape` internally because `shape` is already taken in sympy

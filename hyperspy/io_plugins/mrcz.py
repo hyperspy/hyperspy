@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from distutils.version import LooseVersion
+from packaging.version import Version
 import mrcz as _mrcz
 import logging
 
@@ -46,7 +46,7 @@ _WRITE_ORDER = [0, 2, 1]
 
 # API changes in mrcz 0.5
 def _parse_metadata(metadata):
-    if LooseVersion(_mrcz.__version__) < LooseVersion("0.5"):
+    if Version(_mrcz.__version__) < Version("0.5"):
         return metadata[0]
     else:
         return metadata

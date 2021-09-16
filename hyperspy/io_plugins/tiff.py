@@ -25,7 +25,7 @@ from tifffile import imwrite, TiffFile, TIFF
 import tifffile
 import traits.api as t
 import numpy as np
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.date_time_tools import get_date_time_from_metadata
@@ -170,7 +170,7 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
                           'formats': [dtype] * lastshape})
         shape = shape[:-1]
 
-    if LooseVersion(tifffile.__version__) >= LooseVersion("2020.2.16"):
+    if Version(tifffile.__version__) >= Version("2020.2.16"):
         op = {tag.name: tag.value for tag in page.tags}
     else:
         op = {key: tag.value for key, tag in page.tags.items()}

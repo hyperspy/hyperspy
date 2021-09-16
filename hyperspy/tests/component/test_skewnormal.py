@@ -18,7 +18,7 @@
 
 
 import itertools
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import numpy as np
 import pytest
@@ -30,8 +30,7 @@ from hyperspy.utils import stack
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
-pytestmark = pytest.mark.skipif(LooseVersion(sympy.__version__) <
-                                LooseVersion("1.3"),
+pytestmark = pytest.mark.skipif(Version(sympy.__version__) < Version("1.3"),
                                 reason="This test requires SymPy >= 1.3")
 
 

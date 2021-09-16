@@ -19,7 +19,7 @@
 import pytest
 
 import hyperspy.api as hs
-from hyperspy.signals import ( Signal1D, Signal2D, EELSSpectrum, EDSTEMSpectrum, 
+from hyperspy.signals import ( Signal1D, Signal2D, EELSSpectrum, EDSTEMSpectrum,
                               EDSSEMSpectrum, HologramImage )
 from hyperspy.components1d import EELSCLEdge
 
@@ -39,7 +39,7 @@ def test_signal():
         s.split(number_of_parts=2,axis=0)
 
 def test_signal1d():
-    s = Signal1D((1))
+    s = Signal1D(([0, 1]))
     s.axes_manager[0].convert_to_non_uniform_axis()
     with pytest.raises(NotImplementedError):
         s.calibrate()
@@ -65,7 +65,7 @@ def test_signal2d():
 
 
 def test_eels():
-    s = EELSSpectrum((1))
+    s = EELSSpectrum(([0, 1]))
     s0 = s.deepcopy()
     s.axes_manager[0].convert_to_non_uniform_axis()
     with pytest.raises(NotImplementedError):
@@ -88,11 +88,11 @@ def test_eels():
     g = EELSCLEdge('N_K')
     with pytest.raises(NotImplementedError):
         m.append(g)
-       
+
 
 def test_eds():
-    s = EDSTEMSpectrum((1))
-    s2 = EDSSEMSpectrum((1))
+    s = EDSTEMSpectrum(([0, 1]))
+    s2 = EDSSEMSpectrum(([0, 1]))
     s.axes_manager[0].convert_to_non_uniform_axis()
     s2.axes_manager[0].convert_to_non_uniform_axis()
     s.set_microscope_parameters(20)
@@ -129,4 +129,4 @@ def test_lazy():
     print(s)
     with pytest.raises(NotImplementedError):
         s.diff(0)
-    
+
