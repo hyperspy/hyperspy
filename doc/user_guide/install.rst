@@ -287,13 +287,21 @@ To get the development version from our git repository you need to install `git
 
 Installation in a Anaconda/Miniconda distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Optionally, create an environment to separate your hyperspy installation from 
+other anaconda environments (`read more about environments here 
+<https://conda.io/projects/conda/en/latest/user-guide/concepts/environments.html>`_):
+
+.. code-block:: bash
+
+    $ conda create -n hspy_dev python # create an empty environment with latest python
+    $ conda activate hspy_dev # activate environment
 
 Install the runtime and development dependencies requirements using conda:
 
 .. code-block:: bash
 
-    $ conda install hyperspy-base -c conda-forge --only-deps
-    $ conda install hyperspy-dev -c conda-forge
+    $ conda install hyperspy-base -c conda-forge --only-deps # install hyperspy dependencies
+    $ conda install hyperspy-dev -c conda-forge # install developer dependencies
 
 The package ``hyperspy-dev`` will install the development dependencies required
 for testing and building the documentation.
@@ -303,7 +311,7 @@ From the root folder of your hyperspy repository (folder containing the
 
 .. code-block:: bash
 
-    $ pip install -e . --no-deps
+    $ pip install -e . --no-deps # install the currently checked-out branch of hyperspy
 
 Installation in other (non-system) Python distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
