@@ -288,7 +288,8 @@ To get the development version from our git repository you need to install `git
 Installation in a Anaconda/Miniconda distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Optionally, create an environment to separate your hyperspy installation from 
-other anaconda environments:
+other anaconda environments (`read more about environments here 
+<https://conda.io/projects/conda/en/latest/user-guide/concepts/environments.html>`_):
 
 .. code-block:: bash
 
