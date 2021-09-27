@@ -2,7 +2,6 @@ import numpy as np
 import os
 from datetime import datetime as dt
 import csv
-import warnings
 import logging
 
 
@@ -32,11 +31,11 @@ _logger = logging.getLogger(__name__)
 # argument in the load function to specify the correct reader)
 invalid_file_error = (
     "The csv reader can't import the file, please"
-    " make sure, this is a valid Impulse log file."
+    " make sure, that this is a valid Impulse log file."
 )
 invalid_filenaming_error = {
-    "No _Metadata file detected in filepath, please"
-    " make sure that the Metadata file is included."
+    "The filename does not match Impulse naming, please"
+    " make sure that the filenames for the logfile and metadata file are unchanged."
 }
 no_metadata_file_error = {
     "No _Metadata file detected in filepath, please"
