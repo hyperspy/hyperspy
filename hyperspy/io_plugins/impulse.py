@@ -96,24 +96,34 @@ class impulseCSV:
                 "date": self.original_metadata["Experiment_date"],
                 "time": self.original_metadata["Experiment_time"],
             },
-            "Signal": {"signal_type": "", "quantity": self._parse_quantity_units(quantity)},
+            "Signal": {
+                "signal_type": "",
+                "quantity": self._parse_quantity_units(quantity),
+            },
         }
-
 
     def _parse_quantity_units(self, quantity):
         quantity_split = quantity.strip().split(" ")
-        if len(quantity_split) >1:
-            if quantity_split[-1][0]=="(" and quantity_split[-1][-1]==")":
+        if len(quantity_split) > 1:
+            if quantity_split[-1][0] == "(" and quantity_split[-1][-1] == ")":
                 return quantity_split[-1]
-            else: return "NA"
-        else: return "NA"
-        
+            else:
+                return "NA"
+        else:
+            return "NA"
+
     def _get_metadata_time_axis(self):
         return {"value": self.time_axis, "units": self.time_units}
 
     def _read_data(self):
         names = [
-            name.replace(" ", "_").replace("°C","C").replace("#","No").replace("(","").replace(")","").replace("/","_").replace("%","Perc")
+            name.replace(" ", "_")
+            .replace("°C", "C")
+            .replace("#", "No")
+            .replace("(", "")
+            .replace(")", "")
+            .replace("/", "_")
+            .replace("%", "Perc")
             for name in self.column_names
         ]
         data = np.genfromtxt(
@@ -163,7 +173,9 @@ class impulseCSV:
                             notes_section = True
                             notes = [row[1].strip()]
                         else:
-                            self.original_metadata[row[0].replace(" ","_")] = row[1].strip()
+                            self.original_metadata[row[0].replace(" ", "_")] = row[
+                                1
+                            ].strip()
                     self.original_metadata["Notes"] = notes
                     self.start_datetime = np.datetime64(
                         dt.strptime(
