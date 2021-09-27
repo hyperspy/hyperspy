@@ -34,7 +34,7 @@ class testSyncFile():
 
     def setup_method(self, method):
         filename = os.path.join(dirpath, 'StubExperiment_Synchronized data.csv')
-        self.s_list = hs.load(filename)
+        self.s_list = hs.load(filename, reader='impulse')
 
     def test_read_metadata(self):
         for s in self.s_list:
@@ -101,7 +101,7 @@ def test_loading_random_csv_file():
 def test_loading_invalid_impulse_filename():
     filename = os.path.join(dirpath, 'changed_file_name.csv')
     with pytest.raises(IOError) as cm:
-        hs.load(filename)
+        hs.load(filename, reader='impulse')
         cm.match(invalid_filenaming_error)
         
         
@@ -110,7 +110,7 @@ def test_loading_invalid_impulse_filename():
 def test_loading_file_without_metadata():
     filename = os.path.join(dirpath, 'NoMetadata_Synchronized data.csv')
     with pytest.raises(IOError) as cm:
-        hs.load(filename)
+        hs.load(filename, reader='impulse')
         cm.match(no_metadata_file_error)
                 
 
@@ -120,7 +120,7 @@ class testRawFile():
 
     def setup_method(self, method):
         filename = os.path.join(dirpath, 'StubExperiment_Heat raw.csv')
-        self.s_list = hs.load(filename)
+        self.s_list = hs.load(filename, reader='impulse')
 
     def test_read_metadata(self):
         for s in self.s_list:
