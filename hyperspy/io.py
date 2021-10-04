@@ -50,15 +50,16 @@ f_error_fmt = (
     "\t\tPath: %s")
 
 
-def _infer_file_reader(extension):
-    """Return a file reader from the plugins list based on the file extension.
+def _infer_file_reader(string):
+    """Return a file reader from the plugins list based on the format name or
+    the file extension.
 
     If the extension is not found or understood, returns
     the Python imaging library as the file reader.
 
     Parameters
     ----------
-    extension : str
+    string : str
         File extension, without initial "." separator
 
     Returns
@@ -67,12 +68,16 @@ def _infer_file_reader(extension):
         The inferred file reader.
 
     """
-    rdrs = [rdr for rdr in io_plugins if extension.lower() in rdr.file_extensions]
+    for reader in io_plugins:
+        if string.lower() == reader.format_name.lower():
+            return reader
+
+    rdrs = [rdr for rdr in io_plugins if string.lower() in rdr.file_extensions]
 
     if not rdrs:
         # Try to load it with the python imaging library
         _logger.warning(
-            f"Unable to infer file type from extension '{extension}'. "
+            f"Unable to infer file type from extension '{string}'. "
             "Will attempt to load the file with the Python imaging library."
         )
 

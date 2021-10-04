@@ -11,7 +11,7 @@ format_name = "Impulse"
 description = "Reads DENSsolutions Impulse log files"
 full_support = False
 # Recognised file extension
-file_extensions = ["csv", "CSV", "impulse"]
+file_extensions = ["csv", "CSV"]
 default_extension = 0
 # Reading capabilities
 reads_images = False

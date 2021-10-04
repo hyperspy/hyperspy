@@ -30,7 +30,7 @@ format_name = 'Protochips'
 description = 'Reads Protochips log files (heating/baising and gas cell)'
 full_support = False
 # Recognised file extension
-file_extensions = ['csv', 'CSV', 'protochips']
+file_extensions = ['csv', 'CSV']
 default_extension = 0
 # Reading capabilities
 reads_images = False

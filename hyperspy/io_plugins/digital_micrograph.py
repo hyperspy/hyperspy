@@ -41,7 +41,7 @@ _logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
-format_name = 'Digital Micrograph dm3'
+format_name = 'Digital Micrograph'
 description = 'Read data from Gatan Digital Micrograph (TM) files'
 full_support = False
 # Recognised file extension
@@ -1040,14 +1040,14 @@ class ImageObject(object):
                     "Acquisition_instrument.CL.start_wavelength", None),
                 "{}.CL.Acquisition.Step-size_(nm)".format(tags_path): (
                     "Acquisition_instrument.CL.step_size", None),
-                # SI 
+                # SI
                 "{}.SI.Acquisition.Artefact_Correction.Spatial_Drift.Periodicity".format(tags_path): (
                     "Acquisition_instrument.CL.SI.drift_correction_periodicity", None),
                 "{}.SI.Acquisition.Artefact_Correction.Spatial_Drift.Units".format(tags_path): (
                     "Acquisition_instrument.CL.SI.drift_correction_units", None),
                 "{}.SI.Acquisition.SI_Application_Mode.Name".format(tags_path): (
                     "Acquisition_instrument.CL.SI.mode", None),
-                
+
             })
         elif "DigiScan" in image_tags_dict.keys():
             mapping.update({

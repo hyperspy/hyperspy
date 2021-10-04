@@ -90,8 +90,8 @@ _logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
-format_name = 'SEMPER UNF (unformatted)'
-description = 'Read data from SEMPER UNF files.'
+format_name = 'SEMPER'
+description = 'Read data from SEMPER UNF (unformatted) files.'
 full_support = True  # Hopefully?
 # Recognised file extension
 file_extensions = ('unf', 'UNF')
