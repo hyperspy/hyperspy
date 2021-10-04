@@ -121,6 +121,29 @@ class TestROIs():
         np.testing.assert_equal(
             sr.data, s.data[:, int(15 / scale):int(30 // scale), ...])
 
+    def test_roi_add_widget(self):
+        s = Signal1D(np.random.rand(60, 4))
+        s.axes_manager[0].name = 'nav axis'
+        # Test adding roi to plot
+        s.plot(navigator='spectrum')
+
+        # Try using different argument types
+        for axes in [0, s.axes_manager[0], 'nav axis', [0], ['nav axis']]:
+            r = SpanROI(0, 60)
+            r.add_widget(s, axes=axes)
+            np.testing.assert_equal(r(s).data, s.data)
+
+        # invalid arguments
+        for axes in ['not a DataAxis name', ['not a DataAxis name'], [0, 1]]:
+            r2 = SpanROI(0, 60)
+            with pytest.raises(ValueError):
+                r2.add_widget(s, axes=axes)
+
+        for axes in [2, [2]]:
+            r3 = SpanROI(0, 60)
+            with pytest.raises(IndexError):
+                r3.add_widget(s, axes=axes)
+
     def test_span_spectrum_nav_boundary_roi(self):
         s = Signal1D(np.random.rand(60, 4))
         r = SpanROI(0, 60)

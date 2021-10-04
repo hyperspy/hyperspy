@@ -207,23 +207,22 @@ class BaseROI(t.HasTraits):
             The axes argument specifies which axes the ROI will be applied on.
             The axes in the collection can be either of the following:
 
-            * a tuple of:
+            * Anything that can index the provided ``axes_manager``
+            * a tuple or list of:
 
-                - DataAxis. These will not be checked with signal.axes_manager.
-                - anything that will index signal.axes_manager
-            * Anything that can index signal.axes_manager
+                - DataAxis
+                - anything that will index the provided ``axes_manager``
             * ``None``, it will check whether the widget can be added to the
               navigator, i.e. if dimensionality matches, and use it if
               possible, otherwise it will try the signal space. If none of the
-              two attempts works, an error message will be raised.
+              two attempts work, an error message will be raised.
 
         axes_manager : :py:class:`~hyperspy.axes.AxesManager`
-            The AxesManager to use for parsing axes, if axes is not already a
-            tuple of DataAxis.
+            The AxesManager to use for parsing axes
 
         Returns
         -------
-        :py:class:`~hyperspy.axes.DataAxis`
+        tuple of :py:class:`~hyperspy.axes.DataAxis`
         """
         nd = self.ndim
         if axes is None:
@@ -235,14 +234,17 @@ class BaseROI(t.HasTraits):
                     axes_manager.signal_dimension == 1:
                 # We probably have a navigator plot including both nav and sig
                 # axes.
-                axes_out = [axes_manager.signal_axes[0],
-                            axes_manager.navigation_axes[0]]
+                axes_out = (axes_manager.signal_axes[0],
+                            axes_manager.navigation_axes[0], )
             else:
                 raise ValueError("Could not find valid axes configuration.")
         elif isinstance(axes, (tuple, list)):
-            axes_out = axes_manager[axes[:nd]]
+            if len(axes) > nd:
+                raise ValueError("The length of the provided `axes` is larger "
+                                 "than the dimensionality of the ROI.")
+            axes_out = axes_manager[axes]
         else:
-            axes_out = [axes_manager[axes]]
+            axes_out = (axes_manager[axes], )
 
         return axes_out
 
@@ -433,15 +435,15 @@ class BaseInteractiveROI(BaseROI):
             The axes argument specifies which axes the ROI will be applied on.
             The DataAxis in the collection can be either of the following:
 
+            * Anything that can index ``signal.axes_manager``
             * a tuple of:
 
-                - DataAxis. These will not be checked with signal.axes_manager.
-                - anything that will index signal.axes_manager
-            * Anything that can index signal.axes_manager
+                - DataAxis
+                - anything that will index ``signal.axes_manager``
             * ``None``, it will check whether the widget can be added to the
               navigator, i.e. if dimensionality matches, and use it if
               possible, otherwise it will try the signal space. If none of the
-              two attempts works, an error message will be raised.
+              two attempts work, an error message will be raised.
 
         widget : Widget or None (default)
             If specified, this is the widget that will be added. If None, the
@@ -456,7 +458,7 @@ class BaseInteractiveROI(BaseROI):
         kwargs:
             All keyword argument are passed to the widget constructor.
         """
-        axes = self._parse_axes(axes, signal.axes_manager,)
+        axes = self._parse_axes(axes, signal.axes_manager)
         if widget is None:
             widget = self._get_widget_type(
                 axes, signal)(

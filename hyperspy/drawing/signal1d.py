@@ -91,7 +91,7 @@ class Signal1DFigure(BlittedFigure):
             self.right_ax.hspy_fig = self
             self.right_ax.yaxis.set_animated(self.figure.canvas.supports_blit)
             self.right_ax.tick_params(axis='y', labelcolor=color)
-            # Needs to set the zorder the ax to get the mouse event for ax
+            # Needs to set the zorder of the ax to get the mouse event for ax
             # See https://github.com/matplotlib/matplotlib/issues/10009
             self.ax.set_zorder(self.right_ax.get_zorder() + 1)
         if adjust_layout:
