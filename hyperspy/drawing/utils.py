@@ -1198,14 +1198,15 @@ def plot_spectra(
         Sets the line style of the plots (no action on 'heatmap').
         The main line style are ``'-'``, ``'--'``, ``'-.'``, ``':'``.
         For a list, if its length is less than the number of
-        spectra to plot, line_style will be cycled. If
+        spectra to plot, line_style will be cycled.
         If `None`, use continuous lines, eg: ``'-'``, ``'--'``, ``'-.'``,
         ``':'``.
     drawstyle : {'default', 'steps', 'steps-pre', 'steps-mid', 'steps-post'},
         default: 'default'
         The drawstyle determines how the points are connected, no action with
-        ``style='heatmap'``. See matplotlib drawstyle of
-        :py:func:`matplotlib.lines.Line2D` for more information.
+        ``style='heatmap'``. See
+        :py:meth:`matplotlib.lines.Line2D.set_drawstyle` for more information.
+        The ``'default'`` value is defined by matplotlib.
     padding : float, optional, default 1.0
         Option for "cascade". 1 guarantees that there is no overlapping.
         However, in many cases, a value between 0 and 1 can produce a tighter
