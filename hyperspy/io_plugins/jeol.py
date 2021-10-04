@@ -109,7 +109,7 @@ def read_img(filename, scale=None, **kwargs):
     file_magic = np.fromfile(fd, "<I", 1)[0]
     if file_magic == 52:
         # fileformat
-        _ = fd.read(32).rstrip(b"\x00").decode("utf-8")
+        _ = decode(fd.read(32).rstrip(b"\x00"))
         head_pos, head_len, data_pos = np.fromfile(fd, "<I", 3)
         fd.seek(data_pos + 12)
         header_long = parsejeol(fd)
@@ -197,12 +197,12 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
 
     if file_magic == 304:
         # fileformat
-        _ = fd.read(8).rstrip(b"\x00").decode("utf-8")
+        _ = decode(fd.read(8).rstrip(b"\x00"))
         a, b, head_pos, head_len, data_pos, data_len = np.fromfile(fd, "<I", 6)
         # groupname
-        _ = fd.read(128).rstrip(b"\x00").decode("utf-8")
+        _ = decode(fd.read(128).rstrip(b"\x00"))
         # memo
-        _ = fd.read(132).rstrip(b"\x00").decode("utf-8")
+        _ = decode(fd.read(132).rstrip(b"\x00"))
         datefile = datetime(1899, 12, 30) + timedelta(days=np.fromfile(fd, "d", 1)[0])
         fd.seek(head_pos + 12)
         header = parsejeol(fd)
@@ -378,9 +378,9 @@ def parsejeol(fd):
             elif (
                 kwrd[-1] == 222
             ):  # remove undecodable byte at the end of first ScanSize variable
-                kwrd = kwrd[:-1].decode("utf-8")
+                kwrd = decode(kwrd[:-1])
             else:
-                kwrd = kwrd.decode("utf-8")
+                kwrd = decode(kwrd)
             val_type, val_len = np.fromfile(fd, "<i", 2)
             tmp_list.append(kwrd)
             if val_type == 0:
@@ -390,7 +390,7 @@ def parsejeol(fd):
                 arr_len = val_len // np.dtype(c_type).itemsize
                 if c_type == "c":
                     value = fd.read(val_len).rstrip(b"\x00")
-                    value = value.decode("utf-8").split("\x00")
+                    value = decode(value).split("\x00")
                     # value = os.path.normpath(value.replace('\\','/')).split('\x00')
                 else:
                     value = np.fromfile(fd, c_type, arr_len)
@@ -494,8 +494,8 @@ def read_eds(filename, **kwargs):
     header["filedate"] = datetime(1899, 12, 30) + timedelta(
         days=np.fromfile(fd, "<d", 1)[0]
     )
-    header["sp_name"] = fd.read(80).rstrip(b"\x00").decode("utf-8")
-    header["username"] = fd.read(32).rstrip(b"\x00").decode("utf-8")
+    header["sp_name"] = decode(fd.read(80).rstrip(b"\x00"))
+    header["username"] = decode(fd.read(32).rstrip(b"\x00"))
 
     np.fromfile(fd, "<i", 1)  # 1
     header["arr"] = np.fromfile(fd, "<d", 10)
@@ -520,10 +520,10 @@ def read_eds(filename, **kwargs):
     np.fromfile(fd, "<d", 1)[0]
     header["CoefA"] = np.fromfile(fd, "<d", 1)[0]
     header["CoefB"] = np.fromfile(fd, "<d", 1)[0]
-    header["State"] = fd.read(32).rstrip(b"\x00").decode("utf-8")
+    header["State"] = decode(fd.read(32).rstrip(b"\x00"))
     np.fromfile(fd, "<i", 1)[0]
     np.fromfile(fd, "<d", 1)[0]
-    header["Tpl"] = fd.read(32).rstrip(b"\x00").decode("utf-8")
+    header["Tpl"] = decode(fd.read(32).rstrip(b"\x00"))
     header["NumCH"] = np.fromfile(fd, "<i", 1)[0]
     data = np.fromfile(fd, "<i", header["NumCH"])
 
@@ -548,7 +548,7 @@ def read_eds(filename, **kwargs):
             # unknown
             _ = np.fromfile(fd, "<b", 14)
             energy, unknow1, unknow2, unknow3 = np.fromfile(fd, "<d", 4)
-            elem_name = fd.read(32).rstrip(b"\x00").decode("utf-8")
+            elem_name = decode(fd.read(32).rstrip(b"\x00"))
             # mark3?
             _ = np.fromfile(fd, "<i", 1)[0]
             n_line = np.fromfile(fd, "<i", 1)[0]
@@ -559,9 +559,9 @@ def read_eds(filename, **kwargs):
                 e_line = np.fromfile(fd, "<d", 1)[0]
                 z = np.fromfile(fd, "<H", 1)[0]
                 e_length = np.fromfile(fd, "<b", 1)[0]
-                e_name = fd.read(e_length).rstrip(b"\x00").decode("utf-8")
+                e_name = decode(fd.read(e_length).rstrip(b"\x00"))
                 l_length = np.fromfile(fd, "<b", 1)[0]
-                l_name = fd.read(l_length).rstrip(b"\x00").decode("utf-8")
+                l_name = decode(fd.read(l_length).rstrip(b"\x00"))
                 detect = np.fromfile(fd, "<i", 1)[0]
                 lines[e_name + "_" + l_name] = {
                     "energy": e_line,
@@ -596,7 +596,7 @@ def read_eds(filename, **kwargs):
             mass1 = np.fromfile(fd, "<d", 1)[0]
             error = np.fromfile(fd, "<d", 1)[0]
             atom = np.fromfile(fd, "<d", 1)[0]
-            ox_name = fd.read(16).rstrip(b"\x00").decode("utf-8")
+            ox_name = decode(fd.read(16).rstrip(b"\x00"))
             mass2 = np.fromfile(fd, "<d", 1)[0]
             # K
             _ = np.fromfile(fd, "<d", 1)[0]
@@ -621,9 +621,9 @@ def read_eds(filename, **kwargs):
     e = np.fromfile(fd, "<i", 1)
     if e == 5:
         footer["Parameters"] = {
-            "DetT": fd.read(16).rstrip(b"\x00").decode("utf-8"),
-            "SEM": fd.read(16).rstrip(b"\x00").decode("utf-8"),
-            "Port": fd.read(16).rstrip(b"\x00").decode("utf-8"),
+            "DetT": decode(fd.read(16).rstrip(b"\x00")),
+            "SEM": decode(fd.read(16).rstrip(b"\x00")),
+            "Port": decode(fd.read(16).rstrip(b"\x00")),
             "AccKV": np.fromfile(fd, "<d", 1)[0],
             "AccNA": np.fromfile(fd, "<d", 1)[0],
             "skip": np.fromfile(fd, "<b", 38),
@@ -645,10 +645,10 @@ def read_eds(filename, **kwargs):
             "XtalAng": np.fromfile(fd, "d", 1)[0],
             "ElevAng": np.fromfile(fd, "d", 1)[0],
             "ValidSize": np.fromfile(fd, "d", 1)[0],
-            "WinCMat": fd.read(4).rstrip(b"\x00").decode("utf-8"),
+            "WinCMat": decode(fd.read(4).rstrip(b"\x00")),
             "WinCZ": np.fromfile(fd, "<H", 1)[0],
             "WinCThic": np.fromfile(fd, "d", 1)[0],
-            "WinChem": fd.read(16).rstrip(b"\x00").decode("utf-8"),
+            "WinChem": decode(fd.read(16).rstrip(b"\x00")),
             "WinChem_nelem": np.fromfile(fd, "<H", 1)[0],
             "WinChem_Z1": np.fromfile(fd, "<H", 1)[0],
             "WinChem_Z2": np.fromfile(fd, "<H", 1)[0],
@@ -662,7 +662,7 @@ def read_eds(filename, **kwargs):
             "WinChem_m5": np.fromfile(fd, "d", 1)[0],
             "WinThic": np.fromfile(fd, "d", 1)[0],
             "WinDens": np.fromfile(fd, "d", 1)[0],
-            "SpatMat": fd.read(4).rstrip(b"\x00").decode("utf-8"),
+            "SpatMat": decode(fd.read(4).rstrip(b"\x00")),
             "SpatZ": np.fromfile(fd, "<H", 1)[0],
             "SpatThic": np.fromfile(fd, "d", 1)[0],
             "SiDead": np.fromfile(fd, "d", 1)[0],
@@ -727,3 +727,13 @@ extension_to_reader_mapping = {"img": read_img,
                                "map": read_img,
                                "pts": read_pts,
                                "eds": read_eds}
+
+
+def decode(bytes_string):
+    try:
+        string = bytes_string.decode("utf-8")
+    except:
+        # See https://github.com/hyperspy/hyperspy/issues/2812
+        string = bytes_string.decode("shift_jis")
+
+    return string
