@@ -425,12 +425,12 @@ Extra saving arguments
 ZSpy - HyperSpy's Zarr Specification
 ------------------------------------
 
-This is the an additional format which guarantees that no
+Similarly to the :ref:`hspy format <hspy-format>`, the zspy format guarantees that no
 information will be lost in the writing process and that supports saving data
 of arbitrary dimensions. It is based on the `Zarr project <https://zarr.readthedocs.io/en/stable/index.html>`_. Which exists as a drop in
 replacement for hdf5 with the intention to fix some of the speed and scaling
-issues with the hdf5 format. **If you are working with very large datasets lazily
-we recommend using .zspy for saving and loading your data**
+issues with the hdf5 format and is therefore suitable for saving :ref:`big data <big_data.saving>`.
+
 
 .. code-block:: python
 
@@ -439,7 +439,7 @@ we recommend using .zspy for saving and loading your data**
     >>> hs.load('test.zspy') # loads the directory
 
 
-When saving to ``zspy``, all supported objects in the signal's
+When saving to `zspy <https://zarr.readthedocs.io/en/stable/index.html>`_, all supported objects in the signal's
 :py:attr:`~.signal.BaseSignal.metadata` is stored. This includes lists, tuples and signals.
 Please note that in order to increase saving efficiency and speed, if possible,
 the inner-most structures are converted to numpy arrays when saved. This

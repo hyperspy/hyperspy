@@ -1,4 +1,4 @@
-from distutils.version import LooseVersion
+from packaging.version import Version
 import warnings
 import logging
 import datetime
@@ -12,8 +12,10 @@ from traits.api import Undefined
 from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
 from hyperspy.axes import AxesManager
 
+
 version = "3.1"
-default_version = LooseVersion(version)
+
+default_version = Version(version)
 
 not_valid_format = 'The file is not a valid HyperSpy hdf5 file'
 
@@ -21,15 +23,15 @@ _logger = logging.getLogger(__name__)
 
 
 def _overwrite_dataset(group,
-                      data,
-                      key,
-                      signal_axes=None,
-                      chunks=None,
-                      get_signal_chunks=None,
-                      get_object_dset=None,
-                      store_data=None,
-                      **kwds):
-    """Overwrites some dataset in a hirarchical dataset.
+                       data,
+                       key,
+                       signal_axes=None,
+                       chunks=None,
+                       get_signal_chunks=None,
+                       get_object_dset=None,
+                       store_data=None,
+                       **kwds):
+    """Overwrites some dataset in a hierarchical dataset.
 
     Parameters
     ----------
@@ -45,10 +47,13 @@ def _overwrite_dataset(group,
         The chunks for the dataset. If None then get_signal_chunks will be called
     get_signal_chunks: func
         A function to get the signal chunks for the dataset
-    get_object_dset:
+    get_object_dset: func
         A function to get the object dset for saving ragged arrays.
+    store_data: func
+        A function to store the data in some hierarchical data format
     kwds:
-        Any additional keywords
+        Any additional keywords for to be passed to the store data function
+        The store data function is passed for each hierarchical data format
     Returns
     -------
 
@@ -100,13 +105,19 @@ class HierarchicalReader:
     """A generic Reader class for reading data from hierarchical file types."""
     def __init__(self,
                  file):
+        """ Initalizes a general reader for hierarchical signals.
+
+        Parmeters
+        ---------
+        file: str
+            A file to be read.
+        """
         self.file = file
         self.version = self.get_format_version()
         self.Dataset = None
         self.Group = None
         self.unicode_kwds = None
         self.ragged_kwds = None
-
 
     def get_format_version(self):
         if "file_format_version" in self.file.attrs:
@@ -123,7 +134,7 @@ class HierarchicalReader:
             version = "2.0"
         else:
             raise IOError(not_valid_format)
-        return LooseVersion(version)
+        return Version(version)
 
     def read(self, lazy):
         models_with_signals = []
@@ -182,7 +193,7 @@ class HierarchicalReader:
     def group2signaldict(self,
                          group,
                          lazy=False):
-        if self.version < LooseVersion("1.2"):
+        if self.version < Version("1.2"):
             metadata = "mapped_parameters"
             original_metadata = "original_parameters"
         else:
@@ -251,7 +262,7 @@ class HierarchicalReader:
             if '__unnamed__' == exp['metadata']['General']['title']:
                 exp['metadata']["General"]['title'] = ''
 
-        if self.version < LooseVersion("1.1"):
+        if self.version < Version("1.1"):
             # Load the decomposition results written with the old name,
             # mva_results
             if 'mva_results' in group.keys():
@@ -275,7 +286,7 @@ class HierarchicalReader:
                     exp['metadata']['name']
                 del exp['metadata']['name']
 
-        if self.version < LooseVersion("1.2"):
+        if self.version < Version("1.2"):
             if '_internal_parameters' in exp['metadata']:
                 exp['metadata']['_HyperSpy'] = \
                     exp['metadata']['_internal_parameters']
@@ -361,7 +372,7 @@ class HierarchicalReader:
                     exp["metadata"]["Signal"][key] = exp["metadata"][key]
                     del exp["metadata"][key]
 
-        if self.version < LooseVersion("3.0"):
+        if self.version < Version("3.0"):
             if "Acquisition_instrument" in exp["metadata"]:
                 # Move tilt_stage to Stage.tilt_alpha
                 # Move exposure time to Detector.Camera.exposure_time
@@ -504,11 +515,24 @@ class HierarchicalWriter:
     def __init__(self,
                  file,
                  signal,
-                 expg,
+                 group,
                  **kwds):
+        """Initialize a generic file writer for hierachical data storage types.
+
+        Parameters
+        ----------
+        file: str
+            The file where the signal is to be saved
+        signal: BaseSignal
+            A BaseSignal to be saved
+        group: Group
+            A group to where the experimental data will be saved.
+        kwds:
+            Any additional keywords used for saving the data.
+        """
         self.file = file
         self.signal = signal
-        self.expg = expg
+        self.group = group
         self.Dataset = None
         self.Group = None
         self.unicode_kwds = None
@@ -518,14 +542,14 @@ class HierarchicalWriter:
 
     def write(self):
         self.write_signal(self.signal,
-                          self.expg,
+                          self.group,
                           **self.kwds)
 
     def write_signal(self, signal, group, **kwds):
         "Writes a hyperspy signal to a hdf5 group"
 
         group.attrs.update(get_object_package_info(signal))
-        if default_version < LooseVersion("1.2"):
+        if Version(version) < Version("1.2"):
             metadata = "mapped_parameters"
             original_metadata = "original_parameters"
         else:
@@ -546,7 +570,7 @@ class HierarchicalWriter:
                                'data',
                                signal_axes=signal.axes_manager.signal_indices_in_array,
                                **kwds)
-        if default_version < LooseVersion("1.2"):
+        if default_version < Version("1.2"):
             metadata_dict["_internal_parameters"] = \
                 metadata_dict.pop("_HyperSpy")
         # Remove chunks from the kwds since it wouldn't have the same rank as the
@@ -648,8 +672,6 @@ class HierarchicalWriter:
         elif tmp.dtype.type is np.unicode_:
             if _type + key in group:
                 del group[_type + key]
-            print(self.unicode_kwds)
-            print(kwds)
             group.create_dataset(_type + key,
                                  shape=tmp.shape,
                                  **self.unicode_kwds,

@@ -48,6 +48,7 @@ non_uniform_axis = False
 
 def _byte_to_string(value):
     """Decode a byte string.
+
     Parameters
     ----------
     value :  byte str
@@ -55,6 +56,7 @@ def _byte_to_string(value):
     -------
     str
         decoded version of input value
+
     """
     try:
         text = value.decode("utf-8")
@@ -65,20 +67,24 @@ def _byte_to_string(value):
 
 def _parse_from_file(value, lazy=False):
     """To convert values from the hdf file to compatible formats.
+
     When reading string arrays we convert or keep string arrays as
     byte_strings (some io_plugins only supports byte-strings arrays so this
     ensures inter-compatibility across io_plugins)
     Arrays of length 1 - return the single value stored.
     Large datasets are returned as dask arrays if lazy=True.
+
     Parameters
     ----------
     value : input read from hdf file (array,list,tuple,string,int,float)
     lazy  : bool  {default: False}
         The lazy flag is only applied to values of size >=2
+
     Returns
     -------
     str,int, float, ndarray dask Array
         parsed value.
+
     """
     toreturn = value
     if isinstance(value, h5py.Dataset):
@@ -107,14 +113,18 @@ def _parse_from_file(value, lazy=False):
 
 def _parse_to_file(value):
     """Convert to a suitable format for writing to HDF5.
+
     For example unicode values are not compatible with hdf5 so conversion to
     byte strings is required.
+
     Parameters
     ----------
     value - input object to write to the hdf file
+
     Returns
     -------
     parsed value
+
     """
     totest = value
     toreturn = totest
@@ -134,14 +144,17 @@ def _parse_to_file(value):
 
 def _text_split(s, sep):
     """Split a string based of list of seperators.
+
     Parameters
     ----------
     s   : str
     sep : str  - seperator or list of seperators e.g. '.' or ['_','/']
+
     Returns
     -------
     list
        String sections split based on the seperators
+
     """
     stack = [s]
     for char in sep:
@@ -156,13 +169,16 @@ def _text_split(s, sep):
 
 def _getlink(h5group, rootkey, key):
     """Return the link target path.
+
     If a hdf group is a soft link or has a target attribute
     this method will return the target path. If no link is found
     return None.
+
     Returns
     -------
     str
         Soft link path if it exists, otherwise None
+
     """
     _target = None
     if rootkey != '/':
@@ -182,16 +198,19 @@ def _getlink(h5group, rootkey, key):
 
 def _get_nav_list(data, dataentry):
     """Get the list with information of each axes of the dataset
+
     Parameters
     ----------
     data : hdf dataset
         the dataset to be loaded.
     dataentry : hdf group
         the group with corresponding attributes.
+
     Returns
     -------
     nav_list : list
         contains information about each axes.
+
     """
 
     detector_index = 0
@@ -277,6 +296,7 @@ def _get_nav_list(data, dataentry):
 
 def _extract_hdf_dataset(group, dataset, lazy=False):
     """Import data from hdf path.
+
     Parameters
     ----------
     group : hdf group
@@ -285,10 +305,12 @@ def _extract_hdf_dataset(group, dataset, lazy=False):
         path to the dataset within the group
     lazy    : bool {default:True}
         If true use lazy opening, if false read into memory
+
     Returns
     -------
     dict
         A signal dictionary which can be used to instantiate a signal.
+
     """
 
     data = group[dataset]
@@ -323,6 +345,7 @@ def _extract_hdf_dataset(group, dataset, lazy=False):
 
 def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
     """Load an NXdata set as a hyperspy signal.
+
     Parameters
     ----------
     group : hdf group containing the NXdata
@@ -330,10 +353,12 @@ def _nexus_dataset_to_signal(group, nexus_dataset_path, lazy=False):
         Path to the NXdata set in the group
     lazy : bool, default : True
         lazy loading of data
+
     Returns
     -------
     dict
         A signal dictionary which can be used to instantiate a signal.
+
     """
 
     interpretation = None
@@ -409,6 +434,7 @@ def file_reader(filename, lazy=False, dataset_key=None, dataset_path=None,
                 use_default=False,
                 **kwds):
     """Read NXdata class or hdf datasets from a file and return signal(s).
+
     Note
     ----
     Loading all datasets can result in a large number of signals
@@ -417,6 +443,7 @@ def file_reader(filename, lazy=False, dataset_key=None, dataset_path=None,
     "keys" is a special keywords and prepended with "fix" in the metadata
     structure to avoid any issues.
     Datasets are all arrays with size>2 (arrays, lists)
+
     Parameters
     ----------
     filename : str
@@ -452,13 +479,18 @@ def file_reader(filename, lazy=False, dataset_key=None, dataset_path=None,
         signal. This will ignore the other keyword options. If True and no
         default is defined the file will be loaded according to
         the keyword options.
+
     Returns
     -------
     dict : signal dictionary or list of signal dictionaries
+
+
     See Also
     --------
     * :py:meth:`~.io_plugins.nexus.list_datasets_in_file`
     * :py:meth:`~.io_plugins.nexus.read_metadata_from_file`
+
+
     """
     # search for NXdata sets...
 
@@ -591,13 +623,16 @@ def file_reader(filename, lazy=False, dataset_key=None, dataset_path=None,
 
 def _is_linear_axis(data):
     """Check if the data is linearly incrementing.
+
     Parameters
     ----------
     data : dask or numpy array
+
     Returns
     -------
     bool
        True or False
+
     """
     steps = np.diff(data)
     est_steps = np.array([steps[0]]*len(steps))
@@ -606,13 +641,16 @@ def _is_linear_axis(data):
 
 def _is_numeric_data(data):
     """Check that data contains numeric data.
+
     Parameters
     ----------
     data : dask or numpy array
+
     Returns
     -------
     bool
         True or False
+
     """
     try:
         data.astype(float)
@@ -623,13 +661,16 @@ def _is_numeric_data(data):
 
 def _is_int(s):
     """Check that s in an integer.
+
     Parameters
     ----------
     s : python object to test
+
     Returns
     -------
     bool
         True or False
+
     """
     try:
         int(s)
@@ -656,6 +697,7 @@ def _check_search_keys(search_keys):
 def _find_data(group, search_keys=None, hardlinks_only=False,
                absolute_path=None):
     """Read from a nexus or hdf file and return a list of the dataset entries.
+
     The method iterates through group attributes and returns NXdata or
     hdf datasets of size >=2 if they're not already NXdata blocks
     and returns a list of the entries
@@ -664,6 +706,8 @@ def _find_data(group, search_keys=None, hardlinks_only=False,
     h5py.visit or visititems does not visit soft
     links or external links so an implementation of a recursive
     search is required. See https://github.com/h5py/h5py/issues/671
+
+
     Parameters
     ----------
     group : hdf group or File
@@ -675,12 +719,14 @@ def _find_data(group, search_keys=None, hardlinks_only=False,
         Option to ignore links (soft or External) within the file.
     absolute_path : string, list of strings or None, default: None
         Return items with the exact specified absolute path
+
     Returns
     -------
     nx_dataset_list, hdf_dataset_list
         nx_dataset_list is a list of all NXdata paths
         hdf_dataset_list is a list of all hdf_datasets not linked to an
         NXdata set.
+
     """
     _check_search_keys(search_keys)
     _check_search_keys(absolute_path)
@@ -762,9 +808,11 @@ def _find_data(group, search_keys=None, hardlinks_only=False,
 
 def _load_metadata(group, lazy=False, skip_array_metadata=False):
     """Search through a hdf group and return the group structure.
+
     h5py.visit or visititems does not visit soft
     links or external links so an implementation of a recursive
     search is required. See https://github.com/h5py/h5py/issues/671
+
     Parameters
     ----------
     group : hdf group
@@ -773,10 +821,13 @@ def _load_metadata(group, lazy=False, skip_array_metadata=False):
         Option for lazy loading
     skip_array_metadata : bool, default : False
         whether to skip loading array metadata
+
     Returns
     -------
     dict
         dictionary of group contents
+
+
     """
     rootname = ""
 
@@ -841,16 +892,20 @@ def _load_metadata(group, lazy=False, skip_array_metadata=False):
 
 def _fix_exclusion_keys(key):
     """Exclude hyperspy specific keys.
+
     Signal and DictionaryBrowser break if a
     a key is a dict method - e.g. {"keys":2.0}.
     This method prepends the key with ``fix_`` so the information is
     still present to work around this issue
+
     Parameters
     ----------
     key : str
+
     Returns
     -------
     str
+
     """
     if key.startswith("keys"):
         return "fix_"+key
@@ -860,8 +915,10 @@ def _fix_exclusion_keys(key):
 
 def _find_search_keys_in_dict(tree, search_keys=None):
     """Search through a dict for search keys.
+
     This is a convenience method to inspect a file for a value
     rather than loading the file as a signal
+
     Parameters
     ----------
     tree         : h5py File object
@@ -869,11 +926,13 @@ def _find_search_keys_in_dict(tree, search_keys=None):
         Only return items which contain the strings
         .e.g search_keys = ["instrument","Fe"] will return
         hdf entries with instrument or Fe in their hdf path.
+
     Returns
     -------
     dict
         When search_list is specified only full paths
         containing one or more search_keys will be returned
+
     """
     _check_search_keys(search_keys)
     metadata_dict = {}
@@ -906,6 +965,7 @@ def _find_search_keys_in_dict(tree, search_keys=None):
 
 def _write_nexus_groups(dictionary, group, skip_keys=None, **kwds):
     """Recursively iterate throuh dictionary and write groups to nexus.
+
     Parameters
     ----------
     dictionary : dict
@@ -916,6 +976,7 @@ def _write_nexus_groups(dictionary, group, skip_keys=None, **kwds):
         the key(s) to skip when writing into the group
     **kwds : additional keywords
        additional keywords to pass to h5py.create_dataset method
+
     """
     if skip_keys is None:
         skip_keys = []
@@ -958,13 +1019,16 @@ def _write_nexus_groups(dictionary, group, skip_keys=None, **kwds):
 
 def _write_nexus_attr(dictionary, group, skip_keys=None):
     """Recursively iterate through dictionary and write "attrs" dictionaries.
+
     This step is called after the groups and datasets have been created
+
     Parameters
     ----------
     dictionary : dict
         Input dictionary to be written to the hdf group
     group : hdf group
         location to store the attrs sections of the dictionary
+
     """
     if skip_keys is None:
         skip_keys = []
@@ -991,10 +1055,12 @@ def read_metadata_from_file(filename, metadata_key=None,
                             lazy=False, verbose=False,
                             skip_array_metadata=False):
     """Read the metadata from a nexus or hdf file.
+
     This method iterates through the file and returns a dictionary of
     the entries.
     This is a convenience method to inspect a file for a value
     rather than loading the file as a signal.
+
     Parameters
     ----------
     filename : str
@@ -1011,10 +1077,12 @@ def read_metadata_from_file(filename, metadata_key=None,
         Whether to skip loading array metadata. This is useful as a lot of
         large array may be present in the metadata and it is redundant with
         dataset itself.
+
     Returns
     -------
     dict
         Metadata dictionary.
+
     See Also
     --------
     * :py:meth:`~.io_plugins.nexus.file_reader`
@@ -1040,12 +1108,14 @@ def list_datasets_in_file(filename, dataset_key=None,
                           hardlinks_only=False,
                           verbose=True):
     """Read from a nexus or hdf file and return a list of the dataset paths.
+
     This method is used to inspect the contents of a Nexus file.
     The method iterates through group attributes and returns NXdata or
     hdf datasets of size >=2 if they're not already NXdata blocks
     and returns a list of the entries.
     This is a convenience method to inspect a file to list datasets
     present rather than loading all the datasets in the file as signals.
+
     Parameters
     ----------
     filename : str
@@ -1059,10 +1129,12 @@ def list_datasets_in_file(filename, dataset_key=None,
         If true any links (soft or External) will be ignored when loading.
     verbose : boolean, default : True
         Prints the results to screen
+
     Returns
     -------
     list
         list of paths to datasets
+
     See Also
     --------
     * :py:meth:`~.io_plugins.nexus.file_reader`
@@ -1094,6 +1166,7 @@ def list_datasets_in_file(filename, dataset_key=None,
 
 def _write_signal(signal, nxgroup, signal_name, **kwds):
     """Store the signal data as an NXdata dataset.
+
     Parameters
     ----------
     signal : Hyperspy signal
@@ -1101,6 +1174,7 @@ def _write_signal(signal, nxgroup, signal_name, **kwds):
         Entry at which to save signal data
     signal_name : str
         Name  under which to store the signal entry in the file
+
     """
     smd = signal.metadata.Signal
     if signal.axes_manager.signal_dimension == 1:
@@ -1143,9 +1217,11 @@ def file_writer(filename,
                 use_default=False,
                 *args, **kwds):
     """Write the signal and metadata as a nexus file.
+
     This will save the signal in NXdata format in the file.
     As the form of the metadata can vary and is not validated it will
     be stored as an NXcollection (an unvalidated collection)
+
     Parameters
     ----------
     filename : str
@@ -1163,11 +1239,13 @@ def file_writer(filename,
           Option to define the default dataset in the file.
           If set to True the signal or first signal in the list of signals
           will be defined as the default (following Nexus v3 data rules).
+
     See Also
     --------
     * :py:meth:`~.io_plugins.nexus.file_reader`
     * :py:meth:`~.io_plugins.nexus.list_datasets_in_file`
     * :py:meth:`~.io_plugins.nexus.read_metadata_from_file`
+
     """
     if not isinstance(signals, list):
         signals = [signals]

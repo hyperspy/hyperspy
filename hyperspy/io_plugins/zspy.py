@@ -19,14 +19,15 @@
 import warnings
 import logging
 from functools import partial
-from collections import MutableMapping
+from packaging.version import Version
 
 import zarr
 from zarr import Array, Group
 import numpy as np
 import dask.array as da
-from hyperspy.io_plugins.hspy import version
+from hyperspy.io_plugins.hierarchical import version
 import numcodecs
+
 
 
 from hyperspy.io_plugins.hierarchical import HierarchicalWriter, HierarchicalReader, _overwrite_dataset
@@ -228,7 +229,7 @@ def file_reader(filename,
     mode = kwds.pop('mode', 'r')
     f = zarr.open(filename, mode=mode, **kwds)
     reader = ZspyReader(f)
-    if reader.version > version:
+    if reader.version > Version(version):
         warnings.warn(
             "This file was written using a newer version of the "
             "HyperSpy zspy file format. I will attempt to load it, but, "

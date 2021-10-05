@@ -25,7 +25,7 @@ import numpy as np
 import dask.array as da
 from h5py import Dataset, File, Group
 
-from hyperspy.io_plugins.hierarchical import HierarchicalWriter, HierarchicalReader, _overwrite_dataset
+from hyperspy.io_plugins.hierarchical import HierarchicalWriter, HierarchicalReader, _overwrite_dataset, version
 from hyperspy.misc.utils import multiply
 
 _logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ default_extension = 0
 # Writing capabilities
 writes = True
 non_uniform_axis = True
-version = "3.1"
+version = version
 # ----------------------
 
 # -----------------------
@@ -197,7 +197,7 @@ class HyperspyReader(HierarchicalReader):
         super().__init__(file)
         self.Dataset = Dataset
         self.Group = Group
-        self.unicode_kwds = {"dtype":h5py.special_dtype(vlen=str)}
+        self.unicode_kwds = {"dtype": h5py.special_dtype(vlen=str)}
 
 
 class HyperspyWriter(HierarchicalWriter):
@@ -243,7 +243,7 @@ def file_reader(
     # hdf5 file, so the following two lines must not be deleted or moved
     # elsewhere.
     reader = HyperspyReader(f)
-    if reader.version > version:
+    if reader.version > Version(version):
         warnings.warn(
             "This file was written using a newer version of the "
             "HyperSpy hdf5 file format. I will attempt to load it, but, "
