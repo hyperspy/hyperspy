@@ -28,7 +28,7 @@ from hyperspy.misc import rgb_tools
 
 # Plugin characteristics
 # ----------------------
-format_name = 'Signal2D'
+format_name = 'Image'
 description = 'Import/Export standard image formats using pillow, freeimage or matplotlib (with scalebar)'
 full_support = False
 file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg',
@@ -52,7 +52,7 @@ def file_writer(filename, signal, scalebar=False,
     ----------
     filename: {str, pathlib.Path, bytes, file}
         The resource to write the image to, e.g. a filename, pathlib.Path or
-        file object, see the docs for more info. The file format is defined by 
+        file object, see the docs for more info. The file format is defined by
         the file extension that is any one supported by imageio.
     signal: a Signal instance
     scalebar : bool, optional
