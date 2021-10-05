@@ -400,9 +400,7 @@ Other minor differences
 Saving Big Data
 ^^^^^^^^^^^^^^^^^
 
-* **Zspy Format** When saving big data the hdf5 format struggles to compress,
-save, load and operate on datasets > 50 GB.  A better option is to use the
-:ref:`zspy-format`.
+The most efficient format supported by HyperSpy to write data is the :ref:` zspy format <zspy-format>`, mainly because it supports writing currently from concurrently from multiple threads or processes.
 
 This also allows for smooth interaction with dask-distributed for efficient scaling.
 
