@@ -134,7 +134,7 @@ class impulseCSV:
             encoding="latin1",
         )
         self._data_dictionary = dict()
-        for i, name, name_dtype in zip(range(len(names)), self.column_names, names):
+        for i, (name, name_dtype) in enumerate(zip(self.column_names, names)):
             if name == "Experiment time":
                 self.time_axis = data[name_dtype]
             elif name == "MixValve":
