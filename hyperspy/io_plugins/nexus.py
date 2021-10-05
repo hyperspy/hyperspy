@@ -52,6 +52,7 @@ def _byte_to_string(value):
     Parameters
     ----------
     value :  byte str
+
     Returns
     -------
     str
@@ -210,7 +211,6 @@ def _get_nav_list(data, dataentry):
     -------
     nav_list : list
         contains information about each axes.
-
     """
 
     detector_index = 0
@@ -442,6 +442,7 @@ def file_reader(filename, lazy=False, dataset_key=None, dataset_path=None,
     the datasets of interest.
     "keys" is a special keywords and prepended with "fix" in the metadata
     structure to avoid any issues.
+
     Datasets are all arrays with size>2 (arrays, lists)
 
     Parameters
@@ -895,6 +896,7 @@ def _fix_exclusion_keys(key):
 
     Signal and DictionaryBrowser break if a
     a key is a dict method - e.g. {"keys":2.0}.
+
     This method prepends the key with ``fix_`` so the information is
     still present to work around this issue
 
@@ -1088,6 +1090,8 @@ def read_metadata_from_file(filename, metadata_key=None,
     * :py:meth:`~.io_plugins.nexus.file_reader`
     * :py:meth:`~.io_plugins.nexus.file_writer`
     * :py:meth:`~.io_plugins.nexus.list_datasets_in_file`
+
+
     """
     search_keys = _check_search_keys(metadata_key)
     fin = h5py.File(filename, "r")
@@ -1130,16 +1134,20 @@ def list_datasets_in_file(filename, dataset_key=None,
     verbose : boolean, default : True
         Prints the results to screen
 
+
     Returns
     -------
     list
         list of paths to datasets
+
 
     See Also
     --------
     * :py:meth:`~.io_plugins.nexus.file_reader`
     * :py:meth:`~.io_plugins.nexus.file_writer`
     * :py:meth:`~.io_plugins.nexus.read_metadata_from_file`
+
+
     """
     search_keys = _check_search_keys(dataset_key)
     fin = h5py.File(filename, "r")
