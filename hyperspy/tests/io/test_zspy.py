@@ -80,6 +80,21 @@ class TestZspy:
         signal2 = load(filename)
         np.testing.assert_array_equal(signal2.data, signal.data)
 
+    @pytest.mark.parametrize("overwrite",[None, True, False])
+    def test_overwrite(self,signal,overwrite):
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/testmodels.zspy'
+        signal.save(filename=filename)
+        signal2 = signal*2
+        signal2.save(filename=filename, overwrite=overwrite)
+        if overwrite is None:
+            np.testing.assert_array_equal(signal.data,load(filename).data)
+        elif overwrite:
+            np.testing.assert_array_equal(signal2.data,load(filename).data)
+        else:
+            np.testing.assert_array_equal(signal.data,load(filename).data)
+
+
     @pytest.mark.skip(reason="lmdb must be installed to test")
     def test_save_lmdb_type(self, signal):
         with tempfile.TemporaryDirectory() as tmp:

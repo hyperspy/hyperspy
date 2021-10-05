@@ -784,7 +784,8 @@ def save(filename, signal, overwrite=None, **kwds):
 
     # Create the directory if it does not exist
     ensure_directory(filename.parent)
-    is_file = filename.is_file()
+    is_file = filename.is_file() or (filename.is_dir() and
+                                     os.path.splitext(filename)[1] == '.zspy')
 
     if overwrite is None:
         write = overwrite_method(filename)  # Ask what to do

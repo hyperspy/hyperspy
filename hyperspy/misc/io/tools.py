@@ -104,7 +104,7 @@ def overwrite(fname):
         Whether to overwrite file.
 
     """
-    if Path(fname).is_file():
+    if Path(fname).is_file() or Path(fname).is_dir():
         message = f"Overwrite '{fname}' (y/n)?\n"
         try:
             answer = input(message)
