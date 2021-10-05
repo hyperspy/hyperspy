@@ -74,16 +74,15 @@ def _overwrite_dataset(group,
 
     else:
         got_data = False
-        maxshape = tuple(None for _ in data.shape)
         while not got_data:
             try:
                 these_kwds = kwds.copy()
                 these_kwds.update(dict(shape=data.shape,
                                        dtype=data.dtype,
                                        exact=True,
-                                       maxshape=maxshape,
                                        chunks=chunks,
-                                       shuffle=True, ))
+                                       )
+                                  )
 
                 # If chunks is True, the `chunks` attribute of `dset` below
                 # contains the chunk shape guessed by h5py
