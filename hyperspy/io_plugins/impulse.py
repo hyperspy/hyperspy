@@ -74,10 +74,7 @@ class impulseCSV:
         self.logged_quantity_name_list = self.column_names[2:]
 
     def _is_impulse_csv_file(self):
-        if "TimeStamp" in self.column_names and len(self.column_names) >= 3:
-            return True
-        else:
-            return False
+        return "TimeStamp" in self.column_names and len(self.column_names) >= 3
 
     def get_dictionary(self, quantity):
         return {
