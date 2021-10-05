@@ -81,8 +81,7 @@ def _overwrite_dataset(group,
                                        dtype=data.dtype,
                                        exact=True,
                                        chunks=chunks,
-                                       )
-                                  )
+                                       ))
 
                 # If chunks is True, the `chunks` attribute of `dset` below
                 # contains the chunk shape guessed by h5py

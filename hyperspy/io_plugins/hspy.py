@@ -287,6 +287,8 @@ def file_writer(filename, signal, *args, **kwds):
         else:
             smd.record_by = ""
         try:
+            if "shuffle" not in kwds:
+                kwds["shuffle"] = True
             writer = HyperspyWriter(f, signal, expg, **kwds)
             writer.write()
             #write_signal(signal, expg, **kwds)
