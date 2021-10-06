@@ -403,11 +403,7 @@ def set_xaxis_lims(mpl_ax, hs_axis):
     mpl_ax.set_xlim(x_axis_lower_lim, x_axis_upper_lim)
 
 
-def _make_overlap_plot(spectra, ax, color="blue", linestyle='-', **kwargs):
-    if isinstance(color, str):
-        color = [color] * len(spectra)
-    if isinstance(linestyle, str):
-        linestyle = [linestyle] * len(spectra)
+def _make_overlap_plot(spectra, ax, color, linestyle, **kwargs):
     for spectrum_index, (spectrum, color, linestyle) in enumerate(
             zip(spectra, color, linestyle)):
         x_axis = spectrum.axes_manager.signal_axes[0]
@@ -421,18 +417,13 @@ def _make_overlap_plot(spectra, ax, color="blue", linestyle='-', **kwargs):
     ax.autoscale(tight=True)
 
 
-def _make_cascade_subplot(spectra, ax, color="blue", linestyle='-',
-                          padding=1, **kwargs):
+def _make_cascade_subplot(spectra, ax, color, linestyle, padding=1, **kwargs):
     max_value = 0
     for spectrum in spectra:
         spectrum_yrange = (np.nanmax(spectrum.data) -
                            np.nanmin(spectrum.data))
         if spectrum_yrange > max_value:
             max_value = spectrum_yrange
-    if isinstance(color, str):
-        color = [color] * len(spectra)
-    if isinstance(linestyle, str):
-        linestyle = [linestyle] * len(spectra)
     for spectrum_index, (spectrum, color, linestyle) in enumerate(
             zip(spectra, color, linestyle)):
         x_axis = spectrum.axes_manager.signal_axes[0]
@@ -1259,7 +1250,7 @@ def plot_spectra(
         deprecation_warning("`line_style` has been renamed to `linestyle` and "
                             "will be removed in HyperSpy 2.0.")
         if linestyle is None:
-            linestyle = kwargs['line_style']
+            linestyle = kwargs.pop('line_style')
         else:
             raise ValueError("Both argument `line_style` and `linestyle` have "
                              "been provided and only one should be used: use "
@@ -1325,30 +1316,26 @@ def plot_spectra(
             fig = plt.figure(**kwargs)
         if ax is None:
             ax = fig.add_subplot(111)
-        _make_overlap_plot(spectra,
-                           ax,
-                           color=color,
-                           linestyle=linestyle,
-                           drawstyle=drawstyle)
+        _make_overlap_plot(spectra, ax, color, linestyle, drawstyle=drawstyle)
         if legend is not None:
             ax.legend(legend, loc=legend_loc)
             _reverse_legend(ax, legend_loc)
             if legend_picking is True:
                 animate_legend(fig=fig, ax=ax)
+
     elif style == 'cascade':
         if fig is None:
             fig = plt.figure(**kwargs)
         if ax is None:
             ax = fig.add_subplot(111)
-        _make_cascade_subplot(spectra,
-                              ax,
-                              color=color,
-                              linestyle=linestyle,
-                              padding=padding,
+        _make_cascade_subplot(spectra, ax, color, linestyle, padding=padding,
                               drawstyle=drawstyle)
         if legend is not None:
             plt.legend(legend, loc=legend_loc)
             _reverse_legend(ax, legend_loc)
+            if legend_picking is True:
+                animate_legend(fig=fig, ax=ax)
+
     elif style == 'mosaic':
         default_fsize = plt.rcParams["figure.figsize"]
         figsize = (default_fsize[0], default_fsize[1] * len(spectra))
