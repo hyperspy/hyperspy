@@ -1,15 +1,15 @@
-from packaging.version import Version
-import logging
 import datetime
 import ast
+import logging
+from packaging.version import Version
 
-import h5py
-
-import numpy as np
 import dask.array as da
+import h5py
+import numpy as np
 from traits.api import Undefined
-from hyperspy.misc.utils import ensure_unicode, get_object_package_info
+
 from hyperspy.axes import AxesManager
+from hyperspy.misc.utils import ensure_unicode, get_object_package_info
 
 
 version = "3.1"
@@ -19,83 +19,6 @@ default_version = Version(version)
 not_valid_format = 'The file is not a valid HyperSpy hdf5 file'
 
 _logger = logging.getLogger(__name__)
-
-
-def _overwrite_dataset(group,
-                       data,
-                       key,
-                       signal_axes=None,
-                       chunks=None,
-                       get_signal_chunks=None,
-                       get_object_dset=None,
-                       store_data=None,
-                       **kwds):
-    """Overwrites some dataset in a hierarchical dataset.
-
-    Parameters
-    ----------
-    group: Zarr.Group or h5py.Group
-        The group to write the data to
-    data: Array-like
-        The data to be written
-    key: str
-        The key for the data
-    signal_axes: tuple
-        The indexes of the signal axes
-    chunks: tuple
-        The chunks for the dataset. If None then get_signal_chunks will be called
-    get_signal_chunks: func
-        A function to get the signal chunks for the dataset
-    get_object_dset: func
-        A function to get the object dset for saving ragged arrays.
-    store_data: func
-        A function to store the data in some hierarchical data format
-    kwds:
-        Any additional keywords for to be passed to the store data function
-        The store data function is passed for each hierarchical data format
-    Returns
-    -------
-
-    """
-    if chunks is None:
-        if isinstance(data, da.Array):
-            # For lazy dataset, by default, we use the current dask chunking
-            chunks = tuple([c[0] for c in data.chunks])
-        else:
-            # If signal_axes=None, use automatic h5py chunking, otherwise
-            # optimise the chunking to contain at least one signal per chunk
-            chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
-    if np.issubdtype(data.dtype, np.dtype('U')):
-        # Saving numpy unicode type is not supported in h5py
-        data = data.astype(np.dtype('S'))
-    if data.dtype == np.dtype('O'):
-        dset = get_object_dset(group, data, key, chunks, **kwds)
-
-    else:
-        got_data = False
-        while not got_data:
-            try:
-                these_kwds = kwds.copy()
-                these_kwds.update(dict(shape=data.shape,
-                                       dtype=data.dtype,
-                                       exact=True,
-                                       chunks=chunks,
-                                       ))
-
-                # If chunks is True, the `chunks` attribute of `dset` below
-                # contains the chunk shape guessed by h5py
-                dset = group.require_dataset(key, **these_kwds)
-                got_data = True
-            except TypeError:
-                # if the shape or dtype/etc do not match,
-                # we delete the old one and create new in the next loop run
-                del group[key]
-    if dset == data:
-        # just a reference to already created thing
-        pass
-    else:
-        _logger.info(f"Chunks used for saving: {chunks}")
-        store_data(data, dset, group, key, chunks, **kwds)
 
 
 class HierarchicalReader:
@@ -535,7 +458,86 @@ class HierarchicalWriter:
         self.unicode_kwds = None
         self.ragged_kwds = None
         self.kwds = kwds
-        self.overwrite_dataset=None
+
+    @staticmethod
+    def _get_signal_chunks():
+        raise NotImplementedError(
+            "This method must be implemented by subclasses.")
+
+    @staticmethod
+    def _get_object_dset():
+        raise NotImplementedError(
+            "This method must be implemented by subclasses.")
+
+    @staticmethod
+    def _store_data():
+        raise NotImplementedError(
+            "This method must be implemented by subclasses.")
+
+    @classmethod
+    def overwrite_dataset(cls, group, data, key, signal_axes=None,
+                          chunks=None, **kwds):
+        """Overwrites some dataset in a hierarchical dataset.
+
+        Parameters
+        ----------
+        group: Zarr.Group or h5py.Group
+            The group to write the data to
+        data: Array-like
+            The data to be written
+        key: str
+            The key for the data
+        signal_axes: tuple
+            The indexes of the signal axes
+        chunks: tuple
+            The chunks for the dataset. If None then get_signal_chunks will be
+            called
+        kwds:
+            Any additional keywords for to be passed to the store data function
+            The store data function is passed for each hierarchical data format
+        """
+        if chunks is None:
+            if isinstance(data, da.Array):
+                # For lazy dataset, by default, we use the current dask chunking
+                chunks = tuple([c[0] for c in data.chunks])
+            else:
+                # If signal_axes=None, use automatic h5py chunking, otherwise
+                # optimise the chunking to contain at least one signal per chunk
+                chunks = cls._get_signal_chunks(
+                    data.shape, data.dtype, signal_axes
+                    )
+        if np.issubdtype(data.dtype, np.dtype('U')):
+            # Saving numpy unicode type is not supported in h5py
+            data = data.astype(np.dtype('S'))
+        if data.dtype == np.dtype('O'):
+            dset = cls._get_object_dset(group, data, key, chunks, **kwds)
+
+        else:
+            got_data = False
+            while not got_data:
+                try:
+                    these_kwds = kwds.copy()
+                    these_kwds.update(dict(shape=data.shape,
+                                           dtype=data.dtype,
+                                           exact=True,
+                                           chunks=chunks,
+                                           ))
+
+                    # If chunks is True, the `chunks` attribute of `dset` below
+                    # contains the chunk shape guessed by h5py
+                    dset = group.require_dataset(key, **these_kwds)
+                    got_data = True
+                except TypeError:
+                    # if the shape or dtype/etc do not match,
+                    # we delete the old one and create new in the next loop run
+                    del group[key]
+        if dset == data:
+            # just a reference to already created thing
+            pass
+        else:
+            _logger.info(f"Chunks used for saving: {chunks}")
+            cls._store_data(data, dset, group, key, chunks, **kwds)
+
 
     def write(self):
         self.write_signal(self.signal,

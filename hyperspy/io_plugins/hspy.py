@@ -19,13 +19,15 @@
 from packaging.version import Version
 import warnings
 import logging
-from functools import partial
+
+
+import dask.array as da
 import h5py
 import numpy as np
-import dask.array as da
-from h5py import Dataset, File, Group
 
-from hyperspy.io_plugins.hierarchical import HierarchicalWriter, HierarchicalReader, _overwrite_dataset, version
+from hyperspy.io_plugins._hierarchical import (
+    HierarchicalWriter, HierarchicalReader, version
+    )
 from hyperspy.misc.utils import multiply
 
 _logger = logging.getLogger(__name__)
@@ -68,7 +70,7 @@ version = version
 # The experiment group contains a number of attributes that will be
 # directly assigned as class attributes of the Signal instance. In
 # addition the experiment groups may contain 'original_metadata' and
-# 'metadata'-subgroup that will be assigned to the same name attributes 
+# 'metadata'-subgroup that will be assigned to the same name attributes
 # of the Signal instance as a Dictionary Browser.
 # The Experiments group can contain attributes that may be common to all
 # the experiments and that will be accessible as attributes of the
@@ -102,9 +104,7 @@ current_file_version = None  # Format version of the file being read
 default_version = Version(version)
 
 
-def get_signal_chunks(shape,
-                      dtype,
-                      signal_axes=None):
+def get_signal_chunks(shape, dtype, signal_axes=None):
     """Function that calculates chunks for the signal, preferably at least one
     chunk per signal space.
 
@@ -150,53 +150,11 @@ def get_signal_chunks(shape,
     return tuple(int(x) for x in chunks)
 
 
-def _get_object_dset(group, data, key, chunks, **kwds):
-    """Creates a Dataset or Zarr Array object for saving ragged data
-    Parameters
-    ----------
-    self
-    group
-    data
-    key
-    chunks
-    kwds
-
-    Returns
-    -------
-
-    """
-    # For saving ragged array
-    if chunks is None:
-        chunks = 1
-    dset = group.require_dataset(key,
-                                 chunks,
-                                 dtype=h5py.special_dtype(vlen=data[0].dtype),
-                                 **kwds)
-    return dset
-
-
-def _store_data(data, dset, group, key, chunks, **kwds):
-    if isinstance(data, da.Array):
-        if data.chunks != dset.chunks:
-            data = data.rechunk(dset.chunks)
-        da.store(data, dset)
-    elif data.flags.c_contiguous:
-        dset.write_direct(data)
-    else:
-        dset[:] = data
-
-
-overwrite_dataset = partial(_overwrite_dataset,
-                            get_signal_chunks=get_signal_chunks,
-                            get_object_dset=_get_object_dset,
-                            store_data=_store_data)
-
-
 class HyperspyReader(HierarchicalReader):
     def __init__(self, file):
         super().__init__(file)
-        self.Dataset = Dataset
-        self.Group = Group
+        self.Dataset = h5py.Dataset
+        self.Group = h5py.Group
         self.unicode_kwds = {"dtype": h5py.special_dtype(vlen=str)}
 
 
@@ -213,11 +171,38 @@ class HyperspyWriter(HierarchicalWriter):
                        signal,
                        expg,
                        **kwds)
-        self.Dataset = Dataset
-        self.Group = Group
+        self.Dataset = h5py.Dataset
+        self.Group = h5py.Group
         self.unicode_kwds = {"dtype": h5py.special_dtype(vlen=str)}
         self.ragged_kwds = {"dtype": h5py.special_dtype(vlen=signal.data[0].dtype)}
-        self.overwrite_dataset = overwrite_dataset
+
+    @staticmethod
+    def _get_signal_chunks(shape, dtype, signal_axes=None):
+        return get_signal_chunks(shape, dtype, signal_axes)
+
+    @staticmethod
+    def _store_data(data, dset, group, key, chunks, **kwds):
+        if isinstance(data, da.Array):
+            if data.chunks != dset.chunks:
+                data = data.rechunk(dset.chunks)
+            da.store(data, dset)
+        elif data.flags.c_contiguous:
+            dset.write_direct(data)
+        else:
+            dset[:] = data
+
+    @staticmethod
+    def _get_object_dset(group, data, key, chunks, **kwds):
+        """Creates a h5py dataset object for saving ragged data"""
+        # For saving ragged array
+        if chunks is None:
+            chunks = 1
+        dset = group.require_dataset(key,
+                                     chunks,
+                                     dtype=h5py.special_dtype(vlen=data[0].dtype),
+                                     **kwds)
+        return dset
+
 
 def file_reader(
                 filename,
@@ -238,7 +223,7 @@ def file_reader(
     except ImportError:
         pass
     mode = kwds.pop('mode', 'r')
-    f = File(filename, mode=mode, **kwds)
+    f = h5py.File(filename, mode=mode, **kwds)
     # Getting the format version here also checks if it is a valid HSpy
     # hdf5 file, so the following two lines must not be deleted or moved
     # elsewhere.
@@ -267,6 +252,9 @@ def file_writer(filename, signal, *args, **kwds):
     """
     if 'compression' not in kwds:
         kwds['compression'] = 'gzip'
+    if "shuffle" not in kwds:
+        # Use shuffle by default to improve compression
+        kwds["shuffle"] = True
     with h5py.File(filename, mode='w') as f:
         f.attrs['file_format'] = "HyperSpy"
         f.attrs['file_format_version'] = version
@@ -287,8 +275,6 @@ def file_writer(filename, signal, *args, **kwds):
         else:
             smd.record_by = ""
         try:
-            if "shuffle" not in kwds:
-                kwds["shuffle"] = True
             writer = HyperspyWriter(f, signal, expg, **kwds)
             writer.write()
             #write_signal(signal, expg, **kwds)
