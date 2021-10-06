@@ -19,13 +19,21 @@
 import os
 import re
 import logging
+import warnings
 from datetime import datetime
+from datetime import timezone
+from dateutil import tz, parser
 
 import numpy as np
 import dask.array as da
 import dask
+import pint
+from dask.diagnostics import ProgressBar
+import traits.api as traits
 
 from hyperspy.misc.array_tools import sarray2dict
+from hyperspy.misc.utils import dummy_context_manager
+from hyperspy.defaults_parser import preferences
 
 # Plugin characteristics
 # ----------------------
@@ -34,13 +42,14 @@ description = ('Read support for TVIPS CMOS camera stream/movie files. Can be'
                'used for in-situ movies or 4D-STEM datasets.')
 full_support = False
 # Recognised file extension
-file_extensions = ['blo', 'BLO']
+file_extensions = ['tvips', 'TVIPS']
 default_extension = 0
 # Writing capabilities:
 writes = False
 
 
 _logger = logging.getLogger(__name__)
+_ureg = pint.UnitRegistry()
 
 TVIPS_RECORDER_GENERAL_HEADER = [
     ("size", "u4"),  #likely the size of generalheader in bytes
@@ -78,6 +87,81 @@ TVIPS_RECORDER_FRAME_HEADER = [
     ("objective", "f4"),  # kind of randomly between 0.0 and 1.0
     # TODO: sometimes scan positions may be present in header, may require more reverse engineering
 ]
+
+
+def _guess_image_mode(signal):
+    """
+    Guess whether the dataset contains images (1) or diffraction patterns (2).
+    If no decent guess can be made, None is returned.
+    """
+    # original pixel scale
+    scale = signal.axes_manager[-1].scale
+    unit = signal.axes_manager[-1].units
+    mode = None
+    try:
+        pixel_size = scale * _ureg(unit)
+    except (AttributeError, pint.UndefinedUnitError):
+        pass
+    else:
+        if pixel_size.is_compatible_with("m"):
+            mode = 1
+        elif pixel_size.is_compatible_with("1/m"):
+            mode = 2
+        else:
+            pass
+    return mode
+
+
+def _get_main_header_from_signal(signal, version=2, frame_header_extra_bytes=0):
+    dt = np.dtype(TVIPS_RECORDER_GENERAL_HEADER)
+    header = np.zeros((1,), dtype=dt)
+    header['size'] = dt.itemsize
+    header['version'] = version
+    # original pixel scale
+    mode = _guess_image_mode(signal)
+    scale = signal.axes_manager[-1].scale
+    offsetx = signal.axes_manager[-2].offset
+    offsety = signal.axes_manager[-1].offset
+    unit = signal.axes_manager[-1].units
+    if mode == 1:
+        to_unit = "nm"
+    elif mode == 2:
+        to_unit = "1/nm"
+    else:
+        to_unit = ""
+    if to_unit:
+        scale = (scale * _ureg(unit)).to(to_unit).magnitude
+        offsetx = (offsetx * _ureg(unit)).to(to_unit).magnitude
+        offsety = (offsety * _ureg(unit)).to(to_unit).magnitude
+    else:
+        warnings.warn("Image scale units could not be converted, "
+                      "saving axes scales as is.")
+    header['dimx'] = signal.axes_manager[-2].size
+    header['dimy'] = signal.axes_manager[-1].size
+    header['offsetx'] = offsetx
+    header['offsety'] = offsety
+    header['pixelsize'] = scale
+    header['bitsperpixel'] = signal.data.dtype.itemsize * 8
+    header['binx'] = 1
+    header['biny'] = 1
+    dtf = np.dtype(TVIPS_RECORDER_FRAME_HEADER)
+    header['frameheaderbytes'] = dtf.itemsize + frame_header_extra_bytes
+    header['dummy'] = "HYPERSPY " * 22 + "HYPERS"
+    header['ht'] = signal.metadata.get_item("Acquisition_instrument.TEM.beam_energy", 0)
+    cl = signal.metadata.get_item("Acquisition_instrument.TEM.camera_length", 0)
+    mag = signal.metadata.get_item("Acquisition_instrument.TEM.magnification", 0)
+    header['magtotal'] = cl if cl else mag
+    return header
+
+
+def _get_frame_record_dtype_from_signal(signal, extra_bytes=0):
+    fhdtype = TVIPS_RECORDER_FRAME_HEADER.copy()
+    fhdtype.append(("extra", bytes, extra_bytes))
+    dimx = signal.axes_manager[-2].size
+    dimy = signal.axes_manager[-1].size
+    fhdtype.append(("data", signal.data.dtype, (dimy, dimx)))
+    dt = np.dtype(fhdtype)
+    return dt
 
 
 def _is_valid_first_tvips_file(filename):
@@ -145,7 +229,7 @@ def file_reader(filename,
     scan_shape : str or 2-tuple of int
         By default the data is loaded as an image stack (1 navigation axis).
         If it concerns a 4D-STEM dataset, the (scan_y, scan_x) dimension can
-        be provided. "auto" can also be selected, in which case the rotidx 
+        be provided. "auto" can also be selected, in which case the rotidx
         information in the frame headers will be used to try to reconstruct
         the scan.
     scan_start_frame : int
@@ -179,7 +263,7 @@ def file_reader(filename,
         f.seek(0)
         # read the main header in file 0
         header = np.fromfile(f, dtype=TVIPS_RECORDER_GENERAL_HEADER, count=1)
-        dtype = np.uint8 if header["bitsperpixel"][0] == 8 else np.uint16
+        dtype = np.dtype(f"u{header['bitsperpixel'][0]//8}")
         dimx = header["dimx"][0]
         dimy = header["dimy"][0]
         # the size of the frame header varies with version
@@ -210,7 +294,7 @@ def file_reader(filename,
     # the array data
     all_array_data = [records_000["data"].reshape(-1, dimx, dimy)]
     # in case we also want the frame header metadata later
-    metadata_keys = np.array(TVIPS_RECORDER_FRAME_HEADER)[:,0]
+    metadata_keys = np.array(TVIPS_RECORDER_FRAME_HEADER)[:, 0]
     metadata_000 = records_000[metadata_keys]
     all_metadata = [metadata_000]
     # also load data from other files
@@ -223,7 +307,7 @@ def file_reader(filename,
         data_stack = da.concatenate(all_array_data, axis=0)
     else:
         data_stack = np.concatenate(all_array_data, axis=0)
-    
+
     # extracting some units/scales/offsets of the DP's or images
     mode = all_metadata[0]["mode"][0]
     DPU = "1/m" if mode == 2 else "m"
@@ -249,8 +333,8 @@ def file_reader(filename,
             indices = _guess_scan_index_grid(record_idxs, scan_start_frame, scan_stop_frame)
         # scan shape and start are provided
         else:
-            total_scan_frames = scan_shape[0] * scan_shape[1]
-            indices = np.arange(scan_start_frame, scan_start_frame+total_scan_frames).reshape(scan_shape[0], scan_shape[1])
+            total_scan_frames = np.prod(scan_shape)
+            indices = np.arange(scan_start_frame, scan_start_frame+total_scan_frames).reshape(scan_shape)
 
         # with winding scan, every second column or row must be inverted
         # due to hysteresis there is also a predictable offset
@@ -263,7 +347,7 @@ def file_reader(filename,
                 indices[:, ::2] = np.roll(indices[:, ::2], hysteresis, axis=0)
             else:
                 raise ValueError("Invalid winding scan axis")
-        
+
         with dask.config.set(**{'array.slicing.split_large_chunks': True}):
             data_stack = data_stack[indices.ravel()]
         data_stack = data_stack.reshape(*indices.shape, dimy, dimx)
@@ -281,7 +365,9 @@ def file_reader(filename,
                 'name': names[i],
                 'scale': scales[i],
                 'offset': offsets[i],
-                'units': units[i], }
+                'units': units[i],
+                'navigate': True if i < len(scan_shape) else False,
+            }
             for i in range(dim)]
         if lazy:
             data_stack = data_stack.rechunk({0: "auto", 1: "auto", 2: None, 3: None})
@@ -302,7 +388,9 @@ def file_reader(filename,
                 'name': names[i],
                 'scale': scales[i],
                 'offset': offsets[i],
-                'units': units[i], }
+                'units': units[i],
+                'navigate': True if i==0 else False,
+            }
             for i in range(dim)]
         if lazy:
             data_stack = data_stack.rechunk({0: "auto", 1: None, 2: None})
@@ -345,3 +433,117 @@ def file_reader(filename,
                 'mapping': {}, }
 
     return [dictionary,]
+
+
+def file_writer(filename, signal, **kwds):
+    """
+    Write signal to TVIPS file.
+
+    Parameters
+    ----------
+    file: str
+        Filename of the file to write to. If not supplied, a _000 suffix will
+        automatically be appended before the extension.
+    signal : instance of hyperspy Signal2D
+        The signal to save.
+    max_file_size: int
+        Maximum size of individual files in bytes. By default there is no
+        maximum and everything is stored in a single file. Otherwise, files
+        are split into sequential parts denoted by a suffix _xxx starting
+        from _000.
+    version: int
+        TVIPS file format version (1 or 2)
+    frame_header_extra_bytes: int
+        Number of bytes to pad the frame headers with.
+    mode: int
+        Imaging mode. 1 is imaging, 2 is diffraction. By default the mode is
+        guessed from signal type and signal units.
+    """
+    fnb, ext = os.path.splitext(filename)
+    show_progressbar = kwds.pop("show_progressbar", None)
+    if fnb.endswith("_000"):
+        fnb = fnb[:-4]
+    version = kwds.pop("version", 2)
+    fheb = kwds.pop("frame_header_extra_bytes", 0)
+    main_header = _get_main_header_from_signal(signal, version, fheb)
+    # frame header + frame dtype
+    record_dtype = _get_frame_record_dtype_from_signal(signal, fheb)
+    num_frames = signal.axes_manager.navigation_size
+    total_file_size = main_header.itemsize + num_frames * record_dtype.itemsize
+    max_file_size = kwds.pop("max_file_size", None)
+    if max_file_size is None:
+        max_file_size = total_file_size
+    # frame metadata
+    time_start = datetime.strptime(
+            signal.metadata.get_item("General.date", "1970-01-01") + ";" +
+            signal.metadata.get_item("General.time", "00:00:00"),
+            "%Y-%m-%d;%H:%M:%S")
+    tizo = tz.gettz(signal.metadata.get_item("General.time_zone", "UTC"))
+    time_start = time_start.replace(tzinfo = tizo).timestamp()
+    # find a time axis an increment if it exists
+    nav_units = signal.axes_manager[0].units
+    nav_increment = signal.axes_manager[0].scale
+    try:
+        time_increment = (nav_increment * _ureg(nav_units)).to("ms").magnitude
+    except (AttributeError, pint.UndefinedUnitError, pint.DimensionalityError):
+        time_increment = 0
+    # imaging or diffraction
+    mode = kwds.pop("mode", None)
+    if mode is None:
+        mode = _guess_image_mode(signal)
+    mode = 2 if mode is None else mode
+    stagex = signal.metadata.get_item("Acquisition_instrument.TEM.Stage.x", 0)
+    stagey = signal.metadata.get_item("Acquisition_instrument.TEM.Stage.y", 0)
+    stagez = signal.metadata.get_item("Acquisition_instrument.TEM.Stage.z", 0)
+    stagea = signal.metadata.get_item("Acquisition_instrument.TEM.tilt_alpha", 0)
+    stageb = signal.metadata.get_item("Acquisition_instrument.TEM.tilt_beta", 0)
+    frames_to_save = num_frames
+    current_frame = 0
+    file_index = 0
+    signal.unfold_navigation_space()
+    while (frames_to_save != 0):
+        suffix = "_"+(f"{file_index}".zfill(3))
+        filename = fnb + suffix + ext
+        if file_index == 0:
+            with open(filename, "wb") as f:
+                main_header.tofile(f)
+                file_location = f.tell()
+                open_mode = "r+"
+        else:
+            file_location = 0
+            open_mode = "w+"
+        frames_saved = (max_file_size - file_location) // record_dtype.itemsize
+        # last file can contain fewer images
+        if frames_to_save < frames_saved:
+            frames_saved = frames_to_save
+        file_memmap = np.memmap(
+                filename, dtype=record_dtype, mode=open_mode,
+                offset=file_location, shape=frames_saved,
+                )
+        # fill in the metadata
+        file_memmap["mode"] = mode
+        file_memmap["stagex"] = stagex
+        file_memmap["stagey"] = stagey
+        file_memmap["stagez"] = stagez
+        file_memmap["stagea"] = stagea
+        file_memmap["stageb"] = stageb
+        rotator = np.arange(current_frame, current_frame + frames_saved)
+        milliseconds = rotator * time_increment
+        timestamps = (time_start + milliseconds / 1000).astype(int)
+        milliseconds = milliseconds % 1000
+        file_memmap["timestamp"] = timestamps
+        file_memmap["ms"] = milliseconds
+        file_memmap["rotidx"] = rotator
+        data = signal.data[current_frame:current_frame + frames_saved]
+        if signal._lazy:
+            if show_progressbar is None:
+                show_progressbar = preferences.General.show_progressbar
+            cm = ProgressBar if show_progressbar else dummy_context_manager
+            with cm():
+                data.store(file_memmap["data"])
+        else:
+            file_memmap["data"] = data
+        file_memmap.flush()
+        file_index += 1
+        frames_to_save -= frames_saved
+        current_frame += frames_saved
