@@ -1,0 +1,1 @@
+Rename `line_style` to `linestyle` in `hs.plot.plot_spectra` to match matplotlib argument name

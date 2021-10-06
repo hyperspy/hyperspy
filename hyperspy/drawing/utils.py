@@ -403,16 +403,16 @@ def set_xaxis_lims(mpl_ax, hs_axis):
     mpl_ax.set_xlim(x_axis_lower_lim, x_axis_upper_lim)
 
 
-def _make_overlap_plot(spectra, ax, color="blue", line_style='-', **kwargs):
+def _make_overlap_plot(spectra, ax, color="blue", linestyle='-', **kwargs):
     if isinstance(color, str):
         color = [color] * len(spectra)
-    if isinstance(line_style, str):
-        line_style = [line_style] * len(spectra)
-    for spectrum_index, (spectrum, color, line_style) in enumerate(
-            zip(spectra, color, line_style)):
+    if isinstance(linestyle, str):
+        linestyle = [linestyle] * len(spectra)
+    for spectrum_index, (spectrum, color, linestyle) in enumerate(
+            zip(spectra, color, linestyle)):
         x_axis = spectrum.axes_manager.signal_axes[0]
         spectrum = _transpose_if_required(spectrum, 1)
-        ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style,
+        ax.plot(x_axis.axis, spectrum.data, color=color, ls=linestyle,
                 **kwargs)
         set_xaxis_lims(ax, x_axis)
     _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.BaseSignal)
@@ -421,7 +421,7 @@ def _make_overlap_plot(spectra, ax, color="blue", line_style='-', **kwargs):
     ax.autoscale(tight=True)
 
 
-def _make_cascade_subplot(spectra, ax, color="blue", line_style='-',
+def _make_cascade_subplot(spectra, ax, color="blue", linestyle='-',
                           padding=1, **kwargs):
     max_value = 0
     for spectrum in spectra:
@@ -431,15 +431,15 @@ def _make_cascade_subplot(spectra, ax, color="blue", line_style='-',
             max_value = spectrum_yrange
     if isinstance(color, str):
         color = [color] * len(spectra)
-    if isinstance(line_style, str):
-        line_style = [line_style] * len(spectra)
-    for spectrum_index, (spectrum, color, line_style) in enumerate(
-            zip(spectra, color, line_style)):
+    if isinstance(linestyle, str):
+        linestyle = [linestyle] * len(spectra)
+    for spectrum_index, (spectrum, color, linestyle) in enumerate(
+            zip(spectra, color, linestyle)):
         x_axis = spectrum.axes_manager.signal_axes[0]
         spectrum = _transpose_if_required(spectrum, 1)
         data_to_plot = ((spectrum.data - spectrum.data.min()) /
                         float(max_value) + spectrum_index * padding)
-        ax.plot(x_axis.axis, data_to_plot, color=color, ls=line_style,
+        ax.plot(x_axis.axis, data_to_plot, color=color, ls=linestyle,
                 **kwargs)
         set_xaxis_lims(ax, x_axis)
     _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.BaseSignal)
@@ -448,9 +448,9 @@ def _make_cascade_subplot(spectra, ax, color="blue", line_style='-',
     ax.autoscale(tight=True)
 
 
-def _plot_spectrum(spectrum, ax, color="blue", line_style='-', **kwargs):
+def _plot_spectrum(spectrum, ax, color="blue", linestyle='-', **kwargs):
     x_axis = spectrum.axes_manager.signal_axes[0]
-    ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style,
+    ax.plot(x_axis.axis, spectrum.data, color=color, ls=linestyle,
             **kwargs)
     set_xaxis_lims(ax, x_axis)
 
@@ -1168,7 +1168,7 @@ def plot_spectra(
         spectra,
         style='overlap',
         color=None,
-        line_style=None,
+        linestyle=None,
         drawstyle='default',
         padding=1.,
         legend=None,
@@ -1194,11 +1194,11 @@ def plot_spectra(
         For a list, if its length is less than the number of spectra to plot,
         the colors will be cycled. If `None`, use default matplotlib color
         cycle.
-    line_style : {None, matplotlib line style, list of line_styles}, optional
+    linestyle : {None, matplotlib line style, list of linestyles}, optional
         Sets the line style of the plots (no action on 'heatmap').
         The main line style are ``'-'``, ``'--'``, ``'-.'``, ``':'``.
         For a list, if its length is less than the number of
-        spectra to plot, line_style will be cycled.
+        spectra to plot, linestyle will be cycled.
         If `None`, use continuous lines, eg: ``'-'``, ``'--'``, ``'-.'``,
         ``':'``.
     drawstyle : {'default', 'steps', 'steps-pre', 'steps-mid', 'steps-post'},
@@ -1254,6 +1254,16 @@ def plot_spectra(
 
     """
     import hyperspy.signal
+    if 'line_style' in kwargs.keys():
+        from hyperspy.misc.utils import deprecation_warning
+        deprecation_warning("`line_style` has been renamed to `linestyle` and "
+                            "will be removed in HyperSpy 2.0.")
+        if linestyle is None:
+            linestyle = kwargs['line_style']
+        else:
+            raise ValueError("Both argument `line_style` and `linestyle` have "
+                             "been provided and only one should be used: use "
+                             "`linestyle` only.")
 
     def _reverse_legend(ax_, legend_loc_):
         """
@@ -1290,17 +1300,17 @@ def plot_spectra(
         color = itertools.cycle(
                 plt.rcParams['axes.prop_cycle'].by_key()["color"])
 
-    if line_style is not None:
-        if isinstance(line_style, str):
-            line_style = itertools.cycle([line_style])
-        elif hasattr(line_style, "__iter__"):
-            line_style = itertools.cycle(line_style)
+    if linestyle is not None:
+        if isinstance(linestyle, str):
+            linestyle = itertools.cycle([linestyle])
+        elif hasattr(linestyle, "__iter__"):
+            linestyle = itertools.cycle(linestyle)
         else:
-            raise ValueError("line_style must be None, a valid matplotlib "
-                             "line_style string or a list of valid matplotlib "
-                             "line_style.")
+            raise ValueError("`linestyle` must be None, a valid matplotlib "
+                             "`linestyle` string or a list of valid matplotlib "
+                             "`linestyle`.")
     else:
-        line_style = ['-'] * len(spectra)
+        linestyle = ['-'] * len(spectra)
 
     if legend is not None:
         if isinstance(legend, str):
@@ -1318,7 +1328,7 @@ def plot_spectra(
         _make_overlap_plot(spectra,
                            ax,
                            color=color,
-                           line_style=line_style,
+                           linestyle=linestyle,
                            drawstyle=drawstyle)
         if legend is not None:
             ax.legend(legend, loc=legend_loc)
@@ -1333,7 +1343,7 @@ def plot_spectra(
         _make_cascade_subplot(spectra,
                               ax,
                               color=color,
-                              line_style=line_style,
+                              linestyle=linestyle,
                               padding=padding,
                               drawstyle=drawstyle)
         if legend is not None:
@@ -1346,10 +1356,10 @@ def plot_spectra(
             len(spectra), 1, figsize=figsize, **kwargs)
         if legend is None:
             legend = [legend] * len(spectra)
-        for spectrum, ax, color, line_style, legend in zip(
-                spectra, subplots, color, line_style, legend):
+        for spectrum, ax, color, linestyle, legend in zip(
+                spectra, subplots, color, linestyle, legend):
             spectrum = _transpose_if_required(spectrum, 1)
-            _plot_spectrum(spectrum, ax, color=color, line_style=line_style,
+            _plot_spectrum(spectrum, ax, color=color, linestyle=linestyle,
                            drawstyle=drawstyle)
             ax.set_ylabel('Intensity')
             if legend is not None:
@@ -1453,7 +1463,7 @@ def plot_histograms(signal_list,
                     bins='fd',
                     range_bins=None,
                     color=None,
-                    line_style=None,
+                    linestyle=None,
                     legend='auto',
                     fig=None,
                     **kwargs):
@@ -1481,11 +1491,11 @@ def plot_histograms(signal_list,
         Sets the color of the lines of the plots. For a list, if its length is
         less than the number of spectra to plot, the colors will be cycled.
         If `None`, use default matplotlib color cycle.
-    line_style: {None, valid matplotlib line style, list of line styles}, \
+    linestyle: {None, valid matplotlib line style, list of line styles}, \
         optional
         The main line styles are ``'-'``, ``'--'``, ``'-.'``, ``':'``.
         For a list, if its length is less than the number of
-        spectra to plot, line_style will be cycled.
+        spectra to plot, linestyle will be cycled.
         If `None`, use continuous lines, eg: ``'-'``, ``'--'``, ``'-.'``,
         ``':'``.
     legend: {None, list of str, 'auto'}, optional
@@ -1519,7 +1529,7 @@ def plot_histograms(signal_list,
         hists.append(obj.get_histogram(bins=bins,
                                        range_bins=range_bins, **kwargs))
     return plot_spectra(hists, style='overlap', color=color,
-                        line_style=line_style, drawstyle='steps-mid',
+                        linestyle=linestyle, drawstyle='steps-mid',
                         legend=legend, fig=fig)
 
 

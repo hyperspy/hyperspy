@@ -818,9 +818,9 @@ and provide the legend labels:
     >>> import scipy.misc
     >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
     >>> color_list = ['red', 'red', 'blue', 'blue', 'red', 'red']
-    >>> line_style_list = ['-','--','steps','-.',':','-']
+    >>> linestyle_list = ['-', '--', '-.', ':', '-']
     >>> hs.plot.plot_spectra(s, style='cascade', color=color_list,
-    >>> line_style=line_style_list,legend='auto')
+    >>>                      linestyle=linestyle_list, legend='auto')
 
 .. figure::  images/plot_spectra_color.png
   :align:   center
