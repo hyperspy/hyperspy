@@ -1,5 +1,4 @@
 from packaging.version import Version
-import warnings
 import logging
 import datetime
 import ast
@@ -9,7 +8,7 @@ import h5py
 import numpy as np
 import dask.array as da
 from traits.api import Undefined
-from hyperspy.misc.utils import ensure_unicode, multiply, get_object_package_info
+from hyperspy.misc.utils import ensure_unicode, get_object_package_info
 from hyperspy.axes import AxesManager
 
 
@@ -647,8 +646,8 @@ class HierarchicalWriter:
                     group.attrs[key] = value
                 except BaseException:
                     _logger.exception(
-                        "The hdf5 writer could not write the following "
-                        "information in the file: %s : %s", key, value)
+                        "The writer could not write the following "
+                        f"information in the file: {key} : {value}")
 
     def parse_structure(self, key, group, value, _type, **kwds):
         from hyperspy.signal import BaseSignal
@@ -681,5 +680,3 @@ class HierarchicalWriter:
             group.create_dataset(_type + key,
                                  data=tmp,
                                  **kwds)
-
-
