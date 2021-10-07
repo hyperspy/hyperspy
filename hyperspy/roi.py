@@ -428,8 +428,8 @@ class BaseInteractiveROI(BaseROI):
         Arguments
         ---------
         signal : Signal
-            The signal to witch the widget is added. This is used to determine
-            with plot to add the widget to, and it supplies the axes_manager
+            The signal to which the widget is added. This is used to determine
+            which plot to add the widget to, and it supplies the axes_manager
             for the widget.
         axes : specification of axes to use, default is None
             The axes argument specifies which axes the ROI will be applied on.
@@ -450,13 +450,13 @@ class BaseInteractiveROI(BaseROI):
             default widget will be used, as given by _get_widget_type().
         color : Matplotlib color specifier (default: 'green')
             The color for the widget. Any format that matplotlib uses should be
-            ok. This will not change the color fo any widget passed with the
+            ok. This will not change the color for any widget passed with the
             'widget' argument.
         snap : bool, optional
             If True, the ROI will be snapped to the axes values. Default is
             True.
         kwargs:
-            All keyword argument are passed to the widget constructor.
+            All keyword arguments are passed to the widget constructor.
         """
         axes = self._parse_axes(axes, signal.axes_manager)
         if widget is None:
@@ -514,7 +514,7 @@ class BaseInteractiveROI(BaseROI):
 
     def remove_widget(self, signal, render_figure=True):
         """
-        Removing a widget from a signal consists in two tasks:
+        Removing a widget from a signal consists of two tasks:
             1. Disconnect the interactive operations associated with this ROI
                and the specified signal `signal`.
             2. Removing the widget from the plot.
@@ -522,7 +522,7 @@ class BaseInteractiveROI(BaseROI):
         Parameters
         ----------
         signal : BaseSignal
-            The signal from the which the interactive operations will be
+            The signal from which the interactive operations will be
             disconnected.
         render_figure : bool, optional
             If False, the figure will not be rendered after removing the widget
