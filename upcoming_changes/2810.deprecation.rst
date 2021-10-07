@@ -1,0 +1,1 @@
+Rename ``line_style`` to ``linestyle`` in :py:func:`~.drawing.utils.plot_spectra` to match matplotlib argument name

@@ -333,3 +333,27 @@ def test_plot_autoscale(autoscale):
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
 
     return s._plot.signal_plot.figure
+
+
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                               tolerance=default_tol, style=style_pytest_mpl)
+@pytest.mark.parametrize('linestyle', [None, '-', ['-', '--']])
+def test_plot_spectra_linestyle(linestyle):
+    s = hs.signals.Signal1D(np.arange(100).reshape(2, 50))
+    ax = hs.plot.plot_spectra(s, linestyle=linestyle)
+
+    return ax.get_figure()
+
+
+def test_plot_spectra_linestyle_error():
+    from hyperspy.exceptions import VisibleDeprecationWarning
+    s = hs.signals.Signal1D(np.arange(100).reshape(2, 50))
+    with pytest.warns(VisibleDeprecationWarning):
+        hs.plot.plot_spectra(s, line_style='--')
+
+    with pytest.raises(ValueError):
+        with pytest.warns(VisibleDeprecationWarning):
+            hs.plot.plot_spectra(s, linestyle='-', line_style='--')
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_spectra(s, linestyle='invalid')
