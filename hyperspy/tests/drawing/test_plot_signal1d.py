@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import os
 from shutil import copyfile
 from pathlib import Path
@@ -319,11 +320,13 @@ def test_plot_with_non_finite_value():
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
 
 
-def test_plot_add_line_events():
+@pytest.mark.parametrize('ax', ['left', 'right'])
+def test_plot_add_line_events(ax):
     s = hs.signals.Signal1D(np.arange(100))
     s.plot()
     assert len(s.axes_manager.events.indices_changed.connected) == 1
-    figure = s._plot.signal_plot
+    plot = s._plot.signal_plot
+    assert len(s._plot.signal_plot.figure.get_axes()) == 1
 
     def line_function(axes_manager=None):
         return 100 - np.arange(100)
@@ -331,19 +334,35 @@ def test_plot_add_line_events():
     line = Signal1DLine()
     line.data_function = line_function
     line.set_line_properties(color='blue', type='line', scaley=False)
-    figure.add_line(line, connect_navigation=True)
+
+    if ax == 'right':
+        plot.create_right_axis()
+        plot.right_axes_manager = copy.deepcopy(s.axes_manager)
+        expected_axis_number = 2
+        expected_indices_changed_connected = 1
+    else:
+        expected_axis_number = 1
+        expected_indices_changed_connected = 2
+    plot.add_line(line, ax=ax, connect_navigation=True)
+
+    assert len(s._plot.signal_plot.figure.get_axes()) == expected_axis_number
     line.plot()
     assert len(line.events.closed.connected) == 1
-    assert len(s.axes_manager.events.indices_changed.connected) == 2
+    # expected_indices_changed_connected is 2 only when adding line on the left
+    # because for the right ax, we have a deepcopy of the axes_manager
+    assert len(s.axes_manager.events.indices_changed.connected) == \
+        expected_indices_changed_connected
 
     line.close()
-    figure.close_right_axis()
+    plot.close_right_axis()
 
+    assert len(s._plot.signal_plot.figure.get_axes()) == 1
     assert len(line.events.closed.connected) == 0
     assert len(s.axes_manager.events.indices_changed.connected) == 1
 
-    figure.close()
+    plot.close()
     assert len(s.axes_manager.events.indices_changed.connected) == 0
+    assert s._plot.signal_plot is None
 
 
 @pytest.mark.parametrize("autoscale", ['', 'x', 'xv', 'v'])
@@ -359,3 +378,27 @@ def test_plot_autoscale(autoscale):
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
 
     return s._plot.signal_plot.figure
+
+
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                               tolerance=default_tol, style=style_pytest_mpl)
+@pytest.mark.parametrize('linestyle', [None, '-', ['-', '--']])
+def test_plot_spectra_linestyle(linestyle):
+    s = hs.signals.Signal1D(np.arange(100).reshape(2, 50))
+    ax = hs.plot.plot_spectra(s, linestyle=linestyle)
+
+    return ax.get_figure()
+
+
+def test_plot_spectra_linestyle_error():
+    from hyperspy.exceptions import VisibleDeprecationWarning
+    s = hs.signals.Signal1D(np.arange(100).reshape(2, 50))
+    with pytest.warns(VisibleDeprecationWarning):
+        hs.plot.plot_spectra(s, line_style='--')
+
+    with pytest.raises(ValueError):
+        with pytest.warns(VisibleDeprecationWarning):
+            hs.plot.plot_spectra(s, linestyle='-', line_style='--')
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_spectra(s, linestyle='invalid')

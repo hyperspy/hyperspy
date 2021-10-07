@@ -123,6 +123,29 @@ class TestROIs():
         np.testing.assert_equal(
             sr.data, s.data[:, int(15 / scale):int(30 // scale), ...])
 
+    def test_roi_add_widget(self):
+        s = Signal1D(np.random.rand(60, 4))
+        s.axes_manager[0].name = 'nav axis'
+        # Test adding roi to plot
+        s.plot(navigator='spectrum')
+
+        # Try using different argument types
+        for axes in [0, s.axes_manager[0], 'nav axis', [0], ['nav axis']]:
+            r = SpanROI(0, 60)
+            r.add_widget(s, axes=axes)
+            np.testing.assert_equal(r(s).data, s.data)
+
+        # invalid arguments
+        for axes in ['not a DataAxis name', ['not a DataAxis name'], [0, 1]]:
+            r2 = SpanROI(0, 60)
+            with pytest.raises(ValueError):
+                r2.add_widget(s, axes=axes)
+
+        for axes in [2, [2]]:
+            r3 = SpanROI(0, 60)
+            with pytest.raises(IndexError):
+                r3.add_widget(s, axes=axes)
+
     def test_span_spectrum_nav_boundary_roi(self):
         s = Signal1D(np.random.rand(60, 4))
         r = SpanROI(0, 60)
@@ -159,21 +182,21 @@ class TestROIs():
         r = SpanROI(15, 30)
         assert tuple(r) == (15, 30)
 
+    @pytest.mark.parametrize('roi', [Point1DROI, Point2DROI, RectangularROI,
+                                     SpanROI, Line2DROI, CircleROI])
     @pytest.mark.parametrize('axes', [None, 'signal'])
-    def test_add_widget_ROI_undefined(self, axes):
+    def test_add_widget_ROI_undefined(self, axes, roi):
         s = self.s_i
         s.plot()
+        r = roi()
         if axes == 'signal':
-            axes = s.axes_manager.signal_axes
-        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI,
-                    CircleROI]:
-            r = roi()
-            r.add_widget(s, axes=axes)
-            if axes is None:
-                expected_axes = s.axes_manager.navigation_axes
-            else:
-                expected_axes = axes
-            r.signal_map[s][1][0] in expected_axes
+            axes = s.axes_manager.signal_axes[:r.ndim]
+        r.add_widget(s, axes=axes)
+        if axes is None:
+            expected_axes = s.axes_manager.navigation_axes
+        else:
+            expected_axes = axes
+        r.signal_map[s][1][0] in expected_axes
 
     def test_span_spectrum_sig(self):
         s = self.s_s
