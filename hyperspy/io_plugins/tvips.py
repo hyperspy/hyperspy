@@ -34,6 +34,7 @@ import traits.api as traits
 from hyperspy.misc.array_tools import sarray2dict
 from hyperspy.misc.utils import dummy_context_manager
 from hyperspy.defaults_parser import preferences
+from hyperspy._signals.signal2d import Signal2D
 
 # Plugin characteristics
 # ----------------------
@@ -130,12 +131,12 @@ def _get_main_header_from_signal(signal, version=2, frame_header_extra_bytes=0):
     else:
         to_unit = ""
     if to_unit:
-        scale = (scale * _ureg(unit)).to(to_unit).magnitude
-        offsetx = (offsetx * _ureg(unit)).to(to_unit).magnitude
-        offsety = (offsety * _ureg(unit)).to(to_unit).magnitude
+        scale = round((scale * _ureg(unit)).to(to_unit).magnitude)
+        offsetx = round((offsetx * _ureg(unit)).to(to_unit).magnitude)
+        offsety = round((offsety * _ureg(unit)).to(to_unit).magnitude)
     else:
         warnings.warn("Image scale units could not be converted, "
-                      "saving axes scales as is.")
+                      "saving axes scales as is.", UserWarning)
     header['dimx'] = signal.axes_manager[-2].size
     header['dimy'] = signal.axes_manager[-1].size
     header['offsetx'] = offsetx
@@ -150,13 +151,21 @@ def _get_main_header_from_signal(signal, version=2, frame_header_extra_bytes=0):
     header['ht'] = signal.metadata.get_item("Acquisition_instrument.TEM.beam_energy", 0)
     cl = signal.metadata.get_item("Acquisition_instrument.TEM.camera_length", 0)
     mag = signal.metadata.get_item("Acquisition_instrument.TEM.magnification", 0)
-    header['magtotal'] = cl if cl else mag
+    if (cl != 0 and mag != 0):
+        header['magtotal'] = 0
+    elif (cl != 0 and mode==2):
+        header['magtotal'] = cl
+    elif (mag != 0 and mode==1):
+        header['magtotal'] = mag
+    else:
+        header['magtotal'] = 0
     return header
 
 
 def _get_frame_record_dtype_from_signal(signal, extra_bytes=0):
     fhdtype = TVIPS_RECORDER_FRAME_HEADER.copy()
-    fhdtype.append(("extra", bytes, extra_bytes))
+    if extra_bytes > 0:
+        fhdtype.append(("extra", bytes, extra_bytes))
     dimx = signal.axes_manager[-2].size
     dimy = signal.axes_manager[-1].size
     fhdtype.append(("data", signal.data.dtype, (dimy, dimx)))
@@ -170,13 +179,13 @@ def _is_valid_first_tvips_file(filename):
     match = re.match(filpattern, filename)
     if match is not None:
         num, ext = match.groups()
-        if ext != "tvips":
+        if ext.lower() != "tvips":
             raise ValueError(
-                f"Invalid tvips file: extension {ext}, must " f"be tvips"
+                f"Invalid tvips file: extension {ext}, must be tvips"
             )
         if int(num) != 0:
             raise ValueError(
-                "Can only read video sequences starting with " "part 000"
+                "Can only read video sequences starting with part 000"
             )
         return True
     else:
@@ -190,20 +199,26 @@ def _find_auto_scan_start_stop(rotidxs):
     if indx.size == 0:
         return None, None
     else:
-        return indx[0] + 1, indx[-1] + 1
+        startx = indx[0]
+        if rotidxs[startx] == 0:
+            startx += 1
+        return startx, indx[-1] + 1
 
 
 def _guess_scan_index_grid(rotidx, start, stop):
+    #breakpoint()
     total_scan_frames = rotidx[stop]
     rotidx = rotidx[start : stop + 1]
     indxs = np.zeros(total_scan_frames, dtype=np.int64)
-    prevw = 1
-    for j in range(indxs):
+    prevw = 0
+    for j in range(indxs.shape[0]):
         # find where the argument is j
         w = np.argwhere(rotidx == j + 1)
+        # this value appears in the rotation list
         if w.size > 0:
             w = w[0, 0]
             prevw = w
+        # this value does not appear
         else:
             # move up if the rot index stays the same, else copy
             if prevw + 1 < len(rotidx):
@@ -226,19 +241,19 @@ def file_reader(filename,
 
     Parameters
     ----------
-    scan_shape : str or 2-tuple of int
+    scan_shape : str or tuple of int
         By default the data is loaded as an image stack (1 navigation axis).
-        If it concerns a 4D-STEM dataset, the (scan_y, scan_x) dimension can
+        If it concerns a 4D-STEM dataset, the (..., scan_y, scan_x) dimension can
         be provided. "auto" can also be selected, in which case the rotidx
         information in the frame headers will be used to try to reconstruct
-        the scan.
+        the scan. Additional navigation axes must be prepended.
     scan_start_frame : int
         First frame where the scan starts. If scan_shape = "auto" this is
         ignored.
     winding_scan_axis : str
         "x" or "y" if the scan was performed with winding scan along an axis
         as opposed to flyback scan.
-    hysteresis:
+    hysteresis: int
         Only applicable if winding_scan_axis is not None. This parameter allows
         every second column or row to be shifted to correct for hysteresis that
         occurs during a winding scan.
@@ -286,13 +301,14 @@ def file_reader(filename,
         # create custom dtype for memmap padding the frame_header as required
         extra_bytes = increment - frame_header_dt.itemsize
         record_dtype = TVIPS_RECORDER_FRAME_HEADER.copy()
-        record_dtype.append(("extra", bytes, extra_bytes))
-        record_dtype.append(("data", dtype, dimx*dimy))
+        if extra_bytes > 0:
+            record_dtype.append(("extra", bytes, extra_bytes))
+        record_dtype.append(("data", dtype, (dimy, dimx)))
 
     # memmap the data
     records_000 = np.memmap(filename, mode="r", dtype=record_dtype, offset=header["size"][0])
     # the array data
-    all_array_data = [records_000["data"].reshape(-1, dimx, dimy)]
+    all_array_data = [records_000["data"]]
     # in case we also want the frame header metadata later
     metadata_keys = np.array(TVIPS_RECORDER_FRAME_HEADER)[:, 0]
     metadata_000 = records_000[metadata_keys]
@@ -302,7 +318,7 @@ def file_reader(filename,
         # no offset on the other files
         records = np.memmap(i, mode="r", dtype=record_dtype)
         all_metadata.append(records[metadata_keys])
-        all_array_data.append(records["data"].reshape(-1, dimx, dimy))
+        all_array_data.append(records["data"])
     if lazy:
         data_stack = da.concatenate(all_array_data, axis=0)
     else:
@@ -310,7 +326,7 @@ def file_reader(filename,
 
     # extracting some units/scales/offsets of the DP's or images
     mode = all_metadata[0]["mode"][0]
-    DPU = "1/m" if mode == 2 else "m"
+    DPU = "1/nm" if mode == 2 else "nm"
     SDP = header["pixelsize"][0]
     offsetx = header["offsetx"][0]
     offsety = header["offsety"][0]
@@ -333,6 +349,7 @@ def file_reader(filename,
             indices = _guess_scan_index_grid(record_idxs, scan_start_frame, scan_stop_frame)
         # scan shape and start are provided
         else:
+            scan_start_frame = kwds.get("scan_start_frame", 0)
             total_scan_frames = np.prod(scan_shape)
             indices = np.arange(scan_start_frame, scan_start_frame+total_scan_frames).reshape(scan_shape)
 
@@ -340,22 +357,22 @@ def file_reader(filename,
         # due to hysteresis there is also a predictable offset
         if winding_scan_axis is not None:
             if winding_scan_axis in ["x", 0]:
-                indices[::2] = indices[::2][:, ::-1]
-                indices[::2] = np.roll(indices[::2], hysteresis, axis=1)
+                indices[..., ::2, :] = indices[..., ::2, :][..., ::-1, :]
+                indices[..., ::2, :] = np.roll(indices[..., ::2, :], hysteresis, axis=-1)
             elif winding_scan_axis in ["y", 1]:
-                indices[:, ::2] = indices[:, ::2][::-1, :]
-                indices[:, ::2] = np.roll(indices[:, ::2], hysteresis, axis=0)
+                indices[..., :, ::2] = indices[..., :, ::2][..., :, ::-1]
+                indices[..., :, ::2] = np.roll(indices[..., :, ::2], hysteresis, axis=-2)
             else:
                 raise ValueError("Invalid winding scan axis")
 
         with dask.config.set(**{'array.slicing.split_large_chunks': True}):
             data_stack = data_stack[indices.ravel()]
         data_stack = data_stack.reshape(*indices.shape, dimy, dimx)
-        units = ['nm', 'nm', DPU, DPU]
-        names = ['y', 'x', 'dy', 'dx']
+        units = (indices.ndim - 2) * [""] + ['nm', 'nm', DPU, DPU]
+        names = (indices.ndim - 2) * [""] + ['y', 'x', 'dy', 'dx']
         # no scale information stored in the scan!
-        scales = [1, 1, SDP, SDP]
-        offsets = [0, 0, offsety, offsetx]
+        scales = (indices.ndim - 2) * [1] + [1, 1, SDP, SDP]
+        offsets = (indices.ndim - 2) * [0] + [0, 0, offsety, offsetx]
         # Create the axis objects for each axis
         dim = data_stack.ndim
         axes = [
@@ -370,7 +387,12 @@ def file_reader(filename,
             }
             for i in range(dim)]
         if lazy:
-            data_stack = data_stack.rechunk({0: "auto", 1: "auto", 2: None, 3: None})
+            chunking = {}
+            for ax_index in range(indices.ndim):
+                chunking[ax_index] = "auto"
+            for ax_index in range(indices.ndim, indices.ndim + 2):
+                chunking[ax_index] = None
+            data_stack = data_stack.rechunk(chunking)
     else:
         # we load as a regular image stack
         units = ['s', DPU, DPU]
@@ -459,6 +481,9 @@ def file_writer(filename, signal, **kwds):
         Imaging mode. 1 is imaging, 2 is diffraction. By default the mode is
         guessed from signal type and signal units.
     """
+    # only signal2d is allowed
+    if not isinstance(signal, Signal2D):
+        raise ValueError("Only Signal2D supported for writing to TVIPS file.")
     fnb, ext = os.path.splitext(filename)
     show_progressbar = kwds.pop("show_progressbar", None)
     if fnb.endswith("_000"):
