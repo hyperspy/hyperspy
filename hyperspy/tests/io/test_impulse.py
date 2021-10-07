@@ -23,10 +23,9 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.io_plugins.impulse import (
-    impulseCSV,
+    ImpulseCSV,
     invalid_file_error,
-    invalid_filenaming_error,
-    no_metadata_file_error,
+    invalid_filenaming_error
 )
 
 testdirpath = os.path.dirname(__file__)
@@ -40,45 +39,32 @@ def test_read_sync_file():
     s = hs.load(filename, reader='impulse')
     assert len(s) == 13
     assert (s[0].metadata.General.title ==
-            'Temperature Measured')
-    assert s[0].metadata.Signal.signal_type == ''
-    assert s[0].metadata.Signal.quantity == 'NA'
+            'Temperature Measured (degC)')
+    assert s[0].metadata.Signal.quantity == 'degC'
     assert s[1].metadata.General.title == 'MixValve'
-    assert s[1].metadata.Signal.signal_type == ''
-    assert s[1].metadata.Signal.quantity == 'NA'
+    assert s[1].metadata.Signal.quantity == ''
     assert s[2].metadata.General.title == 'Pin Measured'
-    assert s[2].metadata.Signal.signal_type == ''
-    assert s[2].metadata.Signal.quantity == 'NA'
+    assert s[2].metadata.Signal.quantity == ''
     assert s[3].metadata.General.title == 'Pout Measured'
-    assert s[3].metadata.Signal.signal_type == ''
-    assert s[3].metadata.Signal.quantity == 'NA'
+    assert s[3].metadata.Signal.quantity == ''
     assert s[4].metadata.General.title == 'Pnr Measured'
-    assert s[4].metadata.Signal.signal_type == ''
-    assert s[4].metadata.Signal.quantity == 'NA'
+    assert s[4].metadata.Signal.quantity == ''
     assert s[5].metadata.General.title == 'Fnr'
-    assert s[5].metadata.Signal.signal_type == ''
-    assert s[5].metadata.Signal.quantity == 'NA'
+    assert s[5].metadata.Signal.quantity == ''
     assert s[6].metadata.General.title == '% Gas1 Measured'
-    assert s[6].metadata.Signal.signal_type == ''
-    assert s[6].metadata.Signal.quantity == 'NA'
+    assert s[6].metadata.Signal.quantity == ''
     assert s[7].metadata.General.title == '% Gas2 Measured'
-    assert s[7].metadata.Signal.signal_type == ''
-    assert s[7].metadata.Signal.quantity == 'NA'
+    assert s[7].metadata.Signal.quantity == ''
     assert s[8].metadata.General.title == '% Gas3 Measured'
-    assert s[8].metadata.Signal.signal_type == ''
-    assert s[8].metadata.Signal.quantity == 'NA'
+    assert s[8].metadata.Signal.quantity == ''
     assert s[9].metadata.General.title == 'Channel#1'
-    assert s[9].metadata.Signal.signal_type == ''
-    assert s[9].metadata.Signal.quantity == 'NA'
+    assert s[9].metadata.Signal.quantity == ''
     assert s[10].metadata.General.title == 'Channel#2'
-    assert s[10].metadata.Signal.signal_type == ''
-    assert s[10].metadata.Signal.quantity == 'NA'
+    assert s[10].metadata.Signal.quantity == ''
     assert s[11].metadata.General.title == 'Channel#3'
-    assert s[11].metadata.Signal.signal_type == ''
-    assert s[11].metadata.Signal.quantity == 'NA'
+    assert s[11].metadata.Signal.quantity == ''
     assert s[12].metadata.General.title == 'Channel#4'
-    assert s[12].metadata.Signal.signal_type == ''
-    assert s[12].metadata.Signal.quantity == 'NA'
+    assert s[12].metadata.Signal.quantity == ''
     
 
 class testSyncFile:
@@ -131,7 +117,7 @@ class testSyncFile:
 class testSyncFileCSVreader:
     def setup_method(self, method):
         self.filename = os.path.join(dirpath, "StubExperiment_Synchronized data.csv")
-        self.isf = impulseCSV(self.filename)
+        self.isf = ImpulseCSV(self.filename)
 
     def test_read_column_name(self):
         assert self.isf.column_name == [
@@ -150,8 +136,6 @@ class testSyncFileCSVreader:
             "Channel#4",
         ]
 
-    def test_read_start_datetime(self):
-        assert self.isf.start_datetime == "2021-08-06T13:40:19.000000"
 
     def test_read_data(self):
         dicts = (
@@ -173,7 +157,7 @@ class testSyncFileCSVreader:
 def test_loading_random_csv_file():
     filename = os.path.join(dirpath, "random_csv_file.csv")
     with pytest.raises(IOError) as cm:
-        impulseCSV(filename)
+        ImpulseCSV(filename)
         cm.match(invalid_file_error)
 
 
@@ -185,16 +169,6 @@ def test_loading_invalid_impulse_filename():
     with pytest.raises(IOError) as cm:
         hs.load(filename, reader="impulse")
         cm.match(invalid_filenaming_error)
-
-
-# Loading a csv file without a corresponding metadata file
-
-
-def test_loading_file_without_metadata():
-    filename = os.path.join(dirpath, "NoMetadata_Synchronized data.csv")
-    with pytest.raises(IOError) as cm:
-        hs.load(filename, reader="impulse")
-        cm.match(no_metadata_file_error)
 
 
 # Test raw data file
@@ -244,7 +218,7 @@ class testRawFile():
 class testRawFileCSVreader:
     def setup_method(self, method):
         self.filename = os.path.join(dirpath, "StubExperiment_Heat raw.csv")
-        self.isf = impulseCSV(self.filename)
+        self.isf = ImpulseCSV(self.filename)
 
     def test_read_column_name(self):
         assert self.isf.column_name == ["Temperature Measured"]

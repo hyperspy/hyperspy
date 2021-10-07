@@ -1,4 +1,4 @@
-TimeStamp,Experiment time,Temperature Measured,MixValve,Pin Measured,Pout Measured,Pnr Measured,Fnr,% Gas1 Measured,% Gas2 Measured,% Gas3 Measured,Channel#1,Channel#2,Channel#3,Channel#4
+TimeStamp,Experiment time,Temperature Measured (degC),MixValve,Pin Measured,Pout Measured,Pnr Measured,Fnr,% Gas1 Measured,% Gas2 Measured,% Gas3 Measured,Channel#1,Channel#2,Channel#3,Channel#4
 13:40:26.849,7.787,9.055198,0; 0; 0,3.1,3.2,-0.996279145,-0.938546075,0,0,100,2.73E-10,2.21E-09,2.86E-09,1.56E-09
 13:40:27.350,8.288,11.270884,0; 0; 0,3.1,3.2,-0.996279145,-0.938546075,0,0,100,2.74E-10,2.66E-09,2.87E-09,1.26E-09
 13:40:27.863,8.802,13.471796,0; 0; 0,3.1,3.2,-0.996279145,-0.938546075,0,0,100,2.76E-10,3.09E-09,2.88E-09,9.59E-10

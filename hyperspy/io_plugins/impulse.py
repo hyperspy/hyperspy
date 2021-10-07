@@ -37,28 +37,19 @@ invalid_filenaming_error = {
     "The filename does not match Impulse naming, please"
     " make sure that the filenames for the logfile and metadata file are unchanged."
 }
-no_metadata_file_error = {
-    "No _Metadata file detected in filepath, please"
-    " make sure that the Metadata file is included."
-}
 
 
 def file_reader(filename, *args, **kwds):
-    csv_file = impulseCSV(filename)
+    csv_file = ImpulseCSV(filename)
     return _impulseCSV_log_reader(csv_file)
-
 
 def _impulseCSV_log_reader(csv_file):
     csvs = []
     for key in csv_file.logged_quantity_name_list:
-        try:
-            csvs.append(csv_file.get_dictionary(key))
-        except BaseException:
-            raise IOError(invalid_file_error)
+        csvs.append(csv_file.get_dictionary(key))
     return csvs
 
-
-class impulseCSV:
+class ImpulseCSV:
     def __init__(self, filename):
         self.filename = filename
         self._parse_header()
@@ -93,23 +84,16 @@ class impulseCSV:
                 "time": self.original_metadata["Experiment_time"],
             },
             "Signal": {
-                "signal_type": "",
                 "quantity": self._parse_quantity_units(quantity),
             },
         }
 
     def _parse_quantity_units(self, quantity):
         quantity_split = quantity.strip().split(" ")
-        if len(quantity_split) > 1:
-            if quantity_split[-1][0] == "(" and quantity_split[-1][-1] == ")":
-                return quantity_split[-1]
-            else:
-                return "NA"
+        if len(quantity_split) > 1 and quantity_split[-1][0] == "(" and quantity_split[-1][-1] == ")":
+            return quantity_split[-1].replace("(","").replace(")","")
         else:
-            return "NA"
-
-    def _get_metadata_time_axis(self):
-        return {"value": self.time_axis, "units": self.time_units}
+            return ""
 
     def _read_data(self):
         names = [
@@ -173,32 +157,21 @@ class impulseCSV:
                                 1
                             ].strip()
                     self.original_metadata["Notes"] = notes
-                    self.start_datetime = np.datetime64(
-                        dt.strptime(
-                            self.original_metadata["Experiment_date"]
-                            + self.original_metadata["Experiment_time"],
-                            "%d-%m-%Y%H:%M:%S",
-                        )
-                    )
 
             else:
-                raise IOError(no_metadata_file_error)
+                _logger.warning('No metadata file found in folder')
         else:
             raise IOError(invalid_filenaming_error)
 
     def _get_axes(self):
-        scale = np.diff(self.time_axis[1:-1]).mean()
-        units = "s"
-        offset = 0
-        self.time_units = "Seconds"
         return [
             {
                 "size": self.time_axis.shape[0],
                 "index_in_array": 0,
                 "name": "Time",
-                "scale": scale,
-                "offset": offset,
-                "units": units,
+                "scale": np.diff(self.time_axis[1:-1]).mean(),
+                "offset": 0,
+                "units": "Seconds",
                 "navigate": False,
             }
         ]
