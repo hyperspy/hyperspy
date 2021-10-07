@@ -349,11 +349,11 @@ def test_plot_spectra_linestyle_error():
     from hyperspy.exceptions import VisibleDeprecationWarning
     s = hs.signals.Signal1D(np.arange(100).reshape(2, 50))
     with pytest.warns(VisibleDeprecationWarning):
-        ax = hs.plot.plot_spectra(s, line_style='--')
+        hs.plot.plot_spectra(s, line_style='--')
 
     with pytest.raises(ValueError):
         with pytest.warns(VisibleDeprecationWarning):
-            ax = hs.plot.plot_spectra(s, linestyle='-', line_style='--')
+            hs.plot.plot_spectra(s, linestyle='-', line_style='--')
 
     with pytest.raises(ValueError):
-        ax = hs.plot.plot_spectra(s, linestyle='invalid')
+        hs.plot.plot_spectra(s, linestyle='invalid')

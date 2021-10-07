@@ -1190,10 +1190,9 @@ def plot_spectra(
         The main line style are ``'-'``, ``'--'``, ``'-.'``, ``':'``.
         For a list, if its length is less than the number of
         spectra to plot, linestyle will be cycled.
-        If `None`, use continuous lines, eg: ``'-'``, ``'--'``, ``'-.'``,
-        ``':'``.
+        If `None`, use continuous lines (same as ``'-'``).
     drawstyle : {'default', 'steps', 'steps-pre', 'steps-mid', 'steps-post'},
-        default: 'default'
+        default 'default'
         The drawstyle determines how the points are connected, no action with
         ``style='heatmap'``. See
         :py:meth:`matplotlib.lines.Line2D.set_drawstyle` for more information.
@@ -1296,10 +1295,6 @@ def plot_spectra(
             linestyle = itertools.cycle([linestyle])
         elif hasattr(linestyle, "__iter__"):
             linestyle = itertools.cycle(linestyle)
-        else:
-            raise ValueError("`linestyle` must be None, a valid matplotlib "
-                             "`linestyle` string or a list of valid matplotlib "
-                             "`linestyle`.")
     else:
         linestyle = ['-'] * len(spectra)
 
@@ -1478,13 +1473,12 @@ def plot_histograms(signal_list,
         Sets the color of the lines of the plots. For a list, if its length is
         less than the number of spectra to plot, the colors will be cycled.
         If `None`, use default matplotlib color cycle.
-    linestyle: {None, valid matplotlib line style, list of line styles}, \
+    linestyle: {None, valid matplotlib line style, list of line styles},
         optional
         The main line styles are ``'-'``, ``'--'``, ``'-.'``, ``':'``.
         For a list, if its length is less than the number of
         spectra to plot, linestyle will be cycled.
-        If `None`, use continuous lines, eg: ``'-'``, ``'--'``, ``'-.'``,
-        ``':'``.
+        If `None`, use continuous lines (same as ``'-'``).
     legend: {None, list of str, 'auto'}, optional
        Display a legend. If 'auto', the title of each spectra
        (metadata.General.title) is used.
