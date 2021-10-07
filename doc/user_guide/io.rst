@@ -461,9 +461,10 @@ Extra saving arguments
 
 .. note::
 
-    Compression can significantly increase the saving speed. If file size is not
-    an issue, it can be disabled by setting ``compressor=None``. In general we recommend
-    compressing your datasets as it can greatly reduce i-o overhead
+    Lazy operations are often i-o bound, reading and writing the data creates a bottle neck in processes
+    due to the slow read write speed of many hard disks. In these cases, compressing your data is often
+    beneficial to the speed of some operation. Compression speeds up the process as there is less to
+    read/write with the trade off of slightly more computational work on the CPU."
 
 - ``write_to_storage``: The write to storage option allows you to pass the path to a directory (or database)
    and write directly to the storage container.  This gives you access to the `different storage methods

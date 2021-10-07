@@ -19,6 +19,7 @@
 import warnings
 import logging
 from packaging.version import Version
+from collections import MutableMapping
 
 import dask.array as da
 import numcodecs
@@ -146,11 +147,15 @@ def file_writer(filename,
     if "compressor" not in kwds:
         from numcodecs import Blosc
         kwds["compressor"] = Blosc(cname='zstd', clevel=1)
-    if "write_to_storage" in kwds and kwds["write_to_storage"]:
-        f = zarr.open(filename)
+    if ("write_to_storage" in kwds and kwds["write_to_storage"]) or isinstance(filename, MutableMapping):
+        if isinstance(filename, MutableMapping):
+            store = filename.path
+        else:
+            store = filename
     else:
         store = zarr.storage.NestedDirectoryStore(filename,)
-        f = zarr.group(store=store, overwrite=True)
+    f = zarr.group(store=store, overwrite=True, cache_attrs=False)
+    print(f)
     f.attrs['file_format'] = "ZSpy"
     f.attrs['file_format_version'] = version
     exps = f.create_group('Experiments')

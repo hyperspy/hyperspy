@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os.path
+import os
 
 import dask.array as da
 import numpy as np
@@ -30,24 +30,6 @@ from hyperspy.signal import BaseSignal
 my_path = os.path.dirname(__file__)
 
 
-def test_lazy_loading_read_only(tmp_path):
-    s = BaseSignal(np.empty((5, 5, 5)))
-    fname = tmp_path / 'tmp.zspy'
-    s.save(fname, overwrite=True)
-    shape = (10000, 10000, 100)
-    del s
-    f = zarr.open(fname.name, mode='r+')
-    group = f['Experiments/__unnamed__']
-    del group['data']
-    group.create_dataset('data', shape=shape, dtype=float, chunks=True)
-
-    s2 = load(fname, lazy=True)
-    assert shape == s2.data.shape
-    assert isinstance(s2.data, da.Array)
-    assert s2._lazy
-    s2.close_file()
-
-
 class TestZspy:
 
     @pytest.fixture
@@ -57,6 +39,13 @@ class TestZspy:
         return s
 
     def test_save_N5_type(self, signal, tmp_path):
+        filename = tmp_path / 'testmodels.zspy'
+        store = zarr.N5Store(path=filename)
+        signal.save(store, write_to_storage=True)
+        signal2 = load(filename)
+        np.testing.assert_array_equal(signal2.data, signal.data)
+
+    def test_save_N5_type_path(self, signal, tmp_path):
         filename = tmp_path / 'testmodels.zspy'
         store = zarr.N5Store(path=filename)
         signal.save(store.path, write_to_storage=True)
@@ -95,3 +84,21 @@ class TestZspy:
                overwrite=True,
                compressor=compressor)
         load(tmp_path / 'test_compression.zspy')
+
+    def test_lazy_loading_read_only(self, tmp_path):
+        s = BaseSignal(np.ones((5, 5, 5)))
+
+        fname = tmp_path / 'tmp.zspy'
+        s.save(fname, overwrite=True)
+        shape = (10000, 10000, 100)
+        del s
+        f = zarr.open(fname.name, mode='r+')
+        group = f['Experiments/__unnamed__']
+        del group['data']
+        group.create_dataset('data', shape=shape, dtype=float, chunks=True, overwrite=True)
+
+        s2 = load(fname, lazy=True)
+        assert shape == s2.data.shape
+        assert isinstance(s2.data, da.Array)
+        assert s2._lazy
+        s2.close_file()
