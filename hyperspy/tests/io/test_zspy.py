@@ -16,10 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import gc
 import os.path
-import tempfile
-from os import remove
 
 import dask.array as da
 import numpy as np
@@ -33,57 +30,42 @@ from hyperspy.signal import BaseSignal
 my_path = os.path.dirname(__file__)
 
 
-class TestLoadingOOMReadOnly:
+def test_lazy_loading_read_only(tmp_path):
+    s = BaseSignal(np.empty((5, 5, 5)))
+    fname = tmp_path / 'tmp.zspy'
+    s.save(fname, overwrite=True)
+    shape = (10000, 10000, 100)
+    del s
+    f = zarr.open(fname, mode='r+')
+    group = f['Experiments/__unnamed__']
+    del group['data']
+    group.create_dataset('data', shape=shape, dtype=float, chunks=True)
 
-    def setup_method(self, method):
-        s = BaseSignal(np.empty((5, 5, 5)))
-        s.save('tmp.zspy', overwrite=True)
-        self.shape = (10000, 10000, 100)
-        del s
-        f = zarr.open('tmp.zspy', mode='r+')
-        s = f['Experiments/__unnamed__']
-        del s['data']
-        s.create_dataset(
-            'data',
-            shape=self.shape,
-            dtype='float64',
-            chunks=True)
-
-    def test_oom_loading(self):
-        s = load('tmp.zspy', lazy=True)
-        assert self.shape == s.data.shape
-        assert isinstance(s.data, da.Array)
-        assert s._lazy
-        s.close_file()
-
-    def teardown_method(self, method):
-        gc.collect()  # Make sure any memmaps are closed first!
-        try:
-            remove('tmp.zspy')
-        except BaseException:
-            # Don't fail tests if we cannot remove
-            pass
+    s2 = load(fname, lazy=True)
+    assert shape == s2.data.shape
+    assert isinstance(s2.data, da.Array)
+    assert s2._lazy
+    s2.close_file()
 
 
 class TestZspy:
+
     @pytest.fixture
     def signal(self):
         data = np.ones((10,10,10,10))
         s = Signal1D(data)
         return s
 
-    def test_save_N5_type(self,signal):
-        with tempfile.TemporaryDirectory() as tmp:
-            filename = tmp + '/testmodels.zspy'
+    def test_save_N5_type(self, signal, tmp_path):
+        filename = tmp_path / 'testmodels.zspy'
         store = zarr.N5Store(path=filename)
         signal.save(store.path, write_to_storage=True)
         signal2 = load(filename)
         np.testing.assert_array_equal(signal2.data, signal.data)
 
     @pytest.mark.parametrize("overwrite",[None, True, False])
-    def test_overwrite(self,signal,overwrite):
-        with tempfile.TemporaryDirectory() as tmp:
-            filename = tmp + '/testmodels.zspy'
+    def test_overwrite(self,signal, overwrite, tmp_path):
+        filename = tmp_path / 'testmodels.zspy'
         signal.save(filename=filename)
         signal2 = signal*2
         signal2.save(filename=filename, overwrite=overwrite)
@@ -94,16 +76,14 @@ class TestZspy:
         else:
             np.testing.assert_array_equal(signal.data,load(filename).data)
 
-
-    @pytest.mark.skip(reason="lmdb must be installed to test")
-    def test_save_lmdb_type(self, signal):
-        with tempfile.TemporaryDirectory() as tmp:
-            os.mkdir(tmp+"/testmodels.zspy")
-            filename = tmp + '/testmodels.zspy/'
-            store = zarr.LMDBStore(path=filename)
-            signal.save(store.path, write_to_storage=True)
-            signal2 = load(store.path)
-            np.testing.assert_array_equal(signal2.data, signal.data)
+    def test_save_lmdb_type(self, signal, tmp_path):
+        pytest.importorskip("lmdb")
+        path = tmp_path / "testmodels.zspy"
+        os.mkdir(path)
+        store = zarr.LMDBStore(path=path)
+        signal.save(store.path, write_to_storage=True)
+        signal2 = load(store.path)
+        np.testing.assert_array_equal(signal2.data, signal.data)
 
     def test_compression_opts(self, tmp_path):
         self.filename = tmp_path / 'testfile.zspy'
@@ -116,7 +96,7 @@ class TestZspy:
 
     @pytest.mark.parametrize("compressor", (None, "default", "blosc"))
     def test_compression(self, compressor, tmp_path):
-        if compressor is "blosc":
+        if compressor == "blosc":
             from numcodecs import Blosc
             compressor = Blosc(cname='zstd', clevel=3, shuffle=Blosc.BITSHUFFLE)
         s = Signal1D(np.ones((3, 3)))
