@@ -61,7 +61,7 @@ class BaseROI(t.HasTraits):
 
     """Base class for all ROIs.
 
-    Provides some basic functionality that is likely to be shared between all
+    Provides some basic functionalities that are likely to be shared between all
     ROIs, and serve as a common type that can be checked for.
     """
 
@@ -74,7 +74,7 @@ class BaseROI(t.HasTraits):
             Event that triggers when the ROI has changed.
 
             What constitues a change varies from ROI to ROI, but in general it
-            should correspond to the region selected by the ROI has changed.
+            should correspond to the region selected by the ROI being changed.
 
             Arguments:
             ----------
@@ -164,13 +164,13 @@ class BaseROI(t.HasTraits):
         axes : specification of axes to use, default = None
             The axes argument specifies which axes the ROI will be applied on.
             The items in the collection can be either of the following:
-
+            
             * a tuple of:
 
-              - DataAxis. These will not be checked with signal.axes_manager.
+              - DataAxis, these will not be checked with signal.axes_manager
               - anything that will index signal.axes_manager
             * For any other value, it will check whether the navigation
-              space can fit the right number of axis, and use that if it
+              space can fit the right number of axes, and use that if it
               fits. If not, it will try the signal space.
         """
         if axes is None and signal in self.signal_map:
@@ -207,11 +207,11 @@ class BaseROI(t.HasTraits):
             The axes argument specifies which axes the ROI will be applied on.
             The axes in the collection can be either of the following:
 
-            * Anything that can index the provided ``axes_manager``
+            * Anything that can index the provided ``axes_manager``.
             * a tuple or list of:
 
                 - DataAxis
-                - anything that will index the provided ``axes_manager``
+                - anything that can index the provided ``axes_manager``
             * ``None``, it will check whether the widget can be added to the
               navigator, i.e. if dimensionality matches, and use it if
               possible, otherwise it will try the signal space. If none of the
@@ -259,7 +259,7 @@ def _get_mpl_ax(plot, axes):
     Parameters
     ----------
     plot : MPL_HyperExplorer
-        The explorer that contains the navigation and signal plots
+        The explorer that contains the navigation and signal plots.
     axes : collection of DataAxis
         The axes to infer from.
     """
@@ -281,7 +281,7 @@ class BaseInteractiveROI(BaseROI):
 
     """Base class for interactive ROIs, i.e. ROIs with widget interaction.
     The base class defines a lot of the common code for interacting with
-    widgets, but inhertors need to implement the following functions:
+    widgets, but inheritors need to implement the following functions:
 
     _get_widget_type()
     _apply_roi2widget(widget)
@@ -352,7 +352,7 @@ class BaseInteractiveROI(BaseROI):
         Arguments
         ---------
         signal : Signal
-            The source signal to slice
+            The source signal to slice.
         navigation_signal : Signal, None or "same" (default)
             If not None, it will automatically create a widget on
             navigation_signal. Passing "same" is identical to passing the same
@@ -363,7 +363,7 @@ class BaseInteractiveROI(BaseROI):
             a new Signal.
         color : Matplotlib color specifier (default: 'green')
             The color for the widget. Any format that matplotlib uses should be
-            ok. This will not change the color fo any widget passed with the
+            ok. This will not change the color for any widget passed with the
             'widget' argument.
         snap : bool, optional
             If True, the ROI will be snapped to the axes values. Default is
@@ -435,11 +435,11 @@ class BaseInteractiveROI(BaseROI):
             The axes argument specifies which axes the ROI will be applied on.
             The DataAxis in the collection can be either of the following:
 
-            * Anything that can index ``signal.axes_manager``
+            * Anything that can index ``signal.axes_manager``.
             * a tuple of:
 
                 - DataAxis
-                - anything that will index ``signal.axes_manager``
+                - anything that can index ``signal.axes_manager``
             * ``None``, it will check whether the widget can be added to the
               navigator, i.e. if dimensionality matches, and use it if
               possible, otherwise it will try the signal space. If none of the
@@ -932,7 +932,7 @@ class RectangularROI(BaseInteractiveROI):
 class CircleROI(BaseInteractiveROI):
     """Selects a circular or annular region in a 2D space. The coordinates of
     the center of the circle are stored in the 'cx' and 'cy' attributes. The
-    radious in the `r` attribute. If an internal radious is defined using the
+    radious in the `r` attribute. If an internal radius is defined using the
     `r_inner` attribute, then an annular region is selected instead.
     `CircleROI` can be used in place of a tuple containing `(cx, cy, r)`, `(cx,
     cy, r, r_inner)` when `r_inner` is not `None`.
@@ -1012,11 +1012,11 @@ class CircleROI(BaseInteractiveROI):
             The axes argument specifies which axes the ROI will be applied on.
             The items in the collection can be either of the following:
                 * a tuple of:
-                    - DataAxis. These will not be checked with
-                      signal.axes_manager.
-                    - anything that will index signal.axes_manager
+                    - DataAxis, these will not be checked with
+                      signal.axes_manager
+                    - anything that can index signal.axes_manager
                 * For any other value, it will check whether the navigation
-                  space can fit the right number of axis, and use that if it
+                  space can fit the right number of axes, and use that if it
                   fits. If not, it will try the signal space.
         """
 
@@ -1369,11 +1369,11 @@ class Line2DROI(BaseInteractiveROI):
             The axes argument specifies which axes the ROI will be applied on.
             The items in the collection can be either of the following:
                 * a tuple of:
-                    - DataAxis. These will not be checked with
-                      signal.axes_manager.
-                    - anything that will index signal.axes_manager
+                    - DataAxis, these will not be checked with
+                      signal.axes_manager
+                    - anything that can index signal.axes_manager
                 * For any other value, it will check whether the navigation
-                  space can fit the right number of axis, and use that if it
+                  space can fit the right number of axes, and use that if it
                   fits. If not, it will try the signal space.
         order : The spline interpolation order to use when extracting the line
             profile. 0 means nearest-neighbor interpolation, and is both the
