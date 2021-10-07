@@ -10,6 +10,7 @@ from traits.api import Undefined
 
 from hyperspy.axes import AxesManager
 from hyperspy.misc.utils import ensure_unicode, get_object_package_info
+from hyperspy.misc.utils import multiply
 
 
 version = "3.1"
@@ -460,9 +461,49 @@ class HierarchicalWriter:
         self.kwds = kwds
 
     @staticmethod
-    def _get_signal_chunks():
-        raise NotImplementedError(
-            "This method must be implemented by subclasses.")
+    def _get_signal_chunks(shape, dtype, signal_axes=None, target_size=1e6):
+        """Function that calculates chunks for the signal, preferably at least one
+        chunk per signal space.
+
+        Parameters
+        ----------
+        shape : tuple
+            the shape of the dataset to be sored / chunked
+        dtype : {dtype, string}
+            the numpy dtype of the data
+        signal_axes: {None, iterable of ints}
+            the axes defining "signal space" of the dataset. If None, the default
+            h5py chunking is performed.
+        target_size: int
+            The target number of bytes for one chunk
+        """
+        typesize = np.dtype(dtype).itemsize
+        if signal_axes is None:
+            return h5py._hl.filters.guess_chunk(shape, None, typesize)
+
+        # largely based on the guess_chunk in h5py
+        bytes_per_signal = multiply([shape[i] for i in signal_axes]) * typesize
+        signals_per_chunk = np.floor_divide(target_size,bytes_per_signal)
+        navigation_axes = tuple(i for i in range(len(shape)) if i not in
+                                signal_axes)
+        num_nav_axes = len(navigation_axes)
+        num_signals = np.prod([shape[i] for i in navigation_axes])
+        if signals_per_chunk < 2 or num_nav_axes==0:
+            # signal is larger than chunk max
+            chunks = [s if i in signal_axes else 1 for i, s in enumerate(shape)]
+            return tuple(chunks)
+        elif signals_per_chunk > num_signals:
+            return shape
+        else:
+            # signal is smaller than chunk max
+            sig_axes_chunk = np.floor(signals_per_chunk**(1/num_nav_axes))
+            remainder = np.floor_divide(signals_per_chunk - (sig_axes_chunk**num_nav_axes),
+                                        sig_axes_chunk)
+            if remainder<0:
+                remainder =0
+            chunks = [s if i in signal_axes else sig_axes_chunk for i, s in enumerate(shape)]
+            chunks[navigation_axes[0]] = chunks[navigation_axes[0]]+remainder
+            return tuple(int(x) for x in chunks)
 
     @staticmethod
     def _get_object_dset():
@@ -490,8 +531,9 @@ class HierarchicalWriter:
         signal_axes: tuple
             The indexes of the signal axes
         chunks: tuple
-            The chunks for the dataset. If None then get_signal_chunks will be
-            called
+            The chunks for the dataset. If ``None`` and saving lazy signal, the chunks
+        of the dask array will be used otherwise the chunks will determine by
+        ``get_signal_chunks``.
         kwds:
             Any additional keywords for to be passed to the store data function
             The store data function is passed for each hierarchical data format
@@ -504,7 +546,7 @@ class HierarchicalWriter:
                 # If signal_axes=None, use automatic h5py chunking, otherwise
                 # optimise the chunking to contain at least one signal per chunk
                 chunks = cls._get_signal_chunks(
-                    data.shape, data.dtype, signal_axes
+                    data.shape, data.dtype, signal_axes, cls.target_size
                     )
         if np.issubdtype(data.dtype, np.dtype('U')):
             # Saving numpy unicode type is not supported in h5py

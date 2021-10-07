@@ -36,7 +36,7 @@ def test_lazy_loading_read_only(tmp_path):
     s.save(fname, overwrite=True)
     shape = (10000, 10000, 100)
     del s
-    f = zarr.open(fname, mode='r+')
+    f = zarr.open(fname.name, mode='r+')
     group = f['Experiments/__unnamed__']
     del group['data']
     group.create_dataset('data', shape=shape, dtype=float, chunks=True)
@@ -75,15 +75,6 @@ class TestZspy:
             np.testing.assert_array_equal(signal2.data,load(filename).data)
         else:
             np.testing.assert_array_equal(signal.data,load(filename).data)
-
-    def test_save_lmdb_type(self, signal, tmp_path):
-        pytest.importorskip("lmdb")
-        path = tmp_path / "testmodels.zspy"
-        os.mkdir(path)
-        store = zarr.LMDBStore(path=path)
-        signal.save(store.path, write_to_storage=True)
-        signal2 = load(store.path)
-        np.testing.assert_array_equal(signal2.data, signal.data)
 
     def test_compression_opts(self, tmp_path):
         self.filename = tmp_path / 'testfile.zspy'

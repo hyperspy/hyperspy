@@ -41,6 +41,7 @@ from hyperspy.misc.test_utils import sanitize_dict as san_dict
 from hyperspy.roi import Point2DROI
 from hyperspy.signal import BaseSignal
 from hyperspy.utils import markers
+from hyperspy.io_plugins._hierarchical import HierarchicalWriter
 
 my_path = os.path.dirname(__file__)
 
@@ -847,3 +848,10 @@ class TestChunking:
         s1 = load(filename, lazy=True)
         assert tuple([c[0] for c in s1.data.chunks]) == chunks
 
+@pytest.mark.parametrize("target_size", (1e6,1e7))
+def test_get_signal_chunks(target_size):
+    chunks = HierarchicalWriter._get_signal_chunks(shape=[15, 15, 256, 256],
+                                                   dtype=int,
+                                                   signal_axes=(2, 3),
+                                                   target_size=target_size)
+    assert (np.prod(chunks)*8 < target_size)

@@ -82,6 +82,7 @@ class ZspyReader(HierarchicalReader):
 
 
 class ZspyWriter(HierarchicalWriter):
+    target_size = 1e8
     def __init__(self,
                  file,
                  signal,
@@ -92,30 +93,7 @@ class ZspyWriter(HierarchicalWriter):
         self.ragged_kwds = {"dtype": object,
                             "object_codec": numcodecs.VLenArray(int),
                             "exact":  True}
-
-    @staticmethod
-    def _get_signal_chunks(shape, dtype, signal_axes=None):
-        """Function that calculates chunks for the signal,
-         preferably at least one chunk per signal space.
-
-        Parameters
-        ----------
-        shape : tuple
-            the shape of the dataset to be sored / chunked
-        dtype : {dtype, string}
-            the numpy dtype of the data
-        signal_axes: {None, iterable of ints}
-            the axes defining "signal space" of the dataset. If None, the default
-            zarr chunking is performed.
-        """
-        typesize = np.dtype(dtype).itemsize
-        if signal_axes is None:
-            return None
-        # chunk size larger than 1 Mb, shooting for 100 Mb chunks, see
-        # https://zarr.readthedocs.io/en/stable/tutorial.html#chunk-optimizations
-        total_size = np.prod(shape) * typesize
-        if total_size < 1e8:  # 1 mb
-            return None
+        self.target_size = 1e8
 
     @staticmethod
     def _get_object_dset(group, data, key, chunks, **kwds):
