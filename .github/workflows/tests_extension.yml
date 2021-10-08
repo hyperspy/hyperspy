@@ -61,7 +61,7 @@ jobs:
           pip install https://github.com/lumispy/lumispy/archive/main.zip
           pip install https://github.com/pyxem/kikuchipy/archive/develop.zip
           pip install https://github.com/pyxem/pyxem/archive/master.zip
-          pip install https://https://gitlab.com/atomap/atomap/-/archive/master/atomap-master.zip
+          pip install https://gitlab.com/atomap/atomap/-/archive/master/atomap-master.zip
 
       - name: Run Kikuchipy Test Suite
         if: ${{ always() }}
