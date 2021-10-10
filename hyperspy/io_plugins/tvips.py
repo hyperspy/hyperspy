@@ -21,15 +21,14 @@ import re
 import logging
 import warnings
 from datetime import datetime
-from datetime import timezone
-from dateutil import tz, parser
+from dateutil import tz
 
 import numpy as np
 import dask.array as da
 import dask
 import pint
 from dask.diagnostics import ProgressBar
-import traits.api as traits
+from numba import njit
 
 from hyperspy.misc.array_tools import sarray2dict
 from hyperspy.misc.utils import dummy_context_manager
@@ -205,27 +204,22 @@ def _find_auto_scan_start_stop(rotidxs):
         return startx, indx[-1] + 1
 
 
+@njit
 def _guess_scan_index_grid(rotidx, start, stop):
-    #breakpoint()
-    total_scan_frames = rotidx[stop]
-    rotidx = rotidx[start : stop + 1]
-    indxs = np.zeros(total_scan_frames, dtype=np.int64)
-    prevw = 0
-    for j in range(indxs.shape[0]):
-        # find where the argument is j
-        w = np.argwhere(rotidx == j + 1)
-        # this value appears in the rotation list
-        if w.size > 0:
-            w = w[0, 0]
-            prevw = w
-        # this value does not appear
-        else:
-            # move up if the rot index stays the same, else copy
-            if prevw + 1 < len(rotidx):
-                if rotidx[prevw + 1] == rotidx[prevw]:
-                    prevw = prevw + 1
-            w = prevw
-        indxs[j] = w
+    indxs = np.zeros(rotidx[stop], dtype=np.int64)
+    rotidx = rotidx[start: stop + 1]
+    inv = 0  # index of the value we fill in
+    for i in range(rotidx.shape[0]):
+        if rotidx[inv] != rotidx[i]:
+            # when we encounter a new value, we fill in indices
+            pos_start = rotidx[inv] - 1
+            pos_end = rotidx[i] - 1
+            stack = np.arange(inv, i)[:pos_end - pos_start]
+            indxs[pos_start:pos_end] = stack[-1]
+            indxs[pos_start:pos_start + stack.shape[0]] = stack
+            inv = i
+    # the last value we fill in at the end
+    indxs[rotidx[inv] - 1:] = inv
     return indxs + start
 
 

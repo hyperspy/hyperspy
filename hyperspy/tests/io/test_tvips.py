@@ -278,14 +278,20 @@ def test_auto_scan_start_stop(rotators, expected):
                              np.array([2, 3, 4, 5, 6, 7])),
                             (np.array([0, 1, 2, 3, 4, 5, 6, 0, 0]),
                              (2, 5),
-                             np.array([2, 3, 4, 5, 6])),
+                             np.array([2, 2, 3, 4, 5])),
                             (np.array([1, 3, 3, 4, 5, 5, 9, 0, 0]),
                              None,
-                             np.array([0, 0, 1, 2, 2, 3, 4, 5, 6])),
+                             np.array([0, 0, 1, 3, 4, 5, 5, 5, 6])),
+                            (np.array([0, 0, 1, 3, 3, 4, 5, 5, 9, 0, 0]),
+                             None,
+                             np.array([2, 2, 3, 5, 6, 7, 7, 7, 8])),
                         ])
 def test_guess_scan_index_grid(rotators, startstop, expected):
-    pass
-    # If startstop is None:
-    #    startstop = tvips._find_auto_scan_start_stop(rotators)
-    # ndices = tvips._guess_scan_index_grid(rotators, startstop[0], startstop[1])
-    # ssert np.all(indices == expected)
+    if startstop is None:
+        startstop = tvips._find_auto_scan_start_stop(rotators)
+    # non jit
+    indices = tvips._guess_scan_index_grid.py_func(rotators, startstop[0], startstop[1])
+    assert np.all(indices == expected)
+    # jit compiled
+    indices = tvips._guess_scan_index_grid(rotators, startstop[0], startstop[1])
+    assert np.all(indices == expected)
