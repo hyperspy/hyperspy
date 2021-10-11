@@ -292,9 +292,9 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         pixel_time = meas_data_header["Doc"]["DwellTime(msec)"]
 
         data_shape = [height, width, channel_number]
+        sweep = meas_data_header["Doc"]["Sweep"]
         if not sum_frames:
-            sweep = meas_data_header["Doc"]["Sweep"]
-            data_shape.insert(0, sweep)
+            data_shape.insert(0, sweep + 1)  # +1 for partly swept frame
             axes.insert(0, {
                 "index_in_array": 0,
                 "name": "Frame",
@@ -306,9 +306,16 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
 
         data = np.zeros(data_shape, dtype=SI_dtype)
         datacube_reader = readcube if sum_frames else readcube_frames
-        data = datacube_reader(rawdata, data, rebin_energy, channel_number,
+        data, swept = datacube_reader(rawdata, data, sweep,
+                                      rebin_energy, channel_number,
                                width_norm, height_norm, np.iinfo(SI_dtype).max)
+        if sweep < swept:
+            if sum_frames:
+                _logger.warning("Broken frame %d was ignored" % (swept))
+            else:
+                _logger.warning("Broken frame %d was read, but not counted" % (swept))
 
+                
         hv = meas_data_header["MeasCond"]["AccKV"]
         if hv <= 30.0:
             mode = "SEM"
@@ -439,13 +446,20 @@ def parsejeol(fd):
 
 
 @numba.njit(cache=True)
-def readcube(rawdata, hypermap, rebin_energy, channel_number, width_norm,
+def readcube(rawdata, hypermap, sweep, rebin_energy, channel_number, width_norm,
              height_norm, max_value):  # pragma: no cover
+    frame_idx = 0
+    previous_y = 0
     for value in rawdata:
         if value >= 32768 and value < 36864:
             x = int((value - 32768) / width_norm)
         elif value >= 36864 and value < 40960:
             y = int((value - 36864) / height_norm)
+            if y < previous_y:
+                frame_idx += 1
+                if frame_idx >= sweep:  # dispose partly swepd frame
+                    break 
+            previous_y = y
         elif value >= 45056 and value < 49152:
             z = int((value - 45056) / rebin_energy)
             if z < channel_number:
@@ -454,11 +468,11 @@ def readcube(rawdata, hypermap, rebin_energy, channel_number, width_norm,
                     raise ValueError("The range of the dtype is too small, "
                                      "use `SI_dtype` to set a dtype with "
                                      "higher range.")
-    return hypermap
+    return hypermap, frame_idx + 1
 
 
 @numba.njit(cache=True)
-def readcube_frames(rawdata, hypermap, rebin_energy, channel_number,
+def readcube_frames(rawdata, hypermap, sweep, rebin_energy, channel_number,
              width_norm, height_norm, max_value):  # pragma: no cover
     """
     We need to create a separate function, because numba.njit doesn't play well
@@ -473,6 +487,11 @@ def readcube_frames(rawdata, hypermap, rebin_energy, channel_number,
             y = int((value - 36864) / height_norm)
             if y < previous_y:
                 frame_idx += 1
+                if frame_idx > sweep:
+                    # frame_idx < sweep : normal operation
+                    # frame_idx == sweep when sweeping was interrupted
+                    # frame_idx > sweep: unknown error
+                    raise ValueError("The frame number is too large")
             previous_y = y
         elif value >= 45056 and value < 49152:
             z = int((value - 45056) / rebin_energy)
@@ -482,7 +501,7 @@ def readcube_frames(rawdata, hypermap, rebin_energy, channel_number,
                     raise ValueError("The range of the dtype is too small, "
                                      "use `SI_dtype` to set a dtype with "
                                      "higher range.")
-    return hypermap
+    return hypermap, frame_idx + 1
 
 
 def read_eds(filename, **kwargs):
