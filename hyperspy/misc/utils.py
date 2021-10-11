@@ -469,9 +469,9 @@ class DictionaryTreeBrowser:
         if key == 'binned':
             warnings.warn('Use of the `binned` attribute in metadata is '
                           'going to be deprecated in v2.0. Set the '
-                          '`axis.is_binned` attribute instead. ', 
+                          '`axis.is_binned` attribute instead. ',
                           VisibleDeprecationWarning)
-            
+
         if key.startswith('_sig_'):
             key = key[5:]
             from hyperspy.signal import BaseSignal
@@ -920,7 +920,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
           stack_metadata=True, show_progressbar=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
 
-    The title is set to that of the first signal in the list. 
+    The title is set to that of the first signal in the list.
 
     Parameters
     ----------
@@ -1315,8 +1315,8 @@ def map_result_construction(signal,
             sig.axes_manager._append_axis(size=sig_shape[-ind], navigate=False)
     if not ragged:
         sig.get_dimensions_from_data()
-    if not sig.axes_manager._axes:
-        add_scalar_axis(sig, lazy=lazy)
+        if not sig.axes_manager._axes:
+            add_scalar_axis(sig, lazy=lazy)
     return res
 
 
@@ -1437,4 +1437,3 @@ def is_binned(signal, axis=-1):
         return signal.metadata.Signal.binned
     else:
         return signal.axes_manager[axis].is_binned
-
