@@ -309,13 +309,13 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         data, swept = datacube_reader(rawdata, data, sweep,
                                       rebin_energy, channel_number,
                                width_norm, height_norm, np.iinfo(SI_dtype).max)
-        if sum_frames and sweep == swept:
+        if not sum_frames and sweep == swept:
             data = data[:sweep]  # dispose additional frame
         if sweep < swept:
             if sum_frames:
-                _logger.warning("Broken frame %d was ignored" % (swept))
+                _logger.info("Broken frame %d was ignored" % (swept))
             else:
-                _logger.warning("Broken frame %d was read, but not counted" % (swept))
+                _logger.info("Broken frame %d was read, but not counted" % (swept))
 
                 
         hv = meas_data_header["MeasCond"]["AccKV"]
