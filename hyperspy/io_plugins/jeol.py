@@ -309,6 +309,8 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         data, swept = datacube_reader(rawdata, data, sweep,
                                       rebin_energy, channel_number,
                                width_norm, height_norm, np.iinfo(SI_dtype).max)
+        if sum_frames and sweep == swept:
+            data = data[:sweep]  # dispose additional frame
         if sweep < swept:
             if sum_frames:
                 _logger.warning("Broken frame %d was ignored" % (swept))
