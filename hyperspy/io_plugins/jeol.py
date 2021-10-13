@@ -185,8 +185,7 @@ def read_img(filename, scale=None, **kwargs):
 
 def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
              SI_dtype=np.uint8, cutoff_at_kV=None, downsample=1,
-             read_incomplete_frame=False,
-             **kwargs):
+             only_valid_data=True, **kwargs):
     fd = open(filename, "br")
     file_magic = np.fromfile(fd, "<I", 1)[0]
 
@@ -297,7 +296,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         sweep = meas_data_header["Doc"]["Sweep"]
         if not sum_frames:
             data_shape.insert(0, sweep)
-            if read_incomplete_frame:
+            if not only_valid_data:
                 data_shape[0] += 1 # for partly swept frame
             axes.insert(0, {
                 "index_in_array": 0,
@@ -310,18 +309,18 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
 
         data = np.zeros(data_shape, dtype=SI_dtype)
         datacube_reader = readcube if sum_frames else readcube_frames
-        data, swept = datacube_reader(rawdata, data, sweep, read_incomplete_frame,
+        data, swept = datacube_reader(rawdata, data, sweep, only_valid_data,
                                       rebin_energy, channel_number,
                                width_norm, height_norm, np.iinfo(SI_dtype).max)
 
-        if not sum_frames and read_incomplete_frame:
+        if not sum_frames and not only_valid_data:
             if  (sweep == swept):
                 data = data[:sweep]
             else:
                 axes[0]["size"] = swept
 
-        if sweep < swept and not read_incomplete_frame:
-            _logger.info("The last frame (sweep) is incomplete because the acquisition stopped during this frame. The partially acquired frame is ignored. Use 'sum_frames=False, read_incomplete_frame=True' to read all frames individually, including the last partially completed frame.")
+        if sweep < swept and only_valid_data:
+            _logger.info("The last frame (sweep) is incomplete because the acquisition stopped during this frame. The partially acquired frame is ignored. Use 'sum_frames=False, only_valid_data=False' to read all frames individually, including the last partially completed frame.")
                 
         hv = meas_data_header["MeasCond"]["AccKV"]
         if hv <= 30.0:
@@ -453,7 +452,7 @@ def parsejeol(fd):
 
 
 @numba.njit(cache=True)
-def readcube(rawdata, hypermap, sweep, read_incomplete_frame, rebin_energy, 
+def readcube(rawdata, hypermap, sweep, only_valid_data, rebin_energy, 
             channel_number, width_norm, height_norm, max_value):  # pragma: no cover
     frame_idx = 0
     previous_y = 0
@@ -464,7 +463,7 @@ def readcube(rawdata, hypermap, sweep, read_incomplete_frame, rebin_energy,
             y = int((value - 36864) / height_norm)
             if y < previous_y:
                 frame_idx += 1
-                if not read_incomplete_frame and frame_idx >= sweep:
+                if only_valid_data and frame_idx >= sweep:
                     # skip incomplete_frame
                     break 
             previous_y = y
@@ -480,7 +479,7 @@ def readcube(rawdata, hypermap, sweep, read_incomplete_frame, rebin_energy,
 
 
 @numba.njit(cache=True)
-def readcube_frames(rawdata, hypermap, sweep, read_incomplete_frame, rebin_energy, channel_number,
+def readcube_frames(rawdata, hypermap, sweep, only_valid_data, rebin_energy, channel_number,
              width_norm, height_norm, max_value):  # pragma: no cover
     """
     We need to create a separate function, because numba.njit doesn't play well
@@ -496,7 +495,7 @@ def readcube_frames(rawdata, hypermap, sweep, read_incomplete_frame, rebin_energ
             if y < previous_y:
                 frame_idx += 1
                 if frame_idx == sweep: # incomplete frame exist
-                    if not read_incomplete_frame:
+                    if only_valid_data:
                         break  # ignore
                 if frame_idx > sweep:
                     raise ValueError("The frame number is too large")
