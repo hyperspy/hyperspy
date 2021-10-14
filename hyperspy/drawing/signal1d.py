@@ -94,6 +94,7 @@ class Signal1DFigure(BlittedFigure):
             # Needs to set the zorder of the ax to get the mouse event for ax
             # See https://github.com/matplotlib/matplotlib/issues/10009
             self.ax.set_zorder(self.right_ax.get_zorder() + 1)
+            self.ax.patch.set_visible(False)
         if adjust_layout:
             plt.tight_layout()
 
