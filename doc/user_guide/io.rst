@@ -1762,6 +1762,9 @@ Extra loading arguments
   dataset, it can be integer or a tuple of length 2 to define ``x`` and ``y``
   separetely and it must be a mutiple of the size of the navigation dimension.
   (default 1).
+- ``only_valid_data`` : ignore incomplete (partly aquiered, interrupted) frame when reading pts file.
+  (default True).
+
 
 Example of loading data downsampled, and with energy range cropped with the
 original navigation dimension 512 x 512 and the EDS range 40 keV over 4096
