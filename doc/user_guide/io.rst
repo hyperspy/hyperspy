@@ -1762,6 +1762,13 @@ Extra loading arguments
   dataset, it can be integer or a tuple of length 2 to define ``x`` and ``y``
   separetely and it must be a mutiple of the size of the navigation dimension.
   (default 1).
+- ``only_valid_data`` : for ``pts`` file only, ignore incomplete and partly
+  acquired last frame, which typically occurs when the acquisition was
+  interrupted. When loading incomplete data (``only_valid_data=False``),
+  the missing data are filled with zeros. If ``sum_frames=True``, this argument
+  will be ignored to enforce consistent sum over the mapped area. 
+  (default True).
+
 
 Example of loading data downsampled, and with energy range cropped with the
 original navigation dimension 512 x 512 and the EDS range 40 keV over 4096
