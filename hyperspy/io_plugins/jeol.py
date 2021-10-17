@@ -463,7 +463,7 @@ def readcube(rawdata, hypermap, sweep, only_valid_data, rebin_energy,
             y = int((value - 36864) / height_norm)
             if y < previous_y:
                 frame_idx += 1
-                if only_valid_data and frame_idx >= sweep:
+                if frame_idx >= sweep:
                     # skip incomplete_frame
                     break 
             previous_y = y
