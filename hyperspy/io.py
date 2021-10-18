@@ -801,7 +801,7 @@ def save(filename, signal, overwrite=None, **kwds):
             raise ValueError("`overwrite` parameter can only be None, True or "
                              "False.")
     else:
-        write=True
+        write = True  # file does not exist (creating it)
     if write:
         # Pass as a string for now, pathlib.Path not
         # properly supported in io_plugins
@@ -813,3 +813,8 @@ def save(filename, signal, overwrite=None, **kwds):
             signal.tmp_parameters.set_item('extension', extension)
         else:
             writer.file_writer(filename, signal, **kwds)
+            if hasattr(filename, "path"):
+                file = Path(filename.path).resolve()
+                signal.tmp_parameters.set_item('folder', file.parent)
+                signal.tmp_parameters.set_item('filename', file.stem)
+                signal.tmp_parameters.set_item('extension', extension)

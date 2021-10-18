@@ -85,20 +85,13 @@ class TestZspy:
                compressor=compressor)
         load(tmp_path / 'test_compression.zspy')
 
-    def test_lazy_loading_read_only(self, tmp_path):
+    def test_overwrite(self, tmp_path):
         s = BaseSignal(np.ones((5, 5, 5)))
 
         fname = tmp_path / 'tmp.zspy'
         s.save(fname, overwrite=True)
-        shape = (10000, 10000, 100)
-        del s
-        f = zarr.open(fname.name, mode='r+')
-        group = f['Experiments/__unnamed__']
-        del group['data']
-        group.create_dataset('data', shape=shape, dtype=float, chunks=True, overwrite=True)
+        shape = (10, 10, 10)
+        s2 = BaseSignal(np.ones(shape))
+        s2.save(fname, overwrite=True)
 
-        s2 = load(fname, lazy=True)
         assert shape == s2.data.shape
-        assert isinstance(s2.data, da.Array)
-        assert s2._lazy
-        s2.close_file()

@@ -2857,7 +2857,6 @@ class BaseSignal(FancySlicing,
             else:
                 raise ValueError('File name not defined')
 
-        print(type(filename))
         if not isinstance(filename, MutableMapping):
             filename = Path(filename)
             if extension is not None:
