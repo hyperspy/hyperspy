@@ -50,7 +50,7 @@ class HierarchicalReader:
         elif "Experiments" in self.file:
             # Chances are that this is a HSpy hdf5 file version 1.0
             version = "1.0"
-        elif "Analysis" in self.f:
+        elif "Analysis" in self.file:
             # Starting version 2.0 we have "Analysis" field as well
             version = "2.0"
         else:

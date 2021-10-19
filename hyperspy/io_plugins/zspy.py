@@ -154,8 +154,7 @@ def file_writer(filename,
             store = filename
     else:
         store = zarr.storage.NestedDirectoryStore(filename,)
-    f = zarr.group(store=store, overwrite=True, cache_attrs=False)
-    print(f)
+    f = zarr.group(store=store, overwrite=True)
     f.attrs['file_format'] = "ZSpy"
     f.attrs['file_format_version'] = version
     exps = f.create_group('Experiments')
