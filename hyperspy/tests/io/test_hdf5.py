@@ -851,7 +851,7 @@ class TestChunking:
 @pytest.mark.parametrize("target_size", (1e6,1e7))
 def test_get_signal_chunks(target_size):
     chunks = HierarchicalWriter._get_signal_chunks(shape=[15, 15, 256, 256],
-                                                   dtype=int,
+                                                   dtype=np.int64,
                                                    signal_axes=(2, 3),
                                                    target_size=target_size)
     assert (np.prod(chunks)*8 < target_size)
