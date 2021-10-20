@@ -117,15 +117,8 @@ class HyperspyWriter(HierarchicalWriter):
     """
     target_size = 1e6
 
-    def __init__(self,
-                 file,
-                 signal,
-                 expg,
-                 **kwds):
-        super().__init__(file,
-                       signal,
-                       expg,
-                       **kwds)
+    def __init__(self, file, signal, expg, **kwds):
+        super().__init__(file, signal, expg, **kwds)
         self.Dataset = h5py.Dataset
         self.Group = h5py.Group
         self.unicode_kwds = {"dtype": h5py.special_dtype(vlen=str)}
@@ -198,9 +191,18 @@ def file_writer(filename, signal, close_file=True, *args, **kwds):
     Parameters
     ----------
     filename: str
+        The name of the file used to save the signal.
     signal: a BaseSignal instance
-    *args, optional
+        The signal to save.
+    close_file : bool, optional
+        Close the file after writing, default is True.
+    write_dataset : bool, optional
+        If True, overwrite the data, otherwise, don't overwrite. Useful to
+        save attributes without having the write the whole dataset.
+        Default is True.
     **kwds, optional
+        The keyword argument are passed to the
+        :py:func:`h5py.Group.require_dataset` function.
     """
     if 'compression' not in kwds:
         kwds['compression'] = 'gzip'
@@ -209,15 +211,23 @@ def file_writer(filename, signal, close_file=True, *args, **kwds):
         # Use shuffle by default to improve compression
         kwds["shuffle"] = True
 
-    mode = kwds.get('mode', 'w')
     folder = signal.tmp_parameters.get_item('folder', '')
     fname = signal.tmp_parameters.get_item('filename', '')
     ext = signal.tmp_parameters.get_item('extension', '')
     original_path = Path(folder, f"{fname}.{ext}")
-    if signal._lazy and Path(filename).absolute() == original_path:
-        f = signal._get_file_handle()
-    else:
-        f = h5py.File(filename, mode=mode)
+
+    f = None
+    if (signal._lazy and Path(filename).absolute() == original_path):
+        f = signal._get_file_handle(warn=False)
+        if f is not None and f.mode == 'r':
+            # when the file is read only, force to reopen it in writing mode
+            raise OSError("File opened in read only mode. To overwrite file "
+                          "with lazy signal, use `mode='a'` when loading the "
+                          "signal.")
+
+    if f is None:
+        # TODO: what should be the default mode? 'w' or 'a'
+        f = h5py.File(filename, mode=kwds.get('mode', 'w'))
 
     f.attrs['file_format'] = "HyperSpy"
     f.attrs['file_format_version'] = version

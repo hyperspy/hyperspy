@@ -148,7 +148,7 @@ class HierarchicalReader:
         axes = []
         for i in range(len(exp['data'].shape)):
             try:
-                axes.append(self.group2dict(group['axis-%i' % i]))
+                axes.append(self.group2dict(group[f'axis-{i}']))
                 axis = axes[-1]
                 for key, item in axis.items():
                     if isinstance(item, np.bool_):
@@ -433,11 +433,7 @@ class HierarchicalWriter:
     """An object used to simplify and orgainize the process for
     writing a Hierachical signal.  (.hspy format)
     """
-    def __init__(self,
-                 file,
-                 signal,
-                 group,
-                 **kwds):
+    def __init__(self, file, signal, group, **kwds):
         """Initialize a generic file writer for hierachical data storage types.
 
         Parameters
@@ -586,10 +582,10 @@ class HierarchicalWriter:
                           self.group,
                           **self.kwds)
 
-    def write_signal(self, signal, group, **kwds):
+    def write_signal(self, signal, group, write_dataset=True, **kwds):
         "Writes a hyperspy signal to a hdf5 group"
-
         group.attrs.update(get_object_package_info(signal))
+
         if Version(version) < Version("1.2"):
             metadata = "mapped_parameters"
             original_metadata = "original_parameters"
@@ -599,13 +595,19 @@ class HierarchicalWriter:
 
         for axis in signal.axes_manager._axes:
             axis_dict = axis.get_axis_dictionary()
-            coord_group = group.require_group(
-                'axis-%s' % axis.index_in_array)
+            group_name = f'axis-{axis.index_in_array}'
+            # delete existing group in case the file have been open in 'a' mode
+            # and we are saving a different type of axis, to avoid having
+            # incompatible axis attributes from previously saved axis.
+            if group_name in group.keys():
+                del group[group_name]
+            coord_group = group.create_group(group_name)
             self.dict2group(axis_dict, coord_group, **kwds)
+
         mapped_par = group.require_group(metadata)
         metadata_dict = signal.metadata.as_dictionary()
-        overwrite_data = kwds.pop('overwrite_data', True)
-        if overwrite_data:
+
+        if write_dataset:
             self.overwrite_dataset(
                 group,
                 signal.data,
@@ -613,9 +615,11 @@ class HierarchicalWriter:
                 signal_axes=signal.axes_manager.signal_indices_in_array,
                 **kwds
                 )
+
         if default_version < Version("1.2"):
             metadata_dict["_internal_parameters"] = \
                 metadata_dict.pop("_HyperSpy")
+
         # Remove chunks from the kwds since it wouldn't have the same rank as the
         # dataset and can't be used
         kwds.pop('chunks', None)
@@ -626,6 +630,7 @@ class HierarchicalWriter:
         learning_results = group.require_group('learning_results')
         self.dict2group(signal.learning_results.__dict__,
                       learning_results, **kwds)
+
         if hasattr(signal, 'peak_learning_results'):
             peak_learning_results = group.require_group(
                 'peak_learning_results')

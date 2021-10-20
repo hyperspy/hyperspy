@@ -516,6 +516,11 @@ def load_with_reader(
             signal.tmp_parameters.folder = folder
             signal.tmp_parameters.filename = filename
             signal.tmp_parameters.extension = extension.replace('.', '')
+            # original_filename and original_file are used to keep track of
+            # where is the file which has been open lazily
+            signal.tmp_parameters.original_folder = folder
+            signal.tmp_parameters.original_filename = filename
+            signal.tmp_parameters.original_extension = extension.replace('.', '')
             # test if binned attribute is still in metadata
             if signal.metadata.has_item('Signal.binned'):
                 for axis in signal.axes_manager.signal_axes:

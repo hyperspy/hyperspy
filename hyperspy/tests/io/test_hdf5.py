@@ -424,8 +424,8 @@ def test_nonuniformFDA(tmp_path, file):
     fname = tmp_path / file
     data = np.arange(10)
     x0 = UniformDataAxis(size=data.size, offset=1)
-    axis = FunctionalDataAxis(expression = '1/x', x = x0, navigate = False)
-    s = Signal1D(data, axes=(axis.get_axis_dictionary(), ))
+    axis = FunctionalDataAxis(expression='1/x', x=x0, navigate=False)
+    s = Signal1D(data, axes = (axis.get_axis_dictionary(), ))
     print(axis.get_axis_dictionary())
     s.save(fname, overwrite=True)
     s2 = load(fname)
@@ -436,77 +436,62 @@ def test_nonuniformFDA(tmp_path, file):
     assert(s2.axes_manager[0].size == data.size)
 
 
-class TestLoadingOOMReadOnly:
+def test_lazy_loading(tmp_path):
+    s = BaseSignal(np.empty((5, 5, 5)))
+    fname = tmp_path / 'tmp.hdf5'
+    s.save(fname, overwrite=True)
+    shape = (10000, 10000, 100)
+    del s
+    f = h5py.File(fname, mode='r+')
+    s = f['Experiments/__unnamed__']
+    del s['data']
+    s.create_dataset(
+        'data',
+        shape=shape,
+        dtype='float64',
+        chunks=True)
+    f.close()
 
-    def setup_method(self, method):
-        s = BaseSignal(np.empty((5, 5, 5)))
-        s.save('tmp.hdf5', overwrite=True)
-        self.shape = (10000, 10000, 100)
-        del s
-        f = h5py.File('tmp.hdf5', mode='r+')
-        s = f['Experiments/__unnamed__']
-        del s['data']
-        s.create_dataset(
-            'data',
-            shape=self.shape,
-            dtype='float64',
-            chunks=True)
-        f.close()
-
-    def test_oom_loading(self):
-        s = load('tmp.hdf5', lazy=True)
-        assert self.shape == s.data.shape
-        assert isinstance(s.data, da.Array)
-        assert s._lazy
-        s.close_file()
-
-    def teardown_method(self, method):
-        gc.collect()        # Make sure any memmaps are closed first!
-        try:
-            remove('tmp.hdf5')
-        except BaseException:
-            # Don't fail tests if we cannot remove
-            pass
+    s = load(fname, lazy=True)
+    assert shape == s.data.shape
+    assert isinstance(s.data, da.Array)
+    assert s._lazy
+    s.close_file()
 
 
-class TestPassingArgs:
+def test_passing_compression_opts_saving(tmp_path):
+    filename = tmp_path / 'testfile.hdf5'
+    BaseSignal([1, 2, 3]).save(filename, compression_opts=8)
 
-    def setup_method(self, method):
-        self.filename = 'testfile.hdf5'
-        BaseSignal([1, 2, 3]).save(self.filename, compression_opts=8)
+    f = h5py.File(filename, mode='r+')
+    d = f['Experiments/__unnamed__/data']
+    assert d.compression_opts == 8
+    assert d.compression == 'gzip'
+    f.close()
 
-    def test_compression_opts(self):
-        f = h5py.File(self.filename, mode='r+')
-        d = f['Experiments/__unnamed__/data']
-        assert d.compression_opts == 8
-        assert d.compression == 'gzip'
-        f.close()
+@zspy_marker
+def test_axes_configuration(tmp_path, file):
+    fname = tmp_path / file
+    s = BaseSignal(np.zeros((2, 2, 2, 2, 2)))
+    s.axes_manager.signal_axes[0].navigate = True
+    s.axes_manager.signal_axes[0].navigate = True
 
-    def teardown_method(self, method):
-        remove(self.filename)
+    s.save(fname, overwrite=True)
+    s = load(fname)
+    assert s.axes_manager.navigation_axes[0].index_in_array == 4
+    assert s.axes_manager.navigation_axes[1].index_in_array == 3
+    assert s.axes_manager.signal_dimension == 3
 
+@zspy_marker
+def test_axes_configuration_binning(tmp_path, file):
+    fname = tmp_path / file
+    filename = tmp_path / 'testfile.hdf5'
+    s = BaseSignal(np.zeros((2, 2, 2)))
+    s.axes_manager.signal_axes[-1].is_binned = True
+    s.save(fname)
 
-class TestAxesConfiguration:
-    @zspy_marker
-    def test_axes_binning(self, tmp_path, file):
-        fname = tmp_path / file
-        s = BaseSignal(np.zeros((2, 2, 2)))
-        s.axes_manager.signal_axes[-1].is_binned = True
-        s.save(fname)
-        s = load(fname)
-        assert s.axes_manager.signal_axes[-1].is_binned
-
-    @zspy_marker
-    def test_axes_configuration(self, tmp_path, file):
-        fname = tmp_path / file
-        s = BaseSignal(np.zeros((2, 2, 2, 2, 2)))
-        s.axes_manager.signal_axes[0].navigate = True
-        s.axes_manager.signal_axes[0].navigate = True
-        s.save(fname)
-        s = load(fname)
-        assert s.axes_manager.navigation_axes[0].index_in_array == 4
-        assert s.axes_manager.navigation_axes[1].index_in_array == 3
-        assert s.axes_manager.signal_dimension == 3
+    s = load(fname)
+    assert s.axes_manager.signal_axes[-1].is_binned
 
 
 class Test_permanent_markers_io:
@@ -807,54 +792,85 @@ def test_load_missing_extension(caplog):
     with pytest.raises(ImportError):
        _ = s.models.restore("a")
 
-class TestChunking:
-    @zspy_marker
-    def test_save_chunks_signal_metadata(self, tmp_path, file):
-        N = 10
-        dim = 3
-        s = Signal1D(np.arange(N**dim).reshape([N]*dim))
-        s.navigator = s.sum(-1)
-        s.change_dtype('float')
-        s.decomposition()
-        filename = tmp_path / file
-        chunks = (5, 5, 10)
-        s.save(filename, chunks=chunks)
-        s2 = load(filename, lazy=True)
-        assert tuple([c[0] for c in s2.data.chunks]) == chunks
 
-    @zspy_marker
-    def test_chunking_saving_lazy(self, tmp_path, file):
-        filename = tmp_path / file
-        s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
-        s.data = s.data.rechunk([50, 25, 25])
-        s.save(filename)
-        s1 = load(filename, lazy=True)
-        assert s.data.chunks == s1.data.chunks
+@zspy_marker
+def test_save_chunks_signal_metadata(tmp_path, file):
+    N = 10
+    dim = 3
+    s = Signal1D(np.arange(N**dim).reshape([N]*dim))
+    s.navigator = s.sum(-1)
+    s.change_dtype('float')
+    s.decomposition()
 
-    @zspy_marker
-    def test_chunking_saving_lazy_True(self, tmp_path, file):
-        filename = tmp_path / file
-        s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
-        s.data = s.data.rechunk([50, 25, 25])
-        s.save(filename, chunks=True)
-        s1 = load(filename, lazy=True)
-        if file == "test.hspy":
-            assert tuple([c[0] for c in s1.data.chunks]) == (7, 25, 25)
-        else:
-            assert tuple([c[0] for c in s1.data.chunks]) == (25, 50, 50)
+    filename = tmp_path / file
+    chunks = (5, 5, 10)
+    s.save(filename, chunks=chunks)
+    s2 = load(filename, lazy=True)
+    assert tuple([c[0] for c in s2.data.chunks]) == chunks
 
-    @zspy_marker
-    def test_chunking_saving_lazy_specify(self, tmp_path, file):
-        filename = tmp_path / file
-        s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
-        # specify chunks
-        chunks = (50, 10, 10)
-        s.data = s.data.rechunk([50, 25, 25])
-        s.save(filename, chunks=chunks)
-        s1 = load(filename, lazy=True)
-        assert tuple([c[0] for c in s1.data.chunks]) == chunks
 
-@pytest.mark.parametrize("target_size", (1e6,1e7))
+@zspy_marker
+def test_chunking_saving_lazy(tmp_path, file):
+    s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
+    s.data = s.data.rechunk([50, 25, 25])
+
+    filename = tmp_path / 'test_chunking_saving_lazy.hspy'
+    filename2 = tmp_path / 'test_chunking_saving_lazy_chunks_True.hspy'
+    filename3 = tmp_path / 'test_chunking_saving_lazy_chunks_specified.hspy'
+    s.save(filename)
+    s1 = load(filename, lazy=True)
+    assert s.data.chunks == s1.data.chunks
+
+    # with chunks=True, use h5py chunking
+    s.save(filename2, chunks=True)
+    s2 = load(filename2, lazy=True)
+    assert tuple([c[0] for c in s2.data.chunks]) == (7, 25, 25)
+
+    # specify chunks
+    chunks = (50, 10, 10)
+    s.save(filename3, chunks=chunks)
+    s3 = load(filename3, lazy=True)
+    assert tuple([c[0] for c in s3.data.chunks]) == chunks
+
+
+def test_saving_hspy_close_file(tmp_path):
+    # Setup that we will reopen
+    s = Signal1D(da.zeros((10, 100))).as_lazy()
+    fname = tmp_path / 'test.hspy'
+    s.save(fname, close_file=True)
+
+    s2 = load(fname, lazy=True, mode='a')
+    assert s2._get_file_handle() is not None
+    s2.save(fname, close_file=True, overwrite=True)
+    assert s2._get_file_handle() is None
+
+    s3 = load(fname, lazy=True, mode='a')
+    assert s3._get_file_handle() is not None
+    s3.save(fname, close_file=False, overwrite=True)
+    assert s3._get_file_handle() is not None
+    s3.close_file()
+    assert s3._get_file_handle() is None
+
+    s4 = load(fname, lazy=True)
+    assert s4._get_file_handle() is not None
+    with pytest.raises(OSError):
+        s4.save(fname, overwrite=True)
+
+
+def test_saving_hspy_overwrite_data(tmp_path):
+    s = Signal1D(da.zeros((10, 100))).as_lazy()
+    fname = tmp_path / 'test.hspy'
+    s.save(fname, close_file=True)
+
+    s2 = load(fname, lazy=True, mode='a')
+    s2.axes_manager[0].units = 'nm'
+    s2.save(fname, overwrite=True, write_dataset=False)
+
+    s3 = load(fname)
+    assert s3.axes_manager[0].units == 'nm'
+
+
+@pytest.mark.parametrize("target_size", (1e6, 1e7))
 def test_get_signal_chunks(target_size):
     chunks = HierarchicalWriter._get_signal_chunks(shape=[15, 15, 256, 256],
                                                    dtype=np.int64,
