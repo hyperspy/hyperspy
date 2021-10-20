@@ -1,0 +1,1 @@
+Add options not to close file (lazy signal only) and not to write dataset for hspy file format, see :ref:`hspy-format` for details

@@ -427,7 +427,7 @@ Extra saving arguments
 - ``close_file``: if ``False``, doesn't close the file after writing. The file
   should not be close if the data need to be accessed lazily after saving.
   Default is ``True``.
-- ``write_dataset``: if ``False``, doesn't write the data when writing the file.
+- ``write_dataset``: if ``False``, doesn't write the dataset when writing the file.
   This can be useful to overwrite signal attributes only (for example ``axes_manager``)
   without having to write the whole dataset, which can take time. Default is ``True``.
 
