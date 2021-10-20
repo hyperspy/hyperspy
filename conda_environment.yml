@@ -2,8 +2,10 @@ name: test_env
 channels:
 - conda-forge
 dependencies:
-- dask-core >2.0
+- dask-core >2.1
 - dill
+# dask-core < 2021.3.1 doesn't have fsspec as dependency
+- fsspec
 - h5py
 - imageio
 - ipyparallel
@@ -28,5 +30,6 @@ dependencies:
 - toolz
 - tqdm
 - traits
+- zarr
 
 

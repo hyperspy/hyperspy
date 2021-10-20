@@ -43,7 +43,9 @@ import pint
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.elements import atomic_number2name
 import hyperspy.misc.io.fei_stream_readers as stream_readers
-from hyperspy.io_plugins.hspy import get_signal_chunks
+from hyperspy.io_plugins.hspy import HyperspyWriter
+
+get_signal_chunks = HyperspyWriter._get_signal_chunks
 
 
 # Plugin characteristics

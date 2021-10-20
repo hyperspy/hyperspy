@@ -59,6 +59,8 @@ install_req = ['scipy>=1.1',
                'python-dateutil>=2.5.0',
                'ipyparallel',
                'dask[array]>2.1.0',
+               # fsspec is missing from dask dependencies for dask < 2021.3.1
+               'fsspec',
                'scikit-image>=0.15',
                'pint>=0.10',
                'numexpr',
@@ -73,6 +75,8 @@ install_req = ['scipy>=1.1',
                 # included in stdlib since v3.8, but this required version requires Python 3.10
                 # We can remove this requirement when the minimum supported version becomes Python 3.10
                'importlib_metadata>=3.6',
+               # numcodecs currently only supported on x86_64/AMD64 machines
+               'zarr;platform_machine=="x86_64" or platform_machine=="AMD64"',
                ]
 
 extras_require = {

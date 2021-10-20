@@ -26,6 +26,7 @@ import numpy as np
 from natsort import natsorted
 from inspect import isgenerator
 from pathlib import Path
+from collections import MutableMapping
 
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.exceptions import VisibleDeprecationWarning
@@ -332,14 +333,14 @@ def load(filenames=None,
             lazy = load_ui.lazy
         if filenames is None:
             raise ValueError("No file provided to reader")
-
     if isinstance(filenames, str):
         pattern = filenames
         if escape_square_brackets:
             filenames = _escape_square_brackets(filenames)
 
         filenames = natsorted([f for f in glob.glob(filenames)
-                               if os.path.isfile(f)])
+                               if os.path.isfile(f) or (os.path.isdir(f) and
+                                                        os.path.splitext(f)[1] == '.zspy')])
 
         if not filenames:
             raise ValueError(f'No filename matches the pattern "{pattern}"')
@@ -347,7 +348,8 @@ def load(filenames=None,
     elif isinstance(filenames, Path):
         # Just convert to list for now, pathlib.Path not
         # fully supported in io_plugins
-        filenames = [f for f in [filenames] if f.is_file()]
+        filenames = [f for f in [filenames]
+                     if f.is_file() or (f.is_dir() and ".zspy" in f.name)]
 
     elif isgenerator(filenames):
         filenames = list(filenames)
@@ -454,7 +456,8 @@ def load_single_file(filename, **kwds):
         Data loaded from the file.
 
     """
-    if not os.path.isfile(filename):
+    if not os.path.isfile(filename) and not (os.path.isdir(filename) or
+                                             os.path.splitext(filename)[1] == '.zspy'):
         raise FileNotFoundError(f"File: {filename} not found!")
 
     # File extension without "." separator
@@ -736,11 +739,14 @@ def save(filename, signal, overwrite=None, **kwds):
     None
 
     """
-    filename = Path(filename).resolve()
-    extension = filename.suffix
-    if extension == '':
-        extension = ".hspy"
-        filename = filename.with_suffix(extension)
+    if isinstance(filename, MutableMapping):
+        extension =".zspy"
+    else:
+        filename = Path(filename).resolve()
+        extension = filename.suffix
+        if extension == '':
+            extension = ".hspy"
+            filename = filename.with_suffix(extension)
 
     writer = None
     for plugin in io_plugins:
@@ -785,24 +791,35 @@ def save(filename, signal, overwrite=None, **kwds):
         )
 
     # Create the directory if it does not exist
-    ensure_directory(filename.parent)
-    is_file = filename.is_file()
+    if not isinstance(filename, MutableMapping):
+        ensure_directory(filename.parent)
+        is_file = filename.is_file() or (filename.is_dir() and
+                                         os.path.splitext(filename)[1] == '.zspy')
 
-    if overwrite is None:
-        write = overwrite_method(filename)  # Ask what to do
-    elif overwrite is True or (overwrite is False and not is_file):
-        write = True  # Write the file
-    elif overwrite is False and is_file:
-        write = False  # Don't write the file
+        if overwrite is None:
+            write = overwrite_method(filename)  # Ask what to do
+        elif overwrite is True or (overwrite is False and not is_file):
+            write = True  # Write the file
+        elif overwrite is False and is_file:
+            write = False  # Don't write the file
+        else:
+            raise ValueError("`overwrite` parameter can only be None, True or "
+                             "False.")
     else:
-        raise ValueError("`overwrite` parameter can only be None, True or "
-                         "False.")
+        write = True  # file does not exist (creating it)
     if write:
         # Pass as a string for now, pathlib.Path not
         # properly supported in io_plugins
-        writer.file_writer(str(filename), signal, **kwds)
-
-        _logger.info(f'{filename} was created')
-        signal.tmp_parameters.set_item('folder', filename.parent)
-        signal.tmp_parameters.set_item('filename', filename.stem)
-        signal.tmp_parameters.set_item('extension', extension)
+        if not isinstance(filename, MutableMapping):
+            writer.file_writer(str(filename), signal, **kwds)
+            _logger.info(f'{filename} was created')
+            signal.tmp_parameters.set_item('folder', filename.parent)
+            signal.tmp_parameters.set_item('filename', filename.stem)
+            signal.tmp_parameters.set_item('extension', extension)
+        else:
+            writer.file_writer(filename, signal, **kwds)
+            if hasattr(filename, "path"):
+                file = Path(filename.path).resolve()
+                signal.tmp_parameters.set_item('folder', file.parent)
+                signal.tmp_parameters.set_item('filename', file.stem)
+                signal.tmp_parameters.set_item('extension', extension)
