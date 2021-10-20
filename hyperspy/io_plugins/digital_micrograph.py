@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright 2010 Stefano Mazzucco
-# Copyright 2011-2020 The HyperSpy developers
+# Copyright 2011-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy. It is a fork of the original PIL dm3 plugin
 # written by Stefano Mazzucco.
@@ -27,7 +27,6 @@ import dateutil.parser
 
 import numpy as np
 import traits.api as t
-from copy import deepcopy
 
 import hyperspy.misc.io.utils_readfile as iou
 from hyperspy.exceptions import DM3TagIDError, DM3DataTypeError, DM3TagTypeError
@@ -41,15 +40,14 @@ _logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
-format_name = 'Digital Micrograph'
+format_name = 'Digital Micrograph dm3'
 description = 'Read data from Gatan Digital Micrograph (TM) files'
 full_support = False
 # Recognised file extension
 file_extensions = ('dm3', 'DM3', 'dm4', 'DM4')
 default_extension = 0
-# Writing capabilities
+# Writing features
 writes = False
-non_uniform_axis = False
 # ----------------------
 
 
@@ -308,8 +306,9 @@ class DigitalMicrographReader(object):
         return data
 
     def read_string(self, length, skip=False):
-        """Read a string defined by the infoArray iarray from file f with a
-        given endianness (byte order). endian can be either 'big' or 'little'.
+        """Read a string defined by the infoArray iarray from
+         file f with a given endianness (byte order).
+        endian can be either 'big' or 'little'.
 
         If it's a tag name, each char is 1-Byte;
         if it's a tag data, each char is 2-Bytes Unicode,
@@ -542,9 +541,6 @@ class ImageObject(object):
         elif self.signal_type in ("EDS", "EDX"):
             if "keV" in self.units:
                 names[indices.pop(self.units.index("keV"))] = "Energy"
-        elif self.signal_type in ("CL"):
-            if "nm" in self.units:
-                names[indices.pop(self.units.index("nm"))] = "Wavelength"
         for index, name in zip(indices[::-1], ("x", "y", "z")):
             names[index] = name
         return names
@@ -625,13 +621,11 @@ class ImageObject(object):
 
     @property
     def signal_type(self):
-        md_signal = self.imdict.get_item('ImageTags.Meta_Data.Signal', "")
-        if md_signal == 'X-ray':
-            return "EDS_TEM"
-        elif md_signal == 'CL':
-            return "CL"
-        # 'ImageTags.spim.eels' is Orsay's tag group
-        elif md_signal == 'EELS' or 'ImageTags.spim.eels' in self.imdict:
+        if 'ImageTags.Meta_Data.Signal' in self.imdict:
+            if self.imdict.ImageTags.Meta_Data.Signal == "X-ray":
+                return "EDS_TEM"
+            return self.imdict.ImageTags.Meta_Data.Signal
+        elif 'ImageTags.spim.eels' in self.imdict:  # Orsay's tag group
             return "EELS"
         else:
             return ""
@@ -794,8 +788,6 @@ class ImageObject(object):
     def _get_mode(self, mode):
         if 'STEM' in mode:
             return 'STEM'
-        elif 'SEM' in mode:
-            return 'SEM'
         else:
             return 'TEM'
 
@@ -804,14 +796,14 @@ class ImageObject(object):
             dt = dateutil.parser.parse(time)
             return dt.time().isoformat()
         except BaseException:
-            _logger.warning(f"Time string '{time}' could not be parsed.")
+            _logger.warning("Time string, %s,  could not be parsed", time)
 
     def _get_date(self, date):
         try:
             dt = dateutil.parser.parse(date)
             return dt.date().isoformat()
         except BaseException:
-            _logger.warning(f"Date string '{date}' could not be parsed.")
+            _logger.warning("Date string, %s,  could not be parsed", date)
 
     def _get_microscope_name(self, ImageTags):
         locations = (
@@ -826,20 +818,9 @@ class ImageObject(object):
         _logger.info("Microscope name not present")
         return None
 
-    def _parse_string(self, tag, convert_to_float=False, tag_name=None):
+    def _parse_string(self, tag):
         if len(tag) == 0:
             return None
-        elif convert_to_float:
-            try:
-                return float(tag)
-            # In case the string can't be converted to float
-            except BaseException:
-                if tag_name is None:
-                    warning = "Metadata could not be parsed."
-                else:
-                    warning = f"Metadata '{tag_name}' could not be parsed."
-                _logger.warning(warning)
-                return None
         else:
             return tag
 
@@ -932,15 +913,7 @@ class ImageObject(object):
                     "Acquisition_instrument.TEM.microscope",
                     self._get_microscope_name),
             })
-        if "SI" in self.imdict.ImageTags.keys():
-            mapping.update({
-                "{}.SI.Acquisition.Date".format(tags_path): (
-                    "General.date",
-                    self._get_date),
-                "{}.SI.Acquisition.Start time".format(tags_path): (
-                    "General.time",
-                    self._get_time),
-            })
+
         if self.signal_type == "EELS":
             if is_scanning:
                 mapped_attribute = 'dwell_time'
@@ -969,9 +942,7 @@ class ImageObject(object):
                     None),
                 "{}.EELS_Spectrometer.Aperture_label".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.aperture_size",
-                    lambda string: self._parse_string(string.replace('mm', ''),
-                                                      convert_to_float=True,
-                                                      tag_name='Aperture_label')),
+                    lambda string: float(string.replace('mm', ''))),
                 "{}.EELS Spectrometer.Instrument name".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.spectrometer",
                     None),
@@ -999,55 +970,6 @@ class ImageObject(object):
                 "{}.EDS.Real_time".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EDS.real_time",
                     None),
-            })
-        elif self.signal_type == "CL":
-            mapping.update({
-                "{}.CL.Acquisition.Date".format(tags_path): (
-                    "General.date", self._get_date),
-                "{}.CL.Acquisition.Start_time".format(tags_path): (
-                    "General.time", self._get_time),
-                "{}.Meta_Data.Acquisition_Mode".format(tags_path): (
-                    "Acquisition_instrument.CL.acquisition_mode", None),
-                "{}.Meta_Data.Format".format(tags_path): (
-                    "Signal.format", None),
-                "{}.CL.Acquisition.Dispersion_grating_(lines/mm)".format(tags_path): (
-                    "Acquisition_instrument.CL.dispersion_grating", None),
-                # Parallel spectrum
-                "{}.CL.Acquisition.Central_wavelength_(nm)".format(tags_path): (
-                    "Acquisition_instrument.CL.central_wavelength", None),
-                "{}.CL.Acquisition.Exposure_(s)".format(tags_path): (
-                    "Acquisition_instrument.CL.exposure", None),
-                "{}.CL.Acquisition.Number_of_frames".format(tags_path): (
-                    "Acquisition_instrument.CL.frame_number", None),
-                "{}.CL.Acquisition.Integration_time_(s)".format(tags_path): (
-                    "Acquisition_instrument.CL.integration_time", None),
-                "{}.CL.Acquisition.Saturation_fraction".format(tags_path): (
-                    "Acquisition_instrument.CL.saturation_fraction", None),
-                "{}.Acquisition.Parameters.High_Level.Binning".format(tags_path): (
-                    "Acquisition_instrument.CL.CCD.binning", None),
-                "{}.Acquisition.Parameters.High_Level.CCD_Read_Area".format(tags_path): (
-                    "Acquisition_instrument.CL.CCD.read_area", None),
-                "{}.Acquisition.Parameters.High_Level.Processing".format(tags_path): (
-                    "Acquisition_instrument.CL.CCD.processing", None),
-                # Serial Spectrum
-                "{}.CL.Acquisition.Acquisition_begin".format(tags_path): (
-                    "General.date", self._get_date),
-                "{}.CL.Acquisition.Detector_type".format(tags_path): (
-                    "Acquisition_instrument.CL.detector_type", None),
-                "{}.CL.Acquisition.Dwell_time_(s)".format(tags_path): (
-                    "Acquisition_instrument.CL.dwell_time", None),
-                "{}.CL.Acquisition.Start_wavelength_(nm)".format(tags_path): (
-                    "Acquisition_instrument.CL.start_wavelength", None),
-                "{}.CL.Acquisition.Step-size_(nm)".format(tags_path): (
-                    "Acquisition_instrument.CL.step_size", None),
-                # SI
-                "{}.SI.Acquisition.Artefact_Correction.Spatial_Drift.Periodicity".format(tags_path): (
-                    "Acquisition_instrument.CL.SI.drift_correction_periodicity", None),
-                "{}.SI.Acquisition.Artefact_Correction.Spatial_Drift.Units".format(tags_path): (
-                    "Acquisition_instrument.CL.SI.drift_correction_units", None),
-                "{}.SI.Acquisition.SI_Application_Mode.Name".format(tags_path): (
-                    "Acquisition_instrument.CL.SI.mode", None),
-
             })
         elif "DigiScan" in image_tags_dict.keys():
             mapping.update({
@@ -1078,8 +1000,8 @@ class ImageObject(object):
 
 def file_reader(filename, record_by=None, order=None, lazy=False,
                 optimize=True):
-    """Reads a DM3/4 file and loads the data into the appropriate class.
-    data_id can be specified to load a given image within a DM3/4 file that
+    """Reads a DM3 file and loads the data into the appropriate class.
+    data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
 
     Parameters
@@ -1121,17 +1043,11 @@ def file_reader(filename, record_by=None, order=None, lazy=False,
                                     dtype=image.dtype)
             else:
                 data = image.get_data()
-            # in the event there are multiple signals contained within this
-            # DM file, it is important to make a "deepcopy" of the metadata
-            # and original_metadata, since they are changed in each iteration
-            # of the "for image in images" loop, and using shallow copies
-            # will result in the final signal's metadata being used for all
-            # of the contained signals
             imd.append(
                 {'data': data,
                  'axes': axes,
-                 'metadata': deepcopy(mp),
-                 'original_metadata': deepcopy(dm.tags_dict),
+                 'metadata': mp,
+                 'original_metadata': dm.tags_dict,
                  'post_process': post_process,
                  'mapping': image.get_mapping(),
                  })

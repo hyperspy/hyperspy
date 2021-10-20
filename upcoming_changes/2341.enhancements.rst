@@ -1,1 +1,0 @@
-:ref:`Region of Interest (ROI)<roi-label>` can now be created without specifying values

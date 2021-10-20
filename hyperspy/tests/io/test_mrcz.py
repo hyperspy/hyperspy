@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,20 +16,30 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import tempfile
-from time import perf_counter, sleep
-
 import numpy as np
 import numpy.testing as npt
+import os
+import tempfile
 import pytest
+from time import perf_counter, sleep
+try:
+    import blosc
+    blosc_installed = True
+except BaseException:
+    blosc_installed = False
+try:
+    import mrcz
+    mrcz_installed = True
+except BaseException:
+    mrcz_installed = False
 
-from hyperspy import signals
 from hyperspy.io import load, save
+from hyperspy import signals
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
-mrcz = pytest.importorskip("mrcz", reason="mrcz not installed")
+pytestmark = pytest.mark.skipif(
+    not mrcz_installed, reason="mrcz not installed")
 
 
 #==============================================================================
@@ -113,7 +123,7 @@ class TestPythonMrcz:
                     sleep(0.001)
             print("Time to save file: {} s".format(
                 perf_counter() - (t_stop - MAX_ASYNC_TIME)))
-            sleep(0.1)
+            sleep(0.005)
 
         reSignal = load(mrcName)
         try:
@@ -155,14 +165,6 @@ class TestPythonMrcz:
                              _generate_parameters())
     def test_MRC(self, dtype, compressor, clevel, lazy):
         t_start = perf_counter()
-
-        try:
-            import blosc
-
-            blosc_installed = True
-        except BaseException:
-            blosc_installed = False
-
         if not blosc_installed and compressor is not None:
             with pytest.raises(ImportError):
                 return self.compareSaveLoad([2, 64, 32], dtype=dtype,
@@ -177,9 +179,17 @@ class TestPythonMrcz:
 
     @pytest.mark.parametrize("dtype", dtype_list)
     def test_Async(self, dtype):
-        blosc = pytest.importorskip('blosc', reason="skipping test_async, requires blosc")
+        pytest.importorskip('blosc')
         t_start = perf_counter()
         self.compareSaveLoad([2, 64, 32], dtype=dtype, compressor='zstd',
                              clevel=1, do_async=True)
         print("MRCZ Asychronous test finished in {} s".format(
             perf_counter() - t_start))
+
+
+if __name__ == '__main__':
+    theSuite = TestPythonMrcz()
+    parameters = _generate_parameters()
+    for parameter in parameters:
+        theSuite.test_MRC(*parameter)
+    theSuite.test_Async(parameter[0])

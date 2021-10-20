@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2017 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,7 +17,8 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from scipy.fftpack import fft2
+import matplotlib.pyplot as plt
+from scipy.fftpack import fft2, fftshift
 import logging
 
 _logger = logging.getLogger(__name__)

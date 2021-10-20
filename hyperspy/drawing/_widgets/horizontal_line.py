@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,8 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from hyperspy.drawing.widgets import Widget1DBase
-from hyperspy.drawing.utils import picker_kwargs
-from hyperspy.defaults_parser import preferences
 
 
 class HorizontalLineWidget(Widget1DBase):
@@ -27,18 +25,17 @@ class HorizontalLineWidget(Widget1DBase):
     """
 
     def _update_patch_position(self):
-        if self.is_on and self.patch:
+        if self.is_on() and self.patch:
             self.patch[0].set_ydata(self._pos[0])
             self.draw_patch()
 
     def _set_patch(self):
         ax = self.ax
-        kwargs = picker_kwargs(preferences.Plot.pick_tolerance)
         self.patch = [ax.axhline(
             self._pos[0],
             color=self.color,
             alpha=self.alpha,
-            **kwargs)]
+            picker=5)]
 
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""

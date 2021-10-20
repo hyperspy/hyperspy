@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+# custom exceptions
 from functools import wraps
 
 
@@ -100,9 +101,21 @@ def interactive_range_selector(cm):
         if not args and not kwargs:
             range_selector = Signal1DRangeSelector(self)
             range_selector.on_close.append((cm, self))
-            get_gui(
-                range_selector,
-                toolkey="hyperspy.interactive_range_selector")
+            get_gui(range_selector, toolkey="interactive_range_selector")
         else:
             cm(self, *args, **kwargs)
     return wrapper
+
+
+def jit_ifnumba(*args, **kwargs):
+    try:
+        import numba
+        if "nopython" not in kwargs:
+            kwargs["nopython"] = True
+        return numba.jit(*args, **kwargs)
+    except ImportError:
+        def wrap1(func):
+            def wrap2(*args2, **kwargs2):
+                return func(*args2, **kwargs2)
+            return wrap2
+        return wrap1

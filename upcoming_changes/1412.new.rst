@@ -1,1 +1,0 @@
-Add ``filter_zero_loss_peak`` argument to the :py:meth:`~._signals.eels.EELSSpectrum.spikes_removal_tool` method

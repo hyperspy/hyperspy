@@ -1,22 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
-#
-# This file is part of  HyperSpy.
-#
-#  HyperSpy is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-#  HyperSpy is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
-
-from collections.abc import Iterable
 import numpy as np
 import numbers
 import copy
@@ -168,7 +149,7 @@ def atomic_to_weight(atomic_percent, elements='auto'):
     from hyperspy.signals import BaseSignal
     elements = _elements_auto(atomic_percent, elements)
     if isinstance(atomic_percent[0], BaseSignal):
-        weight_percent = stack(atomic_percent, show_progressbar=False)
+        weight_percent = stack(atomic_percent)
         weight_percent.data = _atomic_to_weight(
             weight_percent.data, elements)
         weight_percent = weight_percent.split()
@@ -218,23 +199,19 @@ def _density_of_mixture(weight_percent,
         [elements_db[element]['Physical_properties']['density (g/cm^3)']
             for element in elements])
     sum_densities = np.zeros_like(weight_percent, dtype='float')
-    try : 
-        if mean == 'harmonic':
-            for i, weight in enumerate(weight_percent):
-                sum_densities[i] = weight / densities[i]
-            sum_densities = sum_densities.sum(axis=0)
-            density = np.sum(weight_percent, axis=0) / sum_densities
-            return np.where(sum_densities == 0.0, 0.0, density)
-        elif mean == 'weighted':
-            for i, weight in enumerate(weight_percent):
-                sum_densities[i] = weight * densities[i]
-            sum_densities = sum_densities.sum(axis=0)
-            sum_weight = np.sum(weight_percent, axis=0)
-            density = sum_densities / sum_weight
-            return np.where(sum_weight == 0.0, 0.0, density)
-    except TypeError : 
-        raise ValueError(
-            'The density of one of the elements is unknown (Probably At or Fr).')
+    if mean == 'harmonic':
+        for i, weight in enumerate(weight_percent):
+            sum_densities[i] = weight / densities[i]
+        sum_densities = sum_densities.sum(axis=0)
+        density = np.sum(weight_percent, axis=0) / sum_densities
+        return np.where(sum_densities == 0.0, 0.0, density)
+    elif mean == 'weighted':
+        for i, weight in enumerate(weight_percent):
+            sum_densities[i] = weight * densities[i]
+        sum_densities = sum_densities.sum(axis=0)
+        sum_weight = np.sum(weight_percent, axis=0)
+        density = sum_densities / sum_weight
+        return np.where(sum_weight == 0.0, 0.0, density)
 
 
 def density_of_mixture(weight_percent,
@@ -308,7 +285,7 @@ def mass_absorption_coefficient(element, energies):
 
     See also
     --------
-    :py:func:`~hs.material.mass_absorption_mixture`
+    hs.material.mass_absorption_mixture
 
     Note
     ----
@@ -322,7 +299,7 @@ def mass_absorption_coefficient(element, energies):
     energies = copy.copy(energies)
     if isinstance(energies, str):
         energies = utils_eds._get_energy_xray_line(energies)
-    elif isinstance(energies, Iterable):
+    elif hasattr(energies, '__iter__'):
         for i, energy in enumerate(energies):
             if isinstance(energy, str):
                 energies[i] = utils_eds._get_energy_xray_line(energy)
@@ -367,7 +344,7 @@ def _mass_absorption_mixture(weight_percent,
 
     See also
     --------
-    :py:func:`~hs.material.mass_absorption`
+    hs.material.mass_absorption
 
     Note
     ----
@@ -379,7 +356,7 @@ def _mass_absorption_mixture(weight_percent,
     if len(elements) != len(weight_percent):
         raise ValueError(
             "Elements and weight_fraction should have the same length")
-    if isinstance(weight_percent[0], Iterable):
+    if hasattr(weight_percent[0], '__iter__'):
         weight_fraction = np.array(weight_percent)
         weight_fraction /= np.sum(weight_fraction, 0)
         mac_res = np.zeros([len(energies)] + list(weight_fraction.shape[1:]))
@@ -430,7 +407,7 @@ def mass_absorption_mixture(weight_percent,
 
     See also
     --------
-    :py:func:`~hs.material.mass_absorption_coefficient`
+    hs.material.mass_absorption_coefficient
 
     Note
     ----
@@ -445,8 +422,7 @@ def mass_absorption_mixture(weight_percent,
     energies = _lines_auto(weight_percent, energies)
     if isinstance(weight_percent[0], BaseSignal):
         weight_per = np.array([wt.data for wt in weight_percent])
-        mac_res = stack([weight_percent[0].deepcopy()] * len(energies),
-                        show_progressbar=False)
+        mac_res = stack([weight_percent[0].deepcopy()] * len(energies))
         mac_res.data = \
             _mass_absorption_mixture(weight_per, elements, energies)
         mac_res = mac_res.split()

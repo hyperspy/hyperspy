@@ -1,24 +1,6 @@
-# -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
-#
-# This file is part of  HyperSpy.
-#
-#  HyperSpy is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-#  HyperSpy is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
-
 from __future__ import print_function
-
 from unittest import mock
+
 
 import numpy as np
 import pytest
@@ -151,10 +133,3 @@ class TestInteractive():
         s.data[:] = 1
         e2.trigger()
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
-
-    def test_interactive_function_return_None(self):
-        e = Event()
-        def function_return_None():
-            print('function called')
-        hs.interactive(function_return_None, e)
-        e.trigger()

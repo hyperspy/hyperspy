@@ -1,0 +1,122 @@
+
+shallow_clone: true
+
+environment:
+
+  global:
+    TEST_DEPS: "pytest pytest-cov pytest-mpl wheel"
+    MPLBACKEND: "agg"
+
+
+  matrix:
+
+    # Pre-installed Python versions, which Appveyor may upgrade to
+    # a later point release.
+     - PYTHON: "C:\\Miniconda35"
+       PYTHON_VERSION: "3.5.x"
+       PYTHON_MAJOR: 3
+       PYTHON_ARCH: "32"
+       CONDA_PY: "35"
+       DEPS: "numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
+
+     - PYTHON: "C:\\Miniconda35-x64"
+       PYTHON_VERSION: "3.5.x"
+       PYTHON_MAJOR: 3
+       PYTHON_ARCH: "64"
+       CONDA_PY: "35"
+       DEPS: "numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
+
+     - PYTHON: "C:\\Miniconda36"
+       PYTHON_VERSION: "3.6.x"
+       PYTHON_MAJOR: 3
+       PYTHON_ARCH: "32"
+       CONDA_PY: "36"
+       DEPS: "numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
+
+     - PYTHON: "C:\\Miniconda36-x64"
+       PYTHON_VERSION: "3.6.x"
+       PYTHON_MAJOR: 3
+       PYTHON_ARCH: "64"
+       CONDA_PY: "36"
+       DEPS: "numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
+
+     - PYTHON: "C:\\Miniconda37"
+       PYTHON_VERSION: "3.7.x"
+       PYTHON_MAJOR: 3
+       PYTHON_ARCH: "32"
+       CONDA_PY: "37"
+       DEPS: "numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
+
+     - PYTHON: "C:\\Miniconda37-x64"
+       PYTHON_VERSION: "3.7.x"
+       PYTHON_MAJOR: 3
+       PYTHON_ARCH: "64"
+       CONDA_PY: "37"
+       DEPS: "numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
+
+
+init:
+  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+  - "ECHO %APPVEYOR_BUILD_FOLDER%"
+  - "ECHO %CMD_IN_ENV%"
+
+install:
+  - ps: Add-AppveyorMessage "Starting install..."
+  # Prepend Python to the PATH
+  - "SET ORIGPATH=%PATH%"
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+
+  # Check that we have the expected version and architecture for Python
+  - "python --version"
+  - "python -c \"import sys; print(sys.version)\""  # this gives more info
+  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+
+  # Install the dependencies of the project.
+  - ps: Add-AppveyorMessage "Installing conda packages..."
+  - "conda install -yq -c conda-forge %TEST_DEPS%"
+  - "conda install -yq -c conda-forge %DEPS%"
+
+  - ps: Add-AppveyorMessage "Installing hyperspy..."
+  - "pip install .[all]"
+
+build: false  # Not a C# project, build stuff at the test step instead.
+
+test_script:
+  # Run the project tests
+  - ps: Add-AppveyorMessage "Running tests..."
+  - "python setup.py build_ext --inplace"
+  - "py.test --mpl"
+  - "python setup.py clean"
+  - ps: Add-AppveyorMessage "Testing completed."
+
+after_test:
+  - python setup.py bdist_wheel
+
+artifacts:
+  - path: dist\*.whl
+    name: win_wheels
+
+on_failure:
+  - ps: $Env:image_comparison_filename = 'image_comparison_' + $Env:PYTHON_VERSION + '_' + $Env:PYTHON_ARCH + 'bits.zip'
+  - ps: 7z a -r $Env:image_comparison_filename C:\Users\appveyor\AppData\Local\Temp\1\*png
+  - ps: Push-AppveyorArtifact $Env:image_comparison_filename
+
+deploy:
+  provider: GitHub
+  auth_token:
+    #   to266:
+    #secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
+    #   vidartf:
+    #secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
+    #   sem-geologist:
+    #secure: RRqUkx9H5VuFNITmm+YzgB0qnqgVGPH1yrPVxb4oCD+FAjcTch2WZAiPEKn4L6w6
+    #   ericpre:
+    #secure: ae8XsPI+vKJI9AWm0r9+ec71CIkXcnCHlNIQ57v+87hh5k1xuAAxIOi1CFKEmmZv
+    # francisco-dlp
+    secure: ziv2aenVNPt0QKxSpAmkGIHRkv51FNhiiLo9epCeeURGaTjvQOlJBiAy3mzB5lRf
+  artifact: win_wheels  # upload wheels to release assets
+  draft: false
+  prerelease: false
+  force_update: true
+  on:
+    appveyor_repo_tag: true        # deploy on tag push only

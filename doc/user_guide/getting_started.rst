@@ -67,32 +67,11 @@ that you have installed at least one of HyperSpy's GUI packages:
 and the
 `traitsui GUI <https://github.com/hyperspy/hyperspy_gui_traitsui>`_.
 
-Possible warnings when importing HyperSpy?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-HyperSpy supports different GUIs and 
-`matplotlib backends <https://matplotlib.org/tutorials/introductory/usage.html#backends>`_ 
-which in specific cases can lead to warnings when importing HyperSpy. Most of the time 
-there is nothing to worry about — the warnings simply inform you of several choices you have.
-There may be several causes for a warning, for example:
-
-- not all the GUIs packages are installed. If none is installed, we reccomend you to install
-  at least the ``hyperspy-gui-ipywidgets`` package is your are planning to perform interactive
-  data analysis in the Jupyter Notebook. Otherwise, you can simply disable the warning in
-  :ref:`preferences <configuring-hyperspy-label>` as explained below.
-- the ``hyperspy-gui-traitsui`` package is installed and you are using an incompatible matplotlib
-  backend (e.g. ``notebook``, ``nbagg`` or ``widget``).
-
-   - If you want to use the traitsui GUI, use the ``qt`` matplotlib backend instead.
-   - Alternatively, if you prefer to use the ``notebook`` or ``widget`` matplotlib backend,
-     and if you don't want to see the (harmless) warning, make sure that you have the
-     ``hyperspy-gui-ipywidgets`` installed and disable the traitsui
-     GUI in the :ref:`preferences <configuring-hyperspy-label>`.
-
-
 By default, HyperSpy warns the user if one of the GUI packages is not installed.
 These warnings can be turned off using the
-:ref:`preferences <configuring-hyperspy-label>` GUI or programmatically as follows:
+:py:class:`~.defaults_parser.Preferences` GUI
+(see :ref:`here <configuring-hyperspy-label>` for more information) or
+programmatically as follows:
 
     .. code-block:: python
 
@@ -101,11 +80,17 @@ These warnings can be turned off using the
        >>> hs.preferences.save()
 
 
-.. versionchanged:: v1.3
-    HyperSpy works with all matplotlib backends, including the ``notebook`` 
-    (also called ``nbAgg``) backend that enables interactive plotting embedded 
-    in the jupyter notebook.
+Now you are ready to load
+your data (see below).
 
+.. versionchanged:: v1.3
+    HyperSpy works with all matplotlib backends, including the nbagg backend
+    that enables interactive plotting embedded in the jupyter notebook.
+
+.. warning::
+        When using the qt4 backend in Python 2 the matplotlib magic must be
+        executed after importing HyperSpy and qt must be the default HyperSpy
+        backend.
 
 .. NOTE::
 
@@ -120,17 +105,23 @@ These warnings can be turned off using the
        >>> import hyperspy.api as hs
 
 
+
+
+
+
+
 Getting help
 ------------
 
 When using IPython, the documentation (docstring in Python jargon) can be
 accessed by adding a question mark to the name of a function. e.g.:
 
-.. code-block:: none
 
-   >>> hs?
-   >>> hs.load?
-   >>> hs.signals?
+.. code-block:: python
+
+    >>> hs?
+    >>> hs.load?
+    >>> hs.signals?
 
 This syntax is a shortcut to the standard way one of displaying the help
 associated to a given functions (docstring in Python jargon) and it is one of
@@ -208,7 +199,7 @@ of the signal class.
 .. _example-data-label:
 
 Loading example data and data from online databases
----------------------------------------------------
+----------------------------------------------------
 
 HyperSpy is distributed with some example data that can be found in
 `hs.datasets.example_signals`. The following example plots one of the example
@@ -230,6 +221,10 @@ experimental data.
     >>> s.plot()
 
 .. _eelsdb-label:
+
+.. versionadded:: 1.0
+    :py:func:`~.misc.eels.eelsdb.eelsdb` function.
+
 
 The :py:func:`~.misc.eels.eelsdb.eelsdb` function in `hs.datasets` can
 directly load spectra from `The EELS Database <http://eelsdb.eu>`_. For
@@ -318,7 +313,6 @@ chop it into two chunks (signal and navigation), and then swap those chunks, at
 least when printing. As an example:
 
 .. code-block:: bash
-
     (a1, a2, a3, a4, a5, a6) # original (numpy)
     (a6, a5, a4, a3, a2, a1) # reverse
     (a6, a5) (a4, a3, a2, a1) # chop
@@ -328,6 +322,154 @@ In the background, HyperSpy also takes care of storing the data in memory in
 a "machine-friendly" way, so that iterating over the navigation axes is always
 fast.
 
+
+.. _Setting_axis_properties:
+
+Setting axis properties
+-----------------------
+
+The axes are managed and stored by the :py:class:`~.axes.AxesManager` class
+that is stored in the :py:attr:`~.signal.BaseSignal.axes_manager` attribute of
+the signal class. The individual axes can be accessed by indexing the
+AxesManager. e.g.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.random.random((10, 20 , 100)))
+    >>> s
+    <Signal1D, title: , dimensions: (20, 10|100)>
+    >>> s.axes_manager
+    <Axes manager, axes: (<Unnamed 0th axis, size: 20, index: 0>, <Unnamed 1st
+    axis, size: 10, index: 0>|<Unnamed 2nd axis, size: 100>)>
+    >>> s.axes_manager[0]
+    <Unnamed 0th axis, size: 20, index: 0>
+
+
+The axis properties can be set by setting the :py:class:`~.axes.DataAxis`
+attributes e.g.
+
+.. code-block:: python
+
+    >>> s.axes_manager[0].name = "X"
+    >>> s.axes_manager[0]
+    <X axis, size: 20, index: 0>
+
+
+Once the name of an axis has been defined it is possible to request it by its
+name e.g.:
+
+.. code-block:: python
+
+    >>> s.axes_manager["X"]
+    <X axis, size: 20, index: 0>
+    >>> s.axes_manager["X"].scale = 0.2
+    >>> s.axes_manager["X"].units = "nm"
+    >>> s.axes_manager["X"].offset = 100
+
+
+It is also possible to set the axes properties using a GUI by calling the
+:py:meth:`~.axes.AxesManager.gui` method of the :py:class:`~.axes.AxesManager`
+
+.. code-block:: python
+
+    >>> s.axes_manager.gui()
+
+.. _axes_manager_gui_image:
+
+.. figure::  images/axes_manager_gui_ipywidgets.png
+   :align:   center
+
+   AxesManager ipywidgets GUI.
+
+or the :py:class:`~.axes.DataAxis`, e.g:
+
+.. code-block:: python
+
+    >>> s.axes_manager["X"].gui()
+
+.. _data_axis_gui_image:
+
+.. figure::  images/data_axis_gui_ipywidgets.png
+   :align:   center
+
+   DataAxis ipywidgets GUI.
+
+To simply change the "current position" (i.e. the indices of the navigation
+axes) you could use the navigation sliders:
+
+.. code-block:: python
+
+    >>> s.axes_manager.gui_navigation_sliders()
+
+.. _navigation_sliders_image:
+
+.. figure::  images/axes_manager_navigation_sliders_ipywidgets.png
+   :align:   center
+
+   Navigation sliders ipywidgets GUI.
+
+Alternatively, the "current position" can be changed programmatically by
+directly accessing ``indices`` attribute of a Signal's
+:py:class:`~.axes.AxesManager`. This is particularly useful if trying to set
+a specific location with which to initialize a model's parameters to
+sensible values before preforming a fit over an entire spectrum image. The
+``indices`` must be provided as a tuple, with the same length as the number of
+navigation dimensions:
+
+.. code-block:: python
+
+    >>> s.axes_manager.indices = (5, 4)
+
+.. _quantity_and_converting_units:
+
+Using quantity and converting units
+-------------------------------------------
+
+The scale and the offset of each axis can be set and retrieved as quantity.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.arange(10))
+    >>> s.axes_manager[0].scale_as_quantity
+    1.0 dimensionless
+    >>> s.axes_manager[0].scale_as_quantity = '2.5 µm'
+    >>> s.axes_manager
+    <Axes manager, axes: (|10)>
+                Name |   size |  index |  offset |   scale |  units 
+    ================ | ====== | ====== | ======= | ======= | ====== 
+    ---------------- | ------ | ------ | ------- | ------- | ------ 
+         <undefined> |     10 |        |       0 |     2.5 |     µm
+    >>> s.axes_manager[0].offset_as_quantity = '2.5 nm'
+    <Axes manager, axes: (|10)>
+                Name |   size |  index |  offset |   scale |  units 
+    ================ | ====== | ====== | ======= | ======= | ====== 
+    ---------------- | ------ | ------ | ------- | ------- | ------ 
+         <undefined> |     10 |        |     2.5 | 2.5e+03 |     nm
+
+
+Internally, HyperSpy uses the `pint <http://pint.readthedocs.io>`_ library to manage the scale and offset quantities. The ``scale_as_quantity`` and ``offset_as_quantity`` attributes return pint object:
+
+.. code-block:: python
+
+    >>> q = s.axes_manager[0].offset_as_quantity
+    >>> type(q) # q is a pint quantity object
+    pint.quantity.build_quantity_class.<locals>.Quantity
+    >>> q
+    2.5 nanometer
+
+
+The ``convert_units`` method of the :py:class:`~.axes.AxesManager` converts units, which by default (no parameters provided) converts all axis units to an optimal units to avoid using too large or small number.
+
+Each axis can also be converted individually using the ``convert_to_units`` method of the :py:class:`~.axes.DataAxis`:
+
+.. code-block:: python
+
+    >>> axis = hs.hyperspy.axes.DataAxis(size=10, scale=0.1, offset=10, units='mm')
+    >>> axis.scale_as_quantity
+    0.1 millimeter
+    >>> axis.convert_to_units('µm')
+    >>> axis.scale_as_quantity
+    100.0 micrometer
 
 .. _saving:
 
@@ -440,7 +582,7 @@ hyperspy gui packages are installed and enabled:
    Preferences user interface.
 
 .. versionadded:: 1.3
-    Possibility to enable/disable GUIs in the preferences.
+    Possibility to enable/disable GUIs in the
 
 It is also possible to set the preferences programmatically. For example,
 to disable the traitsui GUI elements and save the changes to disk:
@@ -449,7 +591,6 @@ to disable the traitsui GUI elements and save the changes to disk:
 
     >>> hs.preferences.GUIs.enable_traitsui_gui = False
     >>> hs.preferences.save()
-    >>> # if not saved, this setting will be used until the next jupyter kernel shutdown
 
 .. versionchanged:: 1.3
 
@@ -468,6 +609,8 @@ to disable the traitsui GUI elements and save the changes to disk:
 
 Messages log
 ------------
+
+.. versionadded:: 1.0
 
 HyperSpy writes messages to the `Python logger
 <https://docs.python.org/3/howto/logging.html#logging-basic-tutorial>`_. The

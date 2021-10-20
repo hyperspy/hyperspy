@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -192,7 +192,10 @@ class MarkerBase(object):
             self._render_figure()
 
     def _render_figure(self):
-        self.ax.hspy_fig.render_figure()
+        if self.ax.figure.canvas.supports_blit:
+            self.ax.hspy_fig._update_animated()
+        else:
+            self.ax.figure.canvas.draw_idle()
 
     def close(self, render_figure=True):
         """Remove and disconnect the marker.

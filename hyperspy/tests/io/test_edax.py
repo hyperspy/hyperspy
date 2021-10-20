@@ -1,16 +1,20 @@
-import gc
-import hashlib
-import os
 import os.path
+import os
 import tempfile
+import gc
+import urllib.request
 import zipfile
+import hashlib
 
 import numpy as np
+from numpy.testing import assert_allclose, assert_equal
 import pytest
 import requests
 
-from hyperspy import signals
 from hyperspy.io import load
+from hyperspy import signals
+from hyperspy.misc.test_utils import assert_deep_almost_equal
+
 
 MY_PATH = os.path.dirname(__file__)
 ZIPF = os.path.join(MY_PATH, "edax_files.zip")
@@ -31,6 +35,7 @@ if not TEST_FILES_OK:
 
         SHA256SUM_GOT = hashlib.sha256(r.content).hexdigest()
         if SHA256SUM_GOT == SHA256SUM:
+            ZIPF = os.path.join(TMP_DIR.name, "edax_files.zip")
             with open(ZIPF, 'wb') as f:
                 f.write(r.content)
             TEST_FILES_OK = True
@@ -92,29 +97,28 @@ class TestSpcSpectrum_v061_xrf:
             'Signal']
 
         # Testing SEM parameters
-        np.testing.assert_allclose(30, sem_dict['beam_energy'])
-        np.testing.assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
+        assert_allclose(30, sem_dict['beam_energy'])
+        assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
 
         # Testing EDS parameters
-        np.testing.assert_allclose(45, eds_dict['azimuth_angle'])
-        np.testing.assert_allclose(35, eds_dict['elevation_angle'])
-        np.testing.assert_allclose(137.92946, eds_dict['energy_resolution_MnKa'],
+        assert_allclose(45, eds_dict['azimuth_angle'])
+        assert_allclose(35, eds_dict['elevation_angle'])
+        assert_allclose(137.92946, eds_dict['energy_resolution_MnKa'],
                         atol=1E-5)
-        np.testing.assert_allclose(2561.0, eds_dict['live_time'], atol=1E-6)
+        assert_allclose(2561.0, eds_dict['live_time'], atol=1E-6)
 
         # Testing elements
         assert ({'Al', 'Ca', 'Cl', 'Cr', 'Fe', 'K', 'Mg', 'Mn', 'Si', 'Y'} ==
                 set(elements))
 
         # Testing HyperSpy parameters
+        assert True == signal_dict['binned']
         assert 'EDS_SEM' == signal_dict['signal_type']
         assert isinstance(TestSpcSpectrum_v061_xrf.spc, signals.EDSSEMSpectrum)
 
     def test_axes(self):
-        spc_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
-                                     'name': 'Energy',
+        spc_ax_manager = {'axis-0': {'name': 'Energy',
                                      'navigate': False,
-                                     'is_binned': True,
                                      'offset': 0.0,
                                      'scale': 0.01,
                                      'size': 4000,
@@ -126,13 +130,13 @@ class TestSpcSpectrum_v061_xrf:
         spc_header = TestSpcSpectrum_v061_xrf.spc_loadAll.original_metadata[
             'spc_header']
 
-        np.testing.assert_allclose(4, spc_header['analysisType'])
-        np.testing.assert_allclose(4, spc_header['analyzerType'])
-        np.testing.assert_allclose(2013, spc_header['collectDateYear'])
-        np.testing.assert_allclose(9, spc_header['collectDateMon'])
-        np.testing.assert_allclose(26, spc_header['collectDateDay'])
-        np.testing.assert_equal(b'Garnet1.', spc_header['fileName'].view('|S8')[0])
-        np.testing.assert_allclose(45, spc_header['xRayTubeZ'])
+        assert_allclose(4, spc_header['analysisType'])
+        assert_allclose(4, spc_header['analyzerType'])
+        assert_allclose(2013, spc_header['collectDateYear'])
+        assert_allclose(9, spc_header['collectDateMon'])
+        assert_allclose(26, spc_header['collectDateDay'])
+        assert_equal(b'Garnet1.', spc_header['fileName'].view('|S8')[0])
+        assert_allclose(45, spc_header['xRayTubeZ'])
 
 
 class TestSpcSpectrum_v070_eds:
@@ -169,29 +173,28 @@ class TestSpcSpectrum_v070_eds:
             'Signal']
 
         # Testing SEM parameters
-        np.testing.assert_allclose(22, sem_dict['beam_energy'])
-        np.testing.assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
+        assert_allclose(22, sem_dict['beam_energy'])
+        assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
 
         # Testing EDS parameters
-        np.testing.assert_allclose(0, eds_dict['azimuth_angle'])
-        np.testing.assert_allclose(34, eds_dict['elevation_angle'])
-        np.testing.assert_allclose(129.31299, eds_dict['energy_resolution_MnKa'],
+        assert_allclose(0, eds_dict['azimuth_angle'])
+        assert_allclose(34, eds_dict['elevation_angle'])
+        assert_allclose(129.31299, eds_dict['energy_resolution_MnKa'],
                         atol=1E-5)
-        np.testing.assert_allclose(50.000004, eds_dict['live_time'], atol=1E-6)
+        assert_allclose(50.000004, eds_dict['live_time'], atol=1E-6)
 
         # Testing elements
         assert ({'Al', 'C', 'Ce', 'Cu', 'F', 'Ho', 'Mg', 'O'} ==
                 set(elements))
 
         # Testing HyperSpy parameters
+        assert True == signal_dict['binned']
         assert 'EDS_SEM' == signal_dict['signal_type']
         assert isinstance(TestSpcSpectrum_v070_eds.spc, signals.EDSSEMSpectrum)
 
     def test_axes(self):
-        spc_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
-                                     'name': 'Energy',
+        spc_ax_manager = {'axis-0': {'name': 'Energy',
                                      'navigate': False,
-                                     'is_binned': True,
                                      'offset': 0.0,
                                      'scale': 0.01,
                                      'size': 4096,
@@ -203,15 +206,15 @@ class TestSpcSpectrum_v070_eds:
         spc_header = TestSpcSpectrum_v070_eds.spc_loadAll.original_metadata[
             'spc_header']
 
-        np.testing.assert_allclose(4, spc_header['analysisType'])
-        np.testing.assert_allclose(5, spc_header['analyzerType'])
-        np.testing.assert_allclose(2016, spc_header['collectDateYear'])
-        np.testing.assert_allclose(4, spc_header['collectDateMon'])
-        np.testing.assert_allclose(19, spc_header['collectDateDay'])
-        np.testing.assert_equal(b'C:\\ProgramData\\EDAX\\jtaillon\\Cole\\Mapping\\Lsm\\'
+        assert_allclose(4, spc_header['analysisType'])
+        assert_allclose(5, spc_header['analyzerType'])
+        assert_allclose(2016, spc_header['collectDateYear'])
+        assert_allclose(4, spc_header['collectDateMon'])
+        assert_allclose(19, spc_header['collectDateDay'])
+        assert_equal(b'C:\\ProgramData\\EDAX\\jtaillon\\Cole\\Mapping\\Lsm\\'
                      b'GFdCr\\950\\Area 1\\spectrum20160419153851427_0.spc',
                      spc_header['longFileName'].view('|S256')[0])
-        np.testing.assert_allclose(0, spc_header['xRayTubeZ'])
+        assert_allclose(0, spc_header['xRayTubeZ'])
 
 
 class TestSpdMap_070_eds:
@@ -267,45 +270,40 @@ class TestSpdMap_070_eds:
         signal_dict = TestSpdMap_070_eds.spd.metadata.as_dictionary()['Signal']
 
         # Testing SEM parameters
-        np.testing.assert_allclose(22, sem_dict['beam_energy'])
-        np.testing.assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
+        assert_allclose(22, sem_dict['beam_energy'])
+        assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
 
         # Testing EDS parameters
-        np.testing.assert_allclose(0, eds_dict['azimuth_angle'])
-        np.testing.assert_allclose(34, eds_dict['elevation_angle'])
-        np.testing.assert_allclose(126.60252, eds_dict['energy_resolution_MnKa'],
+        assert_allclose(0, eds_dict['azimuth_angle'])
+        assert_allclose(34, eds_dict['elevation_angle'])
+        assert_allclose(126.60252, eds_dict['energy_resolution_MnKa'],
                         atol=1E-5)
-        np.testing.assert_allclose(2621.4399, eds_dict['live_time'], atol=1E-4)
+        assert_allclose(2621.4399, eds_dict['live_time'], atol=1E-4)
 
         # Testing elements
         assert {'Ce', 'Co', 'Cr', 'Fe', 'Gd', 'La', 'Mg', 'O',
                 'Sr'} == set(elements)
 
         # Testing HyperSpy parameters
+        assert True == signal_dict['binned']
         assert 'EDS_SEM' == signal_dict['signal_type']
         assert isinstance(TestSpdMap_070_eds.spd, signals.EDSSEMSpectrum)
 
     def test_axes(self):
-        spd_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
-                                     'name': 'y',
+        spd_ax_manager = {'axis-0': {'name': 'y',
                                      'navigate': True,
-                                     'is_binned': False,
                                      'offset': 0.0,
                                      'scale': 14.227345585823057,
                                      'size': 200,
                                      'units': 'nm'},
-                          'axis-1': {'_type': 'UniformDataAxis',
-                                     'name': 'x',
+                          'axis-1': {'name': 'x',
                                      'navigate': True,
-                                     'is_binned': False,
                                      'offset': 0.0,
                                      'scale': 14.235896058380602,
                                      'size': 256,
                                      'units': 'nm'},
-                          'axis-2': {'_type': 'UniformDataAxis',
-                                     'name': 'Energy',
+                          'axis-2': {'name': 'Energy',
                                      'navigate': False,
-                                     'is_binned': True,
                                      'offset': 0.0,
                                      'scale': 0.0050000000000000001,
                                      'size': 2500,
@@ -315,8 +313,8 @@ class TestSpdMap_070_eds:
 
     def test_ipr_reading(self):
         ipr_header = TestSpdMap_070_eds.spd.original_metadata['ipr_header']
-        np.testing.assert_allclose(0.014235896, ipr_header['mppX'])
-        np.testing.assert_allclose(0.014227346, ipr_header['mppY'])
+        assert_allclose(0.014235896, ipr_header['mppX'])
+        assert_allclose(0.014227346, ipr_header['mppY'])
 
     def test_spc_reading(self):
         # Test to make sure that spc metadata matches spd metadata
@@ -328,19 +326,19 @@ class TestSpdMap_070_eds:
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
 
-        np.testing.assert_allclose(spc_header.azimuth,
+        assert_allclose(spc_header.azimuth,
                         eds_dict['azimuth_angle'])
-        np.testing.assert_allclose(spc_header.detReso,
+        assert_allclose(spc_header.detReso,
                         eds_dict['energy_resolution_MnKa'])
-        np.testing.assert_allclose(spc_header.elevation,
+        assert_allclose(spc_header.elevation,
                         eds_dict['elevation_angle'])
-        np.testing.assert_allclose(spc_header.liveTime,
+        assert_allclose(spc_header.liveTime,
                         eds_dict['live_time'])
-        np.testing.assert_allclose(spc_header.evPerChan,
+        assert_allclose(spc_header.evPerChan,
                         TestSpdMap_070_eds.spd.axes_manager[2].scale * 1000)
-        np.testing.assert_allclose(spc_header.kV,
+        assert_allclose(spc_header.kV,
                         sem_dict['beam_energy'])
-        np.testing.assert_allclose(spc_header.numElem,
+        assert_allclose(spc_header.numElem,
                         len(elements))
 
 
@@ -397,45 +395,40 @@ class TestSpdMap_061_xrf:
         signal_dict = TestSpdMap_061_xrf.spd.metadata.as_dictionary()['Signal']
 
         # Testing SEM parameters
-        np.testing.assert_allclose(30, sem_dict['beam_energy'])
-        np.testing.assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
+        assert_allclose(30, sem_dict['beam_energy'])
+        assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
 
         # Testing EDS parameters
-        np.testing.assert_allclose(45, eds_dict['azimuth_angle'])
-        np.testing.assert_allclose(35, eds_dict['elevation_angle'])
-        np.testing.assert_allclose(137.92946, eds_dict['energy_resolution_MnKa'],
+        assert_allclose(45, eds_dict['azimuth_angle'])
+        assert_allclose(35, eds_dict['elevation_angle'])
+        assert_allclose(137.92946, eds_dict['energy_resolution_MnKa'],
                         atol=1E-5)
-        np.testing.assert_allclose(2561.0, eds_dict['live_time'], atol=1E-4)
+        assert_allclose(2561.0, eds_dict['live_time'], atol=1E-4)
 
         # Testing elements
         assert {'Al', 'Ca', 'Cl', 'Cr', 'Fe', 'K', 'Mg', 'Mn', 'Si',
                 'Y'} == set(elements)
 
         # Testing HyperSpy parameters
+        assert True == signal_dict['binned']
         assert 'EDS_SEM' == signal_dict['signal_type']
         assert isinstance(TestSpdMap_061_xrf.spd, signals.EDSSEMSpectrum)
 
     def test_axes(self):
-        spd_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
-                                     'name': 'y',
+        spd_ax_manager = {'axis-0': {'name': 'y',
                                      'navigate': True,
-                                     'is_binned': False,
                                      'offset': 0.0,
                                      'scale': 0.5651920166015625,
                                      'size': 200,
                                      'units': 'mm'},
-                          'axis-1': {'_type': 'UniformDataAxis',
-                                     'name': 'x',
+                          'axis-1': {'name': 'x',
                                      'navigate': True,
-                                     'is_binned': False,
                                      'offset': 0.0,
                                      'scale': 0.5651920166015625,
                                      'size': 256,
                                      'units': 'mm'},
-                          'axis-2': {'_type': 'UniformDataAxis',
-                                     'name': 'Energy',
+                          'axis-2': {'name': 'Energy',
                                      'navigate': False,
-                                     'is_binned': True,
                                      'offset': 0.0,
                                      'scale': 0.01,
                                      'size': 2000,
@@ -445,8 +438,8 @@ class TestSpdMap_061_xrf:
 
     def test_ipr_reading(self):
         ipr_header = TestSpdMap_061_xrf.spd.original_metadata['ipr_header']
-        np.testing.assert_allclose(565.1920166015625, ipr_header['mppX'])
-        np.testing.assert_allclose(565.1920166015625, ipr_header['mppY'])
+        assert_allclose(565.1920166015625, ipr_header['mppX'])
+        assert_allclose(565.1920166015625, ipr_header['mppY'])
 
     def test_spc_reading(self):
         # Test to make sure that spc metadata matches spd_061_xrf metadata
@@ -458,17 +451,17 @@ class TestSpdMap_061_xrf:
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
 
-        np.testing.assert_allclose(spc_header.azimuth,
+        assert_allclose(spc_header.azimuth,
                         eds_dict['azimuth_angle'])
-        np.testing.assert_allclose(spc_header.detReso,
+        assert_allclose(spc_header.detReso,
                         eds_dict['energy_resolution_MnKa'])
-        np.testing.assert_allclose(spc_header.elevation,
+        assert_allclose(spc_header.elevation,
                         eds_dict['elevation_angle'])
-        np.testing.assert_allclose(spc_header.liveTime,
+        assert_allclose(spc_header.liveTime,
                         eds_dict['live_time'])
-        np.testing.assert_allclose(spc_header.evPerChan,
+        assert_allclose(spc_header.evPerChan,
                         TestSpdMap_061_xrf.spd.axes_manager[2].scale * 1000)
-        np.testing.assert_allclose(spc_header.kV,
+        assert_allclose(spc_header.kV,
                         sem_dict['beam_energy'])
-        np.testing.assert_allclose(spc_header.numElem,
+        assert_allclose(spc_header.numElem,
                         len(elements))

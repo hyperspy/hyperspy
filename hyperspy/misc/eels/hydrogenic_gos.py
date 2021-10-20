@@ -1,28 +1,13 @@
-# -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
-#
-# This file is part of  HyperSpy.
-#
-#  HyperSpy is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-#  HyperSpy is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
 import logging
 
 import numpy as np
-from scipy import integrate, interpolate, constants
+import scipy as sp
+import scipy.interpolate
 
 from hyperspy.misc.eels.base_gos import GOSBase
+from hyperspy.misc.physical_constants import R
 
 _logger = logging.getLogger(__name__)
 
@@ -34,8 +19,6 @@ XU = [
 
 # IE1=[118,149,189,229,270,320,377,438,500,564,628,695,769,846,
 # 926,1008,1096,1194,1142,1248,1359,1476,1596,1727]
-
-R = constants.value("Rydberg constant times hc in eV")
 
 
 class HydrogenicGOS(GOSBase):
@@ -139,11 +122,12 @@ class HydrogenicGOS(GOSBase):
 
             # dsbyde IS THE ENERGY-DIFFERENTIAL X-SECN (barn/eV/atom)
             qint[i] = 3.5166e8 * (R / T) * (R / E) * (
-                integrate.quad(
+                scipy.integrate.quad(
                     lambda x: self.gosfunc(E, np.exp(x)),
                     math.log(qa0sqmin), math.log(qa0sqmax))[0])
         self.qint = qint
-        return interpolate.interp1d(self.energy_axis + energy_shift, qint)
+        return sp.interpolate.interp1d(self.energy_axis + energy_shift,
+                                       qint)
 
     def gosfuncK(self, E, qa02):
         # gosfunc calculates (=DF/DE) which IS PER EV AND PER ATOM
@@ -191,7 +175,7 @@ class HydrogenicGOS(GOSBase):
             u = .1
         else:
             # Egerton's correction to the Hydrogenic XS
-            u = XU[int(iz)]
+            u = XU[np.int(iz)]
         el3 = self.onset_energy_L3 + self.energy_shift
         el1 = self.onset_energy_L1 + self.energy_shift
 

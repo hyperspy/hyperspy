@@ -1,14 +1,16 @@
-import gc
-import os.path
 import tempfile
+import os.path
+import gc
 
 import numpy as np
-import numpy.testing as npt
-import pytest
 
-import hyperspy.signals as signals
+import pytest
+import numpy.testing as npt
+
 from hyperspy.io import load
+import hyperspy.signals as signals
 from hyperspy.io_plugins import ripple
+
 
 # Tuple of tuples (data shape, signal_dimensions)
 SHAPES_SDIM = (((3,), (1, )),
@@ -22,7 +24,7 @@ MYPATH = os.path.dirname(__file__)
 def test_write_unsupported_data_shape():
     data = np.arange(5 * 10 * 15 * 20).reshape((5, 10, 15, 20))
     s = signals.Signal1D(data)
-    with pytest.raises(TypeError):
+    with pytest.raises(IOError):
         s.save('test_write_unsupported_data_shape.rpl')
 
 

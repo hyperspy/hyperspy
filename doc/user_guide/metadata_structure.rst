@@ -21,7 +21,6 @@ in the following sections of this chapter.
     ├── Acquisition_instrument
     │   ├── SEM
     │   │   ├── Detector
-    │   │   │   ├── detector_type
     │   │   │   └── EDS
     │   │   │       ├── azimuth_angle (º)
     │   │   │       ├── elevation_angle (º)
@@ -101,6 +100,7 @@ in the following sections of this chapter.
         │   │   ├── gain_offset
         │   │   └── parameters_estimation_method
         │   └── variance
+        ├── binned
         ├── quantity
         ├── signal_type
         └── signal_origin
@@ -291,11 +291,6 @@ All instruments can contain a "Detector" node with information about the
 detector used to acquire the signal. EDX and EELS detectors should follow the
 following structure:
 
-detector_type
-    type: Str
-
-    The type of the detector, e.g. SE for SEM
-
 EELS
 ^^^^
 
@@ -443,7 +438,6 @@ signal_origin
 
 record_by
     .. deprecated:: 1.2
-
     type: Str
 
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.

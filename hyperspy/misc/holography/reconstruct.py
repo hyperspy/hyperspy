@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -137,7 +137,7 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness,
         Smoothness of the aperture in pixel.
     output_shape: tuple, optional
         New output shape.
-    plotting : bool
+    plotting : boolean
         Plots the masked sideband used for reconstruction.
 
     Returns

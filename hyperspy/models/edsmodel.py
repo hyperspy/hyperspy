@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -31,8 +31,6 @@ from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 import hyperspy.components1d as create_component
-from hyperspy.misc.test_utils import ignore_warning
-
 
 _logger = logging.getLogger(__name__)
 
@@ -102,13 +100,14 @@ class EDSModel(Model1D):
 
     Parameters
     ----------
-    spectrum : EDSSpectrum (or any EDSSpectrum subclass) instance.
+    spectrum : an EDSSpectrum (or any EDSSpectrum subclass) instance.
 
-    auto_add_lines : bool
+    auto_add_lines : boolean
         If True, automatically add Gaussians for all X-rays generated
         in the energy range by an element, using the edsmodel.add_family_lines
         method.
-    auto_background : bool
+
+    auto_background : boolean
         If True, adds automatically a polynomial order 6 to the model,
         using the edsmodel.add_polynomial_background method.
 
@@ -203,16 +202,7 @@ class EDSModel(Model1D):
             those. If 'from_elements', add all lines from the elements contains
             in `metadata`. Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols. (eg. ('Al_Ka','Zn_Ka')).
-
-        Raises
-        ------
-        NotImplementedError
-            If the signal axis is a non-uniform axis.
         """
-        # Test that signal axis is uniform
-        if not self.axes_manager[-1].is_uniform:
-            raise NotImplementedError("This function is not yet implemented "
-                                      "for non-uniform axes.")
 
         only_one = False
         only_lines = ("Ka", "La", "Ma")
@@ -281,7 +271,7 @@ class EDSModel(Model1D):
     @property
     def _active_background_components(self):
         return [bc for bc in self.background_components
-                if bc.free_parameters]
+                if bc.coefficients.free]
 
     def add_polynomial_background(self, order=6):
         """
@@ -294,24 +284,25 @@ class EDSModel(Model1D):
         order: int
             The order of the polynomial
         """
-        with ignore_warning(message="The API of the `Polynomial` component"):
-            background = create_component.Polynomial(order=order, legacy=False)
+        background = create_component.Polynomial(order=order)
         background.name = 'background_order_' + str(order)
         background.isbackground = True
         self.append(background)
         self.background_components.append(background)
 
-    def add_physical_background(self, E0='from_metadata', detector='Polymer_C', quantification='Mean',emission_model='Kramer', absorption_model='quadrilateral', coating_thickness=0, TOA='from_metadata', Phase_map=None, correct_for_backscatterring=False, standard=False):
+    def add_physical_background(self, E0='from_metadata', detector='Polymer_C', quantification='Mean',emission_model='Kramer', absorption_model='quadrilateral', coating_thickness=0, TOA='from_metadata', Phase_map=None, correct_for_backscatterring=True):
         """
-        Add a physical model of the background taking into account the interraction e-/mater (see Zanetta et al. 2019)
+        Add a background based on physical property of the interraction e-/mater (see Zanetta et al. 2019)
     
         the background is added to self.background_components
+
         Parameters
         ----------
         E0: int
             The Beam energy
                 If `from_metadata` contains `beam_energy` referenced in the metadata
                 If an integer is write, this value will be used during the fit
+
         detector: str or array
             The string is the type of detector used during the acquisition
                 String can be 'Polymer_C' / 'Super_X' / '12µm_BE' / '25µm_BE' / '100µm_BE' / 'Polymer_C2' / 'Polymer_C3' 
@@ -342,13 +333,16 @@ class EDSModel(Model1D):
             This argument allow to speed up the fit on large map. If a phase map is known, the mass absorption coefficient function is considered to be the same for each pixel of the same phase
             and is only calculated one time for the entire phase
         Correct_for_backscattering: True or False
-            apply a correction for the backscattered electron to the emitted intensities
+            apply a correction for the backscattered electron to the emitted intensities (Small et al 1987)
             
              
         Caution ! : The number of elements have to be equal to the number of Xray_lines. It's preferable to remove secondary lines and keep only higher energy lines
+
         Example:
+
             s = hs.datasets.example_signals.EDS_SEM_Spectrum()
             s.add_lines()
+
             m=s.create_model(auto_background=False)
             m.add_physical_background()
             m.components.Bremsstrahlung.initialize() # Carefull it's a necessary step
@@ -362,31 +356,26 @@ class EDSModel(Model1D):
         if TOA == 'from_metadata':
             TOA = self.signal.get_take_off_angle()
             
-        background = create_component.Physical_background(E0=E0,detector=detector, quantification=quantification, emission_model=emission_model, absorption_model=absorption_model, coating_thickness=coating_thickness,TOA=TOA, Phase_map=Phase_map,correct_for_backscatterring=correct_for_backscatterring, standard=standard)
+        background = create_component.Physical_background(E0=E0,detector=detector, quantification=quantification, emission_model=emission_model, absorption_model=absorption_model, coating_thickness=coating_thickness,TOA=TOA, Phase_map=Phase_map,correct_for_backscatterring=correct_for_backscatterring)
         background.name = "Bremsstrahlung"
         background.isbackground = True
         self.append(background)
         self.background_components.append(background)
 
+
     def free_background(self):
         """
         Free the yscale of the background components.
         """
-        if self.background_components[0].name == 'Bremsstrahlung':
-            self.background_components[0].mt.free=True
-            self.background_components[0].a.free=True
-            self.background_components[0].b.free=True
-            
-        else :  
-            for component in self.background_components:
-                component.set_parameters_free()
+        for component in self.background_components:
+            component.coefficients.free = True
 
     def fix_background(self):
         """
         Fix the background components.
         """
         for component in self._active_background_components:
-            component.set_parameters_not_free()
+            component.coefficients.free = False
 
     def enable_xray_lines(self):
         """Enable the X-ray lines components.
@@ -437,7 +426,7 @@ class EDSModel(Model1D):
             If 'single' fit only the current location. If 'multi'
             use multifit.
         **kwargs : extra key word arguments
-            All extra key word arguments are passed to fit or multifit
+            All extra key word arguments are passed to fit or
 
         See also
         --------
@@ -572,17 +561,7 @@ class EDSModel(Model1D):
             The X-ray lines. If 'all_alpha', fit all using all alpha lines
         ref: list of float
             The centres, before fitting, of the X-ray lines included
-
-        Raises
-        ------
-        NotImplementedError
-            If the signal axis is a non-uniform axis.
         """
-        # Test that signal axis is uniform
-        if not self.axes_manager[-1].is_uniform:
-            raise NotImplementedError("This function is not yet implemented "
-                                      "for non-uniform axes.")
-
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
         ax = self.signal.axes_manager[-1]
@@ -636,17 +615,7 @@ class EDSModel(Model1D):
             The Xray lines. If 'all_alpha', fit all using all alpha lines
         ref: list of float
             The centres, before fitting, of the X-ray lines included
-
-        Raises
-        ------
-        NotImplementedError
-            If the signal axis is a non-uniform axis.
         """
-        # Test that signal axis is uniform
-        if not self.axes_manager[-1].is_uniform:
-            raise NotImplementedError("This function is not yet implemented "
-                                      "for non-uniform axes.")
-
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
         diff = self[xray_lines[0]].centre.value - ref[0]
@@ -716,7 +685,6 @@ class EDSModel(Model1D):
             Bound the height of the peak to a fraction of
             its height
         """
-
         def free_twin(component):
             component.A.twin = None
             component.A.free = True
@@ -744,7 +712,6 @@ class EDSModel(Model1D):
 
         Establish the twin on the height of sub-Xray lines (non alpha)
         """
-
         def fix_twin(component):
             component.A.bmin = 0.0
             component.A.bmax = None
@@ -896,17 +863,15 @@ class EDSModel(Model1D):
             fix = self.fix_xray_lines_width
 
         free(xray_lines=xray_lines, bound=bound)
-        if kind == "single":
-            self.fit(bounded=True, **kwargs)
-        elif kind == "multi":
-            self.multifit(bounded=True, **kwargs)
+        if kind == 'single':
+            self.fit(bounded=True, fitter='mpfit', **kwargs)
+        elif kind == 'multi':
+            self.multifit(bounded=True, fitter='mpfit', **kwargs)
         fix(xray_lines=xray_lines)
 
     def get_lines_intensity(self,
                             xray_lines=None,
                             plot_result=False,
-                            only_one=True,
-                            only_lines=("a",),
                             **kwargs):
         """
         Return the fitted intensity of the X-ray lines.
@@ -915,25 +880,14 @@ class EDSModel(Model1D):
 
         Parameters
         ----------
-        xray_lines: {None, list of string}
-            If None,
-            if `metadata.Sample.elements.xray_lines` contains a
-            list of lines use those.
-            If `metadata.Sample.elements.xray_lines` is undefined
-            or empty but `metadata.Sample.elements` is defined,
-            use the same syntax as `add_line` to select a subset of lines
-            for the operation.
-            Alternatively, provide an iterable containing
+        xray_lines: list of str or None or 'from_metadata'
+            If None, all main X-ray lines (alpha)
+            If 'from_metadata', take the Xray_lines stored in the `metadata`
+            of the spectrum. Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols.
         plot_result : bool
             If True, plot the calculated line intensities. If the current
             object is a single spectrum it prints the result instead.
-        only_one : bool
-            If False, use all the lines of each element in the data spectral
-            range. If True use only the line at the highest energy
-            above an overvoltage of 2 (< beam energy / 2).
-        only_lines : {None, list of strings}
-            If not None, use only the given lines.
         kwargs
             The extra keyword arguments for plotting. See
             `utils.plot.plot_signals`
@@ -949,19 +903,16 @@ class EDSModel(Model1D):
         >>> m.get_lines_intensity(["C_Ka", "Ta_Ma"])
         """
         from hyperspy import utils
-
         intensities = []
-
         if xray_lines is None:
             xray_lines = [component.name for component in self.xray_lines]
         else:
-            xray_lines = self.signal._parse_xray_lines(
-                xray_lines, only_one, only_lines)
-            xray_lines = list(filter(lambda x: x in [a.name for a in
-                                                     self], xray_lines))
-        if len(xray_lines) == 0:
+            if xray_lines == 'from_metadata':
+                xray_lines = self.signal.metadata.Sample.xray_lines
+            xray_lines = filter(lambda x: x in [a.name for a in
+                                                self], xray_lines)
+        if not xray_lines:
             raise ValueError("These X-ray lines are not part of the model.")
-
         for xray_line in xray_lines:
             element, line = utils_eds._get_element_and_line(xray_line)
             line_energy = self.signal._get_line_energy(xray_line)
@@ -976,7 +927,6 @@ class EDSModel(Model1D):
                  line_energy,
                  self.signal.axes_manager.signal_axes[0].units,
                  self.signal.metadata.General.title))
-            img.axes_manager.set_signal_dimension(0)
             if plot_result and img.axes_manager.signal_dimension == 0:
                 print("%s at %s %s : Intensity = %.2f"
                       % (xray_line,

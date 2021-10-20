@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -29,7 +29,7 @@ from hyperspy.signal import BaseSetMetadataItems
 _logger = logging.getLogger(__name__)
 
 
-@add_gui_method(toolkey="hyperspy.microscope_parameters_EDS_SEM")
+@add_gui_method(toolkey="microscope_parameters_EDS_SEM")
 class EDSSEMParametersUI(BaseSetMetadataItems):
 
     beam_energy = t.Float(t.Undefined,
@@ -57,7 +57,7 @@ class EDSSEMParametersUI(BaseSetMetadataItems):
         'energy_resolution_MnKa', }
 
 
-class EDSSEMSpectrum(EDSSpectrum):
+class EDSSEM_mixin:
 
     _signal_type = "EDS_SEM"
 
@@ -88,11 +88,6 @@ class EDSSEMSpectrum(EDSSpectrum):
             is divided by the number of pixel (spectrums), giving an
             average live time.
 
-        Raises
-        ------
-        NotImplementedError
-            If the signal axis is a non-uniform axis.
-
         Examples
         --------
         >>> ref = hs.datasets.example_signals.EDS_SEM_Spectrum()
@@ -110,10 +105,6 @@ class EDSSEMSpectrum(EDSSpectrum):
         # Setup the axes_manager
         ax_m = self.axes_manager.signal_axes[0]
         ax_ref = ref.axes_manager.signal_axes[0]
-        for _axis in [ax_m, ax_ref]:
-            if not _axis.is_uniform:
-                raise NotImplementedError(
-                    "The function is not implemented for non-uniform axes.")
         ax_m.scale = ax_ref.scale
         ax_m.units = ax_ref.units
         ax_m.offset = ax_ref.offset
@@ -304,6 +295,10 @@ class EDSSEMSpectrum(EDSSpectrum):
                             auto_add_lines=auto_add_lines,
                             *args, **kwargs)
         return model
+
+
+class EDSSEMSpectrum(EDSSEM_mixin, EDSSpectrum):
+    pass
 
 
 class LazyEDSSEMSpectrum(EDSSEMSpectrum, LazyEDSSpectrum):

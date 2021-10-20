@@ -1,0 +1,10 @@
+[run]
+branch = True
+source = hyperspy
+include = */hyperspy/*
+omit =
+    */hyperspy/external/*
+    */hyperspy/gui_traitsui/*
+    */setup.py
+    */examples/*
+    */continuous_integration/*

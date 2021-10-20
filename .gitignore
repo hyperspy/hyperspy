@@ -43,9 +43,6 @@ hyperspy/io_plugins/unbcf_fast.c
 hyperspy/misc/etc/test_compilers.obj
 /.cache/
 /.spyproject/
-*nbc
-*nbi
-hyperspy/tests/io/edax_files.zip
 
 ### Code ###
 # Visual Studio Code - https://code.visualstudio.com/
@@ -53,4 +50,3 @@ hyperspy/tests/io/edax_files.zip
 .vscode/
 tsconfig.json
 jsconfig.json
-*egg-info*

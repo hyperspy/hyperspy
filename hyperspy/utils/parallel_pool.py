@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,11 +17,10 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import logging
 import time
-from multiprocessing import Pool, cpu_count
+import logging
+from multiprocessing import (cpu_count, Pool)
 from multiprocessing.pool import Pool as Pool_type
-
 import numpy as np
 
 _logger = logging.getLogger(__name__)
@@ -31,8 +30,18 @@ class ParallelPool:
     """ Creates a ParallelPool by either looking for a ipyparallel client and
     then creating a load_balanced_view, or by creating a multiprocessing pool
 
+    Methods
+    -------
+    setup
+        sets up the requested pool
+    sleep
+        sleeps for the requested (or timeout) time
+
     Attributes
     ----------
+
+    has_pool: Bool
+        Boolean if the pool is available and active.
     pool: {ipyparallel.load_balanced_view, multiprocessing.Pool}
         The pool object.
     ipython_kwargs: dict
@@ -45,6 +54,10 @@ class ParallelPool:
     timestep: float
         Can be used as "ticks" to adjust CPU load when building upon this
         class.
+    is_ipyparallel: bool
+        If the pool is ipyparallel-based
+    is_multiprocessing: bool
+        If the pool is multiprocessing-based
 
     """
 
@@ -92,25 +105,19 @@ class ParallelPool:
 
     @property
     def is_ipyparallel(self):
-        """bool: Return ``True`` if the pool is ipyparallel-based else
-        ``False``
-        """
+        """Returns bool if the pool is ipyparallel-based"""
         return hasattr(self.pool, 'client')
 
     @property
     def is_multiprocessing(self):
-        """bool: Return ``True`` if the pool is multiprocessing-based else
-        ``False``
-        """
+        """Returns bool if the pool is multiprocessing-based"""
         return isinstance(self.pool, Pool_type)
 
     @property
     def has_pool(self):
-        """bool: Return ``True`` if the pool is ready and set-up else
-        ``False``
-        """
+        """Returns bool if the pool is ready and set-up"""
         return self.is_ipyparallel or self.is_multiprocessing and \
-            self.pool._state == 0
+            self.pool._state is 0
 
     def _setup_ipyparallel(self):
         import ipyparallel as ipp
