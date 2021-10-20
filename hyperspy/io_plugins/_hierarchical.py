@@ -1,5 +1,5 @@
-import datetime
 import ast
+import datetime
 import logging
 from packaging.version import Version
 
@@ -597,20 +597,22 @@ class HierarchicalWriter:
             metadata = "metadata"
             original_metadata = "original_metadata"
 
-
-
         for axis in signal.axes_manager._axes:
             axis_dict = axis.get_axis_dictionary()
-            coord_group = group.create_group(
+            coord_group = group.require_group(
                 'axis-%s' % axis.index_in_array)
             self.dict2group(axis_dict, coord_group, **kwds)
-        mapped_par = group.create_group(metadata)
+        mapped_par = group.require_group(metadata)
         metadata_dict = signal.metadata.as_dictionary()
-        self.overwrite_dataset(group,
-                               signal.data,
-                               'data',
-                               signal_axes=signal.axes_manager.signal_indices_in_array,
-                               **kwds)
+        overwrite_data = kwds.pop('overwrite_data', True)
+        if overwrite_data:
+            self.overwrite_dataset(
+                group,
+                signal.data,
+                'data',
+                signal_axes=signal.axes_manager.signal_indices_in_array,
+                **kwds
+                )
         if default_version < Version("1.2"):
             metadata_dict["_internal_parameters"] = \
                 metadata_dict.pop("_HyperSpy")
@@ -618,14 +620,14 @@ class HierarchicalWriter:
         # dataset and can't be used
         kwds.pop('chunks', None)
         self.dict2group(metadata_dict, mapped_par, **kwds)
-        original_par = group.create_group(original_metadata)
+        original_par = group.require_group(original_metadata)
         self.dict2group(signal.original_metadata.as_dictionary(), original_par,
                       **kwds)
-        learning_results = group.create_group('learning_results')
+        learning_results = group.require_group('learning_results')
         self.dict2group(signal.learning_results.__dict__,
                       learning_results, **kwds)
         if hasattr(signal, 'peak_learning_results'):
-            peak_learning_results = group.create_group(
+            peak_learning_results = group.require_group(
                 'peak_learning_results')
             self.dict2group(signal.peak_learning_results.__dict__,
                           peak_learning_results, **kwds)
@@ -645,19 +647,23 @@ class HierarchicalWriter:
 
         for key, value in dictionary.items():
             if isinstance(value, dict):
-                self.dict2group(value, group.create_group(key),
-                              **kwds)
+                self.dict2group(value, group.require_group(key), **kwds)
+
             elif isinstance(value, DictionaryTreeBrowser):
                 self.dict2group(value.as_dictionary(),
-                              group.create_group(key),
-                              **kwds)
+                                group.require_group(key),
+                                **kwds)
+
             elif isinstance(value, BaseSignal):
                 kn = key if key.startswith('_sig_') else '_sig_' + key
                 self.write_signal(value, group.require_group(kn))
+
             elif isinstance(value, (np.ndarray, self.Dataset, da.Array)):
                 self.overwrite_dataset(group, value, key, **kwds)
+
             elif value is None:
                 group.attrs[key] = '_None_'
+
             elif isinstance(value, bytes):
                 try:
                     # binary string if has any null characters (otherwise not
@@ -666,17 +672,21 @@ class HierarchicalWriter:
                     group.attrs['_bs_' + key] = np.void(value)
                 except ValueError:
                     group.attrs[key] = value.decode()
+
             elif isinstance(value, str):
                 group.attrs[key] = value
+
             elif isinstance(value, AxesManager):
                 self.dict2group(value.as_dictionary(),
-                              group.create_group('_hspy_AxesManager_' + key),
-                              **kwds)
+                                group.require_group('_hspy_AxesManager_'+key),
+                                **kwds)
+
             elif isinstance(value, list):
                 if len(value):
                     self.parse_structure(key, group, value, '_list_', **kwds)
                 else:
                     group.attrs['_list_empty_' + key] = '_None_'
+
             elif isinstance(value, tuple):
                 if len(value):
                     self.parse_structure(key, group, value, '_tuple_', **kwds)
@@ -685,6 +695,7 @@ class HierarchicalWriter:
 
             elif value is Undefined:
                 continue
+
             else:
                 try:
                     group.attrs[key] = value
@@ -705,10 +716,11 @@ class HierarchicalWriter:
                 tmp = np.array(value)
         except ValueError:
             tmp = np.array([[0]])
+
         if tmp.dtype == np.dtype('O') or tmp.ndim != 1:
             self.dict2group(dict(zip(
                 [str(i) for i in range(len(value))], value)),
-                group.create_group(_type + str(len(value)) + '_' + key),
+                group.require_group(_type + str(len(value)) + '_' + key),
                 **kwds)
         elif tmp.dtype.type is np.unicode_:
             if _type + key in group:

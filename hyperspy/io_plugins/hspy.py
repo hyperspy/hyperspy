@@ -16,19 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from packaging.version import Version
-import warnings
 import logging
-
+from packaging.version import Version
+from pathlib import Path
+import warnings
 
 import dask.array as da
 import h5py
-import numpy as np
 
 from hyperspy.io_plugins._hierarchical import (
     HierarchicalWriter, HierarchicalReader, version
     )
-from hyperspy.misc.utils import multiply
+
 
 _logger = logging.getLogger(__name__)
 
@@ -193,7 +192,7 @@ def file_reader(
     return exp_dict_list
 
 
-def file_writer(filename, signal, *args, **kwds):
+def file_writer(filename, signal, close_file=True, *args, **kwds):
     """Writes data to hyperspy's hdf5 format
 
     Parameters
@@ -205,33 +204,46 @@ def file_writer(filename, signal, *args, **kwds):
     """
     if 'compression' not in kwds:
         kwds['compression'] = 'gzip'
+
     if "shuffle" not in kwds:
         # Use shuffle by default to improve compression
         kwds["shuffle"] = True
-    with h5py.File(filename, mode='w') as f:
-        f.attrs['file_format'] = "HyperSpy"
-        f.attrs['file_format_version'] = version
-        exps = f.create_group('Experiments')
-        group_name = signal.metadata.General.title if \
-            signal.metadata.General.title else '__unnamed__'
-        # / is a invalid character, see #942
-        if "/" in group_name:
-            group_name = group_name.replace("/", "-")
-        expg = exps.create_group(group_name)
 
-        # Add record_by metadata for backward compatibility
-        smd = signal.metadata.Signal
-        if signal.axes_manager.signal_dimension == 1:
-            smd.record_by = "spectrum"
-        elif signal.axes_manager.signal_dimension == 2:
-            smd.record_by = "image"
-        else:
-            smd.record_by = ""
-        try:
-            writer = HyperspyWriter(f, signal, expg, **kwds)
-            writer.write()
-            #write_signal(signal, expg, **kwds)
-        except BaseException:
-            raise
-        finally:
-            del smd.record_by
+    mode = kwds.get('mode', 'w')
+    folder = signal.tmp_parameters.get_item('folder', '')
+    fname = signal.tmp_parameters.get_item('filename', '')
+    ext = signal.tmp_parameters.get_item('extension', '')
+    original_path = Path(folder, f"{fname}.{ext}")
+    if signal._lazy and Path(filename).absolute() == original_path:
+        f = signal._get_file_handle()
+    else:
+        f = h5py.File(filename, mode=mode)
+
+    f.attrs['file_format'] = "HyperSpy"
+    f.attrs['file_format_version'] = version
+    exps = f.require_group('Experiments')
+    group_name = signal.metadata.General.title if \
+        signal.metadata.General.title else '__unnamed__'
+    # / is a invalid character, see #942
+    if "/" in group_name:
+        group_name = group_name.replace("/", "-")
+    expg = exps.require_group(group_name)
+
+    # Add record_by metadata for backward compatibility
+    smd = signal.metadata.Signal
+    if signal.axes_manager.signal_dimension == 1:
+        smd.record_by = "spectrum"
+    elif signal.axes_manager.signal_dimension == 2:
+        smd.record_by = "image"
+    else:
+        smd.record_by = ""
+    try:
+        writer = HyperspyWriter(f, signal, expg, **kwds)
+        writer.write()
+    except BaseException:
+        raise
+    finally:
+        del smd.record_by
+
+    if close_file:
+        f.close()
