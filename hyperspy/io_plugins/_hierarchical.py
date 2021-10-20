@@ -60,6 +60,7 @@ class HierarchicalReader:
     def read(self, lazy):
         models_with_signals = []
         standalone_models = []
+
         if 'Analysis/models' in self.file:
             try:
                 m_gr = self.file['Analysis/models']
@@ -78,8 +79,10 @@ class HierarchicalReader:
                                 m_gr[model_name], lazy=lazy)})
             except TypeError:
                 raise IOError(not_valid_format)
+
         experiments = []
         exp_dict_list = []
+
         if 'Experiments' in self.file:
             for ds in self.file['Experiments']:
                 if isinstance(self.file['Experiments'][ds], self.Group):
@@ -104,11 +107,10 @@ class HierarchicalReader:
             standalone_models.append(m)
 
         exp_dict_list.extend(standalone_models)
+
         if not len(exp_dict_list):
-            raise IOError('This is not a valid HyperSpy HDF5 file. '
-                          'You can still load the data using a hdf5 reader, '
-                          'e.g. h5py, and manually create a Signal. '
-                          'Please, refer to the User Guide for details')
+            raise IOError(f'This is not a valid {self._file_type} file.')
+
         return exp_dict_list
 
     def group2signaldict(self,

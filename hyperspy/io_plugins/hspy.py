@@ -109,6 +109,7 @@ class HyperspyReader(HierarchicalReader):
         self.Dataset = h5py.Dataset
         self.Group = h5py.Group
         self.unicode_kwds = {"dtype": h5py.special_dtype(vlen=str)}
+        self._file_type = format_name.lower()
 
 
 class HyperspyWriter(HierarchicalWriter):

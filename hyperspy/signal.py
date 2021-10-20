@@ -16,24 +16,24 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from collections.abc import MutableMapping
 import copy
-import warnings
-import inspect
 from contextlib import contextmanager
 from datetime import datetime
+import inspect
 from itertools import product
 import logging
-from pint import UnitRegistry, UndefinedUnitError
+import numbers
 from pathlib import Path
+import warnings
 
-import numpy as np
-from scipy import integrate
-from scipy import signal as sp_signal
 import dask.array as da
 from matplotlib import pyplot as plt
+import numpy as np
+from pint import UnitRegistry, UndefinedUnitError
+from scipy import integrate
+from scipy import signal as sp_signal
 import traits.api as t
-import numbers
-from collections import MutableMapping
 
 from hyperspy.axes import AxesManager
 from hyperspy import io

@@ -77,13 +77,16 @@ writes = True
 
 class ZspyReader(HierarchicalReader):
     def __init__(self, file):
-        super(ZspyReader, self).__init__(file)
+        super().__init__(file)
         self.Dataset = zarr.Array
         self.Group = zarr.Group
+        self._file_type = format_name.lower()
 
 
 class ZspyWriter(HierarchicalWriter):
+
     target_size = 1e8
+
     def __init__(self,
                  file,
                  signal,
@@ -94,7 +97,6 @@ class ZspyWriter(HierarchicalWriter):
         self.ragged_kwds = {"dtype": object,
                             "object_codec": numcodecs.VLenArray(int),
                             "exact":  True}
-        self.target_size = 1e8
 
     @staticmethod
     def _get_object_dset(group, data, key, chunks, **kwds):
@@ -132,38 +134,35 @@ class ZspyWriter(HierarchicalWriter):
             dset[:] = data
 
 
-def file_writer(filename,
-                signal,
-                *args,
-                **kwds):
-    """Writes data to hyperspy's zarr format
+def file_writer(filename, signal, **kwds):
+    """Writes data to hyperspy's zarr format.
+
     Parameters
     ----------
     filename: str
     signal: a BaseSignal instance
-    *args, optional
     **kwds, optional
     """
     if "compressor" not in kwds:
         from numcodecs import Blosc
         kwds["compressor"] = Blosc(cname='zstd', clevel=1)
-    if ("write_to_storage" in kwds and kwds["write_to_storage"]) or isinstance(filename, MutableMapping):
-        if isinstance(filename, MutableMapping):
-            store = filename.path
-        else:
-            store = filename
+
+    if isinstance(filename, MutableMapping):
+        store = filename
     else:
         store = zarr.storage.NestedDirectoryStore(filename,)
-    f = zarr.group(store=store, overwrite=True)
+    mode = 'w' if kwds.get('write_dataset', True) else 'a'
+
+    f = zarr.open_group(store=store, mode=mode)
     f.attrs['file_format'] = "ZSpy"
     f.attrs['file_format_version'] = version
-    exps = f.create_group('Experiments')
+    exps = f.require_group('Experiments')
     group_name = signal.metadata.General.title if \
         signal.metadata.General.title else '__unnamed__'
     # / is a invalid character, see #942
     if "/" in group_name:
         group_name = group_name.replace("/", "-")
-    expg = exps.create_group(group_name)
+    expg = exps.require_group(group_name)
 
     # Add record_by metadata for backward compatibility
     smd = signal.metadata.Signal
@@ -173,6 +172,7 @@ def file_writer(filename,
         smd.record_by = "image"
     else:
         smd.record_by = ""
+
     try:
         writer = ZspyWriter(f, signal, expg, **kwds)
         writer.write()
@@ -182,10 +182,10 @@ def file_writer(filename,
         del smd.record_by
 
 
-def file_reader(filename,
-                lazy=False,
-                **kwds):
-    """Read data from zspy files saved with the hyperspy zspy format specification
+def file_reader(filename, lazy=False, **kwds):
+    """Read data from zspy files saved with the hyperspy zspy format
+    specification.
+
     Parameters
     ----------
     filename: str
@@ -202,4 +202,5 @@ def file_reader(filename,
             "HyperSpy zspy file format. I will attempt to load it, but, "
             "if I fail, it is likely that I will be more successful at "
             "this and other tasks if you upgrade me.")
+
     return reader.read(lazy=lazy)

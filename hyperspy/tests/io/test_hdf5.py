@@ -16,11 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import gc
-import os.path
+from pathlib import Path
 import sys
 import time
-from os import remove
 
 import dask.array as da
 import h5py
@@ -41,7 +39,8 @@ from hyperspy.utils import markers
 from hyperspy.io_plugins._hierarchical import HierarchicalWriter
 
 
-my_path = os.path.dirname(__file__)
+
+my_path = Path(__file__).parent
 
 
 try:
@@ -121,10 +120,7 @@ class Example1:
 class TestExample1_12(Example1):
 
     def setup_method(self, method):
-        self.s = load(os.path.join(
-            my_path,
-            "hdf5_files",
-            "example1_v1.2.hdf5"))
+        self.s = load(my_path / "hdf5_files" / "example1_v1.2.hdf5")
 
     def test_date(self):
         assert (
@@ -137,33 +133,26 @@ class TestExample1_12(Example1):
 class TestExample1_10(Example1):
 
     def setup_method(self, method):
-        self.s = load(os.path.join(
-            my_path,
-            "hdf5_files",
-            "example1_v1.0.hdf5"))
+        self.s = load(my_path / "hdf5_files" / "example1_v1.0.hdf5")
 
 
 class TestExample1_11(Example1):
 
     def setup_method(self, method):
-        self.s = load(os.path.join(
-            my_path,
-            "hdf5_files",
-            "example1_v1.1.hdf5"))
+        self.s = load(my_path / "hdf5_files" / "example1_v1.1.hdf5")
 
 
 class TestLoadingNewSavedMetadata:
 
     def setup_method(self, method):
         with pytest.warns(VisibleDeprecationWarning):
-            self.s = load(os.path.join(
-                my_path,
-                "hdf5_files",
-                "with_lists_etc.hdf5"))
+            self.s = load(my_path / "hdf5_files" / "with_lists_etc.hdf5")
 
     def test_signal_inside(self):
-        np.testing.assert_array_almost_equal(self.s.data,
-                                             self.s.metadata.Signal.Noise_properties.variance.data)
+        np.testing.assert_array_almost_equal(
+            self.s.data,
+            self.s.metadata.Signal.Noise_properties.variance.data
+        )
 
     def test_empty_things(self):
         assert self.s.metadata.test.empty_list == []
@@ -337,7 +326,7 @@ class TestSavingMetadataContainers:
         s.metadata.General.title = '__unnamed__'
         s.save(fname)
         l = load(fname)
-        assert l.metadata.General.title is ""
+        assert l.metadata.General.title == ""
 
     @zspy_marker
     def test_save_empty_tuple(self, tmp_path, file):
@@ -361,7 +350,7 @@ class TestSavingMetadataContainers:
 
     def test_metadata_binned_deprecate(self):
         with pytest.warns(UserWarning, match="Loading old file"):
-            s = load(os.path.join(my_path, "hdf5_files", 'example2_v2.2.hspy'))
+            s = load(my_path / "hdf5_files" / 'example2_v2.2.hspy')
         assert s.metadata.has_item('Signal.binned') == False
         assert s.axes_manager[-1].is_binned == False
 
@@ -387,22 +376,20 @@ class TestSavingMetadataContainers:
                                         'original_shape': None,
                                         'signal_unfolded': False,
                                         'unfolded': False}}}
-        s = load(os.path.join(
-            my_path,
-            "hdf5_files",
-            'example2_v3.1.hspy'))
+        s = load(my_path / "hdf5_files" / 'example2_v3.1.hspy')
         assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 
 def test_none_metadata():
-    s = load(os.path.join( my_path, "hdf5_files", "none_metadata.hdf5"))
+    s = load(my_path / "hdf5_files" / "none_metadata.hdf5")
     assert s.metadata.should_be_None is None
 
 
 def test_rgba16():
     with pytest.warns(VisibleDeprecationWarning):
-        s = load(os.path.join(my_path, "hdf5_files", "test_rgba16.hdf5"))
-    data = np.load(os.path.join( my_path, "npy_files", "test_rgba16.npy"))
+        print(my_path)
+        s = load(my_path / "hdf5_files" / "test_rgba16.hdf5")
+    data = np.load(my_path / "npy_files" / "test_rgba16.npy")
     assert (s.data == data).all()
 
 @zspy_marker
@@ -485,7 +472,6 @@ def test_axes_configuration(tmp_path, file):
 @zspy_marker
 def test_axes_configuration_binning(tmp_path, file):
     fname = tmp_path / file
-    filename = tmp_path / 'testfile.hdf5'
     s = BaseSignal(np.zeros((2, 2, 2)))
     s.axes_manager.signal_axes[-1].is_binned = True
     s.save(fname)
@@ -726,10 +712,8 @@ class Test_permanent_markers_io:
         # test_marker_bad_marker_type.hdf5 has 5 markers,
         # where one of them has an unknown marker type
         with pytest.warns(VisibleDeprecationWarning):
-            s = load(os.path.join(
-                my_path,
-                "hdf5_files",
-                "test_marker_bad_marker_type.hdf5"))
+            fname = my_path / "hdf5_files" / "test_marker_bad_marker_type.hdf5"
+            s = load(fname)
         assert len(s.metadata.Markers) == 4
 
     def test_load_missing_y2_value(self):
@@ -737,11 +721,9 @@ class Test_permanent_markers_io:
         # where one of them is missing the y2 value, however the
         # the point marker only needs the x1 and y1 value to work
         # so this should load
+        fname = my_path / "hdf5_files" / "test_marker_point_y2_data_deleted.hdf5"
         with pytest.warns(VisibleDeprecationWarning):
-            s = load(os.path.join(
-                my_path,
-                "hdf5_files",
-                "test_marker_point_y2_data_deleted.hdf5"))
+            s = load(fname)
         assert len(s.metadata.Markers) == 5
 
 
@@ -771,6 +753,7 @@ def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     assert isinstance(s.metadata.Sample.elements, list)
 
+
 @zspy_marker
 def test_save_ragged_array(tmp_path, file):
     a = np.array([0, 1])
@@ -785,7 +768,7 @@ def test_save_ragged_array(tmp_path, file):
 
 
 def test_load_missing_extension(caplog):
-    path = os.path.join(my_path, "hdf5_files", "hspy_ext_missing.hspy")
+    path = my_path / "hdf5_files" / "hspy_ext_missing.hspy"
     with pytest.warns(UserWarning):
         s = load(path)
     assert "This file contains a signal provided by the hspy_ext_missing" in caplog.text
@@ -857,10 +840,12 @@ def test_saving_close_file(tmp_path):
         s4.save(fname, overwrite=True)
 
 
-def test_saving_overwrite_data(tmp_path):
+@zspy_marker
+def test_saving_overwrite_data(tmp_path, file):
     s = Signal1D(da.zeros((10, 100))).as_lazy()
-    fname = tmp_path / 'test.hspy'
-    s.save(fname, close_file=True)
+    kwds = dict(close_file=True) if file == 'test.hspy' else {}
+    fname = tmp_path / file
+    s.save(fname, **kwds)
 
     s2 = load(fname, lazy=True, mode='a')
     s2.axes_manager[0].units = 'nm'
@@ -868,20 +853,24 @@ def test_saving_overwrite_data(tmp_path):
 
     s3 = load(fname)
     assert s3.axes_manager[0].units == 'nm'
+    np.testing.assert_allclose(s3.data, np.zeros((10, 100)))
 
-    # try with opening non-lazily to check opening mode
     s4 = load(fname)
-    with pytest.raises(ValueError):
-        s4.save(fname, overwrite=True, write_dataset=False, mode='w')
+    if file == 'test.hspy':
+        # try with opening non-lazily to check opening mode
+        # only relevant for hdf5 file
+        with pytest.raises(ValueError):
+            s4.save(fname, overwrite=True, write_dataset=False, mode='w')
 
     s4.save(fname, overwrite=True, write_dataset=False)
     # make sure we can open it after, file haven't been corrupted
     _ = load(fname)
 
 
-def test_title_with_slash(tmp_path):
+@zspy_marker
+def test_title_with_slash(tmp_path, file):
+    fname = tmp_path / file
     s = Signal1D(da.zeros((10, 100))).as_lazy()
-    fname = tmp_path / 'test.hspy'
     s.metadata.General.title = 'A / B'
     s.save(fname)
     s2 = load(fname)

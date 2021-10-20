@@ -35,20 +35,6 @@ class TestZspy:
         s = Signal1D(data)
         return s
 
-    def test_save_N5_type(self, signal, tmp_path):
-        filename = tmp_path / 'testmodels.zspy'
-        store = zarr.N5Store(path=filename)
-        signal.save(store, write_to_storage=True)
-        signal2 = load(filename)
-        np.testing.assert_array_equal(signal2.data, signal.data)
-
-    def test_save_N5_type_path(self, signal, tmp_path):
-        filename = tmp_path / 'testmodels.zspy'
-        store = zarr.N5Store(path=filename)
-        signal.save(store.path, write_to_storage=True)
-        signal2 = load(filename)
-        np.testing.assert_array_equal(signal2.data, signal.data)
-
     @pytest.mark.parametrize("overwrite",[None, True, False])
     def test_overwrite(self,signal, overwrite, tmp_path):
         filename = tmp_path / 'testmodels.zspy'
