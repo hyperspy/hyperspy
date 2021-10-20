@@ -192,6 +192,9 @@ components1D:
   PESVoigt:
     module: hyperspy._components.pes_voigt
     class: PESVoigt
+  Physical_background:
+    module: hyperspy._components.physical_background
+    class: Physical_background
   Polynomial:
     module: hyperspy._components.polynomial_deprecated
     class: Polynomial

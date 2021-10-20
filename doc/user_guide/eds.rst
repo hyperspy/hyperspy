@@ -651,6 +651,174 @@ functionalities of X-ray lines when fitting:
 * :py:meth:`~.models.edsmodel.EDSModel.free_xray_lines_width`
 * :py:meth:`~.models.edsmodel.EDSModel.fix_xray_lines_width`
 
+.. _eds_background-Bremsstrahlung-label:
+
+Bremsstrahlung
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 1.3
+
+a) emission
+
+Energetic electrons in matter create X-rays through one of two processes characteristic X-ray generation and bremsstrahlung. The x-ray bremsstrahlung is radiation generated as a result of the deceleration of beam electrons in the Coulombic fields of the target atoms. This radiation forms a slowly varying x-ray background ranging in energy from the incident electron energy down to zero. The intensity of this background is a function of the atomic number of the target Z, the energy of the bremsstrahlung x rays E, and the energy of the incident electrons E0. 
+In 1923 Kramers calculated a relationship for the bremsstrahlung emission based on electron scattering cross sections and the Thomas-Whiddington law for electron retardation in various targets. 
+
+N(E)=KZ ((E-E0)/E)
+
+where N(E) is the number of bremsstrahlung photons of energy E (i.e., the intensity) produced by electrons of energy E0, K is Kramers’ constant, and Z is the atomic number of the ionized atom.
+
+The generated intensity increases rapidly with decreasing Xray energy but at energies inferior to 2 keV the bremsstrahlung is absorbed in the specimen the detected spectrum drops rapidly to zero.
+
+.. figure::  images/Bremsstrahlung_explanation.png
+   :align:   center
+   :width:   100
+
+    Absorption of the emitted Bremsstrahlung
+
+Other models of emission are available for this function (see Small et al. 1987, Castellano et l. 2004)
+
+b) Absorption in the sample
+
+The absorption correction is based upon a simplified representation of the x-ray depth distribution known as Love & Scott model. A quadrilateral profile is assumed for the distribution of x-ray generation. This simplification has been detailed in (Sewell et al 1985). This model has shown a good robustness and seems to be adapted for the quantitative analysis of both heavy and light elements.
+
+Ac=((1-e^((-2µρx) ))/(2µρx))
+
+The mass absorption coefficient is tabulated on an elemental basis, and mass absorption coefficients for compounds may be computed according to the following rule,
+
+µ=∑(Wi.µi)
+
+where Wi and µi are, respectively, the weight fraction and mass attenuation coefficient for element i in a compound with n elements.
+
+.. figure::  images/Mucoefficient.png
+   :align:   center
+   :width:   100
+
+   The Mu coefficient calculated for all energy for a FeS sample
+
+.. figure::  images/Example_absorption.png
+   :align:   center
+   :width:   100
+
+   The corresponding absorption due to the sample
+
+c)	Detector efficiency correction
+
+The second correction which was applied to the experimentally measured data involves an adjustment for the efficiency of the detector as a function of energy. 
+A fraction of the X-rays are absorbed by the thin window in front of the detector are before they reach the active measurement volume.
+
+Windows can be modeled using equation when the composition and thickness of the window are known. However, those data are not always available. The detector efficiency of different model of detectors have been added to hyperspy and can be selected in 'add_physical_background'  
+
+.. figure::  images/Example_polymer_window.png
+   :align:   center
+   :width:   100
+
+   example of the absorption effect though a polymer window
+
+d) Fitted expression
+
+Taking all those conditions in consideration only two free parameters where identified. The “KZ” parameter presented in the emission law, and the “ρx” parameter also known as mass depth. Resulting to a simple equation: 
+
+B(E)=a ((E-E0)/E)*((1-e^((-2µb) ))/(2µb))*Detector_eff
+
+a and b are named coefficients and can be fixed or not in the model (notably with the function :py:meth:`~.fix_background`). 
+
+.. figure::  images/Example_bremsstrahlung.png
+   :align:   center
+   :width:   100
+
+e) Example
+
+First, we load the spectrum, add the different lines of the sample and check if the beam energy is well filled in the metadata
+
+.. code-block:: python
+    >>> s=hs.datasets.example_signals.EDS_SEM_Spectrum()
+    >>> s.set_lines([])
+    >>> s.metadata
+    ├── Acquisition_instrument
+    │   └── SEM
+    │       ├── Detector
+    │       │   └── EDS
+    │       │       ├── azimuth_angle = 0.0
+    │       │       ├── detector = X-max 80 Oxford Instrument
+    │       │       ├── elevation_angle = 37.0
+    │       │       ├── energy_resolution_MnKa = 130.0
+    │       │       ├── live_time = 19.997292000000002
+    │       │       └── real_time = 39.593744999999998
+    │       ├── Stage
+    │       │   └── tilt_alpha = 0.0
+    │       ├── beam_current = 0.0
+    │       ├── beam_energy = 10.0
+    │       └── microscope = Nvision40 Carl Zeiss
+    ├── General
+    │   ├── original_filename = 1D_EDS_SEM_Spectrum.msa
+    │   └── title = EDS SEM Spectrum
+    ├── Sample
+    │   ├── description = EDS-TM002 from BAM (www.webshop.bam.de)
+    │   ├── elements = ['Al', 'C', 'Cu', 'Mn', 'Zr']
+    │   └── xray_lines = ['Al_Ka', 'C_Ka', 'Cu_La', 'Mn_La', 'Zr_La']
+    └── Signal
+        ├── binned = True
+        ├── signal_origin = 
+        └── signal_type = EDS_SEM
+    
+Next, the model is created with :py:meth:`~.create_model()` but the option :py:meth:`~.auto_background` is set to False to remove the polynomial background
+
+.. code-block:: python
+    >>> m=s.create_model(auto_background=False)
+    
+Now we add the Bremsstrahlung component to the model.
+
+.. code-block:: python    
+    
+    >>> m.add_physical_background(detector='Polymer_C', quantification=None)
+    >>> m.components
+           # |      Attribute Name |      Component Name |      Component Type
+        ---- | ------------------- | ------------------- | -------------------
+           0 |               Al_Ka |               Al_Ka |            Gaussian
+           1 |               Al_Kb |               Al_Kb |            Gaussian
+           2 |                C_Ka |                C_Ka |            Gaussian
+           3 |               Cu_Ka |               Cu_Ka |            Gaussian
+           4 |               Cu_Kb |               Cu_Kb |            Gaussian
+           5 |               Cu_La |               Cu_La |            Gaussian
+           6 |              Cu_Lb3 |              Cu_Lb3 |            Gaussian
+           7 |               Cu_Ln |               Cu_Ln |            Gaussian
+           8 |              Cu_Lb1 |              Cu_Lb1 |            Gaussian
+           9 |               Cu_Ll |               Cu_Ll |            Gaussian
+          10 |               Mn_Ka |               Mn_Ka |            Gaussian
+          11 |               Mn_Kb |               Mn_Kb |            Gaussian
+          12 |               Mn_La |               Mn_La |            Gaussian
+          13 |               Mn_Ln |               Mn_Ln |            Gaussian
+          14 |              Mn_Lb3 |              Mn_Lb3 |            Gaussian
+          15 |               Mn_Ll |               Mn_Ll |            Gaussian
+          16 |               Zr_La |               Zr_La |            Gaussian
+          17 |              Zr_Lb3 |              Zr_Lb3 |            Gaussian
+          18 |               Zr_Ln |               Zr_Ln |            Gaussian
+          19 |              Zr_Lb1 |              Zr_Lb1 |            Gaussian
+          20 |              Zr_Lb2 |              Zr_Lb2 |            Gaussian
+          21 |              Zr_Lg3 |              Zr_Lg3 |            Gaussian
+          22 |               Zr_Ll |               Zr_Ll |            Gaussian
+          23 |              Zr_Lg1 |              Zr_Lg1 |            Gaussian
+          24 |      Bremsstrahlung |      Bremsstrahlung | Physical_background
+The step of initialisation allows to create a map in the model which contain values of the quantification filled in add_physical_background or calculated if the option quantification is ‘none’
+
+.. code-block:: python
+    >>> m.components.Bremsstrahlung.initialize()
+The background can now be fitted, the option bounded has to be set to: True since negative values on the coefficients are impossible:
+
+.. code-block:: python 
+    >>> m.fit_background(bounded=True) 
+    >>> m.fit()
+And we display the background of the fit:
+
+.. code-block:: python    
+    >>> m.plot(plot_components=True)
+    
+.. figure::  images/model_bremsstrahlung.png
+   :align:   center
+   :width:   100
+
+Low energy (<0.17 keV) are not fitted in this model since the absorption mixture calculation doesn't work at these energies. 
+
 .. _eds_quantification-label:
 
 EDS Quantification
