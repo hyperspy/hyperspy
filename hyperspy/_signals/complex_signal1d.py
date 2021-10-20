@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -31,17 +31,10 @@ class ComplexSignal1D(ComplexSignal, CommonSignal1D):
         super().__init__(*args, **kwargs)
         if self.axes_manager.signal_dimension != 1:
             self.axes_manager.set_signal_dimension(1)
-        self.metadata.Signal.binned = False
 
 
 class LazyComplexSignal1D(ComplexSignal1D, LazyComplexSignal):
 
     """BaseSignal subclass for lazy complex 1-dimensional data."""
 
-    _signal_dimension = 1
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.axes_manager.signal_dimension != 1:
-            self.axes_manager.set_signal_dimension(1)
-        self.metadata.Signal.binned = False
+    pass

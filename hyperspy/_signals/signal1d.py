@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,29 +16,24 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import logging
 import math
 
 import matplotlib.pyplot as plt
 import numpy as np
 import dask.array as da
-import scipy.interpolate
-import scipy as sp
-from scipy.signal import savgol_filter
+from scipy import interpolate
+from scipy.signal import savgol_filter, medfilt
 from scipy.ndimage.filters import gaussian_filter1d
-try:
-    from statsmodels.nonparametric.smoothers_lowess import lowess
-    statsmodels_installed = True
-except BaseException:
-    statsmodels_installed = False
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal1d import CommonSignal1D
-from hyperspy.signal_tools import SpikesRemoval
+from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
 from hyperspy.models.model1d import Model1D
+from hyperspy.misc.lowess_smooth import lowess
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
-
-from hyperspy.misc.utils import signal_range_from_roi
 from hyperspy.defaults_parser import preferences
 from hyperspy.signal_tools import (
     Signal1DCalibration,
@@ -50,10 +45,13 @@ from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.signal_tools import BackgroundRemoval
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.signal_tools import IntegrateArea
-from hyperspy import components1d
+from hyperspy.signal_tools import IntegrateArea, _get_background_estimator
 from hyperspy._signals.lazy import LazySignal
-from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
+from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC, SPIKES_REMOVAL_TOOL_DOCSTRING
+from hyperspy.docstrings.signal import (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
+                                        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG)
+from hyperspy.docstrings.plot import (
+    BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT1D_DOCSTRING)
 
 _logger = logging.getLogger(__name__)
 
@@ -104,6 +102,7 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
               default is set to 30000.
     subchannel : bool (optional)
              default is set to True.
+
     Returns
     -------
     P : structured array of shape (npeaks)
@@ -129,13 +128,13 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
         amp_thresh = 0.1 * y.max()
     peakgroup = np.round(peakgroup)
     if medfilt_radius:
-        d = np.gradient(scipy.signal.medfilt(y, medfilt_radius))
+        d = np.gradient(medfilt(y, medfilt_radius))
     else:
         d = np.gradient(y)
     n = np.round(peakgroup / 2 + 1)
-    peak_dt = np.dtype([('position', np.float),
-                        ('height', np.float),
-                        ('width', np.float)])
+    peak_dt = np.dtype([('position', float),
+                        ('height', float),
+                        ('width', float)])
     P = np.array([], dtype=peak_dt)
     peak = 0
     for j in range(len(y) - 4):
@@ -222,50 +221,45 @@ def interpolate1D(number_of_interpolation_points, data):
     ch = len(data)
     old_ax = np.linspace(0, 100, ch)
     new_ax = np.linspace(0, 100, ch * ip - (ip - 1))
-    interpolator = scipy.interpolate.interp1d(old_ax, data)
+    interpolator = interpolate.interp1d(old_ax, data)
     return interpolator(new_ax)
 
 
-def _estimate_shift1D(data, **kwargs):
-    mask = kwargs.get('mask', None)
-    ref = kwargs.get('ref', None)
-    interpolate = kwargs.get('interpolate', True)
-    ip = kwargs.get('ip', 5)
-    data_slice = kwargs.get('data_slice', slice(None))
+def _estimate_shift1D(data, data_slice=slice(None), ref=None, ip=5,
+                      interpolate=True, mask=None, **kwargs):
     if bool(mask):
-        # asarray is required for consistensy as argmax
+        # asarray is required for consistency as argmax
         # returns a numpy scalar array
         return np.asarray(np.nan)
     data = data[data_slice]
     if interpolate is True:
         data = interpolate1D(ip, data)
-    return np.argmax(np.correlate(ref, data, 'full')) - len(ref) + 1
+    # Normalise the data before the cross correlation
+    ref = ref - ref.mean()
+    data = data - data.mean()
+    return (np.argmax(np.correlate(ref, data, 'full')) - len(ref) + 1).astype(float)
 
 
 def _shift1D(data, **kwargs):
+    """Used to shift a data array by a specified amount in axes units. Axis must
+    be passed as a kwarg. """
     shift = kwargs.get('shift', 0.)
     original_axis = kwargs.get('original_axis', None)
     fill_value = kwargs.get('fill_value', np.nan)
     kind = kwargs.get('kind', 'linear')
-    offset = kwargs.get('offset', 0.)
-    scale = kwargs.get('scale', 1.)
-    size = kwargs.get('size', 2)
+
     if np.isnan(shift) or shift == 0:
         return data
-    axis = np.linspace(offset, offset + scale * (size - 1), size)
 
-    si = sp.interpolate.interp1d(original_axis,
-                                 data,
-                                 bounds_error=False,
-                                 fill_value=fill_value,
-                                 kind=kind)
-    offset = float(offset - shift)
-    axis = np.linspace(offset, offset + scale * (size - 1), size)
-    return si(axis)
+    #This is the interpolant function
+    si = interpolate.interp1d(original_axis, data, bounds_error=False,
+                              fill_value=fill_value, kind=kind)
+
+    #Evaluate interpolated data at shifted positions
+    return si(original_axis-shift)
 
 
 class Signal1D(BaseSignal, CommonSignal1D):
-
     """
     """
     _signal_dimension = 1
@@ -275,32 +269,18 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if self.axes_manager.signal_dimension != 1:
             self.axes_manager.set_signal_dimension(1)
 
-    def _spikes_diagnosis(self, signal_mask=None,
-                          navigation_mask=None):
-        """Plots a histogram to help in choosing the threshold for
-        spikes removal.
-
-        Parameters
-        ----------
-        signal_mask: boolean array
-            Restricts the operation to the signal locations not marked
-            as True (masked)
-        navigation_mask: boolean array
-            Restricts the operation to the navigation locations not
-            marked as True (masked).
-
-        See also
-        --------
-        spikes_removal_tool
-
-        """
+    def _get_spikes_diagnosis_histogram_data(self, signal_mask=None,
+                                             navigation_mask=None,
+                                             **kwargs):
         self._check_signal_dimension_equals_one()
         dc = self.data
+        axis = self.axes_manager.signal_axes[0].axis
         if signal_mask is not None:
             dc = dc[..., ~signal_mask]
+            axis = axis[~signal_mask]
         if navigation_mask is not None:
             dc = dc[~navigation_mask, :]
-        der = np.abs(np.diff(dc, 1, -1))
+        der = np.abs(np.gradient(dc, axis, axis=-1))
         n = ((~navigation_mask).sum() if navigation_mask else
              self.axes_manager.navigation_size)
 
@@ -310,7 +290,30 @@ class Signal1D(BaseSignal, CommonSignal1D):
             np.ravel(der.max(-1)))
 
         # get histogram signal using smart binning and plot
-        tmph = tmp.get_histogram()
+        return tmp.get_histogram(**kwargs)
+
+    def spikes_diagnosis(self, signal_mask=None,
+                         navigation_mask=None,
+                         **kwargs):
+        """Plots a histogram to help in choosing the threshold for
+        spikes removal.
+
+        Parameters
+        ----------
+        %s
+        %s
+        **kwargs : dict
+            Keyword arguments pass to
+            :py:meth:`~hyperspy.signal.signal.BaseSignal.get_histogram`
+
+        See also
+        --------
+        spikes_removal_tool
+
+        """
+        tmph = self._get_spikes_diagnosis_histogram_data(signal_mask,
+                                                         navigation_mask,
+                                                         **kwargs)
         tmph.plot()
 
         # Customize plot appearance
@@ -330,47 +333,28 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ax.set_xlim(plt.xlim()[0], 1.1 * plt.xlim()[1])
         plt.draw()
 
-    def spikes_removal_tool(self, signal_mask=None,
-                            navigation_mask=None, display=True, toolkit=None):
-        """Graphical interface to remove spikes from EELS spectra.
+    spikes_diagnosis.__doc__ %= (SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG)
 
-        Parameters
-        ----------
-        signal_mask: boolean array
-            Restricts the operation to the signal locations not marked
-            as True (masked)
-        navigation_mask: boolean array
-            Restricts the operation to the navigation locations not
-            marked as True (masked)
-
-        See also
-        --------
-        _spikes_diagnosis,
-
-        """
+    def spikes_removal_tool(self, signal_mask=None, navigation_mask=None,
+                            threshold='auto', interactive=True,
+                            display=True, toolkit=None, **kwargs):
         self._check_signal_dimension_equals_one()
-        sr = SpikesRemoval(self,
-                           navigation_mask=navigation_mask,
-                           signal_mask=signal_mask)
-        return sr.gui(display=display, toolkit=toolkit)
-    spikes_removal_tool.__doc__ =\
-        """Graphical interface to remove spikes from EELS spectra.
+        if interactive:
+            sr = SpikesRemovalInteractive(self,
+                                          signal_mask=signal_mask,
+                                          navigation_mask=navigation_mask,
+                                          threshold=threshold)
+            return sr.gui(display=display, toolkit=toolkit)
+        else:
+            sr = SpikesRemoval(self,
+                               signal_mask=signal_mask,
+                               navigation_mask=navigation_mask,
+                               threshold=threshold, **kwargs)
+            sr.remove_all_spikes()
+            return sr
 
-Parameters
-----------
-signal_mask: boolean array
-    Restricts the operation to the signal locations not marked
-    as True (masked)
-navigation_mask: boolean array
-    Restricts the operation to the navigation locations not
-    marked as True (masked)
-%s
-%s
-See also
---------
-_spikes_diagnosis,
-
-""" % (DISPLAY_DT, TOOLKIT_DT)
+    spikes_removal_tool.__doc__ = SPIKES_REMOVAL_TOOL_DOCSTRING % (
+        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG, "", DISPLAY_DT, TOOLKIT_DT,)
 
     def create_model(self, dictionary=None):
         """Create a model for the current data.
@@ -384,21 +368,25 @@ _spikes_diagnosis,
         model = Model1D(self, dictionary=dictionary)
         return model
 
-    def shift1D(self,
-                shift_array,
-                interpolation_method='linear',
-                crop=True,
-                expand=False,
-                fill_value=np.nan,
-                parallel=None,
-                show_progressbar=None):
+    def shift1D(
+        self,
+        shift_array,
+        interpolation_method='linear',
+        crop=True,
+        expand=False,
+        fill_value=np.nan,
+        parallel=None,
+        show_progressbar=None,
+        max_workers=None,
+    ):
         """Shift the data in place over the signal axis by the amount specified
         by an array.
 
         Parameters
         ----------
-        shift_array : numpy array
-            An array containing the shifting amount. It must have
+        shift_array : BaseSignal or np.array
+            An array containing the shifting amount. It must have the same
+            `axes_manager._navigation_shape`
             `axes_manager._navigation_shape_in_array` shape.
         interpolation_method : str or int
             Specifies the kind of interpolation as a string ('linear',
@@ -412,14 +400,16 @@ _spikes_diagnosis,
         fill_value : float
             If crop is False fill the data outside of the original
             interval with the given value where needed.
-        parallel : {None, bool}
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+        %s
+        %s
+        %s
+
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
-
+        SignalDimensionError
+            If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         if not np.any(shift_array):
             # Nothing to do, the shift array if filled with zeros
@@ -428,6 +418,10 @@ _spikes_diagnosis,
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
+
+        if not axis.is_uniform:
+            raise NotImplementedError(
+                "This operation is not implemented for non-uniform axes.")
 
         # Figure out min/max shifts, and translate to shifts in index as well
         minimum, maximum = np.nanmin(shift_array), np.nanmax(shift_array)
@@ -466,9 +460,8 @@ _spikes_diagnosis,
                 post_array = da.full(tuple(post_shape),
                                      fill_value,
                                      chunks=tuple(post_chunks))
-
                 self.data = da.concatenate((pre_array, self.data, post_array),
-                                           axis=ind)
+                                           axis=ind).rechunk({ind:-1})
             else:
                 padding = []
                 for i in range(self.data.ndim):
@@ -481,17 +474,18 @@ _spikes_diagnosis,
                                    constant_values=(fill_value,))
             axis.offset += minimum
             axis.size += axis.high_index - ihigh + 1 + ilow - axis.low_index
+        if isinstance(shift_array, np.ndarray):
+            shift_array = BaseSignal(shift_array.squeeze()).T
 
-        self._map_iterate(_shift1D, (('shift', shift_array.ravel()),),
-                          original_axis=axis.axis,
-                          fill_value=fill_value,
-                          kind=interpolation_method,
-                          offset=axis.offset,
-                          scale=axis.scale,
-                          size=axis.size,
-                          show_progressbar=show_progressbar,
-                          parallel=parallel,
-                          ragged=False)
+        self.map(_shift1D,
+                 shift=shift_array,
+                 original_axis=axis.axis,
+                 fill_value=fill_value,
+                 kind=interpolation_method,
+                 show_progressbar=show_progressbar,
+                 parallel=parallel,
+                 max_workers=max_workers,
+                 ragged=False)
 
         if crop and not expand:
             _logger.debug("Cropping %s from index %i to %i"
@@ -501,29 +495,42 @@ _spikes_diagnosis,
                       ihigh)
 
         self.events.data_changed.trigger(obj=self)
-    shift1D.__doc__ %= CROP_PARAMETER_DOC
+    shift1D.__doc__ %= (CROP_PARAMETER_DOC, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
-    def interpolate_in_between(self, start, end, delta=3, parallel=None,
-                               show_progressbar=None, **kwargs):
+    def interpolate_in_between(
+        self,
+        start,
+        end,
+        delta=3,
+        show_progressbar=None,
+        parallel=None,
+        max_workers=None,
+        **kwargs,
+    ):
         """Replace the data in a given range by interpolation.
         The operation is performed in place.
+
         Parameters
         ----------
-        start, end : {int | float}
-            The limits of the interval. If int they are taken as the
-            axis index. If float they are taken as the axis value.
-        delta : {int | float}
-            The windows around the (start, end) to use for interpolation
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
-        parallel: {None, bool}
-        All extra keyword arguments are passed to
-        scipy.interpolate.interp1d. See the function documentation
-        for details.
+        start, end : int or float
+            The limits of the interval. If int, they are taken as the
+            axis index. If float, they are taken as the axis value.
+        delta : int or float
+            The windows around the (start, end) to use for interpolation. If
+            int, they are taken as index steps. If float, they are taken in
+            units of the axis value.
+        %s
+        %s
+        %s
+        **kwargs :
+            All extra keyword arguments are passed to
+            :py:func:`scipy.interpolate.interp1d`. See the function documentation
+            for details.
+
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
+        SignalDimensionError
+            If the signal dimension is not 1.
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
@@ -532,45 +539,47 @@ _spikes_diagnosis,
         i1 = axis._get_index(start)
         i2 = axis._get_index(end)
         if isinstance(delta, float):
-            delta = int(delta / axis.scale)
-        i0 = int(np.clip(i1 - delta, 0, np.inf))
-        i3 = int(np.clip(i2 + delta, 0, axis.size))
+            if isinstance(start, int):
+                start = axis.axis[start]
+            if isinstance(end, int):
+                end = axis.axis[end]
+            i0 = axis._get_index(start-delta) if start-delta < axis.low_value else 0
+            i3 = axis._get_index(end+delta) if end+delta > axis.high_value else axis.size
+        else:
+            i0 = int(np.clip(i1 - delta, 0, np.inf))
+            i3 = int(np.clip(i2 + delta, 0, axis.size))
 
         def interpolating_function(dat):
-            dat_int = sp.interpolate.interp1d(
+            dat_int = interpolate.interp1d(
                 list(range(i0, i1)) + list(range(i2, i3)),
                 dat[i0:i1].tolist() + dat[i2:i3].tolist(),
                 **kwargs)
             dat[i1:i2] = dat_int(list(range(i1, i2)))
             return dat
-        self._map_iterate(interpolating_function, ragged=False,
-                          parallel=parallel, show_progressbar=show_progressbar)
+        self._map_iterate(interpolating_function,
+                          ragged=False,
+                          parallel=parallel,
+                          show_progressbar=show_progressbar,
+                          max_workers=max_workers)
         self.events.data_changed.trigger(obj=self)
 
-    def _check_navigation_mask(self, mask):
-        if mask is not None:
-            if not isinstance(mask, BaseSignal):
-                raise ValueError("mask must be a BaseSignal instance.")
-            elif mask.axes_manager.signal_dimension not in (0, 1):
-                raise ValueError("mask must be a BaseSignal "
-                                 "with signal_dimension equal to 1")
-            elif (mask.axes_manager.navigation_dimension !=
-                  self.axes_manager.navigation_dimension):
-                raise ValueError("mask must be a BaseSignal with the same "
-                                 "navigation_dimension as the current signal.")
+    interpolate_in_between.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
-    def estimate_shift1D(self,
-                         start=None,
-                         end=None,
-                         reference_indices=None,
-                         max_shift=None,
-                         interpolate=True,
-                         number_of_interpolation_points=5,
-                         mask=None,
-                         parallel=None,
-                         show_progressbar=None):
+    def estimate_shift1D(
+        self,
+        start=None,
+        end=None,
+        reference_indices=None,
+        max_shift=None,
+        interpolate=True,
+        number_of_interpolation_points=5,
+        mask=None,
+        show_progressbar=None,
+        parallel=None,
+        max_workers=None,
+    ):
         """Estimate the shifts in the current signal axis using
-         cross-correlation.
+        cross-correlation.
         This method can only estimate the shift by comparing
         unidimensional features that should not change the position in
         the signal axis. To decrease the memory usage, the time of
@@ -578,14 +587,15 @@ _spikes_diagnosis,
         select the feature of interest providing sensible values for
         `start` and `end`. By default interpolation is used to obtain
         subpixel precision.
+
         Parameters
         ----------
-        start, end : {int | float | None}
+        start, end : int, float or None
             The limits of the interval. If int they are taken as the
             axis index. If float they are taken as the axis value.
         reference_indices : tuple of ints or None
             Defines the coordinates of the spectrum that will be used
-            as eference. If None the spectrum at the current
+            as reference. If None the spectrum at the current
             coordinates is used for this purpose.
         max_shift : int
             "Saturation limit" for the shift.
@@ -595,31 +605,36 @@ _spikes_diagnosis,
         number_of_interpolation_points : int
             Number of interpolation points. Warning: making this number
             too big can saturate the memory
-        mask : BaseSignal of bool data type.
+        mask : `BaseSignal` of bool.
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
-        parallel : {None, bool}
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+        %s
+        %s
+        %s
+
         Returns
         -------
-        An array with the result of the estimation in the axis units. although
-        the computation is performed in batches if the signal is lazy, the
-        result is computed in memory because it depends on the current state
-        of the axes that could change later on in the workflow.
+        An array with the result of the estimation in the axis units.
+        Although the computation is performed in batches if the signal is
+        lazy, the result is computed in memory because it depends on the
+        current state of the axes that could change later on in the workflow.
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
-
+        SignalDimensionError
+            If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         ip = number_of_interpolation_points + 1
         axis = self.axes_manager.signal_axes[0]
+        if not axis.is_uniform:
+            raise NotImplementedError(
+                "The function is not implemented for non-uniform signal axes.")
         self._check_navigation_mask(mask)
         # we compute for now
         if isinstance(start, da.Array):
@@ -633,12 +648,9 @@ _spikes_diagnosis,
 
         if interpolate is True:
             ref = interpolate1D(ip, ref)
-        iterating_kwargs = ()
-        if mask is not None:
-            iterating_kwargs += (('mask', mask),)
-        shift_signal = self._map_iterate(
+        shift_signal = self.map(
             _estimate_shift1D,
-            iterating_kwargs=iterating_kwargs,
+            mask=mask,
             data_slice=slice(i1, i2),
             ref=ref,
             ip=ip,
@@ -646,7 +658,9 @@ _spikes_diagnosis,
             ragged=False,
             parallel=parallel,
             inplace=False,
-            show_progressbar=show_progressbar,)
+            show_progressbar=show_progressbar,
+            max_workers=max_workers,
+        )
         shift_array = shift_signal.data
         if max_shift is not None:
             if interpolate is True:
@@ -654,13 +668,15 @@ _spikes_diagnosis,
             shift_array.clip(-max_shift, max_shift)
         if interpolate is True:
             shift_array = shift_array / ip
-        shift_array *= axis.scale
+        shift_array = shift_array * axis.scale
         if self._lazy:
             # We must compute right now because otherwise any changes to the
             # axes_manager of the signal later in the workflow may result in
             # a wrong shift_array
             shift_array = shift_array.compute()
         return shift_array
+
+    estimate_shift1D.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def align1D(self,
                 start=None,
@@ -675,7 +691,8 @@ _spikes_diagnosis,
                 fill_value=np.nan,
                 also_align=None,
                 mask=None,
-                show_progressbar=None):
+                show_progressbar=None,
+                iterpath="flyback"):
         """Estimate the shifts in the signal axis using
         cross-correlation and use the estimation to align the data in place.
         This method can only estimate the shift by comparing
@@ -689,12 +706,12 @@ _spikes_diagnosis,
 
         Parameters
         ----------
-        start, end : {int | float | None}
+        start, end : int, float or None
             The limits of the interval. If int they are taken as the
             axis index. If float they are taken as the axis value.
         reference_indices : tuple of ints or None
             Defines the coordinates of the spectrum that will be used
-            as eference. If None the spectrum at the current
+            as reference. If None the spectrum at the current
             coordinates is used for this purpose.
         max_shift : int
             "Saturation limit" for the shift.
@@ -720,20 +737,21 @@ _spikes_diagnosis,
             A list of BaseSignal instances that has exactly the same
             dimensions as this one and that will be aligned using the shift map
             estimated using the this signal.
-        mask : BaseSignal of bool data type.
+        mask : `BaseSignal` or bool data type.
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+        %s
+
         Returns
         -------
-        An array with the result of the estimation. The shift will be
+        An array with the result of the estimation.
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
+        SignalDimensionError
+            If the signal dimension is not 1.
+
         See also
         --------
         estimate_shift1D
@@ -745,64 +763,74 @@ _spikes_diagnosis,
             _logger.warning('In order to properly expand, the lazy '
                             'reference signal will be read twice (once to '
                             'estimate shifts, and second time to shift '
-                            'appropriatelly), which might take a long time. '
+                            'appropriately), which might take a long time. '
                             'Use expand=False to only pass through the data '
                             'once.')
-        shift_array = self.estimate_shift1D(
-            start=start,
-            end=end,
-            reference_indices=reference_indices,
-            max_shift=max_shift,
-            interpolate=interpolate,
-            number_of_interpolation_points=number_of_interpolation_points,
-            mask=mask,
-            show_progressbar=show_progressbar)
-        signals_to_shift = [self] + also_align
-        for signal in signals_to_shift:
-            signal.shift1D(shift_array=shift_array,
-                           interpolation_method=interpolation_method,
-                           crop=crop,
-                           fill_value=fill_value,
-                           expand=expand,
-                           show_progressbar=show_progressbar)
-    align1D.__doc__ %= CROP_PARAMETER_DOC
+        with self.axes_manager.switch_iterpath(iterpath):
+            shift_array = self.estimate_shift1D(
+                start=start,
+                end=end,
+                reference_indices=reference_indices,
+                max_shift=max_shift,
+                interpolate=interpolate,
+                number_of_interpolation_points=number_of_interpolation_points,
+                mask=mask,
+                show_progressbar=show_progressbar)
+            signals_to_shift = [self] + also_align
+            for signal in signals_to_shift:
+                signal.shift1D(shift_array=shift_array,
+                               interpolation_method=interpolation_method,
+                               crop=crop,
+                               fill_value=fill_value,
+                               expand=expand,
+                               show_progressbar=show_progressbar)
+    align1D.__doc__ %= (CROP_PARAMETER_DOC, SHOW_PROGRESSBAR_ARG)
 
     def integrate_in_range(self, signal_range='interactive',
                            display=True, toolkit=None):
-        """ Sums the spectrum over an energy range, giving the integrated
+        """Sums the spectrum over an energy range, giving the integrated
         area.
         The energy range can either be selected through a GUI or the command
         line.
+
         Parameters
         ----------
-        signal_range : {a tuple of this form (l, r), "interactive"}
+        signal_range : a tuple of this form (l, r) or "interactive"
             l and r are the left and right limits of the range. They can be
             numbers or None, where None indicates the extremes of the interval.
             If l and r are floats the `signal_range` will be in axis units (for
             example eV). If l and r are integers the `signal_range` will be in
             index units. When `signal_range` is "interactive" (default) the
-            range is selected using a GUI.
+            range is selected using a GUI. Note that ROIs can be used
+            in place of a tuple.
+
         Returns
-        -------
-        integrated_spectrum : BaseSignal subclass
+        --------
+        integrated_spectrum : `BaseSignal` subclass
+
         See Also
         --------
         integrate_simpson
+
         Examples
         --------
         Using the GUI
+
         >>> s = hs.signals.Signal1D(range(1000))
         >>> s.integrate_in_range() #doctest: +SKIP
 
         Using the CLI
+
         >>> s_int = s.integrate_in_range(signal_range=(560,None))
 
         Selecting a range in the axis units, by specifying the
         signal range with floats.
+
         >>> s_int = s.integrate_in_range(signal_range=(560.,590.))
 
         Selecting a range using the index, by specifying the
         signal range with integers.
+
         >>> s_int = s.integrate_in_range(signal_range=(100,120))
         """
         from hyperspy.misc.utils import deprecation_warning
@@ -811,7 +839,6 @@ _spikes_diagnosis,
             "be removed in v2.0. Use a `roi.SpanRoi` followed by `integrate1D` "
             "instead.")
         deprecation_warning(msg)
-        signal_range = signal_range_from_roi(signal_range)
 
         if signal_range == 'interactive':
             self_copy = self.deepcopy()
@@ -824,24 +851,19 @@ _spikes_diagnosis,
         return integrated_signal1D
 
     def _integrate_in_range_commandline(self, signal_range):
-        signal_range = signal_range_from_roi(signal_range)
         e1 = signal_range[0]
         e2 = signal_range[1]
         integrated_signal1D = self.isig[e1:e2].integrate1D(-1)
         return integrated_signal1D
 
     def calibrate(self, display=True, toolkit=None):
-        self._check_signal_dimension_equals_one()
-        calibration = Signal1DCalibration(self)
-        return calibration.gui(display=display, toolkit=toolkit)
-    calibrate.__doc__ = \
         """
         Calibrate the spectral dimension using a gui.
         It displays a window where the new calibration can be set by:
-        * Setting the offset, units and scale directly
-        * Selection a range by dragging the mouse on the spectrum figure
-         and
-        setting the new values for the given range limits
+
+        * setting the values of offset, units and scale directly
+        * or selecting a range by dragging the mouse on the spectrum figure
+          and setting the new values for the given range limits
 
         Parameters
         ----------
@@ -850,26 +872,73 @@ _spikes_diagnosis,
 
         Notes
         -----
-        For this method to work the output_dimension must be 1. Set the
-        view
-        accordingly
+        For this method to work the output_dimension must be 1.
+
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
-        """ % (DISPLAY_DT, TOOLKIT_DT)
-
-    def smooth_savitzky_golay(self,
-                              polynomial_order=None,
-                              window_length=None,
-                              differential_order=0,
-                              parallel=None, display=True, toolkit=None):
+        SignalDimensionError
+            If the signal dimension is not 1.
+        NotImplementedError
+            If called with a non-uniform axes.
+        """
         self._check_signal_dimension_equals_one()
+        calibration = Signal1DCalibration(self)
+        return calibration.gui(display=display, toolkit=toolkit)
+
+    calibrate.__doc__ %= (DISPLAY_DT, TOOLKIT_DT)
+
+    def smooth_savitzky_golay(
+        self,
+        polynomial_order=None,
+        window_length=None,
+        differential_order=0,
+        parallel=None,
+        max_workers=None,
+        display=True,
+        toolkit=None,
+    ):
+        """
+        Apply a Savitzky-Golay filter to the data in place.
+        If `polynomial_order` or `window_length` or `differential_order` are
+        None the method is run in interactive mode.
+
+        Parameters
+        ----------
+        polynomial_order : int, optional
+            The order of the polynomial used to fit the samples.
+            `polyorder` must be less than `window_length`.
+        window_length : int, optional
+            The length of the filter window (i.e. the number of coefficients).
+            `window_length` must be a positive odd integer.
+        differential_order: int, optional
+            The order of the derivative to compute.  This must be a
+            nonnegative integer.  The default is 0, which means to filter
+            the data without differentiating.
+        %s
+        %s
+        %s
+        %s
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
+        Notes
+        -----
+        More information about the filter in `scipy.signal.savgol_filter`.
+        """
+        self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+            "This functionality is not implement for signals with non-uniform axes. ")
+            "Consider using `smooth_lowess` instead."
         if (polynomial_order is not None and
                 window_length is not None):
             axis = self.axes_manager.signal_axes[0]
             self.map(savgol_filter, window_length=window_length,
                      polyorder=polynomial_order, deriv=differential_order,
-                     delta=axis.scale, ragged=False, parallel=parallel)
+                     delta=axis.scale, ragged=False, parallel=parallel, max_workers=max_workers)
         else:
             # Interactive mode
             smoother = SmoothingSavitzkyGolay(self)
@@ -879,40 +948,44 @@ _spikes_diagnosis,
             if window_length is not None:
                 smoother.window_length = window_length
             return smoother.gui(display=display, toolkit=toolkit)
-    smooth_savitzky_golay.__doc__ = \
+
+    smooth_savitzky_golay.__doc__ %= (PARALLEL_ARG, MAX_WORKERS_ARG, DISPLAY_DT, TOOLKIT_DT)
+
+    def smooth_lowess(
+        self,
+        smoothing_parameter=None,
+        number_of_iterations=None,
+        show_progressbar=None,
+        parallel=None,
+        max_workers=None,
+        display=True,
+        toolkit=None,
+    ):
         """
-        Apply a Savitzky-Golay filter to the data in place.
-        If `polynomial_order` or `window_length` or `differential_order` are
-        None the method is run in interactive mode.
+        Lowess data smoothing in place.
+        If `smoothing_parameter` or `number_of_iterations` are None the method
+        is run in interactive mode.
+
         Parameters
         ----------
-        window_length : int
-            The length of the filter window (i.e. the number of coefficients).
-            `window_length` must be a positive odd integer.
-        polynomial_order : int
-            The order of the polynomial used to fit the samples.
-            `polyorder` must be less than `window_length`.
-        differential_order: int, optional
-            The order of the derivative to compute.  This must be a
-            nonnegative integer.  The default is 0, which means to filter
-            the data without differentiating.
-        parallel : {bool, None}
-            Perform the operation in a threaded manner (parallely).
+        smoothing_parameter: float or None
+            Between 0 and 1. The fraction of the data used
+            when estimating each y-value.
+        number_of_iterations: int or None
+            The number of residual-based reweightings
+            to perform.
         %s
         %s
-        Notes
-        -----
-        More information about the filter in `scipy.signal.savgol_filter`.
-        """ % (DISPLAY_DT, TOOLKIT_DT)
+        %s
+        %s
+        %s
 
-    def smooth_lowess(self,
-                      smoothing_parameter=None,
-                      number_of_iterations=None,
-                      show_progressbar=None,
-                      parallel=None, display=True, toolkit=None):
-        if not statsmodels_installed:
-            raise ImportError("statsmodels is not installed. This package is "
-                              "required for this feature.")
+        Raises
+        ------
+        SignalDimensionError
+            If the signal dimension is not 1.
+
+        """
         self._check_signal_dimension_equals_one()
         if smoothing_parameter is None or number_of_iterations is None:
             smoother = SmoothingLowess(self)
@@ -923,48 +996,50 @@ _spikes_diagnosis,
             return smoother.gui(display=display, toolkit=toolkit)
         else:
             self.map(lowess,
-                     exog=self.axes_manager[-1].axis,
-                     frac=smoothing_parameter,
-                     it=number_of_iterations,
-                     is_sorted=True,
-                     return_sorted=False,
+                     x=self.axes_manager[-1].axis,
+                     f=smoothing_parameter,
+                     n_iter=number_of_iterations,
                      show_progressbar=show_progressbar,
                      ragged=False,
-                     parallel=parallel)
-    smooth_lowess.__doc__ = \
+                     parallel=parallel,
+                     max_workers=max_workers)
+    smooth_lowess.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG, DISPLAY_DT, TOOLKIT_DT)
+
+    def smooth_tv(
+        self,
+        smoothing_parameter=None,
+        show_progressbar=None,
+        parallel=None,
+        max_workers=None,
+        display=True,
+        toolkit=None,
+    ):
         """
-        Lowess data smoothing in place.
-        If `smoothing_parameter` or `number_of_iterations` are None the method
-        is run in interactive mode.
+        Total variation data smoothing in place.
+
         Parameters
         ----------
         smoothing_parameter: float or None
-            Between 0 and 1. The fraction of the data used
-            when estimating each y-value.
-        number_of_iterations: int or None
-            The number of residual-based reweightings
-            to perform.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
-        parallel : {Bool, None, int}
-            Perform the operation parallel
+           Denoising weight relative to L2 minimization. If None the method
+           is run in interactive mode.
+        %s
+        %s
+        %s
         %s
         %s
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
-        ImportError if statsmodels is not installed.
-        Notes
-        -----
-        This method uses the lowess algorithm from statsmodels. statsmodels
-        is required for this method.
-        """ % (DISPLAY_DT, TOOLKIT_DT)
-
-    def smooth_tv(self, smoothing_parameter=None, show_progressbar=None,
-                  parallel=None, display=True, toolkit=None):
+        SignalDimensionError
+            If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+        """
         self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+            "This functionality is not implement for signals with non-uniform axes. ")
+            "Consider using `smooth_lowess` instead."
         if smoothing_parameter is None:
             smoother = SmoothingTV(self)
             return smoother.gui(display=display, toolkit=toolkit)
@@ -972,32 +1047,34 @@ _spikes_diagnosis,
             self.map(_tv_denoise_1d, weight=smoothing_parameter,
                      ragged=False,
                      show_progressbar=show_progressbar,
-                     parallel=parallel)
-    smooth_tv.__doc__ = \
-        """
-        Total variation data smoothing in place.
-        Parameters
-        ----------
-        smoothing_parameter: float or None
-           Denoising weight relative to L2 minimization. If None the method
-           is run in interactive mode.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
-        parallel : {Bool, None, int}
-            Perform the operation parallely
-        %s
-        %s
-        Raises
-        ------
-        SignalDimensionError if the signal dimension is not 1.
+                     parallel=parallel,
+                     max_workers=max_workers)
 
-        """ % (DISPLAY_DT, TOOLKIT_DT)
+    smooth_tv.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG, DISPLAY_DT, TOOLKIT_DT)
 
     def filter_butterworth(self,
                            cutoff_frequency_ratio=None,
                            type='low',
                            order=2, display=True, toolkit=None):
+        """
+        Butterworth filter in place.
+
+        Parameters
+        ----------
+        %s
+        %s
+
+        Raises
+        ------
+        SignalDimensionError
+            If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+        """
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+            "This functionality is not implement for signals with non-uniform axes. ")
+            "Consider using `smooth_lowess` instead."
         self._check_signal_dimension_equals_one()
         smoother = ButterworthFilter(self)
         if cutoff_frequency_ratio is not None:
@@ -1007,45 +1084,50 @@ _spikes_diagnosis,
             smoother.apply()
         else:
             return smoother.gui(display=display, toolkit=toolkit)
-    filter_butterworth.__doc__ = \
-        """
-        Butterworth filter in place.
 
-        Parameters
-        ----------
-        %s
-        %s
-        Raises
-        ------
-        SignalDimensionError if the signal dimension is not 1.
-
-        """ % (DISPLAY_DT, TOOLKIT_DT)
+    filter_butterworth.__doc__ %= (DISPLAY_DT, TOOLKIT_DT)
 
     def _remove_background_cli(
             self, signal_range, background_estimator, fast=True,
-            zero_fill=False, show_progressbar=None):
-        signal_range = signal_range_from_roi(signal_range)
-        from hyperspy.models.model1d import Model1D
-        model = Model1D(self)
-        model.append(background_estimator)
+            zero_fill=False, show_progressbar=None, model=None,
+            return_model=False):
+        """ See :py:meth:`~hyperspy._signal1d.signal1D.remove_background`. """
+        if model is None:
+            from hyperspy.models.model1d import Model1D
+            model = Model1D(self)
+        if background_estimator not in model:
+            model.append(background_estimator)
         background_estimator.estimate_parameters(
             self,
             signal_range[0],
             signal_range[1],
             only_current=False)
-        if fast and not self._lazy:
+
+        if not fast:
+            model.set_signal_range(signal_range[0], signal_range[1])
+            model.multifit(show_progressbar=show_progressbar,
+                           iterpath='serpentine')
+            model.reset_signal_range()
+
+        if self._lazy:
+            result = self - model.as_signal(show_progressbar=show_progressbar)
+        else:
             try:
-                axis = self.axes_manager.signal_axes[0].axis
-                result = Signal1D(self.data -
-                                  background_estimator.function_nd(axis))
+                axis = self.axes_manager.signal_axes[0]
+                if is_binned(self):
+                # in v2 replace by
+                # if axis.is_binned:
+                    if axis.is_uniform:
+                        scale_factor = axis.scale
+                    else:
+                        scale_factor = np.gradient(axis.axis)
+                else:
+                    scale_factor = 1
+                bkg = background_estimator.function_nd(axis.axis) * scale_factor
+                result = self - bkg
             except MemoryError:
                 result = self - model.as_signal(
                     show_progressbar=show_progressbar)
-        else:
-            model.set_signal_range(signal_range[0], signal_range[1])
-            model.multifit(show_progressbar=show_progressbar)
-            model.reset_signal_range()
-            result = self - model.as_signal(show_progressbar=show_progressbar)
 
         if zero_fill:
             if self._lazy:
@@ -1055,70 +1137,55 @@ _spikes_diagnosis,
                 result.data = da.concatenate([z, cropped_da])
             else:
                 result.isig[:signal_range[0]] = 0
+        if return_model:
+            if fast:
+                # Calculate the variance for each navigation position only when
+                # using fast, otherwise the chisq is already calculated when
+                # doing the multifit
+                d = result.data[..., np.where(model.channel_switches)[0]]
+                variance = model._get_variance(only_current=False)
+                d *= d / (1. * variance)  # d = difference^2 / variance.
+                model.chisq.data = d.sum(-1)
+            result = (result, model)
         return result
 
     def remove_background(
             self,
             signal_range='interactive',
-            background_type='Power Law',
+            background_type='Power law',
             polynomial_order=2,
             fast=True,
             zero_fill=False,
             plot_remainder=True,
-            show_progressbar=None, display=True, toolkit=None):
-
-        self._check_signal_dimension_equals_one()
-        if signal_range == 'interactive':
-            br = BackgroundRemoval(self, background_type=background_type,
-                                   polynomial_order=polynomial_order,
-                                   fast=fast,
-                                   plot_remainder=plot_remainder,
-                                   show_progressbar=show_progressbar,
-                                   zero_fill=zero_fill)
-            return br.gui(display=display, toolkit=toolkit)
-        else:
-            if background_type in ('PowerLaw', 'Power Law'):
-                background_estimator = components1d.PowerLaw()
-            elif background_type == 'Gaussian':
-                background_estimator = components1d.Gaussian()
-            elif background_type == 'Offset':
-                background_estimator = components1d.Offset()
-            elif background_type == 'Polynomial':
-                background_estimator = components1d.Polynomial(
-                    polynomial_order)
-            else:
-                raise ValueError(
-                    "Background type: " +
-                    background_type +
-                    " not recognized")
-            spectra = self._remove_background_cli(
-                signal_range=signal_range,
-                background_estimator=background_estimator,
-                fast=fast,
-                zero_fill=zero_fill,
-                show_progressbar=show_progressbar)
-            return spectra
-    remove_background.__doc__ = \
+            show_progressbar=None,
+            return_model=False,
+            display=True,
+            toolkit=None):
         """
-        Remove the background, either in place using a gui or returned as a new
-        spectrum using the command line.
+        Remove the background, either in place using a GUI or returned as a new
+        spectrum using the command line. The fast option is not accurate for
+        most background types - except Gaussian, Offset and
+        Power law - but it is useful to estimate the initial fitting parameters
+        before performing a full fit.
+
         Parameters
         ----------
-        signal_range : tuple, optional
+        signal_range : "interactive", tuple of ints or floats, optional
             If this argument is not specified, the signal range has to be
             selected using a GUI. And the original spectrum will be replaced.
-            If tuple is given, the a spectrum will be returned.
-        background_type : string
+            If tuple is given, a spectrum will be returned.
+        background_type : str
             The type of component which should be used to fit the background.
-            Possible components: PowerLaw, Gaussian, Offset, Polynomial
+            Possible components: Doniach, Gaussian, Lorentzian, Offset,
+            Polynomial, PowerLaw, Exponential, SkewNormal, SplitVoigt, Voigt.
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
         fast : bool
             If True, perform an approximative estimation of the parameters.
             If False, the signal is fitted using non-linear least squares
-            afterwards.This is slower compared to the estimation but
-            possibly more accurate.
+            afterwards. This is slower compared to the estimation but
+            often more accurate.
         zero_fill : bool
             If True, all spectral channels lower than the lower bound of the
             fitting range will be set to zero (this is the default behavior
@@ -1130,27 +1197,84 @@ _spikes_diagnosis,
             background removal. This preview is obtained from a Fast calculation
             so the result may be different if a NLLS calculation is finally
             performed.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+        return_model : bool
+            If True, the background model is returned. The chi² can be obtained
+            from this model using
+            :py:meth:`~hyperspy.models.model1d.Model1D.chisqd`.
         %s
         %s
+        %s
+
+        Returns
+        -------
+        {None, signal, background_model or (signal, background_model)}
+            If signal_range is not 'interactive', the signal with background
+            subtracted is returned. If return_model is True, returns the
+            background model, otherwise, the GUI widget dictionary is returned
+            if `display=False` - see the display parameter documentation.
+
         Examples
         --------
-        Using gui, replaces spectrum s
+        Using GUI, replaces spectrum s
+
         >>> s = hs.signals.Signal1D(range(1000))
         >>> s.remove_background() #doctest: +SKIP
 
-        Using command line, returns a spectrum
-        >>> s1 = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
+        Using command line, returns a Signal1D:
 
-        Using a full model to fit the background
-        >>> s1 = s.remove_background(signal_range=(400,450), fast=False)
+        >>> s.remove_background(signal_range=(400,450),
+                                background_type='PowerLaw')
+        <Signal1D, title: , dimensions: (|1000)>
+
+        Using a full model to fit the background:
+
+        >>> s.remove_background(signal_range=(400,450), fast=False)
+        <Signal1D, title: , dimensions: (|1000)>
+
+        Returns background subtracted and the model:
+
+        >>> s.remove_background(signal_range=(400,450),
+                                fast=False,
+                                return_model=True)
+        (<Signal1D, title: , dimensions: (|1000)>, <Model1D>)
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
-        """ % (DISPLAY_DT, TOOLKIT_DT)
+        SignalDimensionError
+            If the signal dimension is not 1.
+        """
+
+        self._check_signal_dimension_equals_one()
+        # Create model here, so that we can return it
+        from hyperspy.models.model1d import Model1D
+        model = Model1D(self)
+        if signal_range == 'interactive':
+            br = BackgroundRemoval(self, background_type=background_type,
+                                   polynomial_order=polynomial_order,
+                                   fast=fast,
+                                   plot_remainder=plot_remainder,
+                                   show_progressbar=show_progressbar,
+                                   zero_fill=zero_fill,
+                                   model=model)
+            gui_dict = br.gui(display=display, toolkit=toolkit)
+            if return_model:
+                return model
+            else:
+                # for testing purposes
+                return gui_dict
+        else:
+            background_estimator = _get_background_estimator(
+                background_type, polynomial_order)[0]
+            result = self._remove_background_cli(
+                signal_range=signal_range,
+                background_estimator=background_estimator,
+                fast=fast,
+                zero_fill=zero_fill,
+                show_progressbar=show_progressbar,
+                model=model,
+                return_model=return_model)
+            return result
+    remove_background.__doc__ %= (SHOW_PROGRESSBAR_ARG, DISPLAY_DT, TOOLKIT_DT)
 
     @interactive_range_selector
     def crop_signal1D(self, left_value=None, right_value=None,):
@@ -1158,25 +1282,23 @@ _spikes_diagnosis,
 
         Parameters
         ----------
-        left_value, righ_value: {int | float | None}
+        left_value, right_value : int, float or None
             If int the values are taken as indices. If float they are
             converted to indices using the spectral axis calibration.
             If left_value is None crops from the beginning of the axis.
             If right_value is None crops up to the end of the axis. If
-            both are
-            None the interactive cropping interface is activated
-            enabling
-            cropping the spectrum using a span selector in the signal
-            plot.
+            both are None the interactive cropping interface is activated
+            enabling cropping the spectrum using a span selector in the
+            signal plot.
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
-
+        SignalDimensionError
+            If the signal dimension is not 1.
         """
         self._check_signal_dimension_equals_one()
         try:
-            left_value, right_value = signal_range_from_roi(left_value)
+            left_value, right_value = left_value
         except TypeError:
             # It was not a ROI, we carry on
             pass
@@ -1194,12 +1316,18 @@ _spikes_diagnosis,
 
         Raises
         ------
-        ValueError if FWHM is equal or less than zero.
-
-        SignalDimensionError if the signal dimension is not 1.
-
+        ValueError
+            If FWHM is equal or less than zero.
+        SignalDimensionError
+            If the signal dimension is not 1.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         self._check_signal_dimension_equals_one()
+        for _axis in self.axes_manager.signal_axes:
+            if not _axis.is_uniform:
+                raise NotImplementedError(
+                    "The function is not implemented for non-uniform axes.")
         if FWHM <= 0:
             raise ValueError(
                 "FWHM must be greater than zero")
@@ -1212,8 +1340,9 @@ _spikes_diagnosis,
 
         Parameters
         ----------
-        side : {'left', 'right', 'both'}
-        channels : {None, int}
+        side : 'left', 'right' or 'both'
+            Specify which side to use.
+        channels : None or int
             The number of channels to taper. If None 5% of the total
             number of channels are tapered.
         offset : int
@@ -1224,8 +1353,8 @@ _spikes_diagnosis,
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
-
+        SignalDimensionError
+            If the signal dimension is not 1.
         """
         if not np.issubdtype(self.data.dtype, np.floating):
             raise TypeError("The data dtype should be `float`. It can be "
@@ -1283,72 +1412,65 @@ _spikes_diagnosis,
         self.events.data_changed.trigger(obj=self)
         return channels
 
-    def find_peaks1D_ohaver(self, xdim=None, slope_thresh=0, amp_thresh=None,
-                            subchannel=True, medfilt_radius=5, maxpeakn=30000,
-                            peakgroup=10, parallel=None):
-        """Find peaks along a 1D line (peaks in spectrum/spectra).
-
-        Function to locate the positive peaks in a noisy x-y data set.
-
-        Detects peaks by looking for downward zero-crossings in the
-        first derivative that exceed 'slope_thresh'.
-
-        Returns an array containing position, height, and width of each
-        peak.
+    def find_peaks1D_ohaver(self, xdim=None,
+                            slope_thresh=0,
+                            amp_thresh=None,
+                            subchannel=True,
+                            medfilt_radius=5,
+                            maxpeakn=30000,
+                            peakgroup=10,
+                            parallel=None,
+                            max_workers=None):
+        """Find positive peaks along a 1D Signal. It detects peaks by looking
+        for downward zero-crossings in the first derivative that exceed
+        'slope_thresh'.
 
         'slope_thresh' and 'amp_thresh', control sensitivity: higher
         values will neglect broad peaks (slope) and smaller features (amp),
         respectively.
 
-        peakgroup is the number of points around the top of the peak
+        `peakgroup` is the number of points around the top of the peak
         that are taken to estimate the peak height. For spikes or very
-        narrow peaks, keep PeakGroup=1 or 2; for broad or noisy peaks,
-        make PeakGroup larger to reduce the effect of noise.
+        narrow peaks, set `peakgroup` to 1 or 2; for broad or noisy peaks,
+        make `peakgroup` larger to reduce the effect of noise.
 
         Parameters
         ----------
-
-        slope_thresh : float (optional)
-                       1st derivative threshold to count the peak;
-                       higher values will neglect broader features;
-                       default is set to 0.
-
-        amp_thresh : float (optional)
-                     intensity threshold below which peaks are ignored;
-                     higher values will neglect smaller features;
-                     default is set to 10% of max(y).
-
-        medfilt_radius : int (optional)
-                     median filter window to apply to smooth the data
-                     (see scipy.signal.medfilt);
-                     if 0, no filter will be applied;
-                     default is set to 5.
-
-        peakgroup : int (optional)
-                    number of points around the "top part" of the peak
-                    that are taken to estimate the peak height;
-                    default is set to 10
-
-        maxpeakn : int (optional)
-                   number of maximum detectable peaks;
-                   default is set to 5000.
-
-        subchannel : bool (optional)
-                 default is set to True.
-
-        parallel : {None, bool}
-            Perform the operation in a threaded (parallel) manner.
+        slope_thresh : float, optional
+            1st derivative threshold to count the peak;
+            higher values will neglect broader features;
+            default is set to 0.
+        amp_thresh : float, optional
+            intensity threshold below which peaks are ignored;
+            higher values will neglect smaller features;
+            default is set to 10%% of max(y).
+        medfilt_radius : int, optional
+            median filter window to apply to smooth the data
+            (see :py:func:`scipy.signal.medfilt`);
+            if 0, no filter will be applied;
+            default is set to 5.
+        peakgroup : int, optional
+            number of points around the "top part" of the peak
+            that are taken to estimate the peak height;
+            default is set to 10
+        maxpeakn : int, optional
+            number of maximum detectable peaks;
+            default is set to 5000.
+        subchannel : bool, default True
+            default is set to True.
+        %s
+        %s
 
         Returns
         -------
-        peaks : structured array of shape (npeaks)
-            contains fields: 'position', 'width', and 'height' for each peak.
+        structured array of shape (npeaks) containing fields: 'position',
+        'width', and 'height' for each peak.
 
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
-
+        SignalDimensionError
+            If the signal dimension is not 1.
         """
         # TODO: add scipy.signal.find_peaks_cwt
         self._check_signal_dimension_equals_one()
@@ -1363,27 +1485,33 @@ _spikes_diagnosis,
                          subchannel=subchannel,
                          ragged=True,
                          parallel=parallel,
+                         max_workers=max_workers,
                          inplace=False)
         return peaks.data
 
-    def estimate_peak_width(self,
-                            factor=0.5,
-                            window=None,
-                            return_interval=False,
-                            parallel=None,
-                            show_progressbar=None):
+    find_peaks1D_ohaver.__doc__ %= (PARALLEL_ARG, MAX_WORKERS_ARG)
+
+    def estimate_peak_width(
+        self,
+        factor=0.5,
+        window=None,
+        return_interval=False,
+        parallel=None,
+        show_progressbar=None,
+        max_workers=None,
+    ):
         """Estimate the width of the highest intensity of peak
         of the spectra at a given fraction of its maximum.
 
         It can be used with asymmetric peaks. For accurate results any
-        background must be previously substracted.
+        background must be previously subtracted.
         The estimation is performed by interpolation using cubic splines.
 
         Parameters
         ----------
         factor : 0 < float < 1
             The default, 0.5, estimates the FWHM.
-        window : None, float
+        window : None or float
             The size of the window centred at the peak maximum
             used to perform the estimation.
             The window size must be chosen with care: if it is narrower
@@ -1394,23 +1522,37 @@ _spikes_diagnosis,
             If True, returns 2 extra signals with the positions of the
             desired height fraction at the left and right of the
             peak.
-        parallel : {None, bool}
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+        %s
+        %s
+        %s
 
         Returns
         -------
         width or [width, left, right], depending on the value of
         `return_interval`.
 
-        """
+        Notes
+        -----
+        Parallel operation of this function is not supported
+        on Windows platforms.
 
+        """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         if not 0 < factor < 1:
             raise ValueError("factor must be between 0 and 1.")
+
+        if parallel != False and os.name in ["nt", "dos"]:  # pragma: no cover
+            # Due to a scipy bug where scipy.interpolate.UnivariateSpline
+            # appears to not be thread-safe on Windows, we raise a warning
+            # here. See https://github.com/hyperspy/hyperspy/issues/2320
+            # Until/if the scipy bug is fixed, we should do this.
+            _logger.warning(
+                "Parallel operation is not supported on Windows. "
+                "Setting `parallel=False`"
+            )
+            parallel = False
 
         axis = self.axes_manager.signal_axes[0]
         # x = axis.axis
@@ -1428,7 +1570,7 @@ _spikes_diagnosis,
                     slice(vmax - window * 0.5, vmax + window * 0.5))
                 spectrum = spectrum[slices]
                 x = x[slices]
-            spline = scipy.interpolate.UnivariateSpline(
+            spline = interpolate.UnivariateSpline(
                 x,
                 spectrum - factor * spectrum.max(),
                 s=0)
@@ -1445,7 +1587,8 @@ _spikes_diagnosis,
                                  ragged=False,
                                  inplace=False,
                                  parallel=parallel,
-                                 show_progressbar=show_progressbar)
+                                 show_progressbar=show_progressbar,
+                                 max_workers=None)
         left, right = both.T.split()
         width = right - left
         if factor == 0.5:
@@ -1474,6 +1617,34 @@ _spikes_diagnosis,
             return [width, left, right]
         else:
             return width
+
+    estimate_peak_width.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
+
+    def plot(self,
+             navigator="auto",
+             plot_markers=True,
+             autoscale='v',
+             norm="auto",
+             axes_manager=None,
+             navigator_kwds={},
+             **kwargs):
+        """%s
+        %s
+        %s
+        """
+        for c in autoscale:
+            if c not in ['x', 'v']:
+                raise ValueError("`autoscale` only accepts 'x', 'v' as "
+                                 "valid characters.")
+        super().plot(navigator=navigator,
+                     plot_markers=plot_markers,
+                     autoscale=autoscale,
+                     norm=norm,
+                     axes_manager=axes_manager,
+                     navigator_kwds=navigator_kwds,
+                     **kwargs)
+    plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
+                     PLOT1D_DOCSTRING)
 
 
 class LazySignal1D(LazySignal, Signal1D):

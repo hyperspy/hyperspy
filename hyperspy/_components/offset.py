@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,20 +21,26 @@ import numpy as np
 
 from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 class Offset(Component):
 
-    """Component to add a constant value in the y-axis
+    r"""Component to add a constant value in the y-axis.
 
-    f(x) = k + x
+    .. math::
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     k      |  offset   |
-    +------------+-----------+
+        f(x) = k
+
+    ============ =============
+    Variable      Parameter
+    ============ =============
+    :math:`k`     offset
+    ============ =============
+
+    Parameters
+    -----------
+    offset : float
 
     """
 
@@ -80,14 +86,23 @@ class Offset(Component):
         bool
 
         """
-        super(Offset, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
+        if is_binned(signal):
+        # in v2 replace by
+        #if axis.is_binned:
+            # using the mean of the gradient for non-uniform axes is a best
+            # guess to the scaling of binned signals for the estimation
+            scaling_factor = axis.scale if axis.is_uniform \
+                             else np.mean(np.gradient(axis.axis), axis=-1)
 
         if only_current is True:
             self.offset.value = signal()[i1:i2].mean()
-            if self.binned:
-                self.offset.value /= axis.scale
+            if is_binned(signal):
+            # in v2 replace by
+            #if axis.is_binned:
+                self.offset.value /= scaling_factor
             return True
         else:
             if self.offset.map is None:
@@ -97,8 +112,10 @@ class Offset(Component):
             gi[axis.index_in_array] = slice(i1, i2)
             self.offset.map['values'][:] = dc[tuple(
                 gi)].mean(axis.index_in_array)
-            if self.binned:
-                self.offset.map['values'] /= axis.scale
+            if is_binned(signal):
+            # in v2 replace by
+            #if axis.is_binned:
+                self.offset.map['values'] /= scaling_factor
             self.offset.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
@@ -107,8 +124,12 @@ class Offset(Component):
         """%s
 
         """
-        x = axis[np.newaxis, :]
-        o = self.offset.map['values'][..., np.newaxis]
+        if self._is_navigation_multidimensional:
+            x = axis[np.newaxis, :]
+            o = self.offset.map['values'][..., np.newaxis]
+        else:
+            x = axis
+            o = self.offset.value
         return self._function(x, o)
 
     function_nd.__doc__ %= FUNCTION_ND_DOCSTRING

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -40,6 +40,8 @@ class BlittedFigure(object):
                 obj:  SpectrumFigure instances
                     The instance that triggered the event.
             """, arguments=["obj"])
+        self.title = ""
+        self.ax_markers = list()
 
     def create_figure(self, **kwargs):
         """Create matplotlib figure
@@ -61,7 +63,7 @@ class BlittedFigure(object):
     def _on_blit_draw(self, *args):
         fig = self.figure
         # As draw doesn't draw animated elements, in its current state the
-        # canvas only contains the backgroud. The following line simply stores
+        # canvas only contains the background. The following line simply stores
         # it for the consumption of _update_animated.
         self._background = fig.canvas.copy_from_bbox(fig.bbox)
         # draw does not draw animated elements, so we must draw them
@@ -95,8 +97,17 @@ class BlittedFigure(object):
         self.ax_markers.append(marker)
         marker.events.closed.connect(lambda obj: self.ax_markers.remove(obj))
 
+    def remove_markers(self, render_figure=False):
+        """ Remove all markers """
+        for marker in self.ax_markers:
+            marker.close(render_figure=False)
+        if render_figure:
+            self.render_figure()
+
     def _on_close(self):
+        _logger.debug('Closing `BlittedFigure`.')
         if self.figure is None:
+            _logger.debug('`BlittedFigure` already closed.')
             return  # Already closed
         for marker in self.ax_markers:
             marker.close(render_figure=False)
@@ -106,13 +117,15 @@ class BlittedFigure(object):
         if self._draw_event_cid:
             self.figure.canvas.mpl_disconnect(self._draw_event_cid)
             self._draw_event_cid = None
+        plt.close(self.figure)
+        self.figure = None
+        self.ax = None
+        self._background = None
+        _logger.debug('`BlittedFigure` closed.')
 
     def close(self):
-        figure = self.figure
+        _logger.debug('`close` `BlittedFigure` called.')
         self._on_close()   # Needs to trigger serially for a well defined state
-        plt.close(figure)
-        self.figure = None
-        self._background = None
 
     @property
     def title(self):
@@ -122,3 +135,9 @@ class BlittedFigure(object):
     def title(self, value):
         # Wrap the title so that each line is not longer than 60 characters.
         self._title = textwrap.fill(value, 60)
+
+    def render_figure(self):
+        if self.figure.canvas.supports_blit and self._background is not None:
+            self._update_animated()
+        else:
+            self.figure.canvas.draw_idle()

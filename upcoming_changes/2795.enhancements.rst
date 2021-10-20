@@ -1,0 +1,1 @@
+Add :py:meth:`~.axes.AxesManager.switch_iterpath` context manager to switch iterpath

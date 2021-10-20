@@ -4,15 +4,24 @@
 Installing HyperSpy
 ===================
 
-The easiest way to install HyperSpy in Microsoft Windows is installing the
-:ref:`HyperSpy Bundle <hyperspy-bundle>`.
+The easiest way to install HyperSpy is to use the
+:ref:`HyperSpy Bundle <hyperspy-bundle>`, which is available on Windows, MacOS
+and Linux.
 
-For quick instructions on how to install HyperSpy in Linux, MacOs or Windows
-using the `Anaconda Python distribution <http://docs.continuum.io/anaconda/>`_
-see  :ref:`quick-anaconda-install`.
+Alternatively, HyperSpy can be installed in an existing python distribution,
+read the :ref:`conda installation <anaconda-install>` and
+:ref:`pip installation<install-with-pip>` sections for instructions.
 
-Those experienced with Python may like to
-:ref:`install-with-python-installers` or :ref:`install-source`.
+.. note::
+
+    To enable the context-menu (right-click) shortcut in a chosen folder, use
+    the `start_jupyter_cm <https://github.com/hyperspy/start_jupyter_cm>`_ tool.
+
+.. note::
+
+    If you want to be notified about new releases, please *Watch (Releases only)*
+    the `hyperspy repository on GitHub <https://github.com/hyperspy/hyperspy/>`_
+    (requires a `GitHub account <https://github.com/login>`_).
 
 .. warning::
 
@@ -21,116 +30,157 @@ Those experienced with Python may like to
 
 .. _hyperspy-bundle:
 
-HyperSpy Bundle for Microsoft Windows
--------------------------------------
+HyperSpy Bundle
+---------------
 
-.. versionadded:: 0.6
+The `HyperSpy <https://github.com/hyperspy/hyperspy-bundle>`__ bundle is very similar
+to the Anaconda distribution, and it includes:
 
-The easiest way to install HyperSpy in Windows is installing the HyperSpy
-Bundle. This is a customised `WinPython <http://winpython.github.io/>`_
-distribution that includes HyperSpy, all its dependencies and many other
-scientific Python packages.
+  * HyperSpy
+  * HyperSpyUI
+  * `HyperSpy extensions <https://github.com/hyperspy/hyperspy-extensions-list>`_
+  * context `menu shortcut (right-click) <https://github.com/hyperspy/start_jupyter_cm>`_
+    to Jupyter Notebook, Qtconsole or JupyterLab
 
-For details and download links go to https://github.com/hyperspy/hyperspy-bundle
-
-.. _quick-anaconda-install:
-
-Quick instructions to install HyperSpy using Anaconda (Linux, MacOs, Windows)
------------------------------------------------------------------------------
-
-Anaconda is recommended for the best performance (it is compiled using Intel
-MKL libraries) and the easiest installation. The academic license is free.
+.. image:: images/download_hyperspy_button.png
+   :width: 350
+   :align: center
+   :target: https://github.com/hyperspy/hyperspy-bundle/releases
 
 
-#. Download and install
-   `Anaconda <https://store.continuum.io/cshop/anaconda/>`_. If you are not
-   familiar with Anaconda please refer to their
-   `User Guide <https://docs.continuum.io/anaconda/>`_ for
-   details.
+For instructions, see the `HyperSpy bundle <https://github.com/hyperspy/hyperspy-bundle>`__ repository.
 
-#. Then install HyperSpy executing the following `conda` commands in the
-   Anaconda Prompt, Linux/Mac Terminal or Microsoft Windows Command Prompt.
-   (This depends on your OS and how you have installed Anaconda, see the
-   `Anaconda User Guide <https://docs.continuum.io/anaconda/>`_) for
-   details.
+Portable distribution (Windows only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A portable version of the `HyperSpy bundle <https://github.com/hyperspy/hyperspy-bundle>`__
+based on the WinPython distribution is also available on Windows.
+
+.. _anaconda-install:
+
+Installation using conda
+------------------------
+
+`Conda <https://docs.conda.io/en/latest/>`_ is a package manager for Anaconda-like
+distributions, such as the `Miniforge <https://github.com/conda-forge/miniforge>`_
+or the `HyperSpy-bundle <https://github.com/hyperspy/hyperspy-bundle>`__.
+Since HyperSpy is packaged in the `conda-forge <https://conda-forge.org/>`__ channel,
+it can easily be installed using conda.
+
+To install HyperSpy run the following from the Anaconda Prompt on Windows or
+from a Terminal on Linux and Mac.
 
    .. code-block:: bash
 
        $ conda install hyperspy -c conda-forge
 
-#.  (optional) Since HyperSpy v1.3 the
-    `traitsui GUI elements <https://github.com/hyperspy/hyperspy_gui_traitsui>`_
-    are not installed automatically (but the
-    `Jupyter GUI elements <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
-    are). To install them:
+This will also install the optional GUI packages ``hyperspy_gui_ipywidgets``
+and ``hyperspy_gui_traitsui``. To install HyperSpy without the GUI packages, use:
 
-    .. code-block:: bash
+   .. code-block:: bash
 
-        $ conda install hyperspy-gui-traitsui -c conda-forge
+       $ conda install hyperspy-base -c conda-forge
 
 .. note::
-    Since version 0.8.4 HyperSpy only supports Python 3. If you need to
-    install HyperSpy in Python 2.7 install version 0.8.3:
 
-    .. code-block:: bash
+    Depending on how Anaconda has been installed, it is possible that the
+    ``conda`` command is not available from the Terminal, read the
+    `Anaconda User Guide <https://docs.continuum.io/anaconda/>`_ for details.
 
-        $ conda install traitsui
-        $ pip install --upgrade hyperspy==0.8.3-1
+.. note::
 
-To enable context-menu (right-click) startup in a chosen folder, install
-`start_jupyter_cm <https://github.com/hyperspy/start_jupyter_cm>`_. (Currently
-only available for Gnome and Windows, not MacOS.)
+    Using ``-c conda-forge`` is only necessary when the ``conda-forge`` channel
+    is not already added to the conda configuration, read the
+    `conda-forge documentation <https://conda-forge.org/docs/user/introduction.html>`_
+    for more details.
 
+.. note::
 
-For more options and details read the rest of the documentation.
+    Depending on the packages installed in Anaconda, ``conda`` can be slow and
+    in this case ``mamba`` can be used as an alternative of ``conda`` since the
+    former is significantly faster. Read the
+    `mamba documentation <https://github.com/mamba-org/mamba>`_ for instructions.
 
+Further information
+^^^^^^^^^^^^^^^^^^^
 
-.. _install-with-python-installers:
+When installing packages, ``conda`` will verify that all requirements of `all`
+packages installed in an environment are met. This can lead to situations where
+a solution for dependencies resolution cannot be resolved or the solution may
+include installing old or undesired versions of libraries. The requirements
+depend on which libraries are already present in the environment as satisfying
+their respective dependencies may be problematic. In such a situation, possible
+solutions are:
 
-Install using Python installers
--------------------------------
+- use Miniconda instead of Anaconda, if you are installing a python
+  distribution from scratch: Miniconda only installs very few packages so satisfying
+  all dependencies is simple.
+- install HyperSpy in a `new environment <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_.
+  The following example illustrates how to create a new environment named ``hspy_environment``,
+  activate it and install HyperSpy in the new environment.
+
+  .. code-block:: bash
+
+      $ conda create -n hspy_environment
+      $ conda activate hspy_environment
+      $ conda install hyperspy -c conda-forge
+
+  .. note::
+
+      A consequence of installing hyperspy in a new environment is that you need
+      to activate this environment using ``conda activate environment_name`` where
+      ``environment_name`` is the name of the environment, however `shortcuts` can
+      be created using different approaches:
+
+      - Install `start_jupyter_cm <https://github.com/hyperspy/start_jupyter_cm>`_
+        in the hyperspy environment.
+      - Install `nb_conda_kernels <https://github.com/Anaconda-Platform/nb_conda_kernels>`_.
+      - Create `IPython kernels for different environment <https://ipython.readthedocs.io/en/stable/install/kernel_install.html#kernels-for-different-environments>`_.
+
+To learn more about the Anaconda eco-system:
+
+- Choose between `Anaconda or Miniconda <https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html#anaconda-or-miniconda>`_?
+- Understanding `conda and pip <https://www.anaconda.com/blog/understanding-conda-and-pip>`_.
+- What is `conda-forge <https://conda-forge.org/#about>`__.
+
+.. _install-with-pip:
+
+Installation using pip
+----------------------
 
 HyperSpy is listed in the `Python Package Index
 <http://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded
-and installed  `pip <http://pypi.python.org/pypi/pip>`_. You may need to
+and installed  `pip <http://pypi.python.org/pypi/pip>`__. You may need to
 install pip for the following commands to run.
 
-Install using `pip`:
+To install all of HyperSpy's functionalities, run:
 
-.. code-block:: bash
+  .. code-block:: bash
 
-    $ pip install hyperspy
+      $ pip install hyperspy[all]
 
-.. warning::
-    Since version 0.8.4 HyperSpy only supports Python 3. If you need to
-    install HyperSpy in Python 2.7 install version 0.8.3:
+To install only the strictly required dependencies and limited functionalities,
+use:
 
-    .. code-block:: bash
+  .. code-block:: bash
 
-        $ pip install --upgrade hyperspy==0.8.3-1
+      $ pip install hyperspy
 
+See the following list of selectors to select the installation of optional
+dependencies required by specific functionalities:
 
-pip installs automatically the strictly required libraries. However, for full
-functionality you may need to install some other dependencies. To install with
-full functionality:
-
-
-.. code-block:: bash
-
-    $ pip install hyperspy[all]
-
-Alternatively you can select the extra functionalities required:
-
-* ``learning`` to install required libraries for some machine learning features.
-* ``gui-jupyter`` to install required libraries to use the
-  `Jupyter widgets <http://ipywidgets.readthedocs.io/en/stable/>`_
-  GUI elements.
-* ``gui-traitsui`` to install required libraries to use the GUI elements based
-  on `traitsui <http://docs.enthought.com/traitsui/>`_
-* ``test`` to install required libraries to run HyperSpy's unit tests.
-* ``mrcz`` to install the mrcz plugin.
-* ``doc`` to install required libraries to build HyperSpy's documentation.
-* ``speed`` install optional libraries that speed up some functionalities.
+* ``learning`` for some machine learning features,
+* ``gui-jupyter`` to use the `Jupyter widgets <http://ipywidgets.readthedocs.io/en/stable/>`_
+  GUI elements,
+* ``gui-traitsui`` to use the GUI elements based on `traitsui <http://docs.enthought.com/traitsui/>`_,
+* ``mrcz`` to read mrcz file,
+* ``speed`` to speed up some functionalities,
+* ``usid`` to read usid file,
+* ``tests`` to install required libraries to run HyperSpy's unit tests,
+* ``build-doc`` to install required libraries to build HyperSpy's documentation,
+* ``dev`` to install all the above,
+* ``all`` to install all the above except the development requirements
+  (``tests``, ``build-doc`` and ``dev``).
 
 For example:
 
@@ -138,55 +188,87 @@ For example:
 
     $ pip install hyperspy[learning, gui-jupyter]
 
-See also :ref:`install-dependencies`.
+Finally, be aware that HyperSpy depends on a number of libraries that usually
+need to be compiled and therefore installing HyperSpy may require development
+tools installed in the system. If the above does not work for you remember that
+the easiest way to install HyperSpy is
+:ref:`using the HyperSpy bundle <hyperspy-bundle>`.
 
-Finally, be aware that HyperSpy depends on a
-number of libraries that usually need to be compiled and therefore installing
-HyperSpy may require development tools. If the above does not work for you
-remember that the easiest way to install HyperSpy is
-:ref:`using Anaconda <quick-anaconda-install>`.
+.. _update-with-conda:
 
+Update HyperSpy
+---------------
 
-.. _install-binary:
+Using conda
+^^^^^^^^^^^
 
-Install from a binary
----------------------
+To update hyperspy to the latest release using conda:
 
-We provide  binary distributions for Windows (`see the
-Downloads section of the website <http://hyperspy.org/download.html>`_). To
-install easily in other platforms see :ref:`install-with-python-installers`
+   .. code-block:: bash
 
+       $ conda update hyperspy -c conda-forge
 
-.. _install-source:
+Using pip
+^^^^^^^^^
 
-Install from source
--------------------
+To update hyperspy to the latest release using pip:
 
-.. _install-released-source:
+   .. code-block:: bash
 
-Released version
-^^^^^^^^^^^^^^^^
+       $ pip install hyperspy --upgrade
 
-To install from source grab a tar.gz release and in Linux/Mac (requires to
-:ref:`install-dependencies` manually):
+Install specific version
+------------------------
 
-.. code-block:: bash
+Using conda
+^^^^^^^^^^^
 
-    $ tar -xzf hyperspy.tar.gz
-    $ cd hyperspy
-    $ python setup.py install
+To install a specific version of hyperspy (for example ``1.6.1``) using conda:
 
-You can also use a Python installer, e.g.
+   .. code-block:: bash
 
-.. code-block:: bash
+       $ conda install hyperspy=1.6.1 -c conda-forge
 
-    $ pip install hyperspy.tar.gz
+Using pip
+^^^^^^^^^
+
+To install a specific version of hyperspy (for example ``1.6.1``) using pip:
+
+   .. code-block:: bash
+
+       $ pip install hyperspy==1.6.1
+
 
 .. _install-dev:
 
-Development version
-^^^^^^^^^^^^^^^^^^^
+Rolling release Linux distributions
+-----------------------------------
 
+Due to the requirement of up to date versions for dependencies such as *numpy*,
+*scipy*, etc., binary packages of HyperSpy are not provided for most linux
+distributions and the installation via :ref:`Anaconda/Miniconda <anaconda-install>`
+or :ref:`Pip <install-with-pip>` is recommended.
+
+However, packages of the latest HyperSpy release and the related
+GUI packages are maintained for the rolling release distributions
+*Arch-Linux* (in the `Arch User Repository
+<https://aur.archlinux.org/packages/python-hyperspy/>`_) (AUR) and
+*openSUSE* (`Community Package <https://software.opensuse.org/package/python-hyperspy>`_)
+as ``python-hyperspy`` and ``python-hyperspy-gui-traitsui``,
+``python-hyperspy-gui-ipywidgets`` for the GUIs packages.
+
+A more up-to-date package that contains all updates to be included
+in the next minor version release (likely including new features compared to
+the stable release) is also available in the AUR as |python-hyperspy-git|_.
+
+.. |python-hyperspy-git| replace:: ``python-hyperspy-git``
+.. _python-hyperspy-git: https://aur.archlinux.org/packages/python-hyperspy-git
+
+Install development version
+---------------------------
+
+Clone the hyperspy repository
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To get the development version from our git repository you need to install `git
 <http://git-scm.com//>`_. Then just do:
@@ -195,31 +277,55 @@ To get the development version from our git repository you need to install `git
 
     $ git clone https://github.com/hyperspy/hyperspy.git
 
-To install HyperSpy you could proceed like in :ref:`install-released-source`.
-However, if you are installing from the development version most likely you
-will prefer to install HyperSpy using  `pip <http://www.pip-installer.org>`_
-development mode:
+.. Warning::
 
+    When running hyperspy from a development version, it can happen that the
+    dependency requirement changes in which you will need to keep this
+    this requirement up to date (check dependency requirement in ``setup.py``)
+    or run again the installation in development mode using ``pip`` as explained
+    below.
 
-.. code-block:: bash
-
-    $ cd hyperspy
-    $ pip install -e ./
-
-All required dependencies are automatically installed by pip. However, for
-extra functionality you may need to install some extra dependencies, see
-:ref:`install-dependencies`. Note the pip installer requires root to install,
-so for Ubuntu:
+Installation in a Anaconda/Miniconda distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Optionally, create an environment to separate your hyperspy installation from 
+other anaconda environments (`read more about environments here 
+<https://conda.io/projects/conda/en/latest/user-guide/concepts/environments.html>`_):
 
 .. code-block:: bash
 
-    $ cd hyperspy
-    $ sudo pip install -e ./
+    $ conda create -n hspy_dev python # create an empty environment with latest python
+    $ conda activate hspy_dev # activate environment
 
-With development mode setup.py generates or updates git post-checkout hook,
-which will cleanup the cythonized c files, cythonize it again and run
-```build_ext --inplace``` after the next checkout.
+Install the runtime and development dependencies requirements using conda:
 
+.. code-block:: bash
+
+    $ conda install hyperspy-base -c conda-forge --only-deps # install hyperspy dependencies
+    $ conda install hyperspy-dev -c conda-forge # install developer dependencies
+
+The package ``hyperspy-dev`` will install the development dependencies required
+for testing and building the documentation.
+
+From the root folder of your hyperspy repository (folder containing the
+``setup.py`` file) run `pip <http://www.pip-installer.org>`_ in development mode:
+
+.. code-block:: bash
+
+    $ pip install -e . --no-deps # install the currently checked-out branch of hyperspy
+
+Installation in other (non-system) Python distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+From the root folder of your hyperspy repository (folder containing the
+``setup.py`` file) run `pip <http://www.pip-installer.org>`_ in development mode:
+
+.. code-block:: bash
+
+    $ pip install -e .[dev]
+
+All required dependencies are automatically installed by pip. If you don't want
+to install all dependencies and only install some of the optional dependencies,
+use the corresponding selector as explained in the :ref:`install-with-pip` section
 
 ..
     If using Arch Linux, the latest checkout of the master development branch
@@ -227,6 +333,19 @@ which will cleanup the cythonized c files, cythonize it again and run
     <https://aur.archlinux.org/packages/hyperspy-git/>`_
 
 .. _create-debian-binary:
+
+Installation in a system Python distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using a system Python distribution, it is recommended to install the
+dependencies using your system package manager.
+
+From the root folder of your hyperspy repository (folder containing the
+``setup.py`` file) run `pip <http://www.pip-installer.org>`_ in development mode.
+
+.. code-block:: bash
+
+    $ pip install -e --user .[dev]
 
 Creating Debian/Ubuntu binaries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -243,53 +362,3 @@ You can create binaries for Debian/Ubuntu from the source by running the
     For this to work, the following packages must be installed in your system
     python-stdeb, debhelper, dpkg-dev and python-argparser are required.
 
-
-.. _install-dependencies:
-
-Installing the required libraries
----------------------------------
-
-
-In addition to the libraries that are automatically installed when installing
-HyperSpy using ``pip`` (see :ref:`install-with-python-installers`), if HyperSpy
-is going to be installed from  source, Cython is also required. Also, to
-compile the documentation sphinxcontrib-napoleon and sphinx_rtd_theme are
-required.
-
-In case some of the required libraries are not automatically installed when
-installing from source in a conda environment, these can be obtained beforehand
-by installing and removing hyperspy from that environment;
-
-.. code-block:: bash
-    $ conda install hyperspy
-    $ conda remove hyperspy
-    $ sudo pip install -e ./
-
-.. _known-issues:
-
-Known issues
-------------
-
-Windows
-^^^^^^^
-
-* If HyperSpy fails to start in Windows try installing the Microsoft Visual
-  before reporting a bug.
-
-* Concerning older installations with the "Hyperspy here" context menus: Due to
-  a `Python bug <http://bugs.python.org/issue13276>`_ sometimes uninstalling
-  HyperSpy does not uninstall the "Hyperspy here" entries in the context menu.
-  Please run the following code in a Windows Terminal (command line prompt)
-  with administrator rights to remove the entries manually:
-
-  .. code-block:: bash
-
-    $ uninstall_hyperspy_here
-
-
-* If HyperSpy raises a MemoryError exception:
-
-  * Install the 64bit version if you're using the 32bit one and you are running
-    HyperSpy in a 64bit system.
-  * Increase the available RAM by closing other applications or physically
-    adding more RAM to your computer.

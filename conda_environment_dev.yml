@@ -1,0 +1,14 @@
+name: test_env
+channels:
+- conda-forge
+dependencies:
+# We pin freetype and matplotlib for the image comparison
+- freetype=2.9
+- matplotlib-base=3.1
+- cython
+- pytest
+- pytest-mpl
+- pytest-xdist
+- pytest-rerunfailures
+- pytest-instafail
+

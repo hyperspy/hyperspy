@@ -1,0 +1,32 @@
+name: test_env
+channels:
+- conda-forge
+dependencies:
+- dask-core >2.0
+- dill
+- h5py
+- imageio
+- ipyparallel
+- matplotlib-base
+- matplotlib-scalebar
+- mrcz
+- natsort
+- numba
+- numexpr
+- numpy
+- pint
+- prettytable
+- python-dateutil
+- pyyaml
+- requests
+- scikit-image
+- scikit-learn
+- scipy
+- sparse
+- sympy
+- tifffile >=2019.07.26,!=2021.3.31
+- toolz
+- tqdm
+- traits
+
+

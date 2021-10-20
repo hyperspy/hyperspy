@@ -38,7 +38,7 @@ Fourier based reconstruction of off-axis holograms (includes
 finding a side band in FFT, isolating and filtering it, recenter and
 calculate inverse Fourier transform) can be performed using the
 :meth:`~._signals.hologram_image.HologramImage.reconstruct_phase` method
-which returns a :py:class:`~._signals.complex_signal2d.Complex2D` class,
+which returns a :py:class:`~._signals.complex_signal2d.ComplexSignal2D` class,
 containing the reconstructed electron wave.
 The :meth:`~._signals.hologram_image.HologramImage.reconstruct_phase` method
 takes sideband position and size as parameters:
@@ -81,12 +81,12 @@ hologram should be provided to the method either as Hyperspy's
     >>> reference_hologram = hs.datasets.example_signals.reference_hologram()
     >>> wave_image = im.reconstruct_phase(reference_hologram,
     ...                                   sb_position=sb_position,
-    ...                                   sb_size=sb_sb_size)
+    ...                                   sb_size=sb_size)
 
 Using the reconstructed wave, one can access its amplitude and phase (also
 unwrapped phase) using
 ``amplitude`` and ``phase`` properties
-(also the :meth:`~._signals.complex_signal.ComplexSignal_mixin.unwrapped_phase`
+(also the :meth:`~._signals.complex_signal.ComplexSignal.unwrapped_phase`
 method):
 
 .. code-block:: python
@@ -121,10 +121,11 @@ diameter of the sideband as follows:
 
 .. code-block:: python
 
+    >>> out_size = int(2*sb_size.data)
     >>> wave_image = im.reconstruct_phase(reference_hologram,
     ...                                   sb_position=sb_position,
-    ...                                   sb_size=sb_sb_size,
-    ...                                   output_shape=(2*sb_size, 2*sb_size))
+    ...                                   sb_size=sb_size,
+    ...                                   output_shape=(out_size, out_size))
 
 Note that the
 :py:meth:`~._signals.hologram_image.HologramImage.reconstruct_phase`
@@ -136,8 +137,26 @@ methods. This, however, is not recommended for not experienced users.
 
 .. _holography.stats-label:
 
+Further processing of complex wave and phase
+--------------------------------------------
+Once the complex electron wave reconstructed it :ref:`can be processed the same way as any other complex signal
+<complex_data-label>`. A useful tool to explore the complex data is :ref:`Argand plot <complex.argand>`, which can be
+calculated and displayed as follows:
+
+.. _holo.argand-example:
+
+.. code-block:: python
+
+    >>> ad = wave_image.argand_diagram(display_range=[-3, 3])
+    >>> ad.plot(scalebar=False)
+
+.. figure:: images/holography_argand_diagram.png
+  :align: center
+
+  Argand diagram of the reconstructed complex wave.
+
 Getting hologram statistics
---------------------------
+---------------------------
 There are many reasons to have an access to some parameters of holograms which describe the quality of the data.
 :meth:`~._signals.hologram_image.HologramImage.statistics` can be used to calculate carrier frequency,
 fringe spacing and estimate fringe contrast. The method outputs dictionary with the values listed above calculated also

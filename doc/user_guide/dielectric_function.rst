@@ -1,8 +1,6 @@
 Dielectric function tools
 -------------------------
 
-.. versionadded:: 0.7
-
 The :py:class:`~._signals.dielectric_function.DielectricFunction` class
 inherits from :py:class:`~._signals.complex_signal.ComplexSignal` and can
 thus access complex properties. To convert a
@@ -21,8 +19,6 @@ complex and therefore is a subclass of
 
 Number of effective electrons
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. versionadded:: 0.7
 
 The Bethe f-sum rule gives rise to two definitions of the effective number (see
 :ref:`[Egerton2011] <Egerton2011>`):
@@ -43,8 +39,6 @@ method computes both.
 
 Compute the electron energy-loss signal
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. versionadded:: 0.7
 
 The
 :py:meth:`~._signals.dielectric_function.DielectricFunction.get_electron_energy_loss_spectrum`

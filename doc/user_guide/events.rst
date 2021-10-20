@@ -4,9 +4,6 @@
 Events
 ******
 
-
-.. versionadded:: 9.0
-
 Events are a mechanism to send notifications. HyperSpy events are
 decentralised, meaning that there is not a central events dispatcher.
 Instead, each object that can emit events has an :py:attr:`events`

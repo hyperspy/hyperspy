@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=40.8.0", "wheel", "cython"]
+build-backend = "setuptools.build_meta:__legacy__"
+
+
+[tool.towncrier]
+package = "hyperspy"
+filename = "CHANGES.rst"
+directory = "upcoming_changes/"
+# see https://github.com/twisted/towncrier/issues/346
+#title_format = "v{version} ({project_date})"
+issue_format = "`#{issue} <https://github.com/hyperspy/hyperspy/issues/{issue}>`_"
+
+  [[tool.towncrier.type]]
+  directory = "new"
+  name = "New features"
+  showcontent = true
+
+  [[tool.towncrier.type]]
+  directory = "bugfix"
+  name = "Bug Fixes"
+  showcontent = true
+
+  [[tool.towncrier.type]]
+  directory = "doc"
+  name = "Improved Documentation"
+  showcontent = true
+
+  [[tool.towncrier.type]]
+  directory = "deprecation"
+  name = "Deprecations"
+  showcontent = true
+
+  [[tool.towncrier.type]]
+  directory = "enhancements"
+  name = "Enhancements"
+  showcontent = true
+
+  [[tool.towncrier.type]]
+  directory = "api"
+  name = "API changes"
+  showcontent = true
+
+  [[tool.towncrier.type]]
+  directory = "maintenance"
+  name = "Maintenance"
+  showcontent = true

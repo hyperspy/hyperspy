@@ -1,3 +1,20 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2021 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 # Original file from scikits-images
 # Modified by the HyperSpy developers to add _tv_denoise_1d
 
@@ -26,8 +43,7 @@ def _tv_denoise_3d(im, weight=100, eps=2.e-4, keep_type=False, n_iter_max=200):
 
     keep_type: bool, optional (False)
         whether the output has the same dtype as the input array.
-        keep_type is False by default, and the dtype of the output
-        is np.float
+        keep_type is False by default, and the dtype of the output is float
 
     n_iter_max: int, optional
         maximal number of iterations used for the optimization.
@@ -44,15 +60,16 @@ def _tv_denoise_3d(im, weight=100, eps=2.e-4, keep_type=False, n_iter_max=200):
     Examples
     ---------
     First build synthetic noisy data
+
     >>> x, y, z = np.ogrid[0:40, 0:40, 0:40]
     >>> mask = (x -22)**2 + (y - 20)**2 + (z - 17)**2 < 8**2
-    >>> mask = mask.astype(np.float)
+    >>> mask = mask.astype(float)
     >>> mask += 0.2*np.random.randn(*mask.shape)
     >>> res = tv_denoise_3d(mask, weight=100)
     """
     im_type = im.dtype
-    if im_type is not np.float:
-        im = im.astype(np.float)
+    if im_type is not float:
+        im = im.astype(float)
     px = np.zeros_like(im)
     py = np.zeros_like(im)
     pz = np.zeros_like(im)
@@ -119,8 +136,7 @@ def _tv_denoise_2d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
 
     keep_type: bool, optional (False)
         whether the output has the same dtype as the input array.
-        keep_type is False by default, and the dtype of the output
-        is np.float
+        keep_type is False by default, and the dtype of the output is float
 
     n_iter_max: int, optional
         maximal number of iterations used for the optimization.
@@ -136,25 +152,25 @@ def _tv_denoise_2d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     http://en.wikipedia.org/wiki/Total_variation_denoising
 
     This code is an implementation of the algorithm of Rudin, Fatemi and Osher
-    that was proposed by Chambolle in [1]_.
+    that was proposed by Chambolle in [*]_.
 
     References
     ----------
 
-    .. [1] A. Chambolle, An algorithm for total variation minimization and
+    .. [*] A. Chambolle, An algorithm for total variation minimization and
            applications, Journal of Mathematical Imaging and Vision,
            Springer, 2004, 20, 89-97.
 
     Examples
     ---------
     >>> import scipy
-    >>> ascent = scipy.ascent().astype(np.float)
+    >>> ascent = scipy.ascent().astype(float)
     >>> ascent += 0.5 * ascent.std()*np.random.randn(*ascent.shape)
     >>> denoised_ascent = tv_denoise(ascent, weight=60.0)
     """
     im_type = im.dtype
-    if im_type is not np.float:
-        im = im.astype(np.float)
+    if im_type is not float:
+        im = im.astype(float)
     px = np.zeros_like(im)
     py = np.zeros_like(im)
     gx = np.zeros_like(im)
@@ -215,8 +231,7 @@ def _tv_denoise_1d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
 
     keep_type: bool, optional (False)
         whether the output has the same dtype as the input array.
-        keep_type is False by default, and the dtype of the output
-        is np.float
+        keep_type is False by default, and the dtype of the output is float
 
     n_iter_max: int, optional
         maximal number of iterations used for the optimization.
@@ -232,25 +247,25 @@ def _tv_denoise_1d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     http://en.wikipedia.org/wiki/Total_variation_denoising
 
     This code is an implementation of the algorithm of Rudin, Fatemi and Osher
-    that was proposed by Chambolle in [1]_.
+    that was proposed by Chambolle in [*]_.
 
     References
     ----------
 
-    .. [1] A. Chambolle, An algorithm for total variation minimization and
+    .. [*] A. Chambolle, An algorithm for total variation minimization and
            applications, Journal of Mathematical Imaging and Vision,
            Springer, 2004, 20, 89-97.
 
     Examples
     ---------
     >>> import scipy
-    >>> ascent = scipy.misc.ascent().astype(np.float)
+    >>> ascent = scipy.misc.ascent().astype(float)
     >>> ascent += 0.5 * ascent.std()*np.random.randn(*ascent.shape)
     >>> denoised_ascent = tv_denoise(ascent, weight=60.0)
     """
     im_type = im.dtype
-    if im_type is not np.float:
-        im = im.astype(np.float)
+    if im_type is not float:
+        im = im.astype(float)
     px = np.zeros_like(im)
     gx = np.zeros_like(im)
     d = np.zeros_like(im)
@@ -307,8 +322,7 @@ def tv_denoise(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
 
     keep_type: bool, optional (False)
         whether the output has the same dtype as the input array.
-        keep_type is False by default, and the dtype of the output
-        is np.float
+        keep_type is False by default, and the dtype of the output is float
 
     n_iter_max: int, optional
         maximal number of iterations used for the optimization.
@@ -316,8 +330,7 @@ def tv_denoise(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     Returns
     -------
     out: ndarray
-        denoised array
-
+        Denoised array
 
     Notes
     -----
@@ -331,12 +344,12 @@ def tv_denoise(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     piecewise-constant images.
 
     This code is an implementation of the algorithm of Rudin, Fatemi and Osher
-    that was proposed by Chambolle in [1]_.
+    that was proposed by Chambolle in [*]_.
 
     References
     ----------
 
-    .. [1] A. Chambolle, An algorithm for total variation minimization and
+    .. [*] A. Chambolle, An algorithm for total variation minimization and
            applications, Journal of Mathematical Imaging and Vision,
            Springer, 2004, 20, 89-97.
 
@@ -344,13 +357,13 @@ def tv_denoise(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     ---------
     >>> # 2D example using ascent
     >>> import scipy
-    >>> ascent = scipy.misc.ascent().astype(np.float)
+    >>> ascent = scipy.misc.ascent().astype(float)
     >>> ascent += 0.5 * ascent.std()*np.random.randn(*ascent.shape)
     >>> denoised_ascent = tv_denoise(ascent, weight=60)
     >>> # 3D example on synthetic data
     >>> x, y, z = np.ogrid[0:40, 0:40, 0:40]
     >>> mask = (x -22)**2 + (y - 20)**2 + (z - 17)**2 < 8**2
-    >>> mask = mask.astype(np.float)
+    >>> mask = mask.astype(float)
     >>> mask += 0.2*np.random.randn(*mask.shape)
     >>> res = tv_denoise_3d(mask, weight=100)
     """

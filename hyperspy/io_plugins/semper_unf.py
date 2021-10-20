@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -90,14 +90,15 @@ _logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
-format_name = 'SEMPER UNF (unformatted)'
-description = 'Read data from SEMPER UNF files.'
+format_name = 'SEMPER'
+description = 'Read data from SEMPER UNF (unformatted) files.'
 full_support = True  # Hopefully?
 # Recognised file extension
 file_extensions = ('unf', 'UNF')
 default_extension = 0
-# Writing features
+# Writing capabilities
 writes = [(1, 0), (1, 1), (1, 2), (2, 0), (2, 1)]  # All up to 3D
+non_uniform_axis = False
 # ----------------------
 
 
@@ -442,7 +443,7 @@ class SemperFormat(object):
         ----------
         filename : string, optional
             The name of the unf-file to which the data should be written.
-        skip_header : boolean, optional
+        skip_header : bool, optional
             Determines if the header, title and label should be skipped (useful
             for some other programs). Default is False.
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from packaging.version import Version
 import mrcz as _mrcz
 import logging
 
@@ -31,6 +32,8 @@ file_extensions = ['mrc', 'MRC', 'mrcz', 'MRCZ']
 default_extension = 2
 # Writing capabilities:
 writes = True
+non_uniform_axis = False
+# ----------------------
 
 
 _POP_FROM_HEADER = ['compressor', 'MRCtype', 'C3', 'dimensions', 'dtype',
@@ -41,13 +44,21 @@ _READ_ORDER = [1, 2, 0]
 _WRITE_ORDER = [0, 2, 1]
 
 
+# API changes in mrcz 0.5
+def _parse_metadata(metadata):
+    if Version(_mrcz.__version__) < Version("0.5"):
+        return metadata[0]
+    else:
+        return metadata
+
+
 mapping = {
     'mrcz_header.voltage':
         ("Acquisition_instrument.TEM.beam_energy",
-         lambda x: x[0]),
+         _parse_metadata),
     'mrcz_header.gain':
         ("Signal.Noise_properties.Variance_linear_model.gain_factor",
-         lambda x: x[0]),
+         _parse_metadata),
     # There is no metadata field for spherical aberration
     #'mrcz_header.C3':
     #("Acquisition_instrument.TEM.C3", lambda x: x),

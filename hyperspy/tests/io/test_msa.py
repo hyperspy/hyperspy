@@ -1,3 +1,4 @@
+import copy
 import os.path
 import tempfile
 
@@ -24,8 +25,7 @@ example1_metadata = {'Acquisition_instrument': {'TEM': example1_TEM},
                                  'time': "12:00:00"},
                      'Sample': {'thickness': 50.0,
                                 'thickness_units': "nm"},
-                     'Signal': {'binned': True,
-                                # bit silly...
+                     'Signal': {# bit silly...
                                 'quantity': "Counts (Intensity)",
                                 'signal_type': 'EELS'},
                      '_HyperSpy': {'Folding': {'original_axes_manager': None,
@@ -103,8 +103,7 @@ example2_metadata = {'Acquisition_instrument': {'TEM': example2_TEM},
                                  'time': "12:00:00"},
                      'Sample': {'thickness': 50.0,
                                 'thickness_units': "nm"},
-                     'Signal': {'binned': False,
-                                'quantity': "X-RAY INTENSITY (Intensity)",
+                     'Signal': {'quantity': "X-RAY INTENSITY (Intensity)",
                                 'signal_type': 'EDS'},
                      '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                                'unfolded': False,
@@ -207,6 +206,24 @@ class TestExample1:
             s2.metadata.General.original_filename = "example1.msa"
             assert_deep_almost_equal(self.s.metadata.as_dictionary(),
                                      s2.metadata.as_dictionary())
+
+class TestExample1WrongDate:
+
+    def setup_method(self, method):
+        self.s = load(os.path.join(
+            my_path,
+            "msa_files",
+            "example1_wrong_date.msa"))
+
+    def test_metadata(self):
+        md = copy.copy(example1_metadata)
+        del md["General"]["date"]
+        del md["General"]["time"]
+        md["General"]["original_filename"] = "example1_wrong_date.msa"
+        assert_deep_almost_equal(self.s.metadata.as_dictionary(),
+                                 md)
+
+
 
 
 class TestExample2:

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -42,32 +42,31 @@ class Interactive:
 
         Parameters
         ----------
-        f: function or method
+        f : function or method
             A function that returns an object and that optionally can place the
             result in an object given through the `out` keyword.
-        event: {Event, "auto", None, iterable of events}
+        event : {Event, "auto", None, iterable of events}
             Update the result of the operation when the event is triggered.
             If "auto" and `f` is a method of a Signal class instance its
             `data_changed` event is selected if the function takes an `out`
             argument. If None, `update` is not connected to any event. The
             default is "auto". It is also possible to pass an iterable of
             events, in which case all the events are connected.
-        recompute_out_event: {Event, "auto", None, iterable of events}
+        recompute_out_event : {Event, "auto", None, iterable of events}
             Optional argument. If supplied, this event causes a full
             recomputation of a new object. Both the data and axes of the new
             object are then copied over to the existing `out` object. Only
             useful for `Signal` or other objects that have an attribute
             `axes_manager`. If "auto" and `f` is a method of a Signal class
-            instance its `AxesManager` `any_axis_chaged` event is selected.
-            Otherwise the `Signal`
-            `data_changed` event is selected. If None, `recompute_out` is not
-            connected to any event. The default is "auto". It is also possible
-            to pass an iterable of events, in which case all the events are
-            connected.
-
-
-        *args, **kwargs
-            Arguments and keyword arguments to be passed to `f`.
+            instance its `AxesManager` `any_axis_changed` event is selected.
+            Otherwise the `Signal` `data_changed` event is selected.
+            If None, `recompute_out` is not connected to any event.
+            The default is "auto". It is also possible to pass an iterable of
+            events, in which case all the events are connected.
+        *args
+            Arguments to be passed to `f`.
+        **kwargs
+            Keyword arguments to be passed to `f`.
 
         """
         from hyperspy.signal import BaseSignal
@@ -112,15 +111,15 @@ class Interactive:
 
     def recompute_out(self):
         out = self.f(*self.args, **self.kwargs)
+        if out is None:
+            return
         if out.data.shape == self.out.data.shape:
             # Keep the same array if possible.
             self.out.data[:] = out.data[:]
         else:
             self.out.data = out.data
-        # The following may trigger an `any_axis_changed` event and, therefore,
-        # it must precede the `data_changed` trigger below.
         self.out.axes_manager.update_axes_attributes_from(
-            out.axes_manager._axes, attributes=["scale", "offset", "size"])
+            out.axes_manager._axes)
         self.out.events.data_changed.trigger(self.out)
 
     def update(self):

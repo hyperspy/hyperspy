@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,29 +16,31 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import numpy as np
 from scipy.interpolate import interp1d
+
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
+from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
-@add_gui_method(toolkey="ScalableFixedPattern_Component")
+@add_gui_method(toolkey="hyperspy.ScalableFixedPattern_Component")
 class ScalableFixedPattern(Component):
 
-    """Fixed pattern component with interpolation support.
+    r"""Fixed pattern component with interpolation support.
 
-        f(x) = a*s(b*x-x0) + c
+    .. math::
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     a      |  yscale   |
-    +------------+-----------+
-    |     b      |  xscale   |
-    +------------+-----------+
-    |    x0      |  shift    |
-    +------------+-----------+
+        f(x) = a \cdot s \left(b \cdot x - x_0\right) + c
+
+    ============ =============
+     Variable     Parameter
+    ============ =============
+     :math:`a`    yscale
+     :math:`b`    xscale
+     :math:`x_0`  shift
+    ============ =============
 
 
     The fixed pattern is defined by a single spectrum which must be provided to
@@ -49,10 +51,12 @@ class ScalableFixedPattern(Component):
         In [1]: s = load('my_spectrum.hspy')
         In [2]: my_fixed_pattern = components.ScalableFixedPattern(s))
 
-    Attributes
+    Parameters
     ----------
 
-    yscale, xscale, shift : Float
+    yscale : Float
+    xscale : Float
+    shift : Float
     interpolate : Bool
         If False no interpolation is performed and only a y-scaled spectrum is
         returned.
@@ -71,6 +75,7 @@ class ScalableFixedPattern(Component):
 
         self._position = self.shift
         self._whitelist['signal1D'] = ('init,sig', signal1D)
+        self._whitelist['interpolate'] = None
         self.signal = signal1D
         self.yscale.free = True
         self.yscale.value = yscale
@@ -82,6 +87,16 @@ class ScalableFixedPattern(Component):
         self.isbackground = True
         self.convolved = False
         self.interpolate = interpolate
+
+    @property
+    def interpolate(self):
+        return self._interpolate
+
+    @interpolate.setter
+    def interpolate(self, value):
+        self._interpolate = value
+        self.xscale.free = value
+        self.shift.free = value
 
     def prepare_interpolator(self, kind='linear', fill_value=0, **kwargs):
         """Prepare interpolation.
@@ -115,16 +130,39 @@ class ScalableFixedPattern(Component):
             fill_value=fill_value,
             **kwargs)
 
-    def function(self, x):
+    def _function(self, x, xscale, yscale, shift):
         if self.interpolate is True:
-            result = self.yscale.value * self.f(
-                x * self.xscale.value - self.shift.value)
+            result = yscale * self.f(x * xscale - shift)
         else:
-            result = self.yscale.value * self.signal.data
-        if self.signal.metadata.Signal.binned is True:
-            return result / self.signal.axes_manager.signal_axes[0].scale
+            result = yscale * self.signal.data
+        if is_binned(self.signal):
+        # in v2 replace by
+        #if self.signal.axes_manager.signal_axes[0].is_binned:
+            if self.signal.axes_manager.signal_axes[0].is_uniform:
+                return result / self.signal.axes_manager.signal_axes[0].scale
+            else:
+                return result / np.gradient(self.signal.axes_manager.signal_axes[0].axis)
         else:
             return result
+
+    def function(self, x):
+        return self._function(x, self.xscale.value, self.yscale.value,
+                              self.shift.value)
+
+    def function_nd(self, axis):
+        """%s
+
+        """
+        if self._is_navigation_multidimensional:
+            x = axis[np.newaxis, :]
+            xscale = self.xscale.map['values'][..., np.newaxis]
+            yscale = self.yscale.map['values'][..., np.newaxis]
+            shift = self.shift.map['values'][..., np.newaxis]
+            return self._function(x, xscale, yscale, shift)
+        else:
+            return self.function(axis)
+
+    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
 
     def grad_yscale(self, x):
         return self.function(x) / self.yscale.value

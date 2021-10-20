@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -48,6 +48,9 @@ file_extensions = ['spd', 'SPD', 'spc', 'SPC']
 default_extension = 0
 # Writing capabilities
 writes = False
+non_uniform_axis = False
+# ----------------------
+
 
 spd_extensions = ('spd', 'SPD', 'Spd')
 spc_extensions = ('spc', 'SPC', 'Spc')
@@ -124,7 +127,7 @@ def __get_spc_header(f, endianess, load_all_spc):
     version = np.fromfile(f,
                           dtype=[('version', '{}f4'.format(endianess))],
                           count=1)
-    version = round(np.asscalar(version)[0], 2)  # convert to scalar
+    version = round(float(version.item()[0]), 2)  # convert to scalar
     f.seek(0)
 
     spc_header = np.fromfile(f,
@@ -570,7 +573,7 @@ def __get_ipr_header(f, endianess):
     version = np.fromfile(f,
                           dtype=[('version', '{}i2'.format(endianess))],
                           count=1)
-    version = np.asscalar(version)[0]  # convert to scalar
+    version = version.item()[0]  # convert to scalar
     f.seek(0)
     _logger.debug(' .ipr version is {}'.format(version))
 
@@ -590,6 +593,7 @@ def get_ipr_dtype_list(endianess='<', version=333):
     <https://github.com/hyperspy/hyperspy/files/29507/ImageIPR.pdf>`__.
 
     Table of header tags:
+
         -  version: 2 byte unsigned short; *Current version number: 334*
         -  imageType: 2 byte unsigned short; *0=empty; 1=electron; 2=xmap; 3=disk; 4=overlay*
         -  label: 8 byte char array; *Image label*
@@ -618,14 +622,15 @@ def get_ipr_dtype_list(endianess='<', version=333):
         -  wd: 2 byte unsigned short; *Working distance [mm]*
         -  mppX: 4 byte float; *Microns per pixel in X direction*
         -  mppY: 4 byte float; *Microns per pixel in Y direction*
-        -  nTextLines: 2 byte unsigned short; *No. of comment lines *
+        -  nTextLines: 2 byte unsigned short; *No. of comment lines*
         -  charText: (4 x 32) byte character array; *Comment text*
         -  reserved3: 4 byte float; *Not used*
         -  nOverlayElements: 2 byte unsigned short; *No. of overlay elements*
         -  overlayColors: 16 array of 2 byte unsigned short; *Overlay colors*
 
-        # These two are specific to V334 of the file format, and are omitted
-        # for compatibility with V333 of the IPR format
+    These two are specific to V334 of the file format, and are omitted
+    for compatibility with V333 of the IPR format:
+
         -  timeConstantNew: 4 byte float; *Amplifier time constant [usec]*
         -  reserved4: 2 array of 4 byte float; *Not used*
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2021 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -41,6 +41,8 @@ file_extensions = ['mrc', 'MRC', 'ALI', 'ali']
 default_extension = 0
 # Writing capabilities
 writes = False
+non_uniform_axis = False
+# ----------------------
 
 
 def get_std_dtype_list(endianess='<'):
