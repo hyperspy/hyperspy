@@ -879,6 +879,15 @@ def test_saving_overwrite_data(tmp_path):
     _ = load(fname)
 
 
+def test_title_with_slash(tmp_path):
+    s = Signal1D(da.zeros((10, 100))).as_lazy()
+    fname = tmp_path / 'test.hspy'
+    s.metadata.General.title = 'A / B'
+    s.save(fname)
+    s2 = load(fname)
+    assert s2.metadata.General.title == s.metadata.General.title
+
+
 @pytest.mark.parametrize("target_size", (1e6, 1e7))
 def test_get_signal_chunks(target_size):
     chunks = HierarchicalWriter._get_signal_chunks(shape=[15, 15, 256, 256],

@@ -629,7 +629,7 @@ class HierarchicalWriter:
         self.dict2group(signal.learning_results.__dict__,
                       learning_results, **kwds)
 
-        if hasattr(signal, 'peak_learning_results'):
+        if hasattr(signal, 'peak_learning_results'):  # pragma: no cover
             peak_learning_results = group.require_group(
                 'peak_learning_results')
             self.dict2group(signal.peak_learning_results.__dict__,

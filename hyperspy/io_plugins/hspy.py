@@ -229,9 +229,11 @@ def file_writer(filename, signal, close_file=True, **kwds):
                           "signal.")
 
     if f is None:
-        # we need mode='a' to be able to use "write_dataset=False"
-        mode = kwds.get('mode', 'a')
-        if mode != 'a' and not kwds.get('write_dataset', True):
+        write_dataset = kwds.get('write_dataset', True)
+        # with "write_dataset=False", we need mode='a', otherwise the dataset
+        # will be flushed with using 'w' mode
+        mode = kwds.get('mode', 'w' if write_dataset else 'a')
+        if mode != 'a' and not write_dataset:
             raise ValueError("`mode='a'` is required to use "
                              "`write_dataset=False`.")
         f = h5py.File(filename, mode=mode)
