@@ -185,7 +185,7 @@ def file_reader(
     return exp_dict_list
 
 
-def file_writer(filename, signal, close_file=True, *args, **kwds):
+def file_writer(filename, signal, close_file=True, **kwds):
     """Writes data to hyperspy's hdf5 format
 
     Parameters
@@ -194,17 +194,16 @@ def file_writer(filename, signal, close_file=True, *args, **kwds):
         The name of the file used to save the signal.
     signal : a BaseSignal instance
         The signal to save.
-    chunks : tuple of integer or None
+    chunks : tuple of integer or None, default: None
         Define the chunking used for saving the dataset. If None, calculates
         chunks for the signal, with preferably at least one chunk per signal
         space.
-    close_file : bool, optional
-        Close the file after writing, default is True.
-    write_dataset : bool, optional
+    close_file : bool, default: True
+        Close the file after writing.
+    write_dataset : bool, default: True
         If True, overwrite the data, otherwise, don't overwrite. Useful to
         save attributes without having the write the whole dataset.
-        Default is True.
-    **kwds, optional
+    **kwds
         The keyword argument are passed to the
         :py:func:`h5py.Group.require_dataset` function.
     """
@@ -230,8 +229,12 @@ def file_writer(filename, signal, close_file=True, *args, **kwds):
                           "signal.")
 
     if f is None:
-        # TODO: what should be the default mode? 'w' or 'a'
-        f = h5py.File(filename, mode=kwds.get('mode', 'w'))
+        # we need mode='a' to be able to use "write_dataset=False"
+        mode = kwds.get('mode', 'a')
+        if mode != 'a' and not kwds.get('write_dataset', True):
+            raise ValueError("`mode='a'` is required to use "
+                             "`write_dataset=False`.")
+        f = h5py.File(filename, mode=mode)
 
     f.attrs['file_format'] = "HyperSpy"
     f.attrs['file_format_version'] = version

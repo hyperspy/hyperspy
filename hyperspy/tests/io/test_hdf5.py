@@ -833,7 +833,7 @@ def test_chunking_saving_lazy(tmp_path, file):
     assert tuple([c[0] for c in s3.data.chunks]) == chunks
 
 
-def test_saving_hspy_close_file(tmp_path):
+def test_saving_close_file(tmp_path):
     # Setup that we will reopen
     s = Signal1D(da.zeros((10, 100))).as_lazy()
     fname = tmp_path / 'test.hspy'
@@ -857,7 +857,7 @@ def test_saving_hspy_close_file(tmp_path):
         s4.save(fname, overwrite=True)
 
 
-def test_saving_hspy_overwrite_data(tmp_path):
+def test_saving_overwrite_data(tmp_path):
     s = Signal1D(da.zeros((10, 100))).as_lazy()
     fname = tmp_path / 'test.hspy'
     s.save(fname, close_file=True)
@@ -868,6 +868,15 @@ def test_saving_hspy_overwrite_data(tmp_path):
 
     s3 = load(fname)
     assert s3.axes_manager[0].units == 'nm'
+
+    # try with opening non-lazily to check opening mode
+    s4 = load(fname)
+    with pytest.raises(ValueError):
+        s4.save(fname, overwrite=True, write_dataset=False, mode='w')
+
+    s4.save(fname, overwrite=True, write_dataset=False)
+    # make sure we can open it after, file haven't been corrupted
+    _ = load(fname)
 
 
 @pytest.mark.parametrize("target_size", (1e6, 1e7))
