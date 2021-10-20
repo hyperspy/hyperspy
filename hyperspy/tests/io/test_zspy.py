@@ -16,18 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-
-import dask.array as da
 import numpy as np
 import pytest
-import zarr
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.io import load
 from hyperspy.signal import BaseSignal
 
-my_path = os.path.dirname(__file__)
+# zarr (because of numcodecs) is only supported on x86_64 machines
+zarr = pytest.importorskip("zarr", reason="zarr not installed")
 
 
 class TestZspy:
@@ -84,14 +81,3 @@ class TestZspy:
                overwrite=True,
                compressor=compressor)
         load(tmp_path / 'test_compression.zspy')
-
-    def test_overwrite(self, tmp_path):
-        s = BaseSignal(np.ones((5, 5, 5)))
-
-        fname = tmp_path / 'tmp.zspy'
-        s.save(fname, overwrite=True)
-        shape = (10, 10, 10)
-        s2 = BaseSignal(np.ones(shape))
-        s2.save(fname, overwrite=True)
-
-        assert shape == s2.data.shape

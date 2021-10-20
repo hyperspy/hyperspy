@@ -19,7 +19,6 @@
 import gc
 import os.path
 import sys
-import tempfile
 import time
 from os import remove
 
@@ -35,15 +34,22 @@ from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
 from hyperspy.roi import Point2DROI
-from hyperspy.signal import BaseSignal
 from hyperspy.utils import markers
 from hyperspy.io_plugins._hierarchical import HierarchicalWriter
 
+
 my_path = os.path.dirname(__file__)
+
+
+try:
+    # zarr (because of numcodecs) is only supported on x86_64 machines
+    import zarr
+    zspy_marker = pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+except ImportError:
+    zspy_marker = pytest.mark.parametrize("file", ["test.hspy"])
 
 
 data = np.array([4066., 3996., 3932., 3923., 5602., 5288., 7234., 7809.,
@@ -195,7 +201,7 @@ class TestSavingMetadataContainers:
     def setup_method(self, method):
         self.s = BaseSignal([0.1])
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_unicode(self, tmp_path, file):
         s = self.s
         s.metadata.set_item('test', ['a', 'b', '\u6f22\u5b57'])
@@ -207,7 +213,7 @@ class TestSavingMetadataContainers:
         assert isinstance(l.metadata.test[2], str)
         assert l.metadata.test[2] == '\u6f22\u5b57'
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_long_list(self, tmp_path, file):
         s = self.s
         s.metadata.set_item('long_list', list(range(10000)))
@@ -217,7 +223,7 @@ class TestSavingMetadataContainers:
         end = time.time()
         assert end - start < 1.0  # It should finish in less that 1 s.
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_numpy_only_inner_lists(self, tmp_path, file):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ('3', 4)])
@@ -230,7 +236,7 @@ class TestSavingMetadataContainers:
 
     @pytest.mark.xfail(sys.platform == 'win32',
                        reason="randomly fails in win32")
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_numpy_general_type(self, tmp_path, file):
         s = self.s
         s.metadata.set_item('test', np.array([[1., 2], ['3', 4]]))
@@ -241,7 +247,7 @@ class TestSavingMetadataContainers:
 
     @pytest.mark.xfail(sys.platform == 'win32',
                        reason="randomly fails in win32")
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_list_general_type(self, tmp_path, file):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ['3', 4]])
@@ -255,7 +261,7 @@ class TestSavingMetadataContainers:
 
     @pytest.mark.xfail(sys.platform == 'win32',
                        reason="randomly fails in win32")
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_general_type_not_working(self, tmp_path, file):
         s = self.s
         s.metadata.set_item('test', (BaseSignal([1]), 0.1, 'test_string'))
@@ -267,7 +273,7 @@ class TestSavingMetadataContainers:
         assert isinstance(l.metadata.test[1], float)
         assert isinstance(l.metadata.test[2], str)
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_unsupported_type(self, tmp_path, file):
         s = self.s
         s.metadata.set_item('test', Point2DROI(1, 2))
@@ -276,7 +282,7 @@ class TestSavingMetadataContainers:
         l = load(fname)
         assert 'test' not in l.metadata
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_date_time(self, tmp_path, file):
         s = self.s
         date, time = "2016-08-05", "15:00:00.450"
@@ -288,7 +294,7 @@ class TestSavingMetadataContainers:
         assert l.metadata.General.date == date
         assert l.metadata.General.time == time
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_general_metadata(self, tmp_path, file):
         s = self.s
         notes = "Dummy notes"
@@ -304,7 +310,7 @@ class TestSavingMetadataContainers:
         assert l.metadata.General.authors == authors
         assert l.metadata.General.doi == doi
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_quantity(self, tmp_path, file):
         s = self.s
         quantity = "Intensity (electron)"
@@ -314,7 +320,7 @@ class TestSavingMetadataContainers:
         l = load(fname)
         assert l.metadata.Signal.quantity == quantity
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_axes_manager(self, tmp_path, file):
         s = self.s
         s.metadata.set_item('test', s.axes_manager)
@@ -324,7 +330,7 @@ class TestSavingMetadataContainers:
         #strange becuase you need the encoding...
         assert isinstance(l.metadata.test, AxesManager)
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_title(self, tmp_path, file):
         s = self.s
         fname = tmp_path / file
@@ -333,7 +339,7 @@ class TestSavingMetadataContainers:
         l = load(fname)
         assert l.metadata.General.title is ""
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_empty_tuple(self, tmp_path, file):
         s = self.s
         s.metadata.set_item('test', ())
@@ -343,7 +349,7 @@ class TestSavingMetadataContainers:
         #strange becuase you need the encoding...
         assert l.metadata.test == s.metadata.test
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_bytes(self, tmp_path,file):
         s = self.s
         byte_message = bytes("testing", 'utf-8')
@@ -358,7 +364,7 @@ class TestSavingMetadataContainers:
             s = load(os.path.join(my_path, "hdf5_files", 'example2_v2.2.hspy'))
         assert s.metadata.has_item('Signal.binned') == False
         assert s.axes_manager[-1].is_binned == False
-        
+
 
     def test_metadata_update_to_v3_1(self):
         md = {'Acquisition_instrument': {'SEM': {'Stage': {'tilt_alpha': 5.0}},
@@ -399,7 +405,7 @@ def test_rgba16():
     data = np.load(os.path.join( my_path, "npy_files", "test_rgba16.npy"))
     assert (s.data == data).all()
 
-@pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+@zspy_marker
 def test_nonuniformaxis(tmp_path, file):
     fname = tmp_path / file
     data = np.arange(10)
@@ -407,13 +413,13 @@ def test_nonuniformaxis(tmp_path, file):
     s = Signal1D(data, axes=(axis.get_axis_dictionary(), ))
     s.save(fname, overwrite=True)
     s2 = load(fname)
-    np.testing.assert_array_almost_equal(s.axes_manager[0].axis, 
+    np.testing.assert_array_almost_equal(s.axes_manager[0].axis,
                                          s2.axes_manager[0].axis)
     assert(s2.axes_manager[0].is_uniform == False)
     assert(s2.axes_manager[0].navigate == False)
     assert(s2.axes_manager[0].size == data.size)
 
-@pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+@zspy_marker
 def test_nonuniformFDA(tmp_path, file):
     fname = tmp_path / file
     data = np.arange(10)
@@ -423,13 +429,13 @@ def test_nonuniformFDA(tmp_path, file):
     print(axis.get_axis_dictionary())
     s.save(fname, overwrite=True)
     s2 = load(fname)
-    np.testing.assert_array_almost_equal(s.axes_manager[0].axis, 
+    np.testing.assert_array_almost_equal(s.axes_manager[0].axis,
                                          s2.axes_manager[0].axis)
     assert(s2.axes_manager[0].is_uniform == False)
     assert(s2.axes_manager[0].navigate == False)
-    assert(s2.axes_manager[0].size == data.size)    
+    assert(s2.axes_manager[0].size == data.size)
 
-   
+
 class TestLoadingOOMReadOnly:
 
     def setup_method(self, method):
@@ -481,7 +487,7 @@ class TestPassingArgs:
 
 
 class TestAxesConfiguration:
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_axes_binning(self, tmp_path, file):
         fname = tmp_path / file
         s = BaseSignal(np.zeros((2, 2, 2)))
@@ -490,7 +496,7 @@ class TestAxesConfiguration:
         s = load(fname)
         assert s.axes_manager.signal_axes[-1].is_binned
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_axes_configuration(self, tmp_path, file):
         fname = tmp_path / file
         s = BaseSignal(np.zeros((2, 2, 2, 2, 2)))
@@ -505,7 +511,7 @@ class TestAxesConfiguration:
 
 class Test_permanent_markers_io:
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_permanent_marker(self, tmp_path, file):
         filename = tmp_path / file
         s = Signal2D(np.arange(100).reshape(10, 10))
@@ -513,7 +519,7 @@ class Test_permanent_markers_io:
         s.add_marker(m, permanent=True)
         s.save(filename)
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_load_empty_metadata_markers(self, tmp_path, file):
         filename = tmp_path / file
         s = Signal2D(np.arange(100).reshape(10, 10))
@@ -525,7 +531,7 @@ class Test_permanent_markers_io:
         s1 = load(filename)
         assert len(s1.metadata.Markers) == 0
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_load_permanent_marker(self, tmp_path, file):
         filename = tmp_path / file
         x, y = 5, 2
@@ -546,7 +552,7 @@ class Test_permanent_markers_io:
         assert m1.marker_properties['color'] == color
         assert m1.name == name
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_load_permanent_marker_all_types(self, tmp_path, file):
         filename = tmp_path / file
         x1, y1, x2, y2 = 5, 2, 1, 8
@@ -576,7 +582,7 @@ class Test_permanent_markers_io:
         for m0_dict, m1_dict in zip(m0_dict_list, m1_dict_list):
             assert m0_dict == m1_dict
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_load_horizontal_line_marker(self,tmp_path,file):
         filename = tmp_path / file
         y = 8
@@ -592,7 +598,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_load_horizontal_line_segment_marker(self, tmp_path, file):
         filename = tmp_path / file
         x1, x2, y = 1, 5, 8
@@ -609,7 +615,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_load_vertical_line_marker(self, tmp_path, file):
         filename = tmp_path / file
         x = 9
@@ -625,7 +631,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_load_vertical_line_segment_marker(self, tmp_path, file):
         filename = tmp_path / file
         x, y1, y2 = 2, 1, 3
@@ -642,7 +648,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_load_line_segment_marker(self, tmp_path, file):
         filename = tmp_path / file
         x1, x2, y1, y2 = 1, 9, 4, 7
@@ -659,7 +665,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_load_point_marker(self, tmp_path, file):
         filename = tmp_path / file
         x, y = 9, 8
@@ -675,7 +681,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_load_rectangle_marker(self, tmp_path, file):
         filename = tmp_path / file
         x1, x2, y1, y2 = 2, 4, 1, 3
@@ -692,7 +698,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_load_text_marker(self, tmp_path, file):
         filename = tmp_path / file
         x, y = 3, 9.5
@@ -709,7 +715,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_load_multidim_navigation_marker(self, tmp_path, file):
         filename = tmp_path / file
         x, y = (1, 2, 3), (5, 6, 7)
@@ -754,7 +760,7 @@ class Test_permanent_markers_io:
         assert len(s.metadata.Markers) == 5
 
 
-@pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+@zspy_marker
 def test_save_load_model(tmp_path, file):
     from hyperspy._components.gaussian import Gaussian
     filename = tmp_path / file
@@ -780,7 +786,7 @@ def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     assert isinstance(s.metadata.Sample.elements, list)
 
-@pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+@zspy_marker
 def test_save_ragged_array(tmp_path, file):
     a = np.array([0, 1])
     b = np.array([0, 1, 2])
@@ -802,7 +808,7 @@ def test_load_missing_extension(caplog):
        _ = s.models.restore("a")
 
 class TestChunking:
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_save_chunks_signal_metadata(self, tmp_path, file):
         N = 10
         dim = 3
@@ -816,7 +822,7 @@ class TestChunking:
         s2 = load(filename, lazy=True)
         assert tuple([c[0] for c in s2.data.chunks]) == chunks
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_chunking_saving_lazy(self, tmp_path, file):
         filename = tmp_path / file
         s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
@@ -825,7 +831,7 @@ class TestChunking:
         s1 = load(filename, lazy=True)
         assert s.data.chunks == s1.data.chunks
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_chunking_saving_lazy_True(self, tmp_path, file):
         filename = tmp_path / file
         s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
@@ -837,7 +843,7 @@ class TestChunking:
         else:
             assert tuple([c[0] for c in s1.data.chunks]) == (25, 50, 50)
 
-    @pytest.mark.parametrize("file", ["test.hspy", "test.zspy"])
+    @zspy_marker
     def test_chunking_saving_lazy_specify(self, tmp_path, file):
         filename = tmp_path / file
         s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
