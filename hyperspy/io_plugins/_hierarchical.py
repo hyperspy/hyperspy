@@ -526,10 +526,10 @@ class HierarchicalWriter:
             The key for the data
         signal_axes: tuple
             The indexes of the signal axes
-        chunks: tuple
-            The chunks for the dataset. If ``None`` and saving lazy signal, the chunks
-        of the dask array will be used otherwise the chunks will determine by
-        ``get_signal_chunks``.
+        chunks: tuple, None
+            The chunks for the dataset. If ``None`` and saving lazy signal,
+            the chunks of the dask array will be used otherwise the chunks
+            will be determined by the ``_get_signal_chunks`` method.
         kwds:
             Any additional keywords for to be passed to the store data function
             The store data function is passed for each hierarchical data format
@@ -576,13 +576,13 @@ class HierarchicalWriter:
             _logger.info(f"Chunks used for saving: {chunks}")
             cls._store_data(data, dset, group, key, chunks, **kwds)
 
-
     def write(self):
         self.write_signal(self.signal,
                           self.group,
                           **self.kwds)
 
-    def write_signal(self, signal, group, write_dataset=True, **kwds):
+    def write_signal(self, signal, group, write_dataset=True, chunks=None,
+                     **kwds):
         "Writes a hyperspy signal to a hdf5 group"
         group.attrs.update(get_object_package_info(signal))
 
@@ -613,6 +613,7 @@ class HierarchicalWriter:
                 signal.data,
                 'data',
                 signal_axes=signal.axes_manager.signal_indices_in_array,
+                chunks=chunks,
                 **kwds
                 )
 
@@ -620,9 +621,6 @@ class HierarchicalWriter:
             metadata_dict["_internal_parameters"] = \
                 metadata_dict.pop("_HyperSpy")
 
-        # Remove chunks from the kwds since it wouldn't have the same rank as the
-        # dataset and can't be used
-        kwds.pop('chunks', None)
         self.dict2group(metadata_dict, mapped_par, **kwds)
         original_par = group.require_group(original_metadata)
         self.dict2group(signal.original_metadata.as_dictionary(), original_par,

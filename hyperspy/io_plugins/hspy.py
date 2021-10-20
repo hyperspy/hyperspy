@@ -190,10 +190,14 @@ def file_writer(filename, signal, close_file=True, *args, **kwds):
 
     Parameters
     ----------
-    filename: str
+    filename : str
         The name of the file used to save the signal.
-    signal: a BaseSignal instance
+    signal : a BaseSignal instance
         The signal to save.
+    chunks : tuple of integer or None
+        Define the chunking used for saving the dataset. If None, calculates
+        chunks for the signal, with preferably at least one chunk per signal
+        space.
     close_file : bool, optional
         Close the file after writing, default is True.
     write_dataset : bool, optional
@@ -211,9 +215,9 @@ def file_writer(filename, signal, close_file=True, *args, **kwds):
         # Use shuffle by default to improve compression
         kwds["shuffle"] = True
 
-    folder = signal.tmp_parameters.get_item('folder', '')
-    fname = signal.tmp_parameters.get_item('filename', '')
-    ext = signal.tmp_parameters.get_item('extension', '')
+    folder = signal.tmp_parameters.get_item('original_folder', '')
+    fname = signal.tmp_parameters.get_item('original_filename', '')
+    ext = signal.tmp_parameters.get_item('original_extension', '')
     original_path = Path(folder, f"{fname}.{ext}")
 
     f = None

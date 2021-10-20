@@ -405,21 +405,31 @@ Extra saving arguments
 - ``compression``: One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``).
   ``'szip'`` may be unavailable as it depends on the HDF5 installation including it.
 
-.. note::
+    .. note::
 
-    HyperSpy uses h5py for reading and writing HDF5 files and, therefore, it
-    supports all `compression filters supported by h5py <https://docs.h5py.org/en/stable/high/dataset.html#dataset-compression>`_.
-    The default is ``'gzip'``. It is possible to enable other compression filters
-    such as ``blosc`` by installing e.g. `hdf5plugin <https://github.com/silx-kit/hdf5plugin>`_.
-    However, be aware that loading those files will require installing the package
-    providing the compression filter. If not available an error will be raised.
+        HyperSpy uses h5py for reading and writing HDF5 files and, therefore, it
+        supports all `compression filters supported by h5py <https://docs.h5py.org/en/stable/high/dataset.html#dataset-compression>`_.
+        The default is ``'gzip'``. It is possible to enable other compression filters
+        such as ``blosc`` by installing e.g. `hdf5plugin <https://github.com/silx-kit/hdf5plugin>`_.
+        However, be aware that loading those files will require installing the package
+        providing the compression filter. If not available an error will be raised.
 
-    Compression can significantly increase the saving speed. If file size is not
-    an issue, it can be disabled by setting ``compression=None``. Notice that only
-    ``compression=None`` and ``compression='gzip'`` are available in all platforms,
-    see the `h5py documentation <https://docs.h5py.org/en/stable/faq.html#what-compression-processing-filters-are-supported>`_
-    for more details. Therefore, if you choose any other compression filter for
-    saving a file, be aware that it may not be possible to load it in some platforms.
+        Compression can significantly increase the saving speed. If file size is not
+        an issue, it can be disabled by setting ``compression=None``. Notice that only
+        ``compression=None`` and ``compression='gzip'`` are available in all platforms,
+        see the `h5py documentation <https://docs.h5py.org/en/stable/faq.html#what-compression-processing-filters-are-supported>`_
+        for more details. Therefore, if you choose any other compression filter for
+        saving a file, be aware that it may not be possible to load it in some platforms.
+
+- ``chunks``: tuple of interger or None. Define the chunking used for saving
+  the dataset. If None, calculates chunks for the signal, with preferably at
+  least one chunk per signal space.
+- ``close_file``: if ``False``, doesn't close the file after writing. The file
+  should not be close if the data need to be accessed lazily after saving.
+  Default is ``True``.
+- ``write_dataset``: if ``False``, doesn't write the data when writing the file.
+  This can be useful to overwrite signal attributes only (for example ``axes_manager``)
+  without having to write the whole dataset, which can take time. Default is ``True``.
 
 
 .. _zspy-format:
