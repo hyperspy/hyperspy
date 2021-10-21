@@ -21,7 +21,7 @@ jobs:
         include:
           # test oldest supported version of main dependencies on python 3.6
           - os: ubuntu
-            PYTHON_VERSION: 3.6
+            PYTHON_VERSION: 3.7
             OLDEST_SUPPORTED_VERSION: true
             DEPENDENCIES: matplotlib==3.1.0 numpy==1.17.1 scipy==1.1 imagecodecs==2019.12.3 dask==2.1.0
             PIP_SELECTOR: '[all, tests, coverage]'
