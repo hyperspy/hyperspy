@@ -202,8 +202,8 @@ def file_writer(filename, signal, close_file=True, **kwds):
     close_file : bool, default: True
         Close the file after writing.
     write_dataset : bool, default: True
-        If True, write the data, otherwise, don't write. Useful to
-        save attributes without having to the write the whole dataset.
+        If True, write the data, otherwise, don't write it. Useful to
+        save attributes without having to write the whole dataset.
     **kwds
         The keyword argument are passed to the
         :py:func:`h5py.Group.require_dataset` function.

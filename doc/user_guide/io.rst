@@ -425,7 +425,7 @@ Extra saving arguments
   the dataset. If None, calculates chunks for the signal, with preferably at
   least one chunk per signal space.
 - ``close_file``: if ``False``, doesn't close the file after writing. The file
-  should not be close if the data need to be accessed lazily after saving.
+  should not be closed if the data need to be accessed lazily after saving.
   Default is ``True``.
 - ``write_dataset``: if ``False``, doesn't write the dataset when writing the file.
   This can be useful to overwrite signal attributes only (for example ``axes_manager``)
@@ -676,7 +676,7 @@ Extra saving arguments
   scalebar. Useful to set formattiong, location, etc. of the scalebar. See the
   `matplotlib-scalebar <https://pypi.org/project/matplotlib-scalebar/>`_
   documentation for more information.
-- ``output_size`` : (int, tuple of length 2 or None, optional): the output size 
+- ``output_size`` : (int, tuple of length 2 or None, optional): the output size
   of the image in pixels:
 
   * if ``int``, defines the width of the image, the height is
@@ -1837,7 +1837,7 @@ Extra loading arguments
   acquired last frame, which typically occurs when the acquisition was
   interrupted. When loading incomplete data (``only_valid_data=False``),
   the missing data are filled with zeros. If ``sum_frames=True``, this argument
-  will be ignored to enforce consistent sum over the mapped area. 
+  will be ignored to enforce consistent sum over the mapped area.
   (default True).
 
 

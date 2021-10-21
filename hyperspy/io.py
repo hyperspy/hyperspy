@@ -285,7 +285,7 @@ def load(filenames=None,
         Only for hspy files. Close the file after writing, default is True.
     write_dataset : bool, optional
         Only for hspy files. If True, write the dataset, otherwise, don't
-        write. Useful to save attributes without having the write the whole
+        write it. Useful to save attributes without having to write the whole
         dataset. Default is True.
 
 
