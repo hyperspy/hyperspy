@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import os
 import pytest
 
 from hyperspy._signals.signal1d import Signal1D
@@ -34,6 +35,22 @@ class TestZspy:
         data = np.ones((10,10,10,10))
         s = Signal1D(data)
         return s
+
+    @pytest.mark.parametrize('store_class', [zarr.N5Store, zarr.ZipStore])
+    def test_save_store(self, signal, tmp_path, store_class):
+        filename = tmp_path / 'testmodels.zspy'
+        store = store_class(path=filename)
+        signal.save(store)
+
+        if store_class is zarr.ZipStore:
+            os.path.isfile(filename)
+        else:
+            os.path.isdir(filename)
+
+        store2 = store_class(path=filename)
+        signal2 = load(store2)
+
+        np.testing.assert_array_equal(signal2.data, signal.data)
 
     @pytest.mark.parametrize("overwrite",[None, True, False])
     def test_overwrite(self,signal, overwrite, tmp_path):

@@ -125,6 +125,17 @@ def _escape_square_brackets(text):
     return pattern.sub(lambda m: rep[re.escape(m.group(0))], text)
 
 
+def _parse_path(arg):
+    """Convenience function to get the path from zarr store or string."""
+    # In case of zarr store, get the path
+    if isinstance(arg, MutableMapping):
+        fname = arg.path
+    else:
+        fname = arg
+
+    return fname
+
+
 def load(filenames=None,
          signal_type=None,
          stack=False,
@@ -365,7 +376,7 @@ def load(filenames=None,
     elif isgenerator(filenames):
         filenames = list(filenames)
 
-    elif not isinstance(filenames, (list, tuple)):
+    elif not isinstance(filenames, (list, tuple, MutableMapping)):
         raise ValueError(
             'The filenames parameter must be a list, tuple, '
             f'string or None, not {type(filenames)}'
@@ -374,9 +385,12 @@ def load(filenames=None,
     if not filenames:
         raise ValueError('No file(s) provided to reader.')
 
-    # pathlib.Path not fully supported in io_plugins,
-    # so convert to str here to maintain compatibility
-    filenames = [str(f) if isinstance(f, Path) else f for f in filenames]
+    if isinstance(filenames, MutableMapping):
+        filenames = [filenames]
+    else:
+        # pathlib.Path not fully supported in io_plugins,
+        # so convert to str here to maintain compatibility
+        filenames = [str(f) if isinstance(f, Path) else f for f in filenames]
 
     if len(filenames) > 1:
         _logger.info('Loading individual files')
@@ -438,7 +452,8 @@ def load(filenames=None,
             objects.append(signal)
     else:
         # No stack, so simply we load all signals in all files separately
-        objects = [load_single_file(filename, lazy=lazy, **kwds) for filename in filenames]
+        objects = [load_single_file(filename, lazy=lazy, **kwds)
+                   for filename in filenames]
 
     if len(objects) == 1:
         objects = objects[0]
@@ -467,12 +482,16 @@ def load_single_file(filename, **kwds):
         Data loaded from the file.
 
     """
-    if not os.path.isfile(filename) and not (os.path.isdir(filename) or
-                                             os.path.splitext(filename)[1] == '.zspy'):
-        raise FileNotFoundError(f"File: {filename} not found!")
+    # in case filename is a zarr store, we want to the path and not the store
+    path = _parse_path(filename)
+
+    if (not os.path.isfile(path) and
+            not (os.path.isdir(path) and os.path.splitext(path)[1] == '.zspy')
+            ):
+        raise FileNotFoundError(f"File: {path} not found!")
 
     # File extension without "." separator
-    file_ext = os.path.splitext(filename)[1][1:]
+    file_ext = os.path.splitext(path)[1][1:]
     reader = kwds.pop("reader", None)
 
     if reader is None:
@@ -522,7 +541,8 @@ def load_with_reader(
             if signal_type is not None:
                 signal_dict['metadata']["Signal"]['signal_type'] = signal_type
             signal = dict2signal(signal_dict, lazy=lazy)
-            folder, filename = os.path.split(os.path.abspath(filename))
+            path = _parse_path(filename)
+            folder, filename = os.path.split(os.path.abspath(path))
             filename, extension = os.path.splitext(filename)
             signal.tmp_parameters.folder = folder
             signal.tmp_parameters.filename = filename

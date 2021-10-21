@@ -36,8 +36,7 @@ _logger = logging.getLogger(__name__)
 # Plugin characteristics
 # ----------------------
 format_name = 'ZSpy'
-description = \
-    'A default file format for HyperSpy based on the zarr standard'
+description = 'A default file format for HyperSpy based on the zarr standard'
 full_support = False
 # Recognised file extension
 file_extensions = ['zspy']
@@ -122,24 +121,44 @@ class ZspyWriter(HierarchicalWriter):
             dset[:] = data
 
 
-def file_writer(filename, signal, **kwds):
+def file_writer(filename, signal, close_file=True, **kwds):
     """Writes data to hyperspy's zarr format.
 
     Parameters
     ----------
-    filename: str
-    signal: a BaseSignal instance
-    **kwds, optional
+    filename : str
+        The name of the file used to save the signal.
+    signal : a BaseSignal instance
+        The signal to save.
+    chunks : tuple of integer or None, default: None
+        Define the chunking used for saving the dataset. If None, calculates
+        chunks for the signal, with preferably at least one chunk per signal
+        space.
+    compressor : numcodecs compression
+        The default is to use a Blosc compressor.
+    close_file : bool, default: True
+        Close the file after writing.
+    write_dataset : bool, default: True
+        If True, write the data, otherwise, don't write it. Useful to
+        save attributes without having to write the whole dataset.
+    **kwds
+        The keyword argument are passed to the
+        :py:func:`zarr.Group.require_dataset` function.
     """
     if "compressor" not in kwds:
         from numcodecs import Blosc
-        kwds["compressor"] = Blosc(cname='zstd', clevel=1)
+        kwds["compressor"] = Blosc(
+            cname='zstd', clevel=1, shuffle=Blosc.SHUFFLE
+            )
 
     if isinstance(filename, MutableMapping):
         store = filename
     else:
         store = zarr.storage.NestedDirectoryStore(filename,)
     mode = 'w' if kwds.get('write_dataset', True) else 'a'
+
+    _logger.debug(f'File mode: {mode}')
+    _logger.debug(f'Zarr store: {store}')
 
     f = zarr.open_group(store=store, mode=mode)
     f.attrs['file_format'] = "ZSpy"
@@ -169,6 +188,12 @@ def file_writer(filename, signal, **kwds):
     finally:
         del smd.record_by
 
+    if isinstance(store, (zarr.ZipStore, zarr.DBMStore, zarr.LMDBStore)):
+        if close_file:
+            store.close()
+        else:
+            store.flush()
+
 
 def file_reader(filename, lazy=False, **kwds):
     """Read data from zspy files saved with the hyperspy zspy format
@@ -182,7 +207,15 @@ def file_reader(filename, lazy=False, **kwds):
     **kwds, optional
     """
     mode = kwds.pop('mode', 'r')
-    f = zarr.open(filename, mode=mode, **kwds)
+    try:
+        f = zarr.open(filename, mode=mode, **kwds)
+    except BaseException:
+        _logger.error(
+            "The file can't be read. It may be possible that the zspy file is "
+            "saved with a different store than a zarr Directory store. Try "
+            "passing a different zarr store instead of the file name."
+            )
+        raise
     reader = ZspyReader(f)
     if reader.version > Version(version):
         warnings.warn(

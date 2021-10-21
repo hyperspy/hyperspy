@@ -156,7 +156,7 @@ def file_reader(
                 **kwds):
     """Read data from hdf5 files saved with the hyperspy hdf5 format specification
 
-     Parameters
+    Parameters
     ----------
     filename: str
     lazy: bool

@@ -28,8 +28,8 @@ class HierarchicalReader:
                  file):
         """ Initalizes a general reader for hierarchical signals.
 
-        Parmeters
-        ---------
+        Parameters
+        ----------
         file: str
             A file to be read.
         """
