@@ -121,9 +121,10 @@ def read_img(filename, scale=None, **kwargs):
             yscale = scale[3] / height
             units = "µm"
         else:
-            xscale = 1
-            yscale = 1
-            units = "px"
+            scale = header_long["Instrument"]["ScanSize"] / header_long["Instrument"]["Mag"] * 1.0E6
+            xscale = scale / width
+            yscale = scale / height
+            units = "nm"
 
         axes = [
             {
