@@ -549,9 +549,9 @@ class HierarchicalWriter:
         if np.issubdtype(data.dtype, np.dtype('U')):
             # Saving numpy unicode type is not supported in h5py
             data = data.astype(np.dtype('S'))
+
         if data.dtype == np.dtype('O'):
             dset = cls._get_object_dset(group, data, key, chunks, **kwds)
-
         else:
             got_data = False
             while not got_data:
@@ -571,12 +571,9 @@ class HierarchicalWriter:
                     # if the shape or dtype/etc do not match,
                     # we delete the old one and create new in the next loop run
                     del group[key]
-        if dset == data:
-            # just a reference to already created thing
-            pass
-        else:
-            _logger.info(f"Chunks used for saving: {chunks}")
-            cls._store_data(data, dset, group, key, chunks, **kwds)
+
+        _logger.info(f"Chunks used for saving: {chunks}")
+        cls._store_data(data, dset, group, key, chunks, **kwds)
 
     def write(self):
         self.write_signal(self.signal,
