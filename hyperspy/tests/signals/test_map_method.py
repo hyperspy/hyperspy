@@ -366,6 +366,7 @@ class TestLazyMap:
 
         s_out = self.s.map(function=f, inplace=False)
         assert s_out.data.shape[2:] == output_signal_size
+        assert s_out.axes_manager.signal_shape == output_signal_size[::-1]
 
 
 @pytest.mark.parametrize('ragged', [True, False, None])
