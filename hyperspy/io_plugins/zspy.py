@@ -116,7 +116,8 @@ class ZspyWriter(HierarchicalWriter):
         if isinstance(data, da.Array):
             if data.chunks != dset.chunks:
                 data = data.rechunk(dset.chunks)
-            da.store(data, dset)
+            # lock=False is necessary with the distributed scheduler
+            data.store(dset, lock=False)
         else:
             dset[:] = data
 
