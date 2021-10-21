@@ -31,6 +31,7 @@ from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
+from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
@@ -392,12 +393,16 @@ def test_rgba16():
     data = np.load(my_path / "npy_files" / "test_rgba16.npy")
     assert (s.data == data).all()
 
+
 @zspy_marker
-def test_nonuniformaxis(tmp_path, file):
+@pytest.mark.parametrize('lazy', [True, False])
+def test_nonuniformaxis(tmp_path, file, lazy):
     fname = tmp_path / file
     data = np.arange(10)
     axis = DataAxis(axis=1/np.arange(1, data.size+1), navigate=False)
     s = Signal1D(data, axes=(axis.get_axis_dictionary(), ))
+    if lazy:
+        s = s.as_lazy()
     s.save(fname, overwrite=True)
     s2 = load(fname)
     np.testing.assert_array_almost_equal(s.axes_manager[0].axis,
@@ -406,13 +411,17 @@ def test_nonuniformaxis(tmp_path, file):
     assert(s2.axes_manager[0].navigate == False)
     assert(s2.axes_manager[0].size == data.size)
 
+
 @zspy_marker
-def test_nonuniformFDA(tmp_path, file):
+@pytest.mark.parametrize('lazy', [True, False])
+def test_nonuniformFDA(tmp_path, file, lazy):
     fname = tmp_path / file
     data = np.arange(10)
     x0 = UniformDataAxis(size=data.size, offset=1)
     axis = FunctionalDataAxis(expression='1/x', x=x0, navigate=False)
     s = Signal1D(data, axes = (axis.get_axis_dictionary(), ))
+    if lazy:
+        s = s.as_lazy()
     print(axis.get_axis_dictionary())
     s.save(fname, overwrite=True)
     s2 = load(fname)
@@ -456,6 +465,7 @@ def test_passing_compression_opts_saving(tmp_path):
     assert d.compression == 'gzip'
     f.close()
 
+
 @zspy_marker
 def test_axes_configuration(tmp_path, file):
     fname = tmp_path / file
@@ -469,6 +479,7 @@ def test_axes_configuration(tmp_path, file):
     assert s.axes_manager.navigation_axes[1].index_in_array == 3
     assert s.axes_manager.signal_dimension == 3
 
+
 @zspy_marker
 def test_axes_configuration_binning(tmp_path, file):
     fname = tmp_path / file
@@ -480,12 +491,17 @@ def test_axes_configuration_binning(tmp_path, file):
     assert s.axes_manager.signal_axes[-1].is_binned
 
 
+@lazifyTestClass
 class Test_permanent_markers_io:
+
+    def setup_method(self, method):
+        s = Signal2D(np.arange(100).reshape(10, 10))
+        self.s = s
 
     @zspy_marker
     def test_save_permanent_marker(self, tmp_path, file):
         filename = tmp_path / file
-        s = Signal2D(np.arange(100).reshape(10, 10))
+        s = self.s
         m = markers.point(x=5, y=5)
         s.add_marker(m, permanent=True)
         s.save(filename)
@@ -493,7 +509,7 @@ class Test_permanent_markers_io:
     @zspy_marker
     def test_save_load_empty_metadata_markers(self, tmp_path, file):
         filename = tmp_path / file
-        s = Signal2D(np.arange(100).reshape(10, 10))
+        s = self.s
         m = markers.point(x=5, y=5)
         m.name = "test"
         s.add_marker(m, permanent=True)
@@ -505,11 +521,11 @@ class Test_permanent_markers_io:
     @zspy_marker
     def test_save_load_permanent_marker(self, tmp_path, file):
         filename = tmp_path / file
+        s = self.s
         x, y = 5, 2
         color = 'red'
         size = 10
         name = 'testname'
-        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=x, y=y, color=color, size=size)
         m.name = name
         s.add_marker(m, permanent=True)
@@ -526,8 +542,8 @@ class Test_permanent_markers_io:
     @zspy_marker
     def test_save_load_permanent_marker_all_types(self, tmp_path, file):
         filename = tmp_path / file
+        s = self.s
         x1, y1, x2, y2 = 5, 2, 1, 8
-        s = Signal2D(np.arange(100).reshape(10, 10))
         m0_list = [
             markers.point(x=x1, y=y1),
             markers.horizontal_line(y=y1),
@@ -556,11 +572,11 @@ class Test_permanent_markers_io:
     @zspy_marker
     def test_save_load_horizontal_line_marker(self,tmp_path,file):
         filename = tmp_path / file
+        s = self.s
         y = 8
         color = 'blue'
         linewidth = 2.5
         name = "horizontal_line_test"
-        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.horizontal_line(y=y, color=color, linewidth=linewidth)
         m.name = name
         s.add_marker(m, permanent=True)
@@ -572,11 +588,11 @@ class Test_permanent_markers_io:
     @zspy_marker
     def test_save_load_horizontal_line_segment_marker(self, tmp_path, file):
         filename = tmp_path / file
+        s = self.s
         x1, x2, y = 1, 5, 8
         color = 'red'
         linewidth = 1.2
         name = "horizontal_line_segment_test"
-        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.horizontal_line_segment(
             x1=x1, x2=x2, y=y, color=color, linewidth=linewidth)
         m.name = name
@@ -589,11 +605,11 @@ class Test_permanent_markers_io:
     @zspy_marker
     def test_save_load_vertical_line_marker(self, tmp_path, file):
         filename = tmp_path / file
+        s = self.s
         x = 9
         color = 'black'
         linewidth = 3.5
         name = "vertical_line_test"
-        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.vertical_line(x=x, color=color, linewidth=linewidth)
         m.name = name
         s.add_marker(m, permanent=True)
@@ -605,11 +621,11 @@ class Test_permanent_markers_io:
     @zspy_marker
     def test_save_load_vertical_line_segment_marker(self, tmp_path, file):
         filename = tmp_path / file
+        s = self.s
         x, y1, y2 = 2, 1, 3
         color = 'white'
         linewidth = 4.2
         name = "vertical_line_segment_test"
-        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.vertical_line_segment(
             x=x, y1=y1, y2=y2, color=color, linewidth=linewidth)
         m.name = name
@@ -622,11 +638,11 @@ class Test_permanent_markers_io:
     @zspy_marker
     def test_save_load_line_segment_marker(self, tmp_path, file):
         filename = tmp_path / file
+        s = self.s
         x1, x2, y1, y2 = 1, 9, 4, 7
         color = 'cyan'
         linewidth = 0.7
         name = "line_segment_test"
-        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.line_segment(
             x1=x1, x2=x2, y1=y1, y2=y2, color=color, linewidth=linewidth)
         m.name = name
@@ -639,10 +655,10 @@ class Test_permanent_markers_io:
     @zspy_marker
     def test_save_load_point_marker(self, tmp_path, file):
         filename = tmp_path / file
+        s = self.s
         x, y = 9, 8
         color = 'purple'
         name = "point test"
-        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(
             x=x, y=y, color=color)
         m.name = name
@@ -655,11 +671,11 @@ class Test_permanent_markers_io:
     @zspy_marker
     def test_save_load_rectangle_marker(self, tmp_path, file):
         filename = tmp_path / file
+        s = self.s
         x1, x2, y1, y2 = 2, 4, 1, 3
         color = 'yellow'
         linewidth = 5
         name = "rectangle_test"
-        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.rectangle(
             x1=x1, x2=x2, y1=y1, y2=y2, color=color, linewidth=linewidth)
         m.name = name
@@ -672,11 +688,11 @@ class Test_permanent_markers_io:
     @zspy_marker
     def test_save_load_text_marker(self, tmp_path, file):
         filename = tmp_path / file
+        s = self.s
         x, y = 3, 9.5
         color = 'brown'
         name = "text_test"
         text = "a text"
-        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.text(
             x=x, y=y, text=text, color=color)
         m.name = name
@@ -687,11 +703,14 @@ class Test_permanent_markers_io:
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
     @zspy_marker
-    def test_save_load_multidim_navigation_marker(self, tmp_path, file):
+    @pytest.mark.parametrize('lazy', [True, False])
+    def test_save_load_multidim_navigation_marker(self, tmp_path, file, lazy):
         filename = tmp_path / file
         x, y = (1, 2, 3), (5, 6, 7)
         name = 'test point'
         s = Signal2D(np.arange(300).reshape(3, 10, 10))
+        if lazy:
+            s = s.as_lazy()
         m = markers.point(x=x, y=y)
         m.name = name
         s.add_marker(m, permanent=True)
@@ -728,10 +747,13 @@ class Test_permanent_markers_io:
 
 
 @zspy_marker
-def test_save_load_model(tmp_path, file):
+@pytest.mark.parametrize('lazy', [True, False])
+def test_save_load_model(tmp_path, file, lazy):
     from hyperspy._components.gaussian import Gaussian
     filename = tmp_path / file
     s = Signal1D(np.ones((10, 10, 10, 10)))
+    if lazy:
+        s = s.as_lazy()
     m = s.create_model()
     m.append(Gaussian())
     m.store("test")
@@ -849,22 +871,27 @@ def test_saving_overwrite_data(tmp_path, file):
 
     s2 = load(fname, lazy=True, mode='a')
     s2.axes_manager[0].units = 'nm'
+    s2.data = da.ones((10, 100))
     s2.save(fname, overwrite=True, write_dataset=False)
 
     s3 = load(fname)
     assert s3.axes_manager[0].units == 'nm'
+    # Still old data
     np.testing.assert_allclose(s3.data, np.zeros((10, 100)))
 
     s4 = load(fname)
+    s4.data = da.ones((10, 100))
     if file == 'test.hspy':
         # try with opening non-lazily to check opening mode
         # only relevant for hdf5 file
         with pytest.raises(ValueError):
             s4.save(fname, overwrite=True, write_dataset=False, mode='w')
 
-    s4.save(fname, overwrite=True, write_dataset=False)
+    s4.save(fname, overwrite=True, write_dataset=True)
     # make sure we can open it after, file haven't been corrupted
-    _ = load(fname)
+    s5 = load(fname)
+    # now new data
+    np.testing.assert_allclose(s5.data, np.ones((10, 100)))
 
 
 @zspy_marker

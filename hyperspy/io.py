@@ -26,7 +26,7 @@ import numpy as np
 from natsort import natsorted
 from inspect import isgenerator
 from pathlib import Path
-from collections import MutableMapping
+from collections.abc import MutableMapping
 
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.exceptions import VisibleDeprecationWarning

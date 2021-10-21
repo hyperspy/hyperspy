@@ -19,11 +19,10 @@
 import warnings
 import logging
 from packaging.version import Version
-from collections import MutableMapping
+from collections.abc import MutableMapping
 
 import dask.array as da
 import numcodecs
-import numpy as np
 import zarr
 
 from hyperspy.io_plugins._hierarchical import (
@@ -113,24 +112,12 @@ class ZspyWriter(HierarchicalWriter):
 
     @staticmethod
     def _store_data(data, dset, group, key, chunks, **kwds):
-        """Overrides the hyperspy store data function for using zarr format."""
+        """Write data to zarr format."""
         if isinstance(data, da.Array):
             if data.chunks != dset.chunks:
                 data = data.rechunk(dset.chunks)
-            path = group._store.dir_path() + "/" + dset.path
-            data.to_zarr(url=path,
-                         overwrite=True,
-                            **kwds)  # add in compression etc
-        elif data.dtype == np.dtype('O'):
-            group[key][:] = data[:]  # check lazy
+            da.store(data, dset)
         else:
-            path = group._store.dir_path() + "/" + dset.path
-            dset = zarr.open_array(path,
-                                   mode="w",
-                                   shape=data.shape,
-                                    dtype=data.dtype,
-                                    chunks=chunks,
-                                    **kwds)
             dset[:] = data
 
 
