@@ -247,9 +247,10 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
             yscale = scale[3] / height
             units = "µm"
         else:
-            xscale = 1
-            yscale = 1
-            units = "px"
+            scale = header["PTTD Param"]["Params"]["PARAMPAGE0_SEM"]["ScanSize"] / meas_data_header["MeasCond"]["Mag"] * 1.0E6
+            xscale = scale / width
+            yscale = scale / height
+            units = "nm"
 
         ch_mod = meas_data_header["Meas Cond"]["Tpl"]
         ch_res = meas_data_header["Doc"]["CoefA"]
