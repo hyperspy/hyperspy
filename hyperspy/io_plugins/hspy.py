@@ -25,7 +25,8 @@ import dask.array as da
 import h5py
 
 from hyperspy.io_plugins._hierarchical import (
-    HierarchicalWriter, HierarchicalReader, version
+    # hyperspy.io_plugins.hspy.get_signal_chunks is in the hyperspy public API
+    HierarchicalWriter, HierarchicalReader, version, get_signal_chunks
     )
 
 
@@ -113,7 +114,8 @@ class HyperspyReader(HierarchicalReader):
 
 
 class HyperspyWriter(HierarchicalWriter):
-    """An object used to simplify and orgainize the process for
+    """
+    An object used to simplify and orgainize the process for
     writing a hyperspy signal.  (.hspy format)
     """
     target_size = 1e6
@@ -127,7 +129,7 @@ class HyperspyWriter(HierarchicalWriter):
 
 
     @staticmethod
-    def _store_data(data, dset, group, key, chunks, **kwds):
+    def _store_data(data, dset, group, key, chunks):
         if isinstance(data, da.Array):
             if data.chunks != dset.chunks:
                 data = data.rechunk(dset.chunks)
@@ -206,7 +208,7 @@ def file_writer(filename, signal, close_file=True, **kwds):
         save attributes without having to write the whole dataset.
     **kwds
         The keyword argument are passed to the
-        :py:func:`h5py.Group.require_dataset` function.
+        :py:meth:`h5py.Group.require_dataset` function.
     """
     if 'compression' not in kwds:
         kwds['compression'] = 'gzip'
@@ -267,3 +269,5 @@ def file_writer(filename, signal, close_file=True, **kwds):
 
     if close_file:
         f.close()
+
+overwrite_dataset = HyperspyWriter.overwrite_dataset

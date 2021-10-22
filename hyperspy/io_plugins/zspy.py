@@ -110,7 +110,7 @@ class ZspyWriter(HierarchicalWriter):
         return dset
 
     @staticmethod
-    def _store_data(data, dset, group, key, chunks, **kwds):
+    def _store_data(data, dset, group, key, chunks):
         """Write data to zarr format."""
         if isinstance(data, da.Array):
             if data.chunks != dset.chunks:
@@ -143,7 +143,7 @@ def file_writer(filename, signal, close_file=True, **kwds):
         save attributes without having to write the whole dataset.
     **kwds
         The keyword argument are passed to the
-        :py:func:`zarr.Group.require_dataset` function.
+        :py:meth:`zarr.hierarchy.Group.require_dataset` function.
     """
     if "compressor" not in kwds:
         from numcodecs import Blosc

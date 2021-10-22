@@ -37,7 +37,7 @@ from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
 from hyperspy.roi import Point2DROI
 from hyperspy.utils import markers
-from hyperspy.io_plugins._hierarchical import HierarchicalWriter
+from hyperspy.io_plugins.hspy import get_signal_chunks
 
 
 
@@ -906,8 +906,8 @@ def test_title_with_slash(tmp_path, file):
 
 @pytest.mark.parametrize("target_size", (1e6, 1e7))
 def test_get_signal_chunks(target_size):
-    chunks = HierarchicalWriter._get_signal_chunks(shape=[15, 15, 256, 256],
-                                                   dtype=np.int64,
-                                                   signal_axes=(2, 3),
-                                                   target_size=target_size)
+    chunks = get_signal_chunks(shape=[15, 15, 256, 256],
+                               dtype=np.int64,
+                               signal_axes=(2, 3),
+                               target_size=target_size)
     assert (np.prod(chunks)*8 < target_size)
