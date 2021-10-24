@@ -2619,11 +2619,6 @@ class BaseSignal(FancySlicing,
             else:
                 navigator = "slider"
         if axes_manager.signal_dimension == 0:
-            if axes_manager.navigation_dimension == 0:
-                # 0d signal without navigation axis: don't make a figure
-                # and instead, we display the value
-                print(self.data)
-                return
             self._plot = mpl_he.MPL_HyperExplorer()
         elif axes_manager.signal_dimension == 1:
             # Hyperspectrum
