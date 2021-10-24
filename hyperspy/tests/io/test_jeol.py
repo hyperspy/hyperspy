@@ -24,7 +24,7 @@ import hyperspy.api as hs
 
 
 TESTS_FILE_PATH = Path(__file__).resolve().parent / 'JEOL_files'
-
+TESTS_FILE_PATH2 = TESTS_FILE_PATH / 'InvalidFrame'
 
 test_files = ['rawdata.ASW',
               'View000_0000000.img',
@@ -35,6 +35,34 @@ test_files = ['rawdata.ASW',
               'View000_0000005.map',
               'View000_0000006.pts'
               ]
+
+test_files2 = ['dummy2.ASW',
+               'Dummy-Data_0000000.img',
+               'Dummy-Data_0000001.map',
+               'Dummy-Data_0000002.map',
+               'Dummy-Data_0000003.map',
+               'Dummy-Data_0000004.map',
+               'Dummy-Data_0000005.map',
+               'Dummy-Data_0000006.map',
+               'Dummy-Data_0000007.pts',
+               'Dummy-Data_0000008.apb',
+               'Dummy-Data_0000009.map',
+               'Dummy-Data_0000010.map',
+               'Dummy-Data_0000011.map',
+               'Dummy-Data_0000012.map',
+               'Dummy-Data_0000013.map',
+               'Dummy-Data_0000014.map',
+               'Dummy-Data_0000015.pts',
+               'Dummy-Data_0000016.apb',
+               'Dummy-Data_0000017.map',
+               'Dummy-Data_0000018.map',
+               'Dummy-Data_0000019.map',
+               'Dummy-Data_0000020.map',
+               'Dummy-Data_0000021.map',
+               'Dummy-Data_0000022.map',
+               'Dummy-Data_0000023.pts',
+               'Dummy-Data_0000024.APB',
+]
 
 
 def test_load_project():
@@ -245,3 +273,26 @@ def test_shift_jis_encoding():
     except FileNotFoundError:
         # we don't have the other files required to open the data
         pass
+
+def test_number_of_frames():
+    dir1 = TESTS_FILE_PATH / 'Sample' / '00_View000'
+    dir2 = TESTS_FILE_PATH / 'InvalidFrame' / 'Sample' / '00_Dummy-Data'
+
+    test_list = [  # dir, file, num_frames, num_valid_frames
+        [ dir1, test_files[7], 14, 14 ],
+        [ dir2, test_files2[8], 1, 0 ],
+        [ dir2, test_files2[16], 2, 1 ],
+        [ dir2, test_files2[24], 1, 1 ]
+    ]
+
+    for item in test_list:
+        dirname, filename, frames, valid = item
+        fname = str(dirname / filename)
+
+        # Count number of frames including incomplete frame
+        data = hs.load(fname, sum_frames = False, only_valid_data = False)
+        assert data.axes_manager["Frame"].size == frames
+   
+        # Count number of valid frames
+        data = hs.load(fname, sum_frames = False, only_valid_data = True)
+        assert data.axes_manager["Frame"].size == valid

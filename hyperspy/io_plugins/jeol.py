@@ -301,11 +301,16 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         pixel_time = meas_data_header["Doc"]["DwellTime(msec)"]
 
         data_shape = [height, width, channel_number]
-        sweep = meas_data_header["Doc"]["Sweep"]
+        # Sweep value is not reliable
+        # sweep = meas_data_header["Doc"]["Sweep"]
+        ptr_list, last_valid, has_image = pts_prescan(rawdata, width, height)
+        if last_valid or not only_valid_data:
+            sweep = len(ptr_list) - 1
+        else:
+            sweep = len(ptr_list) - 2
+
         if not sum_frames:
             data_shape.insert(0, sweep)
-            if not only_valid_data:
-                data_shape[0] += 1 # for partly swept frame
             axes.insert(0, {
                 "index_in_array": 0,
                 "name": "Frame",
@@ -321,13 +326,9 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
                                       rebin_energy, channel_number,
                                width_norm, height_norm, np.iinfo(SI_dtype).max)
 
-        if not sum_frames and not only_valid_data:
-            if  (sweep == swept):
-                data = data[:sweep]
-            else:
-                axes[0]["size"] = swept
+        axes[0]["size"] = sweep
 
-        if sweep < swept and only_valid_data:
+        if (not last_valid) and only_valid_data:
             _logger.info("The last frame (sweep) is incomplete because the acquisition stopped during this frame. The partially acquired frame is ignored. Use 'sum_frames=False, only_valid_data=False' to read all frames individually, including the last partially completed frame.")
                 
         hv = meas_data_header["MeasCond"]["AccKV"]
@@ -460,6 +461,57 @@ def parsejeol(fd):
 
 
 @numba.njit(cache=True)
+def pts_prescan(rawdata, width, height):
+    """
+    need to prescan data section because the sweep count in the header
+    sometime shows broken value depend on the JEOL software version.
+
+    Returns
+    --------------
+    1. list of frame head address + end of rawdata
+    2. is the last frame valid(True) or not(False)
+    3. is the STEM/SEM-BF data available(True) or not(False)
+    """
+    MAX_VAL = 4096
+    width_norm = int(MAX_VAL / width)
+    height_norm = int(MAX_VAL / width)
+    max_x = MAX_VAL - width_norm
+    max_y = MAX_VAL - height_norm
+
+    previous_x = 0
+    previous_y = MAX_VAL
+    pointer = 0
+    frame_list = []
+
+    has_image = False
+    last_valid = False
+
+    for value in rawdata:
+        value_type = value & 0xF000
+        if value_type == 0x8000:  # pos x
+            previous_x = value & 0xFFF
+        elif value_type == 0x9000:  # pox y
+            y = value & 0xFFF
+            if y < previous_y:
+                frame_list.append(pointer)
+            previous_y = y
+        elif value_type == 0xa000: # image
+            has_image = True
+        #elif value_type == 0xb000: #EDS
+        #    pass
+        pointer += 1
+
+    if previous_y == max_y and (previous_x == max_x or not has_image):
+        # if the STEM-ADF/SEM-BF image is not included in pts file,
+        # maximum value of x is usually smaller than max_x,
+        # sometimes no x-ray events occur in a last few pixels.
+        # So, only the y value is checked
+        last_valid = True
+
+    frame_list.append(pointer)  # end of last frame
+    return frame_list, last_valid, has_image
+
+@numba.njit(cache=True)
 def readcube(rawdata, hypermap, sweep, only_valid_data, rebin_energy, 
             channel_number, width_norm, height_norm, max_value):  # pragma: no cover
     frame_idx = 0
@@ -502,11 +554,8 @@ def readcube_frames(rawdata, hypermap, sweep, only_valid_data, rebin_energy, cha
             y = int((value - 36864) / height_norm)
             if y < previous_y:
                 frame_idx += 1
-                if frame_idx == sweep: # incomplete frame exist
-                    if only_valid_data:
-                        break  # ignore
-                if frame_idx > sweep:
-                    raise ValueError("The frame number is too large")
+                if frame_idx >= sweep:
+                    break
             previous_y = y
         elif value >= 45056 and value < 49152:
             z = int((value - 45056) / rebin_energy)
