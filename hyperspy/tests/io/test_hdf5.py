@@ -793,7 +793,7 @@ def test_strings_from_py2():
 def test_save_ragged_array(tmp_path, file):
     a = np.array([0, 1])
     b = np.array([0, 1, 2])
-    s = BaseSignal(np.array([a, b], dtype=object)).T
+    s = BaseSignal(np.array([a, b], dtype=object), ragged=True)
     fname = tmp_path / file
     s.save(fname)
     s1 = load(fname)
@@ -902,22 +902,21 @@ def test_saving_overwrite_data(tmp_path, file):
 
     s4.save(fname, overwrite=True, write_dataset=True)
     # make sure we can open it after, file haven't been corrupted
-    s5 = load(fname)
+    _ = load(fname)
     # now new data
-    np.testing.assert_allclose(s5.data, np.ones((10, 100)))
+    @zspy_marker
+    def test_chunking_saving_lazy_specify(self, tmp_path, file):
+        filename = tmp_path / file
+        s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
+        # specify chunks
+        chunks = (50, 10, 10)
+        s.data = s.data.rechunk([50, 25, 25])
+        s.save(filename, chunks=chunks)
+        s1 = load(filename, lazy=True)
+        assert tuple([c[0] for c in s1.data.chunks]) == chunks
 
 
-@zspy_marker
-def test_title_with_slash(tmp_path, file):
-    fname = tmp_path / file
-    s = Signal1D(da.zeros((10, 100))).as_lazy()
-    s.metadata.General.title = 'A / B'
-    s.save(fname)
-    s2 = load(fname)
-    assert s2.metadata.General.title == s.metadata.General.title
-
-
-@pytest.mark.parametrize("target_size", (1e6, 1e7))
+@pytest.mark.parametrize("target_size", (1e6,1e7))
 def test_get_signal_chunks(target_size):
     chunks = get_signal_chunks(shape=[15, 15, 256, 256],
                                dtype=np.int64,

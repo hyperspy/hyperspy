@@ -382,8 +382,11 @@ def test_singleton(ragged):
     sig.map(np.sum, inplace=True, ragged=ragged)
     sig_list = (sig, sig1, sig2)
     for _s in sig_list:
-        assert len(_s.axes_manager._axes) == 1
-        assert _s.axes_manager[0].name == 'Scalar'
+        assert len(_s.axes_manager._axes) == 0 if ragged else 1
+        if ragged:
+            assert _s.axes_manager.ragged
+        else:
+            assert _s.axes_manager[0].name == 'Scalar'
         assert isinstance(_s, hs.signals.BaseSignal)
         assert not isinstance(_s, hs.signals.Signal1D)
 

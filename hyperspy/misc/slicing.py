@@ -273,17 +273,20 @@ class FancySlicing(object):
         return tuple(array_slices)
 
     def _slicer(self, slices, isNavigation=None, out=None):
+        if self.axes_manager._ragged and not isNavigation:
+            raise RuntimeError("`isig` is not supported for ragged signal.")
+
         array_slices = self._get_array_slices(slices, isNavigation)
         new_data = self.data[array_slices]
-        if new_data.size == 1 and new_data.dtype is np.dtype('O'):
+        if new_data.shape == (1, ) and new_data.dtype is np.dtype(object):
+            # See https://github.com/hyperspy/hyperspy/pull/1336
             if isinstance(new_data[0], (np.ndarray, dArray)):
                 return self.__class__(new_data[0]).transpose(navigation_axes=0)
             else:
                 return new_data[0]
 
         if out is None:
-            _obj = self._deepcopy_with_new_data(new_data,
-                                                copy_variance=True)
+            _obj = self._deepcopy_with_new_data(new_data, copy_variance=True)
             _to_remove = []
             for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
                 if (isinstance(slice_, slice) or
@@ -291,8 +294,7 @@ class FancySlicing(object):
                     axis._slice_me(slice_)
                 else:
                     _to_remove.append(axis.index_in_axes_manager)
-            for _ind in reversed(sorted(_to_remove)):
-                _obj._remove_axis(_ind)
+            _obj._remove_axis(_to_remove)
         else:
             out.data = new_data
             _obj = out
@@ -328,8 +330,7 @@ class FancySlicing(object):
 
                 except AttributeError:
                     pass
-        # _obj.get_dimensions_from_data() # replots, so we do it manually:
-        dc = _obj.data
+
         if out is None:
             return _obj
         else:

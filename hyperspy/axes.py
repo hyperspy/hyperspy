@@ -1458,7 +1458,7 @@ class AxesManager(t.HasTraits):
     _step = t.Int(1)
 
     def __init__(self, axes_list):
-        super(AxesManager, self).__init__()
+        super().__init__()
         self.events = Events()
         self.events.indices_changed = Event("""
             Event that triggers when the indices of the `AxesManager` changes
@@ -1481,6 +1481,10 @@ class AxesManager(t.HasTraits):
             ----------
             obj : The AxesManager that the event belongs to.
             """, arguments=['obj'])
+
+        # Remove all axis for cases, we reinitiliase the AxesManager
+        if self._axes:
+            self.remove(self._axes)
         self.create_axes(axes_list)
         # set_signal_dimension is called only if there is no current
         # view. It defaults to spectrum
@@ -1679,13 +1683,14 @@ class AxesManager(t.HasTraits):
         if len(indices) == len(axes_list):
             axes_list.sort(key=lambda x: x['index_in_array'])
         for axis_dict in axes_list:
-            if isinstance(axis_dict,dict):
+            if isinstance(axis_dict, dict):
                 self._append_axis(**axis_dict)
             else:
                 self._axes.append(axis_dict)
 
     def set_axis(self, axis, index_in_axes_manager):
         """Replace an axis of current signal with one given in argument.
+
         Parameters
         ----------
         axis: BaseDataAxis axis to replace the current axis with

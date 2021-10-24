@@ -199,23 +199,3 @@ class TestConvertComplexSignal1D:
         assert isinstance(self.s, hs.signals.DielectricFunction)
         self.s.set_signal_type("")
         assert isinstance(self.s, hs.signals.ComplexSignal1D)
-
-
-def test_create_ragged_array(self):
-    data = np.empty((2, 5), dtype=object)
-    data.fill(np.array([10, 20]))
-
-    s = hs.signals.BaseSignal(data)
-    assert s.axes_manager.ragged
-    assert s.__repr__() == "<BaseSignal, title: , dimensions: (5, 2|ragged)>"
-
-    with pytest.raises(RuntimeError):
-        s.T
-
-    assert s.inav[0].axes_manager.ragged
-    assert s.inav[0].axes_manager.signal_dimension == 0
-    assert not s.inav[0, 0].axes_manager.ragged
-
-    data = np.array([[0, 1], [2, 3, 4]], dtype=object)
-    s = hs.signals.BaseSignal(data)
-    assert s.axes_manager.ragged

@@ -679,12 +679,14 @@ class LazySignal(BaseSignal):
         else:
             sig = self._deepcopy_with_new_data(mapped)
             if ragged:
-                sig.axes_manager.remove(sig.axes_manager.signal_axes)
-                sig._lazy = True
+                axes_dicts = self.axes_manager._get_axes_dicts(
+                    self.axes_manager.navigation_axes
+                    )
+                sig.axes_manager.__init__(axes_dicts)
                 sig._assign_subclass()
-
                 return sig
-            # remove if too many axes
+
+        # remove if too many axes
         if axes_changed:
             sig.axes_manager.remove(sig.axes_manager.signal_axes[len(output_signal_size):])
             # add additional required axes
