@@ -115,14 +115,14 @@ class TestSignal2D:
                       ragged=True)
             s = s.map(rotate, angle=angles.T, reshape=True, inplace=False,
                   ragged=True)
+            s.compute()
         else:
             s.map(rotate, angle=angles.T, reshape=True, show_progressbar=None,
                   parallel=parallel, ragged=True)
         # the dtype
         assert s.data.dtype is np.dtype('O')
-        # the special slicing
-        if not s._lazy:
-            assert s.inav[0].data.base is s.data[0]
+        # Check slicing
+        assert s.inav[0].data[0] is s.data[0]
         # actual values
         np.testing.assert_allclose(s.data[0],
                                    np.arange(9.).reshape((3, 3)),
@@ -324,9 +324,8 @@ def test_new_axes(parallel):
     assert isinstance(sl, hs.signals.BaseSignal)
     ax_names = {ax.name for ax in sl.axes_manager._axes}
     assert len(ax_names) == 1
-    assert not 'a' in ax_names
     assert not 'b' in ax_names
-    assert 0 == sl.axes_manager.navigation_dimension
+    assert sl.axes_manager.navigation_dimension == 1
 
 
 class TestLazyMap:

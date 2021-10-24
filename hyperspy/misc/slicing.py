@@ -278,12 +278,13 @@ class FancySlicing(object):
 
         array_slices = self._get_array_slices(slices, isNavigation)
         new_data = self.data[array_slices]
-        if new_data.shape == (1, ) and new_data.dtype is np.dtype(object):
-            # See https://github.com/hyperspy/hyperspy/pull/1336
-            if isinstance(new_data[0], (np.ndarray, dArray)):
-                return self.__class__(new_data[0]).transpose(navigation_axes=0)
-            else:
-                return new_data[0]
+        if (self.ragged and new_data.dtype != np.dtype(object) and
+                isinstance(new_data, np.ndarray)):
+            # Numpy will convert the array to non-ragged, for consistency,
+            # we make a ragged array with only one item
+            data = new_data.copy()
+            new_data = np.empty((1, ), dtype=object)
+            new_data[0] = data
 
         if out is None:
             _obj = self._deepcopy_with_new_data(new_data, copy_variance=True)
