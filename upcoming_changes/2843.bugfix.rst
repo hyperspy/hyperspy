@@ -1,1 +1,0 @@
-Add support for latest h5py release (3.5)
