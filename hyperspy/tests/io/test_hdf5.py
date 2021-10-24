@@ -412,7 +412,7 @@ def test_non_valid_hspy(tmp_path, caplog):
 def test_nonuniformaxis(tmp_path, file, lazy):
     fname = tmp_path / file
     data = np.arange(10)
-    axis = DataAxis(axis=1/np.arange(1, data.size+1), navigate=False)
+    axis = DataAxis(axis =1/np.arange(1, data.size+1), navigate=False)
     s = Signal1D(data, axes=(axis.get_axis_dictionary(), ))
     if lazy:
         s = s.as_lazy()

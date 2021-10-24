@@ -2402,6 +2402,11 @@ class BaseSignal(FancySlicing,
 
     @data.setter
     def data(self, value):
+        if hasattr(value, 'dtype') and value.dtype == object:
+            self.axes_manager._ragged = True
+            self.axes_manager.set_signal_dimension(0)
+        else:
+            self.axes_manager._ragged = False
         from dask.array import Array
         if isinstance(value, Array):
             if not value.ndim:
@@ -2576,6 +2581,7 @@ class BaseSignal(FancySlicing,
         return dic
 
     def _get_undefined_axes_list(self):
+        """Returns default list of axes construct from the data array shape."""
         axes = []
         for s in self.data.shape:
             axes.append({'size': int(s), })
@@ -6000,6 +6006,10 @@ class BaseSignal(FancySlicing,
         <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
 
         """
+
+        if self.axes_manager.ragged:
+            raise RuntimeError("Signal with ragged dimension can't be "
+                               "tranposed.")
 
         am = self.axes_manager
         ax_list = am._axes

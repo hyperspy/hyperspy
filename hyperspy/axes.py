@@ -1492,6 +1492,11 @@ class AxesManager(t.HasTraits):
         self._update_attributes()
         self._update_trait_handlers()
         self.iterpath = 'flyback'
+        self._ragged = False
+
+    @property
+    def ragged(self):
+        return self._ragged
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes.index',
@@ -2169,6 +2174,8 @@ class AxesManager(t.HasTraits):
         for axis in self.signal_axes:
             string += str(axis.size) + ", "
         string = string.rstrip(", ")
+        if self.ragged:
+            string += 'ragged'
         string += ")"
         return string
 
@@ -2202,6 +2209,9 @@ class AxesManager(t.HasTraits):
         for ax in self.signal_axes:
             text += '\n'
             text += axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform)
+        if self.ragged:
+            text += '\n'
+            text += "     Ragged axis |               Variable length"
 
         return text
 
