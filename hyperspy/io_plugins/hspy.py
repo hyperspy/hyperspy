@@ -595,9 +595,6 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
             # if the shape or dtype/etc do not match,
             # we delete the old one and create new in the next loop run
             del group[key]
-    if dset == data:
-        # just a reference to already created thing
-        pass
     else:
         _logger.info(f"Chunks used for saving: {dset.chunks}")
         if isinstance(data, da.Array):
