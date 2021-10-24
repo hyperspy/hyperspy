@@ -94,7 +94,6 @@ def file_reader(filename, **kwds):
                                     if sub_ext in extension_to_reader_mapping.keys():
                                         reader_function = extension_to_reader_mapping[sub_ext]
                                         d = reader_function(file_path, scale, **kwds)
-                                        dictionary.append(d)
                                         if isinstance(d, list):
                                             dictionary.extend(d)
                                         else:
@@ -107,7 +106,6 @@ def file_reader(filename, **kwds):
             dictionary.extend(d)
         else:
             dictionary.append(d)
-        dictionary.append(d)
 
     return dictionary
 
