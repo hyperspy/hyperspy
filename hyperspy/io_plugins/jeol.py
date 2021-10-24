@@ -95,10 +95,18 @@ def file_reader(filename, **kwds):
                                         reader_function = extension_to_reader_mapping[sub_ext]
                                         d = reader_function(file_path, scale, **kwds)
                                         dictionary.append(d)
+                                        if isinstance(d, list):
+                                            dictionary.extend(d)
+                                        else:
+                                            dictionary.append(d)
         else:
             _logger.warning("Not a valid JEOL asw format")
     else:
         d = extension_to_reader_mapping[file_ext](filename, **kwds)
+        if isinstance(d, list):
+            dictionary.extend(d)
+        else:
+            dictionary.append(d)
         dictionary.append(d)
 
     return dictionary
