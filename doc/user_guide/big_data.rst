@@ -397,6 +397,15 @@ Other minor differences
   convenience, ``nansum``, ``nanmean`` and other ``nan*`` signal methods were
   added to mimic the workflow as closely as possible.
 
+.. _big_data.saving:
+
+Saving Big Data
+^^^^^^^^^^^^^^^^^
+
+The most efficient format supported by HyperSpy to write data is the :ref:` zspy format <zspy-format>`,
+mainly because it supports writing currently from concurrently from multiple threads or processes.
+
+This also allows for smooth interaction with dask-distributed for efficient scaling.
 
 .. _lazy_details:
 

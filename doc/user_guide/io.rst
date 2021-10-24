@@ -251,6 +251,8 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +-----------------------------------+--------+--------+--------+
     | hspy                              |    Yes |    Yes |    Yes |
     +-----------------------------------+--------+--------+--------+
+    | zspy                              |    Yes |    Yes |    Yes |
+    +-----------------------------------+--------+--------+--------+
     | Image: e.g. jpg, png, tif, ...    |    Yes |    Yes |    Yes |
     +-----------------------------------+--------+--------+--------+
     | TIFF                              |    Yes |    Yes |    Yes |
@@ -419,6 +421,65 @@ Extra saving arguments
     for more details. Therefore, if you choose any other compression filter for
     saving a file, be aware that it may not be possible to load it in some platforms.
 
+
+.. _zspy-format:
+
+ZSpy - HyperSpy's Zarr Specification
+------------------------------------
+
+Similarly to the :ref:`hspy format <hspy-format>`, the zspy format guarantees that no
+information will be lost in the writing process and that supports saving data
+of arbitrary dimensions. It is based on the `Zarr project <https://zarr.readthedocs.io/en/stable/index.html>`_. Which exists as a drop in
+replacement for hdf5 with the intention to fix some of the speed and scaling
+issues with the hdf5 format and is therefore suitable for saving :ref:`big data <big_data.saving>`.
+
+
+.. code-block:: python
+
+    >>> s = hs.signals.BaseSignal([0])
+    >>> s.save('test.zspy') # will save in nested directory
+    >>> hs.load('test.zspy') # loads the directory
+
+
+When saving to `zspy <https://zarr.readthedocs.io/en/stable/index.html>`_, all supported objects in the signal's
+:py:attr:`~.signal.BaseSignal.metadata` is stored. This includes lists, tuples and signals.
+Please note that in order to increase saving efficiency and speed, if possible,
+the inner-most structures are converted to numpy arrays when saved. This
+procedure homogenizes any types of the objects inside, most notably casting
+numbers as strings if any other strings are present:
+
+Extra saving arguments
+^^^^^^^^^^^^^^^^^^^^^^
+
+- ``compressor``: A `Numcodecs Codec <https://numcodecs.readthedocs.io/en/stable/index.html?>`_.
+   A compresssor can be passed to the save function to compress the data efficiently. The defualt
+   is to call a Blosc Compressor object.
+
+.. code-block:: python
+
+    >>> from numcodecs import Blosc
+    >>> compressor=Blosc(cname='zstd', clevel=1, shuffle=Blosc.SHUFFLE)
+    >>> s.save('test.zspy', compressor = compressor) # will save with Blosc compression
+
+.. note::
+
+    Lazy operations are often i-o bound, reading and writing the data creates a bottle neck in processes
+    due to the slow read write speed of many hard disks. In these cases, compressing your data is often
+    beneficial to the speed of some operation. Compression speeds up the process as there is less to
+    read/write with the trade off of slightly more computational work on the CPU."
+
+- ``write_to_storage``: The write to storage option allows you to pass the path to a directory (or database)
+   and write directly to the storage container.  This gives you access to the `different storage methods
+   <https://zarr.readthedocs.io/en/stable/api/storage.html>`_
+   available through zarr. Namely using a SQL, MongoDB or LMDB database.  Additional downloads may need
+   to be configured to use these features.
+
+.. code-block:: python
+
+    >>>  filename = 'test.zspy/'
+    >>>  os.mkdir('test.zspy')
+    >>>  store = zarr.LMDBStore(path=filename)
+    >>>  signal.save(store.path, write_to_storage=True) # saved to Lmdb
 
 .. _netcdf-format:
 

@@ -72,6 +72,17 @@ def test_load_project():
     np.testing.assert_allclose(s[-1].axes_manager[2].scale, 0.00999866)
     assert s[-1].axes_manager[2].name == 'Energy'
 
+    # check scale (image)
+    filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[1]
+    s1 = hs.load(filename)
+    np.testing.assert_allclose(s[0].axes_manager[0].scale, s1.axes_manager[0].scale)
+    assert s[0].axes_manager[0].units == s1.axes_manager[0].units
+    # check scale (pts)
+    filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[7]
+    s2 = hs.load(filename)
+    np.testing.assert_allclose(s[6].axes_manager[0].scale, s2.axes_manager[0].scale)
+    assert s[6].axes_manager[0].units == s2.axes_manager[0].units
+    
 
 def test_load_image():
     # test load work area haadf image
@@ -81,11 +92,11 @@ def test_load_image():
     assert s.data.dtype == np.uint8
     assert s.data.shape == (512, 512)
     assert s.axes_manager.signal_dimension == 2
-    assert s.axes_manager[0].units == 'px'
-    assert s.axes_manager[0].scale == 1
+    assert s.axes_manager[0].units == 'µm'
+    np.testing.assert_allclose(s.axes_manager[0].scale, 0.00869140587747097)
     assert s.axes_manager[0].name == 'x'
-    assert s.axes_manager[1].units == 'px'
-    assert s.axes_manager[1].scale == 1
+    assert s.axes_manager[1].units == 'µm'
+    np.testing.assert_allclose(s.axes_manager[1].scale, 0.00869140587747097)
     assert s.axes_manager[1].name == 'y'
 
 
@@ -98,11 +109,11 @@ def test_load_datacube(SI_dtype):
     assert s.data.shape == (512, 512, 4096)
     assert s.axes_manager.signal_dimension == 1
     assert s.axes_manager.navigation_dimension == 2
-    assert s.axes_manager[0].units == 'px'
-    assert s.axes_manager[0].scale == 1
+    assert s.axes_manager[0].units == 'µm'
+    np.testing.assert_allclose(s.axes_manager[0].scale, 0.00869140587747097)
     assert s.axes_manager[0].name == 'x'
-    assert s.axes_manager[1].units == 'px'
-    assert s.axes_manager[1].scale == 1
+    assert s.axes_manager[1].units == 'µm'
+    np.testing.assert_allclose(s.axes_manager[1].scale, 0.00869140587747097)
     assert s.axes_manager[1].name == 'y'
     assert s.axes_manager[2].units == 'keV'
     np.testing.assert_allclose(s.axes_manager[2].offset, -0.000789965-0.00999866*96)

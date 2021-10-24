@@ -33,6 +33,7 @@ import dask.array as da
 from matplotlib import pyplot as plt
 import traits.api as t
 import numbers
+from collections import MutableMapping
 
 from hyperspy.axes import AxesManager
 from hyperspy import io
@@ -2856,9 +2857,10 @@ class BaseSignal(FancySlicing,
             else:
                 raise ValueError('File name not defined')
 
-        filename = Path(filename)
-        if extension is not None:
-            filename = filename.with_suffix(f".{extension}")
+        if not isinstance(filename, MutableMapping):
+            filename = Path(filename)
+            if extension is not None:
+                filename = filename.with_suffix(f".{extension}")
         io.save(filename, self, overwrite=overwrite, **kwds)
 
     def _replot(self):
