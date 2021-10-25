@@ -326,8 +326,6 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
                                       rebin_energy, channel_number,
                                width_norm, height_norm, np.iinfo(SI_dtype).max)
 
-        axes[0]["size"] = sweep
-
         if (not last_valid) and only_valid_data:
             _logger.info("The last frame (sweep) is incomplete because the acquisition stopped during this frame. The partially acquired frame is ignored. Use 'sum_frames=False, only_valid_data=False' to read all frames individually, including the last partially completed frame.")
                 
