@@ -595,16 +595,16 @@ def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
             # if the shape or dtype/etc do not match,
             # we delete the old one and create new in the next loop run
             del group[key]
+
+    _logger.info(f"Chunks used for saving: {dset.chunks}")
+    if isinstance(data, da.Array):
+        if data.chunks != dset.chunks:
+            data = data.rechunk(dset.chunks)
+        da.store(data, dset)
+    elif data.flags.c_contiguous:
+        dset.write_direct(data)
     else:
-        _logger.info(f"Chunks used for saving: {dset.chunks}")
-        if isinstance(data, da.Array):
-            if data.chunks != dset.chunks:
-                data = data.rechunk(dset.chunks)
-            da.store(data, dset)
-        elif data.flags.c_contiguous:
-            dset.write_direct(data)
-        else:
-            dset[:] = data
+        dset[:] = data
 
 
 def hdfgroup2dict(group, dictionary=None, lazy=False):
