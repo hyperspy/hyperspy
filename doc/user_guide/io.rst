@@ -1829,6 +1829,13 @@ Extra loading arguments
   the missing data are filled with zeros. If ``sum_frames=True``, this argument
   will be ignored to enforce consistent sum over the mapped area. 
   (default True).
+- ``read_em_image`` : for ``pts`` file only, If ``read_em_image=True``,
+  read SEM/STEM image from pts file if available. Spectrum Image and
+  SEM/STEM Image will be returned.
+  (default False)
+- ``frame_list`` : for ``pts`` file only, frames in frame_list will be loaded.
+  for example, ``frame_list=[1,3]`` means second and forth frame is selected.
+  (default: None (All frames))
 
 
 Example of loading data downsampled, and with energy range cropped with the
