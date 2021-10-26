@@ -374,10 +374,10 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
                 "units": "keV",
             },
         )
-                    
+
         if (not last_valid) and only_valid_data:
             _logger.info("The last frame (sweep) is incomplete because the acquisition stopped during this frame. The partially acquired frame is ignored. Use 'sum_frames=False, only_valid_data=False' to read all frames individually, including the last partially completed frame.")
-                
+
         hv = meas_data_header["MeasCond"]["AccKV"]
         if hv <= 30.0:
             mode = "SEM"
@@ -540,10 +540,10 @@ def pts_prescan(rawdata, width, height):   # pragma: no cover
     ----------
     rawdata : ndarray of uint16
     	spectrum image part of pts file
-    	
+
     width, height : int
     	image width and height
-    
+
 
     Returns
     -------
@@ -641,7 +641,7 @@ def readframe_dense(rawdata, hypermap, em_image, rebin_energy, channel_number,
                     raise ValueError("The range of the dtype is too small, "
                                      "use `SI_dtype` to set a dtype with "
                                      "higher range.")
-                
+
 def readcube_dense(rawdata, frame_ptr_list, frame_list, 
                    width, height, channel_number, width_norm, height_norm, rebin_energy,
                    sum_frames, SI_dtype):  # pragma: no cover
@@ -735,7 +735,7 @@ def readcube_lazy(rawdata, frame_ptr_list, frame_list, rebin_energy,
     	list of index pointers of frames. beggining of rawdata is 0.
     frame_list: list of uint
     	list of frame numbers to read. 0 <= n < number of frames in rawdata
-    
+
 
 
     This can not apply numba (this function uses variable dimenstion numpy.ndarray)
@@ -766,8 +766,8 @@ def readcube_lazy(rawdata, frame_ptr_list, frame_list, rebin_energy,
         data_shape = [1, width, height, channel_number]
     else:
         data_shape = [frame_count, width, height, channel_number]
-        
-    
+
+
     ptr = 0
     frame_count = 0
     for d in data:
@@ -780,8 +780,8 @@ def readcube_lazy(rawdata, frame_ptr_list, frame_list, rebin_energy,
 
     ar_s = sparse.COO(v[0:4], v[4], shape=data_shape)
     return da.from_array(ar_s), em_image
-    
-    
+
+
 
 def read_eds(filename, **kwargs):
     header = {}
