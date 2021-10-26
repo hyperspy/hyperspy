@@ -296,3 +296,44 @@ def test_number_of_frames():
         # Count number of valid frames
         data = hs.load(fname, sum_frames = False, only_valid_data = True)
         assert data.axes_manager["Frame"].size == valid
+
+def test_em_image_in_pts():
+    dir1 = TESTS_FILE_PATH
+    dir1p = dir1 / 'Sample' / '00_View000'
+    dir2 = TESTS_FILE_PATH / 'InvalidFrame'
+    dir2p = dir2 / 'Sample' / '00_Dummy-Data'
+    
+    # no SEM/STEM image
+    s = hs.load(dir1 / test_files[0],
+                read_em_image=False, only_valid_data=False)
+    assert len(s) == 7
+
+    s = hs.load(dir1 / test_files[0],
+                read_em_image=True, only_valid_data=False)
+    assert len(s) == 7
+
+    # with SEM/STEM image
+    s = hs.load(dir2 / test_files2[0],
+                read_em_image=False, only_valid_data=False)
+    assert len(s) == 22
+    s = hs.load(dir2 / test_files2[0],
+                read_em_image=True, only_valid_data=False)
+    assert len(s) == 25
+    assert s[8].metadata.General.title == "SEM/STEM Image"
+    assert s[8].data[38,15] == 87
+    assert s[8].data[38,16] == 0
+
+    # integrate SEM/STEM image along frame axis
+    s = hs.load(dir2p / test_files2[16], read_em_image=True,
+                only_valid_data=False, sum_frames=True,
+                frame_list=[0,0,0,1])
+    assert(s[1].data[0,0] == 87*4)
+    assert(s[1].data[63,63] == 87*3)
+    
+    s = hs.load(dir2p / test_files2[16], read_em_image=True,
+                only_valid_data=False, sum_frames=False)
+    s2 = hs.load(dir2p / test_files2[16], read_em_image=True,
+                   only_valid_data=False, sum_frames=True)
+    s1 = [s[0].data.sum(axis=0), s[1].data.sum(axis=0)]
+    assert np.array_equal(s1[0], s2[0].data)
+    assert np.array_equal(s1[1], s2[1].data)
