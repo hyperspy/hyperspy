@@ -193,6 +193,7 @@ def read_img(filename, scale=None, **kwargs):
 def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
              SI_dtype=np.uint8, cutoff_at_kV=None, downsample=1,
              only_valid_data=True, read_em_image=False, frame_list=None,
+             si_lazy=False, lazy=False,
              **kwargs):
     """
     rawdata : ndarray of uint16
@@ -219,9 +220,15 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         read SEM/STEM image from pts file if read_em_image == True
     frame_list : list of int, default None
     	list of frames to be read (None for all data)
-    lazy : bool, default False
-    	read spectrum image into dask.array if lazy == True
+    si_lazy : bool, default False
+    	read spectrum image into sparse array if si_lazy == True
     	SEM/STEM image is always read into dense array (np.ndarray)
+    lazy : bool, default False
+	set lazy flag not only spectrum image but also other data,
+	if lazy == True. This also set si_lazy = True.
+	Only the spectrum image data is read as a sparse array,
+	The others are read as a dense array even if the lazy flag is set.
+	
 
     Returns
     -------
@@ -229,6 +236,8 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
     	dictionary of spectrum image, axes and metadata
     	(list of dictionaries of spectrum image and SEM/STEM image if read_em_image == True)
     """
+    if lazy:
+        si_lazy = True
     fd = open(filename, "br")
     file_magic = np.fromfile(fd, "<I", 1)[0]
 
@@ -332,10 +341,10 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
             frame_list2.append(frame_idx)
         frame_list = np.array(frame_list2)
 
-        data, em_data = readcube_dense(rawdata, frame_ptr_list, frame_list,
-                                       width, height, channel_number,
-                                       width_norm, height_norm, rebin_energy, 
-                                       sum_frames, SI_dtype)
+        data, em_data = readcube(rawdata, frame_ptr_list, frame_list,
+                                 width, height, channel_number,
+                                 width_norm, height_norm, rebin_energy, 
+                                 sum_frames, si_lazy, SI_dtype)
 
         if sum_frames:
             axes_em = []
@@ -436,6 +445,9 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
             "axes": axes,
             "metadata": metadata,
             "original_metadata": header,
+            "attributes": {
+                "_lazy" : si_lazy
+            }
         }
         if read_em_image and has_em_image:
             dictionary = [dictionary,
@@ -642,9 +654,10 @@ def readframe_dense(rawdata, hypermap, em_image, rebin_energy, channel_number,
                                      "use `SI_dtype` to set a dtype with "
                                      "higher range.")
 
-def readcube_dense(rawdata, frame_ptr_list, frame_list, 
-                   width, height, channel_number, width_norm, height_norm, rebin_energy,
-                   sum_frames, SI_dtype):  # pragma: no cover
+def readcube(rawdata, frame_ptr_list, frame_list, 
+             width, height, channel_number,
+             width_norm, height_norm,
+             rebin_energy, sum_frames, si_lazy, SI_dtype):  # pragma: no cover
     """
     Read spectrum image and TEM/SEM image into dense np.ndarray.
     can not apply numba to this function (variable dimenstion numpy.ndarray)
@@ -665,8 +678,11 @@ def readcube_dense(rawdata, frame_ptr_list, frame_list,
     	Limit of channel to reduce data size
     sum_frames : bool
 	integrate along frame axis if sum_frames == True
+    si_lazy : bool
+	read spectrum image as dask.array if si_lazy == True
     SI_dtype : dtype
         data type for spectrum image.
+
     Returns
     -------
     hypermap : ndarray(frame, width, height, channel_number)
@@ -684,7 +700,11 @@ def readcube_dense(rawdata, frame_ptr_list, frame_list,
         if n_frames >= 16:
             EM_dtype = np.uint32
 
-    hypermap = np.zeros((n_frames, width, height, channel_number), dtype=SI_dtype)
+    if si_lazy:
+        data_list = []
+    else:
+        hypermap = np.zeros((n_frames, width, height, channel_number),
+                            dtype=SI_dtype)
     em_image = np.zeros((n_frames, width, height), dtype=EM_dtype)
     max_value =  np.iinfo(SI_dtype).max
 
@@ -692,14 +712,50 @@ def readcube_dense(rawdata, frame_ptr_list, frame_list,
     for frame_idx in frame_list:
         p_start = frame_ptr_list[frame_idx]
         p_end = frame_ptr_list[frame_idx + 1]
-        readframe_dense(rawdata[p_start:p_end],
+        if si_lazy:
+            data_list.append(
+                readframe_lazy(rawdata[p_start:p_end],
+                               em_image[frame_count],
+                               rebin_energy, channel_number,
+                               width_norm, height_norm, max_value))
+        else:
+            readframe_dense(rawdata[p_start:p_end],
                         hypermap[frame_count], em_image[frame_count],
                         rebin_energy, channel_number,
                         width_norm, height_norm, max_value)
         frame_count += frame_step
+    if not si_lazy:
+        if sum_frames:
+            return hypermap[0], em_image[0]
+        return hypermap, em_image
+
+    length = 0
+    for d in data_list:
+        length += len(d)
+    v = np.zeros(shape=(5, length), dtype=np.uint16)
+
     if sum_frames:
-        return hypermap[0], em_image[0]
-    return hypermap, em_image
+        data_shape = [1, width, height, channel_number]
+    else:
+        data_shape = [frame_count, width, height, channel_number]
+
+
+    ptr = 0
+    frame_count = 0
+    for d in data_list:
+        flen = len(d)
+        pv = v[:,ptr:ptr+flen]
+        pv[1:4, :] = np.array(d).transpose()
+        pv[0,:] = frame_count
+        pv[4,:] = 1
+        ptr += flen
+        if not sum_frames:
+            frame_count += 1
+    import sparse
+    import dask.array as da
+    ar_s = sparse.COO(v[0:4], v[4], shape=data_shape)
+    return da.from_array(ar_s, asarray=False), em_image
+
 
 
 @numba.njit(cache=True)
@@ -714,72 +770,14 @@ def readframe_lazy(rawdata, em_image, rebin_energy, channel_number,
         elif dtype == 0x9000:
             y = dval // height_norm
         elif dtype == 0xa000:
-            em_image[x, y] = dval
+            em_image[y, x] = dval
         elif dtype == 0xb000:    # energy axis
             z = dval // rebin_energy
             if z < channel_number:
-                data.append([x, y, z])
+                data.append([y, x, z])
     return data
 
 
-def readcube_lazy(rawdata, frame_ptr_list, frame_list, rebin_energy,
-                  width, height, channel_number, width_norm, height_norm, max_value,
-                  sum_frames, read_em_image):  # pragma: no cover
-    """
-    Decode spectrum image rawdata to dask.array
-
-    Parameters:
-    rawdata : ndarray of uint16
-    	image part of pts file. numpy, 
-    frame_ptr_list : list of uint
-    	list of index pointers of frames. beggining of rawdata is 0.
-    frame_list: list of uint
-    	list of frame numbers to read. 0 <= n < number of frames in rawdata
-
-
-
-    This can not apply numba (this function uses variable dimenstion numpy.ndarray)
-    """
-
-    if sum_frames:
-        em_image = np_zeros((1, 1, width, height), dtype = np.int32)
-        frame_step = 0
-    else:
-        em_image = np_zeros((len(frame_list), width, height), dtype = np.int16)
-        frame_step = 1
-    frame_count = 0
-    data = []
-    for frame_idx in frame_list:
-        p_start = frame_ptr_list[frame_idx]
-        p_end = frame_ptr_list[frame_idx + 1]
-        data = readframe_lazy(rawdata[p_start:p_end], frame_count, em_image[frame_count],
-                              rebin_energy, channel_number,
-                              width_norm, height_norm, max_value)
-        frame_count += frame_step
-
-    length = 0
-    for d in data:
-        length += len(d)
-    v = np.array((5, length), dtype=np.uint16)
-
-    if sum_frames:
-        data_shape = [1, width, height, channel_number]
-    else:
-        data_shape = [frame_count, width, height, channel_number]
-
-
-    ptr = 0
-    frame_count = 0
-    for d in data:
-        flen = len(d)
-        pv = v[:][ptr:flen]
-        pv[1:4] = np.array(d).transpose()
-        pv[0] = frame_count
-        pv[4] = 1
-        ptr += flen
-
-    ar_s = sparse.COO(v[0:4], v[4], shape=data_shape)
-    return da.from_array(ar_s), em_image
 
 
 

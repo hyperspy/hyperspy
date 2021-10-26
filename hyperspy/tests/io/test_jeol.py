@@ -115,7 +115,6 @@ def test_load_project():
 def test_load_image():
     # test load work area haadf image
     filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[1]
-    print(filename)
     s = hs.load(filename)
     assert s.data.dtype == np.uint8
     assert s.data.shape == (512, 512)
@@ -335,5 +334,17 @@ def test_em_image_in_pts():
     s2 = hs.load(dir2p / test_files2[16], read_em_image=True,
                    only_valid_data=False, sum_frames=True)
     s1 = [s[0].data.sum(axis=0), s[1].data.sum(axis=0)]
+    assert np.array_equal(s1[0], s2[0].data)
+    assert np.array_equal(s1[1], s2[1].data)
+
+def test_pts_lazy():
+    dir2 = TESTS_FILE_PATH / 'InvalidFrame'
+    dir2p = dir2 / 'Sample' / '00_Dummy-Data'
+    s = hs.load(dir2p / test_files2[16], read_em_image=True,
+                only_valid_data=False, sum_frames=False, si_lazy=True)
+    s2 = hs.load(dir2p / test_files2[16], read_em_image=True,
+                only_valid_data=False, sum_frames=True, si_lazy=False)
+    s1 = [s[0].data.sum(axis=0).compute().todense(),
+          s[1].data.sum(axis=0)]
     assert np.array_equal(s1[0], s2[0].data)
     assert np.array_equal(s1[1], s2[1].data)
