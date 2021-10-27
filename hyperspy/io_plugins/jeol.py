@@ -685,10 +685,10 @@ def readcube(rawdata, frame_ptr_list, frame_list,
 
     Returns
     -------
-    hypermap : ndarray(frame, width, height, channel_number)
-    	np.ndarray to store decoded spectrum image.
+    hypermap : ndarray(frame, width, height, channel_number) or dask.array
+    	np.ndarray(dask.array if si_lazy==True)  of  spectrum image.
     em_image : np.ndarray(width, height), dtype = np.uint16 or np.uint32
-    	np.ndarray to store decoded SEM/TEM image.
+    	np.ndarray of SEM/TEM image.
     """
 
     n_frames = len(frame_list)
