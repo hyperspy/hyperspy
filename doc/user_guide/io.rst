@@ -461,7 +461,7 @@ numbers as strings if any other strings are present:
 By default, a :py:class:`zarr.storage.NestedDirectoryStore` is used, but other
 zarr store can be used by providing a `zarr store <https://zarr.readthedocs.io/en/stable/api/storage.html>`_
 instead as argument to the :py:meth:`~.signal.BaseSignal.save` or the
-:py:func:`~.io.load` function. If a zspy file have been saved with a different
+:py:func:`~.io.load` function. If a zspy file has been saved with a different
 store, it would need to be loaded by passing a store of the same type:
 
 .. code-block:: python
@@ -471,7 +471,9 @@ store, it would need to be loaded by passing a store of the same type:
     >>> store = zarr.LMDBStore(filename)
     >>> signal.save(store) # saved to LMDB
 
-To load again this file
+To load this file again
+
+.. code-block:: python
 
     >>> import zarr
     >>> filename = 'test.zspy'
@@ -495,16 +497,16 @@ Extra saving arguments
 
         Lazy operations are often i-o bound, reading and writing the data creates a bottle neck in processes
         due to the slow read write speed of many hard disks. In these cases, compressing your data is often
-        beneficial to the speed of some operation. Compression speeds up the process as there is less to
+        beneficial to the speed of some operations. Compression speeds up the process as there is less to
         read/write with the trade off of slightly more computational work on the CPU.
 
 
-- ``chunks``: tuple of interger or None. Define the chunking used for saving
+- ``chunks``: tuple of integer or None. Define the chunking used for saving
   the dataset. If None, calculates chunks for the signal, with preferably at
   least one chunk per signal space.
 - ``close_file``: only relevant for zarr store (``ZipStore``, ``DBMStore``)
-  requiring store to flush data to disk. if ``False``, doesn't close the file
-  after writing. The file  should not be closed if the data need to be accessed
+  requiring store to flush data to disk. If ``False``, doesn't close the file
+  after writing. The file should not be closed if the data need to be accessed
   lazily after saving.
   Default is ``True``.
 - ``write_dataset``: if ``False``, doesn't write the dataset when writing the file.
@@ -1415,7 +1417,7 @@ Nexus metadata and data are stored in Hierarchical Data Format Files (HDF5) with
 a .nxs extension although standards HDF5 extensions are sometimes used.
 Files must use the ``.nxs`` file extension in order to use this io plugin.
 Using the ``.nxs`` extension will default to the Nexus loader. If your file has
-a HDF5 extension, you can also explicitly set the Nexus file reader:
+an HDF5 extension, you can also explicitly set the Nexus file reader:
 
 .. code-block:: python
 

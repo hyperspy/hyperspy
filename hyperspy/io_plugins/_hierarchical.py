@@ -31,11 +31,11 @@ def get_signal_chunks(shape, dtype, signal_axes=None, target_size=1e6):
     Parameters
     ----------
     shape : tuple
-        the shape of the dataset to be sored / chunked
+        The shape of the dataset to be sorted / chunked.
     dtype : {dtype, string}
-        the numpy dtype of the data
+        The numpy dtype of the data.
     signal_axes: {None, iterable of ints}
-        the axes defining "signal space" of the dataset. If None, the default
+        The axes defining "signal space" of the dataset. If None, the default
         h5py chunking is performed.
     target_size: int
         The target number of bytes for one chunk
@@ -183,7 +183,7 @@ class HierarchicalReader:
 
     def group2signaldict(self, group, lazy=False):
         """
-        Read a h5py/zarr group and returns a signal dictionary
+        Reads a h5py/zarr group and returns a signal dictionary.
 
         Parameters
         ----------
