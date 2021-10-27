@@ -697,7 +697,7 @@ def readcube(rawdata, frame_ptr_list, frame_list,
     if sum_frames:
         n_frames = 1
         frame_step = 0
-        if n_frames >= 16:
+        if n_frames > 16:
             EM_dtype = np.uint32
 
     if si_lazy:
@@ -735,7 +735,7 @@ def readcube(rawdata, frame_ptr_list, frame_list,
     v = np.zeros(shape=(5, length), dtype=np.uint16)
 
     if sum_frames:
-        data_shape = [1, width, height, channel_number]
+        data_shape = [width, height, channel_number]
     else:
         data_shape = [frame_count, width, height, channel_number]
 
@@ -749,11 +749,13 @@ def readcube(rawdata, frame_ptr_list, frame_list,
         pv[0,:] = frame_count
         pv[4,:] = 1
         ptr += flen
-        if not sum_frames:
-            frame_count += 1
+        frame_count += 1
     import sparse
     import dask.array as da
-    ar_s = sparse.COO(v[0:4], v[4], shape=data_shape)
+    if sum_frames:
+        ar_s = sparse.COO(v[1:4], v[4], shape=data_shape)
+    else:
+        ar_s = sparse.COO(v[0:4], v[4], shape=data_shape)
     return da.from_array(ar_s, asarray=False), em_image
 
 
