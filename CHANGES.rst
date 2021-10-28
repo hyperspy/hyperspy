@@ -8,8 +8,34 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 
 .. towncrier release notes start
 
-Hyperspy 1.6.4 (2021-07-08)
-===========================
+v1.6.5 (2021-10-28)
+===================
+
+Bug Fixes
+---------
+
+- Suspend plotting during :py:meth:`~.models.eelsmodel.EELSModel.smart_fit` call (`#2796 <https://github.com/hyperspy/hyperspy/issues/2796>`_)
+- make :py:meth:`~.signal.BaseSignal.add_marker` also check if the plot is not active before plotting signal (`#2799 <https://github.com/hyperspy/hyperspy/issues/2799>`_)
+- Fix irresponsive ROI added to a signal plot with a right hand side axis (`#2809 <https://github.com/hyperspy/hyperspy/issues/2809>`_)
+- Fix :py:func:`~.drawing.utils.plot_histograms` drawstyle following matplotlib API change (`#2810 <https://github.com/hyperspy/hyperspy/issues/2810>`_)
+- Fix incorrect :py:meth:`~.signal.BaseSignal.map` output size of lazy signal when input and output axes do not match (`#2837 <https://github.com/hyperspy/hyperspy/issues/2837>`_)
+- Add support for latest h5py release (3.5) (`#2843 <https://github.com/hyperspy/hyperspy/issues/2843>`_)
+
+
+Deprecations
+------------
+
+- Rename ``line_style`` to ``linestyle`` in :py:func:`~.drawing.utils.plot_spectra` to match matplotlib argument name (`#2810 <https://github.com/hyperspy/hyperspy/issues/2810>`_)
+
+
+Enhancements
+------------
+
+- :py:meth:`~.roi.BaseInteractiveROI.add_widget` can now take a string or integer instead of tuple of string or integer (`#2809 <https://github.com/hyperspy/hyperspy/issues/2809>`_)
+
+
+v1.6.4 (2021-07-08)
+===================
 
 Bug Fixes
 ---------

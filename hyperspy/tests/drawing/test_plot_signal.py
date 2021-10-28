@@ -314,9 +314,3 @@ def test_plot_autoscale(sdim):
 
     s.change_dtype(bool)
     s.plot()
-
-
-def test_plot_signal_scalar():
-    s = hs.signals.BaseSignal([1.0])
-    s.plot()
-    assert s._plot is None
