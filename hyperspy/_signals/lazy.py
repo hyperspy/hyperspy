@@ -177,7 +177,7 @@ class LazySignal(BaseSignal):
         try:
             self._get_file_handle().close()
         except AttributeError:
-            _logger.warning("Failed to close lazy Signal file")
+            _logger.warning("Failed to close lazy signal file")
 
     def _get_file_handle(self, warn=True):
         """Return file handle when possible; currently only hdf5 file are
@@ -195,7 +195,7 @@ class LazySignal(BaseSignal):
                 if warn:
                     _logger.warning("Failed to retrieve file handle, either "
                                     "the file is already closed or it is not "
-                                    "a hdf5 file.")
+                                    "an hdf5 file.")
 
     def _get_dask_chunks(self, axis=None, dtype=None):
         """Returns dask chunks.

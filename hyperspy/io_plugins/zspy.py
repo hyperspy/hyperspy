@@ -212,7 +212,7 @@ def file_reader(filename, lazy=False, **kwds):
     except BaseException:
         _logger.error(
             "The file can't be read. It may be possible that the zspy file is "
-            "saved with a different store than a zarr Directory store. Try "
+            "saved with a different store than a zarr directory store. Try "
             "passing a different zarr store instead of the file name."
             )
         raise
