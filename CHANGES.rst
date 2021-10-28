@@ -8,7 +8,7 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 
 .. towncrier release notes start
 
-v1.6.5 (2021-10-24)
+v1.6.5 (2021-10-28)
 ===================
 
 Bug Fixes
@@ -18,7 +18,7 @@ Bug Fixes
 - make :py:meth:`~.signal.BaseSignal.add_marker` also check if the plot is not active before plotting signal (`#2799 <https://github.com/hyperspy/hyperspy/issues/2799>`_)
 - Fix irresponsive ROI added to a signal plot with a right hand side axis (`#2809 <https://github.com/hyperspy/hyperspy/issues/2809>`_)
 - Fix :py:func:`~.drawing.utils.plot_histograms` drawstyle following matplotlib API change (`#2810 <https://github.com/hyperspy/hyperspy/issues/2810>`_)
-- Fix :py:func:`hyperspy._signals.lazy.LazySignal._map_iterate` output incorrect signal size when input and output axes do not match (`#2837 <https://github.com/hyperspy/hyperspy/issues/2837>`_)
+- Fix incorrect :py:meth:`~.signal.BaseSignal.map` output size of lazy signal when input and output axes do not match (`#2837 <https://github.com/hyperspy/hyperspy/issues/2837>`_)
 - Add support for latest h5py release (3.5) (`#2843 <https://github.com/hyperspy/hyperspy/issues/2843>`_)
 
 
