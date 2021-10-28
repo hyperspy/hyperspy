@@ -31,7 +31,7 @@ def get_signal_chunks(shape, dtype, signal_axes=None, target_size=1e6):
     Parameters
     ----------
     shape : tuple
-        The shape of the dataset to be sorted / chunked.
+        The shape of the dataset to be stored / chunked.
     dtype : {dtype, string}
         The numpy dtype of the data.
     signal_axes: {None, iterable of ints}
