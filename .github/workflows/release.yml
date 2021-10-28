@@ -143,5 +143,5 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
           twine upload dist/*-manylinux*.whl --verbose 
-          twine upload sdist/*.tar.gz --verbose 
+          twine upload dist/*.tar.gz --verbose 
 
