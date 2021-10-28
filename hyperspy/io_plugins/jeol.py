@@ -220,9 +220,10 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         read SEM/STEM image from pts file if read_em_image == True
     frame_list : list of int, default None
     	list of frames to be read (None for all data)
-    si_lazy : bool, default False
+    si_lazy : bool or tuple of chunksize, default False
     	read spectrum image into sparse array if si_lazy == True
     	SEM/STEM image is always read into dense array (np.ndarray)
+    	if tuple is specified, dask.array is generated using chunksize=si_lazy
     lazy : bool, default False
 	set lazy flag not only spectrum image but also other data,
 	if lazy == True. This also set si_lazy = True.
@@ -236,7 +237,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
     	dictionary of spectrum image, axes and metadata
     	(list of dictionaries of spectrum image and SEM/STEM image if read_em_image == True)
     """
-    if lazy:
+    if lazy and not si_lazy:
         si_lazy = True
     fd = open(filename, "br")
     file_magic = np.fromfile(fd, "<I", 1)[0]
@@ -446,7 +447,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
             "metadata": metadata,
             "original_metadata": header,
             "attributes": {
-                "_lazy" : si_lazy
+                "_lazy" : bool(si_lazy)
             }
         }
         if read_em_image and has_em_image:
@@ -678,8 +679,9 @@ def readcube(rawdata, frame_ptr_list, frame_list,
     	Limit of channel to reduce data size
     sum_frames : bool
 	integrate along frame axis if sum_frames == True
-    si_lazy : bool
+    si_lazy : bool or tuple of chunk size
 	read spectrum image as dask.array if si_lazy == True
+    	if tuple is specified, dask.array is generated using chunksize=si_lazy
     SI_dtype : dtype
         data type for spectrum image.
 
@@ -756,6 +758,11 @@ def readcube(rawdata, frame_ptr_list, frame_list,
         ar_s = sparse.COO(v[1:4], v[4], shape=data_shape)
     else:
         ar_s = sparse.COO(v[0:4], v[4], shape=data_shape)
+    if (isinstance(si_lazy, int) and si_lazy != True and si_lazy > 0) or isinstance(si_lazy, tuple) or si_lazy == "auto":
+        print("Hoge")
+        s = da.from_array(ar_s, asarray=False, chunks=si_lazy), em_image
+        print("Fuga")
+        return s
     return da.from_array(ar_s, asarray=False), em_image
 
 
