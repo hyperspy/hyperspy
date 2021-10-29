@@ -105,12 +105,14 @@ default_version = Version(version)
 
 
 class HyperspyReader(HierarchicalReader):
+
+    _file_type = format_name.lower()
+
     def __init__(self, file):
         super().__init__(file)
         self.Dataset = h5py.Dataset
         self.Group = h5py.Group
         self.unicode_kwds = {"dtype": h5py.special_dtype(vlen=str)}
-        self._file_type = format_name.lower()
 
 
 class HyperspyWriter(HierarchicalWriter):
@@ -172,19 +174,12 @@ def file_reader(
         pass
     mode = kwds.pop('mode', 'r')
     f = h5py.File(filename, mode=mode, **kwds)
-    # Getting the format version here also checks if it is a valid HSpy
-    # hdf5 file, so the following two lines must not be deleted or moved
-    # elsewhere.
+
     reader = HyperspyReader(f)
-    if reader.version > Version(version):
-        warnings.warn(
-            "This file was written using a newer version of the "
-            "HyperSpy hdf5 file format. I will attempt to load it, but, "
-            "if I fail, it is likely that I will be more successful at "
-            "this and other tasks if you upgrade me.")
     exp_dict_list = reader.read(lazy=lazy)
     if not lazy:
         f.close()
+
     return exp_dict_list
 
 
@@ -233,6 +228,8 @@ def file_writer(filename, signal, close_file=True, **kwds):
 
     if f is None:
         write_dataset = kwds.get('write_dataset', True)
+        if not isinstance(write_dataset, bool):
+            raise ValueError("`write_dataset` argument must a boolean.")
         # with "write_dataset=False", we need mode='a', otherwise the dataset
         # will be flushed with using 'w' mode
         mode = kwds.get('mode', 'w' if write_dataset else 'a')

@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import logging
 import os
 import pytest
 
@@ -43,17 +44,43 @@ class TestZspy:
         signal.save(store)
 
         if store_class is zarr.ZipStore:
-            os.path.isfile(filename)
+            assert os.path.isfile(filename)
         else:
-            os.path.isdir(filename)
+            assert os.path.isdir(filename)
 
         store2 = store_class(path=filename)
         signal2 = load(store2)
 
         np.testing.assert_array_equal(signal2.data, signal.data)
 
+    def test_save_ZipStore_close_file(self, signal, tmp_path):
+        filename = tmp_path / 'testmodels.zspy'
+        store = zarr.ZipStore(path=filename)
+        signal.save(store, close_file=False)
+
+        assert os.path.isfile(filename)
+
+        store2 = zarr.ZipStore(path=filename)
+        s2 = load(store2)
+
+        np.testing.assert_array_equal(s2.data, signal.data)
+
+    def test_save_wrong_store(self, signal, tmp_path, caplog):
+        filename = tmp_path / 'testmodels.zspy'
+        store = zarr.N5Store(path=filename)
+        signal.save(store)
+
+        store2 = zarr.N5Store(path=filename)
+        s2 = load(store2)
+        np.testing.assert_array_equal(s2.data, signal.data)
+
+        store2 = zarr.NestedDirectoryStore(path=filename)
+        with pytest.raises(BaseException):
+            with caplog.at_level(logging.ERROR):
+                _ = load(store2)
+
     @pytest.mark.parametrize("overwrite",[None, True, False])
-    def test_overwrite(self,signal, overwrite, tmp_path):
+    def test_overwrite(self, signal, overwrite, tmp_path):
         filename = tmp_path / 'testmodels.zspy'
         signal.save(filename=filename)
         signal2 = signal*2
@@ -84,3 +111,15 @@ class TestZspy:
                overwrite=True,
                compressor=compressor)
         load(tmp_path / 'test_compression.zspy')
+
+
+def test_non_valid_zspy(tmp_path, caplog):
+    filename = tmp_path / 'testfile.zspy'
+    data = np.arange(10)
+
+    f = zarr.group(filename)
+    f.create_dataset('dataset', data=data)
+
+    with pytest.raises(IOError):
+        with caplog.at_level(logging.ERROR):
+            _ = load(filename)

@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from pathlib import Path
 import sys
 import time
@@ -392,6 +393,18 @@ def test_rgba16():
         s = load(my_path / "hdf5_files" / "test_rgba16.hdf5")
     data = np.load(my_path / "npy_files" / "test_rgba16.npy")
     assert (s.data == data).all()
+
+
+def test_non_valid_hspy(tmp_path, caplog):
+    filename = tmp_path / 'testfile.hspy'
+    data = np.arange(10)
+
+    with h5py.File(filename, mode='w') as f:
+        f.create_dataset('dataset', data=data)
+
+    with pytest.raises(IOError):
+        with caplog.at_level(logging.ERROR):
+            _ = load(filename)
 
 
 @zspy_marker
@@ -911,3 +924,26 @@ def test_get_signal_chunks(target_size):
                                signal_axes=(2, 3),
                                target_size=target_size)
     assert (np.prod(chunks)*8 < target_size)
+
+
+@zspy_marker
+def test_error_saving(tmp_path, file):
+    filename = tmp_path / file
+    s = Signal1D(np.arange(10))
+
+    with pytest.raises(ValueError):
+        s.save(filename, write_dataset='unsupported_type')
+        assert not s.metadata.Signal.has_item('record_by')
+
+
+def test_more_recent_version_warning(tmp_path):
+    filename = tmp_path / 'test.hspy'
+    s = Signal1D(np.arange(10))
+    s.save(filename)
+
+    with h5py.File(filename, mode='a') as f:
+        f.attrs["file_format_version"] = '99999999'
+
+    with pytest.warns(UserWarning):
+        s2 = load(filename)
+    np.testing.assert_allclose(s.data, s2.data)

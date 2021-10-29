@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import warnings
 import logging
-from packaging.version import Version
 from collections.abc import MutableMapping
 
 import dask.array as da
@@ -74,11 +72,13 @@ writes = True
 
 
 class ZspyReader(HierarchicalReader):
+
+    _file_type = format_name.lower()
+
     def __init__(self, file):
         super().__init__(file)
         self.Dataset = zarr.Array
         self.Group = zarr.Group
-        self._file_type = format_name.lower()
 
 
 class ZspyWriter(HierarchicalWriter):
@@ -155,6 +155,9 @@ def file_writer(filename, signal, close_file=True, **kwds):
         store = filename
     else:
         store = zarr.storage.NestedDirectoryStore(filename,)
+    write_dataset = kwds.get('write_dataset', True)
+    if not isinstance(write_dataset, bool):
+        raise ValueError("`write_dataset` argument must a boolean.")
     mode = 'w' if kwds.get('write_dataset', True) else 'a'
 
     _logger.debug(f'File mode: {mode}')
@@ -216,12 +219,7 @@ def file_reader(filename, lazy=False, **kwds):
             "passing a different zarr store instead of the file name."
             )
         raise
+
     reader = ZspyReader(f)
-    if reader.version > Version(version):
-        warnings.warn(
-            "This file was written using a newer version of the "
-            "HyperSpy zspy file format. I will attempt to load it, but, "
-            "if I fail, it is likely that I will be more successful at "
-            "this and other tasks if you upgrade me.")
 
     return reader.read(lazy=lazy)

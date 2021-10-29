@@ -2,6 +2,7 @@ import ast
 import datetime
 import logging
 from packaging.version import Version
+import warnings
 
 import dask.array as da
 import h5py
@@ -82,11 +83,19 @@ class HierarchicalReader:
             A file to be read.
         """
         self.file = file
+        # Getting version also check that this is a hyperspy format
         self.version = self.get_format_version()
         self.Dataset = None
         self.Group = None
         self.unicode_kwds = None
         self.ragged_kwds = None
+
+        if self.version > Version(version):
+            warnings.warn(
+                "This file was written using a newer version of the "
+                f"HyperSpy {self._file_type} file format. I will attempt to "
+                "load it, but, if I fail, it is likely that I will be more "
+                "successful at this and other tasks if you upgrade me.")
 
     def get_format_version(self):
         """Return the format version."""
@@ -104,6 +113,7 @@ class HierarchicalReader:
             version = "2.0"
         else:
             raise IOError(not_valid_format)
+
         return Version(version)
 
     def read(self, lazy):
@@ -543,12 +553,12 @@ class HierarchicalWriter:
         self.kwds = kwds
 
     @staticmethod
-    def _get_object_dset(*args, **kwargs):
+    def _get_object_dset(*args, **kwargs):  # pragma: no cover
         raise NotImplementedError(
             "This method must be implemented by subclasses.")
 
     @staticmethod
-    def _store_data(*arg):
+    def _store_data(*arg):  # pragma: no cover
         raise NotImplementedError(
             "This method must be implemented by subclasses.")
 
