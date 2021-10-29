@@ -20,9 +20,11 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
 
+from hyperspy.decorators import lazifyTestClass
 from hyperspy import roi, signals
 
 
+@lazifyTestClass
 class Test1D:
 
     def setup_method(self, method):
@@ -142,6 +144,7 @@ class Test1D:
         assert_array_equal(s.isig['rel0.0':'rel1.0'].data, s.data[:-1])
 
 
+@lazifyTestClass
 class Test2D:
 
     def setup_method(self, method):
@@ -161,6 +164,7 @@ class Test2D:
         assert s.data.shape == (3,)
 
 
+@lazifyTestClass
 class Test3D_SignalDim0:
 
     def setup_method(self, method):
@@ -188,6 +192,21 @@ class Test3D_SignalDim0:
         np.testing.assert_array_equal(s.data, s.inav[:].data)
 
 
+@pytest.mark.parametrize('slice_', ((2, 1), (1,)))
+def test_ragged_slicing(slice_):
+    array_ragged = np.empty((2, 3), dtype=object)
+    for iy, ix in np.ndindex(array_ragged.shape):
+        array_ragged[iy, ix] = np.random.randint(
+            0, 20, size=np.random.randint(2, 10)
+            )
+
+    s = signals.BaseSignal(array_ragged, ragged=True)
+    s_lazy = s.as_lazy()
+    np.testing.assert_allclose(s.inav[slice_].data[0],
+                               s_lazy.inav[slice_].data[0])
+
+
+@lazifyTestClass
 class Test3D_Navigate_0_and_1:
 
     def setup_method(self, method):
@@ -253,6 +272,7 @@ class Test3D_Navigate_0_and_1:
         assert s.data.shape == self.data[:, 0:1, :].shape
 
 
+@lazifyTestClass
 class Test3D_Navigate_1:
 
     def setup_method(self, method):
@@ -285,6 +305,7 @@ class Test3D_Navigate_1:
         assert isinstance(im.isig[0], signals.Signal1D)
 
 
+@lazifyTestClass
 class TestFloatArguments:
 
     def setup_method(self, method):
@@ -335,6 +356,7 @@ class TestFloatArguments:
                 self.signal.axes_manager._axes[0].scale * -2)
 
 
+@lazifyTestClass
 class TestEllipsis:
 
     def setup_method(self, method):
@@ -358,6 +380,7 @@ class TestEllipsis:
         np.testing.assert_array_equal(s.data, self.data[:, :, 0, ...])
 
 
+@lazifyTestClass
 class TestROISlicing:
 
     def setup_method(self, method):

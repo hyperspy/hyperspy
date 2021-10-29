@@ -18,7 +18,7 @@
 
 from operator import attrgetter
 import numpy as np
-from dask.array import Array as dArray
+import dask.array as da
 
 from hyperspy.misc.utils import attrsetter
 from hyperspy.misc.export_dictionary import parse_flag_string
@@ -55,7 +55,7 @@ def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
         sl = tuple(array_slices[:nav_dims])
         if isinstance(target, np.ndarray):
             return np.atleast_1d(target[sl])
-        if isinstance(target, dArray):
+        if isinstance(target, da.Array):
             return target[sl]
         raise ValueError(
             'tried to slice with navigation dimensions, but was neither a '
@@ -66,7 +66,7 @@ def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
         sl = tuple(array_slices[-sig_dims:])
         if isinstance(target, np.ndarray):
             return np.atleast_1d(target[sl])
-        if isinstance(target, dArray):
+        if isinstance(target, da.Array):
             return target[sl]
         raise ValueError(
             'tried to slice with navigation dimensions, but was neither a '

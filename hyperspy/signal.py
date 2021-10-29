@@ -2406,13 +2406,9 @@ class BaseSignal(FancySlicing,
 
     @data.setter
     def data(self, value):
-        from dask.array import Array
-        if isinstance(value, Array):
-            if not value.ndim:
-                value = value.reshape((1,))
-            self._data = value
-        else:
-            self._data = np.atleast_1d(np.asanyarray(value))
+        if not isinstance(value, da.Array):
+            value = np.asanyarray(value)
+        self._data = np.atleast_1d(value)
 
     @property
     def ragged(self):
@@ -6073,7 +6069,7 @@ class BaseSignal(FancySlicing,
 
         if self.axes_manager.ragged:
             raise RuntimeError("Signal with ragged dimension can't be "
-                               "tranposed.")
+                               "transposed.")
 
         am = self.axes_manager
         ax_list = am._axes
