@@ -35,10 +35,10 @@ def get_signal_chunks(shape, dtype, signal_axes=None, target_size=1e6):
         The shape of the dataset to be stored / chunked.
     dtype : {dtype, string}
         The numpy dtype of the data.
-    signal_axes: {None, iterable of ints}
+    signal_axes : {None, iterable of ints}
         The axes defining "signal space" of the dataset. If None, the default
         h5py chunking is performed.
-    target_size: int
+    target_size : int
         The target number of bytes for one chunk
     """
     typesize = np.dtype(dtype).itemsize
@@ -75,7 +75,7 @@ class HierarchicalReader:
 
     def __init__(self, file):
         """
-        Initalizes a general reader for hierarchical signals.
+        Initializes a general reader for hierarchical signals.
 
         Parameters
         ----------
@@ -524,8 +524,8 @@ class HierarchicalReader:
 
 class HierarchicalWriter:
     """
-    An object used to simplify and orgainize the process for writing a
-    Hierachical signal, such as hspy/zspy format.
+    An object used to simplify and organize the process for writing a
+    Hierarchical signal, such as hspy/zspy format.
     """
     target_size = 1e6
 

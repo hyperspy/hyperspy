@@ -421,7 +421,7 @@ Extra saving arguments
         for more details. Therefore, if you choose any other compression filter for
         saving a file, be aware that it may not be possible to load it in some platforms.
 
-- ``chunks``: tuple of interger or None. Define the chunking used for saving
+- ``chunks``: tuple of integer or None. Define the chunking used for saving
   the dataset. If None, calculates chunks for the signal, with preferably at
   least one chunk per signal space.
 - ``close_file``: if ``False``, doesn't close the file after writing. The file
@@ -484,7 +484,7 @@ Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
 - ``compressor``: `Numcodecs codec <https://numcodecs.readthedocs.io/en/stable/index.html?>`_,
-  a compresssor can be passed to the save function to compress the data efficiently. The default
+  a compressor can be passed to the save function to compress the data efficiently. The default
   is to call a Blosc compressor object.
 
     .. code-block:: python
@@ -504,7 +504,7 @@ Extra saving arguments
 - ``chunks``: tuple of integer or None. Define the chunking used for saving
   the dataset. If None, calculates chunks for the signal, with preferably at
   least one chunk per signal space.
-- ``close_file``: only relevant for zarr store (``ZipStore``, ``DBMStore``)
+- ``close_file``: only relevant for some zarr store (``ZipStore``, ``DBMStore``)
   requiring store to flush data to disk. If ``False``, doesn't close the file
   after writing. The file should not be closed if the data need to be accessed
   lazily after saving.

@@ -117,7 +117,7 @@ class HyperspyReader(HierarchicalReader):
 
 class HyperspyWriter(HierarchicalWriter):
     """
-    An object used to simplify and orgainize the process for
+    An object used to simplify and organize the process for
     writing a hyperspy signal.  (.hspy format)
     """
     target_size = 1e6
@@ -154,10 +154,7 @@ class HyperspyWriter(HierarchicalWriter):
         return dset
 
 
-def file_reader(
-                filename,
-                lazy=False,
-                **kwds):
+def file_reader(filename, lazy=False, **kwds):
     """Read data from hdf5 files saved with the hyperspy hdf5 format specification
 
     Parameters

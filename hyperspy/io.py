@@ -288,17 +288,6 @@ def load(filenames=None,
         acquisition stopped before the end: if True, load only the acquired
         data. If False, fill empty data with zeros. Default is False and this
         default value will change to True in version 2.0.
-    chunks : tuple of integer or None
-        Only for hspy files. Define the chunking used for saving the dataset.
-        If None, calculates chunks for the signal, with preferably at least
-        one chunk per signal space.
-    close_file : bool, optional
-        Only for hspy files. Close the file after writing, default is True.
-    write_dataset : bool, optional
-        Only for hspy files. If True, write the dataset, otherwise, don't
-        write it. Useful to save attributes without having to write the whole
-        dataset. Default is True.
-
 
     Returns
     -------
