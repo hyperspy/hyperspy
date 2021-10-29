@@ -203,7 +203,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
     	default is None, calc from pts internal data
     rebin_energy : int
     	Binning parameter along energy axis. Must be 2^n.
-    sum_frames : bool
+    sum_frames : bool or ndarray of image shifts 
 	integrate along frame axis if sum_frames == True
     SI_dtype : dtype
         data type for spectrum image. default is uint8
@@ -218,8 +218,10 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         (usually interrupting mesurement makes incomplete frame)
     read_em_image : bool, default False
         read SEM/STEM image from pts file if read_em_image == True
-    frame_list : list of int, default None
-    	list of frames to be read (None for all data)
+    frame_list : list of int [fr0, fr1, ...] or array [[fr0, dx0,dy0,dz0],...], default None
+    	list of frame numbers to be read (None for all data)
+    	if dx, dy, dz are specified, each images are shifted. dx, dy, dz are integers, in unit of pixel.
+	This is useful for express drift correction. (not suitable for a detailed analysis)
     si_lazy : bool or tuple of chunksize, default False
     	read spectrum image into sparse array if si_lazy == True
     	SEM/STEM image is always read into dense array (np.ndarray)
@@ -323,7 +325,6 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         # pixel time in milliseconds
         pixel_time = meas_data_header["Doc"]["DwellTime(msec)"]
 
-        data_shape = [height, width, channel_number]
         # Sweep value is not reliable
         # sweep = meas_data_header["Doc"]["Sweep"]
         frame_ptr_list, last_valid, has_em_image = pts_prescan(rawdata, width, height)
@@ -335,11 +336,24 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
             frame_list = range(sweep)
         frame_list = list(frame_list)
         frame_list2 = []
-        for frame_idx in frame_list:
+        frame_num = 0
+        for frame in frame_list:
+            if isinstance(frame, int):
+                frame_idx = frame
+                frame = [frame_idx, 0,0,0]
+            elif len(frame) == 2:
+                frame_idx = frame_num
+                frame=[frame_idx, frame[0], frame[1], 0]
+            elif len(frame) == 3:
+                frame=[frame[0], frame[1], frame[2], 0]
+                frame_idx = frame[0]
+            else:
+                frame_idx = frame[0]
             if frame_idx < 0 or frame_idx >= sweep:
                 _logger.info(f"Ignoreing frame {frame_idx} : Selected frame is not found in pts data.")
                 continue
-            frame_list2.append(frame_idx)
+            frame_list2.append(frame)
+            frame_num += 1
         frame_list = np.array(frame_list2)
 
         data, em_data = readcube(rawdata, frame_ptr_list, frame_list,
@@ -353,7 +367,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
             axes_em = [{
                 "index_in_array": 0,
                 "name": "Frame",
-                "size": frame_list.size,
+                "size": frame_list.shape[0],
                 "offset": 0,
                 "scale": pixel_time*height*width/1E3,
                 "units": 's',
@@ -608,8 +622,8 @@ def pts_prescan(rawdata, width, height):   # pragma: no cover
 
 
 @numba.njit(cache=True)
-def readframe_dense(rawdata, hypermap, em_image, rebin_energy, channel_number,
-              width_norm, height_norm, max_value): # pragma: nocover
+def readframe_dense(rawdata, hypermap, em_image, rebin_energy, width, height, channel_number,
+                    width_norm, height_norm, max_value, fr_info): # pragma: nocover
     """
     Read one frame from pts file. Used in a inner loop of readcube function.
     This function always read SEM/STEM image even if read_em_image == False
@@ -630,6 +644,8 @@ def readframe_dense(rawdata, hypermap, em_image, rebin_energy, channel_number,
     	scanning step
     max_value : int
     	limit of the data type used in hypermap array
+    fr_info : ndarray of int
+    	information of frame number and frame shift. [frame_number, dx, dy, dz]
 
     Returns
     -------
@@ -637,18 +653,24 @@ def readframe_dense(rawdata, hypermap, em_image, rebin_energy, channel_number,
 
     hypermap and em_image array will be modified
     """
+
+    fnum, dx, dy, dz = fr_info
     for value in rawdata:
         dtype = value & 0xf000
         dval = value & 0xfff
         if dtype == 0x8000:
-            x = dval // width_norm
+            x = dval // width_norm + dx
+            if x >= width:
+                x = -1
         elif dtype == 0x9000:
-            y = dval // height_norm
-        elif dtype == 0xa000:
+            y = dval // height_norm + dy
+            if y >= height:
+                y = -1
+        elif dtype == 0xa000 and x >= 0 and y >= 0 :
             em_image[y, x] += dval
         elif dtype == 0xb000:
-            z = dval // rebin_energy
-            if z < channel_number:
+            z = dval // rebin_energy + dz
+            if z < channel_number and x >= 0 and y >= 0 and z >= 0:
                 hypermap[y, x, z] += 1
                 if hypermap[y, x, z] == max_value:
                     raise ValueError("The range of the dtype is too small, "
@@ -697,11 +719,10 @@ def readcube(rawdata, frame_ptr_list, frame_list,
     EM_dtype = np.uint16
     frame_step = 1
     if sum_frames:
-        n_frames = 1
         frame_step = 0
         if n_frames > 16:
             EM_dtype = np.uint32
-
+        n_frames = 1
     if si_lazy:
         data_list = []
     else:
@@ -711,20 +732,22 @@ def readcube(rawdata, frame_ptr_list, frame_list,
     max_value =  np.iinfo(SI_dtype).max
 
     frame_count = 0
-    for frame_idx in frame_list:
+    for frame in frame_list:
+        frame_idx, dx, dy, dz = frame
         p_start = frame_ptr_list[frame_idx]
         p_end = frame_ptr_list[frame_idx + 1]
         if si_lazy:
             data_list.append(
                 readframe_lazy(rawdata[p_start:p_end],
                                em_image[frame_count],
-                               rebin_energy, channel_number,
-                               width_norm, height_norm, max_value))
+                               rebin_energy, width, height, channel_number,
+                               width_norm, height_norm, max_value,
+                               frame))
         else:
             readframe_dense(rawdata[p_start:p_end],
-                        hypermap[frame_count], em_image[frame_count],
-                        rebin_energy, channel_number,
-                        width_norm, height_norm, max_value)
+                            hypermap[frame_count], em_image[frame_count],
+                            rebin_energy, width, height, channel_number,
+                            width_norm, height_norm, max_value, frame)
         frame_count += frame_step
     if not si_lazy:
         if sum_frames:
@@ -735,12 +758,6 @@ def readcube(rawdata, frame_ptr_list, frame_list,
     for d in data_list:
         length += len(d)
     v = np.zeros(shape=(5, length), dtype=np.uint16)
-
-    if sum_frames:
-        data_shape = [width, height, channel_number]
-    else:
-        data_shape = [frame_count, width, height, channel_number]
-
 
     ptr = 0
     frame_count = 0
@@ -755,34 +772,39 @@ def readcube(rawdata, frame_ptr_list, frame_list,
     import sparse
     import dask.array as da
     if sum_frames:
+        data_shape = [width, height, channel_number]
         ar_s = sparse.COO(v[1:4], v[4], shape=data_shape)
     else:
+        data_shape = [frame_count, width, height, channel_number]
         ar_s = sparse.COO(v[0:4], v[4], shape=data_shape)
     if (isinstance(si_lazy, int) and si_lazy != True and si_lazy > 0) or isinstance(si_lazy, tuple) or si_lazy == "auto":
-        print("Hoge")
         s = da.from_array(ar_s, asarray=False, chunks=si_lazy), em_image
-        print("Fuga")
         return s
     return da.from_array(ar_s, asarray=False), em_image
 
 
 
 @numba.njit(cache=True)
-def readframe_lazy(rawdata, em_image, rebin_energy, channel_number,
-                   width_norm, height_norm, read_em_image):  # pragma: no cover
+def readframe_lazy(rawdata, em_image, rebin_energy, width, height, channel_number,
+                   width_norm, height_norm, read_em_image, fr_info):  # pragma: no cover
+    fr_num, dx, dy, dz = fr_info
     data = []
     for value in rawdata:
         dtype = value & 0xf000
         dval = value & 0xfff
         if dtype == 0x8000:
-            x = dval // width_norm
+            x = dval // width_norm + dx
+            if x >= width:
+                x = -1
         elif dtype == 0x9000:
-            y = dval // height_norm
-        elif dtype == 0xa000:
+            y = dval // height_norm + dy
+            if y >= width:
+                y = -1
+        elif dtype == 0xa000 and x >= 0 and y >= 0:
             em_image[y, x] = dval
-        elif dtype == 0xb000:    # energy axis
-            z = dval // rebin_energy
-            if z < channel_number:
+        elif dtype == 0xb000 and x >= 0 and y >= 0:    # energy axis
+            z = dval // rebin_energy + dz
+            if 0 <= z and z < channel_number:
                 data.append([y, x, z])
     return data
 
