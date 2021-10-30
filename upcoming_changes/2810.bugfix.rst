@@ -1,1 +1,0 @@
-Fix :py:func:`~.drawing.utils.plot_histograms` drawstyle following matplotlib API change

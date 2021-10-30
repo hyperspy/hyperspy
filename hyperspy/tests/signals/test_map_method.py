@@ -362,6 +362,15 @@ class TestLazyMap:
                                    inplace=False)
         np.testing.assert_array_equal(s_out.mean(axis=(2, 3)).data, iter_array)
 
+    @pytest.mark.parametrize("output_signal_size", [(3,), (3, 4), (3, 4, 5)])
+    def test_map_output_signal_size(self, output_signal_size):
+        def f(data):
+            return np.ones(output_signal_size)
+
+        s_out = self.s.map(function=f, inplace=False)
+        assert s_out.data.shape[2:] == output_signal_size
+        assert s_out.axes_manager.signal_shape == output_signal_size[::-1]
+
 
 @pytest.mark.parametrize('ragged', [True, False, None])
 def test_singleton(ragged):

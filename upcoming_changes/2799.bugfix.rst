@@ -1,1 +1,0 @@
-make :py:meth:`~.signal.BaseSignal.add_marker` also check if the plot is not active before plotting signal

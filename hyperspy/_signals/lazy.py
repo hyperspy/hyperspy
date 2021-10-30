@@ -653,7 +653,7 @@ class LazySignal(BaseSignal):
             axes_changed = True
             if len(output_signal_size) != len(old_sig.axes_manager.signal_shape):
                 drop_axis = old_sig.axes_manager.signal_indices_in_array
-                new_axis = tuple(range(len(output_signal_size)))
+                new_axis = tuple(range(len(nav_indexes), len(nav_indexes) + len(output_signal_size)))
             else:
                 drop_axis = [it for (o, i, it) in zip(output_signal_size,
                                                       old_sig.axes_manager.signal_shape,
