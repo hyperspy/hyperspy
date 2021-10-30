@@ -2439,9 +2439,10 @@ class BaseSignal(FancySlicing,
 
     @data.setter
     def data(self, value):
-        # Calling asanyarray to convert to numpy array
-        if not isinstance(value, da.Array) or not \
-            hasattr(value, '__cuda_array_interface__'):
+        # Object supporting __array_function__ protocol (NEP-18) or the
+        # array API standard doesn't to be cast to numpy array
+        if not (hasattr(value, '__array_function__') or
+                hasattr(value, '__array_namespace__')):
             value = np.asanyarray(value)
         self._data = np.atleast_1d(value)
 
