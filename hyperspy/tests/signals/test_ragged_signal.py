@@ -23,7 +23,8 @@ import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 
 
-def test_setting_ragged_array():
+@pytest.mark.parametrize('lazy', (True, False))
+def test_setting_ragged_array(lazy):
     s = hs.signals.Signal1D(np.arange(2*3*4*5).reshape(2, 3, 4, 5))
     assert not s.ragged
     assert s.axes_manager.signal_shape == (5, )
@@ -36,17 +37,23 @@ def test_setting_ragged_array():
     data = np.empty((2, 3, 4), dtype=object)
     data.fill(np.array([10, 20, 30, 40, 50]))
     s = hs.signals.BaseSignal(data, ragged=True)
+    if lazy:
+        s = s.as_lazy()
     assert s.ragged
     assert s.axes_manager.signal_shape == ()
     assert s.axes_manager.navigation_shape == (4, 3, 2)
     assert s.axes_manager.signal_indices_in_array == ()
     assert s.axes_manager.navigation_indices_in_array  == (2, 1, 0)
-    s.ragged = False
-    assert not s.ragged
-    assert s.axes_manager.signal_shape == (5, )
-    assert s.axes_manager.navigation_shape == (4, 3, 2)
-    assert s.axes_manager.signal_indices_in_array == (3, )
-    assert s.axes_manager.navigation_indices_in_array  == (2, 1, 0)
+    if lazy:
+        with pytest.raises(NotImplementedError):
+            s.ragged = False
+    else:
+        s.ragged = False
+        assert not s.ragged
+        assert s.axes_manager.signal_shape == (5, )
+        assert s.axes_manager.navigation_shape == (4, 3, 2)
+        assert s.axes_manager.signal_indices_in_array == (3, )
+        assert s.axes_manager.navigation_indices_in_array  == (2, 1, 0)
 
 
 @lazifyTestClass
