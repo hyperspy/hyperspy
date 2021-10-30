@@ -289,9 +289,10 @@ class BaseDataAxis(t.HasTraits):
 
         self.events = Events()
         if '_type' in kwargs:
-            if kwargs.get('_type') != self.__class__.__name__:
-                raise ValueError('The passed `_type` of axis is inconsistent '
-                                'with the given attributes')
+            _type = kwargs.get('_type')
+            if _type != self.__class__.__name__:
+                raise ValueError(f'The passed `_type` ({_type}) of axis is '
+                                 'inconsistent with the given attributes.')
         _name = self.__class__.__name__
         self.events.index_changed = Event("""
             Event that triggers when the index of the `{}` changes

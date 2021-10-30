@@ -16,24 +16,24 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from collections.abc import MutableMapping
 import copy
-import warnings
-import inspect
 from contextlib import contextmanager
 from datetime import datetime
+import inspect
 from itertools import product
 import logging
-from pint import UnitRegistry, UndefinedUnitError
+import numbers
 from pathlib import Path
+import warnings
 
-import numpy as np
-from scipy import integrate
-from scipy import signal as sp_signal
 import dask.array as da
 from matplotlib import pyplot as plt
+import numpy as np
+from pint import UnitRegistry, UndefinedUnitError
+from scipy import integrate
+from scipy import signal as sp_signal
 import traits.api as t
-import numbers
-from collections import MutableMapping
 
 from hyperspy.axes import AxesManager
 from hyperspy import io
@@ -2777,8 +2777,7 @@ class BaseSignal(FancySlicing,
     plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
                      PLOT1D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
-    def save(self, filename=None, overwrite=None, extension=None,
-             **kwds):
+    def save(self, filename=None, overwrite=None, extension=None, **kwds):
         """Saves the signal in the specified format.
 
         The function gets the format from the specified extension (see
@@ -2841,6 +2840,13 @@ class BaseSignal(FancySlicing,
             Nexus file only. Define the default dataset in the file.
             If set to True the signal or first signal in the list of signals
             will be defined as the default (following Nexus v3 data rules).
+        write_dataset : bool, optional
+            Only for hspy files. If True, write the dataset, otherwise, don't
+            write it. Useful to save attributes without having to write the
+            whole dataset. Default is True.
+        close_file : bool, optional
+            Only for hdf5-based files and some zarr store. Close the file after
+            writing. Default is True.
 
         """
         if filename is None:

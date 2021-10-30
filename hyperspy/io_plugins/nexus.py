@@ -27,7 +27,7 @@ import numpy as np
 import pprint
 import traits.api as t
 
-from hyperspy.io_plugins.hspy import HyperspyWriter
+from hyperspy.io_plugins.hspy import (get_signal_chunks, overwrite_dataset)
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.exceptions import VisibleDeprecationWarning
 
@@ -50,8 +50,6 @@ non_uniform_axis = False
 # ----------------------
 
 
-overwrite_dataset = HyperspyWriter.overwrite_dataset
-get_signal_chunks = HyperspyWriter._get_signal_chunks
 
 def _byte_to_string(value):
     """Decode a byte string.

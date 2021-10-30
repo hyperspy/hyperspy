@@ -405,21 +405,31 @@ Extra saving arguments
 - ``compression``: One of ``None``, ``'gzip'``, ``'szip'``, ``'lzf'`` (default is ``'gzip'``).
   ``'szip'`` may be unavailable as it depends on the HDF5 installation including it.
 
-.. note::
+    .. note::
 
-    HyperSpy uses h5py for reading and writing HDF5 files and, therefore, it
-    supports all `compression filters supported by h5py <https://docs.h5py.org/en/stable/high/dataset.html#dataset-compression>`_.
-    The default is ``'gzip'``. It is possible to enable other compression filters
-    such as ``blosc`` by installing e.g. `hdf5plugin <https://github.com/silx-kit/hdf5plugin>`_.
-    However, be aware that loading those files will require installing the package
-    providing the compression filter. If not available an error will be raised.
+        HyperSpy uses h5py for reading and writing HDF5 files and, therefore, it
+        supports all `compression filters supported by h5py <https://docs.h5py.org/en/stable/high/dataset.html#dataset-compression>`_.
+        The default is ``'gzip'``. It is possible to enable other compression filters
+        such as ``blosc`` by installing e.g. `hdf5plugin <https://github.com/silx-kit/hdf5plugin>`_.
+        However, be aware that loading those files will require installing the package
+        providing the compression filter. If not available an error will be raised.
 
-    Compression can significantly increase the saving speed. If file size is not
-    an issue, it can be disabled by setting ``compression=None``. Notice that only
-    ``compression=None`` and ``compression='gzip'`` are available in all platforms,
-    see the `h5py documentation <https://docs.h5py.org/en/stable/faq.html#what-compression-processing-filters-are-supported>`_
-    for more details. Therefore, if you choose any other compression filter for
-    saving a file, be aware that it may not be possible to load it in some platforms.
+        Compression can significantly increase the saving speed. If file size is not
+        an issue, it can be disabled by setting ``compression=None``. Notice that only
+        ``compression=None`` and ``compression='gzip'`` are available in all platforms,
+        see the `h5py documentation <https://docs.h5py.org/en/stable/faq.html#what-compression-processing-filters-are-supported>`_
+        for more details. Therefore, if you choose any other compression filter for
+        saving a file, be aware that it may not be possible to load it in some platforms.
+
+- ``chunks``: tuple of integer or None. Define the chunking used for saving
+  the dataset. If None, calculates chunks for the signal, with preferably at
+  least one chunk per signal space.
+- ``close_file``: if ``False``, doesn't close the file after writing. The file
+  should not be closed if the data need to be accessed lazily after saving.
+  Default is ``True``.
+- ``write_dataset``: if ``False``, doesn't write the dataset when writing the file.
+  This can be useful to overwrite signal attributes only (for example ``axes_manager``)
+  without having to write the whole dataset, which can take time. Default is ``True``.
 
 
 .. _zspy-format:
@@ -448,38 +458,61 @@ the inner-most structures are converted to numpy arrays when saved. This
 procedure homogenizes any types of the objects inside, most notably casting
 numbers as strings if any other strings are present:
 
+By default, a :py:class:`zarr.storage.NestedDirectoryStore` is used, but other
+zarr store can be used by providing a `zarr store <https://zarr.readthedocs.io/en/stable/api/storage.html>`_
+instead as argument to the :py:meth:`~.signal.BaseSignal.save` or the
+:py:func:`~.io.load` function. If a zspy file has been saved with a different
+store, it would need to be loaded by passing a store of the same type:
+
+.. code-block:: python
+
+    >>> import zarr
+    >>> filename = 'test.zspy'
+    >>> store = zarr.LMDBStore(filename)
+    >>> signal.save(store) # saved to LMDB
+
+To load this file again
+
+.. code-block:: python
+
+    >>> import zarr
+    >>> filename = 'test.zspy'
+    >>> store = zarr.LMDBStore(filename)
+    >>> s = hs.load(store) # load from LMDB
+
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-- ``compressor``: A `Numcodecs Codec <https://numcodecs.readthedocs.io/en/stable/index.html?>`_.
-   A compresssor can be passed to the save function to compress the data efficiently. The defualt
-   is to call a Blosc Compressor object.
+- ``compressor``: `Numcodecs codec <https://numcodecs.readthedocs.io/en/stable/index.html?>`_,
+  a compressor can be passed to the save function to compress the data efficiently. The default
+  is to call a Blosc compressor object.
 
-.. code-block:: python
+    .. code-block:: python
 
-    >>> from numcodecs import Blosc
-    >>> compressor=Blosc(cname='zstd', clevel=1, shuffle=Blosc.SHUFFLE)
-    >>> s.save('test.zspy', compressor = compressor) # will save with Blosc compression
+        >>> from numcodecs import Blosc
+        >>> compressor=Blosc(cname='zstd', clevel=1, shuffle=Blosc.SHUFFLE) # Used by default
+        >>> s.save('test.zspy', compressor = compressor) # will save with Blosc compression
 
-.. note::
+    .. note::
 
-    Lazy operations are often i-o bound, reading and writing the data creates a bottle neck in processes
-    due to the slow read write speed of many hard disks. In these cases, compressing your data is often
-    beneficial to the speed of some operation. Compression speeds up the process as there is less to
-    read/write with the trade off of slightly more computational work on the CPU."
+        Lazy operations are often i-o bound, reading and writing the data creates a bottle neck in processes
+        due to the slow read write speed of many hard disks. In these cases, compressing your data is often
+        beneficial to the speed of some operations. Compression speeds up the process as there is less to
+        read/write with the trade off of slightly more computational work on the CPU.
 
-- ``write_to_storage``: The write to storage option allows you to pass the path to a directory (or database)
-   and write directly to the storage container.  This gives you access to the `different storage methods
-   <https://zarr.readthedocs.io/en/stable/api/storage.html>`_
-   available through zarr. Namely using a SQL, MongoDB or LMDB database.  Additional downloads may need
-   to be configured to use these features.
 
-.. code-block:: python
+- ``chunks``: tuple of integer or None. Define the chunking used for saving
+  the dataset. If None, calculates chunks for the signal, with preferably at
+  least one chunk per signal space.
+- ``close_file``: only relevant for some zarr store (``ZipStore``, ``DBMStore``)
+  requiring store to flush data to disk. If ``False``, doesn't close the file
+  after writing. The file should not be closed if the data need to be accessed
+  lazily after saving.
+  Default is ``True``.
+- ``write_dataset``: if ``False``, doesn't write the dataset when writing the file.
+  This can be useful to overwrite signal attributes only (for example ``axes_manager``)
+  without having to write the whole dataset, which can take time. Default is ``True``.
 
-    >>>  filename = 'test.zspy/'
-    >>>  os.mkdir('test.zspy')
-    >>>  store = zarr.LMDBStore(path=filename)
-    >>>  signal.save(store.path, write_to_storage=True) # saved to Lmdb
 
 .. _netcdf-format:
 
@@ -666,7 +699,7 @@ Extra saving arguments
   scalebar. Useful to set formattiong, location, etc. of the scalebar. See the
   `matplotlib-scalebar <https://pypi.org/project/matplotlib-scalebar/>`_
   documentation for more information.
-- ``output_size`` : (int, tuple of length 2 or None, optional): the output size 
+- ``output_size`` : (int, tuple of length 2 or None, optional): the output size
   of the image in pixels:
 
   * if ``int``, defines the width of the image, the height is
@@ -1384,7 +1417,7 @@ Nexus metadata and data are stored in Hierarchical Data Format Files (HDF5) with
 a .nxs extension although standards HDF5 extensions are sometimes used.
 Files must use the ``.nxs`` file extension in order to use this io plugin.
 Using the ``.nxs`` extension will default to the Nexus loader. If your file has
-a HDF5 extension, you can also explicitly set the Nexus file reader:
+an HDF5 extension, you can also explicitly set the Nexus file reader:
 
 .. code-block:: python
 
@@ -1827,7 +1860,7 @@ Extra loading arguments
   acquired last frame, which typically occurs when the acquisition was
   interrupted. When loading incomplete data (``only_valid_data=False``),
   the missing data are filled with zeros. If ``sum_frames=True``, this argument
-  will be ignored to enforce consistent sum over the mapped area. 
+  will be ignored to enforce consistent sum over the mapped area.
   (default True).
 
 

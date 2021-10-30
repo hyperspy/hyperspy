@@ -167,13 +167,21 @@ class LazySignal(BaseSignal):
                                                                   **kwargs)
                                                 )
 
-
     def close_file(self):
         """Closes the associated data file if any.
 
         Currently it only supports closing the file associated with a dask
         array created from an h5py DataSet (default HyperSpy hdf5 reader).
 
+        """
+        try:
+            self._get_file_handle().close()
+        except AttributeError:
+            _logger.warning("Failed to close lazy signal file")
+
+    def _get_file_handle(self, warn=True):
+        """Return file handle when possible; currently only hdf5 file are
+        supported.
         """
         arrkey = None
         for key in self.data.dask.keys():
@@ -182,9 +190,12 @@ class LazySignal(BaseSignal):
                 break
         if arrkey:
             try:
-                self.data.dask[arrkey].file.close()
-            except AttributeError:
-                _logger.exception("Failed to close lazy Signal file")
+                return self.data.dask[arrkey].file
+            except (AttributeError, ValueError):
+                if warn:
+                    _logger.warning("Failed to retrieve file handle, either "
+                                    "the file is already closed or it is not "
+                                    "an hdf5 file.")
 
     def _get_dask_chunks(self, axis=None, dtype=None):
         """Returns dask chunks.
