@@ -85,3 +85,17 @@ def print_known_signal_types():
         table.sortby = "class name"
     return print_html(f_text=table.get_string,
                       f_html=table.get_html_string)
+
+
+__all__ = [
+    'eds',
+    'material',
+    'model',
+    'plot',
+    'roi',
+    'samfire',
+    'interactive',
+    'stack',
+    'transpose',
+    'print_known_signal_types'
+    ]

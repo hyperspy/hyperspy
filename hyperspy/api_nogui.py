@@ -24,12 +24,26 @@ _logger = logging.getLogger(__name__)
 from hyperspy.logger import set_log_level
 from hyperspy.defaults_parser import preferences
 set_log_level(preferences.General.logging_level)
-from hyperspy import signals
-from hyperspy.utils import *
-from hyperspy.io import load
+
 from hyperspy import datasets
-from hyperspy.Release import version as __version__
 from hyperspy import docstrings
+from hyperspy import signals
+from hyperspy.io import load
+from hyperspy.Release import version as __version__
+from hyperspy.utils import (
+    eds,
+    material,
+    model,
+    plot,
+    roi,
+    samfire,
+    interactive,
+    stack,
+    transpose,
+    print_known_signal_types,
+    )
+import importlib
+
 
 __doc__ = """
 
@@ -93,13 +107,55 @@ For more details see their doctrings.
 
 """ % docstrings.START_HSPY
 
-# Remove the module to avoid polluting the namespace
-del docstrings
-
-
-
-
 
 def get_configuration_directory_path():
     import hyperspy.misc.config_dir
     return hyperspy.misc.config_dir.config_path
+
+
+__all__ = [
+    'datasets',
+    'set_log_level',
+    'preferences',
+    'signals',
+    'eds',
+    'material',
+    'model',
+    'plot',
+    'roi',
+    'samfire',
+    'interactive',
+    'stack',
+    'transpose',
+    'print_known_signal_types',
+    'load',
+    '__version__',
+    'get_configuration_directory_path',
+    '__doc__',
+    ]
+
+
+# mapping following the pattern: from value import key
+_import_mapping = {
+    'eds':'.utils',
+    'interactive': '.utils',
+    'load': '.io',
+    'material': '.utils',
+    'model': '.utils',
+    'plot': '.utils',
+    'print_known_signal_types': '.utils',
+    'roi': '.utils',
+    'samfire': '.utils',
+    'stack': '.utils',
+    'transpose': '.utils',
+    }
+
+
+def __getattr__(name):
+    if name in __all__:
+        if name in _import_mapping.keys():
+            import_path = 'hyperspy' + _import_mapping.get(name)
+            return getattr(importlib.import_module(import_path), name)
+        else:
+            return importlib.import_module("." + name, 'hyperspy')
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
