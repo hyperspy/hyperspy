@@ -145,6 +145,6 @@ def test_transpose_nav0_sig0():
 
     s2 = s.T
     assert s2.axes_manager.signal_dimension == 0
-    # assert s2.axes_manager.navigation_dimension == 0
+    assert s2.axes_manager.navigation_dimension == 1
     assert s2.axes_manager.signal_axes == ()
     assert s2.axes_manager.navigation_axes[0].size == 1

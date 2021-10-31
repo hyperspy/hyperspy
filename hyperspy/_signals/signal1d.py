@@ -265,6 +265,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
     _signal_dimension = 1
 
     def __init__(self, *args, **kwargs):
+        if kwargs.get('ragged', False):
+            raise ValueError("Signal1D can't be ragged.")
         super().__init__(*args, **kwargs)
         if self.axes_manager.signal_dimension != 1:
             self.axes_manager.set_signal_dimension(1)

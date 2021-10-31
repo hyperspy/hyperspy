@@ -2056,6 +2056,9 @@ class AxesManager(t.HasTraits):
             If value if greater than the number of axes or is negative.
 
         """
+        if self.ragged and value > 0:
+            raise ValueError("Signal containing ragged array must have zero "
+                             "signal dimension.")
         if len(self._axes) == 0:
             return
         elif value > len(self._axes):

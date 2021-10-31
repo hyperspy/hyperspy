@@ -106,3 +106,20 @@ def test_create_ragged_array():
     s2 = hs.signals.BaseSignal(data, ragged=True)
     assert s2.axes_manager.ragged
     assert s2.__repr__() == "<BaseSignal, title: , dimensions: (|ragged)>"
+
+
+def test_Signal1D_Signal2D_ragged():
+    data = np.array((1, 2))
+    with pytest.raises(ValueError):
+        _ = hs.signals.Signal1D(data, ragged=True)
+
+    with pytest.raises(ValueError):
+        _ = hs.signals.Signal2D(data, ragged=True)
+
+
+def test_conversion_signal():
+    data = np.empty((2, 3, 4), dtype=object)
+    data.fill(np.array([10, 20, 30, 40, 50]))
+    s = hs.signals.BaseSignal(data, ragged=True)
+    with pytest.raises(ValueError):
+        s.axes_manager.set_signal_dimension(1)
