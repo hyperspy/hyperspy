@@ -303,14 +303,14 @@ Note that the array shape is (2, ):
 Numpy ragged array must have python ``object`` type to allow the variable length of
 the nested sequences - here ``[1, 2, 3]`` and ``[1]``. As explained in
 `NEP-34 <https://numpy.org/neps/nep-0034-infer-dtype-is-object.html>`_,
-``dtype=object`` needs to be specify when creating the array to avoid ambiguity
+``dtype=object`` needs to be specified when creating the array to avoid ambiguity
 about the shape of the array.
 
 HyperSpy supports the use of ragged array with the following conditions:
 
 - The signal must be explicitely define as being ``ragged``, either when creating
-  the signal or by changing the ragged attribute of the signal.
-- The signal dimension the variable length dimension
+  the signal or by changing the ragged attribute of the signal
+- The signal dimension is the variable length dimension of the array
 - The ``isig`` syntax is not supported
 - Signal with ragged array can't be transposed
 - Signal with ragged array can't be plotted

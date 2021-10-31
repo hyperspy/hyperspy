@@ -2168,7 +2168,7 @@ class BaseSignal(FancySlicing,
         ragged : bool or None, optional
             Define whether the signal is ragged or not. Overwrite the
             ``ragged`` value in the ``attributes`` dictionary. If None, it does
-            nothing. Default is None
+            nothing. Default is None.
 
         """
         # the 'full_initialisation' keyword is private API to be used by the
@@ -2431,8 +2431,9 @@ class BaseSignal(FancySlicing,
             if self._lazy:
                 raise NotImplementedError(
                     "Conversion of a lazy ragged signal to its non-ragged "
-                    "counterpar is not supported. Make the required non-ragged "
-                    "dask array manually and make a new lazy signal."
+                    "counterpart is not supported. Make the required "
+                    "non-ragged dask array manually and make a new lazy "
+                    "signal."
                     )
 
             error = "The signal can't be converted to a non-ragged signal."
