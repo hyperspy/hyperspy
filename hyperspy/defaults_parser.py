@@ -136,7 +136,7 @@ class GUIs(t.HasTraits):
         "Requires installing hyperspy_gui_traitsui.")
     warn_if_guis_are_missing = t.CBool(
         True,
-        desc="Display warnings, if hyperspy_gui_ipywidgets or hyperspy_gui_traitsui are missing.")
+        desc="Not necessary anymore and deprecated.")
 
 
 class PlotConfig(t.HasTraits):
