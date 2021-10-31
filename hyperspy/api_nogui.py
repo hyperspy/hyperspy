@@ -20,29 +20,15 @@
 # traitsui
 
 import logging
+import importlib
+
 _logger = logging.getLogger(__name__)
 from hyperspy.logger import set_log_level
 from hyperspy.defaults_parser import preferences
 set_log_level(preferences.General.logging_level)
 
-from hyperspy import datasets
 from hyperspy import docstrings
-from hyperspy import signals
-from hyperspy.io import load
 from hyperspy.Release import version as __version__
-from hyperspy.utils import (
-    eds,
-    material,
-    model,
-    plot,
-    roi,
-    samfire,
-    interactive,
-    stack,
-    transpose,
-    print_known_signal_types,
-    )
-import importlib
 
 
 __doc__ = """
@@ -107,6 +93,7 @@ For more details see their doctrings.
 
 """ % docstrings.START_HSPY
 
+del docstrings
 
 def get_configuration_directory_path():
     import hyperspy.misc.config_dir
@@ -115,23 +102,23 @@ def get_configuration_directory_path():
 
 __all__ = [
     'datasets',
-    'set_log_level',
-    'preferences',
-    'signals',
     'eds',
+    'get_configuration_directory_path',
+    'interactive',
+    'load',
     'material',
     'model',
     'plot',
+    'preferences',
+    'print_known_signal_types',
     'roi',
     'samfire',
-    'interactive',
+    'set_log_level',
+    'signals',
     'stack',
     'transpose',
-    'print_known_signal_types',
-    'load',
-    '__version__',
-    'get_configuration_directory_path',
     '__doc__',
+    '__version__',
     ]
 
 

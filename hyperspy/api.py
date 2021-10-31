@@ -16,32 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.api_nogui import (
-    datasets,
-    set_log_level,
-    preferences,
-    signals,
-    eds,
-    material,
-    model,
-    plot,
-    roi,
-    samfire,
-    interactive,
-    stack,
-    transpose,
-    print_known_signal_types,
-    load,
-    __version__,
-    get_configuration_directory_path,
-    __doc__,
-    )
-
 
 import importlib
-
 import logging
+
+import hyperspy.api_nogui
+from hyperspy.api_nogui import __doc__, get_configuration_directory_path
+from hyperspy.defaults_parser import preferences
+from hyperspy.logger import set_log_level
+from hyperspy.Release import version as __version__
+
+
 _logger = logging.getLogger(__name__)
+
 
 try:
     # Register ipywidgets by importing the module
@@ -63,26 +50,8 @@ except ImportError:  # pragma: no cover
             "hyperspy_gui_traitsui package is not installed.")
 
 
-__all__ = [
-    'datasets',
-    'set_log_level',
-    'preferences',
-    'signals',
-    'eds',
-    'material',
-    'model',
-    'plot',
-    'roi',
-    'samfire',
-    'interactive',
-    'stack',
-    'transpose',
-    'print_known_signal_types',
-    'load',
-    '__version__',
-    'get_configuration_directory_path',
-    '__doc__',
-    ]
+__all__ = hyperspy.api_nogui.__all__
+_import_mapping = hyperspy.api_nogui._import_mapping
 
 
 def __getattr__(name):

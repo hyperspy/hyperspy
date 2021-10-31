@@ -46,7 +46,7 @@ class _TestPlot:
             data = data + 1j * (data + 9)
             title += ', complex'
             dtype = 'Complex'
-        s = hs.signals.__dict__['%sSignal%iD' % (dtype, sdim)](data)
+        s = getattr(hs.signals, f'{dtype}Signal{sdim}D')(data)
         if sdim == 1:
             s.axes_manager = self._set_signal_axes(s.axes_manager, name='Energy',
                                                    units='keV', scale=.5, offset=0.3)
