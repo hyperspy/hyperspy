@@ -683,6 +683,7 @@ class LazySignal(BaseSignal):
                     self.axes_manager.navigation_axes
                     )
                 sig.axes_manager.__init__(axes_dicts)
+                sig.axes_manager._ragged = True
                 sig._assign_subclass()
                 return sig
 
