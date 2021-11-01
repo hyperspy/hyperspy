@@ -690,40 +690,42 @@ whether the optimizers find a local or global optima.
 
 .. table:: Features of supported curve-fitting optimizers.
 
-+--------------------------------------+--------+-----------+---------+----------------+--------+--------+
-| Optimizer                            | Bounds | Gradients | Errors | Loss function  | Type   | Linear |
-+======================================+========+===========+=========+================+========+========+
-| ``"lm"`` (default)                   |  Yes   | Yes       | Yes     | Only ``"ls"``  | local  | No     |
-+--------------------------------------+--------+-----------+---------+----------------+--------+--------+
-| ``"trf"``                            |  Yes   | Yes       | Yes     | Only ``"ls"``  | local  | No     |
-+--------------------------------------+--------+-----------+---------+----------------+--------+--------+
-| ``"dogbox"``                         |  Yes   | Yes       | Yes     | Only ``"ls"``  | local  | No     |
-+--------------------------------------+--------+-----------+---------+----------------+--------+--------+
-| ``"odr"``                            |  No    | Yes       | Yes     | Only ``"ls"``  | local  | No     |
-+--------------------------------------+--------+-----------+---------+----------------+--------+--------+
-| ``"lstsq"``                          |  No    | No        | Yes *** | Only ``"ls"``  | global | Yes    |
-+--------------------------------------+--------+-----------+---------+----------------+--------+--------+
-| ``"ridge_regression"``               |  No    | No        | Yes *** | Only ``"ls"``  | global | Yes    |
-+--------------------------------------+--------+-----------+---------+----------------+--------+--------+
-| :py:func:`scipy.optimize.minimize`   |  Yes * | Yes *     | No      | All            | local  | No     |
-+--------------------------------------+--------+-----------+---------+----------------+--------+--------+
-| ``"Differential Evolution"``         |  Yes   | No        | No      | All            | global | No     |
-+--------------------------------------+--------+-----------+---------+----------------+--------+--------+
-| ``"Dual Annealing"`` **              |  Yes   | No        | No      | All            | global | No     |
-+--------------------------------------+--------+-----------+---------+----------------+--------+--------+
-| ``"SHGO"`` **                        |  Yes   | No        | No      | All            | global | No     |
-+--------------------------------------+--------+-----------+---------+----------------+--------+--------+
+    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | Optimizer                         | Bounds   | Gradients | Errors   | Loss function | Type   | Linear |
+    +===================================+==========+===========+==========+===============+========+========+
+    | ``"lm"`` (default)                |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
+    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"trf"``                         |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
+    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"dogbox"``                      |  Yes     | Yes       | Yes      | Only ``"ls"`` | local  | No     |
+    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"odr"``                         |  No      | Yes       | Yes      | Only ``"ls"`` | local  | No     |
+    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"lstsq"``                       |  No      | No        | Yes [1]_ | Only ``"ls"`` | global | Yes    |
+    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"ridge_regression"``            |  No      | No        | Yes [1]_ | Only ``"ls"`` | global | Yes    |
+    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | :py:func:`scipy.optimize.minimize`| Yes [2]_ | Yes [2]_  | No       | All           | local  | No     |
+    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"Differential Evolution"``      |  Yes     | No        | No       | All           | global | No     |
+    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"Dual Annealing"`` [3]_         |  Yes     | No        | No       | All           | global | No     |
+    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
+    | ``"SHGO"`` [3]_                   |  Yes     | No        | No       | All           | global | No     |
+    +-----------------------------------+----------+-----------+----------+---------------+--------+--------+
 
-.. note::
+.. rubric:: Footnotes
 
-    \* **All** of the fitting algorithms available in :py:func:`scipy.optimize.minimize` are currently
-    supported by HyperSpy; however, only some of them support bounds and/or gradients. For more information,
-    please see the `SciPy documentation <http://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
+.. [1] Requires the :py:meth:`~hyperspy.model.BaseModel.multifit` ``calculate_errors = True`` argument
+       in most cases. See the documentation below on Multiple Linear Least Squares fitting for more info.
 
-    \*\* Requires ``scipy >= 1.2.0``.
+.. [2] **All** of the fitting algorithms available in :py:func:`scipy.optimize.minimize` are currently
+       supported by HyperSpy; however, only some of them support bounds and/or gradients. For more information,
+       please see the `SciPy documentation <http://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
 
-    \*\*\* Requires the ``py:meth:`~hyperspy.model.BaseModel.multifit`` ``calculate_errors = True`` argument
-    in most cases. See the documentation below on Multiple Linear Least Squares fitting for more info.
+.. [3] Requires ``scipy >= 1.2.0``.
+
+
 
 The default optimizer in HyperSpy is ``"lm"``, which stands for the `Levenberg-Marquardt
 algorithm <https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm>`_. In
@@ -1041,11 +1043,27 @@ on the ``centre`` parameter.
              sigma |  True | 0.00999184 | 2.68064163 |       None |       None
             centre |  True | 9.99980788 | 2.68064070 |        7.0 |       14.0
 
-Multiple linear least squares fitting
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _linear_fitting-label:
+
+Linear fitting
+^^^^^^^^^^^^^^
+Linear fitting can be used to address some of the drawbacks of non-linear optimization:
+
+- it doesn't suffer of the *starting parameters* issue, which can sometimes be problematic
+  with nonlinear fitting. Since linear fitting uses linear algebra to find the
+  solution (find the parameter values of the model), the solution is unique solution,
+  while nonlinear optimization uses an iterative approach and therefore relies
+  on the initial values of the parameters.
+- it is fast, because in favorable situations, all pixels can be fitted simultaneously,
+  but also because it is not iterative - it does the calculation only one time instead of
+  10-100 iterations, depending on fast the non-linear optimizer will converge.
+
+However, linear fitting can *only* fit linear model and will be able to fit estimate
+parameter which varies *non-linearly*.
+
 A component is considered linear when its free parameters scale the component only 
 in the y-axis. For the example function ``y = a*x**b``, ``a`` is a linear parameter whilst ``b`` 
-is not. If `b.free = False`, then the component is linear. 
+is not. If ``b.free = False``, then the component is linear. 
 Components can also be made up of several linear parts. For instance, 
 the 2D-polynomial ``y = a*x**2+b*y**2+c*x+d*y+e`` is entirely linear.
 
@@ -1057,9 +1075,9 @@ the 2D-polynomial ``y = a*x**2+b*y**2+c*x+d*y+e`` is entirely linear.
 If all components in a model are linear, then a linear optimizer can be used to
 solve the problem as a linear regression problem! This can be done in the standard
 pixel-by-pixel approach used by the other *nonlinear* optimizers in HyperSpy, but
-the main advantage comes in being able to fit the entire dataset in one vectorised
-operation. This can be over a thousand times faster than regular nonlinear fitting, but
-comes with one caveat: All fixed parameters must have the same value across 
+it is also possible to fit the entire dataset in one vectorised operation, which
+will be much faster and it can up a thousand times faster than nonlinear fitting, but
+comes with one caveat: all fixed parameters must have the same value across 
 the dataset. That means a gaussian sigma parameter may not have been manually set 
 to vary across the dataset. This is because in order to save on memory, the components
 are calculated once for the current navigation indices and used to fit to all 
@@ -1074,13 +1092,13 @@ pixels in the navigator.
 
 There are three implementations of linear fitting in hyperspy: 
 The 'lstsq' optimizer is the recommended linear optimizer, and supports fitting lazy
-signals. The 'ridge_regression' optimizer supports regularization (see `Scikit-Learn's documentation 
-<https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html>`_ for arguments to
-py:meth:`~hyperspy.model.BaseModel.fit`), but does not support lazy signals. 
+signals. The 'ridge_regression' optimizer supports regularization (see
+:py:class:`sklearn.linear_model.Ridge` for arguments to pass to
+:py:meth:`~hyperspy.model.BaseModel.fit`), but does not support lazy signals. 
 
 Standard errors for the parameters are by default not calculated when the entire dataset is fitted at once.
 This is due to the much larger memory requirement of that operation. If errors are required,
-either give ``calculate_errors=True`` as an argument to py:meth:`~hyperspy.model.BaseModel.multifit`, or rerun py:meth:`~hyperspy.model.BaseModel.multifit` with a nonlinear
+either give ``calculate_errors=True`` as an argument to :py:meth:`~hyperspy.model.BaseModel.multifit`, or rerun :py:meth:`~hyperspy.model.BaseModel.multifit` with a nonlinear
 optimizer (which will now run much faster).
 
 None of the linear optimizers currently support bounds.

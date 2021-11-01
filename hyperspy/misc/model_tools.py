@@ -37,7 +37,7 @@ def _non_iter(val):
 class current_component_values():
     """Convenience class that makes use of __repr__ methods for nice printing in the notebook
     of the properties of parameters of a component
-     
+
     Parameters
     ----------
     component : hyperspy component instance
@@ -120,7 +120,7 @@ class current_component_values():
             if not self.only_free or self.only_free and para.free:
                 if _is_iter(para.value):
                     # iterables (polynomial.value) must be handled separately
-                    # This should be removed with hyperspy 2.0 as Polynomial 
+                    # This should be removed with hyperspy 2.0 as Polynomial
                     # has been replaced.
                     value = _iter_join(para.value)
                     std = _iter_join(para.std)
@@ -141,8 +141,8 @@ class current_component_values():
 
 class current_model_values():
     """Convenience class that makes use of __repr__ methods for nice printing in the notebook
-    of the properties of parameters in components in a model 
-     
+    of the properties of parameters in components in a model
+
     Parameters
     ----------
     component : hyperspy component instance
@@ -166,8 +166,8 @@ class current_model_values():
             if not self.only_active or self.only_active and comp.active:
                 if not self.only_free or comp.free_parameters and self.only_free:
                     text += current_component_values(
-                        component=comp, 
-                        only_free=self.only_free, 
+                        component=comp,
+                        only_free=self.only_free,
                         only_active=self.only_active
                         ).__repr__() + "\n"
         return text
@@ -180,60 +180,64 @@ class current_model_values():
             if not self.only_active or self.only_active and comp.active:
                 if not self.only_free or comp.free_parameters and self.only_free:
                     html += current_component_values(
-                        component=comp, 
-                        only_free=self.only_free, 
+                        component=comp,
+                        only_free=self.only_free,
                         only_active=self.only_active
                         )._repr_html_()
         return html
 
-def calc_covariance(target_signal, coefficients, component_data, residual=None, lazy=False):
-        '''Calculate covariance matrix after having performed Linear Regression
+def calc_covariance(target_signal, coefficients, component_data,
+                    residual=None, lazy=False):
+    """Calculate covariance matrix after having performed Linear Regression
 
-        Parameters
-        ----------
+    Parameters
+    ----------
 
-        target_signal : array-like, shape (N,) or (M, N)
-            The signal array to be fit to
-        coefficients : array-like, shape C or (M, C)
-        component_data : array-like, shape N or (C, N)
-        residual : array-like, shape (0,) or (M,)
-            The residual sum of squares, optional. Calculated if None.
-        lazy : bool
-            Whether the signal is a lazy
+    target_signal : array-like, shape (N,) or (M, N)
+        The signal array to be fit to
+    coefficients : array-like, shape C or (M, C)
+    component_data : array-like, shape N or (C, N)
+    residual : array-like, shape (0,) or (M,)
+        The residual sum of squares, optional. Calculated if None.
+    lazy : bool
+        Whether the signal is a lazy
 
-        Notes
-        -----
-        Explanation the array shapes in hyperspy terms:
-        N : flattened signal shape
-        M : flattened navigation shape
-        C : number of components
+    Notes
+    -----
+    Explanation the array shapes in hyperspy terms:
+    N : flattened signal shape
+    M : flattened navigation shape
+    C : number of components
 
-        See https://stats.stackexchange.com/questions/62470 for more info on algorithm
-        '''
-        if len(target_signal.shape) > 1: # model._linear_ndfit is True
-            fit = coefficients[..., None, :] * component_data.T[None]
-        else:
-            fit = coefficients * component_data.T
-        if residual is None:
-            residual = ((target_signal - fit.sum(-1))**2).sum(-1)
-        fit_dot = np.matmul(fit.swapaxes(-2, -1), fit)
+    See https://stats.stackexchange.com/questions/62470 for more info on
+    algorithm
+    """
+    if len(target_signal.shape) > 1: # model._linear_ndfit is True
+        fit = coefficients[..., None, :] * component_data.T[None]
+    else:
+        fit = coefficients * component_data.T
+    if residual is None:
+        residual = ((target_signal - fit.sum(-1))**2).sum(-1)
+    fit_dot = np.matmul(fit.swapaxes(-2, -1), fit)
 
-        # Prefer to find another way than matrix inverse
-        # if target_signal shape is 1D, then fit_dot is 2D and numpy going to dask.linalg.inv is fine.
-        # If target_signal shape is 2D, then dask.linalg.inv will fail because fit_dot is 3D.
-        if lazy and len(target_signal.shape) != 1: 
-            inv_fit_dot = da.map_blocks(np.linalg.inv, fit_dot, chunks=fit_dot.chunks)
-        else:
-            inv_fit_dot = np.linalg.inv(fit_dot)
+    # Prefer to find another way than matrix inverse
+    # if target_signal shape is 1D, then fit_dot is 2D and numpy going to dask.linalg.inv is fine.
+    # If target_signal shape is 2D, then dask.linalg.inv will fail because fit_dot is 3D.
+    if lazy and len(target_signal.shape) != 1:
+        inv_fit_dot = da.map_blocks(np.linalg.inv, fit_dot, chunks=fit_dot.chunks)
+    else:
+        inv_fit_dot = np.linalg.inv(fit_dot)
 
-        n = fit.shape[-2] # the signal axis length
-        k = coefficients.shape[-1]  # the number of components
-        covariance = (1 / (n - k)) * (residual * inv_fit_dot.T).T
-        return covariance
+    n = fit.shape[-2] # the signal axis length
+    k = coefficients.shape[-1]  # the number of components
+    covariance = (1 / (n - k)) * (residual * inv_fit_dot.T).T
+    return covariance
+
 
 def std_err_from_cov(covariance):
     "Get standard error coefficients from the diagonal of the covariance"
     return np.sqrt(np.diagonal(covariance, axis1=-2, axis2=-1))
+
 
 def get_top_parent_twin(parameter):
     "Get the top parent twin, if there is one"
@@ -242,6 +246,7 @@ def get_top_parent_twin(parameter):
     else:
         return parameter
 
+
 def check_top_parent_twins_are_active(component):
     'Check that the top parent twins of the components parameters are active'
     active = True
@@ -249,19 +254,21 @@ def check_top_parent_twins_are_active(component):
         if not get_top_parent_twin(para).component.active:
             active = False
     return active
-    
+
+
 def parameter_map_values_all_identical(para):
-    """Returns True if the parameter has identical values for all 
+    """Returns True if the parameter has identical values for all
     navigation indices, otherwise False.
     """
     return (para.map['values'] == para.map['values'].item(0)).all()
+
 
 def all_set_non_free_para_have_identical_values(model):
     """Returns True and an empty list if the all parameters in the model that
     are not free have identical values in their respective navigation
     indices AND have `is_set` equal to True.
-    
-    Otherwise returns False and a list of the parameters with 
+
+    Otherwise returns False and a list of the parameters with
     non-identical values.
 
     This function is used with linear fitting to check whether to use the faster

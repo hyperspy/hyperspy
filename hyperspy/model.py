@@ -923,7 +923,7 @@ class BaseModel(list):
 
     def _set_linear_parameters_to_one(self, set_map=False):
         """Sets the value of all linear parameters in the model to 1.
-        
+
         Parameters
         ----------
         set_map : bool
@@ -993,7 +993,7 @@ class BaseModel(list):
                 self._component_data[index] += (component_data - component_constant_data)
                 self._component_data_fixed += component_constant_data
             else:
-                # Components that can be separated into multiple linear parts, like 
+                # Components that can be separated into multiple linear parts, like
                 # "C = a*x**2 + b*x + c" would need to be separated into several linear parts.
                 # This is done automatically for Expression components, but difficult to implement
                 # on a general basis for custom components.
@@ -1022,18 +1022,18 @@ class BaseModel(list):
         Parameters
         __________
 
-        optimizer: 
+        optimizer:
             'lstsq' - Default, supports dask
             'ridge_regression' - Supports regularisation, not dask
 
         Developer Notes
         ---------------
         More linear optimizers can be added in future, but note that in order to support simultaneous
-        fitting across the dataset, the optimizer must support "two-dimensional y" (see the 
+        fitting across the dataset, the optimizer must support "two-dimensional y" (see the
         `b` parameter in numpy.linalg.lstsq).
 
         Currently, the overhead in calculating the component data takes about 100 times longer than
-        actually running np.linalg.lstsq. That means that going pixel-by-pixel, calculating the 
+        actually running np.linalg.lstsq. That means that going pixel-by-pixel, calculating the
         component data each time is not faster than the normal nonlinear methods. Linear fitting
         is hence currently only useful for fitting a dataset in the vectorised manner.
         """
@@ -1059,12 +1059,12 @@ class BaseModel(list):
                 + str("\n\t".join(str(para) for para in free_nonlinear_parameters))
             )
 
-        # Components that can be separated into multiple linear parts, like 
-        # "C = a*x + b" may have C._constant_term != 0, eg if b is 
+        # Components that can be separated into multiple linear parts, like
+        # "C = a*x + b" may have C._constant_term != 0, eg if b is
         # not free and nonzero. For Expression components, the constant term is
-        # calculated automatically. Custom components with one parameter 
-        # are fine, since either the entire component is free or fixed, 
-        # but for custom components with more than one parameter 
+        # calculated automatically. Custom components with one parameter
+        # are fine, since either the entire component is free or fixed,
+        # but for custom components with more than one parameter
         # we cannot automatically determine this.
 
         # Some custom components are manually checked and supporte:
@@ -1099,7 +1099,7 @@ class BaseModel(list):
             nav_shape = self.axes_manager._navigation_shape_in_array
             if self.channel_switches.all():
                 # If channel_switches is all True, then is much more performant
-                # and less memory-intensive to just reshape the signal than use 
+                # and less memory-intensive to just reshape the signal than use
                 # fancy indexing (which would create a copy of the signal),
                 # especially with dask
                 target_signal = self.signal.data.reshape(nav_shape + (-1,))
@@ -1130,9 +1130,14 @@ class BaseModel(list):
             self.coefficient_array = result.T
 
         elif optimizer == "lstsq" and self.signal._lazy:
-            result, residual, *_ = da.linalg.lstsq(da.asarray(self._component_data).T, target_signal.T)
-            if self._linear_ndfit and (LooseVersion(dask.__version__) < LooseVersion("2020.12.0")):
-                # Dask pre 2020.12 didn't support residuals on 2D input, we calculate them later.
+            result, residual, *_ = da.linalg.lstsq(
+                da.asarray(self._component_data).T, target_signal.T
+                )
+
+            if self._linear_ndfit and (
+                    Version(dask.__version__) < Version("2020.12.0")):
+                # Dask pre 2020.12 didn't support residuals on 2D input,
+                # we calculate them later.
                 residual = None
             self.coefficient_array = result.T
 
@@ -1174,14 +1179,14 @@ class BaseModel(list):
                 fit_output["x"] = fit_output["x"].compute()
         except:
             pass
-        
+
         # Calculate errors
         # We only do this if going pixel-by-pixel or if `calculate_errors = True` is specified
         # to multifit. This is because it is a very large calculation and can eat all our ram,
         # even when run lazily.
         if not self._linear_ndfit or ("calculate_errors", True) in kwargs.items():
             fit_output["covar"] = calc_covariance(
-                target_signal=target_signal, 
+                target_signal=target_signal,
                 coefficients = self.coefficient_array,
                 component_data = self._component_data,
                 residual=residual,
@@ -1202,7 +1207,7 @@ class BaseModel(list):
                 fit_output["perror"] = fit_output["perror"].compute()
         except:
             pass
-        
+
         return fit_output
 
     def _errfunc_sq(self, param, y, weights=None):
@@ -1726,7 +1731,7 @@ class BaseModel(list):
                     self.p0 = self.fit_output.x[self.axes_manager.indices[::-1]]
                     self.p_std = self.fit_output.perror[self.axes_manager.indices[::-1]] if has_errors else len(self.free_parameters) * (np.nan,)
 
-                    # The nonlinear parameters' .map attribute doesn't get set during 
+                    # The nonlinear parameters' .map attribute doesn't get set during
                     # "all in one go" linear fitting, only during regular multifit.
                     for para in self.nonlinear_parameters:
                         para.map['values'] = para.value
@@ -1735,7 +1740,7 @@ class BaseModel(list):
                 else:
                     self.p0 = self.fit_output.x
                     self.p_std = self.fit_output.perror
-                
+
             else:
                 # scipy.optimize.* functions
                 if loss_function == "ls":
@@ -1978,7 +1983,7 @@ class BaseModel(list):
         if autosave is True:
             _logger.info(f"Deleting temporary file: {autosave_fn}.npz")
             os.remove(autosave_fn + ".npz")
-    
+
     multifit.__doc__ %= (SHOW_PROGRESSBAR_ARG)
 
     def save_parameters2file(self, filename):

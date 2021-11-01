@@ -1084,7 +1084,7 @@ class Component(t.HasTraits):
             If True, only sets a parameter free if it is linear
         only_nonlinear : bool
             If True, only sets a parameter free if it is nonlinear
-        
+
 
         Examples
         --------
@@ -1178,9 +1178,10 @@ class Component(t.HasTraits):
             self._create_arrays()
 
     def as_dictionary(self, fullcopy=True):
-        """Returns component as a dictionary. For more information on method
+        """
+        Returns component as a dictionary. For more information on method
         and conventions, see
-        py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`
+        :py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`
 
         Parameters
         ----------
@@ -1212,7 +1213,8 @@ class Component(t.HasTraits):
         return dic
 
     def _load_dictionary(self, dic):
-        """Load data from dictionary.
+        """
+        Load data from dictionary.
 
         Parameters
         ----------
@@ -1261,7 +1263,9 @@ class Component(t.HasTraits):
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
 
     def print_current_values(self, only_free=False, fancy=True):
-        """Prints the current values of the component's parameters.
+        """
+        Prints the current values of the component's parameters.
+
         Parameters
         ----------
         only_free : bool
@@ -1278,8 +1282,10 @@ class Component(t.HasTraits):
 
     @property
     def is_linear(self):
-        """Loops through the components free parameters,
-        checks that they are linear"""
+        """
+        Loops through the components free parameters, checks that they are
+        linear.
+        """
         linear = True
         for para in self.free_parameters:
             if not para._is_linear:
@@ -1288,18 +1294,20 @@ class Component(t.HasTraits):
 
     @property
     def linear_parameters(self):
-        "Get list of all linear parameters in component"
+        """Get list of all linear parameters in component."""
         return [para for para in self.free_parameters if para._is_linear]
 
     @property
     def nonlinear_parameters(self):
-        "Get list of all nonlinear parameters in component"
+        """Get list of all nonlinear parameters in component."""
         return [para for para in self.free_parameters if not para._is_linear]
 
     @property
     def _constant_term(self):
-        """Get value of any (non-free) constant term of the component.
-        Returns 0 for most components."""
+        """
+        Get value of any (non-free) constant term of the component.
+        Returns 0 for most components.
+        """
         return 0
 
     def _compute_component(self):
@@ -1307,7 +1315,7 @@ class Component(t.HasTraits):
         if model.convolved and self.convolved:
             # TODO: Model2D doesn't support a 2D convolution axis (yet)
             data = convolve_component_values(
-                self.function(model.convolution_axis), 
+                self.function(model.convolution_axis),
                 model=model)
         else:
             axes = [ax.axis for ax in model.axes_manager.signal_axes]

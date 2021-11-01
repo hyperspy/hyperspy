@@ -18,7 +18,6 @@
 
 from packaging.version import Version
 from tqdm import __version__ as tqdm_version
-from dask.callbacks import Callback
 
 if Version(tqdm_version) >= Version("4.36.0"):
     # API change for 5.0 https://github.com/tqdm/tqdm/pull/800
