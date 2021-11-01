@@ -15,8 +15,30 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 import hyperspy.roi
-from hyperspy.roi import (CircleROI, Line2DROI, Point1DROI, Point2DROI,
-                          RectangularROI, SpanROI)
+from hyperspy.roi import (
+    CircleROI,
+    Line2DROI,
+    Point1DROI,
+    Point2DROI,
+    RectangularROI,
+    SpanROI
+    )
+
 
 __doc__ = hyperspy.roi.__doc__
+
+
+__all__ = [
+    'CircleROI',
+    'Line2DROI',
+    'Point1DROI',
+    'Point2DROI',
+    'RectangularROI',
+    'SpanROI',
+    ]
+
+
+def __dir__():
+    return sorted(__all__)

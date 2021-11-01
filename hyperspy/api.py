@@ -34,6 +34,10 @@ __all__ = hyperspy.api_nogui.__all__
 _import_mapping = hyperspy.api_nogui._import_mapping
 
 
+def __dir__():
+    return sorted(__all__)
+
+
 def __getattr__(name):
     if name in __all__:
         if name in _import_mapping.keys():

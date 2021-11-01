@@ -16,7 +16,25 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.misc.eds.utils import (edx_cross_section_to_zeta, electron_range,
-                                     get_xray_lines_near_energy,
-                                     take_off_angle, xray_range,
-                                     zeta_to_edx_cross_section)
+from hyperspy.misc.eds.utils import (
+    edx_cross_section_to_zeta,
+    electron_range,
+    get_xray_lines_near_energy,
+    take_off_angle,
+    xray_range,
+    zeta_to_edx_cross_section
+    )
+
+
+__all__ = [
+    'edx_cross_section_to_zeta',
+    'electron_range',
+    'get_xray_lines_near_energy',
+    'take_off_angle',
+    'xray_range',
+    'zeta_to_edx_cross_section',
+    ]
+
+
+def __dir__():
+    return sorted(__all__)

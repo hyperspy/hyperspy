@@ -19,3 +19,14 @@ The :mod:`~hyperspy.api.datasets` module contains the following submodules:
 
 from hyperspy.misc.eels.eelsdb import eelsdb
 from hyperspy.datasets import artificial_data, example_signals
+
+
+__all__ = [
+    'artificial_data',
+    'eelsdb',
+    'example_signals',
+    ]
+
+
+def __dir__():
+    return sorted(__all__)

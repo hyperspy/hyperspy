@@ -66,6 +66,10 @@ __all__ = [
     ]
 
 
+def __dir__():
+    return sorted(__all__)
+
+
 def __getattr__(name):
     if name in __all__:
         spec = EXTENSIONS_["signals"][name]

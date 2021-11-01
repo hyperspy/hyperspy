@@ -117,7 +117,6 @@ __all__ = [
     'signals',
     'stack',
     'transpose',
-    '__doc__',
     '__version__',
     ]
 
@@ -136,6 +135,10 @@ _import_mapping = {
     'stack': '.utils',
     'transpose': '.utils',
     }
+
+
+def __dir__():
+    return sorted(__all__)
 
 
 def __getattr__(name):

@@ -31,3 +31,13 @@ components2D
 
 import hyperspy.components1d as components1D
 import hyperspy.components2d as components2D
+
+
+__all__ = [
+    'components1D',
+    'components2D',
+    ]
+
+
+def __dir__():
+    return sorted(__all__)

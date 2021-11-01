@@ -89,13 +89,17 @@ def print_known_signal_types():
 
 __all__ = [
     'eds',
+    'interactive',
     'material',
     'model',
     'plot',
+    'print_known_signal_types',
     'roi',
     'samfire',
-    'interactive',
     'stack',
     'transpose',
-    'print_known_signal_types'
     ]
+
+
+def __dir__():
+    return sorted(__all__)

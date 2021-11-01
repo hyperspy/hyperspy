@@ -40,3 +40,19 @@ from hyperspy.drawing._markers.vertical_line import \
     VerticalLine as vertical_line
 from hyperspy.drawing._markers.vertical_line_segment import \
     VerticalLineSegment as vertical_line_segment
+
+
+__all__ = [
+    'horizontal_line',
+    'horizontal_line_segment',
+    'line_segment',
+    'point',
+    'rectangle',
+    'text',
+    'vertical_line',
+    'vertical_line_segment',
+    ]
+
+
+def __dir__():
+    return sorted(__all__)
