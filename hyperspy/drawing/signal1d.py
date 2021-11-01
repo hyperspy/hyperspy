@@ -40,7 +40,7 @@ class Signal1DFigure(BlittedFigure):
     """
     """
 
-    def __init__(self, title=""):
+    def __init__(self, title="", **kwargs):
         super().__init__()
         self.figure = None
         self.ax = None
@@ -54,7 +54,7 @@ class Signal1DFigure(BlittedFigure):
         self.xlabel = ''
         self.ylabel = ''
         self.title = title
-        self.create_figure()
+        self.create_figure(**kwargs)
         self.create_axis()
 
         # Color cycles
@@ -410,7 +410,9 @@ class Signal1DLine(object):
                              "'log' for Signal1D.")
         else:
             plot = self.ax.plot
-        self.line, = plot(self.axis.axis, data, **self.line_properties,
+        # If axis is a DataAxis instance, take the axis attribute
+        axis = getattr(self.axis, 'axis', self.axis)
+        self.line, = plot(axis, data, **self.line_properties,
                           animated=self.ax.figure.canvas.supports_blit)
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
@@ -474,20 +476,20 @@ class Signal1DLine(object):
 
         self._y_min, self._y_max = self.ax.get_ylim()
         ydata = self._get_data()
-        old_xaxis = self.line.get_xdata()
-        if len(old_xaxis) != self.axis.size or \
-                np.any(np.not_equal(old_xaxis, self.axis.axis)):
-            self.line.set_data(self.axis.axis, ydata)
+
+        # If axis is a DataAxis instance, take the axis attribute
+        axis = getattr(self.axis, 'axis', self.axis)
+        if not np.array_equiv(self.line.get_xdata(), axis):
+            self.line.set_data(axis, ydata)
         else:
             self.line.set_ydata(ydata)
 
         if 'x' in self.autoscale:
-            self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
+            self.ax.set_xlim(axis[0], axis[-1])
 
         if 'v' in self.autoscale:
             self.ax.relim()
-            y1, y2 = np.searchsorted(self.axis.axis,
-                                     self.ax.get_xbound())
+            y1, y2 = np.searchsorted(axis, self.ax.get_xbound())
             y2 += 2
             y1, y2 = np.clip((y1, y2), 0, len(ydata - 1))
             clipped_ydata = ydata[y1:y2]

@@ -34,7 +34,7 @@ class HorizontalLineWidget(Widget1DBase):
     def _set_patch(self):
         ax = self.ax
         kwargs = picker_kwargs(preferences.Plot.pick_tolerance)
-        self.patch = [ax.axhline(
+        self._patch = [ax.axhline(
             self._pos[0],
             color=self.color,
             alpha=self.alpha,

@@ -20,8 +20,8 @@ import numpy as np
 import pytest
 
 from hyperspy import signals, components1d, datasets
-from hyperspy._signals.signal1d import BackgroundRemoval
-from hyperspy.signal_tools import ImageContrastEditor
+from hyperspy.signal_tools import ImageContrastEditor, BackgroundRemoval
+
 
 BASELINE_DIR = "plot_signal_tools"
 DEFAULT_TOL = 2.0
@@ -44,8 +44,7 @@ def test_plot_BackgroundRemoval():
                            fast=False,
                            plot_remainder=True)
 
-    br.span_selector.set_initial((105, 150))
-    br.span_selector.onmove_callback()
+    br.span_selector.extents = (105, 150)
     br.span_selector_changed()
 
     return br.signal._plot.signal_plot.figure
@@ -66,8 +65,7 @@ def test_plot_BackgroundRemoval_close_figure():
 def test_plot_BackgroundRemoval_close_tool():
     s = signals.Signal1D(np.arange(1000).reshape(10, 100))
     br = BackgroundRemoval(s, background_type='Gaussian')
-    br.span_selector.set_initial((20, 40))
-    br.span_selector.onmove_callback()
+    br.span_selector.extents = (20, 40)
     br.span_selector_changed()
     signal_plot = s._plot.signal_plot
 

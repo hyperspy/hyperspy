@@ -497,6 +497,15 @@ class BaseInteractiveROI(BaseROI):
                 self.signal_map[signal][1] == axes:
             self.remove_widget(signal)
 
+        if widget.ax is None:
+            if signal._plot is None or signal._plot.signal_plot is None:
+                raise Exception(
+                    f"{repr(signal)} does not have an active plot. Plot the "
+                    "signal before calling this method.")
+
+            ax = _get_mpl_ax(signal._plot, axes)
+            widget.set_mpl_ax(ax)
+
         # Set DataAxes
         widget.axes = axes
         with widget.events.changed.suppress_callback(self._on_widget_change):
@@ -506,15 +515,6 @@ class BaseInteractiveROI(BaseROI):
                 widget.snap_all = snap
             else:
                 widget.snap_position = snap
-
-        if widget.ax is None:
-            if signal._plot is None or signal._plot.signal_plot is None:
-                raise Exception(
-                    f"{repr(signal)} does not have an active plot. Plot the "
-                    "signal before calling this method.")
-
-            ax = _get_mpl_ax(signal._plot, axes)
-            widget.set_mpl_ax(ax)
 
         # Connect widget changes to on_widget_change
         widget.events.changed.connect(self._on_widget_change,
@@ -791,7 +791,8 @@ class SpanROI(BaseInteractiveROI):
         self.left, self.right = value
 
     def _apply_roi2widget(self, widget):
-        widget.set_bounds(left=self.left, right=self.right)
+        if widget.span is not None:
+            widget._set_span_extents(self.left, self.right)
 
     def _get_widget_type(self, axes, signal):
         direction = guess_vertical_or_horizontal(axes=axes, signal=signal)

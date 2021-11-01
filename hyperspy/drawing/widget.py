@@ -60,7 +60,7 @@ class WidgetBase(object):
         self._pos = np.array([0.])
         self._is_on = True
         self.background = None
-        self.patch = []
+        self._patch = []
         self.color = color
         self.alpha = alpha
         self.cids = list()
@@ -89,6 +89,10 @@ class WidgetBase(object):
             """, arguments=['obj'])
         self._navigating = False
         super(WidgetBase, self).__init__(**kwargs)
+
+    @property
+    def patch(self):
+        return tuple(self._patch)
 
     def _get_axes(self):
         return self._axes
@@ -128,7 +132,7 @@ class WidgetBase(object):
                         self.ax.texts]:
                     for p in self.patch:
                         if p in container:
-                            if Version(matplotlib.__version__) >= Version('3.5') :
+                            if Version(matplotlib.__version__) >= Version('3.5.0'):
                                 p.remove()
                             else:
                                 container.remove(p)

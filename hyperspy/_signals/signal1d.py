@@ -846,7 +846,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         if signal_range == 'interactive':
             self_copy = self.deepcopy()
-            ia = IntegrateArea(self_copy, signal_range)
+            ia = IntegrateArea(self_copy)
             ia.gui(display=display, toolkit=toolkit)
             integrated_signal1D = self_copy
         else:
