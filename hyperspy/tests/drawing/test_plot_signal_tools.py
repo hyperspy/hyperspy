@@ -45,6 +45,9 @@ def test_plot_BackgroundRemoval():
                            plot_remainder=True)
 
     br.span_selector.extents = (105, 150)
+    # will draw the line
+    br.span_selector_changed()
+    # will update the right axis
     br.span_selector_changed()
 
     return br.signal._plot.signal_plot.figure
