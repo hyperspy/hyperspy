@@ -25,6 +25,8 @@ resources:
 
 strategy:
   matrix:
+    # Needs to update matplotlib reference image to add python3.9 build
+    # matplotlib 3.1 doesn't have a python 3.9 build
     Linux_Python38:
       vmImage: 'ubuntu-latest'
       PYTHON_VERSION: '3.8'
@@ -32,10 +34,6 @@ strategy:
     Linux_Python37:
       vmImage: 'ubuntu-latest'
       PYTHON_VERSION: '3.7'
-      MAMBAFORGE_PATH: $(Agent.BuildDirectory)/mambaforge
-    Linux_Python36:
-      vmImage: 'ubuntu-latest'
-      PYTHON_VERSION: '3.6'
       MAMBAFORGE_PATH: $(Agent.BuildDirectory)/mambaforge
     MacOS_Python38:
       vmImage: 'macOS-latest'
@@ -49,9 +47,9 @@ strategy:
       vmImage: 'windows-latest'
       PYTHON_VERSION: '3.8'
       MAMBAFORGE_PATH: $(Agent.BuildDirectory)\mambaforge
-    Windows_Python36:
+    Windows_Python37:
       vmImage: 'windows-latest'
-      PYTHON_VERSION: '3.6'
+      PYTHON_VERSION: '3.7'
       MAMBAFORGE_PATH: $(Agent.BuildDirectory)\mambaforge
 
 pool:

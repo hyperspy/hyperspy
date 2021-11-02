@@ -58,7 +58,7 @@ install_req = ['scipy>=1.1',
                'packaging',
                'python-dateutil>=2.5.0',
                'ipyparallel',
-               'dask[array]>2.1.0',
+               'dask[array]>=2.1.0',
                # fsspec is missing from dask dependencies for dask < 2021.3.1
                'fsspec',
                'scikit-image>=0.15',
@@ -70,7 +70,7 @@ install_req = ['scipy>=1.1',
                # prettytable and ptable are API compatible
                # prettytable is maintained and ptable is an unmaintained fork
                'prettytable',
-               'tifffile>=2019.12.3',
+               'tifffile>=2020.2.16',
                'numba',
                 # included in stdlib since v3.8, but this required version requires Python 3.10
                 # We can remove this requirement when the minimum supported version becomes Python 3.10
@@ -86,7 +86,7 @@ extras_require = {
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
-    "speed": ["cython", "imagecodecs"],
+    "speed": ["cython", "imagecodecs>=2020.1.31"],
     "usid": ["pyUSID>=0.0.7", "sidpy"],
     "scalebar": ["matplotlib-scalebar"],
     # bug in pip: matplotib is ignored here because it is already present in
@@ -387,7 +387,6 @@ with update_version_when_dev() as version:
         },
         classifiers=[
             "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
