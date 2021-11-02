@@ -247,15 +247,6 @@ def get_top_parent_twin(parameter):
         return parameter
 
 
-def check_top_parent_twins_are_active(component):
-    'Check that the top parent twins of the components parameters are active'
-    active = True
-    for para in component.parameters:
-        if not get_top_parent_twin(para).component.active:
-            active = False
-    return active
-
-
 def parameter_map_values_all_identical(para):
     """Returns True if the parameter has identical values for all
     navigation indices, otherwise False.

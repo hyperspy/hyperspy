@@ -73,7 +73,7 @@ class PowerLaw(Expression):
             module=module,
             autodoc=False,
             compute_gradients=compute_gradients,
-            linear_override=['A'],
+            linear_parameter_list=['A'],
             **kwargs,
         )
 

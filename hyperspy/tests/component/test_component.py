@@ -287,6 +287,7 @@ def test_get_scaling_parameter(is_binned, non_uniform, dim):
     else:
         assert scaling_factor == 1
 
+
 class TestLinearProperties:
     def setup_method(self, method):
         self.C = Component(['one', 'two'])
@@ -294,9 +295,7 @@ class TestLinearProperties:
         self.G = Gaussian()
 
     def test_properties(self):
-        assert not self.C.linear_parameters
-        assert len(self.C.nonlinear_parameters) == 2
-        assert not self.P._is_linear
+        assert not self.P.linear
 
     def test_set_parameters_not_free_only_both(self):
         with pytest.raises(ValueError, match="set both only_linear"):
@@ -307,10 +306,23 @@ class TestLinearProperties:
             self.C.set_parameters_free(only_linear=True, only_nonlinear=True)
 
     def test_set_parameters_passing_parameters(self):
-        self.G.set_parameters_free(only_linear=True)
-        self.G.set_parameters_not_free(only_linear=True)
+        G = self.G
+        assert G.A.free
+        assert G.centre.free
+        assert G.sigma.free
 
-    def test_is_linear(self):
-        assert self.G.is_linear == False
-        self.G.set_parameters_not_free(only_nonlinear=True)
-        assert self.G.is_linear == True
+        G.set_parameters_free(only_linear=True)
+        assert G.A.free
+        assert G.centre.free
+        assert G.sigma.free
+
+        G.set_parameters_not_free(only_linear=True)
+        assert not G.A.free
+        assert G.centre.free
+        assert G.sigma.free
+
+        G.set_parameters_not_free(only_nonlinear=True)
+        G.set_parameters_free(only_linear=True)
+        assert G.A.free
+        assert not G.centre.free
+        assert not G.sigma.free

@@ -110,7 +110,7 @@ class Expression(Component):
         does not support the calculation of the partial derivatives, for
         example in case of expression containing a "where" condition,
         it can be disabled by using `compute_gradients=False`.
-    linear_override : list
+    linear_parameter_list : list
         A list of the components parameters that are known to be linear
         parameters, but where the check_parameter_linearity function
         is unable to determine it as such. Example: PowerLaw, which 
@@ -155,19 +155,26 @@ class Expression(Component):
 
     def __init__(self, expression, name, position=None, module="numpy",
                  autodoc=True, add_rotation=False, rotation_center=None,
-                 rename_pars={}, compute_gradients=True, **kwargs):
+                 rename_pars={}, compute_gradients=True,
+                 linear_parameter_list=None, **kwargs):
 
+        if linear_parameter_list is None:
+            linear_parameter_list = []
         self._add_rotation = add_rotation
         self._str_expression = expression
         self._module = module
-        self._rename_pars = rename_pars
+        self._rename_pars = rename_pars if rename_pars is not None else {}
         self._compute_gradients = compute_gradients
+
         if rotation_center is None:
             self.compile_function(module=module, position=position)
         else:
             self.compile_function(module=module, position=rotation_center)
+
         # Initialise component
-        Component.__init__(self, self._parameter_strings)
+        Component.__init__(
+            self, self._parameter_strings, linear_parameter_list
+            )
         # When creating components using Expression (for example GaussianHF)
         # we shouldn't add anything else to the _whitelist as the
         # component should be initizialized with its own kwargs.
@@ -178,11 +185,13 @@ class Expression(Component):
             self._whitelist['name'] = ('init', name)
             self._whitelist['position'] = ('init', position)
             self._whitelist['rename_pars'] = ('init', rename_pars)
+            self._whitelist['linear_parameter_list'] = ('init', linear_parameter_list)
             self._whitelist['compute_gradients'] = ('init', compute_gradients)
             if self._is2D:
                 self._whitelist['add_rotation'] = ('init', self._add_rotation)
                 self._whitelist['rotation_center'] = ('init', rotation_center)
         self.name = name
+
         # Set the position parameter
         if position:
             if self._is2D:
@@ -190,6 +199,7 @@ class Expression(Component):
                 self._position_y = getattr(self, position[1])
             else:
                 self._position = getattr(self, position)
+
         # Set the initial value of the parameters
         if kwargs:
             for kwarg, value in kwargs.items():
@@ -199,11 +209,13 @@ class Expression(Component):
             self.__doc__ = _CLASS_DOC % (
                 name, sympy.latex(_parse_substitutions(expression)))
 
-        for para_name in linear_override:
-            setattr(getattr(self, para_name), '_is_linear_override', True)
+        for parameter_name in linear_parameter_list:
+            setattr(getattr(self, parameter_name), '_linear', True)
 
-        for para in self.parameters:
-            para._is_linear = check_parameter_linearity(self._parsed_expr, para.name) if not para._is_linear_override else True
+        for parameter in self.parameters:
+            if parameter.name not in linear_parameter_list:
+                parameter._linear = check_parameter_linearity(
+                    self._parsed_expr, parameter.name)
 
     def compile_function(self, module="numpy", position=False):
         """
@@ -325,16 +337,16 @@ class Expression(Component):
     def _constant_term(self):
         """
         Get value of constant term of free component
-        
-        The 'constant' part of a component is any part that cannot change 
+
+        The 'constant' part of a component is any part that cannot change
         with the free parameters in the model. The fact that a non-free parameter
-        can change due to being twinned with another (free) parameter complicates 
+        can change due to being twinned with another (free) parameter complicates
         this slightly.
         """
         # First get currently constant parameters
         linear_parameters = []
         for para in self.parameters:
-            if para._is_linear:
+            if para.linear:
                 if para.free or get_top_parent_twin(para).free:
                     linear_parameters.append(para.name)
         constant_expr, not_constant_expr = extract_constant_part_of_expression(
@@ -348,13 +360,14 @@ class Expression(Component):
             if var in free_symbols:
                 free_symbols.remove(var)
                 is_variable.append(var)
-        signal_dim = len(is_variable)
+
         para_values = []
         for parameter_name in free_symbols:
             para = getattr(self, parameter_name)
             para_values.append(para.value)
         func = lambdify(is_variable + free_symbols, constant_expr,
                         modules="numpy")
+
         axes = []
         for ax, axis in zip(["x", "y"], self.model.axes_manager.signal_axes):
             if ax in is_variable:
@@ -426,6 +439,7 @@ class Expression(Component):
                 data = np.moveaxis(data, 0, -1)
         return data
 
+
 def check_parameter_linearity(expr, name):
     "Check whether expression is linear for a given parameter"
     symbol = sympy.Symbol(name)
@@ -438,9 +452,11 @@ def check_parameter_linearity(expr, name):
     except AttributeError:
         # attreibuteerror occurs if the expression cannot be parsed
         # for instance some expressions with where.
-        # here, para._is_linear_override should be set
+        # TODO: check here
+        # here, para._linear_override should be set
         return False
     return True
+
 
 def extract_constant_part_of_expression(expr, *args):
     """

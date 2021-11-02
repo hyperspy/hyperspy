@@ -157,6 +157,7 @@ class Parameter(t.HasTraits):
         self.grad = None
         self.name = ''
         self.units = ''
+        self._linear = False
         self.map = None
         self.model = None
         self._whitelist = {'_id_name': None,
@@ -168,14 +169,17 @@ class Parameter(t.HasTraits):
                            '_bounds': None,
                            'ext_bounded': None,
                            'name': None,
+                           '_linear':None,
                            'ext_force_positive': None,
                            'twin_function_expr': None,
                            'twin_inverse_function_expr': None,
                            'self': ('id', None),
                            }
         self._slicing_whitelist = {'map': 'inav'}
-        self._is_linear = False
-        self._is_linear_override = False
+
+    @property
+    def linear(self):
+        return self._linear
 
     def _load_dictionary(self, dictionary):
         """Load data from dictionary.
@@ -734,7 +738,7 @@ class Component(t.HasTraits):
     active = t.Property(t.CBool(True))
     name = t.Property(t.Str(''))
 
-    def __init__(self, parameter_name_list):
+    def __init__(self, parameter_name_list, linear_parameter_list=None):
         self.events = Events()
         self.events.active_changed = Event("""
             Event that triggers when the `Component.active` changes.
@@ -750,7 +754,7 @@ class Component(t.HasTraits):
                 The new active state
             """, arguments=["obj", 'active'])
         self.parameters = []
-        self.init_parameters(parameter_name_list)
+        self.init_parameters(parameter_name_list, linear_parameter_list)
         self._update_free_parameters()
         self.active = True
         self._active_array = None # only if active_is_multidimensional is True
@@ -865,11 +869,31 @@ class Component(t.HasTraits):
         self.events.active_changed.trigger(active=self._active, obj=self)
         self.trait_property_changed('active', old_value, self._active)
 
-    def init_parameters(self, parameter_name_list):
+    def init_parameters(self, parameter_name_list, linear_parameter_list=None):
+        """
+        Initialise the parameters of the component.
+
+        Parameters
+        ----------
+        parameter_name_list : list
+            The list of parameter names.
+        linear_parameter_list : list, optional
+            The list of linear parameter. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
+        if linear_parameter_list is None:
+            linear_parameter_list = []
+
         for name in parameter_name_list:
             parameter = Parameter()
             self.parameters.append(parameter)
             parameter.name = name
+            if name in linear_parameter_list:
+                parameter._linear = True
             parameter._id_name = name
             setattr(self, name, parameter)
             if hasattr(self, 'grad_' + name):
@@ -1115,14 +1139,15 @@ class Component(t.HasTraits):
         for _parameter in parameter_list:
             if not only_linear and not only_nonlinear:
                 _parameter.free = True
-            elif only_linear and _parameter._is_linear:
+            elif only_linear and _parameter.linear:
                 _parameter.free = True
-            elif only_nonlinear and not _parameter._is_linear:
+            elif only_nonlinear and not _parameter.linear:
                 _parameter.free = True
             else:
                 pass
 
-    def set_parameters_not_free(self, parameter_name_list=None, only_linear=False, only_nonlinear=False):
+    def set_parameters_not_free(self, parameter_name_list=None,
+                                only_linear=False, only_nonlinear=False):
         """
         Sets parameters in a component to not free.
 
@@ -1152,7 +1177,9 @@ class Component(t.HasTraits):
         """
 
         if only_linear and only_nonlinear:
-            raise ValueError("To set all parameters not free, set both only_linear and _nonlinear to False.")
+            raise ValueError(
+                "To set all parameters not free, "
+                "set both only_linear and _nonlinear to False.")
 
         parameter_list = []
         if not parameter_name_list:
@@ -1165,9 +1192,9 @@ class Component(t.HasTraits):
         for _parameter in parameter_list:
             if not only_linear and not only_nonlinear:
                 _parameter.free = False
-            elif only_linear and _parameter._is_linear:
+            elif only_linear and _parameter.linear:
                 _parameter.free = False
-            elif only_nonlinear and not _parameter._is_linear:
+            elif only_nonlinear and not _parameter.linear:
                 _parameter.free = False
             else:
                 pass
@@ -1279,28 +1306,10 @@ class Component(t.HasTraits):
             display_pretty(current_component_values(
                 self, only_free=only_free))
 
-
     @property
-    def is_linear(self):
-        """
-        Loops through the components free parameters, checks that they are
-        linear.
-        """
-        linear = True
-        for para in self.free_parameters:
-            if not para._is_linear:
-                linear = False
-        return linear
-
-    @property
-    def linear_parameters(self):
+    def _free_linear_parameters(self):
         """Get list of all linear parameters in component."""
-        return [para for para in self.free_parameters if para._is_linear]
-
-    @property
-    def nonlinear_parameters(self):
-        """Get list of all nonlinear parameters in component."""
-        return [para for para in self.free_parameters if not para._is_linear]
+        return tuple([p for p in self.parameters if p.linear and p.free])
 
     @property
     def _constant_term(self):
@@ -1336,6 +1345,7 @@ class Component(t.HasTraits):
             data = not_convolved
         return data.T[np.where(model.channel_switches)[::-1]].T
 
+    @property
     def _top_parent_twins_are_active(self):
         'Check that the top parent twins of the components parameters are active'
         active = True

@@ -231,6 +231,11 @@ class TestStdWithMultipleFitters:
     def test_fitters(self, optimizer):
         if optimizer == "ridge_regression":
             pytest.importorskip("sklearn")
-        self.m.fit(optimizer=optimizer)
-        np.testing.assert_almost_equal(self.g1.A.std, 0.29659216)
-        np.testing.assert_almost_equal(self.g1.A.std, self.g2.A.std)
+
+        if self.m.signal._lazy and optimizer == "ridge_regression":
+            with pytest.raises(ValueError):
+                self.m.fit(optimizer=optimizer)
+        else:
+            self.m.fit(optimizer=optimizer)
+            np.testing.assert_almost_equal(self.g1.A.std, 0.29659216)
+            np.testing.assert_almost_equal(self.g1.A.std, self.g2.A.std)

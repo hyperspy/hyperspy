@@ -96,8 +96,5 @@ class TestLinearExponential:
         self.E = Exponential()
 
     def test_properties(self):
-        assert self.E.A._is_linear
-        assert not self.E.tau._is_linear
-
-        assert len(self.E.linear_parameters) == 1
-        assert len(self.E.nonlinear_parameters) == 1
+        assert self.E.A.linear
+        assert not self.E.tau.linear

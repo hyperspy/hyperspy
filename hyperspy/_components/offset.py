@@ -45,7 +45,7 @@ class Offset(Component):
     """
 
     def __init__(self, offset=0.):
-        Component.__init__(self, ('offset',))
+        Component.__init__(self, ('offset',), ['offset'])
         self.offset.free = True
         self.offset.value = offset
 
@@ -54,9 +54,6 @@ class Offset(Component):
 
         # Gradients
         self.offset.grad = self.grad_offset
-
-        # Linearity
-        self.offset._is_linear = True
 
     def function(self, x):
         return self._function(x, self.offset.value)

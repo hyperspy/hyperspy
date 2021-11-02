@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+import hyperspy.api as hs
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 
@@ -11,41 +12,40 @@ from hyperspy.components2d import Gaussian2D
 from hyperspy.datasets.example_signals import EDS_SEM_Spectrum
 from hyperspy.datasets.artificial_data import get_low_loss_eels_signal
 from hyperspy.datasets.artificial_data import get_core_loss_eels_signal
-from hyperspy.misc.model_tools import get_top_parent_twin, check_top_parent_twins_are_active
+from hyperspy.misc.model_tools import get_top_parent_twin
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.misc.model_tools import parameter_map_values_all_identical, all_set_non_free_para_have_identical_values
+from hyperspy.misc.model_tools import (
+    parameter_map_values_all_identical,
+    all_set_non_free_para_have_identical_values
+    )
 
-class TestModelFitBinned:
 
-    def setup_method(self, method):
-        np.random.seed(1)
-        s = Signal1D(
-            np.random.normal(
-                scale=2,
-                size=10000)).get_histogram()
-        s.axes_manager[-1].binned = True
-        g = Gaussian()
-        m = s.create_model()
-        m.append(g)
-        g.sigma.value = 1
-        g.centre.value = 0.5
-        g.A.value = 1e3
-        self.m = m
+def test_fit_binned():
+    np.random.seed(1)
+    s = Signal1D(
+        np.random.normal(
+            scale=2,
+            size=10000)).get_histogram()
+    s.axes_manager[-1].binned = True
+    g = Gaussian()
+    m = s.create_model()
+    m.append(g)
+    g.sigma.value = 1
+    g.centre.value = 0.5
+    g.A.value = 1e3
+    # model contains free nonlinear parameters
+    with pytest.raises(RuntimeError):
+        m.fit(optimizer='lstsq')
 
-    def test_model_is_not_linear(self):
-        """
-        Model is not currently linear as Gaussian sigma and centre parameters
-        are free
-        """
-        assert self.m.nonlinear_parameters
 
-    def test_fit_linear(self):
-        self.m[0].sigma.free = False
-        self.m[0].centre.free = False
-        self.m.fit(optimizer='lstsq')
-        np.testing.assert_allclose(self.m[0].A.value, 6132.640632924692, 1)
-        np.testing.assert_allclose(self.m[0].centre.value, 0.5)
-        np.testing.assert_allclose(self.m[0].sigma.value, 1)
+    g.centre.free = False
+    g.sigma.free = False
+
+    m.fit(optimizer='lstsq')
+    np.testing.assert_allclose(m[0].A.value, 6132.640632924692, 1)
+    np.testing.assert_allclose(m[0].centre.value, 0.5)
+    np.testing.assert_allclose(m[0].sigma.value, 1)
+
 
 @lazifyTestClass
 class TestMultiFitLinear:
@@ -129,6 +129,7 @@ class TestMultiFitLinear:
             single.inav[0,0].data, single_nonlinear.inav[0,0].data)
 
 class TestLinearFitting:
+
     def setup_method(self, method):
         self.s = EDS_SEM_Spectrum().isig[5.0:15.0]
         self.m = self.s.create_model(auto_background=False)
@@ -138,45 +139,55 @@ class TestLinearFitting:
     def test_linear_fitting_with_offset(self):
         m = self.m
         m.fit(optimizer='lstsq')
-        linear = m.as_signal()
-        np.testing.assert_allclose(m.p0, np.array([933.2343071493418, 47822.98004150301, -5867.611808815612, 56805.518919752234]))
+        np.testing.assert_allclose(
+            m.p0,
+            np.array([933.2343071493418,
+                      47822.98004150301,
+                      -5867.611808815612,
+                      56805.518919752234])
+            )
 
         # Repeat test with offset fixed
         self.c.b.free = False
         m.fit(optimizer='lstsq')
-        linear = m.as_signal()
-        np.testing.assert_allclose(m.p0, np.array([933.2343071496773, 47822.98004150315, -5867.611808815624]))
+        np.testing.assert_allclose(
+            m.p0,
+            np.array([933.2343071496773, 47822.98004150315, -5867.611808815624])
+            )
 
     def test_fixed_offset_value(self):
         self.m.fit(optimizer='lstsq')
         c = self.c
         c.b.free = False
         constant = c._compute_constant_term()
-        np.testing.assert_array_almost_equal(constant, c.b.value)
+        np.testing.assert_allclose(constant, c.b.value)
 
     def test_constant(self):
         self.c.b.value = -5
         self.c.b.free = False
         assert self.c._constant_term == self.c.b.value
 
+
 @lazifyTestClass
 class TestFitAlgorithms:
+
     def setup_method(self, method):
         s = EDS_SEM_Spectrum().isig[5.0:15.0]
-        self.m = s.create_model(auto_background=False)
-        self.c = Expression('a*x+b', 'line with offset')
-        self.m.append(self.c)
-        self.m.fit()
-        self.nonlinear_fit = self.m.as_signal()
-        self.nonlinear_std = [para.std for para in (self.m.linear_parameters + self.m.nonlinear_parameters) if para.std]
+        m = s.create_model(auto_background=False)
+        c = Expression('a*x+b', 'line with offset')
+        m.append(c)
+        m.fit()
+        self.nonlinear_fit_res = m.as_signal()
+        self.nonlinear_fit_std = [p.std for p in m._free_parameters if p.std]
+        self.m = m
 
     def test_compare_lstsq(self):
         m = self.m
         m.fit(optimizer='lstsq')
         lstsq_fit = m.as_signal()
-        np.testing.assert_array_almost_equal(self.nonlinear_fit.data, lstsq_fit.data)
-        linear_std = [para.std for para in (self.m.linear_parameters + self.m.nonlinear_parameters) if para.std]
-        np.testing.assert_array_almost_equal(self.nonlinear_std, linear_std, decimal=4)
+        np.testing.assert_allclose(self.nonlinear_fit_res, lstsq_fit.data, rtol=2E-6)
+        linear_std = [para.std for para in m._free_parameters if para.std]
+        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std)
 
     def test_nonactive_component(self):
         m = self.m
@@ -185,23 +196,26 @@ class TestFitAlgorithms:
         linear_fit = m.as_signal()
         m.fit()
         nonlinear_fit = m.as_signal()
-        np.testing.assert_array_almost_equal(nonlinear_fit.data, linear_fit.data)
+        np.testing.assert_allclose(nonlinear_fit.data, linear_fit.data, rtol=5E-6)
 
     def test_compare_ridge(self):
         pytest.importorskip("sklearn")
         m = self.m
         if m.signal._lazy:
-            with pytest.warns(UserWarning, match="'ridge_regression' optimizer on a lazy signal"):
+            with pytest.raises(ValueError):
                 m.fit(optimizer='ridge_regression')
+            return
         else:
             m.fit(optimizer='ridge_regression')
         ridge_fit = m.as_signal()
-        np.testing.assert_array_almost_equal(self.nonlinear_fit.data, ridge_fit.data)
-        linear_std = [para.std for para in (self.m.linear_parameters + self.m.nonlinear_parameters) if para.std]
-        np.testing.assert_array_almost_equal(self.nonlinear_std, linear_std, decimal=4)
+        np.testing.assert_allclose(self.nonlinear_fit_res, ridge_fit.data, rtol=2E-6)
+        linear_std = [para.std for para in m._free_parameters if para.std]
+        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std)
+
 
 @lazifyTestClass
 class TestLinearEELSFitting:
+
     def setup_method(self, method):
         self.ll = get_low_loss_eels_signal()
         self.cl = get_core_loss_eels_signal()
@@ -232,7 +246,9 @@ class TestLinearEELSFitting:
         diff = linear - lm
         np.testing.assert_almost_equal(diff.data.sum(), 0.0, decimal=2)
 
+
 class TestLinearModel2D:
+
     def setup_method(self, method):
         low, high = -10, 10
         N = 100
@@ -300,7 +316,7 @@ class TestLinearModel2D:
         P.c.value = 4
         P.d.value = 3
         P.e.value = 2
-        
+
         data = P.function(*self.mesh)
         s = Signal2D(data)
 
@@ -311,7 +327,9 @@ class TestLinearModel2D:
         np.testing.assert_almost_equal(diff.data.sum(), 0.0, decimal=2)
         np.testing.assert_almost_equal(m.p_std, 0.0, decimal=2)
 
+
 class TestLinearFitTwins:
+
     def setup_method(self, method):
         from hyperspy._components.gaussian import Gaussian
         from hyperspy._signals.signal1d import Signal1D
@@ -342,19 +360,19 @@ class TestLinearFitTwins:
         assert get_top_parent_twin(self.gs[0].A) is self.gs[0].A
 
     def test_top_parent_twins_are_active(self):
-        assert check_top_parent_twins_are_active(self.gs[0])
-        assert check_top_parent_twins_are_active(self.gs[1])
-        assert check_top_parent_twins_are_active(self.gs[2])
+        assert self.gs[0]._top_parent_twins_are_active
+        assert self.gs[1]._top_parent_twins_are_active
+        assert self.gs[2]._top_parent_twins_are_active
 
         self.gs[2].active = False
-        assert check_top_parent_twins_are_active(self.gs[0])
-        assert check_top_parent_twins_are_active(self.gs[1])
-        assert not check_top_parent_twins_are_active(self.gs[2])
+        assert self.gs[0]._top_parent_twins_are_active
+        assert self.gs[1]._top_parent_twins_are_active
+        assert not self.gs[2]._top_parent_twins_are_active
 
         self.gs[0].active = False
-        assert not check_top_parent_twins_are_active(self.gs[0])
-        assert not check_top_parent_twins_are_active(self.gs[1])
-        assert not check_top_parent_twins_are_active(self.gs[2])
+        assert not self.gs[0]._top_parent_twins_are_active
+        assert not self.gs[1]._top_parent_twins_are_active
+        assert not self.gs[2]._top_parent_twins_are_active
 
     def test_without_twins(self):
         for g in self.gs:
@@ -377,13 +395,15 @@ class TestLinearFitTwins:
 
         self.gs[0].A.value = 1
         self.m.fit(optimizer='lstsq')
-        
+
         np.testing.assert_almost_equal(self.gs[0].A.value, 20)
         np.testing.assert_almost_equal(self.gs[1].A.value, -10)
         np.testing.assert_almost_equal(self.gs[2].A.value, 5)
         np.testing.assert_array_almost_equal((self.s - self.m.as_signal()).data, 0)
 
+
 class TestCompute:
+
     def setup_method(self):
         self.s = Signal1D(np.random.random(10))
         m = self.s.create_model()
@@ -404,37 +424,37 @@ class TestCompute:
         self.lin.b.free = False
         np.testing.assert_array_almost_equal(self.lin._compute_constant_term(), 3)
 
+
 @lazifyTestClass
 class TestLinearEdgeCases:
     def setup_method(self, method):
         s = EDS_SEM_Spectrum().isig[5.0:15.0]
-        self.m = s.create_model(auto_background=False)
-        self.c = Expression('a*x+b', 'line with offset')
-        self.m.append(self.c)
-        self.m.fit()
-        self.nonlinear_fit = self.m.as_signal()
-        self.nonlinear_std = [para.std for para in (self.m.linear_parameters + self.m.nonlinear_parameters) if para.std]
+        m = s.create_model(auto_background=False)
+        self.m = m
 
     def test_no_free_parameters(self):
         self.m.set_parameters_not_free()
-        with pytest.raises(AttributeError, match="Model does not contain any free components!"):
+        with pytest.raises(RuntimeError,
+                           match="Model does not contain any free components!"):
             self.m.fit(optimizer="lstsq")
-    
+
     def test_free_nonlinear_parameters(self):
         self.m[1].sigma.free = True
-        with pytest.raises(AttributeError, match=str(self.m[1].sigma)):
+        with pytest.raises(RuntimeError, match=str(self.m[1].sigma)):
             self.m.fit(optimizer="lstsq")
 
     def test_force_fake_linear_optimizer(self):
         with pytest.raises(ValueError, match="not supported"):
-            self.m._linear_fitting(optimizer="foo")
-    
+            self.m._linear_fit(optimizer="foo")
+
     def test_append_linear_comp_not_in_model(self):
         with pytest.raises(AssertionError):
             self.m._compute_component(component=Gaussian())
 
+
 @lazifyTestClass
 class TestLinearMultiFitEdgeCases:
+
     def setup_method(self, method):
         nav = Signal2D(np.random.random((2,2)))
         s = EDS_SEM_Spectrum().isig[5.0:15.0] * nav.T
@@ -446,7 +466,9 @@ class TestLinearMultiFitEdgeCases:
         with pytest.warns(UserWarning, match="model contains non-free parameters"):
             self.m.multifit(optimizer="lstsq")
 
+
 class TestLinearModelTools:
+
     def setup_method(self):
         nav = Signal2D(np.random.random((2,2)))
         s = EDS_SEM_Spectrum() * nav.T
@@ -461,15 +483,15 @@ class TestLinearModelTools:
 
     def test_all_set_non_free_para_have_identical_values(self):
         assert all_set_non_free_para_have_identical_values(self.m)
-        
+
         para1 = self.m[0].a1
-        
+
         # Value varies, but is_set is False
         para1.map['values'][0,0] = 2
         is_identical, para_list =  all_set_non_free_para_have_identical_values(self.m)
         assert is_identical is True
         assert not para_list
-        
+
         # Same, but para is not free
         para1.free = False
         is_identical, para_list =  all_set_non_free_para_have_identical_values(self.m)
@@ -488,27 +510,9 @@ class TestLinearModelTools:
         assert is_identical is False
         assert para1 in para_list and len(para_list) == 1
 
-class TestModelLinearPara:
-    def setup_method(self):
-        nav = Signal2D(np.random.random((2,2)))
-        s = EDS_SEM_Spectrum() * nav.T
-        self.m = s.create_model()
-
-    def test_linear_parameters_to_one(self):
-        for para in self.m.linear_parameters:
-            para.value = 3
-
-        self.m._set_linear_parameters_to_one()
-        for para in self.m.linear_parameters:
-            if para.free:
-                assert para.value == 1
-
-        self.m._set_linear_parameters_to_one(set_map=True)
-        for para in self.m.linear_parameters:
-            if para.free:
-                assert (para.map['values'] == 1).all()
 
 class TestTwinnedComponents:
+
     def setup_method(self):
         self.m = EDS_SEM_Spectrum().create_model()
         self.m2 = EDS_SEM_Spectrum().isig[5.:15.].create_model()
@@ -522,37 +526,40 @@ class TestTwinnedComponents:
         m.fit(optimizer="lstsq")
         B = m.as_signal()
         np.testing.assert_array_almost_equal(A.data, B.data)
-        
 
     def test_fit_fixed_twinned_components_and_std(self):
         m = self.m2
         m[1].A.free = False
         m.fit(optimizer='lstsq')
         lstsq_fit = m.as_signal()
-        linear_std = [para.std for para in (self.m.linear_parameters + self.m.nonlinear_parameters) if para.std]
+        linear_std = [para.std for para in self.m.nonlinear_parameters if para.std]
 
         m.fit()
         nonlinear_fit = m.as_signal()
-        nonlinear_std = [para.std for para in (self.m.linear_parameters + self.m.nonlinear_parameters) if para.std]
+        nonlinear_std = [para.std for para in self.m.nonlinear_parameters if para.std]
 
-        np.testing.assert_array_almost_equal(nonlinear_fit.data, lstsq_fit.data)
-        np.testing.assert_array_almost_equal(nonlinear_std, linear_std, decimal=4)
+        np.testing.assert_allclose(nonlinear_fit.data, lstsq_fit.data)
+        np.testing.assert_allclose(nonlinear_std, linear_std)
+
 
 class MultiLinearCustomComponent(Component):
+
     def __init__(self, a0=1, a1=1):
-        Component.__init__(self, ('a0', 'a1'))
+        Component.__init__(
+            self, ('a0', 'a1'), linear_parameter_list=['a0', 'a1']
+            )
 
         self.a0.value = a0
         self.a1.value = a1
-        self.a0._is_linear = True
-        self.a1._is_linear = True
 
     def function(self, x):
         a0 = self.a0.value
         a1 = self.a1.value
         return a0 + x * a1
 
+
 class TestCustomComponent:
+
     def setup_method(self):
         self.m = EDS_SEM_Spectrum().create_model(auto_background=False)
 
@@ -560,7 +567,7 @@ class TestCustomComponent:
         c = MultiLinearCustomComponent()
         self.m.append(c)
         with pytest.raises(AttributeError, match="has more than one free"):
-            with pytest.warns(UserWarning, match="contains custom components not based on Expression"):
+            with pytest.warns(UserWarning, match="not based on Expression"):
                 self.m.fit(optimizer='lstsq')
 
     def test_custom_comp_warning(self):
@@ -583,7 +590,8 @@ class TestCustomComponent:
         self.m.fit()
         nonlinear = c.a1.value
 
-        np.testing.assert_almost_equal(linear, nonlinear)
+        np.testing.assert_allclose(linear, nonlinear)
+
 
 def test_fixed_free_offset():
     s = Signal1D(np.ones(100)*3)
@@ -597,3 +605,11 @@ def test_fixed_free_offset():
 
     np.testing.assert_almost_equal(a.offset.value, 1.)
     np.testing.assert_almost_equal(b.offset.value, 2.)
+
+
+def test_non_uniform_binned():
+    s = hs.datasets.artificial_data.get_luminescence_signal()
+    s.axes_manager[-1].is_binned = True
+    m = s.create_model()
+    with pytest.raises(ValueError):
+        m.fit(optimizer="lstsq")
