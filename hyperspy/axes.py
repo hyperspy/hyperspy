@@ -21,12 +21,14 @@ import copy
 import math
 import logging
 
-import numpy as np
 import dask.array as da
-import traits.api as t
-from traits.trait_errors import TraitError
+import numpy as np
 import pint
 from sympy.utilities.lambdify import lambdify
+import traits.api as t
+from traits.trait_errors import TraitError
+
+from hyperspy.api_nogui import _ureg
 from hyperspy.events import Events, Event
 from hyperspy.misc.array_tools import (
     numba_closest_index_round,
@@ -47,7 +49,6 @@ import inspect
 from collections.abc import Iterable
 
 _logger = logging.getLogger(__name__)
-_ureg = pint.UnitRegistry()
 
 
 FACTOR_DOCSTRING = \
@@ -131,9 +132,9 @@ class UnitConversion:
         try:
             _ureg(units)
         except pint.errors.UndefinedUnitError:
-            warnings.warn('Unit "{}" not supported for conversion. Nothing '
-                          'done.'.format(units),
-                          )
+            warnings.warn(
+                f"Unit {units} not supported for conversion. Nothing done."
+                )
             return True
         return False
 

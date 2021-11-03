@@ -21,8 +21,9 @@ from collections import OrderedDict
 import scipy.constants as constants
 import numpy as np
 from dask.array import Array as daArray
-from pint import UnitRegistry, UndefinedUnitError
+from pint import UndefinedUnitError
 
+from hyperspy.api_nogui import _ureg
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
@@ -737,9 +738,8 @@ class HologramImage(Signal2D):
                                        max_workers=max_workers)
         fringe_sampling = np.divide(1., carrier_freq_px)
 
-        ureg = UnitRegistry()
         try:
-            units = ureg.parse_expression(
+            units = _ureg.parse_expression(
                 str(self.axes_manager.signal_axes[0].units))
         except UndefinedUnitError:
             raise ValueError('Signal axes units should be defined.')
@@ -781,7 +781,7 @@ class HologramImage(Signal2D):
                     1000 / (2 * constants.m_e * constants.c ** 2))
         wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
         carrier_freq_quantity = wavelength * \
-            ureg('nm') * carrier_freq_units / units * ureg('rad')
+            _ureg('nm') * carrier_freq_units / units * _ureg('rad')
         carrier_freq_mrad = carrier_freq_quantity.to('mrad').magnitude
 
         # Calculate fringe contrast:

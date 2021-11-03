@@ -24,7 +24,6 @@ import dask.array as da
 import traits.api as t
 from scipy import constants
 from prettytable import PrettyTable
-import pint
 
 from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
@@ -50,7 +49,6 @@ from hyperspy.docstrings.signal import (
 
 
 _logger = logging.getLogger(__name__)
-_ureg = pint.UnitRegistry()
 
 
 @add_gui_method(toolkey="hyperspy.microscope_parameters_EELS")

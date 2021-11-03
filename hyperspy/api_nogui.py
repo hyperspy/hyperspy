@@ -21,6 +21,7 @@
 
 import logging
 import importlib
+import sys
 
 _logger = logging.getLogger(__name__)
 from hyperspy.logger import set_log_level
@@ -152,4 +153,11 @@ def __getattr__(name):
             return getattr(importlib.import_module(import_path), name)
         else:
             return importlib.import_module("." + name, 'hyperspy')
+    # Special case _ureg to use it as a singleton
+    elif name == '_ureg':
+        if '_ureg' not in globals():
+            from pint import UnitRegistry
+            setattr(sys.modules[__name__], '_ureg', UnitRegistry())
+        return getattr(sys.modules[__name__], '_ureg')
+
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

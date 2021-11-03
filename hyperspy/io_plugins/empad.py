@@ -21,14 +21,13 @@ import ast
 import xml.etree.ElementTree as ET
 import numpy as np
 import logging
-import pint
 import traits.api as t
 
+from hyperspy.api_nogui import _ureg
 from hyperspy.misc.io.tools import convert_xml_to_dict
 
 
 _logger = logging.getLogger(__name__)
-_ureg = pint.UnitRegistry()
 
 
 # Plugin characteristics
@@ -84,7 +83,7 @@ def _parse_xml(filename):
         info.update({'scan_x':int(om.root.pix_x),
                      'scan_y':int(om.root.pix_y)})
     # in case root.pix_x and root.pix_y are not available
-    elif (om.has_item('root.scan_parameters.scan_resolution_x') and 
+    elif (om.has_item('root.scan_parameters.scan_resolution_x') and
               om.has_item('root.scan_parameters.scan_resolution_y')):
         info.update({'scan_x':int(om.root.scan_parameters.scan_resolution_x),
                      'scan_y':int(om.root.scan_parameters.scan_resolution_y)})

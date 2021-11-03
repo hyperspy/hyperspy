@@ -38,8 +38,8 @@ import h5py
 import numpy as np
 import dask.array as da
 from dateutil import tz
-import pint
 
+from hyperspy.api_nogui import _ureg
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.elements import atomic_number2name
 import hyperspy.misc.io.fei_stream_readers as stream_readers
@@ -472,9 +472,6 @@ class EMD_NCEM:
         List of dictionaries which are passed to the file_reader.
     """
 
-    def __init__(self):
-        self._ureg = pint.UnitRegistry()
-
     def read_file(self, file, lazy=None, dataset_path=None, stack_group=None):
         """
         Read the data from an emd file
@@ -744,7 +741,7 @@ class EMD_NCEM:
                 units_list = [u[1:-1].replace("_", "") for u in units_list]
                 value = ' * '.join(units_list)
                 try:
-                    units = self._ureg.parse_units(value)
+                    units = _ureg.parse_units(value)
                     value = f"{units:~}"
                 except:
                     pass
@@ -942,7 +939,6 @@ class FeiEMDReader(object):
         # Parallelise streams reading
         self.filename = filename
         self.select_type = select_type
-        self.ureg = pint.UnitRegistry()
         self.dictionaries = []
         self.first_frame = first_frame
         self.last_frame = last_frame
@@ -1477,7 +1473,7 @@ class FeiEMDReader(object):
         if units == t.Undefined:
             return value, units
         factor /= 2
-        v = float(value) * self.ureg(units)
+        v = float(value) * _ureg(units)
         converted_v = (factor * v).to_compact()
         converted_value = float(converted_v.magnitude / factor)
         converted_units = '{:~}'.format(converted_v.units)
