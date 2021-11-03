@@ -43,6 +43,9 @@ class VolumePlasmonDrude(Expression):
     intensity : float
     plasmon_energy : float
     fwhm : float
+    **kwargs
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
     Notes
     -----

@@ -73,15 +73,17 @@ class Voigt(Expression):
         :math:`\gamma` = HWHM of the Lorentzian distribution.
     sigma: float
         :math:`2 \sigma \sqrt{(2 \log(2))}` = FWHM of the Gaussian distribution.
+    **kwargs
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
-
+    Notes
+    -----
     For convenience the `gwidth` and `lwidth` attributes can also be used to
     set and get the FWHM of the Gaussian and Lorentzian parts of the
     distribution, respectively. For backwards compatability, `FWHM` is another
     alias for the Gaussian width.
 
-    Notes
-    -----
     W.I.F. David, J. Appl. Cryst. (1986). 19, 63-64,
     doi:10.1107/S0021889886089999
     """

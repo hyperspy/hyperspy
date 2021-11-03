@@ -57,6 +57,9 @@ class Gaussian2D(Expression):
     add_rotation : bool
         If True, add the parameter `rotation_angle` corresponding to the angle
         between the `x` and the horizontal axis.
+    **kwargs
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
     Attributes
     ----------

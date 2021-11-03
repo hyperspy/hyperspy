@@ -53,10 +53,13 @@ class DoublePowerLaw(Expression):
     ratio : float
         Height ratio of the two power law components.
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
-    The `left_cutoff` parameter can be used to set a lower threshold from which
-    the component will return 0.
+    Attributes
+    ----------
+    left_cutoff : float
+        For x <= left_cutoff, the function returns 0. Default value is 0.0.
     """
 
     def __init__(self, A=1e-5, r=3., origin=0., shift=20., ratio=1.,

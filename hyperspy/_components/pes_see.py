@@ -57,7 +57,8 @@ class SEE(Expression):
     B : float
         Tail or asymmetry parameter
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
     """
 

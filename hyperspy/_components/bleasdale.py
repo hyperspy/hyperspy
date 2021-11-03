@@ -39,7 +39,8 @@ class Bleasdale(Expression):
         c : Float
 
         **kwargs
-            Extra keyword arguments are passed to the ``Expression`` component.
+            Extra keyword arguments are passed to the
+            :py:class:`~._components.expression.Expression` component.
 
     For :math:`(a+b\cdot x)\leq0`, the component will be set to 0.
     """

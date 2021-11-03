@@ -27,7 +27,7 @@ sqrt2pi = np.sqrt(2 * np.pi)
 
 class SplitVoigt(Component):
 
-    r"""Split pseudo-Voigt
+    r"""Split pseudo-Voigt component.
 
     .. math::
         :nowrap:

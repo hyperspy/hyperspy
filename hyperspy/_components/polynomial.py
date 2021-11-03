@@ -46,7 +46,8 @@ class Polynomial(Expression):
         Order of the polynomial, must be different from 0.
     **kwargs
         Keyword arguments can be used to initialise the value of the
-        parameters, i.e. a2=2, a1=3, a0=1.
+        parameters, i.e. a2=2, a1=3, a0=1. Extra keyword arguments are passed
+        to the :py:class:`~._components.expression.Expression` component.
 
     """
 

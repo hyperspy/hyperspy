@@ -84,12 +84,12 @@ def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
 class Voigt(Component):
     # Legacy class to be removed in v2.0
 
-    r"""This is the legacy Voigt profile component dedicated to photoemission
-    spectroscopy data analysis that will renamed to `PESVoigt` in v2.0. To use
-    the new Voigt lineshape component set `legacy=False`. See the
-    documentation of :meth:`hyperspy._components.voigt.Voigt` for details on
+    r"""Legacy Voigt profile component dedicated to photoemission spectroscopy
+    data analysis that will renamed to `PESVoigt` in v2.0. To use
+    the new Voigt lineshape component set ``legacy=False``. See the
+    documentation of :py:class:`~._components.voigt.Voigt` for details on
     the usage of the new Voigt component and
-    :meth:`hyperspy._components.pes_voigt.PESVoigt` for the legacy component.
+    :py:class:`~._components.pes_voigt.PESVoigt` for the legacy component.
 
     .. math::
         f(x) = G(x) \cdot L(x)
@@ -273,7 +273,8 @@ class PESVoigt(Component):
         Returns
         -------
          : bool
-            Exit status required for the :meth:`remove_background` function.
+            Exit status required for the
+            :py:meth:`~._signals.signal1d.Signal1D.remove_background` function.
 
         Notes
         -----
