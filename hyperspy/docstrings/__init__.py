@@ -15,5 +15,5 @@ namespace as ``hs``, i.e. by executing the following:
 (Note that code snippets are indicated by three greater-than signs)
 
 We recommend to import the HyperSpy API as above also when doing it manually.
-The docstring examples assume that `hyperspy` has been imported as `hs`,
-numpy as ``np`` and ``matplotlib.pyplot`` as ``plt``. """
+The docstring examples assume that ``hyperspy.api`` has been imported as ``hs``,
+``numpy`` as ``np`` and ``matplotlib.pyplot`` as ``plt``. """

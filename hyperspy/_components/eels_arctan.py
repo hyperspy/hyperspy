@@ -26,10 +26,10 @@ class Arctan(Expression):
 
     To use the new Arctan component
     set `minimum_at_zero=False`. See the documentation of
-    :meth:`hyperspy._components.arctan.Arctan` for details on
+    :meth:`~._components.arctan.Arctan` for details on
     the usage.
 
-    The EELS version :meth:`hyperspy._components.eels_arctan.EELSArctan`
+    The EELS version :meth:`~._components.eels_arctan.EELSArctan`
     (`minimum_at_zero=True`) shifts the function by A in the y direction
 
     """
