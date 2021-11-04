@@ -1304,7 +1304,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         # TODO: generalize it
         self._check_signal_dimension_equals_one()
         if channels is None:
-            channels = int(round(len(self()) * 0.02))
+            channels = int(round(self.axes_manager.signal_axes[0].size * 0.02))
             if channels < 20:
                 channels = 20
         dc = self._data_aligned_with_axes
