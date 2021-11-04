@@ -31,7 +31,6 @@ widgets externally (usually for testing or customisation purposes).
 
 import importlib
 
-from hyperspy.misc.utils import isiterable
 from hyperspy.extensions import ALL_EXTENSIONS
 
 
@@ -74,7 +73,7 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     from hyperspy.defaults_parser import preferences
     if isinstance(toolkit, str):
         toolkit = (toolkit,)
-    if isiterable(toolkit):
+    if isinstance(toolkit, (tuple, list)):
         toolkits = set()
         for tk in toolkit:
             if tk in TOOLKIT_REGISTRY:
