@@ -275,9 +275,6 @@ class BaseModel(list):
             obj : Model
                 The Model that the event belongs to
             """, arguments=['obj'])
-        # Perform linear fitting on entire dataset simultaneously,
-        # not iterating through the axes manager
-        self._linear_ndfit = False
 
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
@@ -957,7 +954,8 @@ class BaseModel(list):
         """List all nonlinear parameters."""
         return tuple([p for c in self for p in c.parameters if p.linear])
 
-    def _linear_fit(self, optimizer="lstsq", calculate_errors=False, **kwargs):
+    def _linear_fit(self, optimizer="lstsq", calculate_errors=False,
+                    current_index_only=True, **kwargs):
         """
         Multivariate linear fitting
 
@@ -968,6 +966,8 @@ class BaseModel(list):
             'ridge_regression' - Supports regularisation, doesn't support lazy
             signal.
         calculate_errors : bool, default is False
+        current_index_only : bool, default is True
+            Fit the current index only, instead of the whole navigation space.
         kwargs : dict, optional
             Keywords argument are passed to
             :py:func:`sklearn.linear_model.ridge_regression`.
@@ -1031,9 +1031,6 @@ class BaseModel(list):
             if parameter.linear:
                 parameter.value = 1.0
 
-        # TODO: check if this is necessary
-        self._set_p0()
-
         channels_signal_shape = np.count_nonzero(self.channel_switches)
         model_data = np.zeros((n_parameters, channels_signal_shape))
         constant_term = np.zeros(channels_signal_shape)
@@ -1089,7 +1086,10 @@ class BaseModel(list):
                     component_list=[component], binned=False
                     )
 
-        if self._linear_ndfit:
+        if current_index_only:
+            target_signal = self.signal()[np.where(self.channel_switches)]
+            nav_shape = ()
+        else:
             nav_shape = self.axes_manager._navigation_shape_in_array
             if self.channel_switches.all():
                 # If channel_switches is all True, then is much more performant
@@ -1099,9 +1099,6 @@ class BaseModel(list):
                 target_signal = self.signal.data.reshape(nav_shape + (-1,))
             else:
                 target_signal = self.signal.data.T[np.where(self.channel_switches.T)].T
-        else:
-            target_signal = self.signal()[np.where(self.channel_switches)]
-            nav_shape = ()
 
         if is_binned(self.signal):
             target_signal = target_signal / np.prod(
@@ -1114,12 +1111,12 @@ class BaseModel(list):
 
         # Reshape what may potentially be Signal2D data into a long Signal1D
         # shape and an nD navigation shape to a 1D nav shape
-        if self._linear_ndfit:
+        if current_index_only:
+            target_signal = target_signal.reshape((flat_sig_len,))
+        else:
             target_signal = target_signal.reshape(
                 (np.prod(nav_shape, dtype=int), ) + (flat_sig_len,)
                 )
-        else:
-            target_signal = target_signal.reshape((flat_sig_len,))
 
         if optimizer == "lstsq":
             xp = da if self.signal._lazy else np
@@ -1131,7 +1128,7 @@ class BaseModel(list):
                 **kw)
             self.coefficient_array = result.T
 
-            if self.signal._lazy and self._linear_ndfit and (
+            if self.signal._lazy and not current_index_only and (
                     Version(dask.__version__) < Version("2020.12.0")):
                 # Dask pre 2020.12 didn't support residuals on 2D input,
                 # we calculate them later.
@@ -1167,7 +1164,7 @@ class BaseModel(list):
         # We only do this if going pixel-by-pixel or if `calculate_errors =True`
         # is specified in multifit. This is because it is a very large
         # calculation and can eat all our ram, even when run lazily.
-        if not self._linear_ndfit or calculate_errors:
+        if calculate_errors:
             fit_output["covar"] = calc_covariance(
                 target_signal=target_signal,
                 coefficients = self.coefficient_array,
@@ -1178,7 +1175,7 @@ class BaseModel(list):
                 fit_output["covar"]
             )
 
-        if self._linear_ndfit:
+        if not current_index_only:
             # The nav shape will have been flattened. We reshape it here.
             fit_output['x'] = fit_output['x'].reshape(nav_shape + (n_parameters,))
 
@@ -1701,37 +1698,26 @@ class BaseModel(list):
                 self.p_std = self.fit_output.perror
 
             elif optimizer in ["lstsq", "ridge_regression"]:
+                # multifit pass this kwargs when necessary
+                current_index_only = kwargs.get('current_index_only', True)
+                # Errors are calculated when specifying calculate_errors=True
+                # or when fitting pixel by pixel
+                kwargs.setdefault('calculate_errors', current_index_only)
+
                 fit_output = self._linear_fit(optimizer=optimizer, **kwargs)
                 self.fit_output = OptimizeResult(**fit_output)
 
-                # Errors are calculated only when fitting pixel by pixel
-                # or when specifying calculate_errors=True
-                has_errors = (not self._linear_ndfit or
-                              kwargs.get('calculate_errors', False))
-
-                if self._linear_ndfit:
-                    for i, para in enumerate(self._free_parameters):
-                        para.map['values'] = self.fit_output.x[..., i]
-                        para.map['std'] = self.fit_output.perror[...,i] if has_errors else np.nan
-                        para.map['is_set'] = True
-
-                    self.p0 = self.fit_output.x[self.axes_manager.indices[::-1]]
-                    if has_errors:
-                        self.p_std = self.fit_output.perror[
-                            self.axes_manager.indices[::-1]
-                            ]
-                    else:
-                        self.p_std = len(self._free_parameters) * (np.nan,)
-
-                    # The nonlinear parameters' .map attribute doesn't get set
-                    # during the "all in one go" linear fitting
-                    for parameter in self.nonlinear_parameters:
-                        parameter.map['values'] = parameter.value
-                        parameter.map['is_set'] = True
-
+                if current_index_only:
+                    # fit_output will have only one entry
+                    indices = ()
                 else:
-                    self.p0 = self.fit_output.x
-                    self.p_std = self.fit_output.perror
+                    indices = self.axes_manager.indices[::-1]
+
+                self.p0 = self.fit_output.x[indices]
+                if kwargs['calculate_errors']:
+                    self.p_std = self.fit_output.perror[indices]
+                else:
+                    self.p_std = len(self.p0) * (np.nan,)
 
             else:
                 # scipy.optimize.* functions
@@ -1808,7 +1794,9 @@ class BaseModel(list):
         success = self.fit_output.get("success", None)
         if success is False:
             message = self.fit_output.get("message", "Unknown reason")
-            _logger.warning(f"`m.fit()` did not exit successfully. Reason: {message}")
+            _logger.warning(
+                f"`m.fit()` did not exit successfully. Reason: {message}"
+                )
 
         # Return info
         if return_info:
@@ -1902,11 +1890,13 @@ class BaseModel(list):
             ]
         if iterpath is None:
             if self.axes_manager.iterpath == "flyback" and not linear_fitting:
-                # flyback is set by default in axes_manager.iterpath on signal creation
+                # flyback is set by default in axes_manager.iterpath
+                # on signal creation
                 warnings.warn(
-                    "The `iterpath` default will change from 'flyback' to 'serpentine' "
-                    "in HyperSpy version 2.0. Change the 'iterpath' argument to other than "
-                    "None to suppress this warning.",
+                    "The `iterpath` default will change from 'flyback' to "
+                    "'serpentine' in HyperSpy version 2.0. Change the "
+                    "'iterpath' argument to other than None to suppress "
+                    "this warning.",
                     VisibleDeprecationWarning,
                 )
             # otherwise use whatever is set at m.axes_manager.iterpath
@@ -1931,8 +1921,33 @@ class BaseModel(list):
                 ]
 
             if len(navigation_variable_nonfree_parameters) == 0:
-                # when True, reuse linear fitting components
-                self._linear_ndfit = True
+                # We can fit the whole dataset:
+                # 1. do the fit
+                # 2. set the map values
+                # 3. leave earlier because we don't need to go iterate over
+                #    the navigation indices
+                kwargs['current_index_only'] = False
+                self.fit(**kwargs)
+
+                # TODO: check what happen to linear twinned parameter
+                for i, para in enumerate(self._free_parameters):
+                    para.map['values'] = self.fit_output.x[..., i]
+                    if kwargs.get('calculate_errors', False):
+                        std = self.fit_output.perror[..., i]
+                    else:
+                        std = len(self._free_parameters) * (np.nan,)
+                    para.map['std'] = std
+                    para.map['is_set'] = True
+
+                # The nonlinear parameters' .map attribute doesn't get set
+                # during the "all in one go" linear fitting
+                for parameter in self.nonlinear_parameters:
+                    parameter.map['values'] = parameter.value
+                    parameter.map['std'] = parameter.std
+                    parameter.map['is_set'] = True
+
+                return
+
             else:
                 warnings.warn(
                     "The model contains non-free parameters that have set "
@@ -1942,50 +1957,38 @@ class BaseModel(list):
                     + "\n\t".join(
                         str(x) for x in navigation_variable_nonfree_parameters)
                 )
-                self._linear_ndfit = False
-        else:
-            self._linear_ndfit = False
 
-        if self._linear_ndfit:
-            # Perform linear fitting on entire dataset simultaneously,
-            # not iterating through the axes manager
-            try:
-                self.fit(**kwargs)
-            finally:
-                self._linear_ndfit = False
+        i = 0
+        with self.axes_manager.events.indices_changed.suppress_callback(
+            self.fetch_stored_values
+        ):
+            if interactive_plot:
+                outer = dummy_context_manager
+                inner = self.suspend_update
+            else:
+                outer = self.suspend_update
+                inner = dummy_context_manager
 
-        else:
-            i = 0
-            with self.axes_manager.events.indices_changed.suppress_callback(
-                self.fetch_stored_values
-            ):
-                if interactive_plot:
-                    outer = dummy_context_manager
-                    inner = self.suspend_update
-                else:
-                    outer = self.suspend_update
-                    inner = dummy_context_manager
+            with outer(update_on_resume=True):
+                with progressbar(
+                    total=maxval, disable=not show_progressbar, leave=True
+                ) as pbar:
+                    for index in self.axes_manager:
+                        with inner(update_on_resume=True):
+                            if mask is None or not mask[index[::-1]]:
+                                # first check if model has set initial values in
+                                # parameters.map['values'][indices],
+                                # otherwise use values from previous fit
+                                self.fetch_stored_values(only_fixed=fetch_only_fixed)
+                                self.fit(**kwargs)
+                                i += 1
+                                pbar.update(1)
 
-                with outer(update_on_resume=True):
-                    with progressbar(
-                        total=maxval, disable=not show_progressbar, leave=True
-                    ) as pbar:
-                        for index in self.axes_manager:
-                            with inner(update_on_resume=True):
-                                if mask is None or not mask[index[::-1]]:
-                                    # first check if model has set initial values in
-                                    # parameters.map['values'][indices],
-                                    # otherwise use values from previous fit
-                                    self.fetch_stored_values(only_fixed=fetch_only_fixed)
-                                    self.fit(**kwargs)
-                                    i += 1
-                                    pbar.update(1)
-
-                                if autosave and i % autosave_every == 0:
-                                    self.save_parameters2file(autosave_fn)
-                # Trigger the indices_changed event to update to current indices,
-                # since the callback was suppressed
-                self.axes_manager.events.indices_changed.trigger(self.axes_manager)
+                            if autosave and i % autosave_every == 0:
+                                self.save_parameters2file(autosave_fn)
+            # Trigger the indices_changed event to update to current indices,
+            # since the callback was suppressed
+            self.axes_manager.events.indices_changed.trigger(self.axes_manager)
 
         if autosave is True:
             _logger.info(f"Deleting temporary file: {autosave_fn}.npz")

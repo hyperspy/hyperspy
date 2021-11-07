@@ -13,10 +13,6 @@ from hyperspy.datasets.example_signals import EDS_SEM_Spectrum
 from hyperspy.datasets.artificial_data import get_low_loss_eels_signal
 from hyperspy.datasets.artificial_data import get_core_loss_eels_signal
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.misc.model_tools import (
-    parameter_map_values_all_identical,
-    all_set_non_free_para_have_identical_values
-    )
 
 
 def test_fit_binned():
@@ -52,10 +48,11 @@ class TestMultiFitLinear:
     def setup_method(self):
         np.random.seed(1)
         x = np.random.random(30)
-        shape = np.random.random((2,3,1))
-        X = shape*x
-        self.s = Signal1D(X)
-        self.m = self.s.create_model()
+        shape = np.random.random((2, 3, 1))
+        X = shape * x
+        s = Signal1D(X)
+        m = s.create_model()
+        self.s, self.m = s, m
 
     def test_gaussian(self):
         m = self.m
@@ -69,8 +66,7 @@ class TestMultiFitLinear:
         m.multifit(optimizer='lstsq', iterpath='serpentine')
         multi = m.as_signal()
 
-        np.testing.assert_almost_equal(
-            single.inav[0,0].data, multi.inav[0,0].data)
+        np.testing.assert_allclose(single(), multi())
 
     def test_map_values_std_isset(self):
         m = self.m
@@ -85,9 +81,9 @@ class TestMultiFitLinear:
         m.multifit(optimizer='lstsq', calculate_errors=True)
         linear = L.A.map.copy()
 
-        np.testing.assert_almost_equal(nonlinear['values'], linear['values'])
-        np.testing.assert_almost_equal(nonlinear['std'], linear['std'])
-        np.testing.assert_almost_equal(nonlinear['is_set'], linear['is_set'])
+        np.testing.assert_allclose(nonlinear['values'], linear['values'])
+        np.testing.assert_allclose(nonlinear['std'], linear['std'])
+        np.testing.assert_allclose(nonlinear['is_set'], linear['is_set'])
 
         m.multifit(optimizer='lstsq', calculate_errors=False)
         np.testing.assert_equal(L.A.map['std'], np.nan)
@@ -103,8 +99,7 @@ class TestMultiFitLinear:
         m.multifit(optimizer='lstsq', iterpath='serpentine')
         multi = m.as_signal()
         # compare fits from first pixel
-        np.testing.assert_almost_equal(
-            single.inav[0,0].data, multi.inav[0,0].data)
+        np.testing.assert_allclose(single(), multi())
 
     def test_channel_switches(self):
         m = self.m
@@ -119,13 +114,11 @@ class TestMultiFitLinear:
         m.multifit(optimizer='lstsq', iterpath='serpentine')
         multi = m.as_signal()
 
-        np.testing.assert_almost_equal(
-            single.inav[0,0].data, multi.inav[0,0].data)
+        np.testing.assert_allclose(single(), multi())
 
         m.fit()
         single_nonlinear = m.as_signal()
-        np.testing.assert_almost_equal(
-            single.inav[0,0].data, single_nonlinear.inav[0,0].data)
+        np.testing.assert_allclose(single(), single_nonlinear())
 
 class TestLinearFitting:
 
@@ -185,7 +178,7 @@ class TestFitAlgorithms:
         m = self.m
         m.fit(optimizer='lstsq')
         lstsq_fit = m.as_signal()
-        np.testing.assert_allclose(self.nonlinear_fit_res, lstsq_fit.data, rtol=1E-2)
+        np.testing.assert_allclose(self.nonlinear_fit_res, lstsq_fit(), rtol=1E-2)
         linear_std = [para.std for para in m._free_parameters if para.std]
         np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, rtol=5E-3)
 
@@ -196,7 +189,7 @@ class TestFitAlgorithms:
         linear_fit = m.as_signal()
         m.fit()
         nonlinear_fit = m.as_signal()
-        np.testing.assert_allclose(nonlinear_fit.data, linear_fit.data, rtol=3E-4)
+        np.testing.assert_allclose(nonlinear_fit(), linear_fit(), rtol=3E-4)
 
     def test_compare_ridge(self):
         pytest.importorskip("sklearn")
@@ -217,13 +210,15 @@ class TestFitAlgorithms:
 class TestLinearEELSFitting:
 
     def setup_method(self, method):
-        self.ll = get_low_loss_eels_signal()
-        self.cl = get_core_loss_eels_signal()
-        self.cl.add_elements(('Mn',))
-        self.m = self.cl.create_model(auto_background=False)
-        self.m[0].onset_energy.value = 673.
-        self.m_convolved = self.cl.create_model(auto_background=False, ll=self.ll)
-        self.m_convolved[0].onset_energy.value = 673.
+        ll = get_low_loss_eels_signal()
+        cl = get_core_loss_eels_signal()
+        cl.add_elements(('Mn',))
+        m = cl.create_model(auto_background=False)
+        m[0].onset_energy.value = 673.
+        m_convolved = cl.create_model(auto_background=False, ll=ll)
+        m_convolved[0].onset_energy.value = 673.
+        self.ll, self.cl = ll, cl
+        self.m, self.m_convolved = m, m_convolved
 
     def test_convolved_and_std_error(self):
         m = self.m_convolved
@@ -252,8 +247,9 @@ class TestLinearModel2D:
     def setup_method(self, method):
         low, high = -10, 10
         N = 100
-        self.x = self.y = np.linspace(low, high, N)
-        self.mesh = np.meshgrid(self.x, self.y)
+        x = y = np.linspace(low, high, N)
+        mesh = np.meshgrid(x, y)
+        self.mesh, self.x, self.y = mesh, x, y
 
     def test_model2D_one_component(self):
         mesh, x, y = self.mesh, self.x, self.y
@@ -279,9 +275,10 @@ class TestLinearModel2D:
         np.testing.assert_almost_equal(m.p_std[0], 0.0)
 
     def test_model2D_linear_many_gaussians(self):
+        mesh, x, y = self.mesh, self.x, self.y
         gausslow, gausshigh = -8, 8
         gauss_step = 8
-        X, Y = self.mesh
+        X, Y = mesh
         z = np.zeros(X.shape)
         g = Gaussian2D()
         for i in np.arange(gausslow, gausshigh+1, gauss_step):
@@ -292,11 +289,11 @@ class TestLinearModel2D:
                 z += g.function(X, Y)
 
         s = Signal2D(z)
-        s.axes_manager[-2].offset = self.x[0]
-        s.axes_manager[-1].offset = self.y[0]
+        s.axes_manager[-2].offset = x[0]
+        s.axes_manager[-1].offset = y[0]
 
-        s.axes_manager[-2].scale = self.x[1] - self.x[0]
-        s.axes_manager[-1].scale = self.y[1] - self.y[0]
+        s.axes_manager[-2].scale = x[1] - x[0]
+        s.axes_manager[-1].scale = y[1] - y[0]
 
         m = s.create_model()
         for i in np.arange(gausslow, gausshigh+1, gauss_step):
@@ -354,31 +351,37 @@ class TestLinearFitTwins:
         self.s, self.m, self.gs = s, m, gs
 
     def test_without_twins(self):
-        for g in self.gs:
+        gs = self.gs
+        m = self.m
+        s = self.s
+        for g in gs:
             g.sigma.free = False
             g.centre.free = False
             g.A.twin = None
 
-        self.gs[0].A.value = 1
-        self.m.fit(optimizer='lstsq')
+        gs[0].A.value = 1
+        m.fit(optimizer='lstsq')
 
-        np.testing.assert_allclose(self.gs[0].A.value, 20)
-        np.testing.assert_allclose(self.gs[1].A.value, -10)
-        np.testing.assert_allclose(self.gs[2].A.value, 5)
-        np.testing.assert_allclose((self.s - self.m.as_signal()).data, 0)
+        np.testing.assert_allclose(gs[0].A.value, 20)
+        np.testing.assert_allclose(gs[1].A.value, -10)
+        np.testing.assert_allclose(gs[2].A.value, 5)
+        np.testing.assert_allclose(s.data,  m())
 
     def test_with_twins(self):
-        for g in self.gs:
+        gs = self.gs
+        m = self.m
+        s = self.s
+        for g in gs:
             g.sigma.free = False
             g.centre.free = False
 
-        self.gs[0].A.value = 1
-        self.m.fit(optimizer='lstsq')
+        gs[0].A.value = 1
+        m.fit(optimizer='lstsq')
 
-        np.testing.assert_allclose(self.gs[0].A.value, 20)
-        np.testing.assert_allclose(self.gs[1].A.value, -10)
-        np.testing.assert_allclose(self.gs[2].A.value, 5)
-        np.testing.assert_allclose((self.s - self.m.as_signal()).data, 0)
+        np.testing.assert_allclose(gs[0].A.value, 20)
+        np.testing.assert_allclose(gs[1].A.value, -10)
+        np.testing.assert_allclose(gs[2].A.value, 5)
+        np.testing.assert_allclose(s.data, m())
 
 
 def test_compute_constant_term():
@@ -427,52 +430,9 @@ class TestLinearMultiFitEdgeCases:
     def test_set_value_in_non_free_parameter(self):
         self.m[1].sigma.map['values'][0,0] = 2.
         self.m[1].sigma.map['is_set'][0,0] = True
-        with pytest.warns(UserWarning, match="model contains non-free parameters"):
+        with pytest.warns(UserWarning,
+                          match="model contains non-free parameters"):
             self.m.multifit(optimizer="lstsq")
-
-
-class TestLinearModelTools:
-
-    def setup_method(self):
-        nav = Signal2D(np.random.random((2,2)))
-        s = EDS_SEM_Spectrum() * nav.T
-        self.m = s.create_model()
-
-    def test_parameter_map_values_all_identical(self):
-        para = self.m[0].a1
-        assert parameter_map_values_all_identical(para)
-        para.map['values'][0,0] = 2
-        assert not parameter_map_values_all_identical(para)
-
-
-    def test_all_set_non_free_para_have_identical_values(self):
-        assert all_set_non_free_para_have_identical_values(self.m)
-
-        para1 = self.m[0].a1
-
-        # Value varies, but is_set is False
-        para1.map['values'][0,0] = 2
-        is_identical, para_list =  all_set_non_free_para_have_identical_values(self.m)
-        assert is_identical is True
-        assert not para_list
-
-        # Same, but para is not free
-        para1.free = False
-        is_identical, para_list =  all_set_non_free_para_have_identical_values(self.m)
-        assert is_identical is True
-        assert not para_list
-
-        # para is_set is now True, no longer identical
-        para1.map['is_set'][0,0] = True
-        is_identical, para_list = all_set_non_free_para_have_identical_values(self.m)
-        assert is_identical is False
-        assert para1 in para_list and len(para_list) == 1
-
-        # all is_set are True, but the values vary, no not identical either
-        para1.map['is_set'] = True
-        is_identical, para_list = all_set_non_free_para_have_identical_values(self.m)
-        assert is_identical is False
-        assert para1 in para_list and len(para_list) == 1
 
 
 class TestTwinnedComponents:

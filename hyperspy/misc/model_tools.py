@@ -243,32 +243,3 @@ def calc_covariance(target_signal, coefficients, component_data,
 def std_err_from_cov(covariance):
     "Get standard error coefficients from the diagonal of the covariance"
     return np.sqrt(np.diagonal(covariance, axis1=-2, axis2=-1))
-
-
-def parameter_map_values_all_identical(para):
-    """Returns True if the parameter has identical values for all
-    navigation indices, otherwise False.
-    """
-    return (para.map['values'] == para.map['values'].item(0)).all()
-
-
-def all_set_non_free_para_have_identical_values(model):
-    """Returns True and an empty list if the all parameters in the model that
-    are not free have identical values in their respective navigation
-    indices AND have `is_set` equal to True.
-
-    Otherwise returns False and a list of the parameters with
-    non-identical values.
-
-    This function is used with linear fitting to check whether to use the
-    faster method across the entire navigation space simultaneously, or the
-    slower index-by-index fitting which supports parameters having fixed
-    values that vary from index to index.
-    """
-    nonfree_parameters = [
-        p for c in model.active_components for p in c.parameters if not p.free
-        ]
-    non_identical_parameters = [
-        p for p in nonfree_parameters
-        if not np.all(p.map['values'] == p.map['values'][0])
-        ]
