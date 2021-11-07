@@ -24,7 +24,7 @@ from dask.threaded import get
 import hyperspy.api as hs
 from hyperspy import _lazy_signals
 from hyperspy._signals.lazy import (
-    _reshuffle_mixed_blocks, to_array, get_navigation_dimension_host_chunk_slice)
+    _reshuffle_mixed_blocks, to_array, _get_navigation_dimension_chunk_slice)
 from hyperspy.exceptions import VisibleDeprecationWarning
 
 
@@ -171,7 +171,7 @@ class TestGetNavigationDimensionHostChunkSlice:
     )
     def test_simple(self, position, chunk_slice):
         dask_array = da.zeros((10, 20, 50, 50), chunks=(2, 2, 25, 25))
-        chunk_slice_output = get_navigation_dimension_host_chunk_slice(
+        chunk_slice_output = _get_navigation_dimension_chunk_slice(
             position, dask_array.chunks
         )
         assert chunk_slice_output[:2] == chunk_slice
@@ -182,7 +182,7 @@ class TestGetNavigationDimensionHostChunkSlice:
     )
     def test_out_of_range(self, position):
         dask_array = da.zeros((10, 20, 50, 50), chunks=(2, 2, 25, 25))
-        chunk_slice_output = get_navigation_dimension_host_chunk_slice(
+        chunk_slice_output = _get_navigation_dimension_chunk_slice(
             position, dask_array.chunks
         )
         assert not chunk_slice_output
@@ -200,7 +200,7 @@ class TestGetNavigationDimensionHostChunkSlice:
     def test_dimensions(self, shape):
         dask_array = da.zeros(shape, chunks=(2,) * len(shape))
         position = (1,) * len(shape)
-        chunk_slice_output = get_navigation_dimension_host_chunk_slice(
+        chunk_slice_output = _get_navigation_dimension_chunk_slice(
             position, dask_array.chunks
         )
         chunk_slice_compare = (slice(0, 2),) * len(shape)
@@ -225,31 +225,31 @@ class TestGetTemporaryDaskChunk:
         data = da.from_array(data, chunks=(5, 5, 25, 25))
         s = _lazy_signals.LazySignal2D(data)
         for value, chunk_slice in zip(value_list, chunk_slice_list):
-            value_output = s._get_temporary_dask_chunk(
+            value_output = s._get_cache_dask_chunk(
                 (chunk_slice[0].start, chunk_slice[1].start, slice(None), slice(None))
             )
-            assert s._temp_dask_chunk.shape == (5, 5, 50, 50)
-            assert np.all(s._temp_dask_chunk == value)
-            assert chunk_slice == s._temp_dask_chunk_slice
+            assert s._cache_dask_chunk.shape == (5, 5, 50, 50)
+            assert np.all(s._cache_dask_chunk == value)
+            assert chunk_slice == s._cache_dask_chunk_slice
             assert value == value_output.mean(dtype=np.uint16)
 
     def test_change_position(self):
         s = _lazy_signals.LazySignal2D(
             da.zeros((10, 10, 20, 20), chunks=(5, 5, 10, 10))
         )
-        s._get_temporary_dask_chunk((0, 0, slice(None), slice(None)))
-        chunk_slice0 = s._temp_dask_chunk_slice
+        s._get_cache_dask_chunk((0, 0, slice(None), slice(None)))
+        chunk_slice0 = s._cache_dask_chunk_slice
 
-        s._temp_dask_chunk[:] = 2
+        s._cache_dask_chunk[:] = 2
 
-        s._get_temporary_dask_chunk((4, 4, slice(None), slice(None)))
-        chunk_slice1 = s._temp_dask_chunk_slice
+        s._get_cache_dask_chunk((4, 4, slice(None), slice(None)))
+        chunk_slice1 = s._cache_dask_chunk_slice
         assert chunk_slice0 == chunk_slice1
-        assert np.all(s._temp_dask_chunk == 2)
+        assert np.all(s._cache_dask_chunk == 2)
 
-        s._get_temporary_dask_chunk((6, 4, slice(None), slice(None)))
-        s._get_temporary_dask_chunk((0, 0, slice(None), slice(None)))
-        assert np.all(s._temp_dask_chunk == 0)
+        s._get_cache_dask_chunk((6, 4, slice(None), slice(None)))
+        s._get_cache_dask_chunk((0, 0, slice(None), slice(None)))
+        assert np.all(s._cache_dask_chunk == 0)
 
     @pytest.mark.parametrize(
         "shape",
@@ -265,7 +265,7 @@ class TestGetTemporaryDaskChunk:
         chunks = (2,) * len(shape)
         s = _lazy_signals.LazySignal2D(da.zeros(shape), chunks=chunks)
         position = s.axes_manager._getitem_tuple
-        s._get_temporary_dask_chunk(position)
+        s._get_cache_dask_chunk(position)
         assert len(position) == len(shape)
 
     def test_correct_value_within_chunk(self):
@@ -276,19 +276,19 @@ class TestGetTemporaryDaskChunk:
         data[1, 1] = 4
         data = da.from_array(data, chunks=(2, 2, 25, 25))
         s = _lazy_signals.LazySignal2D(data)
-        value = s._get_temporary_dask_chunk(s.axes_manager._getitem_tuple)
+        value = s._get_cache_dask_chunk(s.axes_manager._getitem_tuple)
         assert np.all(value == 1)
 
         s.axes_manager.indices = (1, 0)
-        value = s._get_temporary_dask_chunk(s.axes_manager._getitem_tuple)
+        value = s._get_cache_dask_chunk(s.axes_manager._getitem_tuple)
         assert np.all(value == 2)
 
         s.axes_manager.indices = (0, 1)
-        value = s._get_temporary_dask_chunk(s.axes_manager._getitem_tuple)
+        value = s._get_cache_dask_chunk(s.axes_manager._getitem_tuple)
         assert np.all(value == 3)
 
         s.axes_manager.indices = (1, 1)
-        value = s._get_temporary_dask_chunk(s.axes_manager._getitem_tuple)
+        value = s._get_cache_dask_chunk(s.axes_manager._getitem_tuple)
         assert np.all(value == 4)
 
     def test_signal1d(self):
@@ -296,41 +296,41 @@ class TestGetTemporaryDaskChunk:
         data[5, 5] = 2
         data = da.from_array(data, chunks=(2, 2, 10))
         s = _lazy_signals.LazySignal1D(data)
-        value = s._get_temporary_dask_chunk(s.axes_manager._getitem_tuple)
-        assert len(s._temp_dask_chunk_slice) == 2
-        assert s._temp_dask_chunk.shape == (2, 2, 20)
-        assert s._temp_dask_chunk_slice == np.s_[0:2, 0:2]
+        value = s._get_cache_dask_chunk(s.axes_manager._getitem_tuple)
+        assert len(s._cache_dask_chunk_slice) == 2
+        assert s._cache_dask_chunk.shape == (2, 2, 20)
+        assert s._cache_dask_chunk_slice == np.s_[0:2, 0:2]
         assert len(value.shape) == 1
         assert len(value) == 20
         s.axes_manager.indices = (5, 5)
-        value = s._get_temporary_dask_chunk(s.axes_manager._getitem_tuple)
+        value = s._get_cache_dask_chunk(s.axes_manager._getitem_tuple)
         assert np.all(value == 2)
 
     def test_changed_data(self):
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
         position = s.axes_manager._getitem_tuple
-        s._get_temporary_dask_chunk(position)
-        assert hasattr(s, "_temp_dask_chunk")
-        assert hasattr(s, "_temp_dask_chunk_slice")
+        s._get_cache_dask_chunk(position)
+        assert hasattr(s, "_cache_dask_chunk")
+        assert hasattr(s, "_cache_dask_chunk_slice")
         s.events.data_changed.trigger(None)
-        assert not hasattr(s, "_temp_dask_chunk")
-        assert not hasattr(s, "_temp_dask_chunk_slice")
+        assert not hasattr(s, "_cache_dask_chunk")
+        assert not hasattr(s, "_cache_dask_chunk_slice")
 
     def test_map(self):
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
         s.__call__()
-        assert len(s._temp_dask_chunk.shape) == 4
+        assert len(s._cache_dask_chunk.shape) == 4
         s.map(np.sum, axis=1, ragged=False)
         s.__call__()
-        assert len(s._temp_dask_chunk.shape) == 3
+        assert len(s._cache_dask_chunk.shape) == 3
 
-    def test_clear_temp_dask_data(self):
+    def test_clear_cache_dask_data(self):
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
         s.__call__()
-        s._clear_temp_dask_data(self)
+        s._clear_cache_dask_data(self)
         assert not hasattr(s, "_temp_dask_data")
         assert not hasattr(s, "_temp_dask_data_slice")
-        s._clear_temp_dask_data(self)
+        s._clear_cache_dask_data(self)
 
 
 class TestLazyPlot:
@@ -353,11 +353,10 @@ class TestLazyPlot:
         for value, chunk_slice in zip(value_list, chunk_slice_list):
             s.plot()
             s.axes_manager.indices = (chunk_slice[1].start, chunk_slice[0].start)
-            assert s._temp_dask_chunk.shape == (5, 5, 50, 50)
-            assert np.all(s._temp_dask_chunk == value)
-            assert chunk_slice == s._temp_dask_chunk_slice
+            assert s._cache_dask_chunk.shape == (5, 5, 50, 50)
+            assert np.all(s._cache_dask_chunk == value)
+            assert chunk_slice == s._cache_dask_chunk_slice
             s._plot.close()
-            s._plot.close_navigator_plot()
 
     @pytest.mark.parametrize(
         "shape",
@@ -374,7 +373,6 @@ class TestLazyPlot:
         s = _lazy_signals.LazySignal2D(da.zeros(shape), chunks=chunks)
         s.plot()
         s._plot.close()
-        s._plot.close_navigator_plot()
 
     def test_axes_manager(self):
         data0 = np.zeros((30, 40, 50, 50), dtype=np.uint16)
@@ -385,14 +383,12 @@ class TestLazyPlot:
         s1 = _lazy_signals.LazySignal2D(data1)
         s0.plot(axes_manager=s1.axes_manager)
         s1.axes_manager.indices = (20, 20)
-        assert np.all(s0._temp_dask_chunk[0, 0] == 100)
+        assert np.all(s0._cache_dask_chunk[0, 0] == 100)
         s0._plot.close()
-        s0._plot.close_navigator_plot()
 
     def test_signal1d(self):
         s = _lazy_signals.LazySignal1D(da.zeros((10, 10, 20), chunks=(5, 5, 10)))
         s.plot()
-        assert s._temp_dask_chunk.shape == (5, 5, 20)
-        assert s._temp_dask_chunk_slice == np.s_[0:5, 0:5]
+        assert s._cache_dask_chunk.shape == (5, 5, 20)
+        assert s._cache_dask_chunk_slice == np.s_[0:5, 0:5]
         s._plot.close()
-        s._plot.close_navigator_plot()

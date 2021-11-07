@@ -235,11 +235,11 @@ class LazySignal(BaseSignal):
             except AttributeError:
                 _logger.exception("Failed to close lazy Signal file")
 
-    def _clear_temp_dask_data(self, obj=None):
-        if hasattr(self, "_temp_dask_chunk"):
-            del self._temp_dask_chunk
-        if hasattr(self, "_temp_dask_chunk_slice"):
-            del self._temp_dask_chunk_slice
+    def _clear_cache_dask_data(self, obj=None):
+        if hasattr(self, "_cache_dask_chunk"):
+            del self._cache_dask_chunk
+        if hasattr(self, "_cache_dask_chunk_slice"):
+            del self._cache_dask_chunk_slice
 
     def _get_dask_chunks(self, axis=None, dtype=None):
         """Returns dask chunks.
@@ -414,27 +414,26 @@ class LazySignal(BaseSignal):
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
-    def _get_temporary_dask_chunk(self, position):
-        if not self._clear_temp_dask_data in self.events.data_changed._connected_all:
-            self.events.data_changed.connect(self._clear_temp_dask_data)
+    def _get_cache_dask_chunk(self, indices):
+        if not self._clear_cache_dask_data in self.events.data_changed._connected_all:
+            self.events.data_changed.connect(self._clear_cache_dask_data)
         sig_dim = self.axes_manager.signal_dimension
         chunks = self.data.chunks[:-sig_dim]
-        navigation_indices = position[:-sig_dim]
+        navigation_indices = indices[:-sig_dim]
         chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, chunks)
-        if not hasattr(self, "_temp_dask_chunk"):
-            self._temp_dask_chunk = None
-            self._temp_dask_chunk_slice = None
-        if not chunk_slice == self._temp_dask_chunk_slice:
-            del self._temp_dask_chunk
-            temp_dask_array = np.atleast_1d(self.data.__getitem__(chunk_slice))
-            self._temp_dask_chunk = np.asarray(temp_dask_array)
-            self._temp_dask_chunk_slice = chunk_slice
+        if not hasattr(self, "_cache_dask_chunk"):
+            self._cache_dask_chunk = None
+            self._cache_dask_chunk_slice = None
+        if chunk_slice != self._cache_dask_chunk_slice:
+            self._clear_cache_dask_data()
+            self._cache_dask_chunk = np.asarray(self.data.__getitem__(chunk_slice))
+            self._cache_dask_chunk_slice = chunk_slice
 
-        position = list(position)
+        indices = list(indices)
         for i, temp_slice in enumerate(chunk_slice):
-            position[i] -= temp_slice.start
-        position = tuple(position)
-        value = self._temp_dask_chunk[position]
+            indices[i] -= temp_slice.start
+        indices = tuple(indices)
+        value = self._cache_dask_chunk[indices]
         return value
 
     def rebin(self, new_shape=None, scale=None,
