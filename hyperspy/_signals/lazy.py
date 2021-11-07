@@ -85,14 +85,47 @@ def to_array(thing, chunks=None):
             raise ValueError
 
 
-def get_navigation_dimension_host_chunk_slice(position_tuple, chunks):
+def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
+    """
+
+    Examples
+    --------
+    Making all the variables
+
+	>>> import dask.array as da
+	>>> from hyperspy._signals.lazy import _get_navigation_dimension_chunk_slice
+	>>> data = da.random.random((128, 128, 256, 256), chunks=(32, 32, 32, 32))
+	>>> s = hs.signals.Signal2D(data).as_lazy()
+	>>> sig_dim = s.axes_manager.signal_dimension
+	>>> nav_chunks = s.data.chunks[:-sig_dim]
+	>>> navigation_indices = s.axes_manager._getitem_tuple[:-sig_dim]
+
+    The navigation index here is (0, 0), giving us the slice which contains
+    this index.
+
+	>>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
+	>>> print(chunk_slice)
+    (slice(0, 32, None), slice(0, 32, None))
+
+    Moving the navigator to a new position, by directly setting the indices.
+    Normally, this is done by moving the navigator while plotting the data.
+    Note the "inversion" of the axes here: the indices is given in (x, y),
+    while the chunk_slice is given in (y, x).
+
+    >>> s.axes_manager.indices = (128, 70)
+    >>> navigation_indices = s.axes_manager._getitem_tuple[:-sig_dim]
+	>>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
+	>>> print(chunk_slice)
+    (slice(64, 96, None), slice(96, 128, None))
+
+    """
     chunk_slice_list = da.core.slices_from_chunks(chunks)
     for chunk_slice in chunk_slice_list:
         is_slice = True
-        for ipos in range(len(position_tuple)):
-            temp_slice = chunk_slice[ipos]
-            pos = position_tuple[ipos]
-            if not (temp_slice.start <= pos < temp_slice.stop):
+        for index_nav in range(len(navigation_indices)):
+            temp_slice = chunk_slice[index_nav]
+            nav = navigation_indices[index_nav]
+            if not (temp_slice.start <= nav < temp_slice.stop):
                 is_slice = False
                 break
         if is_slice:
@@ -386,8 +419,8 @@ class LazySignal(BaseSignal):
             self.events.data_changed.connect(self._clear_temp_dask_data)
         sig_dim = self.axes_manager.signal_dimension
         chunks = self.data.chunks[:-sig_dim]
-        position_tuple = position[:-sig_dim]
-        chunk_slice = get_navigation_dimension_host_chunk_slice(position_tuple, chunks)
+        navigation_indices = position[:-sig_dim]
+        chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, chunks)
         if not hasattr(self, "_temp_dask_chunk"):
             self._temp_dask_chunk = None
             self._temp_dask_chunk_slice = None
