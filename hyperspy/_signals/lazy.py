@@ -92,19 +92,19 @@ def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
     --------
     Making all the variables
 
-	>>> import dask.array as da
-	>>> from hyperspy._signals.lazy import _get_navigation_dimension_chunk_slice
-	>>> data = da.random.random((128, 128, 256, 256), chunks=(32, 32, 32, 32))
-	>>> s = hs.signals.Signal2D(data).as_lazy()
-	>>> sig_dim = s.axes_manager.signal_dimension
-	>>> nav_chunks = s.data.chunks[:-sig_dim]
-	>>> navigation_indices = s.axes_manager._getitem_tuple[:-sig_dim]
+    >>> import dask.array as da
+    >>> from hyperspy._signals.lazy import _get_navigation_dimension_chunk_slice
+    >>> data = da.random.random((128, 128, 256, 256), chunks=(32, 32, 32, 32))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> sig_dim = s.axes_manager.signal_dimension
+    >>> nav_chunks = s.data.chunks[:-sig_dim]
+    >>> navigation_indices = s.axes_manager._getitem_tuple[:-sig_dim]
 
     The navigation index here is (0, 0), giving us the slice which contains
     this index.
 
-	>>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
-	>>> print(chunk_slice)
+    >>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
+    >>> print(chunk_slice)
     (slice(0, 32, None), slice(0, 32, None))
 
     Moving the navigator to a new position, by directly setting the indices.
@@ -114,8 +114,8 @@ def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
 
     >>> s.axes_manager.indices = (128, 70)
     >>> navigation_indices = s.axes_manager._getitem_tuple[:-sig_dim]
-	>>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
-	>>> print(chunk_slice)
+    >>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
+    >>> print(chunk_slice)
     (slice(64, 96, None), slice(96, 128, None))
 
     """
