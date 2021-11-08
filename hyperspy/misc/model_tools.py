@@ -60,11 +60,12 @@ class current_component_values():
         # Number of digits for each label for the terminal-style view.
         size = {
             'name': 14,
-            'free': 5,
+            'free': 7,
             'value': 10,
             'std': 10,
             'bmin': 10,
             'bmax': 10,
+            'linear':6,
         }
         # Using nested string formatting for flexibility in future updates
         signature = "{{:>{name}}} | {{:>{free}}} | {{:>{value}}} | {{:>{std}}} | {{:>{bmin}}} | {{:>{bmax}}}".format(
@@ -84,6 +85,7 @@ class current_component_values():
         text += "\n"
         for para in self.parameters:
             if not self.only_free or self.only_free and para.free:
+                free = para.free if para.twin is None else 'Twinned'
                 if _is_iter(para.value):
                     # iterables (polynomial.value) must be handled separately
                     # `blank` results in a column of spaces
@@ -94,14 +96,14 @@ class current_component_values():
                     for i, (v, s, bn, bx) in enumerate(
                             zip(para.value, std, bmin, bmax)):
                         if i == 0:
-                            text += signature.format(para.name[:size['name']], str(para.free)[:size['free']], str(
+                            text += signature.format(para.name[:size['name']], str(free)[:size['free']], str(
                                 v)[:size['value']], str(s)[:size['std']], str(bn)[:size['bmin']], str(bx)[:size['bmax']])
                         else:
                             text += signature.format("", "", str(v)[:size['value']], str(
                                 s)[:size['std']], str(bn)[:size['bmin']], str(bx)[:size['bmax']])
                         text += "\n"
                 else:
-                    text += signature.format(para.name[:size['name']], str(para.free)[:size['free']], str(para.value)[
+                    text += signature.format(para.name[:size['name']], str(free)[:size['free']], str(para.value)[
                                              :size['value']], str(para.std)[:size['std']], str(para.bmin)[:size['bmin']], str(para.bmax)[:size['bmax']])
                     text += "\n"
         return text
@@ -118,6 +120,7 @@ class current_component_values():
         text += para_head
         for para in self.parameters:
             if not self.only_free or self.only_free and para.free:
+                free = para.free if para.twin is None else 'Twinned'
                 if _is_iter(para.value):
                     # iterables (polynomial.value) must be handled separately
                     # This should be removed with hyperspy 2.0 as Polynomial
@@ -134,7 +137,7 @@ class current_component_values():
 
                 text += """<tr><td>{0}</td><td>{1}</td><td>{2}</td>
                     <td>{3}</td><td>{4}</td><td>{5}</td></tr>""".format(
-                        para.name, para.free, value, std, bmin, bmax)
+                        para.name, free, value, std, bmin, bmax)
         text += "</table>"
         return text
 
