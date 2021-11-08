@@ -344,7 +344,7 @@ class Expression(Component):
         """
         free_linear_parameters = [
             # Use `_free` private attribute not to interfere with twin
-            p.name for p in self.parameters if p.linear and p._free
+            p.name for p in self.parameters if p._linear and p._free
             ]
 
         # Check linearity by multiplying a parameter by a factor and testing

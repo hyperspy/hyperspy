@@ -41,9 +41,9 @@ def test_linear_override():
     g = PowerLaw()
     for para in g.parameters:
         if para is g.A:
-            assert para.linear
+            assert para._linear
         else:
-            assert not para.linear
+            assert not para._linear
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))

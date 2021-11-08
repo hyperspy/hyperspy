@@ -463,11 +463,13 @@ class TestTwinnedComponents:
         m[1].A.free = False
         m.fit(optimizer='lstsq')
         lstsq_fit = m.as_signal()
-        linear_std = [para.std for para in self.m.nonlinear_parameters if para.std]
+        nonlinear_parameters = [p for c in m for p in c.parameters
+                                if not p._linear]
+        linear_std = [para.std for para in nonlinear_parameters if para.std]
 
         m.fit()
         nonlinear_fit = m.as_signal()
-        nonlinear_std = [para.std for para in self.m.nonlinear_parameters if para.std]
+        nonlinear_std = [para.std for para in nonlinear_parameters if para.std]
 
         np.testing.assert_allclose(nonlinear_fit.data, lstsq_fit.data)
         np.testing.assert_allclose(nonlinear_std, linear_std)

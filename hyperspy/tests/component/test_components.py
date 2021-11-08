@@ -609,9 +609,9 @@ class TestScalableFixedPattern:
         fp = hs.model.components1D.ScalableFixedPattern(
             s1, interpolate=interpolate
             )
-        assert fp.yscale.linear
-        assert not fp.xscale.linear
-        assert not fp.shift.linear
+        assert fp.yscale._linear
+        assert not fp.xscale._linear
+        assert not fp.shift._linear
 
         m = s.create_model()
         m.append(fp)
@@ -621,9 +621,9 @@ class TestScalableFixedPattern:
         m2._load_dictionary(model_dict)
         assert m2[0].interpolate == interpolate
         np.testing.assert_allclose(m2[0].signal.data, s1.data)
-        assert m2[0].yscale.linear
-        assert not m2[0].xscale.linear
-        assert not m2[0].shift.linear
+        assert m2[0].yscale._linear
+        assert not m2[0].xscale._linear
+        assert not m2[0].shift._linear
 
 
 class TestHeavisideStep:

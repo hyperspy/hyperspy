@@ -944,16 +944,6 @@ class BaseModel(list):
         """List all nonlinear parameters."""
         return tuple([c for c in self if c.active])
 
-    @property
-    def nonlinear_parameters(self):
-        """List all nonlinear parameters."""
-        return tuple([p for c in self for p in c.parameters if not p.linear])
-
-    @property
-    def linear_parameters(self):
-        """List all nonlinear parameters."""
-        return tuple([p for c in self for p in c.parameters if p.linear])
-
     def _linear_fit(self, optimizer="lstsq", calculate_errors=False,
                     current_index_only=True, **kwargs):
         """
@@ -993,7 +983,7 @@ class BaseModel(list):
 
         free_nonlinear_parameters = [
             p for c in self.active_components for p in c.parameters
-            if p.free and not p.linear
+            if p.free and not p._linear
             ]
         if free_nonlinear_parameters:
             raise RuntimeError(
@@ -1028,7 +1018,7 @@ class BaseModel(list):
         # avoid the entire component being zero. The value of 1 is chosen for
         # no particular reason.
         for parameter in parameters:
-            if parameter.linear:
+            if parameter._linear:
                 parameter.value = 1.0
 
         channels_signal_shape = np.count_nonzero(self.channel_switches)
@@ -1929,7 +1919,9 @@ class BaseModel(list):
 
                 # The nonlinear parameters' .map attribute doesn't get set
                 # during the "all in one go" linear fitting
-                for parameter in self.nonlinear_parameters:
+                nonlinear_parameters = [p for c in self for p in c.parameters
+                                        if not p._linear]
+                for parameter in nonlinear_parameters:
                     parameter.map['values'] = parameter.value
                     parameter.map['std'] = parameter.std
                     parameter.map['is_set'] = True

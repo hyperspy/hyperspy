@@ -40,26 +40,31 @@ class TestModelLinearity:
         Model is not currently linear as Gaussian sigma and centre parameters
         are free
         """
-        assert len(self.m.nonlinear_parameters) > 0
+        nonlinear_parameters = [p for c in self.m for p in c.parameters
+                                if not p._linear]
+        assert len(nonlinear_parameters) > 0
 
     def test_model_linear(self):
         self.g.sigma.free = False
         self.g.centre.free = False
-        nonlinear_parameters = self.m.nonlinear_parameters
+        nonlinear_parameters = [p for c in self.m for p in c.parameters
+                                if not p._linear]
         assert len(nonlinear_parameters) == 2
         l = [p for p in nonlinear_parameters if p in self.m._free_parameters]
         assert len(l) == 0
 
     def test_model_parameters_inactive(self):
         self.g.active = False
-        nonlinear_parameters = self.m.nonlinear_parameters
+        nonlinear_parameters = [p for c in self.m for p in c.parameters
+                                if not p._linear]
         assert len(nonlinear_parameters) == 2
         l = [p for p in nonlinear_parameters if p in self.m._free_parameters]
         assert len(l) == 0
 
     def test_model_parameters_set_inactive(self):
         self.m.set_component_active_value(False, [self.g])
-        nonlinear_parameters = self.m.nonlinear_parameters
+        nonlinear_parameters = [p for c in self.m for p in c.parameters
+                                if not p._linear]
         assert len(nonlinear_parameters) == 2
         l = [p for p in nonlinear_parameters if p in self.m._free_parameters]
         assert len(l) == 0
@@ -68,23 +73,23 @@ class TestModelLinearity:
 def test_sympy_linear_expression():
     expression = "height * exp(-(x - centre) ** 2 * 4 * log(2)/ fwhm ** 2)"
     g = Expression(expression, name="Test_function")
-    assert g.height.linear
-    assert not g.centre.linear
-    assert not g.fwhm.linear
+    assert g.height._linear
+    assert not g.centre._linear
+    assert not g.fwhm._linear
 
 
 def test_sympy_linear_expression2():
     expression = "a * x + b"
     g = Expression(expression, name="Test_function2")
-    assert g.a.linear
-    assert g.b.linear
+    assert g.a._linear
+    assert g.b._linear
 
 
 def test_gaussian_linear():
     g = Gaussian()
-    assert g.A.linear
-    assert not g.centre.linear
-    assert not g.sigma.linear
+    assert g.A._linear
+    assert not g.centre._linear
+    assert not g.sigma._linear
 
 
 def test_parameter_linearity():

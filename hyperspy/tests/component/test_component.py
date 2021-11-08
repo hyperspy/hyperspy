@@ -291,6 +291,6 @@ def test_linear_parameter_initialisation():
     C = Component(['one', 'two'], ['one'])
     P = Parameter()
 
-    assert C.one.linear
-    assert not C.two.linear
-    assert not P.linear
+    assert C.one._linear
+    assert not C.two._linear
+    assert not P._linear

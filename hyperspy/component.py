@@ -177,10 +177,6 @@ class Parameter(t.HasTraits):
                            }
         self._slicing_whitelist = {'map': 'inav'}
 
-    @property
-    def linear(self):
-        return self._linear
-
     def _load_dictionary(self, dictionary):
         """Load data from dictionary.
 
@@ -1142,9 +1138,9 @@ class Component(t.HasTraits):
         for _parameter in parameter_list:
             if not only_linear and not only_nonlinear:
                 _parameter.free = True
-            elif only_linear and _parameter.linear:
+            elif only_linear and _parameter._linear:
                 _parameter.free = True
-            elif only_nonlinear and not _parameter.linear:
+            elif only_nonlinear and not _parameter._linear:
                 _parameter.free = True
             else:
                 pass
@@ -1195,9 +1191,9 @@ class Component(t.HasTraits):
         for _parameter in parameter_list:
             if not only_linear and not only_nonlinear:
                 _parameter.free = False
-            elif only_linear and _parameter.linear:
+            elif only_linear and _parameter._linear:
                 _parameter.free = False
-            elif only_nonlinear and not _parameter.linear:
+            elif only_nonlinear and not _parameter._linear:
                 _parameter.free = False
             else:
                 pass
@@ -1313,7 +1309,7 @@ class Component(t.HasTraits):
     def linear(self):
         """A component is linear if its free parameters are linear."""
         if self._nfree_param == 1:
-            return self.free_parameters[0].linear
+            return self.free_parameters[0]._linear
         else:
             return False
 
