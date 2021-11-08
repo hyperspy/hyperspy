@@ -197,6 +197,15 @@ class TestOffset:
         factor = axis.scale if binned else 1
         np.testing.assert_allclose(o.function_nd(axis.axis) * factor, s.data)
 
+    def test_constant_term(self):
+        m = self.m
+        o = m[0]
+        o.offset.free = True
+        assert o._constant_term == 0
+
+        o.offset.free = False
+        assert o._constant_term == o.offset.value
+
 
 @pytest.mark.filterwarnings("ignore:The API of the `Polynomial` component")
 class TestDeprecatedPolynomial:
@@ -480,14 +489,10 @@ def test_expression_extract():
     assert str(const) == 'a*x + b'
     assert str(not_const) == '0'
 
-def test_expression_extract():
-    const, not_const = extract_constant_part_of_expression("a*x+b",)
-    assert str(const) == 'a*x + b'
-    assert str(not_const) == '0'
-
     const, not_const = extract_constant_part_of_expression("a*x+b-3", "a", "b")
     assert str(const) == '-3'
     assert str(not_const) == 'a*x + b'
+
 
 def test_separate_pseudocomponents():
     A = hs.model.components1D.Expression("a*b*x+c**2*x", "test")
@@ -500,6 +505,7 @@ def test_separate_pseudocomponents():
 
     free, fixed = A._separate_pseudocomponents()
     assert list(free.keys()) == ['c']
+
 
 class TestScalableFixedPattern:
 
@@ -600,8 +606,13 @@ class TestScalableFixedPattern:
     def test_recreate_component(self, interpolate):
         s = self.s
         s1 = self.pattern
-        fp = hs.model.components1D.ScalableFixedPattern(s1,
-                                                        interpolate=interpolate)
+        fp = hs.model.components1D.ScalableFixedPattern(
+            s1, interpolate=interpolate
+            )
+        assert fp.yscale.linear
+        assert not fp.xscale.linear
+        assert not fp.shift.linear
+
         m = s.create_model()
         m.append(fp)
         model_dict = m.as_dictionary()
@@ -610,6 +621,9 @@ class TestScalableFixedPattern:
         m2._load_dictionary(model_dict)
         assert m2[0].interpolate == interpolate
         np.testing.assert_allclose(m2[0].signal.data, s1.data)
+        assert m2[0].yscale.linear
+        assert not m2[0].xscale.linear
+        assert not m2[0].shift.linear
 
 
 class TestHeavisideStep:

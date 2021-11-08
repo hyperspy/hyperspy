@@ -60,8 +60,6 @@ from hyperspy.misc.export_dictionary import (
     )
 from hyperspy.misc.model_tools import (
     current_model_values,
-    all_set_non_free_para_have_identical_values,
-    get_top_parent_twin,
     calc_covariance,
     std_err_from_cov
     )
@@ -108,6 +106,31 @@ def _check_deprecated_optimizer(optimizer):
         optimizer = check_optimizer
 
     return optimizer
+
+
+def _twinned_parameter(parameter):
+    """
+    Used in linear fitting. Since twinned parameter are not free, we need to
+    construct a mapping between the twinned parameter and the parameter
+    component to which the (non-free) twinned parameter component value needs
+    to be added.
+    """
+    twin = parameter.twin
+    if twin is None:
+        # there is no twin
+        return None
+    elif twin.free:
+        # this is the parameter we are looking for
+        return twin
+    elif twin.twin:
+        # recursive to find the final not twinned parameter and
+        return _twinned_parameter(twin)
+    else:
+        # the parameter is not twinned and it is not free, which means that
+        # the original parameter twinned parameter is twinned to a non free
+        # parameter!
+        return None
+
 
 def reconstruct_component(comp_dictionary, **init_args):
     _id = comp_dictionary['_id_name']
@@ -934,79 +957,6 @@ class BaseModel(list):
         """List all nonlinear parameters."""
         return tuple([p for c in self for p in c.parameters if p.linear])
 
-    def _set_twinned_lists(self):
-        "Create lists of twinned components and their parents"
-        self._twinned_components_parents = []
-        self._twinned_components = []
-        self._twinned_parameters = []
-        for comp in self:
-            for para in comp.parameters:
-                if para.twin and para.linear:
-                    # Add only parameters that are both twinned and linear
-                    self._twinned_components.append(comp)
-                    self._twinned_parameters.append(para)
-                    parent = get_top_parent_twin(para)
-                    self._twinned_components_parents.append(parent.component)
-
-    def _compute_component(self, component):
-        """
-        Compute the component with current parameter values, and add that to
-        the component_data array used for linear fitting
-
-        Parameters
-        ----------
-        component : Component
-        """
-        assert component in self, "Component must already be in the model"
-        if component in self._twinned_components:
-            # These twinned components have a linear parameter that is twinned
-            i = self._twinned_components.index(component)
-            component_constant_data = component._compute_constant_term()
-
-            parent_twin = self._twinned_components_parents[i]
-            if parent_twin.free_parameters:
-                # component depends on some free component
-                top_parent_index = self._free_parameters.index(
-                    self._twinned_components_parents[i].free_parameters[0]
-                    )
-                component_data = component._compute_component()
-                self._component_data[top_parent_index] += (component_data - component_constant_data)
-            else:
-                # component was calculated under "_compute_constant_term"
-                self._component_data_fixed += component_constant_data
-
-        elif component.free_parameters:
-            # Normal linear component
-            index = self._free_parameters.index(component.free_parameters[0])
-            if len(component.free_parameters) == 1:
-                component_data = component._compute_component()
-                component_constant_data = component._compute_constant_term()
-                self._component_data[index] += (component_data - component_constant_data)
-                self._component_data_fixed += component_constant_data
-            else:
-                # Components that can be separated into multiple linear parts, like
-                # "C = a*x**2 + b*x + c" would need to be separated into several linear parts.
-                # This is done automatically for Expression components, but difficult to implement
-                # on a general basis for custom components.
-                if not isinstance(component, Expression):
-                    raise AttributeError(
-                        f"Component {component} has more than one free "
-                        "parameter, which is only supported for expression "
-                        "components"
-                        )
-                free, fixed = component._separate_pseudocomponents()
-                for parameter in component.free_parameters:
-                    index = self._free_parameters.index(parameter)
-                    self._component_data[
-                        ..., index, :
-                    ] += component._compute_expression_part(free[parameter.name])
-                self._component_data_fixed += component._compute_expression_part(
-                    fixed
-                )
-        else:
-            # No free parameters, so component is fixed.
-            self._component_data_fixed += component._compute_component()
-
     def _linear_fit(self, optimizer="lstsq", calculate_errors=False, **kwargs):
         """
         Multivariate linear fitting
@@ -1041,76 +991,103 @@ class BaseModel(list):
             raise ValueError("Linear fitting doesn't support signal axes, "
                              "which are binned and non-uniform.")
 
-        not_linear_error = (
-            "Not all free parameters are linear. "
-            "Fit with a "
-            "different optimizer or set non-linear "
-            "`parameters.free = False`. Consider using "
-            "`m.set_parameters_not_free(nonlinear=True)`. These "
-            "parameters are nonlinear and free:"
-        )
-
-        n_free_para = len(self._free_parameters)
-        if not n_free_para:
-            raise RuntimeError("Model does not contain any free components!")
-
         free_nonlinear_parameters = [
             p for c in self.active_components for p in c.parameters
             if p.free and not p.linear
             ]
         if free_nonlinear_parameters:
             raise RuntimeError(
-                not_linear_error
+                "Not all free parameters are linear. Fit with a different "
+                "optimizer or set non-linear `parameters.free = False`. "
+                "Consider using `m.set_parameters_not_free(nonlinear=True)`. "
+                "These parameters are nonlinear and free:"
                 + "\n\t"
                 + str("\n\t".join(str(p) for p in free_nonlinear_parameters))
             )
 
-        # Components that can be separated into multiple linear parts, like
-        # "C = a*x + b" may have C._constant_term != 0, eg if b is
-        # not free and nonzero. For Expression components, the constant term is
-        # calculated automatically. Custom components with one parameter
-        # are fine, since either the entire component is free or fixed,
-        # but for custom components with more than one parameter
-        # we cannot automatically determine this.
+        # We get the list of parameters; twin parameters are not free and
+        # their component need be combined with the component its parameter
+        # is twinned with - see the `twin_parameters_mapping`
+        parameters = [
+            p for c in self.active_components for p in c.parameters
+            if p.free
+            ]
 
-        # Some custom components are manually checked and supported:
-        # EELSCLEdge: Cannot be divided into multiple linear components
-        # Offset: Is only one linear component
-        allowed_component_types = (Expression, EELSCLEdge, Offset)
-        if not all([isinstance(comp, allowed_component_types) or
-                    len(comp.parameters) == 1 for comp in self]):
-            # TODO: clarify this point, does it work or not?
-            # Should it raise an error instead?
-            warnings.warn(
-                "The model contains custom components not based on expression, "
-                "with more than one component."
-                "This is not recommended for linear optimizers, since the "
-                "optimizer is unable to determine if there are any parts of "
-                "the component that are constant. "
-                "Example: comp = a*x+b, with b.free = False and non-zero. "
-                "Either continue at own risk, or define the component as a "
-                "Expression component instead."
-                )
+        n_parameters = len(parameters)
+        if not n_parameters:
+            raise RuntimeError("Model does not contain any free components!")
+
+        # 'parameter':'twin' taking into account the fact that the twin is not
+        # necessary free or the twin can be twinned itself!
+        twin_parameters_mapping = {
+            p:_twinned_parameter(p) for c in self.active_components
+            for p in c.parameters  if _twinned_parameter(p) is not None
+            }
 
         # Linear parameters must be set to a nonzero value before fitting to
         # avoid the entire component being zero. The value of 1 is chosen for
         # no particular reason.
-        for parameter in self._free_parameters:
+        for parameter in parameters:
             if parameter.linear:
                 parameter.value = 1.0
 
+        # TODO: check if this is necessary
         self._set_p0()
 
         channels_signal_shape = np.count_nonzero(self.channel_switches)
+        model_data = np.zeros((n_parameters, channels_signal_shape))
+        constant_term = np.zeros(channels_signal_shape)
 
-        self._component_data = np.zeros((n_free_para, channels_signal_shape))
-        self._component_data_fixed = np.zeros(channels_signal_shape)
+        for component in self.active_components:
+            # Components that can be separated into multiple linear parts,
+            # like "C = a*x + b" may have C._constant_term != 0, eg if b is
+            # not free and nonzero. For Expression components, the constant
+            # term is calculated automatically. Custom components with one
+            # parameter are fine, since either the entire component is free
+            # or fixed, but for custom components with more than one parameter
+            # we cannot automatically determine this.
 
-        self._set_twinned_lists()
-        for component in self:
-            # only compute if component and topmost parent are active
-            if component.active and component._top_parent_twins_are_active:
-                self._compute_component(component)
+            # Also consider (non-free) twinned parameters
+            free_parameters = [p for p in component.parameters
+                               if p.free or p in twin_parameters_mapping]
+
+            if len(free_parameters) > 1:
+                if not isinstance(component, Expression):
+                    raise AttributeError(
+                        f"Component {component} has more than one free "
+                        "parameter,  which is only supported for "
+                        "`Expression` component."
+                        )
+                free, fixed = component._separate_pseudocomponents()
+                for parameter in free_parameters:
+                    # Use the index in the `parameters` list as reference
+                    # to defined the position in the numpy array
+                    index = parameters.index(parameter)
+                    free, fixed = component._separate_pseudocomponents()
+                    model_data[index] = component._compute_expression_part(
+                        free[parameter.name]
+                        )
+                    constant_term += component._compute_expression_part(fixed)
+
+            elif len(free_parameters) == 1:
+                parameter = free_parameters[0]
+                if parameter.twin:
+                    # to get the correct `model_data` index, we need the twin
+                    parameter = twin_parameters_mapping[parameter]
+
+                index = parameters.index(parameter)
+                comp_values = self.__call__(
+                    component_list=[component], binned=False
+                    )
+                comp_constant_values = component._compute_constant_term()
+                model_data[index] += comp_values - comp_constant_values
+                constant_term += comp_constant_values
+
+            else:
+                # No free parameters, so component is fixed.
+                constant_term += self.__call__(
+                    component_list=[component], binned=False
+                    )
 
         if self._linear_ndfit:
             nav_shape = self.axes_manager._navigation_shape_in_array
@@ -1131,14 +1108,16 @@ class BaseModel(list):
                 tuple((ax.scale for ax in self.signal.axes_manager.signal_axes))
             )
 
-        target_signal = target_signal - self._component_data_fixed
+        target_signal = target_signal - constant_term
 
-        flat_sig_len = target_signal.shape[-1] #np.count_nonzero(self.channel_switches)
+        flat_sig_len = target_signal.shape[-1]
 
-        # Reshape what may potentially be Signal2D data into a long Signal1D shape
-        # and an nD navigation shape to a 1D nav shape
+        # Reshape what may potentially be Signal2D data into a long Signal1D
+        # shape and an nD navigation shape to a 1D nav shape
         if self._linear_ndfit:
-            target_signal = target_signal.reshape((np.prod(nav_shape, dtype=int), ) + (flat_sig_len,))
+            target_signal = target_signal.reshape(
+                (np.prod(nav_shape, dtype=int), ) + (flat_sig_len,)
+                )
         else:
             target_signal = target_signal.reshape((flat_sig_len,))
 
@@ -1147,7 +1126,7 @@ class BaseModel(list):
             kw = dict(rcond=None) if not self.signal._lazy else {}
 
             result, residual, *_ = np.linalg.lstsq(
-                xp.asanyarray(self._component_data.T),
+                xp.asanyarray(model_data.T),
                 target_signal.T,
                 **kw)
             self.coefficient_array = result.T
@@ -1168,7 +1147,7 @@ class BaseModel(list):
             kwargs.setdefault('alpha', 0.0)
             self.coefficient_array = \
                 import_sklearn.sklearn.linear_model.ridge_regression(
-                    X=self._component_data.T,
+                    X=model_data.T,
                     y=target_signal.T,
                     **kwargs
                     )
@@ -1177,7 +1156,7 @@ class BaseModel(list):
             raise ValueError(f"Optimizer {optimizer} not supported. Use "
                              "'lstsq' or 'ridge_regression'.")
 
-        fit_output = {"x":self.coefficient_array}
+        fit_output = {"x": self.coefficient_array}
 
         # TODO: reorganise to do lazy computation (coeff and error together)
         if self.signal._lazy:
@@ -1192,7 +1171,7 @@ class BaseModel(list):
             fit_output["covar"] = calc_covariance(
                 target_signal=target_signal,
                 coefficients = self.coefficient_array,
-                component_data = self._component_data,
+                component_data = model_data,
                 residual=residual,
                 lazy=self.signal._lazy)
             fit_output["perror"] = abs(fit_output["x"]) * std_err_from_cov(
@@ -1201,15 +1180,17 @@ class BaseModel(list):
 
         if self._linear_ndfit:
             # The nav shape will have been flattened. We reshape it here.
-            fit_output['x'] = fit_output['x'].reshape(nav_shape + (n_free_para,))
+            fit_output['x'] = fit_output['x'].reshape(nav_shape + (n_parameters,))
 
             if calculate_errors:
-                fit_output['covar'] = fit_output['covar'].reshape(nav_shape + (n_free_para, n_free_para))
-                fit_output["perror"] = fit_output["perror"].reshape(nav_shape + (n_free_para,))
+                fit_output['covar'] = fit_output['covar'].reshape(nav_shape + (n_parameters, n_parameters))
+                fit_output["perror"] = fit_output["perror"].reshape(nav_shape + (n_parameters,))
 
         if self.signal._lazy and calculate_errors:
             with TqdmCallback(desc="Computing errors lazily"):
                 fit_output["perror"] = fit_output["perror"].compute()
+
+        fit_output["success"] = True
 
         return fit_output
 
@@ -1937,18 +1918,30 @@ class BaseModel(list):
         show_progressbar = show_progressbar and (maxval != 0)
 
         if linear_fitting:
-            para_are_identical, non_identical_para = all_set_non_free_para_have_identical_values(self)
-            if para_are_identical:
+            # Check that all non-free parameters doesn't change accross
+            # the navigation dimension. If this the case, we can fit the
+            # dataset in the vectorised fashion
+            nonfree_parameters = [
+                p for c in self.active_components
+                for p in c.parameters if not p.free
+                ]
+            navigation_variable_nonfree_parameters = [
+                p for p in nonfree_parameters
+                if not np.all(p.map['values'] == p.map['values'][0])
+                ]
+
+            if len(navigation_variable_nonfree_parameters) == 0:
                 # when True, reuse linear fitting components
                 self._linear_ndfit = True
             else:
-                w = (
+                warnings.warn(
                     "The model contains non-free parameters that have set "
                     "values that vary across the navigation indices. Fitting "
                     "proceeds using a slower approach than if all parameters "
                     "had constant values. These parameters are:\n\t"
-                    + "\n\t".join(str(x) for x in non_identical_para))
-                warnings.warn(w)
+                    + "\n\t".join(
+                        str(x) for x in navigation_variable_nonfree_parameters)
+                )
                 self._linear_ndfit = False
         else:
             self._linear_ndfit = False

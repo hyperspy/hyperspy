@@ -379,19 +379,22 @@ class Model1D(BaseModel):
     remove.__doc__ = BaseModel.remove.__doc__
 
     def __call__(self, non_convolved=False, onlyactive=False,
-                 component_list=None):
+                 component_list=None, binned=None):
         """Returns the corresponding model for the current coordinates
 
         Parameters
         ----------
         non_convolved : bool
             If True it will return the deconvolved model
-        only_active : bool
+        onlyactive : bool
             If True, only the active components will be used to build the
             model.
         component_list : list or None
             If None, the sum of all the components is returned. If list, only
             the provided components are returned
+        binned : bool or None
+            Specify if the binned attribute of the signal axes needs to be
+            taken into account.
 
         cursor: 1 or 2
 
@@ -430,9 +433,13 @@ class Model1D(BaseModel):
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[self.channel_switches]
-        if is_binned(self.signal):
-        # in v2 replace by
-        #if self.signal.axes_manager[-1].is_binned:
+
+        if binned is None:
+            # in v2 replace by
+            # if self.signal.axes_manager[-1].is_binned:
+            binned = is_binned(self.signal)
+
+        if binned:
             if self.signal.axes_manager[-1].is_uniform:
                 to_return *= self.signal.axes_manager[-1].scale
             else:

@@ -21,10 +21,8 @@ from unittest import mock
 
 import numpy as np
 
-from hyperspy.component import Component, Parameter
-from hyperspy._components.gaussian import Gaussian
 from hyperspy.axes import AxesManager
-from hyperspy.component import Component, _get_scaling_factor
+from hyperspy.component import Component, Parameter, _get_scaling_factor
 from hyperspy._signals.signal1d import Signal1D
 
 
@@ -288,41 +286,11 @@ def test_get_scaling_parameter(is_binned, non_uniform, dim):
         assert scaling_factor == 1
 
 
-class TestLinearProperties:
-    def setup_method(self, method):
-        self.C = Component(['one', 'two'])
-        self.P = Parameter()
-        self.G = Gaussian()
+def test_linear_parameter_initialisation():
 
-    def test_properties(self):
-        assert not self.P.linear
+    C = Component(['one', 'two'], ['one'])
+    P = Parameter()
 
-    def test_set_parameters_not_free_only_both(self):
-        with pytest.raises(ValueError, match="set both only_linear"):
-            self.C.set_parameters_not_free(only_linear=True, only_nonlinear=True)
-
-    def test_set_parameters_free_only_both(self):
-        with pytest.raises(ValueError, match="set both only_linear"):
-            self.C.set_parameters_free(only_linear=True, only_nonlinear=True)
-
-    def test_set_parameters_passing_parameters(self):
-        G = self.G
-        assert G.A.free
-        assert G.centre.free
-        assert G.sigma.free
-
-        G.set_parameters_free(only_linear=True)
-        assert G.A.free
-        assert G.centre.free
-        assert G.sigma.free
-
-        G.set_parameters_not_free(only_linear=True)
-        assert not G.A.free
-        assert G.centre.free
-        assert G.sigma.free
-
-        G.set_parameters_not_free(only_nonlinear=True)
-        G.set_parameters_free(only_linear=True)
-        assert G.A.free
-        assert not G.centre.free
-        assert not G.sigma.free
+    assert C.one.linear
+    assert not C.two.linear
+    assert not P.linear

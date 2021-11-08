@@ -25,7 +25,7 @@ import warnings
 
 from hyperspy.component import Component, convolve_component_values
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
-from hyperspy.misc.model_tools import get_top_parent_twin
+
 
 _CLASS_DOC = \
     """%s component (created with Expression).
@@ -336,79 +336,78 @@ class Expression(Component):
     @property
     def _constant_term(self):
         """
-        Get value of constant term of free component
+        Get value of constant term of component, assuming that the nonlinear
+        term are fixed.
 
         The 'constant' part of a component is any part that cannot change
-        with the free parameters in the model. The fact that a non-free parameter
-        can change due to being twinned with another (free) parameter complicates
-        this slightly.
+        with the free parameters in the model.
         """
-        # First get currently constant parameters
-        linear_parameters = []
-        for para in self.parameters:
-            if para.linear:
-                if para.free or get_top_parent_twin(para).free:
-                    linear_parameters.append(para.name)
-        constant_expr, not_constant_expr = extract_constant_part_of_expression(
-            self._str_expression, *linear_parameters)
+        free_linear_parameters = [
+            # Use `_free` private attribute not to interfere with twin
+            p.name for p in self.parameters if p.linear and p._free
+            ]
+
+        # Check linearity by multiplying a parameter by a factor and testing
+        # if the new expression is equal to multiplying the whole expression
+        # by the same factor.
+        # Testing parameter `a` in example expression `f(x) = a*x + b`
+        # by multiplying by factor `factor`:
+        # `a` is linear if ``(a*LIN)*x + b == LIN*f(x)``
+        expr = sympy.sympify(self._str_expression)
+        args = [
+            sympy.sympify(arg, strict=False) for arg in free_linear_parameters
+            ]
+
+        constant_expr, _ = expr.as_independent(*args, as_Add=True)
 
         # Then replace symbols with value of each parameter
         free_symbols = [str(free) for free in constant_expr.free_symbols]
-        variables = ["x", "y"] if self._is2D else ["x"]
-        is_variable = []
-        for var in variables:
-            if var in free_symbols:
-                free_symbols.remove(var)
-                is_variable.append(var)
 
-        para_values = []
-        for parameter_name in free_symbols:
-            para = getattr(self, parameter_name)
-            para_values.append(para.value)
-        func = lambdify(is_variable + free_symbols, constant_expr,
-                        modules="numpy")
+        for p in self.parameters:
+            if p.name in free_symbols:
+                constant_expr = constant_expr.subs(p.name, p.value)
 
-        axes = []
-        for ax, axis in zip(["x", "y"], self.model.axes_manager.signal_axes):
-            if ax in is_variable:
-                axes.append(axis.axis)
-        mesh = np.meshgrid(*axes)
-        constant = func(*mesh, *para_values)
-        return constant
+        return float(constant_expr.evalf())
 
     def _separate_pseudocomponents(self):
-        '''Separate an expression into a group of lambdified functions
+        """
+        Separate an expression into a group of lambdified functions
         that can compute the free parts of the expression, and a single
-        lambdified function that computes the fixed parts of the expression'''
-
+        lambdified function that computes the fixed parts of the expression
+        """
         expr = self._str_expression
         ex = sympy.sympify(expr)
         remaining_elements = ex.copy()
         free_pseudo_components = {}
         variables = ("x", "y") if self._is2D else ("x", )
+
         for para in self.free_parameters:
             symbol = sympy.sympify(para.name, strict=False)
             element = ex.as_independent(symbol)[-1]
             remaining_elements -= element
-            element_names = set([str(p)
-                                 for p in element.free_symbols]) - set(variables)
+            element_names = \
+                set([str(p) for p in element.free_symbols]) - set(variables)
 
             free_pseudo_components[para.name] = {
-                'function': lambdify(variables + tuple(element_names), element, modules=self._module),
+                'function': lambdify(variables + tuple(element_names),
+                                     element, modules=self._module),
                 'parameters': [getattr(self, e) for e in element_names]
             }
 
-        element_names = set(
-            [str(p) for p in remaining_elements.free_symbols]) - set(variables)
+        element_names = \
+            set([str(p) for p in remaining_elements.free_symbols]) - \
+            set(variables)
+
         fixed_pseudo_components = {
-            'function': lambdify(variables + tuple(element_names), remaining_elements, modules=self._module),
+            'function': lambdify(variables + tuple(element_names),
+                                 remaining_elements, modules=self._module),
             'parameters': [getattr(self, e) for e in element_names]
         }
 
         return free_pseudo_components, fixed_pseudo_components,
 
     def _compute_expression_part(self, part):
-        'Compute the expression for a given value or map["values"]'
+        """Compute the expression for a given value or map["values"]."""
         model = self.model
         function = part['function']
         parameters = part['parameters']
@@ -446,14 +445,10 @@ def check_parameter_linearity(expr, name):
     try:
         if not sympy.Eq(sympy.diff(expr, symbol, 2), 0):
             return False
-    except TypeError:
-        # typeerror occurs if the parameter is nonlinear
-        return False
-    except AttributeError:
-        # attreibuteerror occurs if the expression cannot be parsed
+    except (TypeError, AttributeError):
+        # TypeError occurs if the parameter is nonlinear
+        # AttributeError occurs if the expression cannot be parsed
         # for instance some expressions with where.
-        # TODO: check here
-        # here, para._linear_override should be set
         return False
     return True
 
@@ -461,7 +456,8 @@ def check_parameter_linearity(expr, name):
 def extract_constant_part_of_expression(expr, *args):
     """
     Check linearity by multiplying a parameter by a factor and testing if the
-    new expression is equal to multiplying the whole expression by the same factor.
+    new expression is equal to multiplying the whole expression by the same
+    factor.
     Testing parameter `a` in example expression `f(x) = a*x + b` by multiplying
     by factor `factor`:
 
@@ -470,4 +466,5 @@ def extract_constant_part_of_expression(expr, *args):
     expr = sympy.sympify(expr)
     args = [sympy.sympify(arg, strict=False) for arg in args]
     constant, not_constant = expr.as_independent(*args, as_Add=True)
+
     return constant, not_constant

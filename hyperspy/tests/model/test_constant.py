@@ -16,35 +16,51 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.components1d import Expression, Gaussian
-from hyperspy._signals.signal1d import Signal1D
 import numpy as np
 
+from hyperspy.components1d import Expression
+from hyperspy._signals.signal1d import Signal1D
+
+
 class TestLinearFitting:
+
     def setup_method(self, method):
-        self.s = Signal1D(np.zeros((4,5, 20)))
+        self.s = Signal1D(np.zeros((4, 5, 20)))
         self.m = self.s.create_model()
+
+    def test_constant_term_without_model(self):
+        expression = "a * x + b"
+        g = Expression(
+            expression,
+            name="test_constant",
+            a = 20.0,
+            b = 4.0)
+        assert g._constant_term == 0
+        self.m.append(g)
+        assert g._constant_term == 0
 
     def test_constant_from_expression(self):
         expression = "a * x + b"
         g = Expression(
-            expression, 
+            expression,
             name="test_constant",
             a = 20.0,
             b = 4.0)
-        self.m.append(g)
         g.b.free = False
+        assert g._constant_term == 4.0
+        self.m.append(g)
         assert g._constant_term == 4.0
 
     def test_constant_from_expression2(self):
         expression = "A * exp(-(x-centre)**2/(2*sigma**2))"
         h = Expression(
-            expression, 
+            expression,
             name="test_constant2",
             A = 20.0,
             centre = 4.0,
             sigma = 1.0)
         self.m.append(h)
+
         assert h._constant_term == 0
         h.centre.free = False
         h.sigma.free = False

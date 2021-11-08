@@ -186,6 +186,7 @@ class current_model_values():
                         )._repr_html_()
         return html
 
+
 def calc_covariance(target_signal, coefficients, component_data,
                     residual=None, lazy=False):
     """Calculate covariance matrix after having performed Linear Regression
@@ -212,18 +213,20 @@ def calc_covariance(target_signal, coefficients, component_data,
     See https://stats.stackexchange.com/questions/62470 for more info on
     algorithm
     """
-    if len(target_signal.shape) > 1: # model._linear_ndfit is True
+    if target_signal.ndim > 1:
         fit = coefficients[..., None, :] * component_data.T[None]
     else:
         fit = coefficients * component_data.T
+
     if residual is None:
         residual = ((target_signal - fit.sum(-1))**2).sum(-1)
+
     fit_dot = np.matmul(fit.swapaxes(-2, -1), fit)
 
     # Prefer to find another way than matrix inverse
     # if target_signal shape is 1D, then fit_dot is 2D and numpy going to dask.linalg.inv is fine.
     # If target_signal shape is 2D, then dask.linalg.inv will fail because fit_dot is 3D.
-    if lazy and len(target_signal.shape) != 1:
+    if lazy and target_signal.ndim > 1:
         inv_fit_dot = da.map_blocks(np.linalg.inv, fit_dot, chunks=fit_dot.chunks)
     else:
         inv_fit_dot = np.linalg.inv(fit_dot)
@@ -237,14 +240,6 @@ def calc_covariance(target_signal, coefficients, component_data,
 def std_err_from_cov(covariance):
     "Get standard error coefficients from the diagonal of the covariance"
     return np.sqrt(np.diagonal(covariance, axis1=-2, axis2=-1))
-
-
-def get_top_parent_twin(parameter):
-    "Get the top parent twin, if there is one"
-    if parameter.twin:
-        return get_top_parent_twin(parameter.twin)
-    else:
-        return parameter
 
 
 def parameter_map_values_all_identical(para):
@@ -262,27 +257,15 @@ def all_set_non_free_para_have_identical_values(model):
     Otherwise returns False and a list of the parameters with
     non-identical values.
 
-    This function is used with linear fitting to check whether to use the faster
-    method across the entire navigation space simultaneously, or the slower
-    index-by-index fitting which supports parameters having fixed values that vary
-    from index to index.
+    This function is used with linear fitting to check whether to use the
+    faster method across the entire navigation space simultaneously, or the
+    slower index-by-index fitting which supports parameters having fixed
+    values that vary from index to index.
     """
-
-    model._set_twinned_lists()
-    non_identical_para = []
-    is_identical = True
-    for comp in model:
-        if comp.active:
-            for para in comp.parameters:
-                if not para.free:
-                    if not para in model._twinned_parameters:
-                        if not (~para.map['is_set']).all():
-                            if para.map['is_set'].all():
-                                if not parameter_map_values_all_identical(para):
-                                    is_identical = False
-                                    non_identical_para.append(para)
-                            else:
-                                is_identical = False
-                                non_identical_para.append(para)
-
-    return is_identical, non_identical_para
+    nonfree_parameters = [
+        p for c in model.active_components for p in c.parameters if not p.free
+        ]
+    non_identical_parameters = [
+        p for p in nonfree_parameters
+        if not np.all(p.map['values'] == p.map['values'][0])
+        ]

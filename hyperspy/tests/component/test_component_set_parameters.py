@@ -67,7 +67,7 @@ class TestSetParameters:
         assert not g.sigma.free
         assert not g.centre.free
         assert not g.A.free
-        
+
         g.set_parameters_free(only_linear=True)
         assert not g.sigma.free
         assert not g.centre.free

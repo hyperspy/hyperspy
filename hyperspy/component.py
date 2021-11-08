@@ -34,7 +34,7 @@ from hyperspy.misc.export_dictionary import export_to_dictionary, \
 from hyperspy.events import Events, Event
 from hyperspy.ui_registry import add_gui_method
 from IPython.display import display_pretty, display
-from hyperspy.misc.model_tools import current_component_values, get_top_parent_twin
+from hyperspy.misc.model_tools import current_component_values
 from hyperspy.misc.utils import get_object_package_info
 
 import logging
@@ -112,7 +112,7 @@ class Parameter(t.HasTraits):
     """
     __number_of_elements = 1
     __value = 0
-    __free = True
+    _free = True
     _bounds = (None, None)
     __twin = None
     _axes_manager = None
@@ -364,16 +364,19 @@ class Parameter(t.HasTraits):
     # Fix the parameter when coupled
     def _get_free(self):
         if self.twin is None:
-            return self.__free
+            return self._free
         else:
             return False
 
     def _set_free(self, arg):
-        old_value = self.__free
-        self.__free = arg
+        if arg and self.twin:
+            raise ValueError(f"Parameter {self.name} can't be set free "
+                             "is twinned with {self.twin}.")
+        old_value = self._free
+        self._free = arg
         if self.component is not None:
             self.component._update_free_parameters()
-        self.trait_property_changed('free', old_value, self.__free)
+        self.trait_property_changed('free', old_value, self._free)
 
     def _on_twin_update(self, value, twin=None):
         if (twin is not None
@@ -1307,9 +1310,12 @@ class Component(t.HasTraits):
                 self, only_free=only_free))
 
     @property
-    def _free_linear_parameters(self):
-        """Get list of all linear parameters in component."""
-        return tuple([p for p in self.parameters if p.linear and p.free])
+    def linear(self):
+        """A component is linear if its free parameters are linear."""
+        if self._nfree_param == 1:
+            return self.free_parameters[0].linear
+        else:
+            return False
 
     @property
     def _constant_term(self):
@@ -1319,40 +1325,15 @@ class Component(t.HasTraits):
         """
         return 0
 
-    def _compute_component(self):
-        model = self.model
-        if model.convolved and self.convolved:
-            # TODO: Model2D doesn't support a 2D convolution axis (yet)
-            data = convolve_component_values(
-                self.function(model.convolution_axis),
-                model=model)
-        else:
-            axes = [ax.axis for ax in model.axes_manager.signal_axes]
-            mesh = np.meshgrid(*axes)
-            not_convolved = self.function(*mesh)
-            data = not_convolved
-        return data.T[np.where(model.channel_switches)[::-1]].T
-
     def _compute_constant_term(self):
         'Gets the value of any (non-free) constant term, with convolution'
         model = self.model
         if model.convolved and self.convolved:
-            convolved = convolve_component_values(self._constant_term, model=model)
-            data = convolved
+            data = convolve_component_values(self._constant_term, model=model)
         else:
             signal_shape = model.axes_manager.signal_shape[::-1]
-            not_convolved = self._constant_term * np.ones(signal_shape)
-            data = not_convolved
+            data = self._constant_term * np.ones(signal_shape)
         return data.T[np.where(model.channel_switches)[::-1]].T
-
-    @property
-    def _top_parent_twins_are_active(self):
-        'Check that the top parent twins of the components parameters are active'
-        active = True
-        for para in self.parameters:
-            if not get_top_parent_twin(para).component.active:
-                active = False
-        return active
 
 
 def convolve_component_values(component_values, model):
