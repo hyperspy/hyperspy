@@ -717,7 +717,8 @@ whether the optimizers find a local or global optima.
 .. rubric:: Footnotes
 
 .. [1] Requires the :py:meth:`~hyperspy.model.BaseModel.multifit` ``calculate_errors = True`` argument
-       in most cases. See the documentation below on Multiple Linear Least Squares fitting for more info.
+       in most cases. See the documentation below on :ref:`linear least square fitting <linear_fitting-label>`
+       for more info.
 
 .. [2] **All** of the fitting algorithms available in :py:func:`scipy.optimize.minimize` are currently
        supported by HyperSpy; however, only some of them support bounds and/or gradients. For more information,
@@ -791,6 +792,8 @@ estimated standard deviation are stored in the following line attributes:
     computed, by setting variance equal to 1. However, this calculation
     will not be correct unless an accurate value of the variance is
     provided. See :ref:`signal.noise_properties` for more information.
+
+.. _weighted_least_squares-label:
 
 Weighted least squares with error estimation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1045,8 +1048,11 @@ on the ``centre`` parameter.
 
 .. _linear_fitting-label:
 
-Linear fitting
-^^^^^^^^^^^^^^
+Linear least squares
+^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 1.7
+
 Linear fitting can be used to address some of the drawbacks of non-linear optimization:
 
 - it doesn't suffer of the *starting parameters* issue, which can sometimes be problematic
@@ -1054,9 +1060,11 @@ Linear fitting can be used to address some of the drawbacks of non-linear optimi
   solution (find the parameter values of the model), the solution is unique solution,
   while nonlinear optimization uses an iterative approach and therefore relies
   on the initial values of the parameters.
-- it is fast, because in favorable situations, all pixels can be fitted simultaneously,
-  but also because it is not iterative - it does the calculation only one time instead of
-  10-100 iterations, depending on fast the non-linear optimizer will converge.
+- it is fast, because in favorable situations, the signal can be fitted in a vectorized
+  fashion, `i. e.` the signal is fitted in a single run instead of iterating over
+  the navigation dimension, but also because it is not iterative - it does the
+  calculation only one time instead of 10-100 iterations, depending on fast
+  the non-linear optimizer will converge.
 
 However, linear fitting can *only* fit linear model and will be able to fit estimate
 parameter which varies *non-linearly*.
@@ -1090,16 +1098,23 @@ pixels in the navigator.
     Gaussian peaks with well-defined energy (``Gaussian.centre``) and peak widths 
     (``Gaussian.sigma``). This dataset can be fit extremely fast with a linear optimizer.
 
-There are three implementations of linear fitting in hyperspy: 
-The 'lstsq' optimizer is the recommended linear optimizer, and supports fitting lazy
-signals. The 'ridge_regression' optimizer supports regularization (see
-:py:class:`sklearn.linear_model.Ridge` for arguments to pass to
-:py:meth:`~hyperspy.model.BaseModel.fit`), but does not support lazy signals. 
+There are two implementations of linear least squares fitting in hyperspy:
 
-Standard errors for the parameters are by default not calculated when the entire dataset is fitted at once.
-This is due to the much larger memory requirement of that operation. If errors are required,
-either give ``calculate_errors=True`` as an argument to :py:meth:`~hyperspy.model.BaseModel.multifit`, or rerun :py:meth:`~hyperspy.model.BaseModel.multifit` with a nonlinear
-optimizer (which will now run much faster).
+- the ``'lstsq'`` optimizer, which uses :py:func:`numpy.linalg.lstsq` or 
+  :py:func:`dask.array.linalg.lstsq` for lazy signals.
+- the ``'ridge_regression'`` optimizer, which supports regularization
+  (see :py:class:`sklearn.linear_model.Ridge` for arguments to pass to
+  :py:meth:`~hyperspy.model.BaseModel.fit`), but does not support lazy signals. 
+
+As for non-linear least squares fitting, :ref:`weigthed least squares <weighted_least_squares-label>`
+is supported.
+
+Standard errors for the parameters are by default not calculated when the dataset
+is fitted in vectorized fashion, because it has large memory requirement.
+If errors are required, either give ``calculate_errors=True`` as an argument
+to :py:meth:`~hyperspy.model.BaseModel.multifit`, or rerun
+:py:meth:`~hyperspy.model.BaseModel.multifit` with a nonlinear optimizer,
+which should run fast since the parameters are already optimised.
 
 None of the linear optimizers currently support bounds.
 

@@ -957,14 +957,15 @@ class BaseModel(list):
             'ridge_regression' - Supports regularisation, doesn't support lazy
             signal.
         calculate_errors : bool, default is False
+            If True, calculate the errors.
         only_current : bool, default is True
             Fit the current index only, instead of the whole navigation space.
         kwargs : dict, optional
             Keywords argument are passed to
             :py:func:`sklearn.linear_model.ridge_regression`.
 
-        Developer Notes
-        ---------------
+        Notes
+        -----
         More linear optimizers can be added in future, but note that in order
         to support simultaneous fitting across the dataset, the optimizer must
         support "two-dimensional y" - see the ``b`` parameter in
@@ -973,8 +974,9 @@ class BaseModel(list):
         Currently, the overhead in calculating the component data takes about
         100 times longer than actually running :py:func:`np.linalg.lstsq`.
         That means that going pixel-by-pixel, calculating the component data
-        each time is not faster than the normal nonlinear methods. Linear fitting
-        is hence currently only useful for fitting a dataset in the vectorised manner.
+        each time is not faster than the normal nonlinear methods. Linear
+        fitting is hence currently only useful for fitting a dataset in the
+        vectorised manner.
         """
 
         signal_axes = self.signal.axes_manager.signal_axes
