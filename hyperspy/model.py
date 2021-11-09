@@ -1086,19 +1086,18 @@ class BaseModel(list):
                     component_list=[component], binned=False
                     )
 
+        # Reshape what may potentially be Signal2D data into a long Signal1D
+        # shape and an nD navigation shape to a 1D nav shape
+        channel_switches = np.where(self.channel_switches.ravel())[0]
         if current_index_only:
-            target_signal = self.signal()[np.where(self.channel_switches)]
-            nav_shape = ()
+            target_signal = self.signal().ravel()[channel_switches]
         else:
+            sig_shape = self.axes_manager._signal_shape_in_array
             nav_shape = self.axes_manager._navigation_shape_in_array
-            if self.channel_switches.all():
-                # If channel_switches is all True, then is much more performant
-                # and less memory-intensive to just reshape the signal than use
-                # fancy indexing (which would create a copy of the signal),
-                # especially with dask
-                target_signal = self.signal.data.reshape(nav_shape + (-1,))
-            else:
-                target_signal = self.signal.data.T[np.where(self.channel_switches.T)].T
+            target_signal = self.signal.data.reshape(
+                (np.prod(nav_shape, dtype=int), ) +
+                (np.prod(sig_shape, dtype=int), )
+                )[:, channel_switches]
 
         if is_binned(self.signal):
             target_signal = target_signal / np.prod(
@@ -1106,17 +1105,6 @@ class BaseModel(list):
             )
 
         target_signal = target_signal - constant_term
-
-        flat_sig_len = target_signal.shape[-1]
-
-        # Reshape what may potentially be Signal2D data into a long Signal1D
-        # shape and an nD navigation shape to a 1D nav shape
-        if current_index_only:
-            target_signal = target_signal.reshape((flat_sig_len,))
-        else:
-            target_signal = target_signal.reshape(
-                (np.prod(nav_shape, dtype=int), ) + (flat_sig_len,)
-                )
 
         if optimizer == "lstsq":
             xp = da if self.signal._lazy else np

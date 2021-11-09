@@ -251,7 +251,8 @@ class TestLinearModel2D:
         mesh = np.meshgrid(x, y)
         self.mesh, self.x, self.y = mesh, x, y
 
-    def test_model2D_one_component(self):
+    @pytest.mark.parametrize('nav2d', [False, True])
+    def test_model2D_one_component(self, nav2d):
         mesh, x, y = self.mesh, self.x, self.y
         G1 = Gaussian2D(30, 5.0, 4.0, 0, 0)
 
@@ -263,13 +264,17 @@ class TestLinearModel2D:
         s.axes_manager[-2].scale = x[1] - x[0]
         s.axes_manager[-1].scale = y[1] - y[0]
 
+        if nav2d:
+            s = hs.stack([s]*2)
+            s = hs.stack([s]*3)
+
         m = s.create_model()
         m.append(G1)
 
         G1.set_parameters_not_free()
         G1.A.free = True
 
-        m.fit(optimizer='lstsq')
+        m.multifit(optimizer='lstsq', calculate_errors=True)
         diff = (s - m.as_signal(show_progressbar=False))
         np.testing.assert_almost_equal(diff.data.sum(), 0.0)
         np.testing.assert_almost_equal(m.p_std[0], 0.0)
@@ -536,3 +541,45 @@ def test_non_uniform_binned():
     m = s.create_model()
     with pytest.raises(ValueError):
         m.fit(optimizer="lstsq")
+
+
+def test_navigation_shape_signal1D():
+    np.random.seed(seed=10)
+    s = hs.signals.Signal1D(np.zeros((2, 3, 200)))
+    g = hs.model.components1D.Gaussian()
+    g.sigma.value = 10
+    g.centre.value = 100
+    g.A.value = 1000
+    m = s.create_model()
+    m.append(g)
+    g.A.map['values'] = np.random.randint(low=500, high=1500, size=(2, 3))
+    g.A.map['is_set'] = True
+    s.data = m.as_signal().data
+    s.add_gaussian_noise(0.5)
+    m.set_parameters_not_free(only_nonlinear=True)
+
+    g.A.map['values'] = 0
+    m.multifit(optimizer='lstsq')
+
+    np.testing.assert_allclose(s, m.as_signal(), atol=2)
+
+
+def test_navigation_shape_signal2D():
+    np.random.seed(seed=10)
+    s = hs.signals.Signal1D(np.zeros((2, 3, 200)))
+    g = hs.model.components1D.Gaussian()
+    g.sigma.value = 10
+    g.centre.value = 100
+    g.A.value = 1000
+    m = s.create_model()
+    m.append(g)
+    g.A.map['values'] = np.random.randint(low=500, high=1500, size=(2, 3))
+    g.A.map['is_set'] = True
+    s.data = m.as_signal().data
+    s.add_gaussian_noise(0.5)
+    m.set_parameters_not_free(only_nonlinear=True)
+
+    g.A.map['values'] = 0
+    m.multifit(optimizer='lstsq')
+
+    np.testing.assert_allclose(s, m.as_signal(), atol=2)
