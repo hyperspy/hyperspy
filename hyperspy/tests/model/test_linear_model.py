@@ -10,8 +10,6 @@ from hyperspy.components1d import Gaussian, Expression, Offset
 from hyperspy.components2d import Gaussian2D
 
 from hyperspy.datasets.example_signals import EDS_SEM_Spectrum
-from hyperspy.datasets.artificial_data import get_low_loss_eels_signal
-from hyperspy.datasets.artificial_data import get_core_loss_eels_signal
 from hyperspy.decorators import lazifyTestClass
 
 
@@ -178,9 +176,9 @@ class TestFitAlgorithms:
         m = self.m
         m.fit(optimizer='lstsq')
         lstsq_fit = m.as_signal()
-        np.testing.assert_allclose(self.nonlinear_fit_res, lstsq_fit(), rtol=1E-2)
+        np.testing.assert_allclose(self.nonlinear_fit_res, lstsq_fit(), rtol=5E-6)
         linear_std = [para.std for para in m._free_parameters if para.std]
-        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, rtol=5E-3)
+        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, rtol=5E-6)
 
     def test_nonactive_component(self):
         m = self.m
@@ -189,7 +187,7 @@ class TestFitAlgorithms:
         linear_fit = m.as_signal()
         m.fit()
         nonlinear_fit = m.as_signal()
-        np.testing.assert_allclose(nonlinear_fit(), linear_fit(), rtol=3E-4)
+        np.testing.assert_allclose(nonlinear_fit(), linear_fit(), rtol=1E-5)
 
     def test_compare_ridge(self):
         pytest.importorskip("sklearn")
@@ -201,17 +199,17 @@ class TestFitAlgorithms:
         else:
             m.fit(optimizer='ridge_regression')
         ridge_fit = m.as_signal()
-        np.testing.assert_allclose(self.nonlinear_fit_res, ridge_fit.data, rtol=1E-2)
+        np.testing.assert_allclose(self.nonlinear_fit_res, ridge_fit.data, rtol=5E-6)
         linear_std = [para.std for para in m._free_parameters if para.std]
-        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, rtol=5E-3)
+        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, rtol=5E-6)
 
 
 @lazifyTestClass
 class TestLinearEELSFitting:
 
     def setup_method(self, method):
-        ll = get_low_loss_eels_signal()
-        cl = get_core_loss_eels_signal()
+        ll = hs.datasets.artificial_data.get_low_loss_eels_signal()
+        cl = hs.datasets.artificial_data.get_core_loss_eels_signal()
         cl.add_elements(('Mn',))
         m = cl.create_model(auto_background=False)
         m[0].onset_energy.value = 673.
@@ -229,8 +227,8 @@ class TestLinearEELSFitting:
         lm = m.as_signal()
         std_lm = m.p_std
         diff = linear - lm
-        np.testing.assert_almost_equal(diff.data.sum(), 0.0, decimal=2)
-        np.testing.assert_almost_equal(std_linear, std_lm, decimal=5)
+        np.testing.assert_allclose(diff.data.sum(), 0.0)
+        np.testing.assert_allclose(std_linear, std_lm)
 
     def test_nonconvolved(self):
         m = self.m
@@ -239,8 +237,96 @@ class TestLinearEELSFitting:
         m.fit(optimizer='lm')
         lm = m.as_signal()
         diff = linear - lm
-        np.testing.assert_almost_equal(diff.data.sum(), 0.0, decimal=2)
+        np.testing.assert_allclose(diff.data.sum(), 0.0)
 
+
+class TestWarningSlowMultifit:
+
+    def setup_method(self, method):
+        cl = hs.datasets.artificial_data.get_core_loss_eels_line_scan_signal()
+        ll = hs.datasets.artificial_data.get_low_loss_eels_line_scan_signal()
+        cl.add_elements(('Mn', 'Fe'))
+        m = cl.create_model(ll=ll, auto_background=False, GOS='hydrogenic')
+        m.convolved = False
+        # make dummy twinning
+        m['Fe_L3'].onset_energy.twin = m['Mn_L3'].onset_energy
+        offset = m['Fe_L3'].onset_energy.value - m['Mn_L3'].onset_energy.value
+        m['Fe_L3'].onset_energy.twin_function_expr = f'{offset} + x'
+        m['Fe_L3'].intensity.twin = m['Mn_L3'].intensity
+        m['Fe_L3'].intensity.twin_function_expr = '2 * x'
+
+        self.m = m
+
+    def test_convolved(self):
+        m = self.m
+        m.convolved = True
+        with pytest.warns(UserWarning,
+                          match="convolution is not supported for"):
+            m.multifit(optimizer='lstsq')
+
+    def test_active_is_multidimensional_all_active(self):
+        m = self.m
+        m[0].active_is_multidimensional = True
+        m.multifit(optimizer='lstsq')
+
+    def test_active_is_multidimensional(self):
+        m = self.m
+        component = m[0]
+        component.active_is_multidimensional = True
+        component._active_array[-2] = False
+        assert component.active
+        with pytest.warns(UserWarning,
+                          match="active components that are not active"):
+            with pytest.raises(RuntimeError):
+                # when we hit the navigation position, where the component
+                # is not active
+                m.multifit(optimizer="lstsq")
+        assert m.signal.axes_manager.indices == (10, )
+
+    def test_set_value_in_non_free_parameter(self):
+        m = self.m
+        parameter = m[0].onset_energy
+        assert parameter.twin is None
+        parameter.map['values'][:3] = 650.
+        parameter.map['is_set'][:3] = True
+        with pytest.warns(UserWarning,
+                          match="model contains non-free parameters"):
+            m.multifit(optimizer="lstsq")
+
+    def test_set_value_in_non_free_parameter_twin(self):
+        m = self.m
+        parameter = m[1].onset_energy
+        assert parameter.twin is not None
+        parameter.map['values'][:3] = 660.
+        parameter.map['is_set'][:3] = True
+        with pytest.warns(UserWarning,
+                          match="model contains non-free parameters"):
+            m.multifit(optimizer="lstsq")
+
+    def test_set_value_in_free_parameter_twin(self):
+        m = self.m
+        parameter = m[1].intensity
+        assert parameter.twin is not None
+        parameter.map['values'][:3] = 100.
+        parameter.map['is_set'][:3] = True
+        with pytest.warns(None) as record:
+            m.multifit(optimizer="lstsq")
+        assert len(record) == 0
+
+    def test_rerun_multifit(self):
+        # Check that the parameter map values have set consistently at the end
+        # of `multifit(optimizer="lstsq")` so that rerunning it doesn't fall
+        # back to slow multifit
+        m = self.m
+        m.multifit(optimizer='lstsq')
+        p = m[0].onset_energy
+        np.testing.assert_equal(p.map["is_set"], True)
+        np.testing.assert_allclose(p.map['values'], p.map['values'][0])
+        np.testing.assert_equal(p.map['std'], np.nan)
+
+        with pytest.warns(None) as record:
+            m.multifit(optimizer="lstsq")
+        assert len(record) == 0
 
 class TestLinearModel2D:
 
@@ -276,8 +362,8 @@ class TestLinearModel2D:
 
         m.multifit(optimizer='lstsq', calculate_errors=True)
         diff = (s - m.as_signal(show_progressbar=False))
-        np.testing.assert_almost_equal(diff.data.sum(), 0.0)
-        np.testing.assert_almost_equal(m.p_std[0], 0.0)
+        np.testing.assert_allclose(diff.data, 0.0, atol=1E-7)
+        np.testing.assert_allclose(m.p_std[0], 0.0, atol=1E-7)
 
     def test_model2D_linear_many_gaussians(self):
         mesh, x, y = self.mesh, self.x, self.y
@@ -327,8 +413,8 @@ class TestLinearModel2D:
         m.append(P)
         m.fit(optimizer='lstsq')
         diff = (s - m.as_signal(show_progressbar=False))
-        np.testing.assert_almost_equal(diff.data.sum(), 0.0, decimal=2)
-        np.testing.assert_almost_equal(m.p_std, 0.0, decimal=2)
+        np.testing.assert_allclose(diff.data, 0.0, atol=1E-7)
+        np.testing.assert_allclose(m.p_std, 0.0, atol=1E-7)
 
 
 class TestLinearFitTwins:
@@ -422,22 +508,6 @@ class TestLinearEdgeCases:
     def test_force_fake_linear_optimizer(self):
         with pytest.raises(ValueError, match="not supported"):
             self.m._linear_fit(optimizer="foo")
-
-
-@lazifyTestClass
-class TestLinearMultiFitEdgeCases:
-
-    def setup_method(self, method):
-        nav = Signal2D(np.random.random((2,2)))
-        s = EDS_SEM_Spectrum().isig[5.0:15.0] * nav.T
-        self.m = s.create_model()
-
-    def test_set_value_in_non_free_parameter(self):
-        self.m[1].sigma.map['values'][0,0] = 2.
-        self.m[1].sigma.map['is_set'][0,0] = True
-        with pytest.warns(UserWarning,
-                          match="model contains non-free parameters"):
-            self.m.multifit(optimizer="lstsq")
 
 
 class TestTwinnedComponents:

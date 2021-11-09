@@ -966,8 +966,8 @@ class Component(t.HasTraits):
             shape = [1, ]
         if (not isinstance(self._active_array, np.ndarray)
                 or self._active_array.shape != shape):
-            _logger.debug('Creating _active_array for {}.\n\tCurrent array '
-                          'is:\n{}'.format(self, self._active_array))
+            _logger.debug(f'Creating _active_array for {self}.\n\tCurrent '
+                          f'array is:\n{self._active_array}')
             self._active_array = np.ones(shape, dtype=bool)
 
     def _create_arrays(self):

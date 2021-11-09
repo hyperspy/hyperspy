@@ -30,6 +30,7 @@ import dill
 import numpy as np
 import dask
 import dask.array as da
+from dask.diagnostics import ProgressBar
 import scipy
 import scipy.odr as odr
 from IPython.display import display, display_pretty
@@ -41,7 +42,6 @@ from scipy.optimize import (
     minimize,
     OptimizeResult
 )
-from tqdm.dask import TqdmCallback
 from hyperspy.component import Component
 from hyperspy.components1d import Expression, EELSCLEdge, Offset
 from hyperspy.defaults_parser import preferences
@@ -1018,7 +1018,7 @@ class BaseModel(list):
         # avoid the entire component being zero. The value of 1 is chosen for
         # no particular reason.
         for parameter in parameters:
-            if parameter._linear:
+            if parameter._linear and parameter.free:
                 parameter.value = 1.0
 
         channels_signal_shape = np.count_nonzero(self.channel_switches)
@@ -1050,7 +1050,6 @@ class BaseModel(list):
                     # Use the index in the `parameters` list as reference
                     # to defined the position in the numpy array
                     index = parameters.index(parameter)
-                    free, fixed = component._separate_pseudocomponents()
                     model_data[index] = component._compute_expression_part(
                         free[parameter.name]
                         )
@@ -1135,7 +1134,9 @@ class BaseModel(list):
 
         # TODO: reorganise to do lazy computation (coeff and error together)
         if self.signal._lazy:
-            with TqdmCallback(desc="Computing fit lazily"):
+            cm = ProgressBar if kwargs.get('show_progressbar') \
+                else dummy_context_manager
+            with cm():
                 fit_output["x"] = fit_output["x"].compute()
 
         # Calculate errors
@@ -1162,7 +1163,7 @@ class BaseModel(list):
                 fit_output["perror"] = fit_output["perror"].reshape(nav_shape + (n_parameters,))
 
         if self.signal._lazy and calculate_errors:
-            with TqdmCallback(desc="Computing errors lazily"):
+            with cm():
                 fit_output["perror"] = fit_output["perror"].compute()
 
         fit_output["success"] = True
@@ -1889,46 +1890,24 @@ class BaseModel(list):
             # Check that all non-free parameters doesn't change accross
             # the navigation dimension. If this the case, we can fit the
             # dataset in the vectorised fashion
+            # Only "purely" fixed (not twinned) parameters are relevant
             nonfree_parameters = [
                 p for c in self.active_components
-                for p in c.parameters if not p.free
+                for p in c.parameters if not p._free
                 ]
             navigation_variable_nonfree_parameters = [
                 p for p in nonfree_parameters
-                if not np.all(p.map['values'] == p.map['values'][0])
+                if (np.any(p.map['is_set']) and
+                    np.any(p.map['values'] != p.map['values'][0]))
+                ]
+            # Check that all active components are active for the whole
+            # navigation dimension
+            active_is_multidimensional = [
+                c for c in self
+                if c.active_is_multidimensional and np.any(~c._active_array)
                 ]
 
-            if len(navigation_variable_nonfree_parameters) == 0:
-                # We can fit the whole dataset:
-                # 1. do the fit
-                # 2. set the map values
-                # 3. leave earlier because we don't need to go iterate over
-                #    the navigation indices
-                kwargs['current_index_only'] = False
-                self.fit(**kwargs)
-
-                # TODO: check what happen to linear twinned parameter
-                for i, para in enumerate(self._free_parameters):
-                    para.map['values'] = self.fit_output.x[..., i]
-                    if kwargs.get('calculate_errors', False):
-                        std = self.fit_output.perror[..., i]
-                    else:
-                        std = len(self._free_parameters) * (np.nan,)
-                    para.map['std'] = std
-                    para.map['is_set'] = True
-
-                # The nonlinear parameters' .map attribute doesn't get set
-                # during the "all in one go" linear fitting
-                nonlinear_parameters = [p for c in self for p in c.parameters
-                                        if not p._linear]
-                for parameter in nonlinear_parameters:
-                    parameter.map['values'] = parameter.value
-                    parameter.map['std'] = parameter.std
-                    parameter.map['is_set'] = True
-
-                return
-
-            else:
+            if len(navigation_variable_nonfree_parameters) > 0:
                 warnings.warn(
                     "The model contains non-free parameters that have set "
                     "values that vary across the navigation indices. Fitting "
@@ -1937,6 +1916,50 @@ class BaseModel(list):
                     + "\n\t".join(
                         str(x) for x in navigation_variable_nonfree_parameters)
                 )
+
+            elif len(active_is_multidimensional) > 0:
+                warnings.warn(
+                    "The model contains active components that are not active "
+                    "for all navigation indices. Fitting proceeds using a "
+                    "slower approach. These components are:\n\t"
+                    + "\n\t".join(str(c) for c in active_is_multidimensional)
+                )
+            elif self.convolved:
+                warnings.warn(
+                    "Using convolution is not supported for fitting the whole "
+                    "dataset in a vectorized fashion. Fitting proceeds using "
+                    "a slower approach."
+                )
+            else:
+                # We can fit the whole dataset:
+                # 1. do the fit
+                # 2. set the map values
+                # 3. leave earlier because we don't need to go iterate over
+                #    the navigation indices
+                kwargs['current_index_only'] = False
+                kwargs['show_progressbar'] = show_progressbar
+                self.fit( **kwargs)
+
+                # TODO: check what happen to linear twinned parameter
+                for i, para in enumerate(self._free_parameters):
+                    para.map['values'] = self.fit_output.x[..., i]
+                    if kwargs.get('calculate_errors', False):
+                        std = self.fit_output.perror[..., i]
+                    else:
+                        std = np.nan
+                    para.map['std'] = std
+                    para.map['is_set'] = True
+
+                # The (non-free) twinned parameters' .map attribute doesn't get
+                # set during the "all in one go" linear fitting
+                twinned_parameters = [p for c in self for p in c.parameters
+                                      if p._linear and p._free and p.twin]
+                for para in nonfree_parameters + twinned_parameters:
+                    para.map['values'] = para.value
+                    para.map['std'] = para.std
+                    para.map['is_set'] = True
+
+                return
 
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(
