@@ -43,7 +43,7 @@ from scipy.optimize import (
     OptimizeResult
 )
 from hyperspy.component import Component
-from hyperspy.components1d import Expression, EELSCLEdge, Offset
+from hyperspy.components1d import Expression
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
@@ -523,6 +523,7 @@ class BaseModel(list):
             signal = self.signal.__class__(
                 data,
                 axes=self.signal.axes_manager._get_axes_dicts())
+            signal.set_signal_type(signal.metadata.Signal.signal_type)
             signal.metadata.General.title = (
                 self.signal.metadata.General.title + " from fitted model")
         else:
@@ -945,7 +946,7 @@ class BaseModel(list):
         return tuple([c for c in self if c.active])
 
     def _linear_fit(self, optimizer="lstsq", calculate_errors=False,
-                    current_index_only=True, **kwargs):
+                    only_current=True, weights=None, **kwargs):
         """
         Multivariate linear fitting
 
@@ -956,7 +957,7 @@ class BaseModel(list):
             'ridge_regression' - Supports regularisation, doesn't support lazy
             signal.
         calculate_errors : bool, default is False
-        current_index_only : bool, default is True
+        only_current : bool, default is True
             Fit the current index only, instead of the whole navigation space.
         kwargs : dict, optional
             Keywords argument are passed to
@@ -1022,7 +1023,7 @@ class BaseModel(list):
                 parameter.value = 1.0
 
         channels_signal_shape = np.count_nonzero(self.channel_switches)
-        model_data = np.zeros((n_parameters, channels_signal_shape))
+        comp_values = np.zeros((n_parameters, channels_signal_shape))
         constant_term = np.zeros(channels_signal_shape)
 
         for component in self.active_components:
@@ -1050,7 +1051,7 @@ class BaseModel(list):
                     # Use the index in the `parameters` list as reference
                     # to defined the position in the numpy array
                     index = parameters.index(parameter)
-                    model_data[index] = component._compute_expression_part(
+                    comp_values[index] = component._compute_expression_part(
                         free[parameter.name]
                         )
                     constant_term += component._compute_expression_part(fixed)
@@ -1058,15 +1059,15 @@ class BaseModel(list):
             elif len(free_parameters) == 1:
                 parameter = free_parameters[0]
                 if parameter.twin:
-                    # to get the correct `model_data` index, we need the twin
+                    # to get the correct `comp_values` index, we need the twin
                     parameter = twin_parameters_mapping[parameter]
 
                 index = parameters.index(parameter)
-                comp_values = self.__call__(
+                comp_value = self.__call__(
                     component_list=[component], binned=False
                     )
                 comp_constant_values = component._compute_constant_term()
-                model_data[index] += comp_values - comp_constant_values
+                comp_values[index] += comp_value - comp_constant_values
                 constant_term += comp_constant_values
 
             else:
@@ -1078,7 +1079,7 @@ class BaseModel(list):
         # Reshape what may potentially be Signal2D data into a long Signal1D
         # shape and an nD navigation shape to a 1D nav shape
         channel_switches = np.where(self.channel_switches.ravel())[0]
-        if current_index_only:
+        if only_current:
             target_signal = self.signal().ravel()[channel_switches]
         else:
             sig_shape = self.axes_manager._signal_shape_in_array
@@ -1095,17 +1096,21 @@ class BaseModel(list):
 
         target_signal = target_signal - constant_term
 
+        if weights is not None:
+            comp_values = comp_values * weights
+            target_signal = target_signal * weights
+
         if optimizer == "lstsq":
             xp = da if self.signal._lazy else np
             kw = dict(rcond=None) if not self.signal._lazy else {}
 
             result, residual, *_ = np.linalg.lstsq(
-                xp.asanyarray(model_data.T),
+                xp.asanyarray(comp_values.T),
                 target_signal.T,
                 **kw)
-            self.coefficient_array = result.T
+            coefficient_array = result.T
 
-            if self.signal._lazy and not current_index_only and (
+            if self.signal._lazy and not only_current and (
                     Version(dask.__version__) < Version("2020.12.0")):
                 # Dask pre 2020.12 didn't support residuals on 2D input,
                 # we calculate them later.
@@ -1119,9 +1124,9 @@ class BaseModel(list):
                     )
 
             kwargs.setdefault('alpha', 0.0)
-            self.coefficient_array = \
+            coefficient_array = \
                 import_sklearn.sklearn.linear_model.ridge_regression(
-                    X=model_data.T,
+                    X=comp_values.T,
                     y=target_signal.T,
                     **kwargs
                     )
@@ -1130,7 +1135,7 @@ class BaseModel(list):
             raise ValueError(f"Optimizer {optimizer} not supported. Use "
                              "'lstsq' or 'ridge_regression'.")
 
-        fit_output = {"x": self.coefficient_array}
+        fit_output = {"x": coefficient_array}
 
         # TODO: reorganise to do lazy computation (coeff and error together)
         if self.signal._lazy:
@@ -1146,15 +1151,15 @@ class BaseModel(list):
         if calculate_errors:
             fit_output["covar"] = calc_covariance(
                 target_signal=target_signal,
-                coefficients = self.coefficient_array,
-                component_data = model_data,
+                coefficients=coefficient_array,
+                component_data=comp_values,
                 residual=residual,
                 lazy=self.signal._lazy)
             fit_output["perror"] = abs(fit_output["x"]) * std_err_from_cov(
                 fit_output["covar"]
             )
 
-        if not current_index_only:
+        if not only_current:
             # The nav shape will have been flattened. We reshape it here.
             fit_output['x'] = fit_output['x'].reshape(nav_shape + (n_parameters,))
 
@@ -1186,7 +1191,8 @@ class BaseModel(list):
             return [0, self._jacobian(p, y).T]
 
     def _get_variance(self, only_current=True):
-        """Return the variance taking into account the `channel_switches`.
+        """
+        Return the variance taking into account the `channel_switches`.
         If only_current=True, the variance for the current navigation indices
         is returned, otherwise the variance for all navigation indices is
         returned.
@@ -1257,17 +1263,12 @@ class BaseModel(list):
         return p_var
 
     def _convert_variance_to_weights(self):
-        weights = None
-        variance = self.signal.get_noise_variance()
+        if self.signal.get_noise_variance() is None:
+            weights = None
+        else:
+            variance = self._get_variance(only_current=True)
 
-        if variance is not None:
-            if isinstance(variance, BaseSignal):
-                variance = variance.data.__getitem__(self.axes_manager._getitem_tuple)[
-                    np.where(self.channel_switches)
-                ]
-
-            _logger.info("Setting weights to 1/variance of signal noise")
-
+            _logger.info("Setting weights to 1/variance of signal noise.")
             # Note that we square this later in self._errfunc_sq()
             weights = 1.0 / np.sqrt(variance)
 
@@ -1678,15 +1679,19 @@ class BaseModel(list):
 
             elif optimizer in ["lstsq", "ridge_regression"]:
                 # multifit pass this kwargs when necessary
-                current_index_only = kwargs.get('current_index_only', True)
+                only_current = kwargs.get('only_current', True)
                 # Errors are calculated when specifying calculate_errors=True
                 # or when fitting pixel by pixel
-                kwargs.setdefault('calculate_errors', current_index_only)
+                kwargs.setdefault('calculate_errors', only_current)
 
-                fit_output = self._linear_fit(optimizer=optimizer, **kwargs)
+                fit_output = self._linear_fit(
+                    optimizer=optimizer,
+                    weights=weights,
+                    **kwargs
+                    )
                 self.fit_output = OptimizeResult(**fit_output)
 
-                if current_index_only:
+                if only_current:
                     # fit_output will have only one entry
                     indices = ()
                 else:
@@ -1910,9 +1915,12 @@ class BaseModel(list):
             if len(navigation_variable_nonfree_parameters) > 0:
                 warnings.warn(
                     "The model contains non-free parameters that have set "
-                    "values that vary across the navigation indices. Fitting "
-                    "proceeds using a slower approach than if all parameters "
-                    "had constant values. These parameters are:\n\t"
+                    "values that vary across the navigation indices, which "
+                    "is not supported for fitting the dataset in a vectorized "
+                    "fashion. Fitting proceeds by iterating over the "
+                    "navigation dimension, which is significantly slower "
+                    "than if all parameters had constant values.\n"
+                    "These parameters are:\n\t"
                     + "\n\t".join(
                         str(x) for x in navigation_variable_nonfree_parameters)
                 )
@@ -1920,15 +1928,27 @@ class BaseModel(list):
             elif len(active_is_multidimensional) > 0:
                 warnings.warn(
                     "The model contains active components that are not active "
-                    "for all navigation indices. Fitting proceeds using a "
-                    "slower approach. These components are:\n\t"
+                    "for all navigation indicest, which is not supported "
+                    "for fitting the dataset in a vectorized "
+                    "fashion. Fitting proceeds by iterating over the "
+                    "navigation dimension, which is significantly slower.\n"
+                    "These components are:\n\t"
                     + "\n\t".join(str(c) for c in active_is_multidimensional)
                 )
             elif self.convolved:
                 warnings.warn(
-                    "Using convolution is not supported for fitting the whole "
-                    "dataset in a vectorized fashion. Fitting proceeds using "
-                    "a slower approach."
+                    "Using convolution is not supported for fitting the "
+                    "dataset in a vectorized fashion. Fitting proceeds by "
+                    "iterating over the navigation dimension, which is "
+                    "significantly slower."
+                )
+            elif isinstance(self.signal.get_noise_variance(), BaseSignal):
+                warnings.warn(
+                    "The noise of the signal is not homoscedastic, i.e. the "
+                    "variance of the signal is not constant, which is not "
+                    "supported for fitting the dataset in a vectorized "
+                    "fashion.  Fitting proceeds by iterating over the "
+                    "navigation dimension, which is significantly slower."
                 )
             else:
                 # We can fit the whole dataset:
@@ -1936,7 +1956,7 @@ class BaseModel(list):
                 # 2. set the map values
                 # 3. leave earlier because we don't need to go iterate over
                 #    the navigation indices
-                kwargs['current_index_only'] = False
+                kwargs['only_current'] = False
                 kwargs['show_progressbar'] = show_progressbar
                 self.fit( **kwargs)
 

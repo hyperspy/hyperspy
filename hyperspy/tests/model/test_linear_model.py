@@ -40,6 +40,7 @@ def test_fit_binned():
     np.testing.assert_allclose(m[0].sigma.value, 1)
 
 
+@pytest.mark.parametrize('weighted', [False, True])
 @lazifyTestClass
 class TestMultiFitLinear:
 
@@ -52,7 +53,14 @@ class TestMultiFitLinear:
         m = s.create_model()
         self.s, self.m = s, m
 
-    def test_gaussian(self):
+    def _post_setup_method(self, weighted):
+        """Convenience method to use class parametrize marker"""
+        s = self.s
+        if weighted:
+            s.estimate_poissonian_noise_variance()
+
+    def test_gaussian(self, weighted):
+        self._post_setup_method(weighted)
         m = self.m
         L = Gaussian(centre=15.)
         L.centre.free = L.sigma.free = False
@@ -66,7 +74,8 @@ class TestMultiFitLinear:
 
         np.testing.assert_allclose(single(), multi())
 
-    def test_map_values_std_isset(self):
+    def test_map_values_std_isset(self, weighted):
+        self._post_setup_method(weighted)
         m = self.m
         L = Gaussian(centre=15.)
         L.centre.free = L.sigma.free = False
@@ -86,7 +95,8 @@ class TestMultiFitLinear:
         m.multifit(optimizer='lstsq', calculate_errors=False)
         np.testing.assert_equal(L.A.map['std'], np.nan)
 
-    def test_offset(self):
+    def test_offset(self, weighted):
+        self._post_setup_method(weighted)
         m = self.m
         L = Offset(offset=1.)
         m.append(L)
@@ -99,7 +109,8 @@ class TestMultiFitLinear:
         # compare fits from first pixel
         np.testing.assert_allclose(single(), multi())
 
-    def test_channel_switches(self):
+    def test_channel_switches(self, weighted):
+        self._post_setup_method(weighted)
         m = self.m
         m.channel_switches[5:-5] = False
         L = Gaussian(centre=15.)
@@ -117,6 +128,7 @@ class TestMultiFitLinear:
         m.fit()
         single_nonlinear = m.as_signal()
         np.testing.assert_allclose(single(), single_nonlinear())
+
 
 class TestLinearFitting:
 
@@ -159,6 +171,7 @@ class TestLinearFitting:
         assert self.c._constant_term == self.c.b.value
 
 
+@pytest.mark.parametrize('weighted', [False, True])
 @lazifyTestClass
 class TestFitAlgorithms:
 
@@ -167,12 +180,20 @@ class TestFitAlgorithms:
         m = s.create_model(auto_background=False)
         c = Expression('a*x+b', 'line with offset')
         m.append(c)
+        self.m = m
+
+    def _post_setup_method(self, weighted):
+        """Convenience method to use class parametrize marker"""
+        m = self.m
+        if weighted:
+            variance = np.arange(10, m.signal.data.size-10, 0.01)
+            m.signal.set_noise_variance(hs.signals.Signal1D(variance))
         m.fit()
         self.nonlinear_fit_res = m.as_signal()
         self.nonlinear_fit_std = [p.std for p in m._free_parameters if p.std]
-        self.m = m
 
-    def test_compare_lstsq(self):
+    def test_compare_lstsq(self, weighted):
+        self._post_setup_method(weighted)
         m = self.m
         m.fit(optimizer='lstsq')
         lstsq_fit = m.as_signal()
@@ -180,7 +201,8 @@ class TestFitAlgorithms:
         linear_std = [para.std for para in m._free_parameters if para.std]
         np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, rtol=5E-6)
 
-    def test_nonactive_component(self):
+    def test_nonactive_component(self, weighted):
+        self._post_setup_method(weighted)
         m = self.m
         m[1].active = False
         m.fit(optimizer='lstsq')
@@ -189,7 +211,8 @@ class TestFitAlgorithms:
         nonlinear_fit = m.as_signal()
         np.testing.assert_allclose(nonlinear_fit(), linear_fit(), rtol=1E-5)
 
-    def test_compare_ridge(self):
+    def test_compare_ridge(self, weighted):
+        self._post_setup_method(weighted)
         pytest.importorskip("sklearn")
         m = self.m
         if m.signal._lazy:
@@ -327,6 +350,14 @@ class TestWarningSlowMultifit:
         with pytest.warns(None) as record:
             m.multifit(optimizer="lstsq")
         assert len(record) == 0
+
+    def test_heteroscedastic_variance(self):
+        m = self.m
+        m.signal.estimate_poissonian_noise_variance()
+        with pytest.warns(UserWarning):
+            m.multifit(optimizer="lstsq",
+                       match="noise of the signal is not homoscedastic")
+
 
 class TestLinearModel2D:
 
