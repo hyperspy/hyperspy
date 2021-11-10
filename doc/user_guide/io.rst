@@ -1834,15 +1834,18 @@ Extra loading arguments
   will be ignored to enforce consistent sum over the mapped area. 
 - ``read_em_image`` : bool, default False.
   for ``pts`` file only, If ``read_em_image=True``,
-  read SEM/STEM image from pts file if available. Spectrum Image and
-  SEM/STEM Image will be returned.
+  read SEM/STEM image from pts file if available. In this case, both
+  spectrum Image and SEM/STEM Image will be returned as list.
 - ``frame_list`` : list of integer or None, default None
   for ``pts`` file only, frames in frame_list will be loaded.
-  for example, ``frame_list=[1,3]`` means second and forth frame is selected.
+  for example, ``frame_list=[1,3]`` means second and forth frame will be loaded.
   If ``None``, all frames are loaded.
-- ``si_lazy`` : bool, default False
-  for ``pts`` file only, spectrum image is loaded as a dask.array if si_lazy == true.
-  in contrast to the global 'lazy' option, only the spectrum image become lazy image.
+* - ``frame_shifts`` : list of [[int, int]...] or [[int, int, int], ...] or None, default None
+    for ``pts`` file only, each frame will be loaded with offset of x, y, (and optionary
+    energy axis). Units are pixels.
+    This is useful for express drift correction. Not suitable for accurate analysis.
+- ``lazy`` : bool, default False
+  for ``pts`` file only, spectrum image is loaded as a dask.array if lazy == true.
   This is useful to reduce memory usage, with cost of cpu time for calculation.
 
 

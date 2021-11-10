@@ -332,9 +332,12 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
 
         if not isinstance(frame_list, Iterable) or len(frame_list) == 0:
             frame_list = np.arange(sweep + 1)
-
-        frame_list = np.asarray(frame_list)
+        else:
+            frame_list = np.asarray(frame_list)
     
+        # Remove frame numbers outside the data range.
+        # The frame with number == sweep is accepted in this stage
+        #    for incomplete frame
         wrong_frames_list = frame_list[np.where((frame_list<0) | (frame_list > sweep))]
         frame_list = frame_list[np.where((0 <= frame_list) & (frame_list <= sweep))]
     
@@ -345,6 +348,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         # + 1 for incomplete frame
         max_frame = frame_list.max() + 1
         frame_start_index = np.asarray(frame_start_index)
+
         # fill with -1 as invaid index (not loaded)
         if (frame_start_index.size < max_frame):
             fi = np.full(max_frame, -1, dtype = np.int32)
@@ -360,6 +364,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
             fr = np.zeros((max_frame,3), dtype = np.int16)
             fr[:len(frame_shifts), 0:2] = np.asarray(frame_shifts)
             frame_shifts = fr
+
         data, em_data, has_em_image, sweep, frame_start_index, last_valid = readcube(
             rawdata, frame_start_index, frame_list,
             width, height, channel_number,
