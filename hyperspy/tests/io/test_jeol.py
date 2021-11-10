@@ -341,10 +341,10 @@ def test_pts_lazy():
     dir2 = TESTS_FILE_PATH / 'InvalidFrame'
     dir2p = dir2 / 'Sample' / '00_Dummy-Data'
     s = hs.load(dir2p / test_files2[16], read_em_image=True,
-                only_valid_data=False, sum_frames=False, si_lazy=True)
+                only_valid_data=False, sum_frames=False, lazy=True)
     s2 = hs.load(dir2p / test_files2[16], read_em_image=True,
-                only_valid_data=False, sum_frames=True, si_lazy=False)
+                only_valid_data=False, sum_frames=True, lazy=False)
     s1 = [s[0].data.sum(axis=0).compute().todense(),
-          s[1].data.sum(axis=0)]
+          s[1].data.sum(axis=0).compute()]
     assert np.array_equal(s1[0], s2[0].data)
     assert np.array_equal(s1[1], s2[1].data)
