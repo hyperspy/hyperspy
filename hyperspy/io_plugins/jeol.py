@@ -372,6 +372,8 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
             SI_dtype, sweep, frame_shifts,
             sum_frames, read_em_image, only_valid_data, lazy)
 
+        # axes_em for SEM/STEM image
+        # axes for spectrum image
         if sum_frames:
             axes_em = []
         else:
@@ -599,6 +601,9 @@ def readcube(rawdata, frame_start_index, frame_list,
 	sweep : int
     """
 
+    import sparse
+    import dask.array as da
+
     # In case of sum_frames, spectrum image and SEM/STEM image are summing up to the same frame number.
     # To avoid overflow on integration of SEM/STEM image, data type of np.uint32 is selected
     # for 16 frames and over. (range of image intensity in each frame is 0-4095 (0-0xfff))
@@ -659,6 +664,7 @@ def readcube(rawdata, frame_start_index, frame_list,
         else:
             fs = np.zeros(3, np.uint16)
             _logger.info(f"Size of frame_shift array is too small. The frame {frame_idx} is not moved.")
+        print(target_frame_num, p_start)
         length, frame_data, has_em, valid = readframe(
             rawdata[p_start:], 1,
             hypermap[target_frame_num], em_image[target_frame_num],
@@ -667,18 +673,19 @@ def readcube(rawdata, frame_start_index, frame_list,
             fs[0], fs[1], fs[2], max_value)
         has_em_image = has_em_image or has_em
         if length == 0: # no data
+            print("Lazy Not Add Data")
             break
         if valid or not only_valid_data:
             # accept last frame
             if lazy:
+                print("Lazy Add Data")
                 data_list.append(frame_data)
             frame_num += 1
             target_frame_num += frame_step
         else:
             # incomplete data, not accepted
             if sum_frames:
-                # cancel last frame
-                print("Removing data of last frame = ", frame_idx)
+                # subtract signal counts of last frame
                 length, frame_data, has_em_image, valid = readframe(rawdata[p_start:], -1,
                                                                     hypermap[target_frame_num], em_image[target_frame_num],
                                                                     width, height, channel_number,
@@ -697,17 +704,25 @@ def readcube(rawdata, frame_start_index, frame_list,
         else:
             return hypermap[:target_frame_num], em_image[:target_frame_num], has_em_image, frame_num, frame_start_index, valid
         
+    # for lazy loading
     length = 0
     for d in data_list:
         length += len(d)
-    v = np.zeros(shape=(5, length), dtype=np.uint16)
 
+    # length = number of data points
+
+
+    # v : [[frame_no, x, y, energy_channel, 1], ....]
+    v = np.zeros(shape=(5, length), dtype=np.uint16)
     ptr = 0
     frame_count = 0
     mx = width - max_shifts[0] + min_shifts[0]
     my = height - max_shifts[1] + min_shifts[1]
     for d in data_list:
+        # d : data points in one frame
         d = np.asarray(d)
+        # check if the pixels are in the valid data cube
+        # (frame_shifts make partially integrated area at the rim)
         valid_cube = np.where((0<=d[:,0]) & (d[:,0]<mx) & (0<=d[:,1]) & (d[:,1]<my) & (0<=d[:,2]) & (d[:,2]<channel_number))
         d = d[valid_cube]
         flen = len(d)
@@ -718,8 +733,6 @@ def readcube(rawdata, frame_start_index, frame_list,
         ptr += flen
         frame_count += 1
 
-    import sparse
-    import dask.array as da
     if sum_frames:
         data_shape = [mx, my, channel_number]
         ar_s = sparse.COO(v[1:4], v[4], shape=data_shape)
@@ -738,32 +751,44 @@ def readframe_dense(rawdata, countup, hypermap, em_image, width, height, channel
     """
     Read one frame from pts file. Used in a inner loop of readcube function.
     This function always read SEM/STEM image even if read_em_image == False
+    hypermap and em_image array will be modified
 
     Parameters
     ----------
     rawdata : ndarray of uint16
     	slice of one frame raw data from whole raw data 
-    countup : 1 or -1 when summing up the X-ray events
+    countup : 1 for summing up the X-ray events, -1 to cancel selected frame
     hypermap : ndarray(width, height, channel_number)
     	np.ndarray to store decoded spectrum image.
     em_image : np.ndarray(width, height), dtype = np.uint16 or np.uint32
     	np.ndarray to store decoded SEM/TEM image.
-    rebin_energy : int
-    	Binning parameter along energy axis. Must be 2^n.
+    width : int
+    height : int
     channel_number : int
     	Limit of channel to reduce data size
-    width_norm, height_norm : int
+    width_norm : int
     	scanning step
+    height_norm : int
+    	scanning step
+    rebin_energy : int
+    	Binning parameter along energy axis. Must be 2^n.
+    dx, dy, dz : int
+    	information of frame shift for drift correction. 
     max_value : int
     	limit of the data type used in hypermap array
-    fr_shifts : ndarray of int
-    	information of frame shift for drift correction. [dx, dy, dz]
 
     Returns
     -------
-    frame length based on raw data
+    raw_length : int
+    	frame length based on raw data array
+    _ : int
+	dummy value (used for lazy loading)
+    has_em_image : bool
+    	True if pts file have SEM/STEM image
+    valid : bool
+    	True if current frame is completely swept
+    	False for incomplete frame such as interrupt of measurement
 
-    hypermap and em_image array will be modified
     """
 
     count = 0
@@ -814,7 +839,47 @@ def readframe_dense(rawdata, countup, hypermap, em_image, width, height, channel
 @numba.njit(cache=True)
 def readframe_lazy(rawdata, _1, _2, em_image, width, height, channel_number,
                     width_norm, height_norm, rebin_energy, dx, dy, dz, _3):  # pragma: no cover
-    # parameters are the same as those in readframe_dense
+    """
+    Read one frame from pts file. Used in a inner loop of readcube function.
+    This function always read SEM/STEM image even if read_em_image == False
+    hypermap and em_image array will be modified
+
+    Parameters
+    ----------
+    rawdata : ndarray of uint16
+    	slice of one frame raw data from whole raw data 
+    _1 : dummy parameter, not used
+    _2 : dummy parameter, not used
+    em_image : np.ndarray(width, height), dtype = np.uint16 or np.uint32
+    	np.ndarray to store decoded SEM/TEM image.
+    width : int
+    height : int
+    channel_number : int
+    	Limit of channel to reduce data size
+    width_norm : int
+    	scanning step
+    height_norm : int
+    	scanning step
+    rebin_energy : int
+    	Binning parameter along energy axis. Must be 2^n.
+    dx, dy, dz : int
+    	information of frame shift for drift correction. 
+    _3 : dummy parameter, not used
+
+
+    Returns
+    -------
+    raw_length : int
+    	frame length based on raw data array
+    data : list of [int, int, int]  
+	list of X-ray events as an array of [x, y, energy_ch]
+    has_em_image : bool
+    	True if pts file have SEM/STEM image
+    valid : bool
+    	True if current frame is completely swept
+    	False for incomplete frame such as interrupt of measurement
+    """
+    print("delta=",[dx,dy,dz])
     data = []
     previous_x = 0
     previous_y = 0
@@ -832,6 +897,8 @@ def readframe_lazy(rawdata, _1, _2, em_image, width, height, channel_number,
             if x >= width:
                 x = -1
         elif value_type == 0x9000:
+            if (value < previous_y):
+                break
             previous_y = value
             y = value // height_norm + dy
             if y >= width:
