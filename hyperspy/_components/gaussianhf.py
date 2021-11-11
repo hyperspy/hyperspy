@@ -71,10 +71,10 @@ class GaussianHF(Expression):
     Attributes
     ----------
     A : float
-        Convenience attribute to get and set the height and defined for
+        Convenience attribute to get, set the height and defined for
         compatibility with `Gaussian` component.
     sigma : float
-        Convenience attribute to get and set the width and defined for
+        Convenience attribute to get, set the width and defined for
         compatibility with `Gaussian` component.
 
     See also

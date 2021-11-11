@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
+import importlib
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -41,7 +42,29 @@ More details in the :mod:`~hyperspy.api` docstring.
 """ % docstrings.START_HSPY
 
 
-from . import Release
+__all__ = [
+    "api",
+    "__version__"
+    ]
 
-__all__ = ["api"]
-__version__ = Release.version
+
+def __dir__():
+    return sorted(__all__)
+
+
+_import_mapping = {
+    '__version__':'.Release',
+    }
+
+
+def __getattr__(name):
+    if name in __all__:
+        if name in _import_mapping.keys():
+            import_path = 'hyperspy' + _import_mapping.get(name)
+            return getattr(importlib.import_module(import_path), name)
+        else:  # pragma: no cover
+            # We can't get this block covered in the test suite because it is
+            # already imported, when running the test suite.
+            # If this is broken, a lot of things will be broken!
+            return importlib.import_module("." + name, 'hyperspy')
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

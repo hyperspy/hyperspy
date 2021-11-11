@@ -18,9 +18,14 @@
 
 import pytest
 
-import hyperspy.api as hs
-from hyperspy.signals import ( Signal1D, Signal2D, EELSSpectrum, EDSTEMSpectrum,
-                              EDSSEMSpectrum, HologramImage )
+from hyperspy.signals import (
+    Signal1D,
+    Signal2D,
+    EELSSpectrum,
+    EDSTEMSpectrum,
+    EDSSEMSpectrum,
+    HologramImage
+    )
 from hyperspy.components1d import EELSCLEdge
 
 
@@ -129,4 +134,3 @@ def test_lazy():
     print(s)
     with pytest.raises(NotImplementedError):
         s.diff(0)
-

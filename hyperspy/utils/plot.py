@@ -40,6 +40,7 @@ from hyperspy.drawing.utils import (
     plot_signals,
     plot_spectra
     )
+# This import is redundant with `hyperspy.utils.markers`
 from hyperspy.utils import markers
 
 
