@@ -101,6 +101,7 @@ def test_dir_api():
         'get_configuration_directory_path',
         'interactive',
         'load',
+        'markers',
         'material',
         'model',
         'plot',
@@ -125,6 +126,7 @@ def test_dir_api_nogui():
         'get_configuration_directory_path',
         'interactive',
         'load',
+        'markers',
         'material',
         'model',
         'plot',
@@ -151,6 +153,7 @@ def test_dir_utils():
     assert d == [
         'eds',
         'interactive',
+        'markers',
         'material',
         'model',
         'plot',
