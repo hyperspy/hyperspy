@@ -258,7 +258,6 @@ class TestGetTemporaryDaskChunk:
             (10, 20, 30),
             (6, 10, 20, 30),
             (4, 6, 10, 20, 30),
-            (4, 4, 6, 10, 20, 30),
         ],
     )
     def test_dimensions(self, shape):
@@ -320,7 +319,7 @@ class TestGetTemporaryDaskChunk:
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
         s.__call__()
         assert len(s._cache_dask_chunk.shape) == 4
-        s.map(np.sum, axis=1, ragged=False)
+        s.map(np.sum, axis=1, ragged=False, inplace=True)
         s.__call__()
         assert len(s._cache_dask_chunk.shape) == 3
 
@@ -365,7 +364,6 @@ class TestLazyPlot:
             (10, 20, 30),
             (6, 10, 20, 30),
             (4, 6, 10, 20, 30),
-            (4, 4, 6, 10, 20, 30),
         ],
     )
     def test_dimensions(self, shape):

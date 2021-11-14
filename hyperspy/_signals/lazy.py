@@ -86,7 +86,17 @@ def to_array(thing, chunks=None):
 
 
 def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
-    """
+    """Get the slice necessary to get the dask data chunk containing the
+    navigation indices.
+
+    Parameters
+    ----------
+    navigation_indices : iterable
+    chunks : iterable
+
+    Returns
+    -------
+    chunk_slice : list of slices
 
     Examples
     --------
@@ -106,6 +116,7 @@ def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
     >>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
     >>> print(chunk_slice)
     (slice(0, 32, None), slice(0, 32, None))
+    >>> data_chunk = data[chunk_slice]
 
     Moving the navigator to a new position, by directly setting the indices.
     Normally, this is done by moving the navigator while plotting the data.
@@ -117,6 +128,7 @@ def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
     >>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
     >>> print(chunk_slice)
     (slice(64, 96, None), slice(96, 128, None))
+    >>> data_chunk = data[chunk_slice]
 
     """
     chunk_slice_list = da.core.slices_from_chunks(chunks)
@@ -138,6 +150,18 @@ class LazySignal(BaseSignal):
     (assuming storing the full result of computation in memory is not feasible)
     """
     _lazy = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # The _cache_dask_chunk and _cache_dask_chunk_slice attributes are
+        # used to temporarily cache data contained in one chunk, when
+        # self.__call__ is used. Typically done when using plot or fitting.
+        # _cache_dask_chunk has the NumPy array itself, while
+        # _cache_dask_chunk_slice has the navigation dimension chunk which
+        # the NumPy array originates from.
+        self._cache_dask_chunk = None
+        self._cache_dask_chunk_slice = None
+        self.events.data_changed.connect(self._clear_cache_dask_data)
 
     def compute(self, close_file=False, show_progressbar=None, **kwargs):
         """Attempt to store the full signal in memory.
@@ -236,10 +260,10 @@ class LazySignal(BaseSignal):
                 _logger.exception("Failed to close lazy Signal file")
 
     def _clear_cache_dask_data(self, obj=None):
-        if hasattr(self, "_cache_dask_chunk"):
+        if self._cache_dask_chunk is not None:
             del self._cache_dask_chunk
-        if hasattr(self, "_cache_dask_chunk_slice"):
-            del self._cache_dask_chunk_slice
+            self._cache_dask_chunk = None
+        self._cache_dask_chunk_slice = None
 
     def _get_dask_chunks(self, axis=None, dtype=None):
         """Returns dask chunks.
@@ -415,15 +439,10 @@ class LazySignal(BaseSignal):
             return s
 
     def _get_cache_dask_chunk(self, indices):
-        if not self._clear_cache_dask_data in self.events.data_changed._connected_all:
-            self.events.data_changed.connect(self._clear_cache_dask_data)
         sig_dim = self.axes_manager.signal_dimension
         chunks = self.data.chunks[:-sig_dim]
         navigation_indices = indices[:-sig_dim]
         chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, chunks)
-        if not hasattr(self, "_cache_dask_chunk"):
-            self._cache_dask_chunk = None
-            self._cache_dask_chunk_slice = None
         if chunk_slice != self._cache_dask_chunk_slice:
             self._clear_cache_dask_data()
             self._cache_dask_chunk = np.asarray(self.data.__getitem__(chunk_slice))
