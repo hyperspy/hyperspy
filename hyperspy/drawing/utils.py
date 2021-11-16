@@ -498,7 +498,7 @@ def plot_images(images,
     images : list of Signal2D or BaseSignal
         `images` should be a list of Signals to plot. For `BaseSignal` with
         navigation dimensions 2 and signal dimension 0, the signal will be
-        tranposed to form a `Signal2D`.
+        transposed to form a `Signal2D`.
         Multi-dimensional images will have each plane plotted as a separate
         image.
         If any of the signal shapes is not suitable, a ValueError will be
@@ -1302,7 +1302,7 @@ def plot_spectra(
         Ordered spectra list of signal to plot. If `style` is "cascade" or
         "mosaic", the spectra can have different size and axes. For `BaseSignal`
         with navigation dimensions 1 and signal dimension 0, the signal will be
-        tranposed to form a `Signal1D`.
+        transposed to form a `Signal1D`.
     style : 'overlap', 'cascade', 'mosaic', 'heatmap', optional
         The style of the plot: 'overlap' (default), 'cascade', 'mosaic', or
         'heatmap'.

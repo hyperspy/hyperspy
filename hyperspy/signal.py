@@ -2165,6 +2165,10 @@ class BaseSignal(FancySlicing,
             that will to stores in the ``original_metadata`` attribute. It
             typically contains all the parameters that has been
             imported from the original data file.
+        ragged : bool or None, optional
+            Define whether the signal is ragged or not. Overwrite the
+            ``ragged`` value in the ``attributes`` dictionary. If None, it does
+            nothing. Default is None.
 
         """
         # the 'full_initialisation' keyword is private API to be used by the
@@ -2402,13 +2406,60 @@ class BaseSignal(FancySlicing,
 
     @data.setter
     def data(self, value):
-        from dask.array import Array
-        if isinstance(value, Array):
-            if not value.ndim:
-                value = value.reshape((1,))
-            self._data = value
+        if not isinstance(value, da.Array):
+            value = np.asanyarray(value)
+        self._data = np.atleast_1d(value)
+
+    @property
+    def ragged(self):
+        return self.axes_manager._ragged
+
+    @ragged.setter
+    def ragged(self, value):
+        # nothing needs to be done!
+        if self.ragged == value:
+            return
+
+        if value:
+            if self.data.dtype != object:
+                raise ValueError("The array is not ragged.")
+            axes = [axis for axis in self.axes_manager.signal_axes
+                    if axis.index_in_array not in list(range(self.data.ndim))]
+            self.axes_manager.remove(axes)
+            self.axes_manager.set_signal_dimension(0)
         else:
-            self._data = np.atleast_1d(np.asanyarray(value))
+            if self._lazy:
+                raise NotImplementedError(
+                    "Conversion of a lazy ragged signal to its non-ragged "
+                    "counterpart is not supported. Make the required "
+                    "non-ragged dask array manually and make a new lazy "
+                    "signal."
+                    )
+
+            error = "The signal can't be converted to a non-ragged signal."
+            try:
+                # Check that we can actually make a non-ragged array
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    # As of numpy 1.20, it raises a VisibleDeprecationWarning
+                    # and in the future, it will raise an error
+                    data = np.array(self.data.tolist())
+            except:
+                _logger.error(error)
+
+            if data.dtype == object:
+                raise ValueError(error)
+
+            self.data = data
+            # Add axes which were previously in the ragged dimension
+            axes = [idx for idx in range(self.data.ndim) if
+                    idx not in self.axes_manager.navigation_indices_in_array]
+            for index in axes:
+                axis = {'index_in_array':index, 'size':self.data.shape[index]}
+                self.axes_manager._append_axis(**axis)
+            self.axes_manager._update_attributes()
+
+        self.axes_manager._ragged = value
 
     def _load_dictionary(self, file_data_dict):
         """Load data from dictionary.
@@ -2433,28 +2484,35 @@ class BaseSignal(FancySlicing,
               that will to stores in the `original_metadata` attribute. It
               typically contains all the parameters that has been
               imported from the original data file.
+            * ragged: a bool, defining whether the signal is ragged or not.
+              Overwrite the attributes['ragged'] entry
 
         """
         self.data = file_data_dict['data']
         oldlazy = self._lazy
+        attributes = file_data_dict.get('attributes', {})
+        ragged = file_data_dict.get('ragged')
+        if ragged is not None:
+            attributes['ragged'] = ragged
+        if 'axes' not in file_data_dict:
+            file_data_dict['axes'] = self._get_undefined_axes_list(
+                attributes.get('ragged', False))
+        self.axes_manager = AxesManager(file_data_dict['axes'])
+        # Setting `ragged` attributes requires the `axes_manager`
+        for key, value in attributes.items():
+            if hasattr(self, key):
+                if isinstance(value, dict):
+                    for k, v in value.items():
+                        setattr(getattr(self, key), k, v)
+                else:
+                    setattr(self, key, value)
         if 'models' in file_data_dict:
             self.models._add_dictionary(file_data_dict['models'])
-        if 'axes' not in file_data_dict:
-            file_data_dict['axes'] = self._get_undefined_axes_list()
-        self.axes_manager = AxesManager(
-            file_data_dict['axes'])
         if 'metadata' not in file_data_dict:
             file_data_dict['metadata'] = {}
         if 'original_metadata' not in file_data_dict:
             file_data_dict['original_metadata'] = {}
-        if 'attributes' in file_data_dict:
-            for key, value in file_data_dict['attributes'].items():
-                if hasattr(self, key):
-                    if isinstance(value, dict):
-                        for k, v in value.items():
-                            setattr(getattr(self, key), k, v)
-                    else:
-                        setattr(self, key, value)
+
         self.original_metadata.add_dictionary(
             file_data_dict['original_metadata'])
         self.metadata.add_dictionary(
@@ -2562,7 +2620,8 @@ class BaseSignal(FancySlicing,
                'axes': self.axes_manager._get_axes_dicts(),
                'metadata': copy.deepcopy(self.metadata.as_dictionary()),
                'tmp_parameters': self.tmp_parameters.as_dictionary(),
-               'attributes': {'_lazy': self._lazy},
+               'attributes': {'_lazy': self._lazy,
+                              'ragged': self.axes_manager._ragged},
                }
         if add_original_metadata:
             dic['original_metadata'] = copy.deepcopy(
@@ -2575,10 +2634,16 @@ class BaseSignal(FancySlicing,
             dic['models'] = self.models._models.as_dictionary()
         return dic
 
-    def _get_undefined_axes_list(self):
+    def _get_undefined_axes_list(self, ragged=False):
+        """Returns default list of axes construct from the data array shape."""
         axes = []
         for s in self.data.shape:
             axes.append({'size': int(s), })
+        # With ragged signal with navigation dimension 0 and signal dimension 0
+        # we return an empty list to avoid getting a navigation axis of size 1,
+        # which is incorrect, because it corresponds to the ragged dimension
+        if ragged and len(axes) == 1 and axes[0]['size'] == 1:
+            axes = []
         return axes
 
     def __call__(self, axes_manager=None, fft_shift=False):
@@ -2607,6 +2672,8 @@ class BaseSignal(FancySlicing,
         %s
         %s
         """
+        if self.axes_manager.ragged:
+            raise RuntimeError("Plotting ragged signal is not supported.")
         if self._plot is not None:
             self._plot.close()
         if 'power_spectrum' in kwargs:
@@ -3582,12 +3649,12 @@ class BaseSignal(FancySlicing,
         axes = am[axes]
         if not np.iterable(axes):
             axes = (axes,)
-        if am.navigation_dimension + am.signal_dimension > len(axes):
+        if am.navigation_dimension + am.signal_dimension >= len(axes):
             old_signal_dimension = am.signal_dimension
             am.remove(axes)
             if old_signal_dimension != am.signal_dimension:
                 self._assign_subclass()
-        else:
+        if not self.axes_manager._axes and not self.ragged:
             # Create a "Scalar" axis because the axis is the last one left and
             # HyperSpy does not # support 0 dimensions
             from hyperspy.misc.utils import add_scalar_axis
@@ -6000,6 +6067,10 @@ class BaseSignal(FancySlicing,
         <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
 
         """
+
+        if self.axes_manager.ragged:
+            raise RuntimeError("Signal with ragged dimension can't be "
+                               "transposed.")
 
         am = self.axes_manager
         ax_list = am._axes

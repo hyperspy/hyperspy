@@ -679,12 +679,15 @@ class LazySignal(BaseSignal):
         else:
             sig = self._deepcopy_with_new_data(mapped)
             if ragged:
-                sig.axes_manager.remove(sig.axes_manager.signal_axes)
-                sig._lazy = True
+                axes_dicts = self.axes_manager._get_axes_dicts(
+                    self.axes_manager.navigation_axes
+                    )
+                sig.axes_manager.__init__(axes_dicts)
+                sig.axes_manager._ragged = True
                 sig._assign_subclass()
-
                 return sig
-            # remove if too many axes
+
+        # remove if too many axes
         if axes_changed:
             sig.axes_manager.remove(sig.axes_manager.signal_axes[len(output_signal_size):])
             # add additional required axes
@@ -1099,6 +1102,8 @@ class LazySignal(BaseSignal):
             print("\n".join([str(pr) for pr in to_print]))
 
     def plot(self, navigator='auto', **kwargs):
+        if self.axes_manager.ragged:
+            raise RuntimeError("Plotting ragged signal is not supported.")
         if isinstance(navigator, str):
             if navigator == 'spectrum':
                 # We don't support the 'spectrum' option to keep it simple

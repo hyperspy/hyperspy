@@ -147,16 +147,19 @@ class TestFindPeaks2D:
         peaks = self.sparse_nav2d_shifted.find_peaks(parallel=parallel,
                                                      interactive=False)
 
-        np.testing.assert_equal(peaks.inav[0, 0].data,
-                        np.array([[27,  1],
-                                  [10, 17],
-                                  [22, 23],
-                                  [33, 29]]))
-        np.testing.assert_equal(peaks.inav[0, 1].data,
-                        np.array([[35,  3],
-                                  [ 6, 13],
-                                  [18, 19],
-                                  [29, 25]]))
+        peaks0 = peaks.inav[0]
+        if peaks0._lazy:
+            peaks0.data.compute()
+        np.testing.assert_equal(peaks0.data[0],
+                                np.array([[27,  1],
+                                          [10, 17],
+                                          [22, 23],
+                                          [33, 29]]))
+        np.testing.assert_equal(peaks0.data[1],
+                                np.array([[35,  3],
+                                          [ 6, 13],
+                                          [18, 19],
+                                          [29, 25]]))
 
     @pytest.mark.parametrize('method', PEAK_METHODS)
     @pytest.mark.parametrize('parallel', [True, False])
