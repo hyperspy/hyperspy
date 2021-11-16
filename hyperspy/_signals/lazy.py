@@ -1102,6 +1102,8 @@ class LazySignal(BaseSignal):
             print("\n".join([str(pr) for pr in to_print]))
 
     def plot(self, navigator='auto', **kwargs):
+        if self.axes_manager.ragged:
+            raise RuntimeError("Plotting ragged signal is not supported.")
         if isinstance(navigator, str):
             if navigator == 'spectrum':
                 # We don't support the 'spectrum' option to keep it simple

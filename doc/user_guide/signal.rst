@@ -308,7 +308,7 @@ about the shape of the array.
 
 HyperSpy supports the use of ragged array with the following conditions:
 
-- The signal must be explicitely define as being ``ragged``, either when creating
+- The signal must be explicitly defined as being ``ragged``, either when creating
   the signal or by changing the ragged attribute of the signal
 - The signal dimension is the variable length dimension of the array
 - The ``isig`` syntax is not supported
@@ -361,7 +361,7 @@ contains a ragged array or not.
 
 In the following example, an hyperspy signal is created without specifying that
 the array is ragged. In this case, the signal dimension is 2, which *can be*
-misleading, because each item contains a list of number. To provide a clear
+misleading, because each item contains a list of numbers. To provide a unambiguous
 representation of the fact that the signal contains a ragged array, the
 ``ragged`` attribute can be set to ``True``. By doing so, the signal space will
 be described as "ragged" and the navigation shape will become the same as the
