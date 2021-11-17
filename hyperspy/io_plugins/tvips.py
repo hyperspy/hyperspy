@@ -422,25 +422,31 @@ def file_reader(filename,
     mag = all_metadata[0]["mag"][0]
     focus = all_metadata[0]["objective"][0]
     sigtype = "diffraction" if mode == 2 else "imaging"
-    metadata = {'General': {'original_filename': os.path.split(filename)[1],
-                            'date': date,
-                            'time': time,
-                "Signal": {'signal_type': sigtype},
-                "Acquisition_instrument": {
-                    "TEM": {
-                        "magnification": header["magtotal"][0],
-                        "beam_energy": header["ht"][0],
-                        "beam_current": current,
-                        "defocus": focus,
-                        "Stage": {
-                            "tilt_alpha": stagealpha,
-                            "tilt_beta": stagebeta,
-                            "x": stagex,
-                            "y": stagey,
-                            "z": stagez,
-                            }
-                    }
-                }}}
+    metadata = {
+        'General': {
+            'original_filename': os.path.split(filename)[1],
+            'date': date,
+            'time': time,
+        },
+        "Signal": {
+            'signal_type': sigtype
+        },
+        "Acquisition_instrument": {
+            "TEM": {
+                "magnification": header["magtotal"][0],
+                "beam_energy": header["ht"][0],
+                "beam_current": current,
+                "defocus": focus,
+                "Stage": {
+                    "tilt_alpha": stagealpha,
+                    "tilt_beta": stagebeta,
+                    "x": stagex,
+                    "y": stagey,
+                    "z": stagez,
+                },
+            },
+        }
+    }
 
     dictionary = {'data': data_stack,
                 'axes': axes,
@@ -462,16 +468,16 @@ def file_writer(filename, signal, **kwds):
         automatically be appended before the extension.
     signal : instance of hyperspy Signal2D
         The signal to save.
-    max_file_size: int
+    max_file_size: int, optional
         Maximum size of individual files in bytes. By default there is no
         maximum and everything is stored in a single file. Otherwise, files
         are split into sequential parts denoted by a suffix _xxx starting
         from _000.
-    version: int
-        TVIPS file format version (1 or 2)
-    frame_header_extra_bytes: int
-        Number of bytes to pad the frame headers with.
-    mode: int
+    version: int, optional
+        TVIPS file format version (1 or 2), defaults to 2
+    frame_header_extra_bytes: int, optional
+        Number of bytes to pad the frame headers with, defaults to 0
+    mode: int, optional
         Imaging mode. 1 is imaging, 2 is diffraction. By default the mode is
         guessed from signal type and signal units.
     """
@@ -516,6 +522,8 @@ def file_writer(filename, signal, **kwds):
     stagez = signal.metadata.get_item("Acquisition_instrument.TEM.Stage.z", 0)
     stagea = signal.metadata.get_item("Acquisition_instrument.TEM.tilt_alpha", 0)
     stageb = signal.metadata.get_item("Acquisition_instrument.TEM.tilt_beta", 0)
+    # TODO: is fcurrent actually beam current??
+    fcurrent = signal.metadata.get_item("Acquisition_instrument.TEM.beam_current", 0)
     frames_to_save = num_frames
     current_frame = 0
     file_index = 0
@@ -546,6 +554,7 @@ def file_writer(filename, signal, **kwds):
         file_memmap["stagez"] = stagez
         file_memmap["stagea"] = stagea
         file_memmap["stageb"] = stageb
+        file_memmap['fcurrent'] = fcurrent
         rotator = np.arange(current_frame, current_frame + frames_saved)
         milliseconds = rotator * time_increment
         timestamps = (time_start + milliseconds / 1000).astype(int)

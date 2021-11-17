@@ -112,7 +112,7 @@ def fake_metadatas(fake_metadata_diffraction, fake_metadata_imaging, fake_metada
 
 @pytest.fixture()
 def fake_signal_3D():
-    fake_data = np.arange(120).reshape(4, 5, 6)
+    fake_data = np.arange(120).reshape(4, 5, 6).astype(np.uint16)
     fake_signal = hs.signals.Signal2D(fake_data)
     fake_signal.axes_manager[0].scale_as_quantity = "1 nm"
     fake_signal.axes_manager[1].scale_as_quantity = "1 1/nm"
@@ -122,7 +122,7 @@ def fake_signal_3D():
 
 @pytest.fixture()
 def fake_signal_4D():
-    fake_data = np.arange(360).reshape(3, 4, 5, 6)
+    fake_data = np.arange(360).reshape(3, 4, 5, 6).astype(np.uint32)
     fake_signal = hs.signals.Signal2D(fake_data)
     fake_signal.axes_manager[0].scale_as_quantity = "1 nm"
     fake_signal.axes_manager[1].scale_as_quantity = "1 nm"
@@ -133,7 +133,7 @@ def fake_signal_4D():
 
 @pytest.fixture()
 def fake_signal_5D():
-    fake_data = np.arange(720).reshape(2, 3, 4, 5, 6)
+    fake_data = np.arange(720).reshape(2, 3, 4, 5, 6).astype(np.uint64)
     fake_signal = hs.signals.Signal2D(fake_data)
     fake_signal.axes_manager[0].scale_as_quantity = "1 s"
     fake_signal.axes_manager[1].scale_as_quantity = "1 nm"
@@ -150,15 +150,6 @@ def fake_signals(fake_signal_3D, fake_signal_4D, fake_signal_5D):
             "fake_signal_4D": fake_signal_4D,
             "fake_signal_5D": fake_signal_5D,
             }
-
-
-@pytest.fixture()
-def save_path():
-    with tempfile.TemporaryDirectory() as tmp:
-        filepath = os.path.join(tmp, "tvips_data", "save_temp.tvips")
-        yield filepath
-        # Force files release (required in Windows)
-        gc.collect()
 
 
 @pytest.mark.parametrize("unit, expected_mode",
@@ -295,3 +286,34 @@ def test_guess_scan_index_grid(rotators, startstop, expected):
     # jit compiled
     indices = tvips._guess_scan_index_grid(rotators, startstop[0], startstop[1])
     assert np.all(indices == expected)
+
+
+@pytest.mark.parametrize("sig, meta, max_file_size, fheb",
+        [
+            ("fake_signal_3D", "diffraction", None, 0),
+            ("fake_signal_4D", "imaging", None, 0),
+            ("fake_signal_5D", "diffraction", None, 0),
+            ("fake_signal_4D", "diffraction", 100, 0),
+            ("fake_signal_5D", "imaging", 100, 20),
+        ])
+def test_file_writer(sig, meta, max_file_size, fheb, fake_signals, fake_metadatas):
+    signal = fake_signals[sig]
+    metadata = fake_metadatas[meta]
+    with tempfile.TemporaryDirectory() as tmp:
+        filepath = os.path.join(tmp, "test_tvips_save_000.tvips")
+        scan_shape = signal.axes_manager.navigation_shape
+        signal.metadata = metadata
+        tvips.file_writer(filepath, signal, max_file_size=max_file_size, frame_header_extra_bytes = fheb)
+        if max_file_size is None:
+            assert len(os.listdir(tmp)) == 1
+        else:
+            num_files = signal.data.itemsize * signal.data.size // max_file_size + 1
+            assert len(os.listdir(tmp)) - 1 == num_files
+        dtc = tvips.file_reader(filepath, scan_shape=scan_shape, lazy=False)[0]
+        np.testing.assert_allclose(signal.data, dtc['data'])
+        if metadata:
+            assert dtc["metadata"]["General"]["date"] == metadata.General.date
+            assert dtc["metadata"]["General"]["time"] == metadata.General.time
+            assert dtc["metadata"]["Acquisition_instrument"]["TEM"]['beam_energy'] == metadata.Acquisition_instrument.TEM.beam_energy
+            assert dtc["metadata"]["Acquisition_instrument"]["TEM"]['beam_current'] == metadata.Acquisition_instrument.TEM.beam_current
+        gc.collect()
