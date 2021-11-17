@@ -498,6 +498,10 @@ def file_writer(filename, signal, **kwds):
     max_file_size = kwds.pop("max_file_size", None)
     if max_file_size is None:
         max_file_size = total_file_size
+    minimum_file_size = main_header.itemsize + record_dtype.itemsize
+    if max_file_size < minimum_file_size:
+        warnings.warn(f"The minimum file size for this dataset is {minimum_file_size} bytes")
+        max_file_size = minimum_file_size
     # frame metadata
     time_start = datetime.strptime(
             signal.metadata.get_item("General.date", "1970-01-01") + ";" +
@@ -527,51 +531,51 @@ def file_writer(filename, signal, **kwds):
     frames_to_save = num_frames
     current_frame = 0
     file_index = 0
-    signal.unfold_navigation_space()
-    while (frames_to_save != 0):
-        suffix = "_"+(f"{file_index}".zfill(3))
-        filename = fnb + suffix + ext
-        if file_index == 0:
-            with open(filename, "wb") as f:
-                main_header.tofile(f)
-                file_location = f.tell()
-                open_mode = "r+"
-        else:
-            file_location = 0
-            open_mode = "w+"
-        frames_saved = (max_file_size - file_location) // record_dtype.itemsize
-        # last file can contain fewer images
-        if frames_to_save < frames_saved:
-            frames_saved = frames_to_save
-        file_memmap = np.memmap(
-                filename, dtype=record_dtype, mode=open_mode,
-                offset=file_location, shape=frames_saved,
-                )
-        # fill in the metadata
-        file_memmap["mode"] = mode
-        file_memmap["stagex"] = stagex
-        file_memmap["stagey"] = stagey
-        file_memmap["stagez"] = stagez
-        file_memmap["stagea"] = stagea
-        file_memmap["stageb"] = stageb
-        file_memmap['fcurrent'] = fcurrent
-        rotator = np.arange(current_frame, current_frame + frames_saved)
-        milliseconds = rotator * time_increment
-        timestamps = (time_start + milliseconds / 1000).astype(int)
-        milliseconds = milliseconds % 1000
-        file_memmap["timestamp"] = timestamps
-        file_memmap["ms"] = milliseconds
-        file_memmap["rotidx"] = rotator
-        data = signal.data[current_frame:current_frame + frames_saved]
-        if signal._lazy:
-            if show_progressbar is None:
-                show_progressbar = preferences.General.show_progressbar
-            cm = ProgressBar if show_progressbar else dummy_context_manager
-            with cm():
-                data.store(file_memmap["data"])
-        else:
-            file_memmap["data"] = data
-        file_memmap.flush()
-        file_index += 1
-        frames_to_save -= frames_saved
-        current_frame += frames_saved
+    with signal.unfolded(unfold_navigation=True, unfold_signal=False):
+        while (frames_to_save != 0):
+            suffix = "_"+(f"{file_index}".zfill(3))
+            filename = fnb + suffix + ext
+            if file_index == 0:
+                with open(filename, "wb") as f:
+                    main_header.tofile(f)
+                    file_location = f.tell()
+                    open_mode = "r+"
+            else:
+                file_location = 0
+                open_mode = "w+"
+            frames_saved = (max_file_size - file_location) // record_dtype.itemsize
+            # last file can contain fewer images
+            if frames_to_save < frames_saved:
+                frames_saved = frames_to_save
+            file_memmap = np.memmap(
+                    filename, dtype=record_dtype, mode=open_mode,
+                    offset=file_location, shape=frames_saved,
+                    )
+            # fill in the metadata
+            file_memmap["mode"] = mode
+            file_memmap["stagex"] = stagex
+            file_memmap["stagey"] = stagey
+            file_memmap["stagez"] = stagez
+            file_memmap["stagea"] = stagea
+            file_memmap["stageb"] = stageb
+            file_memmap['fcurrent'] = fcurrent
+            rotator = np.arange(current_frame, current_frame + frames_saved)
+            milliseconds = rotator * time_increment
+            timestamps = (time_start + milliseconds / 1000).astype(int)
+            milliseconds = milliseconds % 1000
+            file_memmap["timestamp"] = timestamps
+            file_memmap["ms"] = milliseconds
+            file_memmap["rotidx"] = rotator
+            data = signal.data[current_frame:current_frame + frames_saved]
+            if signal._lazy:
+                if show_progressbar is None:
+                    show_progressbar = preferences.General.show_progressbar
+                cm = ProgressBar if show_progressbar else dummy_context_manager
+                with cm():
+                    data.store(file_memmap["data"])
+            else:
+                file_memmap["data"] = data
+            file_memmap.flush()
+            file_index += 1
+            frames_to_save -= frames_saved
+            current_frame += frames_saved

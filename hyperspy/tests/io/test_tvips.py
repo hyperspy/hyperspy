@@ -299,18 +299,19 @@ def test_guess_scan_index_grid(rotators, startstop, expected):
 def test_file_writer(sig, meta, max_file_size, fheb, fake_signals, fake_metadatas):
     signal = fake_signals[sig]
     metadata = fake_metadatas[meta]
+    signal.metadata.add_dictionary(metadata.as_dictionary())
     with tempfile.TemporaryDirectory() as tmp:
         filepath = os.path.join(tmp, "test_tvips_save_000.tvips")
         scan_shape = signal.axes_manager.navigation_shape
-        signal.metadata = metadata
         tvips.file_writer(filepath, signal, max_file_size=max_file_size, frame_header_extra_bytes = fheb)
         if max_file_size is None:
             assert len(os.listdir(tmp)) == 1
         else:
             num_files = signal.data.itemsize * signal.data.size // max_file_size + 1
-            assert len(os.listdir(tmp)) - 1 == num_files
-        dtc = tvips.file_reader(filepath, scan_shape=scan_shape, lazy=False)[0]
+            assert len(os.listdir(tmp)) - 1 <= num_files
+        dtc = tvips.file_reader(filepath, scan_shape=scan_shape[::-1], lazy=False)[0]
         np.testing.assert_allclose(signal.data, dtc['data'])
+        assert signal.data.dtype == dtc['data'].dtype
         if metadata:
             assert dtc["metadata"]["General"]["date"] == metadata.General.date
             assert dtc["metadata"]["General"]["time"] == metadata.General.time
