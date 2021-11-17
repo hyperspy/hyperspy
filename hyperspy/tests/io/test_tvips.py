@@ -295,11 +295,17 @@ def test_guess_scan_index_grid(rotators, startstop, expected):
             ("fake_signal_5D", "diffraction", None, 0),
             ("fake_signal_4D", "diffraction", 100, 0),
             ("fake_signal_5D", "imaging", 100, 20),
+            ("fake_signal_5D", None, 700, 10),
         ])
-def test_file_writer(sig, meta, max_file_size, fheb, fake_signals, fake_metadatas):
+@pytest.mark.parametrize("lazy", [True, False])
+def test_file_writer(sig, meta, max_file_size, fheb, fake_signals, fake_metadatas, lazy):
     signal = fake_signals[sig]
-    metadata = fake_metadatas[meta]
-    signal.metadata.add_dictionary(metadata.as_dictionary())
+    if lazy:
+        signal = signal.as_lazy()
+    if meta is not None:
+        metadata = fake_metadatas[meta]
+        signal.metadata.add_dictionary(metadata.as_dictionary())
+    metadata = signal.metadata
     with tempfile.TemporaryDirectory() as tmp:
         filepath = os.path.join(tmp, "test_tvips_save_000.tvips")
         scan_shape = signal.axes_manager.navigation_shape
@@ -307,12 +313,11 @@ def test_file_writer(sig, meta, max_file_size, fheb, fake_signals, fake_metadata
         if max_file_size is None:
             assert len(os.listdir(tmp)) == 1
         else:
-            num_files = signal.data.itemsize * signal.data.size // max_file_size + 1
-            assert len(os.listdir(tmp)) - 1 <= num_files
+            assert len(os.listdir(tmp)) >= 1
         dtc = tvips.file_reader(filepath, scan_shape=scan_shape[::-1], lazy=False)[0]
         np.testing.assert_allclose(signal.data, dtc['data'])
         assert signal.data.dtype == dtc['data'].dtype
-        if metadata:
+        if metadata and meta is not None:
             assert dtc["metadata"]["General"]["date"] == metadata.General.date
             assert dtc["metadata"]["General"]["time"] == metadata.General.time
             assert dtc["metadata"]["Acquisition_instrument"]["TEM"]['beam_energy'] == metadata.Acquisition_instrument.TEM.beam_energy
