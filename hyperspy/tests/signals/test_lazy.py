@@ -305,17 +305,17 @@ class TestGetTemporaryDaskChunk:
         value = s._get_cache_dask_chunk(s.axes_manager._getitem_tuple)
         assert np.all(value == 2)
 
-    def test_changed_data(self):
+    def test_changed_data_trigger(self):
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
         position = s.axes_manager._getitem_tuple
         s._get_cache_dask_chunk(position)
-        assert hasattr(s, "_cache_dask_chunk")
-        assert hasattr(s, "_cache_dask_chunk_slice")
+        assert s._cache_dask_chunk is not None
+        assert s._cache_dask_chunk_slice is not None
         s.events.data_changed.trigger(None)
-        assert not hasattr(s, "_cache_dask_chunk")
-        assert not hasattr(s, "_cache_dask_chunk_slice")
+        assert s._cache_dask_chunk is None
+        assert s._cache_dask_chunk_slice is None
 
-    def test_map(self):
+    def test_map_inplace_data_changing(self):
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
         s.__call__()
         assert len(s._cache_dask_chunk.shape) == 4
@@ -323,13 +323,12 @@ class TestGetTemporaryDaskChunk:
         s.__call__()
         assert len(s._cache_dask_chunk.shape) == 3
 
-    def test_clear_cache_dask_data(self):
+    def test_clear_cache_dask_data_method(self):
         s = _lazy_signals.LazySignal2D(da.zeros((6, 6, 8, 8), chunks=(2, 2, 4, 4)))
         s.__call__()
-        s._clear_cache_dask_data(self)
-        assert not hasattr(s, "_temp_dask_data")
-        assert not hasattr(s, "_temp_dask_data_slice")
-        s._clear_cache_dask_data(self)
+        s._clear_cache_dask_data()
+        assert s._cache_dask_chunk is None
+        assert s._cache_dask_chunk_slice is None
 
 
 class TestLazyPlot:
