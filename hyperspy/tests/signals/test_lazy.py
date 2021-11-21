@@ -372,7 +372,7 @@ class TestLazyPlot:
         s.plot()
         s._plot.close()
 
-    def test_axes_manager(self):
+    def test_plot_with_different_axes_manager(self):
         data0 = np.zeros((30, 40, 50, 50), dtype=np.uint16)
         data0[20, 20] = 100
         data0 = da.from_array(data0, chunks=(10, 10, 25, 25))
