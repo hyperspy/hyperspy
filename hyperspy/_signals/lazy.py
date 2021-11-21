@@ -161,7 +161,8 @@ class LazySignal(BaseSignal):
         # the NumPy array originates from.
         self._cache_dask_chunk = None
         self._cache_dask_chunk_slice = None
-        self.events.data_changed.connect(self._clear_cache_dask_data)
+        if not self._clear_cache_dask_data in self.events.data_changed._connected_all:
+            self.events.data_changed.connect(self._clear_cache_dask_data)
 
     def compute(self, close_file=False, show_progressbar=None, **kwargs):
         """Attempt to store the full signal in memory.
