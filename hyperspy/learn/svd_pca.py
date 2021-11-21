@@ -22,14 +22,15 @@ from packaging.version import Version
 
 import numpy as np
 import scipy
-from scipy.linalg import svd
-from scipy.sparse.linalg import svds
+from numpy.linalg import svd
 
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.machine_learning.import_sklearn import (
     randomized_svd,
     sklearn_installed,
 )
+from hyperspy.misc.utils import is_cupy_array
+
 
 _logger = logging.getLogger(__name__)
 
@@ -61,10 +62,10 @@ def svd_flip_signs(u, v, u_based_decision=True):
 
     if u_based_decision:
         max_abs_cols = np.argmax(abs(u), axis=0)
-        signs = np.sign(u[max_abs_cols, range(u.shape[1])])
+        signs = np.sign(u[max_abs_cols, list(range(u.shape[1]))])
     else:
         max_abs_rows = np.argmax(abs(v), axis=1)
-        signs = np.sign(v[range(v.shape[0]), max_abs_rows])
+        signs = np.sign(v[list(range(v.shape[0])), max_abs_rows])
 
     u *= signs
     v *= signs[:, np.newaxis]
@@ -159,6 +160,10 @@ def svd_solve(
                 "svd_solver='arpack' requires output_dimension "
                 "to be strictly less than min(data.shape)."
             )
+        if is_cupy_array(data):  # pragma: no cover
+            from cupyx.scipy.sparse.linalg import svds
+        else:
+            from scipy.sparse.linalg import svds
         U, S, V = svds(data, k=output_dimension, **kwargs)
         # svds doesn't follow scipy.linalg.svd conventions,
         # so reverse its outputs

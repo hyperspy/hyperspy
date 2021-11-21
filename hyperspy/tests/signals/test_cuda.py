@@ -159,3 +159,20 @@ def test_to_gpu(lazy):
         np.testing.assert_allclose(s.data, data)
         # we have a different copy now
         assert s.data is not data
+
+
+def test_decomposition():
+    data = cp.random.random(size=(20, 10, 10))
+    s = hs.signals.Signal1D(data)
+
+    with pytest.raises(TypeError):
+        s.decomposition(algorithm="NMF")
+    with pytest.raises(ValueError):
+        s.decomposition(algorithm="SVD", svd_solver='randomized')
+
+    s.decomposition()
+    s.plot_explained_variance_ratio()
+    s.plot_decomposition_loadings(3)
+    s.plot_decomposition_factors(3)
+
+    s.blind_source_separation(2, algorithm='orthomax')

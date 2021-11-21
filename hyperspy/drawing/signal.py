@@ -24,6 +24,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from traits.api import Undefined
 
 from hyperspy.drawing.utils import set_axes_decor
+from hyperspy.misc.utils import to_numpy
 
 
 def _plot_1D_component(factors, idx, axes_manager, ax=None,
@@ -38,7 +39,7 @@ def _plot_1D_component(factors, idx, axes_manager, ax=None,
     else:
         x = np.arange(axis.size)
         plt.xlabel('Channel index')
-    ax.plot(x, factors[:, idx], label='%i' % idx)
+    ax.plot(x, to_numpy(factors[:, idx]), label='%i' % idx)
     if comp_label and not same_window:
         plt.title('%s' % comp_label)
     return ax
@@ -61,7 +62,7 @@ def _plot_2D_component(factors, idx, axes_manager,
                   axes[0].low_value)
     if comp_label:
         plt.title('%s' % idx)
-    im = ax.imshow(factors[:, idx].reshape(shape),
+    im = ax.imshow(to_numpy(factors[:, idx].reshape(shape)),
                    cmap=cmap, interpolation='nearest',
                    extent=extent)
 
@@ -78,6 +79,7 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
                   comp_label=None, no_nans=True,
                   calibrate=True, cmap=plt.cm.gray,
                   same_window=False, axes_decor='all'):
+    loadings = to_numpy(loadings)
     if ax is None:
         ax = plt.gca()
     if no_nans:
@@ -92,7 +94,7 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
                       axes[0].high_value,
                       axes[1].high_value,
                       axes[1].low_value)
-        im = ax.imshow(loadings[idx].reshape(shape),
+        im = ax.imshow(to_numpy(loadings[idx].reshape(shape)),
                        cmap=cmap, extent=extent,
                        interpolation='nearest')
         if calibrate:

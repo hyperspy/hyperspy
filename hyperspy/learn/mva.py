@@ -34,7 +34,13 @@ from hyperspy.learn.rpca import orpca, rpca_godec
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.whitening import whiten_data
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import ordinal, stack,is_hyperspy_signal
+from hyperspy.misc.utils import (
+    ordinal,
+    stack,
+    is_hyperspy_signal,
+    is_cupy_array,
+    get_numpy_kwargs,
+    )
 from hyperspy.external.progressbar import progressbar
 
 try:
@@ -188,7 +194,7 @@ class MVA:
                 number of components to extract is lower than 80% of the smallest
                 dimension of the data, then the more efficient "randomized"
                 method is enabled. Otherwise the exact full SVD is computed and
-                optionally truncated afterwards.
+                optionally truncated afterwards. For cupy array, only
             If full:
                 run exact SVD, calling the standard LAPACK solver via
                 :py:func:`scipy.linalg.svd`, and select the components by postprocessing
@@ -232,6 +238,18 @@ class MVA:
         * :py:meth:`~._signals.lazy.LazySignal.decomposition` for lazy signals
 
         """
+        if is_cupy_array(self.data):  # pragma: no cover
+            if algorithm == 'SVD':
+                if svd_solver == 'randomized':
+                    raise ValueError(
+                        "`svd_solver='randomized'` is not supported with "
+                        "cupy array."
+                        )
+                elif svd_solver == 'auto':
+                    svd_solver = 'full'
+            else:
+                raise TypeError("cupy array are not supported.")
+
         from hyperspy.signal import BaseSignal
 
         # Check data is suitable for decomposition
@@ -843,7 +861,9 @@ class MVA:
                 number_of_components = lr.output_dimension
                 comp_list = range(number_of_components)
             else:
-                raise ValueError("No `number_of_components` or `comp_list` provided")
+                raise ValueError(
+                    "No `number_of_components` or `comp_list` provided."
+                    )
 
         factors = stack([factors.inav[i] for i in comp_list])
 
@@ -851,8 +871,15 @@ class MVA:
         is_sklearn_like = False
         algorithms_sklearn = ["sklearn_fastica"]
         if algorithm in algorithms_sklearn:
+            if is_cupy_array(self.data):  # pragma: no cover
+                raise TypeError(
+                    "cupy arrays are not supported with scikit-learn "
+                    "algorithms."
+                    )
             if not import_sklearn.sklearn_installed:
-                raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
+                raise ImportError(
+                    f"algorithm='{algorithm}' requires scikit-learn."
+                    )
 
             # Set smaller convergence tolerance than sklearn default
             if not kwargs.get("tol", False):
@@ -867,7 +894,7 @@ class MVA:
                 _logger.warning(
                     "HyperSpy already performs its own data whitening "
                     f"(whiten_method='{whiten_method}'), so it is ignored "
-                    f"for algorithm='{algorithm}'"
+                    f"for algorithm='{algorithm}'."
                 )
                 estim.whiten = False
 
@@ -1430,6 +1457,8 @@ class MVA:
 
         """
         s = self.get_explained_variance_ratio()
+        if is_cupy_array(s.data):
+            s.to_cpu()
 
         n_max = len(self.learning_results.explained_variance_ratio)
         if n is None:
@@ -1961,9 +1990,9 @@ class MVA:
                          algorithm=None,
                          return_info=False,
                          **kwargs):
-        """Cluster analysis of a signal or decomposition results of a signal
+        """
+        Cluster analysis of a signal or decomposition results of a signal
         Results are stored in `learning_results`.
-
 
         Parameters
         ----------
@@ -2054,12 +2083,14 @@ class MVA:
             raise ImportError(
                 'sklearn is not installed. Nothing done')
 
+        if is_cupy_array(self.data):  # pragma: no cover
+            raise TypeError("cupy array are not supported.")
+
         if source_for_centers is None:
             source_for_centers = cluster_source
 
         cluster_algorithm = \
             self._get_cluster_algorithm(algorithm,**kwargs)
-
 
         target = LearningResults()
         try:
@@ -2413,7 +2444,7 @@ class MVA:
                         f"For n_clusters ={k}. "
                         f"The distance metric is : {inertia[-1]}")
                 to_return = inertia
-                best_k =self.estimate_elbow_position(
+                best_k = self.estimate_elbow_position(
                     to_return, log=False) + min_k
             elif metric == "silhouette":
                 k_range   = list(range(2, max_clusters+1))
@@ -2593,7 +2624,8 @@ class MVA:
             y1 = curve_values_adj[0]
             y2 = curve_values_adj[max_points]
 
-        xs = np.arange(max_points)
+        kw = get_numpy_kwargs(self.data)
+        xs = np.arange(max_points, **kw)
         if log:
             ys = np.log(curve_values_adj[:max_points])
         else:
@@ -2798,4 +2830,3 @@ class LearningResults(object):
             self.bss_loadings,
             self.bss_factors,
         )
-

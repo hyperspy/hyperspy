@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from scipy.linalg import svd
+from numpy.linalg import svd
 
 
 def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
