@@ -6474,14 +6474,15 @@ class BaseSignal(FancySlicing,
     def to_gpu(self):
         """
         Transfer data array to GPU device memory using cupy.asarray. Lazy
-        signal will be converted to their non-lazy counterpart, which means
-        the GPU device needs to have enough memory to accomodate the whole
-        dataset.
+        signal are not supported by this method, see user guide for information
+        on how to process data lazily using GPU.
 
         Raises
         ------
         BaseException
-            Raise expecting if cupy is not installed.
+            Raise expection if cupy is not installed.
+        BaseException
+            Raise expection if signal is lazy.
 
         Returns
         -------
@@ -6502,13 +6503,24 @@ class BaseSignal(FancySlicing,
 
     def to_cpu(self):
         """
-        Transfer data array to host memory
+        Transfer data array to host memory.
+
+        Raises
+        ------
+        BaseException
+            Raise expection if signal is lazy.
 
         Returns
         -------
         None.
 
         """
+        if self._lazy:  # pragma: no cover
+            raise BaseException("Automatically converting data from cupy array "
+                                "is not supported for lazy signal. Read the "
+                                "corresponding section in the user guide "
+                                "for more information on how to use GPU "
+                                "with lazy signals.")
         self.data = to_numpy(self.data)
 
 
