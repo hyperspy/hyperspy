@@ -268,8 +268,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if kwargs.get('ragged', False):
             raise ValueError("Signal1D can't be ragged.")
         super().__init__(*args, **kwargs)
-        if self.axes_manager.signal_dimension != 1:
-            self.axes_manager.set_signal_dimension(1)
 
     def _get_spikes_diagnosis_histogram_data(self, signal_mask=None,
                                              navigation_mask=None,
@@ -1619,7 +1617,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 self.metadata.General.title +
                 " full-width at %.1f maximum right position" % factor)
         for signal in (left, width, right):
-            signal.axes_manager.set_signal_dimension(0)
+            signal.axes_manager.signal_dimension = 0
             signal.set_signal_type("")
         if return_interval is True:
             return [width, left, right]
@@ -1657,10 +1655,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
 class LazySignal1D(LazySignal, Signal1D):
 
-    """
-    """
     _lazy = True
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.axes_manager.set_signal_dimension(1)
+    pass

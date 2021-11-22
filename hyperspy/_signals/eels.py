@@ -562,8 +562,8 @@ class EELSSpectrum(Signal1D):
         else:
             ax = self.axes_manager.signal_axes[0]
             # I0 = self._get_navigation_signal()
-            # I0.axes_manager.set_signal_dimension(0)
-            threshold.axes_manager.set_signal_dimension(0)
+            # I0.axes_manager.signal_dimension = 0
+            threshold.axes_manager.signal_dimension = 0
             binned = ax.is_binned
 
             def estimating_function(data, threshold=None):
@@ -821,7 +821,7 @@ class EELSSpectrum(Signal1D):
             s.tmp_parameters.folder = self.tmp_parameters.folder
             s.tmp_parameters.extension = \
                 self.tmp_parameters.extension
-        s.axes_manager.set_signal_dimension(0)
+        s.axes_manager.signal_dimension = 0
         s.set_signal_type("")
         return s
 

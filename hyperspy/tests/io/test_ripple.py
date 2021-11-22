@@ -121,7 +121,7 @@ def _create_signal(shape, dim, dtype, metadata):
                     energy_resolution_MnKa=5.)
     else:
         s = signals.BaseSignal(data)
-        s.axes_manager.set_signal_dimension(dim)
+        s.axes_manager.signal_dimension = dim
     if metadata:
         s.metadata.General.date = "2016-08-06"
         s.metadata.General.time = "10:55:00"

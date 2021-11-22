@@ -1204,7 +1204,7 @@ class IntegrateArea(SpanSelectorInSignal1D):
             plot = True
         self.signal.__init__(**integrated_spectrum._to_dictionary())
         self.signal._assign_subclass()
-        self.signal.axes_manager.set_signal_dimension(0)
+        self.signal.axes_manager.signal_dimension = 0
 
         if plot is True:
             self.signal.plot()

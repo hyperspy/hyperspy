@@ -670,7 +670,7 @@ class EDSSpectrum(Signal1D):
                 f'X-ray line intensity of {self.metadata.General.title}: '
                 f'{Xray_line} at {line_energy:.2f} '
                 f'{self.axes_manager.signal_axes[0].units}')
-            img.axes_manager.set_signal_dimension(0)
+            img.axes_manager.signal_dimension = 0
             if plot_result and img.axes_manager.navigation_size == 1:
                 if img._lazy:
                     img.compute()

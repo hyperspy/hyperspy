@@ -115,8 +115,12 @@ class TestConvertBaseSignal:
         assert isinstance(self.s, _lazy_signals.LazySignal)
         assert self.s._lazy
 
+    def test_set_signal_dimension_deprecation_warning(self):
+        with pytest.warns(VisibleDeprecationWarning):
+            self.s.axes_manager.set_signal_dimension(1)
+
     def test_base_to_1d(self):
-        self.s.axes_manager.set_signal_dimension(1)
+        self.s.axes_manager.signal_dimension = 1
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.Signal1D)
         self.s.metadata.Signal.record_by = ''
@@ -124,7 +128,7 @@ class TestConvertBaseSignal:
         assert isinstance(self.s, hs.signals.BaseSignal)
 
     def test_base_to_2d(self):
-        self.s.axes_manager.set_signal_dimension(2)
+        self.s.axes_manager.signal_dimension = 2
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.Signal2D)
 
@@ -179,12 +183,12 @@ class TestConvertComplexSignal:
         self.s = hs.signals.ComplexSignal(np.zeros((3, 3)))
 
     def test_complex_to_complex1d(self):
-        self.s.axes_manager.set_signal_dimension(1)
+        self.s.axes_manager.signal_dimension = 1
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.ComplexSignal1D)
 
     def test_complex_to_complex2d(self):
-        self.s.axes_manager.set_signal_dimension(2)
+        self.s.axes_manager.signal_dimension = 2
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.ComplexSignal2D)
 

@@ -31,7 +31,7 @@ class TestTranspose:
         for ax, name in zip(self.s.axes_manager._axes, "abcdef"):
             ax.name = name
         # just to make sure in case default changes
-        self.s.axes_manager.set_signal_dimension(6)
+        self.s.axes_manager.signal_dimension = 6
         self.s.estimate_poissonian_noise_variance()
 
     def test_signal_int_transpose(self):

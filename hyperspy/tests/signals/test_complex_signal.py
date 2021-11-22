@@ -36,7 +36,7 @@ class TestComplexProperties:
     def setup_method(self, method):
         test = self.real_ref + 1j * self.imag_ref
         self.s = hs.signals.ComplexSignal(test)
-        self.s.axes_manager.set_signal_dimension(1)
+        self.s.axes_manager.signal_dimension = 1
 
     def test_get_real(self):
         np.testing.assert_allclose(self.s.real.data, self.real_ref)
@@ -128,7 +128,7 @@ def test_get_unwrapped_phase_1D(parallel, lazy):
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
     if lazy:
         s = s.as_lazy()
-    s.axes_manager.set_signal_dimension(1)
+    s.axes_manager.signal_dimension = 1
     phase_unwrapped = s.unwrapped_phase(seed=42, parallel=parallel)
     assert (
         phase_unwrapped.metadata.General.title ==

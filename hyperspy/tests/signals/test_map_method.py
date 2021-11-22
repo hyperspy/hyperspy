@@ -223,7 +223,7 @@ class TestSignal0D:
 
     def setup_method(self, method):
         self.s = hs.signals.BaseSignal(np.arange(0., 6).reshape((2, 3)))
-        self.s.axes_manager.set_signal_dimension(0)
+        self.s.axes_manager.signal_dimension = 0
         self.ragged = None
 
     @pytest.mark.parametrize('parallel', [True, False])
