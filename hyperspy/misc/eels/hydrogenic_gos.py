@@ -161,7 +161,7 @@ class HydrogenicGOS(GOSBase):
         if akh < 0.01:
             akh = 0.01
         if kh2 >= 0.0:
-            d = 1 - np.e ** (-2 * np.pi / kh2)
+            d = 1 - np.e ** (-2 * np.pi / akh)
             bp = np.arctan(2 * akh / (q - kh2 + 1))
             if bp < 0:
                 bp = bp + np.pi
