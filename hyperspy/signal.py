@@ -5255,8 +5255,10 @@ class BaseSignal(FancySlicing,
         cs = self.__class__(
             self(),
             axes=self.axes_manager._get_signal_axes_dicts(),
-            metadata=metadata.as_dictionary(),
-            attributes={'_lazy': False})
+            metadata=metadata.as_dictionary())
+        if self._lazy:
+            cs._lazy = False
+            cs._assign_subclass()
 
         if cs.metadata.has_item('Markers'):
             temp_marker_dict = cs.metadata.Markers.as_dictionary()
