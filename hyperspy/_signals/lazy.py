@@ -495,7 +495,7 @@ class LazySignal(BaseSignal):
         """
 
         sig_dim = self.axes_manager.signal_dimension
-        chunks = self.data.chunks[:-sig_dim]
+        chunks = self._get_navigation_chunk_size()
         navigation_indices = indices[:-sig_dim]
         chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, chunks)
         if chunk_slice != self._cache_dask_chunk_slice:
