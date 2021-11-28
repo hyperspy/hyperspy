@@ -538,3 +538,39 @@ def test_iterpath_function_serpentine():
     for i, indices in enumerate(_serpentine_iter((3,3,3))):
         if i == 3:
             assert indices == (2, 1, 0)
+
+
+def TestAxesManagerRagged():
+
+    def setup_method(self, method):
+        axes_list = [
+            {
+                "name": "a",
+                "navigate": True,
+                "offset": 0.0,
+                "scale": 1.3,
+                "size": 2,
+                "units": "aa",
+            },
+
+        ]
+
+        self.am = AxesManager(axes_list)
+        self.am._ragged = True
+
+    def test_ragged_property(self):
+        assert self.am.ragged
+        with pytest.raises(AttributeError):
+            self.am.ragged = False
+        self.am._ragged = False
+        assert not self.am.ragged
+
+    def test_reprs(self):
+        expected_string = \
+        "<Axes manager, axes: (2|ragged)>\n"
+        "            Name |   size |  index |  offset |   scale |  units \n"
+        "================ | ====== | ====== | ======= | ======= | ====== \n"
+        "               a |      2 |      0 |       0 |     1.3 |     aa \n"
+        "---------------- | ------ | ------ | ------- | ------- | ------ \n"
+        "     Ragged axis |               Variable length"
+        assert self.am.__repr__() == expected_string

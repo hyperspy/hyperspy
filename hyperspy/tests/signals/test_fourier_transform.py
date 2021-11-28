@@ -33,9 +33,9 @@ def test_null_signal():
     rng = np.random.RandomState(123)
     s = BaseSignal(rng.random_sample())
     with pytest.raises(AttributeError):
-        s.T.fft()
+        s.fft()
     with pytest.raises(AttributeError):
-        s.T.ifft()
+        s.ifft()
 
 
 @lazifyTestClass

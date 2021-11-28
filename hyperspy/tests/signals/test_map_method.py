@@ -26,6 +26,7 @@ from scipy.ndimage import gaussian_filter, gaussian_filter1d, rotate
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy._signals.lazy import LazySignal
 
 
 @lazifyTestClass(ragged=False)
@@ -115,14 +116,15 @@ class TestSignal2D:
                       ragged=True)
             s = s.map(rotate, angle=angles.T, reshape=True, inplace=False,
                   ragged=True)
+            s.compute()
         else:
             s.map(rotate, angle=angles.T, reshape=True, show_progressbar=None,
                   parallel=parallel, ragged=True)
+        assert s.ragged
         # the dtype
         assert s.data.dtype is np.dtype('O')
-        # the special slicing
-        if not s._lazy:
-            assert s.inav[0].data.base is s.data[0]
+        # Check slicing
+        assert s.inav[0].data[0] is s.data[0]
         # actual values
         np.testing.assert_allclose(s.data[0],
                                    np.arange(9.).reshape((3, 3)),
@@ -148,6 +150,8 @@ class TestSignal2D:
                 np.testing.assert_allclose(s.data[i], out.data[i])
         else:
             np.testing.assert_allclose(s.data, out.data)
+        assert out.ragged == ragged
+        assert not s.ragged
 
     @pytest.mark.parametrize('ragged', [True, False])
     def test_ragged_navigation_shape(self, ragged):
@@ -155,6 +159,8 @@ class TestSignal2D:
         out = s.map(lambda x: x, inplace=False, ragged=ragged)
         assert out.axes_manager.navigation_shape == s.axes_manager.navigation_shape
         assert out.data.shape[:2] == s.axes_manager.navigation_shape[::-1]
+        assert out.ragged == ragged
+        assert not s.ragged
 
 
 @lazifyTestClass(ragged=False)
@@ -213,6 +219,8 @@ class TestSignal1D:
                 np.testing.assert_allclose(s.data[i], out.data[i])
         else:
             np.testing.assert_allclose(s.data, out.data)
+        assert out.ragged == ragged
+        assert not s.ragged
 
 
 @lazifyTestClass(ragged=False)
@@ -324,9 +332,8 @@ def test_new_axes(parallel):
     assert isinstance(sl, hs.signals.BaseSignal)
     ax_names = {ax.name for ax in sl.axes_manager._axes}
     assert len(ax_names) == 1
-    assert not 'a' in ax_names
     assert not 'b' in ax_names
-    assert 0 == sl.axes_manager.navigation_dimension
+    assert sl.axes_manager.navigation_dimension == 1
 
 
 class TestLazyMap:
@@ -362,6 +369,15 @@ class TestLazyMap:
                                    inplace=False)
         np.testing.assert_array_equal(s_out.mean(axis=(2, 3)).data, iter_array)
 
+    @pytest.mark.parametrize("output_signal_size", [(3,), (3, 4), (3, 4, 5)])
+    def test_map_output_signal_size(self, output_signal_size):
+        def f(data):
+            return np.ones(output_signal_size)
+
+        s_out = self.s.map(function=f, inplace=False)
+        assert s_out.data.shape[2:] == output_signal_size
+        assert s_out.axes_manager.signal_shape == output_signal_size[::-1]
+
 
 @pytest.mark.parametrize('ragged', [True, False, None])
 def test_singleton(ragged):
@@ -373,8 +389,12 @@ def test_singleton(ragged):
     sig.map(np.sum, inplace=True, ragged=ragged)
     sig_list = (sig, sig1, sig2)
     for _s in sig_list:
-        assert len(_s.axes_manager._axes) == 1
-        assert _s.axes_manager[0].name == 'Scalar'
+        assert len(_s.axes_manager._axes) == 0 if ragged else 1
+        ragged2 = ragged if ragged is not None else False
+        if not ragged:
+            assert _s.axes_manager[0].name == 'Scalar'
+        assert _s.axes_manager.ragged == ragged2
+        assert _s.ragged == ragged2
         assert isinstance(_s, hs.signals.BaseSignal)
         assert not isinstance(_s, hs.signals.Signal1D)
 
@@ -395,7 +415,10 @@ def test_lazy_singleton():
         assert _s.axes_manager[0].name == 'Scalar'
         assert isinstance(_s, hs.signals.BaseSignal)
         assert not isinstance(_s, hs.signals.Signal1D)
-        #assert isinstance(_s, LazySignal)
+        assert not _s.ragged
+        # There may be a bug here
+        # # sig is not expected to be lazy
+        # assert isinstance(_s, LazySignal) == (_s is not sig)
 
 
 def test_lazy_singleton_ragged():
@@ -411,7 +434,8 @@ def test_lazy_singleton_ragged():
     for _s in sig_list:
         assert isinstance(_s, hs.signals.BaseSignal)
         assert not isinstance(_s, hs.signals.Signal1D)
-        #assert isinstance(_s, LazySignal)
+        assert _s.ragged
+        assert not isinstance(_s, LazySignal)
 
 
 def test_map_ufunc(caplog):

@@ -89,6 +89,7 @@ class TestPlotDecomposition:
                                                    title='Loading',
                                                    axes_decor=axes_decor)
 
+
 @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
 class TestPlotClusterAnalysis:
 
@@ -116,11 +117,11 @@ class TestPlotClusterAnalysis:
         s.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
                            preprocessing="minmax", random_state=0)
         s.estimate_number_of_clusters("decomposition",metric="elbow")
-        
+
         s2.decomposition()
         s2.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
                             preprocessing="minmax", random_state=0)
-        
+
         data = np.zeros((2000, 5))
         data[:250*5:5, :] = 10
         data[2 + 250*5:350*5:5, :] = 2
@@ -131,11 +132,11 @@ class TestPlotClusterAnalysis:
         s3.decomposition()
         s3.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
                             preprocessing="minmax", random_state=0)
-        
+
         self.s = s
         self.s2 = s2
         self.s3 = s3
-    
+
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_labels_nav1_sig1(self):
@@ -155,30 +156,23 @@ class TestPlotClusterAnalysis:
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_labels_nav2_sig1(self):
         return self.s2.plot_cluster_labels()
-    
+
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_signals_nav2_sig1(self):
         return self.s2.plot_cluster_signals()
-    
+
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_labels_nav2_sig2(self):
         return self.s3.plot_cluster_labels()
 
-#    @pytest.mark.mpl_image_compare(
-#        baseline_dir=baseline_dir, tolerance=default_tol)
-#    def test_plot_cluster_distances_nav2_sig2(self):
-#        return self.s3.plot_cluster_distances()
+    def test_plot_cluster_distances_nav2_sig2(self):
+        return self.s3.plot_cluster_distances()
 
- #   @pytest.mark.skipif(sys.platform == "win32", 
- #                       reason="does not run on windows 32")
- #   @pytest.mark.mpl_image_compare(
- #       baseline_dir=baseline_dir, tolerance=default_tol)
- #   def test_plot_cluster_signals_nav2_sig2(self):
- #       return self.s3.plot_cluster_signals()
- #   @pytest.mark.skipif(sys.platform == "win32", 
- #                       reason="does not run on windows 32")
+    def test_plot_cluster_signals_nav2_sig2(self):
+        return self.s3.plot_cluster_signals()
+
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_metric(self):

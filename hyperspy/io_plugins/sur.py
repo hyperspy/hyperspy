@@ -52,7 +52,7 @@ _logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
-format_name = 'Digital Surf Surface sur'
+format_name = 'Digital Surf Surface'
 description = """Read data from the proprietary .sur file format from Digital
 Surf. Allows hyperspy to interact with the mountains map software"""
 full_support = False #Check with the boys once this is done

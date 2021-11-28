@@ -20,6 +20,7 @@
 import logging
 import xml.etree.ElementTree as ET
 from pathlib import Path
+import os
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
@@ -104,7 +105,8 @@ def overwrite(fname):
         Whether to overwrite file.
 
     """
-    if Path(fname).is_file():
+    if Path(fname).is_file() or (Path(fname).is_dir() and
+                                 os.path.splitext(fname)[1] == '.zspy'):
         message = f"Overwrite '{fname}' (y/n)?\n"
         try:
             answer = input(message)

@@ -325,4 +325,21 @@ def test_plot_complex_representation():
     s.plot(representation='polar', same_axes=False)
     with pytest.raises(ValueError):
         s.plot(representation='unsupported_argument')
-    
+
+
+def test_plot_signal_scalar():
+    s = hs.signals.BaseSignal([1.0])
+    s.plot()
+    assert s._plot is None
+
+
+@pytest.mark.parametrize('lazy', [True, False])
+def test_plot_ragged_array(lazy):
+    data = np.empty((2, 5), dtype=object)
+    data.fill(np.array([10, 20]))
+
+    s = hs.signals.BaseSignal(data, ragged=True)
+    if lazy:
+        s = s.as_lazy()
+    with pytest.raises(RuntimeError):
+        s.plot()

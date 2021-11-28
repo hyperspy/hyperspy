@@ -1,0 +1,1 @@
+Signals with 1 value in the signal dimension will now be :py:class:`~.signal.BaseSignal`

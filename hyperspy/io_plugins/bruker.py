@@ -41,7 +41,7 @@ import codecs
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 import io
-format_name = 'bruker composite file bcf'
+format_name = 'Bruker'
 description = """the proprietary format used by Bruker's
 Esprit(R) software to save hypermaps together with 16bit SEM imagery,
 EDS spectra and metadata describing the dimentions of the data and

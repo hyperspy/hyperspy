@@ -26,6 +26,7 @@ import numpy as np
 from natsort import natsorted
 from inspect import isgenerator
 from pathlib import Path
+from collections.abc import MutableMapping
 
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.exceptions import VisibleDeprecationWarning
@@ -50,15 +51,16 @@ f_error_fmt = (
     "\t\tPath: %s")
 
 
-def _infer_file_reader(extension):
-    """Return a file reader from the plugins list based on the file extension.
+def _infer_file_reader(string):
+    """Return a file reader from the plugins list based on the format name or
+    the file extension.
 
     If the extension is not found or understood, returns
     the Python imaging library as the file reader.
 
     Parameters
     ----------
-    extension : str
+    string : str
         File extension, without initial "." separator
 
     Returns
@@ -67,12 +69,16 @@ def _infer_file_reader(extension):
         The inferred file reader.
 
     """
-    rdrs = [rdr for rdr in io_plugins if extension.lower() in rdr.file_extensions]
+    for reader in io_plugins:
+        if string.lower() == reader.format_name.lower():
+            return reader
+
+    rdrs = [rdr for rdr in io_plugins if string.lower() in rdr.file_extensions]
 
     if not rdrs:
         # Try to load it with the python imaging library
         _logger.warning(
-            f"Unable to infer file type from extension '{extension}'. "
+            f"Unable to infer file type from extension '{string}'. "
             "Will attempt to load the file with the Python imaging library."
         )
 
@@ -117,6 +123,17 @@ def _escape_square_brackets(text):
     rep = dict((re.escape(k), v) for k, v in {"[": "[[]", "]": "[]]"}.items())
     pattern = re.compile("|".join(rep.keys()))
     return pattern.sub(lambda m: rep[re.escape(m.group(0))], text)
+
+
+def _parse_path(arg):
+    """Convenience function to get the path from zarr store or string."""
+    # In case of zarr store, get the path
+    if isinstance(arg, MutableMapping):
+        fname = arg.path
+    else:
+        fname = arg
+
+    return fname
 
 
 def load(filenames=None,
@@ -327,14 +344,14 @@ def load(filenames=None,
             lazy = load_ui.lazy
         if filenames is None:
             raise ValueError("No file provided to reader")
-
     if isinstance(filenames, str):
         pattern = filenames
         if escape_square_brackets:
             filenames = _escape_square_brackets(filenames)
 
         filenames = natsorted([f for f in glob.glob(filenames)
-                               if os.path.isfile(f)])
+                               if os.path.isfile(f) or (os.path.isdir(f) and
+                                                        os.path.splitext(f)[1] == '.zspy')])
 
         if not filenames:
             raise ValueError(f'No filename matches the pattern "{pattern}"')
@@ -342,12 +359,13 @@ def load(filenames=None,
     elif isinstance(filenames, Path):
         # Just convert to list for now, pathlib.Path not
         # fully supported in io_plugins
-        filenames = [f for f in [filenames] if f.is_file()]
+        filenames = [f for f in [filenames]
+                     if f.is_file() or (f.is_dir() and ".zspy" in f.name)]
 
     elif isgenerator(filenames):
         filenames = list(filenames)
 
-    elif not isinstance(filenames, (list, tuple)):
+    elif not isinstance(filenames, (list, tuple, MutableMapping)):
         raise ValueError(
             'The filenames parameter must be a list, tuple, '
             f'string or None, not {type(filenames)}'
@@ -356,9 +374,12 @@ def load(filenames=None,
     if not filenames:
         raise ValueError('No file(s) provided to reader.')
 
-    # pathlib.Path not fully supported in io_plugins,
-    # so convert to str here to maintain compatibility
-    filenames = [str(f) if isinstance(f, Path) else f for f in filenames]
+    if isinstance(filenames, MutableMapping):
+        filenames = [filenames]
+    else:
+        # pathlib.Path not fully supported in io_plugins,
+        # so convert to str here to maintain compatibility
+        filenames = [str(f) if isinstance(f, Path) else f for f in filenames]
 
     if len(filenames) > 1:
         _logger.info('Loading individual files')
@@ -420,7 +441,8 @@ def load(filenames=None,
             objects.append(signal)
     else:
         # No stack, so simply we load all signals in all files separately
-        objects = [load_single_file(filename, lazy=lazy, **kwds) for filename in filenames]
+        objects = [load_single_file(filename, lazy=lazy, **kwds)
+                   for filename in filenames]
 
     if len(objects) == 1:
         objects = objects[0]
@@ -449,11 +471,16 @@ def load_single_file(filename, **kwds):
         Data loaded from the file.
 
     """
-    if not os.path.isfile(filename):
-        raise FileNotFoundError(f"File: {filename} not found!")
+    # in case filename is a zarr store, we want to the path and not the store
+    path = _parse_path(filename)
+
+    if (not os.path.isfile(path) and
+            not (os.path.isdir(path) and os.path.splitext(path)[1] == '.zspy')
+            ):
+        raise FileNotFoundError(f"File: {path} not found!")
 
     # File extension without "." separator
-    file_ext = os.path.splitext(filename)[1][1:]
+    file_ext = os.path.splitext(path)[1][1:]
     reader = kwds.pop("reader", None)
 
     if reader is None:
@@ -503,11 +530,17 @@ def load_with_reader(
             if signal_type is not None:
                 signal_dict['metadata']["Signal"]['signal_type'] = signal_type
             signal = dict2signal(signal_dict, lazy=lazy)
-            folder, filename = os.path.split(os.path.abspath(filename))
+            path = _parse_path(filename)
+            folder, filename = os.path.split(os.path.abspath(path))
             filename, extension = os.path.splitext(filename)
             signal.tmp_parameters.folder = folder
             signal.tmp_parameters.filename = filename
             signal.tmp_parameters.extension = extension.replace('.', '')
+            # original_filename and original_file are used to keep track of
+            # where is the file which has been open lazily
+            signal.tmp_parameters.original_folder = folder
+            signal.tmp_parameters.original_filename = filename
+            signal.tmp_parameters.original_extension = extension.replace('.', '')
             # test if binned attribute is still in metadata
             if signal.metadata.has_item('Signal.binned'):
                 for axis in signal.axes_manager.signal_axes:
@@ -731,11 +764,14 @@ def save(filename, signal, overwrite=None, **kwds):
     None
 
     """
-    filename = Path(filename).resolve()
-    extension = filename.suffix
-    if extension == '':
-        extension = ".hspy"
-        filename = filename.with_suffix(extension)
+    if isinstance(filename, MutableMapping):
+        extension =".zspy"
+    else:
+        filename = Path(filename).resolve()
+        extension = filename.suffix
+        if extension == '':
+            extension = ".hspy"
+            filename = filename.with_suffix(extension)
 
     writer = None
     for plugin in io_plugins:
@@ -780,24 +816,35 @@ def save(filename, signal, overwrite=None, **kwds):
         )
 
     # Create the directory if it does not exist
-    ensure_directory(filename.parent)
-    is_file = filename.is_file()
+    if not isinstance(filename, MutableMapping):
+        ensure_directory(filename.parent)
+        is_file = filename.is_file() or (filename.is_dir() and
+                                         os.path.splitext(filename)[1] == '.zspy')
 
-    if overwrite is None:
-        write = overwrite_method(filename)  # Ask what to do
-    elif overwrite is True or (overwrite is False and not is_file):
-        write = True  # Write the file
-    elif overwrite is False and is_file:
-        write = False  # Don't write the file
+        if overwrite is None:
+            write = overwrite_method(filename)  # Ask what to do
+        elif overwrite is True or (overwrite is False and not is_file):
+            write = True  # Write the file
+        elif overwrite is False and is_file:
+            write = False  # Don't write the file
+        else:
+            raise ValueError("`overwrite` parameter can only be None, True or "
+                             "False.")
     else:
-        raise ValueError("`overwrite` parameter can only be None, True or "
-                         "False.")
+        write = True  # file does not exist (creating it)
     if write:
         # Pass as a string for now, pathlib.Path not
         # properly supported in io_plugins
-        writer.file_writer(str(filename), signal, **kwds)
-
-        _logger.info(f'{filename} was created')
-        signal.tmp_parameters.set_item('folder', filename.parent)
-        signal.tmp_parameters.set_item('filename', filename.stem)
-        signal.tmp_parameters.set_item('extension', extension)
+        if not isinstance(filename, MutableMapping):
+            writer.file_writer(str(filename), signal, **kwds)
+            _logger.info(f'{filename} was created')
+            signal.tmp_parameters.set_item('folder', filename.parent)
+            signal.tmp_parameters.set_item('filename', filename.stem)
+            signal.tmp_parameters.set_item('extension', extension)
+        else:
+            writer.file_writer(filename, signal, **kwds)
+            if hasattr(filename, "path"):
+                file = Path(filename.path).resolve()
+                signal.tmp_parameters.set_item('folder', file.parent)
+                signal.tmp_parameters.set_item('filename', file.stem)
+                signal.tmp_parameters.set_item('extension', extension)

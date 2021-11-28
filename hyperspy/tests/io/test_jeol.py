@@ -16,14 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-
+from pathlib import Path
 import pytest
 import numpy as np
 
 import hyperspy.api as hs
 
-my_path = os.path.dirname(__file__)
+
+TESTS_FILE_PATH = Path(__file__).resolve().parent / 'JEOL_files'
+
 
 test_files = ['rawdata.ASW',
               'View000_0000000.img',
@@ -38,7 +39,7 @@ test_files = ['rawdata.ASW',
 
 def test_load_project():
     # test load all elements of the project rawdata.ASW
-    filename = os.path.join(my_path, 'JEOL_files', test_files[0])
+    filename = TESTS_FILE_PATH / test_files[0]
     s = hs.load(filename)
     # first file is always a 16bit image of the work area
     assert s[0].data.dtype == np.uint8
@@ -71,36 +72,48 @@ def test_load_project():
     np.testing.assert_allclose(s[-1].axes_manager[2].scale, 0.00999866)
     assert s[-1].axes_manager[2].name == 'Energy'
 
+    # check scale (image)
+    filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[1]
+    s1 = hs.load(filename)
+    np.testing.assert_allclose(s[0].axes_manager[0].scale, s1.axes_manager[0].scale)
+    assert s[0].axes_manager[0].units == s1.axes_manager[0].units
+    # check scale (pts)
+    filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[7]
+    s2 = hs.load(filename)
+    np.testing.assert_allclose(s[6].axes_manager[0].scale, s2.axes_manager[0].scale)
+    assert s[6].axes_manager[0].units == s2.axes_manager[0].units
+    
 
 def test_load_image():
     # test load work area haadf image
-    filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[1])
+    filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[1]
+    print(filename)
     s = hs.load(filename)
     assert s.data.dtype == np.uint8
     assert s.data.shape == (512, 512)
     assert s.axes_manager.signal_dimension == 2
-    assert s.axes_manager[0].units == 'px'
-    assert s.axes_manager[0].scale == 1
+    assert s.axes_manager[0].units == 'µm'
+    np.testing.assert_allclose(s.axes_manager[0].scale, 0.00869140587747097)
     assert s.axes_manager[0].name == 'x'
-    assert s.axes_manager[1].units == 'px'
-    assert s.axes_manager[1].scale == 1
+    assert s.axes_manager[1].units == 'µm'
+    np.testing.assert_allclose(s.axes_manager[1].scale, 0.00869140587747097)
     assert s.axes_manager[1].name == 'y'
 
 
 @pytest.mark.parametrize('SI_dtype', [np.int8, np.uint8])
 def test_load_datacube(SI_dtype):
     # test load eds datacube
-    filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[-1])
+    filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[7]
     s = hs.load(filename, SI_dtype=SI_dtype)
     assert s.data.dtype == SI_dtype
     assert s.data.shape == (512, 512, 4096)
     assert s.axes_manager.signal_dimension == 1
     assert s.axes_manager.navigation_dimension == 2
-    assert s.axes_manager[0].units == 'px'
-    assert s.axes_manager[0].scale == 1
+    assert s.axes_manager[0].units == 'µm'
+    np.testing.assert_allclose(s.axes_manager[0].scale, 0.00869140587747097)
     assert s.axes_manager[0].name == 'x'
-    assert s.axes_manager[1].units == 'px'
-    assert s.axes_manager[1].scale == 1
+    assert s.axes_manager[1].units == 'µm'
+    np.testing.assert_allclose(s.axes_manager[1].scale, 0.00869140587747097)
     assert s.axes_manager[1].name == 'y'
     assert s.axes_manager[2].units == 'keV'
     np.testing.assert_allclose(s.axes_manager[2].offset, -0.000789965-0.00999866*96)
@@ -109,7 +122,7 @@ def test_load_datacube(SI_dtype):
 
 
 def test_load_datacube_rebin_energy():
-    filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[-1])
+    filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[7]
     s = hs.load(filename)
     s_sum = s.sum()
 
@@ -132,7 +145,7 @@ def test_load_datacube_rebin_energy():
 
 def test_load_datacube_cutoff_at_kV():
     cutoff_at_kV = 10.
-    filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[-1])
+    filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[7]
     s = hs.load(filename, cutoff_at_kV=None)
     s2 = hs.load(filename, cutoff_at_kV=cutoff_at_kV)
 
@@ -145,7 +158,7 @@ def test_load_datacube_cutoff_at_kV():
 
 def test_load_datacube_downsample():
     downsample = 8
-    filename = os.path.join(my_path, 'JEOL_files', test_files[0])
+    filename = TESTS_FILE_PATH / test_files[0]
     s = hs.load(filename, downsample=1)[-1]
     s2 = hs.load(filename, downsample=downsample)[-1]
 
@@ -180,7 +193,7 @@ def test_load_datacube_downsample():
 
 def test_load_datacube_frames():
     rebin_energy = 2048
-    filename = os.path.join(my_path, 'JEOL_files', 'Sample', '00_View000', test_files[-1])
+    filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[7]
     s = hs.load(filename, sum_frames=True, rebin_energy=rebin_energy)
     assert s.data.shape == (512, 512, 2)
     s_frame = hs.load(filename, sum_frames=False, rebin_energy=rebin_energy)
@@ -192,8 +205,11 @@ def test_load_datacube_frames():
                                          22141, 22024, 22086, 21797]))
 
 
-def test_load_eds_file():
-    filename = os.path.join(my_path, 'JEOL_files', 'met03.EDS')
+@pytest.mark.parametrize('filename_as_string', [True, False])
+def test_load_eds_file(filename_as_string):
+    filename = TESTS_FILE_PATH / 'met03.EDS'
+    if filename_as_string:
+        filename = str(filename)
     s = hs.load(filename)
     assert isinstance(s, hs.signals.EDSTEMSpectrum)
     assert s.data.shape == (2048,)
@@ -217,3 +233,15 @@ def test_load_eds_file():
                                              'live_time': 30.0}},
                         'Stage': {'tilt_alpha': 0.0}}
 
+
+def test_shift_jis_encoding():
+    # See https://github.com/hyperspy/hyperspy/issues/2812
+    filename = TESTS_FILE_PATH / '181019-BN.ASW'
+    # make sure we can open the file
+    with open(filename, "br"):
+        pass
+    try:
+        _ = hs.load(filename)
+    except FileNotFoundError:
+        # we don't have the other files required to open the data
+        pass

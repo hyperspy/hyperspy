@@ -28,7 +28,7 @@ from hyperspy.misc import rgb_tools
 
 # Plugin characteristics
 # ----------------------
-format_name = 'Signal2D'
+format_name = 'Image'
 description = 'Import/Export standard image formats using pillow, freeimage or matplotlib (with scalebar)'
 full_support = False
 file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg',

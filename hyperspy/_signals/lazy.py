@@ -26,8 +26,7 @@ import dask.delayed as dd
 import dask
 from dask.diagnostics import ProgressBar
 from itertools import product
-from distutils.version import LooseVersion
-
+from packaging.version import Version
 
 from hyperspy.signal import BaseSignal
 from hyperspy.defaults_parser import preferences
@@ -242,13 +241,21 @@ class LazySignal(BaseSignal):
                                                                   **kwargs)
                                                 )
 
-
     def close_file(self):
         """Closes the associated data file if any.
 
         Currently it only supports closing the file associated with a dask
         array created from an h5py DataSet (default HyperSpy hdf5 reader).
 
+        """
+        try:
+            self._get_file_handle().close()
+        except AttributeError:
+            _logger.warning("Failed to close lazy signal file")
+
+    def _get_file_handle(self, warn=True):
+        """Return file handle when possible; currently only hdf5 file are
+        supported.
         """
         arrkey = None
         for key in self.data.dask.keys():
@@ -257,9 +264,12 @@ class LazySignal(BaseSignal):
                 break
         if arrkey:
             try:
-                self.data.dask[arrkey].file.close()
-            except AttributeError:
-                _logger.exception("Failed to close lazy Signal file")
+                return self.data.dask[arrkey].file
+            except (AttributeError, ValueError):
+                if warn:
+                    _logger.warning("Failed to retrieve file handle, either "
+                                    "the file is already closed or it is not "
+                                    "an hdf5 file.")
 
     def _clear_cache_dask_data(self, obj=None):
         if self._cache_dask_chunk is not None:
@@ -783,7 +793,7 @@ class LazySignal(BaseSignal):
             axes_changed = True
             if len(output_signal_size) != len(old_sig.axes_manager.signal_shape):
                 drop_axis = old_sig.axes_manager.signal_indices_in_array
-                new_axis = tuple(range(len(output_signal_size)))
+                new_axis = tuple(range(len(nav_indexes), len(nav_indexes) + len(output_signal_size)))
             else:
                 drop_axis = [it for (o, i, it) in zip(output_signal_size,
                                                       old_sig.axes_manager.signal_shape,
@@ -809,12 +819,15 @@ class LazySignal(BaseSignal):
         else:
             sig = self._deepcopy_with_new_data(mapped)
             if ragged:
-                sig.axes_manager.remove(sig.axes_manager.signal_axes)
-                sig._lazy = True
+                axes_dicts = self.axes_manager._get_axes_dicts(
+                    self.axes_manager.navigation_axes
+                    )
+                sig.axes_manager.__init__(axes_dicts)
+                sig.axes_manager._ragged = True
                 sig._assign_subclass()
-
                 return sig
-            # remove if too many axes
+
+        # remove if too many axes
         if axes_changed:
             sig.axes_manager.remove(sig.axes_manager.signal_axes[len(output_signal_size):])
             # add additional required axes
@@ -1229,6 +1242,8 @@ class LazySignal(BaseSignal):
             print("\n".join([str(pr) for pr in to_print]))
 
     def plot(self, navigator='auto', **kwargs):
+        if self.axes_manager.ragged:
+            raise RuntimeError("Plotting ragged signal is not supported.")
         if isinstance(navigator, str):
             if navigator == 'spectrum':
                 # We don't support the 'spectrum' option to keep it simple
@@ -1305,7 +1320,7 @@ class LazySignal(BaseSignal):
             # Needs to reverse the chunks list to match dask chunking order
             signal_chunks = list(signal_chunks)[::-1]
             navigation_chunks = ['auto'] * len(self.axes_manager.navigation_shape)
-            if LooseVersion(dask.__version__) >= LooseVersion("2.30.0"):
+            if Version(dask.__version__) >= Version("2.30.0"):
                 kwargs = {'balance':True}
             else:
                 kwargs = {}

@@ -246,6 +246,7 @@ towncrier_draft_working_directory = ".."
 
 # Add the hyperspy website to the intersphinx domains
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
+                       'h5py': ('https://docs.h5py.org/en/stable', None),
                        'hyperspyweb': ('https://hyperspy.org/', None),
                        'matplotlib': ('https://matplotlib.org', None),
                        'numpy': ('https://docs.scipy.org/doc/numpy', None),
@@ -254,6 +255,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'astroML': ('https://www.astroml.org/', None),
                        'sklearn': ('https://scikit-learn.org/stable', None),
                        'skimage': ('https://scikit-image.org/docs/stable', None),
+                       'zarr': ('https://zarr.readthedocs.io/en/stable', None),
                        }
 
 graphviz_output_format = "svg"

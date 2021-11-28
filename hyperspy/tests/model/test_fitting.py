@@ -19,7 +19,9 @@
 import logging
 
 import numpy as np
+from packaging.version import Version
 import pytest
+import scipy
 from scipy.optimize import OptimizeResult
 
 import hyperspy.api as hs
@@ -285,6 +287,9 @@ class TestModelFitBinnedGlobal:
         self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
+    # See https://github.com/scipy/scipy/issues/14589
+    @pytest.mark.xfail(Version(scipy.__version__) >= Version("1.8.0"),
+                       reason="Regression introduced in 1.8.0.")
     def test_fit_shgo(self):
         pytest.importorskip("scipy", minversion="1.2.0")
         self.m.fit(optimizer="SHGO", loss_function="ls", bounded=True)

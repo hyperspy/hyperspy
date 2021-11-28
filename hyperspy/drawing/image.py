@@ -17,7 +17,7 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import math
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import numpy as np
 import matplotlib
@@ -520,7 +520,7 @@ class ImagePlot(BlittedFigure):
                 sym_log_kwargs = {'linthresh':self.linthresh,
                                   'linscale':self.linscale,
                                   'vmin':vmin, 'vmax':vmax}
-                if LooseVersion(matplotlib.__version__) >= LooseVersion("3.2"):
+                if Version(matplotlib.__version__) >= Version("3.2"):
                     sym_log_kwargs['base'] = 10
                 norm = SymLogNorm(**sym_log_kwargs)
             elif inspect.isclass(norm) and issubclass(norm, Normalize):

@@ -782,7 +782,7 @@ class TestAsSignal:
 @lazifyTestClass
 class TestCreateModel:
     def setup_method(self, method):
-        self.s = hs.signals.Signal1D(np.asarray([0]))
+        self.s = hs.signals.Signal1D(np.asarray([0, 1]))
         self.im = hs.signals.Signal2D(np.ones([1, 1]))
 
     def test_create_model(self):

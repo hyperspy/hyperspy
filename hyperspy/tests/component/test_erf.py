@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import pytest
 import sympy
@@ -25,8 +25,7 @@ import numpy as np
 
 from hyperspy.components1d import Erf
 
-pytestmark = pytest.mark.skipif(LooseVersion(sympy.__version__) <
-                                LooseVersion("1.3"),
+pytestmark = pytest.mark.skipif(Version(sympy.__version__) < Version("1.3"),
                                 reason="This test requires SymPy >= 1.3")
 
 def test_function():

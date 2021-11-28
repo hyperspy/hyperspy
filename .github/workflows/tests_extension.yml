@@ -1,0 +1,87 @@
+name: Integration tests
+
+on:
+  workflow_dispatch:
+    workflow: "*"
+  pull_request_review:
+    types: [submitted, edited]
+  pull_request:
+    types: [labeled, ready_for_review, reopened]
+
+jobs:
+  integration_test:
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'run-extension-tests') }}
+    name: Extension_${{ matrix.EXTENSION_VERSION }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        EXTENSION_VERSION: ['release', 'dev']
+
+    env:
+      MPLBACKEND: agg
+      EXTENSION: kikuchipy lumispy pyxem atomap
+      TEST_DEPS: pytest pytest-xdist pytest-rerunfailures pytest-instafail
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: conda-incubator/setup-miniconda@master
+        with:
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          # use base environment, so that when using pip, this is from the
+          # mambaforge distribution
+          auto-activate-base: true
+          activate-environment: ""
+
+      - name: Conda info
+        run: |
+          conda info
+          conda list
+
+      - name: Install extensions and Test dependencies
+        run: |
+          mamba install hyperspy-base ${{ env.EXTENSION }} ${{ env.TEST_DEPS }}
+
+      - name: Conda list
+        run: |
+          conda list
+
+      - name: Install HyperSpy
+        run: |
+          pip install .
+
+      - name: Install Extension Dev
+        if: contains(matrix.EXTENSION_VERSION, 'dev')
+        run: |
+          pip install https://github.com/lumispy/lumispy/archive/main.zip
+          pip install https://github.com/pyxem/kikuchipy/archive/develop.zip
+          pip install https://github.com/pyxem/pyxem/archive/master.zip
+          pip install https://gitlab.com/atomap/atomap/-/archive/master/atomap-master.zip
+
+      - name: Run Kikuchipy Test Suite
+        if: ${{ always() }}
+        run: |
+          python -m pytest --pyargs kikuchipy
+
+      - name: Run LumiSpy Test Suite
+        if: ${{ always() }}
+        run: |
+          python -m pytest --pyargs lumispy
+
+      - name: Run Pyxem Test Suite
+        if: ${{ always() }}
+        run: |
+          python -m pytest --pyargs pyxem
+
+      #  The currently released version of Atomap (0.3.1) does not work with this test
+      #  environment. Thus, only the dev version is currently tested. If a newer version
+      #  of Atomap is released, the "if" can be changed to always().
+      - name: Run atomap Test Suite
+        if: contains(matrix.EXTENSION_VERSION, 'dev')
+        run: |
+          python -m pytest --pyargs atomap

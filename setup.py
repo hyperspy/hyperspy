@@ -46,7 +46,7 @@ setup_path = os.path.dirname(__file__)
 
 
 install_req = ['scipy>=1.1',
-               'matplotlib>=3.1.0',
+               'matplotlib>=3.1.0,<3.5',
                'numpy>=1.17.1',
                'traits>=4.5.0',
                'natsort',
@@ -55,9 +55,12 @@ install_req = ['scipy>=1.1',
                'sympy',
                'dill',
                'h5py>=2.3',
+               'packaging',
                'python-dateutil>=2.5.0',
                'ipyparallel',
-               'dask[array]>2.1.0',
+               'dask[array]>=2.1.0',
+               # fsspec is missing from dask dependencies for dask < 2021.3.1
+               'fsspec',
                'scikit-image>=0.15',
                'pint>=0.10',
                'numexpr',
@@ -67,19 +70,23 @@ install_req = ['scipy>=1.1',
                # prettytable and ptable are API compatible
                # prettytable is maintained and ptable is an unmaintained fork
                'prettytable',
-               'tifffile>=2018.10.18',
+               'tifffile>=2020.2.16',
                'numba',
                 # included in stdlib since v3.8, but this required version requires Python 3.10
                 # We can remove this requirement when the minimum supported version becomes Python 3.10
                'importlib_metadata>=3.6',
+               # numcodecs currently only supported on x86_64/AMD64 machines
+               'zarr;platform_machine=="x86_64" or platform_machine=="AMD64"',
                ]
 
 extras_require = {
-    "learning": ['scikit-learn'],
+    # exclude scikit-learn==1.0 on macOS (wheels issue)
+    # See https://github.com/scikit-learn/scikit-learn/pull/21227
+    "learning": ['scikit-learn!=1.0;sys_platform=="darwin"'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
-    "speed": ["cython", "imagecodecs"],
+    "speed": ["cython", "imagecodecs>=2020.1.31"],
     "usid": ["pyUSID>=0.0.7", "sidpy"],
     "scalebar": ["matplotlib-scalebar"],
     # bug in pip: matplotib is ignored here because it is already present in
@@ -338,6 +345,9 @@ with update_version_when_dev() as version:
                 'tests/io/FEI_old/*.ser',
                 'tests/io/FEI_old/*.npy',
                 'tests/io/FEI_old/*.tar.gz',
+                'tests/io/impulse_data/*.csv',
+                'tests/io/impulse_data/*.log',
+                'tests/io/impulse_data/*.npy',
                 'tests/io/msa_files/*.msa',
                 'tests/io/hdf5_files/*.hdf5',
                 'tests/io/hdf5_files/*.hspy',
@@ -380,7 +390,6 @@ with update_version_when_dev() as version:
         },
         classifiers=[
             "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",

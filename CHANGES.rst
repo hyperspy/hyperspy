@@ -8,8 +8,34 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 
 .. towncrier release notes start
 
-Hyperspy 1.6.4 (2021-07-08)
-===========================
+v1.6.5 (2021-10-28)
+===================
+
+Bug Fixes
+---------
+
+- Suspend plotting during :py:meth:`~.models.eelsmodel.EELSModel.smart_fit` call (`#2796 <https://github.com/hyperspy/hyperspy/issues/2796>`_)
+- make :py:meth:`~.signal.BaseSignal.add_marker` also check if the plot is not active before plotting signal (`#2799 <https://github.com/hyperspy/hyperspy/issues/2799>`_)
+- Fix irresponsive ROI added to a signal plot with a right hand side axis (`#2809 <https://github.com/hyperspy/hyperspy/issues/2809>`_)
+- Fix :py:func:`~.drawing.utils.plot_histograms` drawstyle following matplotlib API change (`#2810 <https://github.com/hyperspy/hyperspy/issues/2810>`_)
+- Fix incorrect :py:meth:`~.signal.BaseSignal.map` output size of lazy signal when input and output axes do not match (`#2837 <https://github.com/hyperspy/hyperspy/issues/2837>`_)
+- Add support for latest h5py release (3.5) (`#2843 <https://github.com/hyperspy/hyperspy/issues/2843>`_)
+
+
+Deprecations
+------------
+
+- Rename ``line_style`` to ``linestyle`` in :py:func:`~.drawing.utils.plot_spectra` to match matplotlib argument name (`#2810 <https://github.com/hyperspy/hyperspy/issues/2810>`_)
+
+
+Enhancements
+------------
+
+- :py:meth:`~.roi.BaseInteractiveROI.add_widget` can now take a string or integer instead of tuple of string or integer (`#2809 <https://github.com/hyperspy/hyperspy/issues/2809>`_)
+
+
+v1.6.4 (2021-07-08)
+===================
 
 Bug Fixes
 ---------
@@ -17,7 +43,7 @@ Bug Fixes
 - Fix parsing EELS aperture label with unexpected value, for example 'Imaging' instead of '5 mm' (`#2772 <https://github.com/hyperspy/hyperspy/issues/2772>`_)
 - Lazy datasets can now be saved out as blockfiles (blo) (`#2774 <https://github.com/hyperspy/hyperspy/issues/2774>`_)
 - ComplexSignals can now be rebinned without error (`#2789 <https://github.com/hyperspy/hyperspy/issues/2789>`_)
-- Method `estimate_parameters` in `Polynomial` component now supports order
+- Method :py:meth:`~._components.polynomial.Polynomial.estimate_parameters` of the :py:class:`~._components.polynomial.Polynomial` component now supports order
   greater than 10 (`#2790 <https://github.com/hyperspy/hyperspy/issues/2790>`_)
 - Update minimal requirement of dependency importlib_metadata from
   >= 1.6.0 to >= 3.6 (`#2793 <https://github.com/hyperspy/hyperspy/issues/2793>`_)
@@ -48,7 +74,7 @@ Bug Fixes
 - Fix :py:meth:`~._signals.signal1d.Signal1D.shift1D`, :py:meth:`~._signals.signal1d.Signal1D.align1D` and :py:meth:`~._signals.eels.EELSSpectrum.align_zero_loss_peak` regression with navigation dimension larger than one (`#2729 <https://github.com/hyperspy/hyperspy/issues/2729>`_)
 - Fix disconnecting events when closing figure and :py:meth:`~._signals.signal1d.Signal1D.remove_background` is active (`#2734 <https://github.com/hyperspy/hyperspy/issues/2734>`_)
 - Fix :py:meth:`~.signal.BaseSignal.map` regression of lazy signal with navigation chunks of size of 1 (`#2748 <https://github.com/hyperspy/hyperspy/issues/2748>`_)
-- Fix unclear error message when reading a hspy file saved using blosc compression and `hdf5plugin` hasn't been imported previously (`#2760 <https://github.com/hyperspy/hyperspy/issues/2760>`_)
+- Fix unclear error message when reading a hspy file saved using blosc compression and ``hdf5plugin`` hasn't been imported previously (`#2760 <https://github.com/hyperspy/hyperspy/issues/2760>`_)
 - Fix saving ``navigator`` of lazy signal (`#2763 <https://github.com/hyperspy/hyperspy/issues/2763>`_)
 
 

@@ -30,6 +30,7 @@ from hyperspy.io_plugins import (
     fei,
     hspy,
     image,
+    impulse,
     jeol,
     mrc,
     msa,
@@ -53,6 +54,7 @@ io_plugins = [
     fei,
     hspy,
     image,
+    impulse,
     jeol,
     mrc,
     msa,
@@ -98,6 +100,15 @@ except ImportError:
         "the mrcz package is not installed."
     )
 
+try:
+    from hyperspy.io_plugins import zspy
+
+    io_plugins.append(zspy)
+except ImportError:
+    _logger.info(
+        "The zspy IO plugin is not available because "
+        "the zarr package is not installed."
+    )
 
 default_write_ext = set()
 for plugin in io_plugins:

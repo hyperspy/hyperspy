@@ -1,0 +1,1 @@
+Add Github workflow to run test suite of extension from a pull request.

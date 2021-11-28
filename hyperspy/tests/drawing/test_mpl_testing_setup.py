@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from distutils.version import LooseVersion
 
 import matplotlib
 import pytest
@@ -30,10 +29,6 @@ def test_mlp_agg_for_CI_testing():
 @pytest.fixture
 def mpl_cmdopt(request):
     return request.config.getoption("--mpl")
-
-def test_mpl_version():
-    # for simplicity, only matplotlib 2.x is supported for testing
-    assert LooseVersion(matplotlib.__version__) >= LooseVersion('2.0.0')
 
 
 @pytest.mark.xfail(reason="Check if plotting tests are working: if this test passes,"
