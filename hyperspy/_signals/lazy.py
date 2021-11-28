@@ -441,6 +441,49 @@ class LazySignal(BaseSignal):
             return s
 
     def _get_cache_dask_chunk(self, indices):
+        """Method for handling caching of dask chunks, when using __call__.
+
+        When accessing data in a chunked HDF5 file, the whole chunks needs
+        to be loaded into memory. So even if you only want to access a single
+        index in the navigation dimension, the whole chunk in the navigation
+        dimension needs to be loaded into memory. This method keeps (caches)
+        this chunk in memory after loading it, so moving to a different
+        position with the same chunk will be much faster, reducing amount of
+        data which needs be read from the disk.
+
+        If a navigation index (via the indices parameter) in a different chunk
+        is asked for, the currently cached chunk is discarded, and the new
+        chunk is loaded into memory.
+
+        This only works for functions using self.__call__, for example
+        plot and fitting functions. This will not work with the region of
+        interest functionality.
+
+        The cached chunk is stored in the attribute s._cache_dask_chunk,
+        and the slice needed to extract this chunk is in
+        s._cache_dask_chunk_slice. To these, use s._clear_cache_dask_data()
+
+        Parameter
+        ---------
+        indices : tuple
+            Must be the same length as navigation dimensions in self.
+
+        Returns
+        -------
+        value : NumPy array
+            Same shape as the signal shape of self.
+
+        Examples
+        --------
+        >>> import dask.array as da
+        >>> s = hs.signals.Signal2D(da.ones((5, 10, 20, 30, 40))).as_lazy()
+        >>> value = s._get_cache_dask_chunk((3, 6, 2))
+        >>> cached_chunk = s._cache_dask_chunk # Cached array
+        >>> cached_chunk_slice = s._cache_dask_chunk_slice # Slice of chunk
+        >>> s._clear_cache_dask_data() # Clearing both of these
+
+        """
+
         sig_dim = self.axes_manager.signal_dimension
         chunks = self.data.chunks[:-sig_dim]
         navigation_indices = indices[:-sig_dim]
