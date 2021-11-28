@@ -21,7 +21,6 @@ import re
 import logging
 import warnings
 from datetime import datetime
-from dateutil import tz
 
 import numpy as np
 import dask.array as da
@@ -33,7 +32,6 @@ from numba import njit
 from hyperspy.misc.array_tools import sarray2dict
 from hyperspy.misc.utils import dummy_context_manager
 from hyperspy.defaults_parser import preferences
-from hyperspy._signals.signal2d import Signal2D
 
 # Plugin characteristics
 # ----------------------
@@ -340,10 +338,9 @@ def file_reader(filename,
                 raise ValueError("Scan was not square, please supply a scan_shape and start_frame.")
             scan_shape = (scan_dim, scan_dim)
             # there may be discontinuities which must be filled up
-            indices = _guess_scan_index_grid(record_idxs, scan_start_frame, scan_stop_frame)
+            indices = _guess_scan_index_grid(record_idxs, scan_start_frame, scan_stop_frame).reshape(scan_shape)
         # scan shape and start are provided
         else:
-            scan_start_frame = kwds.get("scan_start_frame", 0)
             total_scan_frames = np.prod(scan_shape)
             indices = np.arange(scan_start_frame, scan_start_frame+total_scan_frames).reshape(scan_shape)
 
@@ -351,10 +348,10 @@ def file_reader(filename,
         # due to hysteresis there is also a predictable offset
         if winding_scan_axis is not None:
             if winding_scan_axis in ["x", 0]:
-                indices[..., ::2, :] = indices[..., ::2, :][..., ::-1, :]
+                indices[..., ::2, :] = indices[..., ::2, :][..., :, ::-1]
                 indices[..., ::2, :] = np.roll(indices[..., ::2, :], hysteresis, axis=-1)
             elif winding_scan_axis in ["y", 1]:
-                indices[..., :, ::2] = indices[..., :, ::2][..., :, ::-1]
+                indices[..., :, ::2] = indices[..., :, ::2][..., ::-1, :]
                 indices[..., :, ::2] = np.roll(indices[..., :, ::2], hysteresis, axis=-2)
             else:
                 raise ValueError("Invalid winding scan axis")
@@ -391,8 +388,11 @@ def file_reader(filename,
         # we load as a regular image stack
         units = ['s', DPU, DPU]
         names = ['time', 'dy', 'dx']
-        times = all_metadata[0]["timestamp"] + all_metadata[0]["ms"]/1000
-        timescale = times[1] - times[0]
+        times = np.concatenate([i["timestamp"] + i["ms"]/1000 for i in all_metadata])
+        if times.shape[0] > 0:
+            timescale = times[1] - times[0]
+        else:
+            timescale = 1
         scales = [timescale, SDP, SDP]
         offsets = [times[0], offsety, offsetx]
         # Create the axis objects for each axis
@@ -482,6 +482,7 @@ def file_writer(filename, signal, **kwds):
         guessed from signal type and signal units.
     """
     # only signal2d is allowed
+    from hyperspy._signals.signal2d import Signal2D
     if not isinstance(signal, Signal2D):
         raise ValueError("Only Signal2D supported for writing to TVIPS file.")
     fnb, ext = os.path.splitext(filename)
@@ -506,16 +507,13 @@ def file_writer(filename, signal, **kwds):
     time_start = datetime.strptime(
             signal.metadata.get_item("General.date", "1970-01-01") + ";" +
             signal.metadata.get_item("General.time", "00:00:00"),
-            "%Y-%m-%d;%H:%M:%S")
-    tizo = tz.gettz(signal.metadata.get_item("General.time_zone", "UTC"))
-    time_start = time_start.replace(tzinfo = tizo).timestamp()
-    # find a time axis an increment if it exists
+            "%Y-%m-%d;%H:%M:%S").timestamp()
     nav_units = signal.axes_manager[0].units
     nav_increment = signal.axes_manager[0].scale
     try:
         time_increment = (nav_increment * _ureg(nav_units)).to("ms").magnitude
     except (AttributeError, pint.UndefinedUnitError, pint.DimensionalityError):
-        time_increment = 0
+        time_increment = 1
     # imaging or diffraction
     mode = kwds.pop("mode", None)
     if mode is None:
@@ -565,7 +563,7 @@ def file_writer(filename, signal, **kwds):
             milliseconds = milliseconds % 1000
             file_memmap["timestamp"] = timestamps
             file_memmap["ms"] = milliseconds
-            file_memmap["rotidx"] = rotator
+            file_memmap["rotidx"] = rotator + 1
             data = signal.data[current_frame:current_frame + frames_saved]
             if signal._lazy:
                 if show_progressbar is None:

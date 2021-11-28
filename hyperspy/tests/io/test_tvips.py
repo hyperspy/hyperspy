@@ -28,7 +28,18 @@ from skimage.exposure import rescale_intensity
 import pytest
 
 import hyperspy.api as hs
-import hyperspy.io_plugins.tvips as tvips
+from hyperspy.io_plugins.tvips import (
+        _guess_image_mode,
+        _get_main_header_from_signal,
+        _get_frame_record_dtype_from_signal,
+        _is_valid_first_tvips_file,
+        _find_auto_scan_start_stop,
+        _guess_scan_index_grid,
+        TVIPS_RECORDER_GENERAL_HEADER,
+        TVIPS_RECORDER_FRAME_HEADER,
+        file_writer,
+        file_reader,
+        )
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import dummy_context_manager
 
@@ -39,9 +50,7 @@ except NameError:
     WindowsError = None
 
 
-DIRPATH = os.path.dirname(__file__)
-FILE1 = os.path.join(DIRPATH, "tvips_data", "test1.tvips")
-FILE2 = os.path.join(DIRPATH, "tvips_data", "test2.tvips")
+DIRPATH = os.path.join(os.path.dirname(__file__), "tvips_files")
 
 
 @pytest.fixture()
@@ -169,7 +178,7 @@ def fake_signals(fake_signal_3D, fake_signal_4D, fake_signal_5D):
 def test_guess_image_mode(unit, expected_mode, sig, fake_signals):
     signal = fake_signals[sig]
     signal.axes_manager[-1].units = unit
-    mode = tvips._guess_image_mode(signal)
+    mode = _guess_image_mode(signal)
     assert mode == expected_mode
 
 
@@ -198,15 +207,15 @@ def test_main_header_from_signal(unit, expected_scale_factor, version, fheb,
     else:
         cm = dummy_context_manager()
     with cm:
-        header = tvips._get_main_header_from_signal(signal, version, fheb)
-    assert header["size"] == np.dtype(tvips.TVIPS_RECORDER_GENERAL_HEADER).itemsize
+        header = _get_main_header_from_signal(signal, version, fheb)
+    assert header["size"] == np.dtype(TVIPS_RECORDER_GENERAL_HEADER).itemsize
     assert header["version"] == version
     assert header["dimx"] == signal.axes_manager[-2].size
     assert header["dimy"] == signal.axes_manager[-1].size
     assert header["offsetx"] == 0
     assert header["offsety"] == 0
     assert header["pixelsize"] == original_scale_x * expected_scale_factor
-    assert header["frameheaderbytes"] == np.dtype(tvips.TVIPS_RECORDER_FRAME_HEADER).itemsize + fheb
+    assert header["frameheaderbytes"] == np.dtype(TVIPS_RECORDER_FRAME_HEADER).itemsize + fheb
     if metadata == "diffraction" and unit == "1/pm":
         assert header["magtotal"] == signal.metadata.Acquisition_instrument.TEM.camera_length
     elif metadata == "imaging" and unit == "um":
@@ -225,10 +234,10 @@ def test_main_header_from_signal(unit, expected_scale_factor, version, fheb,
         ["fake_signal_3D", "fake_signal_4D", "fake_signal_5D"])
 def test_get_frame_record_dtype(sig, fake_signals, extra_bytes):
     signal = fake_signals[sig]
-    dt_fh = tvips._get_frame_record_dtype_from_signal(signal, extra_bytes=extra_bytes)
+    dt_fh = _get_frame_record_dtype_from_signal(signal, extra_bytes=extra_bytes)
     dimx = signal.axes_manager[-2].size
     dimy = signal.axes_manager[-1].size
-    total_size = np.dtype(tvips.TVIPS_RECORDER_FRAME_HEADER).itemsize + extra_bytes + dimx * dimy * signal.data.itemsize
+    total_size = np.dtype(TVIPS_RECORDER_FRAME_HEADER).itemsize + extra_bytes + dimx * dimy * signal.data.itemsize
     assert dt_fh.itemsize == total_size
 
 
@@ -242,7 +251,7 @@ def test_get_frame_record_dtype(sig, fake_signals, extra_bytes):
                             ("foo_000.TVIPS"),
                         ])
 def test_valid_tvips_file(filename):
-    isvalid = tvips._is_valid_first_tvips_file(filename)
+    isvalid = _is_valid_first_tvips_file(filename)
     assert isvalid
 
 
@@ -257,7 +266,7 @@ def test_valid_tvips_file(filename):
                             (np.array([0, 0, 0, 0]), (None, None)),
                         ])
 def test_auto_scan_start_stop(rotators, expected):
-    start, stop = tvips._find_auto_scan_start_stop(rotators)
+    start, stop = _find_auto_scan_start_stop(rotators)
     assert start == expected[0]
     assert stop == expected[1]
 
@@ -279,13 +288,63 @@ def test_auto_scan_start_stop(rotators, expected):
                         ])
 def test_guess_scan_index_grid(rotators, startstop, expected):
     if startstop is None:
-        startstop = tvips._find_auto_scan_start_stop(rotators)
+        startstop = _find_auto_scan_start_stop(rotators)
     # non jit
-    indices = tvips._guess_scan_index_grid.py_func(rotators, startstop[0], startstop[1])
+    indices = _guess_scan_index_grid.py_func(rotators, startstop[0], startstop[1])
     assert np.all(indices == expected)
     # jit compiled
-    indices = tvips._guess_scan_index_grid(rotators, startstop[0], startstop[1])
+    indices = _guess_scan_index_grid(rotators, startstop[0], startstop[1])
     assert np.all(indices == expected)
+
+
+@pytest.mark.parametrize("filename, kwargs",
+        [
+            (
+                os.path.join(DIRPATH, "test_tvips_2233_000.tvips"),
+                {
+                    "scan_shape": "auto",
+                    "scan_start_frame": 20,
+                    "hysteresis": 1,
+                }
+            ),
+            (
+                os.path.join(DIRPATH, "test_tvips_2345_000.tvips"),
+                {
+                    "scan_shape": (2, 3),
+                    "scan_start_frame": 0,
+                    "hysteresis": 0,
+                }
+            ),
+            (
+                os.path.join(DIRPATH, "test_tvips_2345_split_000.tvips"),
+                {
+                    "scan_shape": (2, 2),
+                    "scan_start_frame": 2,
+                    "hysteresis": -1,
+                }
+            ),
+        ])
+@pytest.mark.parametrize("wsa", ["x", "y", None])
+@pytest.mark.parametrize("lazy", [True, False])
+def test_tvips_file_reader(filename, lazy, kwargs, wsa):
+    signal = hs.load(filename, lazy=lazy, **kwargs, winding_scan_axis=wsa)
+    signal_test = hs.load(filename, lazy = lazy)
+    scs = kwargs.get("scan_shape", "auto")
+    ssf = kwargs.get("scan_start_frame", 0)
+    hyst = kwargs.get("hysteresis", 0)
+    sigshape = signal_test.data.shape[-2:]
+    if scs == "auto":
+        scan_dim = int(np.sqrt(signal_test.data.shape[0]))
+        scs = (scan_dim, scan_dim)
+        ssf = 0
+    signal_test.data = signal_test.data[ssf:].reshape((*scs, *sigshape))
+    if wsa == "x":
+        signal_test.data[..., ::2, :, :, :] = signal_test.data[..., ::2, :, :, :][..., :, ::-1, :, :]
+        signal_test.data[..., ::2, :, :, :] = np.roll(signal_test.data[..., ::2, :, :, :], hyst, axis=-3)
+    elif wsa == "y":
+        signal_test.data[..., ::2, :, :] = signal_test.data[..., ::2, :, :][..., ::-1, :, :, :]
+        signal_test.data[..., ::2, :, :] = np.roll(signal_test.data[..., ::2, :, :], hyst, axis=-4)
+    assert np.allclose(signal_test.data, signal.data)
 
 
 @pytest.mark.parametrize("sig, meta, max_file_size, fheb",
@@ -309,12 +368,12 @@ def test_file_writer(sig, meta, max_file_size, fheb, fake_signals, fake_metadata
     with tempfile.TemporaryDirectory() as tmp:
         filepath = os.path.join(tmp, "test_tvips_save_000.tvips")
         scan_shape = signal.axes_manager.navigation_shape
-        tvips.file_writer(filepath, signal, max_file_size=max_file_size, frame_header_extra_bytes = fheb)
+        file_writer(filepath, signal, max_file_size=max_file_size, frame_header_extra_bytes = fheb)
         if max_file_size is None:
             assert len(os.listdir(tmp)) == 1
         else:
             assert len(os.listdir(tmp)) >= 1
-        dtc = tvips.file_reader(filepath, scan_shape=scan_shape[::-1], lazy=False)[0]
+        dtc = file_reader(filepath, scan_shape=scan_shape[::-1], lazy=False)[0]
         np.testing.assert_allclose(signal.data, dtc['data'])
         assert signal.data.dtype == dtc['data'].dtype
         if metadata and meta is not None:
