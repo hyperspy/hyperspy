@@ -347,6 +347,26 @@ def test_tvips_file_reader(filename, lazy, kwargs, wsa):
     assert np.allclose(signal_test.data, signal.data)
 
 
+@pytest.mark.xfail(raises=ValueError)
+def test_read_fail_version():
+    file = os.path.join(DIRPATH, "test_tvips_2345_split_000.tvips"),
+    hs.load(file, scan_shape="auto")
+
+
+@pytest.mark.xfail(raises=ValueError)
+def test_read_fail_wind_axis():
+    file = os.path.join(DIRPATH, "test_tvips_2345_split_000.tvips"),
+    hs.load(file, scan_shape=(2, 3), winding_scan_axis="z")
+
+
+@pytest.mark.xfail(raises=ValueError)
+def test_write_fail_signal_type():
+    with tempfile.TemporaryDirectory() as tdir:
+        fake_signal = hs.signals.BaseSignal(np.zeros((1, 2, 3, 4)))
+        path = os.path.join(tdir, "test_000.tvips")
+        fake_signal.save(path)
+
+
 @pytest.mark.parametrize("sig, meta, max_file_size, fheb",
         [
             ("fake_signal_3D", "diffraction", None, 0),
@@ -366,14 +386,15 @@ def test_file_writer(sig, meta, max_file_size, fheb, fake_signals, fake_metadata
         signal.metadata.add_dictionary(metadata.as_dictionary())
     metadata = signal.metadata
     with tempfile.TemporaryDirectory() as tmp:
-        filepath = os.path.join(tmp, "test_tvips_save_000.tvips")
+        filepath = os.path.join(tmp, "test_tvips_save.tvips")
         scan_shape = signal.axes_manager.navigation_shape
         file_writer(filepath, signal, max_file_size=max_file_size, frame_header_extra_bytes = fheb)
         if max_file_size is None:
             assert len(os.listdir(tmp)) == 1
         else:
             assert len(os.listdir(tmp)) >= 1
-        dtc = file_reader(filepath, scan_shape=scan_shape[::-1], lazy=False)[0]
+        filepath_load = os.path.join(tmp, "test_tvips_save_000.tvips")
+        dtc = file_reader(filepath_load, scan_shape=scan_shape[::-1], lazy=False)[0]
         np.testing.assert_allclose(signal.data, dtc['data'])
         assert signal.data.dtype == dtc['data'].dtype
         if metadata and meta is not None:
