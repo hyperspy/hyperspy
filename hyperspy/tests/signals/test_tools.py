@@ -24,7 +24,6 @@ import pytest
 
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
 
 
 def _verify_test_sum_x_E(self, s):

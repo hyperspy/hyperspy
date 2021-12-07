@@ -2180,7 +2180,6 @@ class BaseSignal(FancySlicing,
             self.models = ModelManager(self)
             self.learning_results = LearningResults()
             kwds['data'] = data
-            self._load_dictionary(kwds)
             self._plot = None
             self.inav = SpecialSlicersSignal(self, True)
             self.isig = SpecialSlicersSignal(self, False)
@@ -2198,6 +2197,7 @@ class BaseSignal(FancySlicing,
                 Arguments:
                     obj: The signal that owns the data.
                 """, arguments=['obj'])
+            self._load_dictionary(kwds)
 
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
@@ -5332,13 +5332,16 @@ class BaseSignal(FancySlicing,
                         key_dict[key] = marker.get_data_position(key)
                     marker.set_data(**key_dict)
 
-        cs = self.__class__(
+        class_ = hyperspy.io.assign_signal_subclass(
+            dtype=self.data.dtype,
+            signal_dimension=self.axes_manager.signal_dimension,
+            signal_type=self._signal_type,
+            lazy=False)
+
+        cs = class_(
             self(),
             axes=self.axes_manager._get_signal_axes_dicts(),
             metadata=metadata.as_dictionary())
-        if self._lazy:
-            cs._lazy = False
-            cs._assign_subclass()
 
         if cs.metadata.has_item('Markers'):
             temp_marker_dict = cs.metadata.Markers.as_dictionary()

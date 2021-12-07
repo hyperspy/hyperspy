@@ -160,9 +160,8 @@ class LazySignal(BaseSignal):
         # the NumPy array originates from.
         self._cache_dask_chunk = None
         self._cache_dask_chunk_slice = None
-        if hasattr(self, "events"):
-            if not self._clear_cache_dask_data in self.events.data_changed._connected_all:
-                self.events.data_changed.connect(self._clear_cache_dask_data)
+        if not self._clear_cache_dask_data in self.events.data_changed.connected:
+            self.events.data_changed.connect(self._clear_cache_dask_data)
 
     def compute(self, close_file=False, show_progressbar=None, **kwargs):
         """Attempt to store the full signal in memory.
@@ -272,9 +271,7 @@ class LazySignal(BaseSignal):
                                     "an hdf5 file.")
 
     def _clear_cache_dask_data(self, obj=None):
-        if self._cache_dask_chunk is not None:
-            del self._cache_dask_chunk
-            self._cache_dask_chunk = None
+        self._cache_dask_chunk = None
         self._cache_dask_chunk_slice = None
 
     def _get_dask_chunks(self, axis=None, dtype=None):
@@ -498,8 +495,8 @@ class LazySignal(BaseSignal):
         chunks = self._get_navigation_chunk_size()
         navigation_indices = indices[:-sig_dim]
         chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, chunks)
-        if chunk_slice != self._cache_dask_chunk_slice:
-            self._clear_cache_dask_data()
+        if (chunk_slice != self._cache_dask_chunk_slice or
+                self._cache_dask_chunk is None):
             self._cache_dask_chunk = np.asarray(self.data.__getitem__(chunk_slice))
             self._cache_dask_chunk_slice = chunk_slice
 
