@@ -199,3 +199,8 @@ class TestConvertComplexSignal1D:
         assert isinstance(self.s, hs.signals.DielectricFunction)
         self.s.set_signal_type("")
         assert isinstance(self.s, hs.signals.ComplexSignal1D)
+
+
+def test_create_lazy_signal():
+    # Check that this syntax is working
+    _ = hs.signals.BaseSignal([0, 1, 2], attributes={'_lazy': True})

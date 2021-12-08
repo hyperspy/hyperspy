@@ -954,6 +954,3 @@ class Signal2D(BaseSignal, CommonSignal2D):
 class LazySignal2D(LazySignal, Signal2D):
 
     _lazy = True
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
