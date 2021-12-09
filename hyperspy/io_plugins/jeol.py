@@ -375,17 +375,14 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
             fr[:len(frame_shifts), 0:2] = np.asarray(frame_shifts)
             frame_shifts = fr
 
-        # invert sign to have the same direction as signal2D.align2D function
-        frame_shifts = -frame_shifts
-
-        data, em_data, has_em_image, sweep, frame_start_index, last_valid, origin = readcube(
+        data, em_data, has_em_image, sweep, frame_start_index, last_valid, origin, frame_shifts_1 = readcube(
             rawdata, frame_start_index, frame_list,
             width, height, channel_number,
             width_norm, height_norm, rebin_energy,
             SI_dtype, sweep, frame_shifts,
             sum_frames, read_em_image, only_valid_data, lazy)
-
         header["jeol_pts_frame_origin"] = origin
+        header["jeol_pts_frame_shifts"] = frame_shifts_1
         header["jeol_pts_frame_start_index"] = frame_start_index
 
         # axes_em for SEM/STEM image  intensity[(frame,) y, x]
@@ -656,6 +653,8 @@ def readcube(rawdata, frame_start_index, frame_list,
 
     max_value =  np.iinfo(SI_dtype).max
 
+    frame_shifts = np.asarray(frame_shifts)
+    frame_list = np.asarray(frame_list)
     max_shift = frame_shifts[frame_list].max(axis=0)
     min_shift = frame_shifts[frame_list].min(axis=0)
     #    sxyz = np.array([min_shift[0]-max_shift[0], min_shift[1]-max_shift[1],0])
@@ -663,8 +662,8 @@ def readcube(rawdata, frame_start_index, frame_list,
     max_shift[2]=0
     sxyz = min_shift-max_shift
     frame_shifts -= max_shift
-    width += sxyz[0]
-    height += sxyz[1]
+    width += sxyz[1]
+    height += sxyz[0]
 
     if lazy:
         readframe = readframe_lazy
@@ -702,7 +701,7 @@ def readcube(rawdata, frame_start_index, frame_list,
             hypermap[target_frame_num], em_image[target_frame_num],
             width, height, channel_number,
             width_norm, height_norm, rebin_energy,
-            fs[0], fs[1], fs[2], max_value)
+            fs[1], fs[0], fs[2], max_value)
         has_em_image = has_em_image or has_em
         if length == 0: # no data
             break
@@ -720,7 +719,7 @@ def readcube(rawdata, frame_start_index, frame_list,
                               hypermap[target_frame_num], em_image[target_frame_num],
                               width, height, channel_number,
                               width_norm, height_norm, rebin_energy,
-                              fs[0], fs[1],fs[2],  max_value)
+                              fs[1], fs[0],fs[2],  max_value)
                 _logger.info("The last frame (sweep) is incomplete because the acquisition stopped during this frame. The partially acquired frame is ignored. Use 'sum_frames=False, only_valid_data=False' to read all frames individually, including the last partially completed frame.")
             break
             # else:
@@ -730,9 +729,9 @@ def readcube(rawdata, frame_start_index, frame_list,
     if not lazy:
         if sum_frames:
             # the first frame has integrated intensity
-            return hypermap[0,:height,:width], em_image[0,:height,:width], has_em_image, frame_num, frame_start_index, valid, max_shift
+            return hypermap[0,:height,:width], em_image[0,:height,:width], has_em_image, frame_num, frame_start_index, valid, max_shift, frame_shifts
         else:
-            return hypermap[:target_frame_num,:height,:width], em_image[:target_frame_num,:height,:width], has_em_image, frame_num, frame_start_index, valid, max_shift
+            return hypermap[:target_frame_num,:height,:width], em_image[:target_frame_num,:height,:width], has_em_image, frame_num, frame_start_index, valid, max_shift, frame_shifts
         
     # for lazy loading
     length = 0
@@ -769,12 +768,12 @@ def readcube(rawdata, frame_start_index, frame_list,
     if sum_frames:
         em_image = em_image[0]
         
-    return da.from_array(ar_s, asarray=False), em_image, has_em_image, sweep, frame_start_index, valid, max_shift
+    return da.from_array(ar_s, asarray=False), em_image, has_em_image, sweep, frame_start_index, valid, max_shift, frame_shifts
 
 
 @numba.njit(cache=True)
 def readframe_dense(rawdata, countup, hypermap, em_image, width, height, channel_number,
-                    width_norm, height_norm, rebin_energy, dy, dx, dz, max_value): # pragma: nocover
+                    width_norm, height_norm, rebin_energy, dx, dy, dz, max_value): # pragma: nocover
     """
     Read one frame from pts file. Used in a inner loop of readcube function.
     This function always read SEM/STEM image even if read_em_image == False
