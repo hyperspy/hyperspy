@@ -350,17 +350,18 @@ def test_pts_lazy():
     assert np.array_equal(s1[1], s2[1].data)
 
 def test_pts_frame_shift():
-    dir2 = TESTS_FILE_PATH2
-    dir2p = dir2 / 'Sample' / '00_Dummy-Data'
+    dir = TESTS_FILE_PATH2
+    dir2p = dir / 'Sample' / '00_Dummy-Data'
     file = str(dir2p / test_files2[16])
+    #    dir = TESTS_FILE_PATH
+    #    file = str(dir / 'testpattern1.pts')
 
+    # without frame shift
     ref = hs.load(file, read_em_image=True, only_valid_data=False, sum_frames=False, lazy=False)
-    # test point location and energy
+    #         x, y, en
     points=[[24,23,106],[21,16,106]]
-    # the values that should be read from spectrum image
     values=[3,1]
-    # shift target (temporary value, only relative value will be used
-    targets=np.asarray([[2,2,106],[40,3,100],[4,20,100]],dtype=np.int16)
+    targets=np.asarray([[2,3,106],[20,3,100],[4,20,100]],dtype=np.int16)
 
     # check values before shift
     d0 = np.zeros(len(points), dtype=np.int16)
@@ -369,14 +370,16 @@ def test_pts_frame_shift():
     for frame in range(len(points)):
         p = points[frame]
         d0[frame] = ref[0].data[frame, p[1], p[0], p[2]]
+        print('p=',p, "d0=",d0[frame])
         assert d0[frame] == values[frame]
 
 
     for target in targets:
-        shifts = np.zeros((ref[0].axes_manager['Frame'].size,3),dtype=np.int16)
+        sfts = np.zeros((ref[0].axes_manager['Frame'].size,3),dtype=np.int16)
         for frame in range(ref[0].axes_manager['Frame'].size):
             origin = points[frame]
-            shifts[frame] = np.asarray(target) - np.asarray(origin)
+            sfts[frame] = np.asarray(target) - np.asarray(origin)
+        shifts = sfts[:,[1,0,2]]
         min_shift=[shifts[:,0].min(),shifts[:,1].min(),shifts[:,2].min()]
         max_shift=[shifts[:,0].max(),shifts[:,1].max(),shifts[:,2].max()]
 
@@ -384,16 +387,25 @@ def test_pts_frame_shift():
         s0 = hs.load(file, read_em_image=True,
                      only_valid_data=False, sum_frames=False,
                      frame_shifts = shifts, lazy=False)
-        pos = [target[1]-max_shift[1], target[0]-max_shift[0], target[2]]
+
+        
         for frame in range(s0[0].axes_manager['Frame'].size):
-            d1[frame] = s0[0].data[frame, pos[0], pos[1], pos[2]]
+            origin = points[frame]
+            sfts0 = s0[0].original_metadata.jeol_pts_frame_shifts[frame]
+            pos = [origin[0]+sfts0[1], origin[1]+sfts0[0], origin[2]+sfts0[2]]
+            d1[frame] = s0[0].data[frame, pos[1], pos[0], pos[2]]
             assert d1[frame] == d0[frame]
 
+
+            
 	# test frame shifts for lazy loading
         s1 = hs.load(file, read_em_image=True,
                      only_valid_data=False, sum_frames=False,
                      frame_shifts = shifts, lazy=True)
         dt = s1[0].data.compute().todense()
         for frame in range(s0[0].axes_manager['Frame'].size):
-            d2[frame] = dt[frame, pos[0], pos[1], pos[2]]
+            origin = points[frame]
+            sfts0 = s0[0].original_metadata.jeol_pts_frame_shifts[frame]
+            pos = [origin[0]+sfts0[1], origin[1]+sfts0[0], origin[2]+sfts0[2]]
+            d2[frame] = dt[frame, pos[1], pos[0], pos[2]]
             assert d2[frame] == d0[frame]
