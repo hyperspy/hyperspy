@@ -384,7 +384,6 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         header["jeol_pts_frame_origin"] = origin
         header["jeol_pts_frame_shifts"] = frame_shifts_1
         header["jeol_pts_frame_start_index"] = frame_start_index
-
         # axes_em for SEM/STEM image  intensity[(frame,) y, x]
         # axes for spectrum image  count[(frame,) y, x, energy]
         if sum_frames:
@@ -646,7 +645,7 @@ def readcube(rawdata, frame_start_index, frame_list,
         hypermap = np.zeros((n_frames), dtype=EM_dtype)  # dummy variable, not used
         data_list = []
     else:
-        hypermap = np.zeros((n_frames, width, height, channel_number),
+        hypermap = np.zeros((n_frames, height, width, channel_number),
                             dtype=SI_dtype)
 
     em_image = np.zeros((n_frames, width, height), dtype=EM_dtype)
@@ -855,13 +854,14 @@ def readframe_dense(rawdata, countup, hypermap, em_image, width, height, channel
         count += 1
 
 
-    if previous_y == MAX_VAL - height_norm and (previous_x == MAX_VAL - width_norm or not has_em_image):
+    if previous_y >= MAX_VAL - height_norm and (previous_x >= MAX_VAL - width_norm or not has_em_image):
         # if the STEM-ADF/SEM-BF image is not included in pts file,
         # maximum value of x is usually smaller than max_x,
         # (sometimes no x-ray events occur in a last few pixels.)
         # So, only the y value is checked
+        #
+        # > is need when downsampling is specified
         valid = True
-        
     return count, 0, has_em_image, valid, previous_y // height_norm
 
 @numba.njit(cache=True)
