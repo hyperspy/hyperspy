@@ -315,8 +315,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
     _signal_dimension = 2
     _lazy = False
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def __init__(self, *args, **kwargs):
+        if kwargs.get('ragged', False):
+            raise ValueError("Signal2D can't be ragged.")
+        super().__init__(*args, **kwargs)
         if self.axes_manager.signal_dimension != 2:
             self.axes_manager.set_signal_dimension(2)
 
@@ -952,6 +954,3 @@ class Signal2D(BaseSignal, CommonSignal2D):
 class LazySignal2D(LazySignal, Signal2D):
 
     _lazy = True
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)

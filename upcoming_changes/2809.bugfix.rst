@@ -1,1 +1,0 @@
-Fix irresponsive ROI added to a signal plot with a right hand side axis

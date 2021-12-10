@@ -1,7 +1,8 @@
-import datetime
 import ast
+import datetime
 import logging
 from packaging.version import Version
+import warnings
 
 import dask.array as da
 import h5py
@@ -22,25 +23,82 @@ not_valid_format = 'The file is not a valid HyperSpy hdf5 file'
 _logger = logging.getLogger(__name__)
 
 
+
+def get_signal_chunks(shape, dtype, signal_axes=None, target_size=1e6):
+    """
+    Function that calculates chunks for the signal, preferably at least one
+    chunk per signal space.
+
+    Parameters
+    ----------
+    shape : tuple
+        The shape of the dataset to be stored / chunked.
+    dtype : {dtype, string}
+        The numpy dtype of the data.
+    signal_axes : {None, iterable of ints}
+        The axes defining "signal space" of the dataset. If None, the default
+        h5py chunking is performed.
+    target_size : int
+        The target number of bytes for one chunk
+    """
+    typesize = np.dtype(dtype).itemsize
+    if signal_axes is None:
+        return h5py._hl.filters.guess_chunk(shape, None, typesize)
+
+    # largely based on the guess_chunk in h5py
+    bytes_per_signal = multiply([shape[i] for i in signal_axes]) * typesize
+    signals_per_chunk = np.floor_divide(target_size, bytes_per_signal)
+    navigation_axes = tuple(i for i in range(len(shape)) if i not in
+                            signal_axes)
+    num_nav_axes = len(navigation_axes)
+    num_signals = np.prod([shape[i] for i in navigation_axes])
+    if signals_per_chunk < 2 or num_nav_axes==0:
+        # signal is larger than chunk max
+        chunks = [s if i in signal_axes else 1 for i, s in enumerate(shape)]
+        return tuple(chunks)
+    elif signals_per_chunk > num_signals:
+        return shape
+    else:
+        # signal is smaller than chunk max
+        sig_axes_chunk = np.floor(signals_per_chunk**(1/num_nav_axes))
+        remainder = np.floor_divide(signals_per_chunk - (sig_axes_chunk**num_nav_axes),
+                                    sig_axes_chunk)
+        if remainder<0:
+            remainder =0
+        chunks = [s if i in signal_axes else sig_axes_chunk for i, s in enumerate(shape)]
+        chunks[navigation_axes[0]] = chunks[navigation_axes[0]]+remainder
+        return tuple(int(x) for x in chunks)
+
+
 class HierarchicalReader:
     """A generic Reader class for reading data from hierarchical file types."""
-    def __init__(self,
-                 file):
-        """ Initalizes a general reader for hierarchical signals.
 
-        Parmeters
-        ---------
+    def __init__(self, file):
+        """
+        Initializes a general reader for hierarchical signals.
+
+        Parameters
+        ----------
         file: str
             A file to be read.
         """
         self.file = file
+        # Getting version also check that this is a hyperspy format
         self.version = self.get_format_version()
         self.Dataset = None
         self.Group = None
         self.unicode_kwds = None
         self.ragged_kwds = None
 
+        if self.version > Version(version):
+            warnings.warn(
+                "This file was written using a newer version of the "
+                f"HyperSpy {self._file_type} file format. I will attempt to "
+                "load it, but, if I fail, it is likely that I will be more "
+                "successful at this and other tasks if you upgrade me.")
+
     def get_format_version(self):
+        """Return the format version."""
         if "file_format_version" in self.file.attrs:
             version = self.file.attrs["file_format_version"]
             if isinstance(version, bytes):
@@ -55,11 +113,32 @@ class HierarchicalReader:
             version = "2.0"
         else:
             raise IOError(not_valid_format)
+
         return Version(version)
 
     def read(self, lazy):
+        """
+        Read all data, metadata, models.
+
+        Parameters
+        ----------
+        lazy : bool
+            Return data as lazy signal.
+
+        Raises
+        ------
+        IOError
+            Raise an IOError when the file can't be read, if the file
+            doesn't follow hspy format specification, etc.
+
+        Returns
+        -------
+        list of dict
+            A list of dictionary, which can be used to create a hspy signal.
+        """
         models_with_signals = []
         standalone_models = []
+
         if 'Analysis/models' in self.file:
             try:
                 m_gr = self.file['Analysis/models']
@@ -67,19 +146,21 @@ class HierarchicalReader:
                     if '_signal' in m_gr[model_name].attrs:
                         key = m_gr[model_name].attrs['_signal']
                         # del m_gr[model_name].attrs['_signal']
-                        res = self.group2dict(
+                        res = self._group2dict(
                             m_gr[model_name],
                             lazy=lazy)
                         del res['_signal']
                         models_with_signals.append((key, {model_name: res}))
                     else:
                         standalone_models.append(
-                            {model_name: self.group2dict(
+                            {model_name: self._group2dict(
                                 m_gr[model_name], lazy=lazy)})
             except TypeError:
                 raise IOError(not_valid_format)
+
         experiments = []
         exp_dict_list = []
+
         if 'Experiments' in self.file:
             for ds in self.file['Experiments']:
                 if isinstance(self.file['Experiments'][ds], self.Group):
@@ -104,16 +185,30 @@ class HierarchicalReader:
             standalone_models.append(m)
 
         exp_dict_list.extend(standalone_models)
+
         if not len(exp_dict_list):
-            raise IOError('This is not a valid HyperSpy HDF5 file. '
-                          'You can still load the data using a hdf5 reader, '
-                          'e.g. h5py, and manually create a Signal. '
-                          'Please, refer to the User Guide for details')
+            raise IOError(f'This is not a valid {self._file_type} file.')
+
         return exp_dict_list
 
-    def group2signaldict(self,
-                         group,
-                         lazy=False):
+    def group2signaldict(self, group, lazy=False):
+        """
+        Reads a h5py/zarr group and returns a signal dictionary.
+
+        Parameters
+        ----------
+        group : :py:class:`h5py.Group` or :py:class:`zarr.hierarchy.Group`
+            A group following hspy specification.
+        lazy : bool, optional
+            Return the data as dask array. The default is False.
+
+        Raises
+        ------
+        IOError
+            Raise an IOError when the group can't be read, if the group
+            doesn't follow hspy format specification, etc.
+
+        """
         if self.version < Version("1.2"):
             metadata = "mapped_parameters"
             original_metadata = "original_parameters"
@@ -121,9 +216,9 @@ class HierarchicalReader:
             metadata = "metadata"
             original_metadata = "original_metadata"
 
-        exp = {'metadata': self.group2dict(
+        exp = {'metadata': self._group2dict(
             group[metadata], lazy=lazy),
-            'original_metadata': self.group2dict(
+            'original_metadata': self._group2dict(
                 group[original_metadata], lazy=lazy),
             'attributes': {}
         }
@@ -148,7 +243,7 @@ class HierarchicalReader:
         axes = []
         for i in range(len(exp['data'].shape)):
             try:
-                axes.append(self.group2dict(group['axis-%i' % i]))
+                axes.append(self._group2dict(group[f'axis-{i}']))
                 axis = axes[-1]
                 for key, item in axis.items():
                     if isinstance(item, np.bool_):
@@ -159,7 +254,7 @@ class HierarchicalReader:
                 break
         if len(axes) != len(exp['data'].shape):  # broke from the previous loop
             try:
-                axes = [i for k, i in sorted(iter(self.group2dict(
+                axes = [i for k, i in sorted(iter(self._group2dict(
                     group['_list_' + str(len(exp['data'].shape)) + '_axes'],
                     lazy=lazy).items()))]
             except KeyError:
@@ -167,12 +262,12 @@ class HierarchicalReader:
         exp['axes'] = axes
         if 'learning_results' in group.keys():
             exp['attributes']['learning_results'] = \
-                self.group2dict(
+                self._group2dict(
                     group['learning_results'],
                     lazy=lazy)
         if 'peak_learning_results' in group.keys():
             exp['attributes']['peak_learning_results'] = \
-                self.group2dict(
+                self._group2dict(
                     group['peak_learning_results'],
                     lazy=lazy)
 
@@ -187,10 +282,10 @@ class HierarchicalReader:
             # Load the decomposition results written with the old name,
             # mva_results
             if 'mva_results' in group.keys():
-                exp['attributes']['learning_results'] = self.group2dict(
+                exp['attributes']['learning_results'] = self._group2dict(
                     group['mva_results'], lazy=lazy)
             if 'peak_mva_results' in group.keys():
-                exp['attributes']['peak_learning_results'] = self.group2dict(
+                exp['attributes']['peak_learning_results'] = self._group2dict(
                     group['peak_mva_results'], lazy=lazy)
             # Replace the old signal and name keys with their current names
             if 'signal' in exp['metadata']:
@@ -325,10 +420,7 @@ class HierarchicalReader:
 
         return exp
 
-    def group2dict(self,
-                  group,
-                  dictionary=None,
-                  lazy=False):
+    def _group2dict(self, group, dictionary=None, lazy=False):
         if dictionary is None:
             dictionary = {}
         for key, value in group.attrs.items():
@@ -405,39 +497,39 @@ class HierarchicalReader:
                 elif key.startswith('_hspy_AxesManager_'):
                     dictionary[key[len('_hspy_AxesManager_'):]] = AxesManager(
                         [i for k, i in sorted(iter(
-                            self.group2dict(
+                            self._group2dict(
                                 group[key], lazy=lazy).items()
                         ))])
                 elif key.startswith('_list_'):
                     dictionary[key[7 + key[6:].find('_'):]] = \
                         [i for k, i in sorted(iter(
-                            self.group2dict(
+                            self._group2dict(
                                 group[key], lazy=lazy).items()
                         ))]
                 elif key.startswith('_tuple_'):
                     dictionary[key[8 + key[7:].find('_'):]] = tuple(
                         [i for k, i in sorted(iter(
-                            self.group2dict(
+                            self._group2dict(
                                 group[key], lazy=lazy).items()
                         ))])
                 else:
                     dictionary[key] = {}
-                    self.group2dict(
+                    self._group2dict(
                         group[key],
                         dictionary[key],
                         lazy=lazy)
 
         return dictionary
 
+
 class HierarchicalWriter:
-    """An object used to simplify and orgainize the process for
-    writing a Hierachical signal.  (.hspy format)
     """
-    def __init__(self,
-                 file,
-                 signal,
-                 group,
-                 **kwds):
+    An object used to simplify and organize the process for writing a
+    Hierarchical signal, such as hspy/zspy format.
+    """
+    target_size = 1e6
+
+    def __init__(self, file, signal, group, **kwds):
         """Initialize a generic file writer for hierachical data storage types.
 
         Parameters
@@ -461,82 +553,41 @@ class HierarchicalWriter:
         self.kwds = kwds
 
     @staticmethod
-    def _get_signal_chunks(shape, dtype, signal_axes=None, target_size=1e6):
-        """Function that calculates chunks for the signal, preferably at least one
-        chunk per signal space.
-
-        Parameters
-        ----------
-        shape : tuple
-            the shape of the dataset to be sored / chunked
-        dtype : {dtype, string}
-            the numpy dtype of the data
-        signal_axes: {None, iterable of ints}
-            the axes defining "signal space" of the dataset. If None, the default
-            h5py chunking is performed.
-        target_size: int
-            The target number of bytes for one chunk
-        """
-        typesize = np.dtype(dtype).itemsize
-        if signal_axes is None:
-            return h5py._hl.filters.guess_chunk(shape, None, typesize)
-
-        # largely based on the guess_chunk in h5py
-        bytes_per_signal = multiply([shape[i] for i in signal_axes]) * typesize
-        signals_per_chunk = np.floor_divide(target_size, bytes_per_signal)
-        navigation_axes = tuple(i for i in range(len(shape)) if i not in
-                                signal_axes)
-        num_nav_axes = len(navigation_axes)
-        num_signals = np.prod([shape[i] for i in navigation_axes])
-        if signals_per_chunk < 2 or num_nav_axes==0:
-            # signal is larger than chunk max
-            chunks = [s if i in signal_axes else 1 for i, s in enumerate(shape)]
-            return tuple(chunks)
-        elif signals_per_chunk > num_signals:
-            return shape
-        else:
-            # signal is smaller than chunk max
-            sig_axes_chunk = np.floor(signals_per_chunk**(1/num_nav_axes))
-            remainder = np.floor_divide(signals_per_chunk - (sig_axes_chunk**num_nav_axes),
-                                        sig_axes_chunk)
-            if remainder<0:
-                remainder =0
-            chunks = [s if i in signal_axes else sig_axes_chunk for i, s in enumerate(shape)]
-            chunks[navigation_axes[0]] = chunks[navigation_axes[0]]+remainder
-            return tuple(int(x) for x in chunks)
-
-    @staticmethod
-    def _get_object_dset():
+    def _get_object_dset(*args, **kwargs):  # pragma: no cover
         raise NotImplementedError(
             "This method must be implemented by subclasses.")
 
     @staticmethod
-    def _store_data():
+    def _store_data(*arg):  # pragma: no cover
         raise NotImplementedError(
             "This method must be implemented by subclasses.")
 
     @classmethod
     def overwrite_dataset(cls, group, data, key, signal_axes=None,
                           chunks=None, **kwds):
-        """Overwrites some dataset in a hierarchical dataset.
+        """
+        Overwrites a dataset into a hierarchical structure following the h5py
+        API.
 
         Parameters
         ----------
-        group: Zarr.Group or h5py.Group
-            The group to write the data to
-        data: Array-like
-            The data to be written
-        key: str
-            The key for the data
-        signal_axes: tuple
-            The indexes of the signal axes
-        chunks: tuple
-            The chunks for the dataset. If ``None`` and saving lazy signal, the chunks
-        of the dask array will be used otherwise the chunks will determine by
-        ``get_signal_chunks``.
-        kwds:
-            Any additional keywords for to be passed to the store data function
-            The store data function is passed for each hierarchical data format
+        group : :py:class:`zarr.hierarchy.Group` or :py:class:`h5py.Group`
+            The group to write the data to.
+        data : Array-like
+            The data to be written.
+        key : str
+            The key for the dataset.
+        signal_axes : tuple
+            The indexes of the signal axes.
+        chunks : tuple, None
+            The chunks for the dataset. If ``None`` and saving lazy signal,
+            the chunks of the dask array will be used otherwise the chunks
+            will be determined by the
+            :py:func:`~.io_plugins._hierarchical.get_signal_chunks` function.
+        kwds : dict
+            Any additional keywords for to be passed to the
+            :py:meth:`h5py.Group.require_dataset` or
+            :py:meth:`zarr.hierarchy.Group.require_dataset` method.
         """
         if chunks is None:
             if isinstance(data, da.Array):
@@ -545,15 +596,15 @@ class HierarchicalWriter:
             else:
                 # If signal_axes=None, use automatic h5py chunking, otherwise
                 # optimise the chunking to contain at least one signal per chunk
-                chunks = cls._get_signal_chunks(
+                chunks = get_signal_chunks(
                     data.shape, data.dtype, signal_axes, cls.target_size
                     )
         if np.issubdtype(data.dtype, np.dtype('U')):
             # Saving numpy unicode type is not supported in h5py
             data = data.astype(np.dtype('S'))
+
         if data.dtype == np.dtype('O'):
             dset = cls._get_object_dset(group, data, key, chunks, **kwds)
-
         else:
             got_data = False
             while not got_data:
@@ -573,23 +624,20 @@ class HierarchicalWriter:
                     # if the shape or dtype/etc do not match,
                     # we delete the old one and create new in the next loop run
                     del group[key]
-        if dset == data:
-            # just a reference to already created thing
-            pass
-        else:
-            _logger.info(f"Chunks used for saving: {chunks}")
-            cls._store_data(data, dset, group, key, chunks, **kwds)
 
+        _logger.info(f"Chunks used for saving: {chunks}")
+        cls._store_data(data, dset, group, key, chunks)
 
     def write(self):
         self.write_signal(self.signal,
                           self.group,
                           **self.kwds)
 
-    def write_signal(self, signal, group, **kwds):
+    def write_signal(self, signal, group, write_dataset=True, chunks=None,
+                     **kwds):
         "Writes a hyperspy signal to a hdf5 group"
-
         group.attrs.update(get_object_package_info(signal))
+
         if Version(version) < Version("1.2"):
             metadata = "mapped_parameters"
             original_metadata = "original_parameters"
@@ -597,35 +645,44 @@ class HierarchicalWriter:
             metadata = "metadata"
             original_metadata = "original_metadata"
 
-
-
         for axis in signal.axes_manager._axes:
             axis_dict = axis.get_axis_dictionary()
-            coord_group = group.create_group(
-                'axis-%s' % axis.index_in_array)
+            group_name = f'axis-{axis.index_in_array}'
+            # delete existing group in case the file have been open in 'a' mode
+            # and we are saving a different type of axis, to avoid having
+            # incompatible axis attributes from previously saved axis.
+            if group_name in group.keys():
+                del group[group_name]
+            coord_group = group.create_group(group_name)
             self.dict2group(axis_dict, coord_group, **kwds)
-        mapped_par = group.create_group(metadata)
+
+        mapped_par = group.require_group(metadata)
         metadata_dict = signal.metadata.as_dictionary()
-        self.overwrite_dataset(group,
-                               signal.data,
-                               'data',
-                               signal_axes=signal.axes_manager.signal_indices_in_array,
-                               **kwds)
+
+        if write_dataset:
+            self.overwrite_dataset(
+                group,
+                signal.data,
+                'data',
+                signal_axes=signal.axes_manager.signal_indices_in_array,
+                chunks=chunks,
+                **kwds
+                )
+
         if default_version < Version("1.2"):
             metadata_dict["_internal_parameters"] = \
                 metadata_dict.pop("_HyperSpy")
-        # Remove chunks from the kwds since it wouldn't have the same rank as the
-        # dataset and can't be used
-        kwds.pop('chunks', None)
+
         self.dict2group(metadata_dict, mapped_par, **kwds)
-        original_par = group.create_group(original_metadata)
+        original_par = group.require_group(original_metadata)
         self.dict2group(signal.original_metadata.as_dictionary(), original_par,
                       **kwds)
-        learning_results = group.create_group('learning_results')
+        learning_results = group.require_group('learning_results')
         self.dict2group(signal.learning_results.__dict__,
                       learning_results, **kwds)
-        if hasattr(signal, 'peak_learning_results'):
-            peak_learning_results = group.create_group(
+
+        if hasattr(signal, 'peak_learning_results'):  # pragma: no cover
+            peak_learning_results = group.require_group(
                 'peak_learning_results')
             self.dict2group(signal.peak_learning_results.__dict__,
                           peak_learning_results, **kwds)
@@ -645,19 +702,23 @@ class HierarchicalWriter:
 
         for key, value in dictionary.items():
             if isinstance(value, dict):
-                self.dict2group(value, group.create_group(key),
-                              **kwds)
+                self.dict2group(value, group.require_group(key), **kwds)
+
             elif isinstance(value, DictionaryTreeBrowser):
                 self.dict2group(value.as_dictionary(),
-                              group.create_group(key),
-                              **kwds)
+                                group.require_group(key),
+                                **kwds)
+
             elif isinstance(value, BaseSignal):
                 kn = key if key.startswith('_sig_') else '_sig_' + key
                 self.write_signal(value, group.require_group(kn))
+
             elif isinstance(value, (np.ndarray, self.Dataset, da.Array)):
                 self.overwrite_dataset(group, value, key, **kwds)
+
             elif value is None:
                 group.attrs[key] = '_None_'
+
             elif isinstance(value, bytes):
                 try:
                     # binary string if has any null characters (otherwise not
@@ -666,17 +727,21 @@ class HierarchicalWriter:
                     group.attrs['_bs_' + key] = np.void(value)
                 except ValueError:
                     group.attrs[key] = value.decode()
+
             elif isinstance(value, str):
                 group.attrs[key] = value
+
             elif isinstance(value, AxesManager):
                 self.dict2group(value.as_dictionary(),
-                              group.create_group('_hspy_AxesManager_' + key),
-                              **kwds)
+                                group.require_group('_hspy_AxesManager_'+key),
+                                **kwds)
+
             elif isinstance(value, list):
                 if len(value):
                     self.parse_structure(key, group, value, '_list_', **kwds)
                 else:
                     group.attrs['_list_empty_' + key] = '_None_'
+
             elif isinstance(value, tuple):
                 if len(value):
                     self.parse_structure(key, group, value, '_tuple_', **kwds)
@@ -685,6 +750,7 @@ class HierarchicalWriter:
 
             elif value is Undefined:
                 continue
+
             else:
                 try:
                     group.attrs[key] = value
@@ -705,10 +771,11 @@ class HierarchicalWriter:
                 tmp = np.array(value)
         except ValueError:
             tmp = np.array([[0]])
+
         if tmp.dtype == np.dtype('O') or tmp.ndim != 1:
             self.dict2group(dict(zip(
                 [str(i) for i in range(len(value))], value)),
-                group.create_group(_type + str(len(value)) + '_' + key),
+                group.require_group(_type + str(len(value)) + '_' + key),
                 **kwds)
         elif tmp.dtype.type is np.unicode_:
             if _type + key in group:

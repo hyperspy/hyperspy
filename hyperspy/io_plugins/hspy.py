@@ -16,19 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from packaging.version import Version
-import warnings
 import logging
-
+from packaging.version import Version
+from pathlib import Path
+import warnings
 
 import dask.array as da
 import h5py
-import numpy as np
 
 from hyperspy.io_plugins._hierarchical import (
-    HierarchicalWriter, HierarchicalReader, version
+    # hyperspy.io_plugins.hspy.get_signal_chunks is in the hyperspy public API
+    HierarchicalWriter, HierarchicalReader, version, get_signal_chunks
     )
-from hyperspy.misc.utils import multiply
+
 
 _logger = logging.getLogger(__name__)
 
@@ -105,6 +105,9 @@ default_version = Version(version)
 
 
 class HyperspyReader(HierarchicalReader):
+
+    _file_type = format_name.lower()
+
     def __init__(self, file):
         super().__init__(file)
         self.Dataset = h5py.Dataset
@@ -113,20 +116,14 @@ class HyperspyReader(HierarchicalReader):
 
 
 class HyperspyWriter(HierarchicalWriter):
-    """An object used to simplify and orgainize the process for
+    """
+    An object used to simplify and organize the process for
     writing a hyperspy signal.  (.hspy format)
     """
     target_size = 1e6
 
-    def __init__(self,
-                 file,
-                 signal,
-                 expg,
-                 **kwds):
-        super().__init__(file,
-                       signal,
-                       expg,
-                       **kwds)
+    def __init__(self, file, signal, expg, **kwds):
+        super().__init__(file, signal, expg, **kwds)
         self.Dataset = h5py.Dataset
         self.Group = h5py.Group
         self.unicode_kwds = {"dtype": h5py.special_dtype(vlen=str)}
@@ -134,7 +131,7 @@ class HyperspyWriter(HierarchicalWriter):
 
 
     @staticmethod
-    def _store_data(data, dset, group, key, chunks, **kwds):
+    def _store_data(data, dset, group, key, chunks):
         if isinstance(data, da.Array):
             if data.chunks != dset.chunks:
                 data = data.rechunk(dset.chunks)
@@ -157,13 +154,10 @@ class HyperspyWriter(HierarchicalWriter):
         return dset
 
 
-def file_reader(
-                filename,
-                lazy=False,
-                **kwds):
+def file_reader(filename, lazy=False, **kwds):
     """Read data from hdf5 files saved with the hyperspy hdf5 format specification
 
-     Parameters
+    Parameters
     ----------
     filename: str
     lazy: bool
@@ -177,61 +171,97 @@ def file_reader(
         pass
     mode = kwds.pop('mode', 'r')
     f = h5py.File(filename, mode=mode, **kwds)
-    # Getting the format version here also checks if it is a valid HSpy
-    # hdf5 file, so the following two lines must not be deleted or moved
-    # elsewhere.
+
     reader = HyperspyReader(f)
-    if reader.version > Version(version):
-        warnings.warn(
-            "This file was written using a newer version of the "
-            "HyperSpy hdf5 file format. I will attempt to load it, but, "
-            "if I fail, it is likely that I will be more successful at "
-            "this and other tasks if you upgrade me.")
     exp_dict_list = reader.read(lazy=lazy)
     if not lazy:
         f.close()
+
     return exp_dict_list
 
 
-def file_writer(filename, signal, *args, **kwds):
+def file_writer(filename, signal, close_file=True, **kwds):
     """Writes data to hyperspy's hdf5 format
 
     Parameters
     ----------
-    filename: str
-    signal: a BaseSignal instance
-    *args, optional
-    **kwds, optional
+    filename : str
+        The name of the file used to save the signal.
+    signal : a BaseSignal instance
+        The signal to save.
+    chunks : tuple of integer or None, default: None
+        Define the chunking used for saving the dataset. If None, calculates
+        chunks for the signal, with preferably at least one chunk per signal
+        space.
+    close_file : bool, default: True
+        Close the file after writing.
+    write_dataset : bool, default: True
+        If True, write the data, otherwise, don't write it. Useful to
+        save attributes without having to write the whole dataset.
+    **kwds
+        The keyword argument are passed to the
+        :py:meth:`h5py.Group.require_dataset` function.
     """
     if 'compression' not in kwds:
         kwds['compression'] = 'gzip'
+
     if "shuffle" not in kwds:
         # Use shuffle by default to improve compression
         kwds["shuffle"] = True
-    with h5py.File(filename, mode='w') as f:
-        f.attrs['file_format'] = "HyperSpy"
-        f.attrs['file_format_version'] = version
-        exps = f.create_group('Experiments')
-        group_name = signal.metadata.General.title if \
-            signal.metadata.General.title else '__unnamed__'
-        # / is a invalid character, see #942
-        if "/" in group_name:
-            group_name = group_name.replace("/", "-")
-        expg = exps.create_group(group_name)
 
-        # Add record_by metadata for backward compatibility
-        smd = signal.metadata.Signal
-        if signal.axes_manager.signal_dimension == 1:
-            smd.record_by = "spectrum"
-        elif signal.axes_manager.signal_dimension == 2:
-            smd.record_by = "image"
-        else:
-            smd.record_by = ""
-        try:
-            writer = HyperspyWriter(f, signal, expg, **kwds)
-            writer.write()
-            #write_signal(signal, expg, **kwds)
-        except BaseException:
-            raise
-        finally:
-            del smd.record_by
+    folder = signal.tmp_parameters.get_item('original_folder', '')
+    fname = signal.tmp_parameters.get_item('original_filename', '')
+    ext = signal.tmp_parameters.get_item('original_extension', '')
+    original_path = Path(folder, f"{fname}.{ext}")
+
+    f = None
+    if (signal._lazy and Path(filename).absolute() == original_path):
+        f = signal._get_file_handle(warn=False)
+        if f is not None and f.mode == 'r':
+            # when the file is read only, force to reopen it in writing mode
+            raise OSError("File opened in read only mode. To overwrite file "
+                          "with lazy signal, use `mode='a'` when loading the "
+                          "signal.")
+
+    if f is None:
+        write_dataset = kwds.get('write_dataset', True)
+        if not isinstance(write_dataset, bool):
+            raise ValueError("`write_dataset` argument must a boolean.")
+        # with "write_dataset=False", we need mode='a', otherwise the dataset
+        # will be flushed with using 'w' mode
+        mode = kwds.get('mode', 'w' if write_dataset else 'a')
+        if mode != 'a' and not write_dataset:
+            raise ValueError("`mode='a'` is required to use "
+                             "`write_dataset=False`.")
+        f = h5py.File(filename, mode=mode)
+
+    f.attrs['file_format'] = "HyperSpy"
+    f.attrs['file_format_version'] = version
+    exps = f.require_group('Experiments')
+    group_name = signal.metadata.General.title if \
+        signal.metadata.General.title else '__unnamed__'
+    # / is a invalid character, see #942
+    if "/" in group_name:
+        group_name = group_name.replace("/", "-")
+    expg = exps.require_group(group_name)
+
+    # Add record_by metadata for backward compatibility
+    smd = signal.metadata.Signal
+    if signal.axes_manager.signal_dimension == 1:
+        smd.record_by = "spectrum"
+    elif signal.axes_manager.signal_dimension == 2:
+        smd.record_by = "image"
+    else:
+        smd.record_by = ""
+    try:
+        writer = HyperspyWriter(f, signal, expg, **kwds)
+        writer.write()
+    except BaseException:
+        raise
+    finally:
+        del smd.record_by
+
+    if close_file:
+        f.close()
+
+overwrite_dataset = HyperspyWriter.overwrite_dataset

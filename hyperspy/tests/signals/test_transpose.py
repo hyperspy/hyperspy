@@ -134,3 +134,17 @@ def test_lazy_transpose_rechunks():
     assert s1.data.chunks == (cks[2], cks[3], cks[0], cks[1])
     s2 = s.transpose(optimize=True)
     assert s2.data.chunks != s1.data.chunks
+
+
+def test_transpose_nav0_sig0():
+    s = BaseSignal([0.])
+    assert s.axes_manager.signal_dimension == 0
+    assert s.axes_manager.navigation_dimension == 0
+    assert s.axes_manager.signal_axes[0].size == 1
+    assert s.axes_manager.navigation_axes == ()
+
+    s2 = s.T
+    assert s2.axes_manager.signal_dimension == 0
+    assert s2.axes_manager.navigation_dimension == 1
+    assert s2.axes_manager.signal_axes == ()
+    assert s2.axes_manager.navigation_axes[0].size == 1

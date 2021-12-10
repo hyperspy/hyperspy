@@ -289,9 +289,10 @@ class BaseDataAxis(t.HasTraits):
 
         self.events = Events()
         if '_type' in kwargs:
-            if kwargs.get('_type') != self.__class__.__name__:
-                raise ValueError('The passed `_type` of axis is inconsistent '
-                                'with the given attributes')
+            _type = kwargs.get('_type')
+            if _type != self.__class__.__name__:
+                raise ValueError(f'The passed `_type` ({_type}) of axis is '
+                                 'inconsistent with the given attributes.')
         _name = self.__class__.__name__
         self.events.index_changed = Event("""
             Event that triggers when the index of the `{}` changes
@@ -1457,7 +1458,7 @@ class AxesManager(t.HasTraits):
     _step = t.Int(1)
 
     def __init__(self, axes_list):
-        super(AxesManager, self).__init__()
+        super().__init__()
         self.events = Events()
         self.events.indices_changed = Event("""
             Event that triggers when the indices of the `AxesManager` changes
@@ -1480,6 +1481,10 @@ class AxesManager(t.HasTraits):
             ----------
             obj : The AxesManager that the event belongs to.
             """, arguments=['obj'])
+
+        # Remove all axis for cases, we reinitiliase the AxesManager
+        if self._axes:
+            self.remove(self._axes)
         self.create_axes(axes_list)
         # set_signal_dimension is called only if there is no current
         # view. It defaults to spectrum
@@ -1491,6 +1496,11 @@ class AxesManager(t.HasTraits):
         self._update_attributes()
         self._update_trait_handlers()
         self.iterpath = 'flyback'
+        self._ragged = False
+
+    @property
+    def ragged(self):
+        return self._ragged
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes.index',
@@ -1673,13 +1683,14 @@ class AxesManager(t.HasTraits):
         if len(indices) == len(axes_list):
             axes_list.sort(key=lambda x: x['index_in_array'])
         for axis_dict in axes_list:
-            if isinstance(axis_dict,dict):
+            if isinstance(axis_dict, dict):
                 self._append_axis(**axis_dict)
             else:
                 self._axes.append(axis_dict)
 
     def set_axis(self, axis, index_in_axes_manager):
         """Replace an axis of current signal with one given in argument.
+
         Parameters
         ----------
         axis: BaseDataAxis axis to replace the current axis with
@@ -2045,6 +2056,9 @@ class AxesManager(t.HasTraits):
             If value if greater than the number of axes or is negative.
 
         """
+        if self.ragged and value > 0:
+            raise ValueError("Signal containing ragged array must have zero "
+                             "signal dimension.")
         if len(self._axes) == 0:
             return
         elif value > len(self._axes):
@@ -2168,6 +2182,8 @@ class AxesManager(t.HasTraits):
         for axis in self.signal_axes:
             string += str(axis.size) + ", "
         string = string.rstrip(", ")
+        if self.ragged:
+            string += 'ragged'
         string += ")"
         return string
 
@@ -2201,6 +2217,9 @@ class AxesManager(t.HasTraits):
         for ax in self.signal_axes:
             text += '\n'
             text += axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform)
+        if self.ragged:
+            text += '\n'
+            text += "     Ragged axis |               Variable length"
 
         return text
 

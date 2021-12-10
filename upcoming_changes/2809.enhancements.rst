@@ -1,1 +1,0 @@
-:py:meth:`~.roi.BaseInteractiveROI.add_widget` can now take a string or integer instead of tuple of string or integer
