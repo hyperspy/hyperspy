@@ -370,7 +370,6 @@ def test_pts_frame_shift():
     for frame in range(len(points)):
         p = points[frame]
         d0[frame] = ref[0].data[frame, p[1], p[0], p[2]]
-        print('p=',p, "d0=",d0[frame])
         assert d0[frame] == values[frame]
 
 
