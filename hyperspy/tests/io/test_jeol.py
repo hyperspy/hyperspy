@@ -289,11 +289,13 @@ def test_number_of_frames():
         fname = str(dirname / filename)
 
         # Count number of frames including incomplete frame
-        data = hs.load(fname, sum_frames = False, only_valid_data = False)
+        data = hs.load(fname, sum_frames = False, only_valid_data = False,
+                       downsample=[32,32], rebin_energy=512, SI_dtype=np.int32)
         assert data.axes_manager["Frame"].size == frames
    
         # Count number of valid frames
-        data = hs.load(fname, sum_frames = False, only_valid_data = True)
+        data = hs.load(fname, sum_frames = False, only_valid_data = True,
+                       downsample=[32,32], rebin_energy=512, SI_dtype=np.int32)
         assert data.axes_manager["Frame"].size == valid
 
 def test_em_image_in_pts():

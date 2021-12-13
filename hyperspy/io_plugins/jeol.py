@@ -76,6 +76,7 @@ def file_reader(filename, **kwds):
         if file_magic == 0:
             fd.seek(12)
             filetree = parsejeol(fd)
+            fd.close()
             filepath, filen = os.path.split(os.path.abspath(filename))
             if "SampleInfo" in filetree.keys():
                 for i in filetree["SampleInfo"].keys():
@@ -100,7 +101,7 @@ def file_reader(filename, **kwds):
                                             dictionary.append(d)
         else:
             _logger.warning("Not a valid JEOL asw format")
-        fd.close()
+            fd.close()
     else:
         d = extension_to_reader_mapping[file_ext](filename, **kwds)
         if isinstance(d, list):
@@ -193,7 +194,7 @@ def read_img(filename, scale=None, **kwargs):
 def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
              SI_dtype=np.uint8, cutoff_at_kV=None, downsample=1,
              only_valid_data=True, read_em_image=False,
-             frame_list=[], frame_start_index=[], frame_shifts=[], 
+             frame_list=None, frame_start_index=None, frame_shifts=None, 
              lazy=False,
              **kwargs):
     """
@@ -219,20 +220,18 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         (usually interrupting mesurement makes incomplete frame)
     read_em_image : bool, default False
         read SEM/STEM image from pts file if read_em_image == True
-    frame_list : list of int [fr0, fr1, ...] or array [[fr0, dx0,dy0,dz0],...], default None
+    frame_list : list of int, default None
     	list of frame numbers to be read (None for all data)
-    	if dx, dy, dz are specified, each images are shifted. dx, dy, dz are integers, in unit of pixel.
-	This is useful for express drift correction. (not suitable for a detailed analysis)
-    si_lazy : bool or tuple of chunksize, default False
-    	read spectrum image into sparse array if si_lazy == True
-    	SEM/STEM image is always read into dense array (np.ndarray)
-    	if tuple is specified, dask.array is generated using chunksize=si_lazy
+    frame_shifts : list of [int dy,int dx] or list of [int dy, int dx, int dEn], default None
+    	each frame will be loaded with offset of dy, dx, (and optionary
+        energy axis). Units are pixels/channels.
+        This is useful for express drift correction. Not suitable for accurate analysis.
+        like the result of estimate_shift2D(), the first parameter is for y-axis
+    frame_start_index: list of offset pointer of each frame in the raw data.
+        The pointer for frame0 is 0.
     lazy : bool, default False
-	set lazy flag not only spectrum image but also other data,
-	if lazy == True. This also set si_lazy = True.
-	Only the spectrum image data is read as a sparse array,
-	The others are read as a dense array even if the lazy flag is set.
-	
+    	read spectrum image into sparse array if lazy == True
+    	SEM/STEM image is always read into dense array (np.ndarray)
 
     Returns
     -------
@@ -327,29 +326,34 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         # Sweep value is not reliable, so +1 frame is needed if sum_frames = False
         # priority of the length of frame_start_index is higher than "sweep" in header
         sweep = meas_data_header["Doc"]["Sweep"]
-        if (frame_start_index):
+        if frame_start_index:            
             sweep = len(frame_start_index)
 
         auto_frame_list = False
-        if not isinstance(frame_list, Iterable) or len(frame_list) == 0:
+        if frame_list:
+            frame_list = np.asarray(frame_list)
+        else:
             auto_frame_list = True
             frame_list = np.arange(sweep + 1)
-        else:
-            frame_list = np.asarray(frame_list)
     
         # Remove frame numbers outside the data range.
         # The frame with number == sweep is accepted in this stage
         #    for incomplete frame
         # If "frame_shifts" option is used, frame number must be in range of frame_shifts
-        nsf = len(frame_shifts)
-        if nsf > 0:
-            wrong_frames_list = frame_list[np.where((frame_list<0) | (frame_list > sweep)
-                       | (frame_list > nsf) | ((frame_list == nsf) & (not auto_frame_list)))]
-            frame_list = frame_list[np.where((0 <= frame_list) & (frame_list <= sweep)
-                                             & (frame_list < nsf))]
+        if frame_shifts is not None:
+            nsf = len(frame_shifts)
+            wrong_frames_list = frame_list[
+                np.where((frame_list<0) | (frame_list > sweep)
+                         | (frame_list > nsf)
+                         | ((frame_list == nsf) & (not auto_frame_list)))]
+            frame_list = frame_list[
+                np.where((0 <= frame_list) & (frame_list <= sweep)
+                         & (frame_list < nsf))]
         else:
-            wrong_frames_list = frame_list[np.where((frame_list<0) | (frame_list > sweep))]
-            frame_list = frame_list[np.where((0 <= frame_list) & (frame_list <= sweep))]
+            wrong_frames_list = frame_list[
+                np.where((frame_list<0) | (frame_list > sweep))]
+            frame_list = frame_list[
+                np.where((0 <= frame_list) & (frame_list <= sweep))]
     
         if len(wrong_frames_list) > 0:
             wrong_frames = wrong_frames_list.flatten().tolist()
@@ -357,7 +361,11 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
 
         # + 1 for incomplete frame
         max_frame = frame_list.max() + 1
-        frame_start_index = np.asarray(frame_start_index)
+
+        if frame_start_index is None:
+            frame_start_index = np.full(max_frame, -1, dtype = np.int32)
+        else:
+            frame_start_index = np.asarray(frame_start_index)
 
         # fill with -1 as invaid index (not loaded)
         if (frame_start_index.size < max_frame):
@@ -365,6 +373,8 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
             fi[0:frame_start_index.size] = frame_start_index
             frame_start_index = fi
 
+        if frame_shifts is None:
+            frame_shifts = np.zeros((max_frame,3), dtype = np.int16)
         if (len(frame_shifts) < max_frame):
             fs =np.zeros((max_frame,3), dtype = np.int16)
             if len(frame_shifts) > 0:

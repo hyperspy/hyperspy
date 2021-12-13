@@ -1840,8 +1840,8 @@ Extra loading arguments
   for ``pts`` file only, frames in frame_list will be loaded.
   for example, ``frame_list=[1,3]`` means second and forth frame will be loaded.
   If ``None``, all frames are loaded.
-* - ``frame_shifts`` : list of [[int, int]...] or [[int, int, int], ...] or None, default None
-    for ``pts`` file only, each frame will be loaded with offset of x, y, (and optionary
+- ``frame_shifts`` : list of [int, int], list of [int, int, int], or None, default None
+    for ``pts`` file only, each frame will be loaded with offset of y, x, (and optionary
     energy axis). Units are pixels.
     This is useful for express drift correction. Not suitable for accurate analysis.
 - ``lazy`` : bool, default False
