@@ -487,7 +487,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
                 "original_filename": os.path.basename(filename),
                 "date": datefile.date().isoformat(),
                 "time": datefile.time().isoformat(),
-                "title": mode + " Image extracted from " + os.path.basename(filename)
+                "title": "S(T)EM Image extracted from " + os.path.basename(filename)
             },
             "Signal": {
                 "record_by": "image",

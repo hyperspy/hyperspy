@@ -320,7 +320,7 @@ def test_em_image_in_pts():
     s = hs.load(dir2 / test_files2[0],
                 read_em_image=True, only_valid_data=False)
     assert len(s) == 25
-    assert s[8].metadata.General.title == "SEM/STEM Image"
+    assert s[8].metadata.General.title == "S(T)EM Image extracted from " + s[8].metadata.General.original_filename
     assert s[8].data[38,15] == 87
     assert s[8].data[38,16] == 0
 
