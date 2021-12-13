@@ -244,6 +244,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
 
     def check_multiple(factor, number, string):
         if factor > 1 and number % factor != 0:
+            fd.close()
             raise ValueError(f'`{string}` must be a multiple of {number}.')
 
     check_multiple(rebin_energy, 4096, 'rebin_energy')
@@ -509,6 +510,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
                           }]
     else:
         _logger.warning("Not a valid JEOL pts format")
+        fd.close()
 
     return dictionary
 
@@ -743,10 +745,19 @@ def readcube(rawdata, frame_start_index, frame_list,
             return hypermap[:target_frame_num,:height,:width], em_image[:target_frame_num,:height,:width], has_em_image, frame_num, frame_start_index, valid, max_shift, frame_shifts
         
     # for lazy loading
-    length = 0
-    for d in data_list:
-        length += len(d)
 
+    class DenseSliceCOO(sparse.COO):
+        """Just like sparse.COO, but returning a dense array on indexing/slicing"""
+
+        def __getitem__(self, *args, **kwargs):
+            obj = super().__getitem__(*args, **kwargs)
+            try:
+                return obj.todense()
+            except AttributeError:
+                # Indexing, unlike slicing, returns directly the content
+                return obj
+
+    length = np.sum([len(d) for d in data_list])
     # length = number of data points
 
 
@@ -770,10 +781,10 @@ def readcube(rawdata, frame_start_index, frame_list,
         frame_count += 1
     if sum_frames:
         data_shape = [height, width, channel_number]
-        ar_s = sparse.COO(v[1:4], v[4], shape=data_shape)
+        ar_s = DenseSliceCOO(v[1:4], v[4], shape=data_shape)
     else:
         data_shape = [frame_count, height, width, channel_number]
-        ar_s = sparse.COO(v[0:4], v[4], shape=data_shape)
+        ar_s = DenseSliceCOO(v[0:4], v[4], shape=data_shape)
     if sum_frames:
         em_image = em_image[0]
         

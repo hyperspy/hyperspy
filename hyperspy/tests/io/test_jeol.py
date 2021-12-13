@@ -344,7 +344,7 @@ def test_pts_lazy():
     dir2p = dir2 / 'Sample' / '00_Dummy-Data'
     s = hs.load(dir2p / test_files2[16], read_em_image=True,
                 only_valid_data=False, sum_frames=False, lazy=True)
-    s1 = [s[0].data.sum(axis=0).compute().todense(),
+    s1 = [s[0].data.sum(axis=0).compute(),
           s[1].data.sum(axis=0).compute()]
     s2 = hs.load(dir2p / test_files2[16], read_em_image=True,
                 only_valid_data=False, sum_frames=True, lazy=False)
@@ -403,7 +403,7 @@ def test_pts_frame_shift():
         s1 = hs.load(file, read_em_image=True,
                      only_valid_data=False, sum_frames=False,
                      frame_shifts = shifts, lazy=True)
-        dt = s1[0].data.compute().todense()
+        dt = s1[0].data.compute()
         for frame in range(s0[0].axes_manager['Frame'].size):
             origin = points[frame]
             sfts0 = s0[0].original_metadata.jeol_pts_frame_shifts[frame]
