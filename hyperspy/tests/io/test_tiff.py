@@ -644,3 +644,11 @@ def test_save_angstrom_units():
         assert s2.axes_manager[0].scale == s.axes_manager[0].scale
         assert s2.axes_manager[0].offset == s.axes_manager[0].offset
         assert s2.axes_manager[0].is_binned == s.axes_manager[0].is_binned
+
+def test_JEOL_SightX():
+    files = [ "JEOL-SightX-Ronchigram.tif",
+              "JEOL-SightX-SAED.tif",
+              "JEOL-SightX-TEM_mag.tif" ]
+    for file in files:
+        file = os.path.join(MY_PATH2, file)
+        _ = hs.load(file)
