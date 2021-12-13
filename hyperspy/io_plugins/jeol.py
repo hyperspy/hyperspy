@@ -468,7 +468,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
                 "original_filename": os.path.basename(filename),
                 "date": datefile.date().isoformat(),
                 "time": datefile.time().isoformat(),
-                "title": "EDX",
+                "title": "EDS extracted from " + os.path.basename(filename),
             },
             "Signal": {
                 "record_by": "spectrum",
@@ -487,7 +487,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
                 "original_filename": os.path.basename(filename),
                 "date": datefile.date().isoformat(),
                 "time": datefile.time().isoformat(),
-                "title": "SEM/STEM Image"
+                "title": mode + " Image extracted from " + os.path.basename(filename)
             },
             "Signal": {
                 "record_by": "image",
