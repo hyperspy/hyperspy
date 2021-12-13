@@ -218,9 +218,18 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
           }
 
     if 'DateTime' in op:
-        dt = datetime.strptime(op['DateTime'], "%Y:%m:%d %H:%M:%S")
-        md['General']['date'] = dt.date().isoformat()
-        md['General']['time'] = dt.time().isoformat()
+        dt = False
+        try:
+            dt = datetime.strptime(op['DateTime'], "%Y:%m:%d %H:%M:%S")
+        except:
+            try:
+                dt = datetime.strptime(op['DateTime'], "%Y/%m/%d %H:%M")
+            except:
+                _logger.info("Date/Time is invalid : "+op['DateTime'])
+        if dt:
+            md['General']['date'] = dt.date().isoformat()
+            md['General']['time'] = dt.time().isoformat()
+                
     if 'units' in intensity_axis:
         md['Signal']['quantity'] = intensity_axis['units']
     if 'scale' in intensity_axis and 'offset' in intensity_axis:
@@ -382,6 +391,24 @@ def _parse_scale_unit(tiff, page, op, shape, force_read_resolution):
             if 'spacing' in imagej_metadata:
                 scales['z'] = imagej_metadata['spacing']
 
+    if ('Make' in op) and (op['Make']=="JEOL Ltd."):
+        _logger.debug("Reading JEOL SightX tiff metadata")
+        # convert xml text to dictionary of tiff op['ImageDescription']
+        import xml.etree.ElementTree as ET
+        jeol_xml = ET.fromstring(op['ImageDescription'])
+        jeol_dict = {}
+        def xml2dict(xml,dict):
+            if len(xml)>0:
+                dict[xml.tag] = {}
+                for elem in xml:
+                    xml2dict(elem,dict[xml.tag])
+            else:
+                dict[xml.tag] = xml.text
+        xml2dict(jeol_xml, jeol_dict)
+        jeol_dict = jeol_dict['TemReporter']
+        op['ImageDescription']= jeol_dict
+        # ToDo: add support of metadata
+        
     return scales, units, offsets, intensity_axis
 
 
