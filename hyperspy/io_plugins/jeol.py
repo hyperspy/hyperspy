@@ -375,6 +375,9 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
             fr[:len(frame_shifts), 0:2] = np.asarray(frame_shifts)
             frame_shifts = fr
 
+        # invert sign to have the same direction as signal2D.align2D function
+        frame_shifts = -frame_shifts
+
         data, em_data, has_em_image, sweep, frame_start_index, last_valid, origin = readcube(
             rawdata, frame_start_index, frame_list,
             width, height, channel_number,
@@ -385,8 +388,8 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         header["jeol_pts_frame_origin"] = origin
         header["jeol_pts_frame_start_index"] = frame_start_index
 
-        # axes_em for SEM/STEM image
-        # axes for spectrum image
+        # axes_em for SEM/STEM image  intensity[(frame,) y, x]
+        # axes for spectrum image  count[(frame,) y, x, energy]
         if sum_frames:
             axes_em = []
             width = data.shape[1]
@@ -700,7 +703,6 @@ def readcube(rawdata, frame_start_index, frame_list,
             width, height, channel_number,
             width_norm, height_norm, rebin_energy,
             fs[0], fs[1], fs[2], max_value)
-        print("max_valid=",max_valid)
         has_em_image = has_em_image or has_em
         if length == 0: # no data
             break
@@ -772,7 +774,7 @@ def readcube(rawdata, frame_start_index, frame_list,
 
 @numba.njit(cache=True)
 def readframe_dense(rawdata, countup, hypermap, em_image, width, height, channel_number,
-                    width_norm, height_norm, rebin_energy, dx, dy, dz, max_value): # pragma: nocover
+                    width_norm, height_norm, rebin_energy, dy, dx, dz, max_value): # pragma: nocover
     """
     Read one frame from pts file. Used in a inner loop of readcube function.
     This function always read SEM/STEM image even if read_em_image == False

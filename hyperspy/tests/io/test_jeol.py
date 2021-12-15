@@ -349,14 +349,17 @@ def test_pts_lazy():
     assert np.array_equal(s1[0], s2[0].data)
     assert np.array_equal(s1[1], s2[1].data)
 
-def test_pts_frame_shift
+def test_pts_frame_shift():
     dir2 = TESTS_FILE_PATH2
     dir2p = dir2 / 'Sample' / '00_Dummy-Data'
     file = str(dir2p / test_files2[16])
 
     ref = hs.load(file, read_em_image=True, only_valid_data=False, sum_frames=False, lazy=False)
+    # test point location and energy
     points=[[24,23,106],[21,16,106]]
+    # the values that should be read from spectrum image
     values=[3,1]
+    # shift target (temporary value, only relative value will be used
     targets=np.asarray([[2,2,106],[40,3,100],[4,20,100]],dtype=np.int16)
 
     # check values before shift
