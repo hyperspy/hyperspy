@@ -84,11 +84,84 @@ def to_array(thing, chunks=None):
             raise ValueError
 
 
+def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
+    """Get the slice necessary to get the dask data chunk containing the
+    navigation indices.
+
+    Parameters
+    ----------
+    navigation_indices : iterable
+    chunks : iterable
+
+    Returns
+    -------
+    chunk_slice : list of slices
+
+    Examples
+    --------
+    Making all the variables
+
+    >>> import dask.array as da
+    >>> from hyperspy._signals.lazy import _get_navigation_dimension_chunk_slice
+    >>> data = da.random.random((128, 128, 256, 256), chunks=(32, 32, 32, 32))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> sig_dim = s.axes_manager.signal_dimension
+    >>> nav_chunks = s.data.chunks[:-sig_dim]
+    >>> navigation_indices = s.axes_manager._getitem_tuple[:-sig_dim]
+
+    The navigation index here is (0, 0), giving us the slice which contains
+    this index.
+
+    >>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
+    >>> print(chunk_slice)
+    (slice(0, 32, None), slice(0, 32, None))
+    >>> data_chunk = data[chunk_slice]
+
+    Moving the navigator to a new position, by directly setting the indices.
+    Normally, this is done by moving the navigator while plotting the data.
+    Note the "inversion" of the axes here: the indices is given in (x, y),
+    while the chunk_slice is given in (y, x).
+
+    >>> s.axes_manager.indices = (128, 70)
+    >>> navigation_indices = s.axes_manager._getitem_tuple[:-sig_dim]
+    >>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
+    >>> print(chunk_slice)
+    (slice(64, 96, None), slice(96, 128, None))
+    >>> data_chunk = data[chunk_slice]
+
+    """
+    chunk_slice_list = da.core.slices_from_chunks(chunks)
+    for chunk_slice in chunk_slice_list:
+        is_slice = True
+        for index_nav in range(len(navigation_indices)):
+            temp_slice = chunk_slice[index_nav]
+            nav = navigation_indices[index_nav]
+            if not (temp_slice.start <= nav < temp_slice.stop):
+                is_slice = False
+                break
+        if is_slice:
+            return chunk_slice
+    return False
+
+
 class LazySignal(BaseSignal):
     """A Lazy Signal instance that delays computation until explicitly saved
     (assuming storing the full result of computation in memory is not feasible)
     """
     _lazy = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # The _cache_dask_chunk and _cache_dask_chunk_slice attributes are
+        # used to temporarily cache data contained in one chunk, when
+        # self.__call__ is used. Typically done when using plot or fitting.
+        # _cache_dask_chunk has the NumPy array itself, while
+        # _cache_dask_chunk_slice has the navigation dimension chunk which
+        # the NumPy array originates from.
+        self._cache_dask_chunk = None
+        self._cache_dask_chunk_slice = None
+        if not self._clear_cache_dask_data in self.events.data_changed.connected:
+            self.events.data_changed.connect(self._clear_cache_dask_data)
 
     def compute(self, close_file=False, show_progressbar=None, **kwargs):
         """Attempt to store the full signal in memory.
@@ -167,13 +240,21 @@ class LazySignal(BaseSignal):
                                                                   **kwargs)
                                                 )
 
-
     def close_file(self):
         """Closes the associated data file if any.
 
         Currently it only supports closing the file associated with a dask
         array created from an h5py DataSet (default HyperSpy hdf5 reader).
 
+        """
+        try:
+            self._get_file_handle().close()
+        except AttributeError:
+            _logger.warning("Failed to close lazy signal file")
+
+    def _get_file_handle(self, warn=True):
+        """Return file handle when possible; currently only hdf5 file are
+        supported.
         """
         arrkey = None
         for key in self.data.dask.keys():
@@ -182,9 +263,16 @@ class LazySignal(BaseSignal):
                 break
         if arrkey:
             try:
-                self.data.dask[arrkey].file.close()
-            except AttributeError:
-                _logger.exception("Failed to close lazy Signal file")
+                return self.data.dask[arrkey].file
+            except (AttributeError, ValueError):
+                if warn:
+                    _logger.warning("Failed to retrieve file handle, either "
+                                    "the file is already closed or it is not "
+                                    "an hdf5 file.")
+
+    def _clear_cache_dask_data(self, obj=None):
+        self._cache_dask_chunk = None
+        self._cache_dask_chunk_slice = None
 
     def _get_dask_chunks(self, axis=None, dtype=None):
         """Returns dask chunks.
@@ -358,6 +446,66 @@ class LazySignal(BaseSignal):
             s = self._deepcopy_with_new_data(new_data)
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
+
+    def _get_cache_dask_chunk(self, indices):
+        """Method for handling caching of dask chunks, when using __call__.
+
+        When accessing data in a chunked HDF5 file, the whole chunks needs
+        to be loaded into memory. So even if you only want to access a single
+        index in the navigation dimension, the whole chunk in the navigation
+        dimension needs to be loaded into memory. This method keeps (caches)
+        this chunk in memory after loading it, so moving to a different
+        position with the same chunk will be much faster, reducing amount of
+        data which needs be read from the disk.
+
+        If a navigation index (via the indices parameter) in a different chunk
+        is asked for, the currently cached chunk is discarded, and the new
+        chunk is loaded into memory.
+
+        This only works for functions using self.__call__, for example
+        plot and fitting functions. This will not work with the region of
+        interest functionality.
+
+        The cached chunk is stored in the attribute s._cache_dask_chunk,
+        and the slice needed to extract this chunk is in
+        s._cache_dask_chunk_slice. To these, use s._clear_cache_dask_data()
+
+        Parameter
+        ---------
+        indices : tuple
+            Must be the same length as navigation dimensions in self.
+
+        Returns
+        -------
+        value : NumPy array
+            Same shape as the signal shape of self.
+
+        Examples
+        --------
+        >>> import dask.array as da
+        >>> s = hs.signals.Signal2D(da.ones((5, 10, 20, 30, 40))).as_lazy()
+        >>> value = s._get_cache_dask_chunk((3, 6, 2))
+        >>> cached_chunk = s._cache_dask_chunk # Cached array
+        >>> cached_chunk_slice = s._cache_dask_chunk_slice # Slice of chunk
+        >>> s._clear_cache_dask_data() # Clearing both of these
+
+        """
+
+        sig_dim = self.axes_manager.signal_dimension
+        chunks = self._get_navigation_chunk_size()
+        navigation_indices = indices[:-sig_dim]
+        chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, chunks)
+        if (chunk_slice != self._cache_dask_chunk_slice or
+                self._cache_dask_chunk is None):
+            self._cache_dask_chunk = np.asarray(self.data.__getitem__(chunk_slice))
+            self._cache_dask_chunk_slice = chunk_slice
+
+        indices = list(indices)
+        for i, temp_slice in enumerate(chunk_slice):
+            indices[i] -= temp_slice.start
+        indices = tuple(indices)
+        value = self._cache_dask_chunk[indices]
+        return value
 
     def rebin(self, new_shape=None, scale=None,
               crop=False, dtype=None, out=None, rechunk=True):
@@ -642,7 +790,7 @@ class LazySignal(BaseSignal):
             axes_changed = True
             if len(output_signal_size) != len(old_sig.axes_manager.signal_shape):
                 drop_axis = old_sig.axes_manager.signal_indices_in_array
-                new_axis = tuple(range(len(output_signal_size)))
+                new_axis = tuple(range(len(nav_indexes), len(nav_indexes) + len(output_signal_size)))
             else:
                 drop_axis = [it for (o, i, it) in zip(output_signal_size,
                                                       old_sig.axes_manager.signal_shape,
@@ -668,12 +816,15 @@ class LazySignal(BaseSignal):
         else:
             sig = self._deepcopy_with_new_data(mapped)
             if ragged:
-                sig.axes_manager.remove(sig.axes_manager.signal_axes)
-                sig._lazy = True
+                axes_dicts = self.axes_manager._get_axes_dicts(
+                    self.axes_manager.navigation_axes
+                    )
+                sig.axes_manager.__init__(axes_dicts)
+                sig.axes_manager._ragged = True
                 sig._assign_subclass()
-
                 return sig
-            # remove if too many axes
+
+        # remove if too many axes
         if axes_changed:
             sig.axes_manager.remove(sig.axes_manager.signal_axes[len(output_signal_size):])
             # add additional required axes
@@ -1088,6 +1239,8 @@ class LazySignal(BaseSignal):
             print("\n".join([str(pr) for pr in to_print]))
 
     def plot(self, navigator='auto', **kwargs):
+        if self.axes_manager.ragged:
+            raise RuntimeError("Plotting ragged signal is not supported.")
         if isinstance(navigator, str):
             if navigator == 'spectrum':
                 # We don't support the 'spectrum' option to keep it simple

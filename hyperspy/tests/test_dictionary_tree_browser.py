@@ -109,7 +109,8 @@ class TestDictionaryBrowser:
                         "leaf211": 211},
                 },
                 "_sig_Some name": {
-                    'attributes': {'_lazy': False},
+                    'attributes': {'_lazy': False,
+                                   'ragged': False},
                     'axes': [
                         {
                             '_type': 'UniformDataAxis',
