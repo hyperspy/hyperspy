@@ -24,7 +24,7 @@ import hyperspy.api as hs
 
 
 TESTS_FILE_PATH = Path(__file__).resolve().parent / 'JEOL_files'
-
+TESTS_FILE_PATH2 = TESTS_FILE_PATH / 'InvalidFrame'
 
 test_files = ['rawdata.ASW',
               'View000_0000000.img',
@@ -35,6 +35,34 @@ test_files = ['rawdata.ASW',
               'View000_0000005.map',
               'View000_0000006.pts'
               ]
+
+test_files2 = ['dummy2.ASW',
+               'Dummy-Data_0000000.img',
+               'Dummy-Data_0000001.map',
+               'Dummy-Data_0000002.map',
+               'Dummy-Data_0000003.map',
+               'Dummy-Data_0000004.map',
+               'Dummy-Data_0000005.map',
+               'Dummy-Data_0000006.map',
+               'Dummy-Data_0000007.pts',
+               'Dummy-Data_0000008.apb',
+               'Dummy-Data_0000009.map',
+               'Dummy-Data_0000010.map',
+               'Dummy-Data_0000011.map',
+               'Dummy-Data_0000012.map',
+               'Dummy-Data_0000013.map',
+               'Dummy-Data_0000014.map',
+               'Dummy-Data_0000015.pts',
+               'Dummy-Data_0000016.apb',
+               'Dummy-Data_0000017.map',
+               'Dummy-Data_0000018.map',
+               'Dummy-Data_0000019.map',
+               'Dummy-Data_0000020.map',
+               'Dummy-Data_0000021.map',
+               'Dummy-Data_0000022.map',
+               'Dummy-Data_0000023.pts',
+               'Dummy-Data_0000024.APB',
+]
 
 
 def test_load_project():
@@ -82,12 +110,11 @@ def test_load_project():
     s2 = hs.load(filename)
     np.testing.assert_allclose(s[6].axes_manager[0].scale, s2.axes_manager[0].scale)
     assert s[6].axes_manager[0].units == s2.axes_manager[0].units
-    
+
 
 def test_load_image():
     # test load work area haadf image
     filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[1]
-    print(filename)
     s = hs.load(filename)
     assert s.data.dtype == np.uint8
     assert s.data.shape == (512, 512)
@@ -104,9 +131,9 @@ def test_load_image():
 def test_load_datacube(SI_dtype):
     # test load eds datacube
     filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[7]
-    s = hs.load(filename, SI_dtype=SI_dtype)
+    s = hs.load(filename, SI_dtype=SI_dtype, cutoff_at_kV=5)
     assert s.data.dtype == SI_dtype
-    assert s.data.shape == (512, 512, 4096)
+    assert s.data.shape == (512, 512, 596)
     assert s.axes_manager.signal_dimension == 1
     assert s.axes_manager.navigation_dimension == 2
     assert s.axes_manager[0].units == 'µm'
@@ -245,3 +272,142 @@ def test_shift_jis_encoding():
     except FileNotFoundError:
         # we don't have the other files required to open the data
         pass
+
+
+def test_number_of_frames():
+    dir1 = TESTS_FILE_PATH / 'Sample' / '00_View000'
+    dir2 = TESTS_FILE_PATH / 'InvalidFrame' / 'Sample' / '00_Dummy-Data'
+
+    test_list = [  # dir, file, num_frames, num_valid_frames
+        [ dir1, test_files[7], 14, 14 ],
+        [ dir2, test_files2[8], 1, 0 ],
+        [ dir2, test_files2[16], 2, 1 ],
+        [ dir2, test_files2[24], 1, 1 ]
+    ]
+
+    for item in test_list:
+        dirname, filename, frames, valid = item
+        fname = str(dirname / filename)
+
+        # Count number of frames including incomplete frame
+        data = hs.load(fname, sum_frames = False, only_valid_data = False,
+                       downsample=[32,32], rebin_energy=512, SI_dtype=np.int32)
+        assert data.axes_manager["Frame"].size == frames
+
+        # Count number of valid frames
+        data = hs.load(fname, sum_frames = False, only_valid_data = True,
+                       downsample=[32,32], rebin_energy=512, SI_dtype=np.int32)
+        assert data.axes_manager["Frame"].size == valid
+
+
+def test_em_image_in_pts():
+    dir1 = TESTS_FILE_PATH
+    dir2 = TESTS_FILE_PATH / 'InvalidFrame'
+    dir2p = dir2 / 'Sample' / '00_Dummy-Data'
+
+    # no SEM/STEM image
+    s = hs.load(dir1 / test_files[0],
+                read_em_image=False, only_valid_data=False,
+                cutoff_at_kV=1)
+    assert len(s) == 7
+
+    s = hs.load(dir1 / test_files[0],
+                read_em_image=True, only_valid_data=False,
+                cutoff_at_kV=1)
+    assert len(s) == 7
+
+    # with SEM/STEM image
+    s = hs.load(dir2 / test_files2[0],
+                read_em_image=False, only_valid_data=False,
+                cutoff_at_kV=1)
+    assert len(s) == 22
+    s = hs.load(dir2 / test_files2[0],
+                read_em_image=True, only_valid_data=False,
+                cutoff_at_kV=1)
+    assert len(s) == 25
+    assert s[8].metadata.General.title == "S(T)EM Image extracted from " + s[8].metadata.General.original_filename
+    assert s[8].data[38,15] == 87
+    assert s[8].data[38,16] == 0
+
+    # integrate SEM/STEM image along frame axis
+    s = hs.load(dir2p / test_files2[16], read_em_image=True,
+                only_valid_data=False, sum_frames=True, cutoff_at_kV=1,
+                frame_list=[0,0,0,1])
+    assert(s[1].data[0,0] == 87*4)
+    assert(s[1].data[63,63] == 87*3)
+
+    s = hs.load(dir2p / test_files2[16], read_em_image=True,
+                only_valid_data=False, sum_frames=False, cutoff_at_kV=1)
+    s2 = hs.load(dir2p / test_files2[16], read_em_image=True,
+                 only_valid_data=False, sum_frames=True, cutoff_at_kV=1)
+    s1 = [s[0].data.sum(axis=0), s[1].data.sum(axis=0)]
+    assert np.array_equal(s1[0], s2[0].data)
+    assert np.array_equal(s1[1], s2[1].data)
+
+
+def test_pts_lazy():
+    dir2 = TESTS_FILE_PATH / 'InvalidFrame'
+    dir2p = dir2 / 'Sample' / '00_Dummy-Data'
+    s = hs.load(dir2p / test_files2[16], read_em_image=True,
+                only_valid_data=False, sum_frames=False, lazy=True)
+    s1 = [s[0].data.sum(axis=0).compute(),
+          s[1].data.sum(axis=0).compute()]
+    s2 = hs.load(dir2p / test_files2[16], read_em_image=True,
+                only_valid_data=False, sum_frames=True, lazy=False)
+    assert np.array_equal(s1[0], s2[0].data)
+    assert np.array_equal(s1[1], s2[1].data)
+
+
+def test_pts_frame_shift():
+    dir = TESTS_FILE_PATH2
+    dir2p = dir / 'Sample' / '00_Dummy-Data'
+    file = str(dir2p / test_files2[16])
+
+    # without frame shift
+    ref = hs.load(file, read_em_image=True, only_valid_data=False,
+                  sum_frames=False, lazy=False)
+    #         x, y, en
+    points=[[24,23,106],[21,16,106]]
+    values=[3,1]
+    targets=np.asarray([[2,3,106],[20,3,100],[4,20,100]],dtype=np.int16)
+
+    # check values before shift
+    d0 = np.zeros(len(points), dtype=np.int16)
+    d1 = np.zeros(len(points), dtype=np.int16)
+    d2 = np.zeros(len(points), dtype=np.int16)
+    for frame in range(len(points)):
+        p = points[frame]
+        d0[frame] = ref[0].data[frame, p[1], p[0], p[2]]
+        assert d0[frame] == values[frame]
+
+    for target in targets:
+        sfts = np.zeros((ref[0].axes_manager['Frame'].size,3),dtype=np.int16)
+        for frame in range(ref[0].axes_manager['Frame'].size):
+            origin = points[frame]
+            sfts[frame] = np.asarray(target) - np.asarray(origin)
+        shifts = sfts[:,[1,0,2]]
+
+        # test frame shifts for dense (normal) loading
+        s0 = hs.load(file, read_em_image=True,
+                     only_valid_data=False, sum_frames=False,
+                     frame_shifts = shifts, lazy=False)
+
+
+        for frame in range(s0[0].axes_manager['Frame'].size):
+            origin = points[frame]
+            sfts0 = s0[0].original_metadata.jeol_pts_frame_shifts[frame]
+            pos = [origin[0]+sfts0[1], origin[1]+sfts0[0], origin[2]+sfts0[2]]
+            d1[frame] = s0[0].data[frame, pos[1], pos[0], pos[2]]
+            assert d1[frame] == d0[frame]
+
+	# test frame shifts for lazy loading
+        s1 = hs.load(file, read_em_image=True,
+                     only_valid_data=False, sum_frames=False,
+                     frame_shifts=shifts, lazy=True)
+        dt = s1[0].data.compute()
+        for frame in range(s0[0].axes_manager['Frame'].size):
+            origin = points[frame]
+            sfts0 = s0[0].original_metadata.jeol_pts_frame_shifts[frame]
+            pos = [origin[0]+sfts0[1], origin[1]+sfts0[0], origin[2]+sfts0[2]]
+            d2[frame] = dt[frame, pos[1], pos[0], pos[2]]
+            assert d2[frame] == d0[frame]

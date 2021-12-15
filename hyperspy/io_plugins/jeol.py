@@ -76,6 +76,7 @@ def file_reader(filename, **kwds):
         if file_magic == 0:
             fd.seek(12)
             filetree = parsejeol(fd)
+            fd.close()
             filepath, filen = os.path.split(os.path.abspath(filename))
             if "SampleInfo" in filetree.keys():
                 for i in filetree["SampleInfo"].keys():
@@ -94,13 +95,19 @@ def file_reader(filename, **kwds):
                                     if sub_ext in extension_to_reader_mapping.keys():
                                         reader_function = extension_to_reader_mapping[sub_ext]
                                         d = reader_function(file_path, scale, **kwds)
-                                        dictionary.append(d)
+                                        if isinstance(d, list):
+                                            dictionary.extend(d)
+                                        else:
+                                            dictionary.append(d)
         else:
             _logger.warning("Not a valid JEOL asw format")
+            fd.close()
     else:
         d = extension_to_reader_mapping[file_ext](filename, **kwds)
-        dictionary.append(d)
-
+        if isinstance(d, list):
+            dictionary.extend(d)
+        else:
+            dictionary.append(d)
     return dictionary
 
 
@@ -186,12 +193,58 @@ def read_img(filename, scale=None, **kwargs):
 
 def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
              SI_dtype=np.uint8, cutoff_at_kV=None, downsample=1,
-             only_valid_data=True, **kwargs):
+             only_valid_data=True, read_em_image=False,
+             frame_list=None, frame_start_index=None, frame_shifts=None, 
+             lazy=False,
+             **kwargs):
+    """
+    rawdata : ndarray of uint16
+    	spectrum image part of pts file
+    scale : list of float
+    	-scale[2], scale[3] are the positional scale from asw data, 
+    	default is None, calc from pts internal data
+    rebin_energy : int
+    	Binning parameter along energy axis. Must be 2^n.
+    sum_frames : bool or ndarray of image shifts 
+	integrate along frame axis if sum_frames == True
+    SI_dtype : dtype
+        data type for spectrum image. default is uint8
+    cutoff_at_kV : float
+	cutoff energy to reduce memory size of spectrum image, default: None (do not cutoff)
+    downsample : int or [int, int]
+    	downsample along spacial axes to reduce memory size of spectrum image
+	value must be 2^n.
+	default: 1 (do not downsample)
+    only_valid_data : bool, default True
+    	read incomplete frame if only_valid_data == False
+        (usually interrupting mesurement makes incomplete frame)
+    read_em_image : bool, default False
+        read SEM/STEM image from pts file if read_em_image == True
+    frame_list : list of int, default None
+    	list of frame numbers to be read (None for all data)
+    frame_shifts : list of [int dy,int dx] or list of [int dy, int dx, int dEn], default None
+    	each frame will be loaded with offset of dy, dx, (and optionary
+        energy axis). Units are pixels/channels.
+        This is useful for express drift correction. Not suitable for accurate analysis.
+        like the result of estimate_shift2D(), the first parameter is for y-axis
+    frame_start_index: list of offset pointer of each frame in the raw data.
+        The pointer for frame0 is 0.
+    lazy : bool, default False
+    	read spectrum image into sparse array if lazy == True
+    	SEM/STEM image is always read into dense array (np.ndarray)
+
+    Returns
+    -------
+    dictionary :
+    	dictionary of spectrum image, axes and metadata
+    	(list of dictionaries of spectrum image and SEM/STEM image if read_em_image == True)
+    """
     fd = open(filename, "br")
     file_magic = np.fromfile(fd, "<I", 1)[0]
 
     def check_multiple(factor, number, string):
         if factor > 1 and number % factor != 0:
+            fd.close()
             raise ValueError(f'`{string}` must be a multiple of {number}.')
 
     check_multiple(rebin_energy, 4096, 'rebin_energy')
@@ -242,6 +295,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         fd.seek(data_pos)
         # read spectrum image
         rawdata = np.fromfile(fd, dtype="u2")
+        fd.close()
 
         if scale is not None:
             xscale = -scale[2] / width
@@ -267,22 +321,115 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
             channel_number = int(
                 np.round((cutoff_at_kV - energy_offset) / energy_scale)
                 )
+        # pixel time in milliseconds
+        pixel_time = meas_data_header["Doc"]["DwellTime(msec)"]
 
-        axes = [
+        # Sweep value is not reliable, so +1 frame is needed if sum_frames = False
+        # priority of the length of frame_start_index is higher than "sweep" in header
+        sweep = meas_data_header["Doc"]["Sweep"]
+        if frame_start_index:            
+            sweep = len(frame_start_index)
+
+        auto_frame_list = False
+        if frame_list:
+            frame_list = np.asarray(frame_list)
+        else:
+            auto_frame_list = True
+            frame_list = np.arange(sweep + 1)
+    
+        # Remove frame numbers outside the data range.
+        # The frame with number == sweep is accepted in this stage
+        #    for incomplete frame
+        # If "frame_shifts" option is used, frame number must be in range of frame_shifts
+        if frame_shifts is not None:
+            nsf = len(frame_shifts)
+            wrong_frames_list = frame_list[
+                np.where((frame_list<0) | (frame_list > sweep)
+                         | (frame_list > nsf)
+                         | ((frame_list == nsf) & (not auto_frame_list)))]
+            frame_list = frame_list[
+                np.where((0 <= frame_list) & (frame_list <= sweep)
+                         & (frame_list < nsf))]
+        else:
+            wrong_frames_list = frame_list[
+                np.where((frame_list<0) | (frame_list > sweep))]
+            frame_list = frame_list[
+                np.where((0 <= frame_list) & (frame_list <= sweep))]
+    
+        if len(wrong_frames_list) > 0:
+            wrong_frames = wrong_frames_list.flatten().tolist()
+            _logger.info(f"Invalid frame number is specified. The frame {wrong_frames} is not found in pts data.")
+
+        # + 1 for incomplete frame
+        max_frame = frame_list.max() + 1
+
+        if frame_start_index is None:
+            frame_start_index = np.full(max_frame, -1, dtype = np.int32)
+        else:
+            frame_start_index = np.asarray(frame_start_index)
+
+        # fill with -1 as invaid index (not loaded)
+        if (frame_start_index.size < max_frame):
+            fi = np.full(max_frame, -1, dtype = np.int32)
+            fi[0:frame_start_index.size] = frame_start_index
+            frame_start_index = fi
+
+        if frame_shifts is None:
+            frame_shifts = np.zeros((max_frame,3), dtype = np.int16)
+        if (len(frame_shifts) < max_frame):
+            fs =np.zeros((max_frame,3), dtype = np.int16)
+            if len(frame_shifts) > 0:
+                fs[0:len(frame_shifts),0:len(frame_shifts[0])] = frame_shifts
+            frame_shifts = fs
+        if len(frame_shifts[0])==2: # fill z with 0
+            fr = np.zeros((max_frame,3), dtype = np.int16)
+            fr[:len(frame_shifts), 0:2] = np.asarray(frame_shifts)
+            frame_shifts = fr
+
+        data, em_data, has_em_image, sweep, frame_start_index, last_valid, origin, frame_shifts_1 = readcube(
+            rawdata, frame_start_index, frame_list,
+            width, height, channel_number,
+            width_norm, height_norm, rebin_energy,
+            SI_dtype, sweep, frame_shifts,
+            sum_frames, read_em_image, only_valid_data, lazy)
+        header["jeol_pts_frame_origin"] = origin
+        header["jeol_pts_frame_shifts"] = frame_shifts_1
+        header["jeol_pts_frame_start_index"] = frame_start_index
+        # axes_em for SEM/STEM image  intensity[(frame,) y, x]
+        # axes for spectrum image  count[(frame,) y, x, energy]
+        if sum_frames:
+            axes_em = []
+            width = data.shape[1]
+            height = data.shape[0]
+        else:
+            axes_em = [{
+                "index_in_array": 0,
+                "name": "Frame",
+                "size": sweep,
+                "offset": 0,
+                "scale": pixel_time*height*width/1E3,
+                "units": 's',
+            }]
+            width = data.shape[2]
+            height = data.shape[1]
+        axes_em.extend( [
             {
                 "name": "y",
                 "size": height,
-                "offset": 0,
+                "offset": origin[1],
                 "scale": yscale,
                 "units": units,
             },
             {
                 "name": "x",
                 "size": width,
-                "offset": 0,
+                "offset": origin[0],
                 "scale": xscale,
                 "units": units,
-            },
+            }
+        ] )
+        axes = axes_em.copy()
+        axes.append(
             {
                 "name": "Energy",
                 "size": channel_number,
@@ -290,40 +437,10 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
                 "scale": energy_scale,
                 "units": "keV",
             },
-        ]
-        # pixel time in milliseconds
-        pixel_time = meas_data_header["Doc"]["DwellTime(msec)"]
-
-        data_shape = [height, width, channel_number]
-        sweep = meas_data_header["Doc"]["Sweep"]
-        if not sum_frames:
-            data_shape.insert(0, sweep)
-            if not only_valid_data:
-                data_shape[0] += 1 # for partly swept frame
-            axes.insert(0, {
-                "index_in_array": 0,
-                "name": "Frame",
-                "size": sweep,
-                "offset": 0,
-                "scale": pixel_time*height*width/1E3,
-                "units": 's',
-            })
-
-        data = np.zeros(data_shape, dtype=SI_dtype)
-        datacube_reader = readcube if sum_frames else readcube_frames
-        data, swept = datacube_reader(rawdata, data, sweep, only_valid_data,
-                                      rebin_energy, channel_number,
-                               width_norm, height_norm, np.iinfo(SI_dtype).max)
-
-        if not sum_frames and not only_valid_data:
-            if  (sweep == swept):
-                data = data[:sweep]
-            else:
-                axes[0]["size"] = swept
-
-        if sweep < swept and only_valid_data:
+        )
+        if (not last_valid) and only_valid_data:
             _logger.info("The last frame (sweep) is incomplete because the acquisition stopped during this frame. The partially acquired frame is ignored. Use 'sum_frames=False, only_valid_data=False' to read all frames individually, including the last partially completed frame.")
-                
+
         hv = meas_data_header["MeasCond"]["AccKV"]
         if hv <= 30.0:
             mode = "SEM"
@@ -351,12 +468,29 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
                 "original_filename": os.path.basename(filename),
                 "date": datefile.date().isoformat(),
                 "time": datefile.time().isoformat(),
-                "title": "EDX",
+                "title": "EDS extracted from " + os.path.basename(filename),
             },
             "Signal": {
                 "record_by": "spectrum",
                 "quantity": "X-rays (Counts)",
                 "signal_type": "EDS_" + mode,
+            },
+        }
+        metadata_em = {
+            "Acquisition_instrument": {
+                mode: {
+                    "beam_energy": hv,
+                    "magnification": meas_data_header["MeasCond"]["Mag"],
+                },
+            },
+            "General": {
+                "original_filename": os.path.basename(filename),
+                "date": datefile.date().isoformat(),
+                "time": datefile.time().isoformat(),
+                "title": "S(T)EM Image extracted from " + os.path.basename(filename)
+            },
+            "Signal": {
+                "record_by": "image",
             },
         }
 
@@ -366,10 +500,17 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
             "metadata": metadata,
             "original_metadata": header,
         }
+        if read_em_image and has_em_image:
+            dictionary = [dictionary,
+                          {
+                              "data": em_data,
+                              "axes": axes_em,
+                              "metadata": metadata_em,
+                              "original_metadata": header
+                          }]
     else:
         _logger.warning("Not a valid JEOL pts format")
-
-    fd.close()
+        fd.close()
 
     return dictionary
 
@@ -453,64 +594,383 @@ def parsejeol(fd):
     return final_dict
 
 
+
+def readcube(rawdata, frame_start_index, frame_list,
+              width, height, channel_number,
+              width_norm, height_norm, rebin_energy,
+              SI_dtype, sweep, frame_shifts,
+              sum_frames, read_em_image, only_valid_data, lazy): # pragma: no cover
+    """
+    Read spectrum image (and SEM/STEM image) from pts file
+
+    Parameters:
+    -----------
+    rawdata : spectrum image part of pts file
+    frame_start_index : ndarray(shape=(sweep+1)) or ndarray(shape=(0))
+	if frame_start_index.size ==0, frame_start_index will be constructed from rawdata
+    frame_list : list of frames to be read.
+    width, height, channel_number : int, int, int
+    	sizes of image
+    width_norm, height_norm, rebin_energy : int, int, int
+    sweep : int
+    frame_shifts : 
+        list of image positions [[x0,y0,z0], ...]
+    	x, y, z can be negative.
+        data points outside data cube are ignored.
+
+    Returns:
+    --------
+    data, em_data, num_frames, frame_start_index, sweep, origin_offset
+	data, em_data : 
+	    np.ndarray of Spectrum image[frame, x, y, energy]  and SEM/TEM image [frame, x, y]
+    	    or np.ndarray of Spectrum image[x, y, energy]  and SEM/TEM image [x, y]
+    	    Spectrum image will be dask.array [[frame, x, y, energy]... ](COO) if lazy == True,
+    	has_em_image : bool
+	sweep : int
+	    number of loaded frames
+    	frame_start_index : ndarray(shape=(sweep+1), dtype=np.int64)
+	    list of the starting positions of each frame in the rawdata.
+	    -1 for unknown position
+        last_valid : bool
+    	origin_offset : ndarray([int, int, int])
+            np.ndarray of the position of top-left corner in pixel, if frame_shifts are specified.
+
+    """
+
+    import sparse
+    import dask.array as da
+
+    # In case of sum_frames, spectrum image and SEM/STEM image are summing up to the same frame number.
+    # To avoid overflow on integration of SEM/STEM image, data type of np.uint32 is selected
+    # for 16 frames and over. (range of image intensity in each frame is 0-4095 (0-0xfff))
+    EM_dtype = np.uint16
+    frame_step = 1
+    if sum_frames:
+        frame_step = 0
+        if sweep >= 16:
+            EM_dtype = np.uint32
+        n_frames = 1  
+    else:
+        n_frames = sweep + 1
+        
+    if lazy:
+        hypermap = np.zeros((n_frames), dtype=EM_dtype)  # dummy variable, not used
+        data_list = []
+    else:
+        hypermap = np.zeros((n_frames, height, width, channel_number),
+                            dtype=SI_dtype)
+
+    em_image = np.zeros((n_frames, width, height), dtype=EM_dtype)
+
+    max_value =  np.iinfo(SI_dtype).max
+
+    frame_shifts = np.asarray(frame_shifts)
+    frame_list = np.asarray(frame_list)
+    max_shift = frame_shifts[frame_list].max(axis=0)
+    min_shift = frame_shifts[frame_list].min(axis=0)
+    #    sxyz = np.array([min_shift[0]-max_shift[0], min_shift[1]-max_shift[1],0])
+    min_shift[2]=0
+    max_shift[2]=0
+    sxyz = min_shift-max_shift
+    frame_shifts -= max_shift
+    width += sxyz[1]
+    height += sxyz[0]
+
+    if lazy:
+        readframe = readframe_lazy
+    else:
+        readframe = readframe_dense
+        
+    frame_num = 0
+    p_start = 0
+    target_frame_num = 0
+    eof = rawdata.size
+    countup = 1
+    has_em_image = False
+    for frame_idx in frame_list:
+        if frame_idx < 0:
+            continue
+        elif frame_start_index[frame_idx] >= 0:
+            # if frame_idx is already indexed
+            p_start = frame_start_index[frame_idx]
+        elif frame_num < frame_idx and frame_start_index[frame_num] < 0:
+            # record start point of frame and skip frame
+            frame_start_index[frame_num] = p_start
+            p_start += readframe_dummy(rawdata[p_start:])
+            frame_num += 1
+            continue
+        else:
+            frame_start_index[frame_idx] = p_start  # = end of last frame
+
+        if frame_idx < frame_shifts.size:
+            fs = frame_shifts[frame_idx]
+        else:
+            fs = np.zeros(3, np.uint16)
+            _logger.info(f"Size of frame_shift array is too small. The frame {frame_idx} is not moved.")
+        length, frame_data, has_em, valid, max_valid = readframe(
+            rawdata[p_start:], 1,
+            hypermap[target_frame_num], em_image[target_frame_num],
+            width, height, channel_number,
+            width_norm, height_norm, rebin_energy,
+            fs[1], fs[0], fs[2], max_value)
+        has_em_image = has_em_image or has_em
+        if length == 0: # no data
+            break
+        if valid or not only_valid_data:
+            # accept last frame
+            if lazy:
+                data_list.append(frame_data)
+            frame_num += 1
+            target_frame_num += frame_step
+        else:
+            # incomplete data, not accepted
+            if sum_frames:
+                # subtract signal counts of last frame
+                _ = readframe(rawdata[p_start:], -1,
+                              hypermap[target_frame_num], em_image[target_frame_num],
+                              width, height, channel_number,
+                              width_norm, height_norm, rebin_energy,
+                              fs[1], fs[0],fs[2],  max_value)
+                _logger.info("The last frame (sweep) is incomplete because the acquisition stopped during this frame. The partially acquired frame is ignored. Use 'sum_frames=False, only_valid_data=False' to read all frames individually, including the last partially completed frame.")
+            break
+            # else:
+            #    pass
+
+        p_start += length
+    if not lazy:
+        if sum_frames:
+            # the first frame has integrated intensity
+            return hypermap[0,:height,:width], em_image[0,:height,:width], has_em_image, frame_num, frame_start_index, valid, max_shift, frame_shifts
+        else:
+            return hypermap[:target_frame_num,:height,:width], em_image[:target_frame_num,:height,:width], has_em_image, frame_num, frame_start_index, valid, max_shift, frame_shifts
+        
+    # for lazy loading
+    from hyperspy.misc.io.fei_stream_readers import DenseSliceCOO
+    length = np.sum([len(d) for d in data_list])
+    # length = number of data points
+
+
+    # v : [[frame_no, y, x, energy_channel, 1], ....]
+    v = np.zeros(shape=(5, length), dtype=np.uint16)
+    ptr = 0
+    frame_count = 0
+    for d in data_list:
+        # d : data points in one frame
+        d = np.asarray(d)
+        # check if the pixels are in the valid data cube
+        # (frame_shifts make partially integrated area at the rim)
+        valid_cube = np.where((0<=d[:,0]) & (d[:,0]<height) & (0<=d[:,1]) & (d[:,1]<width) & (0<=d[:,2]) & (d[:,2]<channel_number))
+        d = d[valid_cube]
+        flen = len(d)
+        pv = v[:,ptr:ptr+flen]
+        pv[1:4, :] = np.array(d).transpose()
+        pv[0,:] = frame_count
+        pv[4,:] = 1
+        ptr += flen
+        frame_count += 1
+    if sum_frames:
+        data_shape = [height, width, channel_number]
+        ar_s = DenseSliceCOO(v[1:4], v[4], shape=data_shape)
+    else:
+        data_shape = [frame_count, height, width, channel_number]
+        ar_s = DenseSliceCOO(v[0:4], v[4], shape=data_shape)
+    if sum_frames:
+        em_image = em_image[0]
+        
+    return da.from_array(ar_s, asarray=False), em_image, has_em_image, sweep, frame_start_index, valid, max_shift, frame_shifts
+
+
 @numba.njit(cache=True)
-def readcube(rawdata, hypermap, sweep, only_valid_data, rebin_energy, 
-            channel_number, width_norm, height_norm, max_value):  # pragma: no cover
-    frame_idx = 0
-    previous_y = 0
+def readframe_dense(rawdata, countup, hypermap, em_image, width, height, channel_number,
+                    width_norm, height_norm, rebin_energy, dx, dy, dz, max_value): # pragma: nocover
+    """
+    Read one frame from pts file. Used in a inner loop of readcube function.
+    This function always read SEM/STEM image even if read_em_image == False
+    hypermap and em_image array will be modified
+
+    Parameters
+    ----------
+    rawdata : ndarray of uint16
+    	slice of one frame raw data from whole raw data 
+    countup : 1 for summing up the X-ray events, -1 to cancel selected frame
+    hypermap : ndarray(width, height, channel_number)
+    	np.ndarray to store decoded spectrum image.
+    em_image : np.ndarray(width, height), dtype = np.uint16 or np.uint32
+    	np.ndarray to store decoded SEM/TEM image.
+    width : int
+    height : int
+    channel_number : int
+    	Limit of channel to reduce data size
+    width_norm : int
+    	scanning step
+    height_norm : int
+    	scanning step
+    rebin_energy : int
+    	Binning parameter along energy axis. Must be 2^n.
+    dx, dy, dz : int
+    	information of frame shift for drift correction. 
+    max_value : int
+    	limit of the data type used in hypermap array
+
+    Returns
+    -------
+    raw_length : int
+    	frame length based on raw data array
+    _ : int
+	dummy value (used for lazy loading)
+    has_em_image : bool
+    	True if pts file have SEM/STEM image
+    valid : bool
+    	True if current frame is completely swept
+    	False for incomplete frame such as interrupt of measurement
+    max_valid : int
+    	maximum number of scan lines to be accepted as valid 
+        in case of incomplete frame
+    """
+
+    count = 0
+    has_em_image = False
+    valid = False
+    MAX_VAL = 4096
+    previous_y = -1
+    x = 0
+    y = 0
     for value in rawdata:
-        if value >= 32768 and value < 36864:
-            x = int((value - 32768) / width_norm)
-        elif value >= 36864 and value < 40960:
-            y = int((value - 36864) / height_norm)
-            if y < previous_y:
-                frame_idx += 1
-                if frame_idx >= sweep:
-                    # skip incomplete_frame
-                    break 
-            previous_y = y
-        elif value >= 45056 and value < 49152:
-            z = int((value - 45056) / rebin_energy)
-            if z < channel_number:
-                hypermap[y, x, z] += 1
+        value_type = value & 0xf000
+        value &= 0xfff
+        if value_type == 0x8000:
+            x = value // width_norm + dx
+            if x >= width:
+                x = -1
+            previous_x = value
+        elif value_type == 0x9000:
+            y = value // height_norm + dy
+            if value < previous_y:
+                break
+            previous_y = value
+            if y >= height:
+                y = -1
+        elif value_type == 0xa000 and x >= 0 and y >= 0 :
+            em_image[y, x] += value * countup
+            has_em_image = True
+        elif value_type == 0xb000:
+            z = value // rebin_energy + dz
+            if z < channel_number and x >= 0 and y >= 0 and z >= 0:
+                hypermap[y, x, z] += countup
                 if hypermap[y, x, z] == max_value:
                     raise ValueError("The range of the dtype is too small, "
                                      "use `SI_dtype` to set a dtype with "
                                      "higher range.")
-    return hypermap, frame_idx + 1
+        count += 1
 
+
+    if previous_y >= MAX_VAL - height_norm and (previous_x >= MAX_VAL - width_norm or not has_em_image):
+        # if the STEM-ADF/SEM-BF image is not included in pts file,
+        # maximum value of x is usually smaller than max_x,
+        # (sometimes no x-ray events occur in a last few pixels.)
+        # So, only the y value is checked
+        #
+        # > is need when downsampling is specified
+        valid = True
+    return count, 0, has_em_image, valid, previous_y // height_norm
 
 @numba.njit(cache=True)
-def readcube_frames(rawdata, hypermap, sweep, only_valid_data, rebin_energy, channel_number,
-             width_norm, height_norm, max_value):  # pragma: no cover
+def readframe_lazy(rawdata, _1, _2, em_image, width, height, channel_number,
+                    width_norm, height_norm, rebin_energy, dx, dy, dz, _3):  # pragma: no cover
     """
-    We need to create a separate function, because numba.njit doesn't play well
-    with an array having its shape depending on something else
+    Read one frame from pts file. Used in a inner loop of readcube function.
+    This function always read SEM/STEM image even if read_em_image == False
+    hypermap and em_image array will be modified
+
+    Parameters
+    ----------
+    rawdata : ndarray of uint16
+    	slice of one frame raw data from whole raw data 
+    _1 : dummy parameter, not used
+    _2 : dummy parameter, not used
+    em_image : np.ndarray(width, height), dtype = np.uint16 or np.uint32
+    	np.ndarray to store decoded SEM/TEM image.
+    width : int
+    height : int
+    channel_number : int
+    	Limit of channel to reduce data size
+    width_norm : int
+    	scanning step
+    height_norm : int
+    	scanning step
+    rebin_energy : int
+    	Binning parameter along energy axis. Must be 2^n.
+    dx, dy, dz : int
+    	information of frame shift for drift correction. 
+    _3 : dummy parameter, not used
+
+
+    Returns
+    -------
+    raw_length : int
+    	frame length based on raw data array
+    data : list of [int, int, int]  
+	list of X-ray events as an array of [x, y, energy_ch]
+    has_em_image : bool
+    	True if pts file have SEM/STEM image
+    valid : bool
+    	True if current frame is completely swept
+    	False for incomplete frame such as interrupt of measurement
+    max_valid : int
+    	maximum number of scan lines to be accepted as valid 
+        in case of incomplete frame
     """
-    frame_idx = 0
+    data = []
+    previous_x = 0
+    previous_y = 0
+    MAX_VAL = 4096
+    count = 0
+    valid = False
+    has_em_image = False
+    for value in rawdata:
+        count += 1
+        value_type = value & 0xf000
+        value &= 0xfff
+        if value_type == 0x8000:
+            previous_x = value
+            x = value // width_norm + dx
+            if x >= width:
+                x = -1
+        elif value_type == 0x9000:
+            if (value < previous_y):
+                break
+            previous_y = value
+            y = value // height_norm + dy
+            if y >= width:
+                y = -1
+        elif value_type == 0xa000 and x >= 0 and y >= 0:
+            em_image[y, x] += value
+            has_em_image = True
+        elif value_type == 0xb000:    # spectrum image
+            z = value // rebin_energy + dz
+            if 0 <= z and z < channel_number:
+                data.append([y, x, z])
+    if previous_y == MAX_VAL - height_norm and (previous_x == MAX_VAL - width_norm or not has_em_image):
+        # if the STEM-ADF/SEM-BF image is not included in pts file,
+        # maximum value of x is usually smaller than max_x,
+        # (sometimes no x-ray events occur in a last few pixels.)
+        # So, only the y value is checked
+        valid = True
+    return count, data, has_em_image, valid, previous_y // height_norm
+
+def readframe_dummy(rawdata):
+    count = 0
     previous_y = 0
     for value in rawdata:
-        if value >= 32768 and value < 36864:
-            x = int((value - 32768) / width_norm)
-        elif value >= 36864 and value < 40960:
-            y = int((value - 36864) / height_norm)
+        value_type = value & 0xf000
+        value &= 0xfff
+        if (value_type == 0x9000):
+            y = value
             if y < previous_y:
-                frame_idx += 1
-                if frame_idx == sweep: # incomplete frame exist
-                    if only_valid_data:
-                        break  # ignore
-                if frame_idx > sweep:
-                    raise ValueError("The frame number is too large")
+                break
             previous_y = y
-        elif value >= 45056 and value < 49152:
-            z = int((value - 45056) / rebin_energy)
-            if z < channel_number:
-                hypermap[frame_idx, y, x, z] += 1
-                if hypermap[frame_idx, y, x, z] == max_value:
-                    raise ValueError("The range of the dtype is too small, "
-                                     "use `SI_dtype` to set a dtype with "
-                                     "higher range.")
-    return hypermap, frame_idx + 1
+        count += 1
+    return count
 
 
 def read_eds(filename, **kwargs):
