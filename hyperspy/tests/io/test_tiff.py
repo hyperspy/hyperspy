@@ -646,9 +646,13 @@ def test_save_angstrom_units():
         assert s2.axes_manager[0].is_binned == s.axes_manager[0].is_binned
 
 def test_JEOL_SightX():
-    files = [ "JEOL-SightX-Ronchigram.tif",
-              "JEOL-SightX-SAED.tif",
-              "JEOL-SightX-TEM_mag.tif" ]
+    files = [ ("JEOL-SightX-Ronchigram.tif", 1.0, t.Undefined),
+              ("JEOL-SightX-SAED.tif", 0.2723, "1 / nm"),
+              ("JEOL-SightX-TEM_mag.tif", 1.8208, "nm") ]
     for file in files:
-        file = os.path.join(MY_PATH2, file)
-        _ = hs.load(file)
+        fname = os.path.join(MY_PATH2, file[0])
+        s = hs.load(fname)
+        for i in range(2): # x, y
+            assert s.axes_manager[i].size == 556
+            np.testing.assert_allclose(s.axes_manager[i].scale, file[1], rtol=1E-3)
+            assert s.axes_manager[1].units == file[2]
