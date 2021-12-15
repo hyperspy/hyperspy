@@ -185,10 +185,10 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
     offsets = [0.0] * len(names)
     units = [t.Undefined] * len(names)
     intensity_axis = {}
-#    try:
-    scales_d, units_d, offsets_d, intensity_axis = _parse_scale_unit(
+    try:
+        scales_d, units_d, offsets_d, intensity_axis = _parse_scale_unit(
             tiff, page, op, shape, force_read_resolution)
-    for i, name in enumerate(names):
+        for i, name in enumerate(names):
             if name == 'height':
                 scales[i], units[i] = scales_d['x'], units_d['x']
                 offsets[i] = offsets_d['x']
@@ -198,8 +198,8 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
             elif name in ['depth', 'image series', 'time']:
                 scales[i], units[i] = scales_d['z'], units_d['z']
                 offsets[i] = offsets_d['z']
-#    except BaseException:
-#        _logger.info("Scale and units could not be imported")
+    except BaseException:
+        _logger.info("Scale and units could not be imported")
 
     axes = [{'size': size,
              'name': str(name),
@@ -223,8 +223,16 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
             dt = datetime.strptime(op['DateTime'], "%Y:%m:%d %H:%M:%S")
         except:
             try:
-                # JEOL SightX. overwritten later by ImageDescription.DateTime
-                dt = datetime.strptime(op['DateTime'], "%Y/%m/%d %H:%M")
+                if 'ImageDescription' in op:
+                    # JEOL SightX.
+                    _dt = op['ImageDescription']['DateTime']
+                    md['General']['date'] = _dt[0:10]
+                    # 1 extra digit for millisec should be removed
+                    md['General']['time'] = _dt[11:26]
+                    md['General']['time_zone'] = _dt[-6:]
+                    dt = None
+                else:
+                    dt = datetime.strptime(op['DateTime'], "%Y/%m/%d %H:%M")
             except:
                 _logger.info("Date/Time is invalid : "+op['DateTime'])
         if dt is not None:
@@ -250,7 +258,8 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
         dc = _load_data(*data_args, memmap=memmap, **kwds)
 
     metadata_mapping = get_metadata_mapping(page, op)
-
+    if 'SightX_Notes' in op:
+        md['General']['title'] = op['SightX_Notes']
     return {'data': dc,
             'original_metadata': op,
             'axes': axes,
@@ -395,7 +404,7 @@ def _parse_scale_unit(tiff, page, op, shape, force_read_resolution):
     if ('Make' in op) and (op['Make']=="JEOL Ltd."):
         _logger.debug("Reading JEOL SightX tiff metadata")
         return _decode_jeol_sightx(tiff, op, scales, units, offsets, intensity_axis)
-        
+
     return scales, units, offsets, intensity_axis
 
 def _decode_jeol_sightx(tiff, op, scales, units, offsets, intensity_axis):
@@ -416,10 +425,17 @@ def _decode_jeol_sightx(tiff, op, scales, units, offsets, intensity_axis):
     illumi = op["ImageDescription"]["IlluminationSystem"]
     imaging = op["ImageDescription"]["ImageFormingSystem"]
 
-    op["Notes"] = ", ".join([eos, illumi["ImageField"], illumi["Mode"],
-                             imaging["ImageFormingMode"],
-                             imaging["ScanningImageFormingMode"],
-                             imaging["SelectorString"]])
+    #             TEM/STEM
+    is_STEM = eos[3:] == "modeASID"
+    mode_strs = []
+    mode_strs.append("STEM" if is_STEM else "TEM" )
+    mode_strs.append(illumi["ImageField"][4:]) # Bright Fiels?
+    if is_STEM:
+        mode_strs.append(imaging["ScanningImageFormingMode"][4:])
+    else:
+        mode_strs.append(imaging["ImageFormingMode"][4:])
+    mode_strs.append(imaging["SelectorString"]) # Mag / Camera Length
+    op["SightX_Notes"] = ", ".join(mode_strs)
 
     res_unit_tag = op['ResolutionUnit']
     if res_unit_tag == TIFF.RESUNIT.INCH:
@@ -643,26 +659,18 @@ def get_jeol_sightx_mapping(op):
         ## Gonio Stage
         # depends on sample holder
         #    ("Acquisition_instrument.TEM.Stage.rotation", None),  #deg
-        'ImageDescription.GonioStage.TX':
+        'ImageDescription.GonioStage.StagePosition.TX':
         ("Acquisition_instrument.TEM.Stage.tilt_alpha", None), #deg
-        'ImageDescription.GonioStage.TY':
+        'ImageDescription.GonioStage.StagePosition.TY':
         ("Acquisition_instrument.TEM.Stage.tilt_beta", None), #deg
-        # MX+PX, MY+PY should be used
-        #    'ImageDescription.GonioStage.MX':
+        # ToDo: MX(Motor)+PX(Piezo), MY+PY should be used
+        #    'ImageDescription.GonioStage.StagePosition.MX':
         #    ("Acquisition_instrument.TEM.Stage.x", lambda x: float(x)*1E-6), # mm
-        #    'ImageDescription.GonioStage.MY':
+        #    'ImageDescription.GonioStage.StagePosition.MY':
         #    ("Acquisition_instrument.TEM.Stage.y", lambda x: float(x)*1E-6), # mm
         'ImageDescription.GonioStage.MZ':
         ("Acquisition_instrument.TEM.Stage.z", lambda x: float(x)*1E-6), # mm
 
-        # Overwrite date / time 
-        'ImageDescription.DateTime':
-        ("General.date", lambda x: x[0:10]),
-        # 1 extra digit for millisec is removed
-        'ImageDescription.DateTime':
-        ("General.time", lambda x: x[11:26]), 
-        'ImageDescription.DateTime':
-        ("General.time_zone", lambda x: x[-6:]),
         #    ("General.notes", None),
         #    ("General.title", None),
         'ImageDescription.Eos.EosMode':
