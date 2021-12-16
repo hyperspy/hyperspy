@@ -401,32 +401,24 @@ def _parse_scale_unit(tiff, page, op, shape, force_read_resolution):
             if 'spacing' in imagej_metadata:
                 scales['z'] = imagej_metadata['spacing']
 
-    if ('Make' in op) and (op['Make']=="JEOL Ltd."):
+    if op.get('Make', None) == "JEOL Ltd.":
         _logger.debug("Reading JEOL SightX tiff metadata")
         return _decode_jeol_sightx(tiff, op, scales, units, offsets, intensity_axis)
-
     return scales, units, offsets, intensity_axis
 
 def _decode_jeol_sightx(tiff, op, scales, units, offsets, intensity_axis):
     # convert xml text to dictionary of tiff op['ImageDescription']
-    import xml.etree.ElementTree as ET
-    jeol_xml = ET.fromstring(op['ImageDescription'].rstrip("\x01").rstrip("\x00"))
-    jeol_dict = {}
-    def xml2dict(xml,dict):
-        if len(xml)>0:
-            dict[xml.tag] = {}
-            for elem in xml:
-                xml2dict(elem,dict[xml.tag])
-        else:
-            dict[xml.tag] = xml.text
-    xml2dict(jeol_xml, jeol_dict)
+    # convert_xml_to_dict need to remove white spaces before decoding XML
+    jeol_xml = ''.join([line.strip(" \r\n\t\x01\x00") for line in op['ImageDescription'].split('\n')])
+    from hyperspy.misc.io.tools import convert_xml_to_dict
+    jeol_dict = convert_xml_to_dict(jeol_xml)
     op['ImageDescription']= jeol_dict['TemReporter']
     eos = op["ImageDescription"]["Eos"]["EosMode"]
     illumi = op["ImageDescription"]["IlluminationSystem"]
     imaging = op["ImageDescription"]["ImageFormingSystem"]
 
     #             TEM/STEM
-    is_STEM = eos[3:] == "modeASID"
+    is_STEM = eos == "modeASID"
     mode_strs = []
     mode_strs.append("STEM" if is_STEM else "TEM" )
     mode_strs.append(illumi["ImageField"][4:]) # Bright Fiels?
@@ -459,7 +451,7 @@ def _decode_jeol_sightx(tiff, op, scales, units, offsets, intensity_axis):
             camera_len /= 1000
         elif imaging["SelectorUnitString"] == "cm":  # convert to "m"
             camera_len /= 100
-        scale /= camera_len * wave_len(ht)  * 1e9  # in nm
+        scale /= camera_len * wave_len(ht) * 1e9  # in nm
         scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op, factor = scale)
         units = {"x": "1 / nm", "y": "1 / nm", "z": t.Undefined}
     return scales, units, offsets, intensity_axis
