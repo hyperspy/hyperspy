@@ -775,7 +775,7 @@ def get_metadata_mapping(tiff_page, op):
         return get_tvips_mapping(mapped_magnification)
     elif tiff_page.is_sis:
         return mapping_olympus_sis
-    elif ('Make' in op) and (op['Make']=="JEOL Ltd."):
+    elif op.get('Make', None) == "JEOL Ltd.":
         return get_jeol_sightx_mapping(op)
     else:
         return {}
