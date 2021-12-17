@@ -536,7 +536,10 @@ class ImageObject(object):
     def names(self):
         names = [t.Undefined] * len(self.shape)
         indices = list(range(len(self.shape)))
-        if self.signal_type == "EELS":
+
+        if self.signal_type == "":
+            pass
+        elif self.signal_type == "EELS":
             if "eV" in self.units:
                 names[indices.pop(self.units.index("eV"))] = "Energy loss"
         elif self.signal_type in ("EDS", "EDX"):
