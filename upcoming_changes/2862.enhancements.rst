@@ -1,0 +1,2 @@
+Add support for JEOL SightX tiff file
+  
