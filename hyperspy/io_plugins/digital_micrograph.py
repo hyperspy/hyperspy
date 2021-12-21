@@ -536,13 +536,14 @@ class ImageObject(object):
     def names(self):
         names = [t.Undefined] * len(self.shape)
         indices = list(range(len(self.shape)))
+
         if self.signal_type == "EELS":
             if "eV" in self.units:
                 names[indices.pop(self.units.index("eV"))] = "Energy loss"
         elif self.signal_type in ("EDS", "EDX"):
             if "keV" in self.units:
                 names[indices.pop(self.units.index("keV"))] = "Energy"
-        elif self.signal_type in ("CL"):
+        elif self.signal_type == "CL":
             if "nm" in self.units:
                 names[indices.pop(self.units.index("nm"))] = "Wavelength"
         for index, name in zip(indices[::-1], ("x", "y", "z")):

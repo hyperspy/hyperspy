@@ -489,3 +489,8 @@ def test_data(pdict):
                                   err_msg='content %s type % i: '
                                   '\n%s not equal to \n%s' %
                                   (subfolder, key, str(s.data), str(dat)))
+
+def test_axes_bug_for_image():
+    fname = os.path.join(MY_PATH, "dm3_2D_data", "test_STEM_image.dm3")
+    s = load(fname)
+    assert s.axes_manager[1].name == 'y'
