@@ -439,3 +439,7 @@ class TestAxesManager:
                                   same_units=same_units)
         assert_deep_almost_equal(self.am._get_axes_dicts(),
                                  self.axes_list)
+
+    def test_initialize_UnitConversion_bug(self):
+        uc = UnitConversion(units="m", scale=1.0, offset=0)
+        assert uc.offset == 0
