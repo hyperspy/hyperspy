@@ -1,1 +1,1 @@
-Add :ref: `html representation<lazy._repr_html>` for lazy signals
+Add :ref:`html representation<lazy._repr_html_>` for lazy signals
