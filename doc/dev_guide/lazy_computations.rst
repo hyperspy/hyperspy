@@ -46,6 +46,20 @@ cases for lazy signals will have to be written. If a function operates on
 arbitrary-sized arrays and the shape of the output can be known before calling,
 ``da.map_blocks`` and ``da.map_overlap`` are efficient and flexible.
 
+For more recent versions of dask (dask>2021.11) when using hyperspy in a jupyter
+notebook a helpful html representation is available.
+    .. code-block::python
+        import numpy as np
+        import hyperspy.api as hs
+        x = np.zeros((20,20,10,10,10,))
+        x = hs.signals.Signal2D(x)
+        display(x)
+
+.. figure:: images/chunks.png
+
+This helps to visualize the chunk structure and identify axes where the chunk spans the entire
+axis (bolded axes).
+
 Finally, in addition to ``_iterate_signal`` that is available to all HyperSpy
 signals, lazy counterparts also have the ``_block_iterator`` method that 
 supports signal and navigation masking and yields (returns on subsequent calls)
