@@ -389,3 +389,7 @@ class TestLazyPlot:
         assert s._cache_dask_chunk.shape == (5, 5, 20)
         assert s._cache_dask_chunk_slice == np.s_[0:5, 0:5]
         s._plot.close()
+
+def test_html_rep():
+    sig = _signal()
+    sig._repr_html_()

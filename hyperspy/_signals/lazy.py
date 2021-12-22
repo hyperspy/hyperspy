@@ -162,6 +162,53 @@ class LazySignal(BaseSignal):
         if not self._clear_cache_dask_data in self.events.data_changed.connected:
             self.events.data_changed.connect(self._clear_cache_dask_data)
 
+    def _repr_html_(self):
+        try:
+            from dask import config
+            from dask.array.svg import svg
+            from dask.widgets import get_template
+            from dask.utils import format_bytes
+            nav_grid = svg(chunks=self.get_chunk_size(axis=self.axes_manager.navigation_axes),
+                           size=config.get("array.svg.size", 160))
+            sig_grid = svg(chunks=self.get_chunk_size(axis=self.axes_manager.signal_axes),
+                           size=config.get("array.svg.size", 160))
+            nbytes = format_bytes(self.data.nbytes)
+            cbytes = format_bytes(np.prod(self.data.chunksize) * self.data.dtype.itemsize)
+            return get_template("lazy_signal.html.j2").render(nav_grid=nav_grid,
+                                                              sig_grid=sig_grid,
+                                                              dim=self.axes_manager._get_dimension_str(),
+                                                              chunks=self._get_chunk_string(),
+                                                              array=self.data,
+                                                              signal_type=self._signal_type,
+                                                              nbytes=nbytes,
+                                                              cbytes=cbytes,
+                                                              title=self.metadata.General.title
+                                                              )
+
+        except ModuleNotFoundError:
+            return self
+
+    def _get_chunk_string(self):
+        nav_chunks = self.data.chunksize[:len(self.axes_manager.navigation_shape)][::-1]
+        string = "("
+        for chunks,axis in zip(nav_chunks,self.axes_manager.navigation_shape):
+            if chunks == axis:
+                string += "<b>"+str(chunks)+"</b>,"
+            else:
+                string += str(chunks) +","
+        string= string.rstrip(",")
+        string +="|"
+
+        sig_chunks = self.data.chunksize[len(self.axes_manager.navigation_shape):][::-1]
+        for chunks,axis in zip(sig_chunks,self.axes_manager.signal_shape):
+            if chunks == axis:
+                string += "<b>"+str(chunks)+"</b>,"
+            else:
+                string += str(chunks) +","
+        string = string.rstrip(",")
+        string +=")"
+        return string
+
     def compute(self, close_file=False, show_progressbar=None, **kwargs):
         """Attempt to store the full signal in memory.
 
@@ -349,10 +396,20 @@ class LazySignal(BaseSignal):
                 chunks.append((dc.shape[i], ))
         return tuple(chunks)
 
-    def _get_navigation_chunk_size(self):
-        nav_axes = self.axes_manager.navigation_indices_in_array
-        nav_chunks = tuple([self.data.chunks[i] for i in sorted(nav_axes)])
-        return nav_chunks
+    def get_chunk_size(self, axis=None):
+        """ Returns the chunk size for a set of given axis.
+        Parameters
+        ----------
+        axis %s
+        """
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
+        axes = self.axes_manager[axis]
+        if not np.iterable(axes):
+            axes = (axes,)
+        axes = tuple([axis.index_in_array for axis in axes])
+        ax_chunks = tuple([self.data.chunks[i] for i in sorted(axes)])
+        return ax_chunks
 
     def _make_lazy(self, axis=None, rechunk=False, dtype=None):
         self.data = self._lazy_data(axis=axis, rechunk=rechunk, dtype=dtype)
@@ -491,7 +548,7 @@ class LazySignal(BaseSignal):
         """
 
         sig_dim = self.axes_manager.signal_dimension
-        chunks = self._get_navigation_chunk_size()
+        chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
         navigation_indices = indices[:-sig_dim]
         chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, chunks)
         if (chunk_slice != self._cache_dask_chunk_slice or
