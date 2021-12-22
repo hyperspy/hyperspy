@@ -59,3 +59,12 @@ are available online:
 * `pepy.tech <https://pepy.tech/project/hyperspy>`_
 * `libraries.io <https://libraries.io/pypi/hyperspy/usage>`_
 * `pypistats.org <https://pypistats.org/packages/hyperspy>`_
+
+HTML Representations
+--------------------
+
+For use inside of jupyter notebooks, html representations are functions which allow for
+more detailed data represenations using snippets of pupulated HTML.
+
+Hyperspy uses jinja and extends dasks html represnetaions in many cases in
+line with this PR. https://github.com/dask/dask/pull/8019
