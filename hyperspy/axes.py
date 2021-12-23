@@ -81,7 +81,7 @@ class UnitConversion:
     def __init__(self, units=t.Undefined, scale=1.0, offset=0.0):
         self.units = units
         self.scale = scale
-        self.offset = units
+        self.offset = offset
 
     def _ignore_conversion(self, units):
         if units == t.Undefined:
