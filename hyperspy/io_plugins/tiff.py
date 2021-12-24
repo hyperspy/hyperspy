@@ -218,9 +218,27 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
           }
 
     if 'DateTime' in op:
-        dt = datetime.strptime(op['DateTime'], "%Y:%m:%d %H:%M:%S")
-        md['General']['date'] = dt.date().isoformat()
-        md['General']['time'] = dt.time().isoformat()
+        dt = None
+        try:
+            dt = datetime.strptime(op['DateTime'], "%Y:%m:%d %H:%M:%S")
+        except:
+            try:
+                if 'ImageDescription' in op:
+                    # JEOL SightX.
+                    _dt = op['ImageDescription']['DateTime']
+                    md['General']['date'] = _dt[0:10]
+                    # 1 extra digit for millisec should be removed
+                    md['General']['time'] = _dt[11:26]
+                    md['General']['time_zone'] = _dt[-6:]
+                    dt = None
+                else:
+                    dt = datetime.strptime(op['DateTime'], "%Y/%m/%d %H:%M")
+            except:
+                _logger.info("Date/Time is invalid : "+op['DateTime'])
+        if dt is not None:
+            md['General']['date'] = dt.date().isoformat()
+            md['General']['time'] = dt.time().isoformat()
+                
     if 'units' in intensity_axis:
         md['Signal']['quantity'] = intensity_axis['units']
     if 'scale' in intensity_axis and 'offset' in intensity_axis:
@@ -240,7 +258,8 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
         dc = _load_data(*data_args, memmap=memmap, **kwds)
 
     metadata_mapping = get_metadata_mapping(page, op)
-
+    if 'SightX_Notes' in op:
+        md['General']['title'] = op['SightX_Notes']
     return {'data': dc,
             'original_metadata': op,
             'axes': axes,
@@ -382,8 +401,60 @@ def _parse_scale_unit(tiff, page, op, shape, force_read_resolution):
             if 'spacing' in imagej_metadata:
                 scales['z'] = imagej_metadata['spacing']
 
+    if op.get('Make', None) == "JEOL Ltd.":
+        _logger.debug("Reading JEOL SightX tiff metadata")
+        return _decode_jeol_sightx(tiff, op, scales, units, offsets, intensity_axis)
     return scales, units, offsets, intensity_axis
 
+def _decode_jeol_sightx(tiff, op, scales, units, offsets, intensity_axis):
+    # convert xml text to dictionary of tiff op['ImageDescription']
+    # convert_xml_to_dict need to remove white spaces before decoding XML
+    jeol_xml = ''.join([line.strip(" \r\n\t\x01\x00") for line in op['ImageDescription'].split('\n')])
+    from hyperspy.misc.io.tools import convert_xml_to_dict
+    jeol_dict = convert_xml_to_dict(jeol_xml)
+    op['ImageDescription']= jeol_dict['TemReporter']
+    eos = op["ImageDescription"]["Eos"]["EosMode"]
+    illumi = op["ImageDescription"]["IlluminationSystem"]
+    imaging = op["ImageDescription"]["ImageFormingSystem"]
+
+    #             TEM/STEM
+    is_STEM = eos == "modeASID"
+    mode_strs = []
+    mode_strs.append("STEM" if is_STEM else "TEM" )
+    mode_strs.append(illumi["ImageField"][4:]) # Bright Fiels?
+    if is_STEM:
+        mode_strs.append(imaging["ScanningImageFormingMode"][4:])
+    else:
+        mode_strs.append(imaging["ImageFormingMode"][4:])
+    mode_strs.append(imaging["SelectorString"]) # Mag / Camera Length
+    op["SightX_Notes"] = ", ".join(mode_strs)
+
+    res_unit_tag = op['ResolutionUnit']
+    if res_unit_tag == TIFF.RESUNIT.INCH:
+        scale = 0.0254  # inch/m
+    else:
+        scale = 0.01 # tiff scaling, cm/m
+    # TEM - MAG
+    if (eos == "eosTEM") and (imaging["ModeString"] == "MAG"):
+        mag = float(imaging["SelectorValue"])
+        scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op, factor = scale / mag * 1e9)
+        units = {"x":"nm", "y":"nm","z":"nm"}
+    # TEM - DIFF
+    elif (eos == "eosTEM") and (imaging["ModeString"] == "DIFF"):
+        def wave_len(ht):
+            import scipy.constants as constants
+            momentum = 2 * constants.m_e * constants.elementary_charge * ht * (1 + constants.elementary_charge * ht / (2 * constants.m_e * constants.c ** 2))
+            return constants.h / np.sqrt(momentum)
+        camera_len = float(imaging["SelectorValue"])
+        ht = float(op["ImageDescription"]["ElectronGun"]["AccelerationVoltage"])
+        if imaging["SelectorUnitString"] == "mm":  # convert to "m"
+            camera_len /= 1000
+        elif imaging["SelectorUnitString"] == "cm":  # convert to "m"
+            camera_len /= 100
+        scale /= camera_len * wave_len(ht) * 1e9  # in nm
+        scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op, factor = scale)
+        units = {"x": "1 / nm", "y": "1 / nm", "z": t.Undefined}
+    return scales, units, offsets, intensity_axis
 
 def _get_scales_from_x_y_resolution(op, factor=1):
     scales = (op["YResolution"][1] / op["YResolution"][0] * factor,
@@ -568,6 +639,45 @@ mapping_fei = {
     ("General.authors", None)
 }
 
+def get_jeol_sightx_mapping(op):
+    mapping = {
+        'ImageDescription.ElectronGun.AccelerationVoltage':
+        ("Acquisition_instrument.TEM.beam_energy", lambda x: float(x)*0.001),  #keV
+        'ImageDescription.ElectronGun.BeamCurrent':
+        ("Acquisition_instrument.TEM.beam_current", lambda x: float(x)*0.001), #nA
+        'ImageDescription.Instruments':
+        ("Acquisition_instrument.TEM.microscope", None),
+
+        ## Gonio Stage
+        # depends on sample holder
+        #    ("Acquisition_instrument.TEM.Stage.rotation", None),  #deg
+        'ImageDescription.GonioStage.StagePosition.TX':
+        ("Acquisition_instrument.TEM.Stage.tilt_alpha", None), #deg
+        'ImageDescription.GonioStage.StagePosition.TY':
+        ("Acquisition_instrument.TEM.Stage.tilt_beta", None), #deg
+        # ToDo: MX(Motor)+PX(Piezo), MY+PY should be used
+        #    'ImageDescription.GonioStage.StagePosition.MX':
+        #    ("Acquisition_instrument.TEM.Stage.x", lambda x: float(x)*1E-6), # mm
+        #    'ImageDescription.GonioStage.StagePosition.MY':
+        #    ("Acquisition_instrument.TEM.Stage.y", lambda x: float(x)*1E-6), # mm
+        'ImageDescription.GonioStage.MZ':
+        ("Acquisition_instrument.TEM.Stage.z", lambda x: float(x)*1E-6), # mm
+
+        #    ("General.notes", None),
+        #    ("General.title", None),
+        'ImageDescription.Eos.EosMode':
+        ("Acquisition_instrument.TEM.acquisition_mode",
+         lambda x: "STEM" if x == "eosASID" else "TEM"),
+        
+        "ImageDescription.ImageFormingSystem.SelectorValue": None,
+    }
+    if op["ImageDescription"]["ImageFormingSystem"]["ModeString"] == "DIFF":
+        mapping["ImageDescription.ImageFormingSystem.SelectorValue"] = (
+            "Acquisition_instrument.TEM.camera_length", None)
+    else: # Mag Mode
+        mapping['ImageDescription.ImageFormingSystem.SelectorValue'] = (
+            "Acquisition_instrument.TEM.magnification", None)
+    return mapping
 
 mapping_cz_sem = {
     'CZ_SEM.ap_actualkv':
@@ -665,5 +775,7 @@ def get_metadata_mapping(tiff_page, op):
         return get_tvips_mapping(mapped_magnification)
     elif tiff_page.is_sis:
         return mapping_olympus_sis
+    elif op.get('Make', None) == "JEOL Ltd.":
+        return get_jeol_sightx_mapping(op)
     else:
         return {}
