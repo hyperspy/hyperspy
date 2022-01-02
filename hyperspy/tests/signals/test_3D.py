@@ -334,13 +334,6 @@ class TestRebinDtype:
     def test_rebin_dtype(self, dtype):
         s = self.s
         s.change_dtype(np.uint8)
-        if s._lazy and LooseVersion(dask.__version__) < LooseVersion("2.11.0"):
-            if dtype is not None:
-                with pytest.raises(ValueError):
-                    _ = s.rebin(scale=(5, 2, 1), dtype=dtype)
-            # exit to skip the rest of the test
-            return
-
         s2 = s.rebin(scale=(5, 2, 1), dtype=dtype)
         if dtype == None:
             # np.sum default uses platform (un)signed interger (input dependent)

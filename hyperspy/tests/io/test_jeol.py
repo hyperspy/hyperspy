@@ -170,6 +170,18 @@ def test_load_datacube_rebin_energy():
         _ = hs.load(filename, rebin_energy=10)
 
 
+# @pytest.mark.parametrize('cutoff_at_kV', [None, 10])
+# def test_load_datacube_cutoff_at_kV(cutoff_at_kV):
+#     gc.collect()
+#     filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[7]
+#     s = hs.load(filename, cutoff_at_kV=cutoff_at_kV)
+
+#     expected_size = 4096 if cutoff_at_kV is None else 1096
+#     assert s.axes_manager[-1].size == expected_size
+#     np.testing.assert_allclose(s.axes_manager[2].scale, 0.00999866)
+#     np.testing.assert_allclose(s.axes_manager[2].offset, -0.9606613)
+
+
 def test_load_datacube_cutoff_at_kV():
     cutoff_at_kV = 10.
     filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[7]
