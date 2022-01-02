@@ -18,7 +18,6 @@
 
 import numpy as np
 import pytest
-from distutils.version import LooseVersion
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
@@ -352,8 +351,6 @@ class TestBSS2D:
         self.mask_nav = mask_nav
         self.mask_sig = mask_sig
 
-    @pytest.mark.skipif(LooseVersion(np.__version__) < LooseVersion("1.17"),
-                        reason="derivative of lazy signal isn't supported with numpy < 1.17.0")
     def test_diff_axes_string_with_mask(self):
         self.s.learning_results.factors[5, :] = np.nan
         factors = self.s.get_decomposition_factors().inav[:3]
@@ -391,8 +388,6 @@ class TestBSS2D:
             matrix, self.s.learning_results.unmixing_matrix, atol=1e-5
         )
 
-    @pytest.mark.skipif(LooseVersion(np.__version__) < LooseVersion("1.17"),
-                        reason="derivative of lazy signal isn't supported with numpy < 1.17.0")
     def test_diff_axes_string_without_mask(self):
         factors = self.s.get_decomposition_factors().inav[:3].derivative(
             axis="x", order=1)
@@ -407,8 +402,6 @@ class TestBSS2D:
             matrix, self.s.learning_results.unmixing_matrix, atol=1e-3
         )
 
-    @pytest.mark.skipif(LooseVersion(np.__version__) < LooseVersion("1.17"),
-                        reason="derivative of lazy signal isn't supported with numpy < 1.17.0")
     def test_diff_axes_without_mask(self):
         factors = self.s.get_decomposition_factors().inav[:3].derivative(
             axis="y", order=1)
