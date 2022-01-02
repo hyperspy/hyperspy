@@ -371,9 +371,7 @@ def test_pts_lazy():
 
 
 def test_pts_frame_shift():
-    dir = TESTS_FILE_PATH2
-    dir2p = dir / 'Sample' / '00_Dummy-Data'
-    file = str(dir2p / test_files2[16])
+    file = TESTS_FILE_PATH2 / 'Sample' / '00_Dummy-Data' / test_files2[16]
 
     # without frame shift
     ref = hs.load(file, read_em_image=True, only_valid_data=False,
