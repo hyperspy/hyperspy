@@ -4,7 +4,7 @@ channels:
 dependencies:
 # We pin freetype and matplotlib for the image comparison
 - freetype=2.9
-- matplotlib-base=3.1
+- matplotlib-base=3.1.3
 - cython
 - pytest
 - pytest-mpl
