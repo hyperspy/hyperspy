@@ -902,7 +902,13 @@ class EELSModel(Model1D):
             edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
-                edge.intensity.free = True
+                edge.set_parameters_free(
+                    parameter_name_list=[
+                        "intensity",
+                        "onset_energy",
+                        "fine_structure_coeff",
+                    ]
+                )
 
     def fix_fine_structure(self, edges_list=None):
         """Fixes the fine structure of the edges given in edges_list.

@@ -190,6 +190,54 @@ class TestEELSModel:
         self.m.remove(comp)
         assert len(self.m) == 2
 
+    def test_free_edges(self):
+        m = self.m
+        m.components.B_K.onset_energy.free = False
+        m.components.B_K.intensity.free = False
+        m.components.B_K.fine_structure_coeff.free = False
+        m.components.C_K.onset_energy.free = False
+        m.components.C_K.intensity.free = False
+        m.components.C_K.fine_structure_coeff.free = False
+        m.free_edges(edges_list=[m.components.B_K])
+        assert m.components.B_K.onset_energy.free
+        assert m.components.B_K.intensity.free
+        assert m.components.B_K.fine_structure_coeff.free
+        assert not m.components.C_K.onset_energy.free
+        assert not m.components.C_K.intensity.free
+        assert not m.components.C_K.fine_structure_coeff.free
+        m.free_edges()
+        assert m.components.B_K.onset_energy.free
+        assert m.components.B_K.intensity.free
+        assert m.components.B_K.fine_structure_coeff.free
+        assert m.components.C_K.onset_energy.free
+        assert m.components.C_K.intensity.free
+        assert m.components.C_K.fine_structure_coeff.free
+
+
+@lazifyTestClass
+class TestEELSModelFitting:
+
+    def setup_method(self, method):
+        data = np.zeros(200)
+        data[25:] = 100
+        s = hs.signals.EELSSpectrum(data)
+        s.set_microscope_parameters(100, 10, 10)
+        s.axes_manager[-1].offset = 150
+        s.add_elements(("B", ))
+        self.m = s.create_model(auto_background=False)
+
+    def test_free_edges(self):
+        m = self.m
+        m.enable_fine_structure()
+        intensity = m.components.B_K.intensity.value
+        onset_energy = m.components.B_K.onset_energy.value
+        fine_structure_coeff = m.components.B_K.fine_structure_coeff.value
+        m.free_edges()
+        m.multifit()
+        assert intensity != m.components.B_K.intensity.value
+        assert onset_energy != m.components.B_K.onset_energy.value
+        assert fine_structure_coeff != m.components.B_K.fine_structure_coeff.value
+
 
 @lazifyTestClass
 class TestFitBackground:
