@@ -1,0 +1,1 @@
+Several improvements for EELSModel. Bugfixes for: free_edges, enable_free_onset_energy and disable_free_onset_energy. Several minor docstring typo and style fixes. Add unit tests for previously untested functions.
