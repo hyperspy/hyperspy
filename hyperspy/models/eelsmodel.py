@@ -133,7 +133,7 @@ class EELSModel(Model1D):
         """Classify components between background and ionization edge
         components.
 
-        This method should be called everytime that components are added and
+        This method should be called every time that components are added and
         removed. An ionization edge becomes background when its onset falls to
         the left of the first non-masked energy channel. The ionization edges
         are stored in a list in the `edges` attribute. They are sorted by
@@ -179,7 +179,8 @@ class EELSModel(Model1D):
         return [bc for bc in self._background_components if bc.active]
 
     def _add_edges_from_subshells_names(self, e_shells=None):
-        """Create the Edge instances and configure them appropiately
+        """Create the Edge instances and configure them appropriately
+
         Parameters
         ----------
         e_shells : list of strings
@@ -227,7 +228,7 @@ class EELSModel(Model1D):
             i1=0):
         """Adjust the fine structure of all edges to avoid overlapping
 
-        This function is called automatically everytime the position of an edge
+        This function is called automatically every time the position of an edge
         changes
 
         Parameters
@@ -332,8 +333,8 @@ class EELSModel(Model1D):
         the energy-loss-axis. First it fits only the background
         up to the first edge. It continues by deactivating all
         edges except the first one, then performs the fit. Then
-        it only activates the the first two, fits, and repeats
-        this until all edges are fitted simultanously.
+        it only activates the first two, fits, and repeats
+        this until all edges are fitted simultaneously.
 
         Other, non-EELSCLEdge components, are never deactivated,
         and fitted on every iteration.
@@ -405,7 +406,7 @@ class EELSModel(Model1D):
 
         """
 
-        # If there is no active background compenent do nothing
+        # If there is no active background component do nothing
         if not self._active_background_components:
             return
         iee = self._get_first_ionization_edge_energy(start_energy=start_energy)
@@ -575,7 +576,7 @@ class EELSModel(Model1D):
 
         Parameters
         ----------
-        edges_list : None or  list of EELSCLEdge or list of edge names
+        edges_list : None or list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
 
@@ -607,7 +608,7 @@ class EELSModel(Model1D):
 
         Parameters
         ----------
-        edges_list : None or  list of EELSCLEdge or list of edge names
+        edges_list : None or list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
 
@@ -638,7 +639,7 @@ class EELSModel(Model1D):
 
         Parameters
         ----------
-        edges_list : None or  list of EELSCLEdge or list of edge names
+        edges_list : None or list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
 
@@ -662,7 +663,7 @@ class EELSModel(Model1D):
         self.resolve_fine_structure()
 
     def enable_background(self):
-        """Enable the background componets.
+        """Enable the background components.
 
         """
         for component in self._background_components:
@@ -682,7 +683,7 @@ class EELSModel(Model1D):
 
         Parameters
         ----------
-        edges_list : None or  list of EELSCLEdge or list of edge names
+        edges_list : None or list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
 
@@ -713,7 +714,7 @@ class EELSModel(Model1D):
 
         Parameters
         ----------
-        edges_list : None or  list of EELSCLEdge or list of edge names
+        edges_list : None or list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
 
@@ -769,11 +770,11 @@ class EELSModel(Model1D):
         """Enable the automatic freeing of the onset_energy parameter during a
         smart fit for the edges listed in edges_list.
         If edges_list is None (default) the onset_energy of all the edges
-        with onset in the spectrum energy region will be freeed.
+        with onset in the spectrum energy region will be freed.
 
         Parameters
         ----------
-        edges_list : None or  list of EELSCLEdge or list of edge names
+        edges_list : None or list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
 
@@ -800,12 +801,12 @@ class EELSModel(Model1D):
         smart fit for the edges listed in edges_list.
         If edges_list is None (default) the onset_energy of all the edges
         with onset in the spectrum energy region will not be freed.
-        Note that if their atribute edge.onset_energy.free is True, the
+        Note that if their attribute edge.onset_energy.free is True, the
         parameter will be free during the smart fit.
 
         Parameters
         ----------
-        edges_list : None or  list of EELSCLEdge or list of edge names
+        edges_list : None or list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
 
@@ -834,7 +835,7 @@ class EELSModel(Model1D):
 
         Parameters
         ----------
-        edges_list : None or  list of EELSCLEdge or list of edge names
+        edges_list : None or list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
 
@@ -860,11 +861,11 @@ class EELSModel(Model1D):
 
     def free_edges(self, edges_list=None):
         """Frees all the parameters of the edges given in edges_list.
-        If edges_list is None (default) all the edges will be freeed.
+        If edges_list is None (default) all the edges will be freed.
 
         Parameters
         ----------
-        edges_list : None or  list of EELSCLEdge or list of edge names
+        edges_list : None or list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
 
@@ -888,12 +889,12 @@ class EELSModel(Model1D):
                 edge.intensity.free = True
 
     def fix_fine_structure(self, edges_list=None):
-        """Fixes all the parameters of the edges given in edges_list.
+        """Fixes the fine structure of the edges given in edges_list.
         If edges_list is None (default) all the edges will be fixed.
 
         Parameters
         ----------
-        edges_list : None or  list of EELSCLEdge or list of edge names
+        edges_list : None or list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
 
@@ -916,12 +917,12 @@ class EELSModel(Model1D):
                 edge.fine_structure_coeff.free = False
 
     def free_fine_structure(self, edges_list=None):
-        """Frees all the parameters of the edges given in edges_list.
-        If edges_list is None (default) all the edges will be freeed.
+        """Frees the fine structure of the edges given in edges_list.
+        If edges_list is None (default) all the edges will be freed.
 
         Parameters
         ----------
-        edges_list : None or  list of EELSCLEdge or list of edge names
+        edges_list : None or list of EELSCLEdge or list of edge names
             If None, the operation is performed on all the edges in the model.
             Otherwise, it will be performed only on the listed components.
 
@@ -944,7 +945,7 @@ class EELSModel(Model1D):
                 edge.fine_structure_coeff.free = True
 
     def suspend_auto_fine_structure_width(self):
-        """Disable the automatic adjustament of the core-loss edges fine
+        """Disable the automatic adjustment of the core-loss edges fine
         structure width.
 
         See Also
@@ -958,14 +959,13 @@ class EELSModel(Model1D):
             warnings.warn("Already suspended, does nothing.")
 
     def resume_auto_fine_structure_width(self, update=True):
-        """Enable the automatic adjustament of the core-loss edges fine
+        """Enable the automatic adjustment of the core-loss edges fine
         structure width.
 
         Parameters
         ----------
         update : bool, optional
             If True, also execute the automatic adjustment (default).
-
 
         See Also
         --------
