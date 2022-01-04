@@ -183,6 +183,57 @@ class TestEELSModel:
         assert (self.m._get_start_energy(100) ==
                 150)
 
+    def test_enable_free_onset_energy(self):
+        m = self.m
+        m.components.B_K.onset_energy.free = False
+        m.components.C_K.onset_energy.free = False
+        m.enable_free_onset_energy(edges_list=[m.components.B_K])
+        assert m.components.B_K.onset_energy.free
+        assert not m.components.C_K.onset_energy.free
+        m.enable_free_onset_energy()
+        assert m.components.B_K.onset_energy.free
+        assert m.components.C_K.onset_energy.free
+
+    def test_disable_free_onset_energy(self):
+        m = self.m
+        m.components.B_K.onset_energy.free = True
+        m.components.C_K.onset_energy.free = True
+        m.disable_free_onset_energy(edges_list=[m.components.B_K])
+        assert not m.components.B_K.onset_energy.free
+        assert m.components.C_K.onset_energy.free
+        m.disable_free_onset_energy()
+        assert not m.components.B_K.onset_energy.free
+        assert not m.components.C_K.onset_energy.free
+
+
+@lazifyTestClass
+class TestEELSModelFitting:
+
+    def setup_method(self, method):
+        data = np.zeros(200)
+        data[25:] = 100
+        s = hs.signals.EELSSpectrum(data)
+        s.set_microscope_parameters(100, 10, 10)
+        s.axes_manager[-1].offset = 150
+        s.add_elements(("B", ))
+        self.m = s.create_model(auto_background=False)
+
+    def test_enable_free_onset_energy_fitting_test(self):
+        m = self.m
+        m.components.B_K.onset_energy.free = False
+        onset_energy = m.components.B_K.onset_energy.value
+        m.enable_free_onset_energy()
+        m.multifit()
+        assert onset_energy != m.components.B_K.onset_energy.value
+
+    def test_disable_free_onset_energy_fitting_test(self):
+        m = self.m
+        m.components.B_K.onset_energy.free = True
+        onset_energy = m.components.B_K.onset_energy.value
+        m.disable_free_onset_energy()
+        m.multifit()
+        assert onset_energy == m.components.B_K.onset_energy.value
+
 
 @lazifyTestClass
 class TestFitBackground:

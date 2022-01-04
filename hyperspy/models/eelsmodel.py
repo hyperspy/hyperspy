@@ -794,7 +794,7 @@ class EELSModel(Model1D):
             edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
-                edge.free_onset_energy = True
+                edge.onset_energy.free = True
 
     def disable_free_onset_energy(self, edges_list=None):
         """Disable the automatic freeing of the onset_energy parameter during a
@@ -827,7 +827,7 @@ class EELSModel(Model1D):
             edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
-                edge.free_onset_energy = True
+                edge.onset_energy.free = False
 
     def fix_edges(self, edges_list=None):
         """Fixes all the parameters of the edges given in edges_list.
