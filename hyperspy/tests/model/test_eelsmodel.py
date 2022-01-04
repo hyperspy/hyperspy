@@ -100,6 +100,7 @@ class TestEELSModel:
         s.set_microscope_parameters(100, 10, 10)
         s.axes_manager[-1].offset = 150
         s.add_elements(("B", "C"))
+        self.s = s
         self.m = s.create_model()
 
     def test_suspend_auto_fsw(self):
@@ -120,6 +121,13 @@ class TestEELSModel:
         m.enable_fine_structure()
         m.resolve_fine_structure()
         assert window == m["B_K"].fine_structure_width
+
+    def test_disable_fine_structure(self):
+        self.m.components.C_K.fine_structure_active = True
+        self.m.components.B_K.fine_structure_active = True
+        self.m.disable_fine_structure()
+        assert not self.m.components.C_K.fine_structure_active
+        assert not self.m.components.B_K.fine_structure_active
 
     def test_get_first_ionization_edge_energy_C_B(self):
         assert (self.m._get_first_ionization_edge_energy() ==
@@ -183,6 +191,89 @@ class TestEELSModel:
         assert (self.m._get_start_energy(100) ==
                 150)
 
+    def test_fit_wrong_kind(self):
+        with pytest.raises(ValueError):
+            self.m.fit(kind="wrongkind")
+
+    def test_enable_background(self):
+        self.m.components.PowerLaw.active = False
+        self.m.enable_background()
+        assert self.m.components.PowerLaw.active
+
+    def test_disable_background(self):
+        self.m.components.PowerLaw.active = True
+        self.m.disable_background()
+        assert not self.m.components.PowerLaw.active
+
+    def test_signal1d_property(self):
+        assert self.s == self.m.signal1D
+        s_new = hs.signals.EELSSpectrum(np.ones(200))
+        s_new.set_microscope_parameters(100, 10, 10)
+        self.m.signal1D = s_new
+        assert self.m.signal1D == s_new
+
+    def test_signal1d_property_wrong_value_setter(self):
+        m = self.m
+        s = hs.signals.Signal1D(np.ones(200))
+        with pytest.raises(ValueError):
+            self.m.signal1D = s
+
+    def test_remove(self):
+        m = self.m
+        c_k = m.components.C_K
+        assert c_k in m
+        m.remove(c_k)
+        assert not (c_k in m)
+
+    def test_quantify(self):
+        self.m.quantify()
+
+    def test_enable_edges(self):
+        m = self.m
+        m.components.B_K.active = False
+        m.components.C_K.active = False
+        m.enable_edges(edges_list=[m.components.B_K])
+        assert m.components.B_K.active
+        assert not m.components.C_K.active
+        m.enable_edges()
+        assert m.components.B_K.active
+        assert m.components.C_K.active
+
+    def test_disable_edges(self):
+        m = self.m
+        m.components.B_K.active = True
+        m.components.C_K.active = True
+        m.disable_edges(edges_list=[m.components.B_K])
+        assert not m.components.B_K.active
+        assert m.components.C_K.active
+        m.disable_edges()
+        assert not m.components.B_K.active
+        assert not m.components.C_K.active
+
+    def test_set_all_edges_intensities_positive(self):
+        m = self.m
+        m.components.B_K.intensity.ext_force_positive = False
+        m.components.B_K.intensity.ext_bounded = False
+        m.components.C_K.intensity.ext_force_positive = False
+        m.components.C_K.intensity.ext_bounded = False
+        m.set_all_edges_intensities_positive()
+        assert m.components.B_K.intensity.ext_force_positive
+        assert m.components.B_K.intensity.ext_bounded
+        assert m.components.C_K.intensity.ext_force_positive
+        assert m.components.C_K.intensity.ext_bounded
+
+    def test_unset_all_edges_intensities_positive(self):
+        m = self.m
+        m.components.B_K.intensity.ext_force_positive = True
+        m.components.B_K.intensity.ext_bounded = True
+        m.components.C_K.intensity.ext_force_positive = True
+        m.components.C_K.intensity.ext_bounded = True
+        m.unset_all_edges_intensities_positive()
+        assert not m.components.B_K.intensity.ext_force_positive
+        assert not m.components.B_K.intensity.ext_bounded
+        assert not m.components.C_K.intensity.ext_force_positive
+        assert not m.components.C_K.intensity.ext_bounded
+
     def test_enable_free_onset_energy(self):
         m = self.m
         m.components.B_K.onset_energy.free = False
@@ -205,6 +296,29 @@ class TestEELSModel:
         assert not m.components.B_K.onset_energy.free
         assert not m.components.C_K.onset_energy.free
 
+    def test_fix_edges(self):
+        m = self.m
+        m.components.B_K.onset_energy.free = True
+        m.components.B_K.intensity.free = True
+        m.components.B_K.fine_structure_coeff.free = True
+        m.components.C_K.onset_energy.free = True
+        m.components.C_K.intensity.free = True
+        m.components.C_K.fine_structure_coeff.free = True
+        m.fix_edges(edges_list=[m.components.B_K])
+        assert not m.components.B_K.onset_energy.free
+        assert not m.components.B_K.intensity.free
+        assert not m.components.B_K.fine_structure_coeff.free
+        assert m.components.C_K.onset_energy.free
+        assert m.components.C_K.intensity.free
+        assert m.components.C_K.fine_structure_coeff.free
+        m.fix_edges()
+        assert not m.components.B_K.onset_energy.free
+        assert not m.components.B_K.intensity.free
+        assert not m.components.B_K.fine_structure_coeff.free
+        assert not m.components.C_K.onset_energy.free
+        assert not m.components.C_K.intensity.free
+        assert not m.components.C_K.fine_structure_coeff.free
+
     def test_free_edges(self):
         m = self.m
         m.components.B_K.onset_energy.free = False
@@ -226,6 +340,28 @@ class TestEELSModel:
         assert m.components.B_K.fine_structure_coeff.free
         assert m.components.C_K.onset_energy.free
         assert m.components.C_K.intensity.free
+        assert m.components.C_K.fine_structure_coeff.free
+
+    def test_fix_fine_structure(self):
+        m = self.m
+        m.components.B_K.fine_structure_coeff.free = True
+        m.components.C_K.fine_structure_coeff.free = True
+        m.fix_fine_structure(edges_list=[m.components.B_K])
+        assert not m.components.B_K.fine_structure_coeff.free
+        assert m.components.C_K.fine_structure_coeff.free
+        m.fix_fine_structure()
+        assert not m.components.B_K.fine_structure_coeff.free
+        assert not m.components.C_K.fine_structure_coeff.free
+
+    def test_free_fine_structure(self):
+        m = self.m
+        m.components.B_K.fine_structure_coeff.free = False
+        m.components.C_K.fine_structure_coeff.free = False
+        m.free_fine_structure(edges_list=[m.components.B_K])
+        assert m.components.B_K.fine_structure_coeff.free
+        assert not m.components.C_K.fine_structure_coeff.free
+        m.free_fine_structure()
+        assert m.components.B_K.fine_structure_coeff.free
         assert m.components.C_K.fine_structure_coeff.free
 
 
@@ -269,6 +405,19 @@ class TestEELSModelFitting:
         assert onset_energy != m.components.B_K.onset_energy.value
         assert fine_structure_coeff != m.components.B_K.fine_structure_coeff.value
 
+    def test_fix_edges(self):
+        m = self.m
+        m.enable_fine_structure()
+        intensity = m.components.B_K.intensity.value
+        onset_energy = m.components.B_K.onset_energy.value
+        fine_structure_coeff = m.components.B_K.fine_structure_coeff.value
+        m.free_edges()
+        m.fix_edges()
+        m.multifit()
+        assert intensity == m.components.B_K.intensity.value
+        assert onset_energy == m.components.B_K.onset_energy.value
+        assert fine_structure_coeff == m.components.B_K.fine_structure_coeff.value
+
 
 @lazifyTestClass
 class TestFitBackground:
@@ -308,3 +457,24 @@ class TestFitBackground:
                         2.14)
         assert not self.m["B_K"].active
         assert not self.m["C_K"].active
+
+
+@lazifyTestClass
+class TestFitBackground2D:
+
+    def setup_method(self):
+        pl = hs.model.components1D.PowerLaw()
+        data = np.empty((2, 250))
+        data[0] = pl.function(np.arange(150, 400))
+        pl.r.value = 1.5
+        data[1] = pl.function(np.arange(150, 400))
+        s = hs.signals.EELSSpectrum(data)
+        s.set_microscope_parameters(100, 10, 10)
+        s.axes_manager[-1].offset = 150
+        self.s = s
+        self.m = s.create_model()
+
+    def test_only_current_false(self):
+        self.m.fit_background(only_current=False)
+        residual = self.s - self.m.as_signal()
+        assert pytest.approx(residual.data) == 0
