@@ -205,6 +205,29 @@ class TestEELSModel:
         assert not m.components.B_K.onset_energy.free
         assert not m.components.C_K.onset_energy.free
 
+    def test_free_edges(self):
+        m = self.m
+        m.components.B_K.onset_energy.free = False
+        m.components.B_K.intensity.free = False
+        m.components.B_K.fine_structure_coeff.free = False
+        m.components.C_K.onset_energy.free = False
+        m.components.C_K.intensity.free = False
+        m.components.C_K.fine_structure_coeff.free = False
+        m.free_edges(edges_list=[m.components.B_K])
+        assert m.components.B_K.onset_energy.free
+        assert m.components.B_K.intensity.free
+        assert m.components.B_K.fine_structure_coeff.free
+        assert not m.components.C_K.onset_energy.free
+        assert not m.components.C_K.intensity.free
+        assert not m.components.C_K.fine_structure_coeff.free
+        m.free_edges()
+        assert m.components.B_K.onset_energy.free
+        assert m.components.B_K.intensity.free
+        assert m.components.B_K.fine_structure_coeff.free
+        assert m.components.C_K.onset_energy.free
+        assert m.components.C_K.intensity.free
+        assert m.components.C_K.fine_structure_coeff.free
+
 
 @lazifyTestClass
 class TestEELSModelFitting:
@@ -233,6 +256,18 @@ class TestEELSModelFitting:
         m.disable_free_onset_energy()
         m.multifit()
         assert onset_energy == m.components.B_K.onset_energy.value
+
+    def test_free_edges(self):
+        m = self.m
+        m.enable_fine_structure()
+        intensity = m.components.B_K.intensity.value
+        onset_energy = m.components.B_K.onset_energy.value
+        fine_structure_coeff = m.components.B_K.fine_structure_coeff.value
+        m.free_edges()
+        m.multifit()
+        assert intensity != m.components.B_K.intensity.value
+        assert onset_energy != m.components.B_K.onset_energy.value
+        assert fine_structure_coeff != m.components.B_K.fine_structure_coeff.value
 
 
 @lazifyTestClass

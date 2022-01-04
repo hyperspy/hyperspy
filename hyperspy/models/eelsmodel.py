@@ -887,6 +887,8 @@ class EELSModel(Model1D):
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.intensity.free = True
+                edge.onset_energy.free = True
+                edge.fine_structure_coeff.free = True
 
     def fix_fine_structure(self, edges_list=None):
         """Fixes the fine structure of the edges given in edges_list.
