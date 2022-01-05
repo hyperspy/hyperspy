@@ -1198,17 +1198,20 @@ def process_function_blockwise(data,
         # There aren't any BaseSignals for iterating
         for nav_index in np.ndindex(chunk_nav_shape):
             islice = np.s_[nav_index]
-            output_array[islice] = function(data[islice],
-                                            **kwargs)
+            output_array[islice] = function(data[islice], **kwargs)
     else:
         # There are BaseSignals which iterate alongside the data
         for index in np.ndindex(chunk_nav_shape):
             islice = np.s_[index]
+            iter_dict = {}
+            for key, a in zip(arg_keys, args):
+                arg_i = a[islice].squeeze()
+                # Some functions does not handle 0-dimension NumPy arrys
+                if arg_i.shape == ():
+                    arg_i = arg_i[()]
+                iter_dict[key] = arg_i
 
-            iter_dict = {key: a[islice].squeeze() for key, a in zip(arg_keys,args)}
-            output_array[islice] = function(data[islice],
-                                            **iter_dict,
-                                            **kwargs)
+            output_array[islice] = function(data[islice], **iter_dict, **kwargs)
     if not (chunk_nav_shape == output_array.shape):
         try:
             output_array = output_array.squeeze(-1)
@@ -1217,34 +1220,39 @@ def process_function_blockwise(data,
     return output_array
 
 
-def guess_output_signal_size(test_signal,
+def guess_output_signal_size(test_data,
                              function,
                              ragged,
                              **kwargs):
     """This function is for guessing the output signal shape and size.
-    It will attempt to apply the function to some test signal and then output
+    It will attempt to apply the function to some test data and then output
     the resulting signal shape and datatype.
 
     Parameters
     ----------
-    test_signal: BaseSignal
-        A test signal for the function to be applied to. A signal
-        with 0 navigation dimensions
-    function: function
+    test_data : NumPy array
+        Data from a test signal for the function to be applied to.
+        The data must be from a signal with 0 navigation dimensions.
+    function : function
         The function to be applied to the data
-    ragged: bool
+    ragged : bool
         If the data is ragged then the output signal size is () and the
         data type is 'object'
-    **kwargs: dict
+    **kwargs : dict
         Any other keyword arguments passed to the function.
     """
     if ragged:
         output_dtype = object
         output_signal_size = ()
     else:
-        output = function(test_signal, **kwargs)
-        output_dtype = output.dtype
-        output_signal_size = output.shape
+        output = function(test_data, **kwargs)
+        try:
+            output_dtype = output.dtype
+            output_signal_size = output.shape
+        except AttributeError:
+            output = np.asarray(output)
+            output_dtype = output.dtype
+            output_signal_size = output.shape
     return output_signal_size, output_dtype
 
 
