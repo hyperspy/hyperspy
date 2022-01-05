@@ -1152,40 +1152,6 @@ def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
                           optimize=optimize) for sig in args]
 
 
-def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
-    """To be used in _map_iterate of BaseSignal and LazySignal.
-
-    Moved to a separate method to reduce code duplication.
-    """
-    from hyperspy.signal import BaseSignal
-    from itertools import repeat
-
-    iterators = tuple(iterating_kwargs[key]._cycle_signal()
-                      if isinstance(iterating_kwargs[key], BaseSignal) else iterating_kwargs[key]
-                      for key in iterating_kwargs)
-    # make all kwargs iterating for simplicity:
-    iterating = tuple(key for key in iterating_kwargs)
-    for k, v in kwargs.items():
-        if k not in iterating:
-            iterating += k,
-            iterators += repeat(v, nav_size),
-
-    def figure_out_kwargs(data):
-        _kwargs = {k: v for k, v in zip(iterating, data[1:])}
-        for k in iterating_kwargs:
-            if (isinstance(iterating_kwargs[k], BaseSignal) and
-                isinstance(_kwargs[k], np.ndarray) and
-                    len(_kwargs[k]) == 1):
-                _kwargs[k] = _kwargs[k][0]
-        return data[0], _kwargs
-
-    def func(*args):
-        dat, these_kwargs = figure_out_kwargs(*args)
-        return function(dat, **these_kwargs)
-
-    return func, iterators
-
-
 def process_function_blockwise(data,
                                *args,
                                function,
@@ -1280,45 +1246,6 @@ def guess_output_signal_size(test_signal,
         output_dtype = output.dtype
         output_signal_size = output.shape
     return output_signal_size, output_dtype
-
-
-def map_result_construction(signal,
-                            inplace,
-                            result,
-                            ragged,
-                            sig_shape=None,
-                            lazy=False):
-    res = None
-    if inplace:
-        sig = signal
-    else:
-        res = sig = signal._deepcopy_with_new_data()
-
-    if ragged:
-        axes_dicts = signal.axes_manager._get_navigation_axes_dicts()
-        sig.axes_manager.__init__(axes_dicts)
-        sig.axes_manager._ragged = True
-        sig.data = result
-        sig._assign_subclass()
-    else:
-        if not sig._lazy and sig.data.shape == result.shape and np.can_cast(
-                result.dtype, sig.data.dtype):
-            sig.data[:] = result
-        else:
-            sig.data = result
-
-        # remove if too many axes
-        sig.axes_manager.remove(sig.axes_manager.signal_axes[len(sig_shape):])
-        # add additional required axes
-        for ind in range(
-                len(sig_shape) - sig.axes_manager.signal_dimension, 0, -1):
-            sig.axes_manager._append_axis(size=sig_shape[-ind], navigate=False)
-
-        sig.get_dimensions_from_data()
-        if not sig.axes_manager._axes:
-            add_scalar_axis(sig, lazy=lazy)
-
-    return res
 
 
 def multiply(iterable):
