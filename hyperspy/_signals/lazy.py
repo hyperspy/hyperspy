@@ -37,8 +37,7 @@ from hyperspy.misc.array_tools import (_requires_linear_rebin,
                                        get_signal_chunk_slice)
 from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import (multiply, dummy_context_manager, isiterable,
-                                 process_function_blockwise, guess_output_signal_size,)
+from hyperspy.misc.utils import multiply, dummy_context_manager, isiterable
 
 
 _logger = logging.getLogger(__name__)
@@ -705,136 +704,6 @@ class LazySignal(BaseSignal):
             da.percentile(_raveled, [75, ]),
             da.nanmax(data), )
         return _mean, _std, _min, _q1, _q2, _q3, _max
-
-    def _map_all(self, function, inplace=True, **kwargs):
-        calc_result = dd(function)(self.data, **kwargs)
-        if inplace:
-            self.data = da.from_delayed(calc_result, shape=self.data.shape,
-                                        dtype=self.data.dtype)
-            return None
-        return self._deepcopy_with_new_data(calc_result)
-
-    def _map_iterate(self,
-                     function,
-                     iterating_kwargs=None,
-                     show_progressbar=None,
-                     parallel=None,
-                     max_workers=None,
-                     ragged=False,
-                     inplace=True,
-                     output_signal_size=None,
-                     output_dtype=None,
-                     **kwargs):
-        # unpacking keyword arguments
-        if iterating_kwargs is None:
-            iterating_kwargs = {}
-        elif isinstance(iterating_kwargs, (tuple, list)):
-            iterating_kwargs = dict((k, v) for k, v in iterating_kwargs)
-
-        nav_indexes = self.axes_manager.navigation_indices_in_array
-        if ragged and inplace:
-            raise ValueError("Ragged and inplace are not compatible with a lazy signal")
-        chunk_span = np.equal(self.data.chunksize, self.data.shape)
-        chunk_span = [chunk_span[i] for i in self.axes_manager.signal_indices_in_array]
-        if not all(chunk_span):
-            _logger.info("The chunk size needs to span the full signal size, rechunking...")
-            old_sig = self.rechunk(inplace=False)
-        else:
-            old_sig = self
-        autodetermine = (output_signal_size is None or output_dtype is None) # try to guess output dtype and sig size?
-        nav_chunks = old_sig._get_navigation_chunk_size()
-        args = ()
-        arg_keys = ()
-
-        for key in iterating_kwargs:
-            if not isinstance(iterating_kwargs[key], BaseSignal):
-                iterating_kwargs[key] = BaseSignal(iterating_kwargs[key].T).T
-                warnings.warn(
-                    "Passing arrays as keyword arguments can be ambigous. "
-                    "This is deprecated and will be removed in HyperSpy 2.0. "
-                    "Pass signal instances instead.",
-                    VisibleDeprecationWarning)
-            if iterating_kwargs[key]._lazy:
-                if iterating_kwargs[key]._get_navigation_chunk_size() != nav_chunks:
-                    iterating_kwargs[key].rechunk(nav_chunks=nav_chunks)
-            else:
-                iterating_kwargs[key] = iterating_kwargs[key].as_lazy()
-                iterating_kwargs[key].rechunk(nav_chunks=nav_chunks)
-            extra_dims = (len(old_sig.axes_manager.signal_shape) -
-                          len(iterating_kwargs[key].axes_manager.signal_shape))
-            if extra_dims > 0:
-                old_shape = iterating_kwargs[key].data.shape
-                new_shape = old_shape + (1,)*extra_dims
-                args += (iterating_kwargs[key].data.reshape(new_shape), )
-            else:
-                args += (iterating_kwargs[key].data, )
-            arg_keys += (key,)
-
-        if autodetermine: #trying to guess the output d-type and size from one signal
-            testing_kwargs = {}
-            for key in iterating_kwargs:
-                test_ind = (0,) * len(old_sig.axes_manager.navigation_axes)
-                testing_kwargs[key] = np.squeeze(iterating_kwargs[key].inav[test_ind].data).compute()
-            testing_kwargs = {**kwargs, **testing_kwargs}
-            test_data = np.array(old_sig.inav[(0,) * len(old_sig.axes_manager.navigation_shape)].data.compute())
-            output_signal_size, output_dtype = guess_output_signal_size(test_signal=test_data,
-                                                                        function=function,
-                                                                        ragged=ragged,
-                                                                        **testing_kwargs)
-        # Dropping/Adding Axes
-        if output_signal_size == old_sig.axes_manager.signal_shape:
-            drop_axis = None
-            new_axis = None
-            axes_changed = False
-        else:
-            axes_changed = True
-            if len(output_signal_size) != len(old_sig.axes_manager.signal_shape):
-                drop_axis = old_sig.axes_manager.signal_indices_in_array
-                new_axis = tuple(range(len(nav_indexes), len(nav_indexes) + len(output_signal_size)))
-            else:
-                drop_axis = [it for (o, i, it) in zip(output_signal_size,
-                                                      old_sig.axes_manager.signal_shape,
-                                                      old_sig.axes_manager.signal_indices_in_array)
-                             if o != i]
-                new_axis = drop_axis
-        chunks = tuple([old_sig.data.chunks[i] for i in sorted(nav_indexes)]) + output_signal_size
-        mapped = da.map_blocks(process_function_blockwise,
-                               old_sig.data,
-                               *args,
-                               function=function,
-                               nav_indexes=nav_indexes,
-                               drop_axis=drop_axis,
-                               new_axis=new_axis,
-                               output_signal_size=output_signal_size,
-                               dtype=output_dtype,
-                               chunks=chunks,
-                               arg_keys=arg_keys,
-                               **kwargs)
-        if inplace:
-            self.data = mapped
-            sig = self
-        else:
-            sig = self._deepcopy_with_new_data(mapped)
-            if ragged:
-                axes_dicts = self.axes_manager._get_axes_dicts(
-                    self.axes_manager.navigation_axes
-                    )
-                sig.axes_manager.__init__(axes_dicts)
-                sig.axes_manager._ragged = True
-                sig._assign_subclass()
-                return sig
-
-        # remove if too many axes
-        if axes_changed:
-            sig.axes_manager.remove(sig.axes_manager.signal_axes[len(output_signal_size):])
-            # add additional required axes
-            for ind in range(
-                    len(output_signal_size) - sig.axes_manager.signal_dimension, 0, -1):
-                sig.axes_manager._append_axis(size=output_signal_size[-ind],
-                                              navigate=False)
-        if not ragged:
-            sig.get_dimensions_from_data()
-        return sig
 
     def _block_iterator(self,
                         flat_signal=True,

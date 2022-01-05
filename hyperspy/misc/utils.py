@@ -1152,40 +1152,6 @@ def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
                           optimize=optimize) for sig in args]
 
 
-def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
-    """To be used in _map_iterate of BaseSignal and LazySignal.
-
-    Moved to a separate method to reduce code duplication.
-    """
-    from hyperspy.signal import BaseSignal
-    from itertools import repeat
-
-    iterators = tuple(iterating_kwargs[key]._cycle_signal()
-                      if isinstance(iterating_kwargs[key], BaseSignal) else iterating_kwargs[key]
-                      for key in iterating_kwargs)
-    # make all kwargs iterating for simplicity:
-    iterating = tuple(key for key in iterating_kwargs)
-    for k, v in kwargs.items():
-        if k not in iterating:
-            iterating += k,
-            iterators += repeat(v, nav_size),
-
-    def figure_out_kwargs(data):
-        _kwargs = {k: v for k, v in zip(iterating, data[1:])}
-        for k in iterating_kwargs:
-            if (isinstance(iterating_kwargs[k], BaseSignal) and
-                isinstance(_kwargs[k], np.ndarray) and
-                    len(_kwargs[k]) == 1):
-                _kwargs[k] = _kwargs[k][0]
-        return data[0], _kwargs
-
-    def func(*args):
-        dat, these_kwargs = figure_out_kwargs(*args)
-        return function(dat, **these_kwargs)
-
-    return func, iterators
-
-
 def process_function_blockwise(data,
                                *args,
                                function,
@@ -1232,17 +1198,20 @@ def process_function_blockwise(data,
         # There aren't any BaseSignals for iterating
         for nav_index in np.ndindex(chunk_nav_shape):
             islice = np.s_[nav_index]
-            output_array[islice] = function(data[islice],
-                                            **kwargs)
+            output_array[islice] = function(data[islice], **kwargs)
     else:
         # There are BaseSignals which iterate alongside the data
         for index in np.ndindex(chunk_nav_shape):
             islice = np.s_[index]
+            iter_dict = {}
+            for key, a in zip(arg_keys, args):
+                arg_i = a[islice].squeeze()
+                # Some functions does not handle 0-dimension NumPy arrys
+                if arg_i.shape == ():
+                    arg_i = arg_i[()]
+                iter_dict[key] = arg_i
 
-            iter_dict = {key: a[islice].squeeze() for key, a in zip(arg_keys,args)}
-            output_array[islice] = function(data[islice],
-                                            **iter_dict,
-                                            **kwargs)
+            output_array[islice] = function(data[islice], **iter_dict, **kwargs)
     if not (chunk_nav_shape == output_array.shape):
         try:
             output_array = output_array.squeeze(-1)
@@ -1251,74 +1220,40 @@ def process_function_blockwise(data,
     return output_array
 
 
-def guess_output_signal_size(test_signal,
+def guess_output_signal_size(test_data,
                              function,
                              ragged,
                              **kwargs):
     """This function is for guessing the output signal shape and size.
-    It will attempt to apply the function to some test signal and then output
+    It will attempt to apply the function to some test data and then output
     the resulting signal shape and datatype.
 
     Parameters
     ----------
-    test_signal: BaseSignal
-        A test signal for the function to be applied to. A signal
-        with 0 navigation dimensions
-    function: function
+    test_data : NumPy array
+        Data from a test signal for the function to be applied to.
+        The data must be from a signal with 0 navigation dimensions.
+    function : function
         The function to be applied to the data
-    ragged: bool
+    ragged : bool
         If the data is ragged then the output signal size is () and the
         data type is 'object'
-    **kwargs: dict
+    **kwargs : dict
         Any other keyword arguments passed to the function.
     """
     if ragged:
         output_dtype = object
         output_signal_size = ()
     else:
-        output = function(test_signal, **kwargs)
-        output_dtype = output.dtype
-        output_signal_size = output.shape
+        output = function(test_data, **kwargs)
+        try:
+            output_dtype = output.dtype
+            output_signal_size = output.shape
+        except AttributeError:
+            output = np.asarray(output)
+            output_dtype = output.dtype
+            output_signal_size = output.shape
     return output_signal_size, output_dtype
-
-
-def map_result_construction(signal,
-                            inplace,
-                            result,
-                            ragged,
-                            sig_shape=None,
-                            lazy=False):
-    res = None
-    if inplace:
-        sig = signal
-    else:
-        res = sig = signal._deepcopy_with_new_data()
-
-    if ragged:
-        axes_dicts = signal.axes_manager._get_navigation_axes_dicts()
-        sig.axes_manager.__init__(axes_dicts)
-        sig.axes_manager._ragged = True
-        sig.data = result
-        sig._assign_subclass()
-    else:
-        if not sig._lazy and sig.data.shape == result.shape and np.can_cast(
-                result.dtype, sig.data.dtype):
-            sig.data[:] = result
-        else:
-            sig.data = result
-
-        # remove if too many axes
-        sig.axes_manager.remove(sig.axes_manager.signal_axes[len(sig_shape):])
-        # add additional required axes
-        for ind in range(
-                len(sig_shape) - sig.axes_manager.signal_dimension, 0, -1):
-            sig.axes_manager._append_axis(size=sig_shape[-ind], navigate=False)
-
-        sig.get_dimensions_from_data()
-        if not sig.axes_manager._axes:
-            add_scalar_axis(sig, lazy=lazy)
-
-    return res
 
 
 def multiply(iterable):

@@ -997,7 +997,8 @@ arguments as in the following example.
 If all function calls do not return identically-shaped results, only navigation
 information is preserved, and the final result is an array where
 each element corresponds to the result of the function (or arbitrary object
-type). As such, most HyperSpy functions cannot operate on such Signal, and the
+type). These are :ref:`ragged arrays<signal.ragged>` and has the dtype `object`.
+As such, most HyperSpy functions cannot operate on such signals, and the
 data should be accessed directly.
 
 The ``inplace`` keyword (by default ``True``) of the
@@ -1012,12 +1013,13 @@ data (default, ``True``) or storing it to a new signal (``False``).
     >>> result = image_stack.map(scipy.ndimage.rotate,
     ...                            angle=angles.T,
     ...                            inplace=False,
+    ...                            ragged=True,
     ...                            reshape=True)
     100%|████████████████████████████████████████████| 4/4 [00:00<00:00, 18.42it/s]
 
     >>> result
     <BaseSignal, title: , dimensions: (4|)>
-    >>> image_stack.data.dtype
+    >>> result.data.dtype
     dtype('O')
     >>> for d in result.data.flat:
     ...     print(d.shape)
@@ -1037,9 +1039,9 @@ The execution can be sped up by passing ``parallel`` keyword to the
     >>> def slow_func(data):
     ...     time.sleep(1.)
     ...     return data + 1
-    >>> s = hs.signals.Signal1D(np.arange(20).reshape((20,1)))
+    >>> s = hs.signals.Signal1D(np.arange(40).reshape((20, 2)))
     >>> s
-    <Signal1D, title: , dimensions: (20|1)>
+    <Signal1D, title: , dimensions: (20|2)>
     >>> s.map(slow_func, parallel=False)
     100%|██████████████████████████████████████| 20/20 [00:20<00:00,  1.00s/it]
     >>> # some operations will be done in parallel:
@@ -1066,6 +1068,46 @@ navigation dimension of s.
     >>> d = hs.signals.Signal1D(np.cos(np.linspace(0., 2*np.pi, 512)))
     >>> s.map(lambda A, B: A * B, B=d)
     100%|██████████| 10/10 [00:00<00:00, 2573.19it/s]
+
+
+.. _lazy_output-map-label:
+
+.. versionadded:: 1.7
+    Get result as lazy signal
+
+Especially when working with very large datasets, it can be useful to
+not do the computation immediately. For example if it would make you run
+out of memory. In that case, the `lazy_output` parameter can be used.
+
+.. code-block:: python
+
+    >>> from scipy.ndimage import gaussian_filter
+    >>> s = hs.signals.Signal2D(np.random.random((4, 4, 128, 128)))
+    >>> s_out = s.map(gaussian_filter, sigma=5, inplace=False, lazy_output=True)
+    <LazySignal2D, title: , dimensions: (4, 4|128, 128)>
+
+`s_out` can then be saved to a hard drive, to avoid it being loaded into memory.
+Alternatively, it can be computed and loaded into memory using `s_out.compute()`
+
+.. code-block:: python
+
+    >>> s_out.save("gaussian_filter_file.hspy")
+
+Another advantage of using `lazy_output=True` is the ability to "chain" operations,
+by running `map` on the output from a previous `map` operation.
+For example, first running a Gaussian filter, followed by peak finding. This can
+improve the computation time, and reduce the memory need.
+
+.. code-block:: python
+
+    >>> s_out = s.map(scipy.ndimage.gaussian_filter, sigma=5, inplace=False, lazy_output=True)
+    >>> from skimage.feature import blob_dog
+    >>> s_out1 = s_out.map(blob_dog, threshold=0.05, inplace=False, ragged=True, lazy_output=False)
+    >>> s_out1
+    <BaseSignal, title: , dimensions: (4, 4|ragged)>
+
+This is especially relevant for very large datasets, where memory use can be a
+limiting factor.
 
 
 Cropping

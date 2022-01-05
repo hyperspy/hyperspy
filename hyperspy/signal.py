@@ -55,10 +55,12 @@ from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.misc.utils import is_binned # remove in v2.0
+from hyperspy.misc.utils import process_function_blockwise, guess_output_signal_size
+from hyperspy.misc.utils import add_scalar_axis
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
     RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
-    CLUSTER_SIGNALS_ARG, HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS)
+    CLUSTER_SIGNALS_ARG, HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS, LAZY_OUTPUT_ARG)
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
                                       BASE_PLOT_DOCSTRING_PARAMETERS,
                                       PLOT2D_KWARGS_DOCSTRING)
@@ -3659,7 +3661,6 @@ class BaseSignal(FancySlicing,
         if not self.axes_manager._axes and not self.ragged:
             # Create a "Scalar" axis because the axis is the last one left and
             # HyperSpy does not # support 0 dimensions
-            from hyperspy.misc.utils import add_scalar_axis
             add_scalar_axis(self)
 
     def _ma_workaround(self, s, function, axes, ar_axes, out):
@@ -4648,7 +4649,8 @@ class BaseSignal(FancySlicing,
         ragged=None,
         output_signal_size=None,
         output_dtype=None,
-        **kwargs
+        lazy_output=None,
+        **kwargs,
     ):
         """Apply a function to the signal data at all the navigation
         coordinates.
@@ -4669,19 +4671,37 @@ class BaseSignal(FancySlicing,
         ----------
 
         function : :std:term:`function`
-            Any function that can be applied to the signal.
-        %s
+            Any function that can be applied to the signal. This function should
+            not alter any mutable input arguments or input data. So do not do
+            operations which alter the input, without copying it first.
+            For example, instead of doing `image *= mask`, rather do
+            `image = image * mask`. Likewise, do not do `image[5, 5] = 10`
+            directly on the input data or arguments, but make a copy of it
+            first. For example via `image = copy.deepcopy(image)`.
         %s
         %s
         inplace : bool, default True
-            if ``True``, the data is replaced by the result. Otherwise
+            If ``True``, the data is replaced by the result. Otherwise
             a new Signal with the results is returned.
         ragged : None or bool, default None
             Indicates if the results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If ``None``,
-            the appropriate choice is made while processing. If True in case
-            of lazy signal, the signal will be compute at the end of the
-            mapping. Note: ``None`` is not allowed for Lazy signals!
+            the output signal will be ragged only if the original signal is ragged.
+        output_signal_size : None, tuple
+            Since the size and dtype of the signal dimension of the output
+            signal can be different from the input signal, this output signal
+            size must be calculated somehow. If both ``output_signal_size``
+            and ``output_dtype`` is ``None``, this is automatically determined.
+            However, if for some reason this is not working correctly, this
+            can be specified via ``output_signal_size`` and ``output_dtype``.
+            The most common reason for this failing is due to the signal size
+            being different for different navigation positions. If this is the
+            case, use ragged=True. None is default.
+        output_dtype : None, NumPy dtype
+            See docstring for output_signal_size for more information.
+            Default None.
+        %s
+        %s
         **kwargs : dict
             All extra keyword arguments are passed to the provided function
 
@@ -4712,36 +4732,60 @@ class BaseSignal(FancySlicing,
         parameter is variable:
 
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
-        >>> sigmas = hs.signals.BaseSignal(np.linspace(2,5,10)).T
+        >>> sigmas = hs.signals.BaseSignal(np.linspace(2, 5, 10)).T
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
+
+        Rotate the two signal dimensions, with different amount as a function
+        of navigation index. Delay the calculation by getting the output
+        lazily. The calculation is then done using the compute method.
+
+        >>> from scipy.ndimage import rotate
+        >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
+        >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
+        >>> s.map(rotate, angle=s_angle, reshape=False, lazy_output=True)
+        >>> s.compute()
+
+        Rotate the two signal dimensions, with different amount as a function
+        of navigation index. In addition, the output is returned as a new
+        signal, instead of replacing the old signal.
+
+        >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
+        >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
+        >>> s_rot = s.map(rotate, angle=s_angle, reshape=False, inplace=False)
 
         Note
         ----
         Currently requires a uniform axis.
 
         """
-        if self.axes_manager.navigation_shape == () and self._lazy:
-            _logger.info("Converting signal to a non-lazy signal because there are no nav dimensions")
-            self.compute()
-
-        # Sepate ndkwargs depending on if they are BaseSignals.
+        if lazy_output is None:
+            lazy_output = self._lazy
+        if ragged is None:
+            ragged = self.ragged
+        # Separate ndkwargs depending on if they are BaseSignals.
+        self_nav_shape = self.axes_manager.navigation_shape
         ndkwargs = {}
         ndkeys = [key for key in kwargs if isinstance(kwargs[key], BaseSignal)]
         for key in ndkeys:
-            if kwargs[key].axes_manager.navigation_shape == self.axes_manager.navigation_shape:
+            nd_nav_shape = kwargs[key].axes_manager.navigation_shape
+            if nd_nav_shape == self_nav_shape:
                 ndkwargs[key] = kwargs.pop(key)
-            elif kwargs[key].axes_manager.navigation_shape == () or kwargs[key].axes_manager.navigation_shape == (1,):
-                kwargs[key] = np.squeeze(kwargs[key].data)  # this really isn't an iterating signal.
+            elif nd_nav_shape == () or nd_nav_shape == (1,):
+                # This really isn't an iterating signal.
+                kwargs[key] = np.squeeze(kwargs[key].data)
             else:
-                raise ValueError(f'The size of the navigation_shape for the kwarg {key} '
-                                 f'(<{kwargs[key].axes_manager.navigation_shape}> must be consistent'
-                                 f'with the size of the mapped signal '
-                                 f'<{self.axes_manager.navigation_shape}>')
+                raise ValueError(
+                    f"The size of the navigation_shape for the kwarg {key} "
+                    f"(<{nd_nav_shape}> must be consistent "
+                    f"with the size of the mapped signal "
+                    f"<{self_nav_shape}>"
+                )
         # TODO: Consider support for non-uniform signal axis
         if any([not ax.is_uniform for ax in self.axes_manager.signal_axes]):
             _logger.warning(
                 "At least one axis of the signal is non-uniform. Can your "
-                "`function` operate on non-uniform axes?")
+                "`function` operate on non-uniform axes?"
+            )
         else:
             # Check if the signal axes have inhomogeneous scales and/or units and
             # display in warning if yes.
@@ -4752,9 +4796,9 @@ class BaseSignal(FancySlicing,
                 units.add(self.axes_manager.signal_axes[i].units)
             if len(units) != 1 or len(scale) != 1:
                 _logger.warning(
-                    "The function you applied does not take into "
-                    "account the difference of units and of scales in-between"
-                    " axes.")
+                    "The function you applied does not take into account "
+                    "the difference of units and of scales in-between axes."
+                )
         # If the function has an axis argument and the signal dimension is 1,
         # we suppose that it can operate on the full array and we don't
         # iterate over the coordinates.
@@ -4765,233 +4809,237 @@ class BaseSignal(FancySlicing,
             if not isinstance(function, np.ufunc):
                 fargs = inspect.signature(function).parameters.keys()
             else:
-                _logger.warning(f"The function `{function.__name__}` can "
-                                "direcly operate on hyperspy signals and it "
-                                "is not necessary to use `map`.")
+                _logger.warning(
+                    f"The function `{function.__name__}` can directly operate "
+                    "on hyperspy signals and it is not necessary to use `map`."
+                )
         except TypeError as error:
             # This is probably a Cython function that is not supported by
             # inspect.
             _logger.warning(error)
 
-        if not ndkwargs and (self.axes_manager.signal_dimension == 1 and
+        if not ndkwargs and not lazy_output and (self.axes_manager.signal_dimension == 1 and
                              "axis" in fargs):
             kwargs['axis'] = self.axes_manager.signal_axes[-1].index_in_array
 
-            res = self._map_all(function, inplace=inplace, **kwargs)
+            result = self._map_all(function, inplace=inplace, **kwargs)
         # If the function has an axes argument
         # we suppose that it can operate on the full array and we don't
         # iterate over the coordinates.
-        elif not ndkwargs and "axes" in fargs and not parallel:
+        elif not ndkwargs and not lazy_output and "axes" in fargs and not parallel:
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
-            res = self._map_all(function, inplace=inplace, **kwargs)
+            result = self._map_all(function, inplace=inplace, **kwargs)
         else:
-            if self._lazy:
-                kwargs["output_signal_size"] = output_signal_size
-                kwargs["output_dtype"] = output_dtype
+            kwargs["output_signal_size"] = output_signal_size
+            kwargs["output_dtype"] = output_dtype
             # Iteration over coordinates.
-            res = self._map_iterate(function, iterating_kwargs=ndkwargs,
-                                    show_progressbar=show_progressbar,
-                                    parallel=parallel,
-                                    max_workers=max_workers,
-                                    ragged=ragged,
-                                    inplace=inplace,
-                                    **kwargs)
-        if inplace:
+            result = self._map_iterate(
+                function,
+                iterating_kwargs=ndkwargs,
+                show_progressbar=show_progressbar,
+                ragged=ragged,
+                inplace=inplace,
+                lazy_output=lazy_output,
+                max_workers=max_workers,
+                **kwargs,
+            )
+        if not inplace:
+            return result
+        else:
             self.events.data_changed.trigger(obj=self)
-        return res
 
-    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
+    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, LAZY_OUTPUT_ARG, MAX_WORKERS_ARG)
 
     def _map_all(self, function, inplace=True, **kwargs):
         """The function has to have either 'axis' or 'axes' keyword argument,
-        and hence support operating on the full dataset efficiently.
-
-        Replaced for lazy signals"""
+        and hence support operating on the full dataset efficiently."""
         newdata = function(self.data, **kwargs)
         if inplace:
             self.data = newdata
+            self._lazy = False
+            self._assign_subclass()
+            self.get_dimensions_from_data()
             return None
-        return self._deepcopy_with_new_data(newdata)
+        else:
+            sig = self._deepcopy_with_new_data(newdata)
+            sig._lazy = False
+            sig._assign_subclass()
+            sig.get_dimensions_from_data()
+            return sig
 
     def _map_iterate(
         self,
         function,
-        iterating_kwargs=(),
+        iterating_kwargs=None,
         show_progressbar=None,
-        parallel=None,
-        max_workers=None,
-        ragged=None,
+        ragged=False,
         inplace=True,
+        output_signal_size=None,
+        output_dtype=None,
+        lazy_output=None,
+        max_workers=None,
         **kwargs,
     ):
-        """Iterates the signal navigation space applying the function.
+        if lazy_output is None:
+            lazy_output = self._lazy
+        if not self._lazy:
+            s_input = self.as_lazy()
+        else:
+            s_input = self
 
-        Parameters
-        ----------
-        function : :std:term:`function`
-            the function to apply
-        iterating_kwargs : tuple (of tuples)
-            A tuple with structure (('key1', value1), ('key2', value2), ..)
-            where the key-value pairs will be passed as kwargs for the
-            function to be mapped, and the values will be iterated together
-            with the signal navigation. The value needs to be a signal
-            instance because passing array can be ambigous and will be removed
-            in HyperSpy 2.0.
-        %s
-        %s
-        %s
-        inplace : bool, default True
-            if ``True``, the data is replaced by the result. Otherwise
-            a new signal with the results is returned.
-        ragged : None or bool, default None
-            Indicates if results for each navigation pixel are of identical
-            shape (and/or numpy arrays to begin with). If ``None``,
-            an appropriate choice is made while processing. Note: ``None`` is
-            not allowed for Lazy signals!
-        **kwargs : dict
-            Additional keyword arguments passed to :std:term:`function`
-
-        Notes
-        -----
-        This method is replaced for lazy signals.
-
-        Examples
-        --------
-
-        Pass a larger array of different shape
-
-        >>> s = hs.signals.Signal1D(np.arange(20.).reshape((20,1)))
-        >>> def func(data, value=0):
-        ...     return data + value
-        >>> # pay attention that it's a tuple of tuples - need commas
-        >>> s._map_iterate(func,
-        ...                iterating_kwargs=(('value',
-        ...                                    np.random.rand(5,400).flat),))
-        >>> s.data.T
-        array([[  0.82869603,   1.04961735,   2.21513949,   3.61329091,
-                    4.2481755 ,   5.81184375,   6.47696867,   7.07682618,
-                    8.16850697,   9.37771809,  10.42794054,  11.24362699,
-                    12.11434077,  13.98654036,  14.72864184,  15.30855499,
-                    16.96854373,  17.65077064,  18.64925703,  19.16901297]])
-
-        Storing function result to other signal (e.g. calculated shifts)
-
-        >>> s = hs.signals.Signal1D(np.arange(20.).reshape((5,4)))
-        >>> def func(data): # the original function
-        ...     return data.sum()
-        >>> result = s._get_navigation_signal().T
-        >>> def wrapped(*args, data=None):
-        ...     return func(data)
-        >>> result._map_iterate(wrapped,
-        ...                     iterating_kwargs=(('data', s),))
-        >>> result.data
-        array([  6.,  22.,  38.,  54.,  70.])
-
-        """
-        from os import cpu_count
-        from hyperspy.misc.utils import create_map_objects, map_result_construction
-
-        if show_progressbar is None:
-            show_progressbar = preferences.General.show_progressbar
-
-        if parallel is None:
-            parallel = preferences.General.parallel
-
-        if isinstance(iterating_kwargs, (tuple, list)):
+        # unpacking keyword arguments
+        if iterating_kwargs is None:
+            iterating_kwargs = {}
+        elif isinstance(iterating_kwargs, (tuple, list)):
             iterating_kwargs = dict((k, v) for k, v in iterating_kwargs)
 
-        size = max(1, self.axes_manager.navigation_size)
-        func, iterators = create_map_objects(function, size, iterating_kwargs, **kwargs)
-        iterators = (self._iterate_signal(),) + iterators
-        res_shape = self.axes_manager._navigation_shape_in_array
-
-        # no navigation
-        if not len(res_shape):
-            res_shape = (1,)
-
-        # pre-allocate some space
-        res_data = np.empty(res_shape, dtype="O")
-        shapes = set()
-
-        if show_progressbar:
-            pbar = progressbar(total=size, leave=True, disable=not show_progressbar)
-
-        # We set this value to equal cpu_count, with a maximum
-        # of 32 cores, since the earlier default value was inappropriate
-        # for many-core machines.
-        if max_workers is None:
-            max_workers = min(32, cpu_count())
-
-        # Avoid any overhead of additional threads
-        if max_workers < 2:
-            parallel = False
-
-        # parallel or sequential mapping
-        if parallel:
-            from concurrent.futures import ThreadPoolExecutor
-
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                for ind, res in zip(
-                    range(res_data.size), executor.map(func, zip(*iterators))
-                ):
-                    res = np.asarray(res)
-                    res_data.flat[ind] = res
-
-                    if ragged is False:
-                        shapes.add(res.shape)
-                        if len(shapes) != 1:
-                            raise ValueError(
-                                "The result shapes are not identical, but ragged=False"
-                            )
-                    else:
-                        try:
-                            shapes.add(res.shape)
-                        except AttributeError:
-                            shapes.add(None)
-
-                    if show_progressbar:
-                        pbar.update(1)
-
-        else:
-            from builtins import map
-
-            for ind, res in zip(range(res_data.size), map(func, zip(*iterators))):
-                res = np.asarray(res)
-                res_data.flat[ind] = res
-
-                if ragged is False:
-                    shapes.add(res.shape)
-                    if len(shapes) != 1:
-                        raise ValueError(
-                            "The result shapes are not identical, but ragged=False"
-                        )
-                else:
-                    try:
-                        shapes.add(res.shape)
-                    except AttributeError:
-                        shapes.add(None)
-
-                if show_progressbar:
-                    pbar.update(1)
-
-        # Combine data if required
-        shapes = list(shapes)
-        suitable_shapes = len(shapes) == 1 and shapes[0] is not None
-        ragged = ragged or not suitable_shapes
-        sig_shape = None
-
-        if not ragged:
-            sig_shape = () if shapes[0] == (1,) else shapes[0]
-            res_data = np.stack(res_data.ravel()).reshape(
-                self.axes_manager._navigation_shape_in_array + sig_shape
+        nav_indexes = s_input.axes_manager.navigation_indices_in_array
+        chunk_span = np.equal(s_input.data.chunksize, s_input.data.shape)
+        chunk_span = [
+            chunk_span[i] for i in s_input.axes_manager.signal_indices_in_array
+        ]
+        if not all(chunk_span):
+            _logger.info(
+                "The chunk size needs to span the full signal size, rechunking..."
             )
+            old_sig = s_input.rechunk(inplace=False, nav_chunks=None)
+        else:
+            old_sig = s_input
+        os_am = old_sig.axes_manager
+        autodetermine = (output_signal_size is None or output_dtype is None) # try to guess output dtype and sig size?
 
-        res = map_result_construction(self, inplace, res_data, ragged, sig_shape)
+        args, arg_keys = old_sig._get_iterating_kwargs(iterating_kwargs)
 
-        return res
+        if autodetermine:  # trying to guess the output d-type and size from one signal
+            testing_kwargs = {}
+            for ikey, key in enumerate(arg_keys):
+                test_ind = (0,) * len(os_am.navigation_axes)
+                testing_kwargs[key] = np.squeeze(args[ikey][test_ind]).compute()
+            testing_kwargs = {**kwargs, **testing_kwargs}
+            test_data = np.array(old_sig.inav[(0,) * len(os_am.navigation_shape)].data.compute())
+            temp_output_signal_size, temp_output_dtype = guess_output_signal_size(
+                test_data=test_data,
+                function=function,
+                ragged=ragged,
+                **testing_kwargs,
+            )
+            if output_signal_size is None:
+                output_signal_size = temp_output_signal_size
+            if output_dtype is None:
+                output_dtype = temp_output_dtype
 
-    _map_iterate.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
+        drop_axis, new_axis, axes_changed = self._get_drop_axis_new_axis(output_signal_size)
+        chunks = tuple([old_sig.data.chunks[i] for i in sorted(nav_indexes)]) + output_signal_size
+        mapped = da.map_blocks(
+            process_function_blockwise,
+            old_sig.data,
+            *args,
+            function=function,
+            nav_indexes=nav_indexes,
+            drop_axis=drop_axis,
+            new_axis=new_axis,
+            output_signal_size=output_signal_size,
+            dtype=output_dtype,
+            chunks=chunks,
+            arg_keys=arg_keys,
+            **kwargs
+        )
+        data_stored = False
+        if inplace:
+            if (
+                not self._lazy
+                and not lazy_output
+                and (mapped.shape == self.data.shape)
+                and (mapped.dtype == self.data.dtype)
+            ):
+                # da.store is used to avoid unnecessary amount of memory usage.
+                # By using it here, the contents in mapped is written directly to
+                # the existing NumPy array, avoiding a potential doubling of memory use.
+                da.store(
+                    mapped,
+                    self.data,
+                    dtype=mapped.dtype,
+                    compute=True,
+                    num_workers=max_workers,
+                )
+                data_stored = True
+            else:
+                self.data = mapped
+            self._lazy = lazy_output
+            sig = self
+        else:
+            sig = s_input._deepcopy_with_new_data(mapped)
+        am = sig.axes_manager
+        sig._lazy = lazy_output
+        if ragged:
+            axes_dicts = self.axes_manager._get_navigation_axes_dicts()
+            sig.axes_manager.__init__(axes_dicts)
+            sig.axes_manager._ragged = True
+        elif axes_changed:
+            am.remove(am.signal_axes[len(output_signal_size) :])
+            for ind in range(len(output_signal_size) - am.signal_dimension, 0, -1):
+                am._append_axis(size=output_signal_size[-ind], navigate=False)
+        if not ragged:
+            sig.axes_manager._ragged = False
+            if output_signal_size == () and am.navigation_dimension == 0:
+                add_scalar_axis(sig)
+            sig.get_dimensions_from_data()
+        sig._assign_subclass()
+        if not lazy_output:
+            if not data_stored:
+                sig.data = sig.data.compute(num_workers=max_workers)
+        return sig
+
+    def _get_drop_axis_new_axis(self, output_signal_size):
+        am = self.axes_manager
+        if output_signal_size == self.axes_manager.signal_shape:
+            drop_axis = None
+            new_axis = None
+            axes_changed = False
+        else:
+            axes_changed = True
+            if len(output_signal_size) != len(am.signal_shape):
+                drop_axis = am.signal_indices_in_array
+                nav_dim = am.navigation_dimension
+                new_axis = tuple(range(nav_dim, len(output_signal_size) + nav_dim))
+            else:
+                drop_axis = [it for (o, i, it) in zip(output_signal_size,
+                                                      am.signal_shape,
+                                                      am.signal_indices_in_array)
+                             if o != i]
+                drop_axis = tuple(drop_axis)
+                new_axis = drop_axis
+        return drop_axis, new_axis, axes_changed
+
+    def _get_iterating_kwargs(self, iterating_kwargs):
+        signal_dim_shape = self.axes_manager.signal_shape
+        nav_chunks = self._get_navigation_chunk_size()
+        args, arg_keys = (), ()
+        for key in iterating_kwargs:
+            if not isinstance(iterating_kwargs[key], BaseSignal):
+                iterating_kwargs[key] = BaseSignal(iterating_kwargs[key].T).T
+                _logger.warning(
+                    "Passing arrays as keyword arguments can be ambiguous. "
+                    "This is deprecated and will be removed in HyperSpy 2.0. "
+                    "Pass signal instances instead."
+                )
+            if iterating_kwargs[key]._lazy:
+                if iterating_kwargs[key]._get_navigation_chunk_size() != nav_chunks:
+                    iterating_kwargs[key].rechunk(nav_chunks=nav_chunks, sig_chunks=-1)
+            else:
+                iterating_kwargs[key] = iterating_kwargs[key].as_lazy()
+                iterating_kwargs[key].rechunk(nav_chunks=nav_chunks, sig_chunks=-1)
+            extra_dims = (len(signal_dim_shape) -
+                          len(iterating_kwargs[key].axes_manager.signal_shape))
+            if extra_dims > 0:
+                old_shape = iterating_kwargs[key].data.shape
+                new_shape = old_shape + (1,)*extra_dims
+                args += (iterating_kwargs[key].data.reshape(new_shape), )
+            else:
+                args += (iterating_kwargs[key].data, )
+            arg_keys += (key,)
+        return args, arg_keys
 
     def copy(self):
         """
