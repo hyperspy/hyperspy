@@ -558,11 +558,13 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 **kwargs)
             dat[i1:i2] = dat_int(list(range(i1, i2)))
             return dat
-        self._map_iterate(interpolating_function,
-                          ragged=False,
-                          parallel=parallel,
-                          show_progressbar=show_progressbar,
-                          max_workers=max_workers)
+        self.map(
+            interpolating_function,
+            ragged=False,
+            parallel=parallel,
+            show_progressbar=show_progressbar,
+            max_workers=max_workers,
+        )
         self.events.data_changed.trigger(obj=self)
 
     interpolate_in_between.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
@@ -671,7 +673,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if interpolate is True:
             shift_array = shift_array / ip
         shift_array = shift_array * axis.scale
-        if self._lazy:
+        if shift_signal._lazy:
             # We must compute right now because otherwise any changes to the
             # axes_manager of the signal later in the workflow may result in
             # a wrong shift_array
@@ -1488,7 +1490,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                          ragged=True,
                          parallel=parallel,
                          max_workers=max_workers,
-                         inplace=False)
+                         inplace=False,
+                         lazy_output=False)
         return peaks.data
 
     find_peaks1D_ohaver.__doc__ %= (PARALLEL_ARG, MAX_WORKERS_ARG)
@@ -1556,19 +1559,20 @@ class Signal1D(BaseSignal, CommonSignal1D):
             )
             parallel = False
 
-        axis = self.axes_manager.signal_axes[0]
-        # x = axis.axis
+        # axis is a keyword already used by self.map so calling this axis_arg
+        # to avoid "parameter collision
+        axis_arg = self.axes_manager.signal_axes[0]
         maxval = self.axes_manager.navigation_size
         show_progressbar = show_progressbar and maxval > 0
 
         def estimating_function(spectrum,
                                 window=None,
                                 factor=0.5,
-                                axis=None):
-            x = axis.axis
+                                axis_arg=None):
+            x = axis_arg.axis
             if window is not None:
-                vmax = axis.index2value(spectrum.argmax())
-                slices = axis._get_array_slices(
+                vmax = axis_arg.index2value(spectrum.argmax())
+                slices = axis_arg._get_array_slices(
                     slice(vmax - window * 0.5, vmax + window * 0.5))
                 spectrum = spectrum[slices]
                 x = x[slices]
@@ -1582,15 +1586,17 @@ class Signal1D(BaseSignal, CommonSignal1D):
             else:
                 return np.full((2,), np.nan)
 
-        both = self._map_iterate(estimating_function,
-                                 window=window,
-                                 factor=factor,
-                                 axis=axis,
-                                 ragged=False,
-                                 inplace=False,
-                                 parallel=parallel,
-                                 show_progressbar=show_progressbar,
-                                 max_workers=None)
+        both = self.map(
+            estimating_function,
+            window=window,
+            factor=factor,
+            axis_arg=axis_arg,
+            ragged=False,
+            inplace=False,
+            parallel=parallel,
+            show_progressbar=show_progressbar,
+            max_workers=max_workers,
+        )
         left, right = both.T.split()
         width = right - left
         if factor == 0.5:
