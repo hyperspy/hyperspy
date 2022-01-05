@@ -72,6 +72,16 @@ PARALLEL_ARG = \
            ``None``, the default from the preferences settings is used. The number
            of threads is controlled by the ``max_workers`` argument."""
 
+LAZY_OUTPUT_ARG = \
+    """lazy_output : None or bool
+           If ``True``, the output will be returned as a lazy signal. This means
+           the calculation itself will be delayed until either compute() is used,
+           or the signal is stored as a file.
+           If ``False``, the output will be returned as a non-lazy signal, this
+           means the outputs will be calculated directly, and loaded into memory.
+           If ``None`` the output will be lazy if the input signal is lazy, and
+           non-lazy if the input signal is non-lazy."""
+
 MAX_WORKERS_ARG = \
     """max_workers : None or int
            Maximum number of threads used when ``parallel=True``. If None, defaults
