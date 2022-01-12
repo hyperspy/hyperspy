@@ -182,17 +182,9 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
                 2 * i + 1 for i in range(lenShape)), dtype=dtype)
         else:
             try:
-                kwargs = {}
-                if LooseVersion(dask.__version__) >= LooseVersion('2.11.0'):
-                    kwargs['dtype'] = dtype
-                elif dtype is not None:
-                    raise ValueError(
-                        'Using the dtype argument for lazy signal requires '
-                        'dask >= 2.11.0.'
-                        )
                 return da.coarsen(np.sum, a,
                                   {i: int(f) for i, f in enumerate(scale)},
-                                  **kwargs)
+                                  dtype=dtype)
             # we provide slightly better error message in hyperspy context
             except ValueError:
                 raise ValueError(

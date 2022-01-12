@@ -16,11 +16,21 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import gc
 from pathlib import Path
+
 import pytest
 import numpy as np
 
 import hyperspy.api as hs
+
+
+def teardown_module(module):
+    """
+    Run a garbage collection cycle at the end of the test of this module
+    to avoid any memory issue when continuing running the test suite.
+    """
+    gc.collect()
 
 
 TESTS_FILE_PATH = Path(__file__).resolve().parent / 'JEOL_files'
@@ -150,7 +160,7 @@ def test_load_datacube(SI_dtype):
 
 def test_load_datacube_rebin_energy():
     filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[7]
-    s = hs.load(filename)
+    s = hs.load(filename, cutoff_at_kV=1)
     s_sum = s.sum()
 
     ref_data = hs.signals.Signal1D(
@@ -171,6 +181,7 @@ def test_load_datacube_rebin_energy():
 
 
 def test_load_datacube_cutoff_at_kV():
+    gc.collect()
     cutoff_at_kV = 10.
     filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[7]
     s = hs.load(filename, cutoff_at_kV=None)
@@ -359,9 +370,7 @@ def test_pts_lazy():
 
 
 def test_pts_frame_shift():
-    dir = TESTS_FILE_PATH2
-    dir2p = dir / 'Sample' / '00_Dummy-Data'
-    file = str(dir2p / test_files2[16])
+    file = TESTS_FILE_PATH2 / 'Sample' / '00_Dummy-Data' / test_files2[16]
 
     # without frame shift
     ref = hs.load(file, read_em_image=True, only_valid_data=False,

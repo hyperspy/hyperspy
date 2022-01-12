@@ -56,6 +56,8 @@ pool:
   vmImage: '$(vmImage)'
 
 steps:
+- checkout: self
+  fetchDepth: 1 # Fetch only one commit
 - template: azure_pipelines/clone_ci-scripts_repo.yml@templates
 - template: azure_pipelines/install_mambaforge.yml@templates
 - template: azure_pipelines/activate_conda.yml@templates
