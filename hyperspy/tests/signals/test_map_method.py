@@ -539,7 +539,7 @@ class TestOutputSignalSizeScalarWithNavigationDimensions:
         s_out = s.map(a_function, inplace=False, lazy_output=False)
         assert s_out.data.shape == nav_shape
         assert s_out.axes_manager.navigation_shape == nav_shape[::-1]
-        assert (s_out.data == np.ones(nav_shape, dtype=np.float) * 10).all()
+        assert (s_out.data == np.ones(nav_shape, dtype=float) * 10).all()
         assert s.data.shape == data_shape
         assert s.axes_manager.shape == nav_shape[::-1] + (30, 20)
 
@@ -1086,7 +1086,7 @@ def test_ragged():
     s = hs.signals.Signal1D(np.ones((10, 8, 100)))
     s_out = s.map(afunction, inplace=False, ragged=True, parallel=False)
     assert s_out.axes_manager.shape == s.axes_manager.navigation_shape
-    assert s_out.data.dtype == np.object
+    assert s_out.data.dtype == object
     with pytest.raises(ValueError):
         s.map(afunction, inplace=False, ragged=False, parallel=False)
 

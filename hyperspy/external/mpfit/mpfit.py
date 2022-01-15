@@ -428,7 +428,7 @@ _logger = logging.getLogger(__name__)
 
 class machar:
     def __init__(self, double=True):
-        info = np.finfo(np.float64) if double else np.finfo(np.float32)
+        info = np.finfo(float) if double else np.finfo(np.float32)
 
         self.machep = info.eps
         self.maxnum = info.max
@@ -625,7 +625,7 @@ class mpfit:
     """
 
     (blas_enorm32,) = get_blas_funcs(["nrm2"], np.array([0], dtype=np.float32))
-    (blas_enorm64,) = get_blas_funcs(["nrm2"], np.array([0], dtype=np.float64))
+    (blas_enorm64,) = get_blas_funcs(["nrm2"], np.array([0], dtype=float))
 
     def __init__(
         self,
@@ -711,7 +711,7 @@ class mpfit:
         # In the case if the xall is not float or if is float but has less
         # than 64 bits we do convert it into double
         if xall.dtype.kind != "f" or xall.dtype.itemsize <= 4:
-            xall = xall.astype(np.float)
+            xall = xall.astype(float)
 
         npar = len(xall)
         self.fnorm = -1.0

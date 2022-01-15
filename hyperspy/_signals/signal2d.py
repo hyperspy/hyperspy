@@ -251,7 +251,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         upsampled_region_size = np.ceil(sub_pixel_factor * 1.5)
         # Center of output array at dftshift + 1
         dftshift = np.fix(upsampled_region_size / 2.0)
-        sub_pixel_factor = np.array(sub_pixel_factor, dtype=np.float64)
+        sub_pixel_factor = np.array(sub_pixel_factor, dtype=float)
         normalization = (image_product.size * sub_pixel_factor ** 2)
         # Matrix multiply DFT around the current shift estimate
         sample_region_offset = dftshift - shifts * sub_pixel_factor
@@ -264,7 +264,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         maxima = np.array(np.unravel_index(
             np.argmax(abs(correlation)),
             correlation.shape),
-            dtype=np.float64)
+            dtype=float)
         maxima -= dftshift
         shifts = shifts + maxima / sub_pixel_factor
         max_val = correlation.real.max()

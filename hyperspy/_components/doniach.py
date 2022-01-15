@@ -27,7 +27,7 @@ from hyperspy.misc.utils import is_binned # remove in v2.0
 sqrt2pi = math.sqrt(2 * math.pi)
 
 
-tiny = np.finfo(np.float64).eps
+tiny = np.finfo(float).eps
 
 
 class Doniach(Expression):
