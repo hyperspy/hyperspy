@@ -306,3 +306,33 @@ class TestOutArg:
         ss = s.sum()  # Sum over navigation, data shape (6,)
         with pytest.raises(ValueError):
             s.sum(axis=s.axes_manager._axes, out=ss)
+
+
+@pytest.mark.parametrize('lazy', [False, True])
+def test_get_current_signal(lazy):
+    data = np.arange(100)
+    s = signals.Signal1D(data.reshape((10, 10)))
+    s.metadata.General.title = 'A signal'
+    if lazy:
+        s = s.as_lazy()
+
+    s.axes_manager.indices = (1,)
+    cs = s.get_current_signal()
+    assert cs.metadata.General.title == 'A signal (1,)'
+    np.testing.assert_allclose(cs.data, np.arange(start=10, stop=20))
+
+    cs = s.get_current_signal(auto_title=False)
+    assert cs.metadata.General.title == 'A signal'
+
+
+def test_to_cpu():
+    data = np.arange(10)
+    s = signals.BaseSignal(data)
+    s.to_cpu()
+    s.data is data
+
+
+def test_lazy_to_gpu():
+    s = signals.BaseSignal(np.arange(10)).as_lazy()
+    with pytest.raises(BaseException):
+        s.to_gpu()

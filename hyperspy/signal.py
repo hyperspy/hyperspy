@@ -94,7 +94,7 @@ _logger = logging.getLogger(__name__)
 
 try:
     import cupy as cp
-    CUPY_INSTALLED = True
+    CUPY_INSTALLED = True  # pragma: no cover
 except ImportError:
     CUPY_INSTALLED = False
 
@@ -5414,7 +5414,8 @@ class BaseSignal(FancySlicing,
         ----------
         auto_title : bool
             If ``True``, the current indices (in parentheses) are appended to
-            the title, separated by a space.
+            the title, separated by a space, otherwise the title of the signal
+            is used unchanged.
         auto_filename : bool
             If ``True`` and `tmp_parameters.filename` is defined
             (which is always the case when the Signal has been read from a
@@ -5439,8 +5440,6 @@ class BaseSignal(FancySlicing,
         <Signal2D, title:  (2, 1), dimensions: (32, 32)>
 
         """
-        from dask.array import Array
-
         metadata = self.metadata.deepcopy()
 
         # Check if marker update
@@ -5466,9 +5465,6 @@ class BaseSignal(FancySlicing,
             self(as_numpy=as_numpy),
             axes=self.axes_manager._get_signal_axes_dicts(),
             metadata=metadata.as_dictionary())
-
-        if isinstance(cs.data, Array):
-            cs.data = cs.data.compute()
 
         if cs.metadata.has_item('Markers'):
             temp_marker_dict = cs.metadata.Markers.as_dictionary()
@@ -6492,13 +6488,17 @@ class BaseSignal(FancySlicing,
         None.
 
         """
+        if self._lazy:
+            raise BaseException("Automatically converting data to cupy array "
+                                "is not supported for lazy signal. Read the "
+                                "corresponding section in the user guide "
+                                "for more information on how to use GPU "
+                                "with lazy signals.")
+
         if not CUPY_INSTALLED:
             raise BaseException('cupy is required.')
-        else:
+        else:  # pragma: no cover
             self.data = cp.asarray(self.data)
-            if self._lazy:
-                self._lazy = False
-                self._assign_subclass()
 
     def to_cpu(self):
         """

@@ -16,6 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from packaging.version import Version
+
+import dask
 import numpy as np
 import pytest
 
@@ -23,6 +26,10 @@ import hyperspy.api as hs
 
 try:
     import cupy as cp
+    if Version(np.__version__) < Version('1.20'):
+        raise ImportError('numpy 1.20 or newer is required.')
+    if Version(dask.__version__) < Version('2021.3.0'):
+        raise ImportError('dask 2021.3.0 or newer is required.')
 except ImportError:
     pytest.skip("cupy is required", allow_module_level=True)
 
@@ -31,7 +38,7 @@ class TestCupy:
     def setup_method(self, method):
         N = 100
         ndim = 3
-        data = cp.arange(N**3).reshape([N]*ndim)
+        data = cp.arange(N**ndim).reshape([N]*ndim)
         s = hs.signals.Signal1D(data)
         self.s = s
 
@@ -72,6 +79,20 @@ class TestCupy:
 
         assert (s.data == data_ref * 10).all()
 
+    def test_map_lazy(self):
+        s = self.s
+        data_ref = s.data.copy()
+        s = s.as_lazy()
+
+        def dummy_function(data):
+            return data * 10
+
+        s.map(dummy_function, inplace=True,
+              output_signal_size=s.axes_manager.signal_shape,
+              output_dtype=s.data.dtype)
+
+        assert (s.data == data_ref * 10).all()
+
     def test_plot_images(self):
         s = self.s
         s2 = s.T.inav[:5]
@@ -92,6 +113,26 @@ class TestCupy:
         hs.plot.plot_spectra(s2, style=style)
         assert isinstance(s2.data, cp.ndarray)
 
+    def test_plot_images_spectra_lazy(self):
+        # simply call the function to check if there is no issue
+        # with dask and cupy
+        s = self.s.as_lazy()
+        hs.plot.plot_spectra(s.inav[:3, 0])
+        hs.plot.plot_images(s.isig[:2].T)
+
+    def test_plot_lazy(self):
+        # simply call the function to check if there is no issue
+        # with dask and cupy
+        # 1D signal
+        s = self.s.as_lazy()
+        s.plot()
+        isinstance(s._cache_dask_chunk, cp.ndarray)
+
+        # 2D signal
+        s2 = self.s.T.as_lazy()
+        s2.plot()
+        isinstance(s._cache_dask_chunk, cp.ndarray)
+
     def test_fit(self):
         s = self.s
         m = s.create_model()
@@ -101,11 +142,20 @@ class TestCupy:
 
 @pytest.mark.parametrize('lazy', [False, True])
 def test_to_gpu(lazy):
-    s = hs.signals.Signal1D(np.arange(10))
+    data = np.arange(10)
+    s = hs.signals.Signal1D(data)
     if lazy:
         s = s.as_lazy()
         assert isinstance(s, hs.hyperspy._signals.signal1d.LazySignal1D)
-
-    s.to_gpu()
-    assert isinstance(s, hs.signals.Signal1D)
-    assert isinstance(s.data, cp.ndarray)
+        with pytest.raises(BaseException):
+            s.to_gpu()
+    else:
+        s.to_gpu()
+        assert isinstance(s, hs.signals.Signal1D)
+        assert isinstance(s.data, cp.ndarray)
+        s.to_cpu()
+        assert isinstance(s, hs.signals.Signal1D)
+        assert isinstance(s.data, np.ndarray)
+        np.testing.assert_allclose(s.data, data)
+        # we have a different copy now
+        assert s.data is not data
