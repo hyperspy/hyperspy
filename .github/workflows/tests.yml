@@ -63,15 +63,15 @@ jobs:
           python --version
           pip --version
 
-      - name: Install
-        shell: bash
-        run: |
-          pip install ${{ env.PIP_ARGS }} .'${{ matrix.PIP_SELECTOR }}'
-
       - name: Install oldest supported version
         if: ${{ matrix.OLDEST_SUPPORTED_VERSION }}
         run: |
           pip install ${{ matrix.DEPENDENCIES }}
+
+      - name: Install
+        shell: bash
+        run: |
+          pip install ${{ env.PIP_ARGS }} .'${{ matrix.PIP_SELECTOR }}'
 
       - name: Pip list
         run: |
