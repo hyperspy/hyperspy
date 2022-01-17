@@ -199,22 +199,22 @@ class LazySignal(BaseSignal):
     def _get_chunk_string(self):
         nav_chunks = self.data.chunksize[:len(self.axes_manager.navigation_shape)][::-1]
         string = "("
-        for chunks,axis in zip(nav_chunks,self.axes_manager.navigation_shape):
+        for chunks, axis in zip(nav_chunks, self.axes_manager.navigation_shape):
             if chunks == axis:
                 string += "<b>"+str(chunks)+"</b>,"
             else:
-                string += str(chunks) +","
-        string= string.rstrip(",")
-        string +="|"
+                string += str(chunks) + ","
+        string = string.rstrip(",")
+        string += "|"
 
         sig_chunks = self.data.chunksize[len(self.axes_manager.navigation_shape):][::-1]
-        for chunks,axis in zip(sig_chunks,self.axes_manager.signal_shape):
+        for chunks, axis in zip(sig_chunks, self.axes_manager.signal_shape):
             if chunks == axis:
                 string += "<b>"+str(chunks)+"</b>,"
             else:
-                string += str(chunks) +","
+                string += str(chunks) + ","
         string = string.rstrip(",")
-        string +=")"
+        string += ")"
         return string
 
     def compute(self, close_file=False, show_progressbar=None, **kwargs):

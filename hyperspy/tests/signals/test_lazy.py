@@ -403,3 +403,18 @@ class TestHTMLRep:
     def test_html_rep_zero_dim_sig(self):
         s = hs.signals.BaseSignal(da.random.random((500, 1000))).as_lazy().T
         s._repr_html_()
+
+    def test_get_chunk_string(self):
+        s = hs.signals.BaseSignal(da.random.random((6, 6, 6, 6))).as_lazy()
+        s = s.transpose(2)
+        s.data = s.data.rechunk((3, 2, 6, 6))
+        s_string = s._get_chunk_string()
+        assert (s_string == "(2,3|<b>6</b>,<b>6</b>)")
+        s.data = s.data.rechunk((6, 6, 2, 3))
+        s_string = s._get_chunk_string()
+        assert (s_string == "(<b>6</b>,<b>6</b>|3,2)")
+
+    def test_get_chunk_size(self):
+        sig = _signal()
+        s = sig.get_chunk_size()
+        assert s == ((2, 1, 3), (4, 5))

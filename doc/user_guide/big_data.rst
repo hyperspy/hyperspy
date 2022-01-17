@@ -308,6 +308,7 @@ it is sometimes possible to manually set a more optimal chunking manually. There
 many operations take a ``rechunk`` or ``optimize`` keyword argument to disable
 automatic rechunking.
 
+.. _lazy._repr_html_:
 For more recent versions of dask (dask>2021.11) when using hyperspy in a jupyter
 notebook a helpful html representation is available.
 .. code-block::python
