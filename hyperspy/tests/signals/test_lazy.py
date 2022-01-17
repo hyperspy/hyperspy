@@ -390,6 +390,16 @@ class TestLazyPlot:
         assert s._cache_dask_chunk_slice == np.s_[0:5, 0:5]
         s._plot.close()
 
-def test_html_rep():
-    sig = _signal()
-    sig._repr_html_()
+
+class TestHTMLRep:
+    def test_html_rep(self):
+        sig = _signal()
+        sig._repr_html_()
+
+    def test_html_rep_zero_dim_nav(self):
+        s = hs.signals.BaseSignal(da.random.random((500, 1000))).as_lazy()
+        s._repr_html_()
+
+    def test_html_rep_zero_dim_sig(self):
+        s = hs.signals.BaseSignal(da.random.random((500, 1000))).as_lazy().T
+        s._repr_html_()

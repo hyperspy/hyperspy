@@ -168,10 +168,18 @@ class LazySignal(BaseSignal):
             from dask.array.svg import svg
             from dask.widgets import get_template
             from dask.utils import format_bytes
-            nav_grid = svg(chunks=self.get_chunk_size(axis=self.axes_manager.navigation_axes),
-                           size=config.get("array.svg.size", 160))
-            sig_grid = svg(chunks=self.get_chunk_size(axis=self.axes_manager.signal_axes),
-                           size=config.get("array.svg.size", 160))
+            nav_chunks = self.get_chunk_size(axis=self.axes_manager.navigation_axes)
+            sig_chunks = self.get_chunk_size(axis=self.axes_manager.signal_axes)
+            if nav_chunks ==():
+                nav_grid = ""
+            else:
+                nav_grid = svg(chunks=nav_chunks,
+                               size=config.get("array.svg.size", 160))
+            if sig_chunks == ():
+                sig_grid = ""
+            else:
+                sig_grid = svg(chunks=sig_chunks,
+                               size=config.get("array.svg.size", 160))
             nbytes = format_bytes(self.data.nbytes)
             cbytes = format_bytes(np.prod(self.data.chunksize) * self.data.dtype.itemsize)
             return get_template("lazy_signal.html.j2").render(nav_grid=nav_grid,
