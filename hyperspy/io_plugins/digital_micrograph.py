@@ -2,7 +2,7 @@
 # Copyright 2010 Stefano Mazzucco
 # Copyright 2011-2020 The HyperSpy developers
 #
-# This file is part of  HyperSpy. It is a fork of the original PIL dm3 plugin
+# This file is part of HyperSpy. It is a fork of the original PIL dm3 plugin
 # written by Stefano Mazzucco.
 #
 #  HyperSpy is free software: you can redistribute it and/or modify
@@ -12,11 +12,11 @@
 #
 #  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 # Plugin to read the Gatan Digital Micrograph(TM) file format
 
