@@ -311,7 +311,9 @@ automatic rechunking.
 .. _lazy._repr_html_:
 For more recent versions of dask (dask>2021.11) when using hyperspy in a jupyter
 notebook a helpful html representation is available.
-.. code-block::python
+
+.. code-block:: python
+
     >>>    import numpy as np
     >>>    import hyperspy.api as hs
     >>>    x = np.zeros((20,20,10,10,10,))
