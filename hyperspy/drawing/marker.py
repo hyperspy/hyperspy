@@ -168,15 +168,6 @@ class MarkerBase(object):
         else:
             return data[ind].item()[()]
 
-    def get_xywh(self): # utility function to get bounding box
-        x1 = self.get_data_position('x1')
-        y1 = self.get_data_position('y1')
-        x2 = self.get_data_position('x2')
-        y2 = self.get_data_position('y2')
-        w = abs(x2-x1)
-        h = abs(y2-y1)
-        return (x1,y1), (x2,y2), w, h
-        
     def plot(self, render_figure=True):
         """
         Plot a marker which has been added to a signal.

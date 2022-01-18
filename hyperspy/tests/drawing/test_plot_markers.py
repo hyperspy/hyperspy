@@ -569,8 +569,11 @@ def test_iterate_markers():
             assert mo.get_data_position('x1') == mi.get_data_position('x1')
             assert mo.get_data_position('y1') == mi.get_data_position('y1')
             assert mo.get_data_position('text') == mi.get_data_position('text')
-            assert mo.marker_properties['color'] == \
-                mi.marker_properties['color']
+            key = 'color'
+            if key not in mo.marker_properties:
+                key = 'edgecolor'   # alt key
+            assert mo.marker_properties[key] == \
+                mi.marker_properties[key]
 
 
 @update_close_figure()

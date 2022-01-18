@@ -23,17 +23,17 @@ from hyperspy.drawing.marker import MarkerBase
 
 class Ellipse(MarkerBase):
 
-    """Rectangle marker that can be added to the signal figure
+    """Ellipse marker that can be added to the signal figure
 
     Parameters
     ----------
     x1 : array or float
-        The position of the up left corner of the rectangle in x.
+        The position of the center of ellipse in x.
         If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
         have the same dimensions in the navigation axes.
     y1 : array or float
-        The position of the up left corner of the rectangle in y.
+        The position of the center of ellipse in y.
         see x1 arguments
     x2 : array or float
         The position of the down right corner of the rectangle in x.
@@ -60,12 +60,12 @@ class Ellipse(MarkerBase):
     >>> im.add_marker(m, permanent=True)
     """
 
-    def __init__(self, x1, y1, x2, y2, **kwargs):
+    def __init__(self, x1, y1, width, height, **kwargs):
         MarkerBase.__init__(self)
         lp = {'edgecolor': 'black', 'facecolor': None, 'fill': None,
               'linewidth': 1, 'zorder' : None}
         self.marker_properties = lp
-        self.set_data(x1=x1, y1=y1, x2=x2, y2=y2)
+        self.set_data(x1=x1, y1=y1, width=width, height=height)
         self.set_marker_properties(**kwargs)
         mp = self.marker_properties
         if 'color' in mp:
@@ -74,13 +74,13 @@ class Ellipse(MarkerBase):
         self.name = 'ellipse'
 
     def __repr__(self):
-        string = "<marker.{}, {} (x1={},x2={},y1={},y2={},edgecolor={},facecolor={},linewidth={},zorder={})>".format(
+        string = "<marker.{}, {} (x={},y={},width={},height={},edgecolor={},facecolor={},linewidth={},zorder={})>".format(
             self.__class__.__name__,
             self.name,
-            self.get_data_position('x1'),
-            self.get_data_position('x2'),
-            self.get_data_position('y1'),
-            self.get_data_position('y2'),
+            self.get_data_position('x'),
+            self.get_data_position('y'),
+            self.get_data_position('width'),
+            self.get_data_position('height'),
             self.marker_properties['edgecolor'],
             self.marker_properties['facecolor'],
             self.marker_properties['linewidth'],
@@ -91,13 +91,19 @@ class Ellipse(MarkerBase):
     def update(self):
         if self.auto_update is False:
             return
-        xy, _, width, height = self.get_xywh()
-        self.marker.set_xy(xy)
+        x = self.get_data_position('x')
+        y = self.get_data_position('y')
+        width = self.get_data_position('width')
+        height = self.get_data_position('height')
+        self.marker.set_xy([x,y])
         self.marker.set_width(width)
         self.marker.set_height(height)
 
     def _plot_marker(self):
-        xy, _, width, height = self.get_xywh()
+        x = self.get_data_position('x')
+        y = self.get_data_position('y')
+        width = self.get_data_position('width')
+        height = self.get_data_position('height')
         self.marker = self.ax.add_patch(patches.Ellipse(
-            xy, width, height, **self.marker_properties))
+            [x,y], width, height, **self.marker_properties))
 
