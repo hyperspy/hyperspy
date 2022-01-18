@@ -23,7 +23,7 @@ jobs:
           - os: ubuntu
             PYTHON_VERSION: 3.7
             OLDEST_SUPPORTED_VERSION: true
-            DEPENDENCIES: matplotlib==3.1.3 numpy==1.17.1 scipy==1.1 imagecodecs==2020.1.31 tifffile==2020.2.16 dask==2.11.0 distributed==2.11.0 scikit-image==0.15
+            DEPENDENCIES: matplotlib==3.1.3 numpy==1.17.1 scipy==1.1 imagecodecs==2020.1.31 tifffile==2020.2.16 dask==2.11.0 distributed==2.11.0 scikit-image==0.15 numba==0.52
             PIP_SELECTOR: '[all, tests, coverage]'
             PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
             LABEL: -oldest

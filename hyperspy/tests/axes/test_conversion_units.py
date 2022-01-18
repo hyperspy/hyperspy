@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import pytest
@@ -462,3 +462,8 @@ class TestAxesManager:
         self.am._axes[0] = DataAxis(axis=np.arange(16)**2)
         with pytest.raises(NotImplementedError):
             self.am.convert_units()
+
+    def test_initialize_UnitConversion_bug(self):
+        uc = UnitConversion(units="m", scale=1.0, offset=0)
+        assert uc.offset == 0
+
