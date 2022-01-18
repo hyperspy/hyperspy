@@ -247,7 +247,7 @@ class Test_permanent_markers:
         m_hline_segment = markers.horizontal_line_segment(x1=1, x2=9, y=5)
         m_rect = markers.rectangle(x1=1, x2=3, y1=5, y2=10)
         m_text = markers.text(x=1, y=5, text="test")
-        m_arrow = markers.arrow(x1=4, y1=5, x2=6, y2=6, arrow_props={arrow_style:'<->'})
+        m_arrow = markers.arrow(x1=4, y1=5, x2=6, y2=6, arrow_props={'arrow_style':'<->'})
         m_ellipse = markers.ellipse(x=10, y=11, width=4, height=6)
         s.add_marker(m_point, permanent=True)
         s.add_marker(m_line, permanent=True)
