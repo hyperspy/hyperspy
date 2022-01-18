@@ -7,6 +7,7 @@ dependencies:
 - h5py
 - imageio
 - ipyparallel
+- ipython !=8.0
 - matplotlib-base
 - mrcz
 - natsort
