@@ -107,10 +107,8 @@ class Rectangle(MarkerBase):
                     self.get_data_position('x2'))
         height = abs(self.get_data_position('y1') -
                      self.get_data_position('y2'))
-        self.marker = self.ax.add_patch(plt.Rectangle(
+        self.marker = self.ax.add_patch(patches.Rectangle(
             (self.get_data_position('x1'), self.get_data_position('y1')),
             width, height, **self.marker_properties))
-        self.marker = self.ax.add_patch(patches.Rectangle(
-            xy, width, height, **self.marker_properties))
 
 
