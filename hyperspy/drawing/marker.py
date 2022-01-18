@@ -168,6 +168,15 @@ class MarkerBase(object):
         else:
             return data[ind].item()[()]
 
+    def get_xywh(self): # utility function to get bounding box
+        x1 = self.get_data_position('x1')
+        y1 = self.get_data_position('y1')
+        x2 = self.get_data_position('x2')
+        y2 = self.get_data_position('y2')
+        w = abs(x2-x1)
+        h = abs(y2-y1)
+        return (x1,y1), (x2,y2), w, h
+        
     def plot(self, render_figure=True):
         """
         Plot a marker which has been added to a signal.
@@ -216,7 +225,7 @@ class MarkerBase(object):
         if render_figure:
             self._render_figure()
 
-
+# markers are imported in hyperspy.utils.markers
 def dict2marker(marker_dict, marker_name):
     marker_type = marker_dict['marker_type']
     if marker_type == 'Point':
@@ -227,8 +236,12 @@ def dict2marker(marker_dict, marker_name):
         marker = markers.horizontal_line_segment.HorizontalLineSegment(0, 0, 0)
     elif marker_type == 'LineSegment':
         marker = markers.line_segment.LineSegment(0, 0, 0, 0)
+    elif marker_type == 'Arrow':
+        marker = markers.arrow.Arrow(0, 0, 0, 0)
     elif marker_type == 'Rectangle':
         marker = markers.rectangle.Rectangle(0, 0, 0, 0)
+    elif marker_type == 'Ellipse':
+        marker = markers.ellipse.Ellipse(0, 0, 0, 0)
     elif marker_type == 'Text':
         marker = markers.text.Text(0, 0, "")
     elif marker_type == 'VerticalLine':

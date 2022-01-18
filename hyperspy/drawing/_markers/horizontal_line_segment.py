@@ -60,20 +60,22 @@ class HorizontalLineSegment(MarkerBase):
 
     def __init__(self, x1, x2, y, **kwargs):
         MarkerBase.__init__(self)
-        lp = {'color': 'black', 'linewidth': 1}
+        lp = {'color': 'black', 'linewidth': 1, 'zorder': None}
         self.marker_properties = lp
         self.set_data(x1=x1, x2=x2, y1=y)
         self.set_marker_properties(**kwargs)
         self.name = 'horizontal_line_segment'
 
     def __repr__(self):
-        string = "<marker.{}, {} (x1={},x2={},y={},color={})>".format(
+        string = "<marker.{}, {} (x1={},x2={},y={},linewidth={},color={},zorder={})>".format(
             self.__class__.__name__,
             self.name,
             self.get_data_position('x1'),
             self.get_data_position('x2'),
             self.get_data_position('y1'),
+            self.marker_properties['linewidth'],
             self.marker_properties['color'],
+            self.marker_properties['zorder'],
         )
         return(string)
 
