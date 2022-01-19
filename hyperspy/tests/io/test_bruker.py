@@ -131,7 +131,7 @@ def test_hyperspy_wrap():
             'title': 'EDX',
             'date': '2018-10-04',
             'time': '13:02:07',
-            'File': {
+            'FileReader': {
                 'hyperspy_version': hs_version,
                 'io_plugin': 'hyperspy.io_plugins.bruker',
             }},
@@ -159,7 +159,7 @@ def test_hyperspy_wrap():
         # original_metadata:
         omd_ref = json.load(fn)
     # delete timestamp since it's runtime dependent
-    del hype.metadata.General.File.load_timestamp
+    del hype.metadata.General.FileReader.load_timestamp
     assert_deep_almost_equal(hype.metadata.as_dictionary(), md_ref)
     assert_deep_almost_equal(hype.original_metadata.as_dictionary(), omd_ref)
     assert hype.metadata.General.date == "2018-10-04"

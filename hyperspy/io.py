@@ -539,11 +539,13 @@ def load_with_reader(
                 signal_dict["metadata"]["Signal"] = {}
             if signal_type is not None:
                 signal_dict['metadata']["Signal"]['signal_type'] = signal_type
-            signal_dict['metadata']['General']['File'] = {
-                'io_plugin': reader.__loader__.name,
-                'hyperspy_version': hs_version,
-                'load_timestamp': datetime.now().astimezone().isoformat()
-            }
+            # do not replace existing FileReader metadata if it already exists
+            if not 'FileReader' in signal_dict['metadata']['General']:
+                signal_dict['metadata']['General']['FileReader'] = {
+                    'io_plugin': reader.__loader__.name,
+                    'hyperspy_version': hs_version,
+                    'load_timestamp': datetime.now().astimezone().isoformat()
+                }
             signal = dict2signal(signal_dict, lazy=lazy)
             path = _parse_path(filename)
             folder, filename = os.path.split(os.path.abspath(path))

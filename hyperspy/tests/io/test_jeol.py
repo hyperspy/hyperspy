@@ -259,14 +259,14 @@ def test_load_eds_file(filename_as_string):
     assert axis.scale == 0.0100004
 
     # delete timestamp from metadata since it's runtime dependent
-    del s.metadata.General.File.load_timestamp
+    del s.metadata.General.FileReader.load_timestamp
 
     md_dict = s.metadata.as_dictionary()
     assert md_dict['General'] == {'original_filename': 'met03.EDS',
                                   'time': '14:14:51',
                                   'date': '2018-06-25',
                                   'title': 'EDX',
-                                  'File': {
+                                  'FileReader': {
                                       'hyperspy_version': hs_version,
                                       'io_plugin':
                                           'hyperspy.io_plugins.jeol'

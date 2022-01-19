@@ -30,6 +30,8 @@ import hyperspy.api as hs
 from hyperspy.signals import Signal1D
 from hyperspy.axes import DataAxis
 from hyperspy.io_plugins import io_plugins
+from hyperspy import __version__ as hs_version
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
 FULLFILENAME = Path(__file__).resolve().parent.joinpath("test_io_overwriting.hspy")
@@ -260,3 +262,19 @@ def test_load_original_metadata():
 
         t = hs.load(Path(dirpath, "temp.hspy"), load_original_metadata=False)
         assert t.original_metadata.as_dictionary() == {}
+
+
+def test_load_save_filereader_metadata():
+    # tests that original FileReader metadata is persisted through a save and
+    # load cycle
+
+    my_path = os.path.dirname(__file__)
+    s = hs.load(os.path.join(my_path, "msa_files", "example1.msa"))
+    assert s.metadata.General.FileReader.io_plugin == 'hyperspy.io_plugins.msa'
+    assert s.metadata.General.FileReader.hyperspy_version == hs_version
+    with tempfile.TemporaryDirectory() as dirpath:
+        f = os.path.join(dirpath, "temp")
+        s.save(f)
+        t = hs.load(Path(dirpath, "temp.hspy"))
+        assert_deep_almost_equal(s.metadata.General.FileReader.as_dictionary(),
+                                 t.metadata.General.FileReader.as_dictionary())

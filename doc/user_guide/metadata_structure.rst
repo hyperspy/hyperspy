@@ -161,11 +161,15 @@ notes
 
 .. _general-file-metadata:
 
-File
-----
+FileReader
+----------
 
 Contains information about the software packages and versions used when the
-Signal was created by reading the original data format (added in HyperSpy v1.7)
+Signal was first created by reading the original data format (added in HyperSpy
+v1.7). In the event the signal is saved to HyperSpy's native format (``.hspy``)
+and reloaded, the metadata within the ``FileReader`` node will be persisted as
+a record of the software configuration when the conversion was made from
+the proprietary/original format to HyperSpy's format.
 
 hyperspy_version
     type: Str

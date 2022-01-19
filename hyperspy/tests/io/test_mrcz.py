@@ -81,7 +81,7 @@ class TestPythonMrcz:
 
         # Add "File" metadata to testSignal
         testSignal.metadata.General.add_dictionary({
-            'File': {
+            'FileReader': {
                 'hyperspy_version': hs_version,
                 'io_plugin': 'hyperspy.io_plugins.mrcz',
                 'load_timestamp': datetime.now().astimezone().isoformat()
@@ -134,8 +134,8 @@ class TestPythonMrcz:
             print("Warning: file {} left on disk".format(mrcName))
 
         # change file timestamp to make the metadata of both signals equal
-        testSignal.metadata.General.File.load_timestamp = (
-            reSignal.metadata.General.File.load_timestamp
+        testSignal.metadata.General.FileReader.load_timestamp = (
+            reSignal.metadata.General.FileReader.load_timestamp
         )
 
         npt.assert_array_almost_equal(
