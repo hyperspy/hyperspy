@@ -1343,8 +1343,10 @@ Permanent markers are stored in the HDF5 file if the signal is saved:
   The parameters after @@ are typical optional parameters.
 
 .. code-block:: python
-  arrow(x1, y1, x2, y2, @@ edgecolor, linewidth, arrow_stryle, zorder)
-  line_segment(x1, y1, x2, y2, @@ color, linewidth, markeredgecolor, markerfacecolor, size, zorder)
+  arrow(x1, y1, x2, y2, @@ 
+        arrowprops={'linewidth':w, 'edgecolor':c, 'arrowstryle':'<->'}, zorder)
+  line_segment(x1, y1, x2, y2, @@ color, linewidth,
+		markeredgecolor, markerfacecolor, size, zorder)
   horizontal_line(y, @@ color, zorder)
   horizontal_line_segment(x1,x2, y, @@ color, zorder)
   vertical_line(x, @@ color, zorder)

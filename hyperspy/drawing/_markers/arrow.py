@@ -41,21 +41,18 @@ class Arrow(MarkerBase):
         The position of the down right of the rectangle in y.
         see x1 arguments
     kwargs :
-        Keywords argument of axvline valid properties (i.e. recognized by
-        mpl.plot).
+        Keywords argument of matplotlib ax.annotate valid properties 
+        (i.e. recognized by mpl.plot).
 
     Example
     -------
     >>> import scipy.misc
     >>> im = hs.signals.Signal2D(scipy.misc.ascent())
-    >>> m = hs.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400,
-    >>>                                  color='red')
+    >>> m = hs.plot.markers.arrow(x1=150, y1=100, x2=400, y2=400,
+    >>>            arrowprop={'arrowstyle':'<->', edgecolor='red'})
     >>> im.add_marker(m)
 
     Adding a marker permanently to a signal
-
-    >>> im = hs.signals.Signal2D(np.random.random((50, 50))
-    >>> m = hs.plot.markers.rectangle(x1=20, y1=30, x2=40, y2=49)
     >>> im.add_marker(m, permanent=True)
     """
 
@@ -102,8 +99,6 @@ class Arrow(MarkerBase):
         y2 = self.get_data_position('y2')
         mp = self.marker_properties
         self.marker = self.ax.annotate('',(x1,y1),(x2,y2), **self.marker_properties)
-#        if 'zorder' in self.marker_properties:
-#            self.marker.set_zorder(self.marker_properties['zorder'])
         
 
 

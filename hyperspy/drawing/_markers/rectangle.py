@@ -43,8 +43,10 @@ class Rectangle(MarkerBase):
         The position of the down right of the rectangle in y.
         see x1 arguments
     kwargs :
-        Keywords argument of axvline valid properties (i.e. recognized by
-        mpl.plot).
+        Keywords argument of matplotlib.patches.Rectangle valid properties 
+        (i.e. recognized by mpl.plot).
+        Note that the 'color' keyword is used as the alias of 'edgecolor' 
+        for backward compatibility.
 
     Example
     -------

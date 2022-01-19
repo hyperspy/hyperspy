@@ -27,36 +27,36 @@ class Ellipse(MarkerBase):
 
     Parameters
     ----------
-    x1 : array or float
+    x : array or float
         The position of the center of ellipse in x.
         If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
         have the same dimensions in the navigation axes.
-    y1 : array or float
+    y : array or float
         The position of the center of ellipse in y.
-        see x1 arguments
-    x2 : array or float
-        The position of the down right corner of the rectangle in x.
-        see x1 arguments
-    y2 : array or float
-        The position of the down right of the rectangle in y.
-        see x1 arguments
+        see x arguments
+    width : array or float
+        The width (diameter) of the ellipse in x.
+        see x arguments
+    height : array or float
+        The hight (diameter) of the ellipse in y.
+        see x arguments
     kwargs :
-        Keywords argument of axvline valid properties (i.e. recognized by
-        mpl.plot).
+        Keywords argument of matplotlib.patches.Ellipse valid properties 
+        (i.e. recognized by mpl.plot).
 
     Example
     -------
     >>> import scipy.misc
     >>> im = hs.signals.Signal2D(scipy.misc.ascent())
-    >>> m = hs.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400,
-    >>>                                  color='red')
+    >>> m = hs.plot.markers.ellipse(x=150, y=100, width=400, height=400,
+    >>>                  edgecolor='red', facecolor='white', fill=True)
     >>> im.add_marker(m)
 
     Adding a marker permanently to a signal
 
     >>> im = hs.signals.Signal2D(np.random.random((50, 50))
-    >>> m = hs.plot.markers.rectangle(x1=20, y1=30, x2=40, y2=49)
+    >>> m = hs.plot.markers.rectangle(x=20, y=30, width=40, height=49)
     >>> im.add_marker(m, permanent=True)
     """
 
