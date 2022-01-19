@@ -78,6 +78,10 @@ in the following sections of this chapter.
     │           ├── y (mm)
     │           └── z (mm)
     ├── General
+    |   |── File
+    |   |   ├── hyperspy_version
+    |   |   ├── io_plugin
+    |   │   └── load_timestamp
     │   ├── authors
     │   ├── date
     │   ├── doi
@@ -154,6 +158,32 @@ notes
     type: Str
 
     Notes about the data.
+
+File
+----
+
+Contains information about the software packages and versions used when the
+Signal was created by reading the original data format (added in HyperSpy v1.7)
+
+hyperspy_version
+    type: Str
+
+    The version number of the HyperSpy software used to extract a Signal from
+    this data file.
+
+io_plugin
+    type: Str
+
+    The specific input/output plugin used to originally extract this data file
+    into a HyperSpy Signal -- will be of the form
+    ``hyperspy.io_plugins.<plugin_name>``.
+
+load_timestamp
+    type: Str
+
+    The timestamp of the computer running the data loading process (in a
+    timezone-aware format). The timestamp will be in ISO 8601 format, as
+    produced by the ``isoformat()`` method of the ``datetime`` class.
 
 Acquisition_instrument
 ======================
