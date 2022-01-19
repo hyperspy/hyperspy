@@ -27,7 +27,9 @@ from natsort import natsorted
 from inspect import isgenerator
 from pathlib import Path
 from collections.abc import MutableMapping
+from datetime import datetime
 
+from hyperspy import __version__ as hs_version
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.io.tools import ensure_directory
@@ -537,6 +539,11 @@ def load_with_reader(
                 signal_dict["metadata"]["Signal"] = {}
             if signal_type is not None:
                 signal_dict['metadata']["Signal"]['signal_type'] = signal_type
+            signal_dict['metadata']['General']['File'] = {
+                'io_plugin': reader.__loader__.name,
+                'hyperspy_version': hs_version,
+                'load_timestamp': datetime.now().astimezone().isoformat()
+            }
             signal = dict2signal(signal_dict, lazy=lazy)
             path = _parse_path(filename)
             folder, filename = os.path.split(os.path.abspath(path))

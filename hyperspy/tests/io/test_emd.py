@@ -32,6 +32,7 @@ import pytest
 import tempfile
 import shutil
 
+from hyperspy import __version__ as hs_version
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.signals import (BaseSignal, EDSTEMSpectrum, Signal1D, Signal2D,
@@ -341,7 +342,13 @@ class TestFeiEMD():
                           'date': '2017-03-06',
                           'time': '09:56:41',
                           'time_zone': 'BST',
-                          'title': 'HAADF'},
+                          'title': 'HAADF',
+                          'File': {
+                              'hyperspy_version': hs_version,
+                              'io_plugin':
+                                  'hyperspy.io_plugins.emd'
+                          }
+              },
               'Signal': {'signal_type': ''},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                         'original_shape': None,
@@ -358,6 +365,8 @@ class TestFeiEMD():
 
         signal = load(os.path.join(self.fei_files_path, 'fei_emd_image.emd'),
                       lazy=lazy)
+        # delete timestamp from metadata since it's runtime dependent
+        del signal.metadata.General.File.load_timestamp
         if lazy:
             assert signal._lazy
             signal.compute(close_file=True)

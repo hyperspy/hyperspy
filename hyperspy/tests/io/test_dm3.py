@@ -23,6 +23,7 @@ import os
 import numpy as np
 import pytest
 
+from hyperspy import __version__ as hs_version
 from hyperspy.io import load
 from hyperspy.io_plugins.digital_micrograph import (DigitalMicrographReader,
                                                     ImageObject)
@@ -485,7 +486,12 @@ def test_multi_signal():
                     'original_filename': 'multi_signal.dm3',
                     'date': '2019-12-10',
                     'time': '15:32:41',
-                    'authors': 'JohnDoe'},
+                    'authors': 'JohnDoe',
+                    'File': {
+                        'hyperspy_version': hs_version,
+                        'io_plugin': 'hyperspy.io_plugins.digital_micrograph'
+                    }
+        },
         'Signal': {'signal_type': '',
                    'quantity': 'Intensity',
                    'Noise_properties': {
@@ -519,7 +525,11 @@ def test_multi_signal():
                 'original_axes_manager': None}},
         'General': {
             'title': 'Plot',
-            'original_filename': 'multi_signal.dm3'},
+            'original_filename': 'multi_signal.dm3',
+            'File': {
+                'hyperspy_version': hs_version,
+                'io_plugin': 'hyperspy.io_plugins.digital_micrograph'
+            }},
         'Signal': {
             'signal_type': '',
             'quantity': 'Intensity',
@@ -528,6 +538,9 @@ def test_multi_signal():
                     'gain_factor': 1.0,
                     'gain_offset': 0.0}}}
     }
+    # remove timestamps from metadata since these are runtime dependent
+    del s1.metadata.General.File.load_timestamp
+    del s2.metadata.General.File.load_timestamp
 
     # make sure the metadata dictionaries are as we expect
     assert s1.metadata.as_dictionary() == s1_md_truth

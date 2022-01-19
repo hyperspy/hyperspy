@@ -288,6 +288,10 @@ def test_save_load_cycle(save_path, convert_units):
     sig_reload.metadata.General.original_filename = (
         signal.metadata.General.original_filename
     )
+    # change file timestamp to make the metadata of both signals equal
+    sig_reload.metadata.General.File.load_timestamp = (
+        signal.metadata.General.File.load_timestamp
+    )
     assert_deep_almost_equal(
         signal.metadata.as_dictionary(), sig_reload.metadata.as_dictionary()
     )

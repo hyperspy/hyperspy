@@ -23,10 +23,12 @@ from time import perf_counter, sleep
 import numpy as np
 import numpy.testing as npt
 import pytest
+from datetime import datetime
 
 from hyperspy import signals
 from hyperspy.io import load, save
 from hyperspy.misc.test_utils import assert_deep_almost_equal
+from hyperspy import __version__ as hs_version
 
 
 mrcz = pytest.importorskip("mrcz", reason="mrcz not installed")
@@ -76,6 +78,16 @@ class TestPythonMrcz:
         testSignal = signals.Signal2D(testData)
         if lazy:
             testSignal = testSignal.as_lazy()
+
+        # Add "File" metadata to testSignal
+        testSignal.metadata.General.add_dictionary({
+            'File': {
+                'hyperspy_version': hs_version,
+                'io_plugin': 'hyperspy.io_plugins.mrcz',
+                'load_timestamp': datetime.now().astimezone().isoformat()
+            }
+        })
+
         # Unfortunately one cannot iterate over axes_manager in a Pythonic way
         # for axis in testSignal.axes_manager:
         testSignal.axes_manager[0].name = 'z'
@@ -120,6 +132,11 @@ class TestPythonMrcz:
             os.remove(mrcName)
         except IOError:
             print("Warning: file {} left on disk".format(mrcName))
+
+        # change file timestamp to make the metadata of both signals equal
+        testSignal.metadata.General.File.load_timestamp = (
+            reSignal.metadata.General.File.load_timestamp
+        )
 
         npt.assert_array_almost_equal(
             testSignal.data.shape,
