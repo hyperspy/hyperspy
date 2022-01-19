@@ -78,7 +78,7 @@ in the following sections of this chapter.
     │           ├── y (mm)
     │           └── z (mm)
     ├── General
-    |   |── File
+    |   |── FileReader
     |   |   ├── hyperspy_version
     |   |   ├── io_plugin
     |   │   └── load_timestamp
