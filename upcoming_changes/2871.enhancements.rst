@@ -1,0 +1,4 @@
+* Enhancement of drawing.marker
+  1. Add new marker "arrow" and "ellipse"
+  2. Add support for filled rectangle
+  3. Add "zorder" property for markers
