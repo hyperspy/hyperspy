@@ -159,6 +159,8 @@ notes
 
     Notes about the data.
 
+.. _general-file-metadata:
+
 File
 ----
 

@@ -1,0 +1,3 @@
+Add metadata about the file-reading operation to the Signals produced by
+``hs.load()`` (see the :ref:`metadata structure <general-file-metadata>`
+section of the user guide)
