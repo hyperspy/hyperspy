@@ -68,6 +68,7 @@ for _external_extension in _external_extensions:
                             ALL_EXTENSIONS["GUI"]["widgets"][toolkit] = {}
                         ALL_EXTENSIONS["GUI"]["widgets"][toolkit].update(specs)
 
-    else:
+    else:  # pragma: no cover
+        # When the "hyperspy_extension.yaml" is missing from the package
         _logger.error(
-            "Failed to load hyperspy extension from {0}. Please report this issue to the {0} developers".format(_external_extension_mod))
+            "Failed to load hyperspy extension from {0}. Please report this issue to the {0} developers".format(_external_extension.name))
