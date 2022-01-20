@@ -29,9 +29,10 @@ sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 class GaussianHF(Expression):
 
-    r"""Normalized gaussian function component, with a `fwhm` parameter instead
-    of the sigma parameter, and a `height` parameter instead of the `A`
-    parameter (scaling difference of :math:`\sigma \sqrt{\left(2\pi\right)}`).
+    r"""Normalized gaussian function component, with a ``fwhm`` parameter
+    instead of the ``sigma`` parameter, and a ``height`` parameter instead of
+    the ``A`` parameter (scaling difference of
+    :math:`\sigma \sqrt{\left(2\pi\right)}`).
     This makes the parameter vs. peak maximum independent of :math:`\sigma`,
     and thereby makes locking of the parameter more viable. As long as there
     is no binning, the `height` parameter corresponds directly to the peak
@@ -64,15 +65,21 @@ class GaussianHF(Expression):
     centre: float
         Location of the gaussian maximum, also the mean position.
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
-
-    The helper properties `sigma` and `A` are also defined for compatibility
-    with `Gaussian` component.
+    Attributes
+    ----------
+    A : float
+        Convenience attribute to get, set the height and defined for
+        compatibility with `Gaussian` component.
+    sigma : float
+        Convenience attribute to get, set the width and defined for
+        compatibility with `Gaussian` component.
 
     See also
     --------
-    hyperspy._components.gaussian.Gaussian
+    ~._components.gaussian.Gaussian
 
     """
 

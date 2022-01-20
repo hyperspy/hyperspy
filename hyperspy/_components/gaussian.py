@@ -79,7 +79,7 @@ class Gaussian(Expression):
 
 
     Parameters
-    -----------
+    ----------
     A : float
         Height scaled by :math:`\sigma\sqrt{(2\pi)}`. ``GaussianHF``
         implements the Gaussian function with a height parameter
@@ -89,16 +89,20 @@ class Gaussian(Expression):
     centre : float
         Location of the Gaussian maximum (peak position).
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
-
-    For convenience the `fwhm` and `height` attributes can be used to get and set
-    the full width at half maximum and height of the distribution, respectively.
+    Attributes
+    ----------
+    fwhm : float
+        Convenience attribute to get and set the full width at half maximum.
+    height : float
+        Convenience attribute to get and set the height.
 
 
     See also
     --------
-    hyperspy._components.gaussianhf.GaussianHF
+    ~._components.gaussianhf.GaussianHF
     """
 
     def __init__(self, A=1., sigma=1., centre=0., module="numexpr", **kwargs):

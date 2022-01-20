@@ -21,9 +21,9 @@ import logging
 
 from imageio import imread, imwrite
 from matplotlib.figure import Figure
-import pint
 import traits.api as t
 
+from hyperspy.api_nogui import _ureg
 from hyperspy.misc import rgb_tools
 
 # Plugin characteristics
@@ -39,7 +39,6 @@ writes = [(2, 0), (0, 2)]
 non_uniform_axis = False
 # ----------------------
 
-_ureg = pint.UnitRegistry()
 _logger = logging.getLogger(__name__)
 
 

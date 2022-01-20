@@ -26,6 +26,7 @@ name = 'hyperspy'
 # by the output of "git describe" if git is available or the git
 # hash if .git is present.
 version = "1.7.0.dev0"
+__version__ = version
 description = "Multidimensional data analysis toolbox"
 license = 'GPL v3'
 

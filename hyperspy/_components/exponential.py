@@ -48,7 +48,8 @@ class Exponential(Expression):
     tau: float
         Scale parameter (time constant)
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
     """
 
     def __init__(self, A=1., tau=1., module="numexpr", **kwargs):

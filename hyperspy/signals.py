@@ -56,15 +56,22 @@ The Signal class and its specialized subclasses:
         ComplexSignal2D can be reconstructed from them.
 """
 
-# -*- coding: utf-8 -*-
-from hyperspy.extensions import EXTENSIONS as _EXTENSIONS
+from hyperspy.extensions import EXTENSIONS as EXTENSIONS_
 import importlib
 
-_g = globals()
-for _signal, _specs in _EXTENSIONS["signals"].items():
-    if not _specs["lazy"]:
-        _g[_signal] = getattr(
-            importlib.import_module(
-                _specs["module"]), _signal)
 
-del importlib
+__all__ = [
+    signal_ for signal_, specs_ in EXTENSIONS_["signals"].items()
+    if not specs_["lazy"]
+    ]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if name in __all__:
+        spec = EXTENSIONS_["signals"][name]
+        return getattr(importlib.import_module(spec['module']), name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

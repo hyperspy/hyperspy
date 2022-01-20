@@ -53,7 +53,8 @@ class HeavisideStep(Expression):
     A : float
         Height parameter for x>n.
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
     """
 
     def __init__(self, A=1., n=0., module="numpy", compute_gradients=True,

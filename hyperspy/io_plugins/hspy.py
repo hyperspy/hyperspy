@@ -19,7 +19,6 @@
 import logging
 from packaging.version import Version
 from pathlib import Path
-import warnings
 
 import dask.array as da
 import h5py

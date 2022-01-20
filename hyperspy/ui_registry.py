@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-"""Registry of user interface widgets.
+r"""Registry of user interface widgets.
 
-Format {"tool_key" : {"toolkit" : <function(obj, display, \*\*kwargs)>}}
+Format {"tool_key" : {"toolkit" : <function(obj, display, **kwargs)>}}
 
 The ``tool_key`` is defined by the "model function" to which the widget provides
 and user interface. That function gets the widget function from this registry
@@ -31,7 +31,6 @@ widgets externally (usually for testing or customisation purposes).
 
 import importlib
 
-from hyperspy.misc.utils import isiterable
 from hyperspy.extensions import ALL_EXTENSIONS
 
 
@@ -74,7 +73,7 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     from hyperspy.defaults_parser import preferences
     if isinstance(toolkit, str):
         toolkit = (toolkit,)
-    if isiterable(toolkit):
+    if isinstance(toolkit, (tuple, list)):
         toolkits = set()
         for tk in toolkit:
             if tk in TOOLKIT_REGISTRY:

@@ -32,7 +32,7 @@ tiny = np.finfo(np.float64).eps
 
 class Doniach(Expression):
 
-    r""" Doniach Sunjic lineshape
+    r""" Doniach Sunjic lineshape component.
 
     .. math::
         :nowrap:
@@ -69,7 +69,8 @@ class Doniach(Expression):
     centre : float
         Location of the maximum (peak position).
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
     Note
     -----

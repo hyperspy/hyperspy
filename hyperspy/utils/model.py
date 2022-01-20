@@ -19,15 +19,25 @@
 """Model functions.
 
 
-The :mod:`~hyperspy.api.model` module contains the following submodules:
+The model module contains the following submodules:
 
-components1D
+:mod:`~.components1d`
     1D components for HyperSpy model.
 
-components2D
+:mod:`~.components2d`
     2D components for HyperSpy model.
 
 """
 
 import hyperspy.components1d as components1D
 import hyperspy.components2d as components2D
+
+
+__all__ = [
+    'components1D',
+    'components2D',
+    ]
+
+
+def __dir__():
+    return sorted(__all__)

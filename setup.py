@@ -59,7 +59,7 @@ install_req = ['scipy>=1.1',
                'python-dateutil>=2.5.0',
                'ipyparallel',
                # https://github.com/ipython/ipython/pull/13466
-               'ipython!=8.0',
+               'ipython!=8.0.*',
                'dask[array]>=2.11.0',
                # fsspec is missing from dask dependencies for dask < 2021.3.1
                'fsspec',

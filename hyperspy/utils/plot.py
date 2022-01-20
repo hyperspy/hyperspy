@@ -34,6 +34,24 @@ The :mod:`~hyperspy.api.plot` module contains the following submodules:
 
 """
 
-from hyperspy.drawing.utils import (plot_histograms, plot_images, plot_signals,
-                                    plot_spectra)
+from hyperspy.drawing.utils import (
+    plot_histograms,
+    plot_images,
+    plot_signals,
+    plot_spectra
+    )
+# This import is redundant with `hyperspy.utils.markers`
 from hyperspy.utils import markers
+
+
+__all__ = [
+    'markers',
+    'plot_histograms',
+    'plot_images',
+    'plot_signals',
+    'plot_spectra',
+    ]
+
+
+def __dir__():
+    return sorted(__all__)

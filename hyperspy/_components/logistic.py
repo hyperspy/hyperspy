@@ -53,7 +53,8 @@ class Logistic(Expression):
     origin : Float
         Position of the sigmoid's midpoint
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
     """
 
     def __init__(self, a=1., b=1., c=1., origin=0., module="numexpr", **kwargs):

@@ -41,12 +41,15 @@ class Erf(Expression):
 
     Parameters
     ----------
-        A : float
-            The min/max values of the distribution are -A/2 and A/2.
-        sigma : float
-            Width of the distribution.
-        origin : float
-            Position of the zero crossing.
+    A : float
+        The min/max values of the distribution are -A/2 and A/2.
+    sigma : float
+        Width of the distribution.
+    origin : float
+        Position of the zero crossing.
+    **kwargs
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
     """
 
     def __init__(self, A=1., sigma=1., origin=0., module=["numpy", "scipy"],

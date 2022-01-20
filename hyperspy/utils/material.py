@@ -17,6 +17,24 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 from hyperspy.misc.elements import elements_db as elements
-from hyperspy.misc.material import (atomic_to_weight, density_of_mixture,
-                                    mass_absorption_coefficient,
-                                    mass_absorption_mixture, weight_to_atomic)
+from hyperspy.misc.material import (
+    atomic_to_weight,
+    density_of_mixture,
+    mass_absorption_coefficient,
+    mass_absorption_mixture,
+    weight_to_atomic
+    )
+
+
+__all__ = [
+    'atomic_to_weight',
+    'density_of_mixture',
+    'elements',
+    'mass_absorption_coefficient',
+    'mass_absorption_mixture',
+    'weight_to_atomic',
+    ]
+
+
+def __dir__():
+    return sorted(__all__)

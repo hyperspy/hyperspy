@@ -17,14 +17,12 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
 import configparser
 import logging
+import os
+from pathlib import Path
 
 import traits.api as t
-import matplotlib.pyplot as plt
-
-from pathlib import Path
 
 from hyperspy.misc.config_dir import config_path, data_path
 from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
@@ -136,7 +134,7 @@ class GUIs(t.HasTraits):
         "Requires installing hyperspy_gui_traitsui.")
     warn_if_guis_are_missing = t.CBool(
         True,
-        desc="Display warnings, if hyperspy_gui_ipywidgets or hyperspy_gui_traitsui are missing.")
+        desc="Not necessary anymore and deprecated.")
 
 
 class PlotConfig(t.HasTraits):
@@ -144,14 +142,17 @@ class PlotConfig(t.HasTraits):
                                 label='Saturated pixels (deprecated)',
                                 desc='Warning: this is deprecated and will be removed in HyperSpy v2.0'
                                 )
-    cmap_navigator = t.Enum(plt.colormaps(),
-                            label='Color map navigator',
-                            desc='Set the default color map for the navigator.',
-                            )
-    cmap_signal = t.Enum(plt.colormaps(),
-                         label='Color map signal',
-                         desc='Set the default color map for the signal plot.',
-                         )
+    # Don't use t.Enum to list all possible matplotlib colormap to
+    # avoid importing matplotlib and building the list of colormap
+    # when importing hyperpsy
+    cmap_navigator = t.Str('gray',
+                           label='Color map navigator',
+                           desc='Set the default color map for the navigator.',
+                           )
+    cmap_signal = t.Str('gray',
+                        label='Color map signal',
+                        desc='Set the default color map for the signal plot.',
+                        )
     dims_024_increase = t.Str('right',
                               label='Navigate right'
                               )
@@ -208,10 +209,6 @@ template = {
 
 # Set the enums defaults
 template['General'].logging_level = 'WARNING'
-template['Plot'].cmap_navigator = 'gray'
-template['Plot'].cmap_signal = 'gray'
-
-
 # Defaults template definition ends ######################################
 
 
@@ -293,6 +290,7 @@ preferences = Preferences(
     GUIs=template['GUIs'],
     Plot=template['Plot'],
 )
+
 
 if preferences.General.logger_on:
     turn_logging_on(verbose=0)

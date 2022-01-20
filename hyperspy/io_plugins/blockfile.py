@@ -23,7 +23,6 @@ import dask
 from dask.diagnostics import ProgressBar
 from skimage.exposure import rescale_intensity
 from skimage import dtype_limits
-from tqdm import tqdm
 import logging
 import warnings
 import datetime

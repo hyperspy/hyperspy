@@ -33,14 +33,7 @@ Subpackages:
         Tools for energy-dispersive X-ray data analysis.
 
 """
-import hyperspy.utils.eds
-import hyperspy.utils.material
-import hyperspy.utils.model
-import hyperspy.utils.plot
-import hyperspy.utils.roi
-import hyperspy.utils.samfire
-from hyperspy.interactive import interactive
-from hyperspy.misc.utils import stack, transpose
+import importlib
 
 
 def print_known_signal_types():
@@ -85,3 +78,41 @@ def print_known_signal_types():
         table.sortby = "class name"
     return print_html(f_text=table.get_string,
                       f_html=table.get_html_string)
+
+
+__all__ = [
+    'eds',
+    'interactive',
+    'markers',
+    'material',
+    'model',
+    'plot',
+    'print_known_signal_types',
+    'roi',
+    'samfire',
+    'stack',
+    'transpose',
+    ]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+_import_mapping = {
+    'interactive':'.interactive',
+    'stack': '.misc.utils',
+    'transpose': '.misc.utils',
+    }
+
+
+def __getattr__(name):
+    if name in __all__:
+        if name in _import_mapping.keys():
+            import_path = 'hyperspy' + _import_mapping.get(name)
+            return getattr(importlib.import_module(import_path), name)
+        else:
+            return importlib.import_module(
+                "." + name, 'hyperspy.utils'
+                )
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

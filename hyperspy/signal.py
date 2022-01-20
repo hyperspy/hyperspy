@@ -30,15 +30,17 @@ import warnings
 import dask.array as da
 from matplotlib import pyplot as plt
 import numpy as np
-from pint import UnitRegistry, UndefinedUnitError
+from pint import UndefinedUnitError
 from scipy import integrate
 from scipy import signal as sp_signal
 import traits.api as t
 
+import hyperspy
 from hyperspy.axes import AxesManager
-from hyperspy import io
+from hyperspy.api_nogui import _ureg
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
 from hyperspy.learn.mva import MVA, LearningResults
+from hyperspy.io import assign_signal_subclass
 import hyperspy.misc.utils
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.drawing import signal as sigdraw
@@ -2938,7 +2940,7 @@ class BaseSignal(FancySlicing,
             filename = Path(filename)
             if extension is not None:
                 filename = filename.with_suffix(f".{extension}")
-        io.save(filename, self, overwrite=overwrite, **kwds)
+        hyperspy.io.save(filename, self, overwrite=overwrite, **kwds)
 
     def _replot(self):
         if self._plot is not None:
@@ -4274,12 +4276,11 @@ class BaseSignal(FancySlicing,
         if hasattr(self.metadata.Signal, 'quantity'):
             self.metadata.Signal.__delattr__('quantity')
 
-        ureg = UnitRegistry()
         for axis in im_fft.axes_manager.signal_axes:
             axis.scale = 1. / axis.size / axis.scale
             axis.offset = 0.0
             try:
-                units = ureg.parse_expression(str(axis.units))**(-1)
+                units = _ureg.parse_expression(str(axis.units))**(-1)
                 axis.units = '{:~}'.format(units.units)
             except UndefinedUnitError:
                 _logger.warning('Units are not set or cannot be recognized')
@@ -4359,11 +4360,10 @@ class BaseSignal(FancySlicing,
         if return_real:
             im_ifft = im_ifft.real
 
-        ureg = UnitRegistry()
         for axis in im_ifft.axes_manager.signal_axes:
             axis.scale = 1. / axis.size / axis.scale
             try:
-                units = ureg.parse_expression(str(axis.units)) ** (-1)
+                units = _ureg.parse_expression(str(axis.units)) ** (-1)
                 axis.units = '{:~}'.format(units.units)
             except UndefinedUnitError:
                 _logger.warning('Units are not set or cannot be recognized')
@@ -5620,7 +5620,7 @@ class BaseSignal(FancySlicing,
 
     def _assign_subclass(self):
         mp = self.metadata
-        self.__class__ = hyperspy.io.assign_signal_subclass(
+        self.__class__ = assign_signal_subclass(
             dtype=self.data.dtype,
             signal_dimension=self.axes_manager.signal_dimension,
             signal_type=mp.Signal.signal_type

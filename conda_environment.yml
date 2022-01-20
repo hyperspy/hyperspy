@@ -9,7 +9,7 @@ dependencies:
 - h5py
 - imageio
 - ipyparallel
-- ipython !=8.0
+- ipython !=8.0.*
 - matplotlib-base
 - matplotlib-scalebar
 - mrcz

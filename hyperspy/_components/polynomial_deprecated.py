@@ -31,6 +31,7 @@ _logger = logging.getLogger(__name__)
 class Polynomial(Component):
 
     """n-order polynomial component. (DEPRECATED)
+
     Polynomial component defined by the coefficients parameters which is an
     array of len the order of the polynomial.
     For example, the [1,2,3] coefficients define the following 3rd order
@@ -38,8 +39,19 @@ class Polynomial(Component):
     `Polynomial2`
 
     This API is deprecated and will be replaced by
-    :py:class:`hyperspy._components.polynomial.Polynomial` in HyperSpy v2.0.
+    :py:class:`~._components.polynomial.Polynomial` in HyperSpy v2.0.
     To use the new API, set `legacy` to `False`.
+
+    Parameters
+    ----------
+    order: int
+        Order of the polynomial.
+    legacy: bool, default True
+        If `False`, use the new API.
+    module: str
+        See the docstring
+        of :py:class:`~._components.polynomial.Polynomial`
+        for details.
 
     Attributes
     ----------
@@ -47,23 +59,6 @@ class Polynomial(Component):
     """
 
     def __init__(self, order=2, legacy=True, module="numexpr", **kwargs):
-        """Polynomial component (DEPRECATED)
-
-        This API is deprecated and will be replaced by
-        :py:class:`hyperspy._components.polynomial.Polynomial` in HyperSpy v2.0.
-        To use the new API, set `legacy` to `False`.
-
-        Parameters
-        ----------
-        order: int
-            Order of the polynomial.
-        legacy: bool, default True
-            If `False`, use the new API.
-        module: str
-            See the docstring
-            of :py:class:`hyperspy._components.polynomial.Polynomial`
-            for details.
-        """
         if legacy:
             from hyperspy.misc.utils import deprecation_warning
             msg = (

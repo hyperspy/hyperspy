@@ -49,7 +49,8 @@ class RC(Expression):
     tau : float
         tau=RC is the RC circuit time constant (voltage rise time)
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
     """
 

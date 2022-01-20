@@ -20,8 +20,9 @@ import numpy as np
 import pytest
 import traits.api as t
 
+from hyperspy.api_nogui import _ureg
 from hyperspy.axes import (DataAxis, UniformDataAxis, AxesManager,
-                           UnitConversion, _ureg)
+                           UnitConversion)
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
@@ -187,7 +188,7 @@ class TestUnitConversion:
             self.uc._get_quantity('size')
         with pytest.raises(ValueError):
             self.uc._set_quantity('size', 10)
-  
+
 
 class TestUniformDataAxis:
 

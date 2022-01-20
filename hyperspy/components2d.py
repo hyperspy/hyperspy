@@ -17,48 +17,56 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-__doc__ = """
+from hyperspy.extensions import EXTENSIONS as _EXTENSIONS
+import importlib
 
-Components that can be used to define a 2D model for e.g. 2D model fitting.
+
+__all__ = [
+    component for component, specs_ in _EXTENSIONS["components2D"].items()
+    ]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if name in __all__:
+        spec = _EXTENSIONS["components2D"][name]
+        return getattr(importlib.import_module(spec['module']), name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+_base_docstring = """
+
+Components that can be used to define a 2D model for e.g. curve fitting.
+
+There are some components that are only useful for one particular kind of signal
+and therefore their name are preceded by the signal name: eg. eels_cl_edge.
 
 Writing a new template is easy: see the user guide documentation on creating
 components.
 
 For more details see each component docstring.
-====================================================================
+==============================================
 """
 
 
-from hyperspy.extensions import EXTENSIONS as _EXTENSIONS
-import importlib
+def _generate_docstring(base_docstring):
+    # Generate the documentation
+    for name in __dir__():
+        # get the component class
+        component = __getattr__(name)
+        spec = _EXTENSIONS["components2D"][name]
+        path = spec['module'].replace('hyperspy', '~')
+        line1 = f":py:class:`{path}.{name}`" + "\n"
+        component_doc = component.__doc__ or "..."
+        # Get the first line only
+        component_doc = component_doc.split('\n')[0]
+        line2 = "    " + component_doc + "\n\n"
+        base_docstring += line1 + line2
 
-_g = globals()
-for _component, _specs in _EXTENSIONS["components2D"].items():
-    _g[_component] = getattr(
-        importlib.import_module(
-            _specs["module"]), _component)
+    return base_docstring
 
-del importlib
-# Generating the documentation
 
-# Grab all the currently defined globals and make a copy of the keys
-# (can't use it directly, as the size changes)
-_keys = [key for key in globals().keys()]
-
-# For every key in alphabetically sorted order
-for key in sorted(_keys):
-    # if it does not start with a "_"
-    if not key.startswith('_'):
-        # get the component class (or function)
-        component = eval(key)
-        # If the component has documentation, grab the first 43 characters of
-        # the first line of the documentation. Else just use two dots ("..")
-        second_part = '..' if component.__doc__ is None else \
-            component.__doc__.split('\n')[0][:43] + '..'
-        # append the component name (up to 25 characters + one space) and the
-        # start of the documentation as one line to the current doc
-        __doc__ += key[:25] + ' ' * (26 - len(key)) + second_part + '\n'
-
-# delete all the temporary things from the namespace once done
-# so that they don't show up in the auto-complete
-del key, _keys, component, second_part
+__doc__ = _generate_docstring(_base_docstring)
