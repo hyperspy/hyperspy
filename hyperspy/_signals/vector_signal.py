@@ -28,7 +28,7 @@ class VectorSignal(BaseSignal):
         super().__init__(*args, **kwargs)
         self.vector = True
 
-    def get_real_vectors(self, axis=None, pixel_units=False, flatten=False):
+    def get_real_vectors(self, axis=None, real_units=True, flatten=False):
         """Returns the vectors in real units. Using the scale and offset as determined by the axes manager.
         If navigation axes are included the navigation axes will be transformed into vectors.
 
@@ -44,10 +44,12 @@ class VectorSignal(BaseSignal):
         """
         if axis is None:
             axes = self.axes_manager.signal_axes
+        elif axis is "all":
+            axis = self.axes_manager._axes
         else:
             axes = self.axes_manager[axis]
         navigate = any([a.navigate for a in axes])
-        if pixel_units:
+        if not real_units:
             sig_scales = np.array([1 for a in axes if not a.navigate])
             sig_offsets = np.array([0 for a in axes if not a.navigate])
         else:
@@ -74,10 +76,10 @@ class VectorSignal(BaseSignal):
 
         return real_vector
 
-    def _get_navigation_positions(self, flatten=False, pixel_units=False):
+    def _get_navigation_positions(self, flatten=False, real_units=True):
         nav_indexes = np.array(list(np.ndindex(self.axes_manager.navigation_shape)))
         np.zeros(shape=self.axes_manager.navigation_shape)
-        if pixel_units:
+        if not real_units:
             scales = [1 for a in self.axes_manager.navigation_axes]
             offsets = [0 for a in self.axes_manager.navigation_axes]
         else:
@@ -90,3 +92,53 @@ class VectorSignal(BaseSignal):
             real_nav = np.reshape([np.array(ind) * scales + offsets for ind in np.array(list(nav_indexes))],
                                    self.axes_manager.navigation_shape+(-1,))
         return real_nav
+
+    def cluster(self, func,
+                axis="all", real_units=True,
+                inplace=True,**kwargs):
+        """
+        Clusters the vectors based on the function given. This is a generic method
+        for clustering some
+        Parameters
+        ----------
+        method: func
+            A function which returns labels for each of the
+            vectors clustering. See sklearn.cluster
+        navigation_to_vector
+            Coverts each of the navigation axes to a vector
+            to cluster in higher dimensions.
+        **kwargs:
+            Any additional keyword arguments for the method.
+        Returns
+        -------
+        vector: Vector
+            A collection of vectors clustered based on the function passed.
+        """
+        if inplace:
+            vectors = self
+        else:
+            vectors = self.deepcopy()
+        real_vectors = vectors.get_real_vectors(axis=axis,
+                                                real_units=real_units,
+                                                flatten=True)
+        labels = func(real_vectors, **kwargs)
+        groups = np.array([real_vectors[labels == l] for l in range(max(labels))], dtype=object)
+        vectors.data = groups
+        return vectors
+
+    def to_markers(self,
+                   x_axis=-2,
+                   y_axis = -1,
+                   **kwargs):
+        """ Converts the vector to a set of markers given the axes.
+
+        Parameters
+        ----------
+        x_axis: int
+            The index for the x axis
+        y_axis: int
+            The index for the y axis
+        """
+        x_vectors = self.get_real_vectors(axis=x_axis).T
+        y_vectors = self.get_real_vectors(axis=y_axis).T
+        return Point(x_vectors, y_vectors)
