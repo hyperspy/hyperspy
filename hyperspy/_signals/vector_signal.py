@@ -148,5 +148,6 @@ class VectorSignal(BaseSignal):
         if isinstance(y_axis, int):
             y_axis = (y_axis,)
         x_vectors = self.get_real_vectors(axis=x_axis).T
+        print(x_vectors[0])
         y_vectors = self.get_real_vectors(axis=y_axis).T
         return Point(x_vectors, y_vectors,**kwargs)
