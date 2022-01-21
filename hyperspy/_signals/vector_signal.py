@@ -117,7 +117,6 @@ class BaseVectorSignal(BaseSignal):
             real_vector = nav_positions[..., nav_indexes]
         else:  # Both navigation and vector axes...
             nav_positions = self._get_navigation_positions(flatten=True)
-            real_vector = np.empty(self.data.shape, dtype=object)
             for ind, nav_pos in zip(np.ndindex(self.data.shape), nav_positions):
                 vectors = self.data[ind][:, sig_indexes]
                 real = vectors * sig_scales + sig_offsets

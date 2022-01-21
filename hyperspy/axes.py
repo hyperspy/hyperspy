@@ -117,6 +117,8 @@ def create_axis(**kwargs):
         axis_class = FunctionalDataAxis
     elif 'vector' in kwargs.keys():  # Functional axis
         axis_class = VectorDataAxis
+    elif 'vector' in kwargs.keys():  # Functional axis
+        axis_class = VectorDataAxis
     else:  # if not argument is provided fall back to uniform axis
         axis_class = UniformDataAxis
     return axis_class(**kwargs)
