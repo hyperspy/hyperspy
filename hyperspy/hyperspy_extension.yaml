@@ -139,6 +139,14 @@ signals:
     dtype: complex
     lazy: True
     module: hyperspy._signals.dielectric_function
+  VectorSignal:
+    signal_type: VectorSignal
+    signal_type_aliases:
+      - vector
+    signal_dimension: 2
+    dtype: real
+    lazy: False
+    module: hyperspy._signals.vector_signal
 
 components1D:
   Arctan:

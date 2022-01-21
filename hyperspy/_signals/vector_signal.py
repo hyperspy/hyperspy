@@ -45,9 +45,12 @@ class VectorSignal(BaseSignal):
         if axis is None:
             axes = self.axes_manager.signal_axes
         elif axis is "all":
-            axis = self.axes_manager._axes
+            axes = self.axes_manager._axes
         else:
             axes = self.axes_manager[axis]
+        nav_indexes = tuple([a.index_in_array for a in axes if a.navigate])
+        sig_indexes = np.array([a.index_in_array for a in axes if not a.navigate])
+        sig_indexes = tuple(sig_indexes - len(self.axes_manager.navigation_axes))
         navigate = any([a.navigate for a in axes])
         if not real_units:
             sig_scales = np.array([1 for a in axes if not a.navigate])
@@ -58,19 +61,20 @@ class VectorSignal(BaseSignal):
         if not navigate:  # Only vector axes
             real_vector = np.empty(self.data.shape, dtype=object)
             for ind in np.ndindex(self.data.shape):
-                vectors = self.data[ind][axis]
+                vectors = self.data[ind][:,sig_indexes]
                 real = vectors * sig_scales + sig_offsets
                 real_vector[ind] = real
         elif len(sig_scales) == 0:  # Only navigation axes
             nav_positions = self._get_navigation_positions()
             # check to see if we need to find the navigation axis index...
-            real_vector = nav_positions[:, :, axis]
+            real_vector = nav_positions[:, :, nav_indexes]
         else:  # Both navigation and vector axes...
             nav_positions = self._get_navigation_positions(flatten=True)
+            real_vector = np.empty(self.data.shape, dtype=object)
             for ind, nav_pos in zip(np.ndindex(self.data.shape), nav_positions):
-                vectors = self.data[ind][axis]
+                vectors = self.data[ind][:,sig_indexes]
                 real = vectors * sig_scales + sig_offsets
-                nav_positions[ind] = np.array([tuple(nav_pos) + tuple(v)for v in real])
+                real_vector[ind] = np.array([tuple(nav_pos) + tuple(v)for v in real])
         if flatten:  # Unpack object into one array
             real_vector = np.array([v for ind in np.ndindex for v in real_vector[ind]])
 
@@ -127,8 +131,8 @@ class VectorSignal(BaseSignal):
         return vectors
 
     def to_markers(self,
-                   x_axis=-2,
-                   y_axis = -1,
+                   x_axis=(-2,),
+                   y_axis=(-1,),
                    **kwargs):
         """ Converts the vector to a set of markers given the axes.
 
@@ -139,6 +143,10 @@ class VectorSignal(BaseSignal):
         y_axis: int
             The index for the y axis
         """
+        if isinstance(x_axis, int):
+            x_axis = (x_axis,)
+        if isinstance(y_axis, int):
+            y_axis = (y_axis,)
         x_vectors = self.get_real_vectors(axis=x_axis).T
         y_vectors = self.get_real_vectors(axis=y_axis).T
-        return Point(x_vectors, y_vectors)
+        return Point(x_vectors, y_vectors,**kwargs)

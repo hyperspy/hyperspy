@@ -39,7 +39,7 @@ from scipy import signal as sp_signal
 import traits.api as t
 from tlz import concat
 
-from hyperspy.axes import AxesManager
+from hyperspy.axes import AxesManager, VectorDataAxis
 from hyperspy.api_nogui import _ureg
 from hyperspy.misc.array_tools import rebin as array_rebin
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
@@ -2471,6 +2471,33 @@ class BaseSignal(FancySlicing,
         if isinstance(d, dict):
             d = DictionaryTreeBrowser(d)
         self._original_metadata = d
+
+    @property
+    def vector(self):
+        return self.axes_manager._vector
+
+    @vector.setter
+    def vector(self, value):
+        if value:
+            if self.data.dtype != object:
+                raise ValueError("The array is not ragged.")
+            num_axes = 0
+
+            for d in np.ndindex(self.axes_manager.navigation_shape):
+                object_shape = np.shape(self.data[d])
+                if len(object_shape) < 1:
+                    continue
+                else:
+                    num_axes = object_shape[-1]
+                    break
+            if len(self.axes_manager.signal_axes) == num_axes:
+                signal_axes = [i.convert_to_vector_axis() for i in self.axes_manager.signal_axes]
+            else:
+                for i in range(num_axes):
+                    axis = {'index_in_array': None, 'vector': True}
+                    self.axes_manager._append_axis(**axis)
+            self.axes_manager._vector = True
+            self.axes_manager._ragged = True
 
     @property
     def ragged(self):

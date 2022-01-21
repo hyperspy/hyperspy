@@ -115,6 +115,8 @@ def create_axis(**kwargs):
         axis_class = DataAxis
     elif 'expression' in kwargs.keys():  # Functional axis
         axis_class = FunctionalDataAxis
+    elif 'vector' in kwargs.keys():  # Functional axis
+        axis_class = VectorDataAxis
     else:  # if not argument is provided fall back to uniform axis
         axis_class = UniformDataAxis
     return axis_class(**kwargs)
@@ -1339,6 +1341,54 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         self.__init__(**d, axis=self.axis)
         self.axes_manager = axes_manager
 
+    def convert_to_vector_axis(self):
+        d = super().get_axis_dictionary()
+        axes_manager = self.axes_manager
+        self.__class__ = VectorDataAxis
+        d["_type"] = 'VectorDataAxis'
+        d["vector"] = True
+        self.__init__(**d)
+        self.axes_manager = axes_manager
+
+
+class VectorDataAxis(UniformDataAxis):
+    """DataAxis class for vector representations of ``ragged`` data
+    The VectorDataAxis preforms like the Uniform DataAxis but has no size.
+    """
+
+    def __init__(self,
+                 index_in_array=None,
+                 index_in_vector=None,
+                 name=t.Undefined,
+                 units=t.Undefined,
+                 navigate=False,
+                 scale=1.,
+                 size=1,
+                 offset=0.,
+                 is_binned=False,
+                 **kwargs):
+        super().__init__(
+            index_in_array=index_in_array,
+            name=name,
+            units=units,
+            navigate=navigate,
+            is_binned=is_binned,
+            scale=scale,
+            size=size,
+            offset=offset,
+            **kwargs
+        )
+        # These traits need to added dynamically to be removed when necessary
+        self.update_axis()
+        self.vector = True
+
+    def get_axis_dictionary(self):
+        d = super().get_axis_dictionary()
+        d.update({'scale': self.scale,
+                  'offset': self.offset})
+        d["vector"] = self.vector
+        return d
+
 
 def _serpentine_iter(shape):
     '''Similar to np.ndindex, but yields indices
@@ -1495,10 +1545,15 @@ class AxesManager(t.HasTraits):
         self._update_trait_handlers()
         self.iterpath = 'flyback'
         self._ragged = False
+        self._vector = False
 
     @property
     def ragged(self):
         return self._ragged
+
+    @property
+    def vector(self):
+        return self._vector
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes.index',
@@ -2232,7 +2287,7 @@ class AxesManager(t.HasTraits):
         for axis in self.signal_axes:
             string += str(axis.size) + ", "
         string = string.rstrip(", ")
-        if self.ragged:
+        if self.ragged and not self.vector:
             string += 'ragged'
         string += ")"
         return string
@@ -2267,7 +2322,7 @@ class AxesManager(t.HasTraits):
         for ax in self.signal_axes:
             text += '\n'
             text += axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform)
-        if self.ragged:
+        if self.ragged and not self.vector:
             text += '\n'
             text += "     Ragged axis |               Variable length"
 
