@@ -5025,7 +5025,8 @@ class BaseSignal(FancySlicing,
                     "Pass signal instances instead."
                 )
             if iterating_kwargs[key]._lazy:
-                if iterating_kwargs[key]._get_navigation_chunk_size() != nav_chunks:
+                if iterating_kwargs[key].get_chunk_size(axis=iterating_kwargs[key].axes_manager.navigation_axes) !=\
+                        nav_chunks:
                     iterating_kwargs[key].rechunk(nav_chunks=nav_chunks, sig_chunks=-1)
             else:
                 iterating_kwargs[key] = iterating_kwargs[key].as_lazy()
