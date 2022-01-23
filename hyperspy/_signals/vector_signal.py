@@ -19,6 +19,7 @@ import numpy as np
 
 from hyperspy.signal import BaseSignal
 from hyperspy.drawing._markers.point import Point
+from hyperspy.axes import VectorDataAxis
 
 
 class VectorSignal(BaseSignal):
@@ -72,13 +73,29 @@ class VectorSignal(BaseSignal):
             nav_positions = self._get_navigation_positions(flatten=True)
             real_vector = np.empty(self.data.shape, dtype=object)
             for ind, nav_pos in zip(np.ndindex(self.data.shape), nav_positions):
-                vectors = self.data[ind][:,sig_indexes]
+                vectors = self.data[ind][:, sig_indexes]
                 real = vectors * sig_scales + sig_offsets
-                real_vector[ind] = np.array([tuple(nav_pos) + tuple(v)for v in real])
+                real_vector[ind] = np.array([np.append(nav_pos, v) for v in real])
         if flatten:  # Unpack object into one array
-            real_vector = np.array([v for ind in np.ndindex for v in real_vector[ind]])
+            real_vector = np.array([v for ind in np.ndindex(self.data.shape) for v in real_vector[ind]])
 
         return real_vector
+
+    def flatten(self, inplace=True):
+        if inplace:
+            vectors = self
+        else:
+            vectors = self.deepcopy()
+        new_vectors = self.get_real_vectors(axis="all",real_units=False, flatten=True)
+        print(vectors.axes_manager._axes)
+        for axis in vectors.axes_manager._axes:
+            if not isinstance(axis, VectorDataAxis):
+                axis.convert_to_vector_axis()
+            axis.navigate = False
+        new = np.empty(1, dtype=object)
+        new[0]=new_vectors
+        vectors.data = new
+        return vectors
 
     def _get_navigation_positions(self, flatten=False, real_units=True):
         nav_indexes = np.array(list(np.ndindex(self.axes_manager.navigation_shape)))
