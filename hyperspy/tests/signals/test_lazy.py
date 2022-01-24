@@ -392,9 +392,9 @@ class TestLazyPlot:
 
 
 class TestHTMLRep:
-    def test_html_rep(self):
-        sig = _signal()
-        sig._repr_html_()
+
+    def test_html_rep(self, signal):
+        signal._repr_html_()
 
     def test_html_rep_zero_dim_nav(self):
         s = hs.signals.BaseSignal(da.random.random((500, 1000))).as_lazy()
@@ -414,7 +414,14 @@ class TestHTMLRep:
         s_string = s._get_chunk_string()
         assert (s_string == "(<b>6</b>,<b>6</b>|3,2)")
 
-    def test_get_chunk_size(self):
-        sig = _signal()
-        s = sig.get_chunk_size()
-        assert s == ((2, 1, 3), (4, 5))
+
+def test_get_chunk_size(signal):
+    sig = signal
+    chunk_size = sig.get_chunk_size()
+    assert chunk_size == ((2, 1, 3), (4, 5))
+    assert sig.get_chunk_size(sig.axes_manager.navigation_axes) == chunk_size
+    assert sig.get_chunk_size([0, 1]) == chunk_size
+
+    sig = _signal()
+    chunk_size = sig.get_chunk_size(axes=0)
+    chunk_size == ((2, 1, 3), )
