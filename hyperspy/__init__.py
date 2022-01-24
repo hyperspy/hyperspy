@@ -18,11 +18,10 @@
 
 import importlib
 import logging
+from hyperspy import docstrings
 
 _logger = logging.getLogger(__name__)
 
-
-from hyperspy import docstrings
 
 __doc__ = """
 HyperSpy: a multi-dimensional data analysis package for Python

@@ -1,0 +1,3 @@
+Add :ref:`html representation<lazy._repr_html_>` for lazy signals and the
+:py:meth:`~._signals.lazy.LazySignal.get_chunk_size` method to get the chunk size
+of given axes

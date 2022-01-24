@@ -46,6 +46,7 @@ cases for lazy signals will have to be written. If a function operates on
 arbitrary-sized arrays and the shape of the output can be known before calling,
 ``da.map_blocks`` and ``da.map_overlap`` are efficient and flexible.
 
+
 Finally, in addition to ``_iterate_signal`` that is available to all HyperSpy
 signals, lazy counterparts also have the ``_block_iterator`` method that 
 supports signal and navigation masking and yields (returns on subsequent calls)

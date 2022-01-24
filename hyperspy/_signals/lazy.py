@@ -16,13 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-import logging
 from functools import partial
+import logging
+import os
 import warnings
 
 import numpy as np
 import dask.array as da
-import dask.delayed as dd
 import dask
 from dask.diagnostics import ProgressBar
 from itertools import product
@@ -30,11 +30,16 @@ from packaging.version import Version
 
 from hyperspy.signal import BaseSignal
 from hyperspy.defaults_parser import preferences
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+from hyperspy.docstrings.signal import (
+    SHOW_PROGRESSBAR_ARG,
+    MANY_AXIS_PARAMETER,
+    )
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.array_tools import (_requires_linear_rebin,
-                                       get_signal_chunk_slice)
+from hyperspy.misc.array_tools import (
+    _requires_linear_rebin,
+    get_signal_chunk_slice,
+    )
 from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.utils import multiply, dummy_context_manager, isiterable
@@ -43,6 +48,15 @@ from hyperspy.misc.utils import multiply, dummy_context_manager, isiterable
 _logger = logging.getLogger(__name__)
 
 lazyerror = NotImplementedError('This method is not available in lazy signals')
+
+
+try:
+    from dask.widgets import TEMPLATE_PATHS
+    templates_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "..", "misc", "dask_widgets")
+    TEMPLATE_PATHS.append(templates_path)
+except ModuleNotFoundError:
+    _logger.info("Dask widgets not loaded (dask >=2021.11.1 is required)")
 
 
 def to_array(thing, chunks=None):
@@ -161,6 +175,61 @@ class LazySignal(BaseSignal):
         self._cache_dask_chunk_slice = None
         if not self._clear_cache_dask_data in self.events.data_changed.connected:
             self.events.data_changed.connect(self._clear_cache_dask_data)
+
+    def _repr_html_(self):
+        try:
+            from dask import config
+            from dask.array.svg import svg
+            from dask.widgets import get_template
+            from dask.utils import format_bytes
+            nav_chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
+            sig_chunks = self.get_chunk_size(self.axes_manager.signal_axes)
+            if nav_chunks ==():
+                nav_grid = ""
+            else:
+                nav_grid = svg(chunks=nav_chunks,
+                               size=config.get("array.svg.size", 160))
+            if sig_chunks == ():
+                sig_grid = ""
+            else:
+                sig_grid = svg(chunks=sig_chunks,
+                               size=config.get("array.svg.size", 160))
+            nbytes = format_bytes(self.data.nbytes)
+            cbytes = format_bytes(np.prod(self.data.chunksize) * self.data.dtype.itemsize)
+            return get_template("lazy_signal.html.j2").render(nav_grid=nav_grid,
+                                                              sig_grid=sig_grid,
+                                                              dim=self.axes_manager._get_dimension_str(),
+                                                              chunks=self._get_chunk_string(),
+                                                              array=self.data,
+                                                              signal_type=self._signal_type,
+                                                              nbytes=nbytes,
+                                                              cbytes=cbytes,
+                                                              title=self.metadata.General.title
+                                                              )
+
+        except ModuleNotFoundError:
+            return self
+
+    def _get_chunk_string(self):
+        nav_chunks = self.data.chunksize[:len(self.axes_manager.navigation_shape)][::-1]
+        string = "("
+        for chunks, axis in zip(nav_chunks, self.axes_manager.navigation_shape):
+            if chunks == axis:
+                string += "<b>"+str(chunks)+"</b>,"
+            else:
+                string += str(chunks) + ","
+        string = string.rstrip(",")
+        string += "|"
+
+        sig_chunks = self.data.chunksize[len(self.axes_manager.navigation_shape):][::-1]
+        for chunks, axis in zip(sig_chunks, self.axes_manager.signal_shape):
+            if chunks == axis:
+                string += "<b>"+str(chunks)+"</b>,"
+            else:
+                string += str(chunks) + ","
+        string = string.rstrip(",")
+        string += ")"
+        return string
 
     def compute(self, close_file=False, show_progressbar=None, **kwargs):
         """Attempt to store the full signal in memory.
@@ -349,10 +418,41 @@ class LazySignal(BaseSignal):
                 chunks.append((dc.shape[i], ))
         return tuple(chunks)
 
-    def _get_navigation_chunk_size(self):
-        nav_axes = self.axes_manager.navigation_indices_in_array
-        nav_chunks = tuple([self.data.chunks[i] for i in sorted(nav_axes)])
-        return nav_chunks
+    def get_chunk_size(self, axes=None):
+        """
+        Returns the chunk size as tuple for a set of given axes. The order
+        of the returned tuple follows the order of the dask array.
+
+        Parameters
+        ----------
+        axes : %s
+
+        Examples
+        --------
+        >>> import dask.array as da
+        >>> data = da.random.random((10, 200, 300))
+        >>> data.chunksize
+        (10, 200, 300)
+        >>> s = hs.signals.Signal1D(data).as_lazy()
+        >>> s.get_chunk_size() # All navigation axes
+        ((10,), (200,))
+        >>> s.get_chunk_size(0) # The first navigation axis
+        ((200,),)
+        """
+        if axes is None:
+            axes = self.axes_manager.navigation_axes
+
+        axes = self.axes_manager[axes]
+
+        if not np.iterable(axes):
+            axes = (axes,)
+
+        axes = tuple([axis.index_in_array for axis in axes])
+        ax_chunks = tuple([self.data.chunks[i] for i in sorted(axes)])
+
+        return ax_chunks
+
+    get_chunk_size.__doc__ %= (MANY_AXIS_PARAMETER)
 
     def _make_lazy(self, axis=None, rechunk=False, dtype=None):
         self.data = self._lazy_data(axis=axis, rechunk=rechunk, dtype=dtype)
@@ -368,6 +468,7 @@ class LazySignal(BaseSignal):
             dtype = np.dtype(dtype)
         super().change_dtype(dtype)
         self._make_lazy(rechunk=rechunk, dtype=dtype)
+
     change_dtype.__doc__ = BaseSignal.change_dtype.__doc__
 
     def _lazy_data(self, axis=None, rechunk=True, dtype=None):
@@ -469,8 +570,8 @@ class LazySignal(BaseSignal):
         and the slice needed to extract this chunk is in
         s._cache_dask_chunk_slice. To these, use s._clear_cache_dask_data()
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         indices : tuple
             Must be the same length as navigation dimensions in self.
 
@@ -491,7 +592,7 @@ class LazySignal(BaseSignal):
         """
 
         sig_dim = self.axes_manager.signal_dimension
-        chunks = self._get_navigation_chunk_size()
+        chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
         navigation_indices = indices[:-sig_dim]
         chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, chunks)
         if (chunk_slice != self._cache_dask_chunk_slice or

@@ -44,10 +44,8 @@ from hyperspy.io import assign_signal_subclass
 import hyperspy.misc.utils
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.drawing import signal as sigdraw
-from hyperspy.defaults_parser import preferences
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import iterable_not_string
-from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import underline, isiterable
@@ -5014,7 +5012,7 @@ class BaseSignal(FancySlicing,
 
     def _get_iterating_kwargs(self, iterating_kwargs):
         signal_dim_shape = self.axes_manager.signal_shape
-        nav_chunks = self._get_navigation_chunk_size()
+        nav_chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
         args, arg_keys = (), ()
         for key in iterating_kwargs:
             if not isinstance(iterating_kwargs[key], BaseSignal):
@@ -5025,11 +5023,18 @@ class BaseSignal(FancySlicing,
                     "Pass signal instances instead."
                 )
             if iterating_kwargs[key]._lazy:
-                if iterating_kwargs[key]._get_navigation_chunk_size() != nav_chunks:
-                    iterating_kwargs[key].rechunk(nav_chunks=nav_chunks, sig_chunks=-1)
+                axes = iterating_kwargs[key].axes_manager.navigation_axes
+                if iterating_kwargs[key].get_chunk_size(axes) != nav_chunks:
+                    iterating_kwargs[key].rechunk(
+                        nav_chunks=nav_chunks,
+                        sig_chunks=-1
+                        )
             else:
                 iterating_kwargs[key] = iterating_kwargs[key].as_lazy()
-                iterating_kwargs[key].rechunk(nav_chunks=nav_chunks, sig_chunks=-1)
+                iterating_kwargs[key].rechunk(
+                    nav_chunks=nav_chunks,
+                    sig_chunks=-1
+                    )
             extra_dims = (len(signal_dim_shape) -
                           len(iterating_kwargs[key].axes_manager.signal_shape))
             if extra_dims > 0:

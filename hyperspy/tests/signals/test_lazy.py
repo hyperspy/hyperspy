@@ -389,3 +389,39 @@ class TestLazyPlot:
         assert s._cache_dask_chunk.shape == (5, 5, 20)
         assert s._cache_dask_chunk_slice == np.s_[0:5, 0:5]
         s._plot.close()
+
+
+class TestHTMLRep:
+
+    def test_html_rep(self, signal):
+        signal._repr_html_()
+
+    def test_html_rep_zero_dim_nav(self):
+        s = hs.signals.BaseSignal(da.random.random((500, 1000))).as_lazy()
+        s._repr_html_()
+
+    def test_html_rep_zero_dim_sig(self):
+        s = hs.signals.BaseSignal(da.random.random((500, 1000))).as_lazy().T
+        s._repr_html_()
+
+    def test_get_chunk_string(self):
+        s = hs.signals.BaseSignal(da.random.random((6, 6, 6, 6))).as_lazy()
+        s = s.transpose(2)
+        s.data = s.data.rechunk((3, 2, 6, 6))
+        s_string = s._get_chunk_string()
+        assert (s_string == "(2,3|<b>6</b>,<b>6</b>)")
+        s.data = s.data.rechunk((6, 6, 2, 3))
+        s_string = s._get_chunk_string()
+        assert (s_string == "(<b>6</b>,<b>6</b>|3,2)")
+
+
+def test_get_chunk_size(signal):
+    sig = signal
+    chunk_size = sig.get_chunk_size()
+    assert chunk_size == ((2, 1, 3), (4, 5))
+    assert sig.get_chunk_size(sig.axes_manager.navigation_axes) == chunk_size
+    assert sig.get_chunk_size([0, 1]) == chunk_size
+
+    sig = _signal()
+    chunk_size = sig.get_chunk_size(axes=0)
+    chunk_size == ((2, 1, 3), )

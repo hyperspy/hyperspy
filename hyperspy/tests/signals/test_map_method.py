@@ -356,13 +356,15 @@ class TestLazyMap:
     def test_keep_navigation_chunks(self):
         s = self.s
         s_out = s.map(lambda x: x, inplace=False, lazy_output=True)
-        assert s._get_navigation_chunk_size() == s_out._get_navigation_chunk_size()
+        assert (s.get_chunk_size(s.axes_manager.navigation_axes) ==
+                s_out.get_chunk_size(s_out.axes_manager.navigation_axes))
 
     def test_keep_navigation_chunks_cropping(self):
         s = self.s
         s1 = s.inav[1:-2, 2:-1]
         s_out = s1.map(lambda x: x, inplace=False, lazy_output=True)
-        assert s1._get_navigation_chunk_size() == s_out._get_navigation_chunk_size()
+        assert (s1.get_chunk_size(s1.axes_manager.navigation_axes) ==
+                s_out.get_chunk_size(s_out.axes_manager.navigation_axes))
 
     @pytest.mark.parametrize("output_signal_size", [(3,), (3, 4), (3, 4, 5)])
     def test_map_output_signal_size(self, output_signal_size):
@@ -579,7 +581,7 @@ class TestGetIteratingKwargsSignal2D:
 
     def test_one_iterating_kwarg(self):
         s = self.s
-        nav_chunks = s._get_navigation_chunk_size()
+        nav_chunks = s.get_chunk_size(axes=s.axes_manager.navigation_axes)
         nav_dim = len(nav_chunks)
         s_iter0 = hs.signals.Signal1D(np.random.random((10, 20, 2)))
         iterating_kwargs = {"iter0": s_iter0}
@@ -593,7 +595,7 @@ class TestGetIteratingKwargsSignal2D:
 
     def test_many_iterating_kwarg(self):
         s = self.s
-        nav_chunks = s._get_navigation_chunk_size()
+        nav_chunks = s.get_chunk_size(axes=s.axes_manager.navigation_axes)
         nav_dim = len(nav_chunks)
         s_iter0 = hs.signals.Signal1D(np.random.random((10, 20, 2)))
         s_iter1 = hs.signals.Signal2D(np.random.random((10, 20, 200, 200)))
@@ -611,7 +613,7 @@ class TestGetIteratingKwargsSignal2D:
 
     def test_lazy_iterating_kwarg(self):
         s = self.s
-        nav_chunks = s._get_navigation_chunk_size()
+        nav_chunks = s.get_chunk_size(axes=s.axes_manager.navigation_axes)
         nav_dim = len(nav_chunks)
         dask_array_iter0 = da.zeros((10, 20, 2), chunks=(5, 10, 2))
         dask_array_iter1 = da.zeros((10, 20, 2), chunks=(5, 5, 2))
@@ -627,7 +629,7 @@ class TestGetIteratingKwargsSignal2D:
 
     def test_cropping_iterating_kwarg(self):
         s = self.s.inav[1:]
-        nav_chunks = s._get_navigation_chunk_size()
+        nav_chunks = s.get_chunk_size(axes=s.axes_manager.navigation_axes)
         nav_dim = len(nav_chunks)
         s_iter0 = hs.signals.Signal1D(np.random.random((10, 19, 2)))
         iterating_kwargs = {"iter0": s_iter0}
@@ -1004,6 +1006,7 @@ class TestLazyInputMapAll:
         assert s.data[0, -1] == 0.0
         assert s.data[-1, 0] == 0.0
         assert s.data[-1, -1] == 0.0
+        assert s_rot is None
 
 
 class TestCompareMapAllvsMapIterate:
