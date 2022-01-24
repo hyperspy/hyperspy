@@ -22,12 +22,48 @@ from hyperspy.drawing._markers.point import Point
 from hyperspy.axes import VectorDataAxis
 
 
-class VectorSignal(BaseSignal):
+class BaseVectorSignal(BaseSignal):
     """A generic class for a ragged signal representing a set of vectors.
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.vector = True
+
+    def nav_to_vector(self,
+                      inplace=True,
+                      axes=None):
+        """Converts the navigation positions to vectors
+
+        Parameters
+        ----------
+        axes: None, tuple
+            The navigation axes to be converted to vectors
+        """
+        if axes is None:
+            axes = self.axes_manager.navigation_axes
+        else:
+            axes = self.axes_manager[axes]
+        if inplace:
+            vectors = self
+        else:
+            vectors = self.deepcopy()
+        vector_ind = np.array([a.index_in_array for a in self.axes_manager.navigation_axes if a in axes],dtype=int)
+        keep_ind = np.array([a.index_in_array for a in self.axes_manager.navigation_axes if a not in axes],dtype=int)
+        orig_shape = self.data.shape
+        if len(keep_ind) == 0:
+            new_shape = 1
+        else:
+            new_shape = tuple(np.array(self.axes_manager.navigation_shape)[keep_ind])
+        vect_shape = tuple(np.array(self.axes_manager.navigation_shape)[vector_ind])
+        new = np.empty(new_shape, dtype=list)
+        for ind in np.ndindex(new_shape):
+            new[ind] = [np.append(ind2, v) for ind2 in np.ndindex(vect_shape) for v in vectors.data[ind2, ind]]
+        vectors.data = new
+        for axis in axes:
+            if not isinstance(axis, VectorDataAxis):
+                axis.convert_to_vector_axis()
+            axis.navigate = False
+        return vectors
 
     def get_real_vectors(self, axis=None, real_units=True, flatten=False):
         """Returns the vectors in real units. Using the scale and offset as determined by the axes manager.
@@ -81,12 +117,25 @@ class VectorSignal(BaseSignal):
 
         return real_vector
 
-    def flatten(self, inplace=True):
+    def flatten(self, inplace=True, axes=None):
+        """ Converts selected navigation axes to vectors.
+
+        Parameters
+        ----------
+        inplace
+        axes
+
+        Returns
+        -------
+
+        """
+        if axes is None:
+            axes = self.axes_manager.navigation_axes
         if inplace:
             vectors = self
         else:
             vectors = self.deepcopy()
-        new_vectors = self.get_real_vectors(axis="all",real_units=False, flatten=True)
+        new_vectors = self.get_real_vectors(axis="all", real_units=False, flatten=True)
         print(vectors.axes_manager._axes)
         for axis in vectors.axes_manager._axes:
             if not isinstance(axis, VectorDataAxis):
@@ -97,7 +146,9 @@ class VectorSignal(BaseSignal):
         vectors.data = new
         return vectors
 
-    def _get_navigation_positions(self, flatten=False, real_units=True):
+    def _get_navigation_positions(self,
+                                  flatten=False,
+                                  real_units=True):
         nav_indexes = np.array(list(np.ndindex(self.axes_manager.navigation_shape)))
         np.zeros(shape=self.axes_manager.navigation_shape)
         if not real_units:

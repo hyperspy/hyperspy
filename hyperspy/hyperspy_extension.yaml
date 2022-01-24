@@ -139,8 +139,8 @@ signals:
     dtype: complex
     lazy: True
     module: hyperspy._signals.dielectric_function
-  VectorSignal:
-    signal_type: VectorSignal
+  BaseVectorSignal:
+    signal_type: BaseVectorSignal
     signal_type_aliases:
       - vector
     signal_dimension: 2
