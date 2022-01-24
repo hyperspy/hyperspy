@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-import logging
 from functools import partial
+import logging
+import os
 import warnings
 
 import numpy as np
@@ -47,6 +48,15 @@ from hyperspy.misc.utils import multiply, dummy_context_manager, isiterable
 _logger = logging.getLogger(__name__)
 
 lazyerror = NotImplementedError('This method is not available in lazy signals')
+
+
+try:
+    from dask.widgets import TEMPLATE_PATHS
+    templates_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "..", "misc", "dask_widgets")
+    TEMPLATE_PATHS.append(templates_path)
+except ModuleNotFoundError:
+    _logger.info("Dask widgets not loaded (dask >=2021.11.1 is required)")
 
 
 def to_array(thing, chunks=None):

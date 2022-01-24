@@ -18,18 +18,10 @@
 
 import importlib
 import logging
-import os
 from hyperspy import docstrings
 
 _logger = logging.getLogger(__name__)
 
-
-try:
-    from dask.widgets import TEMPLATE_PATHS
-    templates_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "widgets/templates")
-    TEMPLATE_PATHS.append(templates_path)
-except ModuleNotFoundError:
-    _logger.info("Dask widgets not loaded (dask >=2021.11.1 is required)")
 
 __doc__ = """
 HyperSpy: a multi-dimensional data analysis package for Python
