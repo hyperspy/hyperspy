@@ -22,7 +22,6 @@ import warnings
 
 import numpy as np
 import dask.array as da
-import dask.delayed as dd
 import dask
 from dask.diagnostics import ProgressBar
 from itertools import product
@@ -30,11 +29,16 @@ from packaging.version import Version
 
 from hyperspy.signal import BaseSignal
 from hyperspy.defaults_parser import preferences
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+from hyperspy.docstrings.signal import (
+    SHOW_PROGRESSBAR_ARG,
+    MANY_AXIS_PARAMETER,
+    )
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.array_tools import (_requires_linear_rebin,
-                                       get_signal_chunk_slice)
+from hyperspy.misc.array_tools import (
+    _requires_linear_rebin,
+    get_signal_chunk_slice,
+    )
 from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.utils import multiply, dummy_context_manager, isiterable
@@ -168,8 +172,8 @@ class LazySignal(BaseSignal):
             from dask.array.svg import svg
             from dask.widgets import get_template
             from dask.utils import format_bytes
-            nav_chunks = self.get_chunk_size(axis=self.axes_manager.navigation_axes)
-            sig_chunks = self.get_chunk_size(axis=self.axes_manager.signal_axes)
+            nav_chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
+            sig_chunks = self.get_chunk_size(self.axes_manager.signal_axes)
             if nav_chunks ==():
                 nav_grid = ""
             else:
@@ -404,20 +408,41 @@ class LazySignal(BaseSignal):
                 chunks.append((dc.shape[i], ))
         return tuple(chunks)
 
-    def get_chunk_size(self, axis=None):
-        """ Returns the chunk size for a set of given axis.
+    def get_chunk_size(self, axes=None):
+        """
+        Returns the chunk size as tuple for a set of given axes. The order
+        of the returned tuple follows the order of the dask array.
+
         Parameters
         ----------
-        axis %s
+        axes : %s
+
+        Examples
+        --------
+        >>> import dask.array as da
+        >>> data = da.random.random((10, 200, 300))
+        >>> data.chunksize
+        (10, 200, 300)
+        >>> s = hs.signals.Signal1D(data).as_lazy()
+        >>> s.get_chunk_size() # All navigation axes
+        ((10,), (200,))
+        >>> s.get_chunk_size(0) # The first navigation axis
+        ((200,),)
         """
-        if axis is None:
-            axis = self.axes_manager.navigation_axes
-        axes = self.axes_manager[axis]
+        if axes is None:
+            axes = self.axes_manager.navigation_axes
+
+        axes = self.axes_manager[axes]
+
         if not np.iterable(axes):
             axes = (axes,)
+
         axes = tuple([axis.index_in_array for axis in axes])
         ax_chunks = tuple([self.data.chunks[i] for i in sorted(axes)])
+
         return ax_chunks
+
+    get_chunk_size.__doc__ %= (MANY_AXIS_PARAMETER)
 
     def _make_lazy(self, axis=None, rechunk=False, dtype=None):
         self.data = self._lazy_data(axis=axis, rechunk=rechunk, dtype=dtype)
@@ -433,6 +458,7 @@ class LazySignal(BaseSignal):
             dtype = np.dtype(dtype)
         super().change_dtype(dtype)
         self._make_lazy(rechunk=rechunk, dtype=dtype)
+
     change_dtype.__doc__ = BaseSignal.change_dtype.__doc__
 
     def _lazy_data(self, axis=None, rechunk=True, dtype=None):
@@ -534,8 +560,8 @@ class LazySignal(BaseSignal):
         and the slice needed to extract this chunk is in
         s._cache_dask_chunk_slice. To these, use s._clear_cache_dask_data()
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         indices : tuple
             Must be the same length as navigation dimensions in self.
 
