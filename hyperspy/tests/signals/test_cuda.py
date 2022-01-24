@@ -49,6 +49,20 @@ class TestCupy:
         np.testing.assert_allclose(np.nan_to_num(sr0), np.zeros_like(sr0))
         assert sr.isig[0].nansum() == 4.360798E08
 
-    def as_signal(self):
+    def test_as_signal(self):
         s = self.s
-        s2 = s.as_signal2D([0, 1])
+        _ = s.as_signal2D([0, 1])
+
+    @pytest.mark.parametrize('parallel', [True, False, None])
+    def test_map(self, parallel):
+        s = self.s
+        data_ref = s.data.copy()
+
+        def dummy_function(data):
+            return data * 10
+
+        s.map(dummy_function, parallel, inplace=True,
+              output_signal_size=s.axes_manager.signal_shape,
+              output_dtype=s.data.dtype)
+
+        assert (s.data == data_ref * 10).all()

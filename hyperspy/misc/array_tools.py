@@ -17,7 +17,7 @@
 
 
 from collections import OrderedDict
-import math as math
+import math
 import logging
 
 import dask.array as da
