@@ -1333,14 +1333,14 @@ Permanent markers are stored in the HDF5 file if the signal is saved:
     >>> s1.metadata.Markers
     └── point = <hyperspy.drawing._markers.point.Point object at 0x7efcfadb06d8>
 
-  Markers have 'zorder' property to support ordering between markers.
-  Signal plane has zorder=0, and the marker that have largest number
-  become a top most marker.
+Markers have 'zorder' property to support ordering between markers.
+Signal plane has zorder=0, and the marker that have largest number
+become a top most marker.
   
-  Currently these markers are provided in hyperspy. The 'color' property in
-  rectangle marker is an alias of 'edgecolor' for backward compatibility.
-  The other parameters are used as in the parameters in matplotlib patches.
-  The parameters after @@ are typical optional parameters.
+Currently these markers are provided in hyperspy. The 'color' property in
+rectangle marker is an alias of 'edgecolor' for backward compatibility.
+The other parameters are used as in the parameters in matplotlib patches.
+The parameters after @@ are typical optional parameters.
 
 .. code-block:: python
   arrow(x1, y1, x2, y2, @@ 

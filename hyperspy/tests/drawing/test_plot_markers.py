@@ -19,6 +19,7 @@ import logging
 
 import numpy as np
 import pytest
+import re
 
 from hyperspy.datasets.artificial_data import get_core_loss_eels_line_scan_signal
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
@@ -616,15 +617,15 @@ def _test_markers_zorder(reversed_order = False):
     s.axes_manager[1].scale=10
     s.plot()
     marker_list = [
-        markers.rectangle(35,45,65,75,edgecolor="yellow",facecolor="cyan",zorder=3),
-        markers.text(10,20,"Text",color="white",size=30,zorder=4),
-        markers.ellipse(40,60, 30,25, edgecolor='white', facecolor='red', linewidth=4, zorder=8),
-        markers.arrow(10,10,50,50,arrowprops={'arrowstyle':'<|-|>','edgecolor':'white','facecolor':'red','linewidth':1},zorder=8.5),
-        markers.arrow(10,15,50,60,arrowprops={'arrowstyle':'<->','edgecolor':'red','facecolor':'red','linewidth':3},zorder=2.8),
-        markers.rectangle(10,20,60,70,edgecolor="red",facecolor="green",fill=True,zorder=2.7),
-        markers.text(50,60,"Text",color="white",backgroundcolor="blue",size=40, zorder=6.6),
-        markers.ellipse(70,40, 30,25, edgecolor='blue', facecolor='red', fill=True, linewidth=4, zorder=7.5),
-        markers.line_segment(50,10,40,80, color='cyan', linewidth=3,zorder=3.2),
+        markers.rectangle(35, 45, 65, 75, edgecolor="yellow", facecolor="cyan", zorder=3),
+        markers.text(10, 20, "Text", color="white", size=30, zorder=4),
+        markers.ellipse(40, 60, 30, 25, edgecolor='white', facecolor='red', linewidth=4, zorder=8),
+        markers.arrow(10, 10, 50, 50, arrowprops={'arrowstyle':'<|-|>', 'edgecolor':'white', 'facecolor':'red', 'linewidth':1},zorder=8.5),
+        markers.arrow(10, 15, 50, 60, arrowprops={'arrowstyle':'<->','edgecolor':'red','facecolor':'red','linewidth':3}, zorder=2.8),
+        markers.rectangle(10, 20, 60, 70, edgecolor="red", facecolor="green", fill=True, zorder=2.7),
+        markers.text(50, 60, "Text", color="white", backgroundcolor="blue", size=40, zorder=6.6),
+        markers.ellipse(70, 40, 30, 25, edgecolor='blue', facecolor='red', fill=True, linewidth=4, zorder=7.5),
+        markers.line_segment(50, 10, 40, 80, color='cyan', linewidth=3, zorder=3.2),
     ]
     if reversed_order:
         marker_list.reverse()
@@ -644,3 +645,18 @@ def test_markers_zorder():
 def test_markers_zorder2():
     s = _test_markers_zorder(True)
     return s._plot.signal_plot.figure
+
+def _test_plot_markers_prep(m):
+    match_str = r'<marker\.'+m.__class__.__name__+', '+m.name+r' \(.*\)>'
+    mm = re.match(match_str,str(m))
+    assert mm is not None
+    
+def test_plot_markers_mpl_options():
+    # check if 'color' property is converted to 'edgecolor'
+    m = markers.rectangle(10, 20, 30, 40, color='red')
+    assert 'color' not in m.marker_properties
+    assert 'edgecolor' in m.marker_properties
+    assert m.marker_properties['edgecolor'] == 'red'
+    _test_plot_markers_prep(m)
+
+

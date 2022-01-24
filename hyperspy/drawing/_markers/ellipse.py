@@ -68,10 +68,6 @@ class Ellipse(MarkerBase):
         self.set_data(x1=x, y1=y, x2=width, y2=height)
         self.set_marker_properties(**kwargs)
         mp = self.marker_properties
-        if 'color' in mp:
-            mp['edgecolor'] = mp['color']
-            del mp['color']
-        self.name = 'ellipse'
 
     def __repr__(self):
         string = "<marker.{}, {} (x={},y={},width={},height={},edgecolor={},facecolor={},linewidth={},zorder={})>".format(
