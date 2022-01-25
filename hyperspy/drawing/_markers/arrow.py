@@ -69,7 +69,7 @@ class Arrow(MarkerBase):
         self.name = 'arrow'
 
     def __repr__(self):
-        string = "<marker.{}, {} (x1={},x2={},y1={},y2={},arrowprops={},zorder={}>".format(
+        string = "<marker.{}, {} (x1={},x2={},y1={},y2={},arrowprops={},zorder={})>".format(
             self.__class__.__name__,
             self.name,
             self.get_data_position('x1'),

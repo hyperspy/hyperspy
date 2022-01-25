@@ -648,7 +648,7 @@ def test_markers_zorder2():
 
 def _test_plot_markers_prep(m, keys):
     match_str = r'<marker\.'+m.__class__.__name__+', '+m.name+r' \((.*)\)>'
-    mm = re.match(match_str,str(m))
+    mm = re.match(match_str,repr(m))
     assert mm is not None
     props = re.sub('=.*$','',re.sub('=.*?,',',',mm.group(1))).split(',')
     for key in keys:
@@ -662,9 +662,9 @@ def test_plot_markers_mpl_options():
     _test_plot_markers_prep(markers.ellipse(10, 20, 30, 40, color='red'),
                             ['x', 'y', 'width', 'height',
                              'linewidth','edgecolor','facecolor','zorder'])
-    _test_plot_markers_prep(markers.horizontail_line(10),
+    _test_plot_markers_prep(markers.horizontal_line(10),
                             ['y', 'linewidth', 'color','zorder'])
-    _test_plot_markers_prep(markers.horizontail_line_segment(10, 20, 30),
+    _test_plot_markers_prep(markers.horizontal_line_segment(10, 20, 30),
                             ['x1', 'x2', 'y', 'linewidth', 'color','zorder'])
     m = markers.rectangle(10, 20, 30, 40, color='red')
     _test_plot_markers_prep(m,
