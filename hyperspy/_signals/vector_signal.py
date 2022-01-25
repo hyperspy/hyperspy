@@ -39,29 +39,33 @@ class BaseVectorSignal(BaseSignal):
         axes: None, tuple
             The navigation axes to be converted to vectors
         """
-        if axes is None:
-            axes = self.axes_manager.navigation_axes
-        else:
-            axes = self.axes_manager[axes]
+
         if inplace:
             vectors = self
         else:
             vectors = self.deepcopy()
+        if axes is None:
+            axes = vectors.axes_manager.navigation_axes
+            print(axes)
+        else:
+            axes = vectors.axes_manager[axes]
 
-        #vector_ind = np.array([if a in aa.index_in_array for a in self.axes_manager.navigation_axes if a in axes],dtype=int)
-        #keep_ind = np.array([a.index_in_array for a in self.axes_manager.navigation_axes if a not in axes],dtype=int)
-        vector_shape = np.array([sh if axis in axes else 1 for sh,axis in
-                        zip(self.data.shape,self.axes_manager.navigation_axes)])
-        new_shape = np.array([sh if axis not in axes else 1 for sh, axis in
-                        zip(self.data.shape, self.axes_manager.navigation_axes)])
-        v_ind = np.argwhere(vector_shape != 1)
-        n_ind = np.argwhere(new_shape != 1)
-        print(new_shape)
-        print(n_ind)
-        new = np.empty(shape=new_shape[n_ind],dtype=object)
+        v_ind = np.isin(vectors.axes_manager.navigation_axes, axes)
+        print(v_ind)
+        n_ind = np.invert(v_ind)
+        vector_shape = np.array(self.data.shape)[v_ind]
+        new_shape = np.array(self.data.shape)[n_ind]
+        print("new_ shape", new_shape)
+        print("vector_shape", vector_shape)
+        if len(new_shape) == 0:
+            new_shape = 1
+        new = np.empty(shape=new_shape, dtype=object)
         for ind in np.ndindex(new_shape):
-            full_ind = [np.where(i==0,ind,i) for i in np.ndindex(vector_shape)]
-            new[ind[n_ind]] = [np.append(ind[v_ind], v) for ind in full_ind for v in vectors.data[ind]]
+            vector_indexes = np.array(list(np.ndindex(tuple(vector_shape))))
+            for i, pos in zip(ind, np.argwhere(n_ind)):
+                vector_indexes = np.insert(vector_indexes, pos, i, axis=1)
+            new[ind] = [np.append(ind[v_ind], v) for ind in vector_indexes
+                        for v in self.data[ind]]
         vectors.data = new
         for axis in axes:
             if not isinstance(axis, VectorDataAxis):
