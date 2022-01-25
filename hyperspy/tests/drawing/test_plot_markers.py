@@ -660,7 +660,7 @@ def test_plot_markers_mpl_options():
     _test_plot_markers_prep(markers.arrow(10, 20, 30, 40),
                             ['x1', 'y1', 'x2', 'y2', 'arrowprops', 'zorder'])
     _test_plot_markers_prep(markers.ellipse(10, 20, 30, 40, color='red'),
-                            ['x1', 'y1', 'x2', 'y2',
+                            ['x', 'y', 'width', 'height',
                              'linewidth','edgecolor','facecolor','zorder'])
     _test_plot_markers_prep(markers.horizontail_line(10),
                             ['y', 'linewidth', 'color','zorder'])
