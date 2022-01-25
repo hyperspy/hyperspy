@@ -646,17 +646,36 @@ def test_markers_zorder2():
     s = _test_markers_zorder(True)
     return s._plot.signal_plot.figure
 
-def _test_plot_markers_prep(m):
-    match_str = r'<marker\.'+m.__class__.__name__+', '+m.name+r' \(.*\)>'
+def _test_plot_markers_prep(m, keys):
+    match_str = r'<marker\.'+m.__class__.__name__+', '+m.name+r' \((.*)\)>'
     mm = re.match(match_str,str(m))
     assert mm is not None
+    props = re.sub('=.*$','',re.sub('=.*?,',',',mm.group(1))).split(',')
+    for key in keys:
+        assert key in props
     
+
 def test_plot_markers_mpl_options():
-    # check if 'color' property is converted to 'edgecolor'
+    # check if required parameters are specified
+    _test_plot_markers_prep(markers.arrow(10, 20, 30, 40),
+                            ['x1', 'y1', 'x2', 'y2', 'arrowprops', 'zorder'])
+    _test_plot_markers_prep(markers.ellipse(10, 20, 30, 40, color='red'),
+                            ['x1', 'y1', 'x2', 'y2',
+                             'linewidth','edgecolor','facecolor','zorder'])
+    _test_plot_markers_prep(markers.horizontail_line(10),
+                            ['y', 'linewidth', 'color','zorder'])
+    _test_plot_markers_prep(markers.horizontail_line_segment(10, 20, 30),
+                            ['x1', 'x2', 'y', 'linewidth', 'color','zorder'])
     m = markers.rectangle(10, 20, 30, 40, color='red')
+    _test_plot_markers_prep(m,
+                            ['linewidth','edgecolor','facecolor','zorder'])
+    # check if 'color' property is converted to 'edgecolor'
     assert 'color' not in m.marker_properties
     assert 'edgecolor' in m.marker_properties
     assert m.marker_properties['edgecolor'] == 'red'
-    _test_plot_markers_prep(m)
 
+    _test_plot_markers_prep(markers.vertical_line(10),
+                            ['x', 'linewidth', 'color','zorder'])
+    m = markers.vertical_line_segment(10, 20, 30)
+    _test_plot_markers_prep(m,['x', 'y1', 'y2', 'linewidth', 'color','zorder'])
 
