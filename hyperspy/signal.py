@@ -2512,7 +2512,10 @@ class BaseSignal(FancySlicing,
                 raise ValueError("The array is not ragged.")
             num_axes = 0
 
-            for d in np.ndindex(self.axes_manager.navigation_shape):
+            nav_shape = self.axes_manager.navigation_shape
+            if nav_shape == ():
+                nav_shape = 1
+            for d in np.ndindex(nav_shape):
                 object_shape = np.shape(self.data[d])
                 if len(object_shape) < 1:
                     continue
@@ -2520,7 +2523,7 @@ class BaseSignal(FancySlicing,
                     num_axes = object_shape[-1]
                     break
             if len(self.axes_manager.signal_axes) == num_axes:
-                signal_axes = [i.convert_to_vector_axis() for i in self.axes_manager.signal_axes]
+                [i.convert_to_vector_axis() for i in self.axes_manager.signal_axes]
             else:
                 for i in range(num_axes):
                     axis = {'index_in_array': None, 'vector': True}
