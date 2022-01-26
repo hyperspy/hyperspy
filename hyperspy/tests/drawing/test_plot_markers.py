@@ -574,11 +574,16 @@ def test_iterate_markers():
         ims.add_marker(m, plot_marker=True, permanent=True)
     xs = index[:, :, 1]
     ys = index[:, :, 0]
-    m = markers.rectangle(np.min(xs, 1),
-                          np.min(ys, 1),
-                          np.max(xs, 1),
-                          np.max(ys, 1),
-                          color='green')
+    x1 = np.min(xs, 1)
+    y1 = np.min(ys, 1)
+    x2 = np.max(xs, 1)
+    y2 = np.max(ys, 1)
+    m = markers.rectangle(x1, y1, x2, y2, color='green')
+    ims.add_marker(m, plot_marker=True, permanent=True)
+    m = markers.arrow(x1, y1, x2, y2, arrowstyle='<->',edgecolor='red')
+    ims.add_marker(m, plot_marker=True, permanent=True)
+    m = markers.ellipse((x1+x2)/2, (y1+y2)/2, x2-x1, y2-y1,
+                      edgecolor='yellow')
     ims.add_marker(m, plot_marker=True, permanent=True)
 
     for im in ims:
@@ -638,8 +643,8 @@ def _test_markers_zorder(reversed_order = False):
         markers.rectangle(35, 45, 65, 75, edgecolor="yellow", facecolor="cyan", zorder=3),
         markers.text(10, 20, "Text", color="white", size=30, zorder=4),
         markers.ellipse(40, 60, 30, 25, edgecolor='white', facecolor='red', linewidth=4, zorder=8),
-        markers.arrow(10, 10, 50, 50, arrowstyle='<|-|>', edgecolor='white', facecolor='red', linewidth=1, zorder=8.5),
-        markers.arrow(10, 15, 50, 60, arrowstyle='<->', edgecolor='red', facecolor='red', linewidth=3, zorder=2.8),
+        markers.arrow(10, 10, 50, 50, arrowstyle='<|-|>', edgecolor='white', facecolor='red', linewidth=1, shrinkA=2, shrinkB=2, zorder=8.5),
+        markers.arrow(10, 15, 50, 60, arrowstyle='<->', edgecolor='red', facecolor='red', linewidth=3, shrinkA=2, shrinkB=2, zorder=2.8),
         markers.rectangle(10, 20, 60, 70, edgecolor="red", facecolor="green", fill=True, zorder=2.7),
         markers.text(50, 60, "Text", color="white", backgroundcolor="blue", size=40, zorder=6.6),
         markers.ellipse(70, 40, 30, 25, edgecolor='blue', facecolor='red', fill=True, linewidth=4, zorder=7.5),

@@ -59,7 +59,12 @@ class Arrow(MarkerBase):
     def __init__(self, x1, y1, x2, y2, **kwargs):
         MarkerBase.__init__(self)
         lp = {'edgecolor': 'black', 'facecolor': None, 
-              'linewidth': 4, 'arrowstyle': '->', 'mutation_scale': 12, 
+              'linewidth': None, 'arrowstyle': '->',
+              # size of arrow head
+              'mutation_scale': 12,
+              # both ends of arrow on the exact pos.
+              # default of matplotlib is 2
+              'shrinkA': 0, 'shrinkB': 0, 
               'zorder': None,
         }
         self.marker_properties = lp

@@ -91,7 +91,7 @@ class Ellipse(MarkerBase):
         y1 = self.get_data_position('y1')
         width = self.get_data_position('x2')
         height = self.get_data_position('y2')
-        self.marker.set_xy([x1,y1])
+        self.marker.set_center([x1,y1])
         self.marker.set_width(width)
         self.marker.set_height(height)
 
