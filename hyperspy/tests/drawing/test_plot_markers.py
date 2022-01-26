@@ -122,6 +122,10 @@ class TestMarkers:
         m8 = markers.point(
             np.arange(256).reshape(2, 2, 2, 2, 2, 2, 2, 2),
             np.arange(256).reshape(2, 2, 2, 2, 2, 2, 2, 2))
+        m9 = markers.arrow(2, 3, 4, 5)
+        m10 = markers.arrow((2, 3), (4, 5), (6, 7), (8, 9))
+        m11 = markers.ellipse(4, 5, 2, 3)
+        m12 = markers.ellipse((2, 3), (4, 5), (6, 7), (8, 9))
         assert m0._get_data_shape() == ()
         assert m1._get_data_shape() == (2,)
         assert m2._get_data_shape() == (2, 3)
@@ -132,6 +136,10 @@ class TestMarkers:
         assert m6._get_data_shape() == ()
         assert m7._get_data_shape() == (2,)
         assert m8._get_data_shape() == (2, 2, 2, 2, 2, 2, 2, 2)
+        assert m9._get_data_shape() == ()
+        assert m10._get_data_shape() == (2,)
+        assert m11._get_data_shape() == ()
+        assert m12._get_data_shape() == (2,)
 
     def test_add_marker_not_plot(self):
         # This will do nothing, since plot_marker=False and permanent=False
