@@ -314,6 +314,8 @@ class Test_permanent_markers:
         assert m.marker_properties['color'] == m1.marker_properties['color']
 
     def test_dict2marker(self):
+        m_arrow = markers.arrow(x1=5, x2=6, y1=7, y2=8)
+        m_ellipse = markers.ellipse(x=4, y=5, width=2, height=3)
         m_point0 = markers.point(x=5, y=5)
         m_point1 = markers.point(x=(5, 10), y=(1, 5))
         m_line = markers.line_segment(x1=5, x2=10, y1=5, y2=10)
@@ -324,6 +326,8 @@ class Test_permanent_markers:
         m_rect = markers.rectangle(x1=1, x2=3, y1=5, y2=10)
         m_text = markers.text(x=1, y=5, text="test")
 
+        m_arrow_new = dict2marker(m_arrow._to_dictionary(), m_arrow.name)
+        m_ellipse_new = dict2marker(m_ellipse._to_dictionary(), m_ellipse.name)
         m_point0_new = dict2marker(m_point0._to_dictionary(), m_point0.name)
         m_point1_new = dict2marker(m_point1._to_dictionary(), m_point1.name)
         m_line_new = dict2marker(m_line._to_dictionary(), m_line.name)
@@ -336,6 +340,8 @@ class Test_permanent_markers:
         m_rect_new = dict2marker(m_rect._to_dictionary(), m_rect.name)
         m_text_new = dict2marker(m_text._to_dictionary(), m_text.name)
 
+        m_arrow_dict = sanitize_dict(m_arrow._to_dictionary())
+        m_ellipse_dict = sanitize_dict(m_ellipse._to_dictionary())
         m_point0_dict = sanitize_dict(m_point0._to_dictionary())
         m_point1_dict = sanitize_dict(m_point1._to_dictionary())
         m_line_dict = sanitize_dict(m_line._to_dictionary())
@@ -346,6 +352,8 @@ class Test_permanent_markers:
         m_rect_dict = sanitize_dict(m_rect._to_dictionary())
         m_text_dict = sanitize_dict(m_text._to_dictionary())
 
+        m_arrow_new_dict = sanitize_dict(m_arrow_new._to_dictionary())
+        m_ellipse_new_dict = sanitize_dict(m_ellipse_new._to_dictionary())
         m_point0_new_dict = sanitize_dict(m_point0_new._to_dictionary())
         m_point1_new_dict = sanitize_dict(m_point1_new._to_dictionary())
         m_line_new_dict = sanitize_dict(m_line_new._to_dictionary())
@@ -357,6 +365,8 @@ class Test_permanent_markers:
             m_hline_segment_new._to_dictionary())
         m_rect_new_dict = sanitize_dict(m_rect_new._to_dictionary())
         m_text_new_dict = sanitize_dict(m_text_new._to_dictionary())
+        assert m_arrow_dict == m_arrow_new_dict
+        assert m_ellipse_dict == m_ellipse_new_dict
         assert m_point0_dict == m_point0_new_dict
         assert m_point1_dict == m_point1_new_dict
         assert m_line_dict == m_line_new_dict
@@ -666,6 +676,8 @@ def test_plot_markers_mpl_options():
                             ['y', 'linewidth', 'color','zorder'])
     _test_plot_markers_prep(markers.horizontal_line_segment(10, 20, 30),
                             ['x1', 'x2', 'y', 'linewidth', 'color','zorder'])
+    _test_plot_markers_prep(markers.point(10, 20),
+                            ['x', 'x', 'color', 'size','zorder'])
     m = markers.rectangle(10, 20, 30, 40, color='red')
     _test_plot_markers_prep(m,
                             ['linewidth','edgecolor','facecolor','zorder'])
@@ -674,6 +686,8 @@ def test_plot_markers_mpl_options():
     assert 'edgecolor' in m.marker_properties
     assert m.marker_properties['edgecolor'] == 'red'
 
+    _test_plot_markers_prep(markers.text(10,20,"test"),
+                            ['x', 'y', 'text', 'color','zorder'])
     _test_plot_markers_prep(markers.vertical_line(10),
                             ['x', 'linewidth', 'color','zorder'])
     m = markers.vertical_line_segment(10, 20, 30)
