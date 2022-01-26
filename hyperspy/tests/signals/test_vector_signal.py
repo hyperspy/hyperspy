@@ -18,6 +18,7 @@
 
 import numpy as np
 import pytest
+import dask.array as da
 
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.signals import BaseVectorSignal, BaseSignal
@@ -29,7 +30,17 @@ class TestVectorSignal:
         x = np.empty(shape=(4, 3), dtype=object)
         for i in np.ndindex(x.shape):
             x[i] = np.random.random((4, 2))
-        s = BaseSignal(x).T
+        s = BaseVectorSignal(x)
+        for ax, name in zip(s.axes_manager._axes, "abcd"):
+            ax.name = name
+        return s
+
+    @pytest.fixture
+    def lazy_four_d_vector(self):
+        x = da.empty(shape=(4), dtype=object)
+        for i in np.ndindex(x.shape):
+            x[i] = da.random.random((6, 4))
+        s = L(x).T
         s.vector = True
         s.set_signal_type("vector")
         for ax, name in zip(s.axes_manager._axes, "abcd"):
@@ -41,27 +52,13 @@ class TestVectorSignal:
         assert len(new.axes_manager.signal_axes) ==4
         assert new.data.shape == (1,)
 
-    def test_signal_iterable_int_transpose(self):
-        t = self.s.transpose(signal_axes=[0, 5, 4])
-        var = t.metadata.Signal.Noise_properties.variance
-        assert t.axes_manager.signal_shape == (6, 1, 2)
-        assert var.axes_manager.signal_shape == (6, 1, 2)
-        assert [ax.name for ax in t.axes_manager.signal_axes] == ["f", "a", "b"]
+    def test_all_to_vector_axis(self, two_d_vector):
+        new = two_d_vector.nav_to_vector(axis=0, inplace=False)
+        assert len(new.axes_manager.signal_axes) ==3
+        assert new.data.shape == (3,)
+        new = two_d_vector.nav_to_vector(axis=1, inplace=False)
+        assert len(new.axes_manager.signal_axes) ==3
+        assert new.data.shape == (4,)
 
-    def test_signal_iterable_names_transpose(self):
-        t = self.s.transpose(signal_axes=["f", "a", "b"])
-        var = t.metadata.Signal.Noise_properties.variance
-        assert t.axes_manager.signal_shape == (6, 1, 2)
-        assert var.axes_manager.signal_shape == (6, 1, 2)
-        assert [ax.name for ax in t.axes_manager.signal_axes] == ["f", "a", "b"]
-
-    def test_signal_iterable_axes_transpose(self):
-        t = self.s.transpose(signal_axes=self.s.axes_manager.signal_axes[:2])
-        var = t.metadata.Signal.Noise_properties.variance
-        assert t.axes_manager.signal_shape == (6, 5)
-        assert var.axes_manager.signal_shape == (6, 5)
-        assert [ax.name for ax in t.axes_manager.signal_axes] == ["f", "e"]
-
-    def test_signal_one_name(self):
-        with pytest.raises(ValueError):
-            self.s.transpose(signal_axes="a")
+    def test_to_markers(self,two_d_vector):
+        markers = two_d_vector.to_markers()

@@ -143,9 +143,17 @@ signals:
     signal_type: BaseVectorSignal
     signal_type_aliases:
       - vector
-    signal_dimension: 2
+    signal_dimension: -1
     dtype: real
     lazy: False
+    module: hyperspy._signals.vector_signal
+  LazyBaseVectorSignal:
+    signal_type: BaseVectorSignal
+    signal_type_aliases:
+      - vector
+    signal_dimension: -1
+    dtype: real
+    lazy: True
     module: hyperspy._signals.vector_signal
 
 components1D:

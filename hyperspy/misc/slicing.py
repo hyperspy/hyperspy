@@ -255,16 +255,22 @@ class FancySlicing(object):
         if len(_orig_slices) > len(idx):
             raise IndexError("too many indices")
 
-        slices = np.array([slice(None,)] *
-                          len(self.axes_manager._axes))
+        if self.axes_manager._ragged:
+            slices = np.array([slice(None,)] *
+                              len(self.axes_manager.navigation_axes))
+            ax = self.axes_manager.navigation_axes
+        else:
+            slices = np.array([slice(None,)] *
+                            len(self.axes_manager._axes))
+            ax = self.axes_manager._axes
 
         slices[idx] = _orig_slices + (slice(None),) * max(
             0, len(idx) - len(_orig_slices))
 
         array_slices = []
-        for slice_, axis in zip(slices, self.axes_manager._axes):
+        for slice_, axis in zip(slices, ax):
             if (isinstance(slice_, slice) or
-                    len(self.axes_manager._axes) < 2):
+                    len(ax) < 2):
                 array_slices.append(axis._get_array_slices(slice_))
             else:
                 if isinstance(slice_, float):

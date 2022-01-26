@@ -18,6 +18,7 @@
 import numpy as np
 
 from hyperspy.signal import BaseSignal
+from hyperspy._signals.lazy import LazySignal
 from hyperspy.drawing._markers.point import Point
 from hyperspy.axes import VectorDataAxis
 
@@ -26,12 +27,16 @@ class BaseVectorSignal(BaseSignal):
     """A generic class for a ragged signal representing a set of vectors.
     """
     def __init__(self, *args, **kwargs):
+        if "ragged" not in kwargs:
+            kwargs["ragged"] = True
         super().__init__(*args, **kwargs)
-        self.vector = True
+        #self.data = np.squeeze(self.data)
+        #if self.data is not [None]:
+        #    self.vector = True
 
     def nav_to_vector(self,
                       inplace=True,
-                      axes=None):
+                      axis=None):
         """Converts the navigation positions to vectors
 
         Parameters
@@ -44,19 +49,17 @@ class BaseVectorSignal(BaseSignal):
             vectors = self
         else:
             vectors = self.deepcopy()
-        if axes is None:
-            axes = vectors.axes_manager.navigation_axes
-            print(axes)
+        if axis is None:
+            axis = vectors.axes_manager.navigation_axes
         else:
-            axes = vectors.axes_manager[axes]
+            axis = vectors.axes_manager[axis]
+        if not isinstance(axis, tuple):
+            axis = (axis,)
 
-        v_ind = np.isin(vectors.axes_manager.navigation_axes, axes)
-        print(v_ind)
+        v_ind = np.isin(vectors.axes_manager.navigation_axes, axis)
         n_ind = np.invert(v_ind)
-        vector_shape = np.array(self.data.shape)[v_ind]
-        new_shape = np.array(self.data.shape)[n_ind]
-        print("new_ shape", new_shape)
-        print("vector_shape", vector_shape)
+        vector_shape = tuple(np.array(self.data.shape)[v_ind])
+        new_shape = tuple(np.array(self.data.shape)[n_ind])
         if len(new_shape) == 0:
             new_shape = 1
         new = np.empty(shape=new_shape, dtype=object)
@@ -67,10 +70,10 @@ class BaseVectorSignal(BaseSignal):
             new[ind] = [np.append(ind[v_ind], v) for ind in vector_indexes
                         for v in self.data[ind]]
         vectors.data = new
-        for axis in axes:
-            if not isinstance(axis, VectorDataAxis):
-                axis.convert_to_vector_axis()
-            axis.navigate = False
+        for a in axis:
+            if not isinstance(a, VectorDataAxis):
+                a.convert_to_vector_axis()
+            a.navigate = False
         return vectors
 
     def get_real_vectors(self, axis=None, real_units=True, flatten=False):
@@ -227,3 +230,6 @@ class BaseVectorSignal(BaseSignal):
         print(x_vectors[0])
         y_vectors = self.get_real_vectors(axis=y_axis).T
         return Point(x_vectors, y_vectors,**kwargs)
+
+class LazyBaseVectorSignal(LazySignal,BaseVectorSignal):
+    _lazy = True
