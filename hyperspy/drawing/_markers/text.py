@@ -34,7 +34,7 @@ class Text(MarkerBase):
     text : array or str
         The text. see x arguments
     kwargs :
-        Keywords argument of ax.annotate valid properties (i.e. recognized by
+        Keywords argument of ax.text valid properties (i.e. recognized by
         mpl.plot).
 
     Example
@@ -84,7 +84,6 @@ class Text(MarkerBase):
         self.marker.set_text(self.get_data_position('text'))
 
     def _plot_marker(self):
-        self.marker = self.ax.annotate(self.get_data_position('text'),
-                                       (self.get_data_position('x1'),
-                                        self.get_data_position('y1')),
-                                       **self.marker_properties)
+        self.marker = self.ax.text(
+            self.get_data_position('x1'), self.get_data_position('y1'),
+            self.get_data_position('text'), **self.marker_properties)

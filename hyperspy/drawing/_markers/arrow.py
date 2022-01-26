@@ -41,7 +41,7 @@ class Arrow(MarkerBase):
         The position of the down right of the rectangle in y.
         see x1 arguments
     kwargs :
-        Keywords argument of matplotlib ax.annotate valid properties 
+        Keywords argument of matplotlib patches.FancyArrowPatch valid properties 
         (i.e. recognized by mpl.plot).
 
     Example
@@ -58,10 +58,9 @@ class Arrow(MarkerBase):
 
     def __init__(self, x1, y1, x2, y2, **kwargs):
         MarkerBase.__init__(self)
-        lp = {
-              'arrowprops':{'facecolor' : None, 'edgecolor' : 'black',
-                            'linewidth':4, 'arrowstyle' : '->'},
-              'zorder': None
+        lp = {'edgecolor': 'black', 'facecolor': None, 
+              'linewidth': 4, 'arrowstyle': '->', 'mutation_scale': 12, 
+              'zorder': None,
         }
         self.marker_properties = lp
         self.set_data(x1=x1, y1=y1, x2=x2, y2=y2)
@@ -69,24 +68,30 @@ class Arrow(MarkerBase):
         self.name = 'arrow'
 
     def __repr__(self):
-        string = "<marker.{}, {} (x1={},x2={},y1={},y2={},arrowprops={},zorder={})>".format(
+        string = "<marker.{}, {} (x1={},x2={},y1={},y2={},edgecolor={},facecolor={},linewidth={},arrowstyle={},mutation_scale={},zorder={})>".format(
             self.__class__.__name__,
             self.name,
             self.get_data_position('x1'),
             self.get_data_position('x2'),
             self.get_data_position('y1'),
             self.get_data_position('y2'),
-            self.marker_properties['arrowprops'],
+            self.marker_properties['edgecolor'],
+            self.marker_properties['facecolor'],
+            self.marker_properties['linewidth'],
+            self.marker_properties['arrowstyle'],
+            self.marker_properties['mutation_scale'],
             self.marker_properties['zorder'],
         )
         return(string)
 
     def update(self):
+        if self.auto_update is False:
+            return
         x1 = self.get_data_position('x1')
         x2 = self.get_data_position('x2')
         y1 = self.get_data_position('y1')
         y2 = self.get_data_position('y2')
-        self.marker.set_data(x1=x1, y1=y1, x2=x2, y2=y2)
+        self.marker.set_positions((x1, y1), (x2, y2))
 
     def _plot_marker(self):
         x1 = self.get_data_position('x1')
@@ -94,7 +99,7 @@ class Arrow(MarkerBase):
         y1 = self.get_data_position('y1')
         y2 = self.get_data_position('y2')
         mp = self.marker_properties
-        self.marker = self.ax.annotate('',(x1,y1),(x2,y2), **self.marker_properties)
-        
+        self.marker = self.ax.add_patch(patches.FancyArrowPatch(
+            (x1,y1), (x2,y2), **self.marker_properties))
 
 
