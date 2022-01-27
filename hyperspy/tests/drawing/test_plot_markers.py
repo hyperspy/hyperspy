@@ -597,12 +597,9 @@ def test_iterate_markers():
             assert mo.get_data_position('x1') == mi.get_data_position('x1')
             assert mo.get_data_position('y1') == mi.get_data_position('y1')
             assert mo.get_data_position('text') == mi.get_data_position('text')
-            key = 'color'
-            if key not in mo.marker_properties:
-                key = 'edgecolor'   # alt key
-            assert mo.marker_properties[key] == \
-                mi.marker_properties[key]
-
+            for propkey in mo.marker_properties:
+                assert mo.marker_properties[propkey] == \
+                    mi.marker_properties[propkey]
 
 @update_close_figure()
 def test_plot_eds_markers_close():
