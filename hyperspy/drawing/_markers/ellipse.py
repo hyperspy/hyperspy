@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import matplotlib.patches as patches
-
+import logging
 from hyperspy.drawing.marker import MarkerBase
 
 
