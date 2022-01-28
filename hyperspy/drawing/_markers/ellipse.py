@@ -60,12 +60,12 @@ class Ellipse(MarkerBase):
     >>> im.add_marker(m, permanent=True)
     """
 
-    def __init__(self, x1, y1, width, height, **kwargs):
+    def __init__(self, x, y, width, height, **kwargs):
         MarkerBase.__init__(self)
         lp = {'edgecolor': 'black', 'facecolor': None, 'fill': None,
               'linewidth': 1, 'zorder' : None}
         self.marker_properties = lp
-        self.set_data(x1=x1, y1=y1, width=width, height=height)
+        self.set_data(x1=x, y1=y, x2=width, y2=height)
         self.set_marker_properties(**kwargs)
         mp = self.marker_properties
         if 'color' in mp:
@@ -77,10 +77,10 @@ class Ellipse(MarkerBase):
         string = "<marker.{}, {} (x={},y={},width={},height={},edgecolor={},facecolor={},linewidth={},zorder={})>".format(
             self.__class__.__name__,
             self.name,
-            self.get_data_position('x'),
-            self.get_data_position('y'),
-            self.get_data_position('width'),
-            self.get_data_position('height'),
+            self.get_data_position('x1'),
+            self.get_data_position('y1'),
+            self.get_data_position('x2'),
+            self.get_data_position('y2'),
             self.marker_properties['edgecolor'],
             self.marker_properties['facecolor'],
             self.marker_properties['linewidth'],
@@ -91,19 +91,19 @@ class Ellipse(MarkerBase):
     def update(self):
         if self.auto_update is False:
             return
-        x = self.get_data_position('x')
-        y = self.get_data_position('y')
-        width = self.get_data_position('width')
-        height = self.get_data_position('height')
-        self.marker.set_xy([x,y])
+        x1 = self.get_data_position('x1')
+        y1 = self.get_data_position('y1')
+        width = self.get_data_position('x2')
+        height = self.get_data_position('y2')
+        self.marker.set_xy([x1,y1])
         self.marker.set_width(width)
         self.marker.set_height(height)
 
     def _plot_marker(self):
-        x = self.get_data_position('x')
-        y = self.get_data_position('y')
-        width = self.get_data_position('width')
-        height = self.get_data_position('height')
+        x1 = self.get_data_position('x1')
+        y1 = self.get_data_position('y1')
+        width = self.get_data_position('x2')
+        height = self.get_data_position('y2')
         self.marker = self.ax.add_patch(patches.Ellipse(
-            [x,y], width, height, **self.marker_properties))
+            [x1,y1], width, height, **self.marker_properties))
 

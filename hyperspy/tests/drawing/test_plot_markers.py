@@ -95,7 +95,7 @@ class TestMarkers:
     def test_markers_properties(self):
         m = markers.text(x=1, y=2, text='a')
         m.set_marker_properties(fontsize=30, color='red')
-        assert m.marker_properties == {'color': 'red', 'backgroundcolor': None, 'zorder': None, 'fontsize': 30}
+        assert m.marker_properties == {'color': 'red', 'zorder': None, 'fontsize': 30}
 
     def test_auto_update(self):
         m = markers.text(y=1, x=2, text='a')
@@ -247,6 +247,8 @@ class Test_permanent_markers:
         m_hline_segment = markers.horizontal_line_segment(x1=1, x2=9, y=5)
         m_rect = markers.rectangle(x1=1, x2=3, y1=5, y2=10)
         m_text = markers.text(x=1, y=5, text="test")
+        m_arrow = markers.arrow(x1=4, y1=5, x2=6, y2=6, arrow_props={arrow_style:'<->'})
+        m_ellipse = markers.ellipse(x=10, y=11, width=4, height=6)
         s.add_marker(m_point, permanent=True)
         s.add_marker(m_line, permanent=True)
         s.add_marker(m_vline, permanent=True)
@@ -255,7 +257,9 @@ class Test_permanent_markers:
         s.add_marker(m_hline_segment, permanent=True)
         s.add_marker(m_rect, permanent=True)
         s.add_marker(m_text, permanent=True)
-        assert len(list(s.metadata.Markers)) == 8
+        s.add_marker(m_arrow, permanent=True)
+        s.add_marker(m_ellipse, permanent=True)
+        assert len(list(s.metadata.Markers)) == 10
         with pytest.raises(ValueError):
             s.add_marker(m_rect, permanent=True)
 
@@ -363,7 +367,7 @@ class Test_permanent_markers:
         assert m_text_dict == m_text_new_dict
 
 
-def _test_plot_rectange_markers():
+def _test_plot_rectangle_markers():
     # Create test image 100x100 pixels:
     im = Signal2D(np.arange(100).reshape([10, 10]))
 
@@ -393,14 +397,14 @@ def _test_plot_rectange_markers():
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_rectange_markers():
-    im = _test_plot_rectange_markers()
+def test_plot_rectangle_markers():
+    im = _test_plot_rectangle_markers()
     return im._plot.signal_plot.figure
 
 
 @update_close_figure()
-def test_plot_rectange_markers_close():
-    return _test_plot_rectange_markers()  # return for @update_close_figure
+def test_plot_rectangle_markers_close():
+    return _test_plot_rectangle_markers()  # return for @update_close_figure
 
 
 def _test_plot_point_markers():
@@ -604,3 +608,39 @@ def test_plot_eels_labels_nav():
     s.plot(plot_edges=True)
     s.axes_manager.indices = (10, )
     s._plot.close()
+
+def _test_markers_zorder(reversed_order = False):
+    s = Signal2D(np.full((10,10),20))
+    s.axes_manager[0].name='x'
+    s.axes_manager[0].scale=10
+    s.axes_manager[1].scale=10
+    s.plot()
+    marker_list = [
+        markers.rectangle(35,45,65,75,edgecolor="yellow",facecolor="cyan",zorder=3),
+        markers.text(10,20,"Text",color="white",size=30,zorder=4),
+        markers.ellipse(40,60, 30,25, edgecolor='white', facecolor='red', linewidth=4, zorder=8),
+        markers.arrow(10,10,50,50,arrowprops={'arrowstyle':'<|-|>','edgecolor':'white','facecolor':'red','linewidth':1},zorder=8.5),
+        markers.arrow(10,15,50,60,arrowprops={'arrowstyle':'<->','edgecolor':'red','facecolor':'red','linewidth':3},zorder=2.8),
+        markers.rectangle(10,20,60,70,edgecolor="red",facecolor="green",fill=True,zorder=2.7),
+        markers.text(50,60,"Text",color="white",backgroundcolor="blue",size=40, zorder=6.6),
+        markers.ellipse(70,40, 30,25, edgecolor='blue', facecolor='red', fill=True, linewidth=4, zorder=7.5),
+        markers.line_segment(50,10,40,80, color='cyan', linewidth=3,zorder=3.2),
+    ]
+    if reversed_order:
+        marker_list.reverse()
+    s.add_marker(marker_list)
+    return s
+    
+@pytest.mark.mpl_image_compare(
+    filename='test_markers_zorder.png',
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_markers_zorder():
+    s = _test_markers_zorder()
+    return s._plot.signal_plot.figure
+
+@pytest.mark.mpl_image_compare(
+    filename='test_markers_zorder.png',
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_markers_zorder2():
+    s = _test_markers_zorder(True)
+    return s._plot.signal_plot.figure

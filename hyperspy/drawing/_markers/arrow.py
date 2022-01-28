@@ -61,30 +61,29 @@ class Arrow(MarkerBase):
 
     def __init__(self, x1, y1, x2, y2, **kwargs):
         MarkerBase.__init__(self)
-        lp = {'edgecolor': 'black', 'facecolor': None, 'fill': None,
-              'linewidth': 1, 'arrow_style': '->', 'zorder' : 0.1}
+        lp = {
+              'arrowprops':{'facecolor' : None, 'edgecolor' : 'black',
+                            'linewidth':4, 'arrowstyle' : '->'},
+              'zorder': None
+        }
         self.marker_properties = lp
         self.set_data(x1=x1, y1=y1, x2=x2, y2=y2)
         self.set_marker_properties(**kwargs)
         mp = self.marker_properties
         if 'color' in mp:
-            mp['edgecolor'] = mp['color']
+            mp['arrowprops']['edgecolor'] = mp['color']
             del mp['color']
         self.name = 'arrow'
 
     def __repr__(self):
-        string = "<marker.{}, {} (x1={},x2={},y1={},y2={},edgecolor={},facecolor={})arrow_style={},fill={},linewidth={},zorder={}>".format(
+        string = "<marker.{}, {} (x1={},x2={},y1={},y2={},arrowprops={},zorder={}>".format(
             self.__class__.__name__,
             self.name,
             self.get_data_position('x1'),
             self.get_data_position('x2'),
             self.get_data_position('y1'),
             self.get_data_position('y2'),
-            self.marker_properties['edgecolor'],
-            self.marker_properties['facecolor'],
-            self.marker_properties['arrow_style'],
-            self.marker_properties['fill'],
-            self.marker_properties['linewidth'],
+            self.marker_properties['arrowprops'],
             self.marker_properties['zorder'],
         )
         return(string)
@@ -97,15 +96,14 @@ class Arrow(MarkerBase):
         self.marker.set_data(x1=x1, y1=y1, x2=x2, y2=y2)
 
     def _plot_marker(self):
-        xy1, xy2, _, _ = self.get_xywh()
+        x1 = self.get_data_position('x1')
+        x2 = self.get_data_position('x2')
+        y1 = self.get_data_position('y1')
+        y2 = self.get_data_position('y2')
         mp = self.marker_properties
-        self.marker = self.ax.annotate('',xy1,xy2, arrowprops={
-            'facecolor' : mp['facecolor'],
-            'edgecolor' : mp['edgecolor'],
-            'arrowstyle' : mp['arrow_style'],
-        })
-        if 'zorder' in self.marker_properties:
-            self.marker.set_zorder(self.marker_properties['zorder'])
+        self.marker = self.ax.annotate('',(x1,y1),(x2,y2), **self.marker_properties)
+#        if 'zorder' in self.marker_properties:
+#            self.marker.set_zorder(self.marker_properties['zorder'])
         
 
 
