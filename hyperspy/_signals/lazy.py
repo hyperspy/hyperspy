@@ -299,6 +299,7 @@ class LazySignal(BaseSignal):
         if not isinstance(nav_chunks, tuple):
             nav_chunks = (nav_chunks,)*len(self.axes_manager.navigation_shape)
         new_chunks = nav_chunks + sig_chunks
+        print(new_chunks)
         if inplace:
             self.data = self.data.rechunk(new_chunks,
                                           **kwargs)
