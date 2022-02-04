@@ -105,7 +105,7 @@ def test_create_ragged_array():
 
     s2 = hs.signals.BaseSignal(data, ragged=True)
     assert s2.axes_manager.ragged
-    assert s2.__repr__() == "<BaseSignal, title: , dimensions: (|ragged)>"
+    assert s2.__repr__() == "<BaseSignal, title: , dimensions: (1|ragged)>"
 
 
 def test_Signal1D_Signal2D_ragged():

@@ -575,7 +575,7 @@ class TestGetIteratingKwargsSignal2D:
     def test_empty(self):
         s = self.s
         iterating_kwargs = {}
-        args, arg_keys = s._get_iterating_kwargs(iterating_kwargs)
+        args, arg_keys, _ = s._get_iterating_kwargs(iterating_kwargs)
         assert len(arg_keys) == 0
         assert len(args) == 0
 
@@ -585,7 +585,7 @@ class TestGetIteratingKwargsSignal2D:
         nav_dim = len(nav_chunks)
         s_iter0 = hs.signals.Signal1D(np.random.random((10, 20, 2)))
         iterating_kwargs = {"iter0": s_iter0}
-        args, arg_keys = s._get_iterating_kwargs(iterating_kwargs)
+        args, arg_keys, _= s._get_iterating_kwargs(iterating_kwargs)
         assert arg_keys == ("iter0",)
         for arg in args:
             iter_nav_chunks = arg.chunks[: len(nav_chunks)]
@@ -603,7 +603,7 @@ class TestGetIteratingKwargsSignal2D:
         s_iter2 = s_iter2.transpose(navigation_axes=(-2, -1))
         s_iter_list = [s_iter0, s_iter1, s_iter2]
         iterating_kwargs = {"iter0": s_iter0, "iter1": s_iter1, "iter2": s_iter2}
-        args, arg_keys = s._get_iterating_kwargs(iterating_kwargs)
+        args, arg_keys, _ = s._get_iterating_kwargs(iterating_kwargs)
         assert arg_keys == ("iter0", "iter1", "iter2")
         for iarg, arg in enumerate(args):
             iter_nav_chunks = arg.chunks[:nav_dim]
@@ -620,7 +620,7 @@ class TestGetIteratingKwargsSignal2D:
         s_iter0 = hs.signals.Signal1D(dask_array_iter0).as_lazy()
         s_iter1 = hs.signals.Signal1D(dask_array_iter1).as_lazy()
         iterating_kwargs = {"iter0": s_iter0, "iter1": s_iter1}
-        args, arg_keys = s._get_iterating_kwargs(iterating_kwargs)
+        args, arg_keys, _ = s._get_iterating_kwargs(iterating_kwargs)
         assert arg_keys == ("iter0", "iter1")
         for arg in args:
             iter_nav_chunks = arg.chunks[: len(nav_chunks)]
@@ -633,7 +633,7 @@ class TestGetIteratingKwargsSignal2D:
         nav_dim = len(nav_chunks)
         s_iter0 = hs.signals.Signal1D(np.random.random((10, 19, 2)))
         iterating_kwargs = {"iter0": s_iter0}
-        args, arg_keys = s._get_iterating_kwargs(iterating_kwargs)
+        args, arg_keys, _ = s._get_iterating_kwargs(iterating_kwargs)
         assert arg_keys == ("iter0",)
         for arg in args:
             iter_nav_chunks = arg.chunks[: len(nav_chunks)]
@@ -844,6 +844,22 @@ class TestMapIterate:
         s_out = s._map_iterate(
             add_sum, inplace=False, iterating_kwargs={'add': s_add})
         assert ((s_out.data == self.dx * self.dy) + 2).all()
+
+    def test_iter_kwarg_larger_dim(self):
+        def add_sum(image, add):
+            out = np.sum(image) + np.sum(add)
+            return out
+        s = self.s
+        s_add = hs.signals.BaseSignal(2 * np.ones((10, 20, 2, 2, 2))).transpose(3)
+        s_out = s.map(add_sum, inplace=False,  add=s_add)
+        print(s_out)
+
+    def test_iter_kwarg_larger_shape(self):
+        def add_sum(image, add):
+            return add
+        s = self.s
+        s_add = hs.signals.BaseSignal(2 * np.ones((10, 20, 201, 101))).transpose(2)
+        s_out = s.map(add_sum, inplace=False,  add=s_add)
 
 
 class TestFullProcessing:
@@ -1107,6 +1123,28 @@ class TestRaggedInputSignal:
         s_out_t = s_out.T
         assert s_out_t.axes_manager.signal_shape == s.axes_manager.navigation_shape
         assert s_out_t.axes_manager.navigation_dimension == 0
+
+    def test_0D_ragged_to_ragged(self):
+        def test_function(image):
+            return np.sum(image)
+        x = np.empty((1,), dtype=object)
+        x[0] = np.ones((2, 4))
+        s = hs.signals.BaseSignal(x, ragged=True)
+        s_out = s.map(test_function, inplace=False, ragged=True)
+        assert s.axes_manager.shape == s_out.axes_manager.shape
+
+    def test_0D_not_ragged_output(self):
+        def test_function(image):
+            return np.sum(image, axis=0)
+
+        x = np.empty((1,), dtype=object)
+        x[0] = np.ones((2, 4))
+        s = hs.signals.BaseSignal(x, ragged=True)
+        s_out = s.map(test_function, inplace=False, ragged=False)
+        print(s_out.data)
+        s_out_t = s_out.T
+        assert s_out_t.axes_manager.signal_shape == s.axes_manager.navigation_shape
+        assert s_out_t.axes_manager.navigation_dimension == 1
 
 
 def test_0d_numpy_array_input():

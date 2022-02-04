@@ -2641,11 +2641,6 @@ class BaseSignal(FancySlicing,
         axes = []
         for s in self.data.shape:
             axes.append({'size': int(s), })
-        # With ragged signal with navigation dimension 0 and signal dimension 0
-        # we return an empty list to avoid getting a navigation axis of size 1,
-        # which is incorrect, because it corresponds to the ragged dimension
-        if ragged and len(axes) == 1 and axes[0]['size'] == 1:
-            axes = []
         return axes
 
     def __call__(self, axes_manager=None, fft_shift=False):
@@ -4885,6 +4880,9 @@ class BaseSignal(FancySlicing,
             s_input = self.as_lazy()
         else:
             s_input = self
+        if ragged:
+            output_dtype = object
+            output_signal_size = ()
 
         # unpacking keyword arguments
         if iterating_kwargs is None:
@@ -4905,9 +4903,9 @@ class BaseSignal(FancySlicing,
         else:
             old_sig = s_input
         os_am = old_sig.axes_manager
-        autodetermine = (output_signal_size is None or output_dtype is None) # try to guess output dtype and sig size?
+        autodetermine = (output_signal_size is None or output_dtype is None)  # try to guess output dtype and sig size?
 
-        args, arg_keys = old_sig._get_iterating_kwargs(iterating_kwargs)
+        args, arg_keys, data = old_sig._get_iterating_kwargs(iterating_kwargs)
 
         if autodetermine:  # trying to guess the output d-type and size from one signal
             testing_kwargs = {}
@@ -4915,7 +4913,7 @@ class BaseSignal(FancySlicing,
                 test_ind = (0,) * len(os_am.navigation_axes)
                 testing_kwargs[key] = np.squeeze(args[ikey][test_ind]).compute()
             testing_kwargs = {**kwargs, **testing_kwargs}
-            test_data = np.array(old_sig.inav[(0,) * len(os_am.navigation_shape)].data.compute())
+            test_data = np.array(data[(0,) * len(os_am.navigation_shape)].compute())
             temp_output_signal_size, temp_output_dtype = guess_output_signal_size(
                 test_data=test_data,
                 function=function,
@@ -4927,11 +4925,11 @@ class BaseSignal(FancySlicing,
             if output_dtype is None:
                 output_dtype = temp_output_dtype
 
-        drop_axis, new_axis, axes_changed = self._get_drop_axis_new_axis(output_signal_size)
+        drop_axis, new_axis, axes_changed = self._get_drop_axis_new_axis(output_signal_size, data)
         chunks = tuple([old_sig.data.chunks[i] for i in sorted(nav_indexes)]) + output_signal_size
         mapped = da.map_blocks(
             process_function_blockwise,
-            old_sig.data,
+            data,
             *args,
             function=function,
             nav_indexes=nav_indexes,
@@ -4989,22 +4987,31 @@ class BaseSignal(FancySlicing,
                 sig.data = sig.data.compute(num_workers=max_workers)
         return sig
 
-    def _get_drop_axis_new_axis(self, output_signal_size):
-        am = self.axes_manager
-        if output_signal_size == self.axes_manager.signal_shape:
+    def _get_drop_axis_new_axis(self, output_signal_size, data=None):
+        if data is not None:
+            signal_shape = np.shape(data)
+            signal_shape = tuple(np.delete(signal_shape, self.axes_manager.navigation_indices_in_array))
+            nav_dim = self.axes_manager.navigation_dimension
+            sig_ind = tuple(range(nav_dim, len(signal_shape) + nav_dim))
+        else:
+            signal_shape = self.axes_manager.signal_shape
+            nav_dim = self.axes_manager.navigation_dimension
+            sig_ind = self.axes_manager.signal_indices_in_array
+
+
+        if output_signal_size == signal_shape:
             drop_axis = None
             new_axis = None
             axes_changed = False
         else:
             axes_changed = True
-            if len(output_signal_size) != len(am.signal_shape):
-                drop_axis = am.signal_indices_in_array
-                nav_dim = am.navigation_dimension
+            if len(output_signal_size) != len(signal_shape):
+                drop_axis = sig_ind
                 new_axis = tuple(range(nav_dim, len(output_signal_size) + nav_dim))
             else:
                 drop_axis = [it for (o, i, it) in zip(output_signal_size,
-                                                      am.signal_shape,
-                                                      am.signal_indices_in_array)
+                                                      signal_shape,
+                                                      sig_ind)
                              if o != i]
                 drop_axis = tuple(drop_axis)
                 new_axis = drop_axis
@@ -5012,6 +5019,9 @@ class BaseSignal(FancySlicing,
 
     def _get_iterating_kwargs(self, iterating_kwargs):
         signal_dim_shape = self.axes_manager.signal_shape
+        iterating_shapes = [iterating_kwargs[key].axes_manager.signal_shape for
+                            key in iterating_kwargs]
+        max_iter_len = max((len(s) for s in [signal_dim_shape,]+iterating_shapes))
         nav_chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
         args, arg_keys = (), ()
         for key in iterating_kwargs:
@@ -5035,8 +5045,8 @@ class BaseSignal(FancySlicing,
                     nav_chunks=nav_chunks,
                     sig_chunks=-1
                     )
-            extra_dims = (len(signal_dim_shape) -
-                          len(iterating_kwargs[key].axes_manager.signal_shape))
+            extra_dims = (max_iter_len -
+                              len(iterating_kwargs[key].axes_manager.signal_shape))
             if extra_dims > 0:
                 old_shape = iterating_kwargs[key].data.shape
                 new_shape = old_shape + (1,)*extra_dims
@@ -5044,7 +5054,15 @@ class BaseSignal(FancySlicing,
             else:
                 args += (iterating_kwargs[key].data, )
             arg_keys += (key,)
-        return args, arg_keys
+        extra_dims = (max_iter_len) - len(signal_dim_shape)
+        if extra_dims > 0:
+            old_shape = self.data.shape
+            new_shape = old_shape + (1,) * extra_dims
+            sig = self.data.reshape(new_shape)
+        else:
+            sig = self.data
+
+        return args, arg_keys, sig
 
     def copy(self):
         """
