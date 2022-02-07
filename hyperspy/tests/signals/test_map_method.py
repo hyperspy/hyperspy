@@ -652,6 +652,7 @@ class TestGetDropAxisNewAxis:
         dask_array = da.random.random(input_shape, chunks=chunks)
         s = hs.signals.Signal2D(dask_array).as_lazy()
         output_signal_size = input_shape[-2:][::-1]
+        print(output_signal_size)
         drop_axis, new_axis, axes_changed = s._get_drop_axis_new_axis(
             output_signal_size
         )
@@ -845,12 +846,26 @@ class TestMapIterate:
             add_sum, inplace=False, iterating_kwargs={'add': s_add})
         assert ((s_out.data == self.dx * self.dy) + 2).all()
 
+    def test_iter_kwarg_larger_shape_ragged(self):
+        def return_img(image, add):
+            return image
+
+        x = np.empty((2,), dtype=object)
+        x[0] = np.ones((4, 2))
+        x[1] = np.ones((4, 2))
+
+        s = hs.signals.BaseSignal(x, ragged=True)
+
+        s_add = hs.signals.BaseSignal(2 * np.ones((2, 201, 101))).transpose(2)
+        s_out = s.map(return_img, inplace=False, add=s_add, ragged=True)
+        np.testing.assert_array_equal(s_out.data[0], x[0])
+
 
 class TestFullProcessing:
     def setup_method(self):
         data_array = np.zeros((30, 40, 50, 60), dtype=np.uint16)
         shift_array = np.random.randint(20, 40, size=(30, 40, 2))
-        intensity_array = np.random.randint(1, 2000, size=(30, 40))
+        intensity_array= np.random.randint(1, 2000, size=(30, 40))
         crop_array = np.zeros((30, 40, 2, 2), dtype=np.int16)
         crop_array[:, :, 0] = 5, -5
         crop_array[:, :, 1] = 8, -8
@@ -885,6 +900,7 @@ class TestFullProcessing:
         s_crop, s_shift, s_intensity = self.s_crop, self.s_shift, self.s_intensity
         s.data = da.from_array(s.data, chunks=(5, 10, 20, 20))
         s = s.as_lazy()
+        print(s.data.chunks)
         s_out = s.map(
             function=shift_intensity_function,
             shift=s_shift,

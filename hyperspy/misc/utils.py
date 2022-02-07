@@ -1157,7 +1157,7 @@ def process_function_blockwise(data,
                                function,
                                nav_indexes=None,
                                output_signal_size=None,
-                               block_info=None,
+                               output_dtype=None,
                                arg_keys=None,
                                **kwargs):
     """
@@ -1189,7 +1189,7 @@ def process_function_blockwise(data,
 
     """
     # Both of these values need to be passed in
-    dtype = block_info[None]["dtype"]
+    dtype = output_dtype
     chunk_nav_shape = tuple([data.shape[i] for i in sorted(nav_indexes)])
     output_shape = chunk_nav_shape + tuple(output_signal_size)
     # Pre-allocating the output array
@@ -1210,7 +1210,6 @@ def process_function_blockwise(data,
                 if arg_i.shape == ():
                     arg_i = arg_i[()]
                 iter_dict[key] = arg_i
-
             output_array[islice] = function(data[islice], **iter_dict, **kwargs)
     if not (chunk_nav_shape == output_array.shape):
         try:
