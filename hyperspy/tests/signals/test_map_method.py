@@ -642,7 +642,7 @@ class TestGetIteratingKwargsSignal2D:
             assert np.all(s_iter0.data == np.squeeze(arg.compute()))
 
 
-class TestGetDropAxisNewAxis:
+class TestGetBlockPattern:
     @pytest.mark.parametrize(
         "input_shape",
         [(50, 40), (10, 50, 40), (100, 10, 40, 70), (150, 100, 20, 65, 13)],
@@ -651,14 +651,9 @@ class TestGetDropAxisNewAxis:
         chunks = (10,) * len(input_shape)
         dask_array = da.random.random(input_shape, chunks=chunks)
         s = hs.signals.Signal2D(dask_array).as_lazy()
-        output_signal_size = input_shape[-2:][::-1]
-        print(output_signal_size)
-        drop_axis, new_axis, axes_changed = s._get_drop_axis_new_axis(
-            output_signal_size
-        )
-        assert drop_axis == None
-        assert new_axis == None
-        assert axes_changed == False
+        arg_pairs, adjust_chunks, new_axis, output_pattern = s.get_block_pattern((s.data,), input_shape)
+        assert new_axis == {}
+        assert adjust_chunks == {}
 
     @pytest.mark.parametrize(
         "input_shape",
@@ -669,31 +664,27 @@ class TestGetDropAxisNewAxis:
         dask_array = da.random.random(input_shape, chunks=chunks)
         s = hs.signals.Signal1D(dask_array).as_lazy()
         output_signal_size = input_shape[-1:]
-        drop_axis, new_axis, axes_changed = s._get_drop_axis_new_axis(
-            output_signal_size
-        )
-        assert drop_axis == None
-        assert new_axis == None
-        assert axes_changed == False
+        arg_pairs, adjust_chunks, new_axis, output_pattern = s.get_block_pattern((s.data,), input_shape)
+        assert new_axis == {}
+        assert adjust_chunks == {}
 
     def test_different_output_signal_size_signal2d(self):
         s = hs.signals.Signal2D(np.zeros((4, 5)))
-        drop_axis, new_axis, axes_changed = s._get_drop_axis_new_axis((1,))
-        assert drop_axis == (1, 0)
-        assert new_axis == (0,)
-        assert axes_changed == True
+        arg_pairs, adjust_chunks, new_axis, output_pattern = s.get_block_pattern((s.data,), (1,))
+        assert new_axis == {}
+        assert adjust_chunks == {0: 1, 1: 0}
 
+    def test_different_output_signal_size_signal2d_2(self):
         s = hs.signals.Signal2D(np.zeros((7, 10, 5)))
-        drop_axis, new_axis, axes_changed = s._get_drop_axis_new_axis((2,))
-        assert drop_axis == (2, 1)
-        assert new_axis == (1,)
-        assert axes_changed == True
+        arg_pairs, adjust_chunks, new_axis, output_pattern = s.get_block_pattern((s.data,), (7, 2))
+        assert new_axis == {}
+        assert adjust_chunks == {1: 2, 2: 0}
 
+    def test_different_output_signal_size_signal2d_3(self):
         s = hs.signals.Signal2D(np.zeros((3, 2, 7, 10, 5)))
-        drop_axis, new_axis, axes_changed = s._get_drop_axis_new_axis((5,))
-        assert drop_axis == (4, 3)
-        assert new_axis == (3,)
-        assert axes_changed == True
+        arg_pairs, adjust_chunks, new_axis, output_pattern = s.get_block_pattern((s.data,),(3, 2, 5,))
+        assert new_axis == {}
+        assert adjust_chunks == {2: 5, 3: 0, 4: 0}
 
 
 def test_dask_array_store():
