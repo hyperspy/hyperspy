@@ -64,9 +64,17 @@ class HorizontalLineSegment(MarkerBase):
         self.marker_properties = lp
         self.set_data(x1=x1, x2=x2, y1=y)
         self.set_marker_properties(**kwargs)
+        # for compatibility with matplotlib 3.1.x - 3.4.x
+        if 'zorder' in self.marker_properties:
+            if self.marker_properties['zorder'] is None:
+                del self.marker_properties['zorder']
         self.name = 'horizontal_line_segment'
 
     def __repr__(self):
+        if 'zorder' in self.marker_properties:
+            zorder = self.marker_properties['zorder']
+        else:
+            zorder = None
         string = "<marker.{}, {} (x1={},x2={},y={},linewidth={},color={},zorder={})>".format(
             self.__class__.__name__,
             self.name,
@@ -75,7 +83,7 @@ class HorizontalLineSegment(MarkerBase):
             self.get_data_position('y1'),
             self.marker_properties['linewidth'],
             self.marker_properties['color'],
-            self.marker_properties['zorder'],
+            zorder,
         )
         return(string)
 
