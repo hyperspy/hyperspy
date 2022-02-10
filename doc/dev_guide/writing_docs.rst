@@ -10,7 +10,7 @@ Documentation comes in two parts: docstrings and user-guide documentation.
 Docstrings
 ^^^^^^^^^^
 
-Written at the start of a function and give essential information
+Written at the start of a function, they give essential information
 about how it should be used, such as which arguments can be passed to it and
 what the syntax should be. The docstrings need to follow the `numpy
 specification <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT
