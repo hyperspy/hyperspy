@@ -142,9 +142,9 @@ def find_peaks_minmax(z, distance=5., threshold=10.):
         Peak pixel coordinates.
 
     """
-    data_max = ndi.filters.maximum_filter(z, distance)
+    data_max = ndi.maximum_filter(z, distance)
     maxima = (z == data_max)
-    data_min = ndi.filters.minimum_filter(z, distance)
+    data_min = ndi.minimum_filter(z, distance)
     diff = ((data_max - data_min) > threshold)
     maxima[diff == 0] = 0
     labeled, num_objects = ndi.label(maxima)

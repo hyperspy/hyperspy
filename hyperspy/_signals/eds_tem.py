@@ -611,7 +611,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         if self.axes_manager.navigation_dimension == 0:
             raise RuntimeError('Navigation dimenstion must be higher than 0 '
                                'to estimate a vacuum mask.')
-        from scipy.ndimage.morphology import binary_dilation, binary_erosion
+        from scipy.ndimage import binary_dilation, binary_erosion
         mask = (self.max(-1) <= threshold)
         if closing:
             mask.data = binary_dilation(mask.data, border_value=0)
