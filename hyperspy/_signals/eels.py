@@ -1872,7 +1872,7 @@ class EELSSpectrum(Signal1D):
 
         mask = (self.isig[start_energy:].mean(-1) <= threshold)
 
-        from scipy.ndimage.morphology import binary_dilation, binary_erosion
+        from scipy.ndimage import binary_dilation, binary_erosion
         if closing:
             mask.data = binary_dilation(mask.data, border_value=0)
             mask.data = binary_erosion(mask.data, border_value=1)
