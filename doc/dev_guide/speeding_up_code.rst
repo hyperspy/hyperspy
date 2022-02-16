@@ -17,7 +17,7 @@ Writing Numba code
 
 If you need to improve the speed of a given part of the code your first choice
 should be `Numba <https://numba.pydata.org/>`_. The motivation is that Numba
-code is very similar (when not identical) to Python code, and, therefore, it is
+code is very similar (when not identical) to Python code, and therefore, it is
 a lot easier to maintain than Cython code (see below).
 
 Numba is also a required dependency for HyperSpy, unlike Cython which
