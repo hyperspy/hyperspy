@@ -26,7 +26,7 @@ import dask.array as da
 import scipy.interpolate
 import scipy as sp
 from scipy.signal import savgol_filter
-from scipy.ndimage.filters import gaussian_filter1d
+from scipy.ndimage import gaussian_filter1d
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal1d import CommonSignal1D
