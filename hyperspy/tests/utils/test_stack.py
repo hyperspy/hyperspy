@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import pytest
@@ -164,3 +164,45 @@ class TestUtilsStack:
         s = self.signal
         rs = utils.stack([5, s], axis='E')
         np.testing.assert_array_equal(rs.isig[0].data, 5 * np.ones((3, 2)))
+
+    def test_stack_non_uniform_axis(self):
+        s = self.signal
+        s2 = s.deepcopy()
+        s2.axes_manager[2].offset = 2.5
+        s.axes_manager[1].convert_to_non_uniform_axis()
+        s.axes_manager[2].convert_to_non_uniform_axis()
+        s2.axes_manager[2].convert_to_non_uniform_axis()
+        # test error for overlapping axes
+        with pytest.raises(ValueError, match="Signals can only be stacked"):
+            rs = utils.stack([s, s], axis=2)
+        # test stacking along non-uniform axis
+        rs = utils.stack([s, s2], axis=2)
+        assert rs.axes_manager[2].axis.size == rs.data.shape[2]
+        # Test stacking without specified axis
+        rs = utils.stack([s, s])
+        assert rs.axes_manager.shape == (2, 3, 2, 5)
+        assert rs.axes_manager[0].axis.size == 2
+        # Test stacking along uniform axis
+        rs = utils.stack([s, s], axis=0)
+        assert rs.axes_manager[0].axis.size == 4
+        # Test stacking axes with inverse vectors
+        s.axes_manager[2].axis = s.axes_manager[2].axis[::-1]
+        s2.axes_manager[2].axis = s2.axes_manager[2].axis[::-1]
+        rs = utils.stack([s2, s], axis=2)
+        assert rs.axes_manager[2].axis.size == rs.data.shape[2]
+
+    def test_stack_functional_data_axis(self):
+        s = self.signal
+        s2 = s.deepcopy()
+        # Test stacking of functional data axes with uniform x vector
+        s.axes_manager[0].convert_to_functional_data_axis(expression='x')
+        s2.axes_manager[0].offset = 2
+        s2.axes_manager[0].convert_to_functional_data_axis(expression='x')
+        rs = utils.stack([s, s2], axis=0)
+        assert rs.axes_manager[0].axis.size == rs.data.shape[1]
+        # Test stacking of functional data axes with uniform x vector
+        s.axes_manager[0].x.convert_to_non_uniform_axis()
+        s2.axes_manager[0].x.convert_to_non_uniform_axis()
+        rs = utils.stack([s, s2], axis=0)
+        assert rs.axes_manager[0].axis.size == rs.data.shape[1]
+        

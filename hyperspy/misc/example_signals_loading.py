@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 from pathlib import Path
+import warnings
 
 
 def _resolve_dir():
@@ -41,8 +42,9 @@ def load_1D_EDS_SEM_spectrum():
     file_path = _resolve_dir().joinpath(
         "eds", "example_signals", "1D_EDS_SEM_Spectrum.hspy"
     )
-
-    return load(file_path, mode="r")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        return load(file_path, mode="r")
 
 
 def load_1D_EDS_TEM_spectrum():
@@ -63,7 +65,9 @@ def load_1D_EDS_TEM_spectrum():
         "eds", "example_signals", "1D_EDS_TEM_Spectrum.hspy"
     )
 
-    return load(file_path, mode="r")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        return load(file_path, mode="r")
 
 
 def load_object_hologram():
@@ -94,8 +98,9 @@ def load_object_hologram():
     file_path = _resolve_dir().joinpath(
         "holography", "example_signals", "01_holo_Vbp_130V_0V_bin2_crop.hdf5"
     )
-
-    return load(file_path, signal_type="hologram", mode="r")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        return load(file_path, mode="r")
 
 
 def load_reference_hologram():
@@ -127,5 +132,6 @@ def load_reference_hologram():
         "holography", "example_signals", "00_ref_Vbp_130V_0V_bin2_crop.hdf5"
     )
 
-    return load(file_path, signal_type="hologram", mode="r")
-
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        return load(file_path, mode="r")

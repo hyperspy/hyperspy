@@ -1,25 +1,27 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 
 import numpy as np
+from packaging.version import Version
 import pytest
+import scipy
 from scipy.optimize import OptimizeResult
 
 import hyperspy.api as hs
@@ -285,6 +287,9 @@ class TestModelFitBinnedGlobal:
         self._check_model_values(self.m[0], expected, rtol=TOL)
         assert isinstance(self.m.fit_output, OptimizeResult)
 
+    # See https://github.com/scipy/scipy/issues/14589
+    @pytest.mark.xfail(Version(scipy.__version__) >= Version("1.8.0"),
+                       reason="Regression introduced in 1.8.0.")
     def test_fit_shgo(self):
         pytest.importorskip("scipy", minversion="1.2.0")
         self.m.fit(optimizer="SHGO", loss_function="ls", bounded=True)
@@ -553,13 +558,13 @@ class TestMultifit:
     def test_iterpath_none(self):
         with pytest.warns(
             VisibleDeprecationWarning,
-            match="'iterpath' default will change from 'flyback' to 'serpentine'",
+            match="default will change from 'flyback' to 'serpentine'",
         ):
             self.m.multifit()  # iterpath = None by default
 
         with pytest.warns(
             VisibleDeprecationWarning,
-            match="'iterpath' default will change from 'flyback' to 'serpentine'",
+            match="default will change from 'flyback' to 'serpentine'",
         ):
             self.m.multifit(iterpath=None)
 

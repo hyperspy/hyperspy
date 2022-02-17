@@ -1,24 +1,25 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import dask.array as da
 
+from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
 from hyperspy.misc.utils import is_binned # remove in v2.0
 
@@ -86,7 +87,8 @@ class Lorentzian(Expression):
     centre : float
         Location of the peak maximum.
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
 
     For convenience the `fwhm` and `height` attributes can be used to get and set
@@ -96,7 +98,7 @@ class Lorentzian(Expression):
     def __init__(self, A=1., gamma=1., centre=0., module="numexpr", **kwargs):
         # We use `_gamma` internally to workaround the use of the `gamma`
         # function in sympy
-        super(Lorentzian, self).__init__(
+        super().__init__(
             expression="A / pi * (_gamma / ((x - centre)**2 + _gamma**2))",
             name="Lorentzian",
             A=A,
@@ -160,27 +162,29 @@ class Lorentzian(Expression):
         >>> g.estimate_parameters(s, -10, 10, False)
         """
 
-        super(Lorentzian, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, gamma = _estimate_lorentzian_parameters(signal, x1, x2,
                                                               only_current)
+        scaling_factor = _get_scaling_factor(signal, axis, centre)
+
         if only_current is True:
             self.centre.value = centre
             self.gamma.value = gamma
             self.A.value = height * gamma * np.pi
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.A.value /= axis.scale
+                self.A.value /= scaling_factor
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * gamma * np.pi
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.A.map['values'] /= axis.scale
+                self.A.map['values'] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.gamma.map['values'][:] = gamma
             self.gamma.map['is_set'][:] = True

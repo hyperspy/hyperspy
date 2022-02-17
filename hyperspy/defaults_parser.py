@@ -1,30 +1,28 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
 import configparser
 import logging
+import os
+from pathlib import Path
 
 import traits.api as t
-import matplotlib.pyplot as plt
-
-from pathlib import Path
 
 from hyperspy.misc.config_dir import config_path, data_path
 from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
@@ -136,7 +134,7 @@ class GUIs(t.HasTraits):
         "Requires installing hyperspy_gui_traitsui.")
     warn_if_guis_are_missing = t.CBool(
         True,
-        desc="Display warnings, if hyperspy_gui_ipywidgets or hyperspy_gui_traitsui are missing.")
+        desc="Not necessary anymore and deprecated.")
 
 
 class PlotConfig(t.HasTraits):
@@ -144,14 +142,17 @@ class PlotConfig(t.HasTraits):
                                 label='Saturated pixels (deprecated)',
                                 desc='Warning: this is deprecated and will be removed in HyperSpy v2.0'
                                 )
-    cmap_navigator = t.Enum(plt.colormaps(),
-                            label='Color map navigator',
-                            desc='Set the default color map for the navigator.',
-                            )
-    cmap_signal = t.Enum(plt.colormaps(),
-                         label='Color map signal',
-                         desc='Set the default color map for the signal plot.',
-                         )
+    # Don't use t.Enum to list all possible matplotlib colormap to
+    # avoid importing matplotlib and building the list of colormap
+    # when importing hyperpsy
+    cmap_navigator = t.Str('gray',
+                           label='Color map navigator',
+                           desc='Set the default color map for the navigator.',
+                           )
+    cmap_signal = t.Str('gray',
+                        label='Color map signal',
+                        desc='Set the default color map for the signal plot.',
+                        )
     dims_024_increase = t.Str('right',
                               label='Navigate right'
                               )
@@ -208,10 +209,6 @@ template = {
 
 # Set the enums defaults
 template['General'].logging_level = 'WARNING'
-template['Plot'].cmap_navigator = 'gray'
-template['Plot'].cmap_signal = 'gray'
-
-
 # Defaults template definition ends ######################################
 
 
@@ -293,6 +290,7 @@ preferences = Preferences(
     GUIs=template['GUIs'],
     Plot=template['Plot'],
 )
+
 
 if preferences.General.logger_on:
     turn_logging_on(verbose=0)

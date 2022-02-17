@@ -1,13 +1,16 @@
 name: test_env
 channels:
-- defaults
 - conda-forge
 dependencies:
-- dask-core >2.0
+- dask-core >=2.11
 - dill
+# dask-core < 2021.3.1 doesn't have fsspec as dependency
+- fsspec
 - h5py
 - imageio
 - ipyparallel
+- ipython !=8.0.*
+- jinja2
 - matplotlib-base
 - matplotlib-scalebar
 - mrcz
@@ -17,7 +20,6 @@ dependencies:
 - numpy
 - pint
 - prettytable
-- python
 - python-dateutil
 - pyyaml
 - requests
@@ -30,5 +32,6 @@ dependencies:
 - toolz
 - tqdm
 - traits
+- zarr
 
 

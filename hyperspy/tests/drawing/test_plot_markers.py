@@ -1,19 +1,19 @@
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 
@@ -177,6 +177,13 @@ class TestMarkers:
         for i in range(12):
             marker_list.append(markers.point(4, 8))
         s.add_marker(marker_list)
+
+    def test_check_if_plot_is_not_active(self):
+        s = Signal1D(np.arange(100).reshape([10,10]))
+        m = markers.vertical_line(np.arange(10))
+        s.add_marker(m)
+        s._plot.close()
+        s.add_marker(m)
 
 
 class Test_permanent_markers:

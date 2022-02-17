@@ -1,19 +1,19 @@
 # Copyright 2007-2020 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import dask.array as da
 import numpy as np
@@ -48,7 +48,7 @@ def test_plot_lazy_chunks(plot_kwargs):
     s.data = s.data.rechunk(("auto", "auto", 5))
     s.plot(**plot_kwargs)
     assert s.navigator.data.shape == tuple([N]*(dim-1))
-    assert s.navigator.original_metadata.sum_from == [slice(5, 10, None)]
+    assert s.navigator.original_metadata.sum_from == '[slice(5, 10, None)]'
 
 
 def test_compute_navigator():
@@ -56,7 +56,7 @@ def test_compute_navigator():
     dim = 3
     s = hs.signals.Signal1D(da.arange(N**dim).reshape([N]*dim)).as_lazy()
     s.compute_navigator(chunks_number=3)
-    assert s.navigator.original_metadata.sum_from == [slice(5, 10, None)]
+    assert s.navigator.original_metadata.sum_from == '[slice(5, 10, None)]'
 
     # change the navigator and check it is used when plotting
     s.navigator = s.navigator / s.navigator.mean()
@@ -107,22 +107,22 @@ def test_compute_navigator_index():
         ax.offset = -0.75
 
     s.compute_navigator(index=0.0, chunks_number=3)
-    assert s.navigator.original_metadata.sum_from ==  [slice(5, 10, None), slice(5, 10, None)]
+    assert s.navigator.original_metadata.sum_from ==  '[slice(5, 10, None), slice(5, 10, None)]'
 
     s.compute_navigator(index=0, chunks_number=3)
-    assert s.navigator.original_metadata.sum_from == [slice(0, 5, None), slice(0, 5, None)]
+    assert s.navigator.original_metadata.sum_from == '[slice(0, 5, None), slice(0, 5, None)]'
 
     s.compute_navigator(index=-0.7, chunks_number=3)
-    assert s.navigator.original_metadata.sum_from == [slice(0, 5, None), slice(0, 5, None)]
+    assert s.navigator.original_metadata.sum_from == '[slice(0, 5, None), slice(0, 5, None)]'
 
     s.compute_navigator(index=[-0.7, 0.0], chunks_number=3)
-    assert s.navigator.original_metadata.sum_from ==  [slice(0, 5, None), slice(5, 10, None)]
+    assert s.navigator.original_metadata.sum_from ==  '[slice(0, 5, None), slice(5, 10, None)]'
 
     s.compute_navigator(index=0.0, chunks_number=[3, 5])
-    assert s.navigator.original_metadata.sum_from ==  [slice(5, 10, None), slice(6, 9, None)]
+    assert s.navigator.original_metadata.sum_from ==  '[slice(5, 10, None), slice(6, 9, None)]'
 
     s.compute_navigator(index=[0.7, -0.7], chunks_number=[3, 5])
-    assert s.navigator.original_metadata.sum_from ==  [slice(10, 15, None), slice(0, 3, None)]
+    assert s.navigator.original_metadata.sum_from ==  '[slice(10, 15, None), slice(0, 3, None)]'
 
 
 def test_plot_navigator_signal():

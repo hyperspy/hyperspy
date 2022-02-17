@@ -14,9 +14,9 @@ for testing. The tests reside in the ``hyperspy.tests`` module.
 
 Tests are short functions, found in ``hyperspy/tests``, that call your functions
 under some known conditions and check the outputs against known values. They
-should depend on as few other features as possible so that when they break
+should depend on as few other features as possible so that when they break,
 we know exactly what caused it. Ideally, the tests should be written at the
-same time than the code itself, as they are very convenient to run to check
+same time as the code itself, as they are very convenient to run to check
 outputs when coding. Writing tests can seem laborious but you'll probably
 soon find that they are very important, as they force you to sanity-check
 all the work that you do.
@@ -34,7 +34,7 @@ all the work that you do.
   parameters of the same function without having to write to much repetitive
   code, which is often error-prone. See `pytest documentation
   <http://doc.pytest.org/en/latest/parametrize.html>`__ for more details.
-* It is good to check that the tests does not use too much memory after
+* It is good to check that the tests do not use too much memory after
   creating new tests. If you need to explicitly delete your objects and free
   memory, you can do the following to release the memory associated with the
   ``s`` object:
@@ -172,14 +172,15 @@ In case of Azure Pipelines, CI helper scripts are pulled from the
 
 The testing matrix is as follows:
 
-- **Github Actions**: test a range of Pythons version on Linux, MacOS and Windows;
+- **Github Actions**: test a range of Python versions on Linux, MacOS and Windows;
   all dependencies are installed from `PyPI <https://pypi.org>`_.
   See ``.github/workflows/tests.yml`` in the HyperSpy repository for further details.
 - **Azure Pipeline**: test a range of Python versions on Linux, MacOS and Windows;
   all dependencies are installed from `Anaconda Cloud <https://anaconda.org/>`_
-  using the `Anaconda "defaults" <https://anaconda.org/anaconda>`_ and the
-  `"conda-forge" <https://anaconda.org/conda-forge>`_ channel (in this order of
-  priority). See ``azure-pipelines.yml`` in the HyperSpy repository for further details.
+  using the `"conda-forge" <https://anaconda.org/conda-forge>`_ channel.
+  See ``azure-pipelines.yml`` in the HyperSpy repository for further details.
+- The testing of **HyperSpy extensions** is described in the 
+  :ref:`integration test suite <integration_test_suite-label>` section.
 
 This testing matrix has been designed to be simple and easy to maintain, whilst
 ensuring that packages from PyPI and Anaconda cloud are not mixed in order to
@@ -221,7 +222,7 @@ tests. The reference images are located in the folder defined by the argument
 
 To run plot tests, you simply need to add the option ``--mpl``:
 
-:: code:: bash
+.. code:: bash
 
     $ pytest --mpl
 
@@ -257,7 +258,7 @@ variable and accordingly set the backend.
 
 Exporting pytest results as HTML
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-With ``pytest-html`` it is possible to export the results of running pytest
+With ``pytest-html``, it is possible to export the results of running pytest
 for easier viewing. It can be installed by conda:
 
 .. code:: bash

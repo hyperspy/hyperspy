@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 from hyperspy._signals.common_signal2d import CommonSignal2D
@@ -24,7 +24,7 @@ from hyperspy.docstrings.plot import (
     COMPLEX_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
 
-class Complex2Dmixin:
+class ComplexSignal2D(ComplexSignal, CommonSignal2D):
 
     """BaseSignal subclass for complex 2-dimensional data."""
 
@@ -117,13 +117,8 @@ class Complex2Dmixin:
                      PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
 
-class ComplexSignal2D(Complex2Dmixin, ComplexSignal, CommonSignal2D):
-
-    """BaseSignal subclass for complex 2-dimensional data."""
-    pass
-
-
 class LazyComplexSignal2D(ComplexSignal2D, LazyComplexSignal):
 
     """BaseSignal subclass for lazy complex 2-dimensional data."""
+
     pass

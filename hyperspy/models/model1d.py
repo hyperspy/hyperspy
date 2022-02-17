@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import copy
 
@@ -23,7 +23,8 @@ from scipy.special import huber
 import traits.api as t
 
 import hyperspy.drawing.signal1d
-from hyperspy.axes import generate_axis
+from hyperspy.axes import generate_uniform_axis
+from hyperspy.exceptions import WrongObjectError, SignalDimensionError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import LabelWidget, VerticalLineWidget
 from hyperspy.events import EventSuppressor
@@ -314,9 +315,11 @@ class Model1D(BaseModel):
         if value is not None:
             if (value.axes_manager.navigation_shape !=
                     self.signal.axes_manager.navigation_shape):
-                raise ValueError('The low-loss does not have '
-                                 'the same navigation dimension as the '
-                                 'core-loss')
+                raise ValueError('The low-loss does not have the same '
+                                 'navigation dimension as the core-loss.')
+            if not value.axes_manager.signal_axes[0].is_uniform:
+                raise ValueError('Low loss convolution is not supported with '
+                                 'non-uniform signal axes.')
             self._low_loss = value
             self.set_convolution_axis()
             self.convolved = True
@@ -337,8 +340,8 @@ class Model1D(BaseModel):
         dimension = self.axis.size + ll_axis.size - 1
         step = self.axis.scale
         knot_position = ll_axis.size - ll_axis.value2index(0) - 1
-        self.convolution_axis = generate_axis(self.axis.offset, step,
-                                              dimension, knot_position)
+        self.convolution_axis = generate_uniform_axis(self.axis.offset, step,
+                                                     dimension, knot_position)
 
     def append(self, thing):
         """Add component to Model.
@@ -427,10 +430,13 @@ class Model1D(BaseModel):
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[self.channel_switches]
-        if is_binned(self.signal) is True:
+        if is_binned(self.signal):
         # in v2 replace by
-        #if self.signal.axes_manager[-1].is_binned is True:
-            to_return *= self.signal.axes_manager[-1].scale
+        #if self.signal.axes_manager[-1].is_binned:
+            if self.signal.axes_manager[-1].is_uniform:
+                to_return *= self.signal.axes_manager[-1].scale
+            else:
+                to_return *= np.gradient(self.signal.axes_manager[-1].axis)
         return to_return
 
     def _errfunc(self, param, y, weights=None):
@@ -634,10 +640,13 @@ class Model1D(BaseModel):
 
             to_return = grad[1:, :] * weights
 
-        if is_binned(self.signal) is True:
+        if is_binned(self.signal):
         # in v2 replace by
-        #if self.signal.axes_manager[-1].is_binned is True:
-            to_return *= self.signal.axes_manager[-1].scale
+        #if self.signal.axes_manager[-1].is_binned:
+            if self.signal.axes_manager[-1].is_uniform:
+                to_return *= self.signal.axes_manager[-1].scale
+            else:
+                to_return *= np.gradient(self.signal.axes_manager[-1].axis)
 
         return to_return
 

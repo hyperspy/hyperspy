@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright 2007-2016 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import os
@@ -38,8 +38,8 @@ def test_elid(pathname):
 
     assert s[0].data.shape == (16, 20)
     assert s[0].axes_manager.as_dictionary() == {
-        'axis-0': {'name': 'y', 'scale': 0.9757792598920122, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True, 'is_binned': False},
-        'axis-1': {'name': 'x', 'scale': 0.9757792598920122, 'offset': 0.0, 'size': 20, 'units': 'µm', 'navigate': True, 'is_binned': False}
+        'axis-0': {'_type': 'UniformDataAxis', 'name': 'y', 'scale': 0.9757792598920122, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True, 'is_binned': False},
+        'axis-1': {'_type': 'UniformDataAxis', 'name': 'x', 'scale': 0.9757792598920122, 'offset': 0.0, 'size': 20, 'units': 'µm', 'navigate': True, 'is_binned': False}
     }
     assert s[0].metadata['Acquisition_instrument']['SEM']['Stage']['x'] == -2.586744298575455
     assert s[0].metadata['Acquisition_instrument']['SEM']['Stage']['y'] == -0.7322168400784014
@@ -70,7 +70,7 @@ def test_elid(pathname):
     assert s[1].metadata['General']['title'] == 'Image 1, Spot 1'
     assert s[1].data.shape == (2048,)
     assert s[1].axes_manager.as_dictionary() == {
-        'axis-0': {'name': 'Energy', 'scale': 0.00988676802994421, 'offset': -0.03634370080990722, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
+        'axis-0': {'_type': 'UniformDataAxis', 'name': 'Energy', 'scale': 0.00988676802994421, 'offset': -0.03634370080990722, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
     }
     assert s[1].data.tolist()[0:300] == [
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,15,16,19,30,52,61,98,125,
@@ -95,7 +95,7 @@ def test_elid(pathname):
     assert s[2].metadata['General']['title'] == 'Image 1, Region 2'
     assert s[2].data.shape == (2048,)
     assert s[2].axes_manager.as_dictionary() == {
-        'axis-0': {'name': 'Energy', 'scale': 0.00988676802994421, 'offset': -0.03634370080990722, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
+        'axis-0': {'_type': 'UniformDataAxis', 'name': 'Energy', 'scale': 0.00988676802994421, 'offset': -0.03634370080990722, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
     }
     assert s[2].original_metadata['acquisition']['scan']['detectors']['EDS']['live_time'] == 6.5802053
     assert s[2].original_metadata['acquisition']['scan']['detectors']['EDS']['real_time'] == 10.177700000000003
@@ -103,9 +103,9 @@ def test_elid(pathname):
     assert s[3].metadata['General']['title'] == 'Image 1, Map 3'
     assert s[3].data.shape == (16, 16, 2048)
     assert s[3].axes_manager.as_dictionary() == {
-        'axis-0': {'name': 'y', 'scale': 1.2197240748650153, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True, 'is_binned': False},
-        'axis-1': {'name': 'x', 'scale': 1.2197240748650153, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True, 'is_binned': False},
-        'axis-2': {'name': 'X-ray energy', 'scale': 0.00988676802994421, 'offset': -0.03634370080990722, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
+        'axis-0': {'_type': 'UniformDataAxis', 'name': 'y', 'scale': 1.2197240748650153, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True, 'is_binned': False},
+        'axis-1': {'_type': 'UniformDataAxis', 'name': 'x', 'scale': 1.2197240748650153, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True, 'is_binned': False},
+        'axis-2': {'_type': 'UniformDataAxis', 'name': 'X-ray energy', 'scale': 0.00988676802994421, 'offset': -0.03634370080990722, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
     }
     assert s[3].original_metadata['acquisition']['scan']['detectors']['EDS']['live_time'] == 4.047052
     assert s[3].original_metadata['acquisition']['scan']['detectors']['EDS']['real_time'] == 3.0005599999999997
@@ -113,8 +113,8 @@ def test_elid(pathname):
     assert s[4].metadata['General']['title'] == 'Image 1, Line 4'
     assert s[4].data.shape == (64, 2048)
     assert s[4].axes_manager.as_dictionary() == {
-        'axis-0': {'name': 'i', 'scale': 1.0, 'offset': 0.0, 'size': 64, 'units': 'points', 'navigate': True, 'is_binned': False},
-        'axis-1': {'name': 'X-ray energy', 'scale': 0.00988676802994421, 'offset': -0.03634370080990722, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
+        'axis-0': {'_type': 'UniformDataAxis', 'name': 'i', 'scale': 1.0, 'offset': 0.0, 'size': 64, 'units': 'points', 'navigate': True, 'is_binned': False},
+        'axis-1': {'_type': 'UniformDataAxis', 'name': 'X-ray energy', 'scale': 0.00988676802994421, 'offset': -0.03634370080990722, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
     }
     assert s[4].original_metadata['acquisition']['scan']['detectors']['EDS']['live_time'] == 5.504343599999998
     assert s[4].original_metadata['acquisition']['scan']['detectors']['EDS']['real_time'] == 6.410299999999996
@@ -122,9 +122,9 @@ def test_elid(pathname):
     assert s[5].metadata['General']['title'] == 'Image 1, Map 6'
     assert s[5].data.shape == (16, 16, 2048)
     assert s[5].axes_manager.as_dictionary() == {
-        'axis-0': {'name': 'y', 'scale': 1.2197240748650153, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True, 'is_binned': False},
-        'axis-1': {'name': 'x', 'scale': 1.2197240748650153, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True, 'is_binned': False},
-        'axis-2': {'name': 'X-ray energy', 'scale': 0.009886797201840245, 'offset': -0.04478043655810262, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
+        'axis-0': {'_type': 'UniformDataAxis', 'name': 'y', 'scale': 1.2197240748650153, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True, 'is_binned': False},
+        'axis-1': {'_type': 'UniformDataAxis', 'name': 'x', 'scale': 1.2197240748650153, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True, 'is_binned': False},
+        'axis-2': {'_type': 'UniformDataAxis', 'name': 'X-ray energy', 'scale': 0.009886797201840245, 'offset': -0.04478043655810262, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
     }
     assert s[5].original_metadata['acquisition']['scan']['detectors']['EDS']['live_time'] == 4.5919591
     assert s[5].original_metadata['acquisition']['scan']['detectors']['EDS']['real_time'] == 3.00056
@@ -132,21 +132,21 @@ def test_elid(pathname):
     assert s[6].metadata['General']['title'] == 'Image 1, Difference 3 - 6'
     assert s[6].data.shape == (2048,)
     assert s[6].axes_manager.as_dictionary() == {
-        'axis-0': {'name': 'Energy', 'scale': 0.00988676802994421, 'offset': -0.03634370080990722, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
+        'axis-0': {'_type': 'UniformDataAxis', 'name': 'Energy', 'scale': 0.00988676802994421, 'offset': -0.03634370080990722, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
     }
 
     assert s[7].metadata['General']['title'] == '385test - spectrum'
     assert s[7].data.shape == (24, 32)
     assert s[7].axes_manager.as_dictionary() == {
-        'axis-0': {'name': 'y', 'scale': 1.0, 'offset': 0.0, 'size': 24, 'units': 'points', 'navigate': True, 'is_binned': False},
-        'axis-1': {'name': 'x', 'scale': 1.0, 'offset': 0.0, 'size': 32, 'units': 'points', 'navigate': True, 'is_binned': False}
+        'axis-0': {'_type': 'UniformDataAxis', 'name': 'y', 'scale': 1.0, 'offset': 0.0, 'size': 24, 'units': 'points', 'navigate': True, 'is_binned': False},
+        'axis-1': {'_type': 'UniformDataAxis', 'name': 'x', 'scale': 1.0, 'offset': 0.0, 'size': 32, 'units': 'points', 'navigate': True, 'is_binned': False}
     }
     assert not 'acquisition' in s[7].original_metadata
 
     assert s[8].metadata['General']['title'] == '385test - spectrum, MSA 1'
     assert s[8].data.shape == (2048,)
     assert s[8].axes_manager.as_dictionary() == {
-        'axis-0': {'name': 'Energy', 'scale': 0.0098868, 'offset': -0.0363437, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
+        'axis-0': {'_type': 'UniformDataAxis', 'name': 'Energy', 'scale': 0.0098868, 'offset': -0.0363437, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
     }
     assert s[8].original_metadata['acquisition']['scan']['detectors']['EDS']['live_time'] == 0.0
     assert s[8].original_metadata['acquisition']['scan']['detectors']['EDS']['real_time'] == 5.066
@@ -154,17 +154,17 @@ def test_elid(pathname):
     assert s[9].metadata['General']['title'] == 'Image 1'
     assert s[9].data.shape == (35, 40)
     assert s[9].axes_manager.as_dictionary() == {
-        'axis-0': {'name': 'y', 'scale': 0.8120422280865187, 'offset': 0.0, 'size': 35, 'units': 'µm', 'navigate': True, 'is_binned': False},
-        'axis-1': {'name': 'x', 'scale': 0.8120422280865187, 'offset': 0.0, 'size': 40, 'units': 'µm', 'navigate': True, 'is_binned': False}
+        'axis-0': {'_type': 'UniformDataAxis', 'name': 'y', 'scale': 0.8120422280865187, 'offset': 0.0, 'size': 35, 'units': 'µm', 'navigate': True, 'is_binned': False},
+        'axis-1': {'_type': 'UniformDataAxis', 'name': 'x', 'scale': 0.8120422280865187, 'offset': 0.0, 'size': 40, 'units': 'µm', 'navigate': True, 'is_binned': False}
     }
     assert not 'EDS' in s[9].original_metadata['acquisition']['scan']['detectors']
 
     assert s[10].metadata['General']['title'] == 'Image 1, Map 1'
     assert s[10].data.shape == (16, 16, 2048)
     assert s[10].axes_manager.as_dictionary() == {
-        'axis-0': {'name': 'y', 'scale': 2.0301055702162967, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True, 'is_binned': False},
-        'axis-1': {'name': 'x', 'scale': 2.0301055702162967, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True, 'is_binned': False},
-        'axis-2': {'name': 'X-ray energy', 'scale': 0.009886797201840245, 'offset': -0.04478043655810262, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
+        'axis-0': {'_type': 'UniformDataAxis', 'name': 'y', 'scale': 2.0301055702162967, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True, 'is_binned': False},
+        'axis-1': {'_type': 'UniformDataAxis', 'name': 'x', 'scale': 2.0301055702162967, 'offset': 0.0, 'size': 16, 'units': 'µm', 'navigate': True, 'is_binned': False},
+        'axis-2': {'_type': 'UniformDataAxis', 'name': 'X-ray energy', 'scale': 0.009886797201840245, 'offset': -0.04478043655810262, 'size': 2048, 'units': 'keV', 'navigate': False, 'is_binned': True}
     }
     assert s[10].original_metadata['acquisition']['scan']['detectors']['EDS']['live_time'] == 4.821238
     assert s[10].original_metadata['acquisition']['scan']['detectors']['EDS']['real_time'] == 3.0005600000000006

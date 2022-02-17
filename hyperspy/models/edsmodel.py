@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
 
@@ -203,7 +203,16 @@ class EDSModel(Model1D):
             those. If 'from_elements', add all lines from the elements contains
             in `metadata`. Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols. (eg. ('Al_Ka','Zn_Ka')).
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
+        # Test that signal axis is uniform
+        if not self.axes_manager[-1].is_uniform:
+            raise NotImplementedError("This function is not yet implemented "
+                                      "for non-uniform axes.")
 
         only_one = False
         only_lines = ("Ka", "La", "Ma")
@@ -490,7 +499,17 @@ class EDSModel(Model1D):
             The X-ray lines. If 'all_alpha', fit all using all alpha lines
         ref: list of float
             The centres, before fitting, of the X-ray lines included
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
+        # Test that signal axis is uniform
+        if not self.axes_manager[-1].is_uniform:
+            raise NotImplementedError("This function is not yet implemented "
+                                      "for non-uniform axes.")
+
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
         ax = self.signal.axes_manager[-1]
@@ -544,7 +563,17 @@ class EDSModel(Model1D):
             The Xray lines. If 'all_alpha', fit all using all alpha lines
         ref: list of float
             The centres, before fitting, of the X-ray lines included
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
+        # Test that signal axis is uniform
+        if not self.axes_manager[-1].is_uniform:
+            raise NotImplementedError("This function is not yet implemented "
+                                      "for non-uniform axes.")
+
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
         diff = self[xray_lines[0]].centre.value - ref[0]

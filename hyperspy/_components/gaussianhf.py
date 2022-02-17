@@ -1,25 +1,26 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import math
 
 from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
+from hyperspy.component import _get_scaling_factor
 from hyperspy.misc.utils import is_binned # remove in v2.0
 
 sqrt2pi = math.sqrt(2 * math.pi)
@@ -28,9 +29,10 @@ sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 class GaussianHF(Expression):
 
-    r"""Normalized gaussian function component, with a `fwhm` parameter instead
-    of the sigma parameter, and a `height` parameter instead of the `A`
-    parameter (scaling difference of :math:`\sigma \sqrt{\left(2\pi\right)}`).
+    r"""Normalized gaussian function component, with a ``fwhm`` parameter
+    instead of the ``sigma`` parameter, and a ``height`` parameter instead of
+    the ``A`` parameter (scaling difference of
+    :math:`\sigma \sqrt{\left(2\pi\right)}`).
     This makes the parameter vs. peak maximum independent of :math:`\sigma`,
     and thereby makes locking of the parameter more viable. As long as there
     is no binning, the `height` parameter corresponds directly to the peak
@@ -63,21 +65,27 @@ class GaussianHF(Expression):
     centre: float
         Location of the gaussian maximum, also the mean position.
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
-
-    The helper properties `sigma` and `A` are also defined for compatibility
-    with `Gaussian` component.
+    Attributes
+    ----------
+    A : float
+        Convenience attribute to get, set the height and defined for
+        compatibility with `Gaussian` component.
+    sigma : float
+        Convenience attribute to get, set the width and defined for
+        compatibility with `Gaussian` component.
 
     See also
     --------
-    hyperspy._components.gaussian.Gaussian
+    ~._components.gaussian.Gaussian
 
     """
 
     def __init__(self, height=1., fwhm=1., centre=0., module="numexpr",
                  **kwargs):
-        super(GaussianHF, self).__init__(
+        super().__init__(
             expression="height * exp(-(x - centre)**2 * 4 * log(2)/fwhm**2)",
             name="GaussianHF",
             height=height,
@@ -135,28 +143,29 @@ class GaussianHF(Expression):
         >>> g.estimate_parameters(s, -10, 10, False)
         """
 
-        super(GaussianHF, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
+        scaling_factor = _get_scaling_factor(signal, axis, centre)
 
         if only_current is True:
             self.centre.value = centre
             self.fwhm.value = sigma * sigma2fwhm
             self.height.value = float(height)
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.height.value /= axis.scale
+                self.height.value /= scaling_factor
             return True
         else:
             if self.height.map is None:
                 self._create_arrays()
             self.height.map['values'][:] = height
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.height.map['values'][:] /= axis.scale
+                self.height.map['values'][:] /= scaling_factor
             self.height.map['is_set'][:] = True
             self.fwhm.map['values'][:] = sigma * sigma2fwhm
             self.fwhm.map['is_set'][:] = True

@@ -1,19 +1,19 @@
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import numpy as np
@@ -230,9 +230,10 @@ class TestSpikesRemovalToolZLP:
         self.signal = s
 
     def _add_spikes(self):
-        self.signal.data[1, 0, 1] += 200
-        self.signal.data[0, 2, 29] += 500
-        self.signal.data[1, 2, 14] += 1000
+        s = self.signal
+        s.data[1, 0, 1] += 200
+        s.data[0, 2, 29] += 500
+        s.data[1, 2, 14] += 1000
 
     def test_get_zero_loss_peak_mask(self):
         mask = self.signal.get_zero_loss_peak_mask()
@@ -260,21 +261,16 @@ class TestSpikesRemovalToolZLP:
 
         zlp_mask = self.signal.get_zero_loss_peak_mask()
         hist_data = self.signal._get_spikes_diagnosis_histogram_data(
-            signal_mask=zlp_mask, max_num_bins=1000)
-        expected_data = np.zeros(544)
-        expected_data[:13] = [41, 46, 31, 31, 30, 15, 14,  4,  5,  5,  2,  1,  1,]
-        expected_data[-4:] = [1, 0, 0, 1]
+            signal_mask=zlp_mask, bins=25)
+        expected_data = np.zeros(25)
+        expected_data[0] = 232
+        expected_data[12] = 1
+        expected_data[-1] = 1
         np.testing.assert_allclose(hist_data.data, expected_data)
 
-        hist_data2 = self.signal._get_spikes_diagnosis_histogram_data(
-            max_num_bins=1000)
-        expected_data2 = np.array([266, 12, 0, 12, 0, 0, 0, 0, 0, 12, 0, 0, 0,
-                                   2, 0, 0, 0, 0, 0, 0, 12, 12, 1, 0, 0, 0,
-                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11,
-                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                   10, 2, 0, 2, 9, 0, 0, 0, 0, 0, 0, 0, 12,
-                                   0, 0, 2, 0, 0, 0, 1])
-        np.testing.assert_allclose(hist_data2.data, expected_data2)
+        hist_data2 = self.signal._get_spikes_diagnosis_histogram_data(bins=25)
+        expected_data2 = np.array([285, 11, 13, 0, 0, 1, 12,  0])
+        np.testing.assert_allclose(hist_data2.data[:8], expected_data2)
 
 
 def test_spikes_removal_tool_no_zlp():

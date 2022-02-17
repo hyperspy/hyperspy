@@ -38,13 +38,14 @@ code (assignment, etc.) you wish.
 
 The ``map`` function is flexible and should be able to handle most operations that
 operate on some signal. If you add a ``BaseSignal`` with the same navigation size
-as the signal it will be iterated alongside the mapped signal otherwise a keyword
+as the signal, it will be iterated alongside the mapped signal, otherwise a keyword
 argument is assumed to be constant and is applied to every signal.
 
 If the new method cannot be coerced into a shape suitable for ``map``, separate
 cases for lazy signals will have to be written. If a function operates on
 arbitrary-sized arrays and the shape of the output can be known before calling,
 ``da.map_blocks`` and ``da.map_overlap`` are efficient and flexible.
+
 
 Finally, in addition to ``_iterate_signal`` that is available to all HyperSpy
 signals, lazy counterparts also have the ``_block_iterator`` method that 

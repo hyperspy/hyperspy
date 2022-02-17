@@ -10,7 +10,7 @@
 #
 # This library is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -41,7 +41,7 @@ import codecs
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 import io
-format_name = 'bruker composite file bcf'
+format_name = 'Bruker'
 description = """the proprietary format used by Bruker's
 Esprit(R) software to save hypermaps together with 16bit SEM imagery,
 EDS spectra and metadata describing the dimentions of the data and
@@ -56,6 +56,8 @@ reads_spectrum = True
 reads_spectrum_image = True
 # Writing capabilities
 writes = False
+non_uniform_axis = False
+# ----------------------
 
 
 _logger = logging.getLogger(__name__)

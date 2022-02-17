@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import math
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import numpy as np
 import matplotlib
@@ -201,7 +201,8 @@ class ImagePlot(BlittedFigure):
         xaxis = self.xaxis
         yaxis = self.yaxis
 
-        if ((xaxis.units == yaxis.units) and
+        if (xaxis.is_uniform and yaxis.is_uniform and
+                (xaxis.units == yaxis.units) and
                 (abs(xaxis.scale) == abs(yaxis.scale))):
             self._auto_scalebar = True
             self._auto_axes_ticks = False
@@ -220,10 +221,17 @@ class ImagePlot(BlittedFigure):
             self._ylabel += ' ({})'.format(yaxis.units)
 
         # Calibrate the axes of the navigator image
-        self._extent = [xaxis.axis[0] - xaxis.scale / 2.,
-                        xaxis.axis[-1] + xaxis.scale / 2.,
-                        yaxis.axis[-1] + yaxis.scale / 2.,
-                        yaxis.axis[0] - yaxis.scale / 2.]
+        if xaxis.is_uniform and yaxis.is_uniform:
+            xaxis_half_px = xaxis.scale / 2.
+            yaxis_half_px = yaxis.scale / 2.
+        else:
+            xaxis_half_px = 0
+            yaxis_half_px = 0
+        # Calibrate the axes of the navigator image
+        self._extent = [xaxis.axis[0] - xaxis_half_px,
+                        xaxis.axis[-1] + xaxis_half_px,
+                        yaxis.axis[-1] + yaxis_half_px,
+                        yaxis.axis[0] - yaxis_half_px]
         self._calculate_aspect()
         if self.saturated_pixels is not None:
             from hyperspy.exceptions import VisibleDeprecationWarning
@@ -249,7 +257,10 @@ class ImagePlot(BlittedFigure):
                 factor = min_asp ** -1 * xaxis.size / yaxis.size
                 self._auto_scalebar = False
                 self._auto_axes_ticks = True
-        self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
+        if xaxis.is_uniform and yaxis.is_uniform:
+            self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
+        else:
+            self._aspect = 1.0
 
     def _calculate_vmin_max(self, data, auto_contrast=False,
                             vmin=None, vmax=None):
@@ -509,7 +520,7 @@ class ImagePlot(BlittedFigure):
                 sym_log_kwargs = {'linthresh':self.linthresh,
                                   'linscale':self.linscale,
                                   'vmin':vmin, 'vmax':vmax}
-                if LooseVersion(matplotlib.__version__) >= LooseVersion("3.2"):
+                if Version(matplotlib.__version__) >= Version("3.2"):
                     sym_log_kwargs['base'] = 10
                 norm = SymLogNorm(**sym_log_kwargs)
             elif inspect.isclass(norm) and issubclass(norm, Normalize):

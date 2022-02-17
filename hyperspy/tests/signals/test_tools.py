@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import sys
 from unittest import mock
@@ -24,7 +24,6 @@ import pytest
 
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
 
 
 def _verify_test_sum_x_E(self, s):
@@ -46,7 +45,6 @@ def _test_default_navigation_signal_operations_over_many_axes(self, op):
 def test_signal_iterator():
     sig = signals.Signal1D(np.arange(3).reshape((3, 1)))
     for s in (sig, sig.as_lazy()):
-        assert next(s).data[0] == 0
         # If the following fails it can be because the iteration index was not
         # restarted
         for i, signal in enumerate(s):
@@ -76,9 +74,25 @@ class TestDerivative:
 
     def test_derivative_data(self):
         der = self.s.derivative(axis=0, order=4)
-        np.testing.assert_allclose(
-            der.data, np.sin(der.axes_manager[0].axis), atol=1e-2
-        )
+        np.testing.assert_allclose(der.data[4:-4], np.sin(
+            der.axes_manager[0].axis[4:-4]), atol=1e-2)
+
+
+def test_derivative():
+    data = np.arange(10)
+    scale = 0.1
+    s = signals.Signal1D(data)
+    s.axes_manager[0].scale = scale
+    der = s.derivative(axis=0)
+    np.testing.assert_allclose(der.data, (data[2]-data[1])/scale)
+
+
+def test_derivative_non_uniform_axis():
+    data = np.arange(1, 10)
+    axis_dict = {'axis': 1/data}
+    s = signals.Signal1D(data, axes=[axis_dict])
+    der = s.derivative(axis=0)
+    np.testing.assert_allclose(der.data[:4], np.array([-2, -5, -10, -17]))
 
 
 @lazifyTestClass
@@ -260,11 +274,16 @@ class TestOutArg:
         s = signals.Signal1D(np.arange(100))
         if mask:
             s.data = np.ma.masked_array(s.data, mask=(s < 50))
-        # Since s haven't any navigation axis, it returns the same signal as
-        # default
+        # Since s does not have any navigation axis, it returns the same signal
+        # as default
         np.testing.assert_array_equal(s, s.sum())
         # When we specify an axis, it actually takes the sum.
         np.testing.assert_array_equal(s.data.sum(), s.sum(axis=0))
+
+    def test_sum_non_uniform_unbinned(self):
+        self.s.axes_manager["E"].convert_to_non_uniform_axis()
+        with pytest.warns(UserWarning, match="You are summing over"):
+            self._run_single(self.s.sum, self.s, dict(axis=("E")))
 
     def test_masked_arrays_out(self):
         s = self.s

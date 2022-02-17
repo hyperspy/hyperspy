@@ -26,7 +26,7 @@ data.
 Models can also be provided by external packages, but don't need to
 be registered. Instead, they are returned by the ``create_model`` method of
 the relevant :py:class:`hyperspy.signal.BaseSignal` subclass, see for example,
-the :py:meth:`hyperspy._signals.eds_tem.EDSTEM_mixin.create_model` of the
+the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.create_model` of the
 :py:class:`~._signals.eds_tem.EDSTEMSpectrum`.
 
 It is good practice to add all packages that extend HyperSpy
@@ -319,12 +319,12 @@ Equivalently, to add a new component 2D:
 Creating and registering new widgets and toolkeys
 -------------------------------------------------
 
-To generate GUIs of specific methods and functions, HyperSpy use widgets and
+To generate GUIs of specific methods and functions, HyperSpy uses widgets and
 toolkeys:
 
 * *widgets* (typically ipywidgets or traitsui objects) generate GUIs,
-* *toolkeys* are functions using which it is possible to associate widgets to
-  a signal method or to a module function.
+* *toolkeys* are functions which associate widgets to a signal method 
+  or to a module function.
 
 An extension can declare new toolkeys and widgets. For example, the
 `hyperspy-gui-traitsui <https://github.com/hyperspy/hyperspy_gui_traitsui>`_ and
@@ -379,7 +379,7 @@ Integration test suite
 ----------------------
 
 The `integration test suite <https://github.com/hyperspy/hyperspy-extensions-list/actions>`__
-runs the test suite of hyperspy and hyperspy extension on a daily basis against both the
+runs the test suite of HyperSpy and of all registered HyperSpy extensions on a daily basis against both the
 release and development versions. The build matrix is as follows:
 
 .. list-table:: Build matrix of the integration test suite
@@ -418,6 +418,11 @@ The development packages of the dependencies are provided by the
 `scipy-wheels-nightly <https://pypi.anaconda.org/scipy-wheels-nightly/simple>`_
 repository, which provides ``scipy``, ``numpy``, ``scikit-learn`` and ``scikit-image``
 at the time of writing.
-The pre-release packages are obtained from `pypi <https://pypi.org>`_ and these
-will be used for any dependency which provides a pre-release package on pypi.
+The pre-release packages are obtained from `PyPI <https://pypi.org>`_ and these
+will be used for any dependency which provides a pre-release package on PyPI.
+
+A similar `Integration test  <https://github.com/hyperspy/hyperspy/actions/workflows/tests_extension.yml>`__
+workflow can run from pull requests (PR) to the
+`hyperspy <https://github.com/hyperspy/hyperspy>`_ repository when the label
+``run-extension-tests`` is added to a PR or when a PR review is edited.
 

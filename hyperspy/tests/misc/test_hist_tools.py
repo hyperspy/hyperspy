@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 
@@ -33,16 +33,13 @@ def generate_bad_toy_data():
     which previously caused a MemoryError when
     using the Freedman-Diaconis rule.
     """
-    ax1 = np.exp(-np.abs(np.arange(-30, 100, 0.02)))
-    ax2 = np.exp(-np.abs(np.arange(-40, 90, 0.02)))
+    ax1 = np.exp(-np.abs(np.arange(-30, 100, 0.05)))
     s1 = hs.signals.EELSSpectrum(ax1)
-    s2 = hs.signals.EELSSpectrum(ax2)
-    s1 = hs.stack([s1] * 5)
-    s2 = hs.stack([s2] * 5)
-    s1.align_zero_loss_peak(also_align=[s2])
+    s1 = hs.stack([s1] * 2)
     return s1
 
-@pytest.mark.parametrize("bins",[10,np.linspace(1,20,num=11)])
+
+@pytest.mark.parametrize("bins", [10, np.linspace(1, 20, num=11)])
 def test_types_of_bins(bins):
     s1 = generate_bad_toy_data()
     out = s1.get_histogram(bins)
@@ -95,7 +92,7 @@ class TestHistogramBinMethodsBadDataset:
         assert out.data.shape == (250,)
         assert "Capping the number of bins" in caplog.text
 
-    @pytest.mark.parametrize("bins, size", [("scott", (106,)), (10, (10,))])
+    @pytest.mark.parametrize("bins, size", [("scott", (58,)), (10, (10,))])
     def test_working_bins(self, bins, size):
         out = self.s1.get_histogram(bins=bins)
         assert out.data.shape == size

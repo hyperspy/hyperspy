@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import copy
 import importlib
@@ -23,7 +23,7 @@ import os
 import tempfile
 import warnings
 from contextlib import contextmanager
-from distutils.version import LooseVersion
+from packaging.version import Version
 from functools import partial
 
 import dill
@@ -527,8 +527,10 @@ class BaseModel(list):
                             continue    # Keep active_map
                         component_.active_is_multidimensional = False
                     component_.active = active
-            maxval = self.axes_manager.navigation_size
-            enabled = show_progressbar and (maxval > 0)
+
+            maxval = self.axes_manager._get_iterpath_size()
+
+            enabled = show_progressbar and (maxval != 0)
             pbar = progressbar(total=maxval, disable=not enabled,
                                position=show_progressbar, leave=True)
             for index in self.axes_manager:
@@ -651,7 +653,8 @@ class BaseModel(list):
         self._plot_components = False
 
     def _set_p0(self):
-        self.p0 = ()
+        "(Re)sets the initial values for the parameters used in the curve fitting functions"
+        self.p0 = () # Stores the values and is fed as initial values to the fitter
         for component in self:
             if component.active:
                 for parameter in component.free_parameters:
@@ -782,16 +785,22 @@ class BaseModel(list):
 
     def store_current_values(self):
         """ Store the parameters of the current coordinates into the
-        parameters array.
+        `parameter.map` array and sets the `is_set` array attribute to True.
 
         If the parameters array has not being defined yet it creates it filling
-        it with the current parameters."""
+        it with the current parameters at the current indices in the array."""
         for component in self:
             if component.active:
                 component.store_current_parameters_in_map()
 
     def fetch_stored_values(self, only_fixed=False, update_on_resume=True):
-        """Fetch the value of the parameters that has been previously stored.
+        """Fetch the value of the parameters that have been previously stored
+        in `parameter.map['values']` if `parameter.map['is_set']` is `True` for
+        those indices.
+
+        If it is not previously stored, the current values from `parameter.value`
+        are used, which are typically from the fit in the previous pixel of a
+        multidimensional signal.
 
         Parameters
         ----------
@@ -821,6 +830,11 @@ class BaseModel(list):
         """Fetch the parameter values from the given array, optionally also
         fetching the standard deviations.
 
+        Places the parameter values into both `m.p0` (the initial values
+        for the optimizer routine) and `component.parameter.value` and
+        `...std`, for parameters in active components ordered by their
+        position in the model and component.
+
         Parameters
         ----------
         array : array
@@ -832,7 +846,8 @@ class BaseModel(list):
         self._fetch_values_from_p0(p_std=array_std)
 
     def _fetch_values_from_p0(self, p_std=None):
-        """Fetch the parameter values from the output of the optimizer `self.p0`
+        """Fetch the parameter values from the output of the optimizer `self.p0`,
+        placing them in their appropriate `component.parameter.value` and `...std`
 
         Parameters
         ----------
@@ -1110,7 +1125,7 @@ class BaseModel(list):
         }
 
         if optimizer in ["Dual Annealing", "SHGO"]:
-            if LooseVersion(scipy.__version__) < LooseVersion("1.2.0"):
+            if Version(scipy.__version__) < Version("1.2.0"):
                 raise ValueError(f"`optimizer='{optimizer}'` requires scipy >= 1.2.0")
 
             from scipy.optimize import dual_annealing, shgo
@@ -1546,20 +1561,22 @@ class BaseModel(list):
                 f"shape: {self.axes_manager._navigation_shape_in_array}"
             )
 
-        masked_elements = 0 if mask is None else mask.sum()
-        maxval = self.axes_manager.navigation_size - masked_elements
-        show_progressbar = show_progressbar and (maxval > 0)
-
         if iterpath is None:
-            self.axes_manager._iterpath = "flyback"
-            warnings.warn(
-                "The 'iterpath' default will change from 'flyback' to 'serpentine' "
-                "in HyperSpy version 2.0. Change 'iterpath' to other than None to "
-                "suppress this warning.",
-                VisibleDeprecationWarning,
-            )
+            if self.axes_manager.iterpath == "flyback":
+                # flyback is set by default in axes_manager.iterpath on signal creation
+                warnings.warn(
+                    "The `iterpath` default will change from 'flyback' to 'serpentine' "
+                    "in HyperSpy version 2.0. Change the 'iterpath' argument to other than "
+                    "None to suppress this warning.",
+                    VisibleDeprecationWarning,
+                )
+            # otherwise use whatever is set at m.axes_manager.iterpath
         else:
-            self.axes_manager._iterpath = iterpath
+            self.axes_manager.iterpath = iterpath
+
+        masked_elements = 0 if mask is None else mask.sum()
+        maxval = self.axes_manager._get_iterpath_size(masked_elements)
+        show_progressbar = show_progressbar and (maxval != 0)
 
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(
@@ -1579,6 +1596,9 @@ class BaseModel(list):
                     for index in self.axes_manager:
                         with inner(update_on_resume=True):
                             if mask is None or not mask[index[::-1]]:
+                                # first check if model has set initial values in
+                                # parameters.map['values'][indices],
+                                # otherwise use values from previous fit
                                 self.fetch_stored_values(only_fixed=fetch_only_fixed)
                                 self.fit(**kwargs)
                                 i += 1

@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import copy
 import logging
@@ -24,7 +24,9 @@ from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy.components1d import EELSCLEdge, PowerLaw
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
+from hyperspy.misc.utils import dummy_context_manager
 from hyperspy.models.model1d import Model1D
+
 
 _logger = logging.getLogger(__name__)
 
@@ -107,8 +109,24 @@ class EELSModel(Model1D):
                 str(type(value)))
 
     def append(self, component):
+        """Append component to EELS model.
+
+        Parameters
+        ----------
+        component
+            HyperSpy component1D object.
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+        """
         super(EELSModel, self).append(component)
         if isinstance(component, EELSCLEdge):
+            # Test that signal axis is uniform
+            if not self.axes_manager[-1].is_uniform:
+                raise NotImplementedError("This operation is not yet implemented "
+                                          "for non-uniform energy axes")
             tem = self.signal.metadata.Acquisition_instrument.TEM
             component.set_microscope_parameters(
                 E0=tem.beam_energy,
@@ -350,12 +368,14 @@ class EELSModel(Model1D):
         * :py:meth:`~hyperspy.model.EELSModel.fit`
 
         """
-        # Fit background
-        self.fit_background(start_energy, **kwargs)
+        cm = self.suspend_update if self._plot_active else dummy_context_manager
+        with cm(update_on_resume=True):
+            # Fit background
+            self.fit_background(start_energy, **kwargs)
 
-        # Fit the edges
-        for i in range(0, len(self._active_edges)):
-            self._fit_edge(i, start_energy, **kwargs)
+            # Fit the edges
+            for i in range(0, len(self._active_edges)):
+                self._fit_edge(i, start_energy, **kwargs)
 
     smart_fit.__doc__ %= FIT_PARAMETERS_ARG
 
@@ -734,11 +754,29 @@ class EELSModel(Model1D):
         self.resolve_fine_structure()
 
     def set_all_edges_intensities_positive(self):
+        """
+        Set all edges intensities positive by setting ``ext_force_positive``
+        and ``ext_bounded`` to ``True``.
+
+        Returns
+        -------
+        None.
+
+        """
         for edge in self._active_edges:
             edge.intensity.ext_force_positive = True
             edge.intensity.ext_bounded = True
 
     def unset_all_edges_intensities_positive(self):
+        """
+        Unset all edges intensities positive by setting ``ext_force_positive``
+        and ``ext_bounded`` to ``False``.
+
+        Returns
+        -------
+        None.
+
+        """
         for edge in self._active_edges:
             edge.intensity.ext_force_positive = False
             edge.intensity.ext_bounded = False

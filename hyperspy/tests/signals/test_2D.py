@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 from unittest import mock
@@ -23,14 +23,16 @@ import numpy as np
 import pytest
 
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.signal import BaseSignal
 from hyperspy.signals import Signal1D, Signal2D
 
 
 def _verify_test_sum_x_E(self, s):
     np.testing.assert_array_equal(self.signal.data.sum(), s.data)
     assert s.data.ndim == 1
-    # Check that there is still one signal axis.
-    assert s.axes_manager.signal_dimension == 1
+    # Check that the signal dimension is now 0
+    assert s.axes_manager.signal_dimension == 0
+    assert isinstance(s, BaseSignal)
 
 
 @lazifyTestClass

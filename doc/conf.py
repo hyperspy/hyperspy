@@ -13,7 +13,6 @@
 
 from hyperspy import Release
 import sys
-import os
 from datetime import datetime
 
 sys.path.append('../')
@@ -38,6 +37,7 @@ extensions = [
     'sphinx.ext.graphviz',
     'sphinx.ext.autosummary',
     'sphinx_toggleprompt',
+    'sphinxcontrib.towncrier',
 ]
 
 try:
@@ -226,7 +226,6 @@ latex_documents = [
 # If false, no module index is generated.
 #latex_domain_indices = True
 
-
 # -- Options for manual page output --------------------------------------
 
 # One entry per manual page. List of tuples
@@ -236,8 +235,18 @@ man_pages = [
      ['The HyperSpy developers'], 1)
 ]
 
+
+# -- Options for towncrier_draft extension -----------------------------------
+
+# Options: draft/sphinx-version/sphinx-release
+towncrier_draft_autoversion_mode = 'draft'
+towncrier_draft_include_empty = False
+towncrier_draft_working_directory = ".."
+
+
 # Add the hyperspy website to the intersphinx domains
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
+                       'h5py': ('https://docs.h5py.org/en/stable', None),
                        'hyperspyweb': ('https://hyperspy.org/', None),
                        'matplotlib': ('https://matplotlib.org', None),
                        'numpy': ('https://docs.scipy.org/doc/numpy', None),
@@ -246,6 +255,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'astroML': ('https://www.astroml.org/', None),
                        'sklearn': ('https://scikit-learn.org/stable', None),
                        'skimage': ('https://scikit-image.org/docs/stable', None),
+                       'zarr': ('https://zarr.readthedocs.io/en/stable', None),
                        }
 
 graphviz_output_format = "svg"
@@ -262,9 +272,10 @@ def run_apidoc(_):
     cur_dir = os.path.normpath(os.path.dirname(__file__))
     output_path = os.path.join(cur_dir, 'api')
     modules = os.path.normpath(os.path.join(cur_dir, "../hyperspy"))
-    exclude_pattern = "../hyperspy/tests"
-    exclude_pattern2 = "../hyperspy/external"
-    main(['-e', '-f', '-P', '-o', output_path, modules, exclude_pattern, exclude_pattern2])
+    exclude_pattern = ["../hyperspy/tests",
+                       "../hyperspy/external",
+                       "../hyperspy/io_plugins/unbcf_fast.pyx"]
+    main(['-e', '-f', '-P', '-o', output_path, modules, *exclude_pattern])
 
 
 def setup(app):

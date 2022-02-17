@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,15 +21,15 @@ from hyperspy._components.expression import Expression
 
 class Arctan(Expression):
     # Legacy class to be removed in v2.0
-    r"""This is the legacy Arctan component dedicated to EELS measurements
+    r"""Legacy Arctan component dedicated to EELS measurements
     that will renamed to `EELSArctan` in v2.0.
 
     To use the new Arctan component
     set `minimum_at_zero=False`. See the documentation of
-    :meth:`hyperspy._components.arctan.Arctan` for details on
+    :py:class:`~._components.arctan.Arctan` for details on
     the usage.
 
-    The EELS version :meth:`hyperspy._components.eels_arctan.EELSArctan`
+    The EELS version :py:class:`~._components.eels_arctan.EELSArctan`
     (`minimum_at_zero=True`) shifts the function by A in the y direction
 
     """
@@ -87,7 +87,7 @@ class EELSArctan(Expression):
         # Not to break scripts once we remove the legacy Arctan
         if "minimum_at_zero" in kwargs:
             del kwargs["minimum_at_zero"]
-        super(EELSArctan, self).__init__(
+        super().__init__(
             expression="A * (pi /2 + arctan(k * (x - x0)))",
             name="Arctan",
             A=A,

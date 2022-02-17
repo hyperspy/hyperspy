@@ -7,11 +7,11 @@ Using Git and GitHub
 
 For developing the code, the home of HyperSpy is on 
 `GitHub <https://github.com>`_, and you'll see that
-a lot of this guide boils down to properly use that platform. So, visit the
+a lot of this guide boils down to properly using that platform. So, visit the
 following link and poke around the code, issues, and pull requests: `HyperSpy
 on GitHub <https://github.com/hyperspy/hyperspy>`_.
 
-It is probably also worth visiting the `github.com <https://github.com/>`_
+It is probably also worth visiting `github.com <https://github.com/>`_
 and to go through the `"boot camp" <https://help.github
 .com/categories/bootcamp/>`_ to get a feel for the terminology.
 
@@ -55,7 +55,7 @@ asked to split it up!
 
 For personal use, before integrating things into the main HyperSpy code, you
 can merge some together for your personal use. However, make sure each new
-feature has it's own branch that is contributed through a separate pull
+feature has its own branch that is contributed through a separate pull
 request!
 
 Diagrammatically, you should be aiming for something like this:
@@ -75,13 +75,13 @@ Each number will change depending on the type of changes according to the follow
 
 The git repository of HyperSpy has 3 main branches matching the above pattern
 and depending on the type of pull request, you will need to base your pull request
-one one of the following branch:
+on one of the following branch:
 
 - ``RELEASE_next_major`` to change the API in a not backward-compatible fashion,
 - ``RELEASE_next_minor`` to add new features and improvement,
 - ``RELEASE_next_patch`` for bug fixes.
 
-The ``RELEASE_next_patch`` is merged daily in the ``RELEASE_next_minor`` by the github action
+The ``RELEASE_next_patch`` branch is merged daily into ``RELEASE_next_minor`` by the github action
 `Nightly Merge <https://github.com/hyperspy/hyperspy/actions>`_.
 
 

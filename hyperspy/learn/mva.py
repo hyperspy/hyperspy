@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import logging
@@ -74,7 +74,7 @@ if import_sklearn.sklearn_installed:
 def _get_derivative(signal, diff_axes, diff_order):
     """Calculate the derivative of a signal."""
     if signal.axes_manager.signal_dimension == 1:
-        signal = signal.diff(order=diff_order, axis=-1)
+        signal = signal.derivative(order=diff_order, axis=-1)
     else:
         # n-d signal case.
         # Compute the differences for each signal axis, unfold the
@@ -900,8 +900,8 @@ class MVA:
             )
             if mask is not None:
                 # The following is a little trick to dilate the mask as
-                # required when operation on the differences. It exploits the
-                # fact that np.diff autimatically "dilates" nans. The trick has
+                # required when operating on differences. It exploits the
+                # fact that np.diff automatically "dilates" nans. The trick has
                 # a memory penalty which should be low compare to the total
                 # memory required for the core application in most cases.
                 mask_diff_axes = (

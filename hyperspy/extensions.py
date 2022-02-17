@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 import copy
@@ -68,6 +68,7 @@ for _external_extension in _external_extensions:
                             ALL_EXTENSIONS["GUI"]["widgets"][toolkit] = {}
                         ALL_EXTENSIONS["GUI"]["widgets"][toolkit].update(specs)
 
-    else:
+    else:  # pragma: no cover
+        # When the "hyperspy_extension.yaml" is missing from the package
         _logger.error(
-            "Failed to load hyperspy extension from {0}. Please report this issue to the {0} developers".format(_external_extension_mod))
+            "Failed to load hyperspy extension from {0}. Please report this issue to the {0} developers".format(_external_extension.name))

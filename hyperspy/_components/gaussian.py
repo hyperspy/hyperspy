@@ -1,26 +1,27 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import math
 
 import numpy as np
 import dask.array as da
 
+from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
 from hyperspy.misc.utils import is_binned # remove in v2.0
 
@@ -78,7 +79,7 @@ class Gaussian(Expression):
 
 
     Parameters
-    -----------
+    ----------
     A : float
         Height scaled by :math:`\sigma\sqrt{(2\pi)}`. ``GaussianHF``
         implements the Gaussian function with a height parameter
@@ -88,20 +89,24 @@ class Gaussian(Expression):
     centre : float
         Location of the Gaussian maximum (peak position).
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
-
-    For convenience the `fwhm` and `height` attributes can be used to get and set
-    the full width at half maximum and height of the distribution, respectively.
+    Attributes
+    ----------
+    fwhm : float
+        Convenience attribute to get and set the full width at half maximum.
+    height : float
+        Convenience attribute to get and set the height.
 
 
     See also
     --------
-    hyperspy._components.gaussianhf.GaussianHF
+    ~._components.gaussianhf.GaussianHF
     """
 
     def __init__(self, A=1., sigma=1., centre=0., module="numexpr", **kwargs):
-        super(Gaussian, self).__init__(
+        super().__init__(
             expression="A * (1 / (sigma * sqrt(2*pi))) * exp(-(x - centre)**2 \
                         / (2 * sigma**2))",
             name="Gaussian",
@@ -160,27 +165,29 @@ class Gaussian(Expression):
         >>> g.estimate_parameters(s, -10, 10, False)
         """
 
-        super(Gaussian, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
+        scaling_factor = _get_scaling_factor(signal, axis, centre)
+
         if only_current is True:
             self.centre.value = centre
             self.sigma.value = sigma
             self.A.value = height * sigma * sqrt2pi
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.A.value /= axis.scale
+                self.A.value /= scaling_factor
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * sigma * sqrt2pi
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.A.map['values'] /= axis.scale
+                self.A.map['values'] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma
             self.sigma.map['is_set'][:] = True

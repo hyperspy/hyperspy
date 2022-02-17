@@ -1,0 +1,20 @@
+Experiment date, 06-08-2021
+Experiment time, 13:40:19
+Experiment duration, 00.00:06:45.416
+Sample, "Gold"
+Description, "Experiment with stub data"
+Calibration value, 0.25
+Room temperature, 21
+Max temperature, 1100
+System version, G+
+Gas1, H2
+Gas2, CH4
+Gas3, Ar
+MassSpec File Location, 
+MassSpec channel 1, 28 (Nitrogen)
+MassSpec channel 2, 32 (Oxygen)
+MassSpec channel 3, 18 (Water)
+MassSpec channel 4, 44 (Carbon dioxide)
+Live notes, 13:46:46: Live note one
+13:46:52: Live note two
+13:46:56: Live note three

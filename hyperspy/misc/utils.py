@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 from operator import attrgetter
 import warnings
@@ -35,7 +35,6 @@ from hyperspy.misc.signal_tools import broadcast_signals
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
-
 
 _logger = logging.getLogger(__name__)
 
@@ -76,28 +75,6 @@ def attrsetter(target, attrs, value):
     if where != -1:
         target = attrgetter(attrs[:where])(target)
     setattr(target, attrs[where + 1:], value)
-
-
-def generate_axis(origin, step, N, index=0):
-    """Creates an axis given the origin, step and number of channels
-
-    Alternatively, the index of the origin channel can be specified.
-
-    Parameters
-    ----------
-    origin : float
-    step : float
-    N : number of channels
-    index : int
-        index of origin
-
-    Returns
-    -------
-    Numpy array
-
-    """
-    return np.linspace(
-        origin - index * step, origin + step * (N - 1 - index), N)
 
 
 @contextmanager
@@ -497,9 +474,9 @@ class DictionaryTreeBrowser:
         if key == 'binned':
             warnings.warn('Use of the `binned` attribute in metadata is '
                           'going to be deprecated in v2.0. Set the '
-                          '`axis.is_binned` attribute instead. ', 
+                          '`axis.is_binned` attribute instead. ',
                           VisibleDeprecationWarning)
-            
+
         if key.startswith('_sig_'):
             key = key[5:]
             from hyperspy.signal import BaseSignal
@@ -1076,10 +1053,14 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         List of signals to stack.
     axis : {None, int, str}
         If None, the signals are stacked over a new axis. The data must
-        have the same dimensions. Otherwise the
-        signals are stacked over the axis given by its integer index or
-        its name. The data must have the same shape, except in the dimension
-        corresponding to `axis`.
+        have the same dimensions. Otherwise the signals are stacked over the
+        axis given by its integer index or its name. The data must have the
+        same shape, except in the dimension corresponding to `axis`. If the
+        stacking axis of the first signal is uniform, it is extended up to the
+        new length; if it is non-uniform, the axes vectors of all signals are
+        concatenated along this direction; if it is a `FunctionalDataAxis`,
+        it is extended based on the expression of the first signal (and its sub
+        axis `x` is handled as above depending on whether it is uniform or not).
     new_axis_name : str
         The name of the new axis when `axis` is None.
         If an axis with this name already
@@ -1108,6 +1089,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
     """
     from hyperspy.signals import BaseSignal
+    from hyperspy.axes import FunctionalDataAxis, UniformDataAxis, DataAxis
     import dask.array as da
     from numbers import Number
 
@@ -1151,13 +1133,40 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
     if len(signal_list) > 1:
         # Matching axis calibration is checked here
-        newlist = broadcast_signals(*signal_list, ignore_axis=axis_input)
+        broadcasted_sigs = broadcast_signals(*signal_list, ignore_axis=axis_input)
 
-        if axis is not None:
-            step_sizes = [s.axes_manager[axis].size for s in newlist]
-            axis = newlist[0].axes_manager[axis]
+        if axis_input is not None:
+            step_sizes = [s.axes_manager[axis_input].size for s in broadcasted_sigs]
+            axis = broadcasted_sigs[0].axes_manager[axis_input]
+            # stack axes if non-uniform (DataAxis)
+            if type(axis) is DataAxis:
+                for _s in signal_list[1:]:
+                    _axis = _s.axes_manager[axis_input]
+                    if (axis.axis[0] < axis.axis[-1] and axis.axis[-1] < _axis.axis[0]) \
+                       or (axis.axis[-1] < axis.axis[0] and _axis.axis[-1] < axis.axis[0]):
+                        axis.axis = np.concatenate((axis.axis, _axis.axis))
+                    else:
+                        raise ValueError("Signals can only be stacked along a "
+                            "non-uniform axes if the axis values do not overlap"
+                            " and have the correct order.")
+            # stack axes if FunctionalDataAxis and its x axis is uniform
+            elif type(axis) is FunctionalDataAxis and \
+               type(axis.axes_manager[axis_input].x) is UniformDataAxis:
+                   axis.x.size = np.sum(step_sizes)
+            # stack axes if FunctionalDataAxis and its x axis is not uniform
+            elif type(axis) is FunctionalDataAxis and \
+               type(axis.axes_manager[axis_input].x) is DataAxis:
+                for _s in signal_list[1:]:
+                    _axis = _s.axes_manager[axis_input]
+                    if (axis.x.axis[0] < axis.x.axis[-1] and axis.x.axis[-1] < _axis.x.axis[0]) \
+                       or (axis.x.axis[-1] < axis.x.axis[0] and _axis.x.axis[-1] < axis.x.axis[0]):
+                        axis.x.axis = np.concatenate((axis.x.axis, _axis.x.axis))
+                    else:
+                        raise ValueError("Signals can only be stacked along a "
+                            "non-uniform axes if the axis values do not overlap"
+                            " and have the correct order.")
 
-        datalist = [s.data for s in newlist]
+        datalist = [s.data for s in broadcasted_sigs]
         newdata = (
             da.stack(datalist, axis=0)
             if axis is None
@@ -1166,7 +1175,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
         if axis_input is None:
             signal = first.__class__(newdata)
-            signal.axes_manager._axes[1:] = copy.deepcopy(newlist[0].axes_manager._axes)
+            signal.axes_manager._axes[1:] = copy.deepcopy(broadcasted_sigs[0].axes_manager._axes)
             axis_name = new_axis_name
             axis_names = [axis_.name for axis_ in signal.axes_manager._axes[1:]]
             j = 1
@@ -1177,7 +1186,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
             eaxis.name = axis_name
             eaxis.navigate = True  # This triggers _update_parameters
         else:
-            signal = newlist[0]._deepcopy_with_new_data(newdata)
+            signal = broadcasted_sigs[0]._deepcopy_with_new_data(newdata)
 
         signal._lazy = True
         signal._assign_subclass()
@@ -1187,6 +1196,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         signal.metadata = first.metadata.deepcopy()
         signal.metadata.General.title = f"Stack of {first.metadata.General.title}"
 
+        # Stack metadata
         if isinstance(stack_metadata, bool):
             if stack_metadata:
                 signal.original_metadata.add_node('stack_elements')
@@ -1267,40 +1277,6 @@ def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
                           optimize=optimize) for sig in args]
 
 
-def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
-    """To be used in _map_iterate of BaseSignal and LazySignal.
-
-    Moved to a separate method to reduce code duplication.
-    """
-    from hyperspy.signal import BaseSignal
-    from itertools import repeat
-
-    iterators = tuple(iterating_kwargs[key]._cycle_signal()
-                      if isinstance(iterating_kwargs[key], BaseSignal) else iterating_kwargs[key]
-                      for key in iterating_kwargs)
-    # make all kwargs iterating for simplicity:
-    iterating = tuple(key for key in iterating_kwargs)
-    for k, v in kwargs.items():
-        if k not in iterating:
-            iterating += k,
-            iterators += repeat(v, nav_size),
-
-    def figure_out_kwargs(data):
-        _kwargs = {k: v for k, v in zip(iterating, data[1:])}
-        for k in iterating_kwargs:
-            if (isinstance(iterating_kwargs[k], BaseSignal) and
-                isinstance(_kwargs[k], np.ndarray) and
-                    len(_kwargs[k]) == 1):
-                _kwargs[k] = _kwargs[k][0]
-        return data[0], _kwargs
-
-    def func(*args):
-        dat, these_kwargs = figure_out_kwargs(*args)
-        return function(dat, **these_kwargs)
-
-    return func, iterators
-
-
 def process_function_blockwise(data,
                                *args,
                                function,
@@ -1310,30 +1286,29 @@ def process_function_blockwise(data,
                                arg_keys=None,
                                **kwargs):
     """
-    Function for processing the function blockwise...
-    This gets passed to map_blocks so that the function
-    only gets applied to the signal axes.
+    Convenience function for processing a function blockwise. By design, its
+    output is used as an argument of the dask ``map_blocks`` so that the
+    function only gets applied to the signal axes.
 
-    Parameters:
-    ------------
-    data: np.array
+    Parameters
+    ----------
+    data : np.ndarray
         The data for one chunk
-    *args: tuple
-        Any signal the is iterated alongside the data in. In the
-        form ((key1, value1),(key2,value2)...)
-    function: function
+    *args : tuple
+        Any signal the is iterated alongside the data in. In the form
+        ((key1, value1), (key2, value2))
+    function : function
         The function to applied to the signal axis
-    nav_indexes: tuple
+    nav_indexes : tuple
         The indexes of the navigation axes for the dataset.
     output_signal_shape: tuple
-        The shape of the output signal.  For a ragged signal
-        this is equal to 1.
-    block_info: dict
-        The block info as described by the `dask.array.map_blocks` function
-    arg_keys: tuple
+        The shape of the output signal. For a ragged signal, this is equal to 1
+    block_info : dict
+        The block info as described by the ``dask.array.map_blocks`` function
+    arg_keys : tuple
         The list of keys for the passed arguments (args).  Together this makes
         a set of key:value pairs to be passed to the function.
-    **kwargs: dict
+    **kwargs : dict
         Any additional key value pairs to be used by the function
         (Note that these are the constants that are applied.)
 
@@ -1348,90 +1323,62 @@ def process_function_blockwise(data,
         # There aren't any BaseSignals for iterating
         for nav_index in np.ndindex(chunk_nav_shape):
             islice = np.s_[nav_index]
-            output_array[islice] = function(data[islice],
-                                            **kwargs)
+            output_array[islice] = function(data[islice], **kwargs)
     else:
         # There are BaseSignals which iterate alongside the data
         for index in np.ndindex(chunk_nav_shape):
             islice = np.s_[index]
+            iter_dict = {}
+            for key, a in zip(arg_keys, args):
+                arg_i = a[islice].squeeze()
+                # Some functions does not handle 0-dimension NumPy arrys
+                if arg_i.shape == ():
+                    arg_i = arg_i[()]
+                iter_dict[key] = arg_i
 
-            iter_dict = {key: a[islice].squeeze() for key, a in zip(arg_keys,args)}
-            output_array[islice] = function(data[islice],
-                                            **iter_dict,
-                                            **kwargs)
-    try:
-        output_array = output_array.squeeze(-1)
-    except ValueError:
-        pass
+            output_array[islice] = function(data[islice], **iter_dict, **kwargs)
+    if not (chunk_nav_shape == output_array.shape):
+        try:
+            output_array = output_array.squeeze(-1)
+        except ValueError:
+            pass
     return output_array
 
 
-def guess_output_signal_size(test_signal,
+def guess_output_signal_size(test_data,
                              function,
                              ragged,
                              **kwargs):
     """This function is for guessing the output signal shape and size.
-    It will attempt to apply the function to some test signal and then output
+    It will attempt to apply the function to some test data and then output
     the resulting signal shape and datatype.
 
     Parameters
-    test_signal: BaseSignal
-        A test signal for the function to be applied to. A signal
-        with 0 navigation dimensions
-    function: function
-        The function to be applied to the dataset
-    ragged: bool
+    ----------
+    test_data : NumPy array
+        Data from a test signal for the function to be applied to.
+        The data must be from a signal with 0 navigation dimensions.
+    function : function
+        The function to be applied to the data
+    ragged : bool
         If the data is ragged then the output signal size is () and the
         data type is 'object'
-    **kwargs: dict
+    **kwargs : dict
         Any other keyword arguments passed to the function.
     """
     if ragged:
         output_dtype = object
         output_signal_size = ()
     else:
-        output = function(test_signal, **kwargs)
-        output_dtype = output.dtype
-        output_signal_size = output.shape
+        output = function(test_data, **kwargs)
+        try:
+            output_dtype = output.dtype
+            output_signal_size = output.shape
+        except AttributeError:
+            output = np.asarray(output)
+            output_dtype = output.dtype
+            output_signal_size = output.shape
     return output_signal_size, output_dtype
-
-def map_result_construction(signal,
-                            inplace,
-                            result,
-                            ragged,
-                            sig_shape=None,
-                            lazy=False):
-    from hyperspy.signals import BaseSignal
-    from hyperspy._lazy_signals import LazySignal
-    res = None
-    if inplace:
-        sig = signal
-    else:
-        res = sig = signal._deepcopy_with_new_data()
-
-    if ragged:
-        sig.data = result
-        sig.axes_manager.remove(sig.axes_manager.signal_axes)
-        sig.__class__ = LazySignal if lazy else BaseSignal
-        sig.__init__(**sig._to_dictionary(add_models=True))
-    else:
-        if not sig._lazy and sig.data.shape == result.shape and np.can_cast(
-                result.dtype, sig.data.dtype):
-            sig.data[:] = result
-        else:
-            sig.data = result
-
-        # remove if too many axes
-        sig.axes_manager.remove(sig.axes_manager.signal_axes[len(sig_shape):])
-        # add additional required axes
-        for ind in range(
-                len(sig_shape) - sig.axes_manager.signal_dimension, 0, -1):
-            sig.axes_manager._append_axis(sig_shape[-ind], navigate=False)
-    if not ragged:
-        sig.get_dimensions_from_data()
-    if not sig.axes_manager._axes:
-        add_scalar_axis(sig, lazy=lazy)
-    return res
 
 
 def multiply(iterable):
@@ -1551,4 +1498,3 @@ def is_binned(signal, axis=-1):
         return signal.metadata.Signal.binned
     else:
         return signal.axes_manager[axis].is_binned
-

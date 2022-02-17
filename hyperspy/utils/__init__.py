@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 """
 
@@ -31,20 +31,9 @@ Subpackages:
         Tools for plotting.
     eds
         Tools for energy-dispersive X-ray data analysis.
-    example_signals
-        A few example of signal
-
 
 """
-import hyperspy.datasets.example_signals
-import hyperspy.utils.eds
-import hyperspy.utils.material
-import hyperspy.utils.model
-import hyperspy.utils.plot
-import hyperspy.utils.roi
-import hyperspy.utils.samfire
-from hyperspy.interactive import interactive
-from hyperspy.misc.utils import stack, transpose
+import importlib
 
 
 def print_known_signal_types():
@@ -89,3 +78,41 @@ def print_known_signal_types():
         table.sortby = "class name"
     return print_html(f_text=table.get_string,
                       f_html=table.get_html_string)
+
+
+__all__ = [
+    'eds',
+    'interactive',
+    'markers',
+    'material',
+    'model',
+    'plot',
+    'print_known_signal_types',
+    'roi',
+    'samfire',
+    'stack',
+    'transpose',
+    ]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+_import_mapping = {
+    'interactive':'.interactive',
+    'stack': '.misc.utils',
+    'transpose': '.misc.utils',
+    }
+
+
+def __getattr__(name):
+    if name in __all__:
+        if name in _import_mapping.keys():
+            import_path = 'hyperspy' + _import_mapping.get(name)
+            return getattr(importlib.import_module(import_path), name)
+        else:
+            return importlib.import_module(
+                "." + name, 'hyperspy.utils'
+                )
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

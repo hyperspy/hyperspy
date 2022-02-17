@@ -1,28 +1,30 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import pytest
+import traits.api as t
 
+from hyperspy.misc.array_tools import round_half_towards_zero
 from hyperspy.roi import (CircleROI, Line2DROI, Point1DROI, Point2DROI,
                           RectangularROI, SpanROI, _get_central_half_limits_of_axis)
 from hyperspy.signals import Signal1D, Signal2D
-import traits.api as t
+
 
 class TestROIs():
 
@@ -121,6 +123,29 @@ class TestROIs():
         np.testing.assert_equal(
             sr.data, s.data[:, int(15 / scale):int(30 // scale), ...])
 
+    def test_roi_add_widget(self):
+        s = Signal1D(np.random.rand(60, 4))
+        s.axes_manager[0].name = 'nav axis'
+        # Test adding roi to plot
+        s.plot(navigator='spectrum')
+
+        # Try using different argument types
+        for axes in [0, s.axes_manager[0], 'nav axis', [0], ['nav axis']]:
+            r = SpanROI(0, 60)
+            r.add_widget(s, axes=axes)
+            np.testing.assert_equal(r(s).data, s.data)
+
+        # invalid arguments
+        for axes in ['not a DataAxis name', ['not a DataAxis name'], [0, 1]]:
+            r2 = SpanROI(0, 60)
+            with pytest.raises(ValueError):
+                r2.add_widget(s, axes=axes)
+
+        for axes in [2, [2]]:
+            r3 = SpanROI(0, 60)
+            with pytest.raises(IndexError):
+                r3.add_widget(s, axes=axes)
+
     def test_span_spectrum_nav_boundary_roi(self):
         s = Signal1D(np.random.rand(60, 4))
         r = SpanROI(0, 60)
@@ -157,12 +182,21 @@ class TestROIs():
         r = SpanROI(15, 30)
         assert tuple(r) == (15, 30)
 
-    def test_widget_initialisation(self):
-        self.s_s.plot()
-        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]:
-            r = roi()
-            r._set_default_values(self.s_s)
-            r.add_widget(self.s_s)
+    @pytest.mark.parametrize('roi', [Point1DROI, Point2DROI, RectangularROI,
+                                     SpanROI, Line2DROI, CircleROI])
+    @pytest.mark.parametrize('axes', [None, 'signal'])
+    def test_add_widget_ROI_undefined(self, axes, roi):
+        s = self.s_i
+        s.plot()
+        r = roi()
+        if axes == 'signal':
+            axes = s.axes_manager.signal_axes[:r.ndim]
+        r.add_widget(s, axes=axes)
+        if axes is None:
+            expected_axes = s.axes_manager.navigation_axes
+        else:
+            expected_axes = axes
+        r.signal_map[s][1][0] in expected_axes
 
     def test_span_spectrum_sig(self):
         s = self.s_s
@@ -182,8 +216,10 @@ class TestROIs():
         sr = r(s)
         scale0 = s.axes_manager[0].scale
         scale1 = s.axes_manager[1].scale
-        n = ((int(round(2.3 / scale0)), int(round(3.5 / scale0)),),
-             (int(round(5.6 / scale1)), int(round(12.2 / scale1)),))
+        n = ((int(round_half_towards_zero(2.3 / scale0)),
+              int(round_half_towards_zero(3.5 / scale0)),),
+             (int(round_half_towards_zero(5.6 / scale1)),
+              int(round_half_towards_zero(12.2 / scale1)),))
         assert (sr.axes_manager.navigation_shape ==
                 (n[0][1] - n[0][0], n[1][1] - n[1][0]))
         np.testing.assert_equal(
@@ -491,7 +527,7 @@ class TestROIs():
             r.angle(axis='z')
 
     def test_repr_None(self):
-        # Setting the args=None sets them as traits.Undefined, which didn't 
+        # Setting the args=None sets them as traits.Undefined, which didn't
         # have a string representation in the old %s style.
         for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI]:
             r = roi()
@@ -521,10 +557,19 @@ class TestROIs():
                 r(self.s_s)
 
     def test_default_values_call(self):
-        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]:
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI,
+                    CircleROI]:
             r = roi()
             r._set_default_values(self.s_s)
             r(self.s_s)
+
+    def test_default_values_call_specify_signal_axes(self):
+        s = self.s_i
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI,
+                    CircleROI]:
+            r = roi()
+            r._set_default_values(s, axes=s.axes_manager.signal_axes)
+            r(s)
 
     def test_get_central_half_limits(self):
         ax = self.s_s.axes_manager[0]

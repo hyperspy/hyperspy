@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import itertools
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import numpy as np
 import pytest
@@ -30,8 +30,7 @@ from hyperspy.utils import stack
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
-pytestmark = pytest.mark.skipif(LooseVersion(sympy.__version__) <
-                                LooseVersion("1.3"),
+pytestmark = pytest.mark.skipif(Version(sympy.__version__) < Version("1.3"),
                                 reason="This test requires SymPy >= 1.3")
 
 
@@ -52,8 +51,9 @@ def test_function():
 
 
 @pytest.mark.parametrize(("lazy"), (True, False))
+@pytest.mark.parametrize(("uniform"), (True, False))
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-def test_estimate_parameters_binned(only_current, binned, lazy):
+def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
     s = Signal1D(np.empty((300,)))
     s.axes_manager.signal_axes[0].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
@@ -61,10 +61,17 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     axis.offset = -10
     g1 = SkewNormal(A=2, x0=2, scale=10, shape=5)
     s.data = g1.function(axis.axis)
+    if not uniform:
+        axis.convert_to_non_uniform_axis()
     if lazy:
         s = s.as_lazy()
     g2 = SkewNormal()
-    factor = axis.scale if binned else 1
+    if binned and uniform:
+        factor = axis.scale
+    elif binned:
+        factor = np.gradient(axis.axis)
+    else:
+        factor = 1
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2._axes_manager[-1].is_binned == binned

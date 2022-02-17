@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 from dask.array import Array as dArray
@@ -22,11 +22,11 @@ import traits.api as t
 from traits.trait_numeric import Array
 import sympy
 from sympy.utilities.lambdify import lambdify
-from distutils.version import LooseVersion
+from packaging.version import Version
 from pathlib import Path
 
 import hyperspy
-from hyperspy.misc.utils import slugify
+from hyperspy.misc.utils import slugify, is_binned
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
@@ -500,8 +500,12 @@ class Parameter(t.HasTraits):
             self.map['std'][indices] = self.std
 
     def fetch(self):
-        """Fetch the stored value and std attributes.
-
+        """Fetch the stored value and std attributes from the
+        parameter.map['values'] and ...['std'] if
+        `parameter.map['is_set']` is True for that index. Updates
+        `parameter.value` and `parameter.std`.
+        If not stored, then .value and .std will remain from their
+        previous values, i.e. from a fit in a previous pixel.
 
         See Also
         --------
@@ -523,7 +527,11 @@ class Parameter(t.HasTraits):
             self.std = std
 
     def assign_current_value_to_all(self, mask=None):
-        """Assign the current value attribute to all the  indices
+        """Assign the current value attribute to all the indices,
+        setting parameter.map for all parameters in the component.
+
+        Takes the current `parameter.value` and sets it for all
+        indices in `parameter.map['values']`.
 
         Parameters
         ----------
@@ -743,7 +751,7 @@ class Component(t.HasTraits):
         self.init_parameters(parameter_name_list)
         self._update_free_parameters()
         self.active = True
-        self._active_array = None
+        self._active_array = None # only if active_is_multidimensional is True
         self.isbackground = False
         self.convolved = True
         self.parameters = tuple(self.parameters)
@@ -768,6 +776,10 @@ class Component(t.HasTraits):
 
     @property
     def active_is_multidimensional(self):
+        """In multidimensional signals it is possible to store the value of the
+        :py:attr:`~.component.Component.active` attribute at each navigation
+        index.
+        """
         return self._active_is_multidimensional
 
     @active_is_multidimensional.setter
@@ -897,6 +909,18 @@ class Component(t.HasTraits):
         self._update_free_parameters()
 
     def fetch_values_from_array(self, p, p_std=None, onlyfree=False):
+        """Fetch the parameter values from an array `p` and optionally standard
+        deviation from `p_std`. Places them `component.parameter.value` and
+        `...std`, according to their position in the component.
+
+        Parameters
+        ----------
+        p : array
+            array containing new values for the parameters in a component
+        p_std : array, optional
+            array containing the corresponding standard deviation.
+
+        """
         if onlyfree is True:
             parameters = self.free_parameters
         else:
@@ -1182,7 +1206,7 @@ class Component(t.HasTraits):
 
         if dic['_id_name'] == self._id_name:
             if (self._id_name == "Polynomial" and
-                    LooseVersion(hyperspy.__version__) >= LooseVersion("2.0")):
+                    Version(hyperspy.__version__) >= Version("2.0")):
                 # in HyperSpy 2.0 the polynomial definition changed
                 from hyperspy._components.polynomial import convert_to_polynomial
                 dic = convert_to_polynomial(dic)
@@ -1216,3 +1240,36 @@ class Component(t.HasTraits):
         else:
             display_pretty(current_component_values(
                 self, only_free=only_free))
+
+
+def _get_scaling_factor(signal, axis, parameter):
+    """
+    Convenience function to get the scaling factor required to take into
+    account binned and/or non-uniform axes.
+
+    Parameters
+    ----------
+    signal : BaseSignal
+    axis : BaseDataAxis
+    parameter : float or numpy array
+        The axis value at which scaling factor is evaluated (ignored if the axis
+        is uniform)
+
+    Returns
+    -------
+    scaling_factor
+
+    """
+
+    if is_binned(signal):
+    # in v2 replace by
+    #if axis.is_binned:
+        if axis.is_uniform:
+            scaling_factor = axis.scale
+        else:
+            parameter_idx  = axis.value2index(parameter)
+            scaling_factor = np.gradient(axis.axis)[parameter_idx]
+    else:
+        scaling_factor = 1
+
+    return scaling_factor

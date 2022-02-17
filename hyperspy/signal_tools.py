@@ -1,27 +1,28 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 import functools
 import copy
 
 import numpy as np
-import scipy as sp
+from scipy import interpolate
+from scipy import signal as sp_signal
 import matplotlib.colors
 import matplotlib.pyplot as plt
 import matplotlib.text as mpl_text
@@ -30,7 +31,7 @@ import traits.api as t
 from hyperspy import drawing
 from hyperspy.docstrings.signal import HISTOGRAM_MAX_BIN_ARGS
 from hyperspy.exceptions import SignalDimensionError
-from hyperspy.axes import AxesManager, DataAxis
+from hyperspy.axes import AxesManager, UniformDataAxis
 from hyperspy.drawing.widgets import VerticalLineWidget
 from hyperspy import components1d
 from hyperspy.component import Component
@@ -199,6 +200,8 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
+        if not isinstance(self.axis, UniformDataAxis):
+            raise NotImplementedError("The calibration tool supports only uniform axes.")
         self.units = self.axis.units
         self.scale = self.axis.scale
         self.offset = self.axis.offset
@@ -564,8 +567,11 @@ class Smoothing(t.HasTraits):
             pass
 
     def diff_model2plot(self, axes_manager=None):
-        smoothed = np.diff(self.model2plot(axes_manager),
-                           self.differential_order)
+        n = self.differential_order
+        smoothed = self.model2plot(axes_manager)
+        while n:
+            smoothed = np.gradient(smoothed, self.axis)
+            n -= 1
         return smoothed
 
     def close(self):
@@ -733,15 +739,15 @@ class ButterworthFilter(Smoothing):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):
-        b, a = sp.signal.butter(self.order, self.cutoff_frequency_ratio,
+        b, a = sp_signal.butter(self.order, self.cutoff_frequency_ratio,
                                 self.type)
-        smoothed = sp.signal.filtfilt(b, a, self.signal())
+        smoothed = sp_signal.filtfilt(b, a, self.signal())
         return smoothed
 
     def apply(self):
-        b, a = sp.signal.butter(self.order, self.cutoff_frequency_ratio,
+        b, a = sp_signal.butter(self.order, self.cutoff_frequency_ratio,
                                 self.type)
-        f = functools.partial(sp.signal.filtfilt, b, a)
+        f = functools.partial(sp_signal.filtfilt, b, a)
         self.signal.map(f)
 
 
@@ -925,9 +931,9 @@ class ImageContrastEditor(t.HasTraits):
         self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
         if self.span_selector is not None:
             # Set this attribute to restrict the span selector to the xaxis
-            self.span_selector.step_ax = DataAxis(size=len(self.xaxis),
-                                                  offset=self.xaxis[1],
-                                                  scale=self.xaxis[1]-self.xaxis[0])
+            self.span_selector.step_ax = UniformDataAxis(size=len(self.xaxis),
+                                                         offset=self.xaxis[1],
+                                                         scale=self.xaxis[1]-self.xaxis[0])
 
     def plot_histogram(self, max_num_bins=250):
         """Plot a histogram of the data.
@@ -1240,7 +1246,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     def __init__(self, signal, background_type='Power law', polynomial_order=2,
                  fast=True, plot_remainder=True, zero_fill=False,
                  show_progressbar=None, model=None):
-        super(BackgroundRemoval, self).__init__(signal)
+        super().__init__(signal)
         # setting the polynomial order will change the backgroud_type to
         # polynomial, so we set it before setting the background type
         self.bg_line = None
@@ -1249,7 +1255,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.fast = fast
         self.plot_remainder = plot_remainder
         if plot_remainder:
-            # When plotting the remainder on the right hand side axis, we 
+            # When plotting the remainder on the right hand side axis, we
             # adjust the layout here to avoid doing it later to avoid
             # corrupting the background when using blitting
             figure = signal._plot.signal_plot.figure
@@ -1271,6 +1277,10 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.set_background_estimator()
 
         self.signal.axes_manager.events.indices_changed.connect(self._fit, [])
+        # This is also disconnected when disabling the span selector but we
+        # disconnect also when closing the figure, because in this case,
+        # `on_disabling_span_selector` will not be called.
+        self.signal._plot.signal_plot.events.closed.connect(self.disconnect, [])
 
     def on_disabling_span_selector(self):
         # Disconnect event
@@ -1364,7 +1374,10 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         if is_binned(self.signal) is True:
         # in v2 replace by
         #if self.axis.is_binned is True:
-            to_return *= self.axis.scale
+            if self.axis.is_uniform:
+                to_return *= self.axis.scale
+            else:
+                to_return *= np.gradient(self.axis.axis)
         return to_return
 
     def rm_to_plot(self, axes_manager=None, fill_with=np.nan):
@@ -1427,8 +1440,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
 
     def disconnect(self):
         axes_manager = self.signal.axes_manager
-        if self._fit in axes_manager.events.indices_changed.connected:
-            axes_manager.events.indices_changed.disconnect(self._fit)
+        for f in [self._fit, self.model._on_navigating]:
+            if f in axes_manager.events.indices_changed.connected:
+                axes_manager.events.indices_changed.disconnect(f)
 
 
 def _get_background_estimator(background_type, polynomial_order=1):
@@ -1590,13 +1604,16 @@ class SpikesRemoval:
             self.noise_type = "shot noise"
 
     def detect_spike(self):
-        derivative = np.diff(self.signal())
+        axis = self.signal.axes_manager.signal_axes[-1].axis
+        derivative = np.gradient(self.signal(), axis)
         if self.signal_mask is not None:
-            derivative[self.signal_mask[:-1]] = 0
+            derivative[self.signal_mask] = 0
         if self.argmax is not None:
             left, right = self.get_interpolation_range()
-            self._temp_mask[left:right] = True
-            derivative[self._temp_mask[:-1]] = 0
+            # Don't search for spikes in the are where one has
+            # been found next time `find` is called.
+            self._temp_mask[left:right + 1] = True
+            derivative[self._temp_mask] = 0
         if abs(derivative.max()) >= self.threshold:
             self.argmax = derivative.argmax()
             self.derivmax = abs(derivative.max())
@@ -1671,7 +1688,7 @@ class SpikesRemoval:
             # Interpolate
             x = np.hstack((axis.axis[ileft:left], axis.axis[right:iright]))
             y = np.hstack((data[ileft:left], data[right:iright]))
-            intp = sp.interpolate.interp1d(x, y, kind=self.kind)
+            intp = interpolate.interp1d(x, y, kind=self.kind)
             data[left:right] = intp(axis.axis[left:right])
 
         # Add noise

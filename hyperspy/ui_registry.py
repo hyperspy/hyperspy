@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-"""Registry of user interface widgets.
+r"""Registry of user interface widgets.
 
-Format {"tool_key" : {"toolkit" : <function(obj, display, \*\*kwargs)>}}
+Format {"tool_key" : {"toolkit" : <function(obj, display, **kwargs)>}}
 
 The ``tool_key`` is defined by the "model function" to which the widget provides
 and user interface. That function gets the widget function from this registry
@@ -31,7 +31,6 @@ widgets externally (usually for testing or customisation purposes).
 
 import importlib
 
-from hyperspy.misc.utils import isiterable
 from hyperspy.extensions import ALL_EXTENSIONS
 
 
@@ -74,7 +73,7 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     from hyperspy.defaults_parser import preferences
     if isinstance(toolkit, str):
         toolkit = (toolkit,)
-    if isiterable(toolkit):
+    if isinstance(toolkit, (tuple, list)):
         toolkits = set()
         for tk in toolkit:
             if tk in TOOLKIT_REGISTRY:

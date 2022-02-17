@@ -288,18 +288,33 @@ The following example shows how to chunk one of the two navigation dimensions in
 .. code-block:: python
 
     >>> import dask.array as da
-    >>> data = da.random.random((10,200,300))
+    >>> data = da.random.random((10, 200, 300))
     >>> data.chunksize
     (10, 200, 300)
 
-    >>> s = hs.signals.Signal1D(data)
+    >>> s = hs.signals.Signal1D(data).as_lazy()
     >>> s # Note the reversed order of navigation dimensions
-    <Signal1D, title: , dimensions: (200, 10|300)>
+    <LazSignal1D, title: , dimensions: (200, 10|300)>
 
     >>> s.save('chunked_signal.hspy', chunks=(10, 100, 300)) # Chunking first hyperspy dimension (second array dimension)
     >>> s2 = hs.load('chunked_signal.hspy', lazy=True)
     >>> s2.data.chunksize
     (10, 100, 300)
+
+To get the chunk size of given axes, the :py:meth:`~._signals.lazy.LazySignal.get_chunk_size`
+method can be used:
+
+.. code-block:: python
+
+    >>> import dask.array as da
+    >>> data = da.random.random((10, 200, 300))
+    >>> data.chunksize
+    (10, 200, 300)
+    >>> s = hs.signals.Signal1D(data).as_lazy()
+    >>> s.get_chunk_size() # All navigation axes
+    ((10,), (200,))
+    >>> s.get_chunk_size(0) # The first navigation axis
+    ((200,),)
 
 .. versionadded:: 1.3.2
 
@@ -308,6 +323,25 @@ it is sometimes possible to manually set a more optimal chunking manually. There
 many operations take a ``rechunk`` or ``optimize`` keyword argument to disable
 automatic rechunking.
 
+.. versionadded:: 1.7.0
+
+.. _lazy._repr_html_:
+
+For more recent versions of dask (dask>2021.11) when using hyperspy in a jupyter
+notebook a helpful html representation is available.
+
+.. code-block:: python
+
+    >>> import numpy as np
+    >>> import hyperspy.api as hs
+    >>> data = np.zeros((20, 20, 10, 10, 10))
+    >>> s = hs.signals.Signal2D(data)
+    >>> s
+
+.. figure:: images/chunks.png
+
+This helps to visualize the chunk structure and identify axes where the chunk spans the entire
+axis (bolded axes).
 
 Computing lazy signals
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -338,7 +372,7 @@ of a given function that is computed lazily depends on the value of the
 axes parameters that *may have changed* before the computation is requested.
 Therefore, in order to avoid such issues, it is reccomended to explicitly
 compute the result of all functions that are affected by the axes
-paramters. This is the reason why e.g. the result of
+parameters. This is the reason why e.g. the result of
 :py:meth:`~._signals.signal1d.Signal1D.shift1D` is not lazy.
 
 
@@ -397,6 +431,15 @@ Other minor differences
   convenience, ``nansum``, ``nanmean`` and other ``nan*`` signal methods were
   added to mimic the workflow as closely as possible.
 
+.. _big_data.saving:
+
+Saving Big Data
+^^^^^^^^^^^^^^^^^
+
+The most efficient format supported by HyperSpy to write data is the :ref:` zspy format <zspy-format>`,
+mainly because it supports writing currently from concurrently from multiple threads or processes.
+
+This also allows for smooth interaction with dask-distributed for efficient scaling.
 
 .. _lazy_details:
 

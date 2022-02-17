@@ -1,19 +1,19 @@
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -46,7 +46,7 @@ class _TestPlot:
             data = data + 1j * (data + 9)
             title += ', complex'
             dtype = 'Complex'
-        s = hs.signals.__dict__['%sSignal%iD' % (dtype, sdim)](data)
+        s = getattr(hs.signals, f'{dtype}Signal{sdim}D')(data)
         if sdim == 1:
             s.axes_manager = self._set_signal_axes(s.axes_manager, name='Energy',
                                                    units='keV', scale=.5, offset=0.3)
@@ -314,3 +314,32 @@ def test_plot_autoscale(sdim):
 
     s.change_dtype(bool)
     s.plot()
+
+
+def test_plot_complex_representation():
+    real_ref = np.arange(9).reshape((3, 3))
+    imag_ref = np.arange(9).reshape((3, 3)) + 9
+    comp_ref = real_ref + 1j * imag_ref
+    s = hs.signals.ComplexSignal1D(comp_ref)
+    s.plot(representation='polar', same_axes=True)
+    s.plot(representation='polar', same_axes=False)
+    with pytest.raises(ValueError):
+        s.plot(representation='unsupported_argument')
+
+
+def test_plot_signal_scalar():
+    s = hs.signals.BaseSignal([1.0])
+    s.plot()
+    assert s._plot is None
+
+
+@pytest.mark.parametrize('lazy', [True, False])
+def test_plot_ragged_array(lazy):
+    data = np.empty((2, 5), dtype=object)
+    data.fill(np.array([10, 20]))
+
+    s = hs.signals.BaseSignal(data, ragged=True)
+    if lazy:
+        s = s.as_lazy()
+    with pytest.raises(RuntimeError):
+        s.plot()

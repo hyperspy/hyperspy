@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import dask.array as da
@@ -26,6 +26,8 @@ from hyperspy.misc.array_tools import (
     get_array_memory_size_in_GiB,
     get_signal_chunk_slice,
     numba_histogram,
+    round_half_towards_zero,
+    round_half_away_from_zero,
 )
 
 dt = [("x", np.uint8), ("y", np.uint16), ("text", (bytes, 6))]
@@ -188,8 +190,48 @@ def test_get_signal_chunk_slice_not_square(sig_chunks, index, expected):
         chunk_slice = get_signal_chunk_slice(index, data.chunks)
         assert chunk_slice == expected
 
+
 @pytest.mark.parametrize('dtype', ['<u2', 'u2', '>u2', '<f4', 'f4', '>f4'])
 def test_numba_histogram(dtype):
     arr = np.arange(100, dtype=dtype)
     np.testing.assert_array_equal(numba_histogram(arr, 5, (0, 100)), [20, 20, 20, 20, 20])
 
+
+def test_round_half_towards_zero_integer():
+    a = np.array([-2.0, -1.7, -1.5, -0.2, 0.0, 0.2, 1.5, 1.7, 2.0])
+    np.testing.assert_allclose(
+        round_half_towards_zero(a, decimals=0),
+        np.array([-2.0, -2.0, -1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 2.0])
+        )
+    np.testing.assert_allclose(
+        round_half_towards_zero(a, decimals=0),
+        round_half_towards_zero(a)
+        )
+
+
+def test_round_half_towards_zero():
+    a = np.array([-2.01, -1.56, -1.55, -1.50, -0.22, 0.0, 0.22, 1.50, 1.55, 1.56, 2.01])
+    np.testing.assert_allclose(
+        round_half_towards_zero(a, decimals=1),
+        np.array([-2.0, -1.6, -1.5, -1.5, -0.2, 0.0, 0.2, 1.5, 1.5, 1.6, 2.0])
+        )
+
+
+def test_round_half_away_from_zero_integer():
+    a = np.array([-2.0, -1.7, -1.5, -0.2, 0.0, 0.2, 1.5, 1.7, 2.0])
+    np.testing.assert_allclose(
+        round_half_away_from_zero(a, decimals=0),
+        np.array([-2.0, -2.0, -2.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0])
+        )
+    np.testing.assert_allclose(
+        round_half_away_from_zero(a, decimals=0),
+        round_half_away_from_zero(a)
+        )
+
+
+def test_round_half_away_from_zero():
+    a = np.array([-2.01, -1.56, -1.55, -1.50, -0.22, 0.0, 0.22, 1.50, 1.55, 1.56, 2.01])
+    np.testing.assert_allclose(
+        round_half_away_from_zero(a, decimals=1),
+        np.array([-2.0, -1.6, -1.6, -1.5, -0.2, 0.0, 0.2, 1.5, 1.6, 1.6, 2.0])
+        )

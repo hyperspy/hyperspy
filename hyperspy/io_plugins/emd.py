@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 # The EMD format is a hdf5 standard proposed at Lawrence Berkeley
 # National Lab (see http://emdatasets.com/ for more information).
@@ -38,8 +38,8 @@ import h5py
 import numpy as np
 import dask.array as da
 from dateutil import tz
-import pint
 
+from hyperspy.api_nogui import _ureg
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.elements import atomic_number2name
 import hyperspy.misc.io.fei_stream_readers as stream_readers
@@ -58,8 +58,9 @@ default_extension = 0
 reads_images = True
 reads_spectrum = True
 reads_spectrum_image = True
-# Writing features
+# Writing capabilities
 writes = True  # Only Berkeley emd
+non_uniform_axis = False
 EMD_VERSION = '0.2'
 # ----------------------
 
@@ -471,9 +472,6 @@ class EMD_NCEM:
         List of dictionaries which are passed to the file_reader.
     """
 
-    def __init__(self):
-        self._ureg = pint.UnitRegistry()
-
     def read_file(self, file, lazy=None, dataset_path=None, stack_group=None):
         """
         Read the data from an emd file
@@ -683,7 +681,7 @@ class EMD_NCEM:
                                    simu_om.get('cellDimension', 0)[0])
                 if not math.isclose(total_thickness, len(array_list) * scale,
                                     rel_tol=1e-4):
-                    _logger.warning("Depth axis is non uniform and its offset "
+                    _logger.warning("Depth axis is non-uniform and its offset "
                                     "and scale can't be set accurately.")
                     # When non-uniform/non-linear axis are implemented, adjust
                     # the final depth to the "total_thickness"
@@ -743,7 +741,7 @@ class EMD_NCEM:
                 units_list = [u[1:-1].replace("_", "") for u in units_list]
                 value = ' * '.join(units_list)
                 try:
-                    units = self._ureg.parse_units(value)
+                    units = _ureg.parse_units(value)
                     value = f"{units:~}"
                 except:
                     pass
@@ -797,7 +795,7 @@ class EMD_NCEM:
             offset, scale = axis_data[0], np.diff(axis_data).mean()
         else:
             # This is a string, return default values
-            # When non-linear axis is supported we should be able to parse
+            # When non-uniform axis is supported we should be able to parse
             # string
             offset, scale = 0, 1
         return offset, scale
@@ -941,7 +939,6 @@ class FeiEMDReader(object):
         # Parallelise streams reading
         self.filename = filename
         self.select_type = select_type
-        self.ureg = pint.UnitRegistry()
         self.dictionaries = []
         self.first_frame = first_frame
         self.last_frame = last_frame
@@ -1476,7 +1473,7 @@ class FeiEMDReader(object):
         if units == t.Undefined:
             return value, units
         factor /= 2
-        v = float(value) * self.ureg(units)
+        v = float(value) * _ureg(units)
         converted_v = (factor * v).to_compact()
         converted_value = float(converted_v.magnitude / factor)
         converted_units = '{:~}'.format(converted_v.units)

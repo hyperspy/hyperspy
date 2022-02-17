@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import numpy as np
@@ -29,19 +29,19 @@ class Offset(Component):
     r"""Component to add a constant value in the y-axis.
 
     .. math::
-    
+
         f(x) = k
 
     ============ =============
-    Variable      Parameter 
+    Variable      Parameter
     ============ =============
-    :math:`k`     offset   
+    :math:`k`     offset
     ============ =============
 
     Parameters
     -----------
-    offset : float 
-        
+    offset : float
+
     """
 
     def __init__(self, offset=0.):
@@ -86,16 +86,23 @@ class Offset(Component):
         bool
 
         """
-        super(Offset, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
+        if is_binned(signal):
+        # in v2 replace by
+        #if axis.is_binned:
+            # using the mean of the gradient for non-uniform axes is a best
+            # guess to the scaling of binned signals for the estimation
+            scaling_factor = axis.scale if axis.is_uniform \
+                             else np.mean(np.gradient(axis.axis), axis=-1)
 
         if only_current is True:
             self.offset.value = signal()[i1:i2].mean()
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.offset.value /= axis.scale
+                self.offset.value /= scaling_factor
             return True
         else:
             if self.offset.map is None:
@@ -105,10 +112,10 @@ class Offset(Component):
             gi[axis.index_in_array] = slice(i1, i2)
             self.offset.map['values'][:] = dc[tuple(
                 gi)].mean(axis.index_in_array)
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.offset.map['values'] /= axis.scale
+                self.offset.map['values'] /= scaling_factor
             self.offset.map['is_set'][:] = True
             self.fetch_stored_values()
             return True

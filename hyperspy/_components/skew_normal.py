@@ -1,29 +1,30 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
 import dask.array as da
+import numpy as np
+from packaging.version import Version
 import sympy
 
+from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
 from hyperspy.misc.utils import is_binned # remove in v2.0
 
-from distutils.version import LooseVersion
 
 sqrt2pi = np.sqrt(2 * np.pi)
 
@@ -130,20 +131,24 @@ class SkewNormal(Expression):
         distribution (Gaussian) is obtained. The distribution is
         right skewed (longer tail to the right) if shape>0 and is
         left skewed if shape<0.
+    **kwargs
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
-
+    Notes
+    -----
     The properties `mean` (position), `variance`, `skewness` and `mode`
-    (=position of maximum) are defined for convenience.
+    (position of maximum) are defined for convenience.
     """
 
     def __init__(self, x0=0., A=1., scale=1., shape=0.,
                  module=['numpy', 'scipy'], **kwargs):
-        if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
+        if Version(sympy.__version__) < Version("1.3"):
             raise ImportError("The `SkewNormal` component requires "
                               "SymPy >= 1.3")
         # We use `_shape` internally because `shape` is already taken in sympy
         # https://github.com/sympy/sympy/pull/20791
-        super(SkewNormal, self).__init__(
+        super().__init__(
             expression="2 * A * normpdf * normcdf;\
                 normpdf = exp(- t ** 2 / 2) / sqrt(2 * pi);\
                 normcdf = (1 + erf(_shape * t / sqrt(2))) / 2;\
@@ -205,29 +210,32 @@ class SkewNormal(Expression):
         >>> g.estimate_parameters(s, -10, 10, False)
         """
 
-        super(SkewNormal, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        x0, height, scale, shape = _estimate_skewnormal_parameters(signal, x1,
-                                                                   x2, only_current)
+        x0, height, scale, shape = _estimate_skewnormal_parameters(
+            signal, x1, x2, only_current
+            )
+        scaling_factor = _get_scaling_factor(signal, axis, x0)
+
         if only_current is True:
             self.x0.value = x0
             self.A.value = height * sqrt2pi
             self.scale.value = scale
             self.shape.value = shape
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.A.value /= axis.scale
+                self.A.value /= scaling_factor
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * sqrt2pi
 
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.A.map['values'] /= axis.scale
+                self.A.map['values'] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.x0.map['values'][:] = x0
             self.x0.map['is_set'][:] = True
@@ -240,22 +248,26 @@ class SkewNormal(Expression):
 
     @property
     def mean(self):
+        """Mean (position) of the component."""
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
         return self.x0.value + self.scale.value * delta * np.sqrt(2 / np.pi)
 
     @property
     def variance(self):
+        """Variance of the component."""
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
         return self.scale.value**2 * (1 - 2 * delta**2 / np.pi)
 
     @property
     def skewness(self):
+        """Skewness of the component."""
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
         return (4 - np.pi)/2 * (delta * np.sqrt(2/np.pi))**3 / (1 -
                                                                 2 * delta**2 / np.pi)**(3/2)
 
     @property
     def mode(self):
+        """Mode (position of maximum) of the component."""
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
         muz = np.sqrt(2 / np.pi) * delta
         sigmaz = np.sqrt(1 - muz**2)

@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import json
@@ -69,6 +69,11 @@ class TestImageObject():
     def test_parse_string(self):
         assert self.imageobject._parse_string("") is None
         assert self.imageobject._parse_string("string") == "string"
+
+    def test_parse_string_convert_float(self):
+        assert self.imageobject._parse_string("5", False) == '5'
+        assert self.imageobject._parse_string("5", True) == 5
+        assert self.imageobject._parse_string("Imaging", True) == None
 
 
 def test_missing_tag():
@@ -484,3 +489,8 @@ def test_data(pdict):
                                   err_msg='content %s type % i: '
                                   '\n%s not equal to \n%s' %
                                   (subfolder, key, str(s.data), str(dat)))
+
+def test_axes_bug_for_image():
+    fname = os.path.join(MY_PATH, "dm3_2D_data", "test_STEM_image.dm3")
+    s = load(fname)
+    assert s.axes_manager[1].name == 'y'

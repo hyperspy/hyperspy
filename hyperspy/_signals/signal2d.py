@@ -1,24 +1,23 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy as sp
 import numpy.ma as ma
 import dask.array as da
 import logging
@@ -222,7 +221,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
             # which was the previous implementation.
             # The size is fixed at 3 to be consistent
             # with the previous implementation.
-            im[:] = sp.ndimage.median_filter(im, size=3)
+            im[:] = ndimage.median_filter(im, size=3)
         if sobel is True:
             im[:] = sobel_filter(im)
 
@@ -316,8 +315,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
     _signal_dimension = 2
     _lazy = False
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def __init__(self, *args, **kwargs):
+        if kwargs.get('ragged', False):
+            raise ValueError("Signal2D can't be ragged.")
+        super().__init__(*args, **kwargs)
         if self.axes_manager.signal_dimension != 2:
             self.axes_manager.set_signal_dimension(2)
 
@@ -647,12 +648,22 @@ class Signal2D(BaseSignal, CommonSignal2D):
         shifts : np.array
             The estimated shifts are returned only if ``shifts`` is None
 
+        Raises
+        ------
+        NotImplementedError
+            If one of the signal axes is a non-uniform axis.
+
         See Also
         --------
         * :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`
 
         """
         self._check_signal_dimension_equals_two()
+
+        for _axis in self.axes_manager.signal_axes:
+            if not _axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not implememented for non-uniform axes")
 
         return_shifts = False
 
@@ -943,6 +954,3 @@ class Signal2D(BaseSignal, CommonSignal2D):
 class LazySignal2D(LazySignal, Signal2D):
 
     _lazy = True
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)

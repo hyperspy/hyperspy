@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import logging
@@ -31,6 +31,7 @@ _logger = logging.getLogger(__name__)
 class Polynomial(Component):
 
     """n-order polynomial component. (DEPRECATED)
+
     Polynomial component defined by the coefficients parameters which is an
     array of len the order of the polynomial.
     For example, the [1,2,3] coefficients define the following 3rd order
@@ -38,8 +39,19 @@ class Polynomial(Component):
     `Polynomial2`
 
     This API is deprecated and will be replaced by
-    :py:class:`hyperspy._components.polynomial.Polynomial` in HyperSpy v2.0.
+    :py:class:`~._components.polynomial.Polynomial` in HyperSpy v2.0.
     To use the new API, set `legacy` to `False`.
+
+    Parameters
+    ----------
+    order: int
+        Order of the polynomial.
+    legacy: bool, default True
+        If `False`, use the new API.
+    module: str
+        See the docstring
+        of :py:class:`~._components.polynomial.Polynomial`
+        for details.
 
     Attributes
     ----------
@@ -47,23 +59,6 @@ class Polynomial(Component):
     """
 
     def __init__(self, order=2, legacy=True, module="numexpr", **kwargs):
-        """Polynomial component (DEPRECATED)
-
-        This API is deprecated and will be replaced by
-        :py:class:`hyperspy._components.polynomial.Polynomial` in HyperSpy v2.0.
-        To use the new API, set `legacy` to `False`.
-
-        Parameters
-        ----------
-        order: int
-            Order of the polynomial.
-        legacy: bool, default True
-            If `False`, use the new API.
-        module: str
-            See the docstring
-            of :py:class:`hyperspy._components.polynomial.Polynomial`
-            for details.
-        """
         if legacy:
             from hyperspy.misc.utils import deprecation_warning
             msg = (
@@ -126,17 +121,26 @@ class Polynomial(Component):
         -------
         bool
         """
-        super(Polynomial, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
+
+        if is_binned(signal):
+        # in v2 replace by
+        #if axis.is_binned:
+            # using the mean of the gradient for non-uniform axes is a best
+            # guess to the scaling of binned signals for the estimation
+            scaling_factor = axis.scale if axis.is_uniform \
+                             else np.mean(np.gradient(axis.axis), axis=-1)
+
         if only_current is True:
             estimation = np.polyfit(axis.axis[i1:i2],
                                     signal()[i1:i2],
                                     self.get_polynomial_order())
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.coefficients.value = estimation / axis.scale
+                self.coefficients.value = estimation / scaling_factor
             else:
                 self.coefficients.value = estimation
             return True
@@ -156,10 +160,10 @@ class Polynomial(Component):
                 # Shape needed to fit coefficients.map:
                 cmap_shape = nav_shape + (self.get_polynomial_order() + 1, )
                 self.coefficients.map['values'][:] = cmaps.reshape(cmap_shape)
-                if is_binned(signal) is True:
+                if is_binned(signal):
                 # in v2 replace by
                 #if axis.is_binned:
-                    self.coefficients.map["values"] /= axis.scale
+                    self.coefficients.map["values"] /= scaling_factor
                 self.coefficients.map['is_set'][:] = True
             self.fetch_stored_values()
             return True

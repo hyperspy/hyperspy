@@ -1,19 +1,19 @@
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -49,6 +49,34 @@ def test_plot_BackgroundRemoval():
     br.span_selector_changed()
 
     return br.signal._plot.signal_plot.figure
+
+
+def test_plot_BackgroundRemoval_close_figure():
+    s = signals.Signal1D(np.arange(1000).reshape(10, 100))
+    br = BackgroundRemoval(s, background_type='Gaussian')
+    signal_plot = s._plot.signal_plot
+
+    assert len(signal_plot.events.closed.connected) == 5
+    assert len(s.axes_manager.events.indices_changed.connected) == 4
+    s._plot.close()
+    assert not br._fit in s.axes_manager.events.indices_changed.connected
+    assert not br.disconnect in signal_plot.events.closed.connected
+
+
+def test_plot_BackgroundRemoval_close_tool():
+    s = signals.Signal1D(np.arange(1000).reshape(10, 100))
+    br = BackgroundRemoval(s, background_type='Gaussian')
+    br.span_selector.set_initial((20, 40))
+    br.span_selector.onmove_callback()
+    br.span_selector_changed()
+    signal_plot = s._plot.signal_plot
+
+    assert len(signal_plot.events.closed.connected) == 5
+    assert len(s.axes_manager.events.indices_changed.connected) == 4
+    br.on_disabling_span_selector()
+    assert not br._fit in s.axes_manager.events.indices_changed.connected
+    s._plot.close()
+    assert not br.disconnect in signal_plot.events.closed.connected
 
 
 @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,

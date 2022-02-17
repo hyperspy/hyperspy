@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
 
@@ -283,14 +283,17 @@ class WidgetBase(object):
 
     def _i2v(self, axis, i):
         """Wrapped version of DataAxis.index2value, which bounds the value
-        between axis.low_value and axis.high_value+axis.scale, and does not
-        raise a ValueError.
+        inbetween axis.low_value and axis.high_value + axis.scale when the axis
+        is uniform and does not raise a ValueError.
         """
         try:
             return axis.index2value(i)
         except ValueError:
             if i > axis.high_index:
-                return axis.high_value + axis.scale
+                if axis.is_uniform:
+                    return axis.high_value + axis.scale
+                else:
+                    return axis.high_value
             elif i < axis.low_index:
                 return axis.low_value
             else:
@@ -568,7 +571,17 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
     def _set_axes(self, axes):
         super(ResizableDraggableWidgetBase, self)._set_axes(axes)
         if self.axes:
-            self._size = np.array([ax.scale for ax in self.axes])
+            self._size = np.array([self._get_step(ax) for ax in self.axes])
+
+    def _get_step(self, axis):
+        # TODO: need to check if this is working fine, particularly with
+        """ Use to determine the size of the widget with support for non 
+        uniform axis.
+        """
+        if axis.index >= axis.size - 1:
+            return axis.index2value(axis.index) - axis.index2value(axis.index - 1)
+        else:
+            return axis.index2value(axis.index + 1) - axis.index2value(axis.index)
 
     def _get_size(self):
         """Getter for 'size' property. Returns the size as a tuple (to prevent

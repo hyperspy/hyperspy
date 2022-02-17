@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 from unittest import mock
 
@@ -113,6 +113,7 @@ def test_align1D():
     shifts = np.random.random(len(s.axes_manager[0].axis)) * 2
     shifts[0] = 0
     s.shift1D(-shifts, show_progressbar=False)
+    s.axes_manager.indices = (0, )
     shifts2 = s.estimate_shift1D(show_progressbar=False)
     np.testing.assert_allclose(shifts, shifts2, rtol=0.5)
 
@@ -137,6 +138,16 @@ class TestShift1D:
         s.shift1D(shifts, crop=True)
         np.testing.assert_allclose(s.axes_manager[0].axis,
                                    np.arange(0., 1.8, 0.2))
+
+    def test_2D_nav_shift1D(self):
+        sig = np.empty((3, 4, 10))
+        sig[...] = np.arange(10)
+        s = hs.signals.Signal1D(sig)
+        s.axes_manager[0].scale = 0.2
+        s.axes_manager[1].scale = 0.2
+        shifts = np.ones((3, 4))*0.1
+        s.shift1D(shifts, crop=True)
+        np.testing.assert_allclose(s.data[0, 0, :], np.arange(0.9, 9))
 
 
 @lazifyTestClass
@@ -200,16 +211,22 @@ class TestInterpolateInBetween:
         s.isig[8:12] = 0
         self.s = s
 
-    def test_single_spectrum(self):
+    @pytest.mark.parametrize('uniform', [True, False])
+    def test_single_spectrum(self, uniform):
         s = self.s.inav[0]
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
+        if not uniform:
+            s.axes_manager[-1].convert_to_non_uniform_axis()
         s.interpolate_in_between(8, 12)
         np.testing.assert_array_equal(s.data, np.arange(20))
         assert m.data_changed.called
 
-    def test_single_spectrum_in_units(self):
+    @pytest.mark.parametrize('uniform', [True, False])
+    def test_single_spectrum_in_units(self, uniform):
         s = self.s.inav[0]
+        if not uniform:
+            s.axes_manager[-1].convert_to_non_uniform_axis()
         s.interpolate_in_between(0.8, 1.2)
         np.testing.assert_array_equal(s.data, np.arange(20))
 
@@ -229,17 +246,20 @@ class TestInterpolateInBetween:
         np.testing.assert_allclose(
             s.data[8:12], np.array([44., 95.4, 139.6, 155.]))
 
-    def test_delta_float(self):
+    @pytest.mark.parametrize('uniform', [True, False])
+    def test_delta_float(self, uniform):
         s = self.s.inav[0]
         s.change_dtype('float')
         tmp = np.zeros(s.data.shape)
         tmp[12] = s.data[12]
         s.data += tmp * 9.
+        if not uniform:
+            s.axes_manager[0].convert_to_non_uniform_axis()
         s.interpolate_in_between(8, 12, delta=0.31, kind='cubic')
         print(s.data[8:12])
         np.testing.assert_allclose(
-            s.data[8:12], np.array([45.09388598, 104.16170809,
-                                    155.48258721, 170.33564422]),
+            s.data[8:12], np.array([46.595205, 109.802805,
+                                    164.512803, 178.615201]),
             atol=1,
         )
 

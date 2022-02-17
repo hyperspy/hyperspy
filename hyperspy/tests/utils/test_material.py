@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import pytest
 
 import hyperspy.api as hs
 from hyperspy.misc.elements import elements_db
@@ -76,6 +77,12 @@ def test_density_of_mixture():
     wt = np.array([[[88] * 2] * 3, [[12] * 2] * 3])
     np.testing.assert_allclose(
         density, hs.material.density_of_mixture(wt, elements)[0, 0])
+
+    # Testing whether the correct exception is raised upon unknown density
+    elements = ("Cu", "Sn", "At")
+    wt = (87., 12., 1.)
+    with pytest.raises(ValueError):
+        hs.material.density_of_mixture(wt,elements)
 
 
 def test_mac():

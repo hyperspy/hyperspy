@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import pytest
@@ -338,6 +338,7 @@ class TestBSS2D:
 
         mask_sig = s._get_signal_signal(dtype="bool")
         mask_sig.unfold()
+        mask_sig.data[:] = False
         mask_sig.isig[5] = True
         mask_sig.fold()
 
@@ -372,12 +373,24 @@ class TestBSS2D:
             diff_axes=["x"],
             mask=self.mask_sig,
         )
+        matrix = self.s.learning_results.unmixing_matrix.copy()
+        self.mask_sig.change_dtype("float")
+        self.mask_sig.data[self.mask_sig.data == 1] = np.nan
+        self.mask_sig.fold()
+        self.mask_sig = self.mask_sig.derivative(axis="x")
+        self.mask_sig.data[np.isnan(self.mask_sig.data)] = 1
+        self.mask_sig.change_dtype("bool")
+        self.s.blind_source_separation(
+            3, diff_order=0, fun="exp", on_loadings=False,
+            factors=factors.derivative(axis="x", order=1),
+            mask=self.mask_sig)
         np.testing.assert_allclose(
             matrix, self.s.learning_results.unmixing_matrix, atol=1e-5
         )
 
     def test_diff_axes_string_without_mask(self):
-        factors = self.s.get_decomposition_factors().inav[:3].diff(axis="x", order=1)
+        factors = self.s.get_decomposition_factors().inav[:3].derivative(
+            axis="x", order=1)
         self.s.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=False, factors=factors
         )
@@ -390,7 +403,8 @@ class TestBSS2D:
         )
 
     def test_diff_axes_without_mask(self):
-        factors = self.s.get_decomposition_factors().inav[:3].diff(axis="y", order=1)
+        factors = self.s.get_decomposition_factors().inav[:3].derivative(
+            axis="y", order=1)
         self.s.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=False, factors=factors
         )

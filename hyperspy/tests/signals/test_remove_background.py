@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import gc
 
@@ -45,12 +45,14 @@ class TestRemoveBackground1DGaussian:
             gaussian.function(np.arange(0, 20, 0.02)))
         self.signal.axes_manager[0].scale = 0.01
 
-    @pytest.mark.parametrize('binning', (True, False))
+    @pytest.mark.parametrize('binning,uniform', [(True, False), (True, True), (False, True)])
     @pytest.mark.parametrize('fast', [False, True])
     @pytest.mark.parametrize('return_model', [False, True])
-    def test_background_remove(self, binning, fast, return_model):
+    def test_background_remove(self, binning, fast, return_model, uniform):
         signal = self.signal
         signal.axes_manager[-1].is_binned = binning
+        if not uniform:
+            signal.axes_manager[-1].convert_to_non_uniform_axis()
         out = signal.remove_background(
             signal_range=(None, None),
             background_type='Gaussian',

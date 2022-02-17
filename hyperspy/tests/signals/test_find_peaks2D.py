@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
 import numpy as np
@@ -147,16 +147,19 @@ class TestFindPeaks2D:
         peaks = self.sparse_nav2d_shifted.find_peaks(parallel=parallel,
                                                      interactive=False)
 
-        np.testing.assert_equal(peaks.inav[0, 0].data,
-                        np.array([[27,  1],
-                                  [10, 17],
-                                  [22, 23],
-                                  [33, 29]]))
-        np.testing.assert_equal(peaks.inav[0, 1].data,
-                        np.array([[35,  3],
-                                  [ 6, 13],
-                                  [18, 19],
-                                  [29, 25]]))
+        peaks0 = peaks.inav[0]
+        if peaks0._lazy:
+            peaks0.data.compute()
+        np.testing.assert_equal(peaks0.data[0],
+                                np.array([[27,  1],
+                                          [10, 17],
+                                          [22, 23],
+                                          [33, 29]]))
+        np.testing.assert_equal(peaks0.data[1],
+                                np.array([[35,  3],
+                                          [ 6, 13],
+                                          [18, 19],
+                                          [29, 25]]))
 
     @pytest.mark.parametrize('method', PEAK_METHODS)
     @pytest.mark.parametrize('parallel', [True, False])
@@ -178,6 +181,7 @@ class TestFindPeaks2D:
 
     def test_return_peaks(self):
         sig = self.sparse_nav2d_shifted
+        sig.axes_manager.indices = (0, 0)
         axes_dict = sig.axes_manager._get_axes_dicts(
             sig.axes_manager.navigation_axes)
         peaks = BaseSignal(np.empty(sig.axes_manager.navigation_shape),

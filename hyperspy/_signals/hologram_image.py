@@ -1,28 +1,29 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 from collections import OrderedDict
 import scipy.constants as constants
 import numpy as np
 from dask.array import Array as daArray
-from pint import UnitRegistry, UndefinedUnitError
+from pint import UndefinedUnitError
 
+from hyperspy.api_nogui import _ureg
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
@@ -204,6 +205,11 @@ class HologramImage(Signal2D):
         -------
         Signal1D instance of sideband positions (y, x), referred to the unshifted FFT.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
+
         Examples
         --------
 
@@ -214,6 +220,10 @@ class HologramImage(Signal2D):
 
         array([124, 452])
         """
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
 
         sb_position = self.map(
             estimate_sideband_position,
@@ -258,6 +268,11 @@ class HologramImage(Signal2D):
         sb_size : Signal1D
             Sideband size referred to the unshifted FFT.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
+
         Examples
         --------
         >>> import hyperspy.api as hs
@@ -267,6 +282,10 @@ class HologramImage(Signal2D):
         >>> sb_size.data
         array([ 68.87670143])
         """
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
 
         sb_size = sb_position.map(
             estimate_sideband_size,
@@ -349,6 +368,11 @@ class HologramImage(Signal2D):
             Reconstructed electron wave. By default object wave is divided by
             reference wave.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
+
         Examples
         --------
         >>> import hyperspy.api as hs
@@ -362,6 +386,11 @@ class HologramImage(Signal2D):
         # TODO: Use defaults for choosing sideband, smoothness, relative filter
         # size and output shape if not provided
         # TODO: Plot FFT with marked SB and SB filter if plotting is enabled
+
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
 
         # Parsing reference:
         if not isinstance(reference, HologramImage):
@@ -661,6 +690,11 @@ class HologramImage(Signal2D):
         statistics_dict :
             Dictionary with the statistics
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
+
         Examples
         --------
         >>> import hyperspy.api as hs
@@ -675,6 +709,10 @@ class HologramImage(Signal2D):
         'Carrier frequency (1 / nm)': 0.28685808994016415}
         """
 
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
         # Testing match of navigation axes of reference and self
         # (exception: reference nav_dim=1):
 
@@ -700,9 +738,8 @@ class HologramImage(Signal2D):
                                        max_workers=max_workers)
         fringe_sampling = np.divide(1., carrier_freq_px)
 
-        ureg = UnitRegistry()
         try:
-            units = ureg.parse_expression(
+            units = _ureg.parse_expression(
                 str(self.axes_manager.signal_axes[0].units))
         except UndefinedUnitError:
             raise ValueError('Signal axes units should be defined.')
@@ -744,7 +781,7 @@ class HologramImage(Signal2D):
                     1000 / (2 * constants.m_e * constants.c ** 2))
         wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
         carrier_freq_quantity = wavelength * \
-            ureg('nm') * carrier_freq_units / units * ureg('rad')
+            _ureg('nm') * carrier_freq_units / units * _ureg('rad')
         carrier_freq_mrad = carrier_freq_quantity.to('mrad').magnitude
 
         # Calculate fringe contrast:

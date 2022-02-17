@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numbers
 import logging
@@ -24,7 +24,6 @@ import dask.array as da
 import traits.api as t
 from scipy import constants
 from prettytable import PrettyTable
-import pint
 
 from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
@@ -50,7 +49,6 @@ from hyperspy.docstrings.signal import (
 
 
 _logger = logging.getLogger(__name__)
-_ureg = pint.UnitRegistry()
 
 
 @add_gui_method(toolkey="hyperspy.microscope_parameters_EELS")
@@ -71,7 +69,7 @@ class EELSTEMParametersUI(BaseSetMetadataItems):
     }
 
 
-class EELSSpectrum_mixin:
+class EELSSpectrum(Signal1D):
 
     _signal_type = "EELS"
     _alias_signal_types = ["TEM EELS"]
@@ -360,6 +358,11 @@ class EELSSpectrum_mixin:
         %s
         %s
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Examples
         --------
         >>> s_ll = hs.signals.EELSSpectrum(np.zeros(1000))
@@ -388,6 +391,10 @@ class EELSSpectrum_mixin:
         """
 
         def substract_from_offset(value, signals):
+            # Test that axes is uniform
+            if not self.axes_manager[-1].is_uniform:
+                raise NotImplementedError("Support for EELS signals with "
+                            "non-uniform signal axes is not yet implemented.")
             if isinstance(value, da.Array):
                 value = value.compute()
             for signal in signals:
@@ -674,7 +681,7 @@ class EELSSpectrum_mixin:
                                     window_length=window_length,
                                     differential_order=1)
         else:
-            s = s.diff(-1)
+            s = s.derivative(-1)
         if tol is None:
             tol = np.max(np.abs(s.data).min(axis.index_in_array))
         saxis = s.axes_manager[-1]
@@ -840,6 +847,11 @@ class EELSSpectrum_mixin:
         -------
         An EELSSpectrum containing the current data deconvolved.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Notes
         -----
         For details see: Egerton, R. Electron Energy-Loss
@@ -847,6 +859,9 @@ class EELSSpectrum_mixin:
 
         """
         self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes")
         s = self.deepcopy()
         zlp_size = zlp.axes_manager.signal_axes[0].size
         self_size = self.axes_manager.signal_axes[0].size
@@ -928,6 +943,11 @@ class EELSSpectrum_mixin:
         extrapolate_lowloss, extrapolate_coreloss : bool
             If True the signals are extrapolated using a power law,
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Notes
         -----
         For details see: Egerton, R. Electron Energy-Loss
@@ -935,6 +955,13 @@ class EELSSpectrum_mixin:
 
         """
         self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes.")
+        if not ll.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "The low-loss energy axis is non-uniform. "
+                "This operation is not yet implemented for non-uniform energy axes")
         orig_cl_size = self.axes_manager.signal_axes[0].size
 
         if threshold is None:
@@ -1027,6 +1054,11 @@ class EELSSpectrum_mixin:
         %s
         %s
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Notes
         -----
         For details on the algorithm see Gloter, A., A. Douiri,
@@ -1035,6 +1067,9 @@ class EELSSpectrum_mixin:
         Ultramicroscopy 96, no. 3–4 (September 2003): 385–400.
 
         """
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes.")
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
@@ -1201,9 +1236,9 @@ class EELSSpectrum_mixin:
         # If the signal is binned we need to bin the extrapolated power law
         # what, in a first approximation, can be done by multiplying by the
         # axis step size.
-        if is_binned(self) is True:
+        if is_binned(self):
         # in v2 replace by
-        # if self.axes_manager[-1].is_binned is True:
+        # if self.axes_manager[-1].is_binned:
             factor = s.axes_manager[-1].scale
         else:
             factor = 1
@@ -1315,6 +1350,8 @@ class EELSSpectrum_mixin:
         AttributeError
             If the beam_energy or the collection semi-angle are not defined in
             metadata.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
 
         Notes
         -----
@@ -1327,6 +1364,9 @@ class EELSSpectrum_mixin:
            Microscope", Springer-Verlag, 2011.
 
         """
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes.")
         output = {}
         if iterations == 1:
             # In this case s.data is not modified so there is no need to make
@@ -1541,11 +1581,19 @@ class EELSSpectrum_mixin:
 
         Returns
         -------
-
         model : `EELSModel` instance.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         from hyperspy.models.eelsmodel import EELSModel
+        if ll is not None and not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "Multiple scattering is not implemented for spectra with a non-uniform energy axis. "
+                "To create a model that does not account for multiple-scattering do not set "
+                "the `ll` keyword.")
         model = EELSModel(self,
                           ll=ll,
                           auto_background=auto_background,
@@ -1763,11 +1811,13 @@ class EELSSpectrum_mixin:
 
         return complmt_edges
 
-    def rebin(self, new_shape=None, scale=None, crop=True, out=None):
+    def rebin(self, new_shape=None, scale=None, crop=True, dtype=None,
+              out=None):
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale)
-        m = super().rebin(new_shape=new_shape, scale=scale, crop=crop, out=out)
+        m = super().rebin(new_shape=new_shape, scale=scale, crop=crop,
+                          dtype=dtype, out=out)
         m = out or m
         time_factor = np.prod([factors[axis.index_in_array]
                                for axis in m.axes_manager.navigation_axes])
@@ -1822,7 +1872,7 @@ class EELSSpectrum_mixin:
 
         mask = (self.isig[start_energy:].mean(-1) <= threshold)
 
-        from scipy.ndimage.morphology import binary_dilation, binary_erosion
+        from scipy.ndimage import binary_dilation, binary_erosion
         if closing:
             mask.data = binary_dilation(mask.data, border_value=0)
             mask.data = binary_erosion(mask.data, border_value=1)
@@ -1830,11 +1880,6 @@ class EELSSpectrum_mixin:
             mask.data = binary_erosion(mask.data, border_value=1)
             mask.data = binary_dilation(mask.data, border_value=0)
         return mask
-
-
-class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
-
-    pass
 
 
 class LazyEELSSpectrum(EELSSpectrum, LazySignal1D):

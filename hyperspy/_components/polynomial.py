@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import logging
@@ -31,7 +31,7 @@ class Polynomial(Expression):
     """n-order polynomial component.
 
     Polynomial component consisting of order + 1 parameters.
-    The parameters are named "a" followed by the corresponding order, 
+    The parameters are named "a" followed by the corresponding order,
     i.e.
 
     .. math::
@@ -46,7 +46,8 @@ class Polynomial(Expression):
         Order of the polynomial, must be different from 0.
     **kwargs
         Keyword arguments can be used to initialise the value of the
-        parameters, i.e. a2=2, a1=3, a0=1.
+        parameters, i.e. a2=2, a1=3, a0=1. Extra keyword arguments are passed
+        to the :py:class:`~._components.expression.Expression` component.
 
     """
 
@@ -58,10 +59,10 @@ class Polynomial(Expression):
             raise ValueError("Polynomial of order 0 is not supported.")
         coeff_list = ['{}'.format(o).zfill(len(list(str(order)))) for o in
                       range(order, -1, -1)]
-        expr = "+".join(["a{}*x**{}".format(c, o) for c, o in 
+        expr = "+".join(["a{}*x**{}".format(c, o) for c, o in
                          zip(coeff_list, range(order, -1, -1))])
         name = "{} order Polynomial".format(ordinal(order))
-        super().__init__(expression=expr, name=name, module=module, 
+        super().__init__(expression=expr, name=name, module=module,
              autodoc=False, **kwargs)
         self._id_name = "eab91275-88db-4855-917a-cdcbe7209592"
 
@@ -90,24 +91,32 @@ class Polynomial(Expression):
 
         """
         super()._estimate_parameters(signal)
-
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
+
+        if is_binned(signal):
+        # in v2 replace by
+        #if axis.is_binned:
+            # using the mean of the gradient for non-uniform axes is a best
+            # guess to the scaling of binned signals for the estimation
+            scaling_factor = axis.scale if axis.is_uniform \
+                             else np.mean(np.gradient(axis.axis), axis=-1)
+
         if only_current is True:
             estimation = np.polyfit(axis.axis[i1:i2],
                                     signal()[i1:i2],
                                     self.get_polynomial_order())
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
                 for para, estim in zip(self.parameters[::-1], estimation):
-                    para.value = estim / axis.scale
+                    para.value = estim / scaling_factor
             else:
                 for para, estim in zip(self.parameters[::-1], estimation):
                     para.value = estim
             return True
         else:
-            if self.a0.map is None:
+            if self.parameters[0].map is None:
                 self._create_arrays()
 
             nav_shape = signal.axes_manager._navigation_shape_in_array
@@ -124,11 +133,11 @@ class Polynomial(Expression):
                 cmap_shape = nav_shape + (self.get_polynomial_order() + 1, )
                 fit = fit.reshape(cmap_shape)
 
-                if is_binned(signal) is True:
+                if is_binned(signal):
                 # in v2 replace by
                 #if axis.is_binned:
                     for i, para in enumerate(self.parameters[::-1]):
-                        para.map['values'][:] = fit[..., i] / axis.scale
+                        para.map['values'][:] = fit[..., i] / scaling_factor
                         para.map['is_set'][:] = True
                 else:
                     for i, para in enumerate(self.parameters[::-1]):
@@ -144,7 +153,7 @@ def convert_to_polynomial(poly_dict):
     """
     _logger.info("Converting the polynomial to the new definition")
     poly_order = poly_dict['order']
-    coeff_list = ['{}'.format(o).zfill(len(list(str(poly_dict['order'])))) 
+    coeff_list = ['{}'.format(o).zfill(len(list(str(poly_dict['order']))))
                   for o in range(poly_dict['order'], -1, -1)]
     poly2_dict = dict(poly_dict)
     coefficient_dict = poly_dict['parameters'][0]

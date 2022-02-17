@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import warnings
@@ -77,7 +77,7 @@ class EDSTEMParametersUI(BaseSetMetadataItems):
         'real_time', }
 
 
-class EDSTEM_mixin:
+class EDSTEMSpectrum(EDSSpectrum):
 
     _signal_type = "EDS_TEM"
 
@@ -250,6 +250,11 @@ class EDSTEM_mixin:
             is divided by the number of pixel (spectrums), giving an
             average live time.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Examples
         --------
         >>> ref = hs.datasets.example_signals.EDS_TEM_Spectrum()
@@ -267,6 +272,10 @@ class EDSTEM_mixin:
         # Setup the axes_manager
         ax_m = self.axes_manager.signal_axes[0]
         ax_ref = ref.axes_manager.signal_axes[0]
+        for _axis in [ax_m, ax_ref]:
+            if not _axis.is_uniform:
+                raise NotImplementedError(
+                    "The function is not implemented for non-uniform axes.")
         ax_m.scale = ax_ref.scale
         ax_m.units = ax_ref.units
         ax_m.offset = ax_ref.offset
@@ -602,7 +611,7 @@ class EDSTEM_mixin:
         if self.axes_manager.navigation_dimension == 0:
             raise RuntimeError('Navigation dimenstion must be higher than 0 '
                                'to estimate a vacuum mask.')
-        from scipy.ndimage.morphology import binary_dilation, binary_erosion
+        from scipy.ndimage import binary_dilation, binary_erosion
         mask = (self.max(-1) <= threshold)
         if closing:
             mask.data = binary_dilation(mask.data, border_value=0)
@@ -923,10 +932,6 @@ class EDSTEM_mixin:
             elemental_mt = element_composition * thickness_map * density * 1E-8
             mass_thickness += elemental_mt
         return mass_thickness
-
-
-class EDSTEMSpectrum(EDSTEM_mixin, EDSSpectrum):
-    pass
 
 
 class LazyEDSTEMSpectrum(EDSTEMSpectrum, LazyEDSSpectrum):

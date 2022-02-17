@@ -1,28 +1,31 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import math
+import numpy as np
+from packaging.version import Version
 import sympy
 
+from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
 from hyperspy.misc.utils import is_binned # remove in v2.0
-from distutils.version import LooseVersion
+
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -70,15 +73,17 @@ class Voigt(Expression):
         :math:`\gamma` = HWHM of the Lorentzian distribution.
     sigma: float
         :math:`2 \sigma \sqrt{(2 \log(2))}` = FWHM of the Gaussian distribution.
+    **kwargs
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
-
+    Notes
+    -----
     For convenience the `gwidth` and `lwidth` attributes can also be used to
     set and get the FWHM of the Gaussian and Lorentzian parts of the
     distribution, respectively. For backwards compatability, `FWHM` is another
     alias for the Gaussian width.
 
-    Notes
-    -----
     W.I.F. David, J. Appl. Cryst. (1986). 19, 63-64,
     doi:10.1107/S0021889886089999
     """
@@ -88,12 +93,12 @@ class Voigt(Expression):
         # Not to break scripts once we remove the legacy Voigt
         if "legacy" in kwargs:
             del kwargs["legacy"]
-        if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
+        if Version(sympy.__version__) < Version("1.3"):
             raise ImportError("The `Voigt` component requires "
                               "SymPy >= 1.3")
         # We use `_gamma` internally to workaround the use of the `gamma`
         # function in sympy
-        super(Voigt, self).__init__(
+        super().__init__(
             expression="area * real(V); \
                 V = wofz(z) / (sqrt(2.0 * pi) * sigma); \
                 z = (x - centre + 1j * _gamma) / (sigma * sqrt(2.0))",
@@ -156,28 +161,29 @@ class Voigt(Expression):
         >>> g.estimate_parameters(s, -10, 10, False)
 
         """
-        super(Voigt, self)._estimate_parameters(signal)
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
+        scaling_factor = _get_scaling_factor(signal, axis, centre)
 
         if only_current is True:
             self.centre.value = centre
             self.sigma.value = sigma
             self.area.value = height * sigma * sqrt2pi
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.area.value /= axis.scale
+                self.area.value /= scaling_factor
             return True
         else:
             if self.area.map is None:
                 self._create_arrays()
             self.area.map['values'][:] = height * sigma * sqrt2pi
-            if is_binned(signal) is True:
+            if is_binned(signal):
             # in v2 replace by
             #if axis.is_binned:
-                self.area.map['values'][:] /= axis.scale
+                self.area.map['values'][:] /= scaling_factor
             self.area.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma
             self.sigma.map['is_set'][:] = True

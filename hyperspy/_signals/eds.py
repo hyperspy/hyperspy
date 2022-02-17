@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 import itertools
 import logging
 
@@ -37,7 +37,7 @@ from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING_PARAMETERS,
 _logger = logging.getLogger(__name__)
 
 
-class EDS_mixin:
+class EDSSpectrum(Signal1D):
 
     _signal_type = "EDS"
 
@@ -188,11 +188,13 @@ class EDS_mixin:
             return s
     sum.__doc__ = Signal1D.sum.__doc__
 
-    def rebin(self, new_shape=None, scale=None, crop=True, out=None):
+    def rebin(self, new_shape=None, scale=None, crop=True, dtype=None,
+              out=None):
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale,)
-        m = super().rebin(new_shape=new_shape, scale=scale, crop=crop, out=out)
+        m = super().rebin(new_shape=new_shape, scale=scale, crop=crop,
+                          dtype=dtype, out=out)
         m = out or m
         time_factor = np.prod([factors[axis.index_in_array]
                                for axis in m.axes_manager.navigation_axes])
@@ -1111,10 +1113,6 @@ class EDS_mixin:
             self.add_marker(line, render_figure=False)
         if render_figure:
             self._render_figure(plot=['signal_plot'])
-
-
-class EDSSpectrum(EDS_mixin, Signal1D):
-    pass
 
 
 class LazyEDSSpectrum(EDSSpectrum, LazySignal1D):

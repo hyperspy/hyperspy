@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import dask.array as da
 import numpy as np
@@ -83,10 +83,7 @@ def test_lazy_reduce_rechunk():
 
 def test_lazy_diff_rechunk():
     s = Signal1D(da.ones((10, 100), chunks=(1, 2))).as_lazy()
-    for rm in (s.derivative, s.diff):
-        # The data has been rechunked
-        assert rm(axis=-1).data.chunks == ((10,), (99,))
-        assert rm(axis=-1, rechunk=False).data.chunks == (
-            (1,) * 10,
-            (1,) * 99,
-        )  # The data has not been rechunked
+    # The data has been rechunked
+    assert s.diff(axis=-1).data.chunks == ((10,), (99,))
+    assert s.diff(axis=-1, rechunk=False).data.chunks == ((1,) *
+                                                      10, (1,) * 99)  # The data has not been rechunked
