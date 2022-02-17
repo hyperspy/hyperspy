@@ -135,14 +135,12 @@ def file_reader(filename, force_read_resolution=False, lazy=False, **kwds):
     **kwds, optional
     """
 
-
     with TiffFile(filename, **kwds) as tiff:
         dict_list = [_read_serie(tiff, serie, filename, force_read_resolution,
                                  lazy=lazy, **kwds)
             for serie in tiff.series]
 
     return dict_list
-
 
 
 def _read_serie(tiff, serie, filename, force_read_resolution=False,
@@ -182,8 +180,9 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
     offsets = [0.0] * len(names)
     units = [t.Undefined] * len(names)
     intensity_axis = {}
+
     try:
-        scales_d, units_d, offsets_d, intensity_axis = _parse_scale_unit(
+        scales_d, offsets_d, units_d, intensity_axis = _parse_scale_unit(
             tiff, page, op, shape, force_read_resolution)
         for i, name in enumerate(names):
             if name == 'height':
@@ -235,7 +234,7 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
         if dt is not None:
             md['General']['date'] = dt.date().isoformat()
             md['General']['time'] = dt.time().isoformat()
-                
+
     if 'units' in intensity_axis:
         md['Signal']['quantity'] = intensity_axis['units']
     if 'scale' in intensity_axis and 'offset' in intensity_axis:
@@ -254,6 +253,9 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
     else:
         dc = _load_data(*data_args, memmap=memmap, **kwds)
 
+    if _is_streak_hamamatsu(op):
+        op.update({'ImageDescription_Parsed': _get_hamamatsu_streak_description(tiff,op)})
+
     metadata_mapping = get_metadata_mapping(page, op)
     if 'SightX_Notes' in op:
         md['General']['title'] = op['SightX_Notes']
@@ -264,7 +266,6 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
             'mapping': metadata_mapping,
             }
 
-
 def _load_data(serie, is_rgb, sl=None, memmap=None, **kwds):
     dc = serie.asarray(out=memmap)
     _logger.debug("data shape: {0}".format(dc.shape))
@@ -274,138 +275,124 @@ def _load_data(serie, is_rgb, sl=None, memmap=None, **kwds):
         dc = dc[tuple(sl)]
     return dc
 
-
-def _parse_scale_unit(tiff, page, op, shape, force_read_resolution):
+def _axes_defaults():
+    """Get default axes dictionaries, with offsets and scales"""
+    #Default initialisation dictionaries for axes
     axes_l = ['x', 'y', 'z']
     scales = {axis: 1.0 for axis in axes_l}
     offsets = {axis: 0.0 for axis in axes_l}
     units = {axis: t.Undefined for axis in axes_l}
     intensity_axis = {}
+    return scales, offsets, units, intensity_axis
 
-    if force_read_resolution and 'ResolutionUnit' in op \
-            and 'XResolution' in op:
-        res_unit_tag = op['ResolutionUnit']
-        if res_unit_tag != TIFF.RESUNIT.NONE:
-            _logger.debug("Resolution unit: %s" % res_unit_tag)
-            scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
-            # conversion to µm:
-            if res_unit_tag == TIFF.RESUNIT.INCH:
-                for key in ['x', 'y']:
-                    units[key] = 'µm'
-                    scales[key] = scales[key] * 25400
-            elif res_unit_tag == TIFF.RESUNIT.CENTIMETER:
-                for key in ['x', 'y']:
-                    units[key] = 'µm'
-                    scales[key] = scales[key] * 10000
 
-        return scales, units, offsets, intensity_axis
+def _is_force_readable(op,force_read_resolution) -> bool:
+    return (force_read_resolution and 'ResolutionUnit' in op and 'XResolution' in op)
+def _axes_force_read(op):
+    scales, offsets, units, intensity_axis = _axes_defaults()
+    res_unit_tag = op['ResolutionUnit']
+    if res_unit_tag != TIFF.RESUNIT.NONE:
+        _logger.debug("Resolution unit: %s" % res_unit_tag)
+        scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
+        # conversion to µm:
+        if res_unit_tag == TIFF.RESUNIT.INCH:
+            for key in ['x', 'y']:
+                units[key] = 'µm'
+                scales[key] = scales[key] * 25400
+        elif res_unit_tag == TIFF.RESUNIT.CENTIMETER:
+            for key in ['x', 'y']:
+                units[key] = 'µm'
+                scales[key] = scales[key] * 10000
+    return scales, offsets, units, intensity_axis
 
-    # for files created with FEI, ZEISS, TVIPS or Olympus (no DM or ImageJ metadata)
-    if 'fei' in tiff.flags:
-        _logger.debug("Reading FEI tif metadata")
-        op['fei_metadata'] = tiff.fei_metadata
+
+def _is_fei(tiff) -> bool:
+    return 'fei' in tiff.flags
+def _axes_fei(tiff,op):
+    _logger.debug("Reading FEI tif metadata")
+
+    # scales, offsets, units, intensity_axis = _axes_forceread(op, force_read_resolution)
+    scales, offsets, units, intensity_axis = _axes_defaults()
+
+    op['fei_metadata'] = tiff.fei_metadata
+    try:
+        del op['FEI_HELIOS']
+    except KeyError:
+        del op['FEI_SFEG']
+    scales['x'] = float(op['fei_metadata']['Scan']['PixelWidth'])
+    scales['y'] = float(op['fei_metadata']['Scan']['PixelHeight'])
+    units.update({'x': 'm', 'y': 'm'})
+    return scales, offsets, units, intensity_axis
+
+def _is_zeiss(tiff) -> bool:
+    return 'sem' in tiff.flags
+def _axes_zeiss(tiff, op):
+    _logger.debug("Reading Zeiss tif pixel_scale")
+    # scales, offsets, units, intensity_axis = _axes_forceread(op, force_read_resolution)
+    scales, offsets, units, intensity_axis = _axes_defaults()
+    # op['CZ_SEM'][''] is containing structure of primary
+    # not described SEM parameters in SI units.
+    # tifffiles returns flattened version of the structure (as tuple)
+    # and the scale in it is at index 3.
+    # The scale is tied with physical display and needs to be multiplied
+    # with factor, which is the 1024 (1k) divide by horizontal pixel n.
+    # CZ_SEM tiff can contain resolution of lesser precision
+    # in the described tags as 'ap_image_pixel_size' and/or
+    # 'ap_pixel_size', which depending from ZEISS software version
+    # can be absent and thus is not used here.
+    scale_in_m = op['CZ_SEM'][''][3] * 1024 / tiff.pages[0].shape[1]
+    scales.update({'x': scale_in_m, 'y': scale_in_m})
+    units.update({'x': 'm', 'y': 'm'})
+    return scales, offsets, units, intensity_axis
+
+
+def _is_tvips(tiff) -> bool:
+    return 'tvips' in tiff.flags
+def _axes_tvips(op):
+    _logger.debug("Reading TVIPS tif metadata")
+
+    # scales, offsets, units, intensity_axis = _axes_forceread(op, force_read_resolution)
+    scales, offsets, units, intensity_axis = _axes_defaults()
+
+    if 'PixelSizeX' in op['TVIPS'] and 'PixelSizeY' in op['TVIPS']:
+        _logger.debug("getting TVIPS scale from PixelSizeX")
+        scales['x'] = op['TVIPS']['PixelSizeX']
+        scales['y'] = op['TVIPS']['PixelSizeY']
+        units.update({'x': 'nm', 'y': 'nm'})
+    else:
+        _logger.debug("getting TVIPS scale from XYResolution")
+        scales['x'], scales['y'] = _get_scales_from_x_y_resolution(
+            op, factor=1e-2)
+        units.update({'x': 'm', 'y': 'm'})
+    return scales, offsets, units, intensity_axis
+
+
+def _is_olympus_sis(page) -> bool:
+    return page.is_sis
+def _axes_olympus_sis(page, op):
+    _logger.debug("Reading Olympus SIS tif metadata")
+    scales, offsets, units, intensity_axis = _axes_defaults()
+
+    sis_metadata = {}
+    for tag_number in [33471, 33560]:
         try:
-            del op['FEI_HELIOS']
-        except KeyError:
-            del op['FEI_SFEG']
-        scales['x'] = float(op['fei_metadata']['Scan']['PixelWidth'])
-        scales['y'] = float(op['fei_metadata']['Scan']['PixelHeight'])
-        units.update({'x': 'm', 'y': 'm'})
-        return scales, units, offsets, intensity_axis
-
-    elif 'sem' in tiff.flags:
-        _logger.debug("Reading Zeiss tif pixel_scale")
-        # op['CZ_SEM'][''] is containing structure of primary
-        # not described SEM parameters in SI units.
-        # tifffiles returns flattened version of the structure (as tuple)
-        # and the scale in it is at index 3.
-        # The scale is tied with physical display and needs to be multiplied
-        # with factor, which is the 1024 (1k) divide by horizontal pixel n.
-        # CZ_SEM tiff can contain reslution of lesser precission
-        # in the described tags as 'ap_image_pixel_size' and/or
-        # 'ap_pixel_size', which depending from ZEISS software version
-        # can be absent and thus is not used here.
-        scale_in_m = op['CZ_SEM'][''][3] * 1024 / tiff.pages[0].shape[1]
-        scales.update({'x': scale_in_m, 'y': scale_in_m})
-        units.update({'x': 'm', 'y': 'm'})
-        return scales, units, offsets, intensity_axis
-
-    elif 'tvips' in tiff.flags:
-        _logger.debug("Reading TVIPS tif metadata")
-        if 'PixelSizeX' in op['TVIPS'] and 'PixelSizeY' in op['TVIPS']:
-            _logger.debug("getting TVIPS scale from PixelSizeX")
-            scales['x'] = op['TVIPS']['PixelSizeX']
-            scales['y'] = op['TVIPS']['PixelSizeY']
-            units.update({'x': 'nm', 'y': 'nm'})
-        else:
-            _logger.debug("getting TVIPS scale from XYResolution")
-            scales['x'], scales['y'] = _get_scales_from_x_y_resolution(
-                op, factor=1e-2)
-            units.update({'x': 'm', 'y': 'm'})
-        return scales, units, offsets, intensity_axis
-
-    elif page.is_sis:
-        _logger.debug("Reading Olympus SIS tif metadata")
-        for tag_number in [33471, 33560]:
-            try:
-                sis_metadata = page.tags[tag_number].value
-            except Exception:
-                pass
-
-        op['Olympus_SIS_metadata'] = sis_metadata
-        scales['x'] = round(float(sis_metadata['pixelsizex']), 15)
-        scales['y'] = round(float(sis_metadata['pixelsizey']), 15)
-        units.update({'x': 'm', 'y': 'm'})
+            sis_metadata = page.tags[tag_number].value
+        except Exception:
+            pass
+    op['Olympus_SIS_metadata'] = sis_metadata
+    scales['x'] = round(float(sis_metadata['pixelsizex']), 15)
+    scales['y'] = round(float(sis_metadata['pixelsizey']), 15)
+    units.update({'x': 'm', 'y': 'm'})
+    return scales, offsets, units, intensity_axis
 
 
-    # for files containing DM metadata
-    if '65003' in op:
-        _logger.debug("Reading Gatan DigitalMicrograph tif metadata")
-        units['y'] = op['65003']  # x units
-    if '65004' in op:
-        units['x'] = op['65004']  # y units
-    if '65005' in op:
-        units['z'] = op['65005']  # z units
-    if '65009' in op:
-        scales['y'] = op['65009']   # x scales
-    if '65010' in op:
-        scales['x'] = op['65010']   # y scales
-    if '65011' in op:
-        scales['z'] = op['65011']   # z scales
-    if '65006' in op:
-        offsets['y'] = op['65006']   # x offset
-    if '65007' in op:
-        offsets['x'] = op['65007']   # y offset
-    if '65008' in op:
-        offsets['z'] = op['65008']   # z offset
-    if '65022' in op:
-        intensity_axis['units'] = op['65022']   # intensity units
-    if '65024' in op:
-        intensity_axis['offset'] = op['65024']   # intensity offset
-    if '65025' in op:
-        intensity_axis['scale'] = op['65025']   # intensity scale
-
-    # for files containing ImageJ metadata
-    if 'imagej' in tiff.flags:
-        imagej_metadata = tiff.imagej_metadata
-        if 'ImageJ' in imagej_metadata:
-            _logger.debug("Reading ImageJ tif metadata")
-            # ImageJ write the unit in the image description
-            if 'unit' in imagej_metadata:
-                if imagej_metadata['unit'] == 'micron':
-                    units.update({'x': 'µm', 'y': 'µm'})
-                scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
-            if 'spacing' in imagej_metadata:
-                scales['z'] = imagej_metadata['spacing']
-
-    if op.get('Make', None) == "JEOL Ltd.":
-        _logger.debug("Reading JEOL SightX tiff metadata")
-        return _decode_jeol_sightx(tiff, op, scales, units, offsets, intensity_axis)
-    return scales, units, offsets, intensity_axis
-
-def _decode_jeol_sightx(tiff, op, scales, units, offsets, intensity_axis):
+def _is_jeol_sightx(op) -> bool:
+    return op.get('Make', None) == "JEOL Ltd."
+def _axes_jeol_sightx(op):
     # convert xml text to dictionary of tiff op['ImageDescription']
     # convert_xml_to_dict need to remove white spaces before decoding XML
+    scales, offsets, units, intensity_axis = _axes_defaults()
+
     jeol_xml = ''.join([line.strip(" \r\n\t\x01\x00") for line in op['ImageDescription'].split('\n')])
     from hyperspy.misc.io.tools import convert_xml_to_dict
     jeol_dict = convert_xml_to_dict(jeol_xml)
@@ -414,7 +401,7 @@ def _decode_jeol_sightx(tiff, op, scales, units, offsets, intensity_axis):
     illumi = op["ImageDescription"]["IlluminationSystem"]
     imaging = op["ImageDescription"]["ImageFormingSystem"]
 
-    #             TEM/STEM
+    #TEM/STEM
     is_STEM = eos == "modeASID"
     mode_strs = []
     mode_strs.append("STEM" if is_STEM else "TEM" )
@@ -451,9 +438,188 @@ def _decode_jeol_sightx(tiff, op, scales, units, offsets, intensity_axis):
         scale /= camera_len * wave_len(ht) * 1e9  # in nm
         scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op, factor = scale)
         units = {"x": "1 / nm", "y": "1 / nm", "z": t.Undefined}
-    return scales, units, offsets, intensity_axis
+    return scales, offsets, units, intensity_axis
 
-def _get_scales_from_x_y_resolution(op, factor=1):
+
+def _is_streak_hamamatsu(op) -> bool:
+    """Determines whether a .tiff page is likely to be a hamamatsu
+    streak file based on the original op content.
+    """
+    is_hamatif = True
+
+    # Check that the original op has an "Artist" that copyrights as hamamatsu
+    if not 'Artist' in op:
+        is_hamatif = False
+        return is_hamatif
+    else:
+        artist = op['Artist']
+        if not artist.startswith("Copyright Hamamatsu"):
+            is_hamatif = False
+            return is_hamatif
+
+    # Check that the original op has a "Software" corresponding to the HPD-TA
+    if not 'Software' in op:
+        is_hamatif = False
+        return is_hamatif
+    else:
+        software = op['Software']
+        if not software.startswith('HPD-TA'):
+            is_hamatif = False
+
+    return is_hamatif
+def _get_hamamatsu_streak_description(tiff, op):
+    """Extract a dictionary recursively from the ImageDescription
+    Metadata field in a Hamamatsu Streak .tiff file"""
+    import csv
+    desc = op['ImageDescription']
+    dict_meta = {}
+    reader = csv.reader(desc.splitlines(), delimiter=',', quotechar='"')
+    for row in reader:
+        key = row[0].strip(" []")
+        key_dict = {}
+        for element in row[1:]:
+            spl = element.split('=')
+            if len(spl) == 2:
+                key_dict[spl[0]] = spl[1].strip('"')
+        dict_meta[key] = key_dict
+
+    import re
+
+    # Scaling entry
+    scaling = dict_meta['Scaling']
+
+    # Address in file where the X axis is saved
+    x_scale_address = int(re.findall(r'\d+', scaling['ScalingXScalingFile'])[0])
+    xlen = op['ImageWidth']
+
+    # If focus mode is used there is no Y axis
+    if scaling['ScalingYScalingFile'].startswith('Focus mode'):
+        y_scale_address = None
+    else:
+        y_scale_address = int(re.findall(r'\d+', scaling['ScalingYScalingFile'])[0])
+    ylen = op['ImageLength']
+
+    # Accessing the file as a binary
+    fh = tiff.filehandle
+    # Reading the x axis
+    fh.seek(x_scale_address, 0)
+    xax = np.fromfile(fh, dtype='f', count=xlen)
+    if y_scale_address is None:
+        yax = np.arange(ylen)
+    else:
+        fh.seek(y_scale_address, 0)
+        yax = np.fromfile(fh, dtype='f', count=ylen)
+
+    dict_meta['Scaling']['ScalingXaxis'] = xax
+    dict_meta['Scaling']['ScalingYaxis'] = yax
+
+    return dict_meta
+def _axes_hamamatsu_streak(tiff, op):
+    _logger.debug("Reading Hamamatsu Streak Map tif metadata")
+
+    scales, offsets, units, intensity_axis = _axes_defaults()
+
+    # Parsing the Metadata
+    desc = _get_hamamatsu_streak_description(tiff, op)
+
+    xax = desc['Scaling']['ScalingXaxis']
+    yax = desc['Scaling']['ScalingYaxis']
+
+    [xsc, xof] = np.polyfit(np.arange(len(xax)), xax, 1)
+    [ysc, yof] = np.polyfit(np.arange(len(yax)), yax, 1)
+
+    #Unfortunately the X/Y naming convention between Hamamatsu
+    #and hyperspy is inverted
+    scales.update({'x': ysc, 'y': xsc})
+    offsets.update({'x': yof, 'y': xof})
+    units.update({'x': desc['Scaling']['ScalingYUnit'],
+                  'y': desc['Scaling']['ScalingXUnit']})
+
+    return scales, offsets, units, intensity_axis
+
+
+def _is_imagej(tiff) -> bool:
+    return 'imagej' in tiff.flags
+def _add_axes_imagej(tiff, op, scales, offsets, units, intensity_axis):
+    imagej_metadata = tiff.imagej_metadata
+    if 'ImageJ' in imagej_metadata:
+        _logger.debug("Reading ImageJ tif metadata")
+        # ImageJ write the unit in the image description
+        if 'unit' in imagej_metadata:
+            if imagej_metadata['unit'] == 'micron':
+                units.update({'x': 'µm', 'y': 'µm'})
+            scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
+        if 'spacing' in imagej_metadata:
+            scales['z'] = imagej_metadata['spacing']
+    return scales, offsets, units, intensity_axis
+
+
+def _is_digital_micrograph(op) -> bool:
+    # for files containing DM metadata
+    tags = ['65003','65004','65005','65009','65010','65011','65006','65007','65008','65022','65024','65025']
+    search_result = [tag in op for tag in tags]
+    return any(search_result)
+def _add_axes_digital_micrograph(op, scales, offsets, units, intensity_axis):
+    if '65003' in op:
+        _logger.debug("Reading Gatan DigitalMicrograph tif metadata")
+        units['y'] = op['65003']  # x units
+    if '65004' in op:
+        units['x'] = op['65004']  # y units
+    if '65005' in op:
+        units['z'] = op['65005']  # z units
+    if '65009' in op:
+        scales['y'] = op['65009']  # x scales
+    if '65010' in op:
+        scales['x'] = op['65010']  # y scales
+    if '65011' in op:
+        scales['z'] = op['65011']  # z scales
+    if '65006' in op:
+        offsets['y'] = op['65006']  # x offset
+    if '65007' in op:
+        offsets['x'] = op['65007']  # y offset
+    if '65008' in op:
+        offsets['z'] = op['65008']  # z offset
+    if '65022' in op:
+        intensity_axis['units'] = op['65022']  # intensity units
+    if '65024' in op:
+        intensity_axis['offset'] = op['65024']  # intensity offset
+    if '65025' in op:
+        intensity_axis['scale'] = op['65025']  # intensity scale
+    return scales, offsets, units, intensity_axis
+
+
+def _parse_scale_unit(tiff, page, op, shape, force_read_resolution):
+    #Force reading always has priority and returns immediately
+    if _is_force_readable(op,force_read_resolution):
+        scales, offsets, units, intensity_axis = _axes_force_read(op)
+        return scales, offsets, units, intensity_axis
+    #Other axes readers can be overloaded
+    elif _is_fei(tiff):
+        scales, offsets, units, intensity_axis = _axes_fei(tiff,op)
+    elif _is_zeiss(tiff):
+        scales, offsets, units, intensity_axis = _axes_zeiss(tiff, op)
+    elif _is_tvips(tiff):
+        scales, offsets, units, intensity_axis = _axes_tvips(op)
+    elif _is_olympus_sis(page):
+        scales, offsets, units, intensity_axis = _axes_olympus_sis(page, op)
+    elif _is_jeol_sightx(op):
+        scales, offsets, units, intensity_axis = _axes_jeol_sightx(op)
+    elif _is_streak_hamamatsu(op):
+        scales, offsets, units, intensity_axis = _axes_hamamatsu_streak(tiff, op)
+    #Axes are otherwise set to defaults
+    else:
+        scales, offsets, units, intensity_axis = _axes_defaults()
+
+    #Finally, axes descriptors can be additionnally parsed from digital micrograph or imadej-style files
+    if _is_digital_micrograph(op):
+        scales, offsets, units, intensity_axis = _add_axes_digital_micrograph(op, scales, offsets, units, intensity_axis)
+    if _is_imagej(tiff):
+        scales, offsets, units, intensity_axis = _add_axes_imagej(tiff, op, scales, offsets, units, intensity_axis)
+
+    return scales, offsets, units, intensity_axis
+
+
+def _get_scales_from_x_y_resolution(op, factor=1.0):
     scales = (op["YResolution"][1] / op["YResolution"][0] * factor,
               op["XResolution"][1] / op["XResolution"][0] * factor)
     return scales
@@ -665,7 +831,7 @@ def get_jeol_sightx_mapping(op):
         'ImageDescription.Eos.EosMode':
         ("Acquisition_instrument.TEM.acquisition_mode",
          lambda x: "STEM" if x == "eosASID" else "TEM"),
-        
+
         "ImageDescription.ImageFormingSystem.SelectorValue": None,
     }
     if op["ImageDescription"]["ImageFormingSystem"]["ModeString"] == "DIFF":

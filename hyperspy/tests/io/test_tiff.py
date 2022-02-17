@@ -645,6 +645,7 @@ def test_save_angstrom_units():
         assert s2.axes_manager[0].offset == s.axes_manager[0].offset
         assert s2.axes_manager[0].is_binned == s.axes_manager[0].is_binned
 
+
 def test_JEOL_SightX():
     files = [ ("JEOL-SightX-Ronchigram-dummy.tif.gz", 1.0, t.Undefined),
               ("JEOL-SightX-SAED-dummy.tif.gz", 0.2723, "1 / nm"),
@@ -668,3 +669,32 @@ def test_JEOL_SightX():
             assert s.axes_manager[i].size == 556
             np.testing.assert_allclose(s.axes_manager[i].scale, file[1], rtol=1E-3)
             assert s.axes_manager[i].units == file[2]
+
+
+def test_hamamatsu_streak_scanfile():
+    file = 'test_hamamatsu_streak_SCAN.tif'
+    fname = os.path.join(MY_PATH2, file)
+
+    s = hs.load(fname)
+
+    assert s.data.shape == (508, 672)
+    assert s.axes_manager[1].units == 'ps'
+    np.testing.assert_allclose(s.axes_manager[1].scale, 2.3081, rtol=1E-3)
+    np.testing.assert_allclose(s.axes_manager[1].offset, 652.3756, rtol=1E-3)
+    np.testing.assert_allclose(s.axes_manager[0].scale, 0.01714, rtol=1E-3)
+    np.testing.assert_allclose(s.axes_manager[0].offset, 231.0909, rtol=1E-3)
+
+
+def test_hamamatsu_streak_focusfile():
+    file = 'test_hamamatsu_streak_FOCUS.tif'
+    fname = os.path.join(MY_PATH2, file)
+
+    s = hs.load(fname)
+
+    assert s.data.shape == (508, 672)
+    assert s.axes_manager[1].units == ''
+    np.testing.assert_allclose(s.axes_manager[1].scale, 1.0, rtol=1E-3)
+    np.testing.assert_allclose(s.axes_manager[1].offset, 0.0, rtol=1E-3, atol=1e-5)
+    np.testing.assert_allclose(s.axes_manager[0].scale, 0.01714, rtol=1E-3)
+    np.testing.assert_allclose(s.axes_manager[0].offset, 231.0909, rtol=1E-3)
+
