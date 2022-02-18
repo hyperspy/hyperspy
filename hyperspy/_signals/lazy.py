@@ -326,7 +326,10 @@ class LazySignal(BaseSignal):
         """
         arrkey = None
         for key in self.data.dask.keys():
-            if "array-original" in key:
+            # The if statement with both "array-original" and "original-array"
+            # is due to dask changing the name of this key. After dask-2022.1.1
+            # the key is "original-array", before it is "array-original"
+            if ("array-original" in key) or ("original-array" in key):
                 arrkey = key
                 break
         if arrkey:
