@@ -534,28 +534,38 @@ class DictionaryTreeBrowser:
                 par_dict.update({key:item})
         return par_dict
 
-    def _nested_get(self, item, wild=False, return_path=False):
-        """Search for an item key in a nested DictionaryTreeBrowser and yield a
-        list of values. If `wild` is `True`, looks for any key that contains
-        the string `item` (case insensitive)."""
+    def _nested_get_iter(self, item, wild=False):
+        """Recursive function to search for an item key in a nested
+        DictionaryTreeBrowser."""
         self.process_lazy_attributes()
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType) and not key_.startswith("_"):
                 key = item_['key']
                 if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
-                    for result in item_['_dtb_value_']._nested_get(item, wild, return_path):
-                        if return_path:
-                            yield key + '.' + result[0], result[1]
-                        else:
-                            yield result
+                    for result in item_['_dtb_value_']._nested_get_iter(item, wild):
+                        yield key + '.' + result[0], result[1]
                 else:
                     if key == item or (wild and (str(item).lower() in str(key).lower())):
-                        if return_path:
-                            yield key, item_['_dtb_value_']
-                        else:
-                            yield item_['_dtb_value_']
+                        yield key, item_['_dtb_value_']
 
-    def has_item(self, item_path, full_path=True, wild=False, return_path=False, default=None):
+    def _nested_get(self, item_path, wild=False, return_path=False):
+        """Search for an item key in a nested DictionaryTreeBrowser and yield a
+        list of values. If `wild` is `True`, looks for any key that contains
+        the string `item` (case insensitive). If part of a path is given,
+        search for matching items and then make sure that the full path is
+        contained."""
+        if '.' in item_path:
+            item = item_path.split('.').pop(-1)
+        else:
+            item = item_path
+        result = list(self._nested_get_iter(item, wild))
+        # remove item where item matches, but not additional elements of item_path
+        if return_path:
+            return [i for i in result if item_path in i[0]]
+        else:
+            return [i[1] for i in result if item_path in i[0]]
+
+    def has_item(self, item_path, default=None, full_path=True, wild=False, return_path=False):
         """Given a path, return True if it exists. May also perform a search
         whether an item exists and optionally returns the full path instead of
         boolean value.
@@ -581,7 +591,7 @@ class DictionaryTreeBrowser:
             a list of paths for multiple matches, or default value if it does
             not exist.
         default :
-            The value to return if the item does not exist (default is `None`).
+            The value to return for path if the item does not exist (default is `None`).
 
         Examples
         --------
@@ -619,9 +629,9 @@ class DictionaryTreeBrowser:
                 return False
         else:
             if not return_path:
-                return list(self._nested_get(item_path, wild=wild)) != []
+                return self._nested_get(item_path, wild=wild) != []
             else:
-                result = list(self._nested_get(item_path, wild=wild, return_path=True))
+                result = self._nested_get(item_path, wild=wild, return_path=True)
                 if len(result) == 0:
                     return default
                 elif len(result) == 1:
@@ -686,7 +696,7 @@ class DictionaryTreeBrowser:
             else:
                 return default
         else:
-            result = list(self._nested_get(item_path, wild=wild, return_path=return_path))
+            result = self._nested_get(item_path, wild=wild, return_path=return_path)
             if len(result) == 0:
                 return default
             elif len(result) == 1:
@@ -699,6 +709,7 @@ class DictionaryTreeBrowser:
                     return [i[1] for i in result], [i[0] for i in result]
                 else:
                     return result
+            
 
     def __contains__(self, item):
         return self.has_item(item_path=item)
