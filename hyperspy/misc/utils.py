@@ -578,7 +578,7 @@ class DictionaryTreeBrowser:
         full_path : boolean
             If `True` (default), the full path to the item has to be given. If
             `False`, a search for the item key is performed (can include
-            additional nodes preceding they key).
+            additional nodes preceding they key separated by full stops).
         wild : boolean
             Only applies if `full_path=False`. If `True`, searches for any items
             where `item` matches a substring of the item key (case insensitive).
@@ -639,8 +639,10 @@ class DictionaryTreeBrowser:
     def get_item(
         self, item_path, default=None, full_path=True, wild=False, return_path=False
     ):
-        """Given a path, return it's value if it exists, or default
-        value if missing.
+        """Given a path, return it's value if it exists, or default value if
+        missing. May also perform a search whether an item key exists and then
+        returns the value or a list of values for multiple occurences of the
+        key -- optionally returns the full path(s) in addition to its value(s).
 
         The nodes of the path are separated using periods.
 
@@ -652,7 +654,7 @@ class DictionaryTreeBrowser:
         full_path : boolean
             If `True` (default), the full path to the item has to be given. If
             `False`, a search for the item key is performed (can include
-            additional nodes preceding they key).
+            additional nodes preceding they key separated by full stops).
         wild : boolean
             Only applies if `full_path=False`. If `True`, searches for any items
             where `item` matches a substring of the item key (case insensitive).

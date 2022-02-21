@@ -28,7 +28,6 @@ from hyperspy.misc.utils import (
     str2num,
     swapelem,
     fsdict,
-    generate_axis,
     closest_power_of_two,
     shorten_name,
     is_binned,
@@ -113,10 +112,6 @@ def test_fsdict():
         == "It is pushing up the daisies"
     )
     assert parrot[""] == "I recognize a dead parrot when I see one"
-
-
-def test_generate_axis():
-    assert (generate_axis(3, 0.2, 20, index=5) == generate_axis(2, 0.2, 20)).all()
 
 
 def test_closest_power_of_two():
