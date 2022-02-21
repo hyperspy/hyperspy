@@ -40,41 +40,41 @@ _logger = logging.getLogger(__name__)
 
 
 def attrsetter(target, attrs, value):
-    """ Sets attribute of the target to specified value, supports nested
-        attributes. Only creates a new attribute if the object supports such
-        behaviour (e.g. DictionaryTreeBrowser does)
+    """Sets attribute of the target to specified value, supports nested
+    attributes. Only creates a new attribute if the object supports such
+    behaviour (e.g. DictionaryTreeBrowser does)
 
-        Parameters
-        ----------
-            target : object
-            attrs : string
-                attributes, separated by periods (e.g.
-                'metadata.Signal.Noise_parameters.variance' )
-            value : object
+    Parameters
+    ----------
+        target : object
+        attrs : string
+            attributes, separated by periods (e.g.
+            'metadata.Signal.Noise_parameters.variance' )
+        value : object
 
-        Example
-        -------
-        First create a signal and model pair:
+    Example
+    -------
+    First create a signal and model pair:
 
-        >>> s = hs.signals.Signal1D(np.arange(10))
-        >>> m = s.create_model()
-        >>> m.signal.data
-        array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    >>> s = hs.signals.Signal1D(np.arange(10))
+    >>> m = s.create_model()
+    >>> m.signal.data
+    array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
-        Now set the data of the model with attrsetter
-        >>> attrsetter(m, 'signal1D.data', np.arange(10)+2)
-        >>> self.signal.data
-        array([2, 3, 4, 5, 6, 7, 8, 9, 10, 10])
+    Now set the data of the model with attrsetter
+    >>> attrsetter(m, 'signal1D.data', np.arange(10)+2)
+    >>> self.signal.data
+    array([2, 3, 4, 5, 6, 7, 8, 9, 10, 10])
 
-        The behaviour is identical to
-        >>> self.signal.data = np.arange(10) + 2
+    The behaviour is identical to
+    >>> self.signal.data = np.arange(10) + 2
 
 
     """
-    where = attrs.rfind('.')
+    where = attrs.rfind(".")
     if where != -1:
         target = attrgetter(attrs[:where])(target)
-    setattr(target, attrs[where + 1:], value)
+    setattr(target, attrs[where + 1 :], value)
 
 
 @contextmanager
@@ -117,7 +117,7 @@ def str2num(string, **kargs):
     return np.loadtxt(stringIO, **kargs)
 
 
-def parse_quantity(quantity, opening='(', closing=')'):
+def parse_quantity(quantity, opening="(", closing=")"):
     """Parse quantity of the signal outputting quantity and units separately.
     It looks for the last matching opening and closing separator.
 
@@ -150,16 +150,14 @@ def parse_quantity(quantity, opening='(', closing=')'):
     if index + 1 == len(quantity):
         return quantity, ""
     else:
-        quantity_name = quantity[:-index-1].strip()
+        quantity_name = quantity[: -index - 1].strip()
         quantity_units = quantity[-index:-1].strip()
         return quantity_name, quantity_units
 
 
-_slugify_strip_re_data = ''.join(
-    c for c in map(
-        chr, np.delete(
-            np.arange(256), [
-                95, 32])) if not c.isalnum()).encode()
+_slugify_strip_re_data = "".join(
+    c for c in map(chr, np.delete(np.arange(256), [95, 32])) if not c.isalnum()
+).encode()
 
 
 def slugify(value, valid_variable_name=False):
@@ -177,11 +175,11 @@ def slugify(value, valid_variable_name=False):
         except BaseException:
             # Try latin1. If this does not work an exception is raised.
             value = str(value, "latin1")
-    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
+    value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore")
     value = value.translate(None, _slugify_strip_re_data).decode().strip()
-    value = value.replace(' ', '_')
+    value = value.replace(" ", "_")
     if valid_variable_name and not value.isidentifier():
-        value = 'Number_' + value
+        value = "Number_" + value
     return value
 
 
@@ -267,24 +265,21 @@ class DictionaryTreeBrowser:
             self._process_dictionary(dictionary, double_lines)
 
     def _process_dictionary(self, dictionary, double_lines):
-        """Process the provided dictionary to set the attributes
-        """
+        """Process the provided dictionary to set the attributes"""
         for key, value in dictionary.items():
-            if key == '_double_lines':
+            if key == "_double_lines":
                 value = double_lines
             self.__setattr__(key, value)
 
     def process_lazy_attributes(self):
-        """Run the DictionaryTreeBrowser machinery for the lazy attributes.
-        """
+        """Run the DictionaryTreeBrowser machinery for the lazy attributes."""
         if len(self._lazy_attributes) > 0:
             _logger.debug("Processing lazy attributes DictionaryBrowserTree")
             self._process_dictionary(self._lazy_attributes, self._double_lines)
         self._lazy_attributes = {}
 
     def add_dictionary(self, dictionary, double_lines=False):
-        """Add new items from dictionary.
-        """
+        """Add new items from dictionary."""
         if len(self._lazy_attributes) > 0:
             # To simplify merging lazy and non lazy attribute, we get self
             # as a dictionary and update the dictionary with the attributes
@@ -294,7 +289,7 @@ class DictionaryTreeBrowser:
         else:
             self._process_dictionary(dictionary, double_lines)
 
-    def export(self, filename, encoding='utf8'):
+    def export(self, filename, encoding="utf8"):
         """Export the dictionary to a text file
 
         Parameters
@@ -306,32 +301,31 @@ class DictionaryTreeBrowser:
 
         """
         self.process_lazy_attributes()
-        f = codecs.open(filename, 'w', encoding=encoding)
+        f = codecs.open(filename, "w", encoding=encoding)
         f.write(self._get_print_items(max_len=None))
         f.close()
 
-    def _get_print_items(self, padding='', max_len=78):
-        """Prints only the attributes that are not methods
-        """
+    def _get_print_items(self, padding="", max_len=78):
+        """Prints only the attributes that are not methods"""
         from hyperspy.defaults_parser import preferences
 
-        string = ''
+        string = ""
         eoi = len(self)
         j = 0
         if preferences.General.dtb_expand_structures and self._double_lines:
-            s_end = '╚══ '
-            s_middle = '╠══ '
-            pad_middle = '║   '
+            s_end = "╚══ "
+            s_middle = "╠══ "
+            pad_middle = "║   "
         else:
-            s_end = '└── '
-            s_middle = '├── '
-            pad_middle = '│   '
+            s_end = "└── "
+            s_middle = "├── "
+            pad_middle = "│   "
         for key_, value in iter(sorted(self.__dict__.items())):
             if key_.startswith("_"):
                 continue
             if not isinstance(key_, types.MethodType):
-                key = ensure_unicode(value['key'])
-                value = value['_dtb_value_']
+                key = ensure_unicode(value["key"])
+                value = value["_dtb_value_"]
                 if j == eoi - 1:
                     symbol = s_end
                 else:
@@ -340,65 +334,62 @@ class DictionaryTreeBrowser:
                     if isinstance(value, list) or isinstance(value, tuple):
                         iflong, strvalue = check_long_string(value, max_len)
                         if iflong:
-                            key += (" <list>"
-                                    if isinstance(value, list)
-                                    else " <tuple>")
+                            key += " <list>" if isinstance(value, list) else " <tuple>"
                             value = DictionaryTreeBrowser(
-                                {'[%d]' % i: v for i, v in enumerate(value)},
+                                {"[%d]" % i: v for i, v in enumerate(value)},
                                 double_lines=True,
-                                lazy=False)
+                                lazy=False,
+                            )
                         else:
-                            string += "%s%s%s = %s\n" % (
-                                padding, symbol, key, strvalue)
+                            string += "%s%s%s = %s\n" % (padding, symbol, key, strvalue)
                             j += 1
                             continue
 
                 if isinstance(value, DictionaryTreeBrowser):
-                    string += '%s%s%s\n' % (padding, symbol, key)
+                    string += "%s%s%s\n" % (padding, symbol, key)
                     if j == eoi - 1:
-                        extra_padding = '    '
+                        extra_padding = "    "
                     else:
                         extra_padding = pad_middle
-                    string += value._get_print_items(
-                        padding + extra_padding)
+                    string += value._get_print_items(padding + extra_padding)
                 else:
                     _, strvalue = check_long_string(value, max_len)
-                    string += "%s%s%s = %s\n" % (
-                        padding, symbol, key, strvalue)
+                    string += "%s%s%s = %s\n" % (padding, symbol, key, strvalue)
             j += 1
         return string
 
-    def _get_html_print_items(self, padding='', max_len=78, recursive_level=0):
+    def _get_html_print_items(self, padding="", max_len=78, recursive_level=0):
         """Recursive method that creates a html string for fancy display
         of metadata.
         """
         recursive_level += 1
         from hyperspy.defaults_parser import preferences
 
-        string = '' # Final return string
+        string = ""  # Final return string
 
         for key_, value in iter(sorted(self.__dict__.items())):
-            if key_.startswith("_"): # Skip any private attributes
+            if key_.startswith("_"):  # Skip any private attributes
                 continue
-            if not isinstance(key_, types.MethodType): # If it isn't a method, then continue
-                key = ensure_unicode(value['key'])
-                value = value['_dtb_value_']
+            if not isinstance(
+                key_, types.MethodType
+            ):  # If it isn't a method, then continue
+                key = ensure_unicode(value["key"])
+                value = value["_dtb_value_"]
 
                 # dtb_expand_structures is a setting that sets whether to fully expand long strings
                 if preferences.General.dtb_expand_structures:
                     if isinstance(value, list) or isinstance(value, tuple):
                         iflong, strvalue = check_long_string(value, max_len)
                         if iflong:
-                            key += (" <list>"
-                                    if isinstance(value, list)
-                                    else " <tuple>")
+                            key += " <list>" if isinstance(value, list) else " <tuple>"
                             value = DictionaryTreeBrowser(
-                                {'[%d]' % i: v for i, v in enumerate(value)},
+                                {"[%d]" % i: v for i, v in enumerate(value)},
                                 double_lines=True,
-                                lazy=False)
+                                lazy=False,
+                            )
                         else:
                             string += add_key_value(key, strvalue)
-                            continue # skips the next if-else
+                            continue  # skips the next if-else
 
                 # If DTB, then add a details html tag
                 if isinstance(value, DictionaryTreeBrowser):
@@ -408,9 +399,14 @@ class DictionaryTreeBrowser:
                     <li style="display: inline;">
                     {}
                     </li></summary>
-                    """.format("open" if recursive_level < 2 else "closed", replace_html_symbols(key))
-                    string += value._get_html_print_items(recursive_level=recursive_level)
-                    string += '</details></ul>'
+                    """.format(
+                        "open" if recursive_level < 2 else "closed",
+                        replace_html_symbols(key),
+                    )
+                    string += value._get_html_print_items(
+                        recursive_level=recursive_level
+                    )
+                    string += "</details></ul>"
 
                 # Otherwise just add value
                 else:
@@ -449,7 +445,7 @@ class DictionaryTreeBrowser:
         if name in keys or f"_sig_{name}" in keys:
             # It is a lazy attribute, we need to process the lazy attribute
             self.process_lazy_attributes()
-            return self.__dict__[name]['_dtb_value_']
+            return self.__dict__[name]["_dtb_value_"]
         else:
             raise AttributeError(name)
 
@@ -459,38 +455,40 @@ class DictionaryTreeBrowser:
         name = slugify(name, valid_variable_name=True)
         item = super().__getattribute__(name)
 
-        if isinstance(item, dict) and '_dtb_value_' in item and "key" in item:
-            return item['_dtb_value_']
+        if isinstance(item, dict) and "_dtb_value_" in item and "key" in item:
+            return item["_dtb_value_"]
         else:
             return item
 
     def __setattr__(self, key, value):
-        if key in ['_double_lines', '_lazy_attributes']:
+        if key in ["_double_lines", "_lazy_attributes"]:
             super().__setattr__(key, value)
             return
-        if key == 'binned':
-            warnings.warn('Use of the `binned` attribute in metadata is '
-                          'going to be deprecated in v2.0. Set the '
-                          '`axis.is_binned` attribute instead. ',
-                          VisibleDeprecationWarning)
+        if key == "binned":
+            warnings.warn(
+                "Use of the `binned` attribute in metadata is "
+                "going to be deprecated in v2.0. Set the "
+                "`axis.is_binned` attribute instead. ",
+                VisibleDeprecationWarning,
+            )
 
-        if key.startswith('_sig_'):
+        if key.startswith("_sig_"):
             key = key[5:]
             from hyperspy.signal import BaseSignal
+
             value = BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
             if slugified_key in self.__dict__.keys():
-                self.__dict__[slugified_key]['_dtb_value_'].add_dictionary(
-                    value,
-                    double_lines=self._double_lines)
+                self.__dict__[slugified_key]["_dtb_value_"].add_dictionary(
+                    value, double_lines=self._double_lines
+                )
                 return
             else:
                 value = DictionaryTreeBrowser(
-                    value,
-                    double_lines=self._double_lines,
-                    lazy=False)
-        super().__setattr__(slugified_key, {'key': key, '_dtb_value_': value})
+                    value, double_lines=self._double_lines, lazy=False
+                )
+        super().__setattr__(slugified_key, {"key": key, "_dtb_value_": value})
 
     def __len__(self):
         if len(self._lazy_attributes) > 0:
@@ -500,16 +498,11 @@ class DictionaryTreeBrowser:
         return len([key for key in d.keys() if not key.startswith("_")])
 
     def keys(self):
-        """Returns a list of non-private keys.
-
-        """
-        return sorted([key for key in self.__dict__.keys()
-                       if not key.startswith("_")])
+        """Returns a list of non-private keys."""
+        return sorted([key for key in self.__dict__.keys() if not key.startswith("_")])
 
     def as_dictionary(self):
-        """Returns its dictionary representation.
-
-        """
+        """Returns its dictionary representation."""
 
         if len(self._lazy_attributes) > 0:
             return copy.deepcopy(self._lazy_attributes)
@@ -517,21 +510,22 @@ class DictionaryTreeBrowser:
         par_dict = {}
 
         from hyperspy.signal import BaseSignal
+
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
                 if key_ in ["_db_index", "_double_lines", "_lazy_attributes"]:
                     continue
-                key = item_['key']
-                if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
-                    item = item_['_dtb_value_'].as_dictionary()
-                elif isinstance(item_['_dtb_value_'], BaseSignal):
-                    item = item_['_dtb_value_']._to_dictionary()
-                    key = '_sig_' + key
-                elif hasattr(item_['_dtb_value_'], '_to_dictionary'):
-                    item = item_['_dtb_value_']._to_dictionary()
+                key = item_["key"]
+                if isinstance(item_["_dtb_value_"], DictionaryTreeBrowser):
+                    item = item_["_dtb_value_"].as_dictionary()
+                elif isinstance(item_["_dtb_value_"], BaseSignal):
+                    item = item_["_dtb_value_"]._to_dictionary()
+                    key = "_sig_" + key
+                elif hasattr(item_["_dtb_value_"], "_to_dictionary"):
+                    item = item_["_dtb_value_"]._to_dictionary()
                 else:
-                    item = item_['_dtb_value_']
-                par_dict.update({key:item})
+                    item = item_["_dtb_value_"]
+                par_dict.update({key: item})
         return par_dict
 
     def _nested_get_iter(self, item, wild=False):
@@ -540,13 +534,15 @@ class DictionaryTreeBrowser:
         self.process_lazy_attributes()
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType) and not key_.startswith("_"):
-                key = item_['key']
-                if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
-                    for result in item_['_dtb_value_']._nested_get_iter(item, wild):
-                        yield key + '.' + result[0], result[1]
+                key = item_["key"]
+                if isinstance(item_["_dtb_value_"], DictionaryTreeBrowser):
+                    for result in item_["_dtb_value_"]._nested_get_iter(item, wild):
+                        yield key + "." + result[0], result[1]
                 else:
-                    if key == item or (wild and (str(item).lower() in str(key).lower())):
-                        yield key, item_['_dtb_value_']
+                    if key == item or (
+                        wild and (str(item).lower() in str(key).lower())
+                    ):
+                        yield key, item_["_dtb_value_"]
 
     def _nested_get(self, item_path, wild=False, return_path=False):
         """Search for an item key in a nested DictionaryTreeBrowser and yield a
@@ -554,8 +550,8 @@ class DictionaryTreeBrowser:
         the string `item` (case insensitive). If part of a path is given,
         search for matching items and then make sure that the full path is
         contained."""
-        if '.' in item_path:
-            item = item_path.split('.').pop(-1)
+        if "." in item_path:
+            item = item_path.split(".").pop(-1)
         else:
             item = item_path
         result = list(self._nested_get_iter(item, wild))
@@ -565,7 +561,9 @@ class DictionaryTreeBrowser:
         else:
             return [i[1] for i in result if item_path in i[0]]
 
-    def has_item(self, item_path, default=None, full_path=True, wild=False, return_path=False):
+    def has_item(
+        self, item_path, default=None, full_path=True, wild=False, return_path=False
+    ):
         """Given a path, return True if it exists. May also perform a search
         whether an item exists and optionally returns the full path instead of
         boolean value.
@@ -612,7 +610,7 @@ class DictionaryTreeBrowser:
         """
         if full_path:
             if isinstance(item_path, str):
-                item_path = item_path.split('.')
+                item_path = item_path.split(".")
             else:
                 item_path = copy.copy(item_path)
             attrib = item_path.pop(0)
@@ -638,7 +636,9 @@ class DictionaryTreeBrowser:
                     return result[0][0]
                 return [i[0] for i in result]
 
-    def get_item(self, item_path, default=None, full_path=True, wild=False, return_path=False):
+    def get_item(
+        self, item_path, default=None, full_path=True, wild=False, return_path=False
+    ):
         """Given a path, return it's value if it exists, or default
         value if missing.
 
@@ -680,7 +680,7 @@ class DictionaryTreeBrowser:
         """
         if full_path:
             if isinstance(item_path, str):
-                item_path = item_path.split('.')
+                item_path = item_path.split(".")
             else:
                 item_path = copy.copy(item_path)
             attrib = item_path.pop(0)
@@ -709,7 +709,6 @@ class DictionaryTreeBrowser:
                     return [i[1] for i in result], [i[0] for i in result]
                 else:
                     return result
-            
 
     def __contains__(self, item):
         return self.has_item(item_path=item)
@@ -744,10 +743,9 @@ class DictionaryTreeBrowser:
         if not self.has_item(item_path):
             self.add_node(item_path)
         if isinstance(item_path, str):
-            item_path = item_path.split('.')
+            item_path = item_path.split(".")
         if len(item_path) > 1:
-            self.__getattribute__(item_path.pop(0)).set_item(
-                item_path, value)
+            self.__getattribute__(item_path.pop(0)).set_item(item_path, value)
         else:
             self.__setattr__(item_path.pop(), value)
 
@@ -770,7 +768,7 @@ class DictionaryTreeBrowser:
             └── Second = 3
 
         """
-        keys = node_path.split('.')
+        keys = node_path.split(".")
         dtb = self
         for key in keys:
             if dtb.has_item(key) is False:
@@ -791,7 +789,7 @@ class DictionaryTreeBrowser:
         """
         if len(self) == 0:
             raise StopIteration
-        if not hasattr(self, '_db_index'):
+        if not hasattr(self, "_db_index"):
             self._db_index = 0
         elif self._db_index >= len(self) - 1:
             del self._db_index
@@ -809,7 +807,7 @@ class DictionaryTreeBrowser:
 def strlist2enumeration(lst):
     lst = tuple(lst)
     if not lst:
-        return ''
+        return ""
     elif len(lst) == 1:
         return lst[0]
     elif len(lst) == 2:
@@ -818,7 +816,7 @@ def strlist2enumeration(lst):
         return "%s, " * (len(lst) - 2) % lst[:-2] + "%s and %s" % lst[-2:]
 
 
-def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
+def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
     if not isinstance(stuff, (bytes, np.string_)):
         return stuff
     else:
@@ -826,8 +824,9 @@ def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
     try:
         string = string.decode(encoding)
     except BaseException:
-        string = string.decode(encoding2, errors='ignore')
+        string = string.decode(encoding2, errors="ignore")
     return string
+
 
 def check_long_string(value, max_len):
     "Checks whether string is too long for printing in html metadata"
@@ -838,10 +837,10 @@ def check_long_string(value, max_len):
     _long = False
     if max_len is not None and len(strvalue) > 2 * max_len:
         right_limit = min(max_len, len(strvalue) - max_len)
-        strvalue = '%s ... %s' % (
-            strvalue[:max_len], strvalue[-right_limit:])
+        strvalue = "%s ... %s" % (strvalue[:max_len], strvalue[-right_limit:])
         _long = True
     return _long, strvalue
+
 
 def replace_html_symbols(str_value):
     "Escapes any &, < and > tags that would become invisible when printing html"
@@ -850,12 +849,15 @@ def replace_html_symbols(str_value):
     str_value = str_value.replace(">", "&gt;")
     return str_value
 
+
 def add_key_value(key, value):
     "Returns the metadata value as a html string"
     return """
     <ul style="margin: 0px; list-style-position: outside;">
     <li style='margin-left:1em; padding-left: 0.5em'>{} = {}</li></ul>
-    """.format(replace_html_symbols(key), replace_html_symbols(value))
+    """.format(
+        replace_html_symbols(key), replace_html_symbols(value)
+    )
 
 
 def swapelem(obj, i, j):
@@ -936,8 +938,13 @@ def find_subclasses(mod, cls):
     dictonary in which key, item = subclass name, subclass
 
     """
-    return dict([(name, obj) for name, obj in inspect.getmembers(mod)
-                 if inspect.isclass(obj) and issubclass(obj, cls)])
+    return dict(
+        [
+            (name, obj)
+            for name, obj in inspect.getmembers(mod)
+            if inspect.isclass(obj) and issubclass(obj, cls)
+        ]
+    )
 
 
 def isiterable(obj):
@@ -1000,9 +1007,7 @@ def ordinal(value):
 
 
 def underline(line, character="-"):
-    """Return the line underlined.
-
-    """
+    """Return the line underlined."""
 
     return line + "\n" + character * len(line)
 
@@ -1015,8 +1020,15 @@ def closest_power_of_two(n):
     return int(2 ** np.ceil(np.log2(n)))
 
 
-def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
-          stack_metadata=True, show_progressbar=None, **kwargs):
+def stack(
+    signal_list,
+    axis=None,
+    new_axis_name="stack_element",
+    lazy=None,
+    stack_metadata=True,
+    show_progressbar=None,
+    **kwargs,
+):
     """Concatenate the signals in the list over a given axis or a new axis.
 
     The title is set to that of the first signal in the list.
@@ -1093,7 +1105,6 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         else:
             raise ValueError(f"Objects of type {type(_s)} cannot be stacked")
 
-
     if lazy is None:
         lazy = any(_s._lazy for _s in signal_list)
 
@@ -1116,29 +1127,45 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
             if type(axis) is DataAxis:
                 for _s in signal_list[1:]:
                     _axis = _s.axes_manager[axis_input]
-                    if (axis.axis[0] < axis.axis[-1] and axis.axis[-1] < _axis.axis[0]) \
-                       or (axis.axis[-1] < axis.axis[0] and _axis.axis[-1] < axis.axis[0]):
+                    if (
+                        axis.axis[0] < axis.axis[-1] and axis.axis[-1] < _axis.axis[0]
+                    ) or (
+                        axis.axis[-1] < axis.axis[0] and _axis.axis[-1] < axis.axis[0]
+                    ):
                         axis.axis = np.concatenate((axis.axis, _axis.axis))
                     else:
-                        raise ValueError("Signals can only be stacked along a "
+                        raise ValueError(
+                            "Signals can only be stacked along a "
                             "non-uniform axes if the axis values do not overlap"
-                            " and have the correct order.")
+                            " and have the correct order."
+                        )
             # stack axes if FunctionalDataAxis and its x axis is uniform
-            elif type(axis) is FunctionalDataAxis and \
-               type(axis.axes_manager[axis_input].x) is UniformDataAxis:
-                   axis.x.size = np.sum(step_sizes)
+            elif (
+                type(axis) is FunctionalDataAxis
+                and type(axis.axes_manager[axis_input].x) is UniformDataAxis
+            ):
+                axis.x.size = np.sum(step_sizes)
             # stack axes if FunctionalDataAxis and its x axis is not uniform
-            elif type(axis) is FunctionalDataAxis and \
-               type(axis.axes_manager[axis_input].x) is DataAxis:
+            elif (
+                type(axis) is FunctionalDataAxis
+                and type(axis.axes_manager[axis_input].x) is DataAxis
+            ):
                 for _s in signal_list[1:]:
                     _axis = _s.axes_manager[axis_input]
-                    if (axis.x.axis[0] < axis.x.axis[-1] and axis.x.axis[-1] < _axis.x.axis[0]) \
-                       or (axis.x.axis[-1] < axis.x.axis[0] and _axis.x.axis[-1] < axis.x.axis[0]):
+                    if (
+                        axis.x.axis[0] < axis.x.axis[-1]
+                        and axis.x.axis[-1] < _axis.x.axis[0]
+                    ) or (
+                        axis.x.axis[-1] < axis.x.axis[0]
+                        and _axis.x.axis[-1] < axis.x.axis[0]
+                    ):
                         axis.x.axis = np.concatenate((axis.x.axis, _axis.x.axis))
                     else:
-                        raise ValueError("Signals can only be stacked along a "
+                        raise ValueError(
+                            "Signals can only be stacked along a "
                             "non-uniform axes if the axis values do not overlap"
-                            " and have the correct order.")
+                            " and have the correct order."
+                        )
 
         datalist = [s.data for s in broadcasted_sigs]
         newdata = (
@@ -1149,7 +1176,9 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
         if axis_input is None:
             signal = first.__class__(newdata)
-            signal.axes_manager._axes[1:] = copy.deepcopy(broadcasted_sigs[0].axes_manager._axes)
+            signal.axes_manager._axes[1:] = copy.deepcopy(
+                broadcasted_sigs[0].axes_manager._axes
+            )
             axis_name = new_axis_name
             axis_names = [axis_.name for axis_ in signal.axes_manager._axes[1:]]
             j = 1
@@ -1173,10 +1202,10 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
         # Stack metadata
         if isinstance(stack_metadata, bool):
             if stack_metadata:
-                signal.original_metadata.add_node('stack_elements')
+                signal.original_metadata.add_node("stack_elements")
                 for i, obj in enumerate(signal_list):
-                    signal.original_metadata.stack_elements.add_node(f'element{i}')
-                    node = signal.original_metadata.stack_elements[f'element{i}']
+                    signal.original_metadata.stack_elements.add_node(f"element{i}")
+                    node = signal.original_metadata.stack_elements[f"element{i}"]
                     node.original_metadata = obj.original_metadata.deepcopy()
                     node.metadata = obj.metadata.deepcopy()
             else:
@@ -1186,7 +1215,7 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
             signal.metadata = obj.metadata.deepcopy()
             signal.original_metadata = obj.original_metadata.deepcopy()
         else:
-            raise ValueError('`stack_metadata` must a boolean or an integer.')
+            raise ValueError("`stack_metadata` must a boolean or an integer.")
 
         if axis_input is None:
             axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
@@ -1213,12 +1242,13 @@ def stack(signal_list, axis=None, new_axis_name="stack_element", lazy=None,
 
     return signal
 
+
 stack.__doc__ %= (STACK_METADATA_ARG, SHOW_PROGRESSBAR_ARG)
 
 
 def shorten_name(name, req_l):
     if len(name) > req_l:
-        return name[:req_l - 2] + '..'
+        return name[: req_l - 2] + ".."
     else:
         return name
 
@@ -1244,21 +1274,27 @@ def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
     >>> hs.transpose(signal1, signal2, signal3, signal_axes=["Energy"])
     """
     from hyperspy.signal import BaseSignal
+
     if not all(map(isinstance, args, (BaseSignal for _ in args))):
         raise ValueError("Not all pased objects are signals")
-    return [sig.transpose(signal_axes=signal_axes,
-                          navigation_axes=navigation_axes,
-                          optimize=optimize) for sig in args]
+    return [
+        sig.transpose(
+            signal_axes=signal_axes, navigation_axes=navigation_axes, optimize=optimize
+        )
+        for sig in args
+    ]
 
 
-def process_function_blockwise(data,
-                               *args,
-                               function,
-                               nav_indexes=None,
-                               output_signal_size=None,
-                               block_info=None,
-                               arg_keys=None,
-                               **kwargs):
+def process_function_blockwise(
+    data,
+    *args,
+    function,
+    nav_indexes=None,
+    output_signal_size=None,
+    block_info=None,
+    arg_keys=None,
+    **kwargs,
+):
     """
     Convenience function for processing a function blockwise. By design, its
     output is used as an argument of the dask ``map_blocks`` so that the
@@ -1319,10 +1355,7 @@ def process_function_blockwise(data,
     return output_array
 
 
-def guess_output_signal_size(test_data,
-                             function,
-                             ragged,
-                             **kwargs):
+def guess_output_signal_size(test_data, function, ragged, **kwargs):
     """This function is for guessing the output signal shape and size.
     It will attempt to apply the function to some test data and then output
     the resulting signal shape and datatype.
@@ -1384,15 +1417,12 @@ def add_scalar_axis(signal, lazy=None):
     am = signal.axes_manager
     from hyperspy.signal import BaseSignal
     from hyperspy._signals.lazy import LazySignal
+
     if lazy is None:
         lazy = signal._lazy
     signal.__class__ = LazySignal if lazy else BaseSignal
     am.remove(am._axes)
-    am._append_axis(size=1,
-                    scale=1,
-                    offset=0,
-                    name="Scalar",
-                    navigate=False)
+    am._append_axis(size=1, scale=1, offset=0, name="Scalar", navigate=False)
 
 
 def get_object_package_info(obj):
@@ -1409,14 +1439,14 @@ def get_object_package_info(obj):
     dic["package"] = obj.__module__.split(".")[0]
     if dic["package"] != "__main__":
         try:
-            dic["package_version"] = importlib.import_module(
-                dic["package"]).__version__
+            dic["package_version"] = importlib.import_module(dic["package"]).__version__
         except AttributeError:
             dic["package_version"] = ""
             _logger.warning(
-                "The package {package} does not set its version in " +
-                "{package}.__version__. Please report this issue to the " +
-                "{package} developers.".format(package=dic["package"]))
+                "The package {package} does not set its version in "
+                + "{package}.__version__. Please report this issue to the "
+                + "{package} developers.".format(package=dic["package"])
+            )
     else:
         dic["package_version"] = ""
     return dic
@@ -1424,12 +1454,14 @@ def get_object_package_info(obj):
 
 def print_html(f_text, f_html):
     """Print html version when in Jupyter Notebook"""
+
     class PrettyText:
         def __repr__(self):
             return f_text()
 
         def _repr_html_(self):
             return f_html()
+
     return PrettyText()
 
 
@@ -1449,15 +1481,18 @@ def is_hyperspy_signal(input_object):
 
     """
     from hyperspy.signals import BaseSignal
-    return isinstance(input_object,BaseSignal)
+
+    return isinstance(input_object, BaseSignal)
 
 
 def nested_dictionary_merge(dict1, dict2):
-    """ Merge dict2 into dict1 recursively
-    """
+    """Merge dict2 into dict1 recursively"""
     for key, value in dict2.items():
-        if (key in dict1 and isinstance(dict1[key], dict)
-            and isinstance(dict2[key], Mapping)):
+        if (
+            key in dict1
+            and isinstance(dict1[key], dict)
+            and isinstance(dict2[key], Mapping)
+        ):
             nested_dictionary_merge(dict1[key], dict2[key])
         else:
             dict1[key] = dict2[key]
@@ -1468,7 +1503,7 @@ def is_binned(signal, axis=-1):
 
     Can be removed in v2.0.
     """
-    if signal.metadata.has_item('Signal.binned'):
+    if signal.metadata.has_item("Signal.binned"):
         return signal.metadata.Signal.binned
     else:
         return signal.axes_manager[axis].is_binned
