@@ -562,7 +562,7 @@ Output metadata
 ---------------
 
 :py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item`
-    Given a ``path`` to an item key, return the ``value`` of the metadata item.
+    Given an ``item_path``, return the ``value`` of the metadata item.
 
 :py:meth:`~.misc.utils.DictionaryTreeBrowser.as_dictionary`
     Returns a dictionary representation of the metadata tree.
@@ -575,18 +575,28 @@ Output metadata
 Searching for keys
 ------------------
 
-The following functions can find items by their key in the metadata when the
-exact path is not known. By default, only an exact match of the search string
-with the item key counts. The setting ``wild=True`` allows to search for a
-case-insensitive substring of the item key.
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
+    Given an ``item_path``, returns ``True`` if the item exists anywhere
+    in the metadata tree.
 
-:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_nested_item`
-    Given a ``string``, returns ``True`` if the item exists anywhere in the
-    metadata tree.
+Using the option ``full_path=False``, the functions
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item` and
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item` can also find items by
+their key in the metadata when the exact path is not known. By default, only
+an exact match of the search string with the item key counts. The additional 
+setting ``wild=True`` allows to search for a case-insensitive substring of the
+item key. The search functionality also accepts item keys preceded by one or
+several nodes of the path (separated by the usual full stop).
 
-:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_nested_path`
-    Returns the path or list of paths to any matching item(s).
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
+    For ``full_path=False``, given a ``item_key``, returns ``True`` if the item
+    exists anywhere in the metadata tree.
 
-:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_nested_item`
-    Returns the value or list of values for any matching item(s). Setting
-    ``return_path=True``, a tuple (value, path) is returned.
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
+    For ``full_path=False, return_path=True``, returns the path or list of
+    paths to any matching item(s).
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item`
+    For ``full_path=False``, returns the value or list of values for any
+    matching item(s). Setting ``return_path=True``, a tuple (value, path) is
+    returned -- or lists of tuples for multiple occurences.
