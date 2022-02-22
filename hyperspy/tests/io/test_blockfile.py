@@ -430,7 +430,10 @@ def test_load_readonly():
     s = hs.load(FILE2, lazy=True)
     k = next(
         filter(
-            lambda x: isinstance(x, str) and x.startswith("array-original"),
+            # The or statement with both "array-original" and "original-array"
+            # is due to dask changing the name of this key. After dask-2022.1.1
+            # the key is "original-array", before it is "array-original"
+            lambda x: isinstance(x, str) and (x.startswith("original-array") or x.startswith("array-original")),
             s.data.dask.keys(),
         )
     )

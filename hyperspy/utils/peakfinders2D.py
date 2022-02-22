@@ -142,9 +142,9 @@ def find_peaks_minmax(z, distance=5., threshold=10.):
         Peak pixel coordinates.
 
     """
-    data_max = ndi.filters.maximum_filter(z, distance)
+    data_max = ndi.maximum_filter(z, distance)
     maxima = (z == data_max)
-    data_min = ndi.filters.minimum_filter(z, distance)
+    data_min = ndi.minimum_filter(z, distance)
     diff = ((data_max - data_min) > threshold)
     maxima[diff == 0] = 0
     labeled, num_objects = ndi.label(maxima)
@@ -361,7 +361,7 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
         """Calculates rolling method 'func' over a circular kernel."""
         x, y = np.ogrid[-radius : radius + 1, -radius : radius + 1]
         kernel = np.hypot(x, y) < radius
-        stat = ndi.filters.generic_filter(image, func, footprint=kernel)
+        stat = ndi.generic_filter(image, func, footprint=kernel)
         return stat
 
     def local_mean(image, radius):
@@ -375,7 +375,7 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
     def single_pixel_desensitize(image):
         """Reduces single-pixel anomalies by nearest-neighbor smoothing."""
         kernel = np.array([[0.5, 1, 0.5], [1, 1, 1], [0.5, 1, 0.5]])
-        smoothed_image = ndi.filters.generic_filter(image, _fast_mean, footprint=kernel)
+        smoothed_image = ndi.generic_filter(image, _fast_mean, footprint=kernel)
         return smoothed_image
 
     def stat_binarise(image):
@@ -390,8 +390,8 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
 
     def smooth(image):
         """Image convolved twice using a uniform 3x3 kernel."""
-        image = ndi.filters.uniform_filter(image, size=3)
-        image = ndi.filters.uniform_filter(image, size=3)
+        image = ndi.uniform_filter(image, size=3)
+        image = ndi.uniform_filter(image, size=3)
         return image
 
     def half_binarise(image):

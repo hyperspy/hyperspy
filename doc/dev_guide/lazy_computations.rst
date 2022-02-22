@@ -38,7 +38,7 @@ code (assignment, etc.) you wish.
 
 The ``map`` function is flexible and should be able to handle most operations that
 operate on some signal. If you add a ``BaseSignal`` with the same navigation size
-as the signal it will be iterated alongside the mapped signal otherwise a keyword
+as the signal, it will be iterated alongside the mapped signal, otherwise a keyword
 argument is assumed to be constant and is applied to every signal.
 
 If the new method cannot be coerced into a shape suitable for ``map``, separate
