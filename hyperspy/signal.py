@@ -34,7 +34,7 @@ from pint import UndefinedUnitError
 from scipy import integrate
 from scipy import signal as sp_signal
 import traits.api as t
-from toolz.itertoolz import concat
+from tlz import concat
 
 import hyperspy
 from hyperspy.axes import AxesManager
