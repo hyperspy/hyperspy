@@ -856,7 +856,7 @@ class TestFullProcessing:
     def setup_method(self):
         data_array = np.zeros((30, 40, 50, 60), dtype=np.uint16)
         shift_array = np.random.randint(20, 40, size=(30, 40, 2))
-        intensity_array= np.random.randint(1, 2000, size=(30, 40))
+        intensity_array = np.random.randint(1, 2000, size=(30, 40))
         crop_array = np.zeros((30, 40, 2, 2), dtype=np.int16)
         crop_array[:, :, 0] = 5, -5
         crop_array[:, :, 1] = 8, -8
@@ -891,7 +891,6 @@ class TestFullProcessing:
         s_crop, s_shift, s_intensity = self.s_crop, self.s_shift, self.s_intensity
         s.data = da.from_array(s.data, chunks=(5, 10, 20, 20))
         s = s.as_lazy()
-        print(s.data.chunks)
         s_out = s.map(
             function=shift_intensity_function,
             shift=s_shift,
