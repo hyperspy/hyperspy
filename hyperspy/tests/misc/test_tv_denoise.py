@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import pytest
@@ -29,7 +29,7 @@ def test_tv_denoise_error():
 
 def test_2d_tv_denoise():
     rng = np.random.RandomState(123)
-    data = ascent().astype(np.float)
+    data = ascent().astype(float)
     data_noisy = data + data.std() * rng.randn(*data.shape)
     data_clean = tv_denoise(data, weight=60)
 
@@ -44,7 +44,7 @@ def test_3d_tv_denoise():
     rng = np.random.RandomState(123)
     x, y, z = np.ogrid[0:40, 0:40, 0:40]
     data = (x - 22) ** 2 + (y - 20) ** 2 + (z - 17) ** 2 < 8 ** 2
-    data = 255 * data.astype(np.float)
+    data = 255 * data.astype(float)
     data_noisy = data + data.std() * rng.randn(*data.shape)
     data_clean = tv_denoise(data_noisy, weight=100)
 

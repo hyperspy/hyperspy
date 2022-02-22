@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 """Common docstring snippets for signal1d.
 
@@ -48,7 +48,10 @@ SPIKES_DIAGNOSIS_DOCSTRING = \
         """
 
 SPIKES_REMOVAL_TOOL_DOCSTRING =\
-        """Graphical interface to remove spikes from EELS spectra.
+        """Graphical interface to remove spikes from EELS spectra or 
+        luminescence data. 
+        If non-interactive, it removes all spikes and returns a
+        `~hyperspy.signals._signal_tools.SpikesRemoval` object.
 
         Parameters
         ----------
@@ -62,13 +65,16 @@ SPIKES_REMOVAL_TOOL_DOCSTRING =\
             method.
         %s
         interactive : bool
-            If True, remove the spikes using the graphical user interface. If False,
-            remove the spikes automatically, which could introduce artefacts if used
-            with signal containing peak-like features. However, this could be
-            mitigated by it in combination with the `signal_mask` argument to mask the
-            signal of interest.
+            If True, remove the spikes using the graphical user interface. 
+            If False, remove all the spikes automatically, which can
+            introduce artefacts if used with signal containing peak-like 
+            features. However, this can be mitigated by using the 
+            `signal_mask` argument to mask the signal of interest.
         %s
         %s
+        **kwargs : dict
+            Keyword arguments pass to
+                :py:meth:`~hyperspy.signals._signal_tools.SpikesRemoval`
 
         See also
         --------

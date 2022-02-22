@@ -43,7 +43,7 @@ github: `conda-forge/hyperspy-feedstock <https://github.com/conda-forge/hyperspy
 Monitoring version distribution
 -------------------------------
 
-Download metrics are available from pypi and Anaconda cloud but the reliability
+Download metrics are available from pypi and Anaconda cloud, but the reliability
 of these numbers is poor for the following reason:
 
 * hyperspy is distributed by other means: the
@@ -51,11 +51,20 @@ of these numbers is poor for the following reason:
   various linux distribution (Arch-Linux, openSUSE)
 * these packages may be used by continuous integration of other python libraries
 
-However, distribution of download version can be useful to identify
-issues, such as version pinning or library incompatibilities. Various service
+However, distribution of downloaded versions can be useful to identify
+issues, such as version pinning or library incompatibilities. Various services
 processing the `pypi data <https://packaging.python.org/guides/analyzing-pypi-package-downloads/>`_
 are available online:
 
 * `pepy.tech <https://pepy.tech/project/hyperspy>`_
 * `libraries.io <https://libraries.io/pypi/hyperspy/usage>`_
 * `pypistats.org <https://pypistats.org/packages/hyperspy>`_
+
+HTML Representations
+--------------------
+
+For use inside of jupyter notebooks, html representations are functions which allow for
+more detailed data represenations using snippets of pupulated HTML.
+
+Hyperspy uses jinja and extends dasks html represnetaions in many cases in
+line with this PR. https://github.com/dask/dask/pull/8019

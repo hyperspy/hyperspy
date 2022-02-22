@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import json
@@ -71,6 +71,11 @@ class TestImageObject():
     def test_parse_string(self):
         assert self.imageobject._parse_string("") is None
         assert self.imageobject._parse_string("string") == "string"
+
+    def test_parse_string_convert_float(self):
+        assert self.imageobject._parse_string("5", False) == '5'
+        assert self.imageobject._parse_string("5", True) == 5
+        assert self.imageobject._parse_string("Imaging", True) == None
 
 
 def test_missing_tag():
@@ -380,8 +385,7 @@ def test_multi_signal():
                     'date': '2019-12-10',
                     'time': '15:32:41',
                     'authors': 'JohnDoe'},
-        'Signal': {'binned': False,
-                   'signal_type': '',
+        'Signal': {'signal_type': '',
                    'quantity': 'Intensity',
                    'Noise_properties': {
                        'Variance_linear_model': {
@@ -416,7 +420,6 @@ def test_multi_signal():
             'title': 'Plot',
             'original_filename': 'multi_signal.dm3'},
         'Signal': {
-            'binned': False,
             'signal_type': '',
             'quantity': 'Intensity',
             'Noise_properties': {
@@ -432,6 +435,10 @@ def test_multi_signal():
     # rather than testing all of original metadata (huge), use length as a proxy
     assert len(json.dumps(s1.original_metadata.as_dictionary())) == 17779
     assert len(json.dumps(s2.original_metadata.as_dictionary())) == 15024
+    
+    # test axes
+    assert s1.axes_manager[-1].is_binned == False
+    assert s2.axes_manager[-1].is_binned == False
 
     # simple tests on the data itself:
     assert s1.data.sum() == 949490255
@@ -607,3 +614,9 @@ class TestAnnotationsToMarkers:
         assert marker_rect.get_data_position('x2')/scale == 14.
         assert marker_rect.get_data_position('y2')/scale == 10.
         assert marker_rect_text.get_data_position('text') == 'Spatial Drift'
+
+
+def test_axes_bug_for_image():
+    fname = os.path.join(MY_PATH, "dm3_2D_data", "test_STEM_image.dm3")
+    s = load(fname)
+    assert s.axes_manager[1].name == 'y'

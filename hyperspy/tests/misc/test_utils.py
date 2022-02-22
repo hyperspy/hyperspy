@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import pytest
 
 from hyperspy import signals
 from hyperspy.misc.utils import (
@@ -24,7 +25,9 @@ from hyperspy.misc.utils import (
     parse_quantity,
     slugify,
     strlist2enumeration,
+    is_binned,
 )
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 def test_slugify():
@@ -65,3 +68,12 @@ def test_strlist2enumeration():
     assert strlist2enumeration(["a"]) == "a"
     assert strlist2enumeration(["a", "b"]) == "a and b"
     assert strlist2enumeration(["a", "b", "c"]) == "a, b and c"
+
+# Can be removed in v2.0:
+def test_is_binned():
+    s = signals.Signal1D(np.zeros((5, 5)))
+    assert is_binned(s) == s.axes_manager[-1].is_binned
+    with pytest.warns(VisibleDeprecationWarning, match="Use of the `binned`"):
+        s.metadata.set_item('Signal.binned', True)
+    assert is_binned(s) == s.metadata.Signal.binned
+    

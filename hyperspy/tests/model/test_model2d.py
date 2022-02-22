@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import numpy as np
@@ -177,15 +177,25 @@ def test_channelswitches_mask():
     im.axes_manager[1].scale = scale
     im.axes_manager[1].offset = -10
 
-    mask = (im<0.01).data
+    mask = (im < 0.01)
+
+    # Add another Gaussian to get different results if the mask is ignored
+    g2 = hs.model.components2D.Gaussian2D(
+        A=1, centre_x=5.0, centre_y=5.0, sigma_x=1.0, sigma_y=2.0
+    )
+    im += hs.signals.Signal2D(g2.function(X, Y))
 
     m = im.create_model()
-    gt = hs.model.components2D.Gaussian2D(centre_x=-4.5,
-                                          centre_y=-4.5,
-                                          sigma_x=0.5,
-                                          sigma_y=1.5)
+    gt = hs.model.components2D.Gaussian2D(centre_x=0.0,
+                                          centre_y=0.0,
+                                          sigma_x=50,
+                                          sigma_y=50)
     m.append(gt)
+    m.channel_switches = ~mask.data
     m.fit()
+
+    assert not m.channel_switches[0, 0]
+    assert m.channel_switches[50, 50]
 
     np.testing.assert_allclose(gt.centre_x.value, -5.)
     np.testing.assert_allclose(gt.centre_y.value, -5.)

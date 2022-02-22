@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import pytest
 import sympy
@@ -25,8 +25,7 @@ import numpy as np
 
 from hyperspy.components1d import Erf
 
-pytestmark = pytest.mark.skipif(LooseVersion(sympy.__version__) <
-                                LooseVersion("1.3"),
+pytestmark = pytest.mark.skipif(Version(sympy.__version__) < Version("1.3"),
                                 reason="This test requires SymPy >= 1.3")
 
 def test_function():

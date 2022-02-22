@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import math
@@ -46,8 +46,8 @@ class EELSCLEdge(Component):
     software. If Digital Micrograph is installed in the system HyperSpy in the
     standard location HyperSpy should find the path to the HS GOS folder.
     Otherwise, the location of the folder can be defined in HyperSpy
-    preferences, which can be done through hs.preferences.gui() or the
-    hs.preferences.EELS.eels_gos_files_path variable.
+    preferences, which can be done through ``hs.preferences.gui()`` or the
+    ``hs.preferences.EELS.eels_gos_files_path`` variable.
 
     Parameters
     ----------
@@ -55,7 +55,6 @@ class EELSCLEdge(Component):
         Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
         subshell. If a dictionary is passed, it is assumed that Hartree Slater
         GOS was exported using `GOS.as_dictionary`, and will be reconstructed.
-
     GOS : {'hydrogenic', 'Hartree-Slater', None}
         The GOS to use. If None it will use the Hartree-Slater GOS if
         they are available, otherwise it will use the hydrogenic GOS.
@@ -80,7 +79,6 @@ class EELSCLEdge(Component):
     fine_structure_smoothing : float between 0 and 1
         Controls the level of smoothing of the fine structure model.
         Decreasing the value increases the level of smoothing.
-
     fine_structure_active : bool
         Activates/deactivates the fine structure feature.
 
@@ -218,12 +216,6 @@ class EELSCLEdge(Component):
 
     @property
     def fine_structure_smoothing(self):
-        """Controls the level of the smoothing of the fine structure.
-
-        It must a real number between 0 and 1. The higher close to 0
-        the higher the smoothing.
-
-        """
         return self._fine_structure_smoothing
 
     @fine_structure_smoothing.setter

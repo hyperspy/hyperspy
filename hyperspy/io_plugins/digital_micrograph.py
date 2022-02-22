@@ -2,21 +2,21 @@
 # Copyright 2010 Stefano Mazzucco
 # Copyright 2011-2020 The HyperSpy developers
 #
-# This file is part of  HyperSpy. It is a fork of the original PIL dm3 plugin
+# This file is part of HyperSpy. It is a fork of the original PIL dm3 plugin
 # written by Stefano Mazzucco.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 # Plugin to read the Gatan Digital Micrograph(TM) file format
 
@@ -41,14 +41,15 @@ _logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
-format_name = 'Digital Micrograph dm3'
+format_name = 'Digital Micrograph'
 description = 'Read data from Gatan Digital Micrograph (TM) files'
 full_support = False
 # Recognised file extension
 file_extensions = ('dm3', 'DM3', 'dm4', 'DM4')
 default_extension = 0
-# Writing features
+# Writing capabilities
 writes = False
+non_uniform_axis = False
 # ----------------------
 
 
@@ -535,13 +536,14 @@ class ImageObject(object):
     def names(self):
         names = [t.Undefined] * len(self.shape)
         indices = list(range(len(self.shape)))
+
         if self.signal_type == "EELS":
             if "eV" in self.units:
                 names[indices.pop(self.units.index("eV"))] = "Energy loss"
         elif self.signal_type in ("EDS", "EDX"):
             if "keV" in self.units:
                 names[indices.pop(self.units.index("keV"))] = "Energy"
-        elif self.signal_type in ("CL"):
+        elif self.signal_type == "CL":
             if "nm" in self.units:
                 names[indices.pop(self.units.index("nm"))] = "Wavelength"
         for index, name in zip(indices[::-1], ("x", "y", "z")):
@@ -624,11 +626,13 @@ class ImageObject(object):
 
     @property
     def signal_type(self):
-        if 'ImageTags.Meta_Data.Signal' in self.imdict:
-            if self.imdict.ImageTags.Meta_Data.Signal == "X-ray":
-                return "EDS_TEM"
-            return self.imdict.ImageTags.Meta_Data.Signal
-        elif 'ImageTags.spim.eels' in self.imdict:  # Orsay's tag group
+        md_signal = self.imdict.get_item('ImageTags.Meta_Data.Signal', "")
+        if md_signal == 'X-ray':
+            return "EDS_TEM"
+        elif md_signal == 'CL':
+            return "CL"
+        # 'ImageTags.spim.eels' is Orsay's tag group
+        elif md_signal == 'EELS' or 'ImageTags.spim.eels' in self.imdict:
             return "EELS"
         else:
             return ""
@@ -801,14 +805,14 @@ class ImageObject(object):
             dt = dateutil.parser.parse(time)
             return dt.time().isoformat()
         except BaseException:
-            _logger.warning("Time string, %s,  could not be parsed", time)
+            _logger.warning(f"Time string '{time}' could not be parsed.")
 
     def _get_date(self, date):
         try:
             dt = dateutil.parser.parse(date)
             return dt.date().isoformat()
         except BaseException:
-            _logger.warning("Date string, %s,  could not be parsed", date)
+            _logger.warning(f"Date string '{date}' could not be parsed.")
 
     def _get_microscope_name(self, ImageTags):
         locations = (
@@ -949,9 +953,20 @@ class ImageObject(object):
                 markers_dict[name] = temp_dict
         return markers_dict
 
-    def _parse_string(self, tag):
+    def _parse_string(self, tag, convert_to_float=False, tag_name=None):
         if len(tag) == 0:
             return None
+        elif convert_to_float:
+            try:
+                return float(tag)
+            # In case the string can't be converted to float
+            except BaseException:
+                if tag_name is None:
+                    warning = "Metadata could not be parsed."
+                else:
+                    warning = f"Metadata '{tag_name}' could not be parsed."
+                _logger.warning(warning)
+                return None
         else:
             return tag
 
@@ -1081,7 +1096,9 @@ class ImageObject(object):
                     None),
                 "{}.EELS_Spectrometer.Aperture_label".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.aperture_size",
-                    lambda string: float(string.replace('mm', ''))),
+                    lambda string: self._parse_string(string.replace('mm', ''),
+                                                      convert_to_float=True,
+                                                      tag_name='Aperture_label')),
                 "{}.EELS Spectrometer.Instrument name".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.spectrometer",
                     None),
@@ -1150,14 +1167,14 @@ class ImageObject(object):
                     "Acquisition_instrument.CL.start_wavelength", None),
                 "{}.CL.Acquisition.Step-size_(nm)".format(tags_path): (
                     "Acquisition_instrument.CL.step_size", None),
-                # SI 
+                # SI
                 "{}.SI.Acquisition.Artefact_Correction.Spatial_Drift.Periodicity".format(tags_path): (
                     "Acquisition_instrument.CL.SI.drift_correction_periodicity", None),
                 "{}.SI.Acquisition.Artefact_Correction.Spatial_Drift.Units".format(tags_path): (
                     "Acquisition_instrument.CL.SI.drift_correction_units", None),
                 "{}.SI.Acquisition.SI_Application_Mode.Name".format(tags_path): (
                     "Acquisition_instrument.CL.SI.mode", None),
-                
+
             })
         elif "DigiScan" in image_tags_dict.keys():
             mapping.update({

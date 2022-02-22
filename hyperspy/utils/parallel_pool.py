@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import logging
@@ -31,18 +31,8 @@ class ParallelPool:
     """ Creates a ParallelPool by either looking for a ipyparallel client and
     then creating a load_balanced_view, or by creating a multiprocessing pool
 
-    Methods
-    -------
-    setup
-        sets up the requested pool
-    sleep
-        sleeps for the requested (or timeout) time
-
     Attributes
     ----------
-
-    has_pool: Bool
-        Boolean if the pool is available and active.
     pool: {ipyparallel.load_balanced_view, multiprocessing.Pool}
         The pool object.
     ipython_kwargs: dict
@@ -55,10 +45,6 @@ class ParallelPool:
     timestep: float
         Can be used as "ticks" to adjust CPU load when building upon this
         class.
-    is_ipyparallel: bool
-        If the pool is ipyparallel-based
-    is_multiprocessing: bool
-        If the pool is multiprocessing-based
 
     """
 
@@ -106,17 +92,23 @@ class ParallelPool:
 
     @property
     def is_ipyparallel(self):
-        """Returns bool if the pool is ipyparallel-based"""
+        """bool: Return ``True`` if the pool is ipyparallel-based else
+        ``False``
+        """
         return hasattr(self.pool, 'client')
 
     @property
     def is_multiprocessing(self):
-        """Returns bool if the pool is multiprocessing-based"""
+        """bool: Return ``True`` if the pool is multiprocessing-based else
+        ``False``
+        """
         return isinstance(self.pool, Pool_type)
 
     @property
     def has_pool(self):
-        """Returns bool if the pool is ready and set-up"""
+        """bool: Return ``True`` if the pool is ready and set-up else
+        ``False``
+        """
         return self.is_ipyparallel or self.is_multiprocessing and \
             self.pool._state == 0
 

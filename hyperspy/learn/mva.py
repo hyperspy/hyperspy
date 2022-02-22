@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import logging
@@ -74,7 +74,7 @@ if import_sklearn.sklearn_installed:
 def _get_derivative(signal, diff_axes, diff_order):
     """Calculate the derivative of a signal."""
     if signal.axes_manager.signal_dimension == 1:
-        signal = signal.diff(order=diff_order, axis=-1)
+        signal = signal.derivative(order=diff_order, axis=-1)
     else:
         # n-d signal case.
         # Compute the differences for each signal axis, unfold the
@@ -367,9 +367,9 @@ class MVA:
             _logger.info("Performing decomposition analysis")
 
             if isinstance(navigation_mask, BaseSignal):
-                navigation_mask = navigation_mask.data
-            if hasattr(navigation_mask, "ravel"):
-                navigation_mask = navigation_mask.ravel()
+                navigation_mask = navigation_mask.data.ravel()
+            elif hasattr(navigation_mask, "ravel"):
+                navigation_mask = navigation_mask.T.ravel()
 
             if isinstance(signal_mask, BaseSignal):
                 signal_mask = signal_mask.data
@@ -804,9 +804,12 @@ class MVA:
                 if mask.axes_manager.signal_shape != ref_shape:
                     raise ValueError(
                         f"`mask` shape is not equal to {space} shape. "
-                        f"Mask shape: {mask.axes_manager.signal_shape}\t"
+                        f"Mask shape: {mask.axes_manager.signal_shape}; "
                         f"{space} shape: {ref_shape}"
                     )
+            else:
+                raise ValueError("`mask` must be a HyperSpy signal.")
+
             if hasattr(mask, "compute"):
                 # if the mask is lazy, we compute them, which should be fine
                 # since we already reduce the dimensionality of the data.
@@ -897,8 +900,8 @@ class MVA:
             )
             if mask is not None:
                 # The following is a little trick to dilate the mask as
-                # required when operation on the differences. It exploits the
-                # fact that np.diff autimatically "dilates" nans. The trick has
+                # required when operating on differences. It exploits the
+                # fact that np.diff automatically "dilates" nans. The trick has
                 # a memory penalty which should be low compare to the total
                 # memory required for the core application in most cases.
                 mask_diff_axes = (

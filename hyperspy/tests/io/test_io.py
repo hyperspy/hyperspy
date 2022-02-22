@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import hashlib
 import os
@@ -28,6 +28,8 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.signals import Signal1D
+from hyperspy.axes import DataAxis
+from hyperspy.io_plugins import io_plugins
 
 
 FULLFILENAME = Path(__file__).resolve().parent.joinpath("test_io_overwriting.hspy")
@@ -85,9 +87,51 @@ class TestIOOverwriting:
             self.new_s.save(FULLFILENAME)
             assert not self._check_file_is_written(FULLFILENAME)
 
+    def test_io_overwriting_invalid_parameter(self):
+        with pytest.raises(ValueError, match="parameter can only be"):
+            self.new_s.save(FULLFILENAME, overwrite="spam")
+
     def teardown_method(self, method):
         self._clean_file()
 
+class TestNonUniformAxisCheck:
+
+    def setup_method(self, method):
+        axis = DataAxis(axis = 1/(np.arange(10)+1), navigate = False)
+        self.s = Signal1D(np.arange(10), axes=(axis.get_axis_dictionary(), ))
+        # make sure we start from a clean state
+    
+    def test_io_nonuniform(self):
+        assert(self.s.axes_manager[0].is_uniform == False)
+        self.s.save('tmp.hspy', overwrite = True)
+        with pytest.raises(TypeError, match = "not supported for non-uniform"):
+            self.s.save('tmp.msa', overwrite = True)
+
+    def test_nonuniform_writer_characteristic(self):
+        for plugin in io_plugins:
+            try:
+                plugin.non_uniform_axis is True
+            except AttributeError:
+                print(plugin.format_name + ' IO-plugin is missing the '
+                      'characteristic `non_uniform_axis`')
+
+    def test_nonuniform_error(self):
+        assert(self.s.axes_manager[0].is_uniform == False)
+        incompatible_writers = [plugin.file_extensions[plugin.default_extension]
+                      for plugin in io_plugins if (plugin.writes is True or
+                      plugin.writes is not False and (1, 0) in plugin.writes)
+                      and plugin.non_uniform_axis is False]
+        for ext in incompatible_writers:
+            with pytest.raises(TypeError, match = "not supported for non-uniform"):
+                filename = 'tmp.' + ext
+                self.s.save(filename, overwrite = True)
+
+    def teardown_method(self):
+        if os.path.exists('tmp.hspy'):
+            os.remove('tmp.hspy')
+        if os.path.exists('tmp.msa'):
+            os.remove('tmp.msa')
+            
 
 def test_glob_wildcards():
     s = Signal1D(np.arange(10))
@@ -98,7 +142,7 @@ def test_glob_wildcards():
         for f in fnames:
             s.save(f)
 
-        with pytest.raises(ValueError, match="No filename matches this pattern"):
+        with pytest.raises(ValueError, match="No filename matches the pattern"):
             _ = hs.load(fnames[0])
 
         t = hs.load([fnames[0]])
@@ -113,7 +157,7 @@ def test_glob_wildcards():
         t = hs.load(os.path.join(dirpath, "temp[*].hspy"), escape_square_brackets=True,)
         assert len(t) == 2
 
-        with pytest.raises(ValueError, match="No filename matches this pattern"):
+        with pytest.raises(ValueError, match="No filename matches the pattern"):
             _ = hs.load(os.path.join(dirpath, "temp[*].hspy"))
 
         # Test pathlib.Path
@@ -137,7 +181,7 @@ def test_file_not_found_error():
         if os.path.exists(temp_fname):
             os.remove(temp_fname)
 
-        with pytest.raises(ValueError, match="No filename matches this pattern"):
+        with pytest.raises(ValueError, match='No filename matches the pattern'):
             _ = hs.load(temp_fname)
 
         with pytest.raises(FileNotFoundError):
@@ -200,3 +244,19 @@ def test_save_default_format():
 
         t = hs.load(Path(dirpath, "temp.hspy"))
         assert len(t) == 1
+
+
+def test_load_original_metadata():
+    s = Signal1D(np.arange(10))
+    s.original_metadata.a = 0
+
+    with tempfile.TemporaryDirectory() as dirpath:
+        f = os.path.join(dirpath, "temp")
+        s.save(f)
+        assert s.original_metadata.as_dictionary() != {}
+
+        t = hs.load(Path(dirpath, "temp.hspy"))
+        assert t.original_metadata.as_dictionary() == s.original_metadata.as_dictionary()
+
+        t = hs.load(Path(dirpath, "temp.hspy"), load_original_metadata=False)
+        assert t.original_metadata.as_dictionary() == {}

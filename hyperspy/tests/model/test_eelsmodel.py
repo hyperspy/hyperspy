@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import pytest
@@ -137,7 +137,7 @@ class TestEELSModel:
 
     def test_two_area_powerlaw_estimation_BC(self):
         self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
-        self.m.signal.metadata.Signal.binned = False
+        #self.m.signal.axes_manager[-1].is_binned = False
         self.m.two_area_background_estimation()
         np.testing.assert_allclose(
             self.m._background_components[0].A.value,
@@ -149,7 +149,7 @@ class TestEELSModel:
     def test_two_area_powerlaw_estimation_C(self):
         self.m["B_K"].active = False
         self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
-        self.m.signal.metadata.Signal.binned = False
+        #self.m.signal.axes_manager[-1].is_binned = False
         self.m.two_area_background_estimation()
         np.testing.assert_allclose(
             self.m._background_components[0].A.value,
@@ -162,7 +162,8 @@ class TestEELSModel:
         self.m["B_K"].active = False
         self.m["C_K"].active = False
         self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
-        self.m.signal.metadata.Signal.binned = False
+        print(self.m.signal.axes_manager[-1].is_binned)
+        #self.m.signal.axes_manager[-1].is_binned = False
         self.m.two_area_background_estimation()
         np.testing.assert_allclose(
             self.m._background_components[0].A.value,

@@ -1,0 +1,65 @@
+<table>
+    <tr>
+        <td>
+            <table>
+                <thead>
+                    <tr>
+                        <th> Title: </th>
+                        <td> {{title}} </td>
+                    </tr>
+                    <tr>
+                        <th> SignalType: </th>
+                        <td> {{signal_type}} </td>
+                    </tr>
+                </thead>
+                <thead>
+                    <tr>
+                        <td>  </td>
+                        <th> Array </th>
+                        <th> Chunk </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if nbytes %}
+                    <tr>
+                        <th> Bytes </th>
+                        <td> {{ nbytes }} </td>
+                        <td> {{ cbytes }} </td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <th> Shape </th>
+                        <td> {{ dim }} </td>
+                        <td> {{ chunks }} </td>
+                    </tr>
+                    <tr>
+                        <th> Count </th>
+                        <td> {{ array.__dask_graph__() | length }} Tasks </td>
+                        <td> {{ array.npartitions }} Chunks </td>
+                    </tr>
+                    <tr>
+                    <th> Type </th>
+                    <td> {{ array.dtype }} </td>
+                    <td> {{ array._meta | type | typename }} </td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+        <td>
+            <table>
+                <thead>
+                    <tr>
+                        <th><p style="text-align:left;">Navigation Axes</p>  </th>
+                        <th> <p style="text-align:left;">Signal Axes</p> </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td> {{ nav_grid }} </td>
+                        <td> {{ sig_grid }} </td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+    </tr>
+</table>

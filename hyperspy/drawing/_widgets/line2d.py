@@ -1,24 +1,25 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-import numpy as np
 import logging
+import numpy as np
+import matplotlib.pyplot as plt
 
 from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
 from hyperspy.drawing.utils import picker_kwargs
@@ -87,7 +88,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
     Notes
     -----
     The 'position' is now a 2D tuple: tuple(tuple(x1, x2), tuple(y1, y2))
-    
+
     Notes
     -----
     The 'size' property corresponds to line width, so it has a len() of only
@@ -139,12 +140,20 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             if self.snap_size:
                 value = self._do_snap_size(value)[0]
         if self._size[0] != value:
-            if not value and self._size:
+            if value == 0 and self._size[0] > 0:
+                # width reaches zero from higher value:
+                # remove the width indicators
                 self._size = np.array((0,))
                 self._remove_size_patch()
-            elif value and not self._size:
+            elif value > 0 and self._size[0] == 0:
+                # width is current zero and new value is higher
+                # add the width indicators
                 self._size = np.array((value,))
                 self._set_size_patch()
+                # the size patches have been removed, we need to draw them
+                for p in self._width_indicator_patches:
+                    self.ax.add_artist(p)
+                    p.set_animated(self.blit)
             else:
                 self._size = np.array((value,))
             self._size_changed()
@@ -153,7 +162,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         # _set_axes overwrites self._size so we back it up
         size = self._size
         position = self._pos
-        super(Line2DWidget, self)._set_axes(axes)
+        super()._set_axes(axes)
         # Restore self._size
         self._size = size
         self._pos = position
@@ -178,9 +187,8 @@ class Line2DWidget(ResizableDraggableWidgetBase):
 
     def _do_snap_position(self, value=None):
         value = np.array(value) if value is not None else self._pos
-
-        ret1 = super(Line2DWidget, self)._do_snap_position(value[0, :])
-        ret2 = super(Line2DWidget, self)._do_snap_position(value[1, :])
+        ret1 = super()._do_snap_position(value[0, :])
+        ret2 = super()._do_snap_position(value[1, :])
 
         return np.array([ret1, ret2])
 
@@ -242,7 +250,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
     def _update_patch_geometry(self):
         """Set line position, and set width indicator's if appropriate
         """
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].set_data(np.array(self._pos).T)
             # Update width indicator if present
             if self._width_indicator_patches:
@@ -260,10 +268,9 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         max_r = max(self.radius_move, self.radius_resize,
                     self.radius_rotate)
         kwargs = picker_kwargs(max_r)
-        self.patch = self.ax.plot(
+        self.patch = [plt.Line2D(
             xy[:, 0], xy[:, 1],
             linestyle='-',
-            animated=self.blit,
             lw=self.linewidth,
             c=self.color,
             alpha=self.alpha,
@@ -271,16 +278,23 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             markersize=self.radius_resize,
             mew=0.1,
             mfc='lime',
-            **kwargs,)[0:1]
+            **kwargs,)]
+        if self._size[0] > 0:
+            self._set_size_patch()
 
     def _set_size_patch(self):
+        if self.ax is None:
+            # The widget hasn't been fully added to an axis yet.
+            return
+        if self.axes[0].scale != self.axes[1].scale:
+            raise ValueError("linewidth is not supported for axis with "
+                             "different scale.")
         wc = self._get_width_indicator_coords()
         kwargs = picker_kwargs(self.radius_move)
         for i in range(2):
-            wi, = self.ax.plot(
-                wc[i][0], wc[i][1],
+            wi = plt.Line2D(
+                *wc[i].T,
                 linestyle=':',
-                animated=self.blit,
                 lw=self.linewidth,
                 c=self.color,
                 **kwargs)

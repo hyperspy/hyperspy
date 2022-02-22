@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import math
@@ -501,8 +501,9 @@ def _quantification_cliff_lorimer(intensities,
     other_index = list(range(len(kfactors)))
     other_index.pop(ref_index)
     for i in other_index:
-        ab[i] = intensities[ref_index] * kfactors[ref_index]  \
-            / (intensities[i] * absorption_correction[i]) / kfactors[i]
+        ab[i] = (intensities[ref_index] * absorption_correction[ref_index]) \
+            / (intensities[i] * absorption_correction[i]) \
+            *( kfactors[ref_index] / kfactors[i])
     # Ca = ab /(1 + ab + ab/ac + ab/ad + ...)
     ab = ab
     for i in other_index:
@@ -550,10 +551,10 @@ def quantification_zeta_factor(intensities,
 
     sumzi = np.zeros_like(intensities[0], dtype='float')
     composition = np.zeros_like(intensities, dtype='float')
-    for intensity, zfactor, absorption_correction in zip(intensities, zfactors, absorption_correction):
-        sumzi = sumzi + intensity * zfactor * absorption_correction
-    for i, (intensity, zfactor, absorption_correction) in enumerate(zip(intensities, zfactors, absorption_correction)):
-        composition[i] = intensity * zfactor * absorption_correction / sumzi
+    for intensity, zfactor, acf in zip(intensities, zfactors, absorption_correction):
+        sumzi = sumzi + (intensity * zfactor * acf)
+    for i, (intensity, zfactor, acf) in enumerate(zip(intensities, zfactors, absorption_correction)):
+        composition[i] = intensity * zfactor * acf / sumzi
     mass_thickness = sumzi / dose
     return composition, mass_thickness
 
@@ -580,9 +581,8 @@ def get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle): # take_of
         material.mass_absorption_mixture(weight_percent=weight_percent),
         show_progressbar=False
         ) * 0.1
-    acf = mac.data * mass_thickness.data * csc_toa
-    acf = acf/(1.0 - np.exp(-(acf)))
-
+    expo = mac.data * mass_thickness.data * csc_toa
+    acf = expo/(1.0 - np.exp(-(expo)))
     return acf
 
 def quantification_cross_section(intensities,
@@ -655,25 +655,21 @@ def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle,
 
     number_of_atoms = stack(number_of_atoms, show_progressbar=False).data
 
-    #calculate the total_mass per pixel, or mass thicknessself.
+    #calculate the total_mass in kg/m^2, or mass thickness.
     total_mass = np.zeros_like(number_of_atoms[0], dtype = 'float')
     for i, (weight) in enumerate(atomic_weights):
-        total_mass += (number_of_atoms[i] * weight / Av / probe_area / 1E-15)
-
-    # determine mass absorption coefficients and convert from cm^2/g to m^2/atom.
+        total_mass += (number_of_atoms[i] * weight / Av / 1E3 / probe_area / 1E-18)
+    # determine mass absorption coefficients and convert from cm^2/g to m^2/kg.
     to_stack = material.mass_absorption_mixture(
         weight_percent=material.atomic_to_weight(composition)
         )
     mac = stack(to_stack, show_progressbar=False) * 0.1
-
     acf = np.zeros_like(number_of_atoms)
-    constant = 1/(Av * math.sin(toa_rad) * probe_area * 1E-16)
-
-    #determine an absorption coeficcient per element per pixel.
+    csc_toa = 1/math.sin(toa_rad)
+    #determine an absorption coeficient per element per pixel.
     for i, (weight) in enumerate(atomic_weights):
-        expo = (mac.data[i] * total_mass * constant)
-        acf[i] = expo/(1 - math.e**(-expo))
-
+        expo = (mac.data[i] * total_mass * csc_toa)
+        acf[i] = expo/(1 - np.exp(-expo))
     return acf
 
 

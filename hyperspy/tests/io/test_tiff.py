@@ -4,7 +4,7 @@ import tempfile
 import numpy as np
 import pytest
 import traits.api as t
-from distutils.version import LooseVersion
+from packaging.version import Version
 import tifffile
 
 
@@ -388,8 +388,7 @@ FEI_Helios_metadata = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 
                                    'authors': 'supervisor',
                                    'date': '2016-06-13',
                                    'time': '17:06:40'},
-                       'Signal': {'binned': False,
-                                  'signal_type': ''},
+                       'Signal': {'signal_type': ''},
                        '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                                  'original_shape': None,
                                                  'signal_unfolded': False,
@@ -441,7 +440,7 @@ def test_read_Zeiss_SEM_scale_metadata_1k_image():
                       'original_filename': 'test_tiff_Zeiss_SEM_1k.tif',
                       'time': '09:40:32',
                       'title': ''},
-          'Signal': {'binned': False, 'signal_type': ''},
+          'Signal': {'signal_type': ''},
           '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                     'original_shape': None,
                                     'signal_unfolded': False,
@@ -472,7 +471,7 @@ def test_read_Zeiss_SEM_scale_metadata_512_image():
                       'original_filename': 'test_tiff_Zeiss_SEM_512pix.tif',
                       'time': '08:20:42',
                       'title': ''},
-          'Signal': {'binned': False, 'signal_type': ''},
+          'Signal': {'signal_type': ''},
           '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                     'original_shape': None,
                                     'signal_unfolded': False,
@@ -565,7 +564,7 @@ def test_read_TVIPS_metadata():
           'General': {'original_filename': 'TVIPS_bin4.tif',
                       'time': '9:01:17',
                       'title': ''},
-          'Signal': {'binned': False, 'signal_type': ''},
+          'Signal': {'signal_type': ''},
           '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                     'original_shape': None,
                                     'signal_unfolded': False,
@@ -592,17 +591,20 @@ def test_axes_metadata():
         s2 = hs.load(fname)
         assert s2.axes_manager.navigation_axes[0].name == 'image series'
         assert s2.axes_manager.navigation_axes[0].units == nav_unit
+        assert s2.axes_manager.navigation_axes[0].is_binned == False
 
         fname2 = os.path.join(tmpdir, 'axes_metadata_IYX.tif')
         s.save(fname2, metadata={'axes':'IYX'})
         s3 = hs.load(fname2)
         assert s3.axes_manager.navigation_axes[0].name == 'image series'
         assert s3.axes_manager.navigation_axes[0].units == nav_unit
+        assert s3.axes_manager.navigation_axes[0].is_binned == False
 
         fname2 = os.path.join(tmpdir, 'axes_metadata_ZYX.tif')
         s.save(fname2, metadata={'axes':'ZYX'})
         s3 = hs.load(fname2)
         assert s3.axes_manager.navigation_axes[0].units == nav_unit
+        assert s3.axes_manager.navigation_axes[0].is_binned == False
 
 
 def test_olympus_SIS():
@@ -637,7 +639,32 @@ def test_save_angstrom_units():
         fname = os.path.join(tmpdir, 'save_angstrom_units.tif')
         s.save(fname)
         s2 = hs.load(fname)
-        if LooseVersion(tifffile.__version__) >= LooseVersion("2020.7.17"):
+        if Version(tifffile.__version__) >= Version("2020.7.17"):
             assert s2.axes_manager[0].units == s.axes_manager[0].units
         assert s2.axes_manager[0].scale == s.axes_manager[0].scale
         assert s2.axes_manager[0].offset == s.axes_manager[0].offset
+        assert s2.axes_manager[0].is_binned == s.axes_manager[0].is_binned
+
+def test_JEOL_SightX():
+    files = [ ("JEOL-SightX-Ronchigram-dummy.tif.gz", 1.0, t.Undefined),
+              ("JEOL-SightX-SAED-dummy.tif.gz", 0.2723, "1 / nm"),
+              ("JEOL-SightX-TEM-mag-dummy.tif.gz", 1.8208, "nm") ]
+    for file in files:
+        fname = file[0]
+        if fname[-3:]==".gz":
+            import tempfile
+            import gzip
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                with gzip.open(os.path.join(MY_PATH2,fname),'rb') as f:
+                    content = f.read()
+                fname = os.path.join(tmp_dir, fname[:-3])
+                with open(fname,"wb") as f2:
+                    f2.write(content)
+                s = hs.load(fname)
+        else:
+            fname = os.path.join(MY_PATH2, file[0])
+            s = hs.load(fname)
+        for i in range(2): # x, y
+            assert s.axes_manager[i].size == 556
+            np.testing.assert_allclose(s.axes_manager[i].scale, file[1], rtol=1E-3)
+            assert s.axes_manager[i].units == file[2]

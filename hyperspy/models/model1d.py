@@ -1,28 +1,30 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import copy
 
 import numpy as np
 from scipy.special import huber
+import traits.api as t
 
 import hyperspy.drawing.signal1d
-from hyperspy.axes import generate_axis
+from hyperspy.axes import generate_uniform_axis
+from hyperspy.exceptions import WrongObjectError, SignalDimensionError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import LabelWidget, VerticalLineWidget
 from hyperspy.events import EventSuppressor
@@ -31,14 +33,18 @@ from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT, add_gui_method
 from hyperspy.misc.utils import dummy_context_manager
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 @add_gui_method(toolkey="hyperspy.Model1D.fit_component")
 class ComponentFit(SpanSelectorInSignal1D):
+    only_current = t.Bool(True)
+    iterpath = t.Enum('flyback', 'serpentine', default='serpentine',
+                      desc='Define the iterating pattern over the navigation space.')
 
     def __init__(self, model, component, signal_range=None,
                  estimate_parameters=True, fit_independent=False,
-                 only_current=True, **kwargs):
+                 only_current=True, iterpath='flyback', **kwargs):
         if model.signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 model.signal.axes_manager.signal_dimension, 1)
@@ -53,6 +59,7 @@ class ComponentFit(SpanSelectorInSignal1D):
         self.fit_independent = fit_independent
         self.fit_kwargs = kwargs
         self.only_current = only_current
+        self.iterpath = iterpath
         if signal_range == "interactive":
             if (not hasattr(self.model, '_plot') or self.model._plot is None or
                     not self.model._plot.is_active):
@@ -106,7 +113,7 @@ class ComponentFit(SpanSelectorInSignal1D):
         if only_current:
             self.model.fit(**self.fit_kwargs)
         else:
-            self.model.multifit(**self.fit_kwargs)
+            self.model.multifit(iterpath=self.iterpath, **self.fit_kwargs)
 
         # Restore the signal range
         if self.signal_range is not None:
@@ -148,7 +155,6 @@ class Model1D(BaseModel):
 
     Attributes
     ----------
-
     signal : Signal1D instance
         It contains the data to fit.
     chisq : A Signal of floats
@@ -164,13 +170,8 @@ class Model1D(BaseModel):
 
     Methods
     -------
-
-    append
-        Append one component to the model.
     extend
         Append multiple components to the model.
-    remove
-        Remove component from model.
     as_signal
         Generate a Signal1D instance (possible multidimensional)
         from the model.
@@ -189,8 +190,6 @@ class Model1D(BaseModel):
         full dataset.
     save_parameters2file, load_parameters_from_file
         Save/load the parameter values to/from a file.
-    plot
-        Plot the model and the data.
     enable_plot_components, disable_plot_components
         Plot each component separately. (Use after `plot`.)
     set_current_values_to
@@ -205,9 +204,6 @@ class Model1D(BaseModel):
     enable_adjust_position, disable_adjust_position
         Enable/disable interactive adjustment of the position of the components
         that have a well defined position. (Use after `plot`).
-    fit_component
-        Fit just the given component in the given signal range, that can be
-        set interactively.
     set_parameters_not_free, set_parameters_free
         Fit the `free` status of several components and parameters at once.
     set_parameters_value
@@ -319,9 +315,11 @@ class Model1D(BaseModel):
         if value is not None:
             if (value.axes_manager.navigation_shape !=
                     self.signal.axes_manager.navigation_shape):
-                raise ValueError('The low-loss does not have '
-                                 'the same navigation dimension as the '
-                                 'core-loss')
+                raise ValueError('The low-loss does not have the same '
+                                 'navigation dimension as the core-loss.')
+            if not value.axes_manager.signal_axes[0].is_uniform:
+                raise ValueError('Low loss convolution is not supported with '
+                                 'non-uniform signal axes.')
             self._low_loss = value
             self.set_convolution_axis()
             self.convolved = True
@@ -342,10 +340,16 @@ class Model1D(BaseModel):
         dimension = self.axis.size + ll_axis.size - 1
         step = self.axis.scale
         knot_position = ll_axis.size - ll_axis.value2index(0) - 1
-        self.convolution_axis = generate_axis(self.axis.offset, step,
-                                              dimension, knot_position)
+        self.convolution_axis = generate_uniform_axis(self.axis.offset, step,
+                                                     dimension, knot_position)
 
     def append(self, thing):
+        """Add component to Model.
+
+        Parameters
+        ----------
+        thing: `Component` instance.
+        """
         cm = self.suspend_update if self._plot_active else dummy_context_manager
         with cm(update_on_resume=False):
             super(Model1D, self).append(thing)
@@ -426,8 +430,13 @@ class Model1D(BaseModel):
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[self.channel_switches]
-        if self.signal.metadata.Signal.binned is True:
-            to_return *= self.signal.axes_manager[-1].scale
+        if is_binned(self.signal):
+        # in v2 replace by
+        #if self.signal.axes_manager[-1].is_binned:
+            if self.signal.axes_manager[-1].is_uniform:
+                to_return *= self.signal.axes_manager[-1].scale
+            else:
+                to_return *= np.gradient(self.signal.axes_manager[-1].axis)
         return to_return
 
     def _errfunc(self, param, y, weights=None):
@@ -456,6 +465,17 @@ class Model1D(BaseModel):
         self.channel_switches[i1:i2] = True
         self.update_plot()
 
+    def _parse_signal_range_values(self, x1=None, x2=None):
+        """Parse signal range values to be used by the `set_signal_range`,
+        `add_signal_range` and `remove_signal_range` and return sorted indices
+        """
+        try:
+            x1, x2 = x1
+        except TypeError:
+            # It was not a ROI, we carry on
+            pass
+        return self.axis.value_range_to_indices(x1, x2)
+
     @interactive_range_selector
     def set_signal_range(self, x1=None, x2=None):
         """Use only the selected spectral range defined in its own units in the
@@ -463,17 +483,10 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        E1 : None or float
-        E2 : None or float
-
+        x1, x2 : None or float
         """
-        try:
-            x1, x2 = x1
-        except TypeError:
-            # It was not a ROI, we carry on
-            pass
-        i1, i2 = self.axis.value_range_to_indices(x1, x2)
-        self._set_signal_range_in_pixels(i1, i2)
+        indices = self._parse_signal_range_values(x1, x2)
+        self._set_signal_range_in_pixels(*indices)
 
     def _remove_signal_range_in_pixels(self, i1=None, i2=None):
         """Removes the data in the given range from the data range that
@@ -481,8 +494,7 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        x1 : None or float
-        x2 : None or float
+        i1, i2 : None or integer
         """
         if i2 is not None:
             i2 += 1
@@ -496,17 +508,10 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        x1 : None or float
-        x2 : None or float
-
+        x1, x2 : None or float
         """
-        try:
-            x1, x2 = x1
-        except TypeError:
-            # It was not a ROI, we carry on
-            pass
-        i1, i2 = self.axis.value_range_to_indices(x1, x2)
-        self._remove_signal_range_in_pixels(i1, i2)
+        indices = self._parse_signal_range_values(x1, x2)
+        self._remove_signal_range_in_pixels(*indices)
 
     def reset_signal_range(self):
         """Resets the data range"""
@@ -518,8 +523,7 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        x1 : None or float
-        x2 : None or float
+        i1, i2 : None or integer
         """
         if i2 is not None:
             i2 += 1
@@ -533,17 +537,10 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        x1 : None or float
-        x2 : None or float
-
+        x1, x2 : None or float
         """
-        try:
-            x1, x2 = x1
-        except TypeError:
-            # It was not a ROI, we carry on
-            pass
-        i1, i2 = self.axis.value_range_to_indices(x1, x2)
-        self._add_signal_range_in_pixels(i1, i2)
+        indices = self._parse_signal_range_values(x1, x2)
+        self._add_signal_range_in_pixels(*indices)
 
     def reset_the_signal_range(self):
         self.channel_switches[:] = True
@@ -643,8 +640,13 @@ class Model1D(BaseModel):
 
             to_return = grad[1:, :] * weights
 
-        if self.signal.metadata.Signal.binned is True:
-            to_return *= self.signal.axes_manager[-1].scale
+        if is_binned(self.signal):
+        # in v2 replace by
+        #if self.signal.axes_manager[-1].is_binned:
+            if self.signal.axes_manager[-1].is_uniform:
+                to_return *= self.signal.axes_manager[-1].scale
+            else:
+                to_return *= np.gradient(self.signal.axes_manager[-1].axis)
 
         return to_return
 
@@ -704,17 +706,16 @@ class Model1D(BaseModel):
         return s
 
     def plot(self, plot_components=False, **kwargs):
-        """Plots the current spectrum to the screen and a map with a
+        """Plot the current spectrum to the screen and a map with a
         cursor to explore the SI.
 
         Parameters
         ----------
         plot_components : bool
             If True, add a line per component to the signal figure.
-        kwargs:
-            All extra keyword arguements are passed to ``Signal1D.plot``
-
-
+        **kwargs : dict
+            All extra keyword arguements are passed to
+            :py:meth:`~._signals.signal1d.Signal1D.plot`
         """
 
         # If new coordinates are assigned

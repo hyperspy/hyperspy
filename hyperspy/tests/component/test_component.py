@@ -1,27 +1,29 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
+import pytest
 from unittest import mock
 
 import numpy as np
 
 from hyperspy.axes import AxesManager
-from hyperspy.component import Component
+from hyperspy.component import Component, _get_scaling_factor
+from hyperspy._signals.signal1d import Signal1D
 
 
 class TestMultidimensionalActive:
@@ -236,14 +238,14 @@ class TestCallMethods:
     def test_plotting_not_active_component(self):
         c = self.c
         c.active = False
-        c.model.signal.metadata.Signal.binned = False
+        c.model.signal.axes_manager[-1].is_binned = False
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=False)
         assert np.isnan(res).all()
 
     def test_plotting_active_component_notbinned(self):
         c = self.c
         c.active = True
-        c.model.signal.metadata.Signal.binned = False
+        c.model.signal.axes_manager[-1].is_binned = False
         c.model.__call__.return_value = np.array([1.3])
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=False)
         np.testing.assert_array_equal(res, np.array([1.3, ]))
@@ -251,7 +253,7 @@ class TestCallMethods:
     def test_plotting_active_component_binned(self):
         c = self.c
         c.active = True
-        c.model.signal.metadata.Signal.binned = True
+        c.model.signal.axes_manager[-1].is_binned = True
         c.model.__call__.return_value = np.array([1.3])
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=False)
         np.testing.assert_array_equal(res, np.array([1.3, ]))
@@ -259,7 +261,27 @@ class TestCallMethods:
     def test_plotting_active_component_out_of_range(self):
         c = self.c
         c.active = True
-        c.model.signal.metadata.Signal.binned = False
+        c.model.signal.axes_manager[-1].is_binned = False
         c.model.__call__.return_value = np.array([1.1, 1.3])
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=True)
         np.testing.assert_array_equal(res, np.array([1.1, np.nan, 1.3]))
+
+
+@pytest.mark.parametrize('is_binned', [True, False])
+@pytest.mark.parametrize('non_uniform', [True, False])
+@pytest.mark.parametrize('dim', [1, 2, 3])
+def test_get_scaling_parameter(is_binned, non_uniform, dim):
+    shape = [10 + i for i in range(dim)]
+    signal = Signal1D(np.arange(np.prod(shape)).reshape(shape[::-1]))
+    axis = signal.axes_manager.signal_axes[0]
+    axis.is_binned = is_binned
+    axis.scale = 0.5
+    if non_uniform:
+        axis.convert_to_non_uniform_axis()
+    centre = np.ones(shape[::-2])
+    scaling_factor = _get_scaling_factor(signal, axis, centre)
+
+    if is_binned:
+        assert np.all(scaling_factor == 0.5)
+    else:
+        assert scaling_factor == 1

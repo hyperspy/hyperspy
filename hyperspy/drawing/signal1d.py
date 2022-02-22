@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import warnings
 import numpy as np
@@ -70,7 +70,20 @@ class Signal1DFigure(BlittedFigure):
         self.ax.xaxis.set_animated(animated)
         self.ax.hspy_fig = self
 
-    def create_right_axis(self, color='black'):
+    def create_right_axis(self, color='black', adjust_layout=True):
+        """
+        Add an axis on the right hand side of the figure.
+
+        Parameters
+        ----------
+        adjust_layout : bool, optional
+            Whether to call ``plt.tight_layout`` or not. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
         if self.ax is None:
             self.create_axis()
         if self.right_ax is None:
@@ -78,14 +91,33 @@ class Signal1DFigure(BlittedFigure):
             self.right_ax.hspy_fig = self
             self.right_ax.yaxis.set_animated(self.figure.canvas.supports_blit)
             self.right_ax.tick_params(axis='y', labelcolor=color)
-        plt.tight_layout()
+            # Needs to set the zorder of the ax to get the mouse event for ax
+            # See https://github.com/matplotlib/matplotlib/issues/10009
+            self.ax.set_zorder(self.right_ax.get_zorder() + 1)
+        if adjust_layout:
+            plt.tight_layout()
 
-    def close_right_axis(self):
+    def close_right_axis(self, adjust_layout=True):
+        """
+        Remove the axis on the right hand side of the figure
+
+        Parameters
+        ----------
+        adjust_layout : bool, optional
+            Whether to call ``plt.tight_layout`` or not. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
         if self.right_ax is not None:
             for lines in self.right_ax_lines:
                 lines.close()
-            self.right_ax.axes.get_yaxis().set_visible(False)
+            self.right_ax.remove()
             self.right_ax = None
+        if adjust_layout:
+            plt.tight_layout()
 
     def add_line(self, line, ax='left', connect_navigation=False):
         """
@@ -202,10 +234,7 @@ class Signal1DFigure(BlittedFigure):
         if self.right_ax is not None:
             update_lines(self.right_ax, self.right_ax_lines)
 
-        if self.ax.figure.canvas.supports_blit:
-            self.ax.hspy_fig._update_animated()
-        else:
-            self.ax.figure.canvas.draw_idle()
+        self.render_figure()
 
 
 class Signal1DLine(object):
@@ -381,8 +410,8 @@ class Signal1DLine(object):
                              "'log' for Signal1D.")
         else:
             plot = self.ax.plot
-        self.line, = plot(self.axis.axis, data, **self.line_properties)
-        self.line.set_animated(self.ax.figure.canvas.supports_blit)
+        self.line, = plot(self.axis.axis, data, **self.line_properties,
+                          animated=self.ax.figure.canvas.supports_blit)
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
@@ -395,7 +424,7 @@ class Signal1DLine(object):
                                      color=self.line.get_color(),
                                      animated=self.ax.figure.canvas.supports_blit)
         self._y_min, self._y_max = self.ax.get_ylim()
-        self.ax.figure.canvas.draw_idle()
+        self.ax.hspy_fig.render_figure()
 
     def _get_data(self, real_part=False):
         if self._plot_imag and not real_part:
@@ -424,8 +453,8 @@ class Signal1DLine(object):
                update_ylimits=False):
         """Update the current spectrum figure
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         force_replot : bool
             If True, close and open the figure. Default is False.
         render_figure : bool
@@ -496,10 +525,7 @@ class Signal1DLine(object):
             self.text.set_text(self.axes_manager.indices)
 
         if render_figure:
-            if self.ax.figure.canvas.supports_blit:
-                self.ax.hspy_fig._update_animated()
-            else:
-                self.ax.figure.canvas.draw_idle()
+            self.ax.hspy_fig.render_figure()
 
     def close(self):
         _logger.debug('Closing `Signal1DLine`.')

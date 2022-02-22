@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -22,6 +22,7 @@ from scipy.interpolate import interp1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 @add_gui_method(toolkey="hyperspy.ScalableFixedPattern_Component")
@@ -134,8 +135,13 @@ class ScalableFixedPattern(Component):
             result = yscale * self.f(x * xscale - shift)
         else:
             result = yscale * self.signal.data
-        if self.signal.metadata.Signal.binned is True:
-            return result / self.signal.axes_manager.signal_axes[0].scale
+        if is_binned(self.signal):
+        # in v2 replace by
+        #if self.signal.axes_manager.signal_axes[0].is_binned:
+            if self.signal.axes_manager.signal_axes[0].is_uniform:
+                return result / self.signal.axes_manager.signal_axes[0].scale
+            else:
+                return result / np.gradient(self.signal.axes_manager.signal_axes[0].axis)
         else:
             return result
 

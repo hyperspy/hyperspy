@@ -1,28 +1,29 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 from collections import OrderedDict
 import scipy.constants as constants
 import numpy as np
 from dask.array import Array as daArray
-from pint import UnitRegistry, UndefinedUnitError
+from pint import UndefinedUnitError
 
+from hyperspy.api_nogui import _ureg
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
@@ -97,7 +98,6 @@ def _parse_sb_size(s, reference, sb_position, sb_size, parallel):
                 sb_size = BaseSignal(sb_size)
             if isinstance(sb_size.data, daArray):
                 sb_size = sb_size.as_lazy()
-
     if sb_size.axes_manager.navigation_size != s.axes_manager.navigation_size:
         if sb_size.axes_manager.navigation_size:
             raise ValueError('Sideband size dimensions do not match '
@@ -205,6 +205,11 @@ class HologramImage(Signal2D):
         -------
         Signal1D instance of sideband positions (y, x), referred to the unshifted FFT.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
+
         Examples
         --------
 
@@ -215,6 +220,10 @@ class HologramImage(Signal2D):
 
         array([124, 452])
         """
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
 
         sb_position = self.map(
             estimate_sideband_position,
@@ -259,6 +268,11 @@ class HologramImage(Signal2D):
         sb_size : Signal1D
             Sideband size referred to the unshifted FFT.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
+
         Examples
         --------
         >>> import hyperspy.api as hs
@@ -268,6 +282,10 @@ class HologramImage(Signal2D):
         >>> sb_size.data
         array([ 68.87670143])
         """
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
 
         sb_size = sb_position.map(
             estimate_sideband_size,
@@ -294,7 +312,7 @@ class HologramImage(Signal2D):
         output_shape=None,
         plotting=False,
         store_parameters=True,
-        show_progressbar=False,        
+        show_progressbar=False,
         parallel=None,
         max_workers=None,
     ):
@@ -330,7 +348,7 @@ class HologramImage(Signal2D):
             The sideband position (y, x), referred to the non-shifted FFT. If
             None, sideband is determined automatically from FFT.
         high_cf : bool, optional
-            If False, the highest carrier frequency allowed for the sideband 
+            If False, the highest carrier frequency allowed for the sideband
             location is equal to half of the Nyquist frequency (Default: True).
         output_shape: tuple, None
             Choose a new output shape. Default is the shape of the input
@@ -350,6 +368,11 @@ class HologramImage(Signal2D):
             Reconstructed electron wave. By default object wave is divided by
             reference wave.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
+
         Examples
         --------
         >>> import hyperspy.api as hs
@@ -363,6 +386,11 @@ class HologramImage(Signal2D):
         # TODO: Use defaults for choosing sideband, smoothness, relative filter
         # size and output shape if not provided
         # TODO: Plot FFT with marked SB and SB filter if plotting is enabled
+
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
 
         # Parsing reference:
         if not isinstance(reference, HologramImage):
@@ -477,9 +505,9 @@ class HologramImage(Signal2D):
         if output_shape is None:
             # Future improvement will give a possibility to choose
             # if sb_size.axes_manager.navigation_size > 0:
-            #     output_shape = (np.int(sb_size.inav[0].data*2), np.int(sb_size.inav[0].data*2))
+            #     output_shape = (int(sb_size.inav[0].data*2), int(sb_size.inav[0].data*2))
             # else:
-            #     output_shape = (np.int(sb_size.data*2), np.int(sb_size.data*2))
+            #     output_shape = (int(sb_size.data*2), int(sb_size.data*2))
             output_shape = self.axes_manager.signal_shape
             output_shape = output_shape[::-1]
 
@@ -639,7 +667,7 @@ class HologramImage(Signal2D):
               where I(k_0) is intensity of sideband and I(0) is the intensity of central band (FFT origin).
               This method delivers also reasonable estimation if the
               interference pattern do not cover full field of view.
-            * 'statistical': fringe contrast is estimated by dividing the 
+            * 'statistical': fringe contrast is estimated by dividing the
               standard deviation by the mean of the hologram intensity in real
               space. This algorithm relies on regularly spaced fringes and
               covering the entire field of view.
@@ -662,6 +690,11 @@ class HologramImage(Signal2D):
         statistics_dict :
             Dictionary with the statistics
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
+
         Examples
         --------
         >>> import hyperspy.api as hs
@@ -676,6 +709,10 @@ class HologramImage(Signal2D):
         'Carrier frequency (1 / nm)': 0.28685808994016415}
         """
 
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
         # Testing match of navigation axes of reference and self
         # (exception: reference nav_dim=1):
 
@@ -701,9 +738,8 @@ class HologramImage(Signal2D):
                                        max_workers=max_workers)
         fringe_sampling = np.divide(1., carrier_freq_px)
 
-        ureg = UnitRegistry()
         try:
-            units = ureg.parse_expression(
+            units = _ureg.parse_expression(
                 str(self.axes_manager.signal_axes[0].units))
         except UndefinedUnitError:
             raise ValueError('Signal axes units should be defined.')
@@ -745,7 +781,7 @@ class HologramImage(Signal2D):
                     1000 / (2 * constants.m_e * constants.c ** 2))
         wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
         carrier_freq_quantity = wavelength * \
-            ureg('nm') * carrier_freq_units / units * ureg('rad')
+            _ureg('nm') * carrier_freq_units / units * _ureg('rad')
         carrier_freq_mrad = carrier_freq_quantity.to('mrad').magnitude
 
         # Calculate fringe contrast:

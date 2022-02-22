@@ -1,20 +1,21 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import os
 from shutil import copyfile
 from pathlib import Path
@@ -38,11 +39,6 @@ style_pytest_mpl = 'default'
 style = ['default', 'overlap', 'cascade', 'mosaic', 'heatmap']
 
 
-@pytest.fixture
-def mpl_generate_path_cmdopt(request):
-    return request.config.getoption("--mpl-generate-path")
-
-
 def _generate_filename_list(style):
     path = Path(__file__).resolve().parent
     baseline_path = path.joinpath(baseline_dir)
@@ -62,7 +58,13 @@ def _generate_filename_list(style):
 
 @pytest.fixture
 def setup_teardown(request, scope="class"):
-    mpl_generate_path_cmdopt = request.config.getoption("--mpl-generate-path")
+    try:
+        import pytest_mpl
+        # This option is available only when pytest-mpl is installed
+        mpl_generate_path_cmdopt = request.config.getoption("--mpl-generate-path")
+    except ImportError:
+        mpl_generate_path_cmdopt = None
+
     # SETUP
     # duplicate baseline images to match the test_name when the
     # parametrized 'test_plot_spectra' are run. For a same 'style', the
@@ -191,21 +193,47 @@ class TestPlotSpectra():
         return ax.get_figure()
 
 
-@update_close_figure
+class TestPlotNonLinearAxis:
+
+    def setup_method(self):
+        dict0 = {'size': 10, 'name': 'Axis0', 'units': 'A', 'scale': 0.2,
+                 'offset': 1, 'navigate': True}
+        dict1 = {'axis': np.arange(100)**3, 'name': 'Axis1', 'units': 'O',
+                 'navigate': False}
+        np.random.seed(1)
+        s = hs.signals.Signal1D(np.random.random((10, 100)),
+                                axes=[dict0, dict1])
+        self.s = s
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_uniform_sig(self):
+        self.s.plot()
+        return self.s._plot.signal_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_uniform_nav(self):
+        s2 = self.s.T
+        s2.plot()
+        return s2._plot.navigator_plot.figure
+
+
+@update_close_figure()
 def test_plot_nav0_close():
     test_plot = _TestPlot(ndim=0, sdim=1)
     test_plot.signal.plot()
     return test_plot.signal
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_nav1_close():
     test_plot = _TestPlot(ndim=1, sdim=1)
     test_plot.signal.plot()
     return test_plot.signal
 
 
-@update_close_figure
+@update_close_figure(check_data_changed_close=False)
 def test_plot_nav2_close():
     test_plot = _TestPlot(ndim=2, sdim=1)
     test_plot.signal.plot()
@@ -256,8 +284,7 @@ def test_plot_log_scale():
     return s._plot.signal_plot.figure
 
 
-@pytest.mark.parametrize(("ndim", "plot_type"),
-                         _generate_parameter())
+@pytest.mark.parametrize(("ndim", "plot_type"), _generate_parameter())
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_two_cursors(ndim, plot_type):
@@ -267,12 +294,10 @@ def test_plot_two_cursors(ndim, plot_type):
         f = s._plot.signal_plot.figure
     else:
         f= s._plot.navigator_plot.figure
-    f.canvas.draw()
-    f.canvas.flush_events()
     return f
 
 
-@update_close_figure
+@update_close_figure(check_data_changed_close=False)
 def test_plot_nav2_sig1_two_cursors_close():
     return _test_plot_two_cursors(ndim=2)
 
@@ -295,11 +320,13 @@ def test_plot_with_non_finite_value():
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
 
 
-def test_plot_add_line_events():
+@pytest.mark.parametrize('ax', ['left', 'right'])
+def test_plot_add_line_events(ax):
     s = hs.signals.Signal1D(np.arange(100))
     s.plot()
     assert len(s.axes_manager.events.indices_changed.connected) == 1
-    figure = s._plot.signal_plot
+    plot = s._plot.signal_plot
+    assert len(s._plot.signal_plot.figure.get_axes()) == 1
 
     def line_function(axes_manager=None):
         return 100 - np.arange(100)
@@ -307,19 +334,35 @@ def test_plot_add_line_events():
     line = Signal1DLine()
     line.data_function = line_function
     line.set_line_properties(color='blue', type='line', scaley=False)
-    figure.add_line(line, connect_navigation=True)
+
+    if ax == 'right':
+        plot.create_right_axis()
+        plot.right_axes_manager = copy.deepcopy(s.axes_manager)
+        expected_axis_number = 2
+        expected_indices_changed_connected = 1
+    else:
+        expected_axis_number = 1
+        expected_indices_changed_connected = 2
+    plot.add_line(line, ax=ax, connect_navigation=True)
+
+    assert len(s._plot.signal_plot.figure.get_axes()) == expected_axis_number
     line.plot()
     assert len(line.events.closed.connected) == 1
-    assert len(s.axes_manager.events.indices_changed.connected) == 2
+    # expected_indices_changed_connected is 2 only when adding line on the left
+    # because for the right ax, we have a deepcopy of the axes_manager
+    assert len(s.axes_manager.events.indices_changed.connected) == \
+        expected_indices_changed_connected
 
     line.close()
-    figure.close_right_axis()
+    plot.close_right_axis()
 
+    assert len(s._plot.signal_plot.figure.get_axes()) == 1
     assert len(line.events.closed.connected) == 0
     assert len(s.axes_manager.events.indices_changed.connected) == 1
 
-    figure.close()
+    plot.close()
     assert len(s.axes_manager.events.indices_changed.connected) == 0
+    assert s._plot.signal_plot is None
 
 
 @pytest.mark.parametrize("autoscale", ['', 'x', 'xv', 'v'])
@@ -335,3 +378,27 @@ def test_plot_autoscale(autoscale):
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
 
     return s._plot.signal_plot.figure
+
+
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                               tolerance=default_tol, style=style_pytest_mpl)
+@pytest.mark.parametrize('linestyle', [None, '-', ['-', '--']])
+def test_plot_spectra_linestyle(linestyle):
+    s = hs.signals.Signal1D(np.arange(100).reshape(2, 50))
+    ax = hs.plot.plot_spectra(s, linestyle=linestyle)
+
+    return ax.get_figure()
+
+
+def test_plot_spectra_linestyle_error():
+    from hyperspy.exceptions import VisibleDeprecationWarning
+    s = hs.signals.Signal1D(np.arange(100).reshape(2, 50))
+    with pytest.warns(VisibleDeprecationWarning):
+        hs.plot.plot_spectra(s, line_style='--')
+
+    with pytest.raises(ValueError):
+        with pytest.warns(VisibleDeprecationWarning):
+            hs.plot.plot_spectra(s, linestyle='-', line_style='--')
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_spectra(s, linestyle='invalid')

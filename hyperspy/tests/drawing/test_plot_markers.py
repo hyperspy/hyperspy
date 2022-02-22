@@ -1,19 +1,21 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+
+import logging
 
 import numpy as np
 import pytest
@@ -111,8 +113,8 @@ class TestMarkers:
         m2 = markers.point(((12, 2, 9), (1, 2, 3)), ((2, 5, 1), (3, 9, 2)))
         m3 = markers.vertical_line(((12, 2), (2, 5), (9, 2)))
         m4 = markers.point(5, 5)
-        m4.data['x1'][()] = np.array(None, dtype=np.object)
-        m4.data['y1'][()] = np.array(None, dtype=np.object)
+        m4.data['x1'][()] = np.array(None, dtype=object)
+        m4.data['y1'][()] = np.array(None, dtype=object)
         m5 = markers.vertical_line(9)
         m6 = markers.rectangle(1, 5, 6, 8)
         m7 = markers.rectangle((1, 2), (5, 6), (6, 7), (8, 9))
@@ -156,7 +158,7 @@ class TestMarkers:
         for iy, temp_marker_list in enumerate(marker_pos_list):
             for ix, value in enumerate(temp_marker_list):
                 s.axes_manager.indices = (ix, iy)
-                vertical_line = s._plot.signal_plot.figure.axes[0].lines[1]
+                vertical_line = s._plot.signal_plot.ax.lines[1]
                 assert value == vertical_line.get_data()[0]
 
     def test_add_marker_signal2d_navigation_dim(self):
@@ -175,6 +177,13 @@ class TestMarkers:
         for i in range(12):
             marker_list.append(markers.point(4, 8))
         s.add_marker(marker_list)
+
+    def test_check_if_plot_is_not_active(self):
+        s = Signal1D(np.arange(100).reshape([10,10]))
+        m = markers.vertical_line(np.arange(10))
+        s.add_marker(m)
+        s._plot.close()
+        s.add_marker(m)
 
 
 class Test_permanent_markers:
@@ -389,7 +398,7 @@ def test_plot_rectange_markers():
     return im._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_rectange_markers_close():
     return _test_plot_rectange_markers()  # return for @update_close_figure
 
@@ -414,7 +423,7 @@ def test_plot_point_markers():
     return s._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_point_markers_close():
     return _test_plot_point_markers()
 
@@ -445,7 +454,7 @@ def test_plot_text_markers_sig():
     return s._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_text_markers_close():
     return _test_plot_text_markers()
 
@@ -472,7 +481,7 @@ def test_plot_line_markers():
     return im._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_line_markers_close():
     return _test_plot_line_markers()
 
@@ -485,6 +494,45 @@ def test_plot_eds_lines():
     s.plot(True)
     s.axes_manager.navigation_axes[0].index = 1
     return s._plot.signal_plot.figure
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl,
+    filename='test_plot_eds_lines.png')
+def test_plot_xray_lines():
+    # It should be the same image as with previous test (test_plot_eds_lines)
+    a = EDS_TEM_Spectrum()
+    s = stack([a, a * 5])
+    s.plot()
+    s._plot_xray_lines(xray_lines=True)
+    s.axes_manager.navigation_axes[0].index = 1
+    return s._plot.signal_plot.figure
+
+
+def test_plot_eds_lines_not_in_range(caplog):
+    s = EDS_TEM_Spectrum().isig[5.0:8.0]
+    s.plot()
+    with caplog.at_level(logging.WARNING):
+        s._plot_xray_lines(xray_lines=['Pt_Ka'])
+
+    assert "Pt_Ka is not in the data energy range." in caplog.text
+
+
+def test_plot_eds_lines_background():
+    s = EDS_TEM_Spectrum().isig[5.0:8.0]
+    s.plot()
+    bw = s.estimate_background_windows()
+    s._plot_xray_lines(background_windows=bw)
+
+
+def test_plot_add_background_windows():
+    s = EDS_TEM_Spectrum().isig[5.0:8.0]
+    s.plot()
+    bw = s.estimate_background_windows()
+    s._add_background_windows_markers(bw)
+    # Add integration windows
+    iw = s.estimate_integration_windows(windows_width=2.0, xray_lines=['Fe_Ka'])
+    s._add_vertical_lines_groups(iw, linestyle='--')
 
 
 def test_iterate_markers():
@@ -525,7 +573,7 @@ def test_iterate_markers():
                 mi.marker_properties['color']
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_eds_markers_close():
     s = EDS_TEM_Spectrum()
     s.plot(True)

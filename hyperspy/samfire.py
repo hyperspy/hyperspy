@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 from multiprocessing import cpu_count
@@ -85,7 +85,6 @@ class Samfire:
 
     Attributes
     ----------
-
     model : Model instance
         The complete model
     optional_components : list
@@ -119,34 +118,6 @@ class Samfire:
     random_state : None or int or RandomState instance, default None
         Random seed used to select the next pixels.
 
-    Methods
-    -------
-
-    start
-        start SAMFire
-    stop
-        stop SAMFire
-    plot
-        force plot of currently selected active strategy
-    refresh_database
-        refresh current active strategy database. No previous structure is
-        preserved
-    backup
-        backs up the current version of the model
-    change_strategy
-        changes strategy to a new one. Certain rules apply
-    append
-        appends strategy to the strategies list
-    extend
-        extends strategies list
-    remove
-        removes strategy from strategies list
-    update
-        updates the current model with values, received from a worker
-    log
-        if _log exists, logs the arguments to the list.
-    generate_values
-        creates a generator to calculate values to be sent to the workers
     """
 
     __active_strategy_ind = 0
@@ -199,7 +170,6 @@ class Samfire:
 
     @property
     def active_strategy(self):
-        """Returns the active strategy"""
         return self.strategies[self._active_strategy_ind]
 
     @active_strategy.setter
@@ -228,12 +198,13 @@ class Samfire:
             self.pool.prepare_workers(self)
 
     def start(self, **kwargs):
-        """Starts SAMFire.
+        """Start SAMFire.
 
         Parameters
         ----------
-        **kwargs : key-word arguments
-            Any key-word arguments to be passed to Model.fit() call
+        **kwargs : dict
+            Any keyword arguments to be passed to
+            :py:meth:`~.model.BaseModel.fit`
         """
         self._setup()
         if self._workers and self.pool is not None:
@@ -265,7 +236,7 @@ class Samfire:
                 self.pool.collect_results()
 
     def append(self, strategy):
-        """appends the given strategy to the end of the strategies list
+        """Append the given strategy to the end of the strategies list
 
         Parameters
         ----------
@@ -274,7 +245,7 @@ class Samfire:
         self.strategies.append(strategy)
 
     def extend(self, iterable):
-        """extend the strategies list by the given iterable
+        """Extend the strategies list by the given iterable
 
         Parameters
         ----------
@@ -340,14 +311,14 @@ class Samfire:
             self.backup(on_count=True)
 
     def backup(self, filename=None, on_count=True):
-        """Backs-up the samfire results in a file
+        """Backup the samfire results in a file.
 
         Parameters
         ----------
-        filename: {str, None}
-            the filename. If None, a default value of "backup_"+signal_title
+        filename : {str, None}
+            the filename. If None, a default value of ``backup_`` + signal_title
             is used.
-        on_count: bool
+        on_count : bool
             if True (default), only saves on the required count of steps
         """
         if filename is None:
@@ -388,8 +359,8 @@ class Samfire:
             self._swap_dict_and_model(ind, results)
 
     def refresh_database(self):
-        """Refreshes currently selected strategy without preserving any
-        "ignored" pixels
+        """Refresh currently selected strategy without preserving any
+        "ignored" pixels; no previous structure is preserved.
         """
         # updates current active strategy database / prob.
         # Assume when chisq is not None, it's relevant
@@ -602,7 +573,7 @@ class Samfire:
                 connect_other_navigation1), [])
 
     def plot(self, on_count=False):
-        """(if possible) plots current strategy plot. Local strategies plot
+        """If possible, plot current strategy plot. Local strategies plot
         grayscale navigation signal with brightness representing order of the
         pixel selection. Global strategies plot a collection of histograms,
         one per parameter.
@@ -623,7 +594,7 @@ class Samfire:
                     self._figure = self.active_strategy.plot(self._figure)
 
     def log(self, *args):
-        """If has a list named "_log", appends the arguments there
+        """If has a list named "_log" as attribute, appends the arguments there
         """
         if hasattr(self, '_log') and isinstance(self._log, list):
             self._log.append(args)
@@ -635,5 +606,6 @@ class Samfire:
         return ans
 
     def stop(self):
+        """Stop SAMFire."""
         if hasattr(self, "pool") and self.pool is not None:
             self.pool.stop()

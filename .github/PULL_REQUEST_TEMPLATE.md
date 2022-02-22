@@ -1,5 +1,5 @@
 ### Requirements
-* Read the [developer guide](https://hyperspy.org/hyperspy-doc/current/dev_guide/index.html).
+* Read the [developer guide](https://hyperspy.org/hyperspy-doc/current/dev_guide/intro.html).
 * Base your pull request on the [correct branch](https://hyperspy.org/hyperspy-doc/current/dev_guide/git.html#semantic-versioning-and-hyperspy-main-branches).
 * Filling out the template; it helps the review process and it is useful to summarise the PR.
 * This template can be updated during the progression of the PR to summarise its status. 
@@ -16,7 +16,8 @@ A few sentences and/or a bulleted list to describe and motivate the change:
 - [ ] Change implemented (can be split into several points),
 - [ ] update docstring (if appropriate),
 - [ ] update user guide (if appropriate),
-- [ ] add entry to `CHANGES.rst` (if appropriate),
+- [ ] add an changelog entry in the `upcoming_changes` folder (see [`upcoming_changes/README.rst`](https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/upcoming_changes/README.rst)),
+- [ ] Check formatting changelog entry in the `readthedocs` doc build of this PR (link in github checks)
 - [ ] add tests,
 - [ ] ready for review.
 

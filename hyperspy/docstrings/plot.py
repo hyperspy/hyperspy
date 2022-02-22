@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 """Common docstring snippets for plot.
 
@@ -22,10 +22,10 @@
 
 
 BASE_PLOT_DOCSTRING_PARAMETERS = \
-    """navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
-        Allowed string values are ``'auto'``, ``'slider'``, and ``'spectrum'``.
+    """navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass). \
+       Allowed string values are ``'auto'``, ``'slider'``, and ``'spectrum'``.
 
-        If ``'auto'``:
+            If ``'auto'``:
 
                 - If `navigation_dimension` > 0, a navigator is
                   provided to explore the data.
@@ -45,6 +45,9 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
                   current `Z` index and a window with sliders for the `X`, `Y`,
                   and `Z` axes will be raised. Notice that changing the `Z`-axis
                   index changes the navigator in this case.
+                - For lazy signals, the navigator will be calculated using the
+                  :py:func:`~hyperspy._signals.lazy.LazySignal.compute_navigator`
+                  method.
 
             If ``'slider'``:
 
@@ -55,13 +58,14 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
 
                 - If `navigation_dimension` > 0 the navigator is always a
                   spectrum obtained by integrating the data over all other axes.
+                - Not supported for lazy signals, the ``'auto'`` option will
+                  be used instead.
 
             If ``None``, no navigator will be provided.
 
             Alternatively a :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
-            instance can be provided. The `signal_dimension` must be 1 (for a
-            spectrum navigator) or 2 (for a image navigator) and
-            `navigation_shape` must be 0 (for a static navigator) or
+            instance can be provided. The navigation or signal shape must
+            match the navigation shape of the signal to plot or the
             `navigation_shape` + `signal_shape` must be equal to the
             `navigator_shape` of the current object (for a dynamic navigator).
             If the signal `dtype` is RGB or RGBA this parameter has no effect and
@@ -117,16 +121,17 @@ PLOT2D_DOCSTRING = \
             position. If 'v' (for values) is in the string, the contrast of the
             image will be set automatically according to `vmin` and `vmax` when
             the data or navigation indices change. Default is 'v'.
-        saturated_pixels: scalar
+        saturated_pixels : scalar
             The percentage of pixels that are left out of the bounds.
             For example, the low and high bounds of a value of 1 are the 0.5%
             and 99.5% percentiles. It must be in the [0, 100] range.
             If None (default value), the value from the preferences is used.
-        .. deprecated:: 1.6.0
-           `saturated_pixels` will be removed in HyperSpy 2.0.0, it is replaced
-            by `vmin`, `vmax` and `autoscale`.
-        norm : {"auto", "linear", "power", "log", "symlog" or a subclass of
-                :py:class:`matplotlib.colors.Normalise`}
+
+            .. deprecated:: 1.6.0
+               `saturated_pixels` will be removed in HyperSpy 2.0.0, it is replaced
+               by `vmin`, `vmax` and `autoscale`.
+
+        norm : {"auto", "linear", "power", "log", "symlog" or a subclass of :py:class:`matplotlib.colors.Normalise`}
             Set the norm of the image to display. If "auto", a linear scale is
             used except if when `power_spectrum=True` in case of complex data
             type. "symlog" can be used to display negative value on a negative
@@ -194,7 +199,7 @@ COMPLEX_DOCSTRING = \
 
 
 PLOT2D_KWARGS_DOCSTRING = \
-    """**kwargs
+    """**kwargs : dict
             Only when plotting an image: additional (optional) keyword
             arguments for :py:func:`matplotlib.pyplot.imshow`.
         """

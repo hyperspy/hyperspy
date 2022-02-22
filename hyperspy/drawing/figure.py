@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import textwrap
 import matplotlib.pyplot as plt
@@ -63,7 +63,7 @@ class BlittedFigure(object):
     def _on_blit_draw(self, *args):
         fig = self.figure
         # As draw doesn't draw animated elements, in its current state the
-        # canvas only contains the backgroud. The following line simply stores
+        # canvas only contains the background. The following line simply stores
         # it for the consumption of _update_animated.
         self._background = fig.canvas.copy_from_bbox(fig.bbox)
         # draw does not draw animated elements, so we must draw them
@@ -102,10 +102,7 @@ class BlittedFigure(object):
         for marker in self.ax_markers:
             marker.close(render_figure=False)
         if render_figure:
-            if self.ax.figure.canvas.supports_blit:
-                self.ax.hspy_fig._update_animated()
-            else:
-                self.ax.figure.canvas.draw_idle()
+            self.render_figure()
 
     def _on_close(self):
         _logger.debug('Closing `BlittedFigure`.')
@@ -138,3 +135,9 @@ class BlittedFigure(object):
     def title(self, value):
         # Wrap the title so that each line is not longer than 60 characters.
         self._title = textwrap.fill(value, 60)
+
+    def render_figure(self):
+        if self.figure.canvas.supports_blit and self._background is not None:
+            self._update_animated()
+        else:
+            self.figure.canvas.draw_idle()

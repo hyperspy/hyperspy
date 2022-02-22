@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 from operator import attrgetter
 import numpy as np
-from dask.array import Array as dArray
+import dask.array as da
 
 from hyperspy.misc.utils import attrsetter
 from hyperspy.misc.export_dictionary import parse_flag_string
@@ -55,7 +55,7 @@ def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
         sl = tuple(array_slices[:nav_dims])
         if isinstance(target, np.ndarray):
             return np.atleast_1d(target[sl])
-        if isinstance(target, dArray):
+        if isinstance(target, da.Array):
             return target[sl]
         raise ValueError(
             'tried to slice with navigation dimensions, but was neither a '
@@ -66,7 +66,7 @@ def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
         sl = tuple(array_slices[-sig_dims:])
         if isinstance(target, np.ndarray):
             return np.atleast_1d(target[sl])
-        if isinstance(target, dArray):
+        if isinstance(target, da.Array):
             return target[sl]
         raise ValueError(
             'tried to slice with navigation dimensions, but was neither a '
@@ -273,17 +273,21 @@ class FancySlicing(object):
         return tuple(array_slices)
 
     def _slicer(self, slices, isNavigation=None, out=None):
+        if self.axes_manager._ragged and not isNavigation:
+            raise RuntimeError("`isig` is not supported for ragged signal.")
+
         array_slices = self._get_array_slices(slices, isNavigation)
         new_data = self.data[array_slices]
-        if new_data.size == 1 and new_data.dtype is np.dtype('O'):
-            if isinstance(new_data[0], (np.ndarray, dArray)):
-                return self.__class__(new_data[0]).transpose(navigation_axes=0)
-            else:
-                return new_data[0]
+        if (self.ragged and new_data.dtype != np.dtype(object) and
+                isinstance(new_data, np.ndarray)):
+            # Numpy will convert the array to non-ragged, for consistency,
+            # we make a ragged array with only one item
+            data = new_data.copy()
+            new_data = np.empty((1, ), dtype=object)
+            new_data[0] = data
 
         if out is None:
-            _obj = self._deepcopy_with_new_data(new_data,
-                                                copy_variance=True)
+            _obj = self._deepcopy_with_new_data(new_data, copy_variance=True)
             _to_remove = []
             for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
                 if (isinstance(slice_, slice) or
@@ -291,8 +295,7 @@ class FancySlicing(object):
                     axis._slice_me(slice_)
                 else:
                     _to_remove.append(axis.index_in_axes_manager)
-            for _ind in reversed(sorted(_to_remove)):
-                _obj._remove_axis(_ind)
+            _obj._remove_axis(_to_remove)
         else:
             out.data = new_data
             _obj = out
@@ -328,10 +331,7 @@ class FancySlicing(object):
 
                 except AttributeError:
                     pass
-        # _obj.get_dimensions_from_data() # replots, so we do it manually:
-        dc = _obj.data
-        for axis in _obj.axes_manager._axes:
-            axis.size = int(dc.shape[axis.index_in_array])
+
         if out is None:
             return _obj
         else:

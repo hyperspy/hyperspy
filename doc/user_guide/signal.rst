@@ -48,6 +48,9 @@ in the :py:attr:`~.signal.BaseSignal.metadata` attribute and the axes
 information (including calibration) can be accessed (and modified) in the
 :py:class:`~.axes.AxesManager` attribute.
 
+
+.. _signal_initialization:
+
 Signal initialization
 ---------------------
 
@@ -78,8 +81,10 @@ This also applies to the :py:attr:`~.signal.BaseSignal.metadata`.
     │   ├── name = A BaseSignal
     │   └── title = A BaseSignal title
     └── Signal
-	├── binned = False
 	└── signal_type =
+
+Instead of using a list of *axes dictionaries* ``[dict0, dict1]`` during signal 
+initialization, you can also pass a list of *axes objects*: ``[axis0, axis1]``.
 
 
 The navigation and signal dimensions
@@ -214,6 +219,8 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     |    :py:class:`~._signals.complex_signal2d.Complex2D`                    |        2         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
 
+.. versionchanged:: 1.0 ``Simulation``, ``SpectrumSimulation`` and ``ImageSimulation``
+   classes removed.
 
 .. versionadded:: 1.5
     External packages can register extra :py:class:`~.signal.BaseSignal`
@@ -223,7 +230,7 @@ Note that, if you have :ref:`packages that extend HyperSpy
 <hyperspy_extensions-label>` installed in your system, there may
 be more specialised signals available to you. To print all available specialised
 :py:class:`~.signal.BaseSignal` subclasses installed in your system call the
-:py:func:`hyperspy.utils.print_known_signal_types`
+:py:func:`~.utils.print_known_signal_types`
 function as in the following example:
 
 .. code-block:: python
@@ -270,9 +277,107 @@ The following example shows how to transform between different subclasses.
        >>> s
        <ComplexSignal1D, title: , dimensions: (20, 10|100)>
 
+.. _signal.ragged:
+
+Ragged array
+------------
+
+A ragged array (also called jagged array) is an array created with
+sequences-of-sequences, where the nested sequences don't have the same length.
+For example, a numpy ragged array can be created as follow:
+
+   .. code-block:: python
+
+       >>> arr = np.array([[1, 2, 3], [1]], dtype=object)
+       >>> arr
+       array([list([1, 2, 3]), list([1])], dtype=object)
+       
+Note that the array shape is (2, ):
+
+   .. code-block:: python
+
+       >>> arr.shape
+       (2, )
 
 
+Numpy ragged array must have python ``object`` type to allow the variable length of
+the nested sequences - here ``[1, 2, 3]`` and ``[1]``. As explained in
+`NEP-34 <https://numpy.org/neps/nep-0034-infer-dtype-is-object.html>`_,
+``dtype=object`` needs to be specified when creating the array to avoid ambiguity
+about the shape of the array.
 
+HyperSpy supports the use of ragged array with the following conditions:
+
+- The signal must be explicitly defined as being ``ragged``, either when creating
+  the signal or by changing the ragged attribute of the signal
+- The signal dimension is the variable length dimension of the array
+- The ``isig`` syntax is not supported
+- Signal with ragged array can't be transposed
+- Signal with ragged array can't be plotted
+
+To create a hyperspy signal of a numpy ragged array:
+
+   .. code-block:: python
+
+       >>> s = hs.signals.BaseSignal(arr, ragged=True)
+       >>> s
+       <BaseSignal, title: , dimensions: (2|ragged)>
+
+       >>> s.ragged
+       True
+
+       >>> s.axes_manager
+       <Axes manager, axes: (2|ragged)>
+                   Name |   size |  index |  offset |   scale |  units 
+       ================ | ====== | ====== | ======= | ======= | ====== 
+            <undefined> |      2 |      0 |       0 |       1 | <undefined> 
+       ---------------- | ------ | ------ | ------- | ------- | ------ 
+            Ragged axis |               Variable length
+
+.. note::
+    When possible, numpy will cast sequences-of-sequences to "non-ragged" array:
+
+       .. code-block:: python
+
+           >>> arr = np.array([np.array([1, 2]), np.array([1, 2])], dtype=object)
+           >>> arr
+           array([[1, 2],
+                  [1, 2]], dtype=object)
+
+       
+    Unlike in the previous example, here the array is not ragged, because
+    the length of the nested sequences are equal (2) and numpy will create
+    an array of shape (2, 2) instead of (2, ) as in the previous example of
+    ragged array
+
+       .. code-block:: python
+
+           >>> arr.shape
+           (2, 2)
+
+In addition to the use of the keyword ``ragged`` when creating an hyperspy
+signal, the ``ragged`` attribute can also be set to specify whether the signal
+contains a ragged array or not.
+
+In the following example, an hyperspy signal is created without specifying that
+the array is ragged. In this case, the signal dimension is 2, which *can be*
+misleading, because each item contains a list of numbers. To provide a unambiguous
+representation of the fact that the signal contains a ragged array, the
+``ragged`` attribute can be set to ``True``. By doing so, the signal space will
+be described as "ragged" and the navigation shape will become the same as the
+shape of the ragged array:
+
+   .. code-block:: python
+
+       >>> arr = np.array([[1, 2, 3], [1]], dtype=object)
+       >>> s = hs.signals.BaseSignal(arr)
+       >>> s
+       <BaseSignal, title: , dimensions: (|2)>
+       
+       >>> s.ragged = True
+       >>> s
+       <BaseSignal, title: , dimensions: (2|ragged)>       
+       
 
 .. _signal.binned:
 
@@ -280,14 +385,15 @@ Binned and unbinned signals
 ---------------------------
 
 Signals that are a histogram of a probability density function (pdf) should
-have the ``signal.metadata.Signal.binned`` attribute set to
-``True``. This is because some methods operate differently in signals that are
-*binned*.
+have the ``is_binned`` attribute of the signal axis set to ``True``. The reason
+is that some methods operate differently on signals that are *binned*. An
+example of *binned* signals are EDS spectra, where the multichannel analyzer
+integrates the signal counts in every channel (=bin).
+Note that for 2D signals each signal axis has an ``is_binned``
+attribute that can be set independently. For example, for the first signal
+axis: ``signal.axes_manager.signal_axes[0].is_binned``.
 
-.. versionchanged:: 1.0 ``Simulation``, ``SpectrumSimulation`` and ``ImageSimulation``
-   classes removed.
-
-The default value of the ``binned`` attribute is shown in the
+The default value of the ``is_binned`` attribute is shown in the
 following table:
 
 .. table:: Binned default values for the different subclasses.
@@ -304,7 +410,7 @@ following table:
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | True   |
     +---------------------------------------------------------------+--------+
-    |           :py:class:`~._signals.eds_tem.EDSTEM`               | True   |
+    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | True   |
     +---------------------------------------------------------------+--------+
     |              :py:class:`~._signals.signal2d.Signal2D`         | False  |
     +---------------------------------------------------------------+--------+
@@ -312,10 +418,8 @@ following table:
     +---------------------------------------------------------------+--------+
     |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`    | False  |
     +---------------------------------------------------------------+--------+
-    |    :py:class:`~._signals.complex_signal2d.Complex2Dmixin`     | False  |
+    |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`    | False  |
     +---------------------------------------------------------------+--------+
-
-
 
 
 
@@ -323,7 +427,20 @@ To change the default value:
 
 .. code-block:: python
 
-    >>> s.metadata.Signal.binned = True
+    >>> s.axes_manager[-1].is_binned = True
+
+.. versionchanged:: 1.7 The ``binned`` attribute from the metadata has been
+    replaced by the axis attributes ``is_binned``.
+
+Integration of binned signals
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For binned axes, the detector already provides the per-channel integration of
+the signal. Therefore, in this case, :py:meth:`~.signal.BaseSignal.integrate1D`
+performs a simple summation along the given axis. In contrast, for unbinned
+axes, :py:meth:`~.signal.BaseSignal.integrate1D` calls the
+:py:meth:`~.signal.BaseSignal.integrate_simpson` method.
+
 
 Generic tools
 -------------
@@ -435,6 +552,15 @@ array instead of a :py:class:`~.signal.BaseSignal` instance e.g.:
     >>> np.angle(s)
     array([ 0.,  0.])
 
+.. note::
+    For numerical **differentiation** and **integration**, use the proper
+    methods :py:meth:`~.signal.BaseSignal.derivative` and
+    :py:meth:`~.signal.BaseSignal.integrate1D`. In certain cases, particularly
+    when operating on a non-uniform axis, the approximations using the
+    :py:meth:`~.signal.BaseSignal.diff` and :py:meth:`~.signal.BaseSignal.sum`
+    methods will lead to erroneous results.
+
+
 .. _signal.indexing:
 
 Indexing
@@ -462,6 +588,7 @@ features differ from numpy):
   + Allow independent indexing of signal and navigation dimensions
   + Support indexing with decimal numbers.
   + Support indexing with units.
+  + Support indexing with relative coordinates i.e. 'rel0.5'
   + Use the image order for indexing i.e. [x, y, z,...] (HyperSpy) vs
     [...,z,y,x] (numpy)
 
@@ -503,9 +630,11 @@ First consider indexing a single spectrum, which has only one signal dimension
     >>> s.isig[5::2].data
     array([5, 7, 9])
 
-Unlike numpy, HyperSpy supports indexing using decimal numbers or string
-(containing a decimal number and an units), in which case
-HyperSpy indexes using the axis scales instead of the indices.
+Unlike numpy, HyperSpy supports indexing using decimal numbers or strings
+(containing a decimal number and units), in which case
+HyperSpy indexes using the axis scales instead of the indices. Additionally,
+one can index using relative coordinates, for example 'rel0.5' to index the
+middle of the axis.
 
 .. code-block:: python
 
@@ -525,6 +654,8 @@ HyperSpy indexes using the axis scales instead of the indices.
     array([1, 3])
     >>> s.axes_manager[0].units = 'µm'
     >>> s.isig[:'2000 nm'].data
+    array([0, 1, 2, 3])
+    >>> s.isig[:'rel0.5'].data
     array([0, 1, 2, 3])
 
 Importantly the original :py:class:`~.signal.BaseSignal` and its "indexed self"
@@ -866,7 +997,8 @@ arguments as in the following example.
 If all function calls do not return identically-shaped results, only navigation
 information is preserved, and the final result is an array where
 each element corresponds to the result of the function (or arbitrary object
-type). As such, most HyperSpy functions cannot operate on such Signal, and the
+type). These are :ref:`ragged arrays<signal.ragged>` and has the dtype `object`.
+As such, most HyperSpy functions cannot operate on such signals, and the
 data should be accessed directly.
 
 The ``inplace`` keyword (by default ``True``) of the
@@ -881,12 +1013,13 @@ data (default, ``True``) or storing it to a new signal (``False``).
     >>> result = image_stack.map(scipy.ndimage.rotate,
     ...                            angle=angles.T,
     ...                            inplace=False,
+    ...                            ragged=True,
     ...                            reshape=True)
     100%|████████████████████████████████████████████| 4/4 [00:00<00:00, 18.42it/s]
 
     >>> result
     <BaseSignal, title: , dimensions: (4|)>
-    >>> image_stack.data.dtype
+    >>> result.data.dtype
     dtype('O')
     >>> for d in result.data.flat:
     ...     print(d.shape)
@@ -906,9 +1039,9 @@ The execution can be sped up by passing ``parallel`` keyword to the
     >>> def slow_func(data):
     ...     time.sleep(1.)
     ...     return data + 1
-    >>> s = hs.signals.Signal1D(np.arange(20).reshape((20,1)))
+    >>> s = hs.signals.Signal1D(np.arange(40).reshape((20, 2)))
     >>> s
-    <Signal1D, title: , dimensions: (20|1)>
+    <Signal1D, title: , dimensions: (20|2)>
     >>> s.map(slow_func, parallel=False)
     100%|██████████████████████████████████████| 20/20 [00:20<00:00,  1.00s/it]
     >>> # some operations will be done in parallel:
@@ -935,6 +1068,46 @@ navigation dimension of s.
     >>> d = hs.signals.Signal1D(np.cos(np.linspace(0., 2*np.pi, 512)))
     >>> s.map(lambda A, B: A * B, B=d)
     100%|██████████| 10/10 [00:00<00:00, 2573.19it/s]
+
+
+.. _lazy_output-map-label:
+
+.. versionadded:: 1.7
+    Get result as lazy signal
+
+Especially when working with very large datasets, it can be useful to
+not do the computation immediately. For example if it would make you run
+out of memory. In that case, the `lazy_output` parameter can be used.
+
+.. code-block:: python
+
+    >>> from scipy.ndimage import gaussian_filter
+    >>> s = hs.signals.Signal2D(np.random.random((4, 4, 128, 128)))
+    >>> s_out = s.map(gaussian_filter, sigma=5, inplace=False, lazy_output=True)
+    <LazySignal2D, title: , dimensions: (4, 4|128, 128)>
+
+`s_out` can then be saved to a hard drive, to avoid it being loaded into memory.
+Alternatively, it can be computed and loaded into memory using `s_out.compute()`
+
+.. code-block:: python
+
+    >>> s_out.save("gaussian_filter_file.hspy")
+
+Another advantage of using `lazy_output=True` is the ability to "chain" operations,
+by running `map` on the output from a previous `map` operation.
+For example, first running a Gaussian filter, followed by peak finding. This can
+improve the computation time, and reduce the memory need.
+
+.. code-block:: python
+
+    >>> s_out = s.map(scipy.ndimage.gaussian_filter, sigma=5, inplace=False, lazy_output=True)
+    >>> from skimage.feature import blob_dog
+    >>> s_out1 = s_out.map(blob_dog, threshold=0.05, inplace=False, ragged=True, lazy_output=False)
+    >>> s_out1
+    <BaseSignal, title: , dimensions: (4, 4|ragged)>
+
+This is especially relevant for very large datasets, where memory use can be a
+limiting factor.
 
 
 Cropping
@@ -1015,6 +1188,61 @@ cannot be performed lazily:
     NotImplementedError: Lazy rebin requires scale to be integer and divisor of the original signal shape
 
 
+The ``dtype``  argument can be used to specify the ``dtype`` of the returned
+signal:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.ones((2, 5, 10), dtype=np.uint8)
+    >>> print(s)
+    <Signal1D, title: , dimensions: (5, 2|10)>
+    >>> print(s.data.dtype)
+    uint8
+
+    # Use dtype=np.unit16 to specify a dtype
+    >>> s2 = s.rebin(scale=(5, 2, 1), dtype=np.uint16)
+    >>> print(s2.data.dtype)
+    uint16
+
+    # Use dtype="same" to keep the same dtype
+    >>> s3 = s.rebin(scale=(5, 2, 1), dtype="same")
+    >>> print(s3.data.dtype)
+    uint8
+
+    # By default `dtype=None`, the dtype is determined by the behaviour of
+    # numpy.sum, in this case, unsigned integer of the same precision as the 
+    # platform interger
+    >>> s4 = s.rebin(scale=(5, 2, 1))
+    >>> print(s4.data.dtype)
+    uint64
+
+
+.. _squeeze-label:
+
+Squeezing
+^^^^^^^^^
+
+The :py:meth:`~.signal.BaseSignal.squeeze` method removes any zero-dimensional
+axes, i.e. axes of ``size=1``, and the attributed data dimensions from a signal.
+The method returns a reduced copy of the signal and does not operate in place.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal2D(np.random.random((2,1,1,6,8,8)))
+    <Signal2D, title: , dimensions: (6, 1, 1, 2|8, 8)>
+    >>> s = s.squeeze()
+    >>> s
+    <Signal2D, title: , dimensions: (6, 2|8, 8)>
+
+Squeezing can be particularly useful after a rebinning operation that leaves
+one dimension with ``shape=1``:
+
+    >>> s = hs.signals.Signal2D(np.random.random((5,5,5,10,10)))
+    >>> s.rebin(new_shape=(5,1,5,5,5))
+    <Signal2D, title: , dimensions: (5, 1, 5|5, 5)>
+    >>> s.rebin(new_shape=(5,1,5,5,5)).squeeze()
+    <Signal2D, title: , dimensions: (5, 5|5, 5)>
+
 
 Folding and unfolding
 ^^^^^^^^^^^^^^^^^^^^^
@@ -1053,6 +1281,14 @@ with same dimension.
 
   Stacking example.
 
+.. note::
+
+    When stacking signals with large amount of
+    :py:attr:`~.signal.BaseSignal.original_metadata`, these metadata will be
+    stacked and this can lead to very large amount of metadata which can in
+    turn slow down processing. The ``stack_original_metadata`` argument can be
+    used to disable stacking :py:attr:`~.signal.BaseSignal.original_metadata`.
+
 An object can be split into several objects
 with the :py:meth:`~.signal.BaseSignal.split` method. This function can be used
 to reverse the :py:func:`~.utils.stack` function:
@@ -1074,13 +1310,13 @@ to reverse the :py:func:`~.utils.stack` function:
 Fast Fourier Transform (FFT)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The `fast Fourier transform <https://en.wikipedia.org/wiki/Fast_Fourier_transform>`_ 
-of a signal can be computed using the :py:meth:`~.signal.BaseSignal.fft` method. By default, 
-the FFT is calculated with the origin at (0, 0), which will be displayed at the 
-bottom left and not in the centre of the FFT. Conveniently, the ``shift`` argument of the 
-the :py:meth:`~.signal.BaseSignal.fft` method can be used to center the output of the FFT. 
-In the following example, the FFT of a hologram is computed using ``shift=True`` and its 
-output signal is displayed, which shows that the FFT results in a complex signal with a 
+The `fast Fourier transform <https://en.wikipedia.org/wiki/Fast_Fourier_transform>`_
+of a signal can be computed using the :py:meth:`~.signal.BaseSignal.fft` method. By default,
+the FFT is calculated with the origin at (0, 0), which will be displayed at the
+bottom left and not in the centre of the FFT. Conveniently, the ``shift`` argument of the
+the :py:meth:`~.signal.BaseSignal.fft` method can be used to center the output of the FFT.
+In the following example, the FFT of a hologram is computed using ``shift=True`` and its
+output signal is displayed, which shows that the FFT results in a complex signal with a
 real and an imaginary parts:
 
 .. code-block:: python
@@ -1093,11 +1329,11 @@ real and an imaginary parts:
   :align:   center
   :width:   800
 
-The strong features in the real and imaginary parts correspond to the lattice fringes of the 
+The strong features in the real and imaginary parts correspond to the lattice fringes of the
 hologram.
 
-For visual inspection of the FFT it is convenient to display its power spectrum 
-(i.e. the square of the absolute value of the FFT) rather than FFT itself as it is done 
+For visual inspection of the FFT it is convenient to display its power spectrum
+(i.e. the square of the absolute value of the FFT) rather than FFT itself as it is done
 in the example above by using the ``power_spectum`` argument:
 
 .. code-block:: python
@@ -1106,8 +1342,8 @@ in the example above by using the ``power_spectum`` argument:
     >>> fft = im.fft(True)
     >>> fft.plot(True)
 
-Where ``power_spectum`` is set to ``True`` since it is the first argument of the 
-:py:meth:`~._signals.complex_signal.ComplexSignal_mixin.plot` method for complex signal. 
+Where ``power_spectum`` is set to ``True`` since it is the first argument of the
+:py:meth:`~._signals.complex_signal.ComplexSignal.plot` method for complex signal.
 When ``power_spectrum=True``, the plot will be displayed on a log scale by default.
 
 
@@ -1115,7 +1351,7 @@ When ``power_spectrum=True``, the plot will be displayed on a log scale by defau
   :align:   center
   :width:   400
 
-The visualisation can be further improved by setting the minimum value to display to the 30-th 
+The visualisation can be further improved by setting the minimum value to display to the 30-th
 percentile; this can be done by using ``vmin="30th"`` in the plot function:
 
 .. code-block:: python
@@ -1128,12 +1364,12 @@ percentile; this can be done by using ``vmin="30th"`` in the plot function:
   :align:   center
   :width:   400
 
-The streaks visible in the FFT come from the edge of the image and can be removed by  
-applying an `apodization <https://en.wikipedia.org/wiki/Apodization>`_ function to the original 
-signal before the computation of the FFT. This can be done using the ``apodization`` argument of 
-the :py:meth:`~.signal.BaseSignal.fft` method and it is usually used for visualising FFT patterns 
-rather than for quantitative analyses. By default, the so-called ``hann`` windows is 
-used but different type of windows such as the ``hamming`` and ``tukey`` windows. 
+The streaks visible in the FFT come from the edge of the image and can be removed by
+applying an `apodization <https://en.wikipedia.org/wiki/Apodization>`_ function to the original
+signal before the computation of the FFT. This can be done using the ``apodization`` argument of
+the :py:meth:`~.signal.BaseSignal.fft` method and it is usually used for visualising FFT patterns
+rather than for quantitative analyses. By default, the so-called ``hann`` windows is
+used but different type of windows such as the ``hamming`` and ``tukey`` windows.
 
 .. code-block:: python
 
@@ -1151,8 +1387,8 @@ used but different type of windows such as the ``hamming`` and ``tukey`` windows
 Inverse Fast Fourier Transform (iFFT)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Inverse fast Fourier transform can be calculated from a complex signal by using the 
-:py:meth:`~.signal.BaseSignal.ifft` method. Similarly to the :py:meth:`~.signal.BaseSignal.fft` method, 
+Inverse fast Fourier transform can be calculated from a complex signal by using the
+:py:meth:`~.signal.BaseSignal.ifft` method. Similarly to the :py:meth:`~.signal.BaseSignal.fft` method,
 the ``shift`` argument can be provided to shift the origin of the iFFT when necessary:
 
 .. code-block:: python
@@ -1488,7 +1724,6 @@ model, for example:
   ├── General
   │   └── title =
   └── Signal
-      ├── binned = False
       └── signal_type =
 
   >>> s.estimate_poissonian_noise_variance()
@@ -1502,7 +1737,6 @@ model, for example:
       │   │   ├── gain_factor = 1
       │   │   └── gain_offset = 0
       │   └── variance = <SpectrumSimulation, title: Variance of , dimensions: (|100)>
-      ├── binned = False
       └── signal_type =
 
 Speeding up operations
@@ -1546,10 +1780,10 @@ operation.
 Handling complex data
 ---------------------
 
-The HyperSpy :py:class:`~.hyperspy.signals.ComplexSignal` signal class and its
-subclasses for 1-dimensional and 2-dimensional data allow the user to access
-complex properties like the `real` and `imag` parts of the data or the
-`amplitude` (also known as the modulus) and `phase` (also known as angle or
+The HyperSpy :py:class:`~._signals.complex_signal.ComplexSignal` signal class
+and its subclasses for 1-dimensional and 2-dimensional data allow the user to
+access complex properties like the ``real`` and ``imag`` parts of the data or the
+``amplitude`` (also known as the modulus) and ``phase`` (also known as angle or
 argument) directly. Getting and setting those properties can be done as
 follows:
 
@@ -1572,31 +1806,32 @@ To transform a real signal into a complex one use:
 
     >>> s.change_dtype(complex)
 
-Changing the `dtype` of a complex signal to something real is not clearly
-defined and thus not directly possible. Use the `real`, `imag`, `amplitude`
-or `phase` properties instead to extract the real data that is desired.
+Changing the ``dtype`` of a complex signal to something real is not clearly
+defined and thus not directly possible. Use the ``real``, ``imag``,
+``amplitude`` or ``phase`` properties instead to extract the real data that is
+desired.
 
 
 Calculate the angle / phase / argument
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:func:`~hyperspy.signals.ComplexSignal.angle` function can be used to
-calculate the angle, which is equivalent to using the `phase` property if no
-argument is used. If the data is real, the angle will be 0 for positive
-values and 2$\pi$ for negative values. If the `deg` parameter is set to
-`True`, the result will be given in degrees, otherwise in rad (default). The
-underlying function is the :py:func:`~numpy.angle` function.
-:py:func:`~hyperspy.signals.ComplexSignal.angle` will return an appropriate
-HyperSpy signal.
+The :py:meth:`~._signals.complex_signal.ComplexSignal.angle` function
+can be used to calculate the angle, which is equivalent to using the ``phase``
+property if no argument is used. If the data is real, the angle will be 0 for
+positive values and 2$\pi$ for negative values. If the `deg` parameter is set
+to ``True``, the result will be given in degrees, otherwise in rad (default).
+The underlying function is the :py:func:`numpy.angle` function.
+:py:meth:`~._signals.complex_signal.ComplexSignal.angle` will return
+an appropriate HyperSpy signal.
 
 
 Phase unwrapping
 ^^^^^^^^^^^^^^^^
 
-With the :py:func:`~hyperspy.signals.ComplexSignal.unwrapped_phase` method the
-complex phase of a signal can be unwrapped and returned as a new signal. The
-underlying method is :py:func:`~skimage.restoration.unwrap`, which uses the
-algorithm described in :ref:`[Herraez] <Herraez>`.
+With the :py:meth:`~._signals.complex_signal.ComplexSignal.unwrapped_phase`
+method the complex phase of a signal can be unwrapped and returned as a new signal.
+The underlying method is :py:func:`skimage.restoration.unwrap_phase`, which
+uses the algorithm described in :ref:`[Herraez] <Herraez>`.
 
 
 .. _complex.argand:
@@ -1606,13 +1841,12 @@ Calculate and display Argand diagram
 
 Sometimes it is convenient to visualize a complex signal as a plot of its
 imaginary part versus real one. In this case so called Argand diagrams can
-be calculated using :py:func:`~hyperspy.signals.ComplexSignal.argand_diagram`
-method, which returns the plot as a
-:py:class:`~._signals.complex_signal.Signal2D`. Optional arguments ``size``
-and ``display_range`` can be used to change the size (and therefore
-resolution) of the plot and to change the range for the display of the
-plot respectively. The last one is especially useful in order to zoom
-into specific regions of the plot or to limit the plot in case of noisy
+be calculated using :py:meth:`~hyperspy.signals.ComplexSignal.argand_diagram`
+method, which returns the plot as a :py:class:`~._signals.signal2d.Signal2D`.
+Optional arguments ``size`` and ``display_range`` can be used to change the
+size (and therefore resolution) of the plot and to change the range for the
+display of the plot respectively. The last one is especially useful in order to
+zoom into specific regions of the plot or to limit the plot in case of noisy
 data points.
 
 An example of calculation of Aragand diagram is :ref:`shown for electron
@@ -1623,9 +1857,9 @@ Add a linear phase ramp
 
 For 2-dimensional complex images, a linear phase ramp can be added to the
 signal via the
-:py:func:`~._signals.complex_signal2d.Complex2Dmixin.add_phase_ramp` method.
-The parameters `ramp_x` and `ramp_y` dictate the slope of the ramp in `x`-
-and `y` direction, while the offset is determined by the `offset` parameter.
+:py:meth:`~._signals.complex_signal2d.ComplexSignal2D.add_phase_ramp` method.
+The parameters ``ramp_x`` and ``ramp_y`` dictate the slope of the ramp in `x`-
+and `y` direction, while the offset is determined by the ``offset`` parameter.
 The fulcrum of the linear ramp is at the origin and the slopes are given in
 units of the axis with the according scale taken into account. Both are
 available via the :py:class:`~.axes.AxesManager` of the signal.

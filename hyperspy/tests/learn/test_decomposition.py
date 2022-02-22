@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 from tempfile import TemporaryDirectory
 from pathlib import Path
@@ -214,6 +214,9 @@ class TestEstimateElbowPosition:
         ):
             _ = self.s.estimate_elbow_position(None)
 
+    # Should be removed in scikit-learn 0.26
+    # https://scikit-learn.org/dev/whats_new/v0.24.html#sklearn-cross-decomposition
+    @pytest.mark.filterwarnings("ignore:The 'init' value, when 'init=None':FutureWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_store_number_significant_components(self):
         s = signals.Signal1D(generate_low_rank_matrix())
@@ -335,9 +338,6 @@ class TestDecompositionAlgorithm:
     def test_decomposition(self, algorithm):
         self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
-    # Warning filter can be removed after scikit-learn >= 0.22
-    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
-    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     @pytest.mark.parametrize("algorithm", ["RPCA", "ORPCA", "ORNMF", "MLPCA"])
     def test_decomposition_output_dimension_not_given(self, algorithm):
@@ -377,9 +377,9 @@ class TestPrintInfo:
         captured = capfd.readouterr()
         assert "Decomposition info:" in captured.out
 
-    # Warning filter can be removed after scikit-learn >= 0.22
-    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
-    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
+    # Should be removed in scikit-learn 0.26
+    # https://scikit-learn.org/dev/whats_new/v0.24.html#sklearn-cross-decomposition
+    @pytest.mark.filterwarnings("ignore:The 'init' value, when 'init=None':FutureWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     @pytest.mark.parametrize(
         "algorithm", ["sklearn_pca", "NMF", "sparse_pca", "mini_batch_sparse_pca"]
@@ -410,10 +410,11 @@ class TestReturnInfo:
             is None
         )
 
-    # Warning filter can be removed after scikit-learn >= 0.22
-    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
-    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
+    # Should be removed in scikit-learn 0.26
+    # https://scikit-learn.org/dev/whats_new/v0.24.html#sklearn-cross-decomposition
+    @pytest.mark.filterwarnings("ignore:The 'init' value, when 'init=None':FutureWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @pytest.mark.parametrize("return_info", [True, False])
     @pytest.mark.parametrize(
         "algorithm",
         [
@@ -426,37 +427,11 @@ class TestReturnInfo:
             "mini_batch_sparse_pca",
         ],
     )
-    def test_decomposition_supported_return_true(self, algorithm):
-        assert (
-            self.s.decomposition(
-                algorithm=algorithm, return_info=True, output_dimension=2
+    def test_decomposition_supported(self, algorithm, return_info):
+        out = self.s.decomposition(
+                algorithm=algorithm, return_info=return_info, output_dimension=2
             )
-            is not None
-        )
-
-    # Warning filter can be removed after scikit-learn >= 0.22
-    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
-    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
-    @pytest.mark.parametrize(
-        "algorithm",
-        [
-            "RPCA",
-            "ORPCA",
-            "ORNMF",
-            "sklearn_pca",
-            "NMF",
-            "sparse_pca",
-            "mini_batch_sparse_pca",
-        ],
-    )
-    def test_decomposition_supported_return_false(self, algorithm):
-        assert (
-            self.s.decomposition(
-                algorithm=algorithm, return_info=False, output_dimension=2
-            )
-            is None
-        )
+        assert (out is not None) is return_info
 
 
 class TestNonFloatTypeError:
@@ -671,6 +646,11 @@ def test_decomposition_navigation_mask(mask_as_array):
     if mask_as_array:
         navigation_mask = navigation_mask
     s.decomposition(navigation_mask=navigation_mask)
+    data = s.get_decomposition_loadings().inav[0].data
+    # Use np.argwhere(np.isnan(data)) to get the indices
+    np.testing.assert_allclose(data[[2, 5, 7, 8, 12, 13, 15, 19]],
+                               np.full(8, np.nan))
+    assert not np.isnan(s.get_decomposition_factors().data).any()
 
 
 @pytest.mark.parametrize('mask_as_array', [True, False])
@@ -680,6 +660,12 @@ def test_decomposition_signal_mask(mask_as_array):
     if mask_as_array:
         signal_mask = signal_mask.data
     s.decomposition(signal_mask=signal_mask)
+    data = s.get_decomposition_factors().inav[0].data
+    # Use np.argwhere(np.isnan(data)) to get the indices
+    np.testing.assert_allclose(data[[ 5, 12, 14, 15, 18, 21, 27, 28, 32, 43,
+                                     52, 55, 57, 59, 62, 79, 83]],
+                                np.full(17, np.nan))
+    assert not np.isnan(s.get_decomposition_loadings().data).any()
 
 
 @pytest.mark.parametrize('normalise_poissonian_noise', [True, False])

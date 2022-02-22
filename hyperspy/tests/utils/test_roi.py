@@ -1,26 +1,28 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import pytest
+import traits.api as t
 
+from hyperspy.misc.array_tools import round_half_towards_zero
 from hyperspy.roi import (CircleROI, Line2DROI, Point1DROI, Point2DROI,
-                          RectangularROI, SpanROI)
+                          RectangularROI, SpanROI, _get_central_half_limits_of_axis)
 from hyperspy.signals import Signal1D, Signal2D
 
 
@@ -104,6 +106,12 @@ class TestROIs():
         r = Point2DROI(1, 2)
         assert tuple(r) == (1, 2)
 
+    def test_span_roi_init(self):
+        with pytest.raises(ValueError):
+            SpanROI(30, 15)
+        with pytest.raises(ValueError):
+            SpanROI(15, 15)
+
     def test_span_spectrum_nav(self):
         s = self.s_s
         r = SpanROI(15, 30)
@@ -114,6 +122,29 @@ class TestROIs():
                 (n, ) + s.axes_manager.navigation_shape[1:])
         np.testing.assert_equal(
             sr.data, s.data[:, int(15 / scale):int(30 // scale), ...])
+
+    def test_roi_add_widget(self):
+        s = Signal1D(np.random.rand(60, 4))
+        s.axes_manager[0].name = 'nav axis'
+        # Test adding roi to plot
+        s.plot(navigator='spectrum')
+
+        # Try using different argument types
+        for axes in [0, s.axes_manager[0], 'nav axis', [0], ['nav axis']]:
+            r = SpanROI(0, 60)
+            r.add_widget(s, axes=axes)
+            np.testing.assert_equal(r(s).data, s.data)
+
+        # invalid arguments
+        for axes in ['not a DataAxis name', ['not a DataAxis name'], [0, 1]]:
+            r2 = SpanROI(0, 60)
+            with pytest.raises(ValueError):
+                r2.add_widget(s, axes=axes)
+
+        for axes in [2, [2]]:
+            r3 = SpanROI(0, 60)
+            with pytest.raises(IndexError):
+                r3.add_widget(s, axes=axes)
 
     def test_span_spectrum_nav_boundary_roi(self):
         s = Signal1D(np.random.rand(60, 4))
@@ -151,14 +182,21 @@ class TestROIs():
         r = SpanROI(15, 30)
         assert tuple(r) == (15, 30)
 
-    def test_widget_initialisation(self):
-        s = Signal1D(np.arange(2 * 4 * 6).reshape(2, 4, 6))
-        s.axes_manager[0].scale = 0.5
-        s.axes_manager[1].scale = 1.0
-
-        roi_nav = RectangularROI(0, 0, 1, 0.5)
+    @pytest.mark.parametrize('roi', [Point1DROI, Point2DROI, RectangularROI,
+                                     SpanROI, Line2DROI, CircleROI])
+    @pytest.mark.parametrize('axes', [None, 'signal'])
+    def test_add_widget_ROI_undefined(self, axes, roi):
+        s = self.s_i
         s.plot()
-        roi_nav.add_widget(s)
+        r = roi()
+        if axes == 'signal':
+            axes = s.axes_manager.signal_axes[:r.ndim]
+        r.add_widget(s, axes=axes)
+        if axes is None:
+            expected_axes = s.axes_manager.navigation_axes
+        else:
+            expected_axes = axes
+        r.signal_map[s][1][0] in expected_axes
 
     def test_span_spectrum_sig(self):
         s = self.s_s
@@ -178,8 +216,10 @@ class TestROIs():
         sr = r(s)
         scale0 = s.axes_manager[0].scale
         scale1 = s.axes_manager[1].scale
-        n = ((int(round(2.3 / scale0)), int(round(3.5 / scale0)),),
-             (int(round(5.6 / scale1)), int(round(12.2 / scale1)),))
+        n = ((int(round_half_towards_zero(2.3 / scale0)),
+              int(round_half_towards_zero(3.5 / scale0)),),
+             (int(round_half_towards_zero(5.6 / scale1)),
+              int(round_half_towards_zero(12.2 / scale1)),))
         assert (sr.axes_manager.navigation_shape ==
                 (n[0][1] - n[0][0], n[1][1] - n[1][0]))
         np.testing.assert_equal(
@@ -298,7 +338,7 @@ class TestROIs():
 
     def test_circle_getitem(self):
         r = CircleROI(20, 25, 20)
-        assert tuple(r) == (20, 25, 20)
+        assert tuple(r) == (20, 25, 20, 0)
 
     def test_annulus_getitem(self):
         r_ann = CircleROI(20, 25, 20, 15)
@@ -486,6 +526,59 @@ class TestROIs():
         with pytest.raises(ValueError):
             r.angle(axis='z')
 
+    def test_repr_None(self):
+        # Setting the args=None sets them as traits.Undefined, which didn't
+        # have a string representation in the old %s style.
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI]:
+            r = roi()
+            for value in tuple(r):
+                assert value == t.Undefined
+            repr(r)
+        for roi in [CircleROI, Line2DROI]:
+            r = roi()
+            for value in tuple(r)[:-1]:
+                assert value == t.Undefined
+            assert tuple(r)[-1] == 0
+            repr(r)
+
+    def test_repr_vals(self):
+        repr(Point1DROI(1.1))
+        repr(Point2DROI(1.1, 2.1))
+        repr(Line2DROI(0, 0, 1, 1, 0.1))
+        repr(RectangularROI(0, 0, 1, 1))
+        repr(SpanROI(3., 5.))
+        repr(CircleROI(5, 5, 3))
+        repr(CircleROI(5, 5, 3, 1))
+
+    def test_undefined_call(self):
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]:
+            r = roi()
+            with pytest.raises(ValueError, match='not yet been set'):
+                r(self.s_s)
+
+    def test_default_values_call(self):
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI,
+                    CircleROI]:
+            r = roi()
+            r._set_default_values(self.s_s)
+            r(self.s_s)
+
+    def test_default_values_call_specify_signal_axes(self):
+        s = self.s_i
+        for roi in [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI,
+                    CircleROI]:
+            r = roi()
+            r._set_default_values(s, axes=s.axes_manager.signal_axes)
+            r(s)
+
+    def test_get_central_half_limits(self):
+        ax = self.s_s.axes_manager[0]
+        assert _get_central_half_limits_of_axis(ax) == (73.75, 221.25)
+
+    def test_line2droi_length(self):
+        line = Line2DROI(x1=0., x2=2, y1=0., y2=2)
+        np.testing.assert_allclose(line.length, np.sqrt(8))
+
 
 class TestInteractive:
 
@@ -538,3 +631,88 @@ class TestInteractive:
         r.x += 5
         sr2 = r(s)
         np.testing.assert_array_equal(sr.data, sr2.data)
+
+    def test_interactive_default_values(self):
+        rois = [Point1DROI, Point2DROI, RectangularROI, SpanROI, Line2DROI, CircleROI]
+        values = [
+            (4.5,),
+            (4.5, 9.5),
+            (2.25, 6.75, 4.75, 14.25),
+            (2.25, 6.75),
+            (2.25, 4.75, 6.75, 14.25, 0.0),
+            (4.5, 9.5, 4.5, 0.0),
+        ]
+        self.s.plot()
+        for roi, vals in zip(rois, values):
+            r = roi()
+            r.interactive(signal=self.s)
+            assert tuple(r) == vals
+
+
+    @pytest.mark.parametrize('snap', [True, False, 'default'])
+    def test_interactive_snap(self, snap):
+        kwargs = {}
+        if snap != 'default':
+            kwargs['snap'] = snap
+        else:
+            # default is True
+            snap = True
+        s = self.s
+        r = RectangularROI(left=3, right=7, top=2, bottom=5)
+        s.plot()
+        _ = r.interactive(s, **kwargs)
+        for w in r.widgets:
+            old_position = w.position
+            new_position = (3.25, 2.2)
+            w.position = new_position
+            assert w.position == old_position if snap else new_position
+            assert w.snap_all == snap
+            assert w.snap_position == snap
+            assert w.snap_size == snap
+
+        p1 = Point1DROI(4)
+        _ = p1.interactive(s, **kwargs)
+        for w in p1.widgets:
+            old_position = w.position
+            new_position = (4.2, )
+            w.position = new_position
+            assert w.position == old_position if snap else new_position
+            assert w.snap_position == snap
+
+        p2 = Point2DROI(4, 5)
+        _ = p2.interactive(s, **kwargs)
+        for w in p2.widgets:
+            old_position = w.position
+            new_position = (4.3, 5.3)
+            w.position = new_position
+            assert w.position == old_position if snap else new_position
+            assert w.snap_position == snap
+
+        span = SpanROI(4, 5)
+        _ = span.interactive(s, **kwargs)
+        for w in span.widgets:
+            old_position = w.position
+            new_position = (4.2, )
+            w.position = new_position
+            assert w.position == old_position if snap else new_position
+            assert w.snap_all == snap
+            assert w.snap_position == snap
+            assert w.snap_size == snap
+
+            # check that changing snap is working fine
+            new_snap = not snap
+            w.snap_all = new_snap
+            new_position = (4.2, )
+            w.position = new_position
+            assert w.position == old_position if new_snap else new_position
+
+        line2d = Line2DROI(4, 5, 6, 6, 1)
+        _ = line2d.interactive(s, **kwargs)
+        for w in line2d.widgets:
+            old_position = w.position
+            new_position = ([4.3, 5.3], [6.0, 6.0])
+            w.position = new_position
+            assert w.position == old_position if snap else new_position
+            assert w.snap_all == snap
+            assert w.snap_position == snap
+            assert w.snap_size == snap

@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numbers
 import logging
@@ -24,7 +24,6 @@ import dask.array as da
 import traits.api as t
 from scipy import constants
 from prettytable import PrettyTable
-import pint
 
 from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
@@ -35,6 +34,7 @@ import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, underline, print_html
+from hyperspy.misc.utils import is_binned # remove in v2.0
 from hyperspy.misc.math_tools import optimal_fft_size
 from hyperspy.misc.eels.tools import get_edges_near_energy
 from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
@@ -49,7 +49,6 @@ from hyperspy.docstrings.signal import (
 
 
 _logger = logging.getLogger(__name__)
-_ureg = pint.UnitRegistry()
 
 
 @add_gui_method(toolkey="hyperspy.microscope_parameters_EELS")
@@ -70,7 +69,7 @@ class EELSTEMParametersUI(BaseSetMetadataItems):
     }
 
 
-class EELSSpectrum_mixin:
+class EELSSpectrum(Signal1D):
 
     _signal_type = "EELS"
     _alias_signal_types = ["TEM EELS"]
@@ -84,7 +83,7 @@ class EELSSpectrum_mixin:
         if hasattr(self.metadata, 'Sample') and \
                 hasattr(self.metadata.Sample, 'elements'):
             self.add_elements(self.metadata.Sample.elements)
-        self.metadata.Signal.binned = True
+        self.axes_manager.signal_axes[0].is_binned = True
         self._edge_markers = {}
 
     def add_elements(self, elements, include_pre_edges=False):
@@ -101,7 +100,7 @@ class EELSSpectrum_mixin:
             work, while add_elements(('C')) will NOT work.
         include_pre_edges : bool
             If True, the ionization edges with an onset below the lower
-            energy limit of the SI will be incluided
+            energy limit of the SI will be included
 
         Examples
         --------
@@ -144,7 +143,7 @@ class EELSSpectrum_mixin:
         ----------
         include_pre_edges : bool
             If True, the ionization edges with an onset below the lower
-            energy limit of the SI will be incluided
+            energy limit of the SI will be included
 
         """
         Eaxis = self.axes_manager.signal_axes[0].axis
@@ -288,7 +287,7 @@ class EELSSpectrum_mixin:
         -----
         This function only works when the zero-loss peak is the most
         intense feature in the spectrum. If it is not in most cases
-        the spectrum can be cropped to meet this criterium.
+        the spectrum can be cropped to meet this criterion.
         Alternatively use `estimate_shift1D`.
 
         See Also
@@ -341,7 +340,7 @@ class EELSSpectrum_mixin:
             the spectra in the list.
         print_stats : bool
             If True, print summary statistics of the ZLP maximum before
-            the aligment.
+            the alignment.
         subpixel : bool
             If True, perform the alignment with subpixel accuracy
             using cross-correlation.
@@ -358,6 +357,11 @@ class EELSSpectrum_mixin:
             in place of a tuple.
         %s
         %s
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
 
         Examples
         --------
@@ -387,6 +391,10 @@ class EELSSpectrum_mixin:
         """
 
         def substract_from_offset(value, signals):
+            # Test that axes is uniform
+            if not self.axes_manager[-1].is_uniform:
+                raise NotImplementedError("Support for EELS signals with "
+                            "non-uniform signal axes is not yet implemented.")
             if isinstance(value, da.Array):
                 value = value.compute()
             for signal in signals:
@@ -515,7 +523,7 @@ class EELSSpectrum_mixin:
                                     interactive=interactive,
                                     display=display, toolkit=toolkit)
     spikes_removal_tool.__doc__ = SPIKES_REMOVAL_TOOL_DOCSTRING % (
-        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG, MASK_ZERO_LOSS_PEAK_WIDTH, DISPLAY_DT, TOOLKIT_DT)
+        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG, MASK_ZERO_LOSS_PEAK_WIDTH, DISPLAY_DT, TOOLKIT_DT,)
 
     def estimate_elastic_scattering_intensity(
             self, threshold, show_progressbar=None):
@@ -556,7 +564,7 @@ class EELSSpectrum_mixin:
             # I0 = self._get_navigation_signal()
             # I0.axes_manager.set_signal_dimension(0)
             threshold.axes_manager.set_signal_dimension(0)
-            binned = self.metadata.Signal.binned
+            binned = ax.is_binned
 
             def estimating_function(data, threshold=None):
                 if np.isnan(threshold):
@@ -625,7 +633,7 @@ class EELSSpectrum_mixin:
         window_length : int
             If non zero performs order three Savitzky-Golay smoothing
             to the data to avoid falling in local minima caused by
-            the noise. It must be an odd interger.
+            the noise. It must be an odd integer.
         polynomial_order : int
             Savitzky-Golay filter polynomial order.
         start : float
@@ -673,7 +681,7 @@ class EELSSpectrum_mixin:
                                     window_length=window_length,
                                     differential_order=1)
         else:
-            s = s.diff(-1)
+            s = s.derivative(-1)
         if tol is None:
             tol = np.max(np.abs(s.data).min(axis.index_in_array))
         saxis = s.axes_manager[-1]
@@ -787,9 +795,9 @@ class EELSSpectrum_mixin:
                     _logger.info(f"The estimated iMFP is {mean_free_path} nm")
         else:
             _logger.warning(
-                "Computing the thickness without taking into account the effect of"
-                "the limited collection angle, what usually leads to underestimating"
-                "the thickness. To perform the angular corrections you must provide"
+                "Computing the thickness without taking into account the effect of "
+                "the limited collection angle, what usually leads to underestimating "
+                "the thickness. To perform the angular corrections you must provide "
                 "the density of the material.")
 
         s = self._get_navigation_signal(data=t_over_lambda)
@@ -839,6 +847,11 @@ class EELSSpectrum_mixin:
         -------
         An EELSSpectrum containing the current data deconvolved.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Notes
         -----
         For details see: Egerton, R. Electron Energy-Loss
@@ -846,6 +859,9 @@ class EELSSpectrum_mixin:
 
         """
         self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes")
         s = self.deepcopy()
         zlp_size = zlp.axes_manager.signal_axes[0].size
         self_size = self.axes_manager.signal_axes[0].size
@@ -908,7 +924,7 @@ class EELSSpectrum_mixin:
         """Performs Fourier-ratio deconvolution.
 
         The core-loss should have the background removed. To reduce the noise
-        amplication the result is convolved with a Gaussian function.
+        amplification the result is convolved with a Gaussian function.
 
         Parameters
         ----------
@@ -927,6 +943,11 @@ class EELSSpectrum_mixin:
         extrapolate_lowloss, extrapolate_coreloss : bool
             If True the signals are extrapolated using a power law,
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Notes
         -----
         For details see: Egerton, R. Electron Energy-Loss
@@ -934,6 +955,13 @@ class EELSSpectrum_mixin:
 
         """
         self._check_signal_dimension_equals_one()
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes.")
+        if not ll.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "The low-loss energy axis is non-uniform. "
+                "This operation is not yet implemented for non-uniform energy axes")
         orig_cl_size = self.axes_manager.signal_axes[0].size
 
         if threshold is None:
@@ -1026,6 +1054,11 @@ class EELSSpectrum_mixin:
         %s
         %s
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Notes
         -----
         For details on the algorithm see Gloter, A., A. Douiri,
@@ -1034,6 +1067,9 @@ class EELSSpectrum_mixin:
         Ultramicroscopy 96, no. 3–4 (September 2003): 385–400.
 
         """
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes.")
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
@@ -1111,23 +1147,22 @@ class EELSSpectrum_mixin:
                 "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
                 collection_angle)
     set_microscope_parameters.__doc__ = \
-"""
-Set the microscope parameters that are necessary to calculate
-the GOS. If not all of them are defined, in interactive mode
-raises an UI item to fill the values.
+        """
+        Set the microscope parameters that are necessary to calculate
+        the GOS.
 
-Parameters
-----------
+        If not all of them are defined, in interactive mode
+        raises an UI item to fill the values.
 
-beam_energy:  float
-    The energy of the electron beam in keV.
-convengence_angle : float
-    The microscope convergence semi-angle in mrad.
-collection_angle : float
-    The collection semi-angle in mrad.
-{}
-{}
-""".format(TOOLKIT_DT, DISPLAY_DT)
+        beam_energy: float
+            The energy of the electron beam in keV.
+        convergence_angle : float
+            The microscope convergence semi-angle in mrad.
+        collection_angle : float
+            The collection semi-angle in mrad.
+        {}
+        {}
+        """.format(TOOLKIT_DT, DISPLAY_DT)
 
     def power_law_extrapolation(self,
                                 window_size=20,
@@ -1201,7 +1236,9 @@ collection_angle : float
         # If the signal is binned we need to bin the extrapolated power law
         # what, in a first approximation, can be done by multiplying by the
         # axis step size.
-        if self.metadata.Signal.binned is True:
+        if is_binned(self):
+        # in v2 replace by
+        # if self.axes_manager[-1].is_binned:
             factor = s.axes_manager[-1].scale
         else:
             factor = 1
@@ -1236,16 +1273,15 @@ collection_angle : float
                                 t=None,
                                 delta=0.5,
                                 full_output=False):
-        r"""Calculate the complex
-        dielectric function from a single scattering distribution (SSD) using
-        the Kramers-Kronig relations.
+        r"""Calculate the complex dielectric function from a single scattering
+        distribution (SSD) using the Kramers-Kronig relations.
 
         It uses the FFT method as in [1]_.  The SSD is an
         EELSSpectrum instance containing SSD low-loss EELS with no zero-loss
         peak. The internal loop is devised to approximately subtract the
         surface plasmon contribution supposing an unoxidized planar surface and
         neglecting coupling between the surfaces. This method does not account
-        for retardation effects, instrumental broading and surface plasmon
+        for retardation effects, instrumental broadening and surface plasmon
         excitation in particles.
 
         Note that either refractive index or thickness are required.
@@ -1253,7 +1289,7 @@ collection_angle : float
 
         Parameters
         ----------
-        zlp: {None, number, Signal1D}
+        zlp : {None, number, Signal1D}
             ZLP intensity. It is optional (can be None) if `t` is None and `n`
             is not None and the thickness estimation is not required. If `t`
             is not None, the ZLP is required to perform the normalization and
@@ -1265,17 +1301,17 @@ collection_angle : float
             spectra for each location ii) a BaseSignal of signal dimension 0
             and navigation_dimension equal to the current signal containing the
             integrated ZLP intensity.
-        iterations: int
+        iterations : int
             Number of the iterations for the internal loop to remove the
             surface plasmon contribution. If 1 the surface plasmon contribution
             is not estimated and subtracted (the default is 1).
-        n: {None, float}
+        n : {None, float}
             The medium refractive index. Used for normalization of the
             SSD to obtain the energy loss function. If given the thickness
             is estimated and returned. It is only required when `t` is None.
-        t: {None, number, Signal1D}
-            The sample thickness in nm. Used for normalization of the
-             to obtain the energy loss function. It is only required when
+        t : {None, number, Signal1D}
+            The sample thickness in nm. Used for normalization of the SSD
+            to obtain the energy loss function. It is only required when
             `n` is None. If the thickness is the same for all spectra it can be
             given by a number. Otherwise, it can be provided as a BaseSignal
             with signal dimension 0 and navigation_dimension equal to the
@@ -1300,36 +1336,37 @@ collection_angle : float
 
             contained in an DielectricFunction instance.
         output: Dictionary (optional)
-            A dictionary of optional outputs with the following keys:
+            A dictionary of optional outputs with the following keys
 
-            ``thickness``
-                The estimated  thickness in nm calculated by normalization of
-                the SSD (only when `t` is None)
-
-            ``surface plasmon estimation``
-               The estimated surface plasmon excitation (only if
-               `iterations` > 1.)
+            * ``thickness``: the estimated  thickness in nm calculated by
+              normalization of the SSD (only when ``t`` is None)
+            * ``surface plasmon estimation``: the estimated surface plasmon
+              excitation (only if ``iterations`` > 1.)
 
         Raises
         ------
-        ValuerError
+        ValueError
             If both `n` and `t` are undefined (None).
-        AttribureError
+        AttributeError
             If the beam_energy or the collection semi-angle are not defined in
             metadata.
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
 
         Notes
         -----
-        This method is based in Egerton's Matlab code [1]_ with some
-        minor differences:
-
-        * The wrap-around problem when computing the ffts is workarounded by
-          padding the signal instead of substracting the reflected tail.
+        This method is based in Egerton's Matlab code [1]_ with a
+        minor difference: the wrap-around problem when computing the FFTs is
+        workarounded by padding the signal instead of subtracting the
+        reflected tail.
 
         .. [1] Ray Egerton, "Electron Energy-Loss Spectroscopy in the Electron
            Microscope", Springer-Verlag, 2011.
 
         """
+        if not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "This operation is not yet implemented for non-uniform energy axes.")
         output = {}
         if iterations == 1:
             # In this case s.data is not modified so there is no need to make
@@ -1392,7 +1429,7 @@ collection_angle : float
                                  'low-loss signal')
         elif isinstance(t, np.ndarray) and t.shape and t.shape != (1,):
             raise ValueError("thickness must be a HyperSpy signal or a number,"
-                             " not a numpy array.")
+                             " not a NumPy array.")
 
         # Slicer to get the signal data from 0 to axis.size
         slicer = s.axes_manager._get_data_slice(
@@ -1405,7 +1442,7 @@ collection_angle : float
 
         for io in range(iterations):
             # Calculation of the ELF by normalization of the SSD
-            # Norm(SSD) = Imag(-1/epsilon) (Energy Loss Funtion, ELF)
+            # Norm(SSD) = Imag(-1/epsilon) (Energy Loss Function, ELF)
 
             # We start by the "angular corrections"
             Im = s.data / (np.log(1 + (beta * tgt / eaxis) ** 2)) / axis.scale
@@ -1470,7 +1507,7 @@ collection_angle : float
 
             if iterations > 1 and zlp is not None:
                 # Surface losses correction:
-                #  Calculates the surface ELF from a vaccumm border effect
+                #  Calculates the surface ELF from a vacuum border effect
                 #  A simulated surface plasmon is subtracted from the ELF
                 Srfelf = 4 * e2 / ((e1 + 1) ** 2 + e2 ** 2) - Im
                 adep = (tgt / (eaxis + delta) *
@@ -1535,7 +1572,7 @@ collection_angle : float
             the components.EELSSpectrum.add_elements method automatically
             add the corresponding ionisation edges to the model.
         GOS : {'hydrogenic' | 'Hartree-Slater'}, optional
-            The generalized oscillation strenght calculations to use for the
+            The generalized oscillation strength calculations to use for the
             core-loss EELS edges. If None the Hartree-Slater GOS are used if
             available, otherwise it uses the hydrogenic GOS.
         dictionary : {None | dict}, optional
@@ -1544,11 +1581,19 @@ collection_angle : float
 
         Returns
         -------
-
         model : `EELSModel` instance.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
         from hyperspy.models.eelsmodel import EELSModel
+        if ll is not None and not self.axes_manager.signal_axes[0].is_uniform:
+            raise NotImplementedError(
+                "Multiple scattering is not implemented for spectra with a non-uniform energy axis. "
+                "To create a model that does not account for multiple-scattering do not set "
+                "the `ll` keyword.")
         model = EELSModel(self,
                           ll=ll,
                           auto_background=auto_background,
@@ -1766,11 +1811,13 @@ collection_angle : float
 
         return complmt_edges
 
-    def rebin(self, new_shape=None, scale=None, crop=True, out=None):
+    def rebin(self, new_shape=None, scale=None, crop=True, dtype=None,
+              out=None):
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale)
-        m = super().rebin(new_shape=new_shape, scale=scale, crop=crop, out=out)
+        m = super().rebin(new_shape=new_shape, scale=scale, crop=crop,
+                          dtype=dtype, out=out)
         m = out or m
         time_factor = np.prod([factors[axis.index_in_array]
                                for axis in m.axes_manager.navigation_axes])
@@ -1816,13 +1863,16 @@ collection_angle : float
         mask: signal
             The mask of the region.
         """
+        if self.axes_manager.navigation_dimension == 0:
+            raise RuntimeError('Navigation dimenstion must be higher than 0 '
+                               'to estimate a vacuum mask.')
         signal_axis = self.axes_manager.signal_axes[0]
         if start_energy is None:
             start_energy = 0.75 * signal_axis.high_value
 
         mask = (self.isig[start_energy:].mean(-1) <= threshold)
 
-        from scipy.ndimage.morphology import binary_dilation, binary_erosion
+        from scipy.ndimage import binary_dilation, binary_erosion
         if closing:
             mask.data = binary_dilation(mask.data, border_value=0)
             mask.data = binary_erosion(mask.data, border_value=1)
@@ -1830,11 +1880,6 @@ collection_angle : float
             mask.data = binary_erosion(mask.data, border_value=1)
             mask.data = binary_dilation(mask.data, border_value=0)
         return mask
-
-
-class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
-
-    pass
 
 
 class LazyEELSSpectrum(EELSSpectrum, LazySignal1D):

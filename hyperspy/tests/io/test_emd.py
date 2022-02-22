@@ -1,37 +1,36 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+
 
 # The EMD format is a hdf5 standard proposed at Lawrence Berkeley
 # National Lab (see http://emdatasets.com/ for more information).
 # NOT to be confused with the FEI EMD format which was developed later.
 
-
-import gc
-import os.path
-import shutil
-import tempfile
+import dask.array as da
 from datetime import datetime
-from os import remove
-
+from dateutil import tz
+import gc
 import h5py
 import numpy as np
+import os
 import pytest
-from dateutil import tz
+import tempfile
+import shutil
 
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
@@ -274,7 +273,32 @@ class TestCaseSaveAndRead():
         assert isinstance(signal, BaseSignal)
 
     def teardown_method(self, method):
-        remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
+        os.remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
+
+
+def test_chunking_saving_lazy():
+    s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
+    s.data = s.data.rechunk([50, 25, 25])
+    with tempfile.TemporaryDirectory() as tmp:
+        filename = os.path.join(tmp, 'test_chunking_saving_lazy.emd')
+        filename2 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_True.emd')
+        filename3 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_specify.emd')
+    s.save(filename)
+    s1 = load(filename, lazy=True)
+    assert s.data.chunks == s1.data.chunks
+
+    # with chunks=True, use h5py chunking
+    s.save(filename2, chunks=True)
+    s2 = load(filename2, lazy=True)
+    assert tuple([c[0] for c in s2.data.chunks]) == (13, 25, 13)
+    s1.close_file()
+    s2.close_file()
+
+    # Specify chunks
+    chunks = (50, 20, 20)
+    s.save(filename3, chunks=chunks)
+    s3 = load(filename3, lazy=True)
+    assert tuple([c[0] for c in s3.data.chunks]) == chunks
 
 
 def _generate_parameters():
@@ -318,7 +342,7 @@ class TestFeiEMD():
                           'time': '09:56:41',
                           'time_zone': 'BST',
                           'title': 'HAADF'},
-              'Signal': {'binned': False, 'signal_type': ''},
+              'Signal': {'signal_type': ''},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                         'original_shape': None,
                                         'signal_unfolded': False,
@@ -341,9 +365,11 @@ class TestFeiEMD():
                                          'fei_emd_image.npy'))
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].units == 'µm'
+        assert signal.axes_manager[0].is_binned == False
         np.testing.assert_allclose(signal.axes_manager[0].scale, 0.00530241, rtol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].units == 'µm'
+        assert signal.axes_manager[1].is_binned == False
         np.testing.assert_allclose(signal.axes_manager[1].scale, 0.00530241, rtol=1E-5)
         np.testing.assert_allclose(signal.data, fei_image)
         assert_deep_almost_equal(signal.metadata.as_dictionary(), md)
@@ -664,6 +690,9 @@ def test_fei_complex_loading():
     signal = load(os.path.join(my_path, 'emd_files', 'fei_example_complex_fft.emd'))
     assert isinstance(signal, ComplexSignal2D)
 
+def test_fei_complex_loading_lazy():
+    signal = load(os.path.join(my_path, 'emd_files', 'fei_example_complex_fft.emd'), lazy=True)
+    assert isinstance(signal, ComplexSignal2D)
 
 def test_fei_no_frametime():
     signal = load(os.path.join(my_path, 'emd_files', 'fei_example_tem_stack.emd'))

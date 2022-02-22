@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import copy
@@ -168,13 +168,9 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         rl.text_position = (1., 1.05,)
         rl.plot(**kwargs)
         self.right_pointer_on = True
-        if hasattr(self.signal_plot.figure, 'tight_layout'):
-            try:
-                self.signal_plot.figure.tight_layout()
-            except BaseException:
-                # tight_layout is a bit brittle, we do this just in case it
-                # complains
-                pass
+        # because we added the right axis, we need to redraw the canvas to
+        # update the background
+        self.signal_plot.figure.canvas.draw_idle()
 
     def remove_right_pointer(self):
         for line in self.signal_plot.right_ax_lines:

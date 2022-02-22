@@ -1,24 +1,25 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import math
 
 import numpy as np
+from pytest import approx
 
 from hyperspy.components2d import Gaussian2D
 
@@ -61,6 +62,39 @@ def test_util_fwhm_getset():
     g1.fwhm_y = 0.33
     assert g1.fwhm_x == 0.33
     assert g1.fwhm_y == 0.33
+
+
+def test_height_value():
+    g = Gaussian2D()
+    g.sigma_x.value = 0.1
+    g.sigma_y.value = 0.5
+    g.A.value = 99
+    x = np.arange(-2, 2, 0.01)
+    y = np.arange(-2, 2, 0.01)
+    xx, yy = np.meshgrid(x, y)
+    g_image = g.function(xx, yy)
+    assert approx(g_image.max()) == g.height
+
+
+def test_util_height_set():
+    g = Gaussian2D()
+    g.height = 0.33
+    np.testing.assert_allclose(
+        g.height, g.A.value / (2 * np.pi * g.sigma_x.value * g.sigma_y.value)
+    )
+
+
+def test_util_height_get():
+    g = Gaussian2D(A=55)
+    np.testing.assert_allclose(
+        g.height, g.A.value / (2 * np.pi * g.sigma_x.value * g.sigma_y.value)
+    )
+
+
+def test_util_height_getset():
+    g = Gaussian2D()
+    g.height = 0.165
+    assert g.height == 0.165
 
 
 def test_properties():

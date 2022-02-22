@@ -1,28 +1,27 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-import math
 import logging
+import math
+from pathlib import Path
 
 import numpy as np
-import scipy as sp
-
-from pathlib import Path
+from scipy import constants, integrate, interpolate
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.eels.base_gos import GOSBase
@@ -30,11 +29,11 @@ from hyperspy.misc.elements import elements
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary, load_from_dictionary)
 
+
 _logger = logging.getLogger(__name__)
 
-
-R = sp.constants.value("Rydberg constant times hc in eV")
-a0 = sp.constants.value("Bohr radius")
+R = constants.value("Rydberg constant times hc in eV")
+a0 = constants.value("Bohr radius")
 
 
 class HartreeSlaterGOS(GOSBase):
@@ -44,7 +43,6 @@ class HartreeSlaterGOS(GOSBase):
 
     Parameters
     ----------
-
     element_subshell : {str, dict}
         Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
         subshell. If a dictionary is passed, it is assumed that Hartree Slater
@@ -52,7 +50,6 @@ class HartreeSlaterGOS(GOSBase):
 
     Methods
     -------
-
     readgosfile()
         Read the GOS files of the element subshell from the location
         defined in Preferences.
@@ -60,13 +57,9 @@ class HartreeSlaterGOS(GOSBase):
         given the energy axis index and qmin and qmax values returns
         the qaxis and gos between qmin and qmax using linear
         interpolation to include qmin and qmax in the range.
-    as_dictionary()
-        Export the GOS as a dictionary that can be saved.
-
 
     Attributes
     ----------
-
     energy_axis : array
         The tabulated energy axis
     qaxis : array
@@ -109,7 +102,7 @@ class HartreeSlaterGOS(GOSBase):
         self.energy_axis = self.rel_energy_axis + self.onset_energy
 
     def as_dictionary(self, fullcopy=True):
-        """Export the GOS as a dictionary
+        """Export the GOS as a dictionary.
         """
         dic = {}
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
@@ -189,10 +182,10 @@ class HartreeSlaterGOS(GOSBase):
             # Perform the integration in a log grid
             qaxis, gos = self.get_qaxis_and_gos(i, qmin, qmax)
             logsqa0qaxis = np.log((a0 * qaxis) ** 2)
-            qint[i] = sp.integrate.simps(gos, logsqa0qaxis)
+            qint[i] = integrate.simps(gos, logsqa0qaxis)
         E = self.energy_axis + energy_shift
         # Energy differential cross section in (barn/eV/atom)
         qint *= (4.0 * np.pi * a0 ** 2.0 * R ** 2 / E / T *
                  self.subshell_factor) * 1e28
         self.qint = qint
-        return sp.interpolate.interp1d(E, qint, kind=3)
+        return interpolate.interp1d(E, qint, kind=3)

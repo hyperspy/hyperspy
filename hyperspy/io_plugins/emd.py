@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 # The EMD format is a hdf5 standard proposed at Lawrence Berkeley
 # National Lab (see http://emdatasets.com/ for more information).
@@ -38,11 +38,12 @@ import h5py
 import numpy as np
 import dask.array as da
 from dateutil import tz
-import pint
 
+from hyperspy.api_nogui import _ureg
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.elements import atomic_number2name
 import hyperspy.misc.io.fei_stream_readers as stream_readers
-from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.io_plugins.hspy import get_signal_chunks
 
 
 # Plugin characteristics
@@ -57,46 +58,13 @@ default_extension = 0
 reads_images = True
 reads_spectrum = True
 reads_spectrum_image = True
-# Writing features
+# Writing capabilities
 writes = True  # Only Berkeley emd
+non_uniform_axis = False
 EMD_VERSION = '0.2'
 # ----------------------
 
 _logger = logging.getLogger(__name__)
-
-
-def calculate_chunks(shape, dtype, chunk_size_mb=100):
-    """Calculate chunks to get target chunk size.
-
-    The chunks are optimized for C-order reading speed.
-
-    Parameters
-    ----------
-    shape: tuple of ints
-        The shape of the array
-    dtype: string or numpy dtype
-        The dtype of the array
-    chunk_size_mb: int
-        The maximum size of the resulting chunks in MB. The default is
-        100MB as reccommended by the dask documentation.
-
-    """
-
-    target = chunk_size_mb * 1e6
-    items = int(target // np.dtype(dtype).itemsize)
-    chunks = ()
-    dimsize = np.cumprod(shape[::-1])[::-1][1:]
-    for i, ds in enumerate(dimsize):
-        chunk = items // ds
-        if not chunk:
-            chunks += (1,)
-        elif chunk <= shape[i]:
-            chunks += (chunk, )
-        else:
-            chunks += (shape[i],)
-    # At least one signal
-    chunks += (shape[-1], )
-    return chunks
 
 
 class EMD(object):
@@ -504,9 +472,6 @@ class EMD_NCEM:
         List of dictionaries which are passed to the file_reader.
     """
 
-    def __init__(self):
-        self._ureg = pint.UnitRegistry()
-
     def read_file(self, file, lazy=None, dataset_path=None, stack_group=None):
         """
         Read the data from an emd file
@@ -585,9 +550,19 @@ class EMD_NCEM:
             self.dictionaries.append(d)
 
     @classmethod
-    def find_dataset_paths(cls, file):
+    def find_dataset_paths(cls, file, supported_dataset=True):
         """
         Find the paths of all groups containing valid EMD data.
+
+        Parameters
+        ----------
+        file : hdf5 file handle
+        supported_dataset : bool, optional
+            If True (default), returns the paths of all supported datasets,
+            otherwise returns the path of the non-supported other dataset.
+            This is relevant for groups containing auxiliary dataset(s) which
+            are not supported by HyperSpy or described in the EMD NCEM dataset
+            specification.
 
         Returns
         -------
@@ -595,15 +570,20 @@ class EMD_NCEM:
             List of path to these group.
 
         """
-        def print_dataset_only(item_name, item):
-            if not os.path.basename(item_name).startswith(('dim', 'index_coords')):
+        def print_dataset_only(item_name, item, dataset_only):
+            if supported_dataset is os.path.basename(item_name).startswith(
+                    ('data', 'counted_datacube', 'datacube', 'diffractionslice',
+                     'realslice', 'pointlistarray', 'pointlist')):
                 if isinstance(item, h5py.Dataset):
                     grp = file.get(os.path.dirname(item_name))
                     if cls._get_emd_group_type(grp):
                         dataset_path.append(item_name)
 
+        f = lambda item_name, item: print_dataset_only(item_name, item,
+                                                       supported_dataset)
+
         dataset_path = []
-        file.visititems(print_dataset_only)
+        file.visititems(f)
 
         return dataset_path
 
@@ -627,12 +607,15 @@ class EMD_NCEM:
         """Read dataset and use the h5py AsStrWrapper when the dataset is of
         string type (h5py 3.0 and newer)
         """
+        chunks = dataset.chunks
+        if chunks is None:
+            chunks = 'auto'
         if (h5py.check_string_dtype(dataset.dtype) and
             hasattr(dataset, 'asstr')):
             # h5py 3.0 and newer
             # https://docs.h5py.org/en/3.0.0/strings.html
             dataset = dataset.asstr()[:]
-        return dataset
+        return dataset, chunks
 
     def _read_emd_version(self, group):
         """ Return the group version if the group is an EMD group, otherwise
@@ -654,32 +637,27 @@ class EMD_NCEM:
         if None in array_list:
             raise IOError("Dataset can't be found.")
 
-        if self.lazy:
-            chunks = array_list[0].chunks
-            if chunks is None:
-                chunks = calculate_chunks(array_list[0].shape, array_list[0].dtype)
-
         if len(array_list) > 1:
             # Squeeze the data only when
             if self.lazy:
-                data_list = [da.from_array(self._read_dataset(d),
-                                           chunks=chunks) for d in array_list]
+                data_list = [da.from_array(*self._read_dataset(d))
+                             for d in array_list]
                 if transpose_required:
                     data_list = [da.transpose(d) for d in data_list]
                 data = da.stack(data_list)
                 data = da.squeeze(data)
             else:
-                data_list = [np.asanyarray(self._read_dataset(d))
+                data_list = [np.asanyarray(self._read_dataset(d)[0])
                              for d in array_list]
                 if transpose_required:
                     data_list = [np.transpose(d) for d in data_list]
                 data = np.stack(data_list).squeeze()
         else:
+            d = array_list[0]
             if self.lazy:
-                data = da.from_array(self._read_dataset(array_list[0]),
-                                     chunks=chunks)
+                data = da.from_array(*self._read_dataset(d))
             else:
-                data = np.asanyarray(self._read_dataset(array_list[0]))
+                data = np.asanyarray(self._read_dataset(d)[0])
             if transpose_required:
                 data = data.transpose()
 
@@ -703,7 +681,7 @@ class EMD_NCEM:
                                    simu_om.get('cellDimension', 0)[0])
                 if not math.isclose(total_thickness, len(array_list) * scale,
                                     rel_tol=1e-4):
-                    _logger.warning("Depth axis is non uniform and its offset "
+                    _logger.warning("Depth axis is non-uniform and its offset "
                                     "and scale can't be set accurately.")
                     # When non-uniform/non-linear axis are implemented, adjust
                     # the final depth to the "total_thickness"
@@ -763,7 +741,7 @@ class EMD_NCEM:
                 units_list = [u[1:-1].replace("_", "") for u in units_list]
                 value = ' * '.join(units_list)
                 try:
-                    units = self._ureg.parse_units(value)
+                    units = _ureg.parse_units(value)
                     value = f"{units:~}"
                 except:
                     pass
@@ -817,7 +795,7 @@ class EMD_NCEM:
             offset, scale = axis_data[0], np.diff(axis_data).mean()
         else:
             # This is a string, return default values
-            # When non-linear axis is supported we should be able to parse
+            # When non-uniform axis is supported we should be able to parse
             # string
             offset, scale = 0, 1
         return offset, scale
@@ -833,8 +811,8 @@ class EMD_NCEM:
         signal : instance of hyperspy signal
             The signal to save.
         **kwargs : dict
-            Dictionary containing metadata which will be written as attribute
-            of the root group.
+            Keyword argument are passed to the ``h5py.Group.create_dataset``
+            method.
 
         """
         if isinstance(file, str):
@@ -856,10 +834,11 @@ class EMD_NCEM:
         # Write signals:
         signal_group = emd_file.require_group('signals')
         signal_group.attrs['emd_group_type'] = 1
-        self._write_signal_to_group(signal_group, signal)
+        self._write_signal_to_group(signal_group, signal, **kwargs)
         emd_file.close()
 
-    def _write_signal_to_group(self, signal_group, signal):
+    def _write_signal_to_group(self, signal_group, signal, chunks=None,
+                               **kwargs):
         # Save data:
         title = signal.metadata.General.title or '__unnamed__'
         dataset = signal_group.require_group(title)
@@ -868,8 +847,20 @@ class EMD_NCEM:
         if np.issubdtype(data.dtype, np.dtype('U')):
             # Saving numpy unicode type is not supported in h5py
             data = data.astype(np.dtype('S'))
-        dataset.create_dataset('data', data=data, chunks=True,
-                               maxshape=maxshape)
+        if chunks is None:
+            if isinstance(data, da.Array):
+                # For lazy dataset, by default, we use the current dask chunking
+                chunks = tuple([c[0] for c in data.chunks])
+            else:
+                signal_axes = signal.axes_manager.signal_indices_in_array
+                chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
+        # when chunks=True, we leave it to h5py `guess_chunk`
+        elif chunks is not True:
+            # Need to reverse since the data is transposed when saving
+            chunks = chunks[::-1]
+
+        dataset.create_dataset('data', data=data, maxshape=maxshape,
+                               chunks=chunks, **kwargs)
 
         array_indices = np.arange(0, len(data.shape))
         dim_indices = (array_indices + 1)[::-1]
@@ -948,7 +939,6 @@ class FeiEMDReader(object):
         # Parallelise streams reading
         self.filename = filename
         self.select_type = select_type
-        self.ureg = pint.UnitRegistry()
         self.dictionaries = []
         self.first_frame = first_frame
         self.last_frame = last_frame
@@ -1114,15 +1104,18 @@ class FeiEMDReader(object):
                      ('imagFloat', '<f4')]
         if h5data.dtype == fft_dtype or h5data.dtype == dpc_dtype:
             _logger.debug("Found an FFT or DPC, loading as Complex2DSignal")
-            if self.lazy:
-                _logger.warning("Lazy not supported for FFT or DPC")
-            data = np.empty(h5data.shape, h5data.dtype)
-            h5data.read_direct(data)
             real = h5data.dtype.descr[0][0]
             imag = h5data.dtype.descr[1][0]
-            data = data[real] + 1j * data[imag]
-            # Set the axes in frame, y, x order
-            data = np.rollaxis(data, axis=2)
+            if self.lazy:
+                data = da.from_array(h5data, chunks=h5data.chunks)
+                data = data[real] + 1j * data[imag]
+                data = da.transpose(data, axes=[2, 0, 1])
+            else:
+                data = np.empty(h5data.shape, h5data.dtype)
+                h5data.read_direct(data)
+                data = data[real] + 1j * data[imag]
+                # Set the axes in frame, y, x order
+                data = np.rollaxis(data, axis=2)
         else:
             if self.lazy:
                 data = da.transpose(
@@ -1480,7 +1473,7 @@ class FeiEMDReader(object):
         if units == t.Undefined:
             return value, units
         factor /= 2
-        v = np.float(value) * self.ureg(units)
+        v = float(value) * _ureg(units)
         converted_v = (factor * v).to_compact()
         converted_value = float(converted_v.magnitude / factor)
         converted_units = '{:~}'.format(converted_v.units)

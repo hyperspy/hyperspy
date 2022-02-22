@@ -1,19 +1,19 @@
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -227,6 +227,34 @@ class _TestIteratedSignal:
         return axes_manager
 
 
+class TestPlotNonLinearAxis:   
+    
+    def setup_method(self):
+        dict0 = {'axis': np.arange(10)**0.5, 'name':'Non uniform 0', 'units':'A',
+                 'navigate':True}
+        dict1 = {'axis': np.arange(10)**0.5, 'name':'Non uniform 1', 'units':'A',
+                 'navigate':False}
+        dict2 = {'size': 100, 'name':'Linear 2', 'units':'A', 'scale':0.2,
+                 'offset':1, 'navigate':False}
+        np.random.seed(1)
+        s = hs.signals.Signal2D(np.random.random((10, 10, 100)),
+                                axes=[dict0, dict1, dict2])
+        self.s = s
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_uniform_nav(self):
+        self.s.plot()
+        return self.s._plot.navigator_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_uniform_sig(self):
+        s2 = self.s.T
+        s2.plot(navigator=None)
+        return s2._plot.signal_plot.figure
+
+
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_images_default():
@@ -327,7 +355,7 @@ def test_plot_images_cmap_make_cmap_bitfalse():
                                         '#745C97',
                                         (0.22, 0.22, 0.36)],
                                        bit=False,
-                                       name='test_cmap',
+                                       name='test_cmap2',
                                        register=True))
     return plt.gcf()
 
@@ -406,8 +434,7 @@ def test_plot_images_multi_signal_w_axes_replot():
         plt.matplotlib.backends.backend_agg.FigureCanvasBase.button_press_event(
             f.canvas, x, y, 'left', True)
         fn = plt.gcf()
-        tests.append(
-            np.allclose(imi, fn.axes[0].images[0].get_array().data))
+        tests.append(np.allclose(imi, plt.gca().images[0].get_array().data))
         plt.close(fn)
     assert np.alltrue(tests)
     return f
@@ -499,8 +526,8 @@ def test_plot_with_non_finite_value():
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_log_negative_value(cmap):
-    s = hs.signals.Signal2D(np.arange(10*10).reshape(10, 10))
-    s -= 5*10
+    s = hs.signals.Signal2D(np.arange(10*10, dtype=float).reshape(10, 10))
+    s -= 49.5
     if cmap:
         s.plot(norm='log', cmap=cmap)
     else:
@@ -561,3 +588,31 @@ def test_plot_autoscale_data_changed(autoscale):
     else:
         np.testing.assert_allclose(imf._vmin, _vmin)
         np.testing.assert_allclose(imf._vmax, _vmax)
+
+@pytest.mark.parametrize("axes_decor", ['all', 'off'])
+@pytest.mark.parametrize("label", ['auto', ['b','g']])
+@pytest.mark.parametrize("colors", ['auto', ['b','g']])
+@pytest.mark.parametrize("alphas", [1.0, [0.9,0.9]])
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                               tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_overlay(axes_decor,label,colors,alphas):
+    s1 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    s2 = hs.signals.Signal2D(np.arange(99,-1,-1).reshape(10, 10))
+    ax = hs.plot.plot_images([s1,s2], overlay=True, scalebar='all',
+                             label=label, suptitle=False,
+                             axes_decor=axes_decor, colors=colors,
+                             alphas=alphas, pixel_size_factor=10)
+
+    return ax[0].figure
+
+
+def test_plot_scale_different_sign():
+    N = 10
+    s = hs.signals.Signal2D(np.arange(N**2).reshape([10]*2))
+    s2 = s.isig[:, ::-1]
+    s2.axes_manager[0].scale = 1.0
+    s2.axes_manager[1].scale = -1.0
+
+    s2.plot()
+    assert s2._plot.signal_plot.pixel_units is not None
+    assert s2._plot.signal_plot.scalebar is True
