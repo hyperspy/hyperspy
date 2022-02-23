@@ -261,16 +261,16 @@ def test_read_CL_pmt_metadata():
     assert md.General.date == "2020-10-27"
     assert md.General.original_filename == "test-CL_spectrum-pmt.dm4"
     assert md.General.title == "test-CL_spectrum-pmt"
-    assert md.Acquisition_instrument.CL.acquisition_mode == "Serial dispersive"
-    assert md.Acquisition_instrument.CL.detector_type == "linear"
+    assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Serial dispersive"
+    assert md.Acquisition_instrument.Detector.detector_type == "PMT"
     np.testing.assert_allclose(
-        md.Acquisition_instrument.CL.dispersion_grating, 1200)
+        md.Acquisition_instrument.Spectrometer.Grating.groove_density, 1200)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.CL.dwell_time, 1.0)
+        md.Acquisition_instrument.Detector.integration_time, 1.0)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.CL.step_size, 0.5)
+        md.Acquisition_instrument.Spectrometer.step_size, 0.5)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.CL.start_wavelength, 166.233642578125)
+        md.Acquisition_instrument.Spectrometer.start_wavelength, 166.233642578125)
 
 def test_read_CL_ccd_metadata():
     fname = os.path.join(MY_PATH, "dm4_1D_data", "test-CL_spectrum-ccd.dm4")
@@ -283,27 +283,28 @@ def test_read_CL_ccd_metadata():
     assert md.General.time == "17:04:19"
     assert md.General.original_filename == "test-CL_spectrum-ccd.dm4"
     assert md.General.title == "test-CL_spectrum-ccd"
-    assert md.Acquisition_instrument.TEM.acquisition_mode == "SEM"
-    assert md.Acquisition_instrument.TEM.microscope == "Ultra55"
-    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 5.0)
+    #assert md.Acquisition_instrument.Detector.detector_type == "CCD"
+    assert md.Acquisition_instrument.SEM.acquisition_mode == "SEM"
+    assert md.Acquisition_instrument.SEM.microscope == "Ultra55"
+    np.testing.assert_allclose(md.Acquisition_instrument.SEM.beam_energy, 5.0)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.TEM.magnification, 10104.515625)
-    assert md.Acquisition_instrument.CL.acquisition_mode == "Parallel dispersive"
+        md.Acquisition_instrument.SEM.magnification, 10104.515625)
+    assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Parallel dispersive"
     np.testing.assert_allclose(
-        md.Acquisition_instrument.CL.dispersion_grating, 300.0)
+        md.Acquisition_instrument.Spectrometer.Grating.groove_density, 300.0)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.CL.exposure, 30.0)
+        md.Acquisition_instrument.Detector.exposure_per_frame, 30.0)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.CL.frame_number, 1.0)
+        md.Acquisition_instrument.Detector.frames, 1.0)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.CL.integration_time, 30.0)
+        md.Acquisition_instrument.Detector.integration_time, 30.0)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.CL.central_wavelength, 949.9741821289062)
+        md.Acquisition_instrument.Spectrometer.central_wavelength, 949.9741821289062)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.CL.saturation_fraction, 0.01861908845603466)
-    assert md.Acquisition_instrument.CL.CCD.binning == (1, 100)
-    assert md.Acquisition_instrument.CL.CCD.processing == "Dark Subtracted"
-    assert md.Acquisition_instrument.CL.CCD.read_area == (0, 0, 100, 1336)
+        md.Acquisition_instrument.Detector.saturation_fraction, 0.01861908845603466)
+    assert md.Acquisition_instrument.Detector.binning == (1, 100)
+    assert md.Acquisition_instrument.Detector.processing == "Dark Subtracted"
+    assert md.Acquisition_instrument.Detector.sensor_roi == (0, 0, 100, 1336)
 
 def test_read_CL_SI_metadata():
     fname = os.path.join(MY_PATH, "dm4_2D_data", "test-CL_spectrum-SI.dm4")
@@ -316,28 +317,29 @@ def test_read_CL_SI_metadata():
     assert md.General.time == "14:41:01"
     assert md.General.original_filename == "test-CL_spectrum-SI.dm4"
     assert md.General.title == "test-CL_spectrum-SI"
-    assert md.Acquisition_instrument.TEM.acquisition_mode == "SEM"
-    assert md.Acquisition_instrument.TEM.microscope == "Ultra55"
-    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 5.0)
+    #assert md.Acquisition_instrument.Detector.detector_type == "CCD"
+    assert md.Acquisition_instrument.SEM.acquisition_mode == "SEM"
+    assert md.Acquisition_instrument.SEM.microscope == "Ultra55"
+    np.testing.assert_allclose(md.Acquisition_instrument.SEM.beam_energy, 5.0)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.TEM.magnification, 31661.427734375)
-    assert md.Acquisition_instrument.CL.acquisition_mode == "Parallel dispersive"
+        md.Acquisition_instrument.SEM.magnification, 31661.427734375)
+    assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Parallel dispersive"
     np.testing.assert_allclose(
-        md.Acquisition_instrument.CL.dispersion_grating, 600.0)
+        md.Acquisition_instrument.Spectrometer.Grating.groove_density, 600.0)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.CL.exposure, 0.05000000074505806)
+        md.Acquisition_instrument.Detector.exposure_per_frame, 0.05000000074505806)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.CL.frame_number, 1)
+        md.Acquisition_instrument.Detector.frames, 1)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.CL.central_wavelength, 869.9838256835938)
+        md.Acquisition_instrument.Spectrometer.central_wavelength, 869.9838256835938)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.CL.saturation_fraction[0], 0.09676377475261688)
-    assert md.Acquisition_instrument.CL.CCD.binning == (1, 100)
-    assert md.Acquisition_instrument.CL.CCD.processing == "Dark Subtracted"
-    assert md.Acquisition_instrument.CL.CCD.read_area == (0, 0, 100, 1336)
-    assert md.Acquisition_instrument.CL.SI.drift_correction_periodicity == 1
-    assert md.Acquisition_instrument.CL.SI.drift_correction_units == "second(s)"
-    assert md.Acquisition_instrument.CL.SI.mode == "LineScan"
+        md.Acquisition_instrument.Detector.saturation_fraction[0], 0.09676377475261688)
+    assert md.Acquisition_instrument.Detector.binning == (1, 100)
+    assert md.Acquisition_instrument.Detector.processing == "Dark Subtracted"
+    assert md.Acquisition_instrument.Detector.sensor_roi == (0, 0, 100, 1336)
+    assert md.Acquisition_instrument.Spectrum_image.drift_correction_periodicity == 1
+    assert md.Acquisition_instrument.Spectrum_image.drift_correction_units == "second(s)"
+    assert md.Acquisition_instrument.Spectrum_image.mode == "LineScan"
 
 
 def test_location():
