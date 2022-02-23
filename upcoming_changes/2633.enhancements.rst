@@ -1,0 +1,1 @@
+Add possibility to search/access nested items in DictionaryTreeBrowser (metadata) without providing full path to item.
