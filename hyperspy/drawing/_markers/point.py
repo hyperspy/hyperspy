@@ -39,8 +39,8 @@ class Point(MarkerBase):
     size : array or float, optional, default 20
         The size of the point. see x arguments
     kwargs :
-        Keywords argument of ax.scatter valid properties (i.e. recognized by
-        mpl.plot).
+        Keywords argument of matplotlib.axes.Axes.scatter valid properties 
+        (i.e. recognized by mpl.plot).
 
     Example
     -------

@@ -22,23 +22,23 @@ from hyperspy.drawing.marker import MarkerBase
 
 class Arrow(MarkerBase):
 
-    """Rectangle marker that can be added to the signal figure
+    """Arrow marker that can be added to the signal figure
 
     Parameters
     ----------
     x1 : array or float
-        The position of the up left corner of the rectangle in x.
+        The position of the tail of the arrow in x.
         If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
         have the same dimensions in the navigation axes.
     y1 : array or float
-        The position of the up left corner of the rectangle in y.
+        The position of the tail of the arrow in y.
         see x1 arguments
     x2 : array or float
-        The position of the down right corner of the rectangle in x.
+        The position of the head of the arrow in x.
         see x1 arguments
     y2 : array or float
-        The position of the down right of the rectangle in y.
+        The position of the head of the arrow in y.
         see x1 arguments
     kwargs :
         Keywords argument of matplotlib patches.FancyArrowPatch valid properties 

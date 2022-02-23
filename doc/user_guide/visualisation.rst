@@ -187,7 +187,7 @@ Customising image plot
 The image plot can be customised by passing additional arguments when plotting.
 Colorbar, scalebar and contrast controls are HyperSpy-specific, however
 `matplotlib.imshow
-<http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.imshow>`_
+<https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.imshow.html>`_
 arguments are supported as well:
 
 .. code-block:: python
@@ -340,7 +340,7 @@ Data files used in the following examples can be downloaded using
 
     The sample and the data used in this chapter are described in
     P. Burdet, `et al.`, Acta Materialia, 61, p. 3090-3098 (2013) (see
-    `abstract <http://infoscience.epfl.ch/record/185861/>`_).
+    `abstract <https://infoscience.epfl.ch/record/185861/>`_).
 
 Stack of 2D images can be imported as an 3D image and plotted with a slider
 instead of the 2D navigator as in the previous example.
@@ -445,10 +445,10 @@ Data files used in the following examples can be downloaded using
     `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-demos/blob/master/electron_microscopy/EDS/>`_ .
 
 Although HyperSpy does not currently support plotting when signal_dimension is
-greater than 2, `Mayavi <http://docs.enthought.com/mayavi/mayavi/>`_ can be
+greater than 2, `Mayavi <https://docs.enthought.com/mayavi/mayavi/>`_ can be
 used for this purpose.
 
-In the following example we also use `scikit-image <http://scikit-image.org/>`_
+In the following example we also use `scikit-image <https://scikit-image.org/>`_
 for noise reduction. More details about
 :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` method can be
 found in :ref:`EDS lines intensity<get_lines_intensity>`.
@@ -496,7 +496,7 @@ Plotting several images
 :py:func:`~.drawing.utils.plot_images` is used to plot several images in the
 same figure. It supports many configurations and has many options available
 to customize the resulting output. The function returns a list of
-`matplotlib axes <http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.axes>`_,
+`matplotlib axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.axes.html>`_,
 which can be used to further customize the figure. Some examples are given
 below. Plots generated from another installation may look slightly different
 due to ``matplotlib`` GUI backends and default font sizes. To change the
@@ -618,7 +618,7 @@ spectrum image. This example also demonstrates changing the colormap (with
 `cmap`), adding scalebars to the plots (with `scalebar`), and changing the
 `padding` between the images. The padding is specified as a dictionary,
 which is used to call subplots_adjust method of matplotlib
-(see `documentation <http://matplotlib.org/api/figure_api.html#matplotlib.figure.Figure.subplots_adjust>`_).
+(see `documentation <https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure.subplots_adjust>`_).
 
 .. code-block:: python
 
@@ -910,7 +910,7 @@ There are also two other styles, "heatmap" and "mosaic":
   `mosaic` style.
 
 For the "heatmap" style, different
-`matplotlib color schemes <http://matplotlib.org/examples/color/colormaps_reference.html>`_
+`matplotlib color schemes <https://matplotlib.org/stable/gallery/color/colormap_reference.html>`_
 can be used:
 
 .. code-block:: python
@@ -1337,23 +1337,20 @@ Markers have 'zorder' property to support ordering between markers.
 Signal plane has zorder=0, and the marker that have largest number
 become a top most marker.
   
-Currently these markers are provided in hyperspy. The 'color' property in
+Currently these markers are provided in HyperSpy. The 'color' property in
 rectangle marker is an alias of 'edgecolor' for backward compatibility.
-The other parameters are used as in the parameters in matplotlib patches.
-The parameters after @@ are typical optional parameters.
+The other parameters are used as in the parameters in matplotlib objects.
+The optional parameters (**kwargs, keyword arguments) can be used for extra parameters used in matplotlib.
 
 .. code-block:: python
-  arrow(x1, y1, x2, y2, @@ 
-        arrowprops={'linewidth':w, 'edgecolor':c, 'arrowstryle':'<->'}, zorder)
-  line_segment(x1, y1, x2, y2, @@ color, linewidth,
-		markeredgecolor, markerfacecolor, size, zorder)
-  horizontal_line(y, @@ color, zorder)
-  horizontal_line_segment(x1,x2, y, @@ color, zorder)
-  vertical_line(x, @@ color, zorder)
-  vertical_line_segment(x, y1, y2, @@ color, zorder)
-  point(x1, y1, @@ markeredgecolor, markerfacecolor, size, zorder)
-  rectangle(x1, y1, x2, y2, @@ edgecolor, facecolor, fill, linewidth, zorder)
-  ellipse(x, y, width, height, @@ edgecolor, facecolor, fill, linewidth, zorder)
-  text(x, y, text, @@ color, backgroundcolor, zorder)
-
+  arrow(x1, y1, x2, y2, **kwargs) # (see `matplotlib.patches.FancyArrowPatch <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.FancyArrowPatch.html>`_)
+  line_segment(x1, y1, x2, y2, **kwargs) # (see `matplotlib.axes.Axes.plot.html <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html>`_)
+  horizontal_line(y, **kwargs) # (see `matplotlib.axes.Axes.axhline <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axhline.html>`_)
+  horizontal_line_segment(x1, x2, y, **kwargs) # (see `matplotlib.axes.Axes.hlines <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.hlines.html>`_)
+  vertical_line(x, **kwargs) # (see `matplotlib.axes.Axes.axvline <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axvline.html>`_)
+  vertical_line_segment(x, y1, y2, **kwargs) # (see `matplotlib.axes.Axes.vlines <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.vlines.html>`_)
+  point(x1, y1, **kwargs) # (see `matplotlib.axes.Axes.scatter <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.scatter.html>`_)
+  rectangle(x1, y1, x2, y2, **kwargs) # (see `matplotlib.patches.Rectangle <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Rectangle.html>`_)
+  ellipse(x, y, width, height, **kwargs) # (see `matplotlib.patches.Ellipse <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Ellipse.html>`_)
+  text(x, y, text, **kwargs) # (see `matplotlib.axes.Axes.text <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.text.html>`_)
 

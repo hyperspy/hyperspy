@@ -39,7 +39,7 @@ class Ellipse(MarkerBase):
         The width (diameter) of the ellipse in x.
         see x arguments
     height : array or float
-        The hight (diameter) of the ellipse in y.
+        The height (diameter) of the ellipse in y.
         see x arguments
     kwargs :
         Keywords argument of matplotlib.patches.Ellipse valid properties 
@@ -56,7 +56,7 @@ class Ellipse(MarkerBase):
     Adding a marker permanently to a signal
 
     >>> im = hs.signals.Signal2D(np.random.random((50, 50))
-    >>> m = hs.plot.markers.rectangle(x=20, y=30, width=40, height=49)
+    >>> m = hs.plot.markers.ellipse(x=20, y=30, width=40, height=49)
     >>> im.add_marker(m, permanent=True)
     """
 

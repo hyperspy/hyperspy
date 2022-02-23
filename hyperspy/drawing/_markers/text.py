@@ -34,8 +34,8 @@ class Text(MarkerBase):
     text : array or str
         The text. see x arguments
     kwargs :
-        Keywords argument of ax.text valid properties (i.e. recognized by
-        mpl.plot).
+        Keywords argument of matplotlib.axes.Axes.text valid properties 
+        (i.e. recognized by mpl.plot).
 
     Example
     -------

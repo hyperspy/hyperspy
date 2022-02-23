@@ -30,7 +30,7 @@ class VerticalLine(MarkerBase):
         If array, the marker will be updated when navigating. The array should
         have the same dimensions in the navigation axes.
     kwargs :
-        Keywords argument of axvline valid properties (i.e. recognized by
+        Keywords argument of ax.axvline valid properties (i.e. recognized by
         mpl.plot).
 
     Example

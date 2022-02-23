@@ -39,7 +39,7 @@ class HorizontalLineSegment(MarkerBase):
         The position of line segment in y.
         see x1 arguments
     kwargs :
-        Keywords argument of ax.vlines valid properties (i.e. recognized by
+        Keywords argument of ax.hlines valid properties (i.e. recognized by
         mpl.plot).
 
     Example
@@ -93,7 +93,7 @@ class HorizontalLineSegment(MarkerBase):
         self._update_segment()
 
     def _plot_marker(self):
-        self.marker = self.ax.vlines(0, 0, 1, **self.marker_properties)
+        self.marker = self.ax.hlines(0, 0, 1, **self.marker_properties)
         self._update_segment()
 
     def _update_segment(self):
