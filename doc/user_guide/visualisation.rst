@@ -1340,7 +1340,7 @@ become a top most marker.
 Currently these markers are provided in HyperSpy. The 'color' property in
 rectangle marker is an alias of 'edgecolor' for backward compatibility.
 The other parameters are used as in the parameters in matplotlib objects.
-The optional parameters (**kwargs, keyword arguments) can be used for extra parameters used in matplotlib.
+The optional parameters (\*\*kwargs, keyword arguments) can be used for extra parameters used in matplotlib.
 
 .. code-block:: python
   arrow(x1, y1, x2, y2, **kwargs) # (see `matplotlib.patches.FancyArrowPatch <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.FancyArrowPatch.html>`_)
