@@ -1333,24 +1333,26 @@ Permanent markers are stored in the HDF5 file if the signal is saved:
     >>> s1.metadata.Markers
     └── point = <hyperspy.drawing._markers.point.Point object at 0x7efcfadb06d8>
 
-Markers have 'zorder' property to support ordering between markers.
-Signal plane has zorder=0, and the marker that have largest number
+Markers have ``zorder`` property to support ordering between markers.
+Signal plane has ``zorder=0``, and the marker that have largest number
 become a top most marker.
   
-Currently these markers are provided in HyperSpy. The 'color' property in
-rectangle marker is an alias of 'edgecolor' for backward compatibility.
+Currently these markers are provided in HyperSpy. The ``color`` property in
+rectangle marker is an alias of ``edgecolor`` for backward compatibility.
 The other parameters are used as in the parameters in matplotlib objects.
 The optional parameters (\*\*kwargs, keyword arguments) can be used for extra parameters used in matplotlib.
 
 .. code-block:: python
-  arrow(x1, y1, x2, y2, **kwargs) # (see `matplotlib.patches.FancyArrowPatch <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.FancyArrowPatch.html>`_)
-  line_segment(x1, y1, x2, y2, **kwargs) # (see `matplotlib.axes.Axes.plot.html <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html>`_)
-  horizontal_line(y, **kwargs) # (see `matplotlib.axes.Axes.axhline <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axhline.html>`_)
-  horizontal_line_segment(x1, x2, y, **kwargs) # (see `matplotlib.axes.Axes.hlines <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.hlines.html>`_)
-  vertical_line(x, **kwargs) # (see `matplotlib.axes.Axes.axvline <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axvline.html>`_)
-  vertical_line_segment(x, y1, y2, **kwargs) # (see `matplotlib.axes.Axes.vlines <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.vlines.html>`_)
-  point(x1, y1, **kwargs) # (see `matplotlib.axes.Axes.scatter <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.scatter.html>`_)
-  rectangle(x1, y1, x2, y2, **kwargs) # (see `matplotlib.patches.Rectangle <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Rectangle.html>`_)
-  ellipse(x, y, width, height, **kwargs) # (see `matplotlib.patches.Ellipse <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Ellipse.html>`_)
-  text(x, y, text, **kwargs) # (see `matplotlib.axes.Axes.text <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.text.html>`_)
+
+    arrow(x1, y1, x2, y2, **kwargs) # (see `matplotlib.patches.FancyArrowPatch <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.FancyArrowPatch.html>`_)
+    ellipse(x, y, width, height, **kwargs) # (see `matplotlib.patches.Ellipse <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Ellipse.html>`_)
+    horizontal_line(y, **kwargs) # (see `matplotlib.axes.Axes.axhline <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axhline.html>`_)
+    horizontal_line_segment(x1, x2, y, **kwargs) # (see `matplotlib.axes.Axes.hlines <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.hlines.html>`_)
+    line_segment(x1, y1, x2, y2, **kwargs) # (see `matplotlib.axes.Axes.plot.html <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html>`_)
+    point(x1, y1, **kwargs) # (see `matplotlib.axes.Axes.scatter <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.scatter.html>`_)
+    rectangle(x1, y1, x2, y2, **kwargs) # (see `matplotlib.patches.Rectangle <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Rectangle.html>`_)
+    text(x, y, text, **kwargs) # (see `matplotlib.axes.Axes.text <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.text.html>`_)
+    vertical_line(x, **kwargs) # (see `matplotlib.axes.Axes.axvline <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axvline.html>`_)
+    vertical_line_segment(x, y1, y2, **kwargs) # (see `matplotlib.axes.Axes.vlines <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.vlines.html>`_)
+
 

@@ -70,14 +70,13 @@ class LineSegment(MarkerBase):
         self.name = 'line_segment'
 
     def __repr__(self):
-        string = "<marker.{}, {} (x1={},x2={},y1={},y2={},linewidth={},color={},zorder={})>".format(
+        string = "<marker.{}, {} (x1={},x2={},y1={},y2={},color={},zorder={})>".format(
             self.__class__.__name__,
             self.name,
             self.get_data_position('x1'),
             self.get_data_position('x2'),
             self.get_data_position('y1'),
             self.get_data_position('y2'),
-            self.marker_properties['linewidth'],
             self.marker_properties['color'],
             self.marker_properties['zorder'],
         )

@@ -73,13 +73,12 @@ class VerticalLineSegment(MarkerBase):
             zorder = self.marker_properties['zorder']
         else:
             zorder = None
-        string = "<marker.{}, {} (x={},y1={},y2={},linewidth={},color={},zorder={})>".format(
+        string = "<marker.{}, {} (x={},y1={},y2={},color={},zorder={})>".format(
             self.__class__.__name__,
             self.name,
             self.get_data_position('x1'),
             self.get_data_position('y1'),
             self.get_data_position('y2'),
-            self.marker_properties['linewidth'],
             self.marker_properties['color'],
             zorder
         )
