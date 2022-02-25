@@ -42,6 +42,7 @@ from hyperspy.io_plugins import (
     sur,
     tiff,
     tvips,
+    prz,
 )
 
 io_plugins = [
@@ -67,6 +68,7 @@ io_plugins = [
     sur,
     tiff,
     tvips,
+    prz,
 ]
 
 
