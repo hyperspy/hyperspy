@@ -951,6 +951,24 @@ class TestFullProcessing:
         assert not np.any(s_out.data)
         assert s_out.axes_manager.shape == (39, 28, 44, 40)
 
+    def test_rechunk_arguments(self):
+        chunk_shape = (2, 2, 2, 2, 2)
+
+        def add_sum(image, add1, add2):
+            temp_add = add1.sum(-1) + add2
+            out = image + np.sum(temp_add)
+            return out
+        x = np.ones((4, 5, 10, 11))
+        s = hs.signals.Signal2D(x)
+        s_add1 = hs.signals.BaseSignal(2 * np.ones((4, 5, 2, 3, 2))).transpose(3)
+        s_add2 = hs.signals.BaseSignal(3 * np.ones((4, 5, 2, 3))).transpose(2)
+
+        s = hs.signals.Signal2D(da.from_array(s.data, chunks=(2, 2, 2, 2))).as_lazy()
+        s_add1 = hs.signals.Signal2D(da.from_array(s_add1.data, chunks=chunk_shape)).as_lazy().transpose(
+            navigation_axes=(1, 2))
+        s_out = s.map(add_sum, inplace=False, add1=s_add1, add2=s_add2, lazy_output=False)
+        assert (s_out.axes_manager.shape == s.axes_manager.shape)
+
 
 class TestLazyNavChunkSize1:
     @staticmethod

@@ -2698,7 +2698,6 @@ class BaseSignal(FancySlicing,
             if axes_manager.navigation_dimension == 0:
                 # 0d signal without navigation axis: don't make a figure
                 # and instead, we display the value
-                print(self.data)
                 return
             self._plot = mpl_he.MPL_HyperExplorer()
         elif axes_manager.signal_dimension == 1:
@@ -4902,6 +4901,7 @@ class BaseSignal(FancySlicing,
             _logger.info(
                 "The chunk size needs to span the full signal size, rechunking..."
             )
+
             old_sig = s_input.rechunk(inplace=False, nav_chunks=None)
         else:
             old_sig = s_input
@@ -5019,9 +5019,7 @@ class BaseSignal(FancySlicing,
         arg_pairs = [(a, p) for a, p in zip(args, arg_patterns)]
         return arg_pairs, adjust_chunks, new_axis, output_pattern
 
-
     def _get_iterating_kwargs(self, iterating_kwargs):
-        signal_dim_shape = self.axes_manager.signal_shape
         nav_chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
         args, arg_keys = (), ()
         for key in iterating_kwargs:
@@ -5035,6 +5033,13 @@ class BaseSignal(FancySlicing,
             if iterating_kwargs[key]._lazy:
                 axes = iterating_kwargs[key].axes_manager.navigation_axes
                 if iterating_kwargs[key].get_chunk_size(axes) != nav_chunks:
+                    iterating_kwargs[key].rechunk(nav_chunks=nav_chunks, sig_chunks=-1)
+                chunk_span = np.equal(iterating_kwargs[key].data.chunksize,
+                                      iterating_kwargs[key].data.shape)
+                chunk_span = [
+                    chunk_span[i] for i in iterating_kwargs[key].axes_manager.signal_indices_in_array
+                ]
+                if not all(chunk_span):
                     iterating_kwargs[key].rechunk(nav_chunks=nav_chunks, sig_chunks=-1)
             else:
                 iterating_kwargs[key] = iterating_kwargs[key].as_lazy()
