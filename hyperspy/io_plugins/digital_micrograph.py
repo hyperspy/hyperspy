@@ -1026,8 +1026,16 @@ class ImageObject(object):
                     "Acquisition_instrument.Spectrometer.acquisition_mode", None),
                 "{}.Meta_Data.Format".format(tags_path): (
                     "Signal.format", None),
+                "{}.Acquisition.Monarc_Spectrometer.Grating".format(tags_path): (
+                    "Acquisition_instrument.Spectrometer.Grating.groove_density", None),
                 "{}.CL.Acquisition.Dispersion_grating_(lines/mm)".format(tags_path): (
                     "Acquisition_instrument.Spectrometer.Grating.groove_density", None),
+                "{}.Acquisition.Monarc_Spectrometer.Slit_Width".format(tags_path): (
+                    "Acquisition_instrument.Spectrometer.entrance_slit_width", None),
+                "{}.Acquisition.Monarc_Spectrometer.Slit_Width".format(tags_path): (
+                    "Acquisition_instrument.Spectrometer.exit_slit_width", None),
+                "{}.Acquisition.Monarc_Spectrometer.Bandpass".format(tags_path): (
+                    "Acquisition_instrument.Spectrometer.bandpass", None),
                 "{}.CL.Acquisition".format(tags_path): (
                     "Acquisition_instrument.Detector.detector_type",
                     self._get_CL_detector_type),
@@ -1048,6 +1056,8 @@ class ImageObject(object):
                     "Acquisition_instrument.Detector.sensor_roi", None),
                 "{}.Acquisition.Parameters.High_Level.Processing".format(tags_path): (
                     "Acquisition_instrument.Detector.processing", None),
+                "{}.Acquisition.Device.CCD.Pixel_Size".format(tags_path): (
+                    "Acquisition_instrument.Detector.pixel_width", None),
                 # Serial Spectrum
                 "{}.CL.Acquisition.Acquisition_begin".format(tags_path): (
                     "General.date", self._get_date),
@@ -1057,13 +1067,21 @@ class ImageObject(object):
                     "Acquisition_instrument.Spectrometer.start_wavelength", None),
                 "{}.CL.Acquisition.Step-size_(nm)".format(tags_path): (
                     "Acquisition_instrument.Spectrometer.step_size", None),
+                # PMT image
+                "{}.CL.Acquisition.Monarc_Spectrometer.PMT_HV".format(tags_path): (
+                    "Acquisition_instrument.Detector.pmt_voltage", None),
                 # SI
+                "{}.DataBar.Acquisition_Date".format(tags_path): (
+                    "General.date", self._get_date),
+                "{}.DataBar.Acquisition_Time".format(tags_path): (
+                    "General.time", self._get_time),
                 "{}.SI.Acquisition.SI_Application_Mode.Name".format(tags_path): (
                     "Acquisition_instrument.Spectrum_image.mode", None),
                 "{}.SI.Acquisition.Artefact_Correction.Spatial_Drift.Periodicity".format(tags_path): (
                     "Acquisition_instrument.Spectrum_image.drift_correction_periodicity", None),
                 "{}.SI.Acquisition.Artefact_Correction.Spatial_Drift.Units".format(tags_path): (
                     "Acquisition_instrument.Spectrum_image.drift_correction_units", None),
+                # Integration time needs to be calculated from exposure and frames in CL/Acquisition!
             })
         elif "DigiScan" in image_tags_dict.keys():
             mapping.update({
