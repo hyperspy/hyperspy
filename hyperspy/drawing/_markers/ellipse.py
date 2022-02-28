@@ -90,8 +90,13 @@ class Ellipse(MarkerBase):
         width = self.get_data_position('x2')
         height = self.get_data_position('y2')
         self.marker.set_center([x1,y1])
-        self.marker.set_width(width)
-        self.marker.set_height(height)
+        try:
+            self.marker.set_width(width)
+            self.marker.set_height(height)
+        except: # for matplotlib 3.1.x
+            self.marker._width = width
+            self.marker._height = height
+            self.marker.stale = True
 
     def _plot_marker(self):
         x1 = self.get_data_position('x1')

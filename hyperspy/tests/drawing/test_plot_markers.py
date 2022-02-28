@@ -653,14 +653,14 @@ def _test_markers_zorder(reversed_order = False):
     return s
     
 @pytest.mark.mpl_image_compare(
-    filename='test_markers_zorder.png',
+    filename='test_plot_markers_zorder.png',
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_markers_zorder():
     s = _test_markers_zorder()
     return s._plot.signal_plot.figure
 
 @pytest.mark.mpl_image_compare(
-    filename='test_markers_zorder.png',
+    filename='test_plot_markers_zorder.png',
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_markers_zorder2():
     s = _test_markers_zorder(True)
