@@ -315,6 +315,7 @@ def test_read_MonoCL_ccd_metadata():
     assert md.Acquisition_instrument.Detector.binning == (1, 100)
     assert md.Acquisition_instrument.Detector.processing == "Dark Subtracted"
     assert md.Acquisition_instrument.Detector.sensor_roi == (0, 0, 100, 1336)
+    assert md.Acquisition_instrument.Detector.pixel_width == (20.0, 20.0)
 
 def test_read_MonarcCL_ccd_metadata():
     fname = os.path.join(MY_PATH, "dm4_1D_data", "test-MonarcCL_spectrum-ccd.dm4")
@@ -344,7 +345,7 @@ def test_read_MonarcCL_ccd_metadata():
     assert md.Acquisition_instrument.Detector.binning == (2, 100)
     assert md.Acquisition_instrument.Detector.processing == "Dark Subtracted"
     assert md.Acquisition_instrument.Detector.sensor_roi == (0, 0, 100, 1336)
-    #assert md.Acquisition_instrument.Detector.pixel_width == 20.0
+    assert md.Acquisition_instrument.Detector.pixel_width == (20.0, 20.0)
     #assert md.Acquisition_instrument.Spectrometer.entrance_slit_width == 1
 
 def test_read_MonoCL_SI_metadata():
@@ -369,6 +370,9 @@ def test_read_MonoCL_SI_metadata():
     np.testing.assert_allclose(
         md.Acquisition_instrument.Detector.exposure_per_frame, 0.05)
     assert md.Acquisition_instrument.Detector.frames == 1
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Detector.integration_time, 0.05)
+    assert md.Acquisition_instrument.Detector.pixel_width == (20.0, 20.0)
     np.testing.assert_allclose(
         md.Acquisition_instrument.Spectrometer.central_wavelength, 869.983825)
     np.testing.assert_allclose(
@@ -406,7 +410,7 @@ def test_read_MonarcCL_SI_metadata():
     assert md.Acquisition_instrument.Detector.frames == 1
     np.testing.assert_allclose(
         md.Acquisition_instrument.Detector.integration_time, 0.05)
-    #assert md.Acquisition_instrument.Detector.pixel_width == 20.0
+    assert md.Acquisition_instrument.Detector.pixel_width == (20.0, 20.0)
     #np.testing.assert_allclose(
     #    md.Acquisition_instrument.Spectrometer.central_wavelength, 869.9838)
     np.testing.assert_allclose(
@@ -428,20 +432,16 @@ def test_read_MonarcCL_image_metadata():
     assert md.General.time == "11:41:07"
     assert md.General.original_filename == "test-MonarcCL_mono-image.dm4"
     assert md.General.title == "MonoCL-image-rebin"
-    #assert md.Acquisition_instrument.Detector.detector_type == "PMT"
     assert md.Acquisition_instrument.SEM.acquisition_mode == "SEM"
     assert md.Acquisition_instrument.SEM.microscope == "Zeiss SEM COM"
     assert md.Acquisition_instrument.SEM.beam_energy == 3.0
     assert md.Acquisition_instrument.SEM.magnification == 2500.
     assert md.Acquisition_instrument.SEM.dwell_time == 1e-5
-    #assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Serial dispersive"
-    #assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 1200.0
-    #assert md.Acquisition_instrument.Spectrometer.entrance_slit_width == 1
-    #assert md.Acquisition_instrument.Spectrometer.exit_slit_width == 1
-    #assert md.Acquisition_instrument.Spectrometer.bandpass == 1
-    #np.testing.assert_allclose(
-    #    md.Acquisition_instrument.Spectrometer.central_wavelength, 869.9838)
-    #assert md.Acquisition_instrument.Detector.pmt_voltage == 1000
+    assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 300.0
+    assert md.Acquisition_instrument.Spectrometer.entrance_slit_width == 0.961
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Spectrometer.bandpass, 14.9915999)
+    assert md.Acquisition_instrument.Detector.pmt_voltage == 1000
 
 def test_location():
     fname_list = ['Fei HAADF-DE_location.dm3', 'Fei HAADF-FR_location.dm3',

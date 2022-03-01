@@ -859,9 +859,9 @@ class ImageObject(object):
             _logger.info("EELS exposure time can't be read.")
 
     def _get_CL_detector_type(self, tags):
-        if tags["Acquisition_Mode"] == "Parallel dispersive":
+        if "Acquisition_Mode" in tags and tags["Acquisition_Mode"] == "Parallel dispersive":
             return "CCD"
-        elif tags["Acquisition_Mode"] == "Serial dispersive":
+        elif "Acquisition_Mode" in tags and tags["Acquisition_Mode"] == "Serial dispersive":
             return "PMT"
         else:
             _logger.info("CL detector type can't be read.")
@@ -1025,9 +1025,7 @@ class ImageObject(object):
                     "Acquisition_instrument.TEM.Detector.EDS.real_time",
                     None),
             })
-        elif self.signal_type == "CL":
-            #print(self._get_CL_detector_type(self.imdict.ImageTags["Meta_Data"]))
-            #print(self._get_CL_exposure_time(self.imdict.ImageTags["CL"]["Acquisition"]))
+        elif self.signal_type == "CL" or ("Acquisition" in image_tags_dict.keys() and "Monarc_Spectrometer" in image_tags_dict["Acquisition"].keys()):
             mapping.update({
                 "{}.CL.Acquisition.Date".format(tags_path): (
                     "General.date", self._get_date),
@@ -1049,8 +1047,6 @@ class ImageObject(object):
                     "Acquisition_instrument.Spectrometer.Grating.groove_density", None),
                 "{}.Acquisition.Monarc_Spectrometer.Slit_Width".format(tags_path): (
                     "Acquisition_instrument.Spectrometer.entrance_slit_width", None),
-                #"{}.Acquisition.Monarc_Spectrometer.Slit_Width".format(tags_path): (
-                #    "Acquisition_instrument.Spectrometer.exit_slit_width", None),
                 "{}.Acquisition.Monarc_Spectrometer.Bandpass".format(tags_path): (
                     "Acquisition_instrument.Spectrometer.bandpass", None),
                 # Parallel spectrum
@@ -1071,7 +1067,7 @@ class ImageObject(object):
                     "Acquisition_instrument.Detector.sensor_roi", None),
                 "{}.Acquisition.Parameters.High_Level.Processing".format(tags_path): (
                     "Acquisition_instrument.Detector.processing", None),
-                "{}.Acquisition.Device.CCD.Pixel_Size".format(tags_path): (
+                "{}.Acquisition.Device.CCD.Pixel_Size_um".format(tags_path): (
                     "Acquisition_instrument.Detector.pixel_width", None),
                 # Serial Spectrum
                 "{}.CL.Acquisition.Acquisition_begin".format(tags_path): (
@@ -1083,8 +1079,11 @@ class ImageObject(object):
                 "{}.CL.Acquisition.Step-size_(nm)".format(tags_path): (
                     "Acquisition_instrument.Spectrometer.step_size", None),
                 # PMT image
-                "{}.CL.Acquisition.Monarc_Spectrometer.PMT_HV".format(tags_path): (
+                "{}.Acquisition.Monarc_Spectrometer.PMT_HV".format(tags_path): (
                     "Acquisition_instrument.Detector.pmt_voltage", None),
+                "{}.DigiScan.Sample Time".format(tags_path): (
+                    "Acquisition_instrument.%s.dwell_time" % microscope,
+                    lambda x: x / 1e6),
                 # SI
                 "{}.DataBar.Acquisition_Date".format(tags_path): (
                     "General.date", self._get_date),
@@ -1096,7 +1095,6 @@ class ImageObject(object):
                     "Acquisition_instrument.Spectrum_image.drift_correction_periodicity", None),
                 "{}.SI.Acquisition.Artefact_Correction.Spatial_Drift.Units".format(tags_path): (
                     "Acquisition_instrument.Spectrum_image.drift_correction_units", None),
-                # Integration time needs to be calculated from exposure and frames in CL/Acquisition!
             })
         elif "DigiScan" in image_tags_dict.keys():
             mapping.update({
