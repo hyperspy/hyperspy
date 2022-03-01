@@ -443,12 +443,13 @@ def check_parameter_linearity(expr, name):
     "Check whether expression is linear for a given parameter"
     symbol = sympy.Symbol(name)
     try:
-        if not sympy.Eq(sympy.diff(expr, symbol, 2), 0):
+        if not sympy.diff(expr, symbol, 2) == 0:
             return False
-    except (TypeError, AttributeError):
-        # TypeError occurs if the parameter is nonlinear
+    except AttributeError:
         # AttributeError occurs if the expression cannot be parsed
         # for instance some expressions with where.
+        warnings.warn(f"The linearity of the parameter {name} can't be "
+                      "determined.", UserWarning)
         return False
     return True
 

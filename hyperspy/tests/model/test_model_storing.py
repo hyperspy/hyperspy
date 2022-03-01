@@ -139,6 +139,18 @@ class TestModelStoring:
             s.models.restore('a')
 
 
+@pytest.mark.parametrize('save_std', [True, False])
+@pytest.mark.parametrize('only_free', [True, False])
+@pytest.mark.parametrize('only_active', [True, False])
+def test_model_export(tmp_path, save_std, only_free, only_active):
+    s = Signal1D(range(100))
+    m = s.create_model()
+    m.append(Gaussian())
+    m.fit()
+    m.export_results(tmp_path, save_std=save_std, only_free=only_free,
+                     only_active=only_active)
+
+
 class TestModelSaving:
 
     def setup_method(self, method):

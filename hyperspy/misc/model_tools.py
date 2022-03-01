@@ -214,16 +214,16 @@ def calc_covariance(target_signal, coefficients, component_data,
     residual : array-like, shape (0,) or (M,)
         The residual sum of squares, optional. Calculated if None.
     lazy : bool
-        Whether the signal is a lazy
+        Whether the signal is lazy
 
     Notes
     -----
-    Explanation the array shapes in hyperspy terms:
+    Explanation the array shapes in HyperSpy terms:
     N : flattened signal shape
     M : flattened navigation shape
     C : number of components
 
-    See https://stats.stackexchange.com/questions/62470 for more info on
+    See https://stats.stackexchange.com/questions/62470 for more info on the
     algorithm
     """
     if target_signal.ndim > 1:

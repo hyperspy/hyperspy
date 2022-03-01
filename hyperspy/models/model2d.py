@@ -148,7 +148,7 @@ class Model2D(BaseModel):
         non_convolved : bool
             Not Implemented for Model2D
         onlyactive : bool
-            If true, only the active components will be used to build the
+            If True, only the active components will be used to build the
             model.
         component_list : list or None
             If None, the sum of all the components is returned. If list, only
@@ -164,7 +164,7 @@ class Model2D(BaseModel):
             component_list = self
         if not isinstance(component_list, (list, tuple)):
             raise ValueError(
-                "'Component_list' parameter need to be a list or None."
+                "'Component_list' parameter needs to be a list or None."
                 )
 
         if onlyactive:

@@ -17,6 +17,8 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import pytest
+
 from hyperspy.components1d import Expression, Gaussian
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._components.expression import check_parameter_linearity
@@ -105,3 +107,9 @@ def test_parameter_linearity():
     expr = "a*exp(-b*x)"
     assert check_parameter_linearity(expr, 'a')
     assert not check_parameter_linearity(expr, 'b')
+    
+    expr = "where(x > 10, a*sin(b*x), 0)"
+    with pytest.warns(UserWarning):
+        check_parameter_linearity(expr, 'a')
+    with pytest.warns(UserWarning):
+        check_parameter_linearity(expr, 'b')

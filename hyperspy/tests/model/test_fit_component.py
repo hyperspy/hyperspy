@@ -197,7 +197,10 @@ class TestFitSI:
 
 @lazifyTestClass
 class TestStdWithMultipleFitters:
-    'Test that error estimation is approximately the same for all fitters, with both positive and negative components'
+    """
+    Test that error estimation is approximately the same for all
+    fitters, with both positive and negative components
+    """
 
     def setup_method(self, method):
         np.random.seed(1)

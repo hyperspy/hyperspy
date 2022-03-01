@@ -1055,22 +1055,22 @@ Linear least squares
 
 Linear fitting can be used to address some of the drawbacks of non-linear optimization:
 
-- it doesn't suffer of the *starting parameters* issue, which can sometimes be problematic
+- it doesn't suffer from the *starting parameters* issue, which can sometimes be problematic
   with nonlinear fitting. Since linear fitting uses linear algebra to find the
-  solution (find the parameter values of the model), the solution is unique solution,
+  solution (find the parameter values of the model), the solution is a unique solution,
   while nonlinear optimization uses an iterative approach and therefore relies
   on the initial values of the parameters.
-- it is fast, because in favorable situations, the signal can be fitted in a vectorized
+- it is fast, because i) in favorable situations, the signal can be fitted in a vectorized
   fashion, `i. e.` the signal is fitted in a single run instead of iterating over
-  the navigation dimension, but also because it is not iterative - it does the
+  the navigation dimension; ii) it is not iterative, `i. e.` it does the
   calculation only one time instead of 10-100 iterations, depending on fast
   the non-linear optimizer will converge.
 
-However, linear fitting can *only* fit linear model and will be able to fit estimate
+However, linear fitting can *only* fit linear models and will not be able to fit
 parameter which varies *non-linearly*.
 
 A component is considered linear when its free parameters scale the component only 
-in the y-axis. For the example function ``y = a*x**b``, ``a`` is a linear parameter whilst ``b`` 
+in the y-axis. For the exemplary function ``y = a*x**b``, ``a`` is a linear parameter, whilst ``b`` 
 is not. If ``b.free = False``, then the component is linear. 
 Components can also be made up of several linear parts. For instance, 
 the 2D-polynomial ``y = a*x**2+b*y**2+c*x+d*y+e`` is entirely linear.
@@ -1081,15 +1081,12 @@ the 2D-polynomial ``y = a*x**2+b*y**2+c*x+d*y+e`` is entirely linear.
     all nonlinear parameters to be ``free = False`` is to use ``m.set_parameters_not_free(only_nonlinear=True)``
 
 If all components in a model are linear, then a linear optimizer can be used to
-solve the problem as a linear regression problem! This can be done in the standard
-pixel-by-pixel approach used by the other *nonlinear* optimizers in HyperSpy, but
-it is also possible to fit the entire dataset in one vectorised operation, which
-will be much faster and it can up a thousand times faster than nonlinear fitting, but
-comes with one caveat: all fixed parameters must have the same value across 
-the dataset. That means a gaussian sigma parameter may not have been manually set 
-to vary across the dataset. This is because in order to save on memory, the components
-are calculated once for the current navigation indices and used to fit to all 
-pixels in the navigator.
+solve the problem as a linear regression problem! This can be done using two approaches:
+- the standard pixel-by-pixel approach as used by the *nonlinear* optimizers
+- fit the entire dataset in one vectorised operation, which will be much faster (up to 1000 times).
+  However, there is a caveat: all fixed parameters must have the same value across the dataset in
+  order to avoid creating a very large matrice, whose size will scale with the number of different
+  values of the non-free parameters.
 
 .. note::
 
@@ -1114,7 +1111,7 @@ is fitted in vectorized fashion, because it has large memory requirement.
 If errors are required, either give ``calculate_errors=True`` as an argument
 to :py:meth:`~hyperspy.model.BaseModel.multifit`, or rerun
 :py:meth:`~hyperspy.model.BaseModel.multifit` with a nonlinear optimizer,
-which should run fast since the parameters are already optimised.
+which should run fast since the parameters are already optimized.
 
 None of the linear optimizers currently support bounds.
 

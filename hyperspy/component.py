@@ -1108,14 +1108,12 @@ class Component(t.HasTraits):
         only_nonlinear : bool
             If True, only sets a parameter free if it is nonlinear
 
-
         Examples
         --------
         >>> v1 = hs.model.components1D.Voigt()
         >>> v1.set_parameters_free()
         >>> v1.set_parameters_free(parameter_name_list=['area','centre'])
         >>> v1.set_parameters_free(linear=True)
-
 
         See also
         --------
@@ -1125,7 +1123,10 @@ class Component(t.HasTraits):
         """
 
         if only_linear and only_nonlinear:
-            raise ValueError("To set all parameters free, set both only_linear and _nonlinear to False.")
+            raise ValueError(
+                "To set all parameters free, set both `only_linear` and "
+                "`only_nonlinear` to False."
+                )
 
         parameter_list = []
         if not parameter_name_list:
@@ -1142,8 +1143,6 @@ class Component(t.HasTraits):
                 _parameter.free = True
             elif only_nonlinear and not _parameter._linear:
                 _parameter.free = True
-            else:
-                pass
 
     def set_parameters_not_free(self, parameter_name_list=None,
                                 only_linear=False, only_nonlinear=False):
@@ -1195,8 +1194,6 @@ class Component(t.HasTraits):
                 _parameter.free = False
             elif only_nonlinear and not _parameter._linear:
                 _parameter.free = False
-            else:
-                pass
 
     def _estimate_parameters(self, signal):
         if self._axes_manager != signal.axes_manager:
@@ -1306,14 +1303,6 @@ class Component(t.HasTraits):
                 self, only_free=only_free))
 
     @property
-    def linear(self):
-        """A component is linear if its free parameters are linear."""
-        if self._nfree_param == 1:
-            return self.free_parameters[0]._linear
-        else:
-            return False
-
-    @property
     def _constant_term(self):
         """
         Get value of any (non-free) constant term of the component.
@@ -1322,7 +1311,7 @@ class Component(t.HasTraits):
         return 0
 
     def _compute_constant_term(self):
-        'Gets the value of any (non-free) constant term, with convolution'
+        """Gets the value of any (non-free) constant term, with convolution"""
         model = self.model
         if model.convolved and self.convolved:
             data = convolve_component_values(self._constant_term, model=model)
@@ -1333,9 +1322,12 @@ class Component(t.HasTraits):
 
 
 def convolve_component_values(component_values, model):
-    '''Convolve component with model convolution axis
+    """
+    Convolve component with model convolution axis.
 
-    Multiply by np.ones in order to handle case where component_values is a single constant'''
+    Multiply by np.ones in order to handle case where component_values is a
+    single constant
+    """
 
     sig = component_values * np.ones(model.convolution_axis.shape)
 

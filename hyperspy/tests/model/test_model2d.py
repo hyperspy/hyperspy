@@ -102,6 +102,10 @@ class TestModel2D:
         with pytest.raises(NotImplementedError, match="is not implemented for Model2D"):
             self.m.fit(optimizer="odr")
 
+    def test_call(self):
+        with pytest.raises(ValueError):
+            self.m(component_list=0)
+
 
 def test_Model2D_NotImplementedError_range():
     im = hs.signals.Signal2D(np.ones((128, 128)))

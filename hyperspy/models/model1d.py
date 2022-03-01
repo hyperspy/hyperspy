@@ -28,7 +28,6 @@ from hyperspy.exceptions import WrongObjectError, SignalDimensionError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import LabelWidget, VerticalLineWidget
 from hyperspy.events import EventSuppressor
-from hyperspy.exceptions import SignalDimensionError, WrongObjectError
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT, add_gui_method
@@ -393,7 +392,7 @@ class Model1D(BaseModel):
             If None, the sum of all the components is returned. If list, only
             the provided components are returned
         binned : bool or None
-            Specify if the binned attribute of the signal axes needs to be
+            Specify whether the binned attribute of the signal axes needs to be
             taken into account.
 
         cursor: 1 or 2

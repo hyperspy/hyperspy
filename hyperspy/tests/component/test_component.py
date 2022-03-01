@@ -198,6 +198,10 @@ class TestGeneralMethods:
         assert self.c.one.free
         assert self.c.two.free
 
+    def test_set_parameters_free_only_linear_only_nonlinear(self):
+        with pytest.raises(ValueError):
+            self.c.set_parameters_free(only_linear=True, only_nonlinear=True)
+
     def test_set_parameters_free_name(self):
         self.c.set_parameters_free(['one'])
         assert self.c.one.free
@@ -207,6 +211,12 @@ class TestGeneralMethods:
         self.c.set_parameters_not_free()
         assert not self.c.one.free
         assert not self.c.two.free
+
+    def test_set_parameters_not_free_only_linear_only_nonlinear(self):
+        with pytest.raises(ValueError):
+            self.c.set_parameters_not_free(
+                only_linear=True, only_nonlinear=True
+                )
 
     def test_set_parameters_not_free_name(self):
         self.c.one.free = True

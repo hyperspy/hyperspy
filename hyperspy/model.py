@@ -110,10 +110,16 @@ def _check_deprecated_optimizer(optimizer):
 
 def _twinned_parameter(parameter):
     """
-    Used in linear fitting. Since twinned parameter are not free, we need to
+    Used in linear fitting. Since twinned parameters are not free, we need to
     construct a mapping between the twinned parameter and the parameter
     component to which the (non-free) twinned parameter component value needs
     to be added.
+    
+    Returns
+    -------
+    parameter when there is a twin and this twin is free
+    None when there is no twin or when the twin is not non-free itself, which
+    implies that the original parameter is not free
     """
     twin = parameter.twin
     if twin is None:
@@ -123,12 +129,12 @@ def _twinned_parameter(parameter):
         # this is the parameter we are looking for
         return twin
     elif twin.twin:
-        # recursive to find the final not twinned parameter and
+        # recursive to find the final not twinned parameter
         return _twinned_parameter(twin)
     else:
-        # the parameter is not twinned and it is not free, which means that
-        # the original parameter twinned parameter is twinned to a non free
-        # parameter!
+        # the twinned parameter is not twinned and it is not free, which means
+        # that the original parameter is twinned to a non-free parameter and
+        # therefore not free itself!
         return None
 
 
@@ -961,12 +967,12 @@ class BaseModel(list):
         only_current : bool, default is True
             Fit the current index only, instead of the whole navigation space.
         kwargs : dict, optional
-            Keywords argument are passed to
+            Keywords arguments are passed to
             :py:func:`sklearn.linear_model.ridge_regression`.
 
         Notes
         -----
-        More linear optimizers can be added in future, but note that in order
+        More linear optimizers can be added in the future, but note that in order
         to support simultaneous fitting across the dataset, the optimizer must
         support "two-dimensional y" - see the ``b`` parameter in
         :py:func:`numpy.linalg.lstsq`.
@@ -976,7 +982,7 @@ class BaseModel(list):
         That means that going pixel-by-pixel, calculating the component data
         each time is not faster than the normal nonlinear methods. Linear
         fitting is hence currently only useful for fitting a dataset in the
-        vectorised manner.
+        vectorized manner.
         """
 
         signal_axes = self.signal.axes_manager.signal_axes
@@ -992,7 +998,8 @@ class BaseModel(list):
             raise RuntimeError(
                 "Not all free parameters are linear. Fit with a different "
                 "optimizer or set non-linear `parameters.free = False`. "
-                "Consider using `m.set_parameters_not_free(nonlinear=True)`. "
+                "Consider using "
+                "`m.set_parameters_not_free(only_nonlinear=True)`. "
                 "These parameters are nonlinear and free:"
                 + "\n\t"
                 + str("\n\t".join(str(p) for p in free_nonlinear_parameters))
@@ -1014,7 +1021,7 @@ class BaseModel(list):
         # necessary free or the twin can be twinned itself!
         twin_parameters_mapping = {
             p:_twinned_parameter(p) for c in self.active_components
-            for p in c.parameters  if _twinned_parameter(p) is not None
+            for p in c.parameters if _twinned_parameter(p) is not None
             }
 
         # Linear parameters must be set to a nonzero value before fitting to
@@ -1116,7 +1123,7 @@ class BaseModel(list):
                     Version(dask.__version__) < Version("2020.12.0")):
                 # Dask pre 2020.12 didn't support residuals on 2D input,
                 # we calculate them later.
-                residual = None
+                residual = None  # pragma: no cover
 
         elif optimizer == "ridge_regression":
             if self.signal._lazy:
@@ -1894,9 +1901,9 @@ class BaseModel(list):
         show_progressbar = show_progressbar and (maxval != 0)
 
         if linear_fitting:
-            # Check that all non-free parameters doesn't change accross
-            # the navigation dimension. If this the case, we can fit the
-            # dataset in the vectorised fashion
+            # Check that all non-free parameters don't change accross
+            # the navigation dimension. If this is the case, we can fit the
+            # dataset in the vectorized fashion
             # Only "purely" fixed (not twinned) parameters are relevant
             nonfree_parameters = [
                 p for c in self.active_components
@@ -1918,9 +1925,9 @@ class BaseModel(list):
                 warnings.warn(
                     "The model contains non-free parameters that have set "
                     "values that vary across the navigation indices, which "
-                    "is not supported for fitting the dataset in a vectorized "
+                    "is not supported when fitting the dataset in a vectorized "
                     "fashion. Fitting proceeds by iterating over the "
-                    "navigation dimension, which is significantly slower "
+                    "navigation dimensions, which is significantly slower "
                     "than if all parameters had constant values.\n"
                     "These parameters are:\n\t"
                     + "\n\t".join(
@@ -1930,27 +1937,27 @@ class BaseModel(list):
             elif len(active_is_multidimensional) > 0:
                 warnings.warn(
                     "The model contains active components that are not active "
-                    "for all navigation indicest, which is not supported "
-                    "for fitting the dataset in a vectorized "
+                    "for all navigation indices, which is not supported "
+                    "when fitting the dataset in a vectorized "
                     "fashion. Fitting proceeds by iterating over the "
-                    "navigation dimension, which is significantly slower.\n"
+                    "navigation dimensions, which is significantly slower.\n"
                     "These components are:\n\t"
                     + "\n\t".join(str(c) for c in active_is_multidimensional)
                 )
             elif self.convolved:
                 warnings.warn(
-                    "Using convolution is not supported for fitting the "
+                    "Using convolution is not supported when fitting the "
                     "dataset in a vectorized fashion. Fitting proceeds by "
-                    "iterating over the navigation dimension, which is "
+                    "iterating over the navigation dimensions, which is "
                     "significantly slower."
                 )
             elif isinstance(self.signal.get_noise_variance(), BaseSignal):
                 warnings.warn(
                     "The noise of the signal is not homoscedastic, i.e. the "
                     "variance of the signal is not constant, which is not "
-                    "supported for fitting the dataset in a vectorized "
+                    "supported when fitting the dataset in a vectorized "
                     "fashion.  Fitting proceeds by iterating over the "
-                    "navigation dimension, which is significantly slower."
+                    "navigation dimensions, which is significantly slower."
                 )
             else:
                 # We can fit the whole dataset:
@@ -2237,7 +2244,7 @@ class BaseModel(list):
 
         >>> m.set_parameters_not_free(component_list=[v1],
                                       parameter_name_list=['area','centre'])
-        >>> m.set_parameters_not_free(linear=True)
+        >>> m.set_parameters_not_free(only_linear=True)
 
 
         See also
@@ -2290,7 +2297,7 @@ class BaseModel(list):
         >>> m.set_parameters_free()
         >>> m.set_parameters_free(component_list=[v1],
                                   parameter_name_list=['area','centre'])
-        >>> m.set_parameters_free(linear=True)
+        >>> m.set_parameters_free(only_linear=True)
 
         See also
         --------
