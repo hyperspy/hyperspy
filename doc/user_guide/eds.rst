@@ -12,7 +12,7 @@ This chapter describes step-by-step the analysis of an EDS
 spectrum (SEM or TEM).
 
 .. NOTE::
-    See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_.
+    See also the `EDS tutorials <https://nbviewer.org/github/hyperspy/hyperspy-demos/tree/main/electron_microscopy/EDS/>`_.
 
 Spectrum loading and parameters
 -------------------------------
