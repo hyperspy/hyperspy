@@ -251,29 +251,44 @@ def test_read_EDS_metadata():
         md.Signal.Noise_properties.Variance_linear_model.gain_offset,
         0.0)
 
-def test_read_CL_pmt_metadata():
-    fname = os.path.join(MY_PATH, "dm4_1D_data", "test-CL_spectrum-pmt.dm4")
+def test_read_MonoCL_pmt_metadata():
+    fname = os.path.join(MY_PATH, "dm4_1D_data", "test-MonoCL_spectrum-pmt.dm4")
     s = load(fname)
     md = s.metadata
     assert md.Signal.signal_type == "CL"
     assert md.Signal.format == "Spectrum"
     assert md.Signal.quantity == "Intensity (Counts)"
     assert md.General.date == "2020-10-27"
-    assert md.General.original_filename == "test-CL_spectrum-pmt.dm4"
+    assert md.General.original_filename == "test-MonoCL_spectrum-pmt.dm4"
     assert md.General.title == "test-CL_spectrum-pmt"
     assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Serial dispersive"
     assert md.Acquisition_instrument.Detector.detector_type == "PMT"
+    assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 1200
+    assert md.Acquisition_instrument.Detector.integration_time == 1.0
+    assert md.Acquisition_instrument.Spectrometer.step_size == 0.5
     np.testing.assert_allclose(
-        md.Acquisition_instrument.Spectrometer.Grating.groove_density, 1200)
-    np.testing.assert_allclose(
-        md.Acquisition_instrument.Detector.integration_time, 1.0)
-    np.testing.assert_allclose(
-        md.Acquisition_instrument.Spectrometer.step_size, 0.5)
-    np.testing.assert_allclose(
-        md.Acquisition_instrument.Spectrometer.start_wavelength, 166.233642578125)
+        md.Acquisition_instrument.Spectrometer.start_wavelength, 166.233642)
 
-def test_read_CL_ccd_metadata():
-    fname = os.path.join(MY_PATH, "dm4_1D_data", "test-CL_spectrum-ccd.dm4")
+def test_read_MonarcCL_pmt_metadata():
+    fname = os.path.join(MY_PATH, "dm4_1D_data", "test-MonarcCL_spectrum-pmt.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.format == "Spectrum"
+    assert md.Signal.quantity == "Intensity (Counts)"
+    assert md.General.date == "2022-01-17"
+    assert md.General.original_filename == "test-MonarcCL_spectrum-pmt.dm4"
+    assert md.General.title == "CL_15kX_3-60_pmt2s"
+    assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Serial dispersive"
+    assert md.Acquisition_instrument.Detector.detector_type == "PMT"
+    assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 300
+    assert md.Acquisition_instrument.Detector.integration_time == 2.0
+    assert md.Acquisition_instrument.Spectrometer.step_size == 1.0
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Spectrometer.start_wavelength, 160.067505)
+
+def test_read_MonoCL_ccd_metadata():
+    fname = os.path.join(MY_PATH, "dm4_1D_data", "test-MonoCL_spectrum-ccd.dm4")
     s = load(fname)
     md = s.metadata
     assert md.Signal.signal_type == "CL"
@@ -281,33 +296,59 @@ def test_read_CL_ccd_metadata():
     assert md.Signal.quantity == "Intensity (Counts)"
     assert md.General.date == "2020-09-11"
     assert md.General.time == "17:04:19"
-    assert md.General.original_filename == "test-CL_spectrum-ccd.dm4"
+    assert md.General.original_filename == "test-MonoCL_spectrum-ccd.dm4"
     assert md.General.title == "test-CL_spectrum-ccd"
-    #assert md.Acquisition_instrument.Detector.detector_type == "CCD"
+    assert md.Acquisition_instrument.Detector.detector_type == "CCD"
     assert md.Acquisition_instrument.SEM.acquisition_mode == "SEM"
     assert md.Acquisition_instrument.SEM.microscope == "Ultra55"
-    np.testing.assert_allclose(md.Acquisition_instrument.SEM.beam_energy, 5.0)
-    np.testing.assert_allclose(
-        md.Acquisition_instrument.SEM.magnification, 10104.515625)
+    assert md.Acquisition_instrument.SEM.beam_energy == 5.0
+    assert md.Acquisition_instrument.SEM.magnification == 10104.515625
     assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Parallel dispersive"
+    assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 300.0
+    assert md.Acquisition_instrument.Detector.exposure_per_frame == 30.0
+    assert md.Acquisition_instrument.Detector.frames == 1.0
+    assert md.Acquisition_instrument.Detector.integration_time == 30.0
     np.testing.assert_allclose(
-        md.Acquisition_instrument.Spectrometer.Grating.groove_density, 300.0)
+        md.Acquisition_instrument.Spectrometer.central_wavelength, 949.974182)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.Detector.exposure_per_frame, 30.0)
-    np.testing.assert_allclose(
-        md.Acquisition_instrument.Detector.frames, 1.0)
-    np.testing.assert_allclose(
-        md.Acquisition_instrument.Detector.integration_time, 30.0)
-    np.testing.assert_allclose(
-        md.Acquisition_instrument.Spectrometer.central_wavelength, 949.9741821289062)
-    np.testing.assert_allclose(
-        md.Acquisition_instrument.Detector.saturation_fraction, 0.01861908845603466)
+        md.Acquisition_instrument.Detector.saturation_fraction, 0.01861909)
     assert md.Acquisition_instrument.Detector.binning == (1, 100)
     assert md.Acquisition_instrument.Detector.processing == "Dark Subtracted"
     assert md.Acquisition_instrument.Detector.sensor_roi == (0, 0, 100, 1336)
 
-def test_read_CL_SI_metadata():
-    fname = os.path.join(MY_PATH, "dm4_2D_data", "test-CL_spectrum-SI.dm4")
+def test_read_MonarcCL_ccd_metadata():
+    fname = os.path.join(MY_PATH, "dm4_1D_data", "test-MonarcCL_spectrum-ccd.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.format == "Spectrum"
+    assert md.Signal.quantity == "Intensity (Counts)"
+    assert md.General.date == "2022-01-17"
+    assert md.General.time == "16:09:21"
+    assert md.General.original_filename == "test-MonarcCL_spectrum-ccd.dm4"
+    assert md.General.title == "CL_15kX_3-60_CCD300s_bin2"
+    assert md.Acquisition_instrument.Detector.detector_type == "CCD"
+    assert md.Acquisition_instrument.SEM.acquisition_mode == "SEM"
+    assert md.Acquisition_instrument.SEM.microscope == "Ultra55"
+    assert md.Acquisition_instrument.SEM.beam_energy == 3.0
+    assert md.Acquisition_instrument.SEM.magnification == 15000.0
+    assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Parallel dispersive"
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Spectrometer.central_wavelength, 320.049683)
+    assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 300.0
+    assert md.Acquisition_instrument.Detector.exposure_per_frame == 300.0
+    assert md.Acquisition_instrument.Detector.frames == 1.0
+    assert md.Acquisition_instrument.Detector.integration_time == 300.0
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Detector.saturation_fraction, 0.08890307)
+    assert md.Acquisition_instrument.Detector.binning == (2, 100)
+    assert md.Acquisition_instrument.Detector.processing == "Dark Subtracted"
+    assert md.Acquisition_instrument.Detector.sensor_roi == (0, 0, 100, 1336)
+    #assert md.Acquisition_instrument.Detector.pixel_width == 20.0
+    #assert md.Acquisition_instrument.Spectrometer.entrance_slit_width == 1
+
+def test_read_MonoCL_SI_metadata():
+    fname = os.path.join(MY_PATH, "dm4_2D_data", "test-MonoCL_spectrum-SI.dm4")
     s = load(fname)
     md = s.metadata
     assert md.Signal.signal_type == "CL"
@@ -315,25 +356,23 @@ def test_read_CL_SI_metadata():
     assert md.Signal.quantity == "Intensity (Counts)"
     assert md.General.date == "2020-04-11"
     assert md.General.time == "14:41:01"
-    assert md.General.original_filename == "test-CL_spectrum-SI.dm4"
+    assert md.General.original_filename == "test-MonoCL_spectrum-SI.dm4"
     assert md.General.title == "test-CL_spectrum-SI"
-    #assert md.Acquisition_instrument.Detector.detector_type == "CCD"
+    assert md.Acquisition_instrument.Detector.detector_type == "CCD"
     assert md.Acquisition_instrument.SEM.acquisition_mode == "SEM"
     assert md.Acquisition_instrument.SEM.microscope == "Ultra55"
-    np.testing.assert_allclose(md.Acquisition_instrument.SEM.beam_energy, 5.0)
+    assert md.Acquisition_instrument.SEM.beam_energy == 5.0
     np.testing.assert_allclose(
-        md.Acquisition_instrument.SEM.magnification, 31661.427734375)
+        md.Acquisition_instrument.SEM.magnification, 31661.427734)
     assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Parallel dispersive"
+    assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 600.0
     np.testing.assert_allclose(
-        md.Acquisition_instrument.Spectrometer.Grating.groove_density, 600.0)
+        md.Acquisition_instrument.Detector.exposure_per_frame, 0.05)
+    assert md.Acquisition_instrument.Detector.frames == 1
     np.testing.assert_allclose(
-        md.Acquisition_instrument.Detector.exposure_per_frame, 0.05000000074505806)
+        md.Acquisition_instrument.Spectrometer.central_wavelength, 869.983825)
     np.testing.assert_allclose(
-        md.Acquisition_instrument.Detector.frames, 1)
-    np.testing.assert_allclose(
-        md.Acquisition_instrument.Spectrometer.central_wavelength, 869.9838256835938)
-    np.testing.assert_allclose(
-        md.Acquisition_instrument.Detector.saturation_fraction[0], 0.09676377475261688)
+        md.Acquisition_instrument.Detector.saturation_fraction[0], 0.09676377)
     assert md.Acquisition_instrument.Detector.binning == (1, 100)
     assert md.Acquisition_instrument.Detector.processing == "Dark Subtracted"
     assert md.Acquisition_instrument.Detector.sensor_roi == (0, 0, 100, 1336)
@@ -341,6 +380,68 @@ def test_read_CL_SI_metadata():
     assert md.Acquisition_instrument.Spectrum_image.drift_correction_units == "second(s)"
     assert md.Acquisition_instrument.Spectrum_image.mode == "LineScan"
 
+def test_read_MonarcCL_SI_metadata():
+    fname = os.path.join(MY_PATH, "dm4_2D_data", "test-MonarcCL_spectrum-SI.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.format == "Spectrum image"
+    assert md.Signal.quantity == "Intensity (Counts)"
+    assert md.General.date == "2021-09-16"
+    assert md.General.time == "12:06:16"
+    assert md.General.original_filename == "test-MonarcCL_spectrum-SI.dm4"
+    assert md.General.title == "Monarc_SI_9pix"
+    assert md.Acquisition_instrument.Detector.detector_type == "CCD"
+    assert md.Acquisition_instrument.SEM.acquisition_mode == "SEM"
+    assert md.Acquisition_instrument.SEM.microscope == "Zeiss SEM COM"
+    assert md.Acquisition_instrument.SEM.beam_energy == 5.0
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.SEM.magnification, 5884.540039)
+    assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Parallel dispersive"
+    assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 1200.0
+    assert md.Acquisition_instrument.Spectrometer.entrance_slit_width == 0.256
+    assert md.Acquisition_instrument.Spectrometer.bandpass == 0.9984
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Detector.exposure_per_frame, 0.05)
+    assert md.Acquisition_instrument.Detector.frames == 1
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Detector.integration_time, 0.05)
+    #assert md.Acquisition_instrument.Detector.pixel_width == 20.0
+    #np.testing.assert_allclose(
+    #    md.Acquisition_instrument.Spectrometer.central_wavelength, 869.9838)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Detector.saturation_fraction[0], 0.004867628)
+    assert md.Acquisition_instrument.Detector.binning == (2, 400)
+    assert md.Acquisition_instrument.Detector.processing == "Dark Subtracted"
+    assert md.Acquisition_instrument.Detector.sensor_roi == (0, 0, 400, 1340)
+    #assert md.Acquisition_instrument.Spectrum_image.drift_correction_periodicity == 1
+    #assert md.Acquisition_instrument.Spectrum_image.drift_correction_units == "second(s)"
+    assert md.Acquisition_instrument.Spectrum_image.mode == "2D Array"
+
+def test_read_MonarcCL_image_metadata():
+    fname = os.path.join(MY_PATH, "dm4_2D_data", "test-MonarcCL_mono-image.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == ""
+    assert md.Signal.quantity == "Intensity (counts)"
+    assert md.General.date == "2021-05-14"
+    assert md.General.time == "11:41:07"
+    assert md.General.original_filename == "test-MonarcCL_mono-image.dm4"
+    assert md.General.title == "MonoCL-image-rebin"
+    #assert md.Acquisition_instrument.Detector.detector_type == "PMT"
+    assert md.Acquisition_instrument.SEM.acquisition_mode == "SEM"
+    assert md.Acquisition_instrument.SEM.microscope == "Zeiss SEM COM"
+    assert md.Acquisition_instrument.SEM.beam_energy == 3.0
+    assert md.Acquisition_instrument.SEM.magnification == 2500.
+    assert md.Acquisition_instrument.SEM.dwell_time == 1e-5
+    #assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Serial dispersive"
+    #assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 1200.0
+    #assert md.Acquisition_instrument.Spectrometer.entrance_slit_width == 1
+    #assert md.Acquisition_instrument.Spectrometer.exit_slit_width == 1
+    #assert md.Acquisition_instrument.Spectrometer.bandpass == 1
+    #np.testing.assert_allclose(
+    #    md.Acquisition_instrument.Spectrometer.central_wavelength, 869.9838)
+    #assert md.Acquisition_instrument.Detector.pmt_voltage == 1000
 
 def test_location():
     fname_list = ['Fei HAADF-DE_location.dm3', 'Fei HAADF-FR_location.dm3',
@@ -357,7 +458,6 @@ def test_location():
     s = load(os.path.join(MY_PATH, "dm3_locale", fname_list[3]))
     assert s.metadata.General.date == "2016-08-27"
     assert s.metadata.General.time == "20:52:30"
-
 
 def test_multi_signal():
     fname = os.path.join(MY_PATH, "dm3_2D_data", "multi_signal.dm3")

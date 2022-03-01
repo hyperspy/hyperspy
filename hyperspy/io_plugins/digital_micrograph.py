@@ -845,7 +845,6 @@ class ImageObject(object):
             return tag
 
     def _get_EELS_exposure_time(self, tags):
-        print(tags)
         # for GMS 2 and quantum/enfinium, the  "Integration time (s)" tag is
         # only present for single spectrum acquisition;  for maps we need to
         # compute exposure * number of frames
@@ -860,12 +859,23 @@ class ImageObject(object):
             _logger.info("EELS exposure time can't be read.")
 
     def _get_CL_detector_type(self, tags):
-        if "Central_wavelength_(nm)" in tags:
+        if tags["Acquisition_Mode"] == "Parallel dispersive":
             return "CCD"
-        elif "Start_wavelength_(nm)" in tags:
+        elif tags["Acquisition_Mode"] == "Serial dispersive":
             return "PMT"
         else:
             _logger.info("CL detector type can't be read.")
+
+    def _get_CL_exposure_time(self, tags):
+        if 'Integration_time_s' in tags:
+            return float(tags["Integration_time_s"])
+        elif 'Exposure_s' in tags:
+            frame_number = 1
+            if "Number_of_frames" in tags:
+                frame_number = float(tags["Number_of_frames"])
+            return float(tags["Exposure_s"]) * frame_number
+        else:
+            _logger.info("CL exposure time can't be read.")
 
     def get_mapping(self):
         if 'source' in self.imdict.ImageTags.keys():
@@ -1016,7 +1026,8 @@ class ImageObject(object):
                     None),
             })
         elif self.signal_type == "CL":
-            print(self._get_CL_detector_type(self.imdict.ImageTags["CL"]["Acquisition"]))
+            #print(self._get_CL_detector_type(self.imdict.ImageTags["Meta_Data"]))
+            #print(self._get_CL_exposure_time(self.imdict.ImageTags["CL"]["Acquisition"]))
             mapping.update({
                 "{}.CL.Acquisition.Date".format(tags_path): (
                     "General.date", self._get_date),
@@ -1026,19 +1037,22 @@ class ImageObject(object):
                     "Acquisition_instrument.Spectrometer.acquisition_mode", None),
                 "{}.Meta_Data.Format".format(tags_path): (
                     "Signal.format", None),
+                "{}.Meta_Data".format(tags_path): (
+                    "Acquisition_instrument.Detector.detector_type",
+                    self._get_CL_detector_type),
                 "{}.Acquisition.Monarc_Spectrometer.Grating".format(tags_path): (
-                    "Acquisition_instrument.Spectrometer.Grating.groove_density", None),
+                    "Acquisition_instrument.Spectrometer.Grating.groove_density",
+                    lambda string: self._parse_string(string,
+                                                      convert_to_float=True,
+                                                      tag_name='Grating')),
                 "{}.CL.Acquisition.Dispersion_grating_(lines/mm)".format(tags_path): (
                     "Acquisition_instrument.Spectrometer.Grating.groove_density", None),
                 "{}.Acquisition.Monarc_Spectrometer.Slit_Width".format(tags_path): (
                     "Acquisition_instrument.Spectrometer.entrance_slit_width", None),
-                "{}.Acquisition.Monarc_Spectrometer.Slit_Width".format(tags_path): (
-                    "Acquisition_instrument.Spectrometer.exit_slit_width", None),
+                #"{}.Acquisition.Monarc_Spectrometer.Slit_Width".format(tags_path): (
+                #    "Acquisition_instrument.Spectrometer.exit_slit_width", None),
                 "{}.Acquisition.Monarc_Spectrometer.Bandpass".format(tags_path): (
                     "Acquisition_instrument.Spectrometer.bandpass", None),
-                "{}.CL.Acquisition".format(tags_path): (
-                    "Acquisition_instrument.Detector.detector_type",
-                    self._get_CL_detector_type),
                 # Parallel spectrum
                 "{}.CL.Acquisition.Central_wavelength_(nm)".format(tags_path): (
                     "Acquisition_instrument.Spectrometer.central_wavelength", None),
@@ -1046,8 +1060,9 @@ class ImageObject(object):
                     "Acquisition_instrument.Detector.exposure_per_frame", None),
                 "{}.CL.Acquisition.Number_of_frames".format(tags_path): (
                     "Acquisition_instrument.Detector.frames", None),
-                "{}.CL.Acquisition.Integration_time_(s)".format(tags_path): (
-                    "Acquisition_instrument.Detector.integration_time", None),
+                "{}.CL.Acquisition".format(tags_path): (
+                    "Acquisition_instrument.Detector.integration_time",
+                    self._get_CL_exposure_time),
                 "{}.CL.Acquisition.Saturation_fraction".format(tags_path): (
                     "Acquisition_instrument.Detector.saturation_fraction", None),
                 "{}.Acquisition.Parameters.High_Level.Binning".format(tags_path): (
@@ -1086,7 +1101,7 @@ class ImageObject(object):
         elif "DigiScan" in image_tags_dict.keys():
             mapping.update({
                 "{}.DigiScan.Sample Time".format(tags_path): (
-                    "Acquisition_instrument.TEM.dwell_time",
+                    "Acquisition_instrument.%s.dwell_time" % microscope,
                     lambda x: x / 1e6),
             })
         else:
