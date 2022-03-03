@@ -1068,7 +1068,8 @@ class ImageObject(object):
                 "{}.Acquisition.Parameters.High_Level.Processing".format(tags_path): (
                     "Acquisition_instrument.Detector.processing", None),
                 "{}.Acquisition.Device.CCD.Pixel_Size_um".format(tags_path): (
-                    "Acquisition_instrument.Detector.pixel_width", None),
+                    "Acquisition_instrument.Detector.pixel_width", 
+                    lambda x: x[0] if isinstance(x, tuple) else x),
                 # Serial Spectrum
                 "{}.CL.Acquisition.Acquisition_begin".format(tags_path): (
                     "General.date", self._get_date),

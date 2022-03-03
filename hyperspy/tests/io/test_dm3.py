@@ -315,7 +315,7 @@ def test_read_MonoCL_ccd_metadata():
     assert md.Acquisition_instrument.Detector.binning == (1, 100)
     assert md.Acquisition_instrument.Detector.processing == "Dark Subtracted"
     assert md.Acquisition_instrument.Detector.sensor_roi == (0, 0, 100, 1336)
-    assert md.Acquisition_instrument.Detector.pixel_width == (20.0, 20.0)
+    assert md.Acquisition_instrument.Detector.pixel_width == 20.0
 
 def test_read_MonarcCL_ccd_metadata():
     fname = os.path.join(MY_PATH, "dm4_1D_data", "test-MonarcCL_spectrum-ccd.dm4")
@@ -345,7 +345,7 @@ def test_read_MonarcCL_ccd_metadata():
     assert md.Acquisition_instrument.Detector.binning == (2, 100)
     assert md.Acquisition_instrument.Detector.processing == "Dark Subtracted"
     assert md.Acquisition_instrument.Detector.sensor_roi == (0, 0, 100, 1336)
-    assert md.Acquisition_instrument.Detector.pixel_width == (20.0, 20.0)
+    assert md.Acquisition_instrument.Detector.pixel_width == 20.0
     #assert md.Acquisition_instrument.Spectrometer.entrance_slit_width == 1
 
 def test_read_MonoCL_SI_metadata():
@@ -372,7 +372,7 @@ def test_read_MonoCL_SI_metadata():
     assert md.Acquisition_instrument.Detector.frames == 1
     np.testing.assert_allclose(
         md.Acquisition_instrument.Detector.integration_time, 0.05)
-    assert md.Acquisition_instrument.Detector.pixel_width == (20.0, 20.0)
+    assert md.Acquisition_instrument.Detector.pixel_width == 20.0
     np.testing.assert_allclose(
         md.Acquisition_instrument.Spectrometer.central_wavelength, 869.983825)
     np.testing.assert_allclose(
@@ -410,7 +410,7 @@ def test_read_MonarcCL_SI_metadata():
     assert md.Acquisition_instrument.Detector.frames == 1
     np.testing.assert_allclose(
         md.Acquisition_instrument.Detector.integration_time, 0.05)
-    assert md.Acquisition_instrument.Detector.pixel_width == (20.0, 20.0)
+    assert md.Acquisition_instrument.Detector.pixel_width == 20.0
     #np.testing.assert_allclose(
     #    md.Acquisition_instrument.Spectrometer.central_wavelength, 869.9838)
     np.testing.assert_allclose(
