@@ -36,7 +36,7 @@ class Gaussian2D(Expression):
     =============== =============
     Variable         Parameter
     =============== =============
-    :math:`A`        area
+    :math:`A`        A
     :math:`s_x,s_y`  sigma_x/y
     :math:`x_0,y_0`  centre_x/y
     =============== =============

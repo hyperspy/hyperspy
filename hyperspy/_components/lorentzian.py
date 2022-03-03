@@ -68,7 +68,7 @@ class Lorentzian(Expression):
     ============== =============
     Variable        Parameter
     ============== =============
-    :math:`A`       area
+    :math:`A`       A
     :math:`\gamma`  gamma
     :math:`x_0`     centre
     ============== =============

@@ -70,7 +70,7 @@ class Gaussian(Expression):
     ============== ===========
     Variable        Parameter
     ============== ===========
-    :math:`A`       area
+    :math:`A`       A
     :math:`\sigma`  sigma
     :math:`x_0`     centre
     ============== ===========
