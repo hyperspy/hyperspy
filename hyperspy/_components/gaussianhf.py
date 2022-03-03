@@ -65,7 +65,7 @@ class GaussianHF(Expression):
         Extra keyword arguments are passed to the ``Expression`` component.
 
 
-    The helper properties `sigma` and `A` (Area) are also defined for
+    The helper properties `sigma` and `A` (area) are also defined for
     compatibility with the `Gaussian` component.
 
     See also
