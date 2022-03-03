@@ -28,8 +28,8 @@ sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 class GaussianHF(Expression):
 
     r"""Normalized gaussian function component, with a `fwhm` parameter instead
-    of the sigma parameter, and a `height` parameter instead of the `A`
-    parameter (scaling difference of :math:`\sigma \sqrt{\left(2\pi\right)}`).
+    of the sigma parameter, and a `height` parameter instead of the area
+    parameter `A` (scaling difference of :math:`\sigma \sqrt{\left(2\pi\right)}`).
     This makes the parameter vs. peak maximum independent of :math:`\sigma`,
     and thereby makes locking of the parameter more viable. As long as there
     is no binning, the `height` parameter corresponds directly to the peak
@@ -65,8 +65,8 @@ class GaussianHF(Expression):
         Extra keyword arguments are passed to the ``Expression`` component.
 
 
-    The helper properties `sigma` and `A` are also defined for compatibility
-    with `Gaussian` component.
+    The helper properties `sigma` and `A` (Area) are also defined for
+    compatibility with the `Gaussian` component.
 
     See also
     --------

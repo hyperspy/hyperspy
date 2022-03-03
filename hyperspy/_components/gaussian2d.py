@@ -36,7 +36,7 @@ class Gaussian2D(Expression):
     =============== =============
     Variable         Parameter
     =============== =============
-    :math:`A`        A
+    :math:`A`        area
     :math:`s_x,s_y`  sigma_x/y
     :math:`x_0,y_0`  centre_x/y
     =============== =============
@@ -45,7 +45,7 @@ class Gaussian2D(Expression):
     Parameters
     ----------
     A : float
-        Amplitude (height of the peak scaled by :math:`2 \pi s_x s_y`).
+        Area (height of the peak scaled by :math:`2 \pi s_x s_y`).
     sigma_x : float
         Width (scale parameter) of the Gaussian distribution in `x` direction.
     sigma_y : float
