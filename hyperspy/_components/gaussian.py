@@ -79,8 +79,8 @@ class Gaussian(Expression):
     Parameters
     -----------
     A : float
-        Height scaled by :math:`\sigma\sqrt{(2\pi)}`. ``GaussianHF``
-        implements the Gaussian function with a height parameter
+        Area, equals height scaled by :math:`\sigma\sqrt{(2\pi)}`.
+        ``GaussianHF`` implements the Gaussian function with a height parameter
         corresponding to the peak height.
     sigma : float
         Scale parameter of the Gaussian distribution.
