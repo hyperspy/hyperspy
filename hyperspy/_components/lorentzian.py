@@ -99,7 +99,7 @@ class Lorentzian(Expression):
         # We use `_gamma` internally to workaround the use of the `gamma`
         # function in sympy
         super().__init__(
-            expression="A / pi * (_gamma / ((x - centre)**2 + _gamma**2))",
+            expression="A / pi * (gamma_ / ((x - centre)**2 + gamma_**2))",
             name="Lorentzian",
             A=A,
             gamma=gamma,
@@ -107,7 +107,7 @@ class Lorentzian(Expression):
             position="centre",
             module=module,
             autodoc=False,
-            rename_pars={"_gamma": "gamma"},
+            rename_pars={"gamma_": "gamma"},
             **kwargs)
 
         # Boundaries

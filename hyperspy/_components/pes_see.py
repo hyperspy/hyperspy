@@ -78,6 +78,8 @@ class SEE(Expression):
             module=module,
             autodoc=False,
             compute_gradients=compute_gradients,
+            linear_parameter_list=['A'],
+            check_parameter_linearity=False,
             **kwargs,
         )
 

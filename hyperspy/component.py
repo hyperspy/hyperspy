@@ -1299,8 +1299,7 @@ class Component(t.HasTraits):
         if fancy:
             display(current_component_values(self, only_free=only_free))
         else:
-            display_pretty(current_component_values(
-                self, only_free=only_free))
+            display_pretty(current_component_values(self, only_free=only_free))
 
     @property
     def _constant_term(self):

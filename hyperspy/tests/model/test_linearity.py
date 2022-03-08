@@ -21,7 +21,7 @@ import pytest
 
 from hyperspy.components1d import Expression, Gaussian
 from hyperspy._signals.signal1d import Signal1D
-from hyperspy._components.expression import check_parameter_linearity
+from hyperspy._components.expression import _check_parameter_linearity
 
 
 class TestModelLinearity:
@@ -96,20 +96,20 @@ def test_gaussian_linear():
 
 def test_parameter_linearity():
     expr = "a*x**2 + b*x + c"
-    assert check_parameter_linearity(expr, 'a')
-    assert check_parameter_linearity(expr, 'b')
-    assert check_parameter_linearity(expr, 'c')
+    assert _check_parameter_linearity(expr, 'a')
+    assert _check_parameter_linearity(expr, 'b')
+    assert _check_parameter_linearity(expr, 'c')
 
     expr = "a*sin(b*x)"
-    assert check_parameter_linearity(expr, 'a')
-    assert not check_parameter_linearity(expr, 'b')
+    assert _check_parameter_linearity(expr, 'a')
+    assert not _check_parameter_linearity(expr, 'b')
 
     expr = "a*exp(-b*x)"
-    assert check_parameter_linearity(expr, 'a')
-    assert not check_parameter_linearity(expr, 'b')
+    assert _check_parameter_linearity(expr, 'a')
+    assert not _check_parameter_linearity(expr, 'b')
     
     expr = "where(x > 10, a*sin(b*x), 0)"
     with pytest.warns(UserWarning):
-        check_parameter_linearity(expr, 'a')
+        _check_parameter_linearity(expr, 'a')
     with pytest.warns(UserWarning):
-        check_parameter_linearity(expr, 'b')
+        _check_parameter_linearity(expr, 'b')

@@ -112,9 +112,13 @@ class Expression(Component):
         it can be disabled by using `compute_gradients=False`.
     linear_parameter_list : list
         A list of the components parameters that are known to be linear
-        parameters, but where the check_parameter_linearity function
-        is unable to determine it as such. Example: PowerLaw, which 
-        includes a "where" function.
+        parameters.
+    check_parameter_linearity : bool
+        If `True`, automatically check if each parameter is linear and set
+        its corresponding attribute accordingly. If `False`, the default is to 
+        set all parameters, except for those who are specify in
+        ``linear_parameter_list``.
+        
     **kwargs
         Keyword arguments can be used to initialise the value of the
         parameters.
@@ -156,7 +160,8 @@ class Expression(Component):
     def __init__(self, expression, name, position=None, module="numpy",
                  autodoc=True, add_rotation=False, rotation_center=None,
                  rename_pars={}, compute_gradients=True,
-                 linear_parameter_list=None, **kwargs):
+                 linear_parameter_list=None, check_parameter_linearity=True,
+                 **kwargs):
 
         if linear_parameter_list is None:
             linear_parameter_list = []
@@ -164,6 +169,9 @@ class Expression(Component):
         self._str_expression = expression
         self._module = module
         self._rename_pars = rename_pars if rename_pars is not None else {}
+        # Since the expression string uses the parameter name before renaming
+        # it is useful to have the inverse mapping
+        self._rename_pars_inv = {v: k for k, v in self._rename_pars.items()}
         self._compute_gradients = compute_gradients
 
         if rotation_center is None:
@@ -207,15 +215,21 @@ class Expression(Component):
 
         if autodoc:
             self.__doc__ = _CLASS_DOC % (
-                name, sympy.latex(_parse_substitutions(expression)))
+                name, sympy.latex(self._parsed_expr))
 
         for parameter_name in linear_parameter_list:
             setattr(getattr(self, parameter_name), '_linear', True)
 
-        for parameter in self.parameters:
-            if parameter.name not in linear_parameter_list:
-                parameter._linear = check_parameter_linearity(
-                    self._parsed_expr, parameter.name)
+        if check_parameter_linearity:
+            for p in self.parameters:
+                if p.name not in linear_parameter_list:
+                    # _parsed_expr used "non public" parameter name and we
+                    # need to use the correct parameter name by using
+                    # _rename_pars_inv 
+                    p._linear = _check_parameter_linearity(
+                        self._parsed_expr,
+                        self._rename_pars_inv.get(p.name, p.name)
+                        )
 
     def compile_function(self, module="numpy", position=False):
         """
@@ -283,7 +297,7 @@ class Expression(Component):
         else:
             def f(x): return self._f(x, *[p.value for p in self.parameters])
         setattr(self, "function", f)
-        parnames = [symbol.name if symbol.name not in self._rename_pars else self._rename_pars[symbol.name]
+        parnames = [self._rename_pars.get(symbol.name, symbol.name)
                     for symbol in parameters]
         self._parameter_strings = parnames
 
@@ -291,10 +305,9 @@ class Expression(Component):
             try:
                 ffargs = (_fill_function_args_2d if
                           self._is2D else _fill_function_args)
-                for parameter in parameters:
-                    grad_expr = sympy.diff(eval_expr, parameter)
-                    name = parameter.name if parameter.name not in self._rename_pars else self._rename_pars[
-                        parameter.name]
+                for p in parameters:
+                    grad_expr = sympy.diff(eval_expr, p)
+                    name = self._rename_pars.get(p.name, p.name)
                     f_grad = lambdify(variables + parameters,
                                       grad_expr.evalf(),
                                       modules=module,
@@ -339,33 +352,27 @@ class Expression(Component):
         Get value of constant term of component, assuming that the nonlinear
         term are fixed.
 
-        The 'constant' part of a component is any part that cannot change
-        with the free parameters in the model.
+        The 'constant' part of a component is any part that doesn't change
+        when the free parameters is changed.
         """
         free_linear_parameters = [
             # Use `_free` private attribute not to interfere with twin
-            p.name for p in self.parameters if p._linear and p._free
+            self._rename_pars_inv.get(p.name, p.name) for p in self.parameters
+            if p._linear and p._free
             ]
 
-        # Check linearity by multiplying a parameter by a factor and testing
-        # if the new expression is equal to multiplying the whole expression
-        # by the same factor.
-        # Testing parameter `a` in example expression `f(x) = a*x + b`
-        # by multiplying by factor `factor`:
-        # `a` is linear if ``(a*LIN)*x + b == LIN*f(x)``
         expr = sympy.sympify(self._str_expression)
         args = [
             sympy.sympify(arg, strict=False) for arg in free_linear_parameters
             ]
-
         constant_expr, _ = expr.as_independent(*args, as_Add=True)
 
         # Then replace symbols with value of each parameter
         free_symbols = [str(free) for free in constant_expr.free_symbols]
-
         for p in self.parameters:
             if p.name in free_symbols:
-                constant_expr = constant_expr.subs(p.name, p.value)
+                name = self._rename_pars_inv.get(p.name, p.name)
+                constant_expr = constant_expr.subs(name, p.value)
 
         return float(constant_expr.evalf())
 
@@ -374,6 +381,8 @@ class Expression(Component):
         Separate an expression into a group of lambdified functions
         that can compute the free parts of the expression, and a single
         lambdified function that computes the fixed parts of the expression
+        
+        Used by the _compute_expression_part method.
         """
         expr = self._str_expression
         ex = sympy.sympify(expr)
@@ -382,16 +391,17 @@ class Expression(Component):
         variables = ("x", "y") if self._is2D else ("x", )
 
         for para in self.free_parameters:
-            symbol = sympy.sympify(para.name, strict=False)
+            name = self._rename_pars_inv.get(para.name, para.name)
+            symbol = sympy.sympify(name, strict=False)
             element = ex.as_independent(symbol)[-1]
             remaining_elements -= element
             element_names = \
                 set([str(p) for p in element.free_symbols]) - set(variables)
-
             free_pseudo_components[para.name] = {
                 'function': lambdify(variables + tuple(element_names),
                                      element, modules=self._module),
-                'parameters': [getattr(self, e) for e in element_names]
+                'parameters': [getattr(self, self._rename_pars.get(e, e))
+                               for e in element_names]
             }
 
         element_names = \
@@ -401,7 +411,8 @@ class Expression(Component):
         fixed_pseudo_components = {
             'function': lambdify(variables + tuple(element_names),
                                  remaining_elements, modules=self._module),
-            'parameters': [getattr(self, e) for e in element_names]
+            'parameters': [getattr(self, self._rename_pars.get(e, e))
+                           for e in element_names]
         }
 
         return free_pseudo_components, fixed_pseudo_components,
@@ -410,27 +421,21 @@ class Expression(Component):
         """Compute the expression for a given value or map["values"]."""
         model = self.model
         function = part['function']
-        parameters = part['parameters']
-        arr_nav_shape = model.axes_manager._navigation_shape_in_array
-        parameters = [para.value for para in parameters]
-        nav_shape = ()
+        parameters = [para.value for para in part['parameters']]
+        nav_shape = model.axes_manager._navigation_shape_in_array
         signal_shape = model.axes_manager._signal_shape_in_array
+        
         if model.convolved and self.convolved:
-            shape = model.convolution_axis
-            convolution_axis = model.convolution_axis.reshape(
-                shape + len(nav_shape)*(1,))
             data = convolve_component_values(
-                function(convolution_axis, *parameters), model=model)
+                function(model.convolution_axis, *parameters), model=model)
         else:
             axes = [ax.axis for ax in model.axes_manager.signal_axes]
             mesh = np.meshgrid(*axes)
-            shape = mesh[0].shape
-            mesh = [m.reshape(shape + len(nav_shape)*(1,)) for m in mesh]
             data = function(*mesh, *parameters)
             if np.shape(data) == ():
                 data = data * \
                     np.ones(signal_shape)[np.where(model.channel_switches)]
-            elif np.shape(data) == arr_nav_shape:
+            elif np.shape(data) == nav_shape:
                 data = data[..., None] * \
                     np.ones(signal_shape)[np.where(model.channel_switches)]
             else:
@@ -439,8 +444,8 @@ class Expression(Component):
         return data
 
 
-def check_parameter_linearity(expr, name):
-    "Check whether expression is linear for a given parameter"
+def _check_parameter_linearity(expr, name):
+    """Check whether expression is linear for a given parameter."""
     symbol = sympy.Symbol(name)
     try:
         if not sympy.diff(expr, symbol, 2) == 0:
@@ -448,24 +453,8 @@ def check_parameter_linearity(expr, name):
     except AttributeError:
         # AttributeError occurs if the expression cannot be parsed
         # for instance some expressions with where.
-        warnings.warn(f"The linearity of the parameter {name} can't be "
-                      "determined.", UserWarning)
+        warnings.warn(f"The linearity of the parameter `{name}` can't be "
+                      "determined automatically.", UserWarning)
         return False
     return True
 
-
-def extract_constant_part_of_expression(expr, *args):
-    """
-    Check linearity by multiplying a parameter by a factor and testing if the
-    new expression is equal to multiplying the whole expression by the same
-    factor.
-    Testing parameter `a` in example expression `f(x) = a*x + b` by multiplying
-    by factor `factor`:
-
-    `a` is linear if ``(a*LIN)*x + b == LIN*f(x)``
-    """
-    expr = sympy.sympify(expr)
-    args = [sympy.sympify(arg, strict=False) for arg in args]
-    constant, not_constant = expr.as_independent(*args, as_Add=True)
-
-    return constant, not_constant

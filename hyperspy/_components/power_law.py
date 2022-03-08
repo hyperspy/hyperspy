@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
 import logging
+
+import numpy as np
 
 from hyperspy._components.expression import Expression
 
@@ -74,6 +75,7 @@ class PowerLaw(Expression):
             autodoc=False,
             compute_gradients=compute_gradients,
             linear_parameter_list=['A'],
+            check_parameter_linearity=False,
             **kwargs,
         )
 

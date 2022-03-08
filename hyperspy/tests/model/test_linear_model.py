@@ -16,19 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
+import warnings
+
 import numpy as np
 import pytest
 
 import hyperspy.api as hs
-from hyperspy._signals.signal1d import Signal1D
-from hyperspy._signals.signal2d import Signal2D
-
 from hyperspy.component import Component
 from hyperspy.components1d import Gaussian, Expression, Offset
 from hyperspy.components2d import Gaussian2D
-
 from hyperspy.datasets.example_signals import EDS_SEM_Spectrum
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.misc.utils import dummy_context_manager
+from hyperspy.signals import Signal1D, Signal2D
 
 
 def test_fit_binned():
@@ -87,7 +87,10 @@ class TestMultiFitLinear:
         m.fit(optimizer='lstsq')
         single = m.as_signal()
         m.assign_current_values_to_all()
-        m.multifit(optimizer='lstsq', iterpath='serpentine')
+        cm = pytest.warns(UserWarning) if weighted and not self.s._lazy else \
+            dummy_context_manager()
+        with cm:
+            m.multifit(optimizer='lstsq', iterpath='serpentine')
         multi = m.as_signal()
 
         np.testing.assert_allclose(single(), multi())
@@ -103,14 +106,20 @@ class TestMultiFitLinear:
         nonlinear = L.A.map.copy()
 
         L.A.map['is_set'] = False
-        m.multifit(optimizer='lstsq', calculate_errors=True)
+        cm = pytest.warns(UserWarning) if weighted and not self.s._lazy else \
+            dummy_context_manager()
+        with cm:
+            m.multifit(optimizer='lstsq', calculate_errors=True)
         linear = L.A.map.copy()
 
         np.testing.assert_allclose(nonlinear['values'], linear['values'])
         np.testing.assert_allclose(nonlinear['std'], linear['std'])
         np.testing.assert_allclose(nonlinear['is_set'], linear['is_set'])
 
-        m.multifit(optimizer='lstsq', calculate_errors=False)
+        cm = pytest.warns(UserWarning) if weighted and not self.s._lazy else \
+            dummy_context_manager()
+        with cm:
+            m.multifit(optimizer='lstsq', calculate_errors=False)
         np.testing.assert_equal(L.A.map['std'], np.nan)
 
     def test_offset(self, weighted):
@@ -122,7 +131,10 @@ class TestMultiFitLinear:
         m.fit(optimizer='lstsq')
         single = m.as_signal()
         m.assign_current_values_to_all()
-        m.multifit(optimizer='lstsq', iterpath='serpentine')
+        cm = pytest.warns(UserWarning) if weighted and not self.s._lazy else \
+            dummy_context_manager()
+        with cm:
+            m.multifit(optimizer='lstsq', iterpath='serpentine')
         multi = m.as_signal()
         # compare fits from first pixel
         np.testing.assert_allclose(single(), multi())
@@ -138,7 +150,10 @@ class TestMultiFitLinear:
         m.fit(optimizer='lstsq')
         single = m.as_signal()
         m.assign_current_values_to_all()
-        m.multifit(optimizer='lstsq', iterpath='serpentine')
+        cm = pytest.warns(UserWarning) if weighted and not self.s._lazy else \
+            dummy_context_manager()
+        with cm:
+           m.multifit(optimizer='lstsq', iterpath='serpentine')
         multi = m.as_signal()
 
         np.testing.assert_allclose(single(), multi())
@@ -205,7 +220,7 @@ class TestFitAlgorithms:
         m = self.m
         if weighted:
             variance = np.arange(10, m.signal.data.size-10, 0.01)
-            m.signal.set_noise_variance(hs.signals.Signal1D(variance))
+            m.signal.set_noise_variance(Signal1D(variance))
         m.fit()
         self.nonlinear_fit_res = m.as_signal()
         self.nonlinear_fit_std = [p.std for p in m._free_parameters if p.std]
@@ -350,9 +365,9 @@ class TestWarningSlowMultifit:
         assert parameter.twin is not None
         parameter.map['values'][:3] = 100.
         parameter.map['is_set'][:3] = True
-        with pytest.warns(None) as record:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             m.multifit(optimizer="lstsq")
-        assert len(record) == 0
 
     def test_rerun_multifit(self):
         # Check that the parameter map values have set consistently at the end
@@ -365,9 +380,10 @@ class TestWarningSlowMultifit:
         np.testing.assert_allclose(p.map['values'], p.map['values'][0])
         np.testing.assert_equal(p.map['std'], np.nan)
 
-        with pytest.warns(None) as record:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             m.multifit(optimizer="lstsq")
-        assert len(record) == 0
+        # assert len(record) == 0
 
     def test_heteroscedastic_variance(self):
         m = self.m
@@ -704,3 +720,206 @@ def test_navigation_shape_signal2D():
     m.multifit(optimizer='lstsq')
 
     np.testing.assert_allclose(s, m.as_signal(), atol=2)
+
+
+def test_power_law():
+    s = hs.signals.Signal1D(np.zeros(1024))
+    s.axes_manager[0].offset = 10
+    s.axes_manager[0].scale = 0.01
+    m_ref = s.create_model()
+    pl_ref = hs.model.components1D.PowerLaw()
+    m_ref.append(pl_ref)
+    pl_ref.A.value = 100
+    pl_ref.r.value = 4
+
+    s = m_ref.as_signal()
+
+    m = s.create_model()
+    pl = hs.model.components1D.PowerLaw()
+    pl.r.value = pl_ref.r.value
+    m.append(pl)
+    m.set_parameters_not_free(only_nonlinear=True)
+    m.plot()
+    m.fit(optimizer='lstsq')
+    
+    np.testing.assert_allclose(pl_ref.A.value, pl.A.value)
+    np.testing.assert_allclose(pl_ref.r.value, pl.r.value)
+    np.testing.assert_allclose(m.as_signal().data, s.data)
+
+
+def test_lorentzian():
+    """
+    Lorentzian component has renamed parameters which needs to be taken
+    into account in the linear fitting code.
+    """
+    s = hs.signals.Signal1D(np.zeros(100))
+    s.axes_manager[0].offset = 10
+    s.axes_manager[0].scale = 0.1
+    m_ref = s.create_model()
+    l_ref = hs.model.components1D.Lorentzian()
+    m_ref.append(l_ref)
+    l_ref.A.value = 100
+    l_ref.centre.value = 15
+
+    s = m_ref.as_signal()
+
+    m = s.create_model()
+    l = hs.model.components1D.Lorentzian()
+    l.centre.value = l_ref.centre.value
+    m.append(l)
+    m.set_parameters_not_free(only_nonlinear=True)
+    m.plot()
+    m.fit(optimizer='lstsq')
+    
+    np.testing.assert_allclose(l_ref.A.value, l.A.value)
+    np.testing.assert_allclose(l_ref.centre.value, l.centre.value)
+    np.testing.assert_allclose(l_ref.gamma.value, l.gamma.value)
+    np.testing.assert_allclose(m.as_signal().data, s.data)
+
+
+@pytest.mark.parametrize('multiple_free_parameters', (True, False))
+@pytest.mark.parametrize('nav_dim', (0, 1, 2))
+def test_expression_convolved(nav_dim, multiple_free_parameters):
+    s_ref = hs.signals.Signal1D(np.ones(100))
+    
+    # Create signal to convolve
+    to_convolve_component = hs.model.components1D.Gaussian(A=100, sigma=5, centre=10)
+    to_convolve = hs.signals.Signal1D(to_convolve_component.function(np.arange(100)))
+    to_convolve.axes_manager[-1].offset = -to_convolve_component.centre.value
+    
+    # Create reference signal from model with convolution
+    l_ref = hs.model.components1D.Lorentzian(A=100, centre=20, gamma=4)
+    m_ref = s_ref.create_model()
+    m_ref.append(l_ref)
+    m_ref.low_loss = to_convolve
+    s = m_ref.as_signal()    
+
+    if nav_dim >= 1:
+        s = hs.stack([s]*2)
+        to_convolve = hs.stack([to_convolve]*2)
+    if nav_dim == 2:
+        s = hs.stack([s]*3)
+        to_convolve = hs.stack([to_convolve]*3)
+
+    m = s.create_model()
+    l = hs.model.components1D.Lorentzian(centre=20, gamma=4)
+    m.append(l)
+    assert not m.convolved
+    m.low_loss = to_convolve
+    assert m.convolved
+    m.set_parameters_not_free(only_nonlinear=True)
+    with pytest.warns(UserWarning):
+        m.multifit(optimizer='lstsq')
+
+    np.testing.assert_allclose(l_ref.A.value, l.A.value)
+    np.testing.assert_allclose(l_ref.centre.value, l.centre.value)
+    np.testing.assert_allclose(l_ref.gamma.value, l.gamma.value)
+    np.testing.assert_allclose(m.as_signal().data, s.data)
+    if nav_dim in (1, 2):
+        np.testing.assert_allclose(l.A.map['values'].mean(), l_ref.A.value)
+        np.testing.assert_allclose(l.centre.map['values'].mean(), l_ref.centre.value)
+        np.testing.assert_allclose(l.gamma.map['values'].mean(), l_ref.gamma.value)
+
+
+@pytest.mark.parametrize("nav_dim", (0, 1, 2))
+@pytest.mark.parametrize("convolve", (True, False))
+def test_expression_multiple_linear_parameter(nav_dim, convolve):
+    """
+    This test checks that linear fitting works with convolution with
+     - single and multidimensional fit (warning raise)
+     - multiple free parameters for the same component (different code path)
+    """
+    s_ref = hs.signals.Signal1D(np.ones(20))
+    p_ref = hs.model.components1D.Polynomial(order=2, a0=25, a1=-50, a2=2.5,
+                                             legacy=False)
+
+    # Create signal to convolve
+    to_convolve_component = hs.model.components1D.Gaussian(A=100, sigma=5, centre=10)
+    to_convolve = hs.signals.Signal1D(to_convolve_component.function(np.arange(1000)))
+    to_convolve.axes_manager[-1].offset = -to_convolve_component.centre.value
+
+    m_ref = s_ref.create_model()
+    m_ref.extend([p_ref])
+    if convolve:
+        m_ref.low_loss = to_convolve
+    s = m_ref.as_signal()
+    
+    if nav_dim >= 1:
+        s = hs.stack([s]*2)
+        if convolve:
+            to_convolve = hs.stack([to_convolve]*2)
+    if nav_dim == 2:
+        s = hs.stack([s]*3)
+        if convolve:
+            to_convolve = hs.stack([to_convolve]*3)
+    
+    m = s.create_model()
+    p = hs.model.components1D.Polynomial(order=2, legacy=False)
+    m.append(p)
+    assert not m.convolved
+    if convolve:
+        m.low_loss = to_convolve
+        with pytest.warns(UserWarning):
+            m.multifit(optimizer='lstsq')
+    else:
+        m.multifit(optimizer='lstsq') 
+    
+    np.testing.assert_allclose(p_ref.a0.value, p.a0.value)
+    np.testing.assert_allclose(p_ref.a1.value, p.a1.value)
+    np.testing.assert_allclose(p_ref.a2.value, p.a2.value)
+    np.testing.assert_allclose(m.as_signal().data, s.data)
+    if nav_dim >= 1:
+        np.testing.assert_allclose(p.a0.map['values'].mean(), p_ref.a0.value)
+        np.testing.assert_allclose(p.a1.map['values'].mean(), p_ref.a1.value)
+        np.testing.assert_allclose(p.a2.map['values'].mean(), p_ref.a2.value)
+
+
+@pytest.mark.parametrize('nav_dim', (0, 1, 2))
+def test_multiple_linear_parameters_convolution(nav_dim):
+    s_ref = hs.signals.Signal1D(np.ones(1000))
+
+    # Create signal to convolve
+    to_convolve_component = hs.model.components1D.Gaussian(A=1000, sigma=50, centre=100)
+    to_convolve = hs.signals.Signal1D(to_convolve_component.function(np.arange(1000)))
+    to_convolve.axes_manager[-1].offset = -to_convolve_component.centre.value
+    
+    l_ref1 = hs.model.components1D.Lorentzian(A=100, centre=200, gamma=10)
+    l_ref2 = hs.model.components1D.Lorentzian(A=100, centre=600, gamma=20)
+        
+    m_ref = s_ref.create_model()
+    m_ref.extend([l_ref1, l_ref2])
+    m_ref.low_loss = to_convolve
+    s = m_ref.as_signal()
+
+    if nav_dim >= 1:
+        s = hs.stack([s]*2)
+        to_convolve = hs.stack([to_convolve]*2)
+    if nav_dim == 2:
+        s = hs.stack([s]*3)
+        to_convolve = hs.stack([to_convolve]*3)
+
+    m = s.create_model()
+    l1 = hs.model.components1D.Lorentzian(centre=200, gamma=10)
+    l2 = hs.model.components1D.Lorentzian(centre=600, gamma=20)
+    m.extend([l1, l2])
+    assert not m.convolved
+    m.low_loss = to_convolve
+    assert m.convolved
+    m.set_parameters_not_free(only_nonlinear=True)
+    with pytest.warns(UserWarning):
+        m.multifit(optimizer='lstsq')
+
+    np.testing.assert_allclose(l_ref1.A.value, l1.A.value)
+    np.testing.assert_allclose(l_ref1.centre.value, l1.centre.value)
+    np.testing.assert_allclose(l_ref1.gamma.value, l1.gamma.value)
+    np.testing.assert_allclose(l_ref2.A.value, l2.A.value)
+    np.testing.assert_allclose(l_ref2.centre.value, l2.centre.value)
+    np.testing.assert_allclose(l_ref2.gamma.value, l2.gamma.value)
+    np.testing.assert_allclose(m.as_signal().data, s.data)
+    if nav_dim >= 1:
+        np.testing.assert_allclose(l1.A.map['values'].mean(), l_ref1.A.value)
+        np.testing.assert_allclose(l1.centre.map['values'].mean(), l_ref1.centre.value)
+        np.testing.assert_allclose(l1.gamma.map['values'].mean(), l_ref1.gamma.value)
+        np.testing.assert_allclose(l2.A.map['values'].mean(), l_ref2.A.value)
+        np.testing.assert_allclose(l2.centre.map['values'].mean(), l_ref2.centre.value)
+        np.testing.assert_allclose(l2.gamma.map['values'].mean(), l_ref2.gamma.value)

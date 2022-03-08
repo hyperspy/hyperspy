@@ -1056,22 +1056,22 @@ class BaseModel(list):
                         "`Expression` component."
                         )
                 free, fixed = component._separate_pseudocomponents()
-                for parameter in free_parameters:
+                for p in free_parameters:
                     # Use the index in the `parameters` list as reference
                     # to defined the position in the numpy array
-                    index = parameters.index(parameter)
+                    index = parameters.index(p)
                     comp_values[index] = component._compute_expression_part(
-                        free[parameter.name]
+                        free[p.name]
                         )
                     constant_term += component._compute_expression_part(fixed)
 
             elif len(free_parameters) == 1:
-                parameter = free_parameters[0]
-                if parameter.twin:
+                p = free_parameters[0]
+                if p.twin:
                     # to get the correct `comp_values` index, we need the twin
-                    parameter = twin_parameters_mapping[parameter]
+                    p = twin_parameters_mapping[p]
 
-                index = parameters.index(parameter)
+                index = parameters.index(p)
                 comp_value = self.__call__(
                     component_list=[component], binned=False
                     )
