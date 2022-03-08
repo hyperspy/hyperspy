@@ -56,7 +56,8 @@ from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.misc.utils import is_binned # remove in v2.0
-from hyperspy.misc.utils import process_function_blockwise, guess_output_signal_size
+from hyperspy.misc.utils import (
+    process_function_blockwise, guess_output_signal_size,_get_block_pattern)
 from hyperspy.misc.utils import add_scalar_axis
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
@@ -4928,7 +4929,7 @@ class BaseSignal(FancySlicing,
             if output_dtype is None:
                 output_dtype = temp_output_dtype
         output_shape = self.axes_manager._navigation_shape_in_array + output_signal_size
-        arg_pairs, adjust_chunks, new_axis, output_pattern = old_sig.get_block_pattern(
+        arg_pairs, adjust_chunks, new_axis, output_pattern = _get_block_pattern(
             (old_sig.data,) + args, output_shape
         )
 
@@ -4995,29 +4996,6 @@ class BaseSignal(FancySlicing,
             if not data_stored:
                 sig.data = sig.data.compute(num_workers=max_workers)
         return sig
-
-    def get_block_pattern(self, args, output_shape):
-        arg_patterns = tuple(tuple(range(a.ndim)) for a in args)
-        arg_shapes = tuple(a.shape for a in args)
-        output_pattern = tuple(range(len(output_shape)))
-        all_ind = arg_shapes + (output_shape,)
-        max_len = max((len(i) for i in all_ind))  # max number of dimensions
-        max_arg_len = max((len(i) for i in arg_shapes))
-        adjust_chunks = {}
-        new_axis = {}
-        output_shape = output_shape + (0,) * (max_len - len(output_shape))
-        for i in range(max_len):
-            shapes = np.array(
-                [s[i] if len(s) > i else -1 for s in (output_shape,) + arg_shapes]
-            )
-            is_equal_shape = shapes == shapes[0]  # if in shapes == output shapes
-            if not all(is_equal_shape):
-                if i > max_arg_len - 1:
-                    new_axis[i] = output_shape[i]
-                else:
-                    adjust_chunks[i] = output_shape[i]
-        arg_pairs = [(a, p) for a, p in zip(args, arg_patterns)]
-        return arg_pairs, adjust_chunks, new_axis, output_pattern
 
     def _get_iterating_kwargs(self, iterating_kwargs):
         nav_chunks = self.get_chunk_size(self.axes_manager.navigation_axes)

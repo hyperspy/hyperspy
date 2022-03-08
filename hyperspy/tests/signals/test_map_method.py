@@ -27,6 +27,7 @@ import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy._signals.lazy import LazySignal
+from hyperspy.misc.utils import _get_block_pattern
 
 
 @lazifyTestClass(ragged=False)
@@ -651,7 +652,7 @@ class TestGetBlockPattern:
         chunks = (10,) * len(input_shape)
         dask_array = da.random.random(input_shape, chunks=chunks)
         s = hs.signals.Signal2D(dask_array).as_lazy()
-        arg_pairs, adjust_chunks, new_axis, output_pattern = s.get_block_pattern((s.data,), input_shape)
+        arg_pairs, adjust_chunks, new_axis, output_pattern = _get_block_pattern((s.data,), input_shape)
         assert new_axis == {}
         assert adjust_chunks == {}
 
@@ -664,25 +665,25 @@ class TestGetBlockPattern:
         dask_array = da.random.random(input_shape, chunks=chunks)
         s = hs.signals.Signal1D(dask_array).as_lazy()
         output_signal_size = input_shape[-1:]
-        arg_pairs, adjust_chunks, new_axis, output_pattern = s.get_block_pattern((s.data,), input_shape)
+        arg_pairs, adjust_chunks, new_axis, output_pattern = _get_block_pattern((s.data,), input_shape)
         assert new_axis == {}
         assert adjust_chunks == {}
 
     def test_different_output_signal_size_signal2d(self):
         s = hs.signals.Signal2D(np.zeros((4, 5)))
-        arg_pairs, adjust_chunks, new_axis, output_pattern = s.get_block_pattern((s.data,), (1,))
+        arg_pairs, adjust_chunks, new_axis, output_pattern = _get_block_pattern((s.data,), (1,))
         assert new_axis == {}
         assert adjust_chunks == {0: 1, 1: 0}
 
     def test_different_output_signal_size_signal2d_2(self):
         s = hs.signals.Signal2D(np.zeros((7, 10, 5)))
-        arg_pairs, adjust_chunks, new_axis, output_pattern = s.get_block_pattern((s.data,), (7, 2))
+        arg_pairs, adjust_chunks, new_axis, output_pattern = _get_block_pattern((s.data,), (7, 2))
         assert new_axis == {}
         assert adjust_chunks == {1: 2, 2: 0}
 
     def test_different_output_signal_size_signal2d_3(self):
         s = hs.signals.Signal2D(np.zeros((3, 2, 7, 10, 5)))
-        arg_pairs, adjust_chunks, new_axis, output_pattern = s.get_block_pattern((s.data,),(3, 2, 5,))
+        arg_pairs, adjust_chunks, new_axis, output_pattern = _get_block_pattern((s.data,), (3, 2, 5,))
         assert new_axis == {}
         assert adjust_chunks == {2: 5, 3: 0, 4: 0}
 
