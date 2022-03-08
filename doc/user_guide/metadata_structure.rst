@@ -6,11 +6,12 @@ Metadata structure
 
 The :class:`~.signal.BaseSignal` class stores metadata in the
 :attr:`~.signal.BaseSignal.metadata` attribute that has a tree structure. By
-convention, the nodes labels are capitalized and the leaves are not
+convention, the node labels are capitalized and the leaves are not
 capitalized.
 
 When a leaf contains a quantity that is not dimensionless, the units can be
 given in an extra leaf with the same label followed by the "_units" suffix.
+For example, an "energy" leaf should be accompanied by an "energy_units" leaf.
 
 The metadata structure is represented in the following tree diagram. The
 default units are given in parentheses. Details about the leaves can be found
@@ -430,7 +431,7 @@ signal_type
 
     A term that describes the signal type, e.g. EDS, PES... This information
     can be used by HyperSpy to load the file as a specific signal class and
-    therefore the naming should be standarised. Currently HyperSpy provides
+    therefore the naming should be standardised. Currently, HyperSpy provides
     special signal class for photoemission spectroscopy, electron energy
     loss spectroscopy and energy dispersive spectroscopy. The signal_type in
     these cases should be respectively PES, EELS and EDS_TEM (EDS_SEM).
@@ -447,7 +448,7 @@ record_by
     type: Str
 
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
-    If 'spectrum' the spectral data is stored in the faster index.
+    If 'spectrum', the spectral data is stored in the faster index.
 
 quantity
     type: Str
@@ -496,17 +497,17 @@ correlation_factor
 parameters_estimation_method
     type: Str
 
+
 _Internal_parameters
 ====================
 
 This node is "private" and therefore is not displayed when printing the
-:attr:`~.signal.BaseSignal.metadata` attribute. For example, an "energy" leaf
-should be accompanied by an "energy_units" leaf.
+:attr:`~.signal.BaseSignal.metadata` attribute.
 
 Stacking_history
 ----------------
 
-Generated when using :py:meth:`~.utils.stack`. Used by
+Generated when using :py:meth:`~.misc.utils.stack`. Used by
 :py:meth:`~.signal.BaseSignal.split`, to retrieve the former list of signal.
 
 step_sizes
@@ -523,3 +524,79 @@ Folding
 -------
 
 Constains parameters that related to the folding/unfolding of signals.
+
+
+Functions to handle the metadata
+================================
+
+Existing nodes can be directly read out or set by adding the path in the
+metadata tree:
+
+::
+
+    s.metadata.General.title = 'FlyingCircus'
+    s.metadata.General.title
+
+
+The following functions can operate on the metadata tree. An example with the
+same functionality as the above would be:
+
+::
+
+    s.metadata.set_item('General.title', 'FlyingCircus')
+    s.metadata.get_item('General.title')
+
+
+Adding items
+------------
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item`
+    Given a ``path`` and ``value``, easily set metadata items, creating any
+    necessary nodes on the way.
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary`
+    Add new items from a given ``dictionary``.
+
+
+Output metadata
+---------------
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item`
+    Given an ``item_path``, return the ``value`` of the metadata item.
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.as_dictionary`
+    Returns a dictionary representation of the metadata tree.
+    
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.export`
+    Saves the metadata tree in pretty tree printing format in a text file.
+    Takes ``filename`` as parameter.
+
+
+Searching for keys
+------------------
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
+    Given an ``item_path``, returns ``True`` if the item exists anywhere
+    in the metadata tree.
+
+Using the option ``full_path=False``, the functions
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item` and
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item` can also find items by
+their key in the metadata when the exact path is not known. By default, only
+an exact match of the search string with the item key counts. The additional 
+setting ``wild=True`` allows to search for a case-insensitive substring of the
+item key. The search functionality also accepts item keys preceded by one or
+several nodes of the path (separated by the usual full stop).
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
+    For ``full_path=False``, given a ``item_key``, returns ``True`` if the item
+    exists anywhere in the metadata tree.
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
+    For ``full_path=False, return_path=True``, returns the path or list of
+    paths to any matching item(s).
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item`
+    For ``full_path=False``, returns the value or list of values for any
+    matching item(s). Setting ``return_path=True``, a tuple (value, path) is
+    returned -- or lists of tuples for multiple occurences.
