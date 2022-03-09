@@ -9,7 +9,7 @@ Tools for EELS data analysis
 
 The functions described in this chapter are only available for the
 :py:class:`~._signals.eels.EELSSpectrum` class. To transform a
-:py:class:`~.signal.BaseSignal` (or subclass) into a
+:py:class:`~.signal.BaseSignal` (or subclass) into an
 :py:class:`~._signals.eels.EELSSpectrum`:
 
 .. code-block:: python

@@ -86,7 +86,7 @@ Or, from HyperSpy's project folder, simply:
   <https://docs.pytest.org/en/latest/customize.html>`_ for more details.
 
 The HyperSpy test suite can also be run in parallel if you have multiple CPUs
-available, using the ```pytest-xdist`` plugin <https://pypi.org/project/pytest-xdist/>`_.
+available, using the `pytest-xdist plugin <https://pypi.org/project/pytest-xdist/>`_.
 If you have the plugin installed, HyperSpy will automatically run the test suite in
 parallel on your machine.
 
@@ -106,7 +106,7 @@ that all tests in a file run in the same worker.
 
     Running tests in parallel using ``pytest-xdist`` will change the content
     and format of the output of ``pytest`` to the console. We recommend installing
-    ```pytest-sugar`` <https://pypi.org/project/pytest-sugar/>`_ to produce
+    `pytest-sugar <https://pypi.org/project/pytest-sugar/>`_ to produce
     nicer-looking output including an animated progressbar.
 
 
@@ -118,7 +118,7 @@ random or non-deterministic behaviour. They may sometimes pass or sometimes fail
 it won't always be clear why. These are usually known as "flaky" tests.
 
 One way to approach flaky tests is to rerun them, to see if the failure was a one-off.
-This can be achieved using the ```pytest-rerunfailures`` plugin <https://pypi.org/project/pytest-rerunfailures/>`_.
+This can be achieved using the `pytest-rerunfailures plugin <https://pypi.org/project/pytest-rerunfailures/>`_.
 
 .. code:: bash
 
