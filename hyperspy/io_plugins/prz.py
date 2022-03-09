@@ -26,12 +26,12 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 
 # Plugin characteristics
 # ----------------------
-format_name = 'Panta Rhei'
-description = 'File format of CEOS Panta Rhei. Based on simple numpy and dictionaries.'
-full_support = False	# Whether all the Hyperspy features are supported
+format_name = 'PantaRhei'
+description = 'File format used by CEOS PantaRhei. Based on simple numpy arrays and dictionaries.'
+full_support = False # Whether all the Hyperspy features are supported
 # Recognised file extension
 file_extensions = ('prz')
-default_extension = 0	# Index of the extension that will be used by default
+default_extension = 0 # Index of the extension that will be used by default
 # Reading capabilities
 reads_images = True
 reads_spectrum = True
@@ -56,28 +56,41 @@ def file_reader(filename, **kwds):
     prz_file = np.load(filename, allow_pickle=True)
     data = prz_file['data']
     meta_data = prz_file['meta_data'][0]
-    return _import_pr(data, meta_data, filename)
+    return import_pr(data, meta_data, filename)
 
 
 def file_writer(filename, signal, **kwds):
-    data, meta_data = _export_pr(signal=signal)
-    
+    data, meta_data = export_pr(signal=signal)
     np.savez(file=filename, data=data, meta_data=[meta_data], file_format_version=2, data_model=[{}])
+    
 
-def _import_pr(data, meta_data, filename = None):
+def import_pr(data, meta_data, filename = None):
+    """Converts metadata from PantaRhei to hyperspy format, and corrects the order of data axes if needed.
+    
+    Parameters
+    ----------
+    data: ndarray
+        numerical data array, as loaded from file
+    meta_data: dict
+        dictionary containing the meta data in PantaRhei format
+    filename: str or None
+        name of the file being loaded
+
+    Returns
+    -------
+    the list of dictionaries containing the data and metadata in hyperspy format
+    """
 
     data_dimensions = len(data.shape)
     data_type = meta_data.get('type')
     content_type = meta_data.get('content.types')
     calibrations = []
     for axis in range(data_dimensions):
-            try:
-                calib = meta_data['device.calib'][axis]
-            except IndexError:
-                calib = None
-            calibrations.append(calib)
-
-
+        try:
+            calib = meta_data['device.calib'][axis]
+        except IndexError:
+            calib = None
+        calibrations.append(calib)
 
     if not content_type:
         if data_type in ('Stack', '3D'):
@@ -203,7 +216,21 @@ def _import_pr(data, meta_data, filename = None):
     file_data_list = [dictionary, ]
     return file_data_list
 
-def _export_pr(signal):
+def export_pr(signal):
+    """Extracts from the signal the data array and the metadata in PantaRhei format
+    
+    Parameters
+    ----------
+    signal: BaseSignal
+        signal to be exported
+
+    Returns
+    -------
+    data: ndarray
+        numerical data of the signal
+    meta_data: dict
+        metadata dictionary in PantaRhei format
+    """
     data = signal.data
     metadata = signal.metadata
     original_metadata = signal.original_metadata
@@ -269,7 +296,7 @@ def _metadata_converter_in(meta_data, axes, filename):
         if 'mm' in aperture:
             aperture = aperture.split('mm')[0]
             aperture = aperture.rstrip()
-            try: 
+            try:
                 aperture = float(aperture)
             except:
                 pass
@@ -370,7 +397,7 @@ def _metadata_converter_out(metadata, original_metadata=None):
     
     
 def get_metadata_from_axes_info(axes_info, pixel_factors=None):
-    """ Return a dict with meta data obtained from the passed axes info.
+    """ Return a dict with calibration metadata obtained from the passed axes info.
 
     Parameters
     ----------
