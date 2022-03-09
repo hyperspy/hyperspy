@@ -745,7 +745,7 @@ class HyperHeader(object):
                 tmp_d = dictionarize(j)
                 self.elements[tmp_d['XmlClassName']] = {'line': tmp_d['Line'],
                                                         'energy': tmp_d['Energy']}
-        except AttributeError:
+        except (AttributeError, KeyError):
             _logger.info('no element selection present in the spectra..')
 
     def _set_sum_edx(self, root, indexes):
