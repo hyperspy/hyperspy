@@ -1,0 +1,1 @@
+Make Bruker .bcf reader less restrictive when reading files where no element selection is found in the spectra.
