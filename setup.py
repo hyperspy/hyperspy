@@ -80,7 +80,7 @@ install_req = ['scipy>=1.1',
                 # We can remove this requirement when the minimum supported version becomes Python 3.10
                'importlib_metadata>=3.6',
                # numcodecs currently only supported on x86_64/AMD64 machines
-               'zarr;platform_machine=="x86_64" or platform_machine=="AMD64"',
+               'zarr>=2.9.0;platform_machine=="x86_64" or platform_machine=="AMD64"',
                ]
 
 extras_require = {
