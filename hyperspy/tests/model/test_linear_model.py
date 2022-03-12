@@ -430,7 +430,8 @@ class TestLinearModel2D:
         np.testing.assert_allclose(diff.data, 0.0, atol=1E-7)
         np.testing.assert_allclose(m.p_std[0], 0.0, atol=1E-7)
 
-    def test_model2D_linear_many_gaussians(self):
+    @pytest.mark.parametrize('nav2d', [False, True])
+    def test_model2D_linear_many_gaussians(self, nav2d):
         mesh, x, y = self.mesh, self.x, self.y
         gausslow, gausshigh = -8, 8
         gauss_step = 8
@@ -451,6 +452,10 @@ class TestLinearModel2D:
         s.axes_manager[-2].scale = x[1] - x[0]
         s.axes_manager[-1].scale = y[1] - y[0]
 
+        if nav2d:
+            s = hs.stack([s]*2)
+            s = hs.stack([s]*3)
+
         m = s.create_model()
         for i in np.arange(gausslow, gausshigh+1, gauss_step):
             for j in np.arange(gausslow, gausshigh+1, gauss_step):
@@ -462,7 +467,8 @@ class TestLinearModel2D:
         m.fit(optimizer='lstsq')
         np.testing.assert_allclose(s.data, m.as_signal().data)
 
-    def test_model2D_polyexpression(self):
+    @pytest.mark.parametrize('nav2d', [False, True])
+    def test_model2D_polyexpression(self, nav2d):
         poly = "a*x**2 + b*x - c*y**2 + d*y + e"
         P = Expression(poly, 'poly')
         P.a.value = 6
@@ -473,6 +479,10 @@ class TestLinearModel2D:
 
         data = P.function(*self.mesh)
         s = Signal2D(data)
+
+        if nav2d:
+            s = hs.stack([s]*2)
+            s = hs.stack([s]*3)
 
         m = s.create_model()
         m.append(P)

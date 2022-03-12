@@ -116,7 +116,7 @@ class Expression(Component):
     check_parameter_linearity : bool
         If `True`, automatically check if each parameter is linear and set
         its corresponding attribute accordingly. If `False`, the default is to 
-        set all parameters, except for those who are specify in
+        set all parameters, except for those who are specified in
         ``linear_parameter_list``.
         
     **kwargs
@@ -353,7 +353,7 @@ class Expression(Component):
         term are fixed.
 
         The 'constant' part of a component is any part that doesn't change
-        when the free parameters is changed.
+        when the free parameters are changed.
         """
         free_linear_parameters = [
             # Use `_free` private attribute not to interfere with twin
@@ -422,8 +422,6 @@ class Expression(Component):
         model = self.model
         function = part['function']
         parameters = [para.value for para in part['parameters']]
-        nav_shape = model.axes_manager._navigation_shape_in_array
-        signal_shape = model.axes_manager._signal_shape_in_array
         
         if model.convolved and self.convolved:
             data = convolve_component_values(
@@ -432,15 +430,14 @@ class Expression(Component):
             axes = [ax.axis for ax in model.axes_manager.signal_axes]
             mesh = np.meshgrid(*axes)
             data = function(*mesh, *parameters)
-            if np.shape(data) == ():
-                data = data * \
-                    np.ones(signal_shape)[np.where(model.channel_switches)]
-            elif np.shape(data) == nav_shape:
-                data = data[..., None] * \
-                    np.ones(signal_shape)[np.where(model.channel_switches)]
+            slice_ = np.where(model.channel_switches)
+            if len(np.shape(data)) == 0:
+                # For calculation of constant term of the component
+                signal_shape = model.axes_manager._signal_shape_in_array
+                data = data * np.ones(signal_shape)[slice_]
             else:
-                data = data[np.where(model.channel_switches)]
-                data = np.moveaxis(data, 0, -1)
+                data = np.moveaxis(data[slice_], 0, -1)
+
         return data
 
 

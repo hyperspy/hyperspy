@@ -161,3 +161,12 @@ def test_plot_component():
     assert ax.get_ylim() == (-0.1, 49.0)
     m.append(p)
     m.signal._plot.close()
+
+
+@pytest.mark.parametrize(("only_free"), [False, True])
+@pytest.mark.parametrize(("only_active"), [False, True])
+def test_plot_results(only_free, only_active):
+    m = hs.signals.Signal1D(np.arange(100).reshape(2, 50)).create_model()
+    m.append(hs.model.components1D.Gaussian(A=250, sigma=5, centre=20))
+    m.plot_results(only_free=only_free, only_active=only_active)
+    
