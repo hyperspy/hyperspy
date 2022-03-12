@@ -20,23 +20,29 @@ import numpy as np
 import dask.array as da
 
 def _is_iter(val):
-    "Checks if value is a list or tuple"
+    """Checks if value is a list or tuple."""
     return isinstance(val, tuple) or isinstance(val, list)
 
 
 def _iter_join(val):
-    "Joins values of iterable parameters for the fancy view, unless it equals None, then blank"
+    """
+    Joins values of iterable parameters for the fancy view, unless it equals
+    None, then blank
+    """
     return "(" + ", ".join(["{:6g}".format(v) for v in val]) + ")" if val is not None else ""
 
 
 def _non_iter(val):
-    "Returns formatted string for a value unless it equals None, then blank"
+    """
+    Returns formatted string for a value unless it equals None, then blank
+    """
     return "{:6g}".format(val) if val is not None else ""
 
 
 class current_component_values():
-    """Convenience class that makes use of __repr__ methods for nice printing in the notebook
-    of the properties of parameters of a component
+    """
+    Convenience class that makes use of __repr__ methods for nice printing in
+    the notebook of the properties of parameters of a component.
 
     Parameters
     ----------
@@ -44,8 +50,9 @@ class current_component_values():
     only_free : bool, default False
         If True: Only include the free parameters in the view
     only_active : bool, default False
-        If True: Helper for current_model_values. Only include active components in the view.
-        Always shows values if used on an individual component.
+        If True: Helper for current_model_values. Only include active
+        components in the view. Always shows values if used on an individual
+        component.
      """
 
     def __init__(self, component, only_free=False, only_active=False):
@@ -153,8 +160,9 @@ class current_component_values():
 
 
 class current_model_values():
-    """Convenience class that makes use of __repr__ methods for nice printing in the notebook
-    of the properties of parameters in components in a model
+    """
+    Convenience class that makes use of __repr__ methods for nice printing in
+    the notebook of the properties of parameters in components in a model.
 
     Parameters
     ----------
@@ -200,25 +208,28 @@ class current_model_values():
         return html
 
 
-def calc_covariance(target_signal, coefficients, component_data,
-                    residual=None, lazy=False):
-    """Calculate covariance matrix after having performed Linear Regression
+def _calculate_covariance(target_signal, coefficients, component_data,
+                         residual=None, lazy=False):
+    """
+    Calculate covariance matrix after having performed Linear Regression.
 
     Parameters
     ----------
 
     target_signal : array-like, shape (N,) or (M, N)
-        The signal array to be fit to
+        The signal array to be fit to.
     coefficients : array-like, shape C or (M, C)
+        The fitted coefficients.
     component_data : array-like, shape N or (C, N)
+        The component data.
     residual : array-like, shape (0,) or (M,)
         The residual sum of squares, optional. Calculated if None.
     lazy : bool
-        Whether the signal is lazy
+        Whether the signal is lazy.
 
     Notes
     -----
-    Explanation the array shapes in HyperSpy terms:
+    Explanation of the array shapes in HyperSpy terms:
     N : flattened signal shape
     M : flattened navigation shape
     C : number of components
@@ -248,8 +259,3 @@ def calc_covariance(target_signal, coefficients, component_data,
     k = coefficients.shape[-1]  # the number of components
     covariance = (1 / (n - k)) * (residual * inv_fit_dot.T).T
     return covariance
-
-
-def std_err_from_cov(covariance):
-    "Get standard error coefficients from the diagonal of the covariance"
-    return np.sqrt(np.diagonal(covariance, axis1=-2, axis2=-1))

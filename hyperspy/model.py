@@ -60,8 +60,7 @@ from hyperspy.misc.export_dictionary import (
     )
 from hyperspy.misc.model_tools import (
     current_model_values,
-    calc_covariance,
-    std_err_from_cov
+    _calculate_covariance,
     )
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.misc.utils import (
@@ -1158,15 +1157,15 @@ class BaseModel(list):
         # is specified in multifit. This is because it is a very large
         # calculation and can eat all our ram, even when run lazily.
         if calculate_errors:
-            fit_output["covar"] = calc_covariance(
+            covariance = _calculate_covariance(
                 target_signal=target_signal,
                 coefficients=coefficient_array,
                 component_data=comp_values,
                 residual=residual,
                 lazy=self.signal._lazy)
-            fit_output["perror"] = abs(fit_output["x"]) * std_err_from_cov(
-                fit_output["covar"]
-            )
+            std_error = np.sqrt(np.diagonal(covariance, axis1=-2, axis2=-1))
+            fit_output["covar"] = covariance
+            fit_output["perror"] = abs(fit_output["x"]) * std_error
 
         if not only_current:
             # The nav shape will have been flattened. We reshape it here.
