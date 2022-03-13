@@ -186,9 +186,7 @@ Customising image plot
 
 The image plot can be customised by passing additional arguments when plotting.
 Colorbar, scalebar and contrast controls are HyperSpy-specific, however
-`matplotlib.imshow
-<https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.imshow.html>`_
-arguments are supported as well:
+:py:meth:`matplotlib.axes.Axes.imshow` arguments are supported as well:
 
 .. code-block:: python
 
@@ -496,7 +494,7 @@ Plotting several images
 :py:func:`~.drawing.utils.plot_images` is used to plot several images in the
 same figure. It supports many configurations and has many options available
 to customize the resulting output. The function returns a list of
-`matplotlib axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.axes.html>`_,
+:py:class:`matplotlib.axes.Axes`,
 which can be used to further customize the figure. Some examples are given
 below. Plots generated from another installation may look slightly different
 due to ``matplotlib`` GUI backends and default font sizes. To change the
@@ -617,8 +615,7 @@ to get a representative figure of the X-ray line intensities of an EDS
 spectrum image. This example also demonstrates changing the colormap (with
 `cmap`), adding scalebars to the plots (with `scalebar`), and changing the
 `padding` between the images. The padding is specified as a dictionary,
-which is used to call subplots_adjust method of matplotlib
-(see `documentation <https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure.subplots_adjust>`_).
+which is passed to :py:meth:`matplotlib.figure.Figure.subplots_adjust`.
 
 .. code-block:: python
 
@@ -1178,6 +1175,8 @@ Each slice is indicated with the same text on the navigator.
 
   Multi-dimensional markers.
 
+Permanent markers
+-----------------
 
 .. versionadded:: 1.2
    Permanent markers.
@@ -1333,26 +1332,49 @@ Permanent markers are stored in the HDF5 file if the signal is saved:
     >>> s1.metadata.Markers
     └── point = <hyperspy.drawing._markers.point.Point object at 0x7efcfadb06d8>
 
-Markers have ``zorder`` property to support ordering between markers.
+Supported markers
+-----------------
+
+The markers currently supported in HyperSpy are:
+
+.. table:: List of supported markers, their signature and their corresponding matplotlib objects.
+    :widths: 20 40 40
+
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | HyperSpy markers                                                             | Signature                         | Matplotlib objects                                 |
+    +==============================================================================+===================================+====================================================+
+    | :py:class:`~.drawing._markers.arrow.Arrow`                                   | ``x1, y1, x2, y2, **kwargs``      |  :py:class:`matplotlib.patches.FancyArrowPatch`    |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.ellipse.Ellipse`                               | ``x, y, width, height, **kwargs`` |  :py:class:`matplotlib.patches.Ellipse`            |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.horizontal_line.HorizontalLine`                | ``y, **kwargs``                   |  :py:meth:`matplotlib.axes.Axes.hlines`            |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.horizontal_line_segment.HorizontalLineSegment` | ``x1, x2, y, **kwargs``           |  :py:meth:`matplotlib.axes.Axes.hlines`            |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.line_segment.LineSegment`                      | ``x1, y1, x2, y2, **kwargs``      |  :py:meth:`matplotlib.axes.Axes.plot`              |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.point.Point`                                   | ``x1, y1, **kwargs``              |  :py:meth:`matplotlib.axes.Axes.scatter`           |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.rectangle.Rectangle`                           | ``x1, y1, x2, y2, **kwargs``      |  :py:class:`matplotlib.patches.Rectangle`          |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.text.Text`                                     | ``x, y, text, **kwargs``          |  :py:meth:`matplotlib.axes.Axes.text`              |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.vertical_line.VerticalLine`                    | ``x, **kwargs``                   |  :py:meth:`matplotlib.axes.Axes.axvline`           |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.vertical_line_segment.VerticalLineSegment`     | ``x, y1, y2, **kwargs``           |  :py:meth:`matplotlib.axes.Axes.axvline`           |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+
+
+Markers properties
+------------------
+
+Markers have the ``zorder`` property to support ordering between markers.
 Signal plane has ``zorder=0``, and the marker that have largest number
 become a top most marker.
-  
-Currently these markers are provided in HyperSpy. The ``color`` property in
-rectangle marker is an alias of ``edgecolor`` for backward compatibility.
+
+The ``color`` property in rectangle marker is an alias of ``edgecolor`` for backward compatibility.
 The other parameters are used as in the parameters in matplotlib objects.
-The optional parameters (\*\*kwargs, keyword arguments) can be used for extra parameters used in matplotlib.
+The optional parameters (``**kwargs``, keyword arguments) can be used for extra parameters used in matplotlib.
 
-.. code-block:: python
-
-    arrow(x1, y1, x2, y2, **kwargs) # (see `matplotlib.patches.FancyArrowPatch <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.FancyArrowPatch.html>`_)
-    ellipse(x, y, width, height, **kwargs) # (see `matplotlib.patches.Ellipse <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Ellipse.html>`_)
-    horizontal_line(y, **kwargs) # (see `matplotlib.axes.Axes.axhline <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axhline.html>`_)
-    horizontal_line_segment(x1, x2, y, **kwargs) # (see `matplotlib.axes.Axes.hlines <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.hlines.html>`_)
-    line_segment(x1, y1, x2, y2, **kwargs) # (see `matplotlib.axes.Axes.plot.html <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html>`_)
-    point(x1, y1, **kwargs) # (see `matplotlib.axes.Axes.scatter <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.scatter.html>`_)
-    rectangle(x1, y1, x2, y2, **kwargs) # (see `matplotlib.patches.Rectangle <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Rectangle.html>`_)
-    text(x, y, text, **kwargs) # (see `matplotlib.axes.Axes.text <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.text.html>`_)
-    vertical_line(x, **kwargs) # (see `matplotlib.axes.Axes.axvline <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.axvline.html>`_)
-    vertical_line_segment(x, y1, y2, **kwargs) # (see `matplotlib.axes.Axes.vlines <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.vlines.html>`_)
 
 

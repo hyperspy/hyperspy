@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import matplotlib.patches as patches
-import logging
 from hyperspy.drawing.marker import MarkerBase
 
 
@@ -42,15 +41,15 @@ class Ellipse(MarkerBase):
         The height (diameter) of the ellipse in y.
         see x arguments
     kwargs :
-        Keywords argument of matplotlib.patches.Ellipse valid properties 
-        (i.e. recognized by mpl.plot).
+        Keyword arguments are passed to
+        :py:class:`matplotlib.patches.Ellipse`.
 
     Example
     -------
     >>> import scipy.misc
     >>> im = hs.signals.Signal2D(scipy.misc.ascent())
     >>> m = hs.plot.markers.ellipse(x=150, y=100, width=400, height=400,
-    >>>                  edgecolor='red', facecolor='white', fill=True)
+    >>>                             edgecolor='red', facecolor='white', fill=True)
     >>> im.add_marker(m)
 
     Adding a marker permanently to a signal
@@ -67,7 +66,6 @@ class Ellipse(MarkerBase):
         self.marker_properties = lp
         self.set_data(x1=x, y1=y, x2=width, y2=height)
         self.set_marker_properties(**kwargs)
-        mp = self.marker_properties
 
     def __repr__(self):
         string = "<marker.{}, {} (x={},y={},width={},height={},edgecolor={},zorder={})>".format(

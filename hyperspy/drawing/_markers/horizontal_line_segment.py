@@ -39,8 +39,8 @@ class HorizontalLineSegment(MarkerBase):
         The position of line segment in y.
         see x1 arguments
     kwargs :
-        Keywords argument of ax.hlines valid properties (i.e. recognized by
-        mpl.plot).
+        Keywords arguments are passed to
+        :py:meth:`matplotlib.axes.Axes.hlines`.
 
     Example
     -------

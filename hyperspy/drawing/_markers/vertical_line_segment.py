@@ -39,8 +39,8 @@ class VerticalLineSegment(MarkerBase):
         The position of the start of the line segment in y.
         see x1 arguments
     kwargs :
-        Keywords argument of ax.vlines valid properties (i.e. recognized by
-        mpl.plot).
+        Keyword arguments are passed to
+        :py:meth:`matplotlib.axes.Axes.axvline`.
 
     Example
     -------

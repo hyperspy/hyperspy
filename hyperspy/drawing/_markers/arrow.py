@@ -41,30 +41,32 @@ class Arrow(MarkerBase):
         The position of the head of the arrow in y.
         see x1 arguments
     kwargs :
-        Keywords argument of matplotlib patches.FancyArrowPatch valid properties 
-        (i.e. recognized by mpl.plot).
+        Keyword arguments are passed to
+        :py:class:`matplotlib.patches.FancyArrowPatch`.
+
 
     Example
     -------
     >>> import scipy.misc
     >>> im = hs.signals.Signal2D(scipy.misc.ascent())
     >>> m = hs.plot.markers.arrow(x1=150, y1=100, x2=400, y2=400,
-    >>>            arrowprop={'arrowstyle':'<->', edgecolor='red'})
+    >>>                           arrowprop={'arrowstyle':'<->', edgecolor='red'})
     >>> im.add_marker(m)
 
     Adding a marker permanently to a signal
+
     >>> im.add_marker(m, permanent=True)
     """
 
     def __init__(self, x1, y1, x2, y2, **kwargs):
         MarkerBase.__init__(self)
-        lp = {'edgecolor': 'black', 'facecolor': None, 
+        lp = {'edgecolor': 'black', 'facecolor': None,
               'linewidth': None, 'arrowstyle': '->',
               # size of arrow head
               'mutation_scale': 12,
               # both ends of arrow on the exact pos.
               # default of matplotlib is 2
-              'shrinkA': 0, 'shrinkB': 0, 
+              'shrinkA': 0, 'shrinkB': 0,
               'zorder': None,
         }
         self.marker_properties = lp
@@ -100,7 +102,6 @@ class Arrow(MarkerBase):
         x2 = self.get_data_position('x2')
         y1 = self.get_data_position('y1')
         y2 = self.get_data_position('y2')
-        mp = self.marker_properties
         self.marker = self.ax.add_patch(patches.FancyArrowPatch(
             (x1,y1), (x2,y2), **self.marker_properties))
 
