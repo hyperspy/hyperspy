@@ -1287,16 +1287,14 @@ def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
     ]
 
 
-def process_function_blockwise(
-    data,
-    *args,
-    function,
-    nav_indexes=None,
-    output_signal_size=None,
-    block_info=None,
-    arg_keys=None,
-    **kwargs,
-):
+def process_function_blockwise(data,
+                               *args,
+                               function,
+                               nav_indexes=None,
+                               output_signal_size=None,
+                               output_dtype=None,
+                               arg_keys=None,
+                               **kwargs):
     """
     Convenience function for processing a function blockwise. By design, its
     output is used as an argument of the dask ``map_blocks`` so that the
@@ -1313,10 +1311,10 @@ def process_function_blockwise(
         The function to applied to the signal axis
     nav_indexes : tuple
         The indexes of the navigation axes for the dataset.
-    output_signal_shape: tuple
+    output_signal_size: tuple
         The shape of the output signal. For a ragged signal, this is equal to 1
-    block_info : dict
-        The block info as described by the ``dask.array.map_blocks`` function
+    output_dtype : dtype
+        The data type for the output.
     arg_keys : tuple
         The list of keys for the passed arguments (args).  Together this makes
         a set of key:value pairs to be passed to the function.
@@ -1326,7 +1324,7 @@ def process_function_blockwise(
 
     """
     # Both of these values need to be passed in
-    dtype = block_info[None]["dtype"]
+    dtype = output_dtype
     chunk_nav_shape = tuple([data.shape[i] for i in sorted(nav_indexes)])
     output_shape = chunk_nav_shape + tuple(output_signal_size)
     # Pre-allocating the output array
@@ -1347,7 +1345,6 @@ def process_function_blockwise(
                 if arg_i.shape == ():
                     arg_i = arg_i[()]
                 iter_dict[key] = arg_i
-
             output_array[islice] = function(data[islice], **iter_dict, **kwargs)
     if not (chunk_nav_shape == output_array.shape):
         try:
@@ -1357,7 +1354,44 @@ def process_function_blockwise(
     return output_array
 
 
-def guess_output_signal_size(test_data, function, ragged, **kwargs):
+def _get_block_pattern(args, output_shape):
+    """ Returns the block pattern used by the `blockwise` function for a
+    set of arguments give a resulting output_shape
+
+    Parameters
+    ----------
+    args: list
+        A list of all the arguments which are used for `da.blockwise`
+    output_shape: tuple
+        The output shape for the function passed to `da.blockwise` given args
+    """
+    arg_patterns = tuple(tuple(range(a.ndim)) for a in args)
+    arg_shapes = tuple(a.shape for a in args)
+    output_pattern = tuple(range(len(output_shape)))
+    all_ind = arg_shapes + (output_shape,)
+    max_len = max((len(i) for i in all_ind))  # max number of dimensions
+    max_arg_len = max((len(i) for i in arg_shapes))
+    adjust_chunks = {}
+    new_axis = {}
+    output_shape = output_shape + (0,) * (max_len - len(output_shape))
+    for i in range(max_len):
+        shapes = np.array(
+            [s[i] if len(s) > i else -1 for s in (output_shape,) + arg_shapes]
+        )
+        is_equal_shape = shapes == shapes[0]  # if in shapes == output shapes
+        if not all(is_equal_shape):
+            if i > max_arg_len - 1:  # output shape is a new axis
+                new_axis[i] = output_shape[i]
+            else:  # output shape is an existing axis
+                adjust_chunks[i] = output_shape[i]  # adjusting chunks based on output
+    arg_pairs = [(a, p) for a, p in zip(args, arg_patterns)]
+    return arg_pairs, adjust_chunks, new_axis, output_pattern
+
+
+def guess_output_signal_size(test_data,
+                             function,
+                             ragged,
+                             **kwargs):
     """This function is for guessing the output signal shape and size.
     It will attempt to apply the function to some test data and then output
     the resulting signal shape and datatype.

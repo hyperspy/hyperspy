@@ -27,6 +27,7 @@ import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy._signals.lazy import LazySignal
+from hyperspy.misc.utils import _get_block_pattern
 
 
 @lazifyTestClass(ragged=False)
@@ -642,7 +643,7 @@ class TestGetIteratingKwargsSignal2D:
             assert np.all(s_iter0.data == np.squeeze(arg.compute()))
 
 
-class TestGetDropAxisNewAxis:
+class TestGetBlockPattern:
     @pytest.mark.parametrize(
         "input_shape",
         [(50, 40), (10, 50, 40), (100, 10, 40, 70), (150, 100, 20, 65, 13)],
@@ -651,13 +652,9 @@ class TestGetDropAxisNewAxis:
         chunks = (10,) * len(input_shape)
         dask_array = da.random.random(input_shape, chunks=chunks)
         s = hs.signals.Signal2D(dask_array).as_lazy()
-        output_signal_size = input_shape[-2:][::-1]
-        drop_axis, new_axis, axes_changed = s._get_drop_axis_new_axis(
-            output_signal_size
-        )
-        assert drop_axis == None
-        assert new_axis == None
-        assert axes_changed == False
+        arg_pairs, adjust_chunks, new_axis, output_pattern = _get_block_pattern((s.data,), input_shape)
+        assert new_axis == {}
+        assert adjust_chunks == {}
 
     @pytest.mark.parametrize(
         "input_shape",
@@ -668,31 +665,27 @@ class TestGetDropAxisNewAxis:
         dask_array = da.random.random(input_shape, chunks=chunks)
         s = hs.signals.Signal1D(dask_array).as_lazy()
         output_signal_size = input_shape[-1:]
-        drop_axis, new_axis, axes_changed = s._get_drop_axis_new_axis(
-            output_signal_size
-        )
-        assert drop_axis == None
-        assert new_axis == None
-        assert axes_changed == False
+        arg_pairs, adjust_chunks, new_axis, output_pattern = _get_block_pattern((s.data,), input_shape)
+        assert new_axis == {}
+        assert adjust_chunks == {}
 
     def test_different_output_signal_size_signal2d(self):
         s = hs.signals.Signal2D(np.zeros((4, 5)))
-        drop_axis, new_axis, axes_changed = s._get_drop_axis_new_axis((1,))
-        assert drop_axis == (1, 0)
-        assert new_axis == (0,)
-        assert axes_changed == True
+        arg_pairs, adjust_chunks, new_axis, output_pattern = _get_block_pattern((s.data,), (1,))
+        assert new_axis == {}
+        assert adjust_chunks == {0: 1, 1: 0}
 
+    def test_different_output_signal_size_signal2d_2(self):
         s = hs.signals.Signal2D(np.zeros((7, 10, 5)))
-        drop_axis, new_axis, axes_changed = s._get_drop_axis_new_axis((2,))
-        assert drop_axis == (2, 1)
-        assert new_axis == (1,)
-        assert axes_changed == True
+        arg_pairs, adjust_chunks, new_axis, output_pattern = _get_block_pattern((s.data,), (7, 2))
+        assert new_axis == {}
+        assert adjust_chunks == {1: 2, 2: 0}
 
+    def test_different_output_signal_size_signal2d_3(self):
         s = hs.signals.Signal2D(np.zeros((3, 2, 7, 10, 5)))
-        drop_axis, new_axis, axes_changed = s._get_drop_axis_new_axis((5,))
-        assert drop_axis == (4, 3)
-        assert new_axis == (3,)
-        assert axes_changed == True
+        arg_pairs, adjust_chunks, new_axis, output_pattern = _get_block_pattern((s.data,), (3, 2, 5,))
+        assert new_axis == {}
+        assert adjust_chunks == {2: 5, 3: 0, 4: 0}
 
 
 def test_dask_array_store():
@@ -845,6 +838,20 @@ class TestMapIterate:
             add_sum, inplace=False, iterating_kwargs={'add': s_add})
         assert ((s_out.data == self.dx * self.dy) + 2).all()
 
+    def test_iter_kwarg_larger_shape_ragged(self):
+        def return_img(image, add):
+            return image
+
+        x = np.empty((2,), dtype=object)
+        x[0] = np.ones((4, 2))
+        x[1] = np.ones((4, 2))
+
+        s = hs.signals.BaseSignal(x, ragged=True)
+
+        s_add = hs.signals.BaseSignal(2 * np.ones((2, 201, 101))).transpose(2)
+        s_out = s.map(return_img, inplace=False, add=s_add, ragged=True)
+        np.testing.assert_array_equal(s_out.data[0], x[0])
+
 
 class TestFullProcessing:
     def setup_method(self):
@@ -944,6 +951,24 @@ class TestFullProcessing:
         s_out.data[:, :, 0, 0] = 0.0
         assert not np.any(s_out.data)
         assert s_out.axes_manager.shape == (39, 28, 44, 40)
+
+    def test_rechunk_arguments(self):
+        chunk_shape = (2, 2, 2, 2, 2)
+
+        def add_sum(image, add1, add2):
+            temp_add = add1.sum(-1) + add2
+            out = image + np.sum(temp_add)
+            return out
+        x = np.ones((4, 5, 10, 11))
+        s = hs.signals.Signal2D(x)
+        s_add1 = hs.signals.BaseSignal(2 * np.ones((4, 5, 2, 3, 2))).transpose(3)
+        s_add2 = hs.signals.BaseSignal(3 * np.ones((4, 5, 2, 3))).transpose(2)
+
+        s = hs.signals.Signal2D(da.from_array(s.data, chunks=(2, 2, 2, 2))).as_lazy()
+        s_add1 = hs.signals.Signal2D(da.from_array(s_add1.data, chunks=chunk_shape)).as_lazy().transpose(
+            navigation_axes=(1, 2))
+        s_out = s.map(add_sum, inplace=False, add1=s_add1, add2=s_add2, lazy_output=False)
+        assert (s_out.axes_manager.shape == s.axes_manager.shape)
 
 
 class TestLazyNavChunkSize1:
