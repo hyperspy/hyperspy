@@ -630,12 +630,18 @@ def test_plot_eels_labels_nav():
     s.axes_manager.indices = (10, )
     s._plot.close()
 
-def _test_markers_zorder(reversed_order = False):
+
+@pytest.mark.parametrize('reversed_order', [True, False])
+@pytest.mark.mpl_image_compare(
+    filename='test_plot_markers_zorder.png',
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_markers_zorder(reversed_order):
     s = Signal2D(np.full((10,10),20))
     s.axes_manager[0].name='x'
     s.axes_manager[0].scale=10
     s.axes_manager[1].scale=10
     s.plot()
+
     marker_list = [
         markers.rectangle(35, 45, 65, 75, edgecolor="yellow", facecolor="cyan", zorder=3),
         markers.text(10, 20, "Text", color="white", size=30, zorder=4),
@@ -647,24 +653,13 @@ def _test_markers_zorder(reversed_order = False):
         markers.ellipse(70, 40, 30, 25, edgecolor='blue', facecolor='red', fill=True, linewidth=4, zorder=7.5),
         markers.line_segment(50, 10, 40, 80, color='cyan', linewidth=3, zorder=3.2),
     ]
+
     if reversed_order:
         marker_list.reverse()
     s.add_marker(marker_list)
-    return s
-    
-@pytest.mark.mpl_image_compare(
-    filename='test_plot_markers_zorder.png',
-    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_markers_zorder():
-    s = _test_markers_zorder()
+
     return s._plot.signal_plot.figure
 
-@pytest.mark.mpl_image_compare(
-    filename='test_plot_markers_zorder.png',
-    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_markers_zorder2():
-    s = _test_markers_zorder(True)
-    return s._plot.signal_plot.figure
 
 def _test_plot_markers_repr(m, keys):
     match_str = r'<marker\.'+m.__class__.__name__+', '+m.name+r' \((.*)\)>'
@@ -673,12 +668,12 @@ def _test_plot_markers_repr(m, keys):
     props = re.sub('=.*$','',re.sub('=.*?,',',',mm.group(1))).split(',')
     for key in keys:
         assert key in props
-    
+
 
 def test_plot_markers_mpl_options():
     # check if required parameters are shown in repr
     _test_plot_markers_repr(markers.arrow(10, 20, 30, 40),
-                            ['x1', 'y1', 'x2', 'y2', 
+                            ['x1', 'y1', 'x2', 'y2',
                              'edgecolor', 'arrowstyle', 'zorder'])
     _test_plot_markers_repr(markers.ellipse(10, 20, 30, 40, color='red'),
                             ['x', 'y', 'width', 'height',
