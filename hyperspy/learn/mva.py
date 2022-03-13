@@ -146,6 +146,7 @@ class MVA:
             The decomposition algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
+            For cupy arrays, only "SVD" is supported.
         output_dimension : None or int
             Number of components to keep/calculate.
             Default is None, i.e. ``min(data.shape)``.
@@ -194,7 +195,7 @@ class MVA:
                 number of components to extract is lower than 80% of the smallest
                 dimension of the data, then the more efficient "randomized"
                 method is enabled. Otherwise the exact full SVD is computed and
-                optionally truncated afterwards. For cupy array, only
+                optionally truncated afterwards.
             If full:
                 run exact SVD, calling the standard LAPACK solver via
                 :py:func:`scipy.linalg.svd`, and select the components by postprocessing
@@ -205,6 +206,7 @@ class MVA:
             If randomized:
                 use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
                 to estimate a limited number of components
+             For cupy arrays, only "full" is supported.
         copy : bool, default True
             * If True, stores a copy of the data before any pre-treatments
               such as normalization in ``s._data_before_treatments``. The original
@@ -248,7 +250,7 @@ class MVA:
                 elif svd_solver == 'auto':
                     svd_solver = 'full'
             else:
-                raise TypeError("cupy array are not supported.")
+                raise TypeError("cupy arrays are not supported.")
 
         from hyperspy.signal import BaseSignal
 
@@ -2084,7 +2086,7 @@ class MVA:
                 'sklearn is not installed. Nothing done')
 
         if is_cupy_array(self.data):  # pragma: no cover
-            raise TypeError("cupy array are not supported.")
+            raise TypeError("cupy arrays are not supported.")
 
         if source_for_centers is None:
             source_for_centers = cluster_source

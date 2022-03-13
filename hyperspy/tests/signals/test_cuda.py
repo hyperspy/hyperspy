@@ -83,6 +83,8 @@ class TestCupy:
         s = self.s
         data_ref = s.data.copy()
         s = s.as_lazy()
+        assert isinstance(s.data, dask.array.Array)
+        assert isinstance(s.data[0, 0, 0].compute(), cp.ndarray)
 
         def dummy_function(data):
             return data * 10
@@ -91,7 +93,11 @@ class TestCupy:
               output_signal_size=s.axes_manager.signal_shape,
               output_dtype=s.data.dtype)
 
-        assert (s.data == data_ref * 10).all()
+        assert isinstance(s.data, dask.array.Array)
+        assert isinstance(s.data[0, 0, 0].compute(), cp.ndarray)
+
+        s.compute()
+        cp.testing.assert_allclose(s.data, data_ref * 10)
 
     def test_plot_images(self):
         s = self.s

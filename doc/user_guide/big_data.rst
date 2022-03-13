@@ -271,16 +271,27 @@ instead:
 GPU support
 -----------
 
-Lazy data processing using GPU requires setting the dask scheduler
-and explicitely transfering the data to the GPU.
+Lazy data processing on GPUs requires explicitly transferring the data to the
+GPU.
+
+On linux, it is recommended to use the
+`dask_cuda <https://docs.rapids.ai/api/dask-cuda/stable/index.html>`_ library 
+(not supported on windows) to manage the dask scheduler. As for CPU lazy
+processing, if the dask scheduler is not specified, the default scheduler
+will be used.
 
 .. code-block:: python
 
     >>> from dask_cuda import LocalCUDACluster
     >>> from dask.distributed import Client
-    >>> import cupy as cp
     >>> cluster = LocalCUDACluster()
     >>> client = Client(cluster)
+
+.. code-block:: python
+
+    >>> import hyperspy.api as hs
+    >>> import cupy as cp
+    >>> import dask.array as da
     >>> # Create a dask array
     >>> data = da.random.random(size=(20, 20, 100, 100))
     >>> print(data)
@@ -296,7 +307,7 @@ and explicitely transfering the data to the GPU.
 
 .. note::
     See the dask blog on `Richardson Lucy (RL) deconvolution <https://blog.dask.org/2020/11/12/deconvolution>`_
-    for an example of lazy processing on GPU using dask and cupy
+    for an example of lazy processing on GPUs using dask and cupy
 
 
 .. _FitBigData-label:

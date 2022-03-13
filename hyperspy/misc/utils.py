@@ -1572,7 +1572,7 @@ def is_cupy_array(array):
 
 def to_numpy(array):
     """
-    Returns the array as an numpy array
+    Returns the array as a numpy array
 
     Parameters
     ----------
