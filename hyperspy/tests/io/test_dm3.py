@@ -250,6 +250,7 @@ def test_read_EDS_metadata():
     np.testing.assert_allclose(
         md.Signal.Noise_properties.Variance_linear_model.gain_offset,
         0.0)
+    assert s.axes_manager[-1].units == "keV"
 
 def test_read_MonoCL_pmt_metadata():
     fname = os.path.join(MY_PATH, "dm4_1D_data", "test-MonoCL_spectrum-pmt.dm4")
@@ -570,8 +571,11 @@ def generate_parameters():
 
 
 @pytest.mark.parametrize("pdict", generate_parameters())
-def test_data(pdict):
-    s = load(pdict["filename"])
+@pytest.mark.parametrize("lazy", (True, False))
+def test_data(pdict, lazy):
+    s = load(pdict["filename"], lazy=lazy)
+    if lazy:
+        s.compute(close_file=True)
     key = pdict["key"]
     assert s.data.dtype == np.dtype(dm4_data_types[key])
     subfolder = pdict["subfolder"]

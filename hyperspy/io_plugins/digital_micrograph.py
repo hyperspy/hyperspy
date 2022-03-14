@@ -410,46 +410,6 @@ class DigitalMicrographReader(object):
         n_tags = self.read_l_or_q(self.f, "big")
         return bool(is_sorted), bool(is_open), n_tags
 
-    def find_next_tag(self):
-        while iou.read_byte(self.f, "big") not in (20, 21):
-            continue
-        location = self.f.tell() - 1
-        self.f.seek(location)
-        tag_id = iou.read_byte(self.f, "big")
-        self.f.seek(location)
-        tag_header = self.parse_tag_header()
-        if tag_id == 20:
-            _logger.debug("Tag header length", tag_header['tag_name_length'])
-            if not 20 > tag_header['tag_name_length'] > 0:
-                _logger.debug("Skipping id 20")
-                self.f.seek(location + 1)
-                self.find_next_tag()
-            else:
-                self.f.seek(location)
-                return
-        else:
-            try:
-                self.check_data_tag_delimiter()
-                self.f.seek(location)
-                return
-            except DM3TagTypeError:
-                self.f.seek(location + 1)
-                _logger.debug("Skipping id 21")
-                self.find_next_tag()
-
-    def find_next_data_tag(self):
-        while iou.read_byte(self.f, "big") != 21:
-            continue
-        position = self.f.tell() - 1
-        self.f.seek(position)
-        self.parse_tag_header()
-        try:
-            self.check_data_tag_delimiter()
-            self.f.seek(position)
-        except DM3TagTypeError:
-            self.f.seek(position + 1)
-            self.find_next_data_tag()
-
     def parse_tag_header(self):
         tag_id = iou.read_byte(self.f, "big")
         tag_name_length = iou.read_short(self.f, "big")
