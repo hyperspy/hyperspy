@@ -279,6 +279,29 @@ class FancySlicing(object):
         return tuple(array_slices)
 
     def _slicer(self, slices, isNavigation=None, out=None):
+        if self.axes_manager.vector and self.axes_manager._ragged and not isNavigation:
+
+            if not isinstance(slices, tuple):
+                slices = (slices,)
+            slices = np.array([[s.start, s.stop] for s in slices])
+            for i, s in enumerate(slices):
+                if s[0] is None:
+                    slices[i][0] = -np.inf
+                if s[1] is None:
+                    slices[i][1] = np.inf
+            new_data = np.empty(shape=self.data.shape, dtype=object)
+            for ind in np.ndindex(self.data.shape):
+                if self._lazy:
+                    print("Slicing a Vector axis must be non-lazy... Computing")
+                    self.compute()
+                is_returned = np.prod([np.multiply(self.data[ind][:, i] >= s[0],
+                                                   self.data[ind][:, i] <= s[1])
+                                       for i, s in enumerate(slices)], axis=0)
+                new_data[ind] = self.data[ind][np.where(is_returned)]
+
+            _obj = self._deepcopy_with_new_data(new_data, copy_variance=True)
+            return _obj
+
         if self.axes_manager._ragged and not isNavigation:
             raise RuntimeError("`isig` is not supported for ragged signal.")
 
