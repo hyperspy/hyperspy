@@ -1368,13 +1368,8 @@ The markers currently supported in HyperSpy are:
 Markers properties
 ------------------
 
-Markers have the ``zorder`` property to support ordering between markers.
-Signal plane has ``zorder=0``, and the marker that have largest number
-become a top most marker.
-
-The ``color`` property in rectangle marker is an alias of ``edgecolor`` for backward compatibility.
-The other parameters are used as in the parameters in matplotlib objects.
 The optional parameters (``**kwargs``, keyword arguments) can be used for extra parameters used in matplotlib.
+(The ``color`` property in rectangle marker is an alias of ``edgecolor`` for backward compatibility)
 
 
 
