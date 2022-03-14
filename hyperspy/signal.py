@@ -2517,7 +2517,9 @@ class BaseSignal(FancySlicing,
             axes = [axis for axis in self.axes_manager.signal_axes
                     if axis.index_in_array not in list(range(self.data.ndim))]
             self.axes_manager.remove(axes)
-            self.axes_manager._set_signal_dimension(0)
+            self.axes_manager.set_signal_dimension(0)
+        elif self.axes_manager.vector:
+            pass
         else:
             if self._lazy:
                 raise NotImplementedError(

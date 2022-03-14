@@ -27,12 +27,7 @@ class BaseVectorSignal(BaseSignal):
     """A generic class for a ragged signal representing a set of vectors.
     """
     def __init__(self, *args, **kwargs):
-        if "ragged" not in kwargs:
-            kwargs["ragged"] = True
         super().__init__(*args, **kwargs)
-        #self.data = np.squeeze(self.data)
-        #if self.data is not [None]:
-        #    self.vector = True
 
     def nav_to_vector(self,
                       inplace=True,
@@ -90,18 +85,14 @@ class BaseVectorSignal(BaseSignal):
         pixel_units: bool
             Returns the vectors in pixel units rather than using the axes manager.
         """
-        if nav_axis is "all":
-            nav_axes = self.axes_manager.navigation_axes
+        if nav_axis == "all":
+            nav_axis = self.axes_manager.navigation_axes
         else:
-            nav_axes = self.axes_manager[nav_axis]
+            nav_axis = self.axes_manager[nav_axis]
         nav_indexes = tuple([a.index_in_array for a in nav_axis])
-        if sig_axis is "all":
+        if sig_axis == "all":
             sig_indexes = np.array(range(self.axes_manager.signal_dimension), dtype=int)
-        navigate = len(nav_indexes)>0
-        nav_indexes = tuple([a.index_in_array for a in axes if a.navigate])
-        sig_indexes = np.array([a.index_in_array for a in axes if not a.navigate])
-        sig_indexes = tuple(sig_indexes - len(self.axes_manager.navigation_axes))
-        navigate = any([a.navigate for a in axes])
+        navigate = len(nav_indexes) > 0
         if not real_units:
             sig_scales = np.ones(len(sig_indexes))
             sig_offsets = np.zeros(len(sig_indexes))
