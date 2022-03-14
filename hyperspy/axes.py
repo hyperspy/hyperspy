@@ -1347,6 +1347,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         self.__class__ = VectorDataAxis
         d["_type"] = 'VectorDataAxis'
         d["vector"] = True
+        self.remove_trait('size')
         self.__init__(**d)
         self.axes_manager = axes_manager
 
@@ -1381,6 +1382,7 @@ class VectorDataAxis(UniformDataAxis):
         # These traits need to added dynamically to be removed when necessary
         self.update_axis()
         self.vector = True
+        self.remove_trait('size')
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
@@ -1556,7 +1558,7 @@ class AxesManager(t.HasTraits):
 
     @property
     def vector(self):
-        return self._vector
+        return any([isinstance(a, VectorDataAxis) for a in self._axes])
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes.index',
@@ -2288,7 +2290,10 @@ class AxesManager(t.HasTraits):
         string = string.rstrip(", ")
         string += "|"
         for axis in self.signal_axes:
-            string += str(axis.size) + ", "
+            if axis.size == 0:
+                string += "Vect " + ", "
+            else:
+                string += str(axis.size) + ", "
         string = string.rstrip(", ")
         if self.ragged and not self.vector:
             string += 'ragged'
