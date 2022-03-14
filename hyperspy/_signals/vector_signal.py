@@ -90,8 +90,10 @@ class BaseVectorSignal(BaseSignal):
         else:
             nav_axis = self.axes_manager[nav_axis]
         nav_indexes = tuple([a.index_in_array for a in nav_axis])
-        if sig_axis == "all":
+        if sig_axis is "all":
             sig_indexes = np.array(range(self.axes_manager.signal_dimension), dtype=int)
+        else:
+            sig_indexes = np.array(sig_axis, dtype=int)
         navigate = len(nav_indexes) > 0
         if not real_units:
             sig_scales = np.ones(len(sig_indexes))
