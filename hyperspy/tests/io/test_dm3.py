@@ -426,7 +426,7 @@ def test_read_MonarcCL_image_metadata():
     fname = os.path.join(MY_PATH, "dm4_2D_data", "test-MonarcCL_mono-image.dm4")
     s = load(fname)
     md = s.metadata
-    assert md.Signal.signal_type == ""
+    assert md.Signal.signal_type == "CL"
     assert md.Signal.quantity == "Intensity (counts)"
     assert md.General.date == "2021-05-14"
     assert md.General.time == "11:41:07"

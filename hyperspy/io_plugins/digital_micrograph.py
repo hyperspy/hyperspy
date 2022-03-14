@@ -629,7 +629,7 @@ class ImageObject(object):
         md_signal = self.imdict.get_item('ImageTags.Meta_Data.Signal', "")
         if md_signal == 'X-ray':
             return "EDS_TEM"
-        elif md_signal == 'CL':
+        elif md_signal == 'CL'  or 'ImageTags.Acquisition.Monarc_Spectrometer' in self.imdict:
             return "CL"
         # 'ImageTags.spim.eels' is Orsay's tag group
         elif md_signal == 'EELS' or 'ImageTags.spim.eels' in self.imdict:
@@ -844,10 +844,11 @@ class ImageObject(object):
         else:
             return tag
 
-    def _get_EELS_exposure_time(self, tags):
+    def _get_exposure_time(self, tags):
         # for GMS 2 and quantum/enfinium, the  "Integration time (s)" tag is
         # only present for single spectrum acquisition;  for maps we need to
         # compute exposure * number of frames
+        # same holds for some types of CL measurements
         if 'Integration_time_s' in tags.keys():
             return float(tags["Integration_time_s"])
         elif 'Exposure_s' in tags.keys():
@@ -856,7 +857,7 @@ class ImageObject(object):
                 frame_number = float(tags["Number_of_frames"])
             return float(tags["Exposure_s"]) * frame_number
         else:
-            _logger.info("EELS exposure time can't be read.")
+            _logger.info("EELS/CL exposure time can't be read.")
 
     def _get_CL_detector_type(self, tags):
         if "Acquisition_Mode" in tags and tags["Acquisition_Mode"] == "Parallel dispersive":
@@ -865,17 +866,6 @@ class ImageObject(object):
             return "PMT"
         else:
             _logger.info("CL detector type can't be read.")
-
-    def _get_CL_exposure_time(self, tags):
-        if 'Integration_time_s' in tags:
-            return float(tags["Integration_time_s"])
-        elif 'Exposure_s' in tags:
-            frame_number = 1
-            if "Number_of_frames" in tags:
-                frame_number = float(tags["Number_of_frames"])
-            return float(tags["Exposure_s"]) * frame_number
-        else:
-            _logger.info("CL exposure time can't be read.")
 
     def get_mapping(self):
         if 'source' in self.imdict.ImageTags.keys():
@@ -988,7 +978,7 @@ class ImageObject(object):
                     None),
                 "{}.EELS.Acquisition".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.%s" % mapped_attribute,
-                    self._get_EELS_exposure_time),
+                    self._get_exposure_time),
                 "{}.EELS.Acquisition.Number_of_frames".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.frame_number",
                     None),
@@ -1025,7 +1015,7 @@ class ImageObject(object):
                     "Acquisition_instrument.TEM.Detector.EDS.real_time",
                     None),
             })
-        elif self.signal_type == "CL" or ("Acquisition" in image_tags_dict.keys() and "Monarc_Spectrometer" in image_tags_dict["Acquisition"].keys()):
+        elif self.signal_type == "CL":
             mapping.update({
                 "{}.CL.Acquisition.Date".format(tags_path): (
                     "General.date", self._get_date),
@@ -1058,7 +1048,7 @@ class ImageObject(object):
                     "Acquisition_instrument.Detector.frames", None),
                 "{}.CL.Acquisition".format(tags_path): (
                     "Acquisition_instrument.Detector.integration_time",
-                    self._get_CL_exposure_time),
+                    self._get_exposure_time),
                 "{}.CL.Acquisition.Saturation_fraction".format(tags_path): (
                     "Acquisition_instrument.Detector.saturation_fraction", None),
                 "{}.Acquisition.Parameters.High_Level.Binning".format(tags_path): (
