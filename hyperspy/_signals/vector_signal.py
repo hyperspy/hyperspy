@@ -76,7 +76,7 @@ class BaseVectorSignal(BaseSignal):
             a.navigate = False
         return vectors
 
-    def get_real_vectors(self, axis=None, real_units=True, flatten=False):
+    def get_real_vectors(self, nav_axis=(), sig_axis="all", real_units=True, flatten=False):
         """Returns the vectors in real units. Using the scale and offset as determined by the axes manager.
         If navigation axes are included the navigation axes will be transformed into vectors.
 
@@ -90,32 +90,34 @@ class BaseVectorSignal(BaseSignal):
         pixel_units: bool
             Returns the vectors in pixel units rather than using the axes manager.
         """
-        if axis is None:
-            axes = self.axes_manager.signal_axes
-        elif axis is "all":
-            axes = self.axes_manager._axes
+        if nav_axis is "all":
+            nav_axes = self.axes_manager.navigation_axes
         else:
-            axes = self.axes_manager[axis]
+            nav_axes = self.axes_manager[nav_axis]
+        nav_indexes = tuple([a.index_in_array for a in nav_axis])
+        if sig_axis is "all":
+            sig_indexes = np.array(range(self.axes_manager.signal_dimension), dtype=int)
+        navigate = len(nav_indexes)>0
         nav_indexes = tuple([a.index_in_array for a in axes if a.navigate])
         sig_indexes = np.array([a.index_in_array for a in axes if not a.navigate])
         sig_indexes = tuple(sig_indexes - len(self.axes_manager.navigation_axes))
         navigate = any([a.navigate for a in axes])
         if not real_units:
-            sig_scales = np.array([1 for a in axes if not a.navigate])
-            sig_offsets = np.array([0 for a in axes if not a.navigate])
+            sig_scales = np.ones(len(sig_indexes))
+            sig_offsets = np.zeros(len(sig_indexes))
         else:
-            sig_scales = np.array([a.scale for a in axes if not a.navigate])
-            sig_offsets = np.array([a.offset for a in axes if not a.navigate])
+            sig_scales = [self.axes_manager.signal_axes[i].scale for i in sig_indexes]
+            sig_offsets = [self.axes_manager.signal_axes[i].offset for i in sig_indexes]
         if not navigate:  # Only vector axes
             real_vector = np.empty(self.data.shape, dtype=object)
             for ind in np.ndindex(self.data.shape):
-                vectors = self.data[ind][:,sig_indexes]
+                vectors = self.data[ind][:, sig_indexes]
                 real = vectors * sig_scales + sig_offsets
                 real_vector[ind] = real
         elif len(sig_scales) == 0:  # Only navigation axes
             nav_positions = self._get_navigation_positions()
             # check to see if we need to find the navigation axis index...
-            real_vector = nav_positions[:, :, nav_indexes]
+            real_vector = nav_positions[..., nav_indexes]
         else:  # Both navigation and vector axes...
             nav_positions = self._get_navigation_positions(flatten=True)
             real_vector = np.empty(self.data.shape, dtype=object)
@@ -147,13 +149,12 @@ class BaseVectorSignal(BaseSignal):
         else:
             vectors = self.deepcopy()
         new_vectors = self.get_real_vectors(axis="all", real_units=False, flatten=True)
-        print(vectors.axes_manager._axes)
         for axis in vectors.axes_manager._axes:
             if not isinstance(axis, VectorDataAxis):
                 axis.convert_to_vector_axis()
             axis.navigate = False
         new = np.empty(1, dtype=object)
-        new[0]=new_vectors
+        new[0] = new_vectors
         vectors.data = new
         return vectors
 
@@ -226,10 +227,9 @@ class BaseVectorSignal(BaseSignal):
             x_axis = (x_axis,)
         if isinstance(y_axis, int):
             y_axis = (y_axis,)
-        x_vectors = self.get_real_vectors(axis=x_axis).T
-        print(x_vectors[0])
-        y_vectors = self.get_real_vectors(axis=y_axis).T
-        return Point(x_vectors, y_vectors,**kwargs)
+        x_vectors = self.get_real_vectors(sig_axis=x_axis).T
+        y_vectors = self.get_real_vectors(sig_axis=y_axis).T
+        return Point(x_vectors, y_vectors, **kwargs)
 
 class LazyBaseVectorSignal(LazySignal,BaseVectorSignal):
     _lazy = True

@@ -382,7 +382,8 @@ class LazySignal(BaseSignal):
         elif not isinstance(dtype, np.dtype):
             dtype = np.dtype(dtype)
         typesize = max(dtype.itemsize, dc.dtype.itemsize)
-        want_to_keep = multiply([ax.size for ax in need_axes]) * typesize
+        want_to_keep = multiply([ax.size for ax in need_axes
+                                 if ax.size > 0]) * typesize
 
         # @mrocklin reccomends to have around 100MB chunks, so we do that:
         num_that_fit = int(100. * 2.**20 / want_to_keep)
