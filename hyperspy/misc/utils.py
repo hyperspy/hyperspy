@@ -1340,9 +1340,9 @@ def process_function_blockwise(data,
             islice = np.s_[index]
             iter_dict = {}
             for key, a in zip(arg_keys, args):
-                arg_i = a[islice].squeeze()
-                # Some functions does not handle 0-dimension NumPy arrys
-                if arg_i.shape == ():
+                arg_i = np.squeeze(a[islice])
+                # Some functions do not handle 0-dimension NumPy arrays
+                if hasattr(arg_i, "shape") and arg_i.shape == ():
                     arg_i = arg_i[()]
                 iter_dict[key] = arg_i
             output_array[islice] = function(data[islice], **iter_dict, **kwargs)

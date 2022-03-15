@@ -642,6 +642,15 @@ class TestGetIteratingKwargsSignal2D:
             assert np.all(np.squeeze(arg.chunks[nav_dim:]) == arg.shape[nav_dim:])
             assert np.all(s_iter0.data == np.squeeze(arg.compute()))
 
+    def test_iterating_kwarg_non_array(self):
+        def apply_func(data, f):
+            return f(data, data)
+        s = self.s.inav[0:2, 0:2]
+        iter_add = hs.signals.BaseSignal([[np.add, np.add],
+                                          [np.add, np.add]]).T
+        out = s.map(apply_func, f=iter_add, inplace=False)
+        np.testing.assert_array_equal(out.data, s.data)
+
 
 class TestGetBlockPattern:
     @pytest.mark.parametrize(
