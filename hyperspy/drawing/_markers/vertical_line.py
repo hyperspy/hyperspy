@@ -48,19 +48,18 @@ class VerticalLine(MarkerBase):
 
     def __init__(self, x, **kwargs):
         MarkerBase.__init__(self)
-        lp = {'linewidth': 1, 'color':'white', 'zorder': None}
+        lp = {'linewidth': 1, 'color':'white'}
         self.marker_properties = lp
         self.set_data(x1=x)
         self.set_marker_properties(**kwargs)
         self.name = 'vertical_line'
 
     def __repr__(self):
-        string = "<marker.{}, {} (x={},color={},zorder={})>".format(
+        string = "<marker.{}, {} (x={},color={})>".format(
             self.__class__.__name__,
             self.name,
             self.get_data_position('x1'),
             self.marker_properties['color'],
-            self.marker_properties['zorder'],
         )
         return(string)
 

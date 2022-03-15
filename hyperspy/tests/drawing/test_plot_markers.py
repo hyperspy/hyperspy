@@ -96,7 +96,7 @@ class TestMarkers:
     def test_markers_properties(self):
         m = markers.text(x=1, y=2, text='a')
         m.set_marker_properties(fontsize=30, color='red')
-        assert m.marker_properties == {'color': 'red', 'zorder': None, 'fontsize': 30}
+        assert m.marker_properties == {'color': 'red', 'fontsize': 30}
 
     def test_auto_update(self):
         m = markers.text(y=1, x=2, text='a')
@@ -674,29 +674,29 @@ def test_plot_markers_mpl_options():
     # check if required parameters are shown in repr
     _test_plot_markers_repr(markers.arrow(10, 20, 30, 40),
                             ['x1', 'y1', 'x2', 'y2',
-                             'edgecolor', 'arrowstyle', 'zorder'])
+                             'edgecolor', 'arrowstyle'])
     _test_plot_markers_repr(markers.ellipse(10, 20, 30, 40, color='red'),
                             ['x', 'y', 'width', 'height',
-                             'edgecolor', 'zorder'])
+                             'edgecolor'])
     _test_plot_markers_repr(markers.horizontal_line(10),
-                            ['y', 'color','zorder'])
+                            ['y', 'color'])
     _test_plot_markers_repr(markers.horizontal_line_segment(10, 20, 30),
-                            ['x1', 'x2', 'y', 'color','zorder'])
+                            ['x1', 'x2', 'y', 'color'])
     _test_plot_markers_repr(markers.line_segment(10, 20, 30,40),
-                            ['x1', 'x2', 'y1', 'y2', 'color','zorder'])
+                            ['x1', 'x2', 'y1', 'y2', 'color'])
     _test_plot_markers_repr(markers.point(10, 20),
-                            ['x', 'x', 'color', 'size','zorder'])
+                            ['x', 'x', 'color', 'size'])
     m = markers.rectangle(10, 20, 30, 40, color='red')
-    _test_plot_markers_repr(m, ['edgecolor', 'zorder'])
+    _test_plot_markers_repr(m, ['edgecolor'])
     # check if 'color' property is converted to 'edgecolor'
     assert 'color' not in m.marker_properties
     assert 'edgecolor' in m.marker_properties
     assert m.marker_properties['edgecolor'] == 'red'
 
     _test_plot_markers_repr(markers.text(10,20,"test"),
-                            ['x', 'y', 'text', 'color','zorder'])
+                            ['x', 'y', 'text', 'color'])
     _test_plot_markers_repr(markers.vertical_line(10),
-                            ['x', 'color','zorder'])
+                            ['x', 'color'])
     m = markers.vertical_line_segment(10, 20, 30)
-    _test_plot_markers_repr(m,['x', 'y1', 'y2', 'color','zorder'])
+    _test_plot_markers_repr(m,['x', 'y1', 'y2', 'color'])
 

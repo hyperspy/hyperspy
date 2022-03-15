@@ -69,7 +69,7 @@ class Point(MarkerBase):
 
     def __init__(self, x, y, size=20, **kwargs):
         MarkerBase.__init__(self)
-        lp = {'color': 'black', 'zorder': None}
+        lp = {'color': 'black'}
         self.marker_properties = lp
         self.set_data(x1=x, y1=y, size=size)
         self.set_marker_properties(**kwargs)
@@ -80,18 +80,13 @@ class Point(MarkerBase):
         self.name = 'point'
 
     def __repr__(self):
-        if 'zorder' in self.marker_properties:
-            zorder = self.marker_properties['zorder']
-        else:
-            zorder = None
-        string = "<marker.{}, {} (x={},y={},color={},size={},zorder={})>".format(
+        string = "<marker.{}, {} (x={},y={},color={},size={})>".format(
             self.__class__.__name__,
             self.name,
             self.get_data_position('x1'),
             self.get_data_position('y1'),
             self.marker_properties['color'],
             self.get_data_position('size'),
-            zorder,
         )
         return(string)
 

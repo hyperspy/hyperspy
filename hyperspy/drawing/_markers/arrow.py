@@ -67,7 +67,6 @@ class Arrow(MarkerBase):
               # both ends of arrow on the exact pos.
               # default of matplotlib is 2
               'shrinkA': 0, 'shrinkB': 0,
-              'zorder': None,
         }
         self.marker_properties = lp
         self.set_data(x1=x1, y1=y1, x2=x2, y2=y2)
@@ -75,7 +74,7 @@ class Arrow(MarkerBase):
         self.name = 'arrow'
 
     def __repr__(self):
-        string = "<marker.{}, {} (x1={},x2={},y1={},y2={},edgecolor={},arrowstyle={},zorder={})>".format(
+        string = "<marker.{}, {} (x1={},x2={},y1={},y2={},edgecolor={},arrowstyle={})>".format(
             self.__class__.__name__,
             self.name,
             self.get_data_position('x1'),
@@ -84,7 +83,6 @@ class Arrow(MarkerBase):
             self.get_data_position('y2'),
             self.marker_properties['edgecolor'],
             self.marker_properties['arrowstyle'],
-            self.marker_properties['zorder'],
         )
         return(string)
 

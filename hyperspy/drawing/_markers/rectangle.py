@@ -64,8 +64,7 @@ class Rectangle(MarkerBase):
 
     def __init__(self, x1, y1, x2, y2, **kwargs):
         MarkerBase.__init__(self)
-        lp = {'edgecolor': 'black', 'facecolor': None, 'fill': None, 'linewidth': 1,
-              'zorder': None}
+        lp = {'edgecolor': 'black', 'facecolor': None, 'fill': None, 'linewidth': 1}
         self.marker_properties = lp
         self.set_data(x1=x1, y1=y1, x2=x2, y2=y2)
         self.set_marker_properties(**kwargs)
@@ -78,7 +77,7 @@ class Rectangle(MarkerBase):
         self.name = 'rectangle'
 
     def __repr__(self):
-        string = "<marker.{}, {} (x1={},x2={},y1={},y2={},edgecolor={},zorder={})>".format(
+        string = "<marker.{}, {} (x1={},x2={},y1={},y2={},edgecolor={})>".format(
             self.__class__.__name__,
             self.name,
             self.get_data_position('x1'),
@@ -86,7 +85,6 @@ class Rectangle(MarkerBase):
             self.get_data_position('y1'),
             self.get_data_position('y2'),
             self.marker_properties['edgecolor'],
-            self.marker_properties['zorder'],
         )
         return(string)
 

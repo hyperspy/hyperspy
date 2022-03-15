@@ -58,21 +58,20 @@ class Text(MarkerBase):
 
     def __init__(self, x, y, text, **kwargs):
         MarkerBase.__init__(self)
-        lp = {'color': 'black', 'zorder': None}
+        lp = {'color': 'black'}
         self.marker_properties = lp
         self.set_data(x1=x, y1=y, text=text)
         self.set_marker_properties(**kwargs)
         self.name = 'text'
 
     def __repr__(self):
-        string = "<marker.{}, {} (x={},y={},text={},color={},zorder={})>".format(
+        string = "<marker.{}, {} (x={},y={},text={},color={})>".format(
             self.__class__.__name__,
             self.name,
             self.get_data_position('x1'),
             self.get_data_position('y1'),
             self.get_data_position('text'),
             self.marker_properties['color'],
-            self.marker_properties['zorder'],
         )
         return(string)
 

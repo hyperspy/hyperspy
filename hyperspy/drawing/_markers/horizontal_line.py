@@ -49,19 +49,18 @@ class HorizontalLine(MarkerBase):
 
     def __init__(self, y, **kwargs):
         MarkerBase.__init__(self)
-        lp = {'linewidth': 1, 'color': 'black', 'zorder':None}
+        lp = {'linewidth': 1, 'color': 'black'}
         self.marker_properties = lp
         self.set_data(y1=y)
         self.set_marker_properties(**kwargs)
         self.name = 'horizontal_line'
 
     def __repr__(self):
-        string = "<marker.{}, {} (y={},color={},zorder={})>".format(
+        string = "<marker.{}, {} (y={},color={})>".format(
             self.__class__.__name__,
             self.name,
             self.get_data_position('y1'),
             self.marker_properties['color'],
-            self.marker_properties['zorder'],
         )
         return(string)
 

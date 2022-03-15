@@ -58,7 +58,7 @@ class VerticalLineSegment(MarkerBase):
 
     def __init__(self, x, y1, y2, **kwargs):
         MarkerBase.__init__(self)
-        lp = {'color': 'black', 'linewidth': 1, 'zorder': None}
+        lp = {'color': 'black', 'linewidth': 1}
         self.marker_properties = lp
         self.set_data(x1=x, y1=y1, y2=y2)
         self.set_marker_properties(**kwargs)
@@ -69,18 +69,13 @@ class VerticalLineSegment(MarkerBase):
         self.name = 'vertical_line_segment'
 
     def __repr__(self):
-        if 'zorder' in self.marker_properties:
-            zorder = self.marker_properties['zorder']
-        else:
-            zorder = None
-        string = "<marker.{}, {} (x={},y1={},y2={},color={},zorder={})>".format(
+        string = "<marker.{}, {} (x={},y1={},y2={},color={})>".format(
             self.__class__.__name__,
             self.name,
             self.get_data_position('x1'),
             self.get_data_position('y1'),
             self.get_data_position('y2'),
             self.marker_properties['color'],
-            zorder
         )
         return(string)
 

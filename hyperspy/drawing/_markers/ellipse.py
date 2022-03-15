@@ -62,13 +62,13 @@ class Ellipse(MarkerBase):
     def __init__(self, x, y, width, height, **kwargs):
         MarkerBase.__init__(self)
         lp = {'edgecolor': 'black', 'facecolor': None, 'fill': None,
-              'linewidth': 1, 'zorder' : None}
+              'linewidth': 1}
         self.marker_properties = lp
         self.set_data(x1=x, y1=y, x2=width, y2=height)
         self.set_marker_properties(**kwargs)
 
     def __repr__(self):
-        string = "<marker.{}, {} (x={},y={},width={},height={},edgecolor={},zorder={})>".format(
+        string = "<marker.{}, {} (x={},y={},width={},height={},edgecolor={})>".format(
             self.__class__.__name__,
             self.name,
             self.get_data_position('x1'),
@@ -76,7 +76,6 @@ class Ellipse(MarkerBase):
             self.get_data_position('x2'),
             self.get_data_position('y2'),
             self.marker_properties['edgecolor'],
-            self.marker_properties['zorder'],
         )
         return(string)
 
