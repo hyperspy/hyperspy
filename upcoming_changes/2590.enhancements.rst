@@ -1,1 +1,1 @@
-Read Cathodoluminescence metadata
+Read cathodoluminescence metadata from digital micrograph files, amended in `PR #2894 <https://github.com/hyperspy/hyperspy/pull/2894>`_ 
