@@ -1,0 +1,1 @@
+Fix bug where the :py:func:`~.signal.BaseSignal.map` function wasn't operating properly when an iterating signal was not an array.
