@@ -44,6 +44,7 @@ file_extensions = ['tvips', 'TVIPS']
 default_extension = 0
 # Writing capabilities:
 writes = False
+non_uniform_axis = False
 
 
 _logger = logging.getLogger(__name__)
