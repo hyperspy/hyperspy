@@ -20,7 +20,8 @@ import os
 import re
 import logging
 import warnings
-from datetime import datetime, date, time
+from dateutil.parser import parse as dtparse
+from datetime import datetime, timezone
 
 import numpy as np
 import dask.array as da
@@ -429,6 +430,7 @@ def file_reader(filename,
             'original_filename': os.path.split(filename)[1],
             'date': date,
             'time': time,
+            'time_zone': "UTC",
         },
         "Signal": {
             'signal_type': sigtype
@@ -507,10 +509,14 @@ def file_writer(filename, signal, **kwds):
         max_file_size = minimum_file_size
     # frame metadata
     start_date_str = signal.metadata.get_item("General.date", "1970-01-01")
-    start_date = date.fromisoformat(start_date_str)
     start_time_str = signal.metadata.get_item("General.time", "01:00:00")
-    start_time = time.fromisoformat(start_time_str)
-    time_start = datetime.combine(start_date, start_time).timestamp()
+    tz = signal.metadata.get_item("General.time_zone", "UTC")
+    datetime_str = f"{start_date_str} {start_time_str} {tz}"
+    time_dt = dtparse(datetime_str)
+    time_dt_utc = time_dt.astimezone(timezone.utc)
+    # workaround for timestamp not working on Windows, see https://bugs.python.org/issue37527
+    BEGIN = datetime(1970, 1, 1, 0).replace(tzinfo=timezone.utc)
+    timestamp = (time_dt_utc - BEGIN).total_seconds()
     nav_units = signal.axes_manager[0].units
     nav_increment = signal.axes_manager[0].scale
     try:
@@ -562,7 +568,7 @@ def file_writer(filename, signal, **kwds):
             file_memmap['fcurrent'] = fcurrent
             rotator = np.arange(current_frame, current_frame + frames_saved)
             milliseconds = rotator * time_increment
-            timestamps = (time_start + milliseconds / 1000).astype(int)
+            timestamps = (timestamp + milliseconds / 1000).astype(int)
             milliseconds = milliseconds % 1000
             file_memmap["timestamp"] = timestamps
             file_memmap["ms"] = milliseconds

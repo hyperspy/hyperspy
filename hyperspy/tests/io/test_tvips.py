@@ -319,7 +319,6 @@ def _dask_supports_assignment():
     return pversion.parse(dask.__version__) >= pversion.parse("2021.04.1")
 
 
-@pytest.mark.skipif("not _dask_supports_assignment()")
 @pytest.mark.parametrize(
     "filename, kwargs",
     [
@@ -363,6 +362,9 @@ def test_tvips_file_reader(filename, lazy, kwargs, wsa):
         scs = (scan_dim, scan_dim)
         ssf = 0
     signal_test.data = signal_test.data[ssf:].reshape((*scs, *sigshape))
+
+    if not _dask_supports_assignment() and lazy:
+        signal_test.compute()
     if wsa == "x":
         signal_test.data[..., ::2, :, :, :] = signal_test.data[..., ::2, :, :, :][..., :, ::-1, :, :]
         signal_test.data[..., ::2, :, :, :] = np.roll(signal_test.data[..., ::2, :, :, :], hyst, axis=-3)
