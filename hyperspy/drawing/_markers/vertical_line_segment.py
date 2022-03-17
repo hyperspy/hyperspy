@@ -62,10 +62,6 @@ class VerticalLineSegment(MarkerBase):
         self.marker_properties = lp
         self.set_data(x1=x, y1=y1, y2=y2)
         self.set_marker_properties(**kwargs)
-        # for compatibility with matplotlib 3.1.x - 3.4.x
-        if 'zorder' in self.marker_properties:
-            if self.marker_properties['zorder'] is None:
-                del self.marker_properties['zorder']
         self.name = 'vertical_line_segment'
 
     def __repr__(self):
