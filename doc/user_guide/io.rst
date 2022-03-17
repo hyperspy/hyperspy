@@ -1907,7 +1907,7 @@ load the same file without extra arguments:
      <Signal2D, title: O K, dimensions: (|512, 512)>,
      <EDSTEMSpectrum, title: EDX, dimensions: (512, 512|4096)>]
 
-.. _tvips-format:
+.. _tvips_format-label:
 
 TVIPS format
 ------------

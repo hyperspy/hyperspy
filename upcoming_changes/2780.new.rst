@@ -1,1 +1,1 @@
-Added support for reading and writing TVIPS image stream files
+Support for reading and writing :ref:`TVIPS image stream data<tvips_format-label>`

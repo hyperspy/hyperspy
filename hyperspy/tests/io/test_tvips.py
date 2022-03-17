@@ -21,11 +21,11 @@ import gc
 import os
 import tempfile
 import traits.api as traits
-from importlib.metadata import version
 from packaging import version as pversion
 
 import numpy as np
 import pytest
+import dask
 
 import hyperspy.api as hs
 from hyperspy.io_plugins.tvips import (
@@ -316,7 +316,7 @@ def test_guess_scan_index_grid(rotators, startstop, expected):
 
 def _dask_supports_assignment():
     # direct assignment as follows is possible in newer versions (>2021.04.1) of dask, for backward compatibility we use workaround
-    return pversion.parse(version("dask")) >= pversion.parse("2021.04.1")
+    return pversion.parse(dask.__version__) >= pversion.parse("2021.04.1")
 
 
 @pytest.mark.skipif("not _dask_supports_assignment()")

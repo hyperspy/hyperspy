@@ -20,7 +20,7 @@ import os
 import re
 import logging
 import warnings
-from datetime import datetime
+from datetime import datetime, date, time
 
 import numpy as np
 import dask.array as da
@@ -506,11 +506,11 @@ def file_writer(filename, signal, **kwds):
         warnings.warn(f"The minimum file size for this dataset is {minimum_file_size} bytes")
         max_file_size = minimum_file_size
     # frame metadata
-    time_start = datetime.strptime(
-        signal.metadata.get_item("General.date", "1970-01-01") + ";"
-        + signal.metadata.get_item("General.time", "01:00:00"),
-        "%Y-%m-%d;%H:%M:%S"
-    ).timestamp()
+    start_date_str = signal.metadata.get_item("General.date", "1970-01-01")
+    start_date = date.fromisoformat(start_date_str)
+    start_time_str = signal.metadata.get_item("General.time", "01:00:00")
+    start_time = time.fromisoformat(start_time_str)
+    time_start = datetime.combine(start_date, start_time).timestamp()
     nav_units = signal.axes_manager[0].units
     nav_increment = signal.axes_manager[0].scale
     try:
