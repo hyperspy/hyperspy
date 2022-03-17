@@ -60,6 +60,7 @@ set when making the :py:class:`~.signal.BaseSignal` object.
 .. code-block:: python
 
     >>> dict0 = {'size': 10, 'name':'Axis0', 'units':'A', 'scale':0.2, 'offset':1}
+    >>> dict1 = {'size': 20, 'name':'Axis1', 'units':'B', 'scale':0.1, 'offset':2}
     >>> s = hs.signals.BaseSignal(np.random.random((10,20)), axes=[dict0, dict1])
     >>> s.axes_manager
     <Axes manager, axes: (|20, 10)>
