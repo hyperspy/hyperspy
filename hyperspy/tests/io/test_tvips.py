@@ -365,6 +365,7 @@ def test_tvips_file_reader(filename, lazy, kwargs, wsa):
 
     if not _dask_supports_assignment() and lazy:
         signal_test.compute()
+        signal_test.data = signal_test.data.copy()
     if wsa == "x":
         signal_test.data[..., ::2, :, :, :] = signal_test.data[..., ::2, :, :, :][..., :, ::-1, :, :]
         signal_test.data[..., ::2, :, :, :] = np.roll(signal_test.data[..., ::2, :, :, :], hyst, axis=-3)
