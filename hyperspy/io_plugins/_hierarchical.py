@@ -234,6 +234,14 @@ class HierarchicalReader:
             exp["package_version"] = ""
 
         data = group['data']
+        try:
+            ragged_shape = group["ragged_shapes"]
+            new_data = np.empty(shape=data.shape, dtype=object)
+            for i in np.ndindex(data.shape):
+                new_data[i] = np.reshape(data[i], ragged_shape[i])
+            data = new_data
+        except KeyError:
+            pass
         if lazy:
             data = da.from_array(data, chunks=data.chunks)
             exp['attributes']['_lazy'] = True
@@ -626,7 +634,17 @@ class HierarchicalWriter:
                     del group[key]
 
         _logger.info(f"Chunks used for saving: {chunks}")
-        cls._store_data(data, dset, group, key, chunks)
+        if data.dtype == np.dtype('O'):
+            new_data = np.empty(shape=data.shape, dtype=object)
+            shapes = np.empty(shape=data.shape, dtype=object)
+            for i in np.ndindex(data.shape):
+                new_data[i] = np.ndarray.flatten(data[i])
+                shapes[i] = data[i].shape
+            shape_dset = cls._get_object_dset(group, shapes, "ragged_shapes", shapes.shape, **kwds)
+            cls._store_data(shapes, shape_dset, group, 'ragged_shapes', chunks=shapes.shape)
+            cls._store_data(new_data, dset, group, key, chunks)
+        else:
+            cls._store_data(data, dset, group, key, chunks)
 
     def write(self):
         self.write_signal(self.signal,

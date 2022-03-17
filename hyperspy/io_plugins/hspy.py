@@ -22,6 +22,7 @@ from pathlib import Path
 
 import dask.array as da
 import h5py
+import numpy as np
 
 from hyperspy.io_plugins._hierarchical import (
     # hyperspy.io_plugins.hspy.get_signal_chunks is in the hyperspy public API
@@ -138,7 +139,12 @@ class HyperspyWriter(HierarchicalWriter):
         elif data.flags.c_contiguous:
             dset.write_direct(data)
         else:
-            dset[:] = data
+            if data.dtype == object:
+                shapes = [d.shape for d in data]
+                flat_data = [np.ndarray.flatten(d) for d in data]
+                dset[:] = flat_data
+            else:
+                dset[:] = data
 
     @staticmethod
     def _get_object_dset(group, data, key, chunks, **kwds):
