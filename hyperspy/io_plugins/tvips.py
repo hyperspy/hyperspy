@@ -51,7 +51,7 @@ _logger = logging.getLogger(__name__)
 _ureg = pint.UnitRegistry()
 
 TVIPS_RECORDER_GENERAL_HEADER = [
-    ("size", "u4"),  #likely the size of generalheader in bytes
+    ("size", "u4"),  # likely the size of generalheader in bytes
     ("version", "u4"),  # 1 or 2
     ("dimx", "u4"),  # image size width
     ("dimy", "u4"),  # image size height
@@ -151,9 +151,9 @@ def _get_main_header_from_signal(signal, version=2, frame_header_extra_bytes=0):
     mag = signal.metadata.get_item("Acquisition_instrument.TEM.magnification", 0)
     if (cl != 0 and mag != 0):
         header['magtotal'] = 0
-    elif (cl != 0 and mode==2):
+    elif (cl != 0 and mode == 2):
         header['magtotal'] = cl
-    elif (mag != 0 and mode==1):
+    elif (mag != 0 and mode == 1):
         header['magtotal'] = mag
     else:
         header['magtotal'] = 0
@@ -331,8 +331,9 @@ def file_reader(filename,
             record_idxs = np.concatenate([i["rotidx"] for i in all_metadata])
             scan_start_frame, scan_stop_frame = _find_auto_scan_start_stop(record_idxs)
             if scan_start_frame is None or scan_stop_frame is None:
-                raise ValueError("Scan start and stop information could not be automatically "
-                        "determined. Please supply a scan_shape and scan_start_frame.")
+                raise ValueError(
+                    "Scan start and stop information could not be automatically "
+                    "determined. Please supply a scan_shape and scan_start_frame.")
             total_scan_frames = record_idxs[scan_stop_frame]  # last rotator
             scan_dim = int(np.sqrt(total_scan_frames))
             if not np.allclose(scan_dim, np.sqrt(total_scan_frames)):
@@ -343,7 +344,7 @@ def file_reader(filename,
         # scan shape and start are provided
         else:
             total_scan_frames = np.prod(scan_shape)
-            indices = np.arange(scan_start_frame, scan_start_frame+total_scan_frames).reshape(scan_shape)
+            indices = np.arange(scan_start_frame, scan_start_frame + total_scan_frames).reshape(scan_shape)
 
         # with winding scan, every second column or row must be inverted
         # due to hysteresis there is also a predictable offset
@@ -389,7 +390,7 @@ def file_reader(filename,
         # we load as a regular image stack
         units = ['s', DPU, DPU]
         names = ['time', 'dy', 'dx']
-        times = np.concatenate([i["timestamp"] + i["ms"]/1000 for i in all_metadata])
+        times = np.concatenate([i["timestamp"] + i["ms"] / 1000 for i in all_metadata])
         if times.shape[0] > 0:
             timescale = times[1] - times[0]
         else:
@@ -406,7 +407,7 @@ def file_reader(filename,
                 'scale': scales[i],
                 'offset': offsets[i],
                 'units': units[i],
-                'navigate': True if i==0 else False,
+                'navigate': True if i == 0 else False,
             }
             for i in range(dim)]
         if lazy:
@@ -420,7 +421,7 @@ def file_reader(filename,
     stagez = all_metadata[0]["stagez"][0]
     stagealpha = all_metadata[0]["stagea"][0]
     stagebeta = all_metadata[0]["stageb"][0]
-    mag = all_metadata[0]["mag"][0]
+    # mag = all_metadata[0]["mag"][0]  # TODO it is unclear what this value is
     focus = all_metadata[0]["objective"][0]
     sigtype = "diffraction" if mode == 2 else "imaging"
     metadata = {
@@ -450,12 +451,12 @@ def file_reader(filename,
     }
 
     dictionary = {'data': data_stack,
-                'axes': axes,
-                'metadata': metadata,
-                'original_metadata': original_metadata,
-                'mapping': {}, }
+                  'axes': axes,
+                  'metadata': metadata,
+                  'original_metadata': original_metadata,
+                  'mapping': {}, }
 
-    return [dictionary,]
+    return [dictionary, ]
 
 
 def file_writer(filename, signal, **kwds):
@@ -506,9 +507,10 @@ def file_writer(filename, signal, **kwds):
         max_file_size = minimum_file_size
     # frame metadata
     time_start = datetime.strptime(
-            signal.metadata.get_item("General.date", "1970-01-01") + ";" +
-            signal.metadata.get_item("General.time", "00:00:00"),
-            "%Y-%m-%d;%H:%M:%S").timestamp()
+        signal.metadata.get_item("General.date", "1970-01-01") + ";"
+        + signal.metadata.get_item("General.time", "01:00:00"),
+        "%Y-%m-%d;%H:%M:%S"
+    ).timestamp()
     nav_units = signal.axes_manager[0].units
     nav_increment = signal.axes_manager[0].scale
     try:
@@ -532,7 +534,7 @@ def file_writer(filename, signal, **kwds):
     file_index = 0
     with signal.unfolded(unfold_navigation=True, unfold_signal=False):
         while (frames_to_save != 0):
-            suffix = "_"+(f"{file_index}".zfill(3))
+            suffix = "_" + (f"{file_index}".zfill(3))
             filename = fnb + suffix + ext
             if file_index == 0:
                 with open(filename, "wb") as f:
@@ -547,9 +549,9 @@ def file_writer(filename, signal, **kwds):
             if frames_to_save < frames_saved:
                 frames_saved = frames_to_save
             file_memmap = np.memmap(
-                    filename, dtype=record_dtype, mode=open_mode,
-                    offset=file_location, shape=frames_saved,
-                    )
+                filename, dtype=record_dtype, mode=open_mode,
+                offset=file_location, shape=frames_saved,
+            )
             # fill in the metadata
             file_memmap["mode"] = mode
             file_memmap["stagex"] = stagex
