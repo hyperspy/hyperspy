@@ -388,6 +388,12 @@ def test_read_fail_wind_axis():
 
 
 @pytest.mark.xfail(raises=ValueError)
+def test_read_fail_scan_shape():
+    file = os.path.join(DIRPATH, "test_tvips_2345_split_000.tvips"),
+    hs.load(file, scan_shape=(3, 3))
+
+
+@pytest.mark.xfail(raises=ValueError)
 def test_write_fail_signal_type():
     with tempfile.TemporaryDirectory() as tdir:
         fake_signal = hs.signals.BaseSignal(np.zeros((1, 2, 3, 4)))

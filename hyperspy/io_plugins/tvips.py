@@ -345,7 +345,14 @@ def file_reader(filename,
         # scan shape and start are provided
         else:
             total_scan_frames = np.prod(scan_shape)
-            indices = np.arange(scan_start_frame, scan_start_frame + total_scan_frames).reshape(scan_shape)
+            max_frame_index = np.prod(data_stack.shape[:-2])
+            final_frame = scan_start_frame + total_scan_frames
+            if final_frame > max_frame_index:
+                raise ValueError(
+                    f"Shape {scan_shape} requires image index {final_frame-1} "
+                    f"which is out of bounds. Final frame index: {max_frame_index-1}."
+                )
+            indices = np.arange(scan_start_frame, final_frame).reshape(scan_shape)
 
         # with winding scan, every second column or row must be inverted
         # due to hysteresis there is also a predictable offset
@@ -424,7 +431,8 @@ def file_reader(filename,
     stagebeta = all_metadata[0]["stageb"][0]
     # mag = all_metadata[0]["mag"][0]  # TODO it is unclear what this value is
     focus = all_metadata[0]["objective"][0]
-    sigtype = "diffraction" if mode == 2 else "imaging"
+    # TODO at the moment hyperspy doesn't distinguish between imaging types
+    # sigtype = "diffraction" if mode == 2 else "imaging"
     metadata = {
         'General': {
             'original_filename': os.path.split(filename)[1],
@@ -432,9 +440,9 @@ def file_reader(filename,
             'time': time,
             'time_zone': "UTC",
         },
-        "Signal": {
-            'signal_type': sigtype
-        },
+        # "Signal": {
+        #    'signal_type': sigtype
+        # }
         "Acquisition_instrument": {
             "TEM": {
                 "magnification": header["magtotal"][0],
@@ -509,7 +517,7 @@ def file_writer(filename, signal, **kwds):
         max_file_size = minimum_file_size
     # frame metadata
     start_date_str = signal.metadata.get_item("General.date", "1970-01-01")
-    start_time_str = signal.metadata.get_item("General.time", "01:00:00")
+    start_time_str = signal.metadata.get_item("General.time", "00:00:00")
     tz = signal.metadata.get_item("General.time_zone", "UTC")
     datetime_str = f"{start_date_str} {start_time_str} {tz}"
     time_dt = dtparse(datetime_str)
