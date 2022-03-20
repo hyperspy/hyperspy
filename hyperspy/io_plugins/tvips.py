@@ -33,6 +33,7 @@ from numba import njit
 from hyperspy.misc.array_tools import sarray2dict
 from hyperspy.misc.utils import dummy_context_manager
 from hyperspy.defaults_parser import preferences
+from hyperspy.api_nogui import _ureg
 
 # Plugin characteristics
 # ----------------------
@@ -49,7 +50,7 @@ non_uniform_axis = False
 
 
 _logger = logging.getLogger(__name__)
-_ureg = pint.UnitRegistry()
+
 
 TVIPS_RECORDER_GENERAL_HEADER = [
     ("size", "u4"),  # likely the size of generalheader in bytes
@@ -229,6 +230,7 @@ def file_reader(filename,
                 winding_scan_axis=None,
                 hysteresis=0,
                 lazy=True,
+                rechunking="auto",
                 **kwds):
     """
     TVIPS stream file reader for in-situ and 4D STEM data
@@ -246,11 +248,17 @@ def file_reader(filename,
         ignored.
     winding_scan_axis : str
         "x" or "y" if the scan was performed with winding scan along an axis
-        as opposed to flyback scan.
+        as opposed to flyback scan. By default (None), flyback scan is assumed
+        with "x" the fast and "y" the slow scan directions.
     hysteresis: int
         Only applicable if winding_scan_axis is not None. This parameter allows
         every second column or row to be shifted to correct for hysteresis that
         occurs during a winding scan.
+    rechunking: bool, str, or Dict
+        If set to False each tvips file is a single chunk. For a better experience
+        working with the dataset, an automatic rechunking is recommended (default).
+        If set to anything else, e.g. a Dictionary, the value will be passed to the
+        chunks argument in dask.array.rechunk.
     """
     # check whether we start at the first tvips file
     _is_valid_first_tvips_file(filename)
@@ -277,7 +285,7 @@ def file_reader(filename,
         dimy = header["dimy"][0]
         # the size of the frame header varies with version
         if header["version"][0] == 1:
-            increment = 12
+            increment = 12 # pragma: no cover
         elif header["version"][0] == 2:
             increment = header["frameheaderbytes"][0]
         else:
@@ -285,11 +293,11 @@ def file_reader(filename,
                 f"This version {header.version} is not yet supported"
                 " in HyperSpy. Please report this as an issue at "
                 "https://github.com/hyperspy/hyperspy/issues."
-            )
+                )  # pragma: no cover
         frame_header_dt = np.dtype(TVIPS_RECORDER_FRAME_HEADER)
         # the record must consume less bytes than reported in the main header
         if increment < frame_header_dt.itemsize:
-            raise ValueError("The frame header record consumes more bytes than stated in the main header")
+            raise ValueError("The frame header record consumes more bytes than stated in the main header") # pragma: no cover
         # save metadata
         original_metadata = {'tvips_header': sarray2dict(header)}
         # create custom dtype for memmap padding the frame_header as required
@@ -334,7 +342,7 @@ def file_reader(filename,
             if scan_start_frame is None or scan_stop_frame is None:
                 raise ValueError(
                     "Scan start and stop information could not be automatically "
-                    "determined. Please supply a scan_shape and scan_start_frame.")
+                    "determined. Please supply a scan_shape and scan_start_frame.") # pragma: no cover
             total_scan_frames = record_idxs[scan_stop_frame]  # last rotator
             scan_dim = int(np.sqrt(total_scan_frames))
             if not np.allclose(scan_dim, np.sqrt(total_scan_frames)):
@@ -388,21 +396,20 @@ def file_reader(filename,
             }
             for i in range(dim)]
         if lazy:
-            chunking = {}
-            for ax_index in range(indices.ndim):
-                chunking[ax_index] = "auto"
-            for ax_index in range(indices.ndim, indices.ndim + 2):
-                chunking[ax_index] = None
-            data_stack = data_stack.rechunk(chunking)
+            if rechunking:
+                if rechunking == "auto":
+                    chunks = {ax_index: "auto" for ax_index in range(indices.ndim)}
+                    chunks[indices.ndim] = None
+                    chunks[indices.ndim+1] = None
+                else:
+                    chunks = rechunking
+                data_stack = data_stack.rechunk(chunks)
     else:
         # we load as a regular image stack
         units = ['s', DPU, DPU]
         names = ['time', 'dy', 'dx']
         times = np.concatenate([i["timestamp"] + i["ms"] / 1000 for i in all_metadata])
-        if times.shape[0] > 0:
-            timescale = times[1] - times[0]
-        else:
-            timescale = 1
+        timescale = 1 if times.shape[0] <= 0 else times[1] - times[0]
         scales = [timescale, SDP, SDP]
         offsets = [times[0], offsety, offsetx]
         # Create the axis objects for each axis
@@ -419,7 +426,12 @@ def file_reader(filename,
             }
             for i in range(dim)]
         if lazy:
-            data_stack = data_stack.rechunk({0: "auto", 1: None, 2: None})
+            if rechunking:
+                if rechunking == "auto":
+                    chunks = {0: "auto", 1: None, 2: None}
+                else:
+                    chunks = rechunking
+                data_stack = data_stack.rechunk(chunks)
     dtobj = datetime.fromtimestamp(all_metadata[0]["timestamp"][0])
     date = dtobj.date().isoformat()
     time = dtobj.time().isoformat()
@@ -431,8 +443,6 @@ def file_reader(filename,
     stagebeta = all_metadata[0]["stageb"][0]
     # mag = all_metadata[0]["mag"][0]  # TODO it is unclear what this value is
     focus = all_metadata[0]["objective"][0]
-    # TODO at the moment hyperspy doesn't distinguish between imaging types
-    # sigtype = "diffraction" if mode == 2 else "imaging"
     metadata = {
         'General': {
             'original_filename': os.path.split(filename)[1],
@@ -440,9 +450,6 @@ def file_reader(filename,
             'time': time,
             'time_zone': "UTC",
         },
-        # "Signal": {
-        #    'signal_type': sigtype
-        # }
         "Acquisition_instrument": {
             "TEM": {
                 "magnification": header["magtotal"][0],
@@ -459,6 +466,10 @@ def file_reader(filename,
             },
         }
     }
+
+    if mode == 2:
+        metadata["Signal"] = {"signal_type": "diffraction"}
+    # TODO at the moment hyperspy doesn't have a signal type for mode==1, imaging
 
     dictionary = {'data': data_stack,
                   'axes': axes,
@@ -498,7 +509,6 @@ def file_writer(filename, signal, **kwds):
     if not isinstance(signal, Signal2D):
         raise ValueError("Only Signal2D supported for writing to TVIPS file.")
     fnb, ext = os.path.splitext(filename)
-    show_progressbar = kwds.pop("show_progressbar", None)
     if fnb.endswith("_000"):
         fnb = fnb[:-4]
     version = kwds.pop("version", 2)
@@ -583,8 +593,7 @@ def file_writer(filename, signal, **kwds):
             file_memmap["rotidx"] = rotator + 1
             data = signal.data[current_frame:current_frame + frames_saved]
             if signal._lazy:
-                if show_progressbar is None:
-                    show_progressbar = preferences.General.show_progressbar
+                show_progressbar = kwds.get("show_progressbar", preferences.General.show_progressbar)
                 cm = ProgressBar if show_progressbar else dummy_context_manager
                 with cm():
                     data.store(file_memmap["data"])

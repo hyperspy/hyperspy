@@ -1952,11 +1952,17 @@ Extra loading arguments
   beam flyback but with a winding "snake" scan, then every second scan row
   or column needs to be reversed to make sense of the data. This can be
   indicated with values `"x"` or `"y"`, depending on whether winding happened
-  along the primary or secondary axis.
+  along the primary or secondary axis. By default, flyback scan without winding
+  is assumed with `x` the fast scan and `y` the slow scan direction.
 - ``hysteresis``: if winding scan was active it is likely there is an overshoot
   of a few pixels (2-5) every second scan row. This parameter shifts every
   second row by the indicated number of scan points to align even and odd scan
-  rows.
+  rows. Default is 0, no hysteresis.
+- ``rechunking``: only relevant when using lazy loading. If set to `False`
+  each TVIPS file is loaded as a single chunk. For a better experience, with the
+  default setting of `auto` rechunking is performed such that the navigation axes
+  are optimally chunked and the signal axes are not chunked. If set to anything else, the
+  value will be passed to the `chunks` argument in `dask.array.rechunk`.
   
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -1964,11 +1970,12 @@ Extra saving arguments
 - ``max_file_size``: approximate maximum size of individual files in bytes. 
   In this way a dataset can be split into multiple files. A file needs to be
   at least the size of the main header in the first file plus one frame and its
-  frame header.
+  frame header. By default there is no maximum and the entire dataset is saved
+  to one file.
 - ``version``: TVIPS file format version, defaults to version 2. Only version
   1 and 2 are currently supported.
 - ``frame_header_extra_bytes``: the number of bytes to pad the frame headers
-  with.
+  with. By default this is 0.
 - ``mode``: `1` for imaging, `2` for diffraction. By default the mode is
   guessed from the signal type and signal unites.
 

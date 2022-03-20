@@ -328,6 +328,7 @@ def _dask_supports_assignment():
                 "scan_shape": "auto",
                 "scan_start_frame": 20,
                 "hysteresis": 1,
+                "rechunking": False,
             }
         ),
         (
@@ -336,6 +337,7 @@ def _dask_supports_assignment():
                 "scan_shape": (2, 3),
                 "scan_start_frame": 0,
                 "hysteresis": 0,
+                "rechunking": "auto",
             }
         ),
         (
@@ -344,6 +346,7 @@ def _dask_supports_assignment():
                 "scan_shape": (2, 2),
                 "scan_start_frame": 2,
                 "hysteresis": -1,
+                "rechunking": {0: 1, 1: 1, 2: None, 3: None},
             }
         ),
     ]
@@ -422,7 +425,7 @@ def test_file_writer(sig, meta, max_file_size, fheb, fake_signals, fake_metadata
         signal.metadata.add_dictionary(metadata.as_dictionary())
     metadata = signal.metadata
     with tempfile.TemporaryDirectory() as tmp:
-        filepath = os.path.join(tmp, "test_tvips_save.tvips")
+        filepath = os.path.join(tmp, "test_tvips_save_000.tvips")
         scan_shape = signal.axes_manager.navigation_shape
         file_writer(filepath, signal, max_file_size=max_file_size, frame_header_extra_bytes=fheb)
         if max_file_size is None:
@@ -439,3 +442,11 @@ def test_file_writer(sig, meta, max_file_size, fheb, fake_signals, fake_metadata
             assert dtc["metadata"]["Acquisition_instrument"]["TEM"]['beam_energy'] == metadata.Acquisition_instrument.TEM.beam_energy
             assert dtc["metadata"]["Acquisition_instrument"]["TEM"]['beam_current'] == metadata.Acquisition_instrument.TEM.beam_current
         gc.collect()
+
+
+@pytest.mark.xfail(raises=ValueError)
+def test_file_writer_fail():
+    signal = hs.signals.Signal1D(np.array([1, 2, 3]))
+    with tempfile.TemporaryDirectory() as tmp:
+        filepath = os.path.join(tmp, "test.tvips")
+        file_writer(filepath, signal)
