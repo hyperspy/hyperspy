@@ -395,15 +395,6 @@ def file_reader(filename,
                 'navigate': True if i < len(scan_shape) else False,
             }
             for i in range(dim)]
-        if lazy:
-            if rechunking:
-                if rechunking == "auto":
-                    chunks = {ax_index: "auto" for ax_index in range(indices.ndim)}
-                    chunks[indices.ndim] = None
-                    chunks[indices.ndim+1] = None
-                else:
-                    chunks = rechunking
-                data_stack = data_stack.rechunk(chunks)
     else:
         # we load as a regular image stack
         units = ['s', DPU, DPU]
@@ -425,13 +416,6 @@ def file_reader(filename,
                 'navigate': True if i == 0 else False,
             }
             for i in range(dim)]
-        if lazy:
-            if rechunking:
-                if rechunking == "auto":
-                    chunks = {0: "auto", 1: None, 2: None}
-                else:
-                    chunks = rechunking
-                data_stack = data_stack.rechunk(chunks)
     dtobj = datetime.fromtimestamp(all_metadata[0]["timestamp"][0])
     date = dtobj.date().isoformat()
     time = dtobj.time().isoformat()
@@ -466,6 +450,17 @@ def file_reader(filename,
             },
         }
     }
+
+    if lazy:
+        if rechunking:
+            if rechunking == "auto":
+                navdims = data_stack.ndim - 2
+                chunks = {ax_index: "auto" for ax_index in range(navdims)}
+                chunks[navdims] = None
+                chunks[navdims+1] = None
+            else:
+                chunks = rechunking
+            data_stack = data_stack.rechunk(chunks)
 
     if mode == 2:
         metadata["Signal"] = {"signal_type": "diffraction"}
