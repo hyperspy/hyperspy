@@ -440,7 +440,7 @@ Data files used in the following examples can be downloaded using
 
 .. NOTE::
     See also the
-    `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-demos/blob/master/electron_microscopy/EDS/>`_ .
+    `EDS tutorials <https://nbviewer.org/github/hyperspy/hyperspy-demos/tree/main/electron_microscopy/EDS/>`_ .
 
 Although HyperSpy does not currently support plotting when signal_dimension is
 greater than 2, `Mayavi <https://docs.enthought.com/mayavi/mayavi/>`_ can be
@@ -468,7 +468,7 @@ found in :ref:`EDS lines intensity<get_lines_intensity>`.
 
 .. NOTE::
     See also the
-    `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-demos/blob/master/electron_microscopy/EDS/>`_ .
+    `SEM EDS tutorials <https://nbviewer.org/github/hyperspy/hyperspy-demos/tree/main/electron_microscopy/EDS/>`_ .
 
 .. NOTE::
 
