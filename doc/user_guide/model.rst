@@ -1082,6 +1082,7 @@ the 2D-polynomial ``y = a*x**2+b*y**2+c*x+d*y+e`` is entirely linear.
 
 If all components in a model are linear, then a linear optimizer can be used to
 solve the problem as a linear regression problem! This can be done using two approaches:
+
 - the standard pixel-by-pixel approach as used by the *nonlinear* optimizers
 - fit the entire dataset in one vectorised operation, which will be much faster (up to 1000 times).
   However, there is a caveat: all fixed parameters must have the same value across the dataset in
