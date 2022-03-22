@@ -700,3 +700,91 @@ def test_plot_markers_mpl_options():
     m = markers.vertical_line_segment(10, 20, 30)
     _test_plot_markers_repr(m,['x', 'y1', 'y2', 'color'])
 
+
+def test_markers_auto_update():
+    # test data for fixed marker
+    _pos = (1, 2, 3, 4)
+    # test data for auto_update marker
+    _pos_list = np.array([[1, 3, 5], [2, 4, 6]])
+    _list_1 = np.array([[1, 2, 3],[1, 2, 3]])
+    _list_2 = np.array([[3, 2, 1],[3, 2, 1]])
+    s = Signal2D(np.arange(2 * 3 * 8 * 10).reshape(2, 3, 8, 10))
+
+    marker_list = [
+        # fixed marker
+            markers.vertical_line(_pos[0]),
+        markers.horizontal_line(_pos[0]),
+        markers.vertical_line_segment(_pos[0], _pos[1], _pos[2]),
+        markers.horizontal_line_segment(_pos[0], _pos[1], _pos[2]),
+        markers.rectangle(_pos[0], _pos[1], _pos[2], _pos[3]),
+        markers.ellipse(_pos[0], _pos[1], _pos[2], _pos[3]),
+        markers.arrow(_pos[0], _pos[1], _pos[2], _pos[3]),
+        markers.line_segment(_pos[0], _pos[1], _pos[2], _pos[3]),
+        markers.point(_pos[0], _pos[1]),
+        markers.text(_pos[0], _pos[1], "test"),
+        # auto update
+            markers.vertical_line(_pos_list),
+        markers.horizontal_line(_pos_list),
+        markers.vertical_line_segment(_pos_list + 1, _list_1, _list_1 + 1),
+        markers.horizontal_line_segment(_list_1, _list_1 + 1, _pos_list + 1),
+        markers.rectangle(_pos_list, _pos_list - 1,
+                          _pos_list + _list_1, _pos_list + _list_2),
+        markers.ellipse(_pos_list, _pos_list - 1,
+                        _pos_list + _list_1, _pos_list + _list_2),
+        markers.arrow(_pos_list, _pos_list - 1,
+                      _pos_list + _list_1, _pos_list + _list_2),
+        markers.line_segment(_pos_list, _pos_list - 1,
+                             _pos_list + _list_1, _pos_list + _list_2),
+        markers.point(_pos_list, _pos_list - 1),
+        markers.text(_pos_list, _pos_list - 1, "test"),
+    ]
+    s.add_marker(marker_list)
+    for iy, temp_marker_list in enumerate(_pos_list):
+        for ix, value in enumerate(temp_marker_list):
+            s.axes_manager.indices = (ix, iy)
+            for marker in marker_list:
+                _x1 = marker.get_data_position('x1')
+                _y1 = marker.get_data_position('y1')
+                _x2 = marker.get_data_position('x2')
+                _y2 = marker.get_data_position('y2')
+                _name = marker.name
+                if marker.auto_update is False:
+                    if _name == 'vertical_line':
+                        assert _pos[0] == _x1
+                    elif _name == 'horizontal_line':
+                        assert _pos[0] == _y1
+                    elif _name == 'vertical_line_segment':
+                        assert _pos[0]== _x1
+                        assert _pos[1] == _y1
+                        assert _pos[2] == _y2
+                    elif _name == 'horizontal_line_segment':
+                        assert _pos[2] == _y1
+                        assert _pos[0] == _x1
+                        assert _pos[1] == _x2
+                    else:
+                        if _name in ('rectangle', 'ellipse', 'arrow', 'line_segment'):
+                            assert _pos[2] == _x2
+                            assert _pos[3] == _y2
+                            # point, text
+                        assert _pos[0] == _x1
+                        assert _pos[1] == _y1
+                else: # auto_update is True
+                    if _name == 'vertical_line':
+                        assert value == _x1
+                    elif _name == 'horizontal_line':
+                        assert value == _y1
+                    elif _name == 'vertical_line_segment':
+                        assert value + 1 == _x1
+                        assert _list_1[iy, ix] == _y1
+                        assert _list_1[iy, ix] + 1 == _y2
+                    elif _name == 'horizontal_line_segment':
+                        assert value + 1 == _y1
+                        assert _list_1[iy, ix] == _x1
+                        assert _list_1[iy, ix] + 1 == _x2
+                    else:
+                        if _name in ('rectangle', 'ellipse', 'arrow', 'line_segment'):
+                            assert value + _list_1[iy, ix] == _x2
+                            assert value + _list_2[iy, ix] == _y2
+                        assert value == _x1
+                        assert value - 1 == _y1
+

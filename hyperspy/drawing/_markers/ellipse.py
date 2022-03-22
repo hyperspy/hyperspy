@@ -91,8 +91,8 @@ class Ellipse(MarkerBase):
             self.marker.set_width(width)
             self.marker.set_height(height)
         except: # for matplotlib 3.1.x
-            self.marker._width = width
-            self.marker._height = height
+            self.marker.width = width
+            self.marker.height = height
             self.marker.stale = True
 
     def _plot_marker(self):

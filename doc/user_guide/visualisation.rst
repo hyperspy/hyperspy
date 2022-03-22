@@ -332,7 +332,7 @@ Data files used in the following examples can be downloaded using
 
 .. NOTE::
     See also the
-    `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-demos/blob/master/electron_microscopy/EDS/>`_ .
+    `SEM EDS tutorials <https://nbviewer.org/github/hyperspy/hyperspy-demos/tree/main/electron_microscopy/EDS/>`_ .
 
 .. NOTE::
 
@@ -1365,7 +1365,7 @@ The markers currently supported in HyperSpy are:
     +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
 
 
-Markers properties
+Marker properties
 ------------------
 
 The optional parameters (``**kwargs``, keyword arguments) can be used for extra parameters used in matplotlib.
