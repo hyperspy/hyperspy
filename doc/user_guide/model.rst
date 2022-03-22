@@ -1067,7 +1067,7 @@ Linear fitting can be used to address some of the drawbacks of non-linear optimi
   the non-linear optimizer will converge.
 
 However, linear fitting can *only* fit linear models and will not be able to fit
-parameter which varies *non-linearly*.
+parameters which vary *non-linearly*.
 
 A component is considered linear when its free parameters scale the component only 
 in the y-axis. For the exemplary function ``y = a*x**b``, ``a`` is a linear parameter, whilst ``b`` 
