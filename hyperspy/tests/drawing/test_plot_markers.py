@@ -662,6 +662,7 @@ def test_plot_markers_zorder(reversed_order):
 
 
 def _test_plot_markers_repr(m, keys):
+    print(m, keys)
     match_str = r'<marker\.'+m.__class__.__name__+', '+m.name+r' \((.*)\)>'
     mm = re.match(match_str,repr(m))
     assert mm is not None
@@ -699,6 +700,19 @@ def test_plot_markers_mpl_options():
                             ['x', 'color'])
     m = markers.vertical_line_segment(10, 20, 30)
     _test_plot_markers_repr(m,['x', 'y1', 'y2', 'color'])
+
+
+def test_vertical_horizontal_line_segment_with_None():
+    m0 = markers.horizontal_line_segment(None, None, 1)
+    m1 = markers.vertical_line_segment(1, None, None)
+    w = 2
+    h = 3
+    s = Signal2D(np.arange(w * h).reshape(w, h))
+    print(np.arange(w * h).reshape(w, h))
+    s.add_marker(m0)
+    s.add_marker(m1)
+    np.testing.assert_allclose(m0.marker.get_segments()[0], [[-0.5, 1.],[w - 0.5, 1.]])
+    np.testing.assert_allclose(m1.marker.get_segments()[0], [[1., h - 0.5],[1., -0.5]])
 
 
 def test_markers_auto_update():
@@ -755,5 +769,3 @@ def test_markers_auto_update():
                         assert _xy2[0:2] == _xy[0:2]
                     else:
                         raise ValueError('Unknown marker : ' + _name)
-
-
