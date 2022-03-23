@@ -707,8 +707,7 @@ def test_vertical_horizontal_line_segment_with_None():
     m1 = markers.vertical_line_segment(1, None, None)
     w = 2
     h = 3
-    s = Signal2D(np.arange(w * h).reshape(w, h))
-    print(np.arange(w * h).reshape(w, h))
+    s = Signal2D(np.arange(w * h).reshape(h, w))
     s.add_marker(m0)
     s.add_marker(m1)
     np.testing.assert_allclose(m0.marker.get_segments()[0], [[-0.5, 1.],[w - 0.5, 1.]])
