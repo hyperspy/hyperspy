@@ -66,6 +66,7 @@ class Ellipse(MarkerBase):
         self.marker_properties = lp
         self.set_data(x1=x, y1=y, x2=width, y2=height)
         self.set_marker_properties(**kwargs)
+        self.name = 'ellipse'
 
     def __repr__(self):
         string = "<marker.{}, {} (x={},y={},width={},height={},edgecolor={})>".format(
@@ -90,7 +91,9 @@ class Ellipse(MarkerBase):
         try:
             self.marker.set_width(width)
             self.marker.set_height(height)
-        except: # for matplotlib 3.1.x
+        except: # pragma: no cover
+            # set_width() and set_height() appear on matplotlib==3.3.0
+            # after 3.3.0, marker.width, marker.height are renamed.
             self.marker.width = width
             self.marker.height = height
             self.marker.stale = True
