@@ -34,6 +34,7 @@ from pint import UndefinedUnitError
 from scipy import integrate
 from scipy import signal as sp_signal
 import traits.api as t
+from tlz import concat
 
 import hyperspy
 from hyperspy.axes import AxesManager
@@ -55,7 +56,8 @@ from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.misc.utils import is_binned # remove in v2.0
-from hyperspy.misc.utils import process_function_blockwise, guess_output_signal_size
+from hyperspy.misc.utils import (
+    process_function_blockwise, guess_output_signal_size,_get_block_pattern)
 from hyperspy.misc.utils import add_scalar_axis
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
@@ -2697,7 +2699,6 @@ class BaseSignal(FancySlicing,
             if axes_manager.navigation_dimension == 0:
                 # 0d signal without navigation axis: don't make a figure
                 # and instead, we display the value
-                print(self.data)
                 return
             self._plot = mpl_he.MPL_HyperExplorer()
         elif axes_manager.signal_dimension == 1:
@@ -4901,12 +4902,14 @@ class BaseSignal(FancySlicing,
             _logger.info(
                 "The chunk size needs to span the full signal size, rechunking..."
             )
+
             old_sig = s_input.rechunk(inplace=False, nav_chunks=None)
         else:
             old_sig = s_input
         os_am = old_sig.axes_manager
-        autodetermine = (output_signal_size is None or output_dtype is None) # try to guess output dtype and sig size?
-
+        autodetermine = (
+            output_signal_size is None or output_dtype is None
+        )  # try to guess output dtype and sig size?
         args, arg_keys = old_sig._get_iterating_kwargs(iterating_kwargs)
 
         if autodetermine:  # trying to guess the output d-type and size from one signal
@@ -4915,34 +4918,39 @@ class BaseSignal(FancySlicing,
                 test_ind = (0,) * len(os_am.navigation_axes)
                 testing_kwargs[key] = np.squeeze(args[ikey][test_ind]).compute()
             testing_kwargs = {**kwargs, **testing_kwargs}
-            test_data = np.array(old_sig.inav[(0,) * len(os_am.navigation_shape)].data.compute())
+            test_data = np.array(
+                old_sig.inav[(0,) * len(os_am.navigation_shape)].data.compute()
+            )
             temp_output_signal_size, temp_output_dtype = guess_output_signal_size(
-                test_data=test_data,
-                function=function,
-                ragged=ragged,
-                **testing_kwargs,
+                test_data=test_data, function=function, ragged=ragged, **testing_kwargs,
             )
             if output_signal_size is None:
                 output_signal_size = temp_output_signal_size
             if output_dtype is None:
                 output_dtype = temp_output_dtype
-
-        drop_axis, new_axis, axes_changed = self._get_drop_axis_new_axis(output_signal_size)
-        chunks = tuple([old_sig.data.chunks[i] for i in sorted(nav_indexes)]) + output_signal_size
-        mapped = da.map_blocks(
-            process_function_blockwise,
-            old_sig.data,
-            *args,
-            function=function,
-            nav_indexes=nav_indexes,
-            drop_axis=drop_axis,
-            new_axis=new_axis,
-            output_signal_size=output_signal_size,
-            dtype=output_dtype,
-            chunks=chunks,
-            arg_keys=arg_keys,
-            **kwargs
+        output_shape = self.axes_manager._navigation_shape_in_array + output_signal_size
+        arg_pairs, adjust_chunks, new_axis, output_pattern = _get_block_pattern(
+            (old_sig.data,) + args, output_shape
         )
+
+        axes_changed = len(new_axis) != 0 or len(adjust_chunks) != 0
+        mapped = da.blockwise(
+            process_function_blockwise,
+            output_pattern,
+            *concat(arg_pairs),
+            adjust_chunks=adjust_chunks,
+            new_axes=new_axis,
+            align_arrays=False,
+            dtype=output_dtype,
+            concatenate=True,
+            arg_keys=arg_keys,
+            function=function,
+            output_dtype=output_dtype,
+            nav_indexes=nav_indexes,
+            output_signal_size=output_signal_size,
+            **kwargs,
+        )
+
         data_stored = False
         if inplace:
             if (
@@ -4989,29 +4997,7 @@ class BaseSignal(FancySlicing,
                 sig.data = sig.data.compute(num_workers=max_workers)
         return sig
 
-    def _get_drop_axis_new_axis(self, output_signal_size):
-        am = self.axes_manager
-        if output_signal_size == self.axes_manager.signal_shape:
-            drop_axis = None
-            new_axis = None
-            axes_changed = False
-        else:
-            axes_changed = True
-            if len(output_signal_size) != len(am.signal_shape):
-                drop_axis = am.signal_indices_in_array
-                nav_dim = am.navigation_dimension
-                new_axis = tuple(range(nav_dim, len(output_signal_size) + nav_dim))
-            else:
-                drop_axis = [it for (o, i, it) in zip(output_signal_size,
-                                                      am.signal_shape,
-                                                      am.signal_indices_in_array)
-                             if o != i]
-                drop_axis = tuple(drop_axis)
-                new_axis = drop_axis
-        return drop_axis, new_axis, axes_changed
-
     def _get_iterating_kwargs(self, iterating_kwargs):
-        signal_dim_shape = self.axes_manager.signal_shape
         nav_chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
         args, arg_keys = (), ()
         for key in iterating_kwargs:
@@ -5025,24 +5011,18 @@ class BaseSignal(FancySlicing,
             if iterating_kwargs[key]._lazy:
                 axes = iterating_kwargs[key].axes_manager.navigation_axes
                 if iterating_kwargs[key].get_chunk_size(axes) != nav_chunks:
-                    iterating_kwargs[key].rechunk(
-                        nav_chunks=nav_chunks,
-                        sig_chunks=-1
-                        )
+                    iterating_kwargs[key].rechunk(nav_chunks=nav_chunks, sig_chunks=-1)
+                chunk_span = np.equal(iterating_kwargs[key].data.chunksize,
+                                      iterating_kwargs[key].data.shape)
+                chunk_span = [
+                    chunk_span[i] for i in iterating_kwargs[key].axes_manager.signal_indices_in_array
+                ]
+                if not all(chunk_span):
+                    iterating_kwargs[key].rechunk(nav_chunks=nav_chunks, sig_chunks=-1)
             else:
                 iterating_kwargs[key] = iterating_kwargs[key].as_lazy()
-                iterating_kwargs[key].rechunk(
-                    nav_chunks=nav_chunks,
-                    sig_chunks=-1
-                    )
-            extra_dims = (len(signal_dim_shape) -
-                          len(iterating_kwargs[key].axes_manager.signal_shape))
-            if extra_dims > 0:
-                old_shape = iterating_kwargs[key].data.shape
-                new_shape = old_shape + (1,)*extra_dims
-                args += (iterating_kwargs[key].data.reshape(new_shape), )
-            else:
-                args += (iterating_kwargs[key].data, )
+                iterating_kwargs[key].rechunk(nav_chunks=nav_chunks, sig_chunks=-1)
+            args += (iterating_kwargs[key].data,)
             arg_keys += (key,)
         return args, arg_keys
 

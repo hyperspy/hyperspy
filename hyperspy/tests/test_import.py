@@ -182,6 +182,8 @@ def test_dir_utils_markers():
     import hyperspy.utils.markers
     d = dir(hyperspy.utils.markers)
     assert d == [
+        'arrow',
+        'ellipse',
         'horizontal_line',
         'horizontal_line_segment',
         'line_segment',

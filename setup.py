@@ -79,8 +79,9 @@ install_req = ['scipy>=1.1',
                 # included in stdlib since v3.8, but this required version requires Python 3.10
                 # We can remove this requirement when the minimum supported version becomes Python 3.10
                'importlib_metadata>=3.6',
+               'toolz',
                # numcodecs currently only supported on x86_64/AMD64 machines
-               'zarr;platform_machine=="x86_64" or platform_machine=="AMD64"',
+               'zarr>=2.9.0;platform_machine=="x86_64" or platform_machine=="AMD64"',
                ]
 
 extras_require = {
@@ -97,7 +98,7 @@ extras_require = {
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
     "tests": ["pytest>=3.6", "pytest-mpl", "pytest-xdist", "pytest-rerunfailures", "pytest-instafail", "matplotlib>=3.1"],
-    "coverage":["pytest-cov", "codecov"],
+    "coverage":["pytest-cov"],
     # required to build the docs
     "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme", "sphinx-toggleprompt", "sphinxcontrib-mermaid", "sphinxcontrib-towncrier"],
 }

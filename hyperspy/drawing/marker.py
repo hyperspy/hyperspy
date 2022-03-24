@@ -216,7 +216,7 @@ class MarkerBase(object):
         if render_figure:
             self._render_figure()
 
-
+# markers are imported in hyperspy.utils.markers
 def dict2marker(marker_dict, marker_name):
     marker_type = marker_dict['marker_type']
     if marker_type == 'Point':
@@ -227,8 +227,12 @@ def dict2marker(marker_dict, marker_name):
         marker = markers.horizontal_line_segment.HorizontalLineSegment(0, 0, 0)
     elif marker_type == 'LineSegment':
         marker = markers.line_segment.LineSegment(0, 0, 0, 0)
+    elif marker_type == 'Arrow':
+        marker = markers.arrow.Arrow(0, 0, 0, 0)
     elif marker_type == 'Rectangle':
         marker = markers.rectangle.Rectangle(0, 0, 0, 0)
+    elif marker_type == 'Ellipse':
+        marker = markers.ellipse.Ellipse(0, 0, 0, 0)
     elif marker_type == 'Text':
         marker = markers.text.Text(0, 0, "")
     elif marker_type == 'VerticalLine':

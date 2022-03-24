@@ -30,8 +30,8 @@ class HorizontalLine(MarkerBase):
         If array, the marker will be updated when navigating. The array should
         have the same dimensions in the navigation axes.
     kwargs :
-        Keywords argument of axvline valid properties (i.e. recognized by
-        mpl.plot).
+        Keyword arguments are passed to
+        :py:meth:`matplotlib.axes.Axes.hlines`.
 
     Example
     -------
@@ -61,7 +61,6 @@ class HorizontalLine(MarkerBase):
             self.name,
             self.get_data_position('y1'),
             self.marker_properties['color'],
-            self.get_data_position('size'),
         )
         return(string)
 

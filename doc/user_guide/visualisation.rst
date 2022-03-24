@@ -186,9 +186,7 @@ Customising image plot
 
 The image plot can be customised by passing additional arguments when plotting.
 Colorbar, scalebar and contrast controls are HyperSpy-specific, however
-`matplotlib.imshow
-<http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.imshow>`_
-arguments are supported as well:
+:py:meth:`matplotlib.axes.Axes.imshow` arguments are supported as well:
 
 .. code-block:: python
 
@@ -334,13 +332,13 @@ Data files used in the following examples can be downloaded using
 
 .. NOTE::
     See also the
-    `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-demos/blob/master/electron_microscopy/EDS/>`_ .
+    `SEM EDS tutorials <https://nbviewer.org/github/hyperspy/hyperspy-demos/tree/main/electron_microscopy/EDS/>`_ .
 
 .. NOTE::
 
     The sample and the data used in this chapter are described in
     P. Burdet, `et al.`, Acta Materialia, 61, p. 3090-3098 (2013) (see
-    `abstract <http://infoscience.epfl.ch/record/185861/>`_).
+    `abstract <https://infoscience.epfl.ch/record/185861/>`_).
 
 Stack of 2D images can be imported as an 3D image and plotted with a slider
 instead of the 2D navigator as in the previous example.
@@ -442,13 +440,13 @@ Data files used in the following examples can be downloaded using
 
 .. NOTE::
     See also the
-    `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-demos/blob/master/electron_microscopy/EDS/>`_ .
+    `EDS tutorials <https://nbviewer.org/github/hyperspy/hyperspy-demos/tree/main/electron_microscopy/EDS/>`_ .
 
 Although HyperSpy does not currently support plotting when signal_dimension is
-greater than 2, `Mayavi <http://docs.enthought.com/mayavi/mayavi/>`_ can be
+greater than 2, `Mayavi <https://docs.enthought.com/mayavi/mayavi/>`_ can be
 used for this purpose.
 
-In the following example we also use `scikit-image <http://scikit-image.org/>`_
+In the following example we also use `scikit-image <https://scikit-image.org/>`_
 for noise reduction. More details about
 :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` method can be
 found in :ref:`EDS lines intensity<get_lines_intensity>`.
@@ -470,7 +468,7 @@ found in :ref:`EDS lines intensity<get_lines_intensity>`.
 
 .. NOTE::
     See also the
-    `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-demos/blob/master/electron_microscopy/EDS/>`_ .
+    `SEM EDS tutorials <https://nbviewer.org/github/hyperspy/hyperspy-demos/tree/main/electron_microscopy/EDS/>`_ .
 
 .. NOTE::
 
@@ -496,7 +494,7 @@ Plotting several images
 :py:func:`~.drawing.utils.plot_images` is used to plot several images in the
 same figure. It supports many configurations and has many options available
 to customize the resulting output. The function returns a list of
-`matplotlib axes <http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.axes>`_,
+:py:class:`matplotlib.axes.Axes`,
 which can be used to further customize the figure. Some examples are given
 below. Plots generated from another installation may look slightly different
 due to ``matplotlib`` GUI backends and default font sizes. To change the
@@ -617,8 +615,7 @@ to get a representative figure of the X-ray line intensities of an EDS
 spectrum image. This example also demonstrates changing the colormap (with
 `cmap`), adding scalebars to the plots (with `scalebar`), and changing the
 `padding` between the images. The padding is specified as a dictionary,
-which is used to call subplots_adjust method of matplotlib
-(see `documentation <http://matplotlib.org/api/figure_api.html#matplotlib.figure.Figure.subplots_adjust>`_).
+which is passed to :py:meth:`matplotlib.figure.Figure.subplots_adjust`.
 
 .. code-block:: python
 
@@ -910,7 +907,7 @@ There are also two other styles, "heatmap" and "mosaic":
   `mosaic` style.
 
 For the "heatmap" style, different
-`matplotlib color schemes <http://matplotlib.org/examples/color/colormaps_reference.html>`_
+`matplotlib color schemes <https://matplotlib.org/stable/gallery/color/colormap_reference.html>`_
 can be used:
 
 .. code-block:: python
@@ -1178,6 +1175,8 @@ Each slice is indicated with the same text on the navigator.
 
   Multi-dimensional markers.
 
+Permanent markers
+-----------------
 
 .. versionadded:: 1.2
    Permanent markers.
@@ -1332,3 +1331,45 @@ Permanent markers are stored in the HDF5 file if the signal is saved:
     >>> s1 = hs.load("storing_marker.hdf5")
     >>> s1.metadata.Markers
     └── point = <hyperspy.drawing._markers.point.Point object at 0x7efcfadb06d8>
+
+Supported markers
+-----------------
+
+The markers currently supported in HyperSpy are:
+
+.. table:: List of supported markers, their signature and their corresponding matplotlib objects.
+    :widths: 20 40 40
+
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | HyperSpy markers                                                             | Signature                         | Matplotlib objects                                 |
+    +==============================================================================+===================================+====================================================+
+    | :py:class:`~.drawing._markers.arrow.Arrow`                                   | ``x1, y1, x2, y2, **kwargs``      |  :py:class:`matplotlib.patches.FancyArrowPatch`    |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.ellipse.Ellipse`                               | ``x, y, width, height, **kwargs`` |  :py:class:`matplotlib.patches.Ellipse`            |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.horizontal_line.HorizontalLine`                | ``y, **kwargs``                   |  :py:meth:`matplotlib.axes.Axes.hlines`            |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.horizontal_line_segment.HorizontalLineSegment` | ``x1, x2, y, **kwargs``           |  :py:meth:`matplotlib.axes.Axes.hlines`            |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.line_segment.LineSegment`                      | ``x1, y1, x2, y2, **kwargs``      |  :py:meth:`matplotlib.axes.Axes.plot`              |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.point.Point`                                   | ``x1, y1, **kwargs``              |  :py:meth:`matplotlib.axes.Axes.scatter`           |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.rectangle.Rectangle`                           | ``x1, y1, x2, y2, **kwargs``      |  :py:class:`matplotlib.patches.Rectangle`          |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.text.Text`                                     | ``x, y, text, **kwargs``          |  :py:meth:`matplotlib.axes.Axes.text`              |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.vertical_line.VerticalLine`                    | ``x, **kwargs``                   |  :py:meth:`matplotlib.axes.Axes.axvline`           |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.vertical_line_segment.VerticalLineSegment`     | ``x, y1, y2, **kwargs``           |  :py:meth:`matplotlib.axes.Axes.axvline`           |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+
+
+Marker properties
+------------------
+
+The optional parameters (``**kwargs``, keyword arguments) can be used for extra parameters used in matplotlib.
+(The ``color`` property in rectangle marker is an alias of ``edgecolor`` for backward compatibility)
+
+
+

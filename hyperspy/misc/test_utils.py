@@ -27,9 +27,9 @@ import numpy as np
 def ignore_warning(message="", category=None):
     with warnings.catch_warnings():
         if category:
-            warnings.filterwarnings('ignore', message, category=category)
+            warnings.filterwarnings("ignore", message, category=category)
         else:
-            warnings.filterwarnings('ignore', message)
+            warnings.filterwarnings("ignore", message)
         yield
 
 
@@ -51,14 +51,16 @@ def update_close_figure(check_data_changed_close=True):
             p = signal._plot
             p.close()
             check_closing_plot(signal, check_data_changed_close)
+
         return wrapper
+
     return decorator2
 
 
 # Adapted from:
 # https://github.com/gem/oq-engine/blob/master/openquake/server/tests/helpers.py
 def assert_deep_almost_equal(actual, expected, *args, **kwargs):
-    """ Assert that two complex structures have almost equal contents.
+    """Assert that two complex structures have almost equal contents.
     Compares lists, dicts and tuples recursively. Checks numeric values
     using :py:func:`numpy.testing.assert_allclose` and
     checks all other values with :py:func:`numpy.testing.assert_equal`.
@@ -80,8 +82,8 @@ def assert_deep_almost_equal(actual, expected, *args, **kwargs):
         :py:func:`numpy.testing.assert_allclose` or
         :py:func:`assert_deep_almost_equal`.
     """
-    is_root = not '__trace' in kwargs
-    trace = kwargs.pop('__trace', 'ROOT')
+    is_root = not "__trace" in kwargs
+    trace = kwargs.pop("__trace", "ROOT")
     try:
         if isinstance(expected, (int, float, complex)):
             np.testing.assert_allclose(expected, actual, *args, **kwargs)
@@ -89,19 +91,19 @@ def assert_deep_almost_equal(actual, expected, *args, **kwargs):
             assert len(expected) == len(actual)
             for index in range(len(expected)):
                 v1, v2 = expected[index], actual[index]
-                assert_deep_almost_equal(v1, v2,
-                                         __trace=repr(index), *args, **kwargs)
+                assert_deep_almost_equal(v1, v2, __trace=repr(index), *args, **kwargs)
         elif isinstance(expected, dict):
             assert set(expected) == set(actual)
             for key in expected:
-                assert_deep_almost_equal(expected[key], actual[key],
-                                         __trace=repr(key), *args, **kwargs)
+                assert_deep_almost_equal(
+                    expected[key], actual[key], __trace=repr(key), *args, **kwargs
+                )
         else:
             assert expected == actual
     except AssertionError as exc:
-        exc.__dict__.setdefault('traces', []).append(trace)
+        exc.__dict__.setdefault("traces", []).append(trace)
         if is_root:
-            trace = ' -> '.join(reversed(exc.traces))
+            trace = " -> ".join(reversed(exc.traces))
             exc = AssertionError("%s\nTRACE: %s" % (exc, trace))
         raise exc
 
@@ -117,5 +119,5 @@ def sanitize_dict(dictionary):
 
 
 def check_running_tests_in_CI():
-    if 'CI' in os.environ:
-        return os.environ.get('CI')
+    if "CI" in os.environ:
+        return os.environ.get("CI")

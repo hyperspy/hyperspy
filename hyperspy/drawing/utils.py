@@ -1225,7 +1225,7 @@ def make_cmap(colors, name='my_colormap', position=None,
     it with matplotlib for simplified use.
 
     Adapted from Chris Slocum's code at:
-    https://github.com/CSlocumWX/custom_colormap/blob/master/custom_colormaps.py
+    https://github.com/CSlocumWX/custom_colormap/blob/master/custom_colormaps/custom_colormaps.py
     and used under the terms of that code's BSD-3 license
 
     Parameters
