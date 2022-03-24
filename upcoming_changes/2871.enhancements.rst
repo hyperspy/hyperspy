@@ -1,1 +1,1 @@
-Add new markers :py:meth:`~.utils.markers.arrow`, :py:meth:`~.utils.markers.ellipse` and filled :py:meth:`~.utils.markers.rectangle`.
+Add new markers :py:meth:`~drawing._markers.arrow`, :py:meth:`~.drawing._markers.ellipse` and filled :py:meth:`~.drawing._markers.rectangle.
