@@ -81,10 +81,13 @@ class TestPythonMrcz:
 
         # Add "File" metadata to testSignal
         testSignal.metadata.General.add_dictionary({
-            'FileReader': {
-                'hyperspy_version': hs_version,
-                'io_plugin': 'hyperspy.io_plugins.mrcz',
-                'load_timestamp': datetime.now().astimezone().isoformat()
+            'FileIO': {
+                '0': {
+                    'operation': 'load',
+                    'hyperspy_version': hs_version,
+                    'io_plugin': 'hyperspy.io_plugins.mrcz',
+                    'timestamp': datetime.now().astimezone().isoformat()
+                }
             }
         })
 
@@ -134,8 +137,8 @@ class TestPythonMrcz:
             print("Warning: file {} left on disk".format(mrcName))
 
         # change file timestamp to make the metadata of both signals equal
-        testSignal.metadata.General.FileReader.load_timestamp = (
-            reSignal.metadata.General.FileReader.load_timestamp
+        testSignal.metadata.General.FileIO.Number_0.timestamp = (
+            reSignal.metadata.General.FileIO.Number_0.timestamp
         )
 
         npt.assert_array_almost_equal(
@@ -161,6 +164,9 @@ class TestPythonMrcz:
             assert isinstance(reSignal, signals.ComplexSignal2D)
         else:
             assert isinstance(reSignal, signals.Signal2D)
+
+        # delete last load operation from reSignal metadata so we can compare
+        del reSignal.metadata.General.FileIO.Number_2
         assert_deep_almost_equal(testSignal.axes_manager.as_dictionary(),
                                  reSignal.axes_manager.as_dictionary())
         assert_deep_almost_equal(testSignal.metadata.as_dictionary(),

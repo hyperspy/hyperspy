@@ -131,9 +131,12 @@ def test_hyperspy_wrap():
             'title': 'EDX',
             'date': '2018-10-04',
             'time': '13:02:07',
-            'FileReader': {
-                'hyperspy_version': hs_version,
-                'io_plugin': 'hyperspy.io_plugins.bruker',
+            'FileIO': {
+                '0': {
+                    'operation': 'load',
+                    'hyperspy_version': hs_version,
+                    'io_plugin': 'hyperspy.io_plugins.bruker',
+                }
             }},
         'Sample': {
             'name': 'chevkinite',
@@ -158,8 +161,8 @@ def test_hyperspy_wrap():
     with open(filename_omd) as fn:
         # original_metadata:
         omd_ref = json.load(fn)
-    # delete timestamp since it's runtime dependent
-    del hype.metadata.General.FileReader.load_timestamp
+    # delete FileIO timestamp since it's runtime dependent
+    del hype.metadata.General.FileIO.Number_0.timestamp
     assert_deep_almost_equal(hype.metadata.as_dictionary(), md_ref)
     assert_deep_almost_equal(hype.original_metadata.as_dictionary(), omd_ref)
     assert hype.metadata.General.date == "2018-10-04"

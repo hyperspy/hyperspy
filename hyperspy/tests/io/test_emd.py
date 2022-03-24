@@ -343,10 +343,12 @@ class TestFeiEMD():
                           'time': '09:56:41',
                           'time_zone': 'BST',
                           'title': 'HAADF',
-                          'FileReader': {
-                              'hyperspy_version': hs_version,
-                              'io_plugin':
-                                  'hyperspy.io_plugins.emd'
+                          'FileIO': {
+                              '0': {
+                                  'operation': 'load',
+                                  'hyperspy_version': hs_version,
+                                  'io_plugin': 'hyperspy.io_plugins.emd'
+                              }
                           }
               },
               'Signal': {'signal_type': ''},
@@ -366,7 +368,7 @@ class TestFeiEMD():
         signal = load(os.path.join(self.fei_files_path, 'fei_emd_image.emd'),
                       lazy=lazy)
         # delete timestamp from metadata since it's runtime dependent
-        del signal.metadata.General.FileReader.load_timestamp
+        del signal.metadata.General.FileIO.Number_0.timestamp
         if lazy:
             assert signal._lazy
             signal.compute(close_file=True)

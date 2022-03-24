@@ -372,10 +372,12 @@ class TestSavingMetadataContainers:
                           'original_filename': 'test_diffraction_pattern.dm3',
                           'time': '18:56:37',
                           'title': 'test_diffraction_pattern',
-                          'FileReader': {
-                              'hyperspy_version': hs_version,
-                              'io_plugin':
-                                  'hyperspy.io_plugins.hspy'
+                          'FileIO': {
+                              '0': {
+                                  'operation': 'load',
+                                  'hyperspy_version': hs_version,
+                                  'io_plugin': 'hyperspy.io_plugins.hspy'
+                              }
                           }
               },
               'Signal': {'Noise_properties': {'Variance_linear_model': {'gain_factor': 1.0,
@@ -388,7 +390,7 @@ class TestSavingMetadataContainers:
                                         'unfolded': False}}}
         s = load(my_path / "hdf5_files" / 'example2_v3.1.hspy')
         # delete timestamp from metadata since it's runtime dependent
-        del s.metadata.General.FileReader.load_timestamp
+        del s.metadata.General.FileIO.Number_0.timestamp
         assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 

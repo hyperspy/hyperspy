@@ -24,10 +24,10 @@ example1_metadata = {'Acquisition_instrument': {'TEM': example1_TEM},
                                  'title': "NIO EELS OK SHELL",
                                  'date': "1991-10-01",
                                  'time': "12:00:00",
-                                 'FileReader': {
+                                 'FileIO': {'0': {
+                                     'operation': 'load',
                                      'hyperspy_version': hs_version,
-                                     'io_plugin': 'hyperspy.io_plugins.msa'
-                                    }
+                                     'io_plugin': 'hyperspy.io_plugins.msa'}}
                                  },
                      'Sample': {'thickness': 50.0,
                                 'thickness_units': "nm"},
@@ -107,10 +107,10 @@ example2_metadata = {'Acquisition_instrument': {'TEM': example2_TEM},
                                  'title': "NIO Windowless Spectra OK NiL",
                                  'date': "1991-10-01",
                                  'time': "12:00:00",
-                                 'FileReader': {
+                                 'FileIO': {'0': {
+                                     'operation': 'load',
                                      'hyperspy_version': hs_version,
-                                     'io_plugin': 'hyperspy.io_plugins.msa'
-                                    }
+                                     'io_plugin': 'hyperspy.io_plugins.msa'}}
                                  },
                      'Sample': {'thickness': 50.0,
                                 'thickness_units': "nm"},
@@ -174,7 +174,7 @@ class TestExample1:
             "msa_files",
             "example1.msa"))
         # delete timestamp from metadata since it's runtime dependent
-        del self.s.metadata.General.FileReader.load_timestamp
+        del self.s.metadata.General.FileIO.Number_0.timestamp
 
     def test_data(self):
         assert (
@@ -215,7 +215,10 @@ class TestExample1:
             self.s.save(fname2)
             s2 = load(fname2)
             # delete timestamp from metadata since it's runtime dependent
-            del s2.metadata.General.FileReader.load_timestamp
+            del s2.metadata.General.FileIO.Number_0.timestamp
+            del self.s.metadata.General.FileIO.Number_1
+            if 'timestamp' in self.s.metadata.General.FileIO.Number_0:
+                del self.s.metadata.General.FileIO.Number_0.timestamp
             assert (s2.metadata.General.original_filename ==
                     "example1-export.msa")
             s2.metadata.General.original_filename = "example1.msa"
@@ -230,7 +233,7 @@ class TestExample1WrongDate:
             "msa_files",
             "example1_wrong_date.msa"))
         # delete timestamp from metadata since it's runtime dependent
-        del self.s.metadata.General.FileReader.load_timestamp
+        del self.s.metadata.General.FileIO.Number_0.timestamp
 
     def test_metadata(self):
         md = copy.copy(example1_metadata)
@@ -251,7 +254,7 @@ class TestExample2:
             "msa_files",
             "example2.msa"))
         # delete timestamp from metadata since it's runtime dependent
-        del self.s.metadata.General.FileReader.load_timestamp
+        del self.s.metadata.General.FileIO.Number_0.timestamp
 
     def test_data(self):
         assert (
@@ -354,7 +357,8 @@ class TestExample2:
                     "example2-export.msa")
             s2.metadata.General.original_filename = "example2.msa"
             # delete timestamp from metadata since it's runtime dependent
-            del s2.metadata.General.FileReader.load_timestamp
+            del s2.metadata.General.FileIO.Number_0.timestamp
+            del self.s.metadata.General.FileIO.Number_1
             assert_deep_almost_equal(self.s.metadata.as_dictionary(),
                                      s2.metadata.as_dictionary())
 

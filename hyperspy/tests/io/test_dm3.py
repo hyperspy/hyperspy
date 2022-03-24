@@ -487,9 +487,13 @@ def test_multi_signal():
                     'date': '2019-12-10',
                     'time': '15:32:41',
                     'authors': 'JohnDoe',
-                    'FileReader': {
-                        'hyperspy_version': hs_version,
-                        'io_plugin': 'hyperspy.io_plugins.digital_micrograph'
+                    'FileIO': {
+                        '0': {
+                            'operation': 'load',
+                            'hyperspy_version': hs_version,
+                            'io_plugin':
+                                'hyperspy.io_plugins.digital_micrograph'
+                        }
                     }
         },
         'Signal': {'signal_type': '',
@@ -526,9 +530,12 @@ def test_multi_signal():
         'General': {
             'title': 'Plot',
             'original_filename': 'multi_signal.dm3',
-            'FileReader': {
-                'hyperspy_version': hs_version,
-                'io_plugin': 'hyperspy.io_plugins.digital_micrograph'
+            'FileIO': {
+                '0': {
+                    'operation': 'load',
+                    'hyperspy_version': hs_version,
+                    'io_plugin': 'hyperspy.io_plugins.digital_micrograph'
+                }
             }},
         'Signal': {
             'signal_type': '',
@@ -539,8 +546,8 @@ def test_multi_signal():
                     'gain_offset': 0.0}}}
     }
     # remove timestamps from metadata since these are runtime dependent
-    del s1.metadata.General.FileReader.load_timestamp
-    del s2.metadata.General.FileReader.load_timestamp
+    del s1.metadata.General.FileIO.Number_0.timestamp
+    del s2.metadata.General.FileIO.Number_0.timestamp
 
     # make sure the metadata dictionaries are as we expect
     assert s1.metadata.as_dictionary() == s1_md_truth
