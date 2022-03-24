@@ -869,10 +869,6 @@ def add_file_load_metadata(signal_dict, reader):
         'hyperspy_version': hs_version,
         'timestamp': datetime.now().astimezone().isoformat()
     }
-    if 'General' not in signal_dict['metadata']:
-        # if we don't even have basic metadata, just return as-is (shouldn't
-        # happen, but this came up in certain tests)
-        return signal_dict
     if 'FileIO' not in signal_dict['metadata']['General']:
         signal_dict['metadata']['General']['FileIO'] = {
             '0': mdata_dict
