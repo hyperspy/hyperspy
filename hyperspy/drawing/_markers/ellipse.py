@@ -91,7 +91,7 @@ class Ellipse(MarkerBase):
         try:
             self.marker.set_width(width)
             self.marker.set_height(height)
-        except: # pragma: no cover
+        except AttributeError: # pragma: no cover
             # set_width() and set_height() appear on matplotlib==3.3.0
             # after 3.3.0, marker.width, marker.height are renamed.
             self.marker.width = width

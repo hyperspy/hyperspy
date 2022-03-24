@@ -662,7 +662,6 @@ def test_plot_markers_zorder(reversed_order):
 
 
 def _test_plot_markers_repr(m, keys):
-    print(m, keys)
     match_str = r'<marker\.'+m.__class__.__name__+', '+m.name+r' \((.*)\)>'
     mm = re.match(match_str,repr(m))
     assert mm is not None
@@ -746,7 +745,6 @@ def test_markers_auto_update():
             s.axes_manager.indices = (ix, iy)
             for marker in marker_list:
                 _xy = [marker.get_data_position(ax) for ax in ('x1','y1','x2','y2')]
-                print(marker, marker.auto_update)
                 if marker.auto_update is False:
                     _xy2 = pos
                 else:
@@ -754,7 +752,6 @@ def test_markers_auto_update():
                 _name = marker.name
                 if marker.auto_update is False:
                     if _name == 'vertical_line':
-                        print(_xy2[0],_xy[0])
                         assert _xy2[0] == _xy[0]
                     elif _name == 'horizontal_line':
                         assert _xy2[0] == _xy[1]
