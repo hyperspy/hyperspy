@@ -176,7 +176,7 @@ Contains information about the software packages and versions used any time the
 Signal was created by reading the original data format (added in HyperSpy
 v1.7) or saved by one of HyperSpy's IO tools. If the signal is saved
 to HyperSpy's native format (``.hspy``), the metadata within the ``FileIO``
-node will be represent a history of the software configurations used when the
+node will represent a history of the software configurations used when the 
 conversion was made from the proprietary/original format to HyperSpy's
 format, as well as any time the signal was subsequently loaded from and saved
 to disk. Under the ``FileIO`` node will be one or more nodes named ``0``,
