@@ -1,0 +1,2 @@
+Add support for Hamamatsu HPD-TA Streak Camera tiff files,
+with axes and metadata parsing.
