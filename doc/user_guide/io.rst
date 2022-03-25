@@ -770,7 +770,8 @@ Currently HyperSpy has limited support for reading and saving the TIFF tags.
 However, the way that HyperSpy reads and saves the scale and the units of TIFF
 files is compatible with ImageJ/Fiji and Gatan Digital Micrograph software.
 HyperSpy can also import the scale and the units from TIFF files saved using
-FEI, Zeiss SEM and Olympus SIS software.
+FEI, Zeiss SEM, Olympus SIS, Jeol SightX and Hamamatsu HPD-TA (streak camera)
+software.
 
 .. code-block:: python
 
