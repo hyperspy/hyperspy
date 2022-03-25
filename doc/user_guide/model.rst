@@ -1462,7 +1462,7 @@ Strategies
 
 During operation SAMFire uses a list of strategies to determine how to select
 the next pixel and estimate its starting parameters. Only one strategy is used
-at a time. Next strategy is chosen when no new pixels are can be fitted with
+at a time. Next strategy is chosen when no new pixels can be fitted with
 the current strategy. Once either the strategy list is exhausted or the full
 dataset fitted, the algorithm terminates.
 
@@ -1538,7 +1538,7 @@ it's recommended specify it explicitly via the ``ipyparallel=False`` argument,
 to use the fall-back option of `multiprocessing`.
 
 By default a new SAMFire object already has two (and currently only) strategies
-added to its strategist list:
+added to its ``strategies`` list:
 
 .. code-block:: python
 
