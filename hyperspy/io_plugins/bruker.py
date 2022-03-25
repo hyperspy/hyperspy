@@ -961,16 +961,16 @@ class BCF_reader(SFS_reader):
             index = self.def_index
         if type(cutoff_at_kV) in (int, float):
             eds = self.header.spectra_data[index]
-            max_chan = eds.energy_to_channel(cutoff_at_kV)
+            n_channels = eds.energy_to_channel(cutoff_at_kV)
         elif cutoff_at_kV == 'auto':
-            max_chan = self.header.spectra_data[index].last_non_zero_channel()
+            n_channels = self.header.spectra_data[index].last_non_zero_channel() - 1
         elif cutoff_at_kV == 'lowest_constraint':
-            max_chan = self.header.estimate_map_channels(index=index)
+            n_channels = self.header.estimate_map_channels(index=index)
         else:  # ==None
-            max_chan = self.header.spectra_data[index].data.size + 1
+            n_channels = self.header.spectra_data[index].data.size
         shape = (ceil(self.header.image.height / downsample),
                  ceil(self.header.image.width / downsample),
-                 max_chan)
+                 n_channels)
         sfs_file = SFS_reader(self.filename)
         vrt_file_hand = sfs_file.get_file(
             'EDSDatabase/SpectrumData' + str(index))
