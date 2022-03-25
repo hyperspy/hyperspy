@@ -555,6 +555,10 @@ class EDXSpectrum(object):
         # main data:
         self.data = np.fromstring(spectrum.find('./Channels').text,
                                   dtype='Q', sep=",")
+    
+    def last_non_zero_channel(self):
+        """return index of last nonzero channel"""
+        return self.data.nonzero()[0][-1]
 
     def energy_to_channel(self, energy, kV=True):
         """ convert energy to channel index,
@@ -938,9 +942,12 @@ class BCF_reader(SFS_reader):
             skimage.measure, the parser populates reduced array by suming
             results of pixels, thus having lower memory requiriments. Default
             is 1.
-        cutoff_at_kV : None or float
-            Value in keV to truncate the array at. Helps reducing size of
-            array. Default is None.
+        cutoff_at_kV : None, float, int or str
+            Value or method to truncate the array at energy in kV. Helps reducing size of
+            array. Default is None (does not truncate). Numerical value is in kV.
+            "auto" truncates to the last non zero channel (should not be used with slices).
+            "lowest_constraint" truncates to instruments acceleration voltage
+            (should be used only if xrays were generated using electron bombardment).
         lazy : bool
             It True, returns dask.array otherwise a numpy.array. Default is
             False.
@@ -955,8 +962,12 @@ class BCF_reader(SFS_reader):
         if type(cutoff_at_kV) in (int, float):
             eds = self.header.spectra_data[index]
             max_chan = eds.energy_to_channel(cutoff_at_kV)
-        else:
+        elif cutoff_at_kV == 'auto':
+            max_chan = self.header.spectra_data[index].last_non_zero_channel()
+        elif cutoff_at_kV == 'lowest_constraint':
             max_chan = self.header.estimate_map_channels(index=index)
+        else:  # ==None
+            max_chan = self.header.spectra_data[index].data.size + 1
         shape = (ceil(self.header.image.height / downsample),
                  ceil(self.header.image.width / downsample),
                  max_chan)
