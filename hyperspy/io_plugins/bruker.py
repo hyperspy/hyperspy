@@ -743,9 +743,9 @@ class HyperHeader(object):
             for j in elements.findall(
                     "./ClassInstance[@Type='TRTSpectrumRegion']"):
                 tmp_d = dictionarize(j)
-                self.elements[tmp_d['XmlClassName']] = {'line': tmp_d['Line'],
-                                                        'energy': tmp_d['Energy']}
-        except (AttributeError, KeyError):
+                self.elements[tmp_d['XmlClassName']] = {'line': tmp_d.get('Line', 'Ka'),
+                                                        'energy': tmp_d.get('Energy')}
+        except AttributeError:
             _logger.info('no element selection present in the spectra..')
 
     def _set_sum_edx(self, root, indexes):
