@@ -539,8 +539,8 @@ def load_with_reader(
                 signal_dict["metadata"]["Signal"] = {}
             if signal_type is not None:
                 signal_dict['metadata']["Signal"]['signal_type'] = signal_type
-            signal_dict = add_file_load_metadata(signal_dict, reader)
             signal = dict2signal(signal_dict, lazy=lazy)
+            signal = _add_file_load_save_metadata('load', signal, reader)
             path = _parse_path(filename)
             folder, filename = os.path.split(os.path.abspath(path))
             filename, extension = os.path.splitext(filename)
@@ -846,7 +846,7 @@ def save(filename, signal, overwrite=None, **kwds):
     if write:
         # Pass as a string for now, pathlib.Path not
         # properly supported in io_plugins
-        signal = add_file_save_metadata(signal, writer)
+        signal = _add_file_load_save_metadata('save', signal, writer)
         if not isinstance(filename, MutableMapping):
             writer.file_writer(str(filename), signal, **kwds)
             _logger.info(f'{filename} was created')
@@ -862,49 +862,49 @@ def save(filename, signal, overwrite=None, **kwds):
                 signal.tmp_parameters.set_item('extension', extension)
 
 
-def add_file_load_metadata(signal_dict, reader):
+def _add_file_load_save_metadata(operation, signal, io_plugin):
     mdata_dict = {
-        'operation': 'load',
-        'io_plugin': reader.__loader__.name,
+        'operation': operation,
+        'io_plugin': io_plugin.__loader__.name,
         'hyperspy_version': hs_version,
         'timestamp': datetime.now().astimezone().isoformat()
     }
-    if 'FileIO' not in signal_dict['metadata']['General']:
-        signal_dict['metadata']['General']['FileIO'] = {
-            '0': mdata_dict
+    if isinstance(signal.metadata, dict):
+        return _add_file_load_save_metadata_dict(operation, signal,
+                                                 io_plugin, mdata_dict)
+
+    # get the largest integer key present under General.FileIO, returning 0
+    # as default if none are present
+    largest_index = max(
+        [int(i.replace('Number_', '')) + 1
+         for i in signal.metadata.get_item('General.FileIO', {}).keys()] + [0])
+
+    signal.metadata.set_item(f"General.FileIO.{largest_index}", mdata_dict)
+
+    return signal
+
+
+def _add_file_load_save_metadata_dict(operation, signal, io_plugin, mdata_dict):
+    """
+    A version of :py:func:`_add_file_load_save_metadata` that processes
+    when the metadata is stored as a dict rather than the usual
+    DictionaryTreeBrowser
+    """
+    try:
+        f_io = signal.metadata['General']['FileIO']
+        largest_index = max([int(i) + 1 for i in f_io.keys()] + [0])
+    except KeyError:
+        largest_index = 0
+
+    if 'General' not in signal.metadata:
+        signal.metadata['General'] = {
+            'FileIO': {f'{largest_index}': mdata_dict}
         }
+    elif 'FileIO' not in signal.metadata['General']:
+        signal.metadata['General']['FileIO'] = \
+            {f'{largest_index}': mdata_dict}
     else:
-        largest_index = max([
-            int(i.replace('Number_', '')) for i in
-            signal_dict['metadata']['General']['FileIO'].keys()])
-        signal_dict['metadata'][
-            'General']['FileIO'][str(largest_index + 1)] = mdata_dict
-
-    return signal_dict
-
-
-def add_file_save_metadata(signal, writer):
-    mdata_dict = {
-        'operation': 'save',
-        'io_plugin': writer.__loader__.name,
-        'hyperspy_version': hs_version,
-        'timestamp': datetime.now().astimezone().isoformat()
-    }
-    if 'General' not in signal.metadata or isinstance(signal.metadata, dict):
-        # if we don't even have basic metadata as a DictionaryTreeBrowser,
-        # just return as-is (shouldn't happen, but this came up in tests of
-        # test_nexus_hdf.test_save_metadata_as_dict())
-        return signal
-    if 'FileIO' not in signal.metadata.General:
-        signal.metadata.General.add_dictionary = {
-            '0': mdata_dict
-        }
-    else:
-        largest_index = \
-            max([int(i.replace('Number_', '')) for i in
-                 signal.metadata.General.FileIO.keys()])
-        signal.metadata.General.FileIO.add_dictionary({
-            f'{largest_index + 1}': mdata_dict
-        })
+        signal.metadata['General'][
+            'FileIO'][f'{largest_index}'] = mdata_dict
 
     return signal
