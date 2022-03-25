@@ -1060,34 +1060,35 @@ Extra loading arguments
 
 Example of loading reduced (downsampled, and with energy range cropped)
 "spectrum only" data from bcf (original shape: 80keV EDS range (4096 channels),
-100x75 pixels):
+100x75 pixels; SEM acceleration voltage: 20kV):
 
 .. code-block:: python
 
     >>> hs.load("sample80kv.bcf", select_type='spectrum', downsample=2, cutoff_at_kV=10)
     <EDSSEMSpectrum, title: EDX, dimensions: (50, 38|595)>
 
-load the same file without extra arguments:
+load the same file to limiting array size to SEM acceleration voltage:
 
 .. code-block:: python
 
-    >>> hs.load("sample80kv.bcf")
+    >>> hs.load("sample80kv.bcf", cutoff_at_kV='lowest_constraint')
     [<Signal2D, title: BSE, dimensions: (|100, 75)>,
     <Signal2D, title: SE, dimensions: (|100, 75)>,
-    <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|1095)>]
+    <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|1024)>]
 
 The loaded array energy dimension can by forced to be larger than the data
 recorded by setting the 'cutoff_at_kV' kwarg to higher value:
 
 .. code-block:: python
 
-    >>> hs.load("sample80kv.bcf", cutoff_at_kV=80)
+    >>> hs.load("sample80kv.bcf", cutoff_at_kV=60)
     [<Signal2D, title: BSE, dimensions: (|100, 75)>,
     <Signal2D, title: SE, dimensions: (|100, 75)>,
-    <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|4096)>]
+    <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|3072)>]
 
-Note that setting downsample to >1 currently locks out using SEM imagery
-as navigator in the plotting.
+loading without setting cutoff_at_kV value would return data with all 4096
+channels. Note that setting downsample to >1 currently locks out using SEM
+images for navigation in the plotting.
 
 .. _spx-format:
 
