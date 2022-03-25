@@ -1047,8 +1047,16 @@ Extra loading arguments
   The underlying method of downsampling is unchangeable: sum. Differently than
   ``block_reduce`` from skimage.measure it is memory efficient (does not creates
   intermediate arrays, works inplace).
-- ``cutoff_at_kV`` : if set (can be int or float >= 0) can be used either to crop
-  or enlarge energy (or channels) range at max values (default None).
+- ``cutoff_at_kV`` : if set (can be None, int, float (kV), one of 'auto' or
+  'lowest_constraint') can be used either to crop or enlarge energy (or number of
+  channels) range at max values. It can be used to conserve memory or enlarge
+  the range if needed to mach the size of other file. Default value is None
+  (which does not influence size). Numerical values should be in kV.
+  "auto" truncates to the last non zero channel (should not be used for stacks,
+  as low beam current EDS can have different last non zero channel per slice).
+  "lowest_constraint" truncates channels to SEM/TEM acceleration voltage or 
+  energy at last channel, depending which is smaller
+  (should be used only if X-Rays were generated using electron beam).
 
 Example of loading reduced (downsampled, and with energy range cropped)
 "spectrum only" data from bcf (original shape: 80keV EDS range (4096 channels),
