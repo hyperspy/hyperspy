@@ -17,6 +17,8 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import re
+import csv
 import logging
 from datetime import datetime, timedelta
 from dateutil import parser
@@ -31,7 +33,6 @@ from hyperspy.misc import rgb_tools
 from hyperspy.misc.date_time_tools import get_date_time_from_metadata
 
 _logger = logging.getLogger(__name__)
-
 
 # Plugin characteristics
 # ----------------------
@@ -137,15 +138,13 @@ def file_reader(filename, force_read_resolution=False, lazy=False, **kwds):
 
     with TiffFile(filename, **kwds) as tiff:
         dict_list = [_read_serie(tiff, serie, filename, force_read_resolution,
-                                 lazy=lazy, **kwds)
-            for serie in tiff.series]
+                                 lazy=lazy, **kwds) for serie in tiff.series]
 
     return dict_list
 
 
 def _read_serie(tiff, serie, filename, force_read_resolution=False,
                 lazy=False, memmap=None, **kwds):
-
     axes = serie.axes
     page = serie.pages[0]
     if hasattr(serie, 'shape'):
@@ -230,7 +229,7 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
                 else:
                     dt = datetime.strptime(op['DateTime'], "%Y/%m/%d %H:%M")
             except:
-                _logger.info("Date/Time is invalid : "+op['DateTime'])
+                _logger.info("Date/Time is invalid : " + op['DateTime'])
         if dt is not None:
             md['General']['date'] = dt.date().isoformat()
             md['General']['time'] = dt.time().isoformat()
@@ -254,7 +253,7 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
         dc = _load_data(*data_args, memmap=memmap, **kwds)
 
     if _is_streak_hamamatsu(op):
-        op.update({'ImageDescription_Parsed': _get_hamamatsu_streak_description(tiff,op)})
+        op.update({'ImageDescription_Parsed': _get_hamamatsu_streak_description(tiff, op)})
 
     metadata_mapping = get_metadata_mapping(page, op)
     if 'SightX_Notes' in op:
@@ -266,6 +265,7 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
             'mapping': metadata_mapping,
             }
 
+
 def _load_data(serie, is_rgb, sl=None, memmap=None, **kwds):
     dc = serie.asarray(out=memmap)
     _logger.debug("data shape: {0}".format(dc.shape))
@@ -275,9 +275,10 @@ def _load_data(serie, is_rgb, sl=None, memmap=None, **kwds):
         dc = dc[tuple(sl)]
     return dc
 
+
 def _axes_defaults():
     """Get default axes dictionaries, with offsets and scales"""
-    #Default initialisation dictionaries for axes
+
     axes_l = ['x', 'y', 'z']
     scales = {axis: 1.0 for axis in axes_l}
     offsets = {axis: 0.0 for axis in axes_l}
@@ -286,8 +287,10 @@ def _axes_defaults():
     return scales, offsets, units, intensity_axis
 
 
-def _is_force_readable(op,force_read_resolution) -> bool:
-    return (force_read_resolution and 'ResolutionUnit' in op and 'XResolution' in op)
+def _is_force_readable(op, force_read_resolution) -> bool:
+    return force_read_resolution and 'ResolutionUnit' in op and 'XResolution' in op
+
+
 def _axes_force_read(op):
     scales, offsets, units, intensity_axis = _axes_defaults()
     res_unit_tag = op['ResolutionUnit']
@@ -308,7 +311,9 @@ def _axes_force_read(op):
 
 def _is_fei(tiff) -> bool:
     return 'fei' in tiff.flags
-def _axes_fei(tiff,op):
+
+
+def _axes_fei(tiff, op):
     _logger.debug("Reading FEI tif metadata")
 
     # scales, offsets, units, intensity_axis = _axes_forceread(op, force_read_resolution)
@@ -324,8 +329,11 @@ def _axes_fei(tiff,op):
     units.update({'x': 'm', 'y': 'm'})
     return scales, offsets, units, intensity_axis
 
+
 def _is_zeiss(tiff) -> bool:
     return 'sem' in tiff.flags
+
+
 def _axes_zeiss(tiff, op):
     _logger.debug("Reading Zeiss tif pixel_scale")
     # scales, offsets, units, intensity_axis = _axes_forceread(op, force_read_resolution)
@@ -348,6 +356,8 @@ def _axes_zeiss(tiff, op):
 
 def _is_tvips(tiff) -> bool:
     return 'tvips' in tiff.flags
+
+
 def _axes_tvips(op):
     _logger.debug("Reading TVIPS tif metadata")
 
@@ -369,6 +379,8 @@ def _axes_tvips(op):
 
 def _is_olympus_sis(page) -> bool:
     return page.is_sis
+
+
 def _axes_olympus_sis(page, op):
     _logger.debug("Reading Olympus SIS tif metadata")
     scales, offsets, units, intensity_axis = _axes_defaults()
@@ -388,6 +400,8 @@ def _axes_olympus_sis(page, op):
 
 def _is_jeol_sightx(op) -> bool:
     return op.get('Make', None) == "JEOL Ltd."
+
+
 def _axes_jeol_sightx(op):
     # convert xml text to dictionary of tiff op['ImageDescription']
     # convert_xml_to_dict need to remove white spaces before decoding XML
@@ -396,39 +410,41 @@ def _axes_jeol_sightx(op):
     jeol_xml = ''.join([line.strip(" \r\n\t\x01\x00") for line in op['ImageDescription'].split('\n')])
     from hyperspy.misc.io.tools import convert_xml_to_dict
     jeol_dict = convert_xml_to_dict(jeol_xml)
-    op['ImageDescription']= jeol_dict['TemReporter']
+    op['ImageDescription'] = jeol_dict['TemReporter']
     eos = op["ImageDescription"]["Eos"]["EosMode"]
     illumi = op["ImageDescription"]["IlluminationSystem"]
     imaging = op["ImageDescription"]["ImageFormingSystem"]
 
-    #TEM/STEM
+    # TEM/STEM
     is_STEM = eos == "modeASID"
     mode_strs = []
-    mode_strs.append("STEM" if is_STEM else "TEM" )
-    mode_strs.append(illumi["ImageField"][4:]) # Bright Fiels?
+    mode_strs.append("STEM" if is_STEM else "TEM")
+    mode_strs.append(illumi["ImageField"][4:])  # Bright Fiels?
     if is_STEM:
         mode_strs.append(imaging["ScanningImageFormingMode"][4:])
     else:
         mode_strs.append(imaging["ImageFormingMode"][4:])
-    mode_strs.append(imaging["SelectorString"]) # Mag / Camera Length
+    mode_strs.append(imaging["SelectorString"])  # Mag / Camera Length
     op["SightX_Notes"] = ", ".join(mode_strs)
 
     res_unit_tag = op['ResolutionUnit']
     if res_unit_tag == TIFF.RESUNIT.INCH:
         scale = 0.0254  # inch/m
     else:
-        scale = 0.01 # tiff scaling, cm/m
+        scale = 0.01  # tiff scaling, cm/m
     # TEM - MAG
     if (eos == "eosTEM") and (imaging["ModeString"] == "MAG"):
         mag = float(imaging["SelectorValue"])
-        scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op, factor = scale / mag * 1e9)
-        units = {"x":"nm", "y":"nm","z":"nm"}
+        scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op, factor=scale / mag * 1e9)
+        units = {"x": "nm", "y": "nm", "z": "nm"}
     # TEM - DIFF
     elif (eos == "eosTEM") and (imaging["ModeString"] == "DIFF"):
         def wave_len(ht):
             import scipy.constants as constants
-            momentum = 2 * constants.m_e * constants.elementary_charge * ht * (1 + constants.elementary_charge * ht / (2 * constants.m_e * constants.c ** 2))
+            momentum = 2 * constants.m_e * constants.elementary_charge * ht * \
+                (1 + constants.elementary_charge * ht / (2 * constants.m_e * constants.c ** 2))
             return constants.h / np.sqrt(momentum)
+
         camera_len = float(imaging["SelectorValue"])
         ht = float(op["ImageDescription"]["ElectronGun"]["AccelerationVoltage"])
         if imaging["SelectorUnitString"] == "mm":  # convert to "m"
@@ -436,7 +452,7 @@ def _axes_jeol_sightx(op):
         elif imaging["SelectorUnitString"] == "cm":  # convert to "m"
             camera_len /= 100
         scale /= camera_len * wave_len(ht) * 1e9  # in nm
-        scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op, factor = scale)
+        scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op, factor=scale)
         units = {"x": "1 / nm", "y": "1 / nm", "z": t.Undefined}
     return scales, offsets, units, intensity_axis
 
@@ -448,7 +464,7 @@ def _is_streak_hamamatsu(op) -> bool:
     is_hamatif = True
 
     # Check that the original op has an "Artist" that copyrights as hamamatsu
-    if not 'Artist' in op:
+    if 'Artist' not in op:
         is_hamatif = False
         return is_hamatif
     else:
@@ -458,7 +474,7 @@ def _is_streak_hamamatsu(op) -> bool:
             return is_hamatif
 
     # Check that the original op has a "Software" corresponding to the HPD-TA
-    if not 'Software' in op:
+    if 'Software' not in op:
         is_hamatif = False
         return is_hamatif
     else:
@@ -467,10 +483,12 @@ def _is_streak_hamamatsu(op) -> bool:
             is_hamatif = False
 
     return is_hamatif
+
+
 def _get_hamamatsu_streak_description(tiff, op):
     """Extract a dictionary recursively from the ImageDescription
     Metadata field in a Hamamatsu Streak .tiff file"""
-    import csv
+
     desc = op['ImageDescription']
     dict_meta = {}
     reader = csv.reader(desc.splitlines(), delimiter=',', quotechar='"')
@@ -482,8 +500,6 @@ def _get_hamamatsu_streak_description(tiff, op):
             if len(spl) == 2:
                 key_dict[spl[0]] = spl[1].strip('"')
         dict_meta[key] = key_dict
-
-    import re
 
     # Scaling entry
     scaling = dict_meta['Scaling']
@@ -514,6 +530,8 @@ def _get_hamamatsu_streak_description(tiff, op):
     dict_meta['Scaling']['ScalingYaxis'] = yax
 
     return dict_meta
+
+
 def _axes_hamamatsu_streak(tiff, op):
     _logger.debug("Reading Hamamatsu Streak Map tif metadata")
 
@@ -528,8 +546,8 @@ def _axes_hamamatsu_streak(tiff, op):
     [xsc, xof] = np.polyfit(np.arange(len(xax)), xax, 1)
     [ysc, yof] = np.polyfit(np.arange(len(yax)), yax, 1)
 
-    #Unfortunately the X/Y naming convention between Hamamatsu
-    #and hyperspy is inverted
+    # Unfortunately the X/Y naming convention between Hamamatsu
+    # and hyperspy is inverted
     scales.update({'x': ysc, 'y': xsc})
     offsets.update({'x': yof, 'y': xof})
     units.update({'x': desc['Scaling']['ScalingYUnit'],
@@ -540,6 +558,8 @@ def _axes_hamamatsu_streak(tiff, op):
 
 def _is_imagej(tiff) -> bool:
     return 'imagej' in tiff.flags
+
+
 def _add_axes_imagej(tiff, op, scales, offsets, units, intensity_axis):
     imagej_metadata = tiff.imagej_metadata
     if 'ImageJ' in imagej_metadata:
@@ -556,9 +576,11 @@ def _add_axes_imagej(tiff, op, scales, offsets, units, intensity_axis):
 
 def _is_digital_micrograph(op) -> bool:
     # for files containing DM metadata
-    tags = ['65003','65004','65005','65009','65010','65011','65006','65007','65008','65022','65024','65025']
+    tags = ['65003', '65004', '65005', '65009', '65010', '65011', '65006', '65007', '65008', '65022', '65024', '65025']
     search_result = [tag in op for tag in tags]
     return any(search_result)
+
+
 def _add_axes_digital_micrograph(op, scales, offsets, units, intensity_axis):
     if '65003' in op:
         _logger.debug("Reading Gatan DigitalMicrograph tif metadata")
@@ -589,13 +611,13 @@ def _add_axes_digital_micrograph(op, scales, offsets, units, intensity_axis):
 
 
 def _parse_scale_unit(tiff, page, op, shape, force_read_resolution):
-    #Force reading always has priority and returns immediately
-    if _is_force_readable(op,force_read_resolution):
+    # Force reading always has priority and returns immediately
+    if _is_force_readable(op, force_read_resolution):
         scales, offsets, units, intensity_axis = _axes_force_read(op)
         return scales, offsets, units, intensity_axis
-    #Other axes readers can be overloaded
+    # Other axes readers can be overloaded
     elif _is_fei(tiff):
-        scales, offsets, units, intensity_axis = _axes_fei(tiff,op)
+        scales, offsets, units, intensity_axis = _axes_fei(tiff, op)
     elif _is_zeiss(tiff):
         scales, offsets, units, intensity_axis = _axes_zeiss(tiff, op)
     elif _is_tvips(tiff):
@@ -606,13 +628,14 @@ def _parse_scale_unit(tiff, page, op, shape, force_read_resolution):
         scales, offsets, units, intensity_axis = _axes_jeol_sightx(op)
     elif _is_streak_hamamatsu(op):
         scales, offsets, units, intensity_axis = _axes_hamamatsu_streak(tiff, op)
-    #Axes are otherwise set to defaults
+    # Axes are otherwise set to defaults
     else:
         scales, offsets, units, intensity_axis = _axes_defaults()
 
-    #Finally, axes descriptors can be additionnally parsed from digital micrograph or imadej-style files
+    # Finally, axes descriptors can be additionnally parsed from digital micrograph or imadej-style files
     if _is_digital_micrograph(op):
-        scales, offsets, units, intensity_axis = _add_axes_digital_micrograph(op, scales, offsets, units, intensity_axis)
+        scales, offsets, units, intensity_axis = _add_axes_digital_micrograph(op, scales, offsets, units,
+                                                                              intensity_axis)
     if _is_imagej(tiff):
         scales, offsets, units, intensity_axis = _add_axes_imagej(tiff, op, scales, offsets, units, intensity_axis)
 
@@ -664,11 +687,11 @@ def _get_dm_kwargs_extratag(signal, scales, units, offsets):
                  (65007, 'd', 1, offsets[-2], False),  # y origin
                  (65009, 'd', 1, float(scales[-1]), False),  # x scale
                  (65010, 'd', 1, float(scales[-2]), False)]  # y scale
-#                 (65012, 's', 3, units[-1], False),  # x unit full name
-#                 (65013, 's', 3, units[-2], False)]  # y unit full name
-#                 (65015, 'i', 1, 1, False), # don't know
-#                 (65016, 'i', 1, 1, False), # don't know
-#                 (65026, 'i', 1, 1, False)] # don't know
+    #                 (65012, 's', 3, units[-1], False),  # x unit full name
+    #                 (65013, 's', 3, units[-2], False)]  # y unit full name
+    #                 (65015, 'i', 1, 1, False), # don't know
+    #                 (65016, 'i', 1, 1, False), # don't know
+    #                 (65026, 'i', 1, 1, False)] # don't know
     md = signal.metadata
     if md.has_item('Signal.quantity'):
         try:
@@ -775,150 +798,153 @@ def _parse_string(value):
 
 mapping_fei = {
     'fei_metadata.Beam.HV':
-    ("Acquisition_instrument.SEM.beam_energy", lambda x: float(x) * 1e-3),
+        ("Acquisition_instrument.SEM.beam_energy", lambda x: float(x) * 1e-3),
     'fei_metadata.Stage.StageX':
-    ("Acquisition_instrument.SEM.Stage.x", None),
+        ("Acquisition_instrument.SEM.Stage.x", None),
     'fei_metadata.Stage.StageY':
-    ("Acquisition_instrument.SEM.Stage.y", None),
+        ("Acquisition_instrument.SEM.Stage.y", None),
     'fei_metadata.Stage.StageZ':
-    ("Acquisition_instrument.SEM.Stage.z", None),
+        ("Acquisition_instrument.SEM.Stage.z", None),
     'fei_metadata.Stage.StageR':
-    ("Acquisition_instrument.SEM.Stage.rotation", None),
+        ("Acquisition_instrument.SEM.Stage.rotation", None),
     'fei_metadata.Stage.StageT':
-    ("Acquisition_instrument.SEM.Stage.tilt", None),
+        ("Acquisition_instrument.SEM.Stage.tilt", None),
     'fei_metadata.Stage.WorkingDistance':
-    ("Acquisition_instrument.SEM.working_distance", lambda x: float(x) * 1e3),
+        ("Acquisition_instrument.SEM.working_distance", lambda x: float(x) * 1e3),
     'fei_metadata.Scan.Dwelltime':
-    ("Acquisition_instrument.SEM.dwell_time", None),
+        ("Acquisition_instrument.SEM.dwell_time", None),
     'fei_metadata.EBeam.BeamCurrent':
-    ("Acquisition_instrument.SEM.beam_current", _parse_beam_current_FEI),
+        ("Acquisition_instrument.SEM.beam_current", _parse_beam_current_FEI),
     'fei_metadata.System.SystemType':
-    ("Acquisition_instrument.SEM.microscope", None),
+        ("Acquisition_instrument.SEM.microscope", None),
     'fei_metadata.User.Date':
-    ("General.date", lambda x: parser.parse(x).date().isoformat()),
+        ("General.date", lambda x: parser.parse(x).date().isoformat()),
     'fei_metadata.User.Time':
-    ("General.time", lambda x: parser.parse(x).time().isoformat()),
+        ("General.time", lambda x: parser.parse(x).time().isoformat()),
     'fei_metadata.User.User':
-    ("General.authors", None)
+        ("General.authors", None)
 }
+
 
 def get_jeol_sightx_mapping(op):
     mapping = {
         'ImageDescription.ElectronGun.AccelerationVoltage':
-        ("Acquisition_instrument.TEM.beam_energy", lambda x: float(x)*0.001),  #keV
+            ("Acquisition_instrument.TEM.beam_energy", lambda x: float(x) * 0.001),  # keV
         'ImageDescription.ElectronGun.BeamCurrent':
-        ("Acquisition_instrument.TEM.beam_current", lambda x: float(x)*0.001), #nA
+            ("Acquisition_instrument.TEM.beam_current", lambda x: float(x) * 0.001),  # nA
         'ImageDescription.Instruments':
-        ("Acquisition_instrument.TEM.microscope", None),
+            ("Acquisition_instrument.TEM.microscope", None),
 
-        ## Gonio Stage
+        # Gonio Stage
         # depends on sample holder
         #    ("Acquisition_instrument.TEM.Stage.rotation", None),  #deg
         'ImageDescription.GonioStage.StagePosition.TX':
-        ("Acquisition_instrument.TEM.Stage.tilt_alpha", None), #deg
+            ("Acquisition_instrument.TEM.Stage.tilt_alpha", None),  # deg
         'ImageDescription.GonioStage.StagePosition.TY':
-        ("Acquisition_instrument.TEM.Stage.tilt_beta", None), #deg
+            ("Acquisition_instrument.TEM.Stage.tilt_beta", None),  # deg
         # ToDo: MX(Motor)+PX(Piezo), MY+PY should be used
         #    'ImageDescription.GonioStage.StagePosition.MX':
         #    ("Acquisition_instrument.TEM.Stage.x", lambda x: float(x)*1E-6), # mm
         #    'ImageDescription.GonioStage.StagePosition.MY':
         #    ("Acquisition_instrument.TEM.Stage.y", lambda x: float(x)*1E-6), # mm
         'ImageDescription.GonioStage.MZ':
-        ("Acquisition_instrument.TEM.Stage.z", lambda x: float(x)*1E-6), # mm
+            ("Acquisition_instrument.TEM.Stage.z", lambda x: float(x) * 1E-6),  # mm
 
         #    ("General.notes", None),
         #    ("General.title", None),
         'ImageDescription.Eos.EosMode':
-        ("Acquisition_instrument.TEM.acquisition_mode",
-         lambda x: "STEM" if x == "eosASID" else "TEM"),
+            ("Acquisition_instrument.TEM.acquisition_mode",
+             lambda x: "STEM" if x == "eosASID" else "TEM"),
 
         "ImageDescription.ImageFormingSystem.SelectorValue": None,
     }
     if op["ImageDescription"]["ImageFormingSystem"]["ModeString"] == "DIFF":
         mapping["ImageDescription.ImageFormingSystem.SelectorValue"] = (
             "Acquisition_instrument.TEM.camera_length", None)
-    else: # Mag Mode
+    else:  # Mag Mode
         mapping['ImageDescription.ImageFormingSystem.SelectorValue'] = (
             "Acquisition_instrument.TEM.magnification", None)
     return mapping
 
+
 mapping_cz_sem = {
     'CZ_SEM.ap_actualkv':
-    ("Acquisition_instrument.SEM.beam_energy", _parse_tuple_Zeiss),
+        ("Acquisition_instrument.SEM.beam_energy", _parse_tuple_Zeiss),
     'CZ_SEM.ap_mag':
-    ("Acquisition_instrument.SEM.magnification", _parse_tuple_Zeiss),
+        ("Acquisition_instrument.SEM.magnification", _parse_tuple_Zeiss),
     'CZ_SEM.ap_stage_at_x':
-    ("Acquisition_instrument.SEM.Stage.x",
-     lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='mm')),
+        ("Acquisition_instrument.SEM.Stage.x",
+         lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='mm')),
     'CZ_SEM.ap_stage_at_y':
-    ("Acquisition_instrument.SEM.Stage.y",
-     lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='mm')),
+        ("Acquisition_instrument.SEM.Stage.y",
+         lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='mm')),
     'CZ_SEM.ap_stage_at_z':
-    ("Acquisition_instrument.SEM.Stage.z",
-     lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='mm')),
+        ("Acquisition_instrument.SEM.Stage.z",
+         lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='mm')),
     'CZ_SEM.ap_stage_at_r':
-    ("Acquisition_instrument.SEM.Stage.rotation", _parse_tuple_Zeiss),
+        ("Acquisition_instrument.SEM.Stage.rotation", _parse_tuple_Zeiss),
     'CZ_SEM.ap_stage_at_t':
-    ("Acquisition_instrument.SEM.Stage.tilt", _parse_tuple_Zeiss),
+        ("Acquisition_instrument.SEM.Stage.tilt", _parse_tuple_Zeiss),
     'CZ_SEM.ap_wd':
-    ("Acquisition_instrument.SEM.working_distance",
-     lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='mm')),
+        ("Acquisition_instrument.SEM.working_distance",
+         lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='mm')),
     'CZ_SEM.dp_dwell_time':
-    ("Acquisition_instrument.SEM.dwell_time",
-     lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='s')),
+        ("Acquisition_instrument.SEM.dwell_time",
+         lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='s')),
     'CZ_SEM.ap_iprobe':
-    ("Acquisition_instrument.SEM.beam_current",
-     lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='nA')),
+        ("Acquisition_instrument.SEM.beam_current",
+         lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='nA')),
     'CZ_SEM.dp_detector_type':
-    ("Acquisition_instrument.SEM.Detector.detector_type",
-     lambda tup: _parse_tuple_Zeiss(tup)),
+        ("Acquisition_instrument.SEM.Detector.detector_type",
+         lambda tup: _parse_tuple_Zeiss(tup)),
     'CZ_SEM.sv_serial_number':
-    ("Acquisition_instrument.SEM.microscope", _parse_tuple_Zeiss),
+        ("Acquisition_instrument.SEM.microscope", _parse_tuple_Zeiss),
     'CZ_SEM.ap_date':
-    ("General.date", lambda tup: parser.parse(tup[1]).date().isoformat()),
+        ("General.date", lambda tup: parser.parse(tup[1]).date().isoformat()),
     'CZ_SEM.ap_time':
-    ("General.time", lambda tup: parser.parse(tup[1]).time().isoformat()),
+        ("General.time", lambda tup: parser.parse(tup[1]).time().isoformat()),
     'CZ_SEM.sv_user_name':
-    ("General.authors", _parse_tuple_Zeiss),
+        ("General.authors", _parse_tuple_Zeiss),
 }
 
 
 def get_tvips_mapping(mapped_magnification):
     mapping_tvips = {
         'TVIPS.TemMagnification':
-        ("Acquisition_instrument.TEM.%s" % mapped_magnification, None),
+            ("Acquisition_instrument.TEM.%s" % mapped_magnification, None),
         'TVIPS.CameraType':
-        ("Acquisition_instrument.TEM.Detector.Camera.name", None),
+            ("Acquisition_instrument.TEM.Detector.Camera.name", None),
         'TVIPS.ExposureTime':
-        ("Acquisition_instrument.TEM.Detector.Camera.exposure",
-         lambda x: float(x) * 1e-3),
+            ("Acquisition_instrument.TEM.Detector.Camera.exposure",
+             lambda x: float(x) * 1e-3),
         'TVIPS.TemHighTension':
-        ("Acquisition_instrument.TEM.beam_energy", lambda x: float(x) * 1e-3),
+            ("Acquisition_instrument.TEM.beam_energy", lambda x: float(x) * 1e-3),
         'TVIPS.Comment':
-        ("General.notes", _parse_string),
+            ("General.notes", _parse_string),
         'TVIPS.Date':
-        ("General.date", _parse_tvips_date),
+            ("General.date", _parse_tvips_date),
         'TVIPS.Time':
-        ("General.time", _parse_tvips_time),
+            ("General.time", _parse_tvips_time),
         'TVIPS.TemStagePosition':
-        ("Acquisition_instrument.TEM.Stage", lambda stage: {
-            'x': stage[0] * 1E3,
-            'y': stage[1] * 1E3,
-            'z': stage[2] * 1E3,
-            'tilt_alpha': stage[3],
-            'tilt_beta': stage[4]
-        }
-        )
+            ("Acquisition_instrument.TEM.Stage", lambda stage: {
+                'x': stage[0] * 1E3,
+                'y': stage[1] * 1E3,
+                'z': stage[2] * 1E3,
+                'tilt_alpha': stage[3],
+                'tilt_beta': stage[4]
+            }
+             )
     }
     return mapping_tvips
 
 
 mapping_olympus_sis = {
-        'Olympus_SIS_metadata.magnification':
+    'Olympus_SIS_metadata.magnification':
         ("Acquisition_instrument.TEM.magnification", None),
-        'Olympus_SIS_metadata.cameraname':
+    'Olympus_SIS_metadata.cameraname':
         ("Acquisition_instrument.TEM.Detector.Camera.name", None),
-    }
+}
+
 
 def get_metadata_mapping(tiff_page, op):
     if tiff_page.is_fei:
