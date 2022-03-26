@@ -38,6 +38,8 @@ def test_load_16bit():
     np.testing.assert_array_equal(hype.data[:, :, 222:224],
                                   np.load(np_filename))
     assert hype.data.shape == (30, 30, 2048)
+    assert bse.metadata.get_item('Stage.x', full_path=False) == 66940.81
+    assert hype.metadata.get_item('Stage.x', full_path=False) == 66940.81
 
 
 def test_load_16bit_reduced():
