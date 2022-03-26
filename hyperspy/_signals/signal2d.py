@@ -951,5 +951,3 @@ class Signal2D(BaseSignal, CommonSignal2D):
 class LazySignal2D(LazySignal, Signal2D):
 
     _lazy = True
-
-    pass

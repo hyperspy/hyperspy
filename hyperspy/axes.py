@@ -2078,8 +2078,7 @@ class AxesManager(t.HasTraits):
         """The dimension of the signal space."""
         return self._signal_dimension
 
-    @signal_dimension.setter
-    def signal_dimension(self, value):
+    def _set_signal_dimension(self, value):
         if len(self._axes) == 0 or self._signal_dimension == value:
             # Nothing to be done
             return
@@ -2104,10 +2103,6 @@ class AxesManager(t.HasTraits):
             # _update_attribute
             axis.navigate = tl.pop(0)
 
-    @navigation_dimension.setter
-    def navigation_dimension(self, value):
-        self.signal_dimension = len(self._axes) - value
-
     def set_signal_dimension(self, value):
         """Set the dimension of the signal.
 
@@ -2121,10 +2116,11 @@ class AxesManager(t.HasTraits):
             If value if greater than the number of axes or is negative.
 
         """
-        warnings.warn(("Using `set_signal_dimension` is deprecated, set the "
-                       "`signal_dimension` attribute instead."),
+        warnings.warn(("Using `set_signal_dimension` is deprecated, use "
+                       "`as_signal1D`, `as_signal2D` or `transpose` of the "
+                       "signal instance instead."),
                       VisibleDeprecationWarning)
-        self.signal_dimension = value
+        self._set_signal_dimension(value)
 
     def key_navigator(self, event):
         'Set hotkeys for controlling the indices of the navigator plot'

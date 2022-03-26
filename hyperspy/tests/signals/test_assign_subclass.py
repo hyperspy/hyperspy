@@ -120,7 +120,7 @@ class TestConvertBaseSignal:
             self.s.axes_manager.set_signal_dimension(1)
 
     def test_base_to_1d(self):
-        self.s.axes_manager.signal_dimension = 1
+        self.s.axes_manager._set_signal_dimension(1)
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.Signal1D)
         self.s.metadata.Signal.record_by = ''
@@ -128,7 +128,7 @@ class TestConvertBaseSignal:
         assert isinstance(self.s, hs.signals.BaseSignal)
 
     def test_base_to_2d(self):
-        self.s.axes_manager.signal_dimension = 2
+        self.s.axes_manager._set_signal_dimension(2)
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.Signal2D)
 
@@ -183,12 +183,12 @@ class TestConvertComplexSignal:
         self.s = hs.signals.ComplexSignal(np.zeros((3, 3)))
 
     def test_complex_to_complex1d(self):
-        self.s.axes_manager.signal_dimension = 1
+        self.s.axes_manager._set_signal_dimension(1)
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.ComplexSignal1D)
 
     def test_complex_to_complex2d(self):
-        self.s.axes_manager.signal_dimension = 2
+        self.s.axes_manager._set_signal_dimension(2)
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.ComplexSignal2D)
 
@@ -211,15 +211,11 @@ def test_create_lazy_signal():
 
 
 @pytest.mark.parametrize('signal_dim', (0, 1, 2, 4))
-@pytest.mark.parametrize('set_signal_dim', [True, False])
-def test_setting_signal_dimension(signal_dim, set_signal_dim):
+def test_setting_signal_dimension(signal_dim):
     s = hs.signals.BaseSignal(np.random.random(size=(10, 20, 30, 40)))
     nav_dim = s.data.ndim - signal_dim
 
-    if set_signal_dim:
-        s.axes_manager.signal_dimension = signal_dim
-    else:
-        s.axes_manager.navigation_dimension = nav_dim
+    s.axes_manager._set_signal_dimension(signal_dim)
 
     if signal_dim == 0:
         expected_sig_shape = ()

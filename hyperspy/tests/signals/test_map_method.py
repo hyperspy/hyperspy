@@ -25,7 +25,6 @@ from scipy.ndimage import gaussian_filter, gaussian_filter1d, rotate
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.misc.utils import _get_block_pattern
 
@@ -222,8 +221,7 @@ class TestSignal1D:
 class TestSignal0D:
 
     def setup_method(self, method):
-        self.s = hs.signals.BaseSignal(np.arange(0., 6).reshape((2, 3)))
-        self.s.axes_manager.signal_dimension = 0
+        self.s = hs.signals.BaseSignal(np.arange(0., 6).reshape((2, 3))).T
         self.ragged = None
 
     @pytest.mark.parametrize('parallel', [True, False])

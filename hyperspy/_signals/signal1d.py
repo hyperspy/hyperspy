@@ -1617,7 +1617,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 self.metadata.General.title +
                 " full-width at %.1f maximum right position" % factor)
         for signal in (left, width, right):
-            signal.axes_manager.signal_dimension = 0
+            signal = signal.transpose(signal_axes=[])
             signal.set_signal_type("")
         if return_interval is True:
             return [width, left, right]
@@ -1656,5 +1656,3 @@ class Signal1D(BaseSignal, CommonSignal1D):
 class LazySignal1D(LazySignal, Signal1D):
 
     _lazy = True
-
-    pass

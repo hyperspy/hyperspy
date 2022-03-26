@@ -726,7 +726,7 @@ def dict2signal(signal_dict, lazy=False):
 
     # This may happen when the signal dimension couldn't be matched with
     # any specialised subclass
-    signal.axes_manager.signal_dimension = signal_dimension
+    signal.axes_manager._set_signal_dimension(signal_dimension)
 
     if "post_process" in signal_dict:
         for f in signal_dict['post_process']:
