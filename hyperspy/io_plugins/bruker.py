@@ -872,7 +872,8 @@ class HyperHeader(object):
                  'Microscope': self.sem_metadata,
                  'DSP Configuration': self.dsp_metadata,
                  'Stage': self.stage_metadata
-        }
+        },
+             'mapping': get_mapping(self.mode)
         }
         return i
 
