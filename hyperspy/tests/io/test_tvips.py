@@ -205,7 +205,7 @@ def test_main_header_from_signal(unit, expected_scale_factor, version, fheb,
                                  sig, fake_signals, metadata, fake_metadatas):
     signal = fake_signals[sig]
     if metadata is not None:
-        signal.metadata = fake_metadatas[metadata]
+        signal._metadata = fake_metadatas[metadata]
     signal.axes_manager[-1].units = unit
     signal.axes_manager[-2].units = unit
     original_scale_x = signal.axes_manager[-2].scale

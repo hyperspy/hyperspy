@@ -89,30 +89,31 @@ def get_date_time_from_metadata(metadata, formatting='ISO'):
 
 
 def update_date_time_in_metadata(dt, metadata):
-    """ Update the date and time in a metadata tree.
+    """
+    Update the date and time in a metadata tree.
 
-        Parameters
-        ----------
-            dt : date and time information: it can be a ISO 8601 string,
-                a datetime.datetime or a numpy.datetime64 object
-            metadata : metadata object to update
+    Parameters
+    ----------
+        dt : date and time information: it can be a ISO 8601 string,
+            a datetime.datetime or a numpy.datetime64 object
+        metadata : metadata object to update
 
-        Return
-        ----------
-            metadata object
+    Return
+    ------
+        metadata object
 
-        Example
-        -------
-        >>> s = hs.load("example1.msa")
-        >>> dt = '2016-12-12T12:12:12-05:00'
-        >>> s.metadata = update_date_time_in_metadata(dt, s.metadata)
-        >>> s.metadata
-            ├── General
-            │   ├── date = 2016-12-12
-            │   ├── original_filename = example1.msa
-            │   ├── time = 12:12:12
-            │   ├── time_zone = 'EST'
-            │   └── title = NIO EELS OK SHELL
+    Example
+    -------
+    >>> s = hs.load("example1.msa")
+    >>> dt = '2016-12-12T12:12:12-05:00'
+    >>> s.metadata = update_date_time_in_metadata(dt, s.metadata)
+    >>> s.metadata
+        ├── General
+        │   ├── date = 2016-12-12
+        │   ├── original_filename = example1.msa
+        │   ├── time = 12:12:12
+        │   ├── time_zone = 'EST'
+        │   └── title = NIO EELS OK SHELL
     """
     time_zone = None
     if isinstance(dt, str):

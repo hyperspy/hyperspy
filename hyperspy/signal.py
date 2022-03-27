@@ -2204,7 +2204,7 @@ class BaseSignal(FancySlicing,
             self._load_dictionary(kwds)
 
     def _create_metadata(self):
-        self.metadata = DictionaryTreeBrowser()
+        self._metadata = DictionaryTreeBrowser()
         mp = self.metadata
         mp.add_node("_HyperSpy")
         mp.add_node("General")
@@ -2215,7 +2215,7 @@ class BaseSignal(FancySlicing,
         folding.signal_unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
-        self.original_metadata = DictionaryTreeBrowser()
+        self._original_metadata = DictionaryTreeBrowser()
         self.tmp_parameters = DictionaryTreeBrowser()
 
     def __repr__(self):
@@ -2413,6 +2413,38 @@ class BaseSignal(FancySlicing,
         if not isinstance(value, da.Array):
             value = np.asanyarray(value)
         self._data = np.atleast_1d(value)
+
+
+    @property
+    def metadata(self):
+        """The metadata of the signal."""
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, d):
+        warnings.warn(
+            "Setting `metadata` attribute is deprecated and will be removed "
+            "in HyperSpy 2.0. Use the `set_item` and `add_dictionary` methods "
+            "of `metadata` attribute instead."
+            )
+        if isinstance(d, dict):
+            d = DictionaryTreeBrowser(d)
+        self._metadata = d
+
+    @property
+    def original_metadata(self):
+        """The original metadata of the signal."""
+        return self._original_metadata
+
+    @original_metadata.setter
+    def original_metadata(self, d):
+        warnings.warn(
+            "Setting `original_metadata` attribute is deprecated and will be "
+            "removed in HyperSpy 2.0. Use the `set_item` and `add_dictionary` "
+            "methods of `original_metadata` attribute instead.")
+        if isinstance(d, dict):
+            d = DictionaryTreeBrowser(d)
+        self._original_metadata = d
 
     @property
     def ragged(self):
@@ -3372,10 +3404,10 @@ class BaseSignal(FancySlicing,
                 self.original_metadata, 'stack_elements'):
             for i, spectrum in enumerate(splitted):
                 se = self.original_metadata.stack_elements['element' + str(i)]
-                spectrum.metadata = copy.deepcopy(
-                    se['metadata'])
-                spectrum.original_metadata = copy.deepcopy(
-                    se['original_metadata'])
+                spectrum._metadata = copy.deepcopy(se['metadata'])
+                spectrum._original_metadata = copy.deepcopy(
+                    se['original_metadata']
+                    )
                 spectrum.metadata.General.title = se.metadata.General.title
 
         return splitted

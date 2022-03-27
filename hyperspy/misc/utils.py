@@ -1198,8 +1198,8 @@ def stack(
         signal.get_dimensions_from_data()
         # Set the metadata, if an stack_metadata is an integer, the metadata
         # will overwritten later
-        signal.metadata = first.metadata.deepcopy()
-        signal.metadata.General.title = f"Stack of {first.metadata.General.title}"
+        signal._metadata = first.metadata.deepcopy()
+        signal._metadata.General.title = f"Stack of {first.metadata.General.title}"
 
         # Stack metadata
         if isinstance(stack_metadata, bool):
@@ -1211,11 +1211,11 @@ def stack(
                     node.original_metadata = obj.original_metadata.deepcopy()
                     node.metadata = obj.metadata.deepcopy()
             else:
-                signal.original_metadata = DictionaryTreeBrowser({})
+                signal._original_metadata = DictionaryTreeBrowser({})
         elif isinstance(stack_metadata, int):
             obj = signal_list[stack_metadata]
-            signal.metadata = obj.metadata.deepcopy()
-            signal.original_metadata = obj.original_metadata.deepcopy()
+            signal._metadata = obj.metadata.deepcopy()
+            signal._original_metadata = obj.original_metadata.deepcopy()
         else:
             raise ValueError("`stack_metadata` must a boolean or an integer.")
 

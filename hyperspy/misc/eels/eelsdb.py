@@ -232,8 +232,9 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
         try:
             s = dict2signal(parse_msa_string(msa_string)[0])
             emsa = s.original_metadata
-            s.original_metadata = s.original_metadata.__class__(
-                {'json': json_spectrum})
+            s._original_metadata = type(s.original_metadata)(
+                {'json': json_spectrum}
+                )
             s.original_metadata.emsa = emsa
             spectra.append(s)
 

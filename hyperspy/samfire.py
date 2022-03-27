@@ -18,6 +18,7 @@
 
 import logging
 from multiprocessing import cpu_count
+import warnings
 
 import dill
 import numpy as np
@@ -27,8 +28,7 @@ from hyperspy.misc.utils import slugify
 from hyperspy.misc.math_tools import check_random_state
 from hyperspy.external.progressbar import progressbar
 from hyperspy.signal import BaseSignal
-from hyperspy.samfire_utils.strategy import (LocalStrategy,
-                                             GlobalStrategy)
+from hyperspy.samfire_utils.strategy import LocalStrategy, GlobalStrategy
 from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
 from hyperspy.samfire_utils.global_strategies import HistogramStrategy
 
@@ -137,7 +137,7 @@ class Samfire:
         if workers is None:
             workers = max(1, cpu_count() - 1)
         self.model = model
-        self.metadata = DictionaryTreeBrowser()
+        self._metadata = DictionaryTreeBrowser()
 
         self._scale = 1.0
         # -1 -> done pixel, use
@@ -167,6 +167,21 @@ class Samfire:
             self._setup(**kwargs)
         self.refresh_database()
         self.random_state = check_random_state(random_state)
+
+    @property
+    def metadata(self):
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, d):
+        warnings.warn(
+            "Setting `metadata` attribute is deprecated and will be removed "
+            "in HyperSpy 2.0. Use the `set_item` and `add_dictionary` methods "
+            "of `metadata` attribute instead."
+            )
+        if isinstance(d, dict):
+            d = DictionaryTreeBrowser(d)
+        self._metadata = d
 
     @property
     def active_strategy(self):

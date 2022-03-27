@@ -34,7 +34,9 @@ from hyperspy.io_plugins.nexus import (_byte_to_string, _fix_exclusion_keys,
                                        read_metadata_from_file, _getlink,
                                        _check_search_keys, _parse_from_file,
                                        _nexus_dataset_to_signal)
+from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.signals import BaseSignal
+
 
 dirpath = os.path.dirname(__file__)
 
@@ -43,7 +45,6 @@ file2 = os.path.join(dirpath, 'nexus_files', 'saved_multi_signal.nxs')
 file3 = os.path.join(dirpath, 'nexus_files', 'nexus_dls_example.nxs')
 file4 = os.path.join(dirpath, 'nexus_files', 'nexus_dls_example_no_axes.nxs')
 file5 = os.path.join(dirpath, 'nexus_files', 'nexus_test_datakey.nxs')
-
 
 
 my_path = os.path.dirname(__file__)
@@ -337,8 +338,15 @@ class TestSavingMetadataContainers:
         s.original_metadata.set_item("testarray1", ["a", 2, "b", 4, 5])
         s.original_metadata.set_item("testarray2", (1, 2, 3, 4, 5))
         s.original_metadata.set_item("testarray3", np.array([1, 2, 3, 4, 5]))
-        s.original_metadata = s.original_metadata.as_dictionary()
-        s.metadata = s.metadata.as_dictionary()
+
+        with pytest.warns():
+            s.original_metadata = s.original_metadata.as_dictionary()
+        with pytest.warns():
+            s.metadata = s.metadata.as_dictionary()
+
+        assert isinstance(s.metadata, DictionaryTreeBrowser)
+        assert isinstance(s.original_metadata, DictionaryTreeBrowser)
+
         fname = tmp_path / 'test.nxs'
         s.save(fname)
         lin = load(fname, nxdata_only=True)

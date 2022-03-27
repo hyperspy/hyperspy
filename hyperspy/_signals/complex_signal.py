@@ -333,8 +333,9 @@ class ComplexSignal(BaseSignal):
                 raise ValueError('display_range should be array_like, shape(2,2) or shape(2,).')
 
         argand_diagram, real_edges, imag_edges = np.histogram2d(re, im, bins=size, range=range)
-        argand_diagram = Signal2D(argand_diagram.T)
-        argand_diagram.metadata = self.metadata.deepcopy()
+        argand_diagram = Signal2D(argand_diagram.T,
+                                  metadata=self.metadata.as_dictionary(),
+                                  )
         argand_diagram.metadata.General.title = f'Argand diagram of {self.metadata.General.title}'
 
         if self.real.metadata.Signal.has_item('quantity'):

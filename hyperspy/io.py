@@ -553,7 +553,7 @@ def load_with_reader(
             if convert_units:
                 signal.axes_manager.convert_units()
             if not load_original_metadata:
-                signal.original_metadata = type(signal.original_metadata)()
+                signal._original_metadata = type(signal.original_metadata)()
             signal_list.append(signal)
         else:
             # it's a standalone model
