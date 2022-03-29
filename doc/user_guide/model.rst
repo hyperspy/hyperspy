@@ -1061,10 +1061,10 @@ Linear fitting can be used to address some of the drawbacks of non-linear optimi
   while nonlinear optimization uses an iterative approach and therefore relies
   on the initial values of the parameters.
 - it is fast, because i) in favorable situations, the signal can be fitted in a vectorized
-  fashion, `i. e.` the signal is fitted in a single run instead of iterating over
-  the navigation dimension; ii) it is not iterative, `i. e.` it does the
-  calculation only one time instead of 10-100 iterations, depending on fast
-  the non-linear optimizer will converge.
+  fashion, i.e. the signal is fitted in a single run instead of iterating over
+  the navigation dimension; ii) it is not iterative, `i.e.` it does the
+  calculation only one time instead of 10-100 iterations, depending on how
+  quickly the non-linear optimizer will converge.
 
 However, linear fitting can *only* fit linear models and will not be able to fit
 parameters which vary *non-linearly*.
@@ -1080,13 +1080,18 @@ the 2D-polynomial ``y = a*x**2+b*y**2+c*x+d*y+e`` is entirely linear.
     After creating a model with values for the nonlinear parameters, a quick way to set 
     all nonlinear parameters to be ``free = False`` is to use ``m.set_parameters_not_free(only_nonlinear=True)``
 
+To check if a parameter is linear, use the model or component method
+:py:meth:`~hyperspy.model.BaseModel.print_current_values()`. For a component to be
+considered linear, it can hold only one free parameter, and that parameter
+must be linear.
+
 If all components in a model are linear, then a linear optimizer can be used to
 solve the problem as a linear regression problem! This can be done using two approaches:
 
 - the standard pixel-by-pixel approach as used by the *nonlinear* optimizers
-- fit the entire dataset in one vectorised operation, which will be much faster (up to 1000 times).
+- fit the entire dataset in one *vectorised* operation, which will be much faster (up to 1000 times).
   However, there is a caveat: all fixed parameters must have the same value across the dataset in
-  order to avoid creating a very large matrice, whose size will scale with the number of different
+  order to avoid creating a very large array whose size will scale with the number of different
   values of the non-free parameters.
 
 .. note::
@@ -1098,14 +1103,28 @@ solve the problem as a linear regression problem! This can be done using two app
 
 There are two implementations of linear least squares fitting in hyperspy:
 
-- the ``'lstsq'`` optimizer, which uses :py:func:`numpy.linalg.lstsq` or 
+- the ``'lstsq'`` optimizer, which uses :py:func:`numpy.linalg.lstsq`, or 
   :py:func:`dask.array.linalg.lstsq` for lazy signals.
 - the ``'ridge_regression'`` optimizer, which supports regularization
   (see :py:class:`sklearn.linear_model.Ridge` for arguments to pass to
   :py:meth:`~hyperspy.model.BaseModel.fit`), but does not support lazy signals. 
 
-As for non-linear least squares fitting, :ref:`weigthed least squares <weighted_least_squares-label>`
+As for non-linear least squares fitting, :ref:`weighted least squares <weighted_least_squares-label>`
 is supported.
+
+In the following example, we first generate a 300x300 navigation signal of varying total intensity,
+and then populate it with an EDS spectrum at each point. The signal can be fitted with a polynomial
+background and a gaussian for each peak. Hyperspy automatically adds these to the model, and fixes
+the ``centre`` and ``sigma`` parameters to known values. Fitting this model with a non-linear optimizer
+can about half an hour on a decent workstation. With a linear optimizer, it takes seconds.
+
+.. code-block:: python
+
+    >>> nav = hs.signals.Signal2D(np.random.random((300, 300))).T
+    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum() * nav
+    >>> m = s.create_model()
+
+    >>> m.multifit(optimizer='lstsq')
 
 Standard errors for the parameters are by default not calculated when the dataset
 is fitted in vectorized fashion, because it has large memory requirement.
