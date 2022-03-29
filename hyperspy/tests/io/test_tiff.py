@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 
 import numpy as np
@@ -7,9 +8,9 @@ import traits.api as t
 from packaging.version import Version
 import tifffile
 
-
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal
+from hyperspy.io_plugins.tiff import _is_streak_hamamatsu
 
 MY_PATH = os.path.dirname(__file__)
 MY_PATH2 = os.path.join(MY_PATH, "tiff_files")
@@ -697,4 +698,37 @@ def test_hamamatsu_streak_focusfile():
     np.testing.assert_allclose(s.axes_manager[1].offset, 0.0, rtol=1E-3, atol=1e-5)
     np.testing.assert_allclose(s.axes_manager[0].scale, 0.01714, rtol=1E-3)
     np.testing.assert_allclose(s.axes_manager[0].offset, 231.0909, rtol=1E-3)
+
+
+def test_is_hamamatsu_streak():
+    file = 'test_hamamatsu_streak_SCAN.tif'
+    fname = os.path.join(MY_PATH2, file)
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        #Create a temporary copy of the file
+        filebad = "hama_bad_field.tif"
+        fname_tmp = os.path.join(MY_PATH2, filebad)
+
+        shutil.copy(fname,fname_tmp)
+
+        s = hs.load(fname_tmp)
+
+        #Alter the temporary copy
+        with tifffile.TiffFile(fname_tmp,mode='r+b') as tif:
+            _ = tif.pages[0].tags['Artist'].overwrite(tif,value="TAPTAPTAP")
+
+        s = hs.load(fname_tmp)
+        assert _is_streak_hamamatsu(s.original_metadata) == False
+
+        with tifffile.TiffFile(fname_tmp,mode='r+b') as tif:
+            _ = tif.pages[0].tags['Artist'].overwrite(tif,value="Copyright Hamamatsu")
+
+        s = hs.load(fname_tmp)
+        assert _is_streak_hamamatsu(s.original_metadata) == True
+
+        with tifffile.TiffFile(fname_tmp,mode='r+b') as tif:
+            _ = tif.pages[0].tags['Software'].overwrite(tif,value="TAPTAPTAPT")
+
+        s = hs.load(fname_tmp)
+        assert _is_streak_hamamatsu(s.original_metadata) == False
 

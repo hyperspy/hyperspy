@@ -436,7 +436,7 @@ class Model1D(BaseModel):
             if self.signal.axes_manager[-1].is_uniform:
                 to_return *= self.signal.axes_manager[-1].scale
             else:
-                to_return *= np.gradient(self.signal.axes_manager[-1].axis[self.channel_switches])
+                to_return *= np.gradient(self.signal.axes_manager[-1].axis)
         return to_return
 
     def _errfunc(self, param, y, weights=None):
