@@ -1069,15 +1069,15 @@ Linear fitting can be used to address some of the drawbacks of non-linear optimi
 However, linear fitting can *only* fit linear models and will not be able to fit
 parameters which vary *non-linearly*.
 
-A component is considered linear when its free parameters scale the component only 
-in the y-axis. For the exemplary function ``y = a*x**b``, ``a`` is a linear parameter, whilst ``b`` 
-is not. If ``b.free = False``, then the component is linear. 
-Components can also be made up of several linear parts. For instance, 
+A component is considered linear when its free parameters scale the component only
+in the y-axis. For the exemplary function ``y = a*x**b``, ``a`` is a linear parameter, whilst ``b``
+is not. If ``b.free = False``, then the component is linear.
+Components can also be made up of several linear parts. For instance,
 the 2D-polynomial ``y = a*x**2+b*y**2+c*x+d*y+e`` is entirely linear.
 
 .. note::
 
-    After creating a model with values for the nonlinear parameters, a quick way to set 
+    After creating a model with values for the nonlinear parameters, a quick way to set
     all nonlinear parameters to be ``free = False`` is to use ``m.set_parameters_not_free(only_nonlinear=True)``
 
 To check if a parameter is linear, use the model or component method
@@ -1098,23 +1098,23 @@ solve the problem as a linear regression problem! This can be done using two app
 
     A good example of a linear model in the electron-microscopy field is an Energy-Dispersive
     X-ray Spectroscopy (EDS) dataset, which typically consists of a polynomial background and
-    Gaussian peaks with well-defined energy (``Gaussian.centre``) and peak widths 
+    Gaussian peaks with well-defined energy (``Gaussian.centre``) and peak widths
     (``Gaussian.sigma``). This dataset can be fit extremely fast with a linear optimizer.
 
 There are two implementations of linear least squares fitting in hyperspy:
 
-- the ``'lstsq'`` optimizer, which uses :py:func:`numpy.linalg.lstsq`, or 
+- the ``'lstsq'`` optimizer, which uses :py:func:`numpy.linalg.lstsq`, or
   :py:func:`dask.array.linalg.lstsq` for lazy signals.
 - the ``'ridge_regression'`` optimizer, which supports regularization
   (see :py:class:`sklearn.linear_model.Ridge` for arguments to pass to
-  :py:meth:`~hyperspy.model.BaseModel.fit`), but does not support lazy signals. 
+  :py:meth:`~hyperspy.model.BaseModel.fit`), but does not support lazy signals.
 
 As for non-linear least squares fitting, :ref:`weighted least squares <weighted_least_squares-label>`
 is supported.
 
 In the following example, we first generate a 300x300 navigation signal of varying total intensity,
 and then populate it with an EDS spectrum at each point. The signal can be fitted with a polynomial
-background and a gaussian for each peak. Hyperspy automatically adds these to the model, and fixes
+background and a Gaussian for each peak. Hyperspy automatically adds these to the model, and fixes
 the ``centre`` and ``sigma`` parameters to known values. Fitting this model with a non-linear optimizer
 can about half an hour on a decent workstation. With a linear optimizer, it takes seconds.
 
@@ -1128,7 +1128,7 @@ can about half an hour on a decent workstation. With a linear optimizer, it take
 
 Standard errors for the parameters are by default not calculated when the dataset
 is fitted in vectorized fashion, because it has large memory requirement.
-If errors are required, either give ``calculate_errors=True`` as an argument
+If errors are required, either pass ``calculate_errors=True`` as an argument
 to :py:meth:`~hyperspy.model.BaseModel.multifit`, or rerun
 :py:meth:`~hyperspy.model.BaseModel.multifit` with a nonlinear optimizer,
 which should run fast since the parameters are already optimized.
