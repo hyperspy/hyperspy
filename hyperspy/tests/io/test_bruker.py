@@ -57,6 +57,20 @@ def test_load_16bit_reduced():
     assert str(hype.data.dtype)[0] == 'u'
 
 
+def test_load_16bit_cutoff_zealous():
+    filename = os.path.join(my_path, 'bruker_data', test_files[0])
+    print('testing downsampled 16bit bcf with cutoff_at_kV=zealous...')
+    hype = load(filename, cutoff_at_kV="zealous", select_type="spectrum_image")
+    assert hype.data.shape == (30, 30, 2048)
+
+
+def test_load_16bit_cutoff_auto():
+    filename = os.path.join(my_path, 'bruker_data', test_files[0])
+    print('testing downsampled 16bit bcf with cutoff_at_kV=auto...')
+    hype = load(filename, cutoff_at_kV="auto", select_type="spectrum_image")
+    assert hype.data.shape == (30, 30, 2048)
+
+
 def test_load_8bit():
     for bcffile in test_files[1:3]:
         filename = os.path.join(my_path, 'bruker_data', bcffile)

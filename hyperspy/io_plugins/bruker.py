@@ -585,9 +585,10 @@ class HyperHeader(object):
     If Bcf is version 2, the bcf can contain stacks
     of hypermaps - thus header part  can contain multiply sum eds spectras
     and it's metadata per hypermap slice which can be selected using index.
-    Bcf can record number of imagery from different
-    imagining detectors (BSE, SEI, ARGUS, etc...): access to imagery
-    is throught image index.
+    Bcf can record number of images from different single dimentional value
+    detectors (BSE, SEI, ARGUS, etc...). images representing signals are
+    internaly ordered and right signal image can be accessed using image
+    index (do not confuse with dataset index).
     """
 
     def __init__(self, xml_str, indexes, instrument=None):
@@ -758,24 +759,30 @@ class HyperHeader(object):
                 "./SpectrumData{0}/ClassInstance".format(str(i)))
             self.spectra_data[i] = EDXSpectrum(spec_node)
 
-    def estimate_map_channels(self, index=0):
-        """Estimate minimal size of energy axis so any spectra from any pixel
-        would not be truncated.
+    def get_consistent_min_channels(self, index=0):
+        """Estimate consistent minimal size of energy axis by comparing energy
+        at last recorded channel vs electron beam potential and return channel
+        number corresponding to least energy. This method is safe to use with
+        sliced datasets (consistent between slices) which were acquired using
+        the same electron potential.
 
         Parameters
         ----------
         index : int
-            Index of the map if multiply hypermaps are present in the same bcf.
+            Index of the map if multiple hypermaps are present in the same bcf.
 
         Returns
         -------
         optimal channel number
         """
-        bruker_hv_range = self.spectra_data[index].amplification / 1000
-        if self.hv >= bruker_hv_range:
-            return self.spectra_data[index].data.shape[0]
-        else:
+        eds_max_energy = self.spectra_data[index].amplification / 1000  # in kV
+        if hasattr(self, "hv") and (self.hv > 0) and (self.hv < eds_max_energy):
             return self.spectra_data[index].energy_to_channel(self.hv)
+        if (not hasattr(self, "hv")) or (self.hv == 0):
+            logging.warn('bcf header contains no node for electron beam '
+                         'voltage or such node is absent.\n'
+                         'Using full range of recorded channels.')
+        return self.spectra_data[index].data.shape[0]
 
     def estimate_map_depth(self, index=0, downsample=1, for_numpy=False):
         """Estimate minimal dtype of array using cumulative spectra
@@ -943,11 +950,11 @@ class BCF_reader(SFS_reader):
             results of pixels, thus having lower memory requiriments. Default
             is 1.
         cutoff_at_kV : None, float, int or str
-            Value or method to truncate the array at energy in kV. Helps reducing size of
-            array. Default is None (does not truncate). Numerical value is in kV.
-            "auto" truncates to the last non zero channel (should not be used with slices).
-            "lowest_constraint" truncates to instruments acceleration voltage
-            (should be used only if xrays were generated using electron bombardment).
+            Value or method to truncate the array at energy in kV. Helps reducing size of the returned
+            array. Default value is None (does not truncate). Numerical value should be in kV.
+            Two methods for automatic cutoff is available:
+              "zealous" - truncates to the last non zero channel (should not be used for stacks).
+              "auto" - truncates to hv of electron microscope (good for stacks if hv is consistent).
         lazy : bool
             It True, returns dask.array otherwise a numpy.array. Default is
             False.
@@ -959,15 +966,17 @@ class BCF_reader(SFS_reader):
         """
         if index is None:
             index = self.def_index
+
         if type(cutoff_at_kV) in (int, float):
             eds = self.header.spectra_data[index]
             n_channels = eds.energy_to_channel(cutoff_at_kV)
+        elif cutoff_at_kV == 'zealous':
+            n_channels = self.header.spectra_data[index].last_non_zero_channel() + 1
         elif cutoff_at_kV == 'auto':
-            n_channels = self.header.spectra_data[index].last_non_zero_channel() - 1
-        elif cutoff_at_kV == 'lowest_constraint':
-            n_channels = self.header.estimate_map_channels(index=index)
-        else:  # ==None
+            n_channels = self.header.get_consistent_min_channels(index=index)
+        else:  # None
             n_channels = self.header.spectra_data[index].data.size
+
         shape = (ceil(self.header.image.height / downsample),
                  ceil(self.header.image.width / downsample),
                  n_channels)

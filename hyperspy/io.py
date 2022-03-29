@@ -236,10 +236,18 @@ def load(filenames=None,
         pixel. This allows to improve signal and conserve the memory with the
         cost of lower resolution.
     cutoff_at_kV : None, int, float, optional
-        For Bruker bcf files, if set to numerical (default is None),
-        bcf is parsed into array with depth cutoff at coresponding given energy.
+        For Bruker bcf files and Jeol, if set to numerical (default is None),
+        hypermap is parsed into array with depth cutoff at set energy value.
         This allows to conserve the memory by cutting-off unused spectral
         tails, or force enlargement of the spectra size.
+        Bruker bcf reader accepts additional values for semi-automatic cutoff.
+        "zealous" value truncates to the last non zero channel (this option
+        should not be used for stacks, as low beam current EDS can have different
+        last non zero channel per slice).
+        "auto" truncates channels to SEM/TEM acceleration voltage or
+        energy at last channel, depending which is smaller.
+        In case the hv info is not there or hv is off (0 kV) then it fallbacks to
+        full channel range.
     select_type : 'spectrum_image', 'image', 'single_spectrum', None, optional
         If None (default), all data are loaded.
         For Bruker bcf and Velox emd files: if one of 'spectrum_image', 'image'

@@ -1047,16 +1047,17 @@ Extra loading arguments
   The underlying method of downsampling is unchangeable: sum. Differently than
   ``block_reduce`` from skimage.measure it is memory efficient (does not creates
   intermediate arrays, works inplace).
-- ``cutoff_at_kV`` : if set (can be None, int, float (kV), one of 'auto' or
-  'lowest_constraint') can be used either to crop or enlarge energy (or number of
+- ``cutoff_at_kV`` : if set (can be None, int, float (kV), one of 'zealous'
+  or 'auto') can be used either to crop or enlarge energy (or number of
   channels) range at max values. It can be used to conserve memory or enlarge
   the range if needed to mach the size of other file. Default value is None
   (which does not influence size). Numerical values should be in kV.
-  "auto" truncates to the last non zero channel (should not be used for stacks,
-  as low beam current EDS can have different last non zero channel per slice).
-  "lowest_constraint" truncates channels to SEM/TEM acceleration voltage or 
-  energy at last channel, depending which is smaller
-  (should be used only if X-Rays were generated using electron beam).
+  'zealous' truncates to the last non zero channel (this option
+  should not be used for stacks, as low beam current EDS can have different
+  last non zero channel per slice). 'auto' truncates channels to SEM/TEM
+  acceleration voltage or energy at last channel, depending which is smaller.
+  In case the hv info is not there or hv is off (0 kV) then it fallbacks to
+  full channel range.
 
 Example of loading reduced (downsampled, and with energy range cropped)
 "spectrum only" data from bcf (original shape: 80keV EDS range (4096 channels),
@@ -1067,11 +1068,11 @@ Example of loading reduced (downsampled, and with energy range cropped)
     >>> hs.load("sample80kv.bcf", select_type='spectrum', downsample=2, cutoff_at_kV=10)
     <EDSSEMSpectrum, title: EDX, dimensions: (50, 38|595)>
 
-load the same file to limiting array size to SEM acceleration voltage:
+load the same file with limiting array size to SEM acceleration voltage:
 
 .. code-block:: python
 
-    >>> hs.load("sample80kv.bcf", cutoff_at_kV='lowest_constraint')
+    >>> hs.load("sample80kv.bcf", cutoff_at_kV='auto')
     [<Signal2D, title: BSE, dimensions: (|100, 75)>,
     <Signal2D, title: SE, dimensions: (|100, 75)>,
     <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|1024)>]
