@@ -1,0 +1,2 @@
+* when loading Bruker bcf, cutoff_at_kV=None (default) applies no more automatic cutoff.
+* New acceptable values "zealous" and "auto" do automatic cutoff.
