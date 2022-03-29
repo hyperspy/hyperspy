@@ -253,7 +253,7 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
         dc = _load_data(*data_args, memmap=memmap, **kwds)
 
     if _is_streak_hamamatsu(op):
-        op.update({'ImageDescription_Parsed': _get_hamamatsu_streak_description(tiff, op)})
+        op.update({'ImageDescriptionParsed': _get_hamamatsu_streak_description(tiff, op)})
 
     metadata_mapping = get_metadata_mapping(page, op)
     if 'SightX_Notes' in op:
