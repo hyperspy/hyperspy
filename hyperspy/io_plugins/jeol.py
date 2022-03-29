@@ -68,6 +68,9 @@ jTYPE = {
 
 
 def file_reader(filename, **kwds):
+    """
+    File reader for JEOL format
+    """
     dictionary = []
     file_ext = os.path.splitext(filename)[-1][1:].lower()
     if file_ext == "asw":
@@ -198,46 +201,50 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
              lazy=False,
              **kwargs):
     """
-    rawdata : ndarray of uint16
+    Parameters
+    ----------
+    rawdata : numpy.ndarray of uint16
     	spectrum image part of pts file
     scale : list of float
     	-scale[2], scale[3] are the positional scale from asw data, 
     	default is None, calc from pts internal data
     rebin_energy : int
     	Binning parameter along energy axis. Must be 2^n.
-    sum_frames : bool or ndarray of image shifts 
-	integrate along frame axis if sum_frames == True
+    sum_frames : bool
+        If False, returns each frame.
     SI_dtype : dtype
         data type for spectrum image. default is uint8
     cutoff_at_kV : float
-	cutoff energy to reduce memory size of spectrum image, default: None (do not cutoff)
-    downsample : int or [int, int]
-    	downsample along spacial axes to reduce memory size of spectrum image
-	value must be 2^n.
-	default: 1 (do not downsample)
+        The maximum energy. Useful to reduce memory size of spectrum image.
+        Default is None (no cutoff)
+    downsample : int or (int, int)
+    	Downsample along spacial axes to reduce memory size of spectrum image
+        ue must be 2^n. Default is 1 (no downsampling).
     only_valid_data : bool, default True
-    	read incomplete frame if only_valid_data == False
+    	Read incomplete frame if only_valid_data == False
         (usually interrupting mesurement makes incomplete frame)
     read_em_image : bool, default False
-        read SEM/STEM image from pts file if read_em_image == True
+        Read SEM/STEM image from pts file if read_em_image == True
     frame_list : list of int, default None
-    	list of frame numbers to be read (None for all data)
-    frame_shifts : list of [int dy,int dx] or list of [int dy, int dx, int dEn], default None
-    	each frame will be loaded with offset of dy, dx, (and optionary
-        energy axis). Units are pixels/channels.
-        This is useful for express drift correction. Not suitable for accurate analysis.
-        like the result of estimate_shift2D(), the first parameter is for y-axis
-    frame_start_index: list of offset pointer of each frame in the raw data.
+    	List of frame numbers to be read (None for all data)
+    frame_shifts : list of [int, int] or list of [int, int, int], default None
+    	Each frame will be loaded with offset of dy, dx, (and optionary energy
+        axis). Units are pixels/channels.
+        This is useful for express drift correction. Not suitable for accurate
+        analysis.
+        Like the result of estimate_shift2D(), the first parameter is for y-axis
+    frame_start_index: list
+        The list of offset pointer of each frame in the raw data.
         The pointer for frame0 is 0.
     lazy : bool, default False
-    	read spectrum image into sparse array if lazy == True
-    	SEM/STEM image is always read into dense array (np.ndarray)
+    	Read spectrum image into sparse array if lazy == True
+    	SEM/STEM image is always read into dense array (numpy.ndarray)
 
     Returns
     -------
-    dictionary :
-    	dictionary of spectrum image, axes and metadata
-    	(list of dictionaries of spectrum image and SEM/STEM image if read_em_image == True)
+    dictionary : dict or list of dict
+    	The dictionary used to create the signals, list of dictionaries of
+        spectrum image and SEM/STEM image if read_em_image == True
     """
     fd = open(filename, "br")
     file_magic = np.fromfile(fd, "<I", 1)[0]
@@ -596,48 +603,57 @@ def parsejeol(fd):
 
 
 def readcube(rawdata, frame_start_index, frame_list,
-              width, height, channel_number,
-              width_norm, height_norm, rebin_energy,
-              SI_dtype, sweep, frame_shifts,
-              sum_frames, read_em_image, only_valid_data, lazy): # pragma: no cover
+             width, height, channel_number,
+             width_norm, height_norm, rebin_energy,
+             SI_dtype, sweep, frame_shifts,
+             sum_frames, read_em_image, only_valid_data, lazy): # pragma: no cover
     """
     Read spectrum image (and SEM/STEM image) from pts file
 
-    Parameters:
-    -----------
-    rawdata : spectrum image part of pts file
-    frame_start_index : ndarray(shape=(sweep+1)) or ndarray(shape=(0))
-	if frame_start_index.size ==0, frame_start_index will be constructed from rawdata
-    frame_list : list of frames to be read.
-    width, height, channel_number : int, int, int
-    	sizes of image
-    width_norm, height_norm, rebin_energy : int, int, int
+    Parameters
+    ----------
+    rawdata : numpy.ndarray
+        Spectrum image part of pts file.
+    frame_start_index : np.ndarray of shape (sweep+1, ) or (0, ) 
+        The indices of each frame start. If length is zero, the indices will be
+        determined from rawdata.
+    frame_list : list
+        List of frames to be read.
+    width, height : int
+    	The navigation dimension.
+    channel_number : int
+        The number of channels.
+    width_norm, height_norm : int
+        Rebin factor of the navigation dimension
+    rebin_energy : int
+        Rebin factor of the energy dimension
     sweep : int
-    frame_shifts : 
-        list of image positions [[x0,y0,z0], ...]
-    	x, y, z can be negative.
-        data points outside data cube are ignored.
+        Number of sweep
+    frame_shifts : list
+        The list of image positions [[x0,y0,z0], ...]. The x, y, z values can
+        be negative. The data points outside data cube are ignored.
 
-    Returns:
-    --------
-    data, em_data, num_frames, frame_start_index, sweep, origin_offset
-	data, em_data : 
-	    np.ndarray of Spectrum image[frame, x, y, energy]  and SEM/TEM image [frame, x, y]
-    	    or np.ndarray of Spectrum image[x, y, energy]  and SEM/TEM image [x, y]
-    	    Spectrum image will be dask.array [[frame, x, y, energy]... ](COO) if lazy == True,
-    	has_em_image : bool
-	sweep : int
-	    number of loaded frames
-    	frame_start_index : ndarray(shape=(sweep+1), dtype=np.int64)
-	    list of the starting positions of each frame in the rawdata.
-	    -1 for unknown position
-        last_valid : bool
-    	origin_offset : ndarray([int, int, int])
-            np.ndarray of the position of top-left corner in pixel, if frame_shifts are specified.
-
+    Returns
+    -------
+    data : numpy.ndarray or dask.array
+        The spectrum image with shape (frame, x, y, energy) if sum_frames is
+        False, otherwise (x, y, energy).
+        If lazy is True, the dask array is a COO sparse array
+    em_data : numpy.ndarray or dask.array
+        The SEM/STEM image with shape (frame, x, y) if sum_frames is False,
+        otherwise (x, y).
+    has_em_image : bool
+        True if the stream contains SEM/STEM images.
+    sweep : int
+	    The number of loaded frames.
+    frame_start_index : list
+        The indices of each frame start. 
+    max_shift : numpy.ndarray
+	    The maximum shifts of the origin in the navigation dimension
+    frame_shifts : numpy.ndarray
+        The shifts of the origin in the navigation dimension for each frame.
     """
 
-    import sparse
     import dask.array as da
 
     # In case of sum_frames, spectrum image and SEM/STEM image are summing up to the same frame number.
@@ -790,13 +806,13 @@ def readframe_dense(rawdata, countup, hypermap, em_image, width, height, channel
 
     Parameters
     ----------
-    rawdata : ndarray of uint16
+    rawdata : numpy.ndarray of uint16
     	slice of one frame raw data from whole raw data 
     countup : 1 for summing up the X-ray events, -1 to cancel selected frame
-    hypermap : ndarray(width, height, channel_number)
-    	np.ndarray to store decoded spectrum image.
-    em_image : np.ndarray(width, height), dtype = np.uint16 or np.uint32
-    	np.ndarray to store decoded SEM/TEM image.
+    hypermap : numpy.ndarray(width, height, channel_number)
+    	numpy.ndarray to store decoded spectrum image.
+    em_image : numpy.ndarray(width, height), dtype = np.uint16 or np.uint32
+    	numpy.ndarray to store decoded SEM/TEM image.
     width : int
     height : int
     channel_number : int
@@ -884,12 +900,12 @@ def readframe_lazy(rawdata, _1, _2, em_image, width, height, channel_number,
 
     Parameters
     ----------
-    rawdata : ndarray of uint16
+    rawdata : numpy.ndarray of uint16
     	slice of one frame raw data from whole raw data 
     _1 : dummy parameter, not used
     _2 : dummy parameter, not used
-    em_image : np.ndarray(width, height), dtype = np.uint16 or np.uint32
-    	np.ndarray to store decoded SEM/TEM image.
+    em_image : numpy.ndarray(width, height), dtype = np.uint16 or np.uint32
+    	numpy.ndarray to store decoded SEM/TEM image.
     width : int
     height : int
     channel_number : int
