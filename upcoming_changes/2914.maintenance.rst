@@ -1,0 +1,1 @@
+Tweak tests tolerance to fix tests failure on aarch64 platform; Add python 3.10 build.
