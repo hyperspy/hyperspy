@@ -51,9 +51,9 @@ jobs:
             PYTHON_VERSION: '3.8'
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v3
         name: Install Python
         with:
           python-version: ${{ matrix.PYTHON_VERSION }}
@@ -83,7 +83,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: ${{ always() }} && ${{ matrix.PYTEST_ARGS_COVERAGE }}
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v2
 
   build_doc:
     name: Build doc
@@ -93,7 +93,7 @@ jobs:
       LATEX_DEPS: dvipng latexmk texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - uses: ericpre/sphinx-action@latest_sphinx
         with:
@@ -102,7 +102,7 @@ jobs:
           build-command: make html
           docs-folder: doc/
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           path: ./doc/_build/html/
           name: doc_build
