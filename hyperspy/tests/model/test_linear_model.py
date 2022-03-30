@@ -283,7 +283,7 @@ class TestLinearEELSFitting:
         lm = m.as_signal()
         std_lm = m.p_std
         diff = linear - lm
-        np.testing.assert_allclose(diff.data.sum(), 0.0)
+        np.testing.assert_allclose(diff.data.sum(), 0.0, atol=3E-7)
         np.testing.assert_allclose(std_linear, std_lm)
 
     def test_nonconvolved(self):
@@ -293,7 +293,7 @@ class TestLinearEELSFitting:
         m.fit(optimizer='lm')
         lm = m.as_signal()
         diff = linear - lm
-        np.testing.assert_allclose(diff.data.sum(), 0.0)
+        np.testing.assert_allclose(diff.data.sum(), 0.0, atol=3E-7)
 
 
 class TestWarningSlowMultifit:
