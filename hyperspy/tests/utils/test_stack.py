@@ -22,8 +22,6 @@ import pytest
 from hyperspy import utils
 from hyperspy.signal import BaseSignal
 from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.misc.utils import DictionaryTreeBrowser
-
 
 
 def test_stack_warning():
@@ -34,14 +32,15 @@ def test_stack_warning():
 class TestUtilsStack:
 
     def setup_method(self, method):
-        s = BaseSignal(np.random.random((3, 2, 5)))
+        s = BaseSignal(np.random.random((3, 2, 5)),
+                       original_metadata={'om': 'some metadata'}
+                       )
         s.axes_manager.set_signal_dimension(1)
         s.axes_manager[0].name = "x"
         s.axes_manager[1].name = "y"
         s.axes_manager[2].name = "E"
         s.axes_manager[2].scale = 0.5
         s.metadata.General.title = 'test'
-        s.original_metadata = DictionaryTreeBrowser({'om': 'some metadata'})
         self.signal = s
 
     @pytest.mark.parametrize('stack_metadata', [True, False, 0, 1])
