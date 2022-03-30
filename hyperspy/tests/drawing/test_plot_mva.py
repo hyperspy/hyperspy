@@ -184,6 +184,25 @@ class TestPlotClusterAnalysis:
             self.s2.plot_cluster_metric()
 
 
+def test_plot_signal_dimension3():
+    np.random.seed(1)
+    sources = np.random.random(size=(5, 100))
+    np.random.seed(1)
+    mixmat = np.random.random((100, 5))
+    s = signals.Signal1D(np.dot(mixmat, sources))
+    np.random.seed(1)
+    s.add_gaussian_noise(.1)
+    s2 = signals.Signal1D(s.data.reshape(2, 5, 10, 100))
+
+    s3 = s2.transpose(signal_axes=3)
+    s3.decomposition()
+    s3.plot_decomposition_results()
+
+    s4 = s2.transpose(signal_axes=1)
+    s4.decomposition()
+    s4.plot_decomposition_results()
+
+
 def test_plot_without_decomposition():
     sources = np.random.random(size=(5, 100))
     mixmat = np.random.random((100, 5))
