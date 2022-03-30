@@ -2423,9 +2423,9 @@ class BaseSignal(FancySlicing,
     @metadata.setter
     def metadata(self, d):
         warnings.warn(
-            "Setting `metadata` attribute is deprecated and will be removed "
+            "Setting the `metadata` attribute is deprecated and will be removed "
             "in HyperSpy 2.0. Use the `set_item` and `add_dictionary` methods "
-            "of `metadata` attribute instead."
+            "of the `metadata` attribute instead."
             )
         if isinstance(d, dict):
             d = DictionaryTreeBrowser(d)
@@ -2439,9 +2439,9 @@ class BaseSignal(FancySlicing,
     @original_metadata.setter
     def original_metadata(self, d):
         warnings.warn(
-            "Setting `original_metadata` attribute is deprecated and will be "
+            "Setting the `original_metadata` attribute is deprecated and will be removed "
             "removed in HyperSpy 2.0. Use the `set_item` and `add_dictionary` "
-            "methods of `original_metadata` attribute instead.")
+            "methods of the `original_metadata` attribute instead.")
         if isinstance(d, dict):
             d = DictionaryTreeBrowser(d)
         self._original_metadata = d

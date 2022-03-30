@@ -175,9 +175,9 @@ class Samfire:
     @metadata.setter
     def metadata(self, d):
         warnings.warn(
-            "Setting `metadata` attribute is deprecated and will be removed "
+            "Setting the `metadata` attribute is deprecated and will be removed "
             "in HyperSpy 2.0. Use the `set_item` and `add_dictionary` methods "
-            "of `metadata` attribute instead."
+            "of the `metadata` attribute instead."
             )
         if isinstance(d, dict):
             d = DictionaryTreeBrowser(d)
