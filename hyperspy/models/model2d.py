@@ -139,30 +139,49 @@ class Model2D(BaseModel):
         else:
             raise WrongObjectError(str(type(value)), 'Signal2D')
 
-    def __call__(self, non_convolved=True, onlyactive=False):
+    def __call__(self, non_convolved=True, onlyactive=False,
+                 component_list=None, binned=None):
         """Returns the corresponding 2D model for the current coordinates
 
         Parameters
         ----------
-        only_active : bool
-            If true, only the active components will be used to build the
+        non_convolved : bool
+            Not Implemented for Model2D
+        onlyactive : bool
+            If True, only the active components will be used to build the
             model.
+        component_list : list or None
+            If None, the sum of all the components is returned. If list, only
+            the provided components are returned
+        binned : None
+            Not Implemented for Model2D
 
         Returns
         -------
         numpy array
         """
+        if component_list is None:
+            component_list = self
+        if not isinstance(component_list, (list, tuple)):
+            raise ValueError(
+                "'Component_list' parameter needs to be a list or None."
+                )
+
+        if onlyactive:
+            component_list = [
+                component for component in component_list if component.active]
 
         sum_ = np.zeros_like(self.xaxis)
         if onlyactive is True:
-            for component in self:  # Cut the parameters list
+            for component in component_list:  # Cut the parameters list
                 if component.active:
                     np.add(sum_, component.function(self.xaxis, self.yaxis),
                            sum_)
         else:
-            for component in self:  # Cut the parameters list
+            for component in component_list:  # Cut the parameters list
                 np.add(sum_, component.function(self.xaxis, self.yaxis),
                        sum_)
+
         return sum_[self.channel_switches]
 
     def _errfunc(self, param, y, weights=None):

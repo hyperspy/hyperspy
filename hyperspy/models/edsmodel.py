@@ -250,11 +250,15 @@ class EDSModel(Model1D):
             component.name = xray_line
             self.append(component)
             self.xray_lines.append(component)
-            self[xray_line].A.map[
-                'values'] = self.signal.isig[line_energy].data * \
-                line_FWHM / self.signal.axes_manager[-1].scale
-            self[xray_line].A.map['is_set'] = (
-                np.ones(self.signal.isig[line_energy].data.shape) == 1)
+            if self.signal._lazy:
+                # For lazy signal, use a default value to avoid having
+                # to do out-of-core computation
+                component.A.map['values'] = 10
+            else:
+                component.A.map[
+                    'values'] = self.signal.isig[line_energy].data * \
+                    line_FWHM / self.signal.axes_manager[-1].scale
+            component.A.map['is_set'] = True
             component.A.ext_force_positive = True
             for li in elements_db[element]['Atomic_properties']['Xray_lines']:
                 if line[0] in li and line != li:

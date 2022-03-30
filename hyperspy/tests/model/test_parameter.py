@@ -239,10 +239,12 @@ class TestParameterTwin:
         self.p1 = Parameter()
         self.p2 = Parameter()
 
-    def test_slave_fixed(self):
+    def test_free_when_twin(self):
         assert self.p2.free
         self.p2.twin = self.p1
         assert not self.p2.free
+        with pytest.raises(ValueError):
+            self.p2.free = True
 
     def test_twin_value(self):
         self.p2.twin = self.p1

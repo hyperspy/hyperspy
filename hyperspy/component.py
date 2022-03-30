@@ -112,7 +112,7 @@ class Parameter(t.HasTraits):
     """
     __number_of_elements = 1
     __value = 0
-    __free = True
+    _free = True
     _bounds = (None, None)
     __twin = None
     _axes_manager = None
@@ -157,6 +157,7 @@ class Parameter(t.HasTraits):
         self.grad = None
         self.name = ''
         self.units = ''
+        self._linear = False
         self.map = None
         self.model = None
         self._whitelist = {'_id_name': None,
@@ -168,6 +169,7 @@ class Parameter(t.HasTraits):
                            '_bounds': None,
                            'ext_bounded': None,
                            'name': None,
+                           '_linear':None,
                            'ext_force_positive': None,
                            'twin_function_expr': None,
                            'twin_inverse_function_expr': None,
@@ -358,16 +360,19 @@ class Parameter(t.HasTraits):
     # Fix the parameter when coupled
     def _get_free(self):
         if self.twin is None:
-            return self.__free
+            return self._free
         else:
             return False
 
     def _set_free(self, arg):
-        old_value = self.__free
-        self.__free = arg
+        if arg and self.twin:
+            raise ValueError(f"Parameter {self.name} can't be set free "
+                             "is twinned with {self.twin}.")
+        old_value = self._free
+        self._free = arg
         if self.component is not None:
             self.component._update_free_parameters()
-        self.trait_property_changed('free', old_value, self.__free)
+        self.trait_property_changed('free', old_value, self._free)
 
     def _on_twin_update(self, value, twin=None):
         if (twin is not None
@@ -732,7 +737,7 @@ class Component(t.HasTraits):
     active = t.Property(t.CBool(True))
     name = t.Property(t.Str(''))
 
-    def __init__(self, parameter_name_list):
+    def __init__(self, parameter_name_list, linear_parameter_list=None):
         self.events = Events()
         self.events.active_changed = Event("""
             Event that triggers when the `Component.active` changes.
@@ -748,7 +753,7 @@ class Component(t.HasTraits):
                 The new active state
             """, arguments=["obj", 'active'])
         self.parameters = []
-        self.init_parameters(parameter_name_list)
+        self.init_parameters(parameter_name_list, linear_parameter_list)
         self._update_free_parameters()
         self.active = True
         self._active_array = None # only if active_is_multidimensional is True
@@ -863,11 +868,31 @@ class Component(t.HasTraits):
         self.events.active_changed.trigger(active=self._active, obj=self)
         self.trait_property_changed('active', old_value, self._active)
 
-    def init_parameters(self, parameter_name_list):
+    def init_parameters(self, parameter_name_list, linear_parameter_list=None):
+        """
+        Initialise the parameters of the component.
+
+        Parameters
+        ----------
+        parameter_name_list : list
+            The list of parameter names.
+        linear_parameter_list : list, optional
+            The list of linear parameter. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
+        if linear_parameter_list is None:
+            linear_parameter_list = []
+
         for name in parameter_name_list:
             parameter = Parameter()
             self.parameters.append(parameter)
             parameter.name = name
+            if name in linear_parameter_list:
+                parameter._linear = True
             parameter._id_name = name
             setattr(self, name, parameter)
             if hasattr(self, 'grad_' + name):
@@ -941,8 +966,8 @@ class Component(t.HasTraits):
             shape = [1, ]
         if (not isinstance(self._active_array, np.ndarray)
                 or self._active_array.shape != shape):
-            _logger.debug('Creating _active_array for {}.\n\tCurrent array '
-                          'is:\n{}'.format(self, self._active_array))
+            _logger.debug(f'Creating _active_array for {self}.\n\tCurrent '
+                          f'array is:\n{self._active_array}')
             self._active_array = np.ones(shape, dtype=bool)
 
     def _create_arrays(self):
@@ -1068,7 +1093,7 @@ class Component(t.HasTraits):
             self.fetch_stored_values()
         return s
 
-    def set_parameters_free(self, parameter_name_list=None):
+    def set_parameters_free(self, parameter_name_list=None, only_linear=False, only_nonlinear=False):
         """
         Sets parameters in a component to free.
 
@@ -1078,12 +1103,17 @@ class Component(t.HasTraits):
             If None, will set all the parameters to free.
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to free.
+        only_linear : bool
+            If True, only sets a parameter free if it is linear
+        only_nonlinear : bool
+            If True, only sets a parameter free if it is nonlinear
 
         Examples
         --------
         >>> v1 = hs.model.components1D.Voigt()
         >>> v1.set_parameters_free()
         >>> v1.set_parameters_free(parameter_name_list=['area','centre'])
+        >>> v1.set_parameters_free(linear=True)
 
         See also
         --------
@@ -1091,6 +1121,12 @@ class Component(t.HasTraits):
         hyperspy.model.BaseModel.set_parameters_free
         hyperspy.model.BaseModel.set_parameters_not_free
         """
+
+        if only_linear and only_nonlinear:
+            raise ValueError(
+                "To set all parameters free, set both `only_linear` and "
+                "`only_nonlinear` to False."
+                )
 
         parameter_list = []
         if not parameter_name_list:
@@ -1101,9 +1137,15 @@ class Component(t.HasTraits):
                     parameter_list.append(_parameter)
 
         for _parameter in parameter_list:
-            _parameter.free = True
+            if not only_linear and not only_nonlinear:
+                _parameter.free = True
+            elif only_linear and _parameter._linear:
+                _parameter.free = True
+            elif only_nonlinear and not _parameter._linear:
+                _parameter.free = True
 
-    def set_parameters_not_free(self, parameter_name_list=None):
+    def set_parameters_not_free(self, parameter_name_list=None,
+                                only_linear=False, only_nonlinear=False):
         """
         Sets parameters in a component to not free.
 
@@ -1113,12 +1155,17 @@ class Component(t.HasTraits):
             If None, will set all the parameters to not free.
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to not free.
-
+        only_linear : bool
+            If True, only sets a parameter not free if it is linear
+        only_nonlinear : bool
+            If True, only sets a parameter not free if it is nonlinear
         Examples
         --------
         >>> v1 = hs.model.components1D.Voigt()
         >>> v1.set_parameters_not_free()
         >>> v1.set_parameters_not_free(parameter_name_list=['area','centre'])
+        >>> v1.set_parameters_not_free(only_linear=True)
+
 
         See also
         --------
@@ -1126,6 +1173,11 @@ class Component(t.HasTraits):
         hyperspy.model.BaseModel.set_parameters_free
         hyperspy.model.BaseModel.set_parameters_not_free
         """
+
+        if only_linear and only_nonlinear:
+            raise ValueError(
+                "To set all parameters not free, "
+                "set both only_linear and _nonlinear to False.")
 
         parameter_list = []
         if not parameter_name_list:
@@ -1136,7 +1188,12 @@ class Component(t.HasTraits):
                     parameter_list.append(_parameter)
 
         for _parameter in parameter_list:
-            _parameter.free = False
+            if not only_linear and not only_nonlinear:
+                _parameter.free = False
+            elif only_linear and _parameter._linear:
+                _parameter.free = False
+            elif only_nonlinear and not _parameter._linear:
+                _parameter.free = False
 
     def _estimate_parameters(self, signal):
         if self._axes_manager != signal.axes_manager:
@@ -1144,9 +1201,10 @@ class Component(t.HasTraits):
             self._create_arrays()
 
     def as_dictionary(self, fullcopy=True):
-        """Returns component as a dictionary. For more information on method
+        """
+        Returns component as a dictionary. For more information on method
         and conventions, see
-        py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`
+        :py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`
 
         Parameters
         ----------
@@ -1178,7 +1236,8 @@ class Component(t.HasTraits):
         return dic
 
     def _load_dictionary(self, dic):
-        """Load data from dictionary.
+        """
+        Load data from dictionary.
 
         Parameters
         ----------
@@ -1227,7 +1286,9 @@ class Component(t.HasTraits):
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
 
     def print_current_values(self, only_free=False, fancy=True):
-        """Prints the current values of the component's parameters.
+        """
+        Prints the current values of the component's parameters.
+
         Parameters
         ----------
         only_free : bool
@@ -1238,8 +1299,41 @@ class Component(t.HasTraits):
         if fancy:
             display(current_component_values(self, only_free=only_free))
         else:
-            display_pretty(current_component_values(
-                self, only_free=only_free))
+            display_pretty(current_component_values(self, only_free=only_free))
+
+    @property
+    def _constant_term(self):
+        """
+        Get value of any (non-free) constant term of the component.
+        Returns 0 for most components.
+        """
+        return 0
+
+    def _compute_constant_term(self):
+        """Gets the value of any (non-free) constant term, with convolution"""
+        model = self.model
+        if model.convolved and self.convolved:
+            data = convolve_component_values(self._constant_term, model=model)
+        else:
+            signal_shape = model.axes_manager.signal_shape[::-1]
+            data = self._constant_term * np.ones(signal_shape)
+        return data.T[np.where(model.channel_switches)[::-1]].T
+
+
+def convolve_component_values(component_values, model):
+    """
+    Convolve component with model convolution axis.
+
+    Multiply by np.ones in order to handle case where component_values is a
+    single constant
+    """
+
+    sig = component_values * np.ones(model.convolution_axis.shape)
+
+    ll = model.low_loss(model.axes_manager)
+    convolved = np.convolve(sig, ll, mode="valid")
+
+    return convolved
 
 
 def _get_scaling_factor(signal, axis, parameter):

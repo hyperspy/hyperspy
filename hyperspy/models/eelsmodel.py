@@ -121,7 +121,7 @@ class EELSModel(Model1D):
         NotImplementedError
             If the signal axis is a non-uniform axis.
         """
-        super(EELSModel, self).append(component)
+        super().append(component)
         if isinstance(component, EELSCLEdge):
             # Test that signal axis is uniform
             if not self.axes_manager[-1].is_uniform:
@@ -140,7 +140,7 @@ class EELSModel(Model1D):
     append.__doc__ = Model1D.append.__doc__
 
     def remove(self, component):
-        super(EELSModel, self).remove(component)
+        super().remove(component)
         self._classify_components()
 
     remove.__doc__ = Model1D.remove.__doc__

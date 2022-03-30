@@ -96,7 +96,7 @@ class TestCreateEELSModel:
 class TestEELSModel:
 
     def setup_method(self, method):
-        s = hs.signals.EELSSpectrum(np.zeros(200))
+        s = hs.signals.EELSSpectrum(np.ones(200))
         s.set_microscope_parameters(100, 10, 10)
         s.axes_manager[-1].offset = 150
         s.add_elements(("B", "C"))
@@ -183,6 +183,12 @@ class TestEELSModel:
     def test_get_start_energy_below(self):
         assert (self.m._get_start_energy(100) ==
                 150)
+
+    def test_remove_components(self):
+        comp = self.m[1]
+        assert len(self.m) == 3
+        self.m.remove(comp)
+        assert len(self.m) == 2
 
 
 @lazifyTestClass

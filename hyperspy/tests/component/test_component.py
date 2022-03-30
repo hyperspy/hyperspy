@@ -22,7 +22,7 @@ from unittest import mock
 import numpy as np
 
 from hyperspy.axes import AxesManager
-from hyperspy.component import Component, _get_scaling_factor
+from hyperspy.component import Component, Parameter, _get_scaling_factor
 from hyperspy._signals.signal1d import Signal1D
 
 
@@ -198,6 +198,10 @@ class TestGeneralMethods:
         assert self.c.one.free
         assert self.c.two.free
 
+    def test_set_parameters_free_only_linear_only_nonlinear(self):
+        with pytest.raises(ValueError):
+            self.c.set_parameters_free(only_linear=True, only_nonlinear=True)
+
     def test_set_parameters_free_name(self):
         self.c.set_parameters_free(['one'])
         assert self.c.one.free
@@ -208,12 +212,17 @@ class TestGeneralMethods:
         assert not self.c.one.free
         assert not self.c.two.free
 
+    def test_set_parameters_not_free_only_linear_only_nonlinear(self):
+        with pytest.raises(ValueError):
+            self.c.set_parameters_not_free(
+                only_linear=True, only_nonlinear=True
+                )
+
     def test_set_parameters_not_free_name(self):
         self.c.one.free = True
         self.c.set_parameters_not_free(['two'])
         assert self.c.one.free
         assert not self.c.two.free
-
 
 class TestCallMethods:
 
@@ -285,3 +294,13 @@ def test_get_scaling_parameter(is_binned, non_uniform, dim):
         assert np.all(scaling_factor == 0.5)
     else:
         assert scaling_factor == 1
+
+
+def test_linear_parameter_initialisation():
+
+    C = Component(['one', 'two'], ['one'])
+    P = Parameter()
+
+    assert C.one._linear
+    assert not C.two._linear
+    assert not P._linear

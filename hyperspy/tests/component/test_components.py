@@ -151,6 +151,8 @@ class TestDoublePowerLaw:
         g = hs.model.components1D.DoublePowerLaw()
         # Fix the ratio parameter to test the fit
         g.ratio.free = False
+        g.shift.free = False
+        g.origin.free = False
         g.ratio.value = 200
         m = s.create_model()
         m.append(g)
@@ -195,6 +197,15 @@ class TestOffset:
         axis = s.axes_manager.signal_axes[0]
         factor = axis.scale if binned else 1
         np.testing.assert_allclose(o.function_nd(axis.axis) * factor, s.data)
+
+    def test_constant_term(self):
+        m = self.m
+        o = m[0]
+        o.offset.free = True
+        assert o._constant_term == 0
+
+        o.offset.free = False
+        assert o._constant_term == o.offset.value
 
 
 @pytest.mark.filterwarnings("ignore:The API of the `Polynomial` component")
@@ -416,63 +427,6 @@ class TestGaussian:
         np.testing.assert_allclose(g.function_nd(axis.axis) * factor, s2.data)
 
 
-class TestExpression:
-
-    def setup_method(self, method):
-        self.g = hs.model.components1D.Expression(
-            expression="height * exp(-(x - x0) ** 2 * 4 * log(2)/ fwhm ** 2)",
-            name="Gaussian",
-            position="x0",
-            height=1,
-            fwhm=1,
-            x0=0,
-            module="numpy")
-
-    def test_name(self):
-        assert self.g.name == "Gaussian"
-
-    def test_position(self):
-        assert self.g._position is self.g.x0
-
-    def test_f(self):
-        assert self.g.function(0) == 1
-
-    def test_grad_height(self):
-        np.testing.assert_allclose(
-            self.g.grad_height(2),
-            1.5258789062500007e-05)
-
-    def test_grad_x0(self):
-        np.testing.assert_allclose(
-            self.g.grad_x0(2),
-            0.00016922538587889289)
-
-    def test_grad_fwhm(self):
-        np.testing.assert_allclose(
-            self.g.grad_fwhm(2),
-            0.00033845077175778578)
-
-    def test_function_nd(self):
-        assert self.g.function_nd(0) == 1
-
-
-def test_expression_symbols():
-    with pytest.raises(ValueError):
-        hs.model.components1D.Expression(expression="10.0", name="offset")
-    with pytest.raises(ValueError):
-        hs.model.components1D.Expression(expression="10", name="offset")
-    with pytest.raises(ValueError):
-        hs.model.components1D.Expression(expression="10*offset", name="Offset")
-
-
-def test_expression_substitution():
-    expr = 'A / B; A = x+2; B = x-c'
-    comp = hs.model.components1D.Expression(expr, name='testcomp',
-                                            autodoc=True,
-                                            c=2)
-    assert ''.join(p.name for p in comp.parameters) == 'c'
-    assert comp.function(1) == -3
-
 
 class TestScalableFixedPattern:
 
@@ -573,8 +527,13 @@ class TestScalableFixedPattern:
     def test_recreate_component(self, interpolate):
         s = self.s
         s1 = self.pattern
-        fp = hs.model.components1D.ScalableFixedPattern(s1,
-                                                        interpolate=interpolate)
+        fp = hs.model.components1D.ScalableFixedPattern(
+            s1, interpolate=interpolate
+            )
+        assert fp.yscale._linear
+        assert not fp.xscale._linear
+        assert not fp.shift._linear
+
         m = s.create_model()
         m.append(fp)
         model_dict = m.as_dictionary()
@@ -583,6 +542,9 @@ class TestScalableFixedPattern:
         m2._load_dictionary(model_dict)
         assert m2[0].interpolate == interpolate
         np.testing.assert_allclose(m2[0].signal.data, s1.data)
+        assert m2[0].yscale._linear
+        assert not m2[0].xscale._linear
+        assert not m2[0].shift._linear
 
 
 class TestHeavisideStep:

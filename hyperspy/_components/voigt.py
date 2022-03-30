@@ -17,7 +17,6 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import math
-import numpy as np
 from packaging.version import Version
 import sympy
 
@@ -96,12 +95,12 @@ class Voigt(Expression):
         if Version(sympy.__version__) < Version("1.3"):
             raise ImportError("The `Voigt` component requires "
                               "SymPy >= 1.3")
-        # We use `_gamma` internally to workaround the use of the `gamma`
+        # We use `gamma_` internally to workaround the use of the `gamma`
         # function in sympy
         super().__init__(
             expression="area * real(V); \
                 V = wofz(z) / (sqrt(2.0 * pi) * sigma); \
-                z = (x - centre + 1j * _gamma) / (sigma * sqrt(2.0))",
+                z = (x - centre + 1j * gamma_) / (sigma * sqrt(2.0))",
             name="Voigt",
             centre=centre,
             area=area,
@@ -110,7 +109,7 @@ class Voigt(Expression):
             position="centre",
             module=module,
             autodoc=False,
-            rename_pars={"_gamma": "gamma"},
+            rename_pars={"gamma_": "gamma"},
             **kwargs,
         )
 

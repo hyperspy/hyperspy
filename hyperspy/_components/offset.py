@@ -45,7 +45,7 @@ class Offset(Component):
     """
 
     def __init__(self, offset=0.):
-        Component.__init__(self, ('offset',))
+        Component.__init__(self, ('offset',), ['offset'])
         self.offset.free = True
         self.offset.value = offset
 
@@ -133,3 +133,12 @@ class Offset(Component):
         return self._function(x, o)
 
     function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
+
+    @property
+    def _constant_term(self):
+        "Get value of constant term of component"
+        # First get currently constant parameters
+        if self.offset.free:
+            return 0
+        else:
+            return self.offset.value

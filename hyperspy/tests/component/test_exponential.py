@@ -89,3 +89,12 @@ def test_function_nd(binned, lazy):
 
     assert g2._axes_manager[-1].is_binned == binned
     np.testing.assert_allclose(g2.function_nd(axis.axis) * factor, s2.data, rtol=0.05)
+
+
+class TestLinearExponential:
+    def setup_method(self, method):
+        self.E = Exponential()
+
+    def test_properties(self):
+        assert self.E.A._linear
+        assert not self.E.tau._linear

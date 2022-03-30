@@ -55,6 +55,8 @@ class Bleasdale(Expression):
             module=module,
             autodoc=False,
             compute_gradients=False,
+            linear_parameter_list=['b'],
+            check_parameter_linearity=False,
             **kwargs)
 
     def grad_a(self, x):
