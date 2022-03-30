@@ -748,8 +748,11 @@ class HyperHeader(object):
             for j in elements.findall(
                     "./ClassInstance[@Type='TRTSpectrumRegion']"):
                 tmp_d = dictionarize(j)
-                self.elements[tmp_d['XmlClassName']] = {'line': tmp_d['Line'],
-                                                        'energy': tmp_d['Energy']}
+                # In case no information on the specific selected X-ray line is
+                # available, assume it is a 'Ka' line, reflecting the fact that element
+                # tables in Bruker Esprit (1.9 and 2.1) store a single K line for Li-Al
+                self.elements[tmp_d['XmlClassName']] = {'line': tmp_d.get('Line', 'Ka'),
+                                                        'energy': tmp_d.get('Energy')}
         except AttributeError:
             _logger.info('no element selection present in the spectra..')
 

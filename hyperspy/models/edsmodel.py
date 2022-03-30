@@ -602,11 +602,10 @@ class EDSModel(Model1D):
         calibrate: 'resolution' or 'scale' or 'offset'
             If 'resolution', fits the width of Gaussians place at all x-ray
             lines. The width is given by a model of the detector resolution,
-            obtained by extrapolating the `energy_resolution_MnKa` in `metadata`
-            `metadata`.
+            obtained by extrapolating the `energy_resolution_MnKa` in `metadata`.
             This method will update the value of `energy_resolution_MnKa`.
-            If 'scale', calibrate the scale of the energy axis
-            If 'offset', calibrate the offset of the energy axis
+            If 'scale', calibrate the scale of the energy axis.
+            If 'offset', calibrate the offset of the energy axis.
         xray_lines: list of str or 'all_alpha'
             The Xray lines. If 'all_alpha', fit all using all alpha lines
         **kwargs : extra key word arguments
@@ -641,9 +640,9 @@ class EDSModel(Model1D):
 
         Parameters
         ----------
-        xray_lines: list of str or 'all'
+        xray_lines : list of str or 'all'
             The Xray lines. If 'all', fit all lines
-        bounds: float
+        bound : float
             Bound the height of the peak to a fraction of
             its height
         """
