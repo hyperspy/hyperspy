@@ -1,0 +1,1 @@
+Deprecate :py:meth:`~.axes.AxesManager.set_signal_dimension` in favour of using :py:meth:`~.signal.BaseSignal.as_signal1D`, :py:meth:`~.signal.BaseSignal.as_signal2D` or :py:meth:`~.signal.BaseSignal.transpose` of the signal instance instead.
