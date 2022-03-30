@@ -212,7 +212,8 @@ class TestSavingMetadataContainers:
         fname = tmp_path / file
         s.save(fname)
         end = time.time()
-        assert end - start < 1.0  # It should finish in less that 1 s.
+        # It should finish in less that 2 s on CI.
+        assert end - start < 2.0  
 
     @zspy_marker
     def test_numpy_only_inner_lists(self, tmp_path, file):
