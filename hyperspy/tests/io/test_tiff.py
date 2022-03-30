@@ -704,31 +704,14 @@ def test_is_hamamatsu_streak():
     file = 'test_hamamatsu_streak_SCAN.tif'
     fname = os.path.join(MY_PATH2, file)
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        #Create a temporary copy of the file
-        filebad = "hama_bad_field.tif"
-        fname_tmp = os.path.join(MY_PATH2, filebad)
+    s = hs.load(fname)
 
-        shutil.copy(fname,fname_tmp)
+    s.original_metadata['Artist'] = "TAPTAP"
 
-        s = hs.load(fname_tmp)
+    assert _is_streak_hamamatsu(s.original_metadata) == False
 
-        #Alter the temporary copy
-        with tifffile.TiffFile(fname_tmp,mode='r+b') as tif:
-            _ = tif.pages[0].tags['Artist'].overwrite(tif,value="TAPTAPTAP")
+    s.original_metadata['Artist'] = "Copyright Hamamatsu"
 
-        s = hs.load(fname_tmp)
-        assert _is_streak_hamamatsu(s.original_metadata) == False
+    assert _is_streak_hamamatsu(s.original_metadata) == True
 
-        with tifffile.TiffFile(fname_tmp,mode='r+b') as tif:
-            _ = tif.pages[0].tags['Artist'].overwrite(tif,value="Copyright Hamamatsu")
-
-        s = hs.load(fname_tmp)
-        assert _is_streak_hamamatsu(s.original_metadata) == True
-
-        with tifffile.TiffFile(fname_tmp,mode='r+b') as tif:
-            _ = tif.pages[0].tags['Software'].overwrite(tif,value="TAPTAPTAPT")
-
-        s = hs.load(fname_tmp)
-        assert _is_streak_hamamatsu(s.original_metadata) == False
-
+    s.original_metadata['Software'] = "TAPTAPTAP"
