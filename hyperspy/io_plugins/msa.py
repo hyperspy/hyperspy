@@ -159,8 +159,8 @@ def parse_msa_string(string, filename=None):
     --------
     file_data_list: list
         The list containts a dictionary that contains the parsed
-        information. It can be used to create a `:class:BaseSignal`
-        using `:func:hyperspy.io.dict2signal`.
+        information. It can be used to create a :py:class:`~.signal.BaseSignal`
+        using :py:func:`~.io.dict2signal`.
 
     """
     if not hasattr(string, "readlines"):
@@ -211,18 +211,26 @@ def parse_msa_string(string, filename=None):
         else:
             clean_par, units = parameter, None
         if clean_par in keywords:
+            type_ = keywords[clean_par]['dtype']
             try:
-                parameters[parameter] = keywords[clean_par]['dtype'](value)
+                parameters[parameter] = type_(value)
             except BaseException:
-                # Normally the offending mispelling is a space in the scientic
-                # notation, e.g. 2.0 E-06, so we try to correct for it
-                try:
-                    parameters[parameter] = keywords[clean_par]['dtype'](
-                        value.replace(' ', ''))
-                except BaseException:
-                    _logger.exception(
-                        "The %s keyword value, %s could not be converted to "
-                        "the right type", parameter, value)
+                error = f"The {parameter} keyword value, {value} could \
+                    not be converted to the right type."
+                if 'e' in value.lower():
+                    # Normally, the offending misspelling is a space in the 
+                    # scientific notation, e.g. 2.0 E-06
+                    try:
+                        parameters[parameter] = type_(value.replace(' ', ''))
+                    except BaseException:  # pragma: no cover
+                        _logger.exception(error)
+                else:
+                    # Some files have two values separated by a space
+                    # https://eelsdb.eu/wp-content/uploads/2017/03/Cu4O3-O-K.msa
+                    try:
+                        parameters[parameter] = type_(value.split(' ')[0])
+                    except BaseException:  # pragma: no cover
+                        _logger.exception(error)
 
             if keywords[clean_par]['mapped_to'] is not None:
                 mapped.set_item(keywords[clean_par]['mapped_to'],
@@ -235,7 +243,10 @@ def parse_msa_string(string, filename=None):
             time = dt.strptime(parameters['TIME'], "%H:%M")
             mapped.set_item('General.time', time.time().isoformat())
         except ValueError as e:
-            _logger.warning('Possible malformed TIME field in msa file. The time information could not be retrieved.: %s' % e)
+            _logger.warning(
+                'Possible malformed TIME field in msa file. The time '
+                f'information could not be retrieved.: {e}'
+                )
     else:
         _logger.warning('TIME information missing.')
 
