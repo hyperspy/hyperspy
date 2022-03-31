@@ -20,8 +20,12 @@
 import requests
 import logging
 
+from hyperspy.defaults_parser import preferences
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+from hyperspy.external.progressbar import progressbar
 from hyperspy.io_plugins.msa import parse_msa_string
 from hyperspy.io import dict2signal
+
 
 _logger = logging.getLogger(__name__)
 
@@ -30,7 +34,8 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
            edge=None, min_energy=None, max_energy=None, resolution=None,
            min_energy_compare="gt", max_energy_compare="lt",
            resolution_compare="lt", max_n=-1, monochromated=None, order=None,
-           order_direction="ASC", verify_certificate=True):
+           order_direction="ASC", verify_certificate=True,
+           show_progressbar=None):
     r"""Download spectra from the EELS Data Base.
 
     Parameters
@@ -115,6 +120,7 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
         If True, verify the eelsdb website certificate and raise an error
         if it is invalid. If False, continue querying the database if the certificate
         is invalid. (This is a potential security risk.)
+    %s
 
 
 
@@ -218,6 +224,9 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
     else:
         params["element[]"] = element
 
+    if show_progressbar is None:
+        show_progressbar = preferences.General.show_progressbar
+
     request = requests.get('http://api.eelsdb.eu/spectra', params=params, verify=verify_certificate)
     spectra = []
     jsons = request.json()
@@ -225,8 +234,10 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
         # Invalid query, EELSdb raises error.
         raise IOError(
             "Please report the following error to the HyperSpy developers: "
-            "%s" % jsons["message"])
-    for json_spectrum in jsons:
+            f"{jsons['message']}."
+            )
+        
+    for json_spectrum in progressbar(jsons, disable=not show_progressbar):
         download_link = json_spectrum['download_link']
         msa_string = requests.get(download_link, verify=verify_certificate).text
         try:
@@ -246,6 +257,7 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
                 "Title: %s id: %s.\n"
                 "Please report this error to http://eelsdb.eu/about \n" %
                 (json_spectrum["title"], json_spectrum["id"]))
+
     if not spectra:
         _logger.info(
             "The EELS database does not contain any spectra matching your query"
@@ -294,3 +306,5 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
                                 json_md.microscope)
 
     return spectra
+
+eelsdb.__doc__ %= SHOW_PROGRESSBAR_ARG
