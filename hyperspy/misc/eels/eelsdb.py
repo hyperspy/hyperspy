@@ -239,6 +239,15 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
         
     for json_spectrum in progressbar(jsons, disable=not show_progressbar):
         download_link = json_spectrum['download_link']
+        if download_link.split('.')[-1].lower() != 'msa':
+            _logger.exception(
+                "The source file is not a msa file, please report this error "
+                "to http://eelsdb.eu/about with the following details:\n"
+                f"Title: {json_spectrum['title']}\nid: {json_spectrum['id']}\n"
+                f"Download link: {download_link}\n"
+                f"Permalink: {json_spectrum['permalink']}"
+                )
+            continue
         msa_string = requests.get(download_link, verify=verify_certificate).text
         try:
             s = dict2signal(parse_msa_string(msa_string)[0])
@@ -273,9 +282,12 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
             json_md = s.original_metadata.json
             s.metadata.General.title = json_md.title
             if s.metadata.Signal.signal_type == "EELS":
-                if json_md.elements:
+                if json_md.get_item('elements'):
                     try:
-                        s.add_elements(json_md.elements)
+                        # When 'No' is in the list of elements
+                        # https://api.eelsdb.eu/spectra/zero-loss-c-feg-hitachi-disp-0-214-ev/
+                        if json_md.elements[0].lower() != 'no':
+                            s.add_elements(json_md.elements)
                     except ValueError:
                         _logger.exception(
                             "The following spectrum contains invalid chemical "

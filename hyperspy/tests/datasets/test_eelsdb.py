@@ -98,5 +98,16 @@ def test_eelsdb_corrupted_file():
         )
     assert len(ss) == 1
     assert ss[0].metadata.General.title == 'O-K edge in Cu4O3'
-    
 
+
+@pytest.mark.skipif(eelsdb_down(), reason="Unable to connect to EELSdb")
+def test_eelsdb_elements_no():
+    title = "Zero-loss c-FEG Hitachi Disp 0.214 eV"
+    ss = _eelsdb(author='Luc Lajaunie', title=title)
+    assert len(ss) == 1
+    assert ss[0].metadata.General.title == title
+
+
+@pytest.mark.skipif(eelsdb_down(), reason="Unable to connect to EELSdb")
+def test_eelsdb_txt_file():
+    _ = _eelsdb(title="Porous cobalt coating with He-filled nanopores")
