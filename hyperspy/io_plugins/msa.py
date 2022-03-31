@@ -247,8 +247,6 @@ def parse_msa_string(string, filename=None):
                 'Possible malformed TIME field in msa file. The time '
                 f'information could not be retrieved.: {e}'
                 )
-    else:
-        _logger.warning('TIME information missing.')
 
     malformed_date_error = 'Possibly malformed DATE in msa file. The date information could not be retrieved.'
     if "DATE" in parameters and parameters["DATE"]:
