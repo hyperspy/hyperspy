@@ -869,9 +869,6 @@ def _add_file_load_save_metadata(operation, signal, io_plugin):
         'hyperspy_version': hs_version,
         'timestamp': datetime.now().astimezone().isoformat()
     }
-    if isinstance(signal.metadata, dict):
-        return _add_file_load_save_metadata_dict(operation, signal,
-                                                 io_plugin, mdata_dict)
 
     # get the largest integer key present under General.FileIO, returning 0
     # as default if none are present
@@ -880,31 +877,5 @@ def _add_file_load_save_metadata(operation, signal, io_plugin):
          for i in signal.metadata.get_item('General.FileIO', {}).keys()] + [0])
 
     signal.metadata.set_item(f"General.FileIO.{largest_index}", mdata_dict)
-
-    return signal
-
-
-def _add_file_load_save_metadata_dict(operation, signal, io_plugin, mdata_dict):
-    """
-    A version of :py:func:`_add_file_load_save_metadata` that processes
-    when the metadata is stored as a dict rather than the usual
-    DictionaryTreeBrowser
-    """
-    try:
-        f_io = signal.metadata['General']['FileIO']
-        largest_index = max([int(i) + 1 for i in f_io.keys()] + [0])
-    except KeyError:
-        largest_index = 0
-
-    if 'General' not in signal.metadata:
-        signal.metadata['General'] = {
-            'FileIO': {f'{largest_index}': mdata_dict}
-        }
-    elif 'FileIO' not in signal.metadata['General']:
-        signal.metadata['General']['FileIO'] = \
-            {f'{largest_index}': mdata_dict}
-    else:
-        signal.metadata['General'][
-            'FileIO'][f'{largest_index}'] = mdata_dict
 
     return signal

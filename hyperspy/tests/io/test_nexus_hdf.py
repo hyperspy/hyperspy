@@ -339,9 +339,11 @@ class TestSavingMetadataContainers:
         s.original_metadata.set_item("testarray2", (1, 2, 3, 4, 5))
         s.original_metadata.set_item("testarray3", np.array([1, 2, 3, 4, 5]))
 
-        with pytest.warns():
+        with pytest.warns(UserWarning,
+                          match="Setting the `original_metadata` attribute"):
             s.original_metadata = s.original_metadata.as_dictionary()
-        with pytest.warns():
+        with pytest.warns(UserWarning,
+                          match="Setting the `metadata` attribute"):
             s.metadata = s.metadata.as_dictionary()
 
         assert isinstance(s.metadata, DictionaryTreeBrowser)
