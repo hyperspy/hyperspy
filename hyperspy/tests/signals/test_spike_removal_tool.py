@@ -66,6 +66,24 @@ add_noise_params = [
 ]
 
 
+def test_spikes_removal_tool_navigation_dimension_0():
+    #Artificial Signal
+    s = Signal1D(np.ones(1234))
+    #Add a spike
+    s.data[333] = 666
+
+    assert s.axes_manager.navigation_dimension == 0
+
+    sr = SpikesRemovalInteractive(s)
+    sr.threshold = 1.5
+    sr.add_noise = False
+    sr.find()
+
+    sr.apply()
+
+    np.testing.assert_allclose(s.data[333], 1, atol=1e-4)
+
+
 @pytest.mark.parametrize(("add_noise, decimal"), [(True, 1), (False, 5)])
 def test_spikes_removal_tool_non_interactive(add_noise, decimal):
     s = Signal1D(np.ones((2, 3, 30)))
