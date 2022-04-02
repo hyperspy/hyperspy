@@ -288,6 +288,18 @@ def test_save_load_cycle(save_path, convert_units):
     sig_reload.metadata.General.original_filename = (
         signal.metadata.General.original_filename
     )
+    # assert file reading tests here, then delete so we can compare
+    # entire metadata structure at once:
+    plugin = 'hyperspy.io_plugins.blockfile'
+    assert signal.metadata.General.FileIO.Number_0.operation == 'load'
+    assert signal.metadata.General.FileIO.Number_0.io_plugin == plugin
+    assert signal.metadata.General.FileIO.Number_1.operation == 'save'
+    assert signal.metadata.General.FileIO.Number_1.io_plugin == plugin
+    assert sig_reload.metadata.General.FileIO.Number_0.operation == 'load'
+    assert sig_reload.metadata.General.FileIO.Number_0.io_plugin == plugin
+    del signal.metadata.General.FileIO
+    del sig_reload.metadata.General.FileIO
+
     assert_deep_almost_equal(
         signal.metadata.as_dictionary(), sig_reload.metadata.as_dictionary()
     )

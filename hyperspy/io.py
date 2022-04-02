@@ -27,7 +27,9 @@ from natsort import natsorted
 from inspect import isgenerator
 from pathlib import Path
 from collections.abc import MutableMapping
+from datetime import datetime
 
+from hyperspy import __version__ as hs_version
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.io.tools import ensure_directory
@@ -538,6 +540,7 @@ def load_with_reader(
             if signal_type is not None:
                 signal_dict['metadata']["Signal"]['signal_type'] = signal_type
             signal = dict2signal(signal_dict, lazy=lazy)
+            signal = _add_file_load_save_metadata('load', signal, reader)
             path = _parse_path(filename)
             folder, filename = os.path.split(os.path.abspath(path))
             filename, extension = os.path.splitext(filename)
@@ -843,6 +846,7 @@ def save(filename, signal, overwrite=None, **kwds):
     if write:
         # Pass as a string for now, pathlib.Path not
         # properly supported in io_plugins
+        signal = _add_file_load_save_metadata('save', signal, writer)
         if not isinstance(filename, MutableMapping):
             writer.file_writer(str(filename), signal, **kwds)
             _logger.info(f'{filename} was created')
@@ -856,3 +860,22 @@ def save(filename, signal, overwrite=None, **kwds):
                 signal.tmp_parameters.set_item('folder', file.parent)
                 signal.tmp_parameters.set_item('filename', file.stem)
                 signal.tmp_parameters.set_item('extension', extension)
+
+
+def _add_file_load_save_metadata(operation, signal, io_plugin):
+    mdata_dict = {
+        'operation': operation,
+        'io_plugin': io_plugin.__loader__.name,
+        'hyperspy_version': hs_version,
+        'timestamp': datetime.now().astimezone().isoformat()
+    }
+
+    # get the largest integer key present under General.FileIO, returning 0
+    # as default if none are present
+    largest_index = max(
+        [int(i.replace('Number_', '')) + 1
+         for i in signal.metadata.get_item('General.FileIO', {}).keys()] + [0])
+
+    signal.metadata.set_item(f"General.FileIO.{largest_index}", mdata_dict)
+
+    return signal

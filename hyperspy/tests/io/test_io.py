@@ -30,6 +30,8 @@ import hyperspy.api as hs
 from hyperspy.signals import Signal1D
 from hyperspy.axes import DataAxis
 from hyperspy.io_plugins import io_plugins
+from hyperspy import __version__ as hs_version
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
 FULLFILENAME = Path(__file__).resolve().parent.joinpath("test_io_overwriting.hspy")
@@ -260,3 +262,48 @@ def test_load_original_metadata():
 
         t = hs.load(Path(dirpath, "temp.hspy"), load_original_metadata=False)
         assert t.original_metadata.as_dictionary() == {}
+
+
+def test_load_save_filereader_metadata():
+    # tests that original FileReader metadata is correctly persisted and
+    # appended through a save and load cycle
+
+    my_path = os.path.dirname(__file__)
+    s = hs.load(os.path.join(my_path, "msa_files", "example1.msa"))
+    assert s.metadata.General.FileIO.Number_0.io_plugin == \
+           'hyperspy.io_plugins.msa'
+    assert s.metadata.General.FileIO.Number_0.operation == 'load'
+    assert s.metadata.General.FileIO.Number_0.hyperspy_version == hs_version
+
+    with tempfile.TemporaryDirectory() as dirpath:
+        f = os.path.join(dirpath, "temp")
+        s.save(f)
+        expected = {
+            '0': {
+                'io_plugin': 'hyperspy.io_plugins.msa',
+                'operation': 'load',
+                'hyperspy_version': hs_version
+            },
+            '1': {
+                'io_plugin': 'hyperspy.io_plugins.hspy',
+                'operation': 'save',
+                'hyperspy_version': hs_version
+            },
+            '2': {
+                'io_plugin': 'hyperspy.io_plugins.hspy',
+                'operation': 'load',
+                'hyperspy_version': hs_version
+            },
+        }
+        del s.metadata.General.FileIO.Number_0.timestamp  # runtime dependent
+        del s.metadata.General.FileIO.Number_1.timestamp  # runtime dependent
+        assert \
+            s.metadata.General.FileIO.Number_0.as_dictionary() == expected['0']
+        assert \
+            s.metadata.General.FileIO.Number_1.as_dictionary() == expected['1']
+
+        t = hs.load(Path(dirpath, "temp.hspy"))
+        del t.metadata.General.FileIO.Number_0.timestamp  # runtime dependent
+        del t.metadata.General.FileIO.Number_1.timestamp  # runtime dependent
+        del t.metadata.General.FileIO.Number_2.timestamp  # runtime dependent
+        assert t.metadata.General.FileIO.as_dictionary() == expected

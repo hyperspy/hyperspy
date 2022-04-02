@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pytest
 
+from hyperspy import __version__ as hs_version
 from hyperspy import signals
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
@@ -129,7 +130,14 @@ def test_hyperspy_wrap():
                 '30x30_instructively_packed_16bit_compressed.bcf',
             'title': 'EDX',
             'date': '2018-10-04',
-            'time': '13:02:07'},
+            'time': '13:02:07',
+            'FileIO': {
+                '0': {
+                    'operation': 'load',
+                    'hyperspy_version': hs_version,
+                    'io_plugin': 'hyperspy.io_plugins.bruker',
+                }
+            }},
         'Sample': {
             'name': 'chevkinite',
             'elements': ['Al', 'C', 'Ca', 'Ce', 'Fe', 'Gd', 'K', 'Mg', 'Na',
@@ -153,6 +161,8 @@ def test_hyperspy_wrap():
     with open(filename_omd) as fn:
         # original_metadata:
         omd_ref = json.load(fn)
+    # delete FileIO timestamp since it's runtime dependent
+    del hype.metadata.General.FileIO.Number_0.timestamp
     assert_deep_almost_equal(hype.metadata.as_dictionary(), md_ref)
     assert_deep_almost_equal(hype.original_metadata.as_dictionary(), omd_ref)
     assert hype.metadata.General.date == "2018-10-04"

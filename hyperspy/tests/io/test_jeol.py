@@ -23,6 +23,7 @@ import pytest
 import numpy as np
 
 import hyperspy.api as hs
+from hyperspy import __version__ as hs_version
 
 
 def teardown_module(module):
@@ -257,11 +258,23 @@ def test_load_eds_file(filename_as_string):
     assert axis.offset == -0.00176612
     assert axis.scale == 0.0100004
 
+    # delete timestamp from metadata since it's runtime dependent
+    del s.metadata.General.FileIO.Number_0.timestamp
+
     md_dict = s.metadata.as_dictionary()
     assert md_dict['General'] == {'original_filename': 'met03.EDS',
                                   'time': '14:14:51',
-                                  'date':'2018-06-25',
-                                  'title': 'EDX'}
+                                  'date': '2018-06-25',
+                                  'title': 'EDX',
+                                  'FileIO': {
+                                    '0': {
+                                        'operation': 'load',
+                                        'hyperspy_version': hs_version,
+                                        'io_plugin':
+                                            'hyperspy.io_plugins.jeol'
+                                    }
+                                  }
+                                  }
     TEM_dict = md_dict['Acquisition_instrument']['TEM']
     assert TEM_dict == {'beam_energy': 200.0,
                         'Detector': {'EDS': {'azimuth_angle': 90.0,
