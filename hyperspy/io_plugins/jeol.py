@@ -78,7 +78,7 @@ def file_reader(filename, **kwds):
         file_magic = np.fromfile(fd, "<I", 1)[0]
         if file_magic == 0:
             fd.seek(12)
-            filetree = parsejeol(fd)
+            filetree = _parsejeol(fd)
             fd.close()
             filepath, filen = os.path.split(os.path.abspath(filename))
             if "SampleInfo" in filetree.keys():
@@ -114,15 +114,15 @@ def file_reader(filename, **kwds):
     return dictionary
 
 
-def read_img(filename, scale=None, **kwargs):
+def _read_img(filename, scale=None, **kwargs):
     fd = open(filename, "br")
     file_magic = np.fromfile(fd, "<I", 1)[0]
     if file_magic == 52:
         # fileformat
-        _ = decode(fd.read(32).rstrip(b"\x00"))
+        _ = _decode(fd.read(32).rstrip(b"\x00"))
         head_pos, head_len, data_pos = np.fromfile(fd, "<I", 3)
         fd.seek(data_pos + 12)
-        header_long = parsejeol(fd)
+        header_long = _parsejeol(fd)
         width, height = header_long["Image"]["Size"]
         header_long["Image"]["Bits"].resize((height, width))
         data = header_long["Image"]["Bits"]
@@ -194,7 +194,7 @@ def read_img(filename, scale=None, **kwargs):
     return dictionary
 
 
-def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
+def _read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
              SI_dtype=np.uint8, cutoff_at_kV=None, downsample=1,
              only_valid_data=True, read_em_image=False,
              frame_list=None, frame_start_index=None, frame_shifts=None, 
@@ -259,15 +259,15 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
 
     if file_magic == 304:
         # fileformat
-        _ = decode(fd.read(8).rstrip(b"\x00"))
+        _ = _decode(fd.read(8).rstrip(b"\x00"))
         a, b, head_pos, head_len, data_pos, data_len = np.fromfile(fd, "<I", 6)
         # groupname
-        _ = decode(fd.read(128).rstrip(b"\x00"))
+        _ = _decode(fd.read(128).rstrip(b"\x00"))
         # memo
-        _ = decode(fd.read(132).rstrip(b"\x00"))
+        _ = _decode(fd.read(132).rstrip(b"\x00"))
         datefile = datetime(1899, 12, 30) + timedelta(days=np.fromfile(fd, "d", 1)[0])
         fd.seek(head_pos + 12)
-        header = parsejeol(fd)
+        header = _parsejeol(fd)
         meas_data_header = header["PTTD Data"]["AnalyzableMap MeasData"]
         width, height = meas_data_header["Meas Cond"]["Pixels"].split("x")
         width = int(width)
@@ -393,7 +393,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
             fr[:len(frame_shifts), 0:2] = np.asarray(frame_shifts)
             frame_shifts = fr
 
-        data, em_data, has_em_image, sweep, frame_start_index, last_valid, origin, frame_shifts_1 = readcube(
+        data, em_data, has_em_image, sweep, frame_start_index, last_valid, origin, frame_shifts_1 = _readcube(
             rawdata, frame_start_index, frame_list,
             width, height, channel_number,
             width_norm, height_norm, rebin_energy,
@@ -522,7 +522,7 @@ def read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
     return dictionary
 
 
-def parsejeol(fd):
+def _parsejeol(fd):
     final_dict = {}
     tmp_list = []
     tmp_dict = final_dict
@@ -541,9 +541,9 @@ def parsejeol(fd):
             elif (
                 kwrd[-1] == 222
             ):  # remove undecodable byte at the end of first ScanSize variable
-                kwrd = decode(kwrd[:-1])
+                kwrd = _decode(kwrd[:-1])
             else:
-                kwrd = decode(kwrd)
+                kwrd = _decode(kwrd)
             val_type, val_len = np.fromfile(fd, "<i", 2)
             tmp_list.append(kwrd)
             if val_type == 0:
@@ -553,7 +553,7 @@ def parsejeol(fd):
                 arr_len = val_len // np.dtype(c_type).itemsize
                 if c_type == "c":
                     value = fd.read(val_len).rstrip(b"\x00")
-                    value = decode(value).split("\x00")
+                    value = _decode(value).split("\x00")
                     # value = os.path.normpath(value.replace('\\','/')).split('\x00')
                 else:
                     value = np.fromfile(fd, c_type, arr_len)
@@ -601,8 +601,7 @@ def parsejeol(fd):
     return final_dict
 
 
-
-def readcube(rawdata, frame_start_index, frame_list,
+def _readcube(rawdata, frame_start_index, frame_list,
              width, height, channel_number,
              width_norm, height_norm, rebin_energy,
              SI_dtype, sweep, frame_shifts,
@@ -693,9 +692,9 @@ def readcube(rawdata, frame_start_index, frame_list,
     height += sxyz[0]
 
     if lazy:
-        readframe = readframe_lazy
+        readframe = _readframe_lazy
     else:
-        readframe = readframe_dense
+        readframe = _readframe_dense
         
     frame_num = 0
     p_start = 0
@@ -712,7 +711,7 @@ def readcube(rawdata, frame_start_index, frame_list,
         elif frame_num < frame_idx and frame_start_index[frame_num] < 0:
             # record start point of frame and skip frame
             frame_start_index[frame_num] = p_start
-            p_start += readframe_dummy(rawdata[p_start:])
+            p_start += _readframe_dummy(rawdata[p_start:])
             frame_num += 1
             continue
         else:
@@ -797,10 +796,10 @@ def readcube(rawdata, frame_start_index, frame_list,
 
 
 @numba.njit(cache=True)
-def readframe_dense(rawdata, countup, hypermap, em_image, width, height, channel_number,
-                    width_norm, height_norm, rebin_energy, dx, dy, dz, max_value): # pragma: nocover
+def _readframe_dense(rawdata, countup, hypermap, em_image, width, height, channel_number,
+                     width_norm, height_norm, rebin_energy, dx, dy, dz, max_value): # pragma: nocover
     """
-    Read one frame from pts file. Used in a inner loop of readcube function.
+    Read one frame from pts file. Used in a inner loop of _readcube function.
     This function always read SEM/STEM image even if read_em_image == False
     hypermap and em_image array will be modified
 
@@ -890,11 +889,12 @@ def readframe_dense(rawdata, countup, hypermap, em_image, width, height, channel
         valid = True
     return count, 0, has_em_image, valid, previous_y // height_norm
 
+
 @numba.njit(cache=True)
-def readframe_lazy(rawdata, _1, _2, em_image, width, height, channel_number,
+def _readframe_lazy(rawdata, _1, _2, em_image, width, height, channel_number,
                     width_norm, height_norm, rebin_energy, dx, dy, dz, _3):  # pragma: no cover
     """
-    Read one frame from pts file. Used in a inner loop of readcube function.
+    Read one frame from pts file. Used in a inner loop of _readcube function.
     This function always read SEM/STEM image even if read_em_image == False
     hypermap and em_image array will be modified
 
@@ -974,7 +974,8 @@ def readframe_lazy(rawdata, _1, _2, em_image, width, height, channel_number,
         valid = True
     return count, data, has_em_image, valid, previous_y // height_norm
 
-def readframe_dummy(rawdata):
+
+def _readframe_dummy(rawdata):
     count = 0
     previous_y = 0
     for value in rawdata:
@@ -989,7 +990,7 @@ def readframe_dummy(rawdata):
     return count
 
 
-def read_eds(filename, **kwargs):
+def _read_eds(filename, **kwargs):
     header = {}
     fd = open(filename, "br")
     # file_magic
@@ -998,8 +999,8 @@ def read_eds(filename, **kwargs):
     header["filedate"] = datetime(1899, 12, 30) + timedelta(
         days=np.fromfile(fd, "<d", 1)[0]
     )
-    header["sp_name"] = decode(fd.read(80).rstrip(b"\x00"))
-    header["username"] = decode(fd.read(32).rstrip(b"\x00"))
+    header["sp_name"] = _decode(fd.read(80).rstrip(b"\x00"))
+    header["username"] = _decode(fd.read(32).rstrip(b"\x00"))
 
     np.fromfile(fd, "<i", 1)  # 1
     header["arr"] = np.fromfile(fd, "<d", 10)
@@ -1024,10 +1025,10 @@ def read_eds(filename, **kwargs):
     np.fromfile(fd, "<d", 1)[0]
     header["CoefA"] = np.fromfile(fd, "<d", 1)[0]
     header["CoefB"] = np.fromfile(fd, "<d", 1)[0]
-    header["State"] = decode(fd.read(32).rstrip(b"\x00"))
+    header["State"] = _decode(fd.read(32).rstrip(b"\x00"))
     np.fromfile(fd, "<i", 1)[0]
     np.fromfile(fd, "<d", 1)[0]
-    header["Tpl"] = decode(fd.read(32).rstrip(b"\x00"))
+    header["Tpl"] = _decode(fd.read(32).rstrip(b"\x00"))
     header["NumCH"] = np.fromfile(fd, "<i", 1)[0]
     data = np.fromfile(fd, "<i", header["NumCH"])
 
@@ -1052,7 +1053,7 @@ def read_eds(filename, **kwargs):
             # unknown
             _ = np.fromfile(fd, "<b", 14)
             energy, unknow1, unknow2, unknow3 = np.fromfile(fd, "<d", 4)
-            elem_name = decode(fd.read(32).rstrip(b"\x00"))
+            elem_name = _decode(fd.read(32).rstrip(b"\x00"))
             # mark3?
             _ = np.fromfile(fd, "<i", 1)[0]
             n_line = np.fromfile(fd, "<i", 1)[0]
@@ -1063,9 +1064,9 @@ def read_eds(filename, **kwargs):
                 e_line = np.fromfile(fd, "<d", 1)[0]
                 z = np.fromfile(fd, "<H", 1)[0]
                 e_length = np.fromfile(fd, "<b", 1)[0]
-                e_name = decode(fd.read(e_length).rstrip(b"\x00"))
+                e_name = _decode(fd.read(e_length).rstrip(b"\x00"))
                 l_length = np.fromfile(fd, "<b", 1)[0]
-                l_name = decode(fd.read(l_length).rstrip(b"\x00"))
+                l_name = _decode(fd.read(l_length).rstrip(b"\x00"))
                 detect = np.fromfile(fd, "<i", 1)[0]
                 lines[e_name + "_" + l_name] = {
                     "energy": e_line,
@@ -1100,7 +1101,7 @@ def read_eds(filename, **kwargs):
             mass1 = np.fromfile(fd, "<d", 1)[0]
             error = np.fromfile(fd, "<d", 1)[0]
             atom = np.fromfile(fd, "<d", 1)[0]
-            ox_name = decode(fd.read(16).rstrip(b"\x00"))
+            ox_name = _decode(fd.read(16).rstrip(b"\x00"))
             mass2 = np.fromfile(fd, "<d", 1)[0]
             # K
             _ = np.fromfile(fd, "<d", 1)[0]
@@ -1125,9 +1126,9 @@ def read_eds(filename, **kwargs):
     e = np.fromfile(fd, "<i", 1)
     if e == 5:
         footer["Parameters"] = {
-            "DetT": decode(fd.read(16).rstrip(b"\x00")),
-            "SEM": decode(fd.read(16).rstrip(b"\x00")),
-            "Port": decode(fd.read(16).rstrip(b"\x00")),
+            "DetT": _decode(fd.read(16).rstrip(b"\x00")),
+            "SEM": _decode(fd.read(16).rstrip(b"\x00")),
+            "Port": _decode(fd.read(16).rstrip(b"\x00")),
             "AccKV": np.fromfile(fd, "<d", 1)[0],
             "AccNA": np.fromfile(fd, "<d", 1)[0],
             "skip": np.fromfile(fd, "<b", 38),
@@ -1149,10 +1150,10 @@ def read_eds(filename, **kwargs):
             "XtalAng": np.fromfile(fd, "d", 1)[0],
             "ElevAng": np.fromfile(fd, "d", 1)[0],
             "ValidSize": np.fromfile(fd, "d", 1)[0],
-            "WinCMat": decode(fd.read(4).rstrip(b"\x00")),
+            "WinCMat": _decode(fd.read(4).rstrip(b"\x00")),
             "WinCZ": np.fromfile(fd, "<H", 1)[0],
             "WinCThic": np.fromfile(fd, "d", 1)[0],
-            "WinChem": decode(fd.read(16).rstrip(b"\x00")),
+            "WinChem": _decode(fd.read(16).rstrip(b"\x00")),
             "WinChem_nelem": np.fromfile(fd, "<H", 1)[0],
             "WinChem_Z1": np.fromfile(fd, "<H", 1)[0],
             "WinChem_Z2": np.fromfile(fd, "<H", 1)[0],
@@ -1166,7 +1167,7 @@ def read_eds(filename, **kwargs):
             "WinChem_m5": np.fromfile(fd, "d", 1)[0],
             "WinThic": np.fromfile(fd, "d", 1)[0],
             "WinDens": np.fromfile(fd, "d", 1)[0],
-            "SpatMat": decode(fd.read(4).rstrip(b"\x00")),
+            "SpatMat": _decode(fd.read(4).rstrip(b"\x00")),
             "SpatZ": np.fromfile(fd, "<H", 1)[0],
             "SpatThic": np.fromfile(fd, "d", 1)[0],
             "SiDead": np.fromfile(fd, "d", 1)[0],
@@ -1227,13 +1228,13 @@ def read_eds(filename, **kwargs):
     return dictionary
 
 
-extension_to_reader_mapping = {"img": read_img,
-                               "map": read_img,
-                               "pts": read_pts,
-                               "eds": read_eds}
+extension_to_reader_mapping = {"img": _read_img,
+                               "map": _read_img,
+                               "pts": _read_pts,
+                               "eds": _read_eds}
 
 
-def decode(bytes_string):
+def _decode(bytes_string):
     try:
         string = bytes_string.decode("utf-8")
     except:
