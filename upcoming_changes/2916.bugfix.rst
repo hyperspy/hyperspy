@@ -1,0 +1,1 @@
+Fix bug with importing some spectra from eelsdb and add progress bar
