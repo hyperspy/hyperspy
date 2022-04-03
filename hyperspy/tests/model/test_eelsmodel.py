@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
+import io
+import contextlib
 import numpy as np
 import pytest
 
@@ -233,7 +235,11 @@ class TestEELSModel:
         assert not (c_k in m)
 
     def test_quantify(self):
-        self.m.quantify()
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            self.m.quantify()
+        out = f.getvalue()
+        assert out == '\nAbsolute quantification:\nElem.\tIntensity\nB\t1.000000\nC\t1.000000\n'
 
     def test_enable_edges(self):
         m = self.m
