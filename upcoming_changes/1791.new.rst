@@ -1,0 +1,1 @@
+Add :py:meth:`~._signals.signal2d.Signal2D.calibrate` method to :py:class:`~._signals.signal2d.Signal2D` signal, which allows for interactive calibration
