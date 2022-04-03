@@ -232,7 +232,7 @@ class TestEELSModel:
         c_k = m.components.C_K
         assert c_k in m
         m.remove(c_k)
-        assert not (c_k in m)
+        assert c_k not in m
 
     def test_quantify(self):
         f = io.StringIO()
