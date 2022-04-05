@@ -1965,7 +1965,10 @@ class BaseModel(list):
                 # 3. leave earlier because we don't need to go iterate over
                 #    the navigation indices
                 kwargs['only_current'] = False
-                kwargs['show_progressbar'] = show_progressbar
+                # Add the 'show_progressbar' only with lazy signal to avoid
+                # passing it down to 'ridge_regression'
+                if self.signal._lazy:
+                    kwargs['show_progressbar'] = show_progressbar
                 self.fit( **kwargs)
 
                 # TODO: check what happen to linear twinned parameter
