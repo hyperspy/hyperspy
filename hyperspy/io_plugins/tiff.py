@@ -143,6 +143,34 @@ def file_reader(filename, force_read_resolution=False, lazy=False, **kwds):
     return dict_list
 
 
+def _order_axes_by_name(names: list, scales: dict, offsets: dict, units: dict):
+    """order axes by names in lists"""
+    scales_new = [1.0] * len(names)
+    offsets_new = [0.0] * len(names)
+    units_new = [t.Undefined] * len(names)
+    for i, name in enumerate(names):
+        if name == 'height':
+            scales_new[i] = scales['x']
+            offsets_new[i] = offsets['x']
+            units_new[i] = units['x']
+        elif name == 'width':
+            scales_new[i] = scales['y']
+            offsets_new[i] = offsets['y']
+            units_new[i] = units['y']
+        elif name in ['depth', 'image series', 'time']:
+            scales_new[i] = scales['z']
+            offsets_new[i] = offsets['z']
+            units_new[i] = units['z']
+    return scales_new, offsets_new, units_new
+
+
+def _build_axes_dictionaries(shape, names, scales, offsets, units):
+    """Build axes dictionaries from a set of lists"""
+    axes = [{'size': size, 'name': str(name), 'scale': scale, 'offset': offset, 'units': unit}
+            for size, name, scale, offset, unit in zip(shape, names, scales, offsets, units)]
+    return axes
+
+
 def _read_serie(tiff, serie, filename, force_read_resolution=False,
                 lazy=False, memmap=None, **kwds):
     axes = serie.axes
@@ -175,42 +203,16 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
     _logger.debug("Photometric: %s" % op['PhotometricInterpretation'])
     _logger.debug('is_imagej: {}'.format(page.is_imagej))
 
-    scales = [1.0] * len(names)
-    offsets = [0.0] * len(names)
-    units = [t.Undefined] * len(names)
-    intensity_axis = {}
-
     try:
-        scales_d, offsets_d, units_d, intensity_axis = _parse_scale_unit(
-            tiff, page, op, shape, force_read_resolution)
-        for i, name in enumerate(names):
-            if name == 'height':
-                scales[i], units[i] = scales_d['x'], units_d['x']
-                offsets[i] = offsets_d['x']
-            elif name == 'width':
-                scales[i], units[i] = scales_d['y'], units_d['y']
-                offsets[i] = offsets_d['y']
-            elif name in ['depth', 'image series', 'time']:
-                scales[i], units[i] = scales_d['z'], units_d['z']
-                offsets[i] = offsets_d['z']
+        axes = _parse_scale_unit(tiff, page, op, shape, force_read_resolution, names)
     except BaseException:
         _logger.info("Scale and units could not be imported")
-
-    axes = [{'size': size,
-             'name': str(name),
-             'scale': scale,
-             'offset': offset,
-             'units': unit,
-             }
-            for size, name, scale, offset, unit in zip(shape, names,
-                                                       scales, offsets,
-                                                       units)]
+        axes = _build_axes_dictionaries(shape, names, scales=[1.0] * len(names),
+                                                      offsets=[0.0] * len(names),
+                                                      units=[t.Undefined] * len(names))
 
     md = {'General': {'original_filename': os.path.split(filename)[1]},
-          'Signal': {'signal_type': "",
-                     'record_by': "image",
-                     },
-          }
+           'Signal': {'signal_type': "", 'record_by': "image" }}
 
     if 'DateTime' in op:
         dt = None
@@ -233,6 +235,12 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
         if dt is not None:
             md['General']['date'] = dt.date().isoformat()
             md['General']['time'] = dt.time().isoformat()
+
+    #Get the digital micrograph intensity axis
+    if _is_digital_micrograph(op):
+        intensity_axis = _intensity_axis_digital_micrograph(op)
+    else:
+        intensity_axis = {}
 
     if 'units' in intensity_axis:
         md['Signal']['quantity'] = intensity_axis['units']
@@ -278,21 +286,20 @@ def _load_data(serie, is_rgb, sl=None, memmap=None, **kwds):
 
 def _axes_defaults():
     """Get default axes dictionaries, with offsets and scales"""
+    axes_labels = ['x', 'y', 'z']
+    scales = {axis: 1.0 for axis in axes_labels}
+    offsets = {axis: 0.0 for axis in axes_labels}
+    units = {axis: t.Undefined for axis in axes_labels}
 
-    axes_l = ['x', 'y', 'z']
-    scales = {axis: 1.0 for axis in axes_l}
-    offsets = {axis: 0.0 for axis in axes_l}
-    units = {axis: t.Undefined for axis in axes_l}
-    intensity_axis = {}
-    return scales, offsets, units, intensity_axis
+    return scales, offsets, units
 
 
 def _is_force_readable(op, force_read_resolution) -> bool:
     return force_read_resolution and 'ResolutionUnit' in op and 'XResolution' in op
 
 
-def _axes_force_read(op):
-    scales, offsets, units, intensity_axis = _axes_defaults()
+def _axes_force_read(op, shape, names):
+    scales, offsets, units = _axes_defaults()
     res_unit_tag = op['ResolutionUnit']
     if res_unit_tag != TIFF.RESUNIT.NONE:
         _logger.debug("Resolution unit: %s" % res_unit_tag)
@@ -306,18 +313,22 @@ def _axes_force_read(op):
             for key in ['x', 'y']:
                 units[key] = 'µm'
                 scales[key] = scales[key] * 10000
-    return scales, offsets, units, intensity_axis
+
+    scales, offsets, units = _order_axes_by_name(names, scales, offsets, units)
+
+    axes = _build_axes_dictionaries(shape, names, scales, offsets, units)
+
+    return axes
 
 
 def _is_fei(tiff) -> bool:
     return 'fei' in tiff.flags
 
 
-def _axes_fei(tiff, op):
+def _axes_fei(tiff, op, shape, names):
     _logger.debug("Reading FEI tif metadata")
 
-    # scales, offsets, units, intensity_axis = _axes_forceread(op, force_read_resolution)
-    scales, offsets, units, intensity_axis = _axes_defaults()
+    scales, offsets, units = _axes_defaults()
 
     op['fei_metadata'] = tiff.fei_metadata
     try:
@@ -327,17 +338,27 @@ def _axes_fei(tiff, op):
     scales['x'] = float(op['fei_metadata']['Scan']['PixelWidth'])
     scales['y'] = float(op['fei_metadata']['Scan']['PixelHeight'])
     units.update({'x': 'm', 'y': 'm'})
-    return scales, offsets, units, intensity_axis
+
+    # Finally, axes descriptors can be additionally parsed from digital micrograph or imagej-style files
+    if _is_digital_micrograph(op):
+        scales, offsets, units = _add_axes_digital_micrograph(op, scales, offsets, units)
+    if _is_imagej(tiff):
+        scales, offsets, units = _add_axes_imagej(tiff, op, scales, offsets, units)
+
+    scales, offsets, units = _order_axes_by_name(names, scales, offsets, units)
+
+    axes = _build_axes_dictionaries(shape, names, scales, offsets, units)
+
+    return axes
 
 
 def _is_zeiss(tiff) -> bool:
     return 'sem' in tiff.flags
 
 
-def _axes_zeiss(tiff, op):
+def _axes_zeiss(tiff, op, shape, names):
     _logger.debug("Reading Zeiss tif pixel_scale")
-    # scales, offsets, units, intensity_axis = _axes_forceread(op, force_read_resolution)
-    scales, offsets, units, intensity_axis = _axes_defaults()
+    scales, offsets, units = _axes_defaults()
     # op['CZ_SEM'][''] is containing structure of primary
     # not described SEM parameters in SI units.
     # tifffiles returns flattened version of the structure (as tuple)
@@ -351,18 +372,29 @@ def _axes_zeiss(tiff, op):
     scale_in_m = op['CZ_SEM'][''][3] * 1024 / tiff.pages[0].shape[1]
     scales.update({'x': scale_in_m, 'y': scale_in_m})
     units.update({'x': 'm', 'y': 'm'})
-    return scales, offsets, units, intensity_axis
+
+    # Finally, axes descriptors can be additionally parsed from digital micrograph or imagej-style files
+    if _is_digital_micrograph(op):
+        scales, offsets, units = _add_axes_digital_micrograph(op, scales, offsets, units)
+    if _is_imagej(tiff):
+        scales, offsets, units = _add_axes_imagej(tiff, op, scales, offsets, units)
+
+    scales, offsets, units = _order_axes_by_name(names, scales, offsets, units)
+
+    axes = _build_axes_dictionaries(shape, names, scales, offsets, units)
+
+    return axes
+    # return scales, offsets, units, intensity_axis
 
 
 def _is_tvips(tiff) -> bool:
     return 'tvips' in tiff.flags
 
 
-def _axes_tvips(op):
+def _axes_tvips(tiff, op, shape, names):
     _logger.debug("Reading TVIPS tif metadata")
 
-    # scales, offsets, units, intensity_axis = _axes_forceread(op, force_read_resolution)
-    scales, offsets, units, intensity_axis = _axes_defaults()
+    scales, offsets, units = _axes_defaults()
 
     if 'PixelSizeX' in op['TVIPS'] and 'PixelSizeY' in op['TVIPS']:
         _logger.debug("getting TVIPS scale from PixelSizeX")
@@ -374,16 +406,27 @@ def _axes_tvips(op):
         scales['x'], scales['y'] = _get_scales_from_x_y_resolution(
             op, factor=1e-2)
         units.update({'x': 'm', 'y': 'm'})
-    return scales, offsets, units, intensity_axis
+
+    # Finally, axes descriptors can be additionally parsed from digital micrograph or imagej-style files
+    if _is_digital_micrograph(op):
+        scales, offsets, units = _add_axes_digital_micrograph(op, scales, offsets, units)
+    if _is_imagej(tiff):
+        scales, offsets, units = _add_axes_imagej(tiff, op, scales, offsets, units)
+
+    scales, offsets, units = _order_axes_by_name(names, scales, offsets, units)
+
+    axes = _build_axes_dictionaries(shape, names, scales, offsets, units)
+
+    return axes
 
 
 def _is_olympus_sis(page) -> bool:
     return page.is_sis
 
 
-def _axes_olympus_sis(page, op):
+def _axes_olympus_sis(page, tiff, op, shape, names):
     _logger.debug("Reading Olympus SIS tif metadata")
-    scales, offsets, units, intensity_axis = _axes_defaults()
+    scales, offsets, units = _axes_defaults()
 
     sis_metadata = {}
     for tag_number in [33471, 33560]:
@@ -395,17 +438,28 @@ def _axes_olympus_sis(page, op):
     scales['x'] = round(float(sis_metadata['pixelsizex']), 15)
     scales['y'] = round(float(sis_metadata['pixelsizey']), 15)
     units.update({'x': 'm', 'y': 'm'})
-    return scales, offsets, units, intensity_axis
+
+    # Finally, axes descriptors can be additionally parsed from digital micrograph or imagej-style files
+    if _is_digital_micrograph(op):
+        scales, offsets, units = _add_axes_digital_micrograph(op, scales, offsets, units)
+    if _is_imagej(tiff):
+        scales, offsets, units = _add_axes_imagej(tiff, op, scales, offsets, units)
+
+    scales, offsets, units = _order_axes_by_name(names, scales, offsets, units)
+
+    axes = _build_axes_dictionaries(shape, names, scales, offsets, units)
+
+    return axes
 
 
 def _is_jeol_sightx(op) -> bool:
     return op.get('Make', None) == "JEOL Ltd."
 
 
-def _axes_jeol_sightx(op):
+def _axes_jeol_sightx(tiff, op, shape, names):
     # convert xml text to dictionary of tiff op['ImageDescription']
     # convert_xml_to_dict need to remove white spaces before decoding XML
-    scales, offsets, units, intensity_axis = _axes_defaults()
+    scales, offsets, units = _axes_defaults()
 
     jeol_xml = ''.join([line.strip(" \r\n\t\x01\x00") for line in op['ImageDescription'].split('\n')])
     from hyperspy.misc.io.tools import convert_xml_to_dict
@@ -454,7 +508,18 @@ def _axes_jeol_sightx(op):
         scale /= camera_len * wave_len(ht) * 1e9  # in nm
         scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op, factor=scale)
         units = {"x": "1 / nm", "y": "1 / nm", "z": t.Undefined}
-    return scales, offsets, units, intensity_axis
+
+    # Finally, axes descriptors can be additionally parsed from digital micrograph or imagej-style files
+    if _is_digital_micrograph(op):
+        scales, offsets, units = _add_axes_digital_micrograph(op, scales, offsets, units)
+    if _is_imagej(tiff):
+        scales, offsets, units = _add_axes_imagej(tiff, op, scales, offsets, units)
+
+    scales, offsets, units = _order_axes_by_name(names, scales, offsets, units)
+
+    axes = _build_axes_dictionaries(shape, names, scales, offsets, units)
+
+    return axes
 
 
 def _is_streak_hamamatsu(op) -> bool:
@@ -463,7 +528,7 @@ def _is_streak_hamamatsu(op) -> bool:
     """
     is_hamatif = True
 
-    # Check that the original op has an "Artist" that copyrights as hamamatsu
+    # Check that the original op has an "Artist" field with "Copyright Hamamatsu"
     if 'Artist' not in op:
         is_hamatif = False
         return is_hamatif
@@ -473,7 +538,7 @@ def _is_streak_hamamatsu(op) -> bool:
             is_hamatif = False
             return is_hamatif
 
-    # Check that the original op has a "Software" corresponding to the HPD-TA
+    # Check that the original op has a "Software" corresponding to "HPD-TA"
     if 'Software' not in op:
         is_hamatif = False
         return is_hamatif
@@ -532,10 +597,10 @@ def _get_hamamatsu_streak_description(tiff, op):
     return dict_meta
 
 
-def _axes_hamamatsu_streak(tiff, op):
+def _axes_hamamatsu_streak(tiff, op, shape, names):
     _logger.debug("Reading Hamamatsu Streak Map tif metadata")
 
-    scales, offsets, units, intensity_axis = _axes_defaults()
+    scales, offsets, units = _axes_defaults()
 
     # Parsing the Metadata
     desc = _get_hamamatsu_streak_description(tiff, op)
@@ -553,14 +618,24 @@ def _axes_hamamatsu_streak(tiff, op):
     units.update({'x': desc['Scaling']['ScalingYUnit'],
                   'y': desc['Scaling']['ScalingXUnit']})
 
-    return scales, offsets, units, intensity_axis
+    # Finally, axes descriptors can be additionnally parsed from digital micrograph or imagej-style files
+    if _is_digital_micrograph(op):
+        scales, offsets, units = _add_axes_digital_micrograph(op, scales, offsets, units)
+    if _is_imagej(tiff):
+        scales, offsets, units = _add_axes_imagej(tiff, op, scales, offsets, units)
+
+    scales, offsets, units = _order_axes_by_name(names, scales, offsets, units)
+
+    axes = _build_axes_dictionaries(shape, names, scales, offsets, units)
+
+    return axes
 
 
 def _is_imagej(tiff) -> bool:
     return 'imagej' in tiff.flags
 
 
-def _add_axes_imagej(tiff, op, scales, offsets, units, intensity_axis):
+def _add_axes_imagej(tiff, op, scales, offsets, units ):
     imagej_metadata = tiff.imagej_metadata
     if 'ImageJ' in imagej_metadata:
         _logger.debug("Reading ImageJ tif metadata")
@@ -571,17 +646,28 @@ def _add_axes_imagej(tiff, op, scales, offsets, units, intensity_axis):
             scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
         if 'spacing' in imagej_metadata:
             scales['z'] = imagej_metadata['spacing']
-    return scales, offsets, units, intensity_axis
+    return scales, offsets, units
 
 
 def _is_digital_micrograph(op) -> bool:
     # for files containing DM metadata
-    tags = ['65003', '65004', '65005', '65009', '65010', '65011', '65006', '65007', '65008', '65022', '65024', '65025']
+    tags = ['65003', '65004', '65005', '65009', '65010', '65011',
+            '65006', '65007', '65008', '65022', '65024', '65025']
     search_result = [tag in op for tag in tags]
     return any(search_result)
 
 
-def _add_axes_digital_micrograph(op, scales, offsets, units, intensity_axis):
+def _intensity_axis_digital_micrograph(op, intensity_axis = {}):
+    if '65022' in op:
+        intensity_axis['units'] = op['65022']  # intensity units
+    if '65024' in op:
+        intensity_axis['offset'] = op['65024']  # intensity offset
+    if '65025' in op:
+        intensity_axis['scale'] = op['65025']  # intensity scale
+    return intensity_axis
+
+
+def _add_axes_digital_micrograph(op, scales, offsets, units ):
     if '65003' in op:
         _logger.debug("Reading Gatan DigitalMicrograph tif metadata")
         units['y'] = op['65003']  # x units
@@ -601,45 +687,48 @@ def _add_axes_digital_micrograph(op, scales, offsets, units, intensity_axis):
         offsets['x'] = op['65007']  # y offset
     if '65008' in op:
         offsets['z'] = op['65008']  # z offset
-    if '65022' in op:
-        intensity_axis['units'] = op['65022']  # intensity units
-    if '65024' in op:
-        intensity_axis['offset'] = op['65024']  # intensity offset
-    if '65025' in op:
-        intensity_axis['scale'] = op['65025']  # intensity scale
-    return scales, offsets, units, intensity_axis
+
+    return scales, offsets, units
 
 
-def _parse_scale_unit(tiff, page, op, shape, force_read_resolution):
-    # Force reading always has priority and returns immediately
+def _parse_scale_unit(tiff, page, op, shape, force_read_resolution, names):
+    # Force reading always has priority
     if _is_force_readable(op, force_read_resolution):
-        scales, offsets, units, intensity_axis = _axes_force_read(op)
-        return scales, offsets, units, intensity_axis
-    # Other axes readers can be overloaded
+        axes = _axes_force_read(op, shape, names)
+        return axes
+    # Other axes readers can change position if you need to do it
     elif _is_fei(tiff):
-        scales, offsets, units, intensity_axis = _axes_fei(tiff, op)
+        axes = _axes_fei(tiff, op, shape, names)
+        return axes
     elif _is_zeiss(tiff):
-        scales, offsets, units, intensity_axis = _axes_zeiss(tiff, op)
+        axes = _axes_zeiss(tiff, op, shape, names)
+        return axes
     elif _is_tvips(tiff):
-        scales, offsets, units, intensity_axis = _axes_tvips(op)
+        axes = _axes_tvips(tiff, op, shape, names)
+        return axes
     elif _is_olympus_sis(page):
-        scales, offsets, units, intensity_axis = _axes_olympus_sis(page, op)
+        axes = _axes_olympus_sis(page, tiff, op, shape, names)
+        return axes
     elif _is_jeol_sightx(op):
-        scales, offsets, units, intensity_axis = _axes_jeol_sightx(op)
+        axes = _axes_jeol_sightx(tiff, op, shape, names)
+        return axes
     elif _is_streak_hamamatsu(op):
-        scales, offsets, units, intensity_axis = _axes_hamamatsu_streak(tiff, op)
+        axes = _axes_hamamatsu_streak(tiff, op, shape, names)
+        return axes
     # Axes are otherwise set to defaults
     else:
-        scales, offsets, units, intensity_axis = _axes_defaults()
+        scales, offsets, units = _axes_defaults()
+        # Axes descriptors can be additionally parsed from digital micrograph or imagej-style files
+        if _is_digital_micrograph(op):
+            scales, offsets, units = _add_axes_digital_micrograph(op, scales, offsets, units)
+        if _is_imagej(tiff):
+            scales, offsets, units = _add_axes_imagej(tiff, op, scales, offsets, units)
 
-    # Finally, axes descriptors can be additionnally parsed from digital micrograph or imadej-style files
-    if _is_digital_micrograph(op):
-        scales, offsets, units, intensity_axis = _add_axes_digital_micrograph(op, scales, offsets, units,
-                                                                              intensity_axis)
-    if _is_imagej(tiff):
-        scales, offsets, units, intensity_axis = _add_axes_imagej(tiff, op, scales, offsets, units, intensity_axis)
+        scales, offsets, units = _order_axes_by_name(names, scales, offsets, units)
 
-    return scales, offsets, units, intensity_axis
+        axes = _build_axes_dictionaries(shape, names, scales, offsets, units)
+
+        return axes
 
 
 def _get_scales_from_x_y_resolution(op, factor=1.0):
