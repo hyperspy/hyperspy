@@ -1,6 +1,7 @@
 import os
 import shutil
 import tempfile
+import warnings
 
 import numpy as np
 import pytest
@@ -674,11 +675,25 @@ def test_JEOL_SightX():
             assert s.axes_manager[i].units == file[2]
 
 
+def test_hamamatsu_streak_loadwarning():
+    file = 'test_hamamatsu_streak_SCAN.tif'
+    fname = os.path.join(MY_PATH2, file)
+
+    with pytest.warns(UserWarning):
+        s = hs.load(fname)
+
+    #Ensuire that no warning is raised by this
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        s = hs.load(fname,axis_type='uniform')
+
+
 def test_hamamatsu_streak_scanfile():
     file = 'test_hamamatsu_streak_SCAN.tif'
     fname = os.path.join(MY_PATH2, file)
 
-    s = hs.load(fname)
+    with pytest.warns(UserWarning):
+        s = hs.load(fname)
 
     assert s.data.shape == (508, 672)
     assert s.axes_manager[1].units == 'ps'
@@ -692,7 +707,8 @@ def test_hamamatsu_streak_focusfile():
     file = 'test_hamamatsu_streak_FOCUS.tif'
     fname = os.path.join(MY_PATH2, file)
 
-    s = hs.load(fname)
+    with pytest.warns(UserWarning):
+        s = hs.load(fname)
 
     assert s.data.shape == (508, 672)
     assert s.axes_manager[1].units == ''
@@ -702,11 +718,26 @@ def test_hamamatsu_streak_focusfile():
     np.testing.assert_allclose(s.axes_manager[0].offset, 231.0909, rtol=1E-3)
 
 
+def test_hamamatsu_streak_non_uniform_load():
+    file = 'test_hamamatsu_streak_SCAN.tif'
+    fname = os.path.join(MY_PATH2, file)
+
+    s = hs.load(fname,axis_type='data')
+
+    np.testing.assert_allclose(s.original_metadata.ImageDescriptionParsed.Scaling.ScalingYaxis,
+                               s.axes_manager[1].axis,rtol=1e-5)
+
+    s = hs.load(fname,axis_type='functional')
+
+    np.testing.assert_allclose(s.original_metadata.ImageDescriptionParsed.Scaling.ScalingYaxis,
+                               s.axes_manager[1].axis,rtol=1e-5)
+
+
 def test_is_hamamatsu_streak():
     file = 'test_hamamatsu_streak_SCAN.tif'
     fname = os.path.join(MY_PATH2, file)
 
-    s = hs.load(fname)
+    s = hs.load(fname,axis_type='uniform')
 
     s.original_metadata['Artist'] = "TAPTAP"
 

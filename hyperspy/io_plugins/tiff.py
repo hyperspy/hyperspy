@@ -19,6 +19,7 @@
 import os
 import re
 import csv
+import warnings
 import logging
 from datetime import datetime, timedelta
 from dateutil import parser
@@ -135,8 +136,12 @@ def file_reader(filename, force_read_resolution=False, lazy=False, **kwds):
         Load the data lazily. Default is False
     **kwds, optional
     """
+    tmp = kwds.pop('axis_type', None)
+
 
     with TiffFile(filename, **kwds) as tiff:
+        if tmp is not None:
+            kwds.update({'axis_type': tmp})
         dict_list = [_read_serie(tiff, serie, filename, force_read_resolution,
                                  lazy=lazy, **kwds) for serie in tiff.series]
 
@@ -204,7 +209,7 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
     _logger.debug('is_imagej: {}'.format(page.is_imagej))
 
     try:
-        axes = _parse_scale_unit(tiff, page, op, shape, force_read_resolution, names)
+        axes = _parse_scale_unit(tiff, page, op, shape, force_read_resolution, names, **kwds)
     except BaseException:
         _logger.info("Scale and units could not be imported")
         axes = _build_axes_dictionaries(shape, names, scales=[1.0] * len(names),
@@ -597,37 +602,84 @@ def _get_hamamatsu_streak_description(tiff, op):
     return dict_meta
 
 
-def _axes_hamamatsu_streak(tiff, op, shape, names):
+def _axes_hamamatsu_streak(tiff, op, shape, names, **kwds):
     _logger.debug("Reading Hamamatsu Streak Map tif metadata")
 
-    scales, offsets, units = _axes_defaults()
+    if 'axis_type' in kwds:
+        axis_type = kwds['axis_type']
+    else:
+        axis_type = 'uniform'
+        warnings.warn(f"{tiff} contain a non linear axis. By default, "
+                      f"a linearized version is initialised, which can "
+                      f"induce errors. Use the `axis_type` keyword to load "
+                      f"either a parabolic functional axis using `axis_type='functional'`, "
+                      f"a data axis using `axis_type='data'`, or use `axis_type='uniform'`to "
+                      f"linearize the axis and make this warning disappear", UserWarning)
+
+    if axis_type not in ['functional', 'data', 'uniform']:
+        axis_type = 'uniform'
+        warnings.warn("The `axis_type`  argument only admits "
+                         "the values `'data'`, `'functional'` and `'uniform'`", UserWarning)
 
     # Parsing the Metadata
     desc = _get_hamamatsu_streak_description(tiff, op)
-
+    #Getting the raw axes
     xax = desc['Scaling']['ScalingXaxis']
     yax = desc['Scaling']['ScalingYaxis']
 
+    #Axes are initialised as a list of empty dictionaries
+    axes = [{}]*len(names)
+
+    #The width axis is always linear
     [xsc, xof] = np.polyfit(np.arange(len(xax)), xax, 1)
-    [ysc, yof] = np.polyfit(np.arange(len(yax)), yax, 1)
 
-    # Unfortunately the X/Y naming convention between Hamamatsu
-    # and hyperspy is inverted
-    scales.update({'x': ysc, 'y': xsc})
-    offsets.update({'x': yof, 'y': xof})
-    units.update({'x': desc['Scaling']['ScalingYUnit'],
-                  'y': desc['Scaling']['ScalingXUnit']})
+    i = names.index('width')
+    axes[i] = {'size': shape[i],
+               'name': 'width',
+               'units': desc['Scaling']['ScalingXUnit'],
+               'scale': xsc,
+               'offset': xof}
 
-    # Finally, axes descriptors can be additionnally parsed from digital micrograph or imagej-style files
-    if _is_digital_micrograph(op):
-        scales, offsets, units = _add_axes_digital_micrograph(op, scales, offsets, units)
-    if _is_imagej(tiff):
-        scales, offsets, units = _add_axes_imagej(tiff, op, scales, offsets, units)
+    #The height axis is changing
+    i = names.index('height')
+    axes[i] = {'name': 'height',
+               'units': desc['Scaling']['ScalingYUnit']}
+    if axis_type == 'uniform':
+        #Uniform axis initialisation
+        [ysc, yof] = np.polyfit(np.arange(len(yax)), yax, 1)
+        axes[i].update({'scale': ysc,
+                        'offset': yof,
+                        'size': shape[i],
+                        })
+    elif axis_type == 'data':
+        #Data axis initialisation
+        axes[i].update({'axis': yax})
+    elif axis_type == 'functional':
+        #Functional axis initialisation
+        xaxis = {'scale': 1, 'offset': 0, 'size': len(yax)}
+        poly = np.polyfit(np.arange(len(yax)), yax, 3)
+        axes[i] = {'size': len(yax), 'x': xaxis,
+                   'expression': "a*x**3+b*x**2+c*x+d",
+                   'a': poly[0], 'b': poly[1], 'c': poly[2], 'd': poly[3]}
 
-    scales, offsets, units = _order_axes_by_name(names, scales, offsets, units)
+    # scales, offsets, units = _axes_defaults()
+    #
+    # # Unfortunately the X/Y naming convention between Hamamatsu
+    # # and hyperspy is inverted
+    # scales.update({'x': ysc, 'y': xsc})
+    # offsets.update({'x': yof, 'y': xof})
+    # units.update({'x': desc['Scaling']['ScalingYUnit'],
+    #               'y': desc['Scaling']['ScalingXUnit']})
 
-    axes = _build_axes_dictionaries(shape, names, scales, offsets, units)
-
+    # # Finally, axes descriptors can be additionally parsed from digital micrograph or imagej-style files
+    # if _is_digital_micrograph(op):
+    #     scales, offsets, units = _add_axes_digital_micrograph(op, scales, offsets, units)
+    # if _is_imagej(tiff):
+    #     scales, offsets, units = _add_axes_imagej(tiff, op, scales, offsets, units)
+    #
+    # scales, offsets, units = _order_axes_by_name(names, scales, offsets, units)
+    # axes = _build_axes_dictionaries(shape, names, scales, offsets, units)
+    #
     return axes
 
 
@@ -691,7 +743,7 @@ def _add_axes_digital_micrograph(op, scales, offsets, units ):
     return scales, offsets, units
 
 
-def _parse_scale_unit(tiff, page, op, shape, force_read_resolution, names):
+def _parse_scale_unit(tiff, page, op, shape, force_read_resolution, names, **kwds):
     # Force reading always has priority
     if _is_force_readable(op, force_read_resolution):
         axes = _axes_force_read(op, shape, names)
@@ -713,7 +765,7 @@ def _parse_scale_unit(tiff, page, op, shape, force_read_resolution, names):
         axes = _axes_jeol_sightx(tiff, op, shape, names)
         return axes
     elif _is_streak_hamamatsu(op):
-        axes = _axes_hamamatsu_streak(tiff, op, shape, names)
+        axes = _axes_hamamatsu_streak(tiff, op, shape, names, **kwds)
         return axes
     # Axes are otherwise set to defaults
     else:
