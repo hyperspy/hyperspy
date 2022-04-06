@@ -10,8 +10,9 @@ import tifffile
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal
-from hyperspy.io_plugins.tiff import _is_streak_hamamatsu
 from hyperspy import __version__ as hs_version
+from hyperspy.io_plugins.tiff import _is_streak_hamamatsu
+
 
 MY_PATH = os.path.dirname(__file__)
 MY_PATH2 = os.path.join(MY_PATH, "tiff_files")
