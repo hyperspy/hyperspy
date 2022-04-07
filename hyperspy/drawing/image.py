@@ -607,8 +607,10 @@ class ImagePlot(BlittedFigure):
         """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def connect(self):
-        self.figure.canvas.mpl_connect('key_press_event',
-                                        self.on_key_press)
+        # in case the figure is not displayed
+        if self.figure is not None:
+            self.figure.canvas.mpl_connect('key_press_event',
+                                            self.on_key_press)
         if self.axes_manager:
             if self.update not in self.axes_manager.events.indices_changed.connected:
                 self.axes_manager.events.indices_changed.connect(self.update, [])

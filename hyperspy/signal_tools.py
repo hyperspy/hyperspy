@@ -103,14 +103,19 @@ class SpanSelectorInSignal1D(t.HasTraits):
             return
 
         x0, x1 = sorted(self.span_selector.extents)
-        # range of span selector invalid
-        if x0 == x1 or np.diff(self.axis.value2index(np.array([x0, x1]))) == 0:
+        
+        # typically during initialisation
+        if x0 == x1:
             return
 
+        # range of span selector invalid
         if x0 < self.axis.low_value:
             x0 = self.axis.low_value
-        if x1 > self.axis.high_value:
+        if x1 > self.axis.high_value or x1 < self.axis.low_value:
             x1 = self.axis.high_value
+        
+        if np.diff(self.axis.value2index(np.array([x0, x1]))) == 0:
+            return
 
         self.ss_left_value, self.ss_right_value = x0, x1
 
@@ -242,11 +247,14 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
         if not isinstance(self.axis, UniformDataAxis):
-            raise NotImplementedError("The calibration tool supports only uniform axes.")
+            raise NotImplementedError(
+                "The calibration tool supports only uniform axes."
+                )
         self.units = self.axis.units
         self.scale = self.axis.scale
         self.offset = self.axis.offset
         self.last_calibration_stored = True
+        self.span_selector.snap_values = self.axis.axis
 
     def _left_value_changed(self, old, new):
         if self._is_valid_range and self.right_value is not t.Undefined:
@@ -259,7 +267,7 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
     def _update_calibration(self, *args, **kwargs):
         # If the span selector or the new range values are not defined do
         # nothing
-        if not self._is_valid_range:
+        if not self._is_valid_range or self.signal._plot.signal_plot is None:
             return
         lc = self.axis.value2index(self.ss_left_value)
         rc = self.axis.value2index(self.ss_right_value)
@@ -284,6 +292,7 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
         self.signal._replot()
         self.span_selector_switch(on=True)
         self.last_calibration_stored = True
+
 
 @add_gui_method(toolkey="hyperspy.EELSSpectrum.print_edges_table")
 class EdgesRange(SpanSelectorInSignal1D):
