@@ -12,8 +12,8 @@ import tifffile
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy import __version__ as hs_version
-import hyperspy.io_plugins.tiff
 
+import hyperspy.io_plugins.tiff
 
 MY_PATH = os.path.dirname(__file__)
 MY_PATH2 = os.path.join(MY_PATH, "tiff_files")
