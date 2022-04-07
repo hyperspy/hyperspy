@@ -12,7 +12,7 @@ import tifffile
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy import __version__ as hs_version
-from hyperspy.io_plugins.tiff import _is_streak_hamamatsu
+import hyperspy.io_plugins.tiff
 
 
 MY_PATH = os.path.dirname(__file__)
@@ -742,10 +742,10 @@ def test_is_hamamatsu_streak():
 
     s.original_metadata['Artist'] = "TAPTAP"
 
-    assert _is_streak_hamamatsu(s.original_metadata) == False
+    assert hyperspy.io_plugins.tiff._is_streak_hamamatsu(s.original_metadata) == False
 
     s.original_metadata['Artist'] = "Copyright Hamamatsu"
 
-    assert _is_streak_hamamatsu(s.original_metadata) == True
+    assert hyperspy.io_plugins.tiff._is_streak_hamamatsu(s.original_metadata) == True
 
     s.original_metadata['Software'] = "TAPTAPTAP"
