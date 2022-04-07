@@ -1,0 +1,2 @@
+In case the Bruker defined XML element node at SpectrumRegion contains no information on the
+specific selected X-ray line (if there is only single line available), suppose it is 'Ka' line.

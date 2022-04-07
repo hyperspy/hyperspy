@@ -57,7 +57,7 @@ Build the documentation
 To check the output of what you wrote, you can build
 the documentation by running the ``make`` command in the ``hyperspy/doc``
 directory. For example ``make html`` will build the whole documentation in
-html format. See the make command documentation for more details.
+html format. See the ``make`` command documentation for more details.
 
 To install the documentation dependencies, run either
 

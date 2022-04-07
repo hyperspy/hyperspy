@@ -26,6 +26,7 @@ import h5py
 import numpy as np
 import pytest
 
+from hyperspy import __version__ as hs_version
 from hyperspy.io import load
 from hyperspy.axes import DataAxis, UniformDataAxis, FunctionalDataAxis, AxesManager
 from hyperspy.signal import BaseSignal
@@ -212,7 +213,8 @@ class TestSavingMetadataContainers:
         fname = tmp_path / file
         s.save(fname)
         end = time.time()
-        assert end - start < 1.0  # It should finish in less that 1 s.
+        # It should finish in less that 2 s on CI.
+        assert end - start < 2.0  
 
     @zspy_marker
     def test_numpy_only_inner_lists(self, tmp_path, file):
@@ -369,7 +371,15 @@ class TestSavingMetadataContainers:
               'General': {'date': '2014-07-09',
                           'original_filename': 'test_diffraction_pattern.dm3',
                           'time': '18:56:37',
-                          'title': 'test_diffraction_pattern'},
+                          'title': 'test_diffraction_pattern',
+                          'FileIO': {
+                              '0': {
+                                  'operation': 'load',
+                                  'hyperspy_version': hs_version,
+                                  'io_plugin': 'hyperspy.io_plugins.hspy'
+                              }
+                          }
+              },
               'Signal': {'Noise_properties': {'Variance_linear_model': {'gain_factor': 1.0,
                                                                         'gain_offset': 0.0}},
                          'quantity': 'Intensity',
@@ -379,6 +389,8 @@ class TestSavingMetadataContainers:
                                         'signal_unfolded': False,
                                         'unfolded': False}}}
         s = load(my_path / "hdf5_files" / 'example2_v3.1.hspy')
+        # delete timestamp from metadata since it's runtime dependent
+        del s.metadata.General.FileIO.Number_0.timestamp
         assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 

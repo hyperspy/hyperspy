@@ -28,7 +28,6 @@ import pprint
 import traits.api as t
 
 from hyperspy.io_plugins.hspy import (get_signal_chunks, overwrite_dataset)
-from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.exceptions import VisibleDeprecationWarning
 
 
@@ -1277,12 +1276,6 @@ def file_writer(filename,
         for i, sig in enumerate(signals):
             nxentry = f.create_group("entry%d" % (i + 1))
             nxentry.attrs["NX_class"] = _parse_to_file("NXentry")
-
-            if isinstance(sig.metadata, dict):
-                sig.metadata = DictionaryTreeBrowser(sig.metadata)
-            if isinstance(sig.original_metadata, dict):
-                sig.original_metadata = DictionaryTreeBrowser(
-                    sig.original_metadata)
 
             signal_name = sig.metadata.General.title \
                 if sig.metadata.General.title else 'unnamed__%d' % i

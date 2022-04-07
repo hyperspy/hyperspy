@@ -18,7 +18,7 @@ jobs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -38,12 +38,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: ['3.7', '3.8', '3.9', '3.10']
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v3
         name: Install Python
         with:
           python-version: ${{ matrix.python-version }}
@@ -74,7 +74,7 @@ jobs:
           pip install --pre --find-links dist hyperspy[tests]
           pytest --pyargs hyperspy
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           path: ./dist/*.whl
 
@@ -94,10 +94,10 @@ jobs:
     needs: create_release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: 3.8
 
@@ -111,9 +111,9 @@ jobs:
           python -m build --sdist
 
       - name: Build manylinux Python wheels
-        uses: RalfG/python-wheels-manylinux-build@v0.3.3
+        uses: RalfG/python-wheels-manylinux-build@v0.4.2
         with:
-          python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39'
+          python-versions: 'cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310'
           build-requirements: 'cython'
 
       - name: Display content dist folder
@@ -127,7 +127,7 @@ jobs:
           pip install --pre --find-links dist hyperspy[tests]
           pytest --pyargs hyperspy
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           path: |
             ./dist/*-manylinux*.whl

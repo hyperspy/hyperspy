@@ -106,7 +106,7 @@ class EDSSEMSpectrum(EDSSpectrum):
 
         """
 
-        self.original_metadata = ref.original_metadata.deepcopy()
+        self._original_metadata = ref.original_metadata.deepcopy()
         # Setup the axes_manager
         ax_m = self.axes_manager.signal_axes[0]
         ax_ref = ref.axes_manager.signal_axes[0]

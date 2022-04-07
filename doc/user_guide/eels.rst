@@ -9,7 +9,7 @@ Tools for EELS data analysis
 
 The functions described in this chapter are only available for the
 :py:class:`~._signals.eels.EELSSpectrum` class. To transform a
-:py:class:`~.signal.BaseSignal` (or subclass) into a
+:py:class:`~.signal.BaseSignal` (or subclass) into an
 :py:class:`~._signals.eels.EELSSpectrum`:
 
 .. code-block:: python
@@ -52,8 +52,6 @@ they are arranged in the order closest to 849 eV.
     >>> get_edges_near_energy(849, width=6)
     ['La_M4', 'Fe_L1']
 
-
-`
 The static method :py:meth:`~._signals.eels.EELSSpectrum.print_edges_near_energy`
 in :py:class:`~._signals.eels.EELSSpectrum` will print out a table containing
 more information about the edges.
@@ -93,7 +91,7 @@ to aid identification of edges.
    :align:   center
    :width:   500
 
-   Labels of edges can be put or remove by toggling the edge buttons.
+   Labels of edges can be put or removed by toggling the edge buttons.
 
 
 .. _eels_thickness-label:
@@ -120,13 +118,13 @@ Zero-loss peak centre and alignment
 
 The
 :py:meth:`~._signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre`
-can be used to estimate the position of the zero-loss peak. The method assumes
+can be used to estimate the position of the zero-loss peak (ZLP). The method assumes
 that the ZLP is the most intense feature in the spectra. For a more general
 approach see :py:meth:`~.signal.Signal1DTools.find_peaks1D_ohaver`.
 
 The :py:meth:`~._signals.eels.EELSSpectrum.align_zero_loss_peak` can
-align the ZLP with subpixel accuracy. It is more robust and easy to use than
-:py:meth:`~.signal.Signal1DTools.align1D` for the task. Note that it is
+align the ZLP with subpixel accuracy. It is more robust and easy to use for the task
+than :py:meth:`~.signal.Signal1DTools.align1D`. Note that it is
 possible to apply the same alignment to other spectra using the `also_align`
 argument. This can be useful e.g. to align core-loss spectra acquired
 quasi-simultaneously. If there are other features in the low loss signal
@@ -161,7 +159,7 @@ of the signal and assigns the inflexion point to the first point below a
 certain tolerance.  This tolerance value can be set using the `tol` keyword.
 Currently, the method uses smoothing to reduce the impact of the noise in the
 measure. The number of points used for the smoothing window can be specified by
-the npoints keyword.
+the `npoints` keyword.
 
 
 .. _eels.kk:
@@ -220,10 +218,13 @@ Define the chemical composition of the sample
 
     >>> s.add_elements(('B', 'N'))
 
-It is worth noting that in this case the experimental parameters and the list of elements are actually automatically imported from the EELS Data Base.
+It is worth noting that in this case the experimental parameters and the list of
+elements are actually automatically imported from the EELS Data Base.
 However, with real life data, these must often be added by hand.
 
-In order to include the effect of plural scattering, the model is convolved with the loss loss spectrum in which case the low loss spectrum needs to be provided to :py:meth:`~._signals.eels.EELSSpectrum.create_model`:
+In order to include the effect of plural scattering, the model is convolved with the
+low-loss spectrum in which case the low-loss spectrum needs to be provided to
+:py:meth:`~._signals.eels.EELSSpectrum.create_model`:
 
 .. code-block:: python
 
@@ -242,7 +243,7 @@ HyperSpy has created the model and configured it automatically:
        2 |                  B_K |                  B_K |           EELSCLEdge
 
 Conveniently, all the EELS core-loss components of the added elements are added
-automatically, names after its element symbol.
+automatically, named after its element symbol:
 
 .. code-block:: python
 
@@ -253,14 +254,14 @@ automatically, names after its element symbol.
 
 By default the fine structure features are disabled (although
 the default value can be configured (see :ref:`configuring-hyperspy-label`).
-We must enable them to accurately fit this spectrum.
+We must enable them to accurately fit this spectrum:
 
 .. code-block:: python
 
     >>> m.enable_fine_structure()
 
 
-We use :py:meth:`~.models.eelsmodel.EELSModel.smart_fit` instead of standard
+We use :py:meth:`~.models.eelsmodel.EELSModel.smart_fit` instead of the standard
 fit method because :py:meth:`~.models.eelsmodel.EELSModel.smart_fit` is
 optimized to fit EELS core-loss spectra
 
@@ -279,11 +280,11 @@ image
 .. NOTE::
 
     `m.smart_fit()` and `m.multifit(kind='smart')` are methods specific to the
-    EELS model. The fitting procedure acts in iterative manner along the
+    EELS model. The fitting procedure acts in an iterative manner along the
     energy-loss-axis. First it fits only the background up to the first edge.
     It continues by deactivating all edges except the first one, then performs
     the fit. Then it only activates the the first two, fits, and repeats this
-    until all edges are fitted simultanously.
+    until all edges are fitted simultaneously.
 
     Other, non-EELSCLEdge components, are never deactivated, and fitted on every
     iteration.
@@ -328,7 +329,7 @@ There are several methods that are only available in
   convolving with a zero-loss peak.
 
 The following methods permit to easily enable/disable background and ionisation
-edges components:
+edge components:
 
 * :py:meth:`~.models.eelsmodel.EELSModel.enable_edges`
 * :py:meth:`~.models.eelsmodel.EELSModel.enable_background`
@@ -353,10 +354,9 @@ When fitting edges with fine structure enabled it is often desirable that the
 fine structure region of nearby ionization edges does not overlap. HyperSpy
 provides a method,
 :py:meth:`~.models.eelsmodel.EELSModel.resolve_fine_structure`, to
-automatically adjust the fine structure to prevent fine structure to avoid
-overlapping. This method is executed automatically when e.g. components are
-added or removed from the model, but sometimes is necessary to call it
-manually.
+automatically adjust the fine structure to avoid overlap. This method is executed
+automatically when e.g. components are added or removed from the model, but
+sometimes is necessary to call it manually.
 
 Sometimes it is desirable to disable the automatic adjustment of the fine
 structure width. It is possible to suspend this feature by calling

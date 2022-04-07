@@ -38,9 +38,9 @@ Loading data
 All data are loaded with the :py:func:`~.io.load` function, as described in
 detail in :ref:`Loading files<loading_files>`. HyperSpy is able to import
 different formats, among them ".msa" and ".rpl" (the raw format of Oxford
-Instruments and Brucker).
+Instruments and Bruker).
 
-Here are three example for files exported by Oxford Instruments software
+Here are three examples of files exported by Oxford Instruments software
 (INCA). For a single spectrum:
 
 .. code-block:: python
@@ -518,7 +518,7 @@ EDS curve fitting
 -----------------
 
 The intensity of X-ray lines can be extracted using curve-fitting in HyperSpy.
-This example uses an EDS-SEM spectrum of a a test material (EDS-TM001) provided
+This example uses an EDS-SEM spectrum of a test material (EDS-TM001) provided
 by `BAM <http://www.webshop.bam.de>`_.
 
 First, we load the spectrum, define the chemical composition of the sample and
@@ -594,7 +594,7 @@ ranges containing no X-ray lines:
     >>> m.fit_background()
 
 The width of the X-ray lines is defined from the energy resolution (FWHM at
-Mn Ka) provided by `energy_resolution_MnKa` in `metadata`. This parameters
+Mn Ka) provided by `energy_resolution_MnKa` in `metadata`. This parameter
 can be calibrated by fitting with
 :py:meth:`~.models.edsmodel.EDSModel.calibrate_energy_axis`:
 
@@ -714,7 +714,7 @@ transformed into weight percent either with the option
 
     >>> # With s, intensities and kfactors from before
     >>> s.quantification(intensities, method='CL', factors=kfactors,
-    >>>                  composition_units='weight')
+    ...                  composition_units='weight')
     Fe (Fe_Ka): Composition = 4.96 weight percent
     Pt (Pt_La): Composition = 95.04 weight percent
 
@@ -785,19 +785,19 @@ Absorption Correction
 ^^^^^^^^^^^^^^^^^^^^^
 
 Absorption correction can be included into any of the three quantification
-methods by adding the parameter absorption_correction=True to the function.
-By default the function iterates the quantification function until of
-tolerance value of 0.5% up to a maximum number of iterations. The maximum
-number of iterations is set to 30 by default but can be increased by
-specifying max_interations= in the function call. However, typically for TEM
-experiments convergence is witness after less then 5 iterations.
+methods by adding the parameter ``absorption_correction=True`` to the function.
+By default, the function iterates the quantification function until a
+tolerance value of 0.5% up to a maximum number of iterations is reached. The
+maximum number of iterations is set to 30 by default, but can be increased by
+specifying ``max_iterations`` in the function call. However, typically for TEM
+experiments convergence is achieved after less then 5 iterations.
 
 For example:
 
 .. code-block:: python
 
         >>> s.quantification(intensities, method='cross_section',
-        >>>                  factors=factors, absorption_correction=True)
+        ...                  factors=factors, absorption_correction=True)
 
 However for the kfactor method the user must additionally provide a sample
 thickness (in nm) either as a single float value or as a numpy array with the
@@ -808,8 +808,8 @@ composition maps for each element.
 .. code-block:: python
 
         >>> s.quantification(intensities, method='CL',
-        >>>                  factors=factors, absorption_correction=True
-        >>>                  thickness = 100.)
+        ...                  factors=factors, absorption_correction=True
+        ...                  thickness=100.)
 
 At this stage absorption correction is only applicable for parallel-sided,
 thin-film samples. Absorption correction is calculated on a pixel by pixel
@@ -835,13 +835,13 @@ is available:
 .. code-block:: python
 
     >>> hs.material.mass_absorption_coefficient(
-    >>>     element='Al', energies=['C_Ka','Al_Ka'])
+    ...     element='Al', energies=['C_Ka','Al_Ka'])
     array([ 26330.38933818,    372.02616732])
 
 .. code-block:: python
 
     >>> hs.material.mass_absorption_mixture(
-    >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
+    ...     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
     2587.4161643905127
 
 Electron and X-ray range
@@ -862,7 +862,7 @@ To calculate the X-ray range of Cu Ka in pure Carbon at 30kV in micron:
 .. code-block:: python
 
     >>> hs.eds.xray_range('Cu_Ka', 30., hs.material.elements.C.
-    >>>                      Physical_properties.density_gcm3)
+    ...                   Physical_properties.density_gcm3)
     7.6418811280855454
 
 To calculate the electron range in pure Copper at 30 kV in micron

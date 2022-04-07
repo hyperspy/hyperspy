@@ -1,0 +1,1 @@
+Add (weighted) :ref:`linear least square fitting <linear_fitting-label>`. Close `#488 <https://github.com/hyperspy/hyperspy/issues/488>`_ and `#574 <https://github.com/hyperspy/hyperspy/issues/574>`_.

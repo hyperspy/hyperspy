@@ -250,11 +250,15 @@ class EDSModel(Model1D):
             component.name = xray_line
             self.append(component)
             self.xray_lines.append(component)
-            self[xray_line].A.map[
-                'values'] = self.signal.isig[line_energy].data * \
-                line_FWHM / self.signal.axes_manager[-1].scale
-            self[xray_line].A.map['is_set'] = (
-                np.ones(self.signal.isig[line_energy].data.shape) == 1)
+            if self.signal._lazy:
+                # For lazy signal, use a default value to avoid having
+                # to do out-of-core computation
+                component.A.map['values'] = 10
+            else:
+                component.A.map[
+                    'values'] = self.signal.isig[line_energy].data * \
+                    line_FWHM / self.signal.axes_manager[-1].scale
+            component.A.map['is_set'] = True
             component.A.ext_force_positive = True
             for li in elements_db[element]['Atomic_properties']['Xray_lines']:
                 if line[0] in li and line != li:
@@ -598,11 +602,10 @@ class EDSModel(Model1D):
         calibrate: 'resolution' or 'scale' or 'offset'
             If 'resolution', fits the width of Gaussians place at all x-ray
             lines. The width is given by a model of the detector resolution,
-            obtained by extrapolating the `energy_resolution_MnKa` in `metadata`
-            `metadata`.
+            obtained by extrapolating the `energy_resolution_MnKa` in `metadata`.
             This method will update the value of `energy_resolution_MnKa`.
-            If 'scale', calibrate the scale of the energy axis
-            If 'offset', calibrate the offset of the energy axis
+            If 'scale', calibrate the scale of the energy axis.
+            If 'offset', calibrate the offset of the energy axis.
         xray_lines: list of str or 'all_alpha'
             The Xray lines. If 'all_alpha', fit all using all alpha lines
         **kwargs : extra key word arguments
@@ -637,9 +640,9 @@ class EDSModel(Model1D):
 
         Parameters
         ----------
-        xray_lines: list of str or 'all'
+        xray_lines : list of str or 'all'
             The Xray lines. If 'all', fit all lines
-        bounds: float
+        bound : float
             Bound the height of the peak to a fraction of
             its height
         """

@@ -39,14 +39,13 @@ class Point(MarkerBase):
     size : array or float, optional, default 20
         The size of the point. see x arguments
     kwargs :
-        Keywords argument of axvline valid properties (i.e. recognized by
-        mpl.plot).
+        Keyword arguments are passed to :py:meth:`matplotlib.axes.Axes.scatter`.
 
     Example
     -------
     >>> im = hs.signals.Signal2D(np.random.random([10, 50, 50]))
     >>> m = hs.plot.markers.point(x=range(10), y=range(10)[::-1],
-                                     color='red')
+    >>>                           color='red')
     >>> im.add_marker(m)
 
     Adding a marker permanently to a signal
@@ -70,7 +69,7 @@ class Point(MarkerBase):
 
     def __init__(self, x, y, size=20, **kwargs):
         MarkerBase.__init__(self)
-        lp = {'color': 'black', 'linewidth': None}
+        lp = {'color': 'black'}
         self.marker_properties = lp
         self.set_data(x1=x, y1=y, size=size)
         self.set_marker_properties(**kwargs)

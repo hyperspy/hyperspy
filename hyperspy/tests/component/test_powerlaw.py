@@ -36,6 +36,16 @@ def test_function():
     assert g.function(2) == 1
     assert g.function(1) == 0.25
 
+
+def test_linear_override():
+    g = PowerLaw()
+    for para in g.parameters:
+        if para is g.A:
+            assert para._linear
+        else:
+            assert not para._linear
+
+
 @pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
 def test_estimate_parameters_binned(only_current, binned, lazy):
@@ -56,6 +66,7 @@ def test_estimate_parameters_binned(only_current, binned, lazy):
     # error of the estimate function is rather large, esp. when binned=FALSE
     np.testing.assert_allclose(g1.A.value, g2.A.value * factor, rtol=0.05)
     assert abs(g2.r.value - g1.r.value) <= 2e-2
+
 
 @pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("binned"), (True, False))

@@ -1807,8 +1807,9 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
                     minimum),
                 self.signal.axes_manager.signal_axes[0].index2value(
                     maximum))
-            self.signal._plot.pointer._set_indices(
-                self.coordinates[self.index])
+            if self.signal._plot.navigator_plot is not None:
+                self.signal._plot.pointer._set_indices(
+                    self.coordinates[self.index])
             self.update_plot()
             self.create_interpolation_line()
 

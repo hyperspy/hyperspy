@@ -87,11 +87,12 @@ class EELSCLEdge(Component):
 
     def __init__(self, element_subshell, GOS=None):
         # Declare the parameters
-        Component.__init__(self,
-                           ['intensity',
-                            'fine_structure_coeff',
-                            'effective_angle',
-                            'onset_energy'])
+        Component.__init__(
+            self,
+            ['intensity', 'fine_structure_coeff', 'effective_angle',
+             'onset_energy'],
+            linear_parameter_list=['intensity']
+            )
         if isinstance(element_subshell, dict):
             self.element = element_subshell['element']
             self.subshell = element_subshell['subshell']

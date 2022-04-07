@@ -1,0 +1,1 @@
+expose Stage coordinates and rotation angle in metada for sem images in bcf reader.

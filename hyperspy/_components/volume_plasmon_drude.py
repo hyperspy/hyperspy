@@ -68,6 +68,8 @@ class VolumePlasmonDrude(Expression):
             module=module,
             autodoc=False,
             compute_gradients=compute_gradients,
+            linear_parameter_list=['intensity'],
+            check_parameter_linearity=False,
             **kwargs,
         )
 

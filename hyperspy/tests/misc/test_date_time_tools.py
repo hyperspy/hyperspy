@@ -109,13 +109,16 @@ def test_update_date_time_in_metadata():
     assert_deep_almost_equal(md13.General.date, md2.General.date)
     assert_deep_almost_equal(md13.General.time, md2.General.time)
     assert_deep_almost_equal(md13.General.time_zone, '-05:00')
-    assert_deep_almost_equal(dtt.update_date_time_in_metadata(dt2, md.deepcopy()).as_dictionary(),
-                             md2.as_dictionary())
+    assert_deep_almost_equal(
+        dtt.update_date_time_in_metadata(dt2, md.deepcopy()).as_dictionary(),
+        md2.as_dictionary())
 
-    assert_deep_almost_equal(dtt.update_date_time_in_metadata(iso3, md.deepcopy()).as_dictionary(),
-                             md3.as_dictionary())
-    assert_deep_almost_equal(dtt.update_date_time_in_metadata(dt3, md.deepcopy()).as_dictionary(),
-                             md3.as_dictionary())
+    assert_deep_almost_equal(
+        dtt.update_date_time_in_metadata(iso3, md.deepcopy()).as_dictionary(),
+        md3.as_dictionary())
+    assert_deep_almost_equal(
+        dtt.update_date_time_in_metadata(dt3, md.deepcopy()).as_dictionary(),
+        md3.as_dictionary())
 
 
 def test_serial_date_to_ISO_format():

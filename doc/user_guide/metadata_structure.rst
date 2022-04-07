@@ -78,6 +78,18 @@ in the following sections of this chapter.
     │           ├── y (mm)
     │           └── z (mm)
     ├── General
+    |   |── FileIO
+    |   |   ├── 0
+    |   |   |   ├── operation
+    |   |   |   ├── hyperspy_version
+    |   |   |   ├── io_plugin
+    |   │   |   └── timestamp
+    |   |   ├── 1
+    |   |   |   ├── operation
+    |   |   |   ├── hyperspy_version
+    |   |   |   ├── io_plugin
+    |   │   |   └── timestamp
+    |   |   └── ...
     │   ├── authors
     │   ├── date
     │   ├── doi
@@ -154,6 +166,47 @@ notes
     type: Str
 
     Notes about the data.
+
+.. _general-file-metadata:
+
+FileIO
+------
+
+Contains information about the software packages and versions used any time the
+Signal was created by reading the original data format (added in HyperSpy
+v1.7) or saved by one of HyperSpy's IO tools. If the signal is saved to one
+of the ``hspy``, ``zspy`` or ``nxs`` formats, the metadata within the ``FileIO``
+node will represent a history of the software configurations used when the 
+conversion was made from the proprietary/original format to HyperSpy's
+format, as well as any time the signal was subsequently loaded from and saved
+to disk. Under the ``FileIO`` node will be one or more nodes named ``0``,
+``1``, ``2``, etc., each with the following structure:
+
+operation
+   type: Str
+
+   This value will be either ``"load"`` or ``"save"`` to indicate whether
+   this node represents a load from, or save to disk operation, respectively.
+
+hyperspy_version
+    type: Str
+
+    The version number of the HyperSpy software used to extract a Signal from
+    this data file or save this Signal to disk
+
+io_plugin
+    type: Str
+
+    The specific input/output plugin used to originally extract this data file
+    into a HyperSpy Signal or save it to disk -- will be of the form
+    ``hyperspy.io_plugins.<plugin_name>``.
+
+timestamp
+    type: Str
+
+    The timestamp of the computer running the data loading/saving process (in a
+    timezone-aware format). The timestamp will be in ISO 8601 format, as
+    produced by the ``isoformat()`` method of the ``datetime`` class.
 
 Acquisition_instrument
 ======================

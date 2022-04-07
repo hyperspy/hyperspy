@@ -12,7 +12,6 @@ import tifffile
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy import __version__ as hs_version
-
 import hyperspy.io_plugins.tiff
 
 MY_PATH = os.path.dirname(__file__)
@@ -391,7 +390,13 @@ FEI_Helios_metadata = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 
                                    'title': '',
                                    'authors': 'supervisor',
                                    'date': '2016-06-13',
-                                   'time': '17:06:40'},
+                                   'time': '17:06:40',
+                                   'FileIO': {'0': {
+                                       'operation': 'load',
+                                       'hyperspy_version': hs_version,
+                                       'io_plugin': 'hyperspy.io_plugins.tiff'
+                                   }}
+                                   },
                        'Signal': {'signal_type': ''},
                        '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                                  'original_shape': None,
@@ -407,6 +412,8 @@ def test_read_FEI_SEM_scale_metadata_8bits():
     np.testing.assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
     np.testing.assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
     assert s.data.dtype == 'uint8'
+    # delete timestamp from metadata since it's runtime dependent
+    del s.metadata.General.FileIO.Number_0.timestamp
     FEI_Helios_metadata['General'][
         'original_filename'] = 'FEI-Helios-Ebeam-8bits.tif'
     assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
@@ -420,6 +427,8 @@ def test_read_FEI_SEM_scale_metadata_16bits():
     np.testing.assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
     np.testing.assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
     assert s.data.dtype == 'uint16'
+    # delete timestamp from metadata since it's runtime dependent
+    del s.metadata.General.FileIO.Number_0.timestamp
     FEI_Helios_metadata['General'][
         'original_filename'] = 'FEI-Helios-Ebeam-16bits.tif'
     assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
@@ -443,7 +452,13 @@ def test_read_Zeiss_SEM_scale_metadata_1k_image():
                       'date': '2015-12-23',
                       'original_filename': 'test_tiff_Zeiss_SEM_1k.tif',
                       'time': '09:40:32',
-                      'title': ''},
+                      'title': '',
+                      'FileIO': {'0': {
+                          'operation': 'load',
+                          'hyperspy_version': hs_version,
+                          'io_plugin': 'hyperspy.io_plugins.tiff'
+                      }}
+                      },
           'Signal': {'signal_type': ''},
           '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                     'original_shape': None,
@@ -457,6 +472,8 @@ def test_read_Zeiss_SEM_scale_metadata_1k_image():
     np.testing.assert_allclose(s.axes_manager[0].scale, 2.614514, rtol=1E-6)
     np.testing.assert_allclose(s.axes_manager[1].scale, 2.614514, rtol=1E-6)
     assert s.data.dtype == 'uint8'
+    # delete timestamp from metadata since it's runtime dependent
+    del s.metadata.General.FileIO.Number_0.timestamp
     assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 
@@ -474,7 +491,13 @@ def test_read_Zeiss_SEM_scale_metadata_512_image():
                       'date': '2018-09-25',
                       'original_filename': 'test_tiff_Zeiss_SEM_512pix.tif',
                       'time': '08:20:42',
-                      'title': ''},
+                      'title': '',
+                      'FileIO': {'0': {
+                          'operation': 'load',
+                          'hyperspy_version': hs_version,
+                          'io_plugin': 'hyperspy.io_plugins.tiff'
+                      }}
+                      },
           'Signal': {'signal_type': ''},
           '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                     'original_shape': None,
@@ -488,6 +511,8 @@ def test_read_Zeiss_SEM_scale_metadata_512_image():
     np.testing.assert_allclose(s.axes_manager[0].scale, 0.011649976, rtol=1E-6)
     np.testing.assert_allclose(s.axes_manager[1].scale, 0.011649976, rtol=1E-6)
     assert s.data.dtype == 'uint8'
+    # delete timestamp from metadata since it's runtime dependent
+    del s.metadata.General.FileIO.Number_0.timestamp
     assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 
@@ -503,6 +528,8 @@ def test_read_RGB_Zeiss_optical_scale_metadata():
     np.testing.assert_allclose(s.axes_manager[1].scale, 1.0, rtol=1E-5)
     assert s.metadata.General.date == '2016-06-13'
     assert s.metadata.General.time == '15:59:52'
+    assert s.metadata.General.FileIO.Number_0.hyperspy_version == hs_version
+    assert s.metadata.General.FileIO.Number_0.io_plugin == 'hyperspy.io_plugins.tiff'
 
 
 def test_read_BW_Zeiss_optical_scale_metadata():
@@ -567,7 +594,13 @@ def test_read_TVIPS_metadata():
                                              'magnification': 32000.0}},
           'General': {'original_filename': 'TVIPS_bin4.tif',
                       'time': '9:01:17',
-                      'title': ''},
+                      'title': '',
+                      'FileIO': {'0': {
+                          'operation': 'load',
+                          'hyperspy_version': hs_version,
+                          'io_plugin': 'hyperspy.io_plugins.tiff'
+                      }}
+                      },
           'Signal': {'signal_type': ''},
           '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                     'original_shape': None,
@@ -581,6 +614,8 @@ def test_read_TVIPS_metadata():
     assert s.axes_manager[1].units == 'nm'
     np.testing.assert_allclose(s.axes_manager[0].scale, 1.42080, rtol=1E-5)
     np.testing.assert_allclose(s.axes_manager[1].scale, 1.42080, rtol=1E-5)
+    # delete timestamp from metadata since it's runtime dependent
+    del s.metadata.General.FileIO.Number_0.timestamp
     assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 

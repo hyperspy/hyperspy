@@ -80,13 +80,11 @@ class DoublePowerLaw(Expression):
             autodoc=False,
             module=module,
             compute_gradients=compute_gradients,
+            linear_parameter_list=['A'],
+            check_parameter_linearity=False,
             **kwargs,
         )
-
-        self.origin.free = False
-        self.shift.value = 20.
-        self.shift.free = False
-
+    
         # Boundaries
         self.A.bmin = 0.
         self.A.bmax = None
@@ -94,7 +92,7 @@ class DoublePowerLaw(Expression):
         self.r.bmax = 5.
 
         self.isbackground = True
-        self.convolved = False
+        self.convolved = True
 
     def function_nd(self, axis):
         """%s

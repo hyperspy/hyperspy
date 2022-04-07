@@ -1,0 +1,1 @@
+Support for reading and writing :ref:`TVIPS image stream data<tvips_format-label>`

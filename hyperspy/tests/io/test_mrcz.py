@@ -23,10 +23,12 @@ from time import perf_counter, sleep
 import numpy as np
 import numpy.testing as npt
 import pytest
+from datetime import datetime
 
 from hyperspy import signals
 from hyperspy.io import load, save
 from hyperspy.misc.test_utils import assert_deep_almost_equal
+from hyperspy import __version__ as hs_version
 
 
 mrcz = pytest.importorskip("mrcz", reason="mrcz not installed")
@@ -76,6 +78,19 @@ class TestPythonMrcz:
         testSignal = signals.Signal2D(testData)
         if lazy:
             testSignal = testSignal.as_lazy()
+
+        # Add "File" metadata to testSignal
+        testSignal.metadata.General.add_dictionary({
+            'FileIO': {
+                '0': {
+                    'operation': 'load',
+                    'hyperspy_version': hs_version,
+                    'io_plugin': 'hyperspy.io_plugins.mrcz',
+                    'timestamp': datetime.now().astimezone().isoformat()
+                }
+            }
+        })
+
         # Unfortunately one cannot iterate over axes_manager in a Pythonic way
         # for axis in testSignal.axes_manager:
         testSignal.axes_manager[0].name = 'z'
@@ -121,6 +136,11 @@ class TestPythonMrcz:
         except IOError:
             print("Warning: file {} left on disk".format(mrcName))
 
+        # change file timestamp to make the metadata of both signals equal
+        testSignal.metadata.General.FileIO.Number_0.timestamp = (
+            reSignal.metadata.General.FileIO.Number_0.timestamp
+        )
+
         npt.assert_array_almost_equal(
             testSignal.data.shape,
             reSignal.data.shape)
@@ -144,6 +164,9 @@ class TestPythonMrcz:
             assert isinstance(reSignal, signals.ComplexSignal2D)
         else:
             assert isinstance(reSignal, signals.Signal2D)
+
+        # delete last load operation from reSignal metadata so we can compare
+        del reSignal.metadata.General.FileIO.Number_2
         assert_deep_almost_equal(testSignal.axes_manager.as_dictionary(),
                                  reSignal.axes_manager.as_dictionary())
         assert_deep_almost_equal(testSignal.metadata.as_dictionary(),

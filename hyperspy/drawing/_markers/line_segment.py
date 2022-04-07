@@ -40,8 +40,8 @@ class LineSegment(MarkerBase):
         The position of the end of the line segment in y.
         see x1 arguments
     kwargs :
-        Keywords argument of axvline valid properties (i.e. recognized by
-        mpl.plot).
+        Keyword arguments are passed to
+        :py:meth:`matplotlib.axes.Axes.plot`.
 
     Example
     -------
