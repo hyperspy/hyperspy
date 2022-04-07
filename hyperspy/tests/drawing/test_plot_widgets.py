@@ -219,6 +219,12 @@ class TestPlotRangeWidget():
         self.s = s
         self.range_widget = range_widget
 
+    def test_snap_position_span_None(self):
+        # When span is None, there shouldn't an error
+        assert self.range_widget.span is None
+        self.range_widget.snap_position = True
+        assert self.range_widget.snap_position
+
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_range(self):

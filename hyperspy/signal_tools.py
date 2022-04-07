@@ -1014,12 +1014,13 @@ class ImageContrastEditor(t.HasTraits):
         if self.hist_data.max() != 0:
             self.ax.set_ylim(0, self.hist_data.max())
 
-        self.update_line()
-
         if self.auto and self._is_selector_visible:
             # in auto mode, the displayed contrast cover the full range
             # and we need to reset the span selector
+            # no need to clear the line, it will updated 
             self.span_selector.clear()
+
+        self.update_line()
 
         self.ax.figure.canvas.draw()
 
@@ -1073,6 +1074,9 @@ class ImageContrastEditor(t.HasTraits):
             return
         self._set_xaxis_line()
         self.line.update(render_figure=True)
+        if not self.line.line.get_visible():
+            # when the selector have been cleared, line is not visible anymore
+            self.line.line.set_visible(True)
 
     def apply(self):
         if self.ss_left_value == self.ss_right_value:
@@ -1153,6 +1157,9 @@ class ImageContrastEditor(t.HasTraits):
     def _clear_span_selector(self):
         if hasattr(self, 'span_selector'):
             self.span_selector.clear()
+        if hasattr(self, 'line'):
+            self.line.line.set_visible(False)
+            self.hspy_fig.render_figure()
 
     def _show_help_fired(self):
         from pyface.message_dialog import information

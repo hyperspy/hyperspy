@@ -134,7 +134,7 @@ class WidgetBase(object):
                         if p in container:
                             if Version(matplotlib.__version__) >= Version('3.5.0'):
                                 p.remove()
-                            else:
+                            else:  # pragma: no cover
                                 container.remove(p)
                 self.disconnect()
         if hasattr(super(WidgetBase, self), 'set_on'):

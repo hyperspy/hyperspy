@@ -844,7 +844,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             "instead.")
         deprecation_warning(msg)
 
-        if signal_range == 'interactive':
+        if signal_range == 'interactive':  # pragma: no cover
             self_copy = self.deepcopy()
             ia = IntegrateArea(self_copy)
             ia.gui(display=display, toolkit=toolkit)
