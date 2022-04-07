@@ -685,7 +685,7 @@ def test_hamamatsu_streak_loadwarning():
     #Ensuire that no warning is raised by this
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        s = hs.load(fname,axis_type='uniform')
+        s = hs.load(fname,hamamatsu_streak_axis_type='uniform')
 
 
 def test_hamamatsu_streak_scanfile():
@@ -722,22 +722,23 @@ def test_hamamatsu_streak_non_uniform_load():
     file = 'test_hamamatsu_streak_SCAN.tif'
     fname = os.path.join(MY_PATH2, file)
 
-    s = hs.load(fname,axis_type='data')
+    s = hs.load(fname, hamamatsu_streak_axis_type='data')
 
     np.testing.assert_allclose(s.original_metadata.ImageDescriptionParsed.Scaling.ScalingYaxis,
-                               s.axes_manager[1].axis,rtol=1e-5)
+                               s.axes_manager[1].axis, rtol=1e-5)
 
-    s = hs.load(fname,axis_type='functional')
+    s = hs.load(fname, hamamatsu_streak_axis_type='functional')
 
     np.testing.assert_allclose(s.original_metadata.ImageDescriptionParsed.Scaling.ScalingYaxis,
-                               s.axes_manager[1].axis,rtol=1e-5)
+                               s.axes_manager[1].axis, rtol=1e-5)
 
 
 def test_is_hamamatsu_streak():
     file = 'test_hamamatsu_streak_SCAN.tif'
     fname = os.path.join(MY_PATH2, file)
 
-    s = hs.load(fname,axis_type='uniform')
+    with pytest.warns(UserWarning):
+        s = hs.load(fname)
 
     s.original_metadata['Artist'] = "TAPTAP"
 

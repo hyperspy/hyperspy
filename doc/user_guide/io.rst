@@ -773,15 +773,43 @@ HyperSpy can also import the scale and the units from TIFF files saved using
 FEI, Zeiss SEM, Olympus SIS, Jeol SightX and Hamamatsu HPD-TA (streak camera)
 software.
 
+Extra loading arguments
+^^^^^^^^^^^^^^^^^^^^^^^
+
+- ``force_read_resolution`` (bool, optional): Force read image resolution using
+  the x_resolution, y_resolution and resolution_unit tags of the TIFF. Beware:
+  most software don't (properly) use these tags when saving TIFF files. Default
+  is ``False``.
+- ``hamamatsu_streak_axis_type`` (str, optional): decide the type of the
+  time axis for hamamatsu streak files:
+
+  * if ``uniform``, the best-fit linear axis is used, inducing a (small)
+    linearisation error. Initialise a UniformDataAxis.
+  * if ``data``, the raw time axis parsed from the metadata is used. Initialise
+    a DataAxis.
+  * if ``functional``, the best-fit 3rd-order polynomial axis is used, avoiding
+    linearisation error. Initialise a FunctionalDataAxis.
+
+By default, ``uniform`` is used but a warning of the linearisation error is issued.
+Explicitly passing ``hamamatsu_streak_axis_type='uniform'`` suppresses the warning.
+In all cases, the original axis values are stored in the ``original_metadata`` of the
+signal object.
+
 .. code-block:: python
 
     >>> # Force read image resolution using the x_resolution, y_resolution and
-    >>> # the resolution_unit of the TIFF tags. Be aware, that most of the
-    >>> # software doesn't (properly) use these tags when saving TIFF files.
+    >>> # the resolution_unit of the TIFF tags.
     >>> s = hs.load('file.tif', force_read_resolution=True)
+    >>> # Load a non-uniform axis from a hamamatsu streak file:
+    >>> s = hs.load('file.tif', hamamatsu_streak_axis_type='data')
 
-HyperSpy can also read and save custom tags through the ``tifffile``
-library.
+
+Extra saving arguments
+^^^^^^^^^^^^^^^^^^^^^^
+
+- ``extratags`` (tuple, optional): save custom tags through the
+   ``tifffile`` library. Must conform to a specific convention
+   (see ``tifffile`` documentation and example below).
 
 .. code-block:: python
 

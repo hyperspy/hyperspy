@@ -136,12 +136,12 @@ def file_reader(filename, force_read_resolution=False, lazy=False, **kwds):
         Load the data lazily. Default is False
     **kwds, optional
     """
-    tmp = kwds.pop('axis_type', None)
+    tmp = kwds.pop('hamamatsu_streak_axis_type', None)
 
 
     with TiffFile(filename, **kwds) as tiff:
         if tmp is not None:
-            kwds.update({'axis_type': tmp})
+            kwds.update({'hamamatsu_streak_axis_type': tmp})
         dict_list = [_read_serie(tiff, serie, filename, force_read_resolution,
                                  lazy=lazy, **kwds) for serie in tiff.series]
 
@@ -605,20 +605,20 @@ def _get_hamamatsu_streak_description(tiff, op):
 def _axes_hamamatsu_streak(tiff, op, shape, names, **kwds):
     _logger.debug("Reading Hamamatsu Streak Map tif metadata")
 
-    if 'axis_type' in kwds:
-        axis_type = kwds['axis_type']
+    if 'hamamatsu_streak_axis_type' in kwds:
+        hamamatsu_streak_axis_type = kwds['hamamatsu_streak_axis_type']
     else:
-        axis_type = 'uniform'
+        hamamatsu_streak_axis_type = 'uniform'
         warnings.warn(f"{tiff} contain a non linear axis. By default, "
                       f"a linearized version is initialised, which can "
-                      f"induce errors. Use the `axis_type` keyword to load "
-                      f"either a parabolic functional axis using `axis_type='functional'`, "
-                      f"a data axis using `axis_type='data'`, or use `axis_type='uniform'`to "
+                      f"induce errors. Use the `hamamatsu_streak_axis_type` keyword to load "
+                      f"either a parabolic functional axis using `hamamatsu_streak_axis_type='functional'`, "
+                      f"a data axis using `hamamatsu_streak_axis_type='data'`, or use `hamamatsu_streak_axis_type='uniform'`to "
                       f"linearize the axis and make this warning disappear", UserWarning)
 
-    if axis_type not in ['functional', 'data', 'uniform']:
-        axis_type = 'uniform'
-        warnings.warn("The `axis_type`  argument only admits "
+    if hamamatsu_streak_axis_type not in ['functional', 'data', 'uniform']:
+        hamamatsu_streak_axis_type = 'uniform'
+        warnings.warn("The `hamamatsu_streak_axis_type`  argument only admits "
                          "the values `'data'`, `'functional'` and `'uniform'`", UserWarning)
 
     # Parsing the Metadata
@@ -644,17 +644,17 @@ def _axes_hamamatsu_streak(tiff, op, shape, names, **kwds):
     i = names.index('height')
     axes[i] = {'name': 'height',
                'units': desc['Scaling']['ScalingYUnit']}
-    if axis_type == 'uniform':
+    if hamamatsu_streak_axis_type == 'uniform':
         #Uniform axis initialisation
         [ysc, yof] = np.polyfit(np.arange(len(yax)), yax, 1)
         axes[i].update({'scale': ysc,
                         'offset': yof,
                         'size': shape[i],
                         })
-    elif axis_type == 'data':
+    elif hamamatsu_streak_axis_type == 'data':
         #Data axis initialisation
         axes[i].update({'axis': yax})
-    elif axis_type == 'functional':
+    elif hamamatsu_streak_axis_type == 'functional':
         #Functional axis initialisation
         xaxis = {'scale': 1, 'offset': 0, 'size': len(yax)}
         poly = np.polyfit(np.arange(len(yax)), yax, 3)
@@ -662,24 +662,6 @@ def _axes_hamamatsu_streak(tiff, op, shape, names, **kwds):
                    'expression': "a*x**3+b*x**2+c*x+d",
                    'a': poly[0], 'b': poly[1], 'c': poly[2], 'd': poly[3]}
 
-    # scales, offsets, units = _axes_defaults()
-    #
-    # # Unfortunately the X/Y naming convention between Hamamatsu
-    # # and hyperspy is inverted
-    # scales.update({'x': ysc, 'y': xsc})
-    # offsets.update({'x': yof, 'y': xof})
-    # units.update({'x': desc['Scaling']['ScalingYUnit'],
-    #               'y': desc['Scaling']['ScalingXUnit']})
-
-    # # Finally, axes descriptors can be additionally parsed from digital micrograph or imagej-style files
-    # if _is_digital_micrograph(op):
-    #     scales, offsets, units = _add_axes_digital_micrograph(op, scales, offsets, units)
-    # if _is_imagej(tiff):
-    #     scales, offsets, units = _add_axes_imagej(tiff, op, scales, offsets, units)
-    #
-    # scales, offsets, units = _order_axes_by_name(names, scales, offsets, units)
-    # axes = _build_axes_dictionaries(shape, names, scales, offsets, units)
-    #
     return axes
 
 
