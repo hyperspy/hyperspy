@@ -658,9 +658,9 @@ def _axes_hamamatsu_streak(tiff, op, shape, names, **kwds):
         #Functional axis initialisation
         xaxis = {'scale': 1, 'offset': 0, 'size': len(yax)}
         poly = np.polyfit(np.arange(len(yax)), yax, 3)
-        axes[i] = {'size': len(yax), 'x': xaxis,
+        axes[i].update({'size': len(yax), 'x': xaxis,
                    'expression': "a*x**3+b*x**2+c*x+d",
-                   'a': poly[0], 'b': poly[1], 'c': poly[2], 'd': poly[3]}
+                   'a': poly[0], 'b': poly[1], 'c': poly[2], 'd': poly[3]})
 
     return axes
 
