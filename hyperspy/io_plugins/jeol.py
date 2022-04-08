@@ -218,7 +218,8 @@ def _read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
         The maximum energy. Useful to reduce memory size of spectrum image.
         Default is None (no cutoff)
     downsample : int or (int, int)
-    	Downsample along spacial axes to reduce memory size of spectrum image
+    	Downsample along spatial axes to reduce memory size of spectrum image.
+        Value must be 2^n. Default is 1 (no downsampling).
         ue must be 2^n. Default is 1 (no downsampling).
     only_valid_data : bool, default True
     	Read incomplete frame if only_valid_data == False
@@ -228,13 +229,13 @@ def _read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
     frame_list : list of int, default None
     	List of frame numbers to be read (None for all data)
     frame_shifts : list of [int, int] or list of [int, int, int], default None
-    	Each frame will be loaded with offset of dy, dx, (and optionary energy
+    	Each frame will be loaded with offset of dy, dx, (and optional energy
         axis). Units are pixels/channels.
         This is useful for express drift correction. Not suitable for accurate
         analysis.
         Like the result of estimate_shift2D(), the first parameter is for y-axis
     frame_start_index: list
-        The list of offset pointer of each frame in the raw data.
+        The list of offset pointers of each frame in the raw data.
         The pointer for frame0 is 0.
     lazy : bool, default False
     	Read spectrum image into sparse array if lazy == True
@@ -623,9 +624,9 @@ def _readcube(rawdata, frame_start_index, frame_list,
     channel_number : int
         The number of channels.
     width_norm, height_norm : int
-        Rebin factor of the navigation dimension
+        Rebin factor of the navigation dimension.
     rebin_energy : int
-        Rebin factor of the energy dimension
+        Rebin factor of the energy dimension.
     sweep : int
         Number of sweep
     frame_shifts : list
@@ -637,7 +638,7 @@ def _readcube(rawdata, frame_start_index, frame_list,
     data : numpy.ndarray or dask.array
         The spectrum image with shape (frame, x, y, energy) if sum_frames is
         False, otherwise (x, y, energy).
-        If lazy is True, the dask array is a COO sparse array
+        If lazy is True, the dask array is a COO sparse array.
     em_data : numpy.ndarray or dask.array
         The SEM/STEM image with shape (frame, x, y) if sum_frames is False,
         otherwise (x, y).
@@ -648,7 +649,8 @@ def _readcube(rawdata, frame_start_index, frame_list,
     frame_start_index : list
         The indices of each frame start. 
     max_shift : numpy.ndarray
-	    The maximum shifts of the origin in the navigation dimension
+        The maximum shifts of the origin in the navigation dimension.
+```
     frame_shifts : numpy.ndarray
         The shifts of the origin in the navigation dimension for each frame.
     """
