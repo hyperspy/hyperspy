@@ -710,18 +710,30 @@ def test_JEOL_SightX():
             assert s.axes_manager[i].units == file[2]
 
 
-def test_hamamatsu_streak_loadwarning():
+def test_hamamatsu_streak_loadwarnings():
     file = 'test_hamamatsu_streak_SCAN.tif'
     fname = os.path.join(MY_PATH2, file)
 
+    # No hamamatsu_streak_axis_type argument should :
+    # - raise warning
+    # - Initialise uniform data axis
     with pytest.warns(UserWarning):
         s = hs.load(fname)
+        assert s.axes_manager.all_uniform
 
-    #Ensuire that no warning is raised by this
+    #Invalid hamamatsu_streak_axis_type argument should:
+    # - raise warning
+    # - Initialise uniform data axis
+    with pytest.warns(UserWarning):
+        s = hs.load(fname,hamamatsu_streak_axis_type='xxx')
+        assert s.axes_manager.all_uniform
+
+    #Explicitly calling hamamatsu_streak_axis_type='uniform'
+    # should NOT raise a warning
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        s = hs.load(fname,hamamatsu_streak_axis_type='uniform')
-
+        s = hs.load(fname, hamamatsu_streak_axis_type='uniform')
+        assert s.axes_manager.all_uniform
 
 def test_hamamatsu_streak_scanfile():
     file = 'test_hamamatsu_streak_SCAN.tif'
@@ -775,12 +787,26 @@ def test_is_hamamatsu_streak():
     with pytest.warns(UserWarning):
         s = hs.load(fname)
 
-    s.original_metadata['Artist'] = "TAPTAP"
+    omd = s.original_metadata.as_dictionary()
 
-    assert hyperspy.io_plugins.tiff._is_streak_hamamatsu(s.original_metadata) == False
+    omd['Artist'] = "TAPTAP"
 
-    s.original_metadata['Artist'] = "Copyright Hamamatsu"
+    assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
 
-    assert hyperspy.io_plugins.tiff._is_streak_hamamatsu(s.original_metadata) == True
+    _ = omd.pop('Artist')
 
-    s.original_metadata['Software'] = "TAPTAPTAP"
+    assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
+
+    omd.update({'Artist': "Copyright Hamamatsu GmbH, 2018"})
+
+    omd['Software'] = "TAPTAPTAP"
+
+    assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
+
+    _ = omd.pop('Software')
+
+    assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
+
+    omd.update({'Software': "HPD-TA 9.5 pf4"})
+
+    assert hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
