@@ -162,6 +162,20 @@ class TestMultiFitLinear:
         single_nonlinear = m.as_signal()
         np.testing.assert_allclose(single(), single_nonlinear())
 
+    def test_multifit_ridge(self, weighted):
+        pytest.importorskip("sklearn")
+        m = self.m
+        L = Gaussian(centre=15.)
+        L.set_parameters_not_free(['centre', 'sigma'])
+        m.append(L)
+
+        if m.signal._lazy:
+            with pytest.raises(ValueError):
+                m.multifit(optimizer='ridge_regression')
+            return
+        else:
+            m.multifit(optimizer='ridge_regression')
+
 
 class TestLinearFitting:
 
