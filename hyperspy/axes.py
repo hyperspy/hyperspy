@@ -286,7 +286,7 @@ class BaseDataAxis(t.HasTraits):
                  navigate=False,
                  is_binned=False,
                  **kwargs):
-        super(BaseDataAxis, self).__init__()
+        super().__init__()
 
         self.events = Events()
         if '_type' in kwargs:
@@ -616,8 +616,8 @@ class BaseDataAxis(t.HasTraits):
                 index = numba_closest_index_floor(self.axis,value).astype(int)
             else:
                 raise ValueError(
-                    f'Non-supported rounding function. Use '
-                    f'round, math.ceil or math.floor'
+                    'Non-supported rounding function. Use '
+                    'round, `math.ceil` or `math.floor`'
                     )
             #initialise the index same dimension as input, force type to int
             # index = np.empty_like(value,dtype=int)
@@ -710,6 +710,7 @@ class BaseDataAxis(t.HasTraits):
         return any_changes
 
     def convert_to_uniform_axis(self):
+        """Convert to an uniform axis."""
         scale = (self.high_value - self.low_value) / self.size
         d = self.get_axis_dictionary()
         axes_manager = self.axes_manager
@@ -1012,6 +1013,7 @@ class FunctionalDataAxis(BaseDataAxis):
         return d
 
     def convert_to_non_uniform_axis(self):
+        """Convert to a non-uniform axis."""
         d = super().get_axis_dictionary()
         axes_manager = self.axes_manager
         d["_type"] = 'DataAxis'
