@@ -482,7 +482,7 @@ def plot_images(images,
                 labelwrap=30,
                 suptitle=None,
                 suptitle_fontsize=18,
-                colorbar='multi',
+                colorbar='default',
                 centre_colormap='auto',
                 scalebar=None,
                 scalebar_color='white',
@@ -551,13 +551,15 @@ def plot_images(images,
         this parameter will override the automatically determined title.
     suptitle_fontsize : int, optional
         Font size to use for super title at top of figure.
-    colorbar : 'multi', None, 'single', optional
-        Controls the type of colorbars that are plotted.
-        If None, no colorbar is plotted.
-        If 'multi' (default), individual colorbars are plotted for each
-        (non-RGB) image
+    colorbar : 'default', 'multi', 'single', None, optional
+        Controls the type of colorbars that are plotted, incompatible with
+        ``overlay=True``.
+        If 'default', same as 'multi' when ``overlay=False``, otherwise same
+        as ``None``.
+        If 'multi', individual colorbars are plotted for each (non-RGB) image.
         If 'single', all (non-RGB) images are plotted on the same scale,
-        and one colorbar is shown for all
+        and one colorbar is shown for all.
+        If None, no colorbar is plotted.
     centre_colormap : 'auto', True, False, optional
         If True, the centre of the color scheme is set to zero. This is
         particularly useful when using diverging color schemes. If 'auto'
@@ -703,6 +705,15 @@ def plot_images(images,
         n += (sig.axes_manager.navigation_size
               if sig.axes_manager.navigation_size > 0
               else 1)
+
+    # Check compatibility of colorbar and overlay arguments
+    if overlay and colorbar != 'default':
+        _logger.info(f"`colorbar='{colorbar}'` is incompatible with "
+                     "`overlay=True`. Colorbar is disable.")
+        colorbar = None
+    # Setting the default value
+    elif colorbar == 'default':
+        colorbar = 'multi'
 
     # If no cmap given, get default colormap from pyplot:
     if cmap is None:
@@ -993,7 +1004,7 @@ def plot_images(images,
 
         set_axes_decor(ax, axes_decor)
 
-        if scalebar=='all':
+        if scalebar == 'all':
             axes = im.axes_manager.signal_axes
             ax.scalebar = ScaleBar(
                         ax=ax,
@@ -1003,7 +1014,7 @@ def plot_images(images,
         axes_list.append(ax)
 
     #Below is for non-overlayed images
-    if not overlay:
+    else:
         # Loop through each image, adding subplot for each one
         for i, ims in enumerate(images):
             # Get handles for the signal axes and axes_manager

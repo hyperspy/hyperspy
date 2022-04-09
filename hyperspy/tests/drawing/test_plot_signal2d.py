@@ -589,6 +589,7 @@ def test_plot_autoscale_data_changed(autoscale):
         np.testing.assert_allclose(imf._vmin, _vmin)
         np.testing.assert_allclose(imf._vmax, _vmax)
 
+
 @pytest.mark.parametrize("axes_decor", ['all', 'off'])
 @pytest.mark.parametrize("label", ['auto', ['b','g']])
 @pytest.mark.parametrize("colors", ['auto', ['b','g']])
@@ -616,3 +617,9 @@ def test_plot_scale_different_sign():
     s2.plot()
     assert s2._plot.signal_plot.pixel_units is not None
     assert s2._plot.signal_plot.scalebar is True
+
+
+def test_plot_images_overlay_colorbar():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    _ = hs.plot.plot_images([s, s], overlay=True, colorbar='single')    
+    
