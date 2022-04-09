@@ -621,5 +621,35 @@ def test_plot_scale_different_sign():
 
 def test_plot_images_overlay_colorbar():
     s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
-    _ = hs.plot.plot_images([s, s], overlay=True, colorbar='single')    
+    _ = hs.plot.plot_images([s, s], overlay=True, colorbar='single',
+                            axes_decor='off')    
+
+
+def test_plot_images_overlay_figsize():
+    """Test figure size for different aspect ratio of image."""
+    # Set reference figure size
+    plt.rcParams['figure.figsize'] = [6.4, 4.8]
+
+    # aspect_ratio is 1
+    s = hs.signals.Signal2D(np.random.random((10, 10)))
+    hs.plot.plot_images([s, s], overlay=True, scalebar='all', axes_decor='off')
+    f = plt.gcf()
+    np.testing.assert_allclose((f.get_figwidth(), f.get_figheight()), (4.8, 4.8))
+
+    # aspect_ratio is 64 / 48
+    s = hs.signals.Signal2D(np.random.random((48, 64)))
+    hs.plot.plot_images([s, s], overlay=True, scalebar='all', axes_decor='off')
+    f = plt.gcf()
+    np.testing.assert_allclose((f.get_figwidth(), f.get_figheight()), (6.4, 4.8))
+
+    # aspect_ratio is 2
+    s = hs.signals.Signal2D(np.random.random((10, 20)))
+    hs.plot.plot_images([s, s], overlay=True, scalebar='all', axes_decor='off')
+    f = plt.gcf()
+    np.testing.assert_allclose((f.get_figwidth(), f.get_figheight()), (6.4, 3.2))
     
+    # aspect_ratio is 0.5
+    s = hs.signals.Signal2D(np.random.random((20, 10)))
+    hs.plot.plot_images([s, s], overlay=True, scalebar='all', axes_decor='off')
+    f = plt.gcf()
+    np.testing.assert_allclose((f.get_figwidth(), f.get_figheight()), (2.4, 4.8))

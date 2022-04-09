@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
+from functools import partial
 import itertools
 import logging
 from packaging.version import Version
@@ -25,14 +26,13 @@ import warnings
 
 import dask.array as da
 import traits.api as t
-import matplotlib.pyplot as plt
+import numpy as np
+
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.backend_bases import key_press_handler
-import numpy as np
-from functools import partial
-from matplotlib.colors import LinearSegmentedColormap
-from matplotlib.colors import BASE_COLORS, to_rgba
+from matplotlib.colors import LinearSegmentedColormap, BASE_COLORS, to_rgba
+import matplotlib.pyplot as plt
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import to_numpy
@@ -500,7 +500,7 @@ def plot_images(images,
                 alphas=1.0,
                 legend_picking=True,
                 legend_loc='upper right',
-                pixel_size_factor=1,
+                pixel_size_factor=None,
                 **kwargs):
     """Plot multiple images either as sub-images or overlayed in one figure.
 
@@ -605,7 +605,7 @@ def plot_images(images,
         values will require more overlap in titles before activing the
         auto-label code.
     fig : mpl figure, optional
-        If set, the images will be plotted to an existing MPL figure
+        If set, the images will be plotted to an existing matplotlib figure.
     vmin, vmax: scalar, str, None
         If str, formatted as 'xth', use this value to calculate the percentage
         of pixels that are left out of the lower and upper bounds.
@@ -632,10 +632,12 @@ def plot_images(images,
     legend_loc : str, int, optional
         This parameter controls where the legend is placed on the figure
         see the :py:func:`matplotlib.pyplot.legend` docstring for valid values
-    pixel_size_factor : int or float, optional
-        Default value is 1. Sets the size of the figure when plotting an overlay image. The higher
-        the number the larger the figure and therefore a greater number of
-        pixels are used. This value will be ignored if a Figure is provided.
+    pixel_size_factor : None, int or float, optional
+        If ``None`` (default), the size of the figure is taken from the
+        matplotlib ``rcParams``. Otherwise Sets the size of the figure when
+        plotting an overlay image. The higher the number the larger the figure
+        and therefore a greater number of pixels are used. This value will be
+        ignored if a Figure is provided.
     **kwargs, optional
         Additional keyword arguments passed to :py:func:`matplotlib.pyplot.imshow`.
 
@@ -852,22 +854,41 @@ def plot_images(images,
     else:
         raise ValueError("Did not understand input of labels.")
 
-    # Start of non-overlay?
     # Determine appropriate number of images per row
-    rows = int(np.ceil(n / float(per_row)))
-    if n < per_row:
-        per_row = n
+    if overlay:
+        # only a single image
+        per_row = rows = 1
+    else:
+        rows = int(np.ceil(n / float(per_row)))
+        if n < per_row:
+            per_row = n
 
     # Set overall figure size and define figure (if not pre-existing)
     if fig is None:
-        k = max(plt.rcParams['figure.figsize']) / max(per_row, rows)
-        if overlay:
-            shape = images[0].data.shape
-            dpi = 100
-            f = plt.figure(figsize=[pixel_size_factor*v/dpi for v in shape],
-                           dpi=dpi)
+        w, h = plt.rcParams['figure.figsize']
+        dpi = plt.rcParams['figure.dpi']  
+        if overlay and axes_decor == 'off':
+            shape = images[0].axes_manager.signal_shape
+            if pixel_size_factor is None:
+                # Cap the maximum dimension of figure to
+                # plt.rcParams['figure.figsize']
+                aspect_ratio = shape[0] / shape[1]
+                if aspect_ratio >= w / h:
+                    if label is not None and w / aspect_ratio < 1.0:
+                        # Needs enough space for the labels
+                        w = 1.0 * aspect_ratio
+                    figsize = (w, w / aspect_ratio)
+                else:
+                    if scalebar is not None and h * aspect_ratio < 2.0:
+                        # Needs enough width for the scalebar
+                        h = 2.0 / aspect_ratio
+                    figsize = (h * aspect_ratio, h)
+            else:
+                figsize = [pixel_size_factor*v/dpi for v in shape]
         else:
-            f = plt.figure(figsize=(tuple(k * i for i in (per_row, rows))))
+            k = max(w, h) / max(per_row, rows)
+            figsize=[k * i for i in (per_row, rows)]
+        f = plt.figure(figsize=figsize, dpi=dpi)
     else:
         f = fig
 
@@ -890,11 +911,15 @@ def plot_images(images,
         warnings.warn("Sorry, colorbar is not implemented for RGB images.")
 
     # Check if we need to add a scalebar for some of the images
-    if isinstance(scalebar, list) and all(isinstance(x, int)
-                                          for x in scalebar):
+    if isinstance(scalebar, (list, tuple)) and all(isinstance(x, int)
+                                                   for x in scalebar):
         scalelist = True
     else:
         scalelist = False
+
+    if scalebar not in [None, False, 'all'] and scalelist is False:
+        raise ValueError("Did not understand scalebar input. Must be None, "
+                         "'all', or list of ints.")
 
     def check_list_length(arg, arg_name):
         if isinstance(arg, (list, tuple)):
@@ -950,12 +975,11 @@ def plot_images(images,
             _logger.warning('`vmin` is ignored when overlaying images.')
 
         import matplotlib.patches as mpatches
+        factor = plt.rcParams['font.size'] / 100
         if not suptitle and axes_decor == 'off':
             ax = f.add_axes([0, 0, 1, 1])
-        elif not suptitle:
-            ax = f.add_axes([0.1, 0.1, 1, 1])
         else:
-            ax = f.add_axes([0.1, 0.1, 0.9, 0.8])
+            ax = f.add_subplot()
         patches = []
 
         #If no colors are selected use BASE_COLORS
@@ -1000,7 +1024,7 @@ def plot_images(images,
 
         if label is not None:
             plt.legend(handles=patches, loc=legend_loc)
-            if legend_picking is True:
+            if legend_picking:
                 animate_legend(fig=f, ax=ax, plot_type='images')
 
         set_axes_decor(ax, axes_decor)
@@ -1170,20 +1194,6 @@ def plot_images(images,
     if suptitle:
         f.subplots_adjust(top=0.85)
         f.suptitle(suptitle, fontsize=suptitle_fontsize)
-
-    # If we want to plot scalebars, loop through the list of axes and add them
-    if scalebar is None or scalebar is False:
-        # Do nothing if no scalebars are called for
-        pass
-    elif scalebar == 'all':
-        # scalebars were taken care of in the plotting loop
-        pass
-    elif scalelist:
-        # scalebars were taken care of in the plotting loop
-        pass
-    else:
-        raise ValueError("Did not understand scalebar input. Must be None, "
-                         "'all', or list of ints.")
 
     # Adjust subplot spacing according to user's specification
     if padding is not None:
@@ -1677,3 +1687,4 @@ def picker_kwargs(value, kwargs={}):
         kwargs['picker'] = value
 
     return kwargs
+    
