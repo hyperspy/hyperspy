@@ -627,8 +627,8 @@ def plot_images(images,
         Float value or a list of floats corresponding to the alpha value of
         each color.
     legend_picking: bool, optional
-        If True (default), a spectrum can be toggled on and off by clicking on
-        the legended line.
+        If True (default), an image can be toggled on and off by clicking on
+        the legended line. For ``overlay=True`` only.
     legend_loc : str, int, optional
         This parameter controls where the legend is placed on the figure
         see the :py:func:`matplotlib.pyplot.legend` docstring for valid values
@@ -945,8 +945,9 @@ def plot_images(images,
                 images[0].axes_manager[0].scale):
                 raise ValueError("Images are not the same scale and so should"
                                  "not be overlayed.")
-
-        _logger.warning('vmin is ignored when overlaying images.')
+        
+        if vmin is not None:
+            _logger.warning('`vmin` is ignored when overlaying images.')
 
         import matplotlib.patches as mpatches
         if not suptitle and axes_decor == 'off':
@@ -1537,7 +1538,8 @@ def plot_spectra(
 def animate_legend(fig=None, ax=None, plot_type='spectra'):
     """Animate the legend of a figure.
 
-    A spectrum can be toggled on and off by clicking on the line in the legend.
+    A spectrum or image can be toggled on and off by clicking on the line in
+    the legend.
 
     Parameters
     ----------
