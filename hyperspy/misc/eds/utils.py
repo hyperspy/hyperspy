@@ -422,55 +422,36 @@ def quantification_cliff_lorimer(intensities,
     # Value used as an threshold to prevent using zeros as denominator
     min_intensity = 0.1
     dim = intensities.shape
-    if len(dim) > 1:
-        dim2 = reduce(lambda x, y: x * y, dim[1:])
-        intens = intensities.reshape(dim[0], dim2)
-        intens = intens.astype('float')
+    dim2 = reduce(lambda x, y: x * y, dim[1:])
+    intens = intensities.reshape(dim[0], dim2).astype(float)
 
-        if absorption_correction is None:
-            # default to ones
-            absorption_correction = np.ones_like(intens, dtype=float)
-        else:
-            absorption_correction = absorption_correction.reshape(dim[0], dim2)
-
-        for i in range(dim2):
-            index = np.where(intens[:, i] > min_intensity)[0]
-            if len(index) > 1:
-                ref_index, ref_index2 = index[:2]
-                intens[:, i] = _quantification_cliff_lorimer(
-                    intens[:, i], kfactors, absorption_correction[:, i],
-                    ref_index, ref_index2)
-            else:
-                intens[:, i] = np.zeros_like(intens[:, i])
-                if len(index) == 1:
-                    intens[index[0], i] = 1.
-                    
-        intens = intens.reshape(dim)
-        if mask is not None:
-            from hyperspy.signals import BaseSignal
-            if isinstance(mask, BaseSignal):
-                mask = mask.data
-            for i in range(dim[0]):
-                intens[i][(mask==True)] = 0
-        return intens
+    if absorption_correction is None:
+        # default to ones
+        absorption_correction = np.ones_like(intens, dtype=float)
     else:
-        index = np.where(intensities > min_intensity)[0]
-        if absorption_correction is None:
-            # default to ones
-            absorption_correction = np.ones_like(intensities, dtype=float)
+        absorption_correction = absorption_correction.reshape(dim[0], dim2)
+
+    for i in range(dim2):
+        index = np.where(intens[:, i] > min_intensity)[0]
         if len(index) > 1:
             ref_index, ref_index2 = index[:2]
-            intens = _quantification_cliff_lorimer(
-                intensities,
-                kfactors,
-                absorption_correction,
-                ref_index,
-                ref_index2)
+            intens[:, i] = _quantification_cliff_lorimer(
+                intens[:, i], kfactors, absorption_correction[:, i],
+                ref_index, ref_index2)
         else:
-            intens = np.zeros_like(intensities)
+            intens[:, i] = np.zeros_like(intens[:, i])
             if len(index) == 1:
-                intens[index[0]] = 1.
-        return intens
+                intens[index[0], i] = 1.
+                
+    intens = intens.reshape(dim)
+    if mask is not None:
+        from hyperspy.signals import BaseSignal
+        if isinstance(mask, BaseSignal):
+            mask = mask.data
+        for i in range(dim[0]):
+            intens[i][(mask==True)] = 0
+
+    return intens
 
 quantification_cliff_lorimer.__doc__ %= (_ABSORPTION_CORRECTION_DOCSTRING)
 
@@ -635,11 +616,11 @@ def quantification_cross_section(intensities,
 
     if absorption_correction is None:
         # default to ones
-        absorption_correction = np.ones_like(intensities, dtype='float')
+        absorption_correction = np.ones_like(intensities, dtype=float)
 
     shp = len(intensities.shape) - 1
     slices = (slice(None),) + (None,) * shp
-    x_sections = np.array(cross_sections, dtype='float')[slices]
+    x_sections = np.array(cross_sections, dtype=float)[slices]
     number_of_atoms = intensities / (x_sections * dose * 1e-10) * absorption_correction
     total_atoms = np.cumsum(number_of_atoms, axis=0)[-1]
     composition = number_of_atoms / total_atoms
