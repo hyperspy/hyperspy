@@ -559,7 +559,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             utils.plot.plot_signals(composition, **kwargs)
 
         if absorption_correction:
-            _logger.info(f'Conversion found after {it} interations.')
+            _logger.info(f'Convergence reach after {it} interations.')
 
         if method == 'zeta':
             mass_thickness.metadata.General.title = 'Mass thickness'

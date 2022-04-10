@@ -283,6 +283,20 @@ class Test_quantification:
                                    atol=1e-3)
         np.testing.assert_allclose(res[0].data, res4[0][0].data, atol=1e-5)
 
+    def test_quant_lorimer_ac_single_spectrum(self):
+        s = self.signal.inav[0]
+        method = 'CL'
+        kfactors = [1, 2.0009344042484134]
+        composition_units = 'weight'
+        intensities = s.get_lines_intensity()
+        res = s.quantification(intensities, method, kfactors,
+                               composition_units)
+        np.testing.assert_allclose(res[0].data, 22.70779, atol=1e-3)
+        res2 = s.quantification(intensities, method, kfactors,
+                                composition_units,
+                                absorption_correction=True,
+                                thickness=1.)
+        np.testing.assert_allclose(res2[0].data, 22.743013, atol=1e-3)        
 
     def test_quant_zeta(self):
         s = self.signal
