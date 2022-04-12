@@ -51,7 +51,6 @@ from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import (
     add_scalar_axis,
     DictionaryTreeBrowser,
-    get_array_module,
     guess_output_signal_size,
     is_binned, # remove in v2.0
     is_cupy_array,
@@ -67,13 +66,9 @@ from hyperspy.misc.hist_tools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
-from hyperspy.misc.utils import is_binned # remove in v2.0
 from hyperspy.misc.utils import (
-    process_function_blockwise,
-    guess_output_signal_size,
     _get_block_pattern
     )
-from hyperspy.misc.utils import add_scalar_axis
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
     RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
@@ -84,8 +79,7 @@ from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
 from hyperspy.docstrings.utils import REBIN_ARGS
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
-from hyperspy.misc.signal_tools import (are_signals_aligned,
-                                        broadcast_signals)
+from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order, check_random_state
 from hyperspy.exceptions import VisibleDeprecationWarning
 

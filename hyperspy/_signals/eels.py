@@ -301,10 +301,7 @@ class EELSSpectrum(Signal1D):
             mask = mask.data
         zlpc = self.valuemax(-1)
         if mask is not None:
-            if zlpc._lazy:
-                zlpc.data = da.where(mask, np.nan, zlpc.data)
-            else:
-                zlpc.data[mask] = np.nan
+            zlpc.data = np.where(mask, np.nan, zlpc.data)
         zlpc.set_signal_type("")
         title = self.metadata.General.title
         zlpc.metadata.General.title = "ZLP(%s)" % title
@@ -769,10 +766,9 @@ class EELSSpectrum(Signal1D):
         else:
             I0 = self.estimate_elastic_scattering_intensity(
                 threshold=threshold,).data
-        if self._lazy:
-            t_over_lambda = da.log(total_intensity / I0)
-        else:
-            t_over_lambda = np.log(total_intensity / I0)
+        
+        t_over_lambda = np.log(total_intensity / I0)
+        
         if density is not None:
             if self._are_microscope_parameters_missing():
                 raise RuntimeError(
@@ -873,17 +869,15 @@ class EELSSpectrum(Signal1D):
         size = optimal_fft_size(size, not complex_result)
 
         axis = self.axes_manager.signal_axes[0]
-        if self._lazy or zlp._lazy:
 
-            z = da.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
-            j = da.fft.rfft(s.data, n=size, axis=axis.index_in_array)
+        z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
+        j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array)
+        if self._lazy or zlp._lazy:
             j1 = z * da.log(j / z).map_blocks(np.nan_to_num)
-            sdata = da.fft.irfft(j1, axis=axis.index_in_array)
         else:
-            z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
-            j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array)
+
             j1 = z * np.nan_to_num(np.log(j / z))
-            sdata = np.fft.irfft(j1, axis=axis.index_in_array)
+        sdata = np.fft.irfft(j1, axis=axis.index_in_array)
 
         s.data = sdata[s.axes_manager._get_data_slice(
             [(axis.index_in_array, slice(None, self_size)), ])]
@@ -983,12 +977,6 @@ class EELSSpectrum(Signal1D):
 
         ll.hanning_taper()
         cl.hanning_taper()
-        if self._lazy or ll._lazy:
-            rfft = da.fft.rfft
-            irfft = da.fft.irfft
-        else:
-            rfft = np.fft.rfft
-            irfft = np.fft.irfft
 
         ll_size = ll.axes_manager.signal_axes[0].size
         cl_size = self.axes_manager.signal_axes[0].size
@@ -1019,12 +1007,12 @@ class EELSSpectrum(Signal1D):
                         axis.offset + axis.scale * (size - 1),
                         size))
         z = np.fft.rfft(zl)
-        jk = rfft(cl.data, n=size, axis=axis.index_in_array)
-        jl = rfft(ll.data, n=size, axis=axis.index_in_array)
+        jk = np.fft.rfft(cl.data, n=size, axis=axis.index_in_array)
+        jl = np.fft.rfft(ll.data, n=size, axis=axis.index_in_array)
         zshape = [1, ] * len(cl.data.shape)
         zshape[axis.index_in_array] = jk.shape[axis.index_in_array]
-        cl.data = irfft(z.reshape(zshape) * jk / jl,
-                        axis=axis.index_in_array)
+        cl.data = np.fft.irfft(z.reshape(zshape) * jk / jl,
+                               axis=axis.index_in_array)
         cl.data *= I0
         cl.crop(-1, None, int(orig_cl_size))
         cl.metadata.General.title = (self.metadata.General.title +
@@ -1228,11 +1216,7 @@ class EELSSpectrum(Signal1D):
             axis.index2value(axis.size - 1),
             out=True)
         if fix_neg_r is True:
-            if s._lazy:
-                _where = da.where
-            else:
-                _where = np.where
-            A = _where(r <= 0, 0, A)
+            A = np.where(r <= 0, 0, A)
         # If the signal is binned we need to bin the extrapolated power law
         # what, in a first approximation, can be done by multiplying by the
         # axis step size.
