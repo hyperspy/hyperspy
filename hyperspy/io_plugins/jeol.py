@@ -220,7 +220,6 @@ def _read_pts(filename, scale=None, rebin_energy=1, sum_frames=True,
     downsample : int or (int, int)
     	Downsample along spatial axes to reduce memory size of spectrum image.
         Value must be 2^n. Default is 1 (no downsampling).
-        ue must be 2^n. Default is 1 (no downsampling).
     only_valid_data : bool, default True
     	Read incomplete frame if only_valid_data == False
         (usually interrupting mesurement makes incomplete frame)
