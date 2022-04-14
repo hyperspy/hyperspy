@@ -1,19 +1,27 @@
 import os
+from packaging.version import Version
+from pathlib import Path
 import tempfile
+import zipfile
+
 
 import numpy as np
 import pytest
 import traits.api as t
-from packaging.version import Version
 import tifffile
-
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy import __version__ as hs_version
 
+
 MY_PATH = os.path.dirname(__file__)
 MY_PATH2 = os.path.join(MY_PATH, "tiff_files")
+TMP_DIR = tempfile.TemporaryDirectory()
+
+
+def teardown_module():
+    TMP_DIR.cleanup()
 
 
 def test_rgba16():
@@ -604,8 +612,13 @@ def test_read_TVIPS_metadata():
                                     'original_shape': None,
                                     'signal_unfolded': False,
                                     'unfolded': False}}}
-    fname = os.path.join(MY_PATH2, 'TVIPS_bin4.tif')
-    s = hs.load(fname, convert_units=True)
+    
+    zipf = os.path.join(MY_PATH2, "TVIPS_bin4.zip")
+    path = Path(TMP_DIR.name)
+    with zipfile.ZipFile(zipf, 'r') as zipped:
+        zipped.extractall(path)
+        s = hs.load(path / 'TVIPS_bin4.tif', convert_units=True)
+        
     assert s.data.dtype == np.uint8
     assert s.data.shape == (1024, 1024)
     assert s.axes_manager[0].units == 'nm'

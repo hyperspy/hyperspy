@@ -362,6 +362,7 @@ with update_version_when_dev() as version:
                 'tests/io/JEOL_files/Sample/00_View000/*',
                 'tests/io/JEOL_files/InvalidFrame/*',
                 'tests/io/JEOL_files/InvalidFrame/Sample/00_Dummy-Data/*',
+                'tests/io/tiff_files/*.zip',
                 'tests/io/tiff_files/*.tif',
                 'tests/io/tiff_files/*.tif.gz',
                 'tests/io/tiff_files/*.dm3',
