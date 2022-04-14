@@ -1876,11 +1876,11 @@ GPU processing is supported thanks to the numpy dispatch mechanism of array func
 - read `NEP-18 <https://numpy.org/neps/nep-0018-array-function-protocol.html>`_
 and `NEP-35 <https://numpy.org/neps/nep-0035-array-creation-dispatch-with-array-function.html>`_
 for more information. It means that most HyperSpy functions will work on a GPU
-if the data is a :py:class:`cupy.ndarray` and that the required functions are
+if the data is a :py:class:`cupy.ndarray` and the required functions are
 implemented in ``cupy``.
 
 .. note::
-    GPU processing with hyperspy requires numpy 1.20 and dask 2021.3.0, to be
+    GPU processing with hyperspy requires numpy>=1.20 and dask>=2021.3.0, to be
     able to use NEP-18 and NEP-35.
 
 .. code-block:: python
@@ -1897,3 +1897,4 @@ Two convenience methods are available to transfer data to or from the GPU:
 - :py:meth:`~.signal.BaseSignal.to_cpu`
 - :py:meth:`~.signal.BaseSignal.to_gpu`
 
+For lazy processing, see the :ref:`corresponding section<big_data.gpu>`.
