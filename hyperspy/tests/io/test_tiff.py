@@ -25,8 +25,13 @@ def teardown_module():
 
 
 def test_rgba16():
-    s = hs.load(os.path.join(MY_PATH2, "test_rgba16.tif"))
-    data = np.load(os.path.join(MY_PATH, "npy_files", "test_rgba16.npy"))
+    path = Path(TMP_DIR.name)
+    zipf = os.path.join(MY_PATH2, "test_rgba16.zip")
+    with zipfile.ZipFile(zipf, 'r') as zipped:
+        zipped.extractall(path)
+    
+    s = hs.load(path / 'test_rgba16.tif')
+    data = np.load(Path(MY_PATH) / "npz_files" / "test_rgba16.npz")['a']
     assert (s.data == data).all()
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined
