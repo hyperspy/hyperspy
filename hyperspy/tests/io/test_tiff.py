@@ -410,34 +410,43 @@ FEI_Helios_metadata = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 
                                                  'unfolded': False}}}
 
 
-def test_read_FEI_SEM_scale_metadata_8bits():
-    fname = os.path.join(MY_PATH2, 'FEI-Helios-Ebeam-8bits.tif')
-    s = hs.load(fname, convert_units=True)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
-    assert s.data.dtype == 'uint8'
-    # delete timestamp from metadata since it's runtime dependent
-    del s.metadata.General.FileIO.Number_0.timestamp
-    FEI_Helios_metadata['General'][
-        'original_filename'] = 'FEI-Helios-Ebeam-8bits.tif'
-    assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
+class TestReadFEIHelios:
+    
+    path = Path(TMP_DIR.name)
+    
+    @classmethod
+    def setup_class(cls):
+        zipf = os.path.join(MY_PATH2, "tiff_FEI_Helios.zip")
+        with zipfile.ZipFile(zipf, 'r') as zipped:
+            zipped.extractall(cls.path)
 
-
-def test_read_FEI_SEM_scale_metadata_16bits():
-    fname = os.path.join(MY_PATH2, 'FEI-Helios-Ebeam-16bits.tif')
-    s = hs.load(fname, convert_units=True)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
-    assert s.data.dtype == 'uint16'
-    # delete timestamp from metadata since it's runtime dependent
-    del s.metadata.General.FileIO.Number_0.timestamp
-    FEI_Helios_metadata['General'][
-        'original_filename'] = 'FEI-Helios-Ebeam-16bits.tif'
-    assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
+    def test_read_FEI_SEM_scale_metadata_8bits(self):
+        fname = self.path / 'FEI-Helios-Ebeam-8bits.tif'
+        s = hs.load(fname, convert_units=True)
+        assert s.axes_manager[0].units == 'µm'
+        assert s.axes_manager[1].units == 'µm'
+        np.testing.assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
+        np.testing.assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
+        assert s.data.dtype == 'uint8'
+        # delete timestamp from metadata since it's runtime dependent
+        del s.metadata.General.FileIO.Number_0.timestamp
+        FEI_Helios_metadata['General'][
+            'original_filename'] = 'FEI-Helios-Ebeam-8bits.tif'
+        assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
+    
+    def test_read_FEI_SEM_scale_metadata_16bits(self):
+        fname = self.path / 'FEI-Helios-Ebeam-16bits.tif'
+        s = hs.load(fname, convert_units=True)
+        assert s.axes_manager[0].units == 'µm'
+        assert s.axes_manager[1].units == 'µm'
+        np.testing.assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
+        np.testing.assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
+        assert s.data.dtype == 'uint16'
+        # delete timestamp from metadata since it's runtime dependent
+        del s.metadata.General.FileIO.Number_0.timestamp
+        FEI_Helios_metadata['General'][
+            'original_filename'] = 'FEI-Helios-Ebeam-16bits.tif'
+        assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
 
 class TestReadZeissSEM:
