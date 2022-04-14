@@ -250,7 +250,10 @@ class MVA:
                 elif svd_solver == 'auto':
                     svd_solver = 'full'
             else:
-                raise TypeError("cupy arrays are not supported.")
+                raise TypeError(
+                    "Only `algorithm='SVD'` is supported with cupy arrays. "
+                    f"Provided algorithm is '{algorithm}'."
+                    )
 
         from hyperspy.signal import BaseSignal
 
