@@ -34,10 +34,10 @@ class VerticalLineWidget(Widget1DBase):
     def _set_patch(self):
         ax = self.ax
         kwargs = picker_kwargs(preferences.Plot.pick_tolerance)
-        self.patch = [ax.axvline(self._pos[0],
-                                 color=self.color,
-                                 alpha=self.alpha,
-                                 **kwargs)]
+        self._patch = [ax.axvline(self._pos[0],
+                                  color=self.color,
+                                  alpha=self.alpha,
+                                  **kwargs)]
 
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""

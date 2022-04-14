@@ -268,7 +268,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         max_r = max(self.radius_move, self.radius_resize,
                     self.radius_rotate)
         kwargs = picker_kwargs(max_r)
-        self.patch = [plt.Line2D(
+        self._patch = [plt.Line2D(
             xy[:, 0], xy[:, 1],
             linestyle='-',
             lw=self.linewidth,
@@ -298,14 +298,14 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 lw=self.linewidth,
                 c=self.color,
                 **kwargs)
-            self.patch.append(wi)
+            self._patch.append(wi)
             self._width_indicator_patches.append(wi)
 
     def _remove_size_patch(self):
         if not self._width_indicator_patches:
             return
         for patch in self._width_indicator_patches:
-            self.patch.remove(patch)
+            self._patch.remove(patch)
             patch.remove()
         self._width_indicator_patches = []
 

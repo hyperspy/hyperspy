@@ -46,7 +46,7 @@ class SquareWidget(Widget2DBase):
         """
         xy = self._get_patch_xy()
         xs, ys = self.size
-        self.patch = [plt.Rectangle(
+        self._patch = [plt.Rectangle(
             xy, xs, ys,
             fill=False,
             lw=self.border_thickness,

@@ -162,21 +162,20 @@ class TestROIs():
         np.testing.assert_equal(r2(s).data, s.data)
 
         w2.set_bounds(x=-10)  # below min x
-        assert w2._pos[0] == 0
+        assert w2._pos[0] == -0.1
         w2.set_bounds(width=0.1)  # below min width
         assert w2._size[0] == 0.2
         w2.set_bounds(width=30.0)  # above max width
-        assert w2._size[0] == 12
+        assert w2._size[0] == 11.8
 
-        # the combination of the two is not valid
         w2.set_bounds(x=10, width=20)
-        assert w2._pos[0] == 0
-        assert w2._size[0] == 12
+        assert w2._pos[0] == 9.9
+        np.testing.assert_allclose(w2._size[0], 1.8)
 
         w2.set_bounds(x=10)
         w2.set_bounds(width=20)
-        assert w2._pos[0] == 0
-        assert w2._size[0] == 12
+        assert w2._pos[0] == 9.9
+        np.testing.assert_allclose(w2._size[0], 1.8)
 
     def test_spanroi_getitem(self):
         r = SpanROI(15, 30)
@@ -688,7 +687,7 @@ class TestInteractive:
             assert w.position == old_position if snap else new_position
             assert w.snap_position == snap
 
-        span = SpanROI(4, 5)
+        span = SpanROI(4.01, 5)
         _ = span.interactive(s, **kwargs)
         for w in span.widgets:
             old_position = w.position
@@ -702,6 +701,7 @@ class TestInteractive:
             # check that changing snap is working fine
             new_snap = not snap
             w.snap_all = new_snap
+            old_position = w.position
             new_position = (4.2, )
             w.position = new_position
             assert w.position == old_position if new_snap else new_position

@@ -101,9 +101,9 @@ class ScaleBar(object):
 
     def remove(self):
         if self.line is not None:
-            self.ax.lines.remove(self.line)
+            self.line.remove()
         if self.text is not None:
-            self.ax.texts.remove(self.text)
+            self.text.remove()
 
     def plot_scale(self, line_width=1):
         self.remove()

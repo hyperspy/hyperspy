@@ -17,11 +17,9 @@
 
 
 from collections import OrderedDict
-from distutils.version import LooseVersion
 import math as math
 import logging
 
-import dask
 import dask.array as da
 import numpy as np
 from numba import njit
