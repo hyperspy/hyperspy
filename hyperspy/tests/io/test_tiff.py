@@ -440,86 +440,96 @@ def test_read_FEI_SEM_scale_metadata_16bits():
     assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
 
-def test_read_Zeiss_SEM_scale_metadata_1k_image():
-    md = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 10.2,
-                                                       'tilt': -0.0,
-                                                       'x': 75.6442,
-                                                       'y': 60.4901,
-                                                       'z': 25.193},
-                                             'Detector':{'detector_type':
-                                                 'HE-SE2'},
-                                             'beam_current': 1.0,
-                                             'beam_energy': 25.0,
-                                             'dwell_time': 5e-08,
-                                             'magnification': 105.0,
-                                             'microscope': 'Merlin-61-08',
-                                             'working_distance': 14.808}},
-          'General': {'authors': 'LIM',
-                      'date': '2015-12-23',
-                      'original_filename': 'test_tiff_Zeiss_SEM_1k.tif',
-                      'time': '09:40:32',
-                      'title': '',
-                      'FileIO': {'0': {
-                          'operation': 'load',
-                          'hyperspy_version': hs_version,
-                          'io_plugin': 'hyperspy.io_plugins.tiff'
-                      }}
-                      },
-          'Signal': {'signal_type': ''},
-          '_HyperSpy': {'Folding': {'original_axes_manager': None,
-                                    'original_shape': None,
-                                    'signal_unfolded': False,
-                                    'unfolded': False}}}
+class TestReadZeissSEM:
+    
+    path = Path(TMP_DIR.name)
+    
+    @classmethod
+    def setup_class(cls):
+        zipf = os.path.join(MY_PATH2, "tiff_Zeiss_SEM.zip")
+        with zipfile.ZipFile(zipf, 'r') as zipped:
+            zipped.extractall(cls.path)
 
-    fname = os.path.join(MY_PATH2, 'test_tiff_Zeiss_SEM_1k.tif')
-    s = hs.load(fname, convert_units=True)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 2.614514, rtol=1E-6)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 2.614514, rtol=1E-6)
-    assert s.data.dtype == 'uint8'
-    # delete timestamp from metadata since it's runtime dependent
-    del s.metadata.General.FileIO.Number_0.timestamp
-    assert_deep_almost_equal(s.metadata.as_dictionary(), md)
+    def test_read_Zeiss_SEM_scale_metadata_1k_image(self):
+        md = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 10.2,
+                                                           'tilt': -0.0,
+                                                           'x': 75.6442,
+                                                           'y': 60.4901,
+                                                           'z': 25.193},
+                                                 'Detector':{'detector_type':
+                                                     'HE-SE2'},
+                                                 'beam_current': 1.0,
+                                                 'beam_energy': 25.0,
+                                                 'dwell_time': 5e-08,
+                                                 'magnification': 105.0,
+                                                 'microscope': 'Merlin-61-08',
+                                                 'working_distance': 14.808}},
+              'General': {'authors': 'LIM',
+                          'date': '2015-12-23',
+                          'original_filename': 'test_tiff_Zeiss_SEM_1k.tif',
+                          'time': '09:40:32',
+                          'title': '',
+                          'FileIO': {'0': {
+                              'operation': 'load',
+                              'hyperspy_version': hs_version,
+                              'io_plugin': 'hyperspy.io_plugins.tiff'
+                          }}
+                          },
+              'Signal': {'signal_type': ''},
+              '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                        'original_shape': None,
+                                        'signal_unfolded': False,
+                                        'unfolded': False}}}
+        
+        fname = self.path / 'test_tiff_Zeiss_SEM_1k.tif'
+        s = hs.load(fname, convert_units=True)
+    
+        assert s.axes_manager[0].units == 'µm'
+        assert s.axes_manager[1].units == 'µm'
+        np.testing.assert_allclose(s.axes_manager[0].scale, 2.614514, rtol=1E-6)
+        np.testing.assert_allclose(s.axes_manager[1].scale, 2.614514, rtol=1E-6)
+        assert s.data.dtype == 'uint8'
+        # delete timestamp from metadata since it's runtime dependent
+        del s.metadata.General.FileIO.Number_0.timestamp
+        assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
-
-def test_read_Zeiss_SEM_scale_metadata_512_image():
-    md = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 245.8,
-                                                       'tilt': 0.0,
-                                                       'x': 62.9961,
-                                                       'y': 65.3168,
-                                                       'z': 44.678},
-                                             'beam_energy': 5.0,
-                                             'magnification': '50.00 K X',
-                                             'microscope': 'ULTRA 55-36-06',
-                                             'working_distance': 3.9}},
-          'General': {'authors': 'LIBERATO',
-                      'date': '2018-09-25',
-                      'original_filename': 'test_tiff_Zeiss_SEM_512pix.tif',
-                      'time': '08:20:42',
-                      'title': '',
-                      'FileIO': {'0': {
-                          'operation': 'load',
-                          'hyperspy_version': hs_version,
-                          'io_plugin': 'hyperspy.io_plugins.tiff'
-                      }}
-                      },
-          'Signal': {'signal_type': ''},
-          '_HyperSpy': {'Folding': {'original_axes_manager': None,
-                                    'original_shape': None,
-                                    'signal_unfolded': False,
-                                    'unfolded': False}}}
-
-    fname = os.path.join(MY_PATH2, 'test_tiff_Zeiss_SEM_512pix.tif')
-    s = hs.load(fname, convert_units=True)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 0.011649976, rtol=1E-6)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 0.011649976, rtol=1E-6)
-    assert s.data.dtype == 'uint8'
-    # delete timestamp from metadata since it's runtime dependent
-    del s.metadata.General.FileIO.Number_0.timestamp
-    assert_deep_almost_equal(s.metadata.as_dictionary(), md)
+    def test_read_Zeiss_SEM_scale_metadata_512_image(self):
+        md = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 245.8,
+                                                           'tilt': 0.0,
+                                                           'x': 62.9961,
+                                                           'y': 65.3168,
+                                                           'z': 44.678},
+                                                 'beam_energy': 5.0,
+                                                 'magnification': '50.00 K X',
+                                                 'microscope': 'ULTRA 55-36-06',
+                                                 'working_distance': 3.9}},
+              'General': {'authors': 'LIBERATO',
+                          'date': '2018-09-25',
+                          'original_filename': 'test_tiff_Zeiss_SEM_512pix.tif',
+                          'time': '08:20:42',
+                          'title': '',
+                          'FileIO': {'0': {
+                              'operation': 'load',
+                              'hyperspy_version': hs_version,
+                              'io_plugin': 'hyperspy.io_plugins.tiff'
+                          }}
+                          },
+              'Signal': {'signal_type': ''},
+              '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                        'original_shape': None,
+                                        'signal_unfolded': False,
+                                        'unfolded': False}}}
+    
+        fname = self.path / 'test_tiff_Zeiss_SEM_512pix.tif'
+        s = hs.load(fname, convert_units=True)
+        assert s.axes_manager[0].units == 'µm'
+        assert s.axes_manager[1].units == 'µm'
+        np.testing.assert_allclose(s.axes_manager[0].scale, 0.011649976, rtol=1E-6)
+        np.testing.assert_allclose(s.axes_manager[1].scale, 0.011649976, rtol=1E-6)
+        assert s.data.dtype == 'uint8'
+        # delete timestamp from metadata since it's runtime dependent
+        del s.metadata.General.FileIO.Number_0.timestamp
+        assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 
 def test_read_RGB_Zeiss_optical_scale_metadata():
