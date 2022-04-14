@@ -1460,7 +1460,7 @@ class MVA:
         """
         s = self.get_explained_variance_ratio()
         if is_cupy_array(s.data):
-            s.to_cpu()
+            s.to_host()
 
         n_max = len(self.learning_results.explained_variance_ratio)
         if n is None:

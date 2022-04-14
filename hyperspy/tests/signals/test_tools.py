@@ -325,14 +325,14 @@ def test_get_current_signal(lazy):
     assert cs.metadata.General.title == 'A signal'
 
 
-def test_to_cpu():
+def test_to_host():
     data = np.arange(10)
     s = signals.BaseSignal(data)
-    s.to_cpu()
+    s.to_host()
     s.data is data
 
 
-def test_lazy_to_gpu():
+def test_lazy_to_device():
     s = signals.BaseSignal(np.arange(10)).as_lazy()
     with pytest.raises(BaseException):
-        s.to_gpu()
+        s.to_device()

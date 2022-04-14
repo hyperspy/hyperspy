@@ -18,16 +18,18 @@
 
 import copy
 import itertools
+import logging
 from packaging.version import Version
 import textwrap
+import warnings
+
+import dask.array as da
 import traits.api as t
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.backend_bases import key_press_handler
-import warnings
 import numpy as np
-import logging
 from functools import partial
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.colors import BASE_COLORS, to_rgba
@@ -412,7 +414,7 @@ def _make_overlap_plot(spectra, ax, color, linestyle, **kwargs):
             zip(spectra, color, linestyle)):
         x_axis = spectrum.axes_manager.signal_axes[0]
         spectrum = _transpose_if_required(spectrum, 1)
-        ax.plot(x_axis.axis, to_numpy(spectrum.data), color=color,ls=linestyle,
+        ax.plot(x_axis.axis, _parse_array(spectrum), color=color,ls=linestyle,
                 **kwargs)
         set_xaxis_lims(ax, x_axis)
     _set_spectrum_xlabel(spectra, ax)
@@ -443,7 +445,7 @@ def _make_cascade_subplot(spectra, ax, color, linestyle, padding=1, **kwargs):
 
 def _plot_spectrum(spectrum, ax, color="blue", linestyle='-', **kwargs):
     x_axis = spectrum.axes_manager.signal_axes[0]
-    ax.plot(x_axis.axis, to_numpy(spectrum.data), color=color, ls=linestyle,
+    ax.plot(x_axis.axis, _parse_array(spectrum), color=color, ls=linestyle,
             **kwargs)
     set_xaxis_lims(ax, x_axis)
 
@@ -462,6 +464,14 @@ def _transpose_if_required(signal, expected_dimension):
         return signal.T
     else:
         return signal
+
+
+def _parse_array(signal):
+    """Convenience function to parse array from a signal."""
+    data = signal.data
+    if isinstance(data, da.Array):
+        data = data.compute()
+    return to_numpy(data)
 
 
 def plot_images(images,
@@ -679,7 +689,7 @@ def plot_images(images,
     # copy it and put it in a list so labeling works out as (x,y) when plotting
     if isinstance(images,
                   BaseSignal) and images.axes_manager.navigation_dimension > 0:
-        images = [images._deepcopy_with_new_data(to_numpy(images.data))]
+        images = [images._deepcopy_with_new_data(images.data)]
 
     n = 0
     for i, sig in enumerate(images):
@@ -895,7 +905,7 @@ def plot_images(images,
                             'The default values are used instead.')
             vmin, vmax = None, None
         vmin_max = np.array(
-            [contrast_stretching(to_numpy(i.data), vmin, vmax) for i in non_rgb])
+            [contrast_stretching(_parse_array(i), vmin, vmax) for i in non_rgb])
         _vmin, _vmax = vmin_max[:, 0].min(), vmin_max[:, 1].max()
         if next(centre_colormaps):
             _vmin, _vmax = centre_colormap_values(_vmin, _vmax)
@@ -953,17 +963,17 @@ def plot_images(images,
 
         #Loop through each image
         for i, im in enumerate(images):
-
             #Set vmin and vmax
             centre = next(centre_colormaps)   # get next value for centreing
-            data = im.data
+            data = _parse_array(im)
+            
             _vmin = data.min()
             _vmax = vmax[idx] if isinstance(vmax, (tuple, list)) else vmax
             _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
             if centre:
                 _logger.warning('Centering is ignored when overlaying images.')
 
-            ax.imshow(im.data, vmin=_vmin, vmax=_vmax,
+            ax.imshow(data, vmin=_vmin, vmax=_vmax,
                       cmap=transparent_single_color_cmap(colors[i]),
                       alpha=alphas[i], **kwargs)
 
@@ -1003,8 +1013,8 @@ def plot_images(images,
             for j, im in enumerate(ims):
                 ax = f.add_subplot(rows, per_row, idx + 1)
                 axes_list.append(ax)
-                data = to_numpy(im.data)
-                centre = next(centre_colormaps)   # get next value for centreing
+                centre = next(centre_colormaps) # get next value for centreing
+                data = _parse_array(im)
 
                 # Enable RGB plotting
                 if rgb_tools.is_rgbx(data):

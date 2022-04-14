@@ -81,7 +81,7 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order, check_random_state
-from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
 
 
 _logger = logging.getLogger(__name__)
@@ -2434,7 +2434,7 @@ class BaseSignal(FancySlicing,
     @data.setter
     def data(self, value):
         # Object supporting __array_function__ protocol (NEP-18) or the
-        # array API standard doesn't to be cast to numpy array
+        # array API standard doesn't need to be cast to numpy array
         if not (hasattr(value, '__array_function__') or
                 hasattr(value, '__array_namespace__')):
             value = np.asanyarray(value)
@@ -6465,11 +6465,11 @@ class BaseSignal(FancySlicing,
             raise ValueError("The shape of signal mask array must match "
                              "`signal_shape`.")
 
-    def to_gpu(self):
+    def to_device(self):
         """
-        Transfer data array to GPU device memory using cupy.asarray. Lazy
-        signal are not supported by this method, see user guide for information
-        on how to process data lazily using GPU.
+        Transfer data array from host to GPU device memory using cupy.asarray.
+        Lazy signal are not supported by this method, see user guide for
+        information on how to process data lazily using GPU.
 
         Raises
         ------
@@ -6484,20 +6484,16 @@ class BaseSignal(FancySlicing,
 
         """
         if self._lazy:
-            raise BaseException("Automatically converting data to cupy array "
-                                "is not supported for lazy signal. Read the "
-                                "corresponding section in the user guide "
-                                "for more information on how to use GPU "
-                                "with lazy signals.")
+            raise LazyCupyConversion
 
         if not CUPY_INSTALLED:
             raise BaseException('cupy is required.')
         else:  # pragma: no cover
             self.data = cp.asarray(self.data)
 
-    def to_cpu(self):
+    def to_host(self):
         """
-        Transfer data array to host memory.
+        Transfer data array from GPU device to host memory.
 
         Raises
         ------
@@ -6510,11 +6506,7 @@ class BaseSignal(FancySlicing,
 
         """
         if self._lazy:  # pragma: no cover
-            raise BaseException("Automatically converting data from cupy array "
-                                "is not supported for lazy signal. Read the "
-                                "corresponding section in the user guide "
-                                "for more information on how to use GPU "
-                                "with lazy signals.")
+            raise LazyCupyConversion
         self.data = to_numpy(self.data)
 
 

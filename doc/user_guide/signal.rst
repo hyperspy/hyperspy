@@ -1886,15 +1886,16 @@ implemented in ``cupy``.
 .. code-block:: python
 
     >>> import cupy as cp
-    >>> # Create a cupy array (on GPU)
+    >>> # Create a cupy array (on GPU device)
     >>> data = cp.random.random(size=(20, 20, 100, 100))
     >>> s = hs.signals.Signal2D(data)
     >>> type(s.data)
     ... cupy._core.core.ndarray
 
-Two convenience methods are available to transfer data to or from the GPU:
+Two convenience methods are available to transfer data between the host and
+the (GPU) device memory:
 
-- :py:meth:`~.signal.BaseSignal.to_cpu`
-- :py:meth:`~.signal.BaseSignal.to_gpu`
+- :py:meth:`~.signal.BaseSignal.to_host`
+- :py:meth:`~.signal.BaseSignal.to_device`
 
 For lazy processing, see the :ref:`corresponding section<big_data.gpu>`.

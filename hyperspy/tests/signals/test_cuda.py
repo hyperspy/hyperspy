@@ -147,19 +147,19 @@ class TestCupy:
 
 
 @pytest.mark.parametrize('lazy', [False, True])
-def test_to_gpu(lazy):
+def test_to_device(lazy):
     data = np.arange(10)
     s = hs.signals.Signal1D(data)
     if lazy:
         s = s.as_lazy()
         assert isinstance(s, hs.hyperspy._signals.signal1d.LazySignal1D)
         with pytest.raises(BaseException):
-            s.to_gpu()
+            s.to_device()
     else:
-        s.to_gpu()
+        s.to_device()
         assert isinstance(s, hs.signals.Signal1D)
         assert isinstance(s.data, cp.ndarray)
-        s.to_cpu()
+        s.to_host()
         assert isinstance(s, hs.signals.Signal1D)
         assert isinstance(s.data, np.ndarray)
         np.testing.assert_allclose(s.data, data)

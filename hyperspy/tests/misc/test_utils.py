@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
+import dask.array as da
 import numpy as np
 import pytest
 
@@ -35,7 +36,7 @@ from hyperspy.misc.utils import (
     to_numpy,
     get_array_module
 )
-from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
 
 try:
     import cupy as cp
@@ -162,6 +163,12 @@ def test_to_numpy():
     np_array = np.array([0, 1, 2])
     np.testing.assert_allclose(to_numpy(cp_array), np_array)
     np.testing.assert_allclose(to_numpy(np_array), np_array)
+
+
+def test_to_numpy_error():
+    da_array = da.array([0, 1, 2])
+    with pytest.raises(LazyCupyConversion):
+        to_numpy(da_array)
 
 
 @skip_cupy

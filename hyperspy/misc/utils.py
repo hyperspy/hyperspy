@@ -30,10 +30,11 @@ import importlib
 import logging
 from packaging.version import Version
 
+import dask.array as da
 import numpy as np
 
 from hyperspy.misc.signal_tools import broadcast_signals
-from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
 
@@ -1572,18 +1573,26 @@ def is_cupy_array(array):
 
 def to_numpy(array):
     """
-    Returns the array as a numpy array
+    Returns the array as a numpy array. Raises an error when a dask array is
+    provided.
 
     Parameters
     ----------
-    array : numpy or cupy array
-        Array to determine whether numpy or cupy should be used
+    array : numpy.ndarray or cupy.ndarray
+        Array to convert to numpy array.
 
     Returns
     -------
     array : numpy.ndarray
+    
+    Raises
+    ------
+    ValueError
+        If the provided array is a dask array
 
     """
+    if isinstance(array, da.Array):
+        raise LazyCupyConversion
     if is_cupy_array(array):
         import cupy as cp
         array = cp.asnumpy(array)
