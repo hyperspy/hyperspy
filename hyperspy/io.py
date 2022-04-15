@@ -725,10 +725,12 @@ def dict2signal(signal_dict, lazy=False):
                                     lazy=lazy)(**signal_dict)
     if signal._lazy:
         signal._make_lazy()
-    if signal.axes_manager.signal_dimension != signal_dimension:
-        # This may happen when the signal dimension couldn't be matched with
-        # any specialised subclass
-        signal.axes_manager.set_signal_dimension(signal_dimension)
+
+
+    # This may happen when the signal dimension couldn't be matched with
+    # any specialised subclass
+    signal.axes_manager._set_signal_dimension(signal_dimension)
+
     if "post_process" in signal_dict:
         for f in signal_dict['post_process']:
             signal = f(signal)

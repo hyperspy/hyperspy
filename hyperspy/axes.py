@@ -30,6 +30,7 @@ from traits.trait_errors import TraitError
 
 from hyperspy.api_nogui import _ureg
 from hyperspy.events import Events, Event
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.array_tools import (
     numba_closest_index_round,
     numba_closest_index_floor,
@@ -61,7 +62,7 @@ FACTOR_DOCSTRING = \
 class ndindex_nat(np.ndindex):
 
     def __next__(self):
-        return super(ndindex_nat, self).__next__()[::-1]
+        return super().__next__()[::-1]
 
 
 def generate_uniform_axis(offset, scale, size, offset_index=0):
@@ -274,7 +275,7 @@ class BaseDataAxis(t.HasTraits):
     low_index = t.Int(0)
     high_index = t.Int()
     slice = t.Instance(slice)
-    navigate = t.Bool(t.Undefined)
+    navigate = t.Bool(False)
     is_binned = t.Bool(t.Undefined)
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
@@ -1489,12 +1490,6 @@ class AxesManager(t.HasTraits):
         if self._axes:
             self.remove(self._axes)
         self.create_axes(axes_list)
-        # set_signal_dimension is called only if there is no current
-        # view. It defaults to spectrum
-        navigates = [i.navigate for i in self._axes]
-        if t.Undefined in navigates:
-            # Default to Signal1D view if the view is not fully defined
-            self.set_signal_dimension(len(axes_list))
 
         self._update_attributes()
         self._update_trait_handlers()
@@ -2009,8 +2004,8 @@ class AxesManager(t.HasTraits):
     def _update_attributes(self):
         getitem_tuple = []
         values = []
-        self.signal_axes = ()
-        self.navigation_axes = ()
+        signal_axes = ()
+        navigation_axes = ()
         for axis in self._axes:
             # Until we find a better place, take property of the axes
             # here to avoid difficult to debug bugs.
@@ -2018,33 +2013,97 @@ class AxesManager(t.HasTraits):
             if axis.slice is None:
                 getitem_tuple += axis.index,
                 values.append(axis.value)
-                self.navigation_axes += axis,
+                navigation_axes += axis,
             else:
                 getitem_tuple += axis.slice,
-                self.signal_axes += axis,
-        if not self.signal_axes and self.navigation_axes:
+                signal_axes += axis,
+        if not signal_axes and navigation_axes:
             getitem_tuple[-1] = slice(axis.index, axis.index + 1)
 
-        self.signal_axes = self.signal_axes[::-1]
-        self.navigation_axes = self.navigation_axes[::-1]
+        self._signal_axes = signal_axes[::-1]
+        self._navigation_axes = navigation_axes[::-1]
         self._getitem_tuple = tuple(getitem_tuple)
-        if len(self.signal_axes) == 1 and self.signal_axes[0].size == 1:
-            self.signal_dimension = 0
-        else:
-            self.signal_dimension = len(self.signal_axes)
-        self.navigation_dimension = len(self.navigation_axes)
-        if self.navigation_dimension != 0:
-            self.navigation_shape = tuple([
-                axis.size for axis in self.navigation_axes])
-        else:
-            self.navigation_shape = ()
 
-        self.signal_shape = tuple([axis.size for axis in self.signal_axes])
-        self.navigation_size = (np.cumprod(self.navigation_shape)[-1]
-                                if self.navigation_shape else 0)
-        self.signal_size = (np.cumprod(self.signal_shape)[-1]
-                            if self.signal_shape else 0)
+        if len(self.signal_axes) == 1 and self.signal_axes[0].size == 1:
+            self._signal_dimension = 0
+        else:
+            self._signal_dimension = len(self.signal_axes)
+        self._navigation_dimension = len(self.navigation_axes)
+
+        self._signal_size = (np.prod(self.signal_shape)
+                             if self.signal_shape else 0)
+        self._navigation_size = (np.prod(self.navigation_shape)
+                                 if self.navigation_shape else 0)
+
         self._update_max_index()
+
+    @property
+    def signal_axes(self):
+        """The signal axes as a tuple."""
+        return self._signal_axes
+
+    @property
+    def navigation_axes(self):
+        """The navigation axes as a tuple."""
+        return self._navigation_axes
+
+    @property
+    def signal_shape(self):
+        """The shape of the signal space."""
+        return tuple([axis.size for axis in self._signal_axes])
+
+    @property
+    def navigation_shape(self):
+        """The shape of the navigation space."""
+        if self.navigation_dimension != 0:
+            return tuple([axis.size for axis in self._navigation_axes])
+        else:
+            return ()
+
+    @property
+    def signal_size(self):
+        """The size of the signal space."""
+        return self._signal_size
+
+    @property
+    def navigation_size(self):
+        """The size of the navigation space."""
+        return self._navigation_size
+
+    @property
+    def navigation_dimension(self):
+        """The dimension of the navigation space."""
+        return self._navigation_dimension
+
+    @property
+    def signal_dimension(self):
+        """The dimension of the signal space."""
+        return self._signal_dimension
+
+    def _set_signal_dimension(self, value):
+        if len(self._axes) == 0 or self._signal_dimension == value:
+            # Nothing to be done
+            return
+        elif self.ragged and value > 0:
+            raise ValueError("Signal containing ragged array "
+                             "must have zero signal dimension.")
+        elif value > len(self._axes):
+            raise ValueError(
+                "The signal dimension cannot be greater "
+                f"than the number of axes which is {len(self._axes)}")
+        elif value < 0:
+            raise ValueError(
+                "The signal dimension must be a positive integer")
+
+        # Figure out which axis needs navigate=True
+        tl = [True] * len(self._axes)
+        if value != 0:
+            tl[-value:] = (False,) * value
+        for axis in self._axes:
+            # Changing navigate attribute will update the axis._slice
+            # which in turn will trigger _on_slice_changed and call
+            # _update_attribute
+            axis.navigate = tl.pop(0)
 
     def set_signal_dimension(self, value):
         """Set the dimension of the signal.
@@ -2059,25 +2118,11 @@ class AxesManager(t.HasTraits):
             If value if greater than the number of axes or is negative.
 
         """
-        if self.ragged and value > 0:
-            raise ValueError("Signal containing ragged array must have zero "
-                             "signal dimension.")
-        if len(self._axes) == 0:
-            return
-        elif value > len(self._axes):
-            raise ValueError(
-                "The signal dimension cannot be greater"
-                " than the number of axes which is %i" % len(self._axes))
-        elif value < 0:
-            raise ValueError(
-                "The signal dimension must be a positive integer")
-
-        tl = [True] * len(self._axes)
-        if value != 0:
-            tl[-value:] = (False,) * value
-
-        for axis in self._axes:
-            axis.navigate = tl.pop(0)
+        warnings.warn(("Using `set_signal_dimension` is deprecated, use "
+                       "`as_signal1D`, `as_signal2D` or `transpose` of the "
+                       "signal instance instead."),
+                      VisibleDeprecationWarning)
+        self._set_signal_dimension(value)
 
     def key_navigator(self, event):
         'Set hotkeys for controlling the indices of the navigator plot'
@@ -2169,7 +2214,6 @@ class AxesManager(t.HasTraits):
                 self.navigation_axes[::-1]]
 
     def show(self):
-        from hyperspy.exceptions import VisibleDeprecationWarning
         msg = (
             "The `AxesManager.show` method is deprecated and will be removed "
             "in v2.0. Use `gui` instead.")

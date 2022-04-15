@@ -2073,9 +2073,9 @@ def _plot_x_results(factors, loadings, factors_navigator, loadings_navigator,
                     factors_dim, loadings_dim):
     factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
     if loadings.axes_manager.signal_dimension > 2:
-        loadings.axes_manager.set_signal_dimension(loadings_dim)
+        loadings.axes_manager._set_signal_dimension(loadings_dim)
     if factors.axes_manager.signal_dimension > 2:
-        factors.axes_manager.set_signal_dimension(factors_dim)
+        factors.axes_manager._set_signal_dimension(factors_dim)
     if (loadings_navigator == "smart_auto" and
             loadings.axes_manager.navigation_dimension < 3):
         loadings_navigator = "slider"
@@ -2139,6 +2139,9 @@ class BaseSignal(FancySlicing,
                  MVATools,):
 
     _dtype = "real"
+    # When _signal_dimension=-1, the signal dimension of BaseSignal is defined
+    # by the dimension of the array, and this is implemented by the default
+    # value of navigate=False in BaseDataAxis
     _signal_dimension = -1
     _signal_type = ""
     _lazy = False
@@ -2202,6 +2205,11 @@ class BaseSignal(FancySlicing,
                     obj: The signal that owns the data.
                 """, arguments=['obj'])
             self._load_dictionary(kwds)
+
+        if self._signal_dimension >= 0:
+            # We don't explicitly set the signal_dimension of ragged because
+            # we can't predict it in advance
+            self.axes_manager._set_signal_dimension(self._signal_dimension)
 
     def _create_metadata(self):
         self._metadata = DictionaryTreeBrowser()
@@ -2462,7 +2470,7 @@ class BaseSignal(FancySlicing,
             axes = [axis for axis in self.axes_manager.signal_axes
                     if axis.index_in_array not in list(range(self.data.ndim))]
             self.axes_manager.remove(axes)
-            self.axes_manager.set_signal_dimension(0)
+            self.axes_manager._set_signal_dimension(0)
         else:
             if self._lazy:
                 raise NotImplementedError(
@@ -5162,7 +5170,7 @@ class BaseSignal(FancySlicing,
                         "rgb16 images")
                 self.data = rgb_tools.regular_array2rgbx(self.data)
                 self.axes_manager.remove(-1)
-                self.axes_manager.set_signal_dimension(2)
+                self.axes_manager._set_signal_dimension(2)
                 self._assign_subclass()
                 return
             else:
@@ -5181,7 +5189,7 @@ class BaseSignal(FancySlicing,
                 offset=0,
                 name="RGB index",
                 navigate=False,)
-            self.axes_manager.set_signal_dimension(1)
+            self.axes_manager._set_signal_dimension(1)
             self._assign_subclass()
             return
         else:
@@ -5474,9 +5482,8 @@ class BaseSignal(FancySlicing,
         else:
             s = BaseSignal(
                 data,
-                axes=self.axes_manager._get_navigation_axes_dicts())
-            s.axes_manager.set_signal_dimension(
-                self.axes_manager.navigation_dimension)
+                axes=self.axes_manager._get_navigation_axes_dicts()
+                ).T
         if isinstance(data, Array):
             s = s.as_lazy()
         return s
@@ -5561,13 +5568,13 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> img = hs.signals.Signal2D(np.ones((3,4,5,6)))
+        >>> img = hs.signals.Signal2D(np.ones((3, 4, 5, 6)))
         >>> img
-        <Signal2D, title: , dimensions: (4, 3, 6, 5)>
+        <Signal2D, title: , dimensions: (4, 3|6, 5)>
         >>> img.as_signal1D(-1+1j)
-        <Signal1D, title: , dimensions: (6, 5, 4, 3)>
+        <Signal1D, title: , dimensions: (6, 5, 4|3)>
         >>> img.as_signal1D(0)
-        <Signal1D, title: , dimensions: (6, 5, 3, 4)>
+        <Signal1D, title: , dimensions: (6, 5, 3|4)>
 
         """
         sp = self.transpose(signal_axes=[spectral_axis], optimize=optimize)

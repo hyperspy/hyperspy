@@ -121,5 +121,9 @@ def test_conversion_signal():
     data = np.empty((2, 3, 4), dtype=object)
     data.fill(np.array([10, 20, 30, 40, 50]))
     s = hs.signals.BaseSignal(data, ragged=True)
+    
     with pytest.raises(ValueError):
-        s.axes_manager.set_signal_dimension(1)
+        s.axes_manager._set_signal_dimension(1)
+
+    with pytest.raises(RuntimeError):
+        s.as_signal1D(0)

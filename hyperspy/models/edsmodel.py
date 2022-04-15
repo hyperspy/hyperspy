@@ -906,7 +906,7 @@ class EDSModel(Model1D):
                  line_energy,
                  self.signal.axes_manager.signal_axes[0].units,
                  self.signal.metadata.General.title))
-            img.axes_manager.set_signal_dimension(0)
+            img = img.transpose(signal_axes=[])
             if plot_result and img.axes_manager.signal_dimension == 0:
                 print("%s at %s %s : Intensity = %.2f"
                       % (xray_line,

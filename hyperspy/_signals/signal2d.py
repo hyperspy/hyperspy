@@ -313,14 +313,11 @@ class Signal2D(BaseSignal, CommonSignal2D):
     """
     """
     _signal_dimension = 2
-    _lazy = False
 
     def __init__(self, *args, **kwargs):
         if kwargs.get('ragged', False):
             raise ValueError("Signal2D can't be ragged.")
         super().__init__(*args, **kwargs)
-        if self.axes_manager.signal_dimension != 2:
-            self.axes_manager.set_signal_dimension(2)
 
     def plot(self,
              navigator="auto",
