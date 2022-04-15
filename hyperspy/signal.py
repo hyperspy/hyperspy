@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from collections.abc import MutableMapping
 import copy
@@ -1614,7 +1614,7 @@ class MVATools(object):
             see the :py:meth:`~hyperspy.signal.BaseSignal.plot` documentation
             for details.
         loadings_navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
-            See the `factors_navigator` parameter
+         . See the `factors_navigator` parameter
         factors_dim : int
             Currently HyperSpy cannot plot a signal when the signal dimension is
             higher than two. Therefore, to visualize the BSS results when the
@@ -1622,7 +1622,7 @@ class MVATools(object):
             the data can be viewed as spectra (or images) by setting this
             parameter to 1 (or 2). (The default is 2)
         loadings_dim : int
-            See the ``factors_dim`` parameter
+         . See the ``factors_dim`` parameter
 
         See also
         --------
@@ -1662,7 +1662,7 @@ class MVATools(object):
             see the :py:meth:`~hyperspy.signal.BaseSignal.plot` documentation
             for details.
         loadings_navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
-            See the `factors_navigator` parameter
+         . See the `factors_navigator` parameter
         factors_dim : int
             Currently HyperSpy cannot plot a signal when the signal dimension is
             higher than two. Therefore, to visualize the BSS results when the
@@ -1670,7 +1670,7 @@ class MVATools(object):
             the data can be viewed as spectra (or images) by setting this
             parameter to 1 (or 2). (The default is 2)
         loadings_dim : int
-            See the ``factors_dim`` parameter
+         . See the ``factors_dim`` parameter
 
         See also
         --------
@@ -5839,7 +5839,7 @@ class BaseSignal(FancySlicing,
         ----------
         marker : :py:mod:`hyperspy.drawing.marker` object or iterable
             The marker or iterable (list, tuple, ...) of markers to add.
-            See the :ref:`plot.markers` section in the User Guide if you want
+         . See the :ref:`plot.markers` section in the User Guide if you want
             to add a large number of markers as an iterable, since this will
             be much faster. For signals with navigation dimensions,
             the markers can be made to change for different navigation

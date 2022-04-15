@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
 import importlib
@@ -1844,7 +1844,7 @@ class BaseModel(list):
                 change to ``"serpentine"`` in version 2.0.
         **kwargs : keyword arguments
             Any extra keyword argument will be passed to the fit method.
-            See the documentation for :py:meth:`~hyperspy.model.BaseModel.fit`
+         . See the documentation for :py:meth:`~hyperspy.model.BaseModel.fit`
             for a list of valid arguments.
 
         Returns
