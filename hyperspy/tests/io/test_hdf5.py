@@ -403,7 +403,7 @@ def test_rgba16():
     with pytest.warns(VisibleDeprecationWarning):
         print(my_path)
         s = load(my_path / "hdf5_files" / "test_rgba16.hdf5")
-    data = np.load(my_path / "npy_files" / "test_rgba16.npy")
+    data = np.load(my_path / "npz_files" / "test_rgba16.npz")['a']
     assert (s.data == data).all()
 
 

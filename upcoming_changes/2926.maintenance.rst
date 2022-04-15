@@ -1,0 +1,1 @@
+Compress some tiff tests files to reduce package size
