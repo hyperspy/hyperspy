@@ -51,7 +51,7 @@ OPTIMIZE_ARG = \
             fastest iteration over the navigation axes. This operation can
             cause a peak of memory usage and requires considerable processing
             times for large datasets and/or low specification hardware.
-         . See the :ref:`signal.transpose` section of the HyperSpy user guide
+            See the :ref:`signal.transpose` section of the HyperSpy user guide
             for more information. When operating on lazy signals, if ``True``,
             the chunks are optimised for the new axes configuration."""
 

@@ -49,7 +49,7 @@ class Polynomial(Component):
     legacy: bool, default True
         If `False`, use the new API.
     module: str
-     . See the docstring
+        See the docstring
         of :py:class:`~._components.polynomial.Polynomial`
         for details.
 

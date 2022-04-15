@@ -1844,7 +1844,7 @@ class BaseModel(list):
                 change to ``"serpentine"`` in version 2.0.
         **kwargs : keyword arguments
             Any extra keyword argument will be passed to the fit method.
-         . See the documentation for :py:meth:`~hyperspy.model.BaseModel.fit`
+            See the documentation for :py:meth:`~hyperspy.model.BaseModel.fit`
             for a list of valid arguments.
 
         Returns
