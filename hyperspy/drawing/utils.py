@@ -1013,7 +1013,7 @@ def plot_images(images,
             for j, im in enumerate(ims):
                 ax = f.add_subplot(rows, per_row, idx + 1)
                 axes_list.append(ax)
-                centre = next(centre_colormaps) # get next value for centreing
+                centre = next(centre_colormaps) # get next value for centring
                 data = _parse_array(im)
 
                 # Enable RGB plotting

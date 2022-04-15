@@ -212,7 +212,7 @@ class LazyCupyConversion(Exception):
     def __init__(self):
         self.error = (
             "Automatically converting data to cupy array is not supported "
-            "for lazy signal. Read the corresponding section in the user "
+            "for lazy signals. Read the corresponding section in the user "
             "guide for more information on how to use GPU with lazy signals."
             )
 

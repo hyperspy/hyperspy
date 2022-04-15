@@ -6468,8 +6468,8 @@ class BaseSignal(FancySlicing,
     def to_device(self):
         """
         Transfer data array from host to GPU device memory using cupy.asarray.
-        Lazy signal are not supported by this method, see user guide for
-        information on how to process data lazily using GPU.
+        Lazy signals are not supported by this method, see user guide for
+        information on how to process data lazily using the GPU.
 
         Raises
         ------
