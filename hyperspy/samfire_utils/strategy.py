@@ -300,7 +300,7 @@ class LocalStrategy(SamfireStrategy):
             par = []
             for radius in radii:
                 radius_top = np.ceil(radius)
-                par.append(np.abs(np.arange(-radius_top, radius_top + 1)))
+                par.append(abs(np.arange(-radius_top, radius_top + 1)))
             meshg = np.array(np.meshgrid(*par, indexing='ij'))
             self._untruncated = np.sqrt(np.sum(meshg ** 2.0, axis=0))
             distance_mask = np.array(

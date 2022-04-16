@@ -16,20 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
+import pytest
+
+from hyperspy.misc.signal_tools import broadcast_signals
+from hyperspy.signals import Signal1D
 
 
-class ReducedChiSquaredWeight(object):
-
-    def __init__(self):
-        self.expected = 1.0
-        self.model = None
-
-    def function(self, ind):
-        return abs(self.model.red_chisq.data[ind] - self.expected)
-
-    def map(self, mask, slices=slice(None, None)):
-        thing = self.model.red_chisq.data[slices].copy()
-        thing = thing.astype('float64')
-        thing[np.logical_not(mask)] = np.nan
-        return abs(thing - self.expected)
+def test_boardcast_signals_error():
+    with pytest.raises(ValueError):
+        broadcast_signals([0, 1], [2, 3])
+    with pytest.raises(ValueError):
+        broadcast_signals(Signal1D([0, 1]))

@@ -205,3 +205,16 @@ class VisibleDeprecationWarning(UserWarning):
 
     """
     pass
+
+
+class LazyCupyConversion(Exception):
+
+    def __init__(self):
+        self.error = (
+            "Automatically converting data to cupy array is not supported "
+            "for lazy signals. Read the corresponding section in the user "
+            "guide for more information on how to use GPU with lazy signals."
+            )
+
+    def __str__(self):
+        return repr(self.error)

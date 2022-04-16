@@ -204,8 +204,8 @@ class Worker:
         new_AICc = AICc(self.model)
 
         AICc_test = new_AICc < (self._AICc_fraction * self.best_AICc)
-        AICc_absolute_test = np.abs(new_AICc - self.best_AICc) <= \
-            np.abs(self._AICc_fraction * self.best_AICc)
+        AICc_absolute_test = abs(new_AICc - self.best_AICc) <= \
+            abs(self._AICc_fraction * self.best_AICc)
         dof_test = len(self.model.p0) < self.best_dof
 
         if AICc_test or AICc_absolute_test and dof_test:

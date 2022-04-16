@@ -1221,8 +1221,8 @@ class BaseModel(list):
 
     def _calculate_chisq(self):
         variance = self._get_variance()
-        d = self(onlyactive=True).ravel() - self.signal()[np.where(
-            self.channel_switches)]
+        d = self(onlyactive=True).ravel() - self.signal(as_numpy=True)[
+            np.where(self.channel_switches)]
         d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
 
@@ -1545,7 +1545,10 @@ class BaseModel(list):
                 # Will proceed with unweighted fitting.
                 weights = None
 
-            args = (self.signal()[np.where(self.channel_switches)], weights)
+            args = (
+                self.signal(as_numpy=True)[np.where(self.channel_switches)],
+                weights
+                )
 
             if optimizer == "lm":
                 if bounded:

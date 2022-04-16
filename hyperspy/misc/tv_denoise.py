@@ -104,7 +104,7 @@ def _tv_denoise_3d(im, weight=100, eps=2.e-4, keep_type=False, n_iter_max=200):
             E_init = E
             E_previous = E
         else:
-            if np.abs(E_previous - E) < eps * E_init:
+            if abs(E_previous - E) < eps * E_init:
                 break
             else:
                 E_previous = E
@@ -199,7 +199,7 @@ def _tv_denoise_2d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
             E_init = E
             E_previous = E
         else:
-            if np.abs(E_previous - E) < eps * E_init:
+            if abs(E_previous - E) < eps * E_init:
                 break
             else:
                 E_previous = E
@@ -277,7 +277,7 @@ def _tv_denoise_1d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
         out = im + d
         E = (d ** 2).sum()
         gx[:-1] = np.diff(out)
-        norm = np.abs(gx)
+        norm = abs(gx)
         E += weight * norm.sum()
         norm *= 0.5 / weight
         norm += 1
@@ -288,7 +288,7 @@ def _tv_denoise_1d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
             E_init = E
             E_previous = E
         else:
-            if np.abs(E_previous - E) < eps * E_init:
+            if abs(E_previous - E) < eps * E_init:
                 break
             else:
                 E_previous = E

@@ -44,9 +44,9 @@ def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
     cdf = np.cumsum(data,i)
     cdfnorm = cdf/np.max(cdf, i).reshape(centre_shape)
 
-    icentre = np.argmin(np.abs(0.5 - cdfnorm), i)
-    igamma1 = np.argmin(np.abs(0.75 - cdfnorm), i)
-    igamma2 = np.argmin(np.abs(0.25 - cdfnorm), i)
+    icentre = np.argmin(abs(0.5 - cdfnorm), i)
+    igamma1 = np.argmin(abs(0.75 - cdfnorm), i)
+    igamma2 = np.argmin(abs(0.25 - cdfnorm), i)
 
     if isinstance(data, da.Array):
         icentre, igamma1, igamma2 = da.compute(icentre, igamma1, igamma2)

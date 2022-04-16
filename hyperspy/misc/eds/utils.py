@@ -121,7 +121,7 @@ def get_xray_lines_near_energy(energy, width=0.2, only_lines=None):
             if E_min <= line_energy <= E_max:
                 # Store line in Element_Line format, and energy difference
                 valid_lines.append((element + "_" + line,
-                                    np.abs(line_energy - energy)))
+                                    abs(line_energy - energy)))
     # Sort by energy difference, but return only the line names
     return [line for line, _ in sorted(valid_lines, key=lambda x: x[1])]
 

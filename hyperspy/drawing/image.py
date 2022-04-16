@@ -258,7 +258,7 @@ class ImagePlot(BlittedFigure):
                 self._auto_scalebar = False
                 self._auto_axes_ticks = True
         if xaxis.is_uniform and yaxis.is_uniform:
-            self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
+            self._aspect = abs(factor * xaxis.scale / yaxis.scale)
         else:
             self._aspect = 1.0
 

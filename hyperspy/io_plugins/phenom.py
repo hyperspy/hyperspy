@@ -572,7 +572,7 @@ class ElidReader:
                 for bin in range(bins):
                     data[y, x, bin] = self._read_varuint32()
         if has_variable_real_time:
-            real_time_values = np.empty([height, width], dtype=np.float64)
+            real_time_values = np.empty([height, width], dtype=float)
             for y in range(height):
                 for x in range(width):
                     real_time_values[y, x] = self._read_float64()
@@ -580,7 +580,7 @@ class ElidReader:
         else:
             eds_metadata['real_time_values'] = np.full([height, width], self._read_float64())
         if has_variable_live_time:
-            live_time_values = np.empty([height, width], dtype=np.float64)
+            live_time_values = np.empty([height, width], dtype=float)
             for y in range(height):
                 for x in range(width):
                     live_time_values[y, x] = self._read_float64()

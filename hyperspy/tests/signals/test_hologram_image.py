@@ -18,6 +18,7 @@
 
 import gc
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from scipy.interpolate import interp2d
@@ -102,7 +103,10 @@ def test_reconstruct_phase_single(lazy):
     if lazy:
         ref_image = ref_image.as_lazy()
         holo_image = holo_image.as_lazy()
-    wave_image = holo_image.reconstruct_phase(ref, store_parameters=True)
+    wave_image = holo_image.reconstruct_phase(
+        ref, store_parameters=True, plotting=True
+        )
+    plt.close('all')
 
     metadata = wave_image.metadata.Signal.Holography.Reconstruction_parameters
     sb_pos_cc = metadata.sb_position * (-1) + [img_size, img_size]

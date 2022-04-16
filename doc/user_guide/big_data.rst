@@ -264,6 +264,51 @@ instead:
     <LazySignal2D, title: , dimensions: (200, 200|512, 512)>
     >>> s.plot(navigator='slider')
 
+.. versionadded:: 1.7
+
+.. _big_data.gpu:
+
+GPU support
+-----------
+
+Lazy data processing on GPUs requires explicitly transferring the data to the
+GPU.
+
+On linux, it is recommended to use the
+`dask_cuda <https://docs.rapids.ai/api/dask-cuda/stable/index.html>`_ library 
+(not supported on windows) to manage the dask scheduler. As for CPU lazy
+processing, if the dask scheduler is not specified, the default scheduler
+will be used.
+
+.. code-block:: python
+
+    >>> from dask_cuda import LocalCUDACluster
+    >>> from dask.distributed import Client
+    >>> cluster = LocalCUDACluster()
+    >>> client = Client(cluster)
+
+.. code-block:: python
+
+    >>> import hyperspy.api as hs
+    >>> import cupy as cp
+    >>> import dask.array as da
+    >>> # Create a dask array
+    >>> data = da.random.random(size=(20, 20, 100, 100))
+    >>> print(data)
+    ... dask.array<random_sample, shape=(20, 20, 100, 100), dtype=float64,
+    ... chunksize=(20, 20, 100, 100), chunktype=numpy.ndarray>
+    >>> # convert the dask chunks from numpy array to cupy array
+    >>> data = data.map_blocks(cp.asarray)
+    >>> print(data)
+    ... dask.array<random_sample, shape=(20, 20, 100, 100), dtype=float64,
+    ... chunksize=(20, 20, 100, 100), chunktype=cupy.ndarray>
+    >>> # Create the signal
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+
+.. note::
+    See the dask blog on `Richardson Lucy (RL) deconvolution <https://blog.dask.org/2020/11/12/deconvolution>`_
+    for an example of lazy processing on GPUs using dask and cupy
+
 
 .. _FitBigData-label:
 

@@ -479,7 +479,7 @@ class TestCustomOptimization:
         self.m.append(hs.model.components1D.Gaussian())
 
         def sets_second_parameter_to_two(model, parameters, data, weights=None):
-            return np.abs(parameters[1] - 2)
+            return abs(parameters[1] - 2)
 
         self.fmin = sets_second_parameter_to_two
 

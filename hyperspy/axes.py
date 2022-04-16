@@ -618,7 +618,7 @@ class BaseDataAxis(t.HasTraits):
             else:
                 raise ValueError(
                     'Non-supported rounding function. Use '
-                    'round, `math.ceil` or `math.floor`'
+                    '`round`, `math.ceil` or `math.floor`.'
                     )
             #initialise the index same dimension as input, force type to int
             # index = np.empty_like(value,dtype=int)

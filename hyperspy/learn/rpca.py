@@ -33,7 +33,7 @@ _logger = logging.getLogger(__name__)
 
 def _soft_thresh(X, lambda1):
     """Soft-thresholding of array X."""
-    res = np.abs(X) - lambda1
+    res = abs(X) - lambda1
     np.maximum(res, 0.0, out=res)
     res *= np.sign(X)
     return res

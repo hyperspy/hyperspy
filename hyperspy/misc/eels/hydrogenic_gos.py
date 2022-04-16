@@ -157,7 +157,7 @@ class HydrogenicGOS(GOSBase):
 
         q = qa02 / zs ** 2
         kh2 = E / (r * zs ** 2) - 1
-        akh = np.sqrt(np.abs(kh2))
+        akh = np.sqrt(abs(kh2))
         if akh < 0.01:
             akh = 0.01
         if kh2 >= 0.0:
@@ -197,7 +197,7 @@ class HydrogenicGOS(GOSBase):
 
         q = qa02 / zs ** 2
         kh2 = E / (r * zs ** 2) - 0.25
-        akh = np.sqrt(np.abs(kh2))
+        akh = np.sqrt(abs(kh2))
         if kh2 >= 0.0:
             d = 1 - np.exp(-2 * np.pi / akh)
             bp = np.arctan(akh / (q - kh2 + 0.25))
@@ -227,6 +227,6 @@ class HydrogenicGOS(GOSBase):
         # The following commented lines are to give a more accurate GOS
         # for edges presenting white lines. However, this is not relevant
         # for quantification by curve fitting.
-        # if np.abs(iz - 11) <= 5 and E - el3 <= 20:
+        # if abs(iz - 11) <= 5 and E - el3 <= 20:
         #     rf = 1
         return rf * 32 * g * c / a / d * E / r / r / zs ** 4
