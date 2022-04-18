@@ -429,12 +429,11 @@ def _make_cascade_subplot(spectra, ax, color, linestyle, padding=1, **kwargs):
                            np.nanmin(spectrum.data))
         if spectrum_yrange > max_value:
             max_value = spectrum_yrange
-    for spectrum_index, (spectrum, color, linestyle) in enumerate(
+    for i, (spectrum, color, linestyle) in enumerate(
             zip(spectra, color, linestyle)):
         x_axis = spectrum.axes_manager.signal_axes[0]
-        spectrum = _transpose_if_required(spectrum, 1)
-        data_to_plot = to_numpy((spectrum.data - spectrum.data.min()) /
-                                float(max_value) + spectrum_index * padding)
+        data = _parse_array(_transpose_if_required(spectrum, 1))
+        data_to_plot = (data - data.min()) / float(max_value) + i * padding
         ax.plot(x_axis.axis, data_to_plot, color=color, ls=linestyle,
                 **kwargs)
         set_xaxis_lims(ax, x_axis)
