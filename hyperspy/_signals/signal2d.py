@@ -37,7 +37,7 @@ from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
-from hyperspy.signal_tools import PeaksFinder2D
+from hyperspy.signal_tools import PeaksFinder2D, Signal2DCalibration
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT2D_DOCSTRING,
     PLOT2D_KWARGS_DOCSTRING)
@@ -760,6 +760,95 @@ class Signal2D(BaseSignal, CommonSignal2D):
             return shifts
 
     align2D.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
+
+    def calibrate(
+        self,
+        x0=None,
+        y0=None,
+        x1=None,
+        y1=None,
+        new_length=None,
+        units=None,
+        interactive=True,
+        display=True,
+        toolkit=None,
+    ):
+        """Calibrate the x and y signal dimensions.
+
+        Can be used either interactively, or by passing values as parameters.
+
+        Parameters
+        ----------
+        x0, y0, x1, y1 : scalars, optional
+            If interactive is False, these must be set. If given in floats
+            the input will be in scaled axis values. If given in integers,
+            the input will be in non-scaled pixel values. Similar to how
+            integer and float input works when slicing using isig and inav.
+        new_length : scalar, optional
+            If interactive is False, this must be set.
+        units : string, optional
+            If interactive is False, this is used to set the axes units.
+        interactive : bool, default True
+            If True, will use a plot with an interactive line for calibration.
+            If False, x0, y0, x1, y1 and new_length must be set.
+        display : bool, default True
+        toolkit : string, optional
+
+        Examples
+        --------
+        >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
+        >>> s.calibrate()
+
+        Running non-interactively
+
+        >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
+        >>> s.calibrate(x0=10, y0=10, x1=60, y1=10, new_length=100,
+        ...     interactive=False, units="nm")
+
+        """
+        self._check_signal_dimension_equals_two()
+        if interactive:
+            calibration = Signal2DCalibration(self)
+            calibration.gui(display=display, toolkit=toolkit)
+        else:
+            if None in (x0, y0, x1, y1, new_length):
+                raise ValueError(
+                    "With interactive=False x0, y0, x1, y1 and new_length "
+                    "must be set."
+                )
+            self._calibrate(x0, y0, x1, y1, new_length, units=units)
+
+    def _calibrate(self, x0, y0, x1, y1, new_length, units=None):
+        scale = self._get_signal2d_scale(x0, y0, x1, y1, new_length)
+        sa = self.axes_manager.signal_axes
+        sa[0].scale = scale
+        sa[1].scale = scale
+        if units is not None:
+            sa[0].units = units
+            sa[1].units = units
+
+    def _get_signal2d_scale(self, x0, y0, x1, y1, length):
+        sa = self.axes_manager.signal_axes
+        units = set([a.units for a in sa])
+        if len(units) != 1:
+            _logger.warning(
+                "The signal axes does not have the same units, this might lead to "
+                "strange values after this calibration"
+            )
+        scales = set([a.scale for a in sa])
+        if len(scales) != 1:
+            _logger.warning(
+                "The previous scaling is not the same for both axes, this might lead to "
+                "strange values after this calibration"
+            )
+        x0 = sa[0]._get_index(x0)
+        y0 = sa[1]._get_index(y0)
+        x1 = sa[0]._get_index(x1)
+        y1 = sa[1]._get_index(y1)
+        pos = ((x0, y0), (x1, y1))
+        old_length = np.linalg.norm(np.diff(pos, axis=0), axis=1)[0]
+        scale = length / old_length
+        return scale
 
     def crop_image(self, top=None, bottom=None,
                    left=None, right=None, convert_units=False):
