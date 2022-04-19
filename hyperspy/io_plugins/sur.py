@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <https://www.gnu.org/licenses/#GPL>.
 
 # Plugin to read the mountainsmap surface format (sur)
 #Current state can bring support to the surface format if the file is an

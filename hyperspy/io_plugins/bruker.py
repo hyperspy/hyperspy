@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with any project and source this library is coupled.
-# If not, see <http://www.gnu.org/licenses/>.
+# If not, see <https://www.gnu.org/licenses/#GPL>.
 #
 # This python library subset provides read functionality of
 #  Bruker bcf files.
