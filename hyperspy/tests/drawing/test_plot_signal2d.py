@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
@@ -621,8 +623,20 @@ def test_plot_scale_different_sign():
 
 def test_plot_images_overlay_colorbar():
     s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
-    _ = hs.plot.plot_images([s, s], overlay=True, colorbar='single',
-                            axes_decor='off')    
+    hs.plot.plot_images([s, s], overlay=True, colorbar='single',
+                            axes_decor='off')
+
+
+def test_plot_images_overlay_aspect_ratio():
+    s = hs.signals.Signal2D(np.arange(100).reshape(2, 50))
+    hs.plot.plot_images([s, s], overlay=True, axes_decor='off')
+    f = plt.gcf()
+    np.testing.assert_allclose((f.get_figwidth(), f.get_figheight()), (25.0, 1.0))
+
+    s = hs.signals.Signal2D(np.arange(100).reshape(20, 5))
+    hs.plot.plot_images([s, s], overlay=True, axes_decor='off', scalebar='all')
+    f = plt.gcf()
+    np.testing.assert_allclose((f.get_figwidth(), f.get_figheight()), (2.0, 8.0))
 
 
 def test_plot_images_overlay_figsize():
@@ -653,3 +667,28 @@ def test_plot_images_overlay_figsize():
     hs.plot.plot_images([s, s], overlay=True, scalebar='all', axes_decor='off')
     f = plt.gcf()
     np.testing.assert_allclose((f.get_figwidth(), f.get_figheight()), (2.4, 4.8))
+
+
+def test_plot_images_overlay_vmin_warning(caplog):
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    with caplog.at_level(logging.WARNING):
+        hs.plot.plot_images([s, s], overlay=True, vmin=0)  
+
+    assert "`vmin` is ignored when overlaying images." in caplog.text
+
+
+def test_plot_scalebar_error():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    with pytest.raises(ValueError):
+        hs.plot.plot_images([s, s], scalebar='unsupported_argument')
+
+
+def test_plot_scalebar_list():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    ax0, ax1 = hs.plot.plot_images([s, s], scalebar=[0, 1])
+    assert hasattr(ax0, 'scalebar')
+    assert hasattr(ax1, 'scalebar')
+
+    ax0, ax1 = hs.plot.plot_images([s, s], scalebar=[0])
+    assert hasattr(ax0, 'scalebar')
+    assert not hasattr(ax1, 'scalebar')

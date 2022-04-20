@@ -853,6 +853,17 @@ def plot_images(images,
     else:
         raise ValueError("Did not understand input of labels.")
 
+    # Check if we need to add a scalebar for some of the images
+    if isinstance(scalebar, (list, tuple)) and all(isinstance(x, int)
+                                                   for x in scalebar):
+        scalelist = True
+    else:
+        scalelist = False
+
+    if scalebar not in [None, False, 'all'] and scalelist is False:
+        raise ValueError("Did not understand scalebar input. Must be None, "
+                         "'all', or list of ints.")
+
     # Determine appropriate number of images per row
     if overlay:
         # only a single image
@@ -909,16 +920,7 @@ def plot_images(images,
         colorbar = None
         warnings.warn("Sorry, colorbar is not implemented for RGB images.")
 
-    # Check if we need to add a scalebar for some of the images
-    if isinstance(scalebar, (list, tuple)) and all(isinstance(x, int)
-                                                   for x in scalebar):
-        scalelist = True
-    else:
-        scalelist = False
 
-    if scalebar not in [None, False, 'all'] and scalelist is False:
-        raise ValueError("Did not understand scalebar input. Must be None, "
-                         "'all', or list of ints.")
 
     def check_list_length(arg, arg_name):
         if isinstance(arg, (list, tuple)):
