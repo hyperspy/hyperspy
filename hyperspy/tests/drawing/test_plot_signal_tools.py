@@ -184,6 +184,12 @@ def test_plot_constrast_editor_setting_changed():
     assert ceditor._is_selector_visible
     assert ceditor.line.line.get_visible()
     
+    assert ceditor.bins == 24
+    assert ceditor.line.axis.shape == (ceditor.bins, )
+    ceditor.bins = 50
+    assert ceditor.bins == 50
+    assert ceditor.line.axis.shape == (ceditor.bins, )
+
     # test other parameters
     ceditor.linthresh = 0.1
     assert ceditor.image.linthresh == 0.1

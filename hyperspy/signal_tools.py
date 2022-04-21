@@ -950,7 +950,12 @@ class ImageContrastEditor(t.HasTraits):
     mpl_help = "See the matplotlib SymLogNorm for more information."
     ss_left_value = t.Float()
     ss_right_value = t.Float()
-    bins = t.Int(100, desc="Number of bins used for the histogram.")
+    bins = t.Int(
+        100,
+        desc="Number of bins used for the histogram.",
+        auto_set=False,
+        enter_set=True,
+        )
     gamma = t.Range(0.1, 3.0, 1.0)
     vmin_percentile = t.Range(0.0, 100.0, 0)
     vmax_percentile = t.Range(0.0, 100.0, 100)
@@ -1069,6 +1074,10 @@ class ImageContrastEditor(t.HasTraits):
             self._reset(indices_changed=False, update_histogram=False)
             self._clear_span_selector()
 
+    def _bins_changed(self, old, new):
+        if old != new:
+            self.update_histogram(clear_selector=False)
+
     def _norm_changed(self, old, new):
         self.image.norm = new.lower()
         self._reset(auto=False, indices_changed=False,
@@ -1138,7 +1147,7 @@ class ImageContrastEditor(t.HasTraits):
 
     plot_histogram.__doc__ %= HISTOGRAM_MAX_BIN_ARGS
 
-    def update_histogram(self):
+    def update_histogram(self, clear_selector=True):
         if self._vmin == self._vmax:
             return
 
@@ -1162,7 +1171,7 @@ class ImageContrastEditor(t.HasTraits):
         if self.hist_data.max() != 0:
             self.ax.set_ylim(0, self.hist_data.max())
 
-        if self.auto and self._is_selector_visible:
+        if self.auto and self._is_selector_visible and clear_selector:
             # in auto mode, the displayed contrast cover the full range
             # and we need to reset the span selector
             # no need to clear the line, it will updated 
