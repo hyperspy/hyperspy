@@ -633,7 +633,7 @@ def plot_images(images,
         see the :py:func:`matplotlib.pyplot.legend` docstring for valid values
     pixel_size_factor : None, int or float, optional
         If ``None`` (default), the size of the figure is taken from the
-        matplotlib ``rcParams``. Otherwise Sets the size of the figure when
+        matplotlib ``rcParams``. Otherwise sets the size of the figure when
         plotting an overlay image. The higher the number the larger the figure
         and therefore a greater number of pixels are used. This value will be
         ignored if a Figure is provided.
