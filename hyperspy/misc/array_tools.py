@@ -13,15 +13,13 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>
 
 
 from collections import OrderedDict
-from distutils.version import LooseVersion
-import math as math
+import math
 import logging
 
-import dask
 import dask.array as da
 import numpy as np
 from numba import njit

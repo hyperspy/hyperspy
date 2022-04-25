@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 from hyperspy._signals.common_signal1d import CommonSignal1D
@@ -29,9 +29,6 @@ class ComplexSignal1D(ComplexSignal, CommonSignal1D):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.axes_manager.signal_dimension != 1:
-            self.axes_manager.set_signal_dimension(1)
-
 
 class LazyComplexSignal1D(ComplexSignal1D, LazyComplexSignal):
 

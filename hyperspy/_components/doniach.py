@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import math
 import numpy as np
@@ -27,7 +27,7 @@ from hyperspy.misc.utils import is_binned # remove in v2.0
 sqrt2pi = math.sqrt(2 * math.pi)
 
 
-tiny = np.finfo(np.float64).eps
+tiny = np.finfo(float).eps
 
 
 class Doniach(Expression):

@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import warnings
 
@@ -161,6 +161,20 @@ class TestMultiFitLinear:
         m.fit()
         single_nonlinear = m.as_signal()
         np.testing.assert_allclose(single(), single_nonlinear())
+
+    def test_multifit_ridge(self, weighted):
+        pytest.importorskip("sklearn")
+        m = self.m
+        L = Gaussian(centre=15.)
+        L.set_parameters_not_free(['centre', 'sigma'])
+        m.append(L)
+
+        if m.signal._lazy:
+            with pytest.raises(ValueError):
+                m.multifit(optimizer='ridge_regression')
+            return
+        else:
+            m.multifit(optimizer='ridge_regression')
 
 
 class TestLinearFitting:

@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 import pytest
@@ -45,7 +45,11 @@ def test_check_navigation_mask():
     with pytest.raises(ValueError, match=error_message):
         s._check_navigation_mask(mask)
 
-
+    s = hs.signals.Signal1D(np.arange(2*3*4).reshape(3, 2, 4))
+    navigation_mask = s.sum(-1)
+    s._check_navigation_mask(navigation_mask)
+    with pytest.raises(ValueError):
+        s._check_navigation_mask(navigation_mask.T)
 
 def test_check_signal_mask():
     s = hs.signals.Signal1D(np.ones(shape=(32, 32, 1024)))
@@ -69,3 +73,9 @@ def test_check_signal_mask():
     error_message = 'The signal mask signal must have the `navigation_dimension`'
     with pytest.raises(ValueError, match=error_message):
         s._check_signal_mask(mask)
+
+    s = hs.signals.Signal1D(np.arange(2*3*4).reshape(3, 2, 4))
+    signal_mask = s.sum([0, 1])
+    s._check_signal_mask(signal_mask)
+    with pytest.raises(ValueError):
+        s._check_signal_mask(signal_mask.T)

@@ -14,37 +14,186 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import logging
-import functools
 import copy
+import functools
+import logging
 
+import matplotlib
+import matplotlib.colors
+import matplotlib.text as mpl_text
 import numpy as np
 from scipy import interpolate
 from scipy import signal as sp_signal
-import matplotlib.colors
-import matplotlib.pyplot as plt
-import matplotlib.text as mpl_text
 import traits.api as t
 
 from hyperspy import drawing
 from hyperspy.docstrings.signal import HISTOGRAM_MAX_BIN_ARGS
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.axes import AxesManager, UniformDataAxis
-from hyperspy.drawing.widgets import VerticalLineWidget
+from hyperspy.drawing.widgets import Line2DWidget, VerticalLineWidget
+from hyperspy.drawing._widgets.range import SpanSelector
 from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.misc.label_position import SpectrumLabelPosition
 from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
-from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.drawing.signal1d import Signal1DFigure
 from hyperspy.misc.array_tools import numba_histogram
 from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 _logger = logging.getLogger(__name__)
+
+
+class LineInSignal2D(t.HasTraits):
+    """Adds a vertical draggable line to a spectrum that reports its
+    position to the position attribute of the class.
+
+    Attributes:
+    -----------
+    x0, y0, x1, y1 : floats
+        Position of the line in scaled units.
+    length : float
+        Length of the line in scaled units.
+    on : bool
+        Turns on and off the line
+    color : wx.Colour
+        The color of the line. It automatically redraws the line.
+
+    """
+
+    x0, y0, x1, y1 = t.Float(0.0), t.Float(0.0), t.Float(1.0), t.Float(1.0)
+    length = t.Float(1.0)
+    is_ok = t.Bool(False)
+    on = t.Bool(False)
+    # The following is disabled because as of traits 4.6 the Color trait
+    # imports traitsui (!)
+    # try:
+    #     color = t.Color("black")
+    # except ModuleNotFoundError:  # traitsui is not installed
+    #     pass
+    color_str = t.Str("black")
+
+    def __init__(self, signal):
+        if signal.axes_manager.signal_dimension != 2:
+            raise SignalDimensionError(signal.axes_manager.signal_dimension, 2)
+
+        self.signal = signal
+        if (self.signal._plot is None) or (not self.signal._plot.is_active):
+            self.signal.plot()
+        axis_dict0 = signal.axes_manager.signal_axes[0].get_axis_dictionary()
+        axis_dict1 = signal.axes_manager.signal_axes[1].get_axis_dictionary()
+        am = AxesManager([axis_dict1, axis_dict0])
+        am._axes[0].navigate = True
+        am._axes[1].navigate = True
+        self.axes_manager = am
+        self.on_trait_change(self.switch_on_off, "on")
+
+    def draw(self):
+        self.signal._plot.signal_plot.figure.canvas.draw_idle()
+
+    def _get_initial_position(self):
+        am = self.axes_manager
+        d0 = (am[0].high_value - am[0].low_value) / 10
+        d1 = (am[1].high_value - am[1].low_value) / 10
+        position = (
+            (am[0].low_value + d0, am[1].low_value + d1),
+            (am[0].high_value - d0, am[1].high_value - d1),
+        )
+        return position
+
+    def switch_on_off(self, obj, trait_name, old, new):
+        if not self.signal._plot.is_active:
+            return
+
+        if new is True and old is False:
+            self._line = Line2DWidget(self.axes_manager)
+            self._line.position = self._get_initial_position()
+            self._line.set_mpl_ax(self.signal._plot.signal_plot.ax)
+            self._line.linewidth = 1
+            self._color_changed("black", "black")
+            self.update_position()
+            self._line.events.changed.connect(self.update_position)
+            # There is not need to call draw because setting the
+            # color calls it.
+
+        elif new is False and old is True:
+            self._line.close()
+            self._line = None
+            self.draw()
+
+    def update_position(self, *args, **kwargs):
+        if not self.signal._plot.is_active:
+            return
+        pos = self._line.position
+        (self.x0, self.y0), (self.x1, self.y1) = pos
+        self.length = np.linalg.norm(np.diff(pos, axis=0), axis=1)[0]
+
+    def _color_changed(self, old, new):
+        if self.on is False:
+            return
+        self.draw()
+
+
+@add_gui_method(toolkey="hyperspy.Signal2D.calibrate")
+class Signal2DCalibration(LineInSignal2D):
+    new_length = t.Float(t.Undefined, label="New length")
+    scale = t.Float()
+    units = t.Unicode()
+
+    def __init__(self, signal):
+        super(Signal2DCalibration, self).__init__(signal)
+        if signal.axes_manager.signal_dimension != 2:
+            raise SignalDimensionError(signal.axes_manager.signal_dimension, 2)
+        self.units = self.signal.axes_manager.signal_axes[0].units
+        self.scale = self.signal.axes_manager.signal_axes[0].scale
+        self.on = True
+
+    def _new_length_changed(self, old, new):
+        # If the line position is invalid or the new length is not defined do
+        # nothing
+        if (
+            np.isnan(self.x0)
+            or np.isnan(self.y0)
+            or np.isnan(self.x1)
+            or np.isnan(self.y1)
+            or self.new_length is t.Undefined
+        ):
+            return
+        self.scale = self.signal._get_signal2d_scale(
+            self.x0, self.y0, self.x1, self.y1, self.new_length
+        )
+
+    def _length_changed(self, old, new):
+        # If the line position is invalid or the new length is not defined do
+        # nothing
+        if (
+            np.isnan(self.x0)
+            or np.isnan(self.y0)
+            or np.isnan(self.x1)
+            or np.isnan(self.y1)
+            or self.new_length is t.Undefined
+        ):
+            return
+        self.scale = self.signal._get_signal2d_scale(
+            self.x0, self.y0, self.x1, self.y1, self.new_length
+        )
+
+    def apply(self):
+        if self.new_length is t.Undefined:
+            _logger.warn("Input a new length before pressing apply.")
+            return
+        x0, y0, x1, y1 = self.x0, self.y0, self.x1, self.y1
+        if np.isnan(x0) or np.isnan(y0) or np.isnan(x1) or np.isnan(y1):
+            _logger.warn("Line position is not valid")
+            return
+        self.signal._calibrate(
+            x0=x0, y0=y0, x1=x1, y1=y1, new_length=self.new_length, units=self.units
+        )
+        self.signal._replot()
 
 
 class SpanSelectorInSignal1D(t.HasTraits):
@@ -64,36 +213,59 @@ class SpanSelectorInSignal1D(t.HasTraits):
             signal.plot()
         self.span_selector_switch(on=True)
 
+        self.signal._plot.signal_plot.events.closed.connect(
+            self.disconnect, []
+            )
+
     def on_disabling_span_selector(self):
-        pass
+        self.disconnect()
 
     def span_selector_switch(self, on):
         if not self.signal._plot.is_active:
             return
 
         if on is True:
-            self.span_selector = \
-                drawing.widgets.ModifiableSpanSelector(
-                    self.signal._plot.signal_plot.ax,
-                    onselect=self.update_span_selector_traits,
-                    onmove_callback=self.update_span_selector_traits,)
+            if self.span_selector is None:
+                ax = self.signal._plot.signal_plot.ax
+                self.span_selector = SpanSelector(
+                    ax=ax,
+                    onselect=lambda *args, **kwargs: None,
+                    onmove_callback=self.span_selector_changed,
+                    direction='horizontal',
+                    interactive=True,
+                    ignore_event_outside=True,
+                    drag_from_anywhere=True,
+                    props={"alpha":0.25, "color":'r'},
+                    handle_props={"alpha":0.5, "color":'r'},
+                    useblit=ax.figure.canvas.supports_blit)
+                self.connect()
 
         elif self.span_selector is not None:
             self.on_disabling_span_selector()
-            self.span_selector.turn_off()
+            self.span_selector.disconnect_events()
+            self.span_selector.clear()
             self.span_selector = None
 
-    def update_span_selector_traits(self, *args, **kwargs):
+    def span_selector_changed(self, *args, **kwargs):
         if not self.signal._plot.is_active:
             return
-        x0 = self.span_selector.rect.get_x()
+
+        x0, x1 = sorted(self.span_selector.extents)
+        
+        # typically during initialisation
+        if x0 == x1:
+            return
+
+        # range of span selector invalid
         if x0 < self.axis.low_value:
             x0 = self.axis.low_value
-        self.ss_left_value = x0
-        x1 = self.ss_left_value + self.span_selector.rect.get_width()
-        if x1 > self.axis.high_value:
+        if x1 > self.axis.high_value or x1 < self.axis.low_value:
             x1 = self.axis.high_value
-        self.ss_right_value = x1
+        
+        if np.diff(self.axis.value2index(np.array([x0, x1]))) == 0:
+            return
+
+        self.ss_left_value, self.ss_right_value = x0, x1
 
     def reset_span_selector(self):
         self.span_selector_switch(False)
@@ -102,10 +274,32 @@ class SpanSelectorInSignal1D(t.HasTraits):
         self.span_selector_switch(True)
 
     @property
-    def is_span_selector_valid(self):
-        return (not np.isnan(self.ss_left_value) and
-                not np.isnan(self.ss_right_value) and
-                self.ss_left_value <= self.ss_right_value)
+    def _is_valid_range(self):
+        return (self.span_selector is not None and
+                not np.isnan([self.ss_left_value, self.ss_right_value]).any())
+
+    def _reset_span_selector_background(self):
+        if self.span_selector is not None:
+            # For matplotlib backend supporting blit, we need to reset the
+            # background when the data displayed on the figure is changed,
+            # otherwise, when the span selector is updated, old background is
+            # restore
+            self.span_selector.background = None
+            # Trigger callback
+            self.span_selector_changed()
+
+    def connect(self):
+        for event in [self.signal.events.data_changed,
+                      self.signal.axes_manager.events.indices_changed]:
+            event.connect(self._reset_span_selector_background, [])
+
+    def disconnect(self):
+        function = self._reset_span_selector_background
+        for event in [self.signal.events.data_changed,
+                      self.signal.axes_manager.events.indices_changed]:
+            if function in event.connected:
+                event.disconnect(function)
+
 
 class LineInSignal1D(t.HasTraits):
 
@@ -196,35 +390,32 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
     units = t.Unicode()
 
     def __init__(self, signal):
-        super(Signal1DCalibration, self).__init__(signal)
+        super().__init__(signal)
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
         if not isinstance(self.axis, UniformDataAxis):
-            raise NotImplementedError("The calibration tool supports only uniform axes.")
+            raise NotImplementedError(
+                "The calibration tool supports only uniform axes."
+                )
         self.units = self.axis.units
         self.scale = self.axis.scale
         self.offset = self.axis.offset
         self.last_calibration_stored = True
+        self.span_selector.snap_values = self.axis.axis
 
     def _left_value_changed(self, old, new):
-        if self.span_selector is not None and \
-                self.span_selector.range is None:
-            return
-        else:
+        if self._is_valid_range and self.right_value is not t.Undefined:
             self._update_calibration()
 
     def _right_value_changed(self, old, new):
-        if self.span_selector.range is None:
-            return
-        else:
+        if self._is_valid_range and self.left_value is not t.Undefined:
             self._update_calibration()
 
     def _update_calibration(self, *args, **kwargs):
         # If the span selector or the new range values are not defined do
         # nothing
-        if np.isnan(self.ss_left_value) or np.isnan(self.ss_right_value) or\
-                t.Undefined in (self.left_value, self.right_value):
+        if not self._is_valid_range or self.signal._plot.signal_plot is None:
             return
         lc = self.axis.value2index(self.ss_left_value)
         rc = self.axis.value2index(self.ss_right_value)
@@ -233,7 +424,7 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
             modify_calibration=False)
 
     def apply(self):
-        if np.isnan(self.ss_left_value) or np.isnan(self.ss_right_value):
+        if not self._is_valid_range:
             _logger.warning("Select a range by clicking on the signal figure "
                             "and dragging before pressing Apply.")
             return
@@ -250,6 +441,7 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
         self.span_selector_switch(on=True)
         self.last_calibration_stored = True
 
+
 @add_gui_method(toolkey="hyperspy.EELSSpectrum.print_edges_table")
 class EdgesRange(SpanSelectorInSignal1D):
     units = t.Unicode()
@@ -264,7 +456,7 @@ class EdgesRange(SpanSelectorInSignal1D):
                 signal.axes_manager.signal_dimension, 1)
 
         if active is None:
-            super(EdgesRange, self).__init__(signal)
+            super().__init__(signal)
             self.active_edges = []
         else:
             # if active is provided, it is non-interactive mode
@@ -280,11 +472,11 @@ class EdgesRange(SpanSelectorInSignal1D):
 
         self._get_edges_info_within_energy_axis()
 
-        self.signal.axes_manager.events.indices_changed.connect(self._on_figure_changed,
-                                                                [])
+        self.signal.axes_manager.events.indices_changed.connect(
+            self._on_figure_changed, [])
         self.signal._plot.signal_plot.events.closed.connect(
-        lambda: self.signal.axes_manager.events.indices_changed.disconnect(
-        self._on_figure_changed), [])
+            lambda: self.signal.axes_manager.events.indices_changed.disconnect(
+            self._on_figure_changed), [])
 
     def _get_edges_info_within_energy_axis(self):
         mid_energy = (self.axis.low_value + self.axis.high_value) / 2
@@ -377,7 +569,6 @@ class EdgesRange(SpanSelectorInSignal1D):
         self._plot_labels()
 
     def on_complementary(self):
-
         if self.complementary:
             self.active_complementary_edges = \
                 self.signal.get_complementary_edges(self.active_edges,
@@ -386,7 +577,6 @@ class EdgesRange(SpanSelectorInSignal1D):
             self.active_complementary_edges = []
 
     def check_btn_state(self):
-
         edges = [btn.description for btn in self.btns]
         for btn in self.btns:
             edge = btn.description
@@ -453,6 +643,7 @@ class EdgesRange(SpanSelectorInSignal1D):
             if edge in self.active_complementary_edges:
                 self.active_complementary_edges.remove(edge)
 
+
 class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
 
@@ -501,6 +692,7 @@ class Smoothing(t.HasTraits):
         self.original_color = l1.line.get_color()
         l1.set_line_properties(color=self.original_color,
                                type='scatter')
+
         l2 = drawing.signal1d.Signal1DLine()
         l2.data_function = self.model2plot
 
@@ -510,6 +702,7 @@ class Smoothing(t.HasTraits):
         # Add the line to the figure
         hse.signal_plot.add_line(l2)
         l2.plot()
+
         self.data_line = l1
         self.smooth_line = l2
         self.smooth_diff_line = None
@@ -635,11 +828,7 @@ class SmoothingSavitzkyGolay(Smoothing):
             _logger.warning(
                 "Differential order must be <= polynomial order. "
                 "Polynomial order set to %i.", self.polynomial_order)
-        super(
-            SmoothingSavitzkyGolay,
-            self)._differential_order_changed(
-            old,
-            new)
+        super()._differential_order_changed(old, new)
 
     def diff_model2plot(self, axes_manager=None):
         self.single_spectrum.data = self.signal().copy()
@@ -675,7 +864,7 @@ class SmoothingLowess(Smoothing):
                                    value=1)
 
     def __init__(self, *args, **kwargs):
-        super(SmoothingLowess, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _smoothing_parameter_changed(self, old, new):
         if new == 0:
@@ -761,7 +950,12 @@ class ImageContrastEditor(t.HasTraits):
     mpl_help = "See the matplotlib SymLogNorm for more information."
     ss_left_value = t.Float()
     ss_right_value = t.Float()
-    bins = t.Int(100, desc="Number of bins used for the histogram.")
+    bins = t.Int(
+        100,
+        desc="Number of bins used for the histogram.",
+        auto_set=False,
+        enter_set=True,
+        )
     gamma = t.Range(0.1, 3.0, 1.0)
     vmin_percentile = t.Range(0.0, 100.0, 0)
     vmax_percentile = t.Range(0.0, 100.0, 100)
@@ -783,16 +977,15 @@ class ImageContrastEditor(t.HasTraits):
                   "navigator indices. Unselect to keep the same display.")
 
     def __init__(self, image):
-        super(ImageContrastEditor, self).__init__()
+        super().__init__()
         self.image = image
 
-        self.hspy_fig = BlittedFigure()
-        self.hspy_fig.create_figure()
-        self.create_axis()
+        self._init_plot()
 
         # self._vmin and self._vmax are used to compute the histogram
-        # by default, the image display used these, except when there is a span
-        # selector on the histogram
+        # by default, the image display uses these, except when there is a
+        # span selector on the histogram. This is implemented in the
+        # `_get_current_range` method.
         self._vmin, self._vmax = self.image._vmin, self.image._vmax
         self.gamma = self.image.gamma
         self.linthresh = self.image.linthresh
@@ -819,12 +1012,19 @@ class ImageContrastEditor(t.HasTraits):
             self.norm = self.image.norm.capitalize()
         self.norm_original = copy.deepcopy(self.norm)
 
-        self.span_selector = None
-        self.plot_histogram()
+        self.span_selector = SpanSelector(
+            self.ax,
+            onselect=self._update_image_contrast,
+            onmove_callback=self._update_image_contrast,
+            direction='horizontal',
+            interactive=True,
+            ignore_event_outside=False,
+            drag_from_anywhere=True,
+            props={"alpha":0.25, "color":'r'},
+            handle_props={"alpha":0.5, "color":'r'},
+            useblit=self.ax.figure.canvas.supports_blit)
 
-        # After the figure have been rendered to follow the same pattern as
-        # for other tools
-        self.span_selector_switch(on=True)
+        self.plot_histogram()
 
         if self.image.axes_manager is not None:
             self.image.axes_manager.events.indices_changed.connect(
@@ -837,88 +1037,72 @@ class ImageContrastEditor(t.HasTraits):
             # it when necessary in the close method.
             self.image.disconnect()
 
-    def create_axis(self):
-        self.ax = self.hspy_fig.figure.add_subplot(111)
-        self.hspy_fig.ax = self.ax
+    def _init_plot(self):
+        figsize = matplotlib.rcParamsDefault.get('figure.figsize')
+        figsize = figsize[0], figsize[1] / 3
+        self.hspy_fig = Signal1DFigure(figsize=figsize)
+        self.ax = self.hspy_fig.ax
+        self.ax.set_xticks([])
+        self.ax.set_yticks([])
+        self.ax.figure.subplots_adjust(0, 0, 1, 1)
 
     def _gamma_changed(self, old, new):
         if self._vmin == self._vmax:
             return
         self.image.gamma = new
-        if hasattr(self, "hist"):
-            vmin, vmax = self._get_current_range()
-            self.image.update(
-                data_changed=False, auto_contrast=False, vmin=vmin, vmax=vmax)
-            self.update_line()
+        self._reset(auto=False, indices_changed=False,
+                    update_histogram=False)
+        self.update_line()
 
     def _vmin_percentile_changed(self, old, new):
         if isinstance(new, str):
             new = float(new.split('th')[0])
         self.image.vmin = f"{new}th"
-        # Before the tool is fully initialised
-        if hasattr(self, "hist"):
-            self._reset(indices_changed=False)
-            self._reset_span_selector()
+        self._reset(auto=True, indices_changed=False)
+        self._clear_span_selector()
 
     def _vmax_percentile_changed(self, old, new):
         if isinstance(new, str):
             new = float(new.split('th')[0])
         self.image.vmax = f"{new}th"
-        # Before the tool is fully initialised
-        if hasattr(self, "hist"):
-            self._reset(indices_changed=False)
-            self._reset_span_selector()
+        self._reset(auto=True, indices_changed=False)
+        self._clear_span_selector()
 
     def _auto_changed(self, old, new):
         # Do something only if auto is ticked
-        if new and hasattr(self, "hist"):
-            self._reset(indices_changed=False)
-            self._reset_span_selector()
+        if new:
+            self._reset(indices_changed=False, update_histogram=False)
+            self._clear_span_selector()
+
+    def _bins_changed(self, old, new):
+        if old != new:
+            self.update_histogram(clear_selector=False)
 
     def _norm_changed(self, old, new):
-        if hasattr(self, "hist"):
-            self.image.norm = new.lower()
-            self._reset(indices_changed=False)
+        self.image.norm = new.lower()
+        self._reset(auto=False, indices_changed=False,
+                    update_histogram=False)
+        self.update_line()
 
     def _linthresh_changed(self, old, new):
         self.image.linthresh = new
-        if hasattr(self, "hist"):
-            self._reset(indices_changed=False)
+        self._reset(auto=False, indices_changed=False,
+                    update_histogram=False)
 
     def _linscale_changed(self, old, new):
         self.image.linscale = new
-        if hasattr(self, "hist"):
-            self._reset(indices_changed=False)
-
-    def span_selector_switch(self, on):
-        if on is True:
-            self.span_selector = \
-                drawing.widgets.ModifiableSpanSelector(
-                    self.ax,
-                    onselect=self.update_span_selector,
-                    onmove_callback=self.update_span_selector,
-                    rectprops={"alpha":0.25, "color":'r'})
-            self.span_selector.bounds_check = True
-
-        elif self.span_selector is not None:
-            self.span_selector.turn_off()
-            self.span_selector = None
+        self._reset(auto=False, indices_changed=False,
+                    update_histogram=False)
 
     def update_span_selector_traits(self, *args, **kwargs):
-        self.ss_left_value = self.span_selector.rect.get_x()
-        self.ss_right_value = self.ss_left_value + \
-            self.span_selector.rect.get_width()
-
+        self.ss_left_value, self.ss_right_value = sorted(
+            self._get_current_range())
         self.update_line()
 
-    def update_span_selector(self, *args, **kwargs):
-        self.update_span_selector_traits()
-        # switch off auto when using span selector
-        if self.auto:
-            self.auto = False
-        vmin, vmax = self._get_current_range()
-        self.image.update(data_changed=False, auto_contrast=False,
-                          vmin=vmin, vmax=vmax)
+    def _update_image_contrast(self, *args, **kwargs):
+        self.update_span_selector_traits(*args, **kwargs)
+        self._reset(auto=False, indices_changed=False,
+                    update_histogram=False)
 
     def _get_data(self):
         return self.image._current_data
@@ -926,14 +1110,6 @@ class ImageContrastEditor(t.HasTraits):
     def _get_histogram(self, data):
         return numba_histogram(data, bins=self.bins,
                                ranges=(self._vmin, self._vmax))
-
-    def _set_xaxis(self):
-        self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
-        if self.span_selector is not None:
-            # Set this attribute to restrict the span selector to the xaxis
-            self.span_selector.step_ax = UniformDataAxis(size=len(self.xaxis),
-                                                         offset=self.xaxis[1],
-                                                         scale=self.xaxis[1]-self.xaxis[0])
 
     def plot_histogram(self, max_num_bins=250):
         """Plot a histogram of the data.
@@ -966,40 +1142,61 @@ class ImageContrastEditor(t.HasTraits):
             bin_width = sturges_bin_width
 
         self.bins = min(int(np.ceil(data.ptp() / bin_width)), max_num_bins)
-
-        self.hist_data = self._get_histogram(data)
-        self._set_xaxis()
-        self.hist = self.ax.fill_between(self.xaxis, self.hist_data,
-                                         step="mid")
-        self.ax.set_xlim(self._vmin, self._vmax)
-        self.ax.set_ylim(0, self.hist_data.max())
-        self.ax.set_xticks([])
-        self.ax.set_yticks([])
-        self.line = self.ax.plot(*self._get_line(), color='#ff7f0e',
-                                 animated=self.ax.figure.canvas.supports_blit)[0]
-        plt.tight_layout(pad=0)
-        self.ax.figure.canvas.draw()
+        self.update_histogram()
+        self._setup_line()
 
     plot_histogram.__doc__ %= HISTOGRAM_MAX_BIN_ARGS
 
-    def update_histogram(self):
+    def update_histogram(self, clear_selector=True):
         if self._vmin == self._vmax:
             return
-        color = self.hist.get_facecolor()
-        self.hist.remove()
+
+        if hasattr(self, 'hist'):
+            self.hist.remove()
+
+        self.xaxis = UniformDataAxis(
+            scale=(self._vmax-self._vmin) / self.bins,
+            offset=self._vmin,
+            size=self.bins
+            )
         self.hist_data = self._get_histogram(self._get_data())
-        self.hist = self.ax.fill_between(self.xaxis, self.hist_data,
-                                         step="mid", color=color)
+
+        # We don't use blitting for the histogram because it will be part
+        # included in the background
+        self.hist = self.ax.fill_between(
+            self.xaxis.axis, self.hist_data, step="mid", color='C0',
+            )
 
         self.ax.set_xlim(self._vmin, self._vmax)
         if self.hist_data.max() != 0:
             self.ax.set_ylim(0, self.hist_data.max())
-        self.update_line()
-        self.ax.figure.canvas.draw_idle()
 
-    def _get_line(self):
+        if self.auto and self._is_selector_visible and clear_selector:
+            # in auto mode, the displayed contrast cover the full range
+            # and we need to reset the span selector
+            # no need to clear the line, it will updated 
+            self.span_selector.clear()
+
+        self.update_line()
+
+        self.ax.figure.canvas.draw()
+
+    def _setup_line(self):
+        self.hspy_fig.axis = self.xaxis
+        self.line = drawing.signal1d.Signal1DLine()
+        self.line.data_function = self._get_data_function
+        self.line.set_line_properties(color='C1', type='line')
+        # Add the line to the figure
+        self.hspy_fig.add_line(self.line)
+        self.line.plot()
+
+    def _set_xaxis_line(self):
         cmin, cmax = self._get_current_range()
-        xaxis = np.linspace(cmin, cmax, self.bins)
+        self.line.axis = np.linspace(cmin, cmax, self.bins)
+
+    def _get_data_function(self, *args, **kwargs):
+        xaxis = self.xaxis.axis
+        cmin, cmax = xaxis[0], xaxis[-1]
         max_hist = self.hist_data.max()
         if self.image.norm == "linear":
             values = ((xaxis-cmin)/(cmax-cmin)) * max_hist
@@ -1013,16 +1210,16 @@ class ImageContrastEditor(t.HasTraits):
             # if "auto" or "power" use the self.gamma value
             values = ((xaxis-cmin)/(cmax-cmin)) ** self.gamma * max_hist
 
-        return xaxis, values
+        return values
 
     def _sym_log_transform(self, arr):
         # adapted from matploltib.colors.SymLogNorm
         arr = arr.copy()
         _linscale_adj = (self.linscale / (1.0 - np.e ** -1))
         with np.errstate(invalid="ignore"):
-            masked = np.abs(arr) > self.linthresh
+            masked = abs(arr) > self.linthresh
         sign = np.sign(arr[masked])
-        log = (_linscale_adj + np.log(np.abs(arr[masked]) / self.linthresh))
+        log = (_linscale_adj + np.log(abs(arr[masked]) / self.linthresh))
         log *= sign * self.linthresh
         arr[masked] = log
         arr[~masked] *= _linscale_adj
@@ -1030,10 +1227,13 @@ class ImageContrastEditor(t.HasTraits):
         return arr
 
     def update_line(self):
-        if self._vmin == self._vmax:
+        if not hasattr(self, 'line') or self._vmin == self._vmax:
             return
-        self.line.set_data(*self._get_line())
-        self.hspy_fig.render_figure()
+        self._set_xaxis_line()
+        self.line.update(render_figure=True)
+        if not self.line.line.get_visible():
+            # when the selector have been cleared, line is not visible anymore
+            self.line.line.set_visible(True)
 
     def apply(self):
         if self.ss_left_value == self.ss_right_value:
@@ -1043,21 +1243,14 @@ class ImageContrastEditor(t.HasTraits):
             # When we apply the selected range and update the xaxis
             self._vmin, self._vmax = self._get_current_range()
             # Remove the span selector and set the new one ready to use
-            self.span_selector_switch(False)
-            self.span_selector_switch(True)
+            self._clear_span_selector()
             self._reset(auto=False, indices_changed=False)
 
     def reset(self):
         # Reset the display as original
         self._reset_original_settings()
-        self._reset_span_selector()
-
-    def _reset_span_selector(self):
-        if self.span_selector and self.span_selector.rect.get_x() > 0:
-            # Remove the span selector and set the new one ready to use
-            self.span_selector_switch(False)
-            self.span_selector_switch(True)
-            self._reset(indices_changed=False)
+        self._clear_span_selector()
+        self._reset(indices_changed=False)
 
     def _reset_original_settings(self):
         if self.vmin_percentile_original is not None:
@@ -1071,10 +1264,18 @@ class ImageContrastEditor(t.HasTraits):
         self.linthresh = self.linthresh_original
         self.linscale = self.linscale_original
 
+    @property
+    def _is_selector_visible(self):
+        if hasattr(self, 'span_selector'):
+            return self.span_selector.artists[0].get_visible()
+
     def _get_current_range(self):
-        if self.span_selector and self.span_selector._get_span_width() != 0:
+        # Get the range from the span selector if it is displayed otherwise
+        # fallback to the _vmin/_vmax cache values
+        if (self._is_selector_visible and
+                np.diff(self.span_selector.extents) > 0):
             # if we have a span selector, use it to set the display
-            return self.ss_left_value, self.ss_right_value
+            return self.span_selector.extents
         else:
             return self._vmin, self._vmax
 
@@ -1089,7 +1290,7 @@ class ImageContrastEditor(t.HasTraits):
             self.image.connect()
         self.hspy_fig.close()
 
-    def _reset(self, auto=None, indices_changed=True):
+    def _reset(self, auto=None, indices_changed=True, update_histogram=True):
         # indices_changed is used for the connection to the indices_changed
         # event of the axes_manager, which will require to update the displayed
         # image
@@ -1098,16 +1299,24 @@ class ImageContrastEditor(t.HasTraits):
             auto = self.auto
 
         if auto:
+            # Update the image display, which calculates the _vmin/_vmax
             self.image.update(data_changed=indices_changed, auto_contrast=auto)
             self._vmin, self._vmax = self.image._vmin, self.image._vmax
-            self._set_xaxis()
         else:
             vmin, vmax = self._get_current_range()
             self.image.update(data_changed=indices_changed, auto_contrast=auto,
                               vmin=vmin, vmax=vmax)
 
-        self.update_histogram()
-        self.update_span_selector_traits()
+        if update_histogram and hasattr(self, "hist"):
+            self.update_histogram()
+            self.update_span_selector_traits()
+
+    def _clear_span_selector(self):
+        if hasattr(self, 'span_selector'):
+            self.span_selector.clear()
+        if hasattr(self, 'line'):
+            self.line.line.set_visible(False)
+            self.hspy_fig.render_figure()
 
     def _show_help_fired(self):
         from pyface.message_dialog import information
@@ -1178,19 +1387,6 @@ IMAGE_CONTRAST_EDITOR_HELP_IPYWIDGETS = _IMAGE_CONTRAST_EDITOR_HELP.replace(
 class IntegrateArea(SpanSelectorInSignal1D):
     integrate = t.Button()
 
-    def __init__(self, signal, signal_range=None):
-        if signal.axes_manager.signal_dimension != 1:
-            raise SignalDimensionError(
-                signal.axes.signal_dimension, 1)
-
-        self.signal = signal
-        self.axis = self.signal.axes_manager.signal_axes[0]
-        self.span_selector = None
-        if (not hasattr(self.signal, '_plot') or self.signal._plot is None or
-                not self.signal._plot.is_active):
-            self.signal.plot()
-        self.span_selector_switch(on=True)
-
     def apply(self):
         integrated_spectrum = self.signal._integrate_in_range_commandline(
             signal_range=(
@@ -1203,8 +1399,7 @@ class IntegrateArea(SpanSelectorInSignal1D):
             self.signal._plot.close()
             plot = True
         self.signal.__init__(**integrated_spectrum._to_dictionary())
-        self.signal._assign_subclass()
-        self.signal.axes_manager.set_signal_dimension(0)
+        self.signal.transpose(signal_axes=[])
 
         if plot is True:
             self.signal.plot()
@@ -1276,15 +1471,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.show_progressbar = show_progressbar
         self.set_background_estimator()
 
-        self.signal.axes_manager.events.indices_changed.connect(self._fit, [])
-        # This is also disconnected when disabling the span selector but we
-        # disconnect also when closing the figure, because in this case,
-        # `on_disabling_span_selector` will not be called.
-        self.signal._plot.signal_plot.events.closed.connect(self.disconnect, [])
-
     def on_disabling_span_selector(self):
         # Disconnect event
-        self.disconnect()
+        super().on_disabling_span_selector()
         if self.bg_line is not None:
             self.bg_line.close()
             self.bg_line = None
@@ -1301,11 +1490,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.background_type, self.polynomial_order)
         if self.model is not None and len(self.model) == 0:
             self.model.append(self.background_estimator)
-        if not self.fast and self.is_span_selector_valid:
-            self.background_estimator.estimate_parameters(
-                self.signal, self.ss_left_value,
-                self.ss_right_value,
-                only_current=True)
+        if not self.fast and self._is_valid_range:
+            self.background_estimator.estimate_parameters(self.signal,
+                self.ss_left_value, self.ss_right_value, only_current=True)
 
     def _polynomial_order_changed(self, old, new):
         self.set_background_estimator()
@@ -1316,18 +1503,10 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.span_selector_changed()
 
     def _fast_changed(self, old, new):
-        if self.span_selector is None or not self.is_span_selector_valid:
+        if not self._is_valid_range:
             return
         self._fit()
         self._update_line()
-
-    def _ss_left_value_changed(self, old, new):
-        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
-            self.span_selector_changed()
-
-    def _ss_right_value_changed(self, old, new):
-        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
-            self.span_selector_changed()
 
     def create_background_line(self):
         self.bg_line = drawing.signal1d.Signal1DLine()
@@ -1383,8 +1562,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     def rm_to_plot(self, axes_manager=None, fill_with=np.nan):
         return self.signal() - self.bg_line.line.get_ydata()
 
-    def span_selector_changed(self):
-        if not self.is_span_selector_valid:
+    def span_selector_changed(self, *args, **kwargs):
+        super().span_selector_changed()
+        if not self._is_valid_range:
             return
         try:
             self._fit()
@@ -1393,16 +1573,14 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             pass
 
     def _fit(self):
-        if not self.is_span_selector_valid:
+        if not self._is_valid_range:
             return
         # Set signal range here to set correctly the channel_switches for
         # the chisq calculation when using fast
         self.model.set_signal_range(self.ss_left_value, self.ss_right_value)
         if self.fast:
-            self.background_estimator.estimate_parameters(
-                self.signal, self.ss_left_value,
-                self.ss_right_value,
-                only_current=True)
+            self.background_estimator.estimate_parameters(self.signal,
+                self.ss_left_value, self.ss_right_value, only_current=True)
             # Calculate chisq
             self.model._calculate_chisq()
         else:
@@ -1414,7 +1592,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         if self.bg_line is None:
             self.create_background_line()
         else:
-            self.bg_line.update(render_figure=False, update_ylimits=False)
+            self.bg_line.update(render_figure=not self.plot_remainder,
+                                update_ylimits=False)
         if self.plot_remainder:
             if self.rm_line is None:
                 self.create_remainder_line()
@@ -1423,7 +1602,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                                     update_ylimits=True)
 
     def apply(self):
-        if not self.is_span_selector_valid:
+        if not self._is_valid_range:
             return
         return_model = (self.model is not None)
         result = self.signal._remove_background_cli(
@@ -1439,6 +1618,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.signal.events.data_changed.trigger(self)
 
     def disconnect(self):
+        super().disconnect()
         axes_manager = self.signal.axes_manager
         for f in [self._fit, self.model._on_navigating]:
             if f in axes_manager.events.indices_changed.connected:
@@ -1644,12 +1824,12 @@ class SpikesRemoval:
 
     def get_interpolation_range(self):
         axis = self.signal.axes_manager.signal_axes[0]
-        if np.isnan(self.ss_left_value) or np.isnan(self.ss_right_value):
-            left = self.argmax - self.default_spike_width
-            right = self.argmax + self.default_spike_width
-        else:
+        if hasattr(self, 'span_selector') and self._is_valid_range:
             left = axis.value2index(self.ss_left_value)
             right = axis.value2index(self.ss_right_value)
+        else:
+            left = self.argmax - self.default_spike_width
+            right = self.argmax + self.default_spike_width
 
         # Clip to the axis dimensions
         nchannels = self.signal.axes_manager.signal_shape[0]
@@ -1839,6 +2019,7 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
         self.line.auto_update = False
 
     def on_disabling_span_selector(self):
+        super().on_disabling_span_selector()
         if self.interpolated_line is not None:
             self.interpolated_line.close()
             self.interpolated_line = None
@@ -1857,14 +2038,6 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
             self.kind = self.spline_order
         self.span_selector_changed()
 
-    def _ss_left_value_changed(self, old, new):
-        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
-            self.span_selector_changed()
-
-    def _ss_right_value_changed(self, old, new):
-        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
-            self.span_selector_changed()
-
     def create_interpolation_line(self):
         self.interpolated_line = drawing.signal1d.Signal1DLine()
         self.interpolated_line.data_function = self.get_interpolated_spectrum
@@ -1876,7 +2049,8 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
         self.interpolated_line.autoscale = ''
         self.interpolated_line.plot()
 
-    def span_selector_changed(self):
+    def span_selector_changed(self, *args, **kwargs):
+        super().span_selector_changed()
         if self.interpolated_line is None:
             return
         else:

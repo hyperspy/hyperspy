@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.drawing.widgets import Widget1DBase
 from hyperspy.drawing.utils import picker_kwargs
@@ -34,7 +34,7 @@ class HorizontalLineWidget(Widget1DBase):
     def _set_patch(self):
         ax = self.ax
         kwargs = picker_kwargs(preferences.Plot.pick_tolerance)
-        self.patch = [ax.axhline(
+        self._patch = [ax.axhline(
             self._pos[0],
             color=self.color,
             alpha=self.alpha,

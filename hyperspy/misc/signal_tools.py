@@ -14,12 +14,11 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import logging
 from itertools import zip_longest
+import logging
 
-import dask.array as da
 import numpy as np
 
 from hyperspy.misc.axis_tools import check_axes_calibration
@@ -127,8 +126,14 @@ def broadcast_signals(*args, ignore_axis=None):
     list of signals
 
     """
+    from hyperspy.signal import BaseSignal
+
     if len(args) < 2:
-        raise ValueError("This function requires at least two signal instances")
+        raise ValueError(
+            "This function requires at least two signal instances"
+            )
+    if any([not isinstance(a, BaseSignal) for a in args]):
+        raise ValueError("Arguments must be of signal type.")
     args = list(args)
     if not are_signals_aligned(*args, ignore_axis=ignore_axis):
         raise ValueError("The signals cannot be broadcasted")
@@ -184,10 +189,7 @@ def broadcast_signals(*args, ignore_axis=None):
                 thisshape[_id] = newlen
             thisshape = tuple(thisshape)
             if data.shape != thisshape:
-                if isinstance(data, np.ndarray):
-                    data = np.broadcast_to(data, thisshape)
-                else:
-                    data = da.broadcast_to(data, thisshape)
+                data = np.broadcast_to(data, thisshape)
 
             ns = s._deepcopy_with_new_data(data)
             ns.axes_manager._axes = [ax.copy() for ax in new_axes]

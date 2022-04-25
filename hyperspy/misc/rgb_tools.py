@@ -14,10 +14,13 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 from dask.array import Array
+
+from hyperspy.misc.utils import get_numpy_kwargs
+
 
 rgba8 = np.dtype({'names': ['R', 'G', 'B', 'A'],
                   'formats': ['u1', 'u1', 'u1', 'u1']})
@@ -77,7 +80,7 @@ def rgbx2regular_array(data, plot_friendly=False):
         if np.ma.is_masked(data):
             data = data.copy(order='C')
         else:
-            data = np.ascontiguousarray(data)
+            data = np.ascontiguousarray(data, **get_numpy_kwargs(data))
     if is_rgba(data) is True:
         dt = data.dtype.fields['B'][0]
         data = data.view((dt, 4))
@@ -98,7 +101,7 @@ def regular_array2rgbx(data):
         if np.ma.is_masked(data):
             data = data.copy(order='C')
         else:
-            data = np.ascontiguousarray(data)
+            data = np.ascontiguousarray(data, **get_numpy_kwargs(data))
     if data.shape[-1] == 3:
         names = rgb8.names
     elif data.shape[-1] == 4:

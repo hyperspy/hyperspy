@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 import pytest
@@ -58,10 +58,11 @@ class TestPlotROI():
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
     def test_plot_point1D_axis_0(self):
-        self.im.plot()
+        im = self.im
+        im.plot()
         p = roi.Point1DROI(0.5)
-        p.add_widget(signal=self.im, axes=[0, ], color="cyan")
-        return self.im._plot.navigator_plot.figure
+        p.add_widget(signal=im, axes=[0, ], color="cyan")
+        return im._plot.navigator_plot.figure
 
     def test_plot_point1D_axis_0_non_iterable(self):
         self.im.plot()
@@ -72,49 +73,55 @@ class TestPlotROI():
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
     def test_plot_point1D_axis_1(self):
-        self.im.plot()
+        im = self.im
+        im.plot()
         p = roi.Point1DROI(0.05)
-        p.add_widget(signal=self.im, axes=[1, ], color="cyan")
-        return self.im._plot.signal_plot.figure
+        p.add_widget(signal=im, axes=[1, ], color="cyan")
+        return im._plot.signal_plot.figure
 
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
     def test_plot_point1D_axis_2(self):
-        self.im.plot()
+        im = self.im
+        im.plot()
         p = roi.Point1DROI(0.005)
-        p.add_widget(signal=self.im, axes=[2, ], color="cyan")
-        return self.im._plot.signal_plot.figure
+        p.add_widget(signal=im, axes=[2, ], color="cyan")
+        return im._plot.signal_plot.figure
 
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
     def test_plot_spanroi_axis_0(self):
-        self.im.plot()
+        im = self.im
+        im.plot()
         p = roi.SpanROI(0.5, 0.7)
-        p.add_widget(signal=self.im, axes=[0, ], color="cyan")
-        return self.im._plot.navigator_plot.figure
+        p.add_widget(signal=im, axes=[0, ], color="cyan")
+        return im._plot.navigator_plot.figure
 
     def test_plot_spanroi_close(self):
-        self.im.plot()
+        im = self.im
+        im.plot()
         p = roi.SpanROI(0.5, 0.7)
-        p.add_widget(signal=self.im, axes=[0, ], color="cyan")
+        p.add_widget(signal=im, axes=[0, ], color="cyan")
         for widget in p.widgets:
             widget.close()
 
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
     def test_plot_spanroi_axis_1(self):
-        self.im.plot()
+        im = self.im
+        im.plot()
         p = roi.SpanROI(0.05, 0.07)
-        p.add_widget(signal=self.im, axes=[1, ], color="cyan")
-        return self.im._plot.signal_plot.figure
+        p.add_widget(signal=im, axes=[1, ], color="cyan")
+        return im._plot.signal_plot.figure
 
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
     def test_plot_spanroi_axis_2(self):
-        self.im.plot()
+        im = self.im
+        im.plot()
         p = roi.SpanROI(0.005, 0.007)
-        p.add_widget(signal=self.im, axes=[2, ], color="cyan")
-        return self.im._plot.signal_plot.figure
+        p.add_widget(signal=im, axes=[2, ], color="cyan")
+        return im._plot.signal_plot.figure
 
     @pytest.mark.parametrize("space", ("signal", "navigation"))
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
@@ -210,8 +217,8 @@ def test_remove_rois():
     s.plot()
     s2.plot()
 
-    s_roi = r.interactive(s)
-    s2_roi = r.interactive(s2)
+    _ = r.interactive(s)
+    _ = r.interactive(s2)
 
     r.remove_widget(s)
 

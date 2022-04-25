@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import logging
@@ -34,7 +34,13 @@ from hyperspy.learn.rpca import orpca, rpca_godec
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.whitening import whiten_data
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import ordinal, stack,is_hyperspy_signal
+from hyperspy.misc.utils import (
+    ordinal,
+    stack,
+    is_hyperspy_signal,
+    is_cupy_array,
+    get_numpy_kwargs,
+    )
 from hyperspy.external.progressbar import progressbar
 
 try:
@@ -140,6 +146,7 @@ class MVA:
             The decomposition algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
             ``transform()`` methods, in the same manner as a scikit-learn estimator.
+            For cupy arrays, only "SVD" is supported.
         output_dimension : None or int
             Number of components to keep/calculate.
             Default is None, i.e. ``min(data.shape)``.
@@ -199,6 +206,7 @@ class MVA:
             If randomized:
                 use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
                 to estimate a limited number of components
+             For cupy arrays, only "full" is supported.
         copy : bool, default True
             * If True, stores a copy of the data before any pre-treatments
               such as normalization in ``s._data_before_treatments``. The original
@@ -232,6 +240,21 @@ class MVA:
         * :py:meth:`~._signals.lazy.LazySignal.decomposition` for lazy signals
 
         """
+        if is_cupy_array(self.data):  # pragma: no cover
+            if algorithm == 'SVD':
+                if svd_solver == 'randomized':
+                    raise ValueError(
+                        "`svd_solver='randomized'` is not supported with "
+                        "cupy array."
+                        )
+                elif svd_solver == 'auto':
+                    svd_solver = 'full'
+            else:
+                raise TypeError(
+                    "Only `algorithm='SVD'` is supported with cupy arrays. "
+                    f"Provided algorithm is '{algorithm}'."
+                    )
+
         from hyperspy.signal import BaseSignal
 
         # Check data is suitable for decomposition
@@ -843,7 +866,9 @@ class MVA:
                 number_of_components = lr.output_dimension
                 comp_list = range(number_of_components)
             else:
-                raise ValueError("No `number_of_components` or `comp_list` provided")
+                raise ValueError(
+                    "No `number_of_components` or `comp_list` provided."
+                    )
 
         factors = stack([factors.inav[i] for i in comp_list])
 
@@ -851,8 +876,15 @@ class MVA:
         is_sklearn_like = False
         algorithms_sklearn = ["sklearn_fastica"]
         if algorithm in algorithms_sklearn:
+            if is_cupy_array(self.data):  # pragma: no cover
+                raise TypeError(
+                    "cupy arrays are not supported with scikit-learn "
+                    "algorithms."
+                    )
             if not import_sklearn.sklearn_installed:
-                raise ImportError(f"algorithm='{algorithm}' requires scikit-learn")
+                raise ImportError(
+                    f"algorithm='{algorithm}' requires scikit-learn."
+                    )
 
             # Set smaller convergence tolerance than sklearn default
             if not kwargs.get("tol", False):
@@ -867,7 +899,7 @@ class MVA:
                 _logger.warning(
                     "HyperSpy already performs its own data whitening "
                     f"(whiten_method='{whiten_method}'), so it is ignored "
-                    f"for algorithm='{algorithm}'"
+                    f"for algorithm='{algorithm}'."
                 )
                 estim.whiten = False
 
@@ -1007,7 +1039,7 @@ class MVA:
             # following code is an experimental attempt to sort them in a
             # more predictable way
             sorting_indices = np.argsort(
-                lr.explained_variance[:number_of_components] @ np.abs(w.T)
+                lr.explained_variance[:number_of_components] @ abs(w.T)
             )[::-1]
             w[:] = w[sorting_indices, :]
 
@@ -1430,6 +1462,8 @@ class MVA:
 
         """
         s = self.get_explained_variance_ratio()
+        if is_cupy_array(s.data):
+            s.to_host()
 
         n_max = len(self.learning_results.explained_variance_ratio)
         if n is None:
@@ -1961,9 +1995,9 @@ class MVA:
                          algorithm=None,
                          return_info=False,
                          **kwargs):
-        """Cluster analysis of a signal or decomposition results of a signal
+        """
+        Cluster analysis of a signal or decomposition results of a signal
         Results are stored in `learning_results`.
-
 
         Parameters
         ----------
@@ -2054,12 +2088,14 @@ class MVA:
             raise ImportError(
                 'sklearn is not installed. Nothing done')
 
+        if is_cupy_array(self.data):  # pragma: no cover
+            raise TypeError("cupy arrays are not supported.")
+
         if source_for_centers is None:
             source_for_centers = cluster_source
 
         cluster_algorithm = \
             self._get_cluster_algorithm(algorithm,**kwargs)
-
 
         target = LearningResults()
         try:
@@ -2413,7 +2449,7 @@ class MVA:
                         f"For n_clusters ={k}. "
                         f"The distance metric is : {inertia[-1]}")
                 to_return = inertia
-                best_k =self.estimate_elbow_position(
+                best_k = self.estimate_elbow_position(
                     to_return, log=False) + min_k
             elif metric == "silhouette":
                 k_range   = list(range(2, max_clusters+1))
@@ -2490,7 +2526,7 @@ class MVA:
                     reference_inertia[o_indx]=np.mean(local_inertia)
                     reference_std[o_indx] = np.std(local_inertia)
                 std_error = np.sqrt(1.0 + 1.0/n_ref)*reference_std
-                std_error = np.abs(std_error)
+                std_error = abs(std_error)
                 gap       = reference_inertia-data_inertia
                 to_return = gap
                 # finding the first max..check if first point is max
@@ -2593,13 +2629,14 @@ class MVA:
             y1 = curve_values_adj[0]
             y2 = curve_values_adj[max_points]
 
-        xs = np.arange(max_points)
+        kw = get_numpy_kwargs(self.data)
+        xs = np.arange(max_points, **kw)
         if log:
             ys = np.log(curve_values_adj[:max_points])
         else:
             ys = curve_values_adj[:max_points]
 
-        numer = np.abs((x2 - x1) * (y1 - ys) - (x1 - xs) * (y2 - y1))
+        numer = abs((x2 - x1) * (y1 - ys) - (x1 - xs) * (y2 - y1))
         denom = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
         distance = np.nan_to_num(numer / denom)
         elbow_position = np.argmax(distance)
@@ -2798,4 +2835,3 @@ class LearningResults(object):
             self.bss_loadings,
             self.bss_factors,
         )
-

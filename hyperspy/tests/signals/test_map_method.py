@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from unittest import mock
 
@@ -25,7 +25,6 @@ from scipy.ndimage import gaussian_filter, gaussian_filter1d, rotate
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.misc.utils import _get_block_pattern
 
@@ -222,8 +221,7 @@ class TestSignal1D:
 class TestSignal0D:
 
     def setup_method(self, method):
-        self.s = hs.signals.BaseSignal(np.arange(0., 6).reshape((2, 3)))
-        self.s.axes_manager.set_signal_dimension(0)
+        self.s = hs.signals.BaseSignal(np.arange(0., 6).reshape((2, 3))).T
         self.ragged = None
 
     @pytest.mark.parametrize('parallel', [True, False])
@@ -541,7 +539,7 @@ class TestOutputSignalSizeScalarWithNavigationDimensions:
         s_out = s.map(a_function, inplace=False, lazy_output=False)
         assert s_out.data.shape == nav_shape
         assert s_out.axes_manager.navigation_shape == nav_shape[::-1]
-        assert (s_out.data == np.ones(nav_shape, dtype=np.float) * 10).all()
+        assert (s_out.data == np.ones(nav_shape, dtype=float) * 10).all()
         assert s.data.shape == data_shape
         assert s.axes_manager.shape == nav_shape[::-1] + (30, 20)
 
@@ -1088,7 +1086,7 @@ def test_ragged():
     s = hs.signals.Signal1D(np.ones((10, 8, 100)))
     s_out = s.map(afunction, inplace=False, ragged=True, parallel=False)
     assert s_out.axes_manager.shape == s.axes_manager.navigation_shape
-    assert s_out.data.dtype == np.object
+    assert s_out.data.dtype == object
     with pytest.raises(ValueError):
         s.map(afunction, inplace=False, ragged=False, parallel=False)
 

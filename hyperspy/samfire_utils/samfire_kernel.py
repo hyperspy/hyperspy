@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 def single_kernel(model, ind, values, optional_components, _args, test):
@@ -84,7 +84,7 @@ def single_kernel(model, ind, values, optional_components, _args, test):
             new_AICc = AICc(model.inav[ind[::-1]])
 
             if new_AICc < AICc_fraction * best_AICc or \
-                    (np.abs(new_AICc - best_AICc) <= np.abs(AICc_fraction * best_AICc)
+                    (abs(new_AICc - best_AICc) <= abs(AICc_fraction * best_AICc)
                      and len(model.p0) < best_dof):
                 best_values = [
                     getattr(
@@ -208,7 +208,7 @@ def multi_kernel(
             new_AICc = AICc(model)
 
             if new_AICc < AICc_fraction * best_AICc or \
-                    (np.abs(new_AICc - best_AICc) <= np.abs(AICc_fraction * best_AICc)
+                    (abs(new_AICc - best_AICc) <= abs(AICc_fraction * best_AICc)
                      and len(model.p0) < best_dof):
                 best_values = [
                     getattr(

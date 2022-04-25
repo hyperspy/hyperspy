@@ -120,8 +120,7 @@ def _create_signal(shape, dim, dtype, metadata):
                     elevation_angle=4.,
                     energy_resolution_MnKa=5.)
     else:
-        s = signals.BaseSignal(data)
-        s.axes_manager.set_signal_dimension(dim)
+        s = signals.BaseSignal(data).transpose(signal_axes=dim)
     if metadata:
         s.metadata.General.date = "2016-08-06"
         s.metadata.General.time = "10:55:00"

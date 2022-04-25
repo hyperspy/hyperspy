@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
 from multiprocessing import cpu_count
@@ -284,7 +284,7 @@ class Samfire:
 
     @_active_strategy_ind.setter
     def _active_strategy_ind(self, value):
-        self.__active_strategy_ind = np.abs(int(value))
+        self.__active_strategy_ind = abs(int(value))
 
     def _run_active_strategy(self):
         if self.pool is not None:
@@ -410,7 +410,7 @@ class Samfire:
                 raise ValueError(
                     "The passed object is not in current strategies list")
 
-        new_strat = np.abs(int(new_strat))
+        new_strat = abs(int(new_strat))
         if new_strat == self._active_strategy_ind:
             self.refresh_database()
 

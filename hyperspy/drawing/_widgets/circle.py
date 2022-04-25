@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import numpy as np
@@ -106,7 +106,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         super(CircleWidget, self)._set_patch()
         xy = self._get_patch_xy()
         ro, ri = self.size
-        self.patch = [plt.Circle(
+        self._patch = [plt.Circle(
             xy, radius=ro,
             fill=False,
             lw=self.border_thickness,
@@ -114,7 +114,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
             alpha=self.alpha,
             picker=True,)]
         if ri > 0:
-            self.patch.append(
+            self._patch.append(
                 plt.Circle(
                     xy, radius=ri,
                     fill=False,
@@ -156,8 +156,8 @@ class CircleWidget(Widget2DBase, ResizersMixin):
                 if len(self.patch) == 1:
                     # Need to remove the previous patch before using
                     # `_add_patch_to`
-                    self.ax.artists.remove(self.patch[0])
-                    self.patch = []
+                    self._patch[0].remove()
+                    self._patch = []
                     self._add_patch_to(self.ax)
                 self.patch[1].radius = ri
             self._update_resizers()

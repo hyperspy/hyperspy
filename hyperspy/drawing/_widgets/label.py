@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 import matplotlib.transforms as transforms
@@ -93,7 +93,7 @@ class LabelWidget(Widget1DBase):
         ax = self.ax
         trans = transforms.blended_transform_factory(
             ax.transData, ax.transAxes)
-        self.patch = [ax.text(
+        self._patch = [ax.text(
             self._pos[0],
             self._pos[1],
             self.string,

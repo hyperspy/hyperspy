@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 
@@ -29,11 +29,10 @@ class red_chisq_test(goodness_test):
         self.tolerance = tolerance
 
     def test(self, model, ind):
-        return np.abs(
-            model.red_chisq.data[ind] - self.expected) < self.tolerance
+        return abs(model.red_chisq.data[ind] - self.expected) < self.tolerance
 
     def map(self, model, mask):
         rc = model.red_chisq.data
         rc = np.where(np.isnan(rc), -np.inf, rc)
-        ans = np.abs(rc - self.expected) < self.tolerance
+        ans = abs(rc - self.expected) < self.tolerance
         return np.logical_and(mask, ans)

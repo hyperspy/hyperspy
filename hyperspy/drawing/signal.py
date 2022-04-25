@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 # This file contains plotting code generic to the BaseSignal class.
 
@@ -24,6 +24,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from traits.api import Undefined
 
 from hyperspy.drawing.utils import set_axes_decor
+from hyperspy.misc.utils import to_numpy
 
 
 def _plot_1D_component(factors, idx, axes_manager, ax=None,
@@ -38,9 +39,9 @@ def _plot_1D_component(factors, idx, axes_manager, ax=None,
     else:
         x = np.arange(axis.size)
         plt.xlabel('Channel index')
-    ax.plot(x, factors[:, idx], label='%i' % idx)
+    ax.plot(x, to_numpy(factors[:, idx]), label=f'{idx}')
     if comp_label and not same_window:
-        plt.title('%s' % comp_label)
+        plt.title(f'{comp_label}')
     return ax
 
 
@@ -49,10 +50,11 @@ def _plot_2D_component(factors, idx, axes_manager,
                        comp_label=None, cmap=plt.cm.gray,
                        axes_decor='all'
                        ):
+    shape = axes_manager._signal_shape_in_array
+    factors = to_numpy(factors[:, idx].reshape(shape))
     if ax is None:
         ax = plt.gca()
     axes = axes_manager.signal_axes[::-1]
-    shape = axes_manager._signal_shape_in_array
     extent = None
     if calibrate:
         extent = (axes[1].low_value,
@@ -60,10 +62,8 @@ def _plot_2D_component(factors, idx, axes_manager,
                   axes[0].high_value,
                   axes[0].low_value)
     if comp_label:
-        plt.title('%s' % idx)
-    im = ax.imshow(factors[:, idx].reshape(shape),
-                   cmap=cmap, interpolation='nearest',
-                   extent=extent)
+        plt.title(f'{idx}')
+    im = ax.imshow(factors, cmap=cmap, interpolation='nearest', extent=extent)
 
     # Set axes decorations based on user input
     set_axes_decor(ax, axes_decor)
@@ -78,6 +78,7 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
                   comp_label=None, no_nans=True,
                   calibrate=True, cmap=plt.cm.gray,
                   same_window=False, axes_decor='all'):
+    loadings = to_numpy(loadings[idx])
     if ax is None:
         ax = plt.gca()
     if no_nans:
@@ -92,7 +93,7 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
                       axes[0].high_value,
                       axes[1].high_value,
                       axes[1].low_value)
-        im = ax.imshow(loadings[idx].reshape(shape),
+        im = ax.imshow(loadings.reshape(shape),
                        cmap=cmap, extent=extent,
                        interpolation='nearest')
         if calibrate:
@@ -103,9 +104,9 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
             plt.ylabel('pixels')
         if comp_label:
             if same_window:
-                plt.title('%s' % idx)
+                plt.title(f'{idx}')
             else:
-                plt.title('%s #%s' % (comp_label, idx))
+                plt.title(f'{idx} #{idx}')
 
         # Set axes decorations based on user input
         set_axes_decor(ax, axes_decor)
@@ -118,10 +119,9 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
             x = axes[0].axis
         else:
             x = np.arange(axes[0].size)
-        ax.step(x, loadings[idx],
-                label='%s' % idx)
+        ax.step(x, loadings, label=f'{idx}')
         if comp_label and not same_window:
-            plt.title('%s #%s' % (comp_label, idx))
+            plt.title(f'{comp_label} #{idx}')
         plt.ylabel('Score (a. u.)')
         if calibrate:
             if axes[0].units is not Undefined:

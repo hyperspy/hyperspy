@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 import itertools
 import logging
 
@@ -670,7 +670,7 @@ class EDSSpectrum(Signal1D):
                 f'X-ray line intensity of {self.metadata.General.title}: '
                 f'{Xray_line} at {line_energy:.2f} '
                 f'{self.axes_manager.signal_axes[0].units}')
-            img.axes_manager.set_signal_dimension(0)
+            img = img.transpose(signal_axes=[])
             if plot_result and img.axes_manager.navigation_size == 1:
                 if img._lazy:
                     img.compute()

@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
 
@@ -479,7 +479,7 @@ class TestCustomOptimization:
         self.m.append(hs.model.components1D.Gaussian())
 
         def sets_second_parameter_to_two(model, parameters, data, weights=None):
-            return np.abs(parameters[1] - 2)
+            return abs(parameters[1] - 2)
 
         self.fmin = sets_second_parameter_to_two
 

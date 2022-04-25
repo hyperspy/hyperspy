@@ -14,11 +14,10 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pytest
 
 import hyperspy.api as hs
 from hyperspy.signal_tools import ImageContrastEditor
@@ -33,15 +32,14 @@ class TestContrastEditorTool:
     def test_reset_vmin_vmax(self):
         s = self.s
         s.plot(vmin='10th', vmax='99th')
-        ceditor = ImageContrastEditor(s._plot.signal_plot)
 
+        ceditor = ImageContrastEditor(s._plot.signal_plot)
         np.testing.assert_allclose(ceditor._vmin, 9.9)
         np.testing.assert_allclose(ceditor._vmax, 98.01)
 
         ceditor._vmin = 20
         ceditor._vmax = 90
         ceditor._reset_original_settings()
-
         np.testing.assert_allclose(ceditor._vmin, 9.9)
         np.testing.assert_allclose(ceditor._vmax, 98.01)
 
@@ -50,28 +48,20 @@ class TestContrastEditorTool:
         s.plot(vmin='10th', vmax='99th')
         ceditor = ImageContrastEditor(s._plot.signal_plot)
 
-        ceditor.span_selector.set_initial((20, 90))
+        ceditor.span_selector.extents = (20, 90)
+        ceditor._update_image_contrast()
+        ax_image = s._plot.signal_plot.ax.images[0]
+        np.testing.assert_allclose(ax_image.norm.vmin, 20)
+        np.testing.assert_allclose(ax_image.norm.vmax, 90)
 
-        try:
-            ceditor.update_span_selector()
+        ceditor._clear_span_selector()
+        assert not ceditor.span_selector.visible
+        np.testing.assert_allclose(ax_image.norm.vmin, 20)
+        np.testing.assert_allclose(ax_image.norm.vmax, 90)
 
-            ax_image = s._plot.signal_plot.ax.images[0]
-
-            np.testing.assert_allclose(ax_image.norm.vmin, 20)
-            np.testing.assert_allclose(ax_image.norm.vmax, 90)
-
-            ceditor._reset_span_selector()
-
-            np.testing.assert_allclose(ax_image.norm.vmin, 9.9)
-            np.testing.assert_allclose(ax_image.norm.vmax, 98.01)
-
-        except TypeError as e:
-            # Failure sometimes seen with pytest-xdist (parallel tests)
-            # Message: `TypeError: restore_region() argument 1 must be matplotlib.backends._backend_agg.BufferRegion, not None`
-            # See e.g. https://github.com/hyperspy/hyperspy/issues/1688
-            # for a similar issue. Currently unclear what solution is.
-            pytest.skip(f"Skipping reset_span_selector test due to {e}")
-
+        ceditor._update_image_contrast()
+        np.testing.assert_allclose(ax_image.norm.vmin, 9.9)
+        np.testing.assert_allclose(ax_image.norm.vmax, 98.01)
 
     def test_change_navigation_coordinate(self):
         s = self.s
@@ -80,36 +70,21 @@ class TestContrastEditorTool:
 
         np.testing.assert_allclose(ceditor._vmin, 9.9)
         np.testing.assert_allclose(ceditor._vmax, 98.01)
-        try:
-            # Convenience to be able to run test on systems using backends
-            # supporting blit
-            s.axes_manager.indices = (1, 1)
-        except TypeError:
-            pass
 
+        s.axes_manager.indices = (1, 1)
         np.testing.assert_allclose(ceditor._vmin, 409.9)
         np.testing.assert_allclose(ceditor._vmax, 498.01)
 
     def test_vmin_vmax_changed(self):
         s = self.s
         s.plot(vmin='0th', vmax='100th')
-        ceditor = ImageContrastEditor(s._plot.signal_plot)
 
+        ceditor = ImageContrastEditor(s._plot.signal_plot)
         np.testing.assert_allclose(ceditor._vmin, 0.0)
         np.testing.assert_allclose(ceditor._vmax, 99.0)
-        try:
-            # Convenience to be able to run test on systems using backends
-            # supporting blit
-            ceditor._vmin_percentile_changed(0, 10)
-        except TypeError:
-            pass
-        try:
-            # Convenience to be able to run test on systems using backends
-            # supporting blit
-            ceditor._vmax_percentile_changed(100, 99)
-        except TypeError:
-            pass
 
+        ceditor._vmin_percentile_changed(0, 10)
+        ceditor._vmax_percentile_changed(100, 99)
         np.testing.assert_allclose(ceditor._vmin, 9.9)
         np.testing.assert_allclose(ceditor._vmax, 98.01)
 
@@ -125,15 +100,12 @@ def test_close_vmin_vmax():
     ceditor = ImageContrastEditor(image_plot)
 
     # Simulate selecting a range on the histogram
-    ceditor.span_selector_switch(True)
-    ceditor.span_selector.set_initial = (0, 1)
-    ceditor.span_selector.range = display_range
+    ceditor.span_selector.extents = display_range
     plt.pause(0.001) # in case, interactive backend is used
-    ceditor.update_span_selector_traits()
+    ceditor._update_image_contrast()
 
     # Need to use auto=False to pick up the current display when closing
     ceditor.auto = False
     ceditor.close()
 
-    assert image_plot.vmin == display_range[0]
-    assert image_plot.vmax == display_range[1]
+    assert (image_plot.vmin, image_plot.vmax) == display_range

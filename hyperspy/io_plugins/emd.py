@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 # The EMD format is a hdf5 standard proposed at Lawrence Berkeley
 # National Lab (see http://emdatasets.com/ for more information).
@@ -229,7 +229,7 @@ class EMD(object):
         metadata = {}
         for key, value in group.attrs.items():
             metadata[key] = value
-        if signal.data.dtype == np.object:
+        if signal.data.dtype == object:
             self._log.warning('HyperSpy could not load the data in {}, '
                               'skipping it'.format(name))
         else:

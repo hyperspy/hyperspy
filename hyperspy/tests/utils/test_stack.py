@@ -14,13 +14,13 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 import pytest
 
 from hyperspy import utils
-from hyperspy.signal import BaseSignal
+from hyperspy.signals import BaseSignal, Signal1D
 from hyperspy.exceptions import VisibleDeprecationWarning
 
 
@@ -32,10 +32,9 @@ def test_stack_warning():
 class TestUtilsStack:
 
     def setup_method(self, method):
-        s = BaseSignal(np.random.random((3, 2, 5)),
+        s = Signal1D(np.random.random((3, 2, 5)),
                        original_metadata={'om': 'some metadata'}
                        )
-        s.axes_manager.set_signal_dimension(1)
         s.axes_manager[0].name = "x"
         s.axes_manager[1].name = "y"
         s.axes_manager[2].name = "E"

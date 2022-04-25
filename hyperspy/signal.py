@@ -14,16 +14,18 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from collections.abc import MutableMapping
-import copy
 from contextlib import contextmanager
+import copy
 from datetime import datetime
+from functools import partial
 import inspect
 from itertools import product
 import logging
 import numbers
+from packaging.version import Version
 from pathlib import Path
 import warnings
 
@@ -42,23 +44,31 @@ from hyperspy.api_nogui import _ureg
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
 from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.io import assign_signal_subclass
-import hyperspy.misc.utils
-from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.misc.io.tools import ensure_directory
-from hyperspy.misc.utils import iterable_not_string
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import rgb_tools
-from hyperspy.misc.utils import underline, isiterable
+from hyperspy.misc.utils import (
+    add_scalar_axis,
+    DictionaryTreeBrowser,
+    guess_output_signal_size,
+    is_binned, # remove in v2.0
+    is_cupy_array,
+    isiterable,
+    iterable_not_string,
+    process_function_blockwise,
+    rollelem,
+    slugify,
+    to_numpy,
+    underline,
+    )
 from hyperspy.misc.hist_tools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
-from hyperspy.misc.utils import slugify
-from hyperspy.misc.utils import is_binned # remove in v2.0
 from hyperspy.misc.utils import (
-    process_function_blockwise, guess_output_signal_size,_get_block_pattern)
-from hyperspy.misc.utils import add_scalar_axis
+    _get_block_pattern
+    )
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
     RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
@@ -69,13 +79,18 @@ from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
 from hyperspy.docstrings.utils import REBIN_ARGS
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
-from hyperspy.misc.signal_tools import (are_signals_aligned,
-                                        broadcast_signals)
+from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order, check_random_state
-from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
 
 
 _logger = logging.getLogger(__name__)
+
+try:
+    import cupy as cp
+    CUPY_INSTALLED = True  # pragma: no cover
+except ImportError:
+    CUPY_INSTALLED = False
 
 
 class ModelManager(object):
@@ -2073,9 +2088,9 @@ def _plot_x_results(factors, loadings, factors_navigator, loadings_navigator,
                     factors_dim, loadings_dim):
     factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
     if loadings.axes_manager.signal_dimension > 2:
-        loadings.axes_manager.set_signal_dimension(loadings_dim)
+        loadings.axes_manager._set_signal_dimension(loadings_dim)
     if factors.axes_manager.signal_dimension > 2:
-        factors.axes_manager.set_signal_dimension(factors_dim)
+        factors.axes_manager._set_signal_dimension(factors_dim)
     if (loadings_navigator == "smart_auto" and
             loadings.axes_manager.navigation_dimension < 3):
         loadings_navigator = "slider"
@@ -2139,6 +2154,9 @@ class BaseSignal(FancySlicing,
                  MVATools,):
 
     _dtype = "real"
+    # When _signal_dimension=-1, the signal dimension of BaseSignal is defined
+    # by the dimension of the array, and this is implemented by the default
+    # value of navigate=False in BaseDataAxis
     _signal_dimension = -1
     _signal_type = ""
     _lazy = False
@@ -2202,6 +2220,11 @@ class BaseSignal(FancySlicing,
                     obj: The signal that owns the data.
                 """, arguments=['obj'])
             self._load_dictionary(kwds)
+
+        if self._signal_dimension >= 0:
+            # We don't explicitly set the signal_dimension of ragged because
+            # we can't predict it in advance
+            self.axes_manager._set_signal_dimension(self._signal_dimension)
 
     def _create_metadata(self):
         self._metadata = DictionaryTreeBrowser()
@@ -2410,7 +2433,10 @@ class BaseSignal(FancySlicing,
 
     @data.setter
     def data(self, value):
-        if not isinstance(value, da.Array):
+        # Object supporting __array_function__ protocol (NEP-18) or the
+        # array API standard doesn't need to be cast to numpy array
+        if not (hasattr(value, '__array_function__') or
+                hasattr(value, '__array_namespace__')):
             value = np.asanyarray(value)
         self._data = np.atleast_1d(value)
 
@@ -2462,7 +2488,7 @@ class BaseSignal(FancySlicing,
             axes = [axis for axis in self.axes_manager.signal_axes
                     if axis.index_in_array not in list(range(self.data.ndim))]
             self.axes_manager.remove(axes)
-            self.axes_manager.set_signal_dimension(0)
+            self.axes_manager._set_signal_dimension(0)
         else:
             if self._lazy:
                 raise NotImplementedError(
@@ -2682,7 +2708,7 @@ class BaseSignal(FancySlicing,
             axes = []
         return axes
 
-    def __call__(self, axes_manager=None, fft_shift=False):
+    def __call__(self, axes_manager=None, fft_shift=False, as_numpy=False):
         if axes_manager is None:
             axes_manager = self.axes_manager
         indices = axes_manager._getitem_tuple
@@ -2690,6 +2716,8 @@ class BaseSignal(FancySlicing,
             value = self._get_cache_dask_chunk(indices)
         else:
             value = self.data.__getitem__(indices)
+        if as_numpy:
+            value = to_numpy(value)
         value = np.atleast_1d(value)
         if fft_shift:
             value = np.fft.fftshift(value)
@@ -2747,7 +2775,7 @@ class BaseSignal(FancySlicing,
                 "for plotting as a 2D signal.")
 
         self._plot.axes_manager = axes_manager
-        self._plot.signal_data_function = self.__call__
+        self._plot.signal_data_function = partial(self.__call__, as_numpy=True)
 
         if self.metadata.has_item("Signal.quantity"):
             self._plot.quantity_label = self.metadata.Signal.quantity
@@ -2759,9 +2787,9 @@ class BaseSignal(FancySlicing,
 
         def get_static_explorer_wrapper(*args, **kwargs):
             if np.issubdtype(navigator.data.dtype, np.complexfloating):
-                return np.abs(navigator())
+                return abs(navigator(as_numpy=True))
             else:
-                return navigator()
+                return navigator(as_numpy=True)
 
         def get_1D_sum_explorer_wrapper(*args, **kwargs):
             navigator = self
@@ -2774,16 +2802,16 @@ class BaseSignal(FancySlicing,
                 navigator = navigator.sum(
                     am.signal_axes + am.navigation_axes[1:]
                     )
-            return np.nan_to_num(navigator.data).squeeze()
+            return np.nan_to_num(to_numpy(navigator.data)).squeeze()
 
         def get_dynamic_explorer_wrapper(*args, **kwargs):
             navigator.axes_manager.indices = self.axes_manager.indices[
                 navigator.axes_manager.signal_dimension:]
             navigator.axes_manager._update_attributes()
             if np.issubdtype(navigator().dtype, np.complexfloating):
-                return np.abs(navigator())
+                return abs(navigator(as_numpy=True))
             else:
-                return navigator()
+                return navigator(as_numpy=True)
 
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
             if self.navigator is not None:
@@ -2849,18 +2877,20 @@ class BaseSignal(FancySlicing,
                     raise ValueError(
                         "The dimensions of the provided (or stored) navigator "
                         "are not compatible with this signal.")
-            elif navigator == "slider":
-                self._plot.navigator_data_function = "slider"
+            elif isinstance(navigator, str):
+                if navigator == "slider":
+                    self._plot.navigator_data_function = "slider"
+                elif navigator == "data":
+                    if np.issubdtype(self.data.dtype, np.complexfloating):
+                        self._plot.navigator_data_function = \
+                            lambda axes_manager=None: to_numpy(abs(self.data))
+                    else:
+                        self._plot.navigator_data_function = \
+                            lambda axes_manager=None: to_numpy(self.data)
+                elif navigator == "spectrum":
+                    self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
             elif navigator is None:
                 self._plot.navigator_data_function = None
-            elif navigator == "data":
-                if np.issubdtype(self.data.dtype, np.complexfloating):
-                    self._plot.navigator_data_function = lambda axes_manager=None: np.abs(
-                        self.data)
-                else:
-                    self._plot.navigator_data_function = lambda axes_manager=None: self.data
-            elif navigator == "spectrum":
-                self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
             else:
                 raise ValueError(
                     'navigator must be one of "spectrum","auto", '
@@ -3115,13 +3145,13 @@ class BaseSignal(FancySlicing,
         to_index = self.axes_manager[to_axis].index_in_array
         if axis == to_index:
             return self.deepcopy()
-        new_axes_indices = hyperspy.misc.utils.rollelem(
+        new_axes_indices = rollelem(
             [axis_.index_in_array for axis_ in self.axes_manager._axes],
             index=axis,
             to_index=to_index)
 
         s = self._deepcopy_with_new_data(self.data.transpose(new_axes_indices))
-        s.axes_manager._axes = hyperspy.misc.utils.rollelem(
+        s.axes_manager._axes = rollelem(
             s.axes_manager._axes,
             index=axis,
             to_index=to_index)
@@ -3611,7 +3641,11 @@ class BaseSignal(FancySlicing,
             _logger.info("{0!r} data is replaced by its optimized copy, see "
                          "optimize parameter of ``Basesignal.transpose`` "
                          "for more information.".format(self))
-            self.data = np.ascontiguousarray(self.data)
+            # `like` keyword is necessary to support cupy array (NEP-35)
+            kw = {}
+            if Version(np.__version__) >= Version("1.20"):
+                 kw['like'] = self.data
+            self.data = np.ascontiguousarray(self.data, **kw)
 
     def _iterate_signal(self, iterpath=None):
         """Iterates over the signal data. It is faster than using the signal
@@ -4883,8 +4917,10 @@ class BaseSignal(FancySlicing,
     map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, LAZY_OUTPUT_ARG, MAX_WORKERS_ARG)
 
     def _map_all(self, function, inplace=True, **kwargs):
-        """The function has to have either 'axis' or 'axes' keyword argument,
-        and hence support operating on the full dataset efficiently."""
+        """
+        The function has to have either 'axis' or 'axes' keyword argument,
+        and hence support operating on the full dataset efficiently.
+        """
         newdata = function(self.data, **kwargs)
         if inplace:
             self.data = newdata
@@ -4914,6 +4950,7 @@ class BaseSignal(FancySlicing,
     ):
         if lazy_output is None:
             lazy_output = self._lazy
+
         if not self._lazy:
             s_input = self.as_lazy()
         else:
@@ -4930,6 +4967,7 @@ class BaseSignal(FancySlicing,
         chunk_span = [
             chunk_span[i] for i in s_input.axes_manager.signal_indices_in_array
         ]
+
         if not all(chunk_span):
             _logger.info(
                 "The chunk size needs to span the full signal size, rechunking..."
@@ -4938,10 +4976,16 @@ class BaseSignal(FancySlicing,
             old_sig = s_input.rechunk(inplace=False, nav_chunks=None)
         else:
             old_sig = s_input
+
         os_am = old_sig.axes_manager
+
         autodetermine = (
             output_signal_size is None or output_dtype is None
         )  # try to guess output dtype and sig size?
+        if autodetermine and is_cupy_array(self.data):
+            raise ValueError('Autodetermination of `output_signal_size` and '
+                             '`output_dtype` is not supported for cupy array.')
+
         args, arg_keys = old_sig._get_iterating_kwargs(iterating_kwargs)
 
         if autodetermine:  # trying to guess the output d-type and size from one signal
@@ -4984,6 +5028,7 @@ class BaseSignal(FancySlicing,
         )
 
         data_stored = False
+
         if inplace:
             if (
                 not self._lazy
@@ -5004,12 +5049,13 @@ class BaseSignal(FancySlicing,
                 data_stored = True
             else:
                 self.data = mapped
-            self._lazy = lazy_output
             sig = self
         else:
             sig = s_input._deepcopy_with_new_data(mapped)
+
         am = sig.axes_manager
         sig._lazy = lazy_output
+
         if ragged:
             axes_dicts = self.axes_manager._get_navigation_axes_dicts()
             sig.axes_manager.__init__(axes_dicts)
@@ -5018,15 +5064,17 @@ class BaseSignal(FancySlicing,
             am.remove(am.signal_axes[len(output_signal_size) :])
             for ind in range(len(output_signal_size) - am.signal_dimension, 0, -1):
                 am._append_axis(size=output_signal_size[-ind], navigate=False)
+
         if not ragged:
             sig.axes_manager._ragged = False
             if output_signal_size == () and am.navigation_dimension == 0:
                 add_scalar_axis(sig)
             sig.get_dimensions_from_data()
         sig._assign_subclass()
-        if not lazy_output:
-            if not data_stored:
-                sig.data = sig.data.compute(num_workers=max_workers)
+
+        if not lazy_output and not data_stored:
+            sig.data = sig.data.compute(num_workers=max_workers)
+
         return sig
 
     def _get_iterating_kwargs(self, iterating_kwargs):
@@ -5162,7 +5210,7 @@ class BaseSignal(FancySlicing,
                         "rgb16 images")
                 self.data = rgb_tools.regular_array2rgbx(self.data)
                 self.axes_manager.remove(-1)
-                self.axes_manager.set_signal_dimension(2)
+                self.axes_manager._set_signal_dimension(2)
                 self._assign_subclass()
                 return
             else:
@@ -5181,7 +5229,7 @@ class BaseSignal(FancySlicing,
                 offset=0,
                 name="RGB index",
                 navigate=False,)
-            self.axes_manager.set_signal_dimension(1)
+            self.axes_manager._set_signal_dimension(1)
             self._assign_subclass()
             return
         else:
@@ -5348,7 +5396,8 @@ class BaseSignal(FancySlicing,
 
         return None
 
-    def get_current_signal(self, auto_title=True, auto_filename=True):
+    def get_current_signal(self, auto_title=True, auto_filename=True,
+                           as_numpy=False):
         """Returns the data at the current coordinates as a
         :py:class:`~hyperspy.signal.BaseSignal` subclass.
 
@@ -5359,12 +5408,16 @@ class BaseSignal(FancySlicing,
         ----------
         auto_title : bool
             If ``True``, the current indices (in parentheses) are appended to
-            the title, separated by a space.
+            the title, separated by a space, otherwise the title of the signal
+            is used unchanged.
         auto_filename : bool
             If ``True`` and `tmp_parameters.filename` is defined
             (which is always the case when the Signal has been read from a
             file), the filename stored in the metadata is modified by
             appending an underscore and the current indices in parentheses.
+        as_numpy : bool or None
+            Only with cupy array. If ``True``, return the current signal
+            as numpy array, otherwise return as cupy array.
 
         Returns
         -------
@@ -5381,7 +5434,6 @@ class BaseSignal(FancySlicing,
         <Signal2D, title:  (2, 1), dimensions: (32, 32)>
 
         """
-
         metadata = self.metadata.deepcopy()
 
         # Check if marker update
@@ -5404,7 +5456,7 @@ class BaseSignal(FancySlicing,
             lazy=False)
 
         cs = class_(
-            self(),
+            self(as_numpy=as_numpy),
             axes=self.axes_manager._get_signal_axes_dicts(),
             metadata=metadata.as_dictionary())
 
@@ -5474,9 +5526,8 @@ class BaseSignal(FancySlicing,
         else:
             s = BaseSignal(
                 data,
-                axes=self.axes_manager._get_navigation_axes_dicts())
-            s.axes_manager.set_signal_dimension(
-                self.axes_manager.navigation_dimension)
+                axes=self.axes_manager._get_navigation_axes_dicts()
+                ).T
         if isinstance(data, Array):
             s = s.as_lazy()
         return s
@@ -5561,13 +5612,13 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> img = hs.signals.Signal2D(np.ones((3,4,5,6)))
+        >>> img = hs.signals.Signal2D(np.ones((3, 4, 5, 6)))
         >>> img
-        <Signal2D, title: , dimensions: (4, 3, 6, 5)>
+        <Signal2D, title: , dimensions: (4, 3|6, 5)>
         >>> img.as_signal1D(-1+1j)
-        <Signal1D, title: , dimensions: (6, 5, 4, 3)>
+        <Signal1D, title: , dimensions: (6, 5, 4|3)>
         >>> img.as_signal1D(0)
-        <Signal1D, title: , dimensions: (6, 5, 3, 4)>
+        <Signal1D, title: , dimensions: (6, 5, 3|4)>
 
         """
         sp = self.transpose(signal_axes=[spectral_axis], optimize=optimize)
@@ -6413,6 +6464,50 @@ class BaseSignal(FancySlicing,
                 mask.shape != self.axes_manager.signal_shape):
             raise ValueError("The shape of signal mask array must match "
                              "`signal_shape`.")
+
+    def to_device(self):
+        """
+        Transfer data array from host to GPU device memory using cupy.asarray.
+        Lazy signals are not supported by this method, see user guide for
+        information on how to process data lazily using the GPU.
+
+        Raises
+        ------
+        BaseException
+            Raise expection if cupy is not installed.
+        BaseException
+            Raise expection if signal is lazy.
+
+        Returns
+        -------
+        None.
+
+        """
+        if self._lazy:
+            raise LazyCupyConversion
+
+        if not CUPY_INSTALLED:
+            raise BaseException('cupy is required.')
+        else:  # pragma: no cover
+            self.data = cp.asarray(self.data)
+
+    def to_host(self):
+        """
+        Transfer data array from GPU device to host memory.
+
+        Raises
+        ------
+        BaseException
+            Raise expection if signal is lazy.
+
+        Returns
+        -------
+        None.
+
+        """
+        if self._lazy:  # pragma: no cover
+            raise LazyCupyConversion
+        self.data = to_numpy(self.data)
 
 
 ARITHMETIC_OPERATORS = (

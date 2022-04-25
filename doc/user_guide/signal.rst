@@ -84,7 +84,7 @@ This also applies to the :py:attr:`~.signal.BaseSignal.metadata`.
     └── Signal
 	└── signal_type =
 
-Instead of using a list of *axes dictionaries* ``[dict0, dict1]`` during signal 
+Instead of using a list of *axes dictionaries* ``[dict0, dict1]`` during signal
 initialization, you can also pass a list of *axes objects*: ``[axis0, axis1]``.
 
 
@@ -292,7 +292,7 @@ For example, a numpy ragged array can be created as follow:
        >>> arr = np.array([[1, 2, 3], [1]], dtype=object)
        >>> arr
        array([list([1, 2, 3]), list([1])], dtype=object)
-       
+
 Note that the array shape is (2, ):
 
    .. code-block:: python
@@ -329,10 +329,10 @@ To create a hyperspy signal of a numpy ragged array:
 
        >>> s.axes_manager
        <Axes manager, axes: (2|ragged)>
-                   Name |   size |  index |  offset |   scale |  units 
-       ================ | ====== | ====== | ======= | ======= | ====== 
-            <undefined> |      2 |      0 |       0 |       1 | <undefined> 
-       ---------------- | ------ | ------ | ------- | ------- | ------ 
+                   Name |   size |  index |  offset |   scale |  units
+       ================ | ====== | ====== | ======= | ======= | ======
+            <undefined> |      2 |      0 |       0 |       1 | <undefined>
+       ---------------- | ------ | ------ | ------- | ------- | ------
             Ragged axis |               Variable length
 
 .. note::
@@ -345,7 +345,7 @@ To create a hyperspy signal of a numpy ragged array:
            array([[1, 2],
                   [1, 2]], dtype=object)
 
-       
+
     Unlike in the previous example, here the array is not ragged, because
     the length of the nested sequences are equal (2) and numpy will create
     an array of shape (2, 2) instead of (2, ) as in the previous example of
@@ -374,11 +374,11 @@ shape of the ragged array:
        >>> s = hs.signals.BaseSignal(arr)
        >>> s
        <BaseSignal, title: , dimensions: (|2)>
-       
+
        >>> s.ragged = True
        >>> s
-       <BaseSignal, title: , dimensions: (2|ragged)>       
-       
+       <BaseSignal, title: , dimensions: (2|ragged)>
+
 
 .. _signal.binned:
 
@@ -1211,7 +1211,7 @@ signal:
     uint8
 
     # By default `dtype=None`, the dtype is determined by the behaviour of
-    # numpy.sum, in this case, unsigned integer of the same precision as the 
+    # numpy.sum, in this case, unsigned integer of the same precision as the
     # platform interger
     >>> s4 = s.rebin(scale=(5, 2, 1))
     >>> print(s4.data.dtype)
@@ -1864,3 +1864,38 @@ and `y` direction, while the offset is determined by the ``offset`` parameter.
 The fulcrum of the linear ramp is at the origin and the slopes are given in
 units of the axis with the according scale taken into account. Both are
 available via the :py:class:`~.axes.AxesManager` of the signal.
+
+.. versionadded:: 1.7
+
+.. _gpu_processing:
+
+GPU support
+-----------
+
+GPU processing is supported thanks to the numpy dispatch mechanism of array functions
+- read `NEP-18 <https://numpy.org/neps/nep-0018-array-function-protocol.html>`_
+and `NEP-35 <https://numpy.org/neps/nep-0035-array-creation-dispatch-with-array-function.html>`_
+for more information. It means that most HyperSpy functions will work on a GPU
+if the data is a :py:class:`cupy.ndarray` and the required functions are
+implemented in ``cupy``.
+
+.. note::
+    GPU processing with hyperspy requires numpy>=1.20 and dask>=2021.3.0, to be
+    able to use NEP-18 and NEP-35.
+
+.. code-block:: python
+
+    >>> import cupy as cp
+    >>> # Create a cupy array (on GPU device)
+    >>> data = cp.random.random(size=(20, 20, 100, 100))
+    >>> s = hs.signals.Signal2D(data)
+    >>> type(s.data)
+    ... cupy._core.core.ndarray
+
+Two convenience methods are available to transfer data between the host and
+the (GPU) device memory:
+
+- :py:meth:`~.signal.BaseSignal.to_host`
+- :py:meth:`~.signal.BaseSignal.to_device`
+
+For lazy processing, see the :ref:`corresponding section<big_data.gpu>`.

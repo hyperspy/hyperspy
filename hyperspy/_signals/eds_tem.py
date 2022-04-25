@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import warnings
@@ -25,7 +25,7 @@ import numpy as np
 from scipy import constants
 import pint
 
-from hyperspy.signal import BaseSetMetadataItems
+from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy import utils
 from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.defaults_parser import preferences
@@ -399,13 +399,22 @@ class EDSTEMSpectrum(EDSSpectrum):
         --------
         vacuum_mask
         """
+        if (not isinstance(intensities, (list, tuple)) or
+                not isinstance(intensities[0], BaseSignal)):
+            raise ValueError(
+                "The parameter `intensities` must be a list of signals."
+                )
+        elif len(intensities) <= 1:
+            raise ValueError("Several X-ray line intensities are required.")
+        
         if isinstance(navigation_mask, float):
             if self.axes_manager.navigation_dimension > 0:
                 navigation_mask = self.vacuum_mask(navigation_mask, closing)
             else:
                 navigation_mask = None
 
-        xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
+        xray_lines = [intensity.metadata.Sample.xray_lines[0]
+                      for intensity in intensities]
         it = 0
         if absorption_correction:
             if show_progressbar is None:  # pragma: no cover
@@ -559,7 +568,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             utils.plot.plot_signals(composition, **kwargs)
 
         if absorption_correction:
-            _logger.info(f'Conversion found after {it} interations.')
+            _logger.info(f'Convergence reached after {it} interations.')
 
         if method == 'zeta':
             mass_thickness.metadata.General.title = 'Mass thickness'

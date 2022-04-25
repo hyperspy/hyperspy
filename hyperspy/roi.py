@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy.  If not, see <https://www.gnu.org/licenses/#GPL>.
 
 """Region of interests (ROIs).
 
@@ -50,10 +50,11 @@ from functools import partial
 import traits.api as t
 import numpy as np
 
-from hyperspy.events import Events, Event
-from hyperspy.interactive import interactive
 from hyperspy.axes import UniformDataAxis
 from hyperspy.drawing import widgets
+from hyperspy.events import Events, Event
+from hyperspy.interactive import interactive
+from hyperspy.misc.utils import is_cupy_array
 from hyperspy.ui_registry import add_gui_method
 
 
@@ -497,6 +498,15 @@ class BaseInteractiveROI(BaseROI):
                 self.signal_map[signal][1] == axes:
             self.remove_widget(signal)
 
+        if widget.ax is None:
+            if signal._plot is None or signal._plot.signal_plot is None:
+                raise Exception(
+                    f"{repr(signal)} does not have an active plot. Plot the "
+                    "signal before calling this method.")
+
+            ax = _get_mpl_ax(signal._plot, axes)
+            widget.set_mpl_ax(ax)
+
         # Set DataAxes
         widget.axes = axes
         with widget.events.changed.suppress_callback(self._on_widget_change):
@@ -506,15 +516,6 @@ class BaseInteractiveROI(BaseROI):
                 widget.snap_all = snap
             else:
                 widget.snap_position = snap
-
-        if widget.ax is None:
-            if signal._plot is None or signal._plot.signal_plot is None:
-                raise Exception(
-                    f"{repr(signal)} does not have an active plot. Plot the "
-                    "signal before calling this method.")
-
-            ax = _get_mpl_ax(signal._plot, axes)
-            widget.set_mpl_ax(ax)
 
         # Connect widget changes to on_widget_change
         widget.events.changed.connect(self._on_widget_change,
@@ -791,7 +792,8 @@ class SpanROI(BaseInteractiveROI):
         self.left, self.right = value
 
     def _apply_roi2widget(self, widget):
-        widget.set_bounds(left=self.left, right=self.right)
+        if widget.span is not None:
+            widget._set_span_extents(self.left, self.right)
 
     def _get_widget_type(self, axes, signal):
         direction = guess_vertical_or_horizontal(axes=axes, signal=signal)
@@ -1073,8 +1075,15 @@ class CircleROI(BaseInteractiveROI):
         slices = self._make_slices(natax, axes, ranges)
         ir = [slices[natax.index(axes[0])],
               slices[natax.index(axes[1])]]
+
         vx = axes[0].axis[ir[0]] - cx
         vy = axes[1].axis[ir[1]] - cy
+
+        # convert to cupy array when necessary
+        if is_cupy_array(signal.data):
+            import cupy as cp
+            vx, vy = cp.array(vx), cp.array(vy)
+
         gx, gy = np.meshgrid(vx, vy)
         gr = gx**2 + gy**2
         mask = gr > self.r**2
@@ -1117,12 +1126,9 @@ class CircleROI(BaseInteractiveROI):
         if roi._lazy:
             import dask.array as da
             mask = da.from_array(mask, chunks=chunks)
-            mask = da.broadcast_to(mask, tiles)
-            # By default promotes dtype to float if required
-            roi.data = da.where(mask, np.nan, roi.data)
-        else:
-            mask = np.broadcast_to(mask, tiles)
-            roi.data = np.ma.masked_array(roi.data, mask, hard_mask=True)
+        mask = np.broadcast_to(mask, tiles)
+        # roi.data = np.ma.masked_array(roi.data, mask, hard_mask=True)
+        roi.data = np.where(mask, np.nan, roi.data)
         if out is None:
             return roi
         else:

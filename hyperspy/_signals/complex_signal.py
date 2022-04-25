@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from functools import wraps
 
@@ -203,11 +203,11 @@ class ComplexSignal(BaseSignal):
     unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def __call__(self, axes_manager=None, power_spectrum=False,
-                 fft_shift=False):
+                 fft_shift=False, as_numpy=None):
         value = super().__call__(axes_manager=axes_manager,
-                                 fft_shift=fft_shift)
+                                 fft_shift=fft_shift, as_numpy=as_numpy)
         if power_spectrum:
-            value = np.abs(value)**2
+            value = abs(value)**2
         return value
 
     def plot(self,
@@ -345,7 +345,7 @@ class ComplexSignal(BaseSignal):
             argand_diagram.axes_manager.signal_axes[0].name = 'Real'
             units_real = None
         argand_diagram.axes_manager.signal_axes[0].offset = real_edges[0]
-        argand_diagram.axes_manager.signal_axes[0].scale = np.abs(real_edges[0] - real_edges[1])
+        argand_diagram.axes_manager.signal_axes[0].scale = abs(real_edges[0] - real_edges[1])
 
         if self.imag.metadata.Signal.has_item('quantity'):
             quantity_imag, units_imag = parse_quantity(self.imag.metadata.Signal.quantity)
@@ -354,7 +354,7 @@ class ComplexSignal(BaseSignal):
             argand_diagram.axes_manager.signal_axes[1].name = 'Imaginary'
             units_imag = None
         argand_diagram.axes_manager.signal_axes[1].offset = imag_edges[0]
-        argand_diagram.axes_manager.signal_axes[1].scale = np.abs(imag_edges[0] - imag_edges[1])
+        argand_diagram.axes_manager.signal_axes[1].scale = abs(imag_edges[0] - imag_edges[1])
         if units_real:
             argand_diagram.axes_manager.signal_axes[0].units = units_real
         if units_imag:

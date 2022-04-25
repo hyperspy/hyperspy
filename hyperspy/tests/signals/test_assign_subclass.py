@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
 from collections import namedtuple
@@ -115,8 +115,12 @@ class TestConvertBaseSignal:
         assert isinstance(self.s, _lazy_signals.LazySignal)
         assert self.s._lazy
 
+    def test_set_signal_dimension_deprecation_warning(self):
+        with pytest.warns(VisibleDeprecationWarning):
+            self.s.axes_manager.set_signal_dimension(1)
+
     def test_base_to_1d(self):
-        self.s.axes_manager.set_signal_dimension(1)
+        self.s.axes_manager._set_signal_dimension(1)
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.Signal1D)
         self.s.metadata.Signal.record_by = ''
@@ -124,7 +128,7 @@ class TestConvertBaseSignal:
         assert isinstance(self.s, hs.signals.BaseSignal)
 
     def test_base_to_2d(self):
-        self.s.axes_manager.set_signal_dimension(2)
+        self.s.axes_manager._set_signal_dimension(2)
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.Signal2D)
 
@@ -179,12 +183,12 @@ class TestConvertComplexSignal:
         self.s = hs.signals.ComplexSignal(np.zeros((3, 3)))
 
     def test_complex_to_complex1d(self):
-        self.s.axes_manager.set_signal_dimension(1)
+        self.s.axes_manager._set_signal_dimension(1)
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.ComplexSignal1D)
 
     def test_complex_to_complex2d(self):
-        self.s.axes_manager.set_signal_dimension(2)
+        self.s.axes_manager._set_signal_dimension(2)
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.ComplexSignal2D)
 
@@ -204,3 +208,37 @@ class TestConvertComplexSignal1D:
 def test_create_lazy_signal():
     # Check that this syntax is working
     _ = hs.signals.BaseSignal([0, 1, 2], attributes={'_lazy': True})
+
+
+@pytest.mark.parametrize('signal_dim', (0, 1, 2, 4))
+def test_setting_signal_dimension(signal_dim):
+    s = hs.signals.BaseSignal(np.random.random(size=(10, 20, 30, 40)))
+    nav_dim = s.data.ndim - signal_dim
+
+    s.axes_manager._set_signal_dimension(signal_dim)
+
+    if signal_dim == 0:
+        expected_sig_shape = ()
+        expected_nav_shape = s.data.shape[::-1]
+    else:
+        expected_sig_shape = s.data.shape[-signal_dim:][::-1]
+        expected_nav_shape = s.data.shape[:-signal_dim][::-1]
+
+    def expected_size(expected_shape):
+        return np.prod(expected_shape) if expected_shape else 0
+
+    assert s.axes_manager.signal_dimension == signal_dim
+    assert s.axes_manager.navigation_dimension == nav_dim
+    assert len(s.axes_manager.signal_axes) == signal_dim
+    assert len(s.axes_manager.navigation_axes) == nav_dim
+    assert s.axes_manager.signal_shape == expected_sig_shape
+    assert s.axes_manager.navigation_shape == expected_nav_shape
+    assert s.axes_manager.signal_size == expected_size(expected_sig_shape)
+    assert s.axes_manager.navigation_size == expected_size(expected_nav_shape)
+
+    s._assign_subclass()
+    class_mapping = {0:hs.signals.BaseSignal,
+                     1:hs.signals.Signal1D,
+                     2:hs.signals.Signal2D,
+                     4:hs.signals.BaseSignal}
+    assert isinstance(s, class_mapping[signal_dim])

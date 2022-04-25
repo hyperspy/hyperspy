@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import os
 import logging
@@ -173,7 +173,7 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         # centering and scaling
                         yynz = yy != 0
                         coef = np.polyfit(
-                            xxf[yynz], np.log10(np.abs(yy[yynz])), 2)
+                            xxf[yynz], np.log10(abs(yy[yynz])), 2)
                         c1 = coef[2]
                         c2 = coef[1]
                         c3 = coef[0]
@@ -186,7 +186,7 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         # of y in the sub-group of points near peak.
                         if peakgroup < 7:
                             height = np.max(yy)
-                            position = xx[np.argmin(np.abs(yy - height))]
+                            position = xx[np.argmin(abs(yy - height))]
                         else:
                             position = - ((stdev * c2 / (2 * c3)) - avg)
                             height = np.exp(c1 - c3 * (c2 / (2 * c3)) ** 2)
@@ -268,8 +268,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if kwargs.get('ragged', False):
             raise ValueError("Signal1D can't be ragged.")
         super().__init__(*args, **kwargs)
-        if self.axes_manager.signal_dimension != 1:
-            self.axes_manager.set_signal_dimension(1)
 
     def _get_spikes_diagnosis_histogram_data(self, signal_mask=None,
                                              navigation_mask=None,
@@ -282,7 +280,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             axis = axis[~signal_mask]
         if navigation_mask is not None:
             dc = dc[~navigation_mask, :]
-        der = np.abs(np.gradient(dc, axis, axis=-1))
+        der = abs(np.gradient(dc, axis, axis=-1))
         n = ((~navigation_mask).sum() if navigation_mask else
              self.axes_manager.navigation_size)
 
@@ -844,9 +842,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             "instead.")
         deprecation_warning(msg)
 
-        if signal_range == 'interactive':
+        if signal_range == 'interactive':  # pragma: no cover
             self_copy = self.deepcopy()
-            ia = IntegrateArea(self_copy, signal_range)
+            ia = IntegrateArea(self_copy)
             ia.gui(display=display, toolkit=toolkit)
             integrated_signal1D = self_copy
         else:
@@ -1619,7 +1617,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 self.metadata.General.title +
                 " full-width at %.1f maximum right position" % factor)
         for signal in (left, width, right):
-            signal.axes_manager.set_signal_dimension(0)
+            signal = signal.transpose(signal_axes=[])
             signal.set_signal_type("")
         if return_interval is True:
             return [width, left, right]
@@ -1657,10 +1655,4 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
 class LazySignal1D(LazySignal, Signal1D):
 
-    """
-    """
     _lazy = True
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.axes_manager.set_signal_dimension(1)

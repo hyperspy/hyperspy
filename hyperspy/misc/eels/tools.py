@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import math
 import numbers
@@ -373,7 +373,7 @@ def get_edges_near_energy(energy, width=10, only_major=False, order='closest'):
                 if shell[-1] != 'a' and \
                     Emin <= shell_info['onset_energy (eV)'] <= Emax:
                     subshell = '{}_{}'.format(element, shell)
-                    Ediff = np.abs(shell_info['onset_energy (eV)'] - energy)
+                    Ediff = abs(shell_info['onset_energy (eV)'] - energy)
                     valid_edges.append((subshell,
                                         shell_info['onset_energy (eV)'],
                                         Ediff))

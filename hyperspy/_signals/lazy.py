@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from functools import partial
 import logging
@@ -597,10 +597,15 @@ class LazySignal(BaseSignal):
         sig_dim = self.axes_manager.signal_dimension
         chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
         navigation_indices = indices[:-sig_dim]
-        chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, chunks)
+        chunk_slice = _get_navigation_dimension_chunk_slice(
+            navigation_indices,
+            chunks
+            )
+
         if (chunk_slice != self._cache_dask_chunk_slice or
                 self._cache_dask_chunk is None):
-            self._cache_dask_chunk = np.asarray(self.data.__getitem__(chunk_slice))
+            with dummy_context_manager():
+                self._cache_dask_chunk = self.data.__getitem__(chunk_slice).compute()
             self._cache_dask_chunk_slice = chunk_slice
 
         indices = list(indices)

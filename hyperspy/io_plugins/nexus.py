@@ -15,7 +15,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 #
 import logging
 import warnings
@@ -764,8 +764,8 @@ def _find_data(group, search_keys=None, hardlinks_only=False,
                 if isinstance(value, h5py.Dataset):
                     if value.size >= 2:
                         target = _getlink(group, rootkey, key)
-                        if not(value.dtype.type is np.string_ or
-                                value.dtype.type is np.object_):
+                        if not(value.dtype.type is str or
+                                value.dtype.type is object):
                             all_hdf_datasets.append(rootkey)
                             if target is None:
                                 unique_hdf_datasets.append(rootkey)

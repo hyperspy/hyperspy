@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
 import math
@@ -147,7 +147,7 @@ class HartreeSlaterGOS(GOSBase):
         info2_1 = float(GOS_list[6])
         info2_2 = float(GOS_list[7])
         nrow = int(GOS_list[8])
-        self.gos_array = np.array(GOS_list[9:], dtype=np.float64)
+        self.gos_array = np.array(GOS_list[9:], dtype=float)
         # The division by R is not in the equations, but it seems that
         # the the GOS was tabulated this way
         self.gos_array = self.gos_array.reshape(nrow, ncol) / R

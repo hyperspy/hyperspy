@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import dask.array as da
 import numpy as np
@@ -27,12 +27,13 @@ from hyperspy.signals import BaseSignal, Signal2D
 @lazifyTestClass
 class TestTranspose:
     def setup_method(self, method):
-        self.s = BaseSignal(np.random.rand(1, 2, 3, 4, 5, 6))
-        for ax, name in zip(self.s.axes_manager._axes, "abcdef"):
+        s = BaseSignal(np.random.rand(1, 2, 3, 4, 5, 6))
+        for ax, name in zip(s.axes_manager._axes, "abcdef"):
             ax.name = name
         # just to make sure in case default changes
-        self.s.axes_manager.set_signal_dimension(6)
-        self.s.estimate_poissonian_noise_variance()
+        assert s.axes_manager.signal_dimension == 6
+        s.estimate_poissonian_noise_variance()
+        self.s = s
 
     def test_signal_int_transpose(self):
         t = self.s.transpose(signal_axes=2)

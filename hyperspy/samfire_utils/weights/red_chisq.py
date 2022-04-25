@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 
@@ -26,10 +26,10 @@ class ReducedChiSquaredWeight(object):
         self.model = None
 
     def function(self, ind):
-        return np.abs(self.model.red_chisq.data[ind] - self.expected)
+        return abs(self.model.red_chisq.data[ind] - self.expected)
 
     def map(self, mask, slices=slice(None, None)):
         thing = self.model.red_chisq.data[slices].copy()
         thing = thing.astype('float64')
         thing[np.logical_not(mask)] = np.nan
-        return np.abs(thing - self.expected)
+        return abs(thing - self.expected)

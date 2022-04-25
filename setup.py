@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from __future__ import print_function
 
@@ -46,7 +46,7 @@ setup_path = os.path.dirname(__file__)
 
 
 install_req = ['scipy>=1.1',
-               'matplotlib>=3.1.3,<3.5',
+               'matplotlib>=3.1.3',
                'numpy>=1.17.1',
                'traits>=4.5.0',
                'natsort',
@@ -307,8 +307,9 @@ with update_version_when_dev() as version:
                   'hyperspy.misc.holography',
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
-                  'hyperspy.external.mpfit',
                   'hyperspy.external.astropy',
+                  'hyperspy.external.matplotlib',
+                  'hyperspy.external.mpfit',
                   'hyperspy.samfire_utils',
                   'hyperspy.samfire_utils.segmenters',
                   'hyperspy.samfire_utils.weights',
@@ -362,10 +363,11 @@ with update_version_when_dev() as version:
                 'tests/io/JEOL_files/Sample/00_View000/*',
                 'tests/io/JEOL_files/InvalidFrame/*',
                 'tests/io/JEOL_files/InvalidFrame/Sample/00_Dummy-Data/*',
+                'tests/io/tiff_files/*.zip',
                 'tests/io/tiff_files/*.tif',
                 'tests/io/tiff_files/*.tif.gz',
                 'tests/io/tiff_files/*.dm3',
-                'tests/io/npy_files/*.npy',
+                'tests/io/npz_files/*.npz',
                 'tests/io/unf_files/*.unf',
                 'tests/io/bruker_data/*.bcf',
                 'tests/io/bruker_data/*.json',

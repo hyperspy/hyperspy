@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import io
 import contextlib
@@ -87,9 +87,7 @@ class TestCreateEELSModel:
         assert m.convolved
 
     def test_low_loss_bad_shape(self):
-        ll = self.s.deepcopy()
-        ll.axes_manager[-1].offset = -20
-        ll.axes_manager.navigation_shape = (123,)
+        ll = hs.stack([self.s] * 2)
         with pytest.raises(ValueError):
             _ = self.s.create_model(ll=ll)
 

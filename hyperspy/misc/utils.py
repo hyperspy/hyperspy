@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from operator import attrgetter
 import warnings
@@ -28,11 +28,13 @@ import unicodedata
 from contextlib import contextmanager
 import importlib
 import logging
+from packaging.version import Version
 
+import dask.array as da
 import numpy as np
 
 from hyperspy.misc.signal_tools import broadcast_signals
-from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
 
@@ -40,7 +42,8 @@ _logger = logging.getLogger(__name__)
 
 
 def attrsetter(target, attrs, value):
-    """Sets attribute of the target to specified value, supports nested
+    """
+    Sets attribute of the target to specified value, supports nested
     attributes. Only creates a new attribute if the object supports such
     behaviour (e.g. DictionaryTreeBrowser does)
 
@@ -1328,7 +1331,8 @@ def process_function_blockwise(data,
     chunk_nav_shape = tuple([data.shape[i] for i in sorted(nav_indexes)])
     output_shape = chunk_nav_shape + tuple(output_signal_size)
     # Pre-allocating the output array
-    output_array = np.empty(output_shape, dtype=dtype)
+    kw = get_numpy_kwargs(data)
+    output_array = np.empty(output_shape, dtype=dtype, **kw)
     if len(args) == 0:
         # There aren't any BaseSignals for iterating
         for nav_index in np.ndindex(chunk_nav_shape):
@@ -1543,3 +1547,97 @@ def is_binned(signal, axis=-1):
         return signal.metadata.Signal.binned
     else:
         return signal.axes_manager[axis].is_binned
+
+
+def is_cupy_array(array):
+    """
+    Convenience function to determine if an array is a cupy array
+
+    Parameters
+    ----------
+    array : array
+        The array to determine whether it is a cupy array or not.
+
+    Returns
+    -------
+    bool
+        True if it is cupy array, False otherwise.
+
+    """
+    try:
+        import cupy as cp
+        return isinstance(array, cp.ndarray)
+    except ImportError:
+        return False
+
+
+def to_numpy(array):
+    """
+    Returns the array as a numpy array. Raises an error when a dask array is
+    provided.
+
+    Parameters
+    ----------
+    array : numpy.ndarray or cupy.ndarray
+        Array to convert to numpy array.
+
+    Returns
+    -------
+    array : numpy.ndarray
+    
+    Raises
+    ------
+    ValueError
+        If the provided array is a dask array
+
+    """
+    if isinstance(array, da.Array):
+        raise LazyCupyConversion
+    if is_cupy_array(array):
+        import cupy as cp
+        array = cp.asnumpy(array)
+
+    return array
+
+
+def get_array_module(array):
+    """
+    Returns the array module for the given array
+
+    Parameters
+    ----------
+    array : numpy or cupy array
+        Array to determine whether numpy or cupy should be used
+
+    Returns
+    -------
+    module : module
+
+    """
+    module = np
+    try:
+        import cupy as cp
+        if isinstance(array, cp.ndarray):
+            module = cp
+    except ImportError:
+        pass
+
+    return module
+
+
+def get_numpy_kwargs(array):
+    """
+    Convenience funtion to return a dictionary containing the `like` keyword
+    if numpy>=1.20.
+
+    Note
+    ----
+    `like` keyword is an experimental feature introduced in numpy 1.20 and is
+    pending on acceptance of NEP 35
+
+    """
+    kw = {}
+    if Version(np.__version__) >= Version("1.20"):
+         kw['like'] = array
+
+    return kw

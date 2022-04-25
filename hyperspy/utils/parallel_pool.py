@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import logging
@@ -76,7 +76,7 @@ class ParallelPool:
         self.pool = None
         if num_workers is None:
             num_workers = np.inf
-        self.num_workers = np.abs(num_workers)
+        self.num_workers = abs(num_workers)
         self.timestep = 0.001
         self.setup(ipyparallel=ipyparallel)
 

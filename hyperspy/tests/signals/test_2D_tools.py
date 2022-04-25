@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from unittest import mock
 
@@ -25,6 +25,8 @@ from scipy.ndimage import fourier_shift
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.exceptions import SignalDimensionError
+from hyperspy.signal_tools import LineInSignal2D, Signal2DCalibration
 
 
 def _generate_parameters():
@@ -175,6 +177,154 @@ class TestAlignTools:
         assert np.all(d_al == self.aligned)
 
 
+@lazifyTestClass
+class TestGetSignal2DScale:
+    def setup_method(self, method):
+        self.s0 = hs.signals.Signal2D(np.ones((100, 50)))
+        self.s1 = hs.signals.Signal2D(np.ones((100, 200)))
+
+    def test_default_scale(self):
+        s = self.s0
+        x0, y0, x1, y1, length = 10.0, 10.0, 30.0, 10.0, 80.0
+        scale0 = s._get_signal2d_scale(x0=x0, y0=y0, x1=x1, y1=y1, length=length)
+        x0, y0, x1, y1 = 10, 10, 30, 10
+        scale1 = s._get_signal2d_scale(x0=x0, y0=y0, x1=x1, y1=y1, length=length)
+        # With the default scale (1), scale0 and scale1 have the same value
+        assert scale0 == scale1 == 4.0
+
+    def test_non_one_scale(self):
+        s = self.s0
+        sa = s.axes_manager.signal_axes
+        x0, y0, x1, y1, length = 4.0, 2.0, 4.0, 6.0, 16.0
+        sa[0].scale, sa[1].scale = 0.1, 0.1
+        scale0 = s._get_signal2d_scale(x0=x0, y0=y0, x1=x1, y1=y1, length=length)
+        x0, y0, x1, y1 = 4, 2, 4, 6
+        scale1 = s._get_signal2d_scale(x0=x0, y0=y0, x1=x1, y1=y1, length=length)
+        assert scale0 == 0.4
+        assert scale1 == 4
+
+    def test_diagonal(self):
+        length = (100 ** 2 + 50 ** 2) ** 0.5
+        s = self.s1
+        sa = s.axes_manager.signal_axes
+        sa[0].scale, sa[1].scale = 0.5, 1.0
+        scale0 = s._get_signal2d_scale(
+            x0=0.0, y0=0.0, x1=50.0, y1=50.0, length=length / 2
+        )
+        scale1 = s._get_signal2d_scale(x0=0, y0=0, x1=100, y1=50, length=length)
+        assert scale0 == 0.5
+        assert scale1 == 1.0
+
+    def test_string_input(self):
+        s = self.s0
+        with pytest.raises(TypeError):
+            s._get_signal2d_scale(x0="2.", y0="1", x1="3", y1="5", length=2)
+
+
+@lazifyTestClass
+class TestCalibrate2D:
+    def setup_method(self, method):
+        self.s0 = hs.signals.Signal2D(np.ones((100, 100)))
+        self.s1 = hs.signals.Signal2D(np.ones((100, 200)))
+        self.s2 = hs.signals.Signal2D(np.ones((3, 30, 40)))
+        self.s3 = hs.signals.Signal2D(np.ones((2, 3, 30, 440)))
+
+    def test_cli_default_scale(self):
+        s = self.s0
+        x0, y0, x1, y1, new_length = 10.0, 10.0, 30.0, 10.0, 5.0
+        units = "test"
+        s._calibrate(x0=x0, y0=y0, x1=x1, y1=y1, new_length=new_length, units=units)
+        sa = s.axes_manager.signal_axes
+        assert sa[0].units == sa[1].units == units
+        assert sa[0].scale == sa[1].scale == 0.25
+
+    def test_cli_non_one_scale(self):
+        s = self.s0
+        sa = s.axes_manager.signal_axes
+        sa[0].scale, sa[1].scale = 0.25, 0.25
+        x0, y0, x1, y1, new_length = 10.0, 10.0, 10.0, 20.0, 40.0
+        s._calibrate(x0=x0, y0=y0, x1=x1, y1=y1, new_length=new_length)
+        assert sa[0].scale == sa[1].scale == 1.0
+        x0, y0, x1, y1 = 10, 10, 10, 20
+        s._calibrate(x0=x0, y0=y0, x1=x1, y1=y1, new_length=new_length)
+        assert sa[0].scale == sa[1].scale == 4.0
+
+    def test_non_interactive_missing_parameters(self):
+        s = self.s1
+        with pytest.raises(ValueError, match="With interactive=False x0, y0,*"):
+            s.calibrate(x0=20, y0=30, interactive=False)
+
+    def test_non_interactive_not_same_input_scale(self, caplog):
+        s = self.s1
+        s.axes_manager[0].scale = 0.1
+        s.axes_manager[1].scale = 0.5
+        s.calibrate(x0=5, y0=2, x1=9, y1=5, new_length=2.5, interactive=False)
+        assert "The previous scaling is not the same for both axes" in caplog.text
+
+    def test_non_interactive_not_same_input_units(self, caplog):
+        s = self.s1
+        s.axes_manager[0].units = "nm"
+        s.axes_manager[1].units = "mm"
+        s.calibrate(x0=5, y0=2, x1=9, y1=5, new_length=2.5, interactive=False)
+        assert "The signal axes does not have the same units" in caplog.text
+
+    def test_non_interactive_default_scale(self):
+        s = self.s1
+        x0, y0, x1, y1, new_length = 10.0, 10.0, 10.0, 20.0, 40.0
+        units = "nm"
+        s.calibrate(
+            x0=x0,
+            y0=y0,
+            x1=x1,
+            y1=y1,
+            new_length=new_length,
+            interactive=False,
+            units=units,
+        )
+        sa = s.axes_manager.signal_axes
+        assert sa[0].units == sa[1].units == units
+        assert sa[0].scale == sa[1].scale == 4.0
+        x0, y0, x1, y1 = 10, 10, 10, 20
+        s.calibrate(
+            x0=x0, y0=y0, x1=x1, y1=y1, new_length=new_length, interactive=False
+        )
+        assert sa[0].scale == sa[1].scale == 4.0
+        assert sa[0].units == sa[1].units == units
+
+    def test_3d_signal(self):
+        s = self.s2
+        x0, y0, x1, y1, new_length = 10.0, 10.0, 30.0, 10.0, 5.0
+        units = "test"
+        s._calibrate(x0=x0, y0=y0, x1=x1, y1=y1, new_length=new_length, units=units)
+        sa = s.axes_manager.signal_axes
+        assert sa[0].units == sa[1].units == units
+        assert sa[0].scale == sa[1].scale == 0.25
+
+    def test_4d_signal(self):
+        s = self.s3
+        x0, y0, x1, y1, new_length = 10.0, 10.0, 30.0, 10.0, 5.0
+        units = "test"
+        s._calibrate(x0=x0, y0=y0, x1=x1, y1=y1, new_length=new_length, units=units)
+        sa = s.axes_manager.signal_axes
+        assert sa[0].units == sa[1].units == units
+        assert sa[0].scale == sa[1].scale == 0.25
+
+    def test_non_interactive_non_one_scale(self):
+        s = self.s1
+        x0, y0, x1, y1, new_length = 10.0, 10.0, 10.0, 20.0, 40.0
+        sa = s.axes_manager.signal_axes
+        sa[0].scale, sa[1].scale = 5.0, 5.0
+        s.calibrate(
+            x0=x0, y0=y0, x1=x1, y1=y1, new_length=new_length, interactive=False
+        )
+        assert sa[0].scale == sa[1].scale == 20.0
+        x0, y0, x1, y1 = 10, 10, 10, 20
+        s.calibrate(
+            x0=x0, y0=y0, x1=x1, y1=y1, new_length=new_length, interactive=False
+        )
+        assert sa[0].scale == sa[1].scale == 4.0
+
+
 def test_add_ramp():
     s = hs.signals.Signal2D(np.indices((3, 3)).sum(axis=0) + 4)
     s.add_ramp(-1, -1, -4)
@@ -185,3 +335,51 @@ def test_add_ramp_lazy():
     s = hs.signals.Signal2D(np.indices((3, 3)).sum(axis=0) + 4).as_lazy()
     s.add_ramp(-1, -1, -4)
     npt.assert_almost_equal(s.data.compute(), 0)
+
+
+def test_line_in_signal2d_wrong_signal_dimension():
+    s = hs.signals.Signal1D(np.zeros(100))
+    with pytest.raises(SignalDimensionError):
+        _ = LineInSignal2D(s)
+
+
+def test_line_in_signal2d():
+    s = hs.signals.Signal2D(np.zeros((100, 100)))
+    _ = LineInSignal2D(s)
+
+
+def test_signal_2d_calibration_wrong_signal_dimension():
+    s = hs.signals.Signal1D(np.zeros(100))
+    with pytest.raises(SignalDimensionError):
+        _ = Signal2DCalibration(s)
+
+
+def test_signal_2d_calibration():
+    s = hs.signals.Signal2D(np.zeros((100, 100)))
+    s2dc = Signal2DCalibration(s)
+    s2dc.x0, s2dc.x1 = 1, 11
+    s2dc.y0, s2dc.y1 = 20, 20
+    s2dc.new_length, s2dc.units = 50, "nm"
+    s2dc.apply()
+    assert s.axes_manager[0].scale == 5
+    assert s.axes_manager[1].scale == 5
+    assert s.axes_manager[0].units == "nm"
+    assert s.axes_manager[1].units == "nm"
+
+
+def test_signal_2d_calibration_no_new_length(caplog):
+    s = hs.signals.Signal2D(np.zeros((100, 100)))
+    s2dc = Signal2DCalibration(s)
+    s2dc.x0, s2dc.x1 = 1, 11
+    s2dc.y0, s2dc.y1 = 20, 20
+    s2dc.apply()
+    assert "Input a new length before pressing apply." in caplog.text
+
+
+def test_signal_2d_calibration_value_nan(caplog):
+    s = hs.signals.Signal2D(np.zeros((100, 100)))
+    s2dc = Signal2DCalibration(s)
+    s2dc.x0, s2dc.x1, s2dc.y0, s2dc.y1 = 1, np.nan, 20, 20
+    s2dc.new_length = 50
+    s2dc.apply()
+    assert "Line position is not valid" in caplog.text

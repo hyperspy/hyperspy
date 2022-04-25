@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 from scipy.fftpack import fft2
@@ -90,4 +90,4 @@ def estimate_fringe_contrast_fourier(
 
     fft_exp = fft2(data)
 
-    return 2 * np.abs(fft_exp[tuple(sb_position)]) / np.abs(fft_exp[0, 0])
+    return 2 * abs(fft_exp[tuple(sb_position)]) / abs(fft_exp[0, 0])

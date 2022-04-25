@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 from hyperspy.misc.math_tools import closest_nice_number
@@ -101,9 +101,9 @@ class ScaleBar(object):
 
     def remove(self):
         if self.line is not None:
-            self.ax.lines.remove(self.line)
+            self.line.remove()
         if self.text is not None:
-            self.ax.texts.remove(self.text)
+            self.text.remove()
 
     def plot_scale(self, line_width=1):
         self.remove()

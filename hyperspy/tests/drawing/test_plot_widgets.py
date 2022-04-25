@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import matplotlib
 import numpy as np
@@ -219,6 +219,12 @@ class TestPlotRangeWidget():
         self.s = s
         self.range_widget = range_widget
 
+    def test_snap_position_span_None(self):
+        # When span is None, there shouldn't an error
+        assert self.range_widget.span is None
+        self.range_widget.snap_position = True
+        assert self.range_widget.snap_position
+
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_range(self):
@@ -227,18 +233,18 @@ class TestPlotRangeWidget():
         s.plot()
         range_widget.set_mpl_ax(s._plot.signal_plot.ax)
         assert range_widget.ax == s._plot.signal_plot.ax
-        assert range_widget.color == 'red'  # default color
+        assert range_widget.color == 'r'  # default color
         assert range_widget.position == (0.0, )
         assert range_widget.size == (1.2, )
-        assert range_widget.span.rect.get_alpha() == 0.5
+        assert range_widget.span.artists[0].get_alpha() == 0.25
 
         w = widgets.RangeWidget(s.axes_manager, color='blue')
         w.set_mpl_ax(s._plot.signal_plot.ax)
         w.set_ibounds(left=4, width=3)
         assert w.color == 'blue'
-        color_rgba = matplotlib.colors.to_rgba('blue', alpha=0.5)
-        assert w.span.rect.get_fc() == color_rgba
-        assert w.span.rect.get_ec() == color_rgba
+        color_rgba = matplotlib.colors.to_rgba('blue', alpha=0.25)
+        assert w.span.artists[0].get_fc() == color_rgba
+        assert w.span.artists[0].get_ec() == color_rgba
         np.testing.assert_allclose(w.position[0], 4.8)
         np.testing.assert_allclose(w.size[0], 3.6)
 
@@ -247,6 +253,8 @@ class TestPlotRangeWidget():
         assert w2.ax == s._plot.signal_plot.ax
 
         w2.set_bounds(left=24.0, width=12.0)
+        assert w2.position[0] == 24.0
+        assert w2.size[0] == 12.0
         w2.color = 'green'
         assert w2.color == 'green'
         w2.alpha = 0.25
@@ -299,32 +307,3 @@ class TestPlotRangeWidget():
         assert range_v.size == (15.0, )
 
         return im._plot.signal_plot.figure
-
-    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                                   tolerance=default_tol, style=style_pytest_mpl)
-    def test_plot_ModifiableSpanSelector(self):
-        s = self.s
-        s.plot()
-        from hyperspy.drawing._widgets.range import ModifiableSpanSelector
-        ax = s._plot.signal_plot.ax
-        span_v = ModifiableSpanSelector(ax, direction='vertical')
-        span_v.set_initial((15, 20))
-        assert span_v.range == (15, 20)
-
-        span_v.range = (25, 30)
-        assert span_v.range == (25, 30)
-
-        span_h = ModifiableSpanSelector(ax, direction='horizontal',
-                                        rectprops={'color': 'g', 'alpha': 0.2})
-        color_rgba = matplotlib.colors.to_rgba('g', alpha=0.2)
-        assert span_h.rect.get_fc() == color_rgba
-        assert span_h.rect.get_ec() == color_rgba
-        span_h.set_initial((50.4, 55.2))
-        np.testing.assert_allclose(span_h.range[0], 50.4)
-        np.testing.assert_allclose(span_h.range[1], 55.2)
-
-        span_h.range = (40, 45)
-        assert span_h.range == (40, 45)
-        ax.figure.canvas.draw_idle()
-
-        return s._plot.signal_plot.figure

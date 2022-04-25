@@ -14,37 +14,43 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 import pytest
 import traits.api as t
 
+from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.array_tools import round_half_towards_zero
 from hyperspy.roi import (CircleROI, Line2DROI, Point1DROI, Point2DROI,
                           RectangularROI, SpanROI, _get_central_half_limits_of_axis)
 from hyperspy.signals import Signal1D, Signal2D
 
 
+@lazifyTestClass
 class TestROIs():
 
     def setup_method(self, method):
         np.random.seed(0)  # Same random every time, Line2DROi test requires it
-        self.s_s = Signal1D(np.random.rand(50, 60, 4))
-        self.s_s.axes_manager[0].scale = 5
-        self.s_s.axes_manager[0].units = 'nm'
-        self.s_s.axes_manager[1].scale = 5
-        self.s_s.axes_manager[1].units = 'nm'
+        s_s = Signal1D(np.random.rand(50, 60, 4))
+        s_s.axes_manager[0].scale = 5
+        s_s.axes_manager[0].units = 'nm'
+        s_s.axes_manager[1].scale = 5
+        s_s.axes_manager[1].units = 'nm'
 
         # 4D dataset
-        self.s_i = Signal2D(np.random.rand(100, 100, 4, 4))
+        s_i = Signal2D(np.random.rand(100, 100, 4, 4))
 
         # Generate ROI for test of angle measurements
-        self.r = []
+        r = []
         t = np.tan(30. / 180. * np.pi)
         for x in [-1., -t, t, 1]:
             for y in [-1., -t, t, 1]:
-                self.r.append(Line2DROI(x1=0., x2=x, y1=0., y2=y))
+                r.append(Line2DROI(x1=0., x2=x, y1=0., y2=y))
+
+        self.s_s = s_s
+        self.s_i = s_i
+        self.r = r
 
     def test_point1d_spectrum(self):
         s = self.s_s
@@ -53,6 +59,9 @@ class TestROIs():
         scale = s.axes_manager[0].scale
         assert (sr.axes_manager.navigation_shape ==
                 s.axes_manager.navigation_shape[1:])
+        if s._lazy:
+            s.compute()
+            sr.compute()
         np.testing.assert_equal(
             sr.data, s.data[:, int(35 / scale), ...])
 
@@ -61,6 +70,9 @@ class TestROIs():
         r = Point1DROI(37.)
         sr = r(s)
         scale = s.axes_manager[0].scale
+        if s._lazy:
+            s.compute()
+            sr.compute()
         np.testing.assert_equal(
             sr.data, s.data[:, int(round(37 / scale)), ...])
         r = Point1DROI(39.)
@@ -75,6 +87,9 @@ class TestROIs():
         scale = s.axes_manager[0].scale
         assert (sr.axes_manager.navigation_shape ==
                 s.axes_manager.navigation_shape[1:])
+        if s._lazy:
+            s.compute()
+            sr.compute()
         np.testing.assert_equal(
             sr.data, s.data[:, int(35 / scale), ...])
 
@@ -89,6 +104,9 @@ class TestROIs():
         scale = s.axes_manager[0].scale
         assert (sr.axes_manager.navigation_shape ==
                 s.axes_manager.navigation_shape[2:])
+        if s._lazy:
+            s.compute()
+            sr.compute()
         np.testing.assert_equal(
             sr.data, s.data[int(40 / scale), int(35 / scale), ...])
 
@@ -99,6 +117,9 @@ class TestROIs():
         scale = s.axes_manager.signal_axes[0].scale
         assert (sr.axes_manager.signal_shape ==
                 s.axes_manager.signal_shape[2:])
+        if s._lazy:
+            s.compute()
+            sr.compute()
         np.testing.assert_equal(
             sr.data, s.data[..., int(2 / scale), int(1 / scale)])
 
@@ -120,6 +141,9 @@ class TestROIs():
         n = (30 - 15) / scale
         assert (sr.axes_manager.navigation_shape ==
                 (n, ) + s.axes_manager.navigation_shape[1:])
+        if s._lazy:
+            s.compute()
+            sr.compute()
         np.testing.assert_equal(
             sr.data, s.data[:, int(15 / scale):int(30 // scale), ...])
 
@@ -162,21 +186,20 @@ class TestROIs():
         np.testing.assert_equal(r2(s).data, s.data)
 
         w2.set_bounds(x=-10)  # below min x
-        assert w2._pos[0] == 0
+        assert w2._pos[0] == -0.1
         w2.set_bounds(width=0.1)  # below min width
         assert w2._size[0] == 0.2
         w2.set_bounds(width=30.0)  # above max width
-        assert w2._size[0] == 12
+        assert w2._size[0] == 11.8
 
-        # the combination of the two is not valid
         w2.set_bounds(x=10, width=20)
-        assert w2._pos[0] == 0
-        assert w2._size[0] == 12
+        assert w2._pos[0] == 9.9
+        np.testing.assert_allclose(w2._size[0], 1.8)
 
         w2.set_bounds(x=10)
         w2.set_bounds(width=20)
-        assert w2._pos[0] == 0
-        assert w2._size[0] == 12
+        assert w2._pos[0] == 9.9
+        np.testing.assert_allclose(w2._size[0], 1.8)
 
     def test_spanroi_getitem(self):
         r = SpanROI(15, 30)
@@ -205,6 +228,9 @@ class TestROIs():
         scale = s.axes_manager.signal_axes[0].scale
         n = (3 - 1) / scale
         assert sr.axes_manager.signal_shape == (n, )
+        if s._lazy:
+            s.compute()
+            sr.compute()
         np.testing.assert_equal(sr.data, s.data[...,
                                                 int(1 / scale):int(3 / scale)])
 
@@ -222,6 +248,9 @@ class TestROIs():
               int(round_half_towards_zero(12.2 / scale1)),))
         assert (sr.axes_manager.navigation_shape ==
                 (n[0][1] - n[0][0], n[1][1] - n[1][0]))
+        if s._lazy:
+            s.compute()
+            sr.compute()
         np.testing.assert_equal(
             sr.data, s.data[n[1][0]:n[1][1], n[0][0]:n[0][1], ...])
 
@@ -235,7 +264,11 @@ class TestROIs():
         # Test adding roi to plot
         s.plot()
         w = r.add_widget(s)
-        np.testing.assert_equal(r(s).data, s.data)
+        sr = r(s)
+        if s._lazy:
+            s.compute()
+            sr.compute()
+        np.testing.assert_equal(sr.data, s.data)
 
         # width and height should range between 1 and axes shape
         with pytest.raises(ValueError):
@@ -308,33 +341,33 @@ class TestROIs():
         # Check that mask is same for all images:
         for i in range(n):
             for j in range(n):
-                assert (np.all(sr.data.mask[j, i, :] == True) or
-                        np.all(sr.data.mask[j, i, :] == False))
-                assert (np.all(sr_ann.data.mask[j, i, :] == True) or
-                        np.all(sr_ann.data.mask[j, i, :] == False))
+                assert (np.all(sr.data[j, i, :] == np.nan) or
+                        np.all(sr.data[j, i, :] != np.nan))
+                assert (np.all(sr_ann.data[j, i, :] == np.nan) or
+                        np.all(sr_ann.data[j, i, :] != np.nan))
         # Check that the correct elements has been masked out:
-        mask = sr.data.mask[:, :, 0]
+        mask = sr.data[:, :, 0]
         print(mask)   # To help debugging, this shows the shape of the mask
         np.testing.assert_array_equal(
-            np.where(mask.flatten())[0],
+            np.where(np.isnan(mask.flatten()))[0],
             [0, 1, 6, 7, 8, 15, 48, 55, 56, 57, 62, 63])
-        mask_ann = sr_ann.data.mask[:, :, 0]
+        mask_ann = sr_ann.data[:, :, 0]
         print(mask_ann)   # To help debugging, this shows the shape of the mask
         np.testing.assert_array_equal(
-            np.where(mask_ann.flatten())[0],
+            np.where(np.isnan(mask_ann.flatten()))[0],
             [0, 1, 6, 7, 8, 10, 11, 12, 13, 15, 17, 18, 19, 20, 21, 22, 25,
              26, 27, 28, 29, 30, 33, 34, 35, 36, 37, 38, 41, 42, 43, 44, 45, 46,
              48, 50, 51, 52, 53, 55, 56, 57, 62, 63])
         # Check that mask works for sum
-        assert np.sum(sr.data) == (n**2 - 3 * 4) * 4
-        assert np.sum(sr_ann.data) == 4 * 5 * 4
+        assert np.nansum(sr.data) == (n**2 - 3 * 4) * 4
+        assert np.nansum(sr_ann.data) == 4 * 5 * 4
 
         s.plot()
         r_signal = r.interactive(signal=s)
         r_ann_signal = r_ann.interactive(signal=s)
 
-        assert np.sum(r_signal.sum().data) == (n**2 - 3 * 4) * 4
-        assert np.sum(r_ann_signal.sum().data) == 4 * 5 * 4
+        assert np.sum(r_signal.nansum().data) == (n**2 - 3 * 4) * 4
+        assert np.sum(r_ann_signal.nansum().data) == 4 * 5 * 4
 
     def test_circle_getitem(self):
         r = CircleROI(20, 25, 20)
@@ -580,34 +613,44 @@ class TestROIs():
         np.testing.assert_allclose(line.length, np.sqrt(8))
 
 
+@lazifyTestClass
 class TestInteractive:
 
     def setup_method(self, method):
-        self.s = Signal1D(np.arange(2000).reshape((20, 10, 10)))
+        s = Signal1D(np.arange(2000).reshape((20, 10, 10)))
+        self.s = s
 
     def test_out(self):
         s = self.s
         r = RectangularROI(left=3, right=7, top=2, bottom=5)
         sr = r(s)
-        d = s.data.sum()
-        sr.data += 2
-        assert d + sr.data.size * 2 == s.data.sum()
-        r.x += 2
+        sr_ref = r(s)
+
+        sr.data = sr.data + 2
+
         sr2 = r(s)
         r(s, out=sr)
+
+        if s._lazy:
+            s.compute()
+            sr.compute()
+            sr2.compute()
+            sr_ref.compute()
+
         np.testing.assert_array_equal(sr2.data, sr.data)
+        np.testing.assert_array_equal(sr2.data, sr_ref.data)
 
     def test_out_special_case(self):
         s = self.s.inav[0]
         r = CircleROI(3, 5, 2)
         sr = r(s)
-        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+        np.testing.assert_array_equal(np.where(np.isnan(sr.data.flatten()))[0],
                                       [0, 3, 12, 15])
         r.r_inner = 1
         r.cy = 16
         sr2 = r(s)
         r(s, out=sr)
-        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+        np.testing.assert_array_equal(np.where(np.isnan(sr.data.flatten()))[0],
                                       [0, 3, 5, 6, 9, 10, 12, 15])
         np.testing.assert_array_equal(sr2.data, sr.data)
 
@@ -615,12 +658,12 @@ class TestInteractive:
         s = self.s.inav[0]
         r = CircleROI(3, 5, 2)
         sr = r.interactive(s, None, color="blue")
-        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+        np.testing.assert_array_equal(np.where(np.isnan(sr.data.flatten()))[0],
                                       [0, 3, 12, 15])
         r.r_inner = 1
         r.cy = 16
         sr2 = r(s)
-        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+        np.testing.assert_array_equal(np.where(np.isnan(sr.data.flatten()))[0],
                                       [0, 3, 5, 6, 9, 10, 12, 15])
         np.testing.assert_array_equal(sr2.data, sr.data)
 
@@ -688,7 +731,7 @@ class TestInteractive:
             assert w.position == old_position if snap else new_position
             assert w.snap_position == snap
 
-        span = SpanROI(4, 5)
+        span = SpanROI(4.01, 5)
         _ = span.interactive(s, **kwargs)
         for w in span.widgets:
             old_position = w.position
@@ -702,6 +745,7 @@ class TestInteractive:
             # check that changing snap is working fine
             new_snap = not snap
             w.snap_all = new_snap
+            old_position = w.position
             new_position = (4.2, )
             w.position = new_position
             assert w.position == old_position if new_snap else new_position

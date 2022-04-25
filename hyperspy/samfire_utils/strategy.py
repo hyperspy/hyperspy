@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 
@@ -300,7 +300,7 @@ class LocalStrategy(SamfireStrategy):
             par = []
             for radius in radii:
                 radius_top = np.ceil(radius)
-                par.append(np.abs(np.arange(-radius_top, radius_top + 1)))
+                par.append(abs(np.arange(-radius_top, radius_top + 1)))
             meshg = np.array(np.meshgrid(*par, indexing='ij'))
             self._untruncated = np.sqrt(np.sum(meshg ** 2.0, axis=0))
             distance_mask = np.array(

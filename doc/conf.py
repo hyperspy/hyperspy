@@ -107,7 +107,7 @@ pygments_style = 'sphinx'
 
 # -- Options for HTML output ---------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
+# The theme to use for HTML and HTML Help pages. See the documentation for
 # a list of builtin themes.
 html_theme = 'sphinx_rtd_theme'
 
@@ -245,7 +245,8 @@ towncrier_draft_working_directory = ".."
 
 
 # Add the hyperspy website to the intersphinx domains
-intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
+intersphinx_mapping = {'cupy': ('https://docs.cupy.dev/en/stable', None),
+                       'python': ('https://docs.python.org/3', None),
                        'h5py': ('https://docs.h5py.org/en/stable', None),
                        'hyperspyweb': ('https://hyperspy.org/', None),
                        'matplotlib': ('https://matplotlib.org', None),

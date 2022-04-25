@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import numpy as np
@@ -202,6 +202,19 @@ class Test_quantification:
             TEM_md.probe_area, 1.2)
         np.testing.assert_approx_equal(TEM_md.Detector.EDS.real_time, 3.1)
 
+    def test_quant_one_intensity_error(self):
+        s = self.signal
+        method = 'CL'
+        kfactors = [1, 2.0009344042484134]
+        intensities = s.get_lines_intensity()[:1]
+        assert len(intensities) == 1    
+        with pytest.raises(ValueError):
+            _ = s.quantification(intensities, method, kfactors)
+
+        intensities = s.get_lines_intensity()[0]
+        with pytest.raises(ValueError):
+            _ = s.quantification(intensities, method, kfactors)
+
     def test_quant_lorimer(self):
         s = self.signal
         method = 'CL'
@@ -281,8 +294,7 @@ class Test_quantification:
                                    atol=1e-3)
         np.testing.assert_allclose(res3[0][0].data, np.ones((2, 2)) * 31.816908,
                                    atol=1e-3)
-        np.testing.assert_allclose(res[0].data, res4[0][0].data, atol=1e-5)
-
+        np.testing.assert_allclose(res[0].data, res4[0][0].data, atol=1e-5)     
 
     def test_quant_zeta(self):
         s = self.signal

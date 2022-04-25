@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import numpy as np
@@ -290,11 +290,11 @@ class Test_EdgesRange:
         assert np.array_equal(self.er.description_all, description_all)
 
     def test_selected_span_selector(self):
+        # self.er.span_selector.extents = (500, 550)
         self.er.ss_left_value = 500
         self.er.ss_right_value = 550
 
         edges, energy, relevance, description = self.er.update_table()
-
         assert set(edges) == set(
             ("Sb_M4", "O_K", "Pd_M3", "Sb_M5", "Rh_M2", "V_L2", "V_L3", "Sc_L1")
         )
@@ -330,8 +330,8 @@ class Test_EdgesRange:
     def test_complementary_edge(self):
         self.signal.plot(plot_edges=["V_L2"])
         er = EdgesRange(self.signal)
-        er.ss_left_value = 500
         er.ss_right_value = 550
+        er.ss_left_value = 500
         _ = er.update_table()
 
         assert er.active_edges == ["V_L2"]
@@ -341,8 +341,8 @@ class Test_EdgesRange:
         self.signal.plot(plot_edges=["V_L2"])
         er = EdgesRange(self.signal)
         er.complementary = False
-        er.ss_left_value = 500
         er.ss_right_value = 550
+        er.ss_left_value = 500
         _ = er.update_table()
 
         assert er.active_edges == ["V_L2"]
@@ -351,12 +351,12 @@ class Test_EdgesRange:
     def test_keep_valid_edge(self):
         self.signal.plot(plot_edges=["V_L2"])
         er = EdgesRange(self.signal)
-        er.ss_left_value = 500
         er.ss_right_value = 550
+        er.ss_left_value = 500
         _ = er.update_table()
 
-        er.ss_left_value = 600
         er.ss_right_value = 650
+        er.ss_left_value = 600
         _ = er.update_table()
 
         assert er.active_edges == ["V_L1"]
@@ -365,12 +365,12 @@ class Test_EdgesRange:
     def test_remove_out_of_range_edge(self):
         self.signal.plot(plot_edges=["V_L2"])
         er = EdgesRange(self.signal)
-        er.ss_left_value = 500
         er.ss_right_value = 550
+        er.ss_left_value = 500
         _ = er.update_table()
 
-        er.ss_left_value = 700
         er.ss_right_value = 750
+        er.ss_left_value = 700
         _ = er.update_table()
 
         assert len(er.active_edges) == 0
@@ -396,8 +396,8 @@ class Test_EdgesRange:
     def test_remove_all_edge_markers(self):
         self.signal.plot(plot_edges=["V_L2"])
         er = EdgesRange(self.signal)
-        er.ss_left_value = 500
         er.ss_right_value = 550
+        er.ss_left_value = 500
         _ = er.update_table()
 
         er._clear_markers()
@@ -408,8 +408,8 @@ class Test_EdgesRange:
     def test_on_figure_changed(self):
         self.signal.plot(plot_edges=["V_L2"])
         er = EdgesRange(self.signal)
-        er.ss_left_value = 500
         er.ss_right_value = 550
+        er.ss_left_value = 500
         _ = er.update_table()
 
         vl1 = self.signal._edge_markers["V_L1"][0]

@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 from hyperspy._signals.common_signal2d import CommonSignal2D
@@ -32,8 +32,6 @@ class ComplexSignal2D(ComplexSignal, CommonSignal2D):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        if self.axes_manager.signal_dimension != 2:
-            self.axes_manager.set_signal_dimension(2)
 
     def add_phase_ramp(self, ramp_x, ramp_y, offset=0):
         """Add a linear phase ramp to the wave.

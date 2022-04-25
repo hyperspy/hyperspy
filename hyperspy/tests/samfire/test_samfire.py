@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
 import gc
@@ -115,7 +115,7 @@ def generate_test_model():
 
     s = Signal1D(total)
     s.data = rnd.poisson(lam=s.data) + 0.1
-    s.change_dtype(np.float16)
+    s.change_dtype(float)
     s.estimate_poissonian_noise_variance()
 
     m = s.inav[:, :7].create_model()
@@ -150,7 +150,7 @@ class TestSamfireEmpty:
         self.shape = (7, 15)
         n_im = 50
         s = hs.signals.Signal1D(np.ones(self.shape + (n_im,)) + 3.)
-        s.change_dtype(np.float16)
+        s.change_dtype(float)
         s.estimate_poissonian_noise_variance()
         m = s.create_model()
         m.append(hs.model.components1D.Gaussian())
@@ -419,7 +419,7 @@ class TestSamfireWorker:
             l1.function(ax - self.centres[2])
         s = hs.signals.Signal1D(np.array([d, d]))
         s.add_poissonian_noise()
-        s.change_dtype(np.float16)
+        s.change_dtype(float)
         s.metadata.Signal.set_item("Noise_properties.variance",
                                    s.deepcopy() + 1.)
         m = s.create_model()

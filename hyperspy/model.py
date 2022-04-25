@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
 import importlib
@@ -1221,8 +1221,8 @@ class BaseModel(list):
 
     def _calculate_chisq(self):
         variance = self._get_variance()
-        d = self(onlyactive=True).ravel() - self.signal()[np.where(
-            self.channel_switches)]
+        d = self(onlyactive=True).ravel() - self.signal(as_numpy=True)[
+            np.where(self.channel_switches)]
         d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
 
@@ -1545,7 +1545,10 @@ class BaseModel(list):
                 # Will proceed with unweighted fitting.
                 weights = None
 
-            args = (self.signal()[np.where(self.channel_switches)], weights)
+            args = (
+                self.signal(as_numpy=True)[np.where(self.channel_switches)],
+                weights
+                )
 
             if optimizer == "lm":
                 if bounded:
@@ -1965,7 +1968,10 @@ class BaseModel(list):
                 # 3. leave earlier because we don't need to go iterate over
                 #    the navigation indices
                 kwargs['only_current'] = False
-                kwargs['show_progressbar'] = show_progressbar
+                # Add the 'show_progressbar' only with lazy signal to avoid
+                # passing it down to 'ridge_regression'
+                if self.signal._lazy:
+                    kwargs['show_progressbar'] = show_progressbar
                 self.fit( **kwargs)
 
                 # TODO: check what happen to linear twinned parameter

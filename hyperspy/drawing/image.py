@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import math
 from packaging.version import Version
@@ -62,8 +62,8 @@ class ImagePlot(BlittedFigure):
 
     """ % PLOT2D_DOCSTRING
 
-    def __init__(self, title=""):
-        super(ImagePlot, self).__init__()
+    def __init__(self, title="", **kwargs):
+        super().__init__()
         self.data_function = None
         self.data_function_kwargs = {}
 
@@ -258,7 +258,7 @@ class ImagePlot(BlittedFigure):
                 self._auto_scalebar = False
                 self._auto_axes_ticks = True
         if xaxis.is_uniform and yaxis.is_uniform:
-            self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
+            self._aspect = abs(factor * xaxis.scale / yaxis.scale)
         else:
             self._aspect = 1.0
 
@@ -382,7 +382,7 @@ class ImagePlot(BlittedFigure):
                 pass
 
         self.connect()
-        self.figure.canvas.draw()
+        self.render_figure()
 
     def _add_colorbar(self):
         # Bug extend='min' or extend='both' and power law norm
@@ -567,10 +567,7 @@ class ImagePlot(BlittedFigure):
                 )
             else:
                 ims[0].changed()
-            if self.figure.canvas.supports_blit:
-                self._update_animated()
-            else:
-                self.figure.canvas.draw_idle()
+            self.render_figure()
         else:  # no signal have been drawn yet
             new_args = {'extent': self._extent,
                         'aspect': self._aspect,
@@ -583,7 +580,6 @@ class ImagePlot(BlittedFigure):
                     new_args['norm'] = norm
             new_args.update(kwargs)
             self.ax.imshow(data, **new_args)
-            self.figure.canvas.draw_idle()
 
         if self.axes_ticks == 'off':
             self.ax.set_axis_off()
@@ -611,8 +607,10 @@ class ImagePlot(BlittedFigure):
         """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def connect(self):
-        self.figure.canvas.mpl_connect('key_press_event',
-                                        self.on_key_press)
+        # in case the figure is not displayed
+        if self.figure is not None:
+            self.figure.canvas.mpl_connect('key_press_event',
+                                            self.on_key_press)
         if self.axes_manager:
             if self.update not in self.axes_manager.events.indices_changed.connected:
                 self.axes_manager.events.indices_changed.connect(self.update, [])

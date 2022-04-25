@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import numpy as np
@@ -168,9 +168,8 @@ class Test2D:
 class Test3D_SignalDim0:
 
     def setup_method(self, method):
-        self.signal = signals.BaseSignal(np.arange(24).reshape((2, 3, 4)))
+        self.signal = signals.BaseSignal(np.arange(24).reshape((2, 3, 4))).T
         self.data = self.signal.data.copy()
-        self.signal.axes_manager.set_signal_dimension(0)
 
     def test_signal_indexer_signal_dim0_idx_error1(self):
         s = self.signal
@@ -309,8 +308,7 @@ class Test3D_Navigate_1:
 class TestFloatArguments:
 
     def setup_method(self, method):
-        self.signal = signals.BaseSignal(np.arange(10))
-        self.signal.axes_manager.set_signal_dimension(1)
+        self.signal = signals.Signal1D(np.arange(10))
         self.signal.axes_manager[0].scale = 0.5
         self.signal.axes_manager[0].offset = 0.25
         self.data = self.signal.data.copy()
@@ -360,9 +358,8 @@ class TestFloatArguments:
 class TestEllipsis:
 
     def setup_method(self, method):
-        self.signal = signals.BaseSignal(np.arange(2 ** 5).reshape(
+        self.signal = signals.Signal1D(np.arange(2 ** 5).reshape(
             (2, 2, 2, 2, 2)))
-        self.signal.axes_manager.set_signal_dimension(1)
         self.data = self.signal.data.copy()
 
     def test_in_between(self):

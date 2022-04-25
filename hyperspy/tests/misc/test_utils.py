@@ -14,8 +14,9 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import dask.array as da
 import numpy as np
 import pytest
 
@@ -31,8 +32,19 @@ from hyperspy.misc.utils import (
     closest_power_of_two,
     shorten_name,
     is_binned,
+    is_cupy_array,
+    to_numpy,
+    get_array_module
 )
-from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
+
+try:
+    import cupy as cp
+    CUPY_INSTALLED = True
+except ImportError:
+    CUPY_INSTALLED = False
+
+skip_cupy = pytest.mark.skipif(not CUPY_INSTALLED, reason="cupy is required")
 
 
 def test_slugify():
@@ -135,3 +147,33 @@ def test_is_binned():
     with pytest.warns(VisibleDeprecationWarning, match="Use of the `binned`"):
         s.metadata.set_item("Signal.binned", True)
     assert is_binned(s) == s.metadata.Signal.binned
+
+
+@skip_cupy
+def test_is_cupy_array():
+    cp_array = cp.array([0, 1, 2])
+    np_array = np.array([0, 1, 2])
+    assert is_cupy_array(cp_array)
+    assert not is_cupy_array(np_array)
+
+
+@skip_cupy
+def test_to_numpy():
+    cp_array = cp.array([0, 1, 2])
+    np_array = np.array([0, 1, 2])
+    np.testing.assert_allclose(to_numpy(cp_array), np_array)
+    np.testing.assert_allclose(to_numpy(np_array), np_array)
+
+
+def test_to_numpy_error():
+    da_array = da.array([0, 1, 2])
+    with pytest.raises(LazyCupyConversion):
+        to_numpy(da_array)
+
+
+@skip_cupy
+def test_get_array_module():
+    cp_array = cp.array([0, 1, 2])
+    np_array = np.array([0, 1, 2])
+    assert get_array_module(cp_array) == cp
+    assert get_array_module(np_array) == np

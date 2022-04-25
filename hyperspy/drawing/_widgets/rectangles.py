@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -46,7 +46,7 @@ class SquareWidget(Widget2DBase):
         """
         xy = self._get_patch_xy()
         xs, ys = self.size
-        self.patch = [plt.Rectangle(
+        self._patch = [plt.Rectangle(
             xy, xs, ys,
             fill=False,
             lw=self.border_thickness,

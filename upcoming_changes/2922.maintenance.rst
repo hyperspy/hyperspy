@@ -1,0 +1,1 @@
+Add support for matplotlib 3.5, simplify maintenance of ``RangeWidget`` and some signal tools.

@@ -14,11 +14,11 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 
-from scipy.linalg import svd
+from numpy.linalg import svd
 
 
 def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
@@ -77,7 +77,7 @@ def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
                 S = np.sum(S)
                 B = A @ W
 
-                if np.abs(S - Sold) < tol * S:
+                if abs(S - Sold) < tol * S:
                     converged = True
                     break
 
@@ -103,7 +103,7 @@ def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
                     denom = u.T @ u - v.T @ v - gamma * (usum ** 2 - vsum ** 2) * oo_d
 
                     theta = 0.25 * np.arctan2(numer, denom)
-                    maxTheta = max(maxTheta, np.abs(theta))
+                    maxTheta = max(maxTheta, abs(theta))
 
                     R = np.array(
                         [

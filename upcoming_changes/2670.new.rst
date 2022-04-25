@@ -1,0 +1,1 @@
+Add initial support for :ref:`GPU computation<gpu_processing>` using cupy
