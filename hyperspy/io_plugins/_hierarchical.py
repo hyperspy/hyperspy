@@ -638,7 +638,7 @@ class HierarchicalWriter:
             new_data = np.empty(shape=data.shape, dtype=object)
             shapes = np.empty(shape=data.shape, dtype=object)
             for i in np.ndindex(data.shape):
-                new_data[i] = np.ndarray.flatten(data[i])
+                new_data[i] = data[i].ravel()
                 shapes[i] = np.array(data[i].shape)
             shape_dset = cls._get_object_dset(group, shapes, "ragged_shapes", shapes.shape, **kwds)
             cls._store_data(shapes, shape_dset, group, 'ragged_shapes', chunks=shapes.shape)
