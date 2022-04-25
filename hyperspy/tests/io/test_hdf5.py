@@ -814,6 +814,22 @@ def test_save_ragged_array(tmp_path, file):
     assert s.__class__ == s1.__class__
 
 
+@zspy_marker
+def test_save_ragged_dim2(tmp_path, file):
+    x = np.empty(5, dtype=object)
+    for i in range(1, 6):
+        x[i - 1] = np.array([list(range(i)), list(range(i))])
+
+    s = BaseSignal(x, ragged=True)
+
+    filename = tmp_path / file
+    s.save(filename)
+    s2 = load(filename)
+
+    for i, j in zip(s.data,s2.data):
+        np.testing.assert_array_equal(i,j)
+
+
 def test_load_missing_extension(caplog):
     path = my_path / "hdf5_files" / "hspy_ext_missing.hspy"
     with pytest.warns(UserWarning):
