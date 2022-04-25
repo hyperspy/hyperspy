@@ -747,103 +747,115 @@ def test_JEOL_SightX():
             assert s.axes_manager[i].units == file[2]
 
 
-def test_hamamatsu_streak_loadwarnings():
-    file = 'test_hamamatsu_streak_SCAN.tif'
-    fname = os.path.join(MY_PATH2, file)
-
-    # No hamamatsu_streak_axis_type argument should :
-    # - raise warning
-    # - Initialise uniform data axis
-    with pytest.warns(UserWarning):
-        s = hs.load(fname)
-        assert s.axes_manager.all_uniform
-
-    #Invalid hamamatsu_streak_axis_type argument should:
-    # - raise warning
-    # - Initialise uniform data axis
-    with pytest.warns(UserWarning):
-        s = hs.load(fname,hamamatsu_streak_axis_type='xxx')
-        assert s.axes_manager.all_uniform
-
-    #Explicitly calling hamamatsu_streak_axis_type='uniform'
-    # should NOT raise a warning
-    with warnings.catch_warnings():
-        warnings.simplefilter('error')
-        s = hs.load(fname, hamamatsu_streak_axis_type='uniform')
-        assert s.axes_manager.all_uniform
-
-def test_hamamatsu_streak_scanfile():
-    file = 'test_hamamatsu_streak_SCAN.tif'
-    fname = os.path.join(MY_PATH2, file)
-
-    with pytest.warns(UserWarning):
-        s = hs.load(fname)
-
-    assert s.data.shape == (508, 672)
-    assert s.axes_manager[1].units == 'ps'
-    np.testing.assert_allclose(s.axes_manager[1].scale, 2.3081, rtol=1E-3)
-    np.testing.assert_allclose(s.axes_manager[1].offset, 652.3756, rtol=1E-3)
-    np.testing.assert_allclose(s.axes_manager[0].scale, 0.01714, rtol=1E-3)
-    np.testing.assert_allclose(s.axes_manager[0].offset, 231.0909, rtol=1E-3)
+class TestReadHamamatsu:
+    
+    path = Path(TMP_DIR.name)
+    
+    @classmethod
+    def setup_class(cls):
+        zipf = os.path.join(MY_PATH2, "tiff_hamamatsu.zip")
+        with zipfile.ZipFile(zipf, 'r') as zipped:
+            zipped.extractall(cls.path)
 
 
-def test_hamamatsu_streak_focusfile():
-    file = 'test_hamamatsu_streak_FOCUS.tif'
-    fname = os.path.join(MY_PATH2, file)
+    def test_hamamatsu_streak_loadwarnings(self):
+        file = 'test_hamamatsu_streak_SCAN.tif'
+        fname = os.path.join(self.path, file)
+    
+        # No hamamatsu_streak_axis_type argument should :
+        # - raise warning
+        # - Initialise uniform data axis
+        with pytest.warns(UserWarning):
+            s = hs.load(fname)
+            assert s.axes_manager.all_uniform
+    
+        #Invalid hamamatsu_streak_axis_type argument should:
+        # - raise warning
+        # - Initialise uniform data axis
+        with pytest.warns(UserWarning):
+            s = hs.load(fname,hamamatsu_streak_axis_type='xxx')
+            assert s.axes_manager.all_uniform
+    
+        #Explicitly calling hamamatsu_streak_axis_type='uniform'
+        # should NOT raise a warning
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            s = hs.load(fname, hamamatsu_streak_axis_type='uniform')
+            assert s.axes_manager.all_uniform
 
-    with pytest.warns(UserWarning):
-        s = hs.load(fname)
-
-    assert s.data.shape == (508, 672)
-    assert s.axes_manager[1].units == ''
-    np.testing.assert_allclose(s.axes_manager[1].scale, 1.0, rtol=1E-3)
-    np.testing.assert_allclose(s.axes_manager[1].offset, 0.0, rtol=1E-3, atol=1e-5)
-    np.testing.assert_allclose(s.axes_manager[0].scale, 0.01714, rtol=1E-3)
-    np.testing.assert_allclose(s.axes_manager[0].offset, 231.0909, rtol=1E-3)
-
-
-def test_hamamatsu_streak_non_uniform_load():
-    file = 'test_hamamatsu_streak_SCAN.tif'
-    fname = os.path.join(MY_PATH2, file)
-
-    s = hs.load(fname, hamamatsu_streak_axis_type='data')
-
-    np.testing.assert_allclose(s.original_metadata.ImageDescriptionParsed.Scaling.ScalingYaxis,
-                               s.axes_manager[1].axis, rtol=1e-5)
-
-    s = hs.load(fname, hamamatsu_streak_axis_type='functional')
-
-    np.testing.assert_allclose(s.original_metadata.ImageDescriptionParsed.Scaling.ScalingYaxis,
-                               s.axes_manager[1].axis, rtol=1e-5)
-
-
-def test_is_hamamatsu_streak():
-    file = 'test_hamamatsu_streak_SCAN.tif'
-    fname = os.path.join(MY_PATH2, file)
-
-    with pytest.warns(UserWarning):
-        s = hs.load(fname)
-
-    omd = s.original_metadata.as_dictionary()
-
-    omd['Artist'] = "TAPTAP"
-
-    assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
-
-    _ = omd.pop('Artist')
-
-    assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
-
-    omd.update({'Artist': "Copyright Hamamatsu GmbH, 2018"})
-
-    omd['Software'] = "TAPTAPTAP"
-
-    assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
-
-    _ = omd.pop('Software')
-
-    assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
-
-    omd.update({'Software': "HPD-TA 9.5 pf4"})
-
-    assert hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
+    def test_hamamatsu_streak_scanfile(self):
+        file = 'test_hamamatsu_streak_SCAN.tif'
+        fname = os.path.join(self.path, file)
+    
+        with pytest.warns(UserWarning):
+            s = hs.load(fname)
+    
+        assert s.data.shape == (508, 672)
+        assert s.axes_manager[1].units == 'ps'
+        np.testing.assert_allclose(s.axes_manager[1].scale, 2.3081, rtol=1E-3)
+        np.testing.assert_allclose(s.axes_manager[1].offset, 652.3756, rtol=1E-3)
+        np.testing.assert_allclose(s.axes_manager[0].scale, 0.01714, rtol=1E-3)
+        np.testing.assert_allclose(s.axes_manager[0].offset, 231.0909, rtol=1E-3)
+    
+    def test_hamamatsu_streak_focusfile(self):
+        file = 'test_hamamatsu_streak_FOCUS.tif'
+        fname = os.path.join(self.path, file)
+    
+        with pytest.warns(UserWarning):
+            s = hs.load(fname)
+    
+        assert s.data.shape == (508, 672)
+        assert s.axes_manager[1].units == ''
+        np.testing.assert_allclose(s.axes_manager[1].scale, 1.0, rtol=1E-3)
+        np.testing.assert_allclose(s.axes_manager[1].offset, 0.0, rtol=1E-3, atol=1e-5)
+        np.testing.assert_allclose(s.axes_manager[0].scale, 0.01714, rtol=1E-3)
+        np.testing.assert_allclose(s.axes_manager[0].offset, 231.0909, rtol=1E-3)
+    
+    def test_hamamatsu_streak_non_uniform_load(self):
+        file = 'test_hamamatsu_streak_SCAN.tif'
+        fname = os.path.join(self.path, file)
+    
+        s = hs.load(fname, hamamatsu_streak_axis_type='data')
+    
+        np.testing.assert_allclose(
+            s.original_metadata.ImageDescriptionParsed.Scaling.ScalingYaxis,
+            s.axes_manager[1].axis, rtol=1e-5
+            )
+    
+        s = hs.load(fname, hamamatsu_streak_axis_type='functional')
+    
+        np.testing.assert_allclose(
+            s.original_metadata.ImageDescriptionParsed.Scaling.ScalingYaxis,
+            s.axes_manager[1].axis, rtol=1e-5
+            )
+    
+    def test_is_hamamatsu_streak(self):
+        file = 'test_hamamatsu_streak_SCAN.tif'
+        fname = os.path.join(self.path, file)
+    
+        with pytest.warns(UserWarning):
+            s = hs.load(fname)
+    
+        omd = s.original_metadata.as_dictionary()
+    
+        omd['Artist'] = "TAPTAP"
+    
+        assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
+    
+        _ = omd.pop('Artist')
+    
+        assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
+    
+        omd.update({'Artist': "Copyright Hamamatsu GmbH, 2018"})
+    
+        omd['Software'] = "TAPTAPTAP"
+    
+        assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
+    
+        _ = omd.pop('Software')
+    
+        assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
+    
+        omd.update({'Software': "HPD-TA 9.5 pf4"})
+    
+        assert hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
