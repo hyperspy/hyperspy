@@ -1,1 +1,0 @@
-Fix bug for the hydrogenic gdos k edge

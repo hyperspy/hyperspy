@@ -1,1 +1,0 @@
-Add lazy loading for :ref:`JEOL EDS data<jeol_format-label>`

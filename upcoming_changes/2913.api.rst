@@ -1,4 +1,0 @@
-Deprecate the ability to directly set ``metadata`` and ``original_metadata`` Signal 
-attributes in favor of using :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item` 
-and :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods or 
-specifying metadata when creating signals

@@ -1,1 +1,0 @@
-Add new markers :py:mod:`~.drawing._markers.arrow`, :py:mod:`~.drawing._markers.ellipse` and filled :py:mod:`~.drawing._markers.rectangle`.
