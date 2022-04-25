@@ -31,7 +31,7 @@ class GaussianHF(Expression):
 
     r"""Normalized gaussian function component, with a ``fwhm`` parameter
     instead of the ``sigma`` parameter, and a ``height`` parameter instead of
-    the ``A`` parameter (scaling difference of
+    the area parameter ``A`` (scaling difference of
     :math:`\sigma \sqrt{\left(2\pi\right)}`).
     This makes the parameter vs. peak maximum independent of :math:`\sigma`,
     and thereby makes locking of the parameter more viable. As long as there
@@ -71,7 +71,7 @@ class GaussianHF(Expression):
     Attributes
     ----------
     A : float
-        Convenience attribute to get, set the height and defined for
+        Convenience attribute to get, set the area and defined for
         compatibility with `Gaussian` component.
     sigma : float
         Convenience attribute to get, set the width and defined for
