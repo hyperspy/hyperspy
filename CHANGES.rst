@@ -25,7 +25,7 @@ New features
 - Add initial support for :ref:`GPU computation<gpu_processing>` using cupy (`#2670 <https://github.com/hyperspy/hyperspy/issues/2670>`_)
 - Add ``height`` property to the :py:class:`~._components.gaussian2d.Gaussian2D` component (`#2688 <https://github.com/hyperspy/hyperspy/issues/2688>`_)
 - Support for reading and writing :ref:`TVIPS image stream data<tvips_format-label>` (`#2780 <https://github.com/hyperspy/hyperspy/issues/2780>`_)
-- Add in `zspy` format: hspy specification with the zarr format. Particularly useful to speed up loading and saving large by using concurrency. (`#2798 <https://github.com/hyperspy/hyperspy/issues/2798>`_)
+- Add in :ref:`zspy format<zspy-format>`: hspy specification with the zarr format. Particularly useful to speed up loading and :ref:`saving large datasets<big_data.saving>` by using concurrency. (`#2825 <https://github.com/hyperspy/hyperspy/issues/2825>`_)
 - Support for reading :ref:`DENSsolutions Impulse data<dens-format>` (`#2828 <https://github.com/hyperspy/hyperspy/issues/2828>`_)
 - Add lazy loading for :ref:`JEOL EDS data<jeol_format-label>` (`#2846 <https://github.com/hyperspy/hyperspy/issues/2846>`_)
 - Add :ref:`html representation<lazy._repr_html_>` for lazy signals and the
