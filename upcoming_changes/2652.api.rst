@@ -1,1 +1,0 @@
-``metadata.Signal.binned`` is replaced by an axis parameter, e. g. ``axes_manager[-1].is_binned``

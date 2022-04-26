@@ -1,1 +1,0 @@
-Support for reading :ref:`DENSsolutions Impulse data<dens-format>`

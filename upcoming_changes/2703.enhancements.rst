@@ -1,1 +1,0 @@
-Improve :py:meth:`~.signal.BaseSignal.map` function in :py:class:`~.signal.BaseSignal` by utilizing dask for both lazy and non-lazy signals. This includes adding a `lazy_output` parameter, meaning non-lazy signals now can output lazy results. See the :ref:`user guide<lazy_output-map-label>` for more information.

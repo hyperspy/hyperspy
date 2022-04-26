@@ -1,1 +1,0 @@
-Fix bug when the spikes_removal_tool would not work interactively for signal with 0-dimension navigation space.

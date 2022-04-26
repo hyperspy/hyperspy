@@ -1,1 +1,0 @@
-Add ``dtype`` argument to :py:meth:`~.signal.BaseSignal.rebin`

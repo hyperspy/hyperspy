@@ -1,1 +1,0 @@
-Lazy signals now caches the current data chunk when using multifit and when plotting, improving performance.

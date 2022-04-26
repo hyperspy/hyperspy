@@ -1,1 +1,0 @@
-Add :py:meth:`~._signals.eels.EELSSpectrum.vacuum_mask` method to :py:class:`~._signals.eels.EELSSpectrum` signal

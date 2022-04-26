@@ -45,7 +45,8 @@ class Gaussian2D(Expression):
     Parameters
     ----------
     A : float
-        Amplitude (height of the peak scaled by :math:`2 \pi s_x s_y`).
+        Volume (height of the peak scaled by :math:`2 \pi s_x s_y`) --
+        eqivalent to the area in a 1D Gaussian.
     sigma_x : float
         Width (scale parameter) of the Gaussian distribution in `x` direction.
     sigma_y : float

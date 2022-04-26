@@ -1,3 +1,0 @@
-Add metadata about the file-reading and saving operations to the Signals
-produced by :py:func:`~hyperspy.io.load` and :py:meth:`~.signal.BaseSignal.save`
-(see the :ref:`metadata structure <general-file-metadata>` section of the user guide)

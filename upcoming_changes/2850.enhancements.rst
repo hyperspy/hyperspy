@@ -1,1 +1,0 @@
-Import hyperspy submodules lazily to speed up importing hyperspy. Fix autocompletion `signals` submodule

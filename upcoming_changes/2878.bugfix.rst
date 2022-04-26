@@ -1,1 +1,0 @@
-Fix bug where the :py:meth:`~.signal.BaseSignal.map` function wasn't operating properly when an iterating signal was larger than the input signal.
