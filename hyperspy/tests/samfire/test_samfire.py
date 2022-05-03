@@ -197,7 +197,7 @@ class TestSamfireEmpty:
     def test_samfire_set_metadata_deprecation(self):
         m = self.model
         samf = m.create_samfire(workers=N_WORKERS, setup=False)
-        with pytest.warns():
+        with pytest.warns(UserWarning):
             samf.metadata = samf.metadata.as_dictionary()
         assert isinstance(samf.metadata, DictionaryTreeBrowser)
         samf.stop()
