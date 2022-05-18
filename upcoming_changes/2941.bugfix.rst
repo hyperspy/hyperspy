@@ -1,0 +1,1 @@
+Fix issue where a TIFF image from an FEI FIB/SEM navigation camera image would not be read due to missing metadata

@@ -416,6 +416,17 @@ FEI_Helios_metadata = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 
                                                  'signal_unfolded': False,
                                                  'unfolded': False}}}
 
+FEI_navcam_metadata = {
+    '_HyperSpy': {'Folding': {'unfolded': False, 'signal_unfolded': False,
+                              'original_shape': None, 'original_axes_manager': None}},
+    'General': {'original_filename': 'FEI-Helios-navcam-with-no-IRBeam.tif',
+                'title': '', 'date': '2022-05-17', 'time': '09:07:08', 'authors': 'user',
+                'FileIO': {'0': {'operation': 'load', 'io_plugin': 'hyperspy.io_plugins.tiff'}}},
+    'Signal': {'signal_type': ''},
+    'Acquisition_instrument': {'SEM': {'Stage': {'x': 0.0699197, 'y': 0.000811186, 'z': 0,
+                                                 'rotation': 1.07874, 'tilt': 6.54498e-06},
+                                       'working_distance': -0.012, 'microscope': 'Helios NanoLab" 660'}}}
+
 
 class TestReadFEIHelios:
     
@@ -466,27 +477,8 @@ class TestReadFEIHelios:
         # delete timestamp and version from metadata since it's runtime dependent
         del s.metadata.General.FileIO.Number_0.timestamp
         del s.metadata.General.FileIO.Number_0.hyperspy_version
-        expected = {
-            '_HyperSpy': {
-                'Folding': {
-                    'unfolded': False, 'signal_unfolded': False, 'original_shape': None, 'original_axes_manager': None
-                }
-            },
-            'General': {
-                'original_filename': 'FEI-Helios-navcam.tif',
-                'title': '', 'date': '2022-05-17', 'time': '09:07:08', 'authors': 'user',
-                'FileIO': {
-                    '0': {'operation': 'load', 'io_plugin': 'hyperspy.io_plugins.tiff'}
-                }
-            },
-            'Signal': {'signal_type': ''},
-            'Acquisition_instrument': {
-                'SEM': {'Stage': {'x': 0.0699197, 'y': 0.000811186, 'z': 0,
-                                  'rotation': 1.07874, 'tilt': 6.54498e-06},
-                        'working_distance': -0.012, 'microscope': 'Helios NanoLab" 660'}
-            }
-        }
-        assert_deep_almost_equal(s.metadata.as_dictionary(), expected)
+        FEI_navcam_metadata['General']['original_filename'] = 'FEI-Helios-navcam.tif'
+        assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_navcam_metadata)
 
 
     def test_read_FEI_navcam_no_IRBeam_metadata(self):
@@ -500,27 +492,22 @@ class TestReadFEIHelios:
         # delete timestamp and version from metadata since it's runtime dependent
         del s.metadata.General.FileIO.Number_0.timestamp
         del s.metadata.General.FileIO.Number_0.hyperspy_version
-        expected = {
-            '_HyperSpy': {
-                'Folding': {
-                    'unfolded': False, 'signal_unfolded': False, 'original_shape': None, 'original_axes_manager': None
-                }
-            },
-            'General': {
-                'original_filename': 'FEI-Helios-navcam-with-no-IRBeam.tif',
-                'title': '', 'date': '2022-05-17', 'time': '09:07:08', 'authors': 'user',
-                'FileIO': {
-                    '0': {'operation': 'load', 'io_plugin': 'hyperspy.io_plugins.tiff'}
-                }
-            },
-            'Signal': {'signal_type': ''},
-            'Acquisition_instrument': {
-                'SEM': {'Stage': {'x': 0.0699197, 'y': 0.000811186, 'z': 0,
-                                  'rotation': 1.07874, 'tilt': 6.54498e-06},
-                        'working_distance': -0.012, 'microscope': 'Helios NanoLab" 660'}
-            }
-        }
-        assert_deep_almost_equal(s.metadata.as_dictionary(), expected)
+        FEI_navcam_metadata['General']['original_filename'] = 'FEI-Helios-navcam-with-no-IRBeam.tif'
+        assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_navcam_metadata)
+
+
+    def test_read_FEI_navcam_no_IRBeam_bad_floats_metadata(self):
+        fname = self.path / 'FEI-Helios-navcam-with-no-IRBeam-bad-floats.tif'
+        s = hs.load(fname, convert_units=True)
+
+        # delete timestamp and version from metadata since it's runtime dependent
+        del s.metadata.General.FileIO.Number_0.timestamp
+        del s.metadata.General.FileIO.Number_0.hyperspy_version
+        FEI_navcam_metadata['General']['original_filename'] = 'FEI-Helios-navcam-with-no-IRBeam-bad-floats.tif'
+
+        # working distance in the file was a bogus value, so it shouldn't be in the resulting metadata
+        del FEI_navcam_metadata['Acquisition_instrument']['SEM']['working_distance']
+        assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_navcam_metadata)
 
 
 class TestReadZeissSEM:
