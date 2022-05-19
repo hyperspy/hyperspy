@@ -61,12 +61,7 @@ def get_signal_chunks(shape, dtype, signal_axes=None, target_size=1e6):
     else:
         # signal is smaller than chunk max
         sig_axes_chunk = np.floor(signals_per_chunk**(1/num_nav_axes))
-        remainder = np.floor_divide(signals_per_chunk - (sig_axes_chunk**num_nav_axes),
-                                    sig_axes_chunk)
-        if remainder<0:
-            remainder =0
         chunks = [s if i in signal_axes else sig_axes_chunk for i, s in enumerate(shape)]
-        chunks[navigation_axes[0]] = chunks[navigation_axes[0]]+remainder
         return tuple(int(x) for x in chunks)
 
 
