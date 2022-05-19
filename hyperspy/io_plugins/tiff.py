@@ -348,9 +348,19 @@ def _axes_fei(tiff, op, shape, names):
         del op['FEI_HELIOS']
     except KeyError:
         del op['FEI_SFEG']
-    scales['x'] = float(op['fei_metadata']['Scan']['PixelWidth'])
-    scales['y'] = float(op['fei_metadata']['Scan']['PixelHeight'])
-    units.update({'x': 'm', 'y': 'm'})
+    try:
+        scales['x'] = float(op['fei_metadata']['Scan']['PixelWidth'])
+        scales['y'] = float(op['fei_metadata']['Scan']['PixelHeight'])
+        units.update({'x': 'm', 'y': 'm'})
+    except KeyError:
+        _logger.debug("No 'Scan' information found in FEI metadata; attempting to get pixel size "
+                        "from 'IRBeam' metadata")
+        try:
+            scales['x'] = float(op['fei_metadata']['IRBeam']['HFW']) / float(op['fei_metadata']['Image']['ResolutionX'])
+            scales['y'] = float(op['fei_metadata']['IRBeam']['VFW']) / float(op['fei_metadata']['Image']['ResolutionY'])
+            units.update({'x': 'm', 'y': 'm'})
+        except KeyError:
+            _logger.warning("Could not determine pixel size; resulting Signal will not be calibrated")
 
     scales, offsets, units = _order_axes_by_name(names, scales, offsets, units)
 
@@ -864,6 +874,20 @@ def _parse_beam_current_FEI(value):
         return None
 
 
+def _parse_beam_energy_FEI(value):
+    try:
+        return float(value) * 1e-3
+    except ValueError:
+        return None
+
+
+def _parse_working_distance_FEI(value):
+    try:
+        return float(value) * 1e3
+    except ValueError:
+        return None
+
+
 def _parse_tuple_Zeiss(tup):
     value = tup[1]
     try:
@@ -899,7 +923,7 @@ def _parse_string(value):
 
 mapping_fei = {
     'fei_metadata.Beam.HV':
-        ("Acquisition_instrument.SEM.beam_energy", lambda x: float(x) * 1e-3),
+        ("Acquisition_instrument.SEM.beam_energy", _parse_beam_energy_FEI),
     'fei_metadata.Stage.StageX':
         ("Acquisition_instrument.SEM.Stage.x", None),
     'fei_metadata.Stage.StageY':
@@ -911,7 +935,7 @@ mapping_fei = {
     'fei_metadata.Stage.StageT':
         ("Acquisition_instrument.SEM.Stage.tilt", None),
     'fei_metadata.Stage.WorkingDistance':
-        ("Acquisition_instrument.SEM.working_distance", lambda x: float(x) * 1e3),
+        ("Acquisition_instrument.SEM.working_distance", _parse_working_distance_FEI),
     'fei_metadata.Scan.Dwelltime':
         ("Acquisition_instrument.SEM.dwell_time", None),
     'fei_metadata.EBeam.BeamCurrent':
