@@ -60,8 +60,16 @@ def get_signal_chunks(shape, dtype, signal_axes=None, target_size=1e6):
         return shape
     else:
         # signal is smaller than chunk max
-        sig_axes_chunk = np.floor(signals_per_chunk**(1/num_nav_axes))
-        chunks = [s if i in signal_axes else sig_axes_chunk for i, s in enumerate(shape)]
+        nav_axes_chunks = np.floor(signals_per_chunk**(1/num_nav_axes))
+        their_sizes = []
+        small_sizes = []
+        for index, size in enumerate(shape):
+            if index in navigation_axes and size < nav_axes_chunks:
+                their_sizes.append(index)
+                small_sizes.append(size)
+        if small_sizes:
+            nav_axes_chunks = np.floor((signals_per_chunk / np.prod(small_sizes))**(1 / (num_nav_axes - len(small_sizes))))
+        chunks = [s if i in signal_axes or i in their_sizes else nav_axes_chunks for i, s in enumerate(shape)]
         return tuple(int(x) for x in chunks)
 
 
