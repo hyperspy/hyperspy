@@ -946,11 +946,14 @@ def test_saving_overwrite_data(tmp_path, file):
 
 @pytest.mark.parametrize("target_size", (1e6,1e7))
 def test_get_signal_chunks(target_size):
-    chunks = get_signal_chunks(shape=[15, 15, 256, 256],
+    shape = (2, 150, 3, 200, 1, 600, 1)
+    chunks = get_signal_chunks(shape=shape,
                                dtype=np.int64,
                                signal_axes=(2, 3),
                                target_size=target_size)
     assert (np.prod(chunks)*8 < target_size)
+    # The chunks must be smaller or equal that the corresponding sizes
+    assert (np.array(chunks) <= np.array(shape)).all()
 
 
 @zspy_marker
