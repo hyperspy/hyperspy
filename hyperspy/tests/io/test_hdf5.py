@@ -956,6 +956,26 @@ def test_get_signal_chunks(target_size):
     assert (np.array(chunks) <= np.array(shape)).all()
 
 
+def test_get_signal_chunks_big_signal():
+    # One signal exceeds the target size
+    shape = (10, 1000, 5, 1000)
+    chunks = get_signal_chunks(shape=shape,
+                               dtype=np.int32,
+                               signal_axes=(1, 3),
+                               target_size=1e6)
+    # The chunks must be smaller or equal that the corresponding sizes
+    assert chunks == (1, 1000, 1, 1000)
+
+def test_get_signal_chunks_small_dataset():
+    # Whole dataset fits in one chunk
+    shape = (10, 10, 2, 2)
+    chunks = get_signal_chunks(shape=shape,
+                               dtype=np.int32,
+                               signal_axes=(2, 3),
+                               target_size=1e6)
+    # The chunks must be smaller or equal that the corresponding sizes
+    assert chunks == shape
+
 @zspy_marker
 def test_error_saving(tmp_path, file):
     filename = tmp_path / file
