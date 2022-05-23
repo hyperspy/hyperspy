@@ -47,7 +47,7 @@ def get_signal_chunks(shape, dtype, signal_axes=None, target_size=1e6):
 
     # largely based on the guess_chunk in h5py
     bytes_per_signal = multiply([shape[i] for i in signal_axes]) * typesize
-    signals_per_chunk = np.int(np.floor_divide(target_size, bytes_per_signal))
+    signals_per_chunk = int(np.floor_divide(target_size, bytes_per_signal))
     navigation_axes = tuple(i for i in range(len(shape)) if i not in
                             signal_axes)
     num_nav_axes = len(navigation_axes)
