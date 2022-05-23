@@ -60,11 +60,18 @@ def get_signal_chunks(shape, dtype, signal_axes=None, target_size=1e6):
         return shape
     else:
         # signal is smaller than chunk max
+        # Index of axes with size smaller than required to make all chunks equal
         small_idx = []
+        # Sizes of axes with size smaller than required to make all chunks equal
         small_sizes = []
         iterate = True
         while iterate:
             iterate = False
+            # Calculate the size of the chunks of the axes not in `small_idx`
+            # The process is iterative because `nav_axes_chunks` can be bigger
+            # than some axes sizes. If that is the case, the value must be
+            # recomputed at the next iteration after having added the "offending"
+            # axes to `small_idx`
             nav_axes_chunks = int(np.floor((signals_per_chunk / np.prod(small_sizes))**(1 / (num_nav_axes - len(small_sizes)))))
             for index, size in enumerate(shape):
                 if index not in (list(signal_axes) + small_idx) and size < nav_axes_chunks:
