@@ -399,7 +399,7 @@ constrain of storing at least one signal per chunks. For example, for the signal
 passing ``chunks=True`` results in ``(7, 7, 256)`` chunks.
 
 Choosing the correct chunk-size can significantly affect the speed of reading, writing and performance of many HyperSpy algorithms.
-See the `chunking section <big_data.html#Chunking>`__ under `Working with big data <big_data.html>`__ for more information.
+See the :ref:`chunking section <big_data.chunking>` for more information.
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^

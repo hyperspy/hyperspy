@@ -327,6 +327,8 @@ Practical tips
 Despite the limitations detailed below, most HyperSpy operations can be
 performed lazily. Important points are:
 
+.. _big_data.chunking:
+
 Chunking
 ^^^^^^^^
 
