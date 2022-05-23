@@ -379,7 +379,7 @@ This feature is particularly useful when using
 
 The hyperspy HDF5 format supports chunking the data into smaller pieces to make it possible to load only part
 of a dataset at a time. By default, the data is saved in chunks that are optimised to contain at least one
-full signal shape for non-lazy signal, while for lazy signal, the chunking of the dask is used. It is possible to
+full signal.  It is possible to
 customise the chunk shape using the ``chunks`` keyword.
 For example, to save the data with ``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks
 for this signal:
@@ -398,8 +398,8 @@ what, for large signal spaces usually leads to smaller chunks as ``guess_chunk``
 constrain of storing at least one signal per chunks. For example, for the signal in the example above
 passing ``chunks=True`` results in ``(7, 7, 256)`` chunks.
 
-Choosing the correct chunk-size can significantly affect the speed of reading, writing and performance of many hyperspy algorithms.
-See the `chunking section <big_data.html#Chunking>`__ under `Working with big data <big_data.html>`__ for more information.
+Choosing the correct chunk-size can significantly affect the speed of reading, writing and performance of many HyperSpy algorithms.
+See the :ref:`chunking section <big_data.chunking>` for more information.
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^

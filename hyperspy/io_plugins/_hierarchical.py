@@ -47,7 +47,7 @@ def get_signal_chunks(shape, dtype, signal_axes=None, target_size=1e6):
 
     # largely based on the guess_chunk in h5py
     bytes_per_signal = multiply([shape[i] for i in signal_axes]) * typesize
-    signals_per_chunk = np.floor_divide(target_size, bytes_per_signal)
+    signals_per_chunk = int(np.floor_divide(target_size, bytes_per_signal))
     navigation_axes = tuple(i for i in range(len(shape)) if i not in
                             signal_axes)
     num_nav_axes = len(navigation_axes)
@@ -60,13 +60,25 @@ def get_signal_chunks(shape, dtype, signal_axes=None, target_size=1e6):
         return shape
     else:
         # signal is smaller than chunk max
-        sig_axes_chunk = np.floor(signals_per_chunk**(1/num_nav_axes))
-        remainder = np.floor_divide(signals_per_chunk - (sig_axes_chunk**num_nav_axes),
-                                    sig_axes_chunk)
-        if remainder<0:
-            remainder =0
-        chunks = [s if i in signal_axes else sig_axes_chunk for i, s in enumerate(shape)]
-        chunks[navigation_axes[0]] = chunks[navigation_axes[0]]+remainder
+        # Index of axes with size smaller than required to make all chunks equal
+        small_idx = []
+        # Sizes of axes with size smaller than required to make all chunks equal
+        small_sizes = []
+        iterate = True
+        while iterate:
+            iterate = False
+            # Calculate the size of the chunks of the axes not in `small_idx`
+            # The process is iterative because `nav_axes_chunks` can be bigger
+            # than some axes sizes. If that is the case, the value must be
+            # recomputed at the next iteration after having added the "offending"
+            # axes to `small_idx`
+            nav_axes_chunks = int(np.floor((signals_per_chunk / np.prod(small_sizes))**(1 / (num_nav_axes - len(small_sizes)))))
+            for index, size in enumerate(shape):
+                if index not in (list(signal_axes) + small_idx) and size < nav_axes_chunks:
+                    small_idx.append(index)
+                    small_sizes.append(size)
+                    iterate = True
+        chunks = [s if i in signal_axes or i in small_idx else nav_axes_chunks for i, s in enumerate(shape)]
         return tuple(int(x) for x in chunks)
 
 
