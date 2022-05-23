@@ -1,1 +1,1 @@
-Fixes wrong chunking when saving some signals to hspy/zspy formats.
+Fixes invalid file chunks when saving some signals to hspy/zspy formats.
