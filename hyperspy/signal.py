@@ -30,6 +30,7 @@ from pathlib import Path
 import warnings
 
 import dask.array as da
+from dask.diagnostics import ProgressBar
 from matplotlib import pyplot as plt
 import numpy as np
 from pint import UndefinedUnitError
@@ -5029,6 +5030,10 @@ class BaseSignal(FancySlicing,
 
         data_stored = False
 
+        if show_progressbar:
+            pbar = ProgressBar()
+            pbar.register()
+
         if inplace:
             if (
                 not self._lazy
@@ -5074,6 +5079,9 @@ class BaseSignal(FancySlicing,
 
         if not lazy_output and not data_stored:
             sig.data = sig.data.compute(num_workers=max_workers)
+
+        if show_progressbar:
+            pbar.unregister()
 
         return sig
 
