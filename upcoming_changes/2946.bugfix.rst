@@ -1,0 +1,1 @@
+Respect ``show_progressbar`` parameter in ``BaseSignal.map()``
