@@ -203,14 +203,20 @@ class SpanSelectorInSignal1D(t.HasTraits):
 
     def __init__(self, signal):
         if signal.axes_manager.signal_dimension != 1:
-            raise SignalDimensionError(
-                signal.axes_manager.signal_dimension, 1)
+            raise SignalDimensionError(signal.axes_manager.signal_dimension, 1)
+
+        # Plot the signal (or model) if it is not already plotted
+        if signal._plot is None or not signal._plot.is_active:
+            signal.plot()
+        
+        from hyperspy.model import BaseModel
+        if isinstance(signal, BaseModel):
+            signal = signal.signal
 
         self.signal = signal
         self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
-        if signal._plot is None or not signal._plot.is_active:
-            signal.plot()
+
         self.span_selector_switch(on=True)
 
         self.signal._plot.signal_plot.events.closed.connect(
