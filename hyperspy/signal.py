@@ -2585,6 +2585,7 @@ class BaseSignal(FancySlicing,
         oldlazy = self._lazy
         attributes = file_data_dict.get('attributes', {})
         ragged = file_data_dict.get('ragged')
+        vector = file_data_dict.get('vector')
         if ragged is not None:
             attributes['ragged'] = ragged
         if 'axes' not in file_data_dict:
@@ -2599,6 +2600,8 @@ class BaseSignal(FancySlicing,
                         setattr(getattr(self, key), k, v)
                 else:
                     setattr(self, key, value)
+        if vector is not None:
+            self.vector = True
         if 'models' in file_data_dict:
             self.models._add_dictionary(file_data_dict['models'])
         if 'metadata' not in file_data_dict:
@@ -2727,7 +2730,7 @@ class BaseSignal(FancySlicing,
             dic['models'] = self.models._models.as_dictionary()
         return dic
 
-    def _get_undefined_axes_list(self, ragged=False):
+    def _get_undefined_axes_list(self, ragged=False, vector=False):
         """Returns default list of axes construct from the data array shape."""
         axes = []
         for s in self.data.shape:

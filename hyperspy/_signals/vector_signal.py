@@ -27,6 +27,10 @@ class BaseVectorSignal(BaseSignal):
     """A generic class for a ragged signal representing a set of vectors.
     """
     def __init__(self, *args, **kwargs):
+        if "vector" not in kwargs:
+            kwargs["vector"] = True
+        if "ragged" not in kwargs:
+            kwargs["ragged"] = True
         super().__init__(*args, **kwargs)
 
     def nav_to_vector(self,
