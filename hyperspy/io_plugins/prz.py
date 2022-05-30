@@ -61,7 +61,7 @@ def file_reader(filename, **kwds):
 
 def file_writer(filename, signal, **kwds):
     data, meta_data = export_pr(signal=signal)
-    np.savez(file=filename, data=data, meta_data=[meta_data], file_format_version=2, data_model=[{}])
+    np.savez_compressed(file=filename, data=data, meta_data=[meta_data], file_format_version=2, data_model=[{}])
     
 
 def import_pr(data, meta_data, filename = None):
