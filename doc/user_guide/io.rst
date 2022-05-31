@@ -247,6 +247,8 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +-----------------------------------+--------+--------+--------+
     | Gatan's dm4                       |    Yes |    No  |    Yes |
     +-----------------------------------+--------+--------+--------+
+    | CEOS's prz                        |    Yes |   Yes  |    No  |
+    +-----------------------------------+--------+--------+--------+
     | FEI's emi and ser                 |    Yes |    No  |    Yes |
     +-----------------------------------+--------+--------+--------+
     | hspy                              |    Yes |    Yes |    Yes |
@@ -920,6 +922,15 @@ Extra loading arguments for SPD and SPC files
 - ``load_all_spc`` : bool, switch to control if all of the ``.spc`` header is
   read, or just the important parts for import into HyperSpy.
 
+.. _prz-format:
+
+CEOS Panta Rhei PRZ
+-------------------
+
+Hyperspy can read and write ``prz`` files used by the CEOS Panta Rhei software.
+The ``prz`` files are based on open formats (numpy arrays and python dictionaries) so a complete support is in principle possible.
+However, as new features are continuously being added to Panta Rhei, it is also possible to occasionally encounter some which are not yet supported by HyperSpy.
+Please report any problematic file on the `issues tracker <https://github.com/hyperspy/hyperspy/issues>`__ to make us aware of it.
 
 .. _fei-format:
 
