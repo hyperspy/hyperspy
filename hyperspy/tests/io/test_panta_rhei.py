@@ -9,11 +9,7 @@ my_path = Path(__file__).parent
 
 class TestLoadingPrzFiles:
     def test_metadata_prz_v5(self):
-        md = {'_HyperSpy': {'Folding': {'unfolded': False,
-                                        'signal_unfolded': False,
-                                        'original_shape': None,
-                                        'original_axes_manager': None}},
-              'General': {'title': 'AD', 'original_filename': 'panta_rhei_sample_v5.prz'},
+        md = {'General': {'title': 'AD', 'original_filename': 'panta_rhei_sample_v5.prz'},
               'Signal': {'signal_type': ''},
               'Acquisition_instrument': {'TEM': {'beam_energy': 200.0,
                                                  'acquisition_mode': 'STEM',
@@ -39,7 +35,10 @@ class TestLoadingPrzFiles:
         
         s = load(my_path / 'panta_rhei_files' / 'panta_rhei_sample_v5.prz')
         
-        assert_deep_almost_equal(s.metadata.as_dictionary(), md)
+        md_file = s.metadata.as_dictionary()
+        md_file.pop('_HyperSpy')
+        md_file['General'].pop('FileIO')
+        assert_deep_almost_equal(md_file, md)
         assert_deep_almost_equal(s.axes_manager.as_dictionary(), am)
         assert (s.data.shape == (16, 16))
         assert (s.data.max() == 40571)
