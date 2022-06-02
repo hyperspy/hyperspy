@@ -231,3 +231,18 @@ def test_snapping_axis_values(snap):
     r = roi.Line2DROI(x1=6, y1=0, x2=12, y2=4, linewidth=0)
     s.plot()
     _ = r.interactive(s, snap=snap)
+
+
+def test_plot_span_roi_changed_event():
+    s = Signal1D(np.arange(100))
+    s.plot()
+    r = roi.SpanROI()
+    s_span = r.interactive(s)
+    np.testing.assert_allclose(s_span.data, np.arange(25, 74))
+
+    w = list(r.widgets)[0]
+    assert w._pos == (24.5, )
+    assert w._size == (50., )
+    w._set_span_extents(10, 20)
+    np.testing.assert_allclose(s_span.data, np.arange(9, 19))
+

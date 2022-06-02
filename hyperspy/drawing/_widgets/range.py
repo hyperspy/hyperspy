@@ -144,6 +144,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
         extents = self.span.extents
         self._pos = np.array([extents[0]])
         self._size = np.array([extents[1] - extents[0]])
+        self.events.changed.trigger(self)
 
     def _get_range(self):
         p = self._pos[0]
