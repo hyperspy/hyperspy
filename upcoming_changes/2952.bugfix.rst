@@ -1,0 +1,1 @@
+Fix SpanROI regression: the output of :py:meth:`~.roi.BaseInteractiveROI.interactive`` was not updated. Fix errors with updating limits when plotting empty slice of data. Improve docstrings and test coverage.
