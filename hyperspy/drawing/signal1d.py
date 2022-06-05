@@ -177,13 +177,20 @@ class Signal1DFigure(BlittedFigure):
         self.ax.set_title(self.title)
         x_axis_upper_lims = []
         x_axis_lower_lims = []
+
         for line in self.ax_lines:
             line.plot(data_function_kwargs=data_function_kwargs, **kwargs)
-            x_axis_lower_lims.append(line.axis.axis[0])
-            x_axis_upper_lims.append(line.axis.axis[-1])
+            if len(line.axis.axis) > 1:
+                x_axis_lower_lims.append(line.axis.axis[0])
+                x_axis_upper_lims.append(line.axis.axis[-1])
+
         for marker in self.ax_markers:
             marker.plot(render_figure=False)
-        plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
+
+        plt.xlim(min(x_axis_lower_lims, default=None),
+                 max(x_axis_upper_lims, default=None)
+                 )
+
         self.axes_manager.events.indices_changed.connect(self.update, [])
         self.events.closed.connect(
             lambda: self.axes_manager.events.indices_changed.disconnect(
@@ -484,28 +491,36 @@ class Signal1DLine(object):
         else:
             self.line.set_ydata(ydata)
 
-        if 'x' in self.autoscale:
-            self.ax.set_xlim(axis[0], axis[-1])
+        # Don't change xlim if axis has 0 length (unnecessary)
+        if 'x' in self.autoscale and len(axis) > 0:
+            x_min, x_max = axis[0], axis[-1]
+            if x_min == x_max:
+                # To avoid matplotlib UserWarning when calling `set_ylim`
+                x_min, x_max = (x_min - 0.1, x_min + 0.1)
+            self.ax.set_xlim(x_min, x_max)
 
-        if 'v' in self.autoscale:
+        # Don't change ymin if data has 0 length (unnecessary)
+        if 'v' in self.autoscale and len(ydata) > 0:
             self.ax.relim()
-            y1, y2 = np.searchsorted(axis, self.ax.get_xbound())
-            y2 += 2
-            y1, y2 = np.clip((y1, y2), 0, len(ydata - 1))
-            clipped_ydata = ydata[y1:y2]
+            # Based on the current zoom of the x axis, find the corresponding
+            # y range of data and calculate the y_min, y_max accordingly
+            i1, i2 = np.searchsorted(axis, self.ax.get_xbound())
+            # Make interval wider on both side and clip to allowed range
+            i1, i2 = np.clip((i1-1, i2+1), 0, len(ydata - 1))
+            ydata = ydata[i1:i2]
+
             with ignore_warning(category=RuntimeWarning):
                 # In case of "All-NaN slices"
-                y_max, y_min = (np.nanmax(clipped_ydata),
-                                np.nanmin(clipped_ydata))
+                y_max, y_min = np.nanmax(ydata), np.nanmin(ydata)
 
             if self._plot_imag:
                 # Add real plot
-                yreal = self._get_data(real_part=True)
-                clipped_yreal = yreal[y1:y2]
+                yreal = self._get_data(real_part=True)[i1:i2]
                 with ignore_warning(category=RuntimeWarning):
                     # In case of "All-NaN slices"
-                    y_min = min(y_min, np.nanmin(clipped_yreal))
-                    y_max = max(y_max, np.nanmin(clipped_yreal))
+                    y_min = min(y_min, np.nanmin(yreal))
+                    y_max = max(y_max, np.nanmin(yreal))
+
             if y_min == y_max:
                 # To avoid matplotlib UserWarning when calling `set_ylim`
                 y_min, y_max = y_min - 0.1, y_max + 0.1
