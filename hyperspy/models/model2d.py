@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 
@@ -139,30 +139,49 @@ class Model2D(BaseModel):
         else:
             raise WrongObjectError(str(type(value)), 'Signal2D')
 
-    def __call__(self, non_convolved=True, onlyactive=False):
+    def __call__(self, non_convolved=True, onlyactive=False,
+                 component_list=None, binned=None):
         """Returns the corresponding 2D model for the current coordinates
 
         Parameters
         ----------
-        only_active : bool
-            If true, only the active components will be used to build the
+        non_convolved : bool
+            Not Implemented for Model2D
+        onlyactive : bool
+            If True, only the active components will be used to build the
             model.
+        component_list : list or None
+            If None, the sum of all the components is returned. If list, only
+            the provided components are returned
+        binned : None
+            Not Implemented for Model2D
 
         Returns
         -------
         numpy array
         """
+        if component_list is None:
+            component_list = self
+        if not isinstance(component_list, (list, tuple)):
+            raise ValueError(
+                "'Component_list' parameter needs to be a list or None."
+                )
+
+        if onlyactive:
+            component_list = [
+                component for component in component_list if component.active]
 
         sum_ = np.zeros_like(self.xaxis)
         if onlyactive is True:
-            for component in self:  # Cut the parameters list
+            for component in component_list:  # Cut the parameters list
                 if component.active:
                     np.add(sum_, component.function(self.xaxis, self.yaxis),
                            sum_)
         else:
-            for component in self:  # Cut the parameters list
+            for component in component_list:  # Cut the parameters list
                 np.add(sum_, component.function(self.xaxis, self.yaxis),
                        sum_)
+
         return sum_[self.channel_switches]
 
     def _errfunc(self, param, y, weights=None):

@@ -1,1 +1,0 @@
-Add :py:attr:`~.signal.BaseSignal.ragged` attribute to :py:class:`~.signal.BaseSignal` to clarify when a signal contains a ragged array. Fix inconsistency caused by ragged array and add a :ref:`ragged array<signal.ragged>` section to the user guide

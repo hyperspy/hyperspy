@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pytest
 
+from hyperspy import __version__ as hs_version
 from hyperspy import signals
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
@@ -38,6 +39,8 @@ def test_load_16bit():
     np.testing.assert_array_equal(hype.data[:, :, 222:224],
                                   np.load(np_filename))
     assert hype.data.shape == (30, 30, 2048)
+    assert bse.metadata.get_item('Stage.x', full_path=False) == 66940.81
+    assert hype.metadata.get_item('Stage.x', full_path=False) == 66940.81
 
 
 def test_load_16bit_reduced():
@@ -55,6 +58,20 @@ def test_load_16bit_reduced():
     assert bse.data.dtype == np.uint16
     # hypermaps should always return unsigned integers:
     assert str(hype.data.dtype)[0] == 'u'
+
+
+def test_load_16bit_cutoff_zealous():
+    filename = os.path.join(my_path, 'bruker_data', test_files[0])
+    print('testing downsampled 16bit bcf with cutoff_at_kV=zealous...')
+    hype = load(filename, cutoff_at_kV="zealous", select_type="spectrum_image")
+    assert hype.data.shape == (30, 30, 2048)
+
+
+def test_load_16bit_cutoff_auto():
+    filename = os.path.join(my_path, 'bruker_data', test_files[0])
+    print('testing downsampled 16bit bcf with cutoff_at_kV=auto...')
+    hype = load(filename, cutoff_at_kV="auto", select_type="spectrum_image")
+    assert hype.data.shape == (30, 30, 2048)
 
 
 def test_load_8bit():
@@ -113,7 +130,14 @@ def test_hyperspy_wrap():
                 '30x30_instructively_packed_16bit_compressed.bcf',
             'title': 'EDX',
             'date': '2018-10-04',
-            'time': '13:02:07'},
+            'time': '13:02:07',
+            'FileIO': {
+                '0': {
+                    'operation': 'load',
+                    'hyperspy_version': hs_version,
+                    'io_plugin': 'hyperspy.io_plugins.bruker',
+                }
+            }},
         'Sample': {
             'name': 'chevkinite',
             'elements': ['Al', 'C', 'Ca', 'Ce', 'Fe', 'Gd', 'K', 'Mg', 'Na',
@@ -137,6 +161,8 @@ def test_hyperspy_wrap():
     with open(filename_omd) as fn:
         # original_metadata:
         omd_ref = json.load(fn)
+    # delete FileIO timestamp since it's runtime dependent
+    del hype.metadata.General.FileIO.Number_0.timestamp
     assert_deep_almost_equal(hype.metadata.as_dictionary(), md_ref)
     assert_deep_almost_equal(hype.original_metadata.as_dictionary(), omd_ref)
     assert hype.metadata.General.date == "2018-10-04"

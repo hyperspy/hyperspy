@@ -60,6 +60,7 @@ set when making the :py:class:`~.signal.BaseSignal` object.
 .. code-block:: python
 
     >>> dict0 = {'size': 10, 'name':'Axis0', 'units':'A', 'scale':0.2, 'offset':1}
+    >>> dict1 = {'size': 20, 'name':'Axis1', 'units':'B', 'scale':0.1, 'offset':2}
     >>> s = hs.signals.BaseSignal(np.random.random((10,20)), axes=[dict0, dict1])
     >>> s.axes_manager
     <Axes manager, axes: (|20, 10)>
@@ -83,7 +84,7 @@ This also applies to the :py:attr:`~.signal.BaseSignal.metadata`.
     └── Signal
 	└── signal_type =
 
-Instead of using a list of *axes dictionaries* ``[dict0, dict1]`` during signal 
+Instead of using a list of *axes dictionaries* ``[dict0, dict1]`` during signal
 initialization, you can also pass a list of *axes objects*: ``[axis0, axis1]``.
 
 
@@ -291,7 +292,7 @@ For example, a numpy ragged array can be created as follow:
        >>> arr = np.array([[1, 2, 3], [1]], dtype=object)
        >>> arr
        array([list([1, 2, 3]), list([1])], dtype=object)
-       
+
 Note that the array shape is (2, ):
 
    .. code-block:: python
@@ -328,10 +329,10 @@ To create a hyperspy signal of a numpy ragged array:
 
        >>> s.axes_manager
        <Axes manager, axes: (2|ragged)>
-                   Name |   size |  index |  offset |   scale |  units 
-       ================ | ====== | ====== | ======= | ======= | ====== 
-            <undefined> |      2 |      0 |       0 |       1 | <undefined> 
-       ---------------- | ------ | ------ | ------- | ------- | ------ 
+                   Name |   size |  index |  offset |   scale |  units
+       ================ | ====== | ====== | ======= | ======= | ======
+            <undefined> |      2 |      0 |       0 |       1 | <undefined>
+       ---------------- | ------ | ------ | ------- | ------- | ------
             Ragged axis |               Variable length
 
 .. note::
@@ -344,7 +345,7 @@ To create a hyperspy signal of a numpy ragged array:
            array([[1, 2],
                   [1, 2]], dtype=object)
 
-       
+
     Unlike in the previous example, here the array is not ragged, because
     the length of the nested sequences are equal (2) and numpy will create
     an array of shape (2, 2) instead of (2, ) as in the previous example of
@@ -373,11 +374,11 @@ shape of the ragged array:
        >>> s = hs.signals.BaseSignal(arr)
        >>> s
        <BaseSignal, title: , dimensions: (|2)>
-       
+
        >>> s.ragged = True
        >>> s
-       <BaseSignal, title: , dimensions: (2|ragged)>       
-       
+       <BaseSignal, title: , dimensions: (2|ragged)>
+
 
 .. _signal.binned:
 
@@ -997,7 +998,8 @@ arguments as in the following example.
 If all function calls do not return identically-shaped results, only navigation
 information is preserved, and the final result is an array where
 each element corresponds to the result of the function (or arbitrary object
-type). As such, most HyperSpy functions cannot operate on such Signal, and the
+type). These are :ref:`ragged arrays<signal.ragged>` and has the dtype `object`.
+As such, most HyperSpy functions cannot operate on such signals, and the
 data should be accessed directly.
 
 The ``inplace`` keyword (by default ``True``) of the
@@ -1012,12 +1014,13 @@ data (default, ``True``) or storing it to a new signal (``False``).
     >>> result = image_stack.map(scipy.ndimage.rotate,
     ...                            angle=angles.T,
     ...                            inplace=False,
+    ...                            ragged=True,
     ...                            reshape=True)
     100%|████████████████████████████████████████████| 4/4 [00:00<00:00, 18.42it/s]
 
     >>> result
     <BaseSignal, title: , dimensions: (4|)>
-    >>> image_stack.data.dtype
+    >>> result.data.dtype
     dtype('O')
     >>> for d in result.data.flat:
     ...     print(d.shape)
@@ -1037,9 +1040,9 @@ The execution can be sped up by passing ``parallel`` keyword to the
     >>> def slow_func(data):
     ...     time.sleep(1.)
     ...     return data + 1
-    >>> s = hs.signals.Signal1D(np.arange(20).reshape((20,1)))
+    >>> s = hs.signals.Signal1D(np.arange(40).reshape((20, 2)))
     >>> s
-    <Signal1D, title: , dimensions: (20|1)>
+    <Signal1D, title: , dimensions: (20|2)>
     >>> s.map(slow_func, parallel=False)
     100%|██████████████████████████████████████| 20/20 [00:20<00:00,  1.00s/it]
     >>> # some operations will be done in parallel:
@@ -1066,6 +1069,46 @@ navigation dimension of s.
     >>> d = hs.signals.Signal1D(np.cos(np.linspace(0., 2*np.pi, 512)))
     >>> s.map(lambda A, B: A * B, B=d)
     100%|██████████| 10/10 [00:00<00:00, 2573.19it/s]
+
+
+.. _lazy_output-map-label:
+
+.. versionadded:: 1.7
+    Get result as lazy signal
+
+Especially when working with very large datasets, it can be useful to
+not do the computation immediately. For example if it would make you run
+out of memory. In that case, the `lazy_output` parameter can be used.
+
+.. code-block:: python
+
+    >>> from scipy.ndimage import gaussian_filter
+    >>> s = hs.signals.Signal2D(np.random.random((4, 4, 128, 128)))
+    >>> s_out = s.map(gaussian_filter, sigma=5, inplace=False, lazy_output=True)
+    <LazySignal2D, title: , dimensions: (4, 4|128, 128)>
+
+`s_out` can then be saved to a hard drive, to avoid it being loaded into memory.
+Alternatively, it can be computed and loaded into memory using `s_out.compute()`
+
+.. code-block:: python
+
+    >>> s_out.save("gaussian_filter_file.hspy")
+
+Another advantage of using `lazy_output=True` is the ability to "chain" operations,
+by running `map` on the output from a previous `map` operation.
+For example, first running a Gaussian filter, followed by peak finding. This can
+improve the computation time, and reduce the memory need.
+
+.. code-block:: python
+
+    >>> s_out = s.map(scipy.ndimage.gaussian_filter, sigma=5, inplace=False, lazy_output=True)
+    >>> from skimage.feature import blob_dog
+    >>> s_out1 = s_out.map(blob_dog, threshold=0.05, inplace=False, ragged=True, lazy_output=False)
+    >>> s_out1
+    <BaseSignal, title: , dimensions: (4, 4|ragged)>
+
+This is especially relevant for very large datasets, where memory use can be a
+limiting factor.
 
 
 Cropping
@@ -1168,7 +1211,7 @@ signal:
     uint8
 
     # By default `dtype=None`, the dtype is determined by the behaviour of
-    # numpy.sum, in this case, unsigned integer of the same precision as the 
+    # numpy.sum, in this case, unsigned integer of the same precision as the
     # platform interger
     >>> s4 = s.rebin(scale=(5, 2, 1))
     >>> print(s4.data.dtype)
@@ -1821,3 +1864,38 @@ and `y` direction, while the offset is determined by the ``offset`` parameter.
 The fulcrum of the linear ramp is at the origin and the slopes are given in
 units of the axis with the according scale taken into account. Both are
 available via the :py:class:`~.axes.AxesManager` of the signal.
+
+.. versionadded:: 1.7
+
+.. _gpu_processing:
+
+GPU support
+-----------
+
+GPU processing is supported thanks to the numpy dispatch mechanism of array functions
+- read `NEP-18 <https://numpy.org/neps/nep-0018-array-function-protocol.html>`_
+and `NEP-35 <https://numpy.org/neps/nep-0035-array-creation-dispatch-with-array-function.html>`_
+for more information. It means that most HyperSpy functions will work on a GPU
+if the data is a :py:class:`cupy.ndarray` and the required functions are
+implemented in ``cupy``.
+
+.. note::
+    GPU processing with hyperspy requires numpy>=1.20 and dask>=2021.3.0, to be
+    able to use NEP-18 and NEP-35.
+
+.. code-block:: python
+
+    >>> import cupy as cp
+    >>> # Create a cupy array (on GPU device)
+    >>> data = cp.random.random(size=(20, 20, 100, 100))
+    >>> s = hs.signals.Signal2D(data)
+    >>> type(s.data)
+    ... cupy._core.core.ndarray
+
+Two convenience methods are available to transfer data between the host and
+the (GPU) device memory:
+
+- :py:meth:`~.signal.BaseSignal.to_host`
+- :py:meth:`~.signal.BaseSignal.to_device`
+
+For lazy processing, see the :ref:`corresponding section<big_data.gpu>`.

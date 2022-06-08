@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
 
@@ -142,9 +142,9 @@ def find_peaks_minmax(z, distance=5., threshold=10.):
         Peak pixel coordinates.
 
     """
-    data_max = ndi.filters.maximum_filter(z, distance)
+    data_max = ndi.maximum_filter(z, distance)
     maxima = (z == data_max)
-    data_min = ndi.filters.minimum_filter(z, distance)
+    data_min = ndi.minimum_filter(z, distance)
     diff = ((data_max - data_min) > threshold)
     maxima[diff == 0] = 0
     labeled, num_objects = ndi.label(maxima)
@@ -361,7 +361,7 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
         """Calculates rolling method 'func' over a circular kernel."""
         x, y = np.ogrid[-radius : radius + 1, -radius : radius + 1]
         kernel = np.hypot(x, y) < radius
-        stat = ndi.filters.generic_filter(image, func, footprint=kernel)
+        stat = ndi.generic_filter(image, func, footprint=kernel)
         return stat
 
     def local_mean(image, radius):
@@ -375,7 +375,7 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
     def single_pixel_desensitize(image):
         """Reduces single-pixel anomalies by nearest-neighbor smoothing."""
         kernel = np.array([[0.5, 1, 0.5], [1, 1, 1], [0.5, 1, 0.5]])
-        smoothed_image = ndi.filters.generic_filter(image, _fast_mean, footprint=kernel)
+        smoothed_image = ndi.generic_filter(image, _fast_mean, footprint=kernel)
         return smoothed_image
 
     def stat_binarise(image):
@@ -390,8 +390,8 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
 
     def smooth(image):
         """Image convolved twice using a uniform 3x3 kernel."""
-        image = ndi.filters.uniform_filter(image, size=3)
-        image = ndi.filters.uniform_filter(image, size=3)
+        image = ndi.uniform_filter(image, size=3)
+        image = ndi.uniform_filter(image, size=3)
         return image
 
     def half_binarise(image):

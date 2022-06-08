@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from __future__ import division
 
@@ -250,11 +250,15 @@ class EDSModel(Model1D):
             component.name = xray_line
             self.append(component)
             self.xray_lines.append(component)
-            self[xray_line].A.map[
-                'values'] = self.signal.isig[line_energy].data * \
-                line_FWHM / self.signal.axes_manager[-1].scale
-            self[xray_line].A.map['is_set'] = (
-                np.ones(self.signal.isig[line_energy].data.shape) == 1)
+            if self.signal._lazy:
+                # For lazy signal, use a default value to avoid having
+                # to do out-of-core computation
+                component.A.map['values'] = 10
+            else:
+                component.A.map[
+                    'values'] = self.signal.isig[line_energy].data * \
+                    line_FWHM / self.signal.axes_manager[-1].scale
+            component.A.map['is_set'] = True
             component.A.ext_force_positive = True
             for li in elements_db[element]['Atomic_properties']['Xray_lines']:
                 if line[0] in li and line != li:
@@ -598,11 +602,10 @@ class EDSModel(Model1D):
         calibrate: 'resolution' or 'scale' or 'offset'
             If 'resolution', fits the width of Gaussians place at all x-ray
             lines. The width is given by a model of the detector resolution,
-            obtained by extrapolating the `energy_resolution_MnKa` in `metadata`
-            `metadata`.
+            obtained by extrapolating the `energy_resolution_MnKa` in `metadata`.
             This method will update the value of `energy_resolution_MnKa`.
-            If 'scale', calibrate the scale of the energy axis
-            If 'offset', calibrate the offset of the energy axis
+            If 'scale', calibrate the scale of the energy axis.
+            If 'offset', calibrate the offset of the energy axis.
         xray_lines: list of str or 'all_alpha'
             The Xray lines. If 'all_alpha', fit all using all alpha lines
         **kwargs : extra key word arguments
@@ -637,9 +640,9 @@ class EDSModel(Model1D):
 
         Parameters
         ----------
-        xray_lines: list of str or 'all'
+        xray_lines : list of str or 'all'
             The Xray lines. If 'all', fit all lines
-        bounds: float
+        bound : float
             Bound the height of the peak to a fraction of
             its height
         """
@@ -903,7 +906,7 @@ class EDSModel(Model1D):
                  line_energy,
                  self.signal.axes_manager.signal_axes[0].units,
                  self.signal.metadata.General.title))
-            img.axes_manager.set_signal_dimension(0)
+            img = img.transpose(signal_axes=[])
             if plot_result and img.axes_manager.signal_dimension == 0:
                 print("%s at %s %s : Intensity = %.2f"
                       % (xray_line,

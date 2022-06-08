@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 #
 #
 # Install this as hyperspy/io_plugins/phenom.py
@@ -572,7 +572,7 @@ class ElidReader:
                 for bin in range(bins):
                     data[y, x, bin] = self._read_varuint32()
         if has_variable_real_time:
-            real_time_values = np.empty([height, width], dtype=np.float64)
+            real_time_values = np.empty([height, width], dtype=float)
             for y in range(height):
                 for x in range(width):
                     real_time_values[y, x] = self._read_float64()
@@ -580,7 +580,7 @@ class ElidReader:
         else:
             eds_metadata['real_time_values'] = np.full([height, width], self._read_float64())
         if has_variable_live_time:
-            live_time_values = np.empty([height, width], dtype=np.float64)
+            live_time_values = np.empty([height, width], dtype=float)
             for y in range(height):
                 for x in range(width):
                     live_time_values[y, x] = self._read_float64()

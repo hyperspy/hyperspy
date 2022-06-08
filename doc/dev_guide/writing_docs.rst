@@ -10,12 +10,12 @@ Documentation comes in two parts: docstrings and user-guide documentation.
 Docstrings
 ^^^^^^^^^^
 
-Written at the start of a function and give essential information
+Written at the start of a function, they give essential information
 about how it should be used, such as which arguments can be passed to it and
 what the syntax should be. The docstrings need to follow the `numpy
-specification <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT
-.rst.txt>`_, as shown in `this example
-<https://github.com/numpy/numpy/blob/master/doc/example.py>`_.
+specification <https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard>`_, 
+as shown in `this example
+<https://github.com/numpy/numpy/blob/main/doc/example.py>`_.
 
 As a general rule, any code that is part of the public API (i.e. any function
 or class that an end-user might access) should have a clear and comprehensive
@@ -57,7 +57,7 @@ Build the documentation
 To check the output of what you wrote, you can build
 the documentation by running the ``make`` command in the ``hyperspy/doc``
 directory. For example ``make html`` will build the whole documentation in
-html format. See the make command documentation for more details.
+html format. See the ``make`` command documentation for more details.
 
 To install the documentation dependencies, run either
 

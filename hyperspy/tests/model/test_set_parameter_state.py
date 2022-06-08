@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import numpy as np
@@ -131,3 +131,48 @@ class TestSetParameterInModel:
         assert not g3.A.free
         assert not g3.sigma.free
         assert not g3.centre.free
+
+    def test_set_parameter_in_model_linearity(self):
+        m = self.model
+        g1 = self.g1
+        g2 = self.g2
+        g3 = self.g3
+
+        m.set_parameters_not_free(only_linear=True)
+        assert not g1.A.free
+        assert not g2.A.free
+        assert not g3.A.free
+        assert g1.sigma.free
+        assert g1.centre.free
+
+        m.set_parameters_not_free(only_nonlinear=True)
+        assert not g1.A.free
+        assert not g2.A.free
+        assert not g3.A.free
+        assert not g1.sigma.free
+        assert not g1.centre.free
+
+        m.set_parameters_free([g1], only_linear=True)
+        assert g1.A.free
+        assert not g1.sigma.free
+        assert not g1.centre.free
+        assert not g2.A.free
+        assert not g2.sigma.free
+        assert not g2.centre.free
+
+        m.set_parameters_free(only_linear=True)
+        assert g1.A.free
+        assert not g1.sigma.free
+        assert not g1.centre.free
+        assert g2.A.free
+        assert not g2.sigma.free
+        assert not g2.centre.free
+
+        m.set_parameters_not_free(only_linear=True)
+        m.set_parameters_free(only_nonlinear=True)
+        assert not g2.A.free
+        assert g2.sigma.free
+        assert g2.centre.free
+        assert not g3.A.free
+        assert g3.sigma.free
+        assert g3.centre.free

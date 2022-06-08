@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 # The EMD format is a hdf5 standard proposed at Lawrence Berkeley
@@ -32,6 +32,7 @@ import pytest
 import tempfile
 import shutil
 
+from hyperspy import __version__ as hs_version
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.signals import (BaseSignal, EDSTEMSpectrum, Signal1D, Signal2D,
@@ -341,7 +342,15 @@ class TestFeiEMD():
                           'date': '2017-03-06',
                           'time': '09:56:41',
                           'time_zone': 'BST',
-                          'title': 'HAADF'},
+                          'title': 'HAADF',
+                          'FileIO': {
+                              '0': {
+                                  'operation': 'load',
+                                  'hyperspy_version': hs_version,
+                                  'io_plugin': 'hyperspy.io_plugins.emd'
+                              }
+                          }
+              },
               'Signal': {'signal_type': ''},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                         'original_shape': None,
@@ -358,6 +367,8 @@ class TestFeiEMD():
 
         signal = load(os.path.join(self.fei_files_path, 'fei_emd_image.emd'),
                       lazy=lazy)
+        # delete timestamp from metadata since it's runtime dependent
+        del signal.metadata.General.FileIO.Number_0.timestamp
         if lazy:
             assert signal._lazy
             signal.compute(close_file=True)

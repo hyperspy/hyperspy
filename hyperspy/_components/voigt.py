@@ -1,23 +1,22 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import math
-import numpy as np
 from packaging.version import Version
 import sympy
 
@@ -73,15 +72,17 @@ class Voigt(Expression):
         :math:`\gamma` = HWHM of the Lorentzian distribution.
     sigma: float
         :math:`2 \sigma \sqrt{(2 \log(2))}` = FWHM of the Gaussian distribution.
+    **kwargs
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
-
+    Notes
+    -----
     For convenience the `gwidth` and `lwidth` attributes can also be used to
     set and get the FWHM of the Gaussian and Lorentzian parts of the
     distribution, respectively. For backwards compatability, `FWHM` is another
     alias for the Gaussian width.
 
-    Notes
-    -----
     W.I.F. David, J. Appl. Cryst. (1986). 19, 63-64,
     doi:10.1107/S0021889886089999
     """
@@ -94,12 +95,12 @@ class Voigt(Expression):
         if Version(sympy.__version__) < Version("1.3"):
             raise ImportError("The `Voigt` component requires "
                               "SymPy >= 1.3")
-        # We use `_gamma` internally to workaround the use of the `gamma`
+        # We use `gamma_` internally to workaround the use of the `gamma`
         # function in sympy
         super().__init__(
             expression="area * real(V); \
                 V = wofz(z) / (sqrt(2.0 * pi) * sigma); \
-                z = (x - centre + 1j * _gamma) / (sigma * sqrt(2.0))",
+                z = (x - centre + 1j * gamma_) / (sigma * sqrt(2.0))",
             name="Voigt",
             centre=centre,
             area=area,
@@ -108,7 +109,7 @@ class Voigt(Expression):
             position="centre",
             module=module,
             autodoc=False,
-            rename_pars={"_gamma": "gamma"},
+            rename_pars={"gamma_": "gamma"},
             **kwargs,
         )
 

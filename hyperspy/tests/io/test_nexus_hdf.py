@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import os.path
 
@@ -34,7 +34,9 @@ from hyperspy.io_plugins.nexus import (_byte_to_string, _fix_exclusion_keys,
                                        read_metadata_from_file, _getlink,
                                        _check_search_keys, _parse_from_file,
                                        _nexus_dataset_to_signal)
+from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.signals import BaseSignal
+
 
 dirpath = os.path.dirname(__file__)
 
@@ -43,7 +45,6 @@ file2 = os.path.join(dirpath, 'nexus_files', 'saved_multi_signal.nxs')
 file3 = os.path.join(dirpath, 'nexus_files', 'nexus_dls_example.nxs')
 file4 = os.path.join(dirpath, 'nexus_files', 'nexus_dls_example_no_axes.nxs')
 file5 = os.path.join(dirpath, 'nexus_files', 'nexus_test_datakey.nxs')
-
 
 
 my_path = os.path.dirname(__file__)
@@ -337,8 +338,17 @@ class TestSavingMetadataContainers:
         s.original_metadata.set_item("testarray1", ["a", 2, "b", 4, 5])
         s.original_metadata.set_item("testarray2", (1, 2, 3, 4, 5))
         s.original_metadata.set_item("testarray3", np.array([1, 2, 3, 4, 5]))
-        s.original_metadata = s.original_metadata.as_dictionary()
-        s.metadata = s.metadata.as_dictionary()
+
+        with pytest.warns(UserWarning,
+                          match="Setting the `original_metadata` attribute"):
+            s.original_metadata = s.original_metadata.as_dictionary()
+        with pytest.warns(UserWarning,
+                          match="Setting the `metadata` attribute"):
+            s.metadata = s.metadata.as_dictionary()
+
+        assert isinstance(s.metadata, DictionaryTreeBrowser)
+        assert isinstance(s.original_metadata, DictionaryTreeBrowser)
+
         fname = tmp_path / 'test.nxs'
         s.save(fname)
         lin = load(fname, nxdata_only=True)

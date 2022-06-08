@@ -1,34 +1,33 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import os
 import ast
 import xml.etree.ElementTree as ET
 import numpy as np
 import logging
-import pint
 import traits.api as t
 
+from hyperspy.api_nogui import _ureg
 from hyperspy.misc.io.tools import convert_xml_to_dict
 
 
 _logger = logging.getLogger(__name__)
-_ureg = pint.UnitRegistry()
 
 
 # Plugin characteristics
@@ -84,7 +83,7 @@ def _parse_xml(filename):
         info.update({'scan_x':int(om.root.pix_x),
                      'scan_y':int(om.root.pix_y)})
     # in case root.pix_x and root.pix_y are not available
-    elif (om.has_item('root.scan_parameters.scan_resolution_x') and 
+    elif (om.has_item('root.scan_parameters.scan_resolution_x') and
               om.has_item('root.scan_parameters.scan_resolution_y')):
         info.update({'scan_x':int(om.root.scan_parameters.scan_resolution_x),
                      'scan_y':int(om.root.scan_parameters.scan_resolution_y)})

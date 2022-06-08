@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 import pytest
@@ -64,6 +64,24 @@ add_noise_params = [
     [False, 5],
     [True, 1]
 ]
+
+
+def test_spikes_removal_tool_navigation_dimension_0():
+    #Artificial Signal
+    s = Signal1D(np.ones(1234))
+    #Add a spike
+    s.data[333] = 666
+
+    assert s.axes_manager.navigation_dimension == 0
+
+    sr = SpikesRemovalInteractive(s)
+    sr.threshold = 1.5
+    sr.add_noise = False
+    sr.find()
+
+    sr.apply()
+
+    np.testing.assert_allclose(s.data[333], 1, atol=1e-4)
 
 
 @pytest.mark.parametrize(("add_noise, decimal"), [(True, 1), (False, 5)])

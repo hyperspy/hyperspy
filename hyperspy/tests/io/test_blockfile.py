@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import gc
@@ -288,6 +288,18 @@ def test_save_load_cycle(save_path, convert_units):
     sig_reload.metadata.General.original_filename = (
         signal.metadata.General.original_filename
     )
+    # assert file reading tests here, then delete so we can compare
+    # entire metadata structure at once:
+    plugin = 'hyperspy.io_plugins.blockfile'
+    assert signal.metadata.General.FileIO.Number_0.operation == 'load'
+    assert signal.metadata.General.FileIO.Number_0.io_plugin == plugin
+    assert signal.metadata.General.FileIO.Number_1.operation == 'save'
+    assert signal.metadata.General.FileIO.Number_1.io_plugin == plugin
+    assert sig_reload.metadata.General.FileIO.Number_0.operation == 'load'
+    assert sig_reload.metadata.General.FileIO.Number_0.io_plugin == plugin
+    del signal.metadata.General.FileIO
+    del sig_reload.metadata.General.FileIO
+
     assert_deep_almost_equal(
         signal.metadata.as_dictionary(), sig_reload.metadata.as_dictionary()
     )
@@ -430,7 +442,10 @@ def test_load_readonly():
     s = hs.load(FILE2, lazy=True)
     k = next(
         filter(
-            lambda x: isinstance(x, str) and x.startswith("array-original"),
+            # The or statement with both "array-original" and "original-array"
+            # is due to dask changing the name of this key. After dask-2022.1.1
+            # the key is "original-array", before it is "array-original"
+            lambda x: isinstance(x, str) and (x.startswith("original-array") or x.startswith("array-original")),
             s.data.dask.keys(),
         )
     )

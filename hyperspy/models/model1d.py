@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
 
@@ -28,7 +28,6 @@ from hyperspy.exceptions import WrongObjectError, SignalDimensionError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import LabelWidget, VerticalLineWidget
 from hyperspy.events import EventSuppressor
-from hyperspy.exceptions import SignalDimensionError, WrongObjectError
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT, add_gui_method
@@ -379,19 +378,22 @@ class Model1D(BaseModel):
     remove.__doc__ = BaseModel.remove.__doc__
 
     def __call__(self, non_convolved=False, onlyactive=False,
-                 component_list=None):
+                 component_list=None, binned=None):
         """Returns the corresponding model for the current coordinates
 
         Parameters
         ----------
         non_convolved : bool
             If True it will return the deconvolved model
-        only_active : bool
+        onlyactive : bool
             If True, only the active components will be used to build the
             model.
         component_list : list or None
             If None, the sum of all the components is returned. If list, only
             the provided components are returned
+        binned : bool or None
+            Specify whether the binned attribute of the signal axes needs to be
+            taken into account.
 
         cursor: 1 or 2
 
@@ -430,9 +432,13 @@ class Model1D(BaseModel):
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[self.channel_switches]
-        if is_binned(self.signal):
-        # in v2 replace by
-        #if self.signal.axes_manager[-1].is_binned:
+
+        if binned is None:
+            # in v2 replace by
+            # if self.signal.axes_manager[-1].is_binned:
+            binned = is_binned(self.signal)
+
+        if binned:
             if self.signal.axes_manager[-1].is_uniform:
                 to_return *= self.signal.axes_manager[-1].scale
             else:

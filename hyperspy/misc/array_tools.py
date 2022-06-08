@@ -1,27 +1,25 @@
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>
 
 
 from collections import OrderedDict
-from distutils.version import LooseVersion
-import math as math
+import math
 import logging
 
-import dask
 import dask.array as da
 import numpy as np
 from numba import njit
@@ -182,17 +180,9 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
                 2 * i + 1 for i in range(lenShape)), dtype=dtype)
         else:
             try:
-                kwargs = {}
-                if LooseVersion(dask.__version__) >= LooseVersion('2.11.0'):
-                    kwargs['dtype'] = dtype
-                elif dtype is not None:
-                    raise ValueError(
-                        'Using the dtype argument for lazy signal requires '
-                        'dask >= 2.11.0.'
-                        )
                 return da.coarsen(np.sum, a,
                                   {i: int(f) for i, f in enumerate(scale)},
-                                  **kwargs)
+                                  dtype=dtype)
             # we provide slightly better error message in hyperspy context
             except ValueError:
                 raise ValueError(

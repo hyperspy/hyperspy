@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import math
 
@@ -29,9 +29,10 @@ sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 class GaussianHF(Expression):
 
-    r"""Normalized gaussian function component, with a `fwhm` parameter instead
-    of the sigma parameter, and a `height` parameter instead of the `A`
-    parameter (scaling difference of :math:`\sigma \sqrt{\left(2\pi\right)}`).
+    r"""Normalized gaussian function component, with a ``fwhm`` parameter
+    instead of the ``sigma`` parameter, and a ``height`` parameter instead of
+    the area parameter ``A`` (scaling difference of
+    :math:`\sigma \sqrt{\left(2\pi\right)}`).
     This makes the parameter vs. peak maximum independent of :math:`\sigma`,
     and thereby makes locking of the parameter more viable. As long as there
     is no binning, the `height` parameter corresponds directly to the peak
@@ -64,15 +65,21 @@ class GaussianHF(Expression):
     centre: float
         Location of the gaussian maximum, also the mean position.
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
-
-    The helper properties `sigma` and `A` are also defined for compatibility
-    with `Gaussian` component.
+    Attributes
+    ----------
+    A : float
+        Convenience attribute to get, set the area and defined for
+        compatibility with `Gaussian` component.
+    sigma : float
+        Convenience attribute to get, set the width and defined for
+        compatibility with `Gaussian` component.
 
     See also
     --------
-    hyperspy._components.gaussian.Gaussian
+    ~._components.gaussian.Gaussian
 
     """
 

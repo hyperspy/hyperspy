@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 import pytest
@@ -161,3 +161,12 @@ def test_plot_component():
     assert ax.get_ylim() == (-0.1, 49.0)
     m.append(p)
     m.signal._plot.close()
+
+
+@pytest.mark.parametrize(("only_free"), [False, True])
+@pytest.mark.parametrize(("only_active"), [False, True])
+def test_plot_results(only_free, only_active):
+    m = hs.signals.Signal1D(np.arange(100).reshape(2, 50)).create_model()
+    m.append(hs.model.components1D.Gaussian(A=250, sigma=5, centre=20))
+    m.plot_results(only_free=only_free, only_active=only_active)
+    

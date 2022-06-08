@@ -1,1 +1,0 @@
-Add ``height`` property to the :py:class:`~._components.gaussian2d.Gaussian2D` component

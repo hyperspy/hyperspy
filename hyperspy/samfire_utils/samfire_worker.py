@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
 import os
@@ -204,8 +204,8 @@ class Worker:
         new_AICc = AICc(self.model)
 
         AICc_test = new_AICc < (self._AICc_fraction * self.best_AICc)
-        AICc_absolute_test = np.abs(new_AICc - self.best_AICc) <= \
-            np.abs(self._AICc_fraction * self.best_AICc)
+        AICc_absolute_test = abs(new_AICc - self.best_AICc) <= \
+            abs(self._AICc_fraction * self.best_AICc)
         dof_test = len(self.model.p0) < self.best_dof
 
         if AICc_test or AICc_absolute_test and dof_test:

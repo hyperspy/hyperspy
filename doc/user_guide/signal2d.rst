@@ -104,6 +104,26 @@ It is possible to crop interactively using :ref:`roi-label`. For example:
    Interactive image cropping using a ROI.
 
 
+Interactive calibration
+-----------------------
+
+The scale can be calibrated interactively by using
+:py:meth:`~._signals.signal2d.Signal2D.calibrate`, which is used to
+set the scale by dragging a line across some feature of known size.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal2D(np.random.random((200, 200)))
+    >>> s.calibrate()
+
+
+The same function can also be used non-interactively.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal2D(np.random.random((200, 200)))
+    >>> s.calibrate(x0=1, y0=1, x1=5, y1=5, new_length=3.4, units="nm", interactive=False)
+
 
 Add a linear ramp
 -----------------

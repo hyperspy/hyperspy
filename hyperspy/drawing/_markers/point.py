@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.drawing.marker import MarkerBase
 
@@ -39,14 +39,13 @@ class Point(MarkerBase):
     size : array or float, optional, default 20
         The size of the point. see x arguments
     kwargs :
-        Keywords argument of axvline valid properties (i.e. recognized by
-        mpl.plot).
+        Keyword arguments are passed to :py:meth:`matplotlib.axes.Axes.scatter`.
 
     Example
     -------
     >>> im = hs.signals.Signal2D(np.random.random([10, 50, 50]))
     >>> m = hs.plot.markers.point(x=range(10), y=range(10)[::-1],
-                                     color='red')
+    >>>                           color='red')
     >>> im.add_marker(m)
 
     Adding a marker permanently to a signal
@@ -70,7 +69,7 @@ class Point(MarkerBase):
 
     def __init__(self, x, y, size=20, **kwargs):
         MarkerBase.__init__(self)
-        lp = {'color': 'black', 'linewidth': None}
+        lp = {'color': 'black'}
         self.marker_properties = lp
         self.set_data(x1=x, y1=y, size=size)
         self.set_marker_properties(**kwargs)

@@ -1,26 +1,37 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import gc
 from pathlib import Path
+
 import pytest
 import numpy as np
 
 import hyperspy.api as hs
+from hyperspy import __version__ as hs_version
+
+
+def teardown_module(module):
+    """
+    Run a garbage collection cycle at the end of the test of this module
+    to avoid any memory issue when continuing running the test suite.
+    """
+    gc.collect()
 
 
 TESTS_FILE_PATH = Path(__file__).resolve().parent / 'JEOL_files'
@@ -150,27 +161,26 @@ def test_load_datacube(SI_dtype):
 
 def test_load_datacube_rebin_energy():
     filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[7]
-    s = hs.load(filename)
+    s = hs.load(filename, cutoff_at_kV=0.1)
     s_sum = s.sum()
 
     ref_data = hs.signals.Signal1D(
-        np.array([1032, 1229, 1409, 1336, 1239, 1169, 969, 850, 759, 782, 773,
-                  779, 853, 810, 825, 927, 1110, 1271, 1656, 1948])
+        np.array([   3,   23,   77,  200,  487,  984, 1599, 2391])
         )
-    np.testing.assert_allclose(s_sum.isig[0.5:0.7].data, ref_data.data)
+    np.testing.assert_allclose(s_sum.data[88:96], ref_data.data)
 
-    rebin_energy = 2
+    rebin_energy = 8
     s2 = hs.load(filename, rebin_energy=rebin_energy)
     s2_sum = s2.sum()
 
-    ref_data2 = ref_data.rebin(scale=(rebin_energy,))
-    np.testing.assert_allclose(s2_sum.isig[0.5:0.7].data, ref_data2.data)
+    np.testing.assert_allclose(s2_sum.data[11:12], ref_data.data.sum())
 
     with pytest.raises(ValueError, match='must be a multiple'):
         _ = hs.load(filename, rebin_energy=10)
 
 
 def test_load_datacube_cutoff_at_kV():
+    gc.collect()
     cutoff_at_kV = 10.
     filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[7]
     s = hs.load(filename, cutoff_at_kV=None)
@@ -246,11 +256,23 @@ def test_load_eds_file(filename_as_string):
     assert axis.offset == -0.00176612
     assert axis.scale == 0.0100004
 
+    # delete timestamp from metadata since it's runtime dependent
+    del s.metadata.General.FileIO.Number_0.timestamp
+
     md_dict = s.metadata.as_dictionary()
     assert md_dict['General'] == {'original_filename': 'met03.EDS',
                                   'time': '14:14:51',
-                                  'date':'2018-06-25',
-                                  'title': 'EDX'}
+                                  'date': '2018-06-25',
+                                  'title': 'EDX',
+                                  'FileIO': {
+                                    '0': {
+                                        'operation': 'load',
+                                        'hyperspy_version': hs_version,
+                                        'io_plugin':
+                                            'hyperspy.io_plugins.jeol'
+                                    }
+                                  }
+                                  }
     TEM_dict = md_dict['Acquisition_instrument']['TEM']
     assert TEM_dict == {'beam_energy': 200.0,
                         'Detector': {'EDS': {'azimuth_angle': 90.0,
@@ -359,9 +381,7 @@ def test_pts_lazy():
 
 
 def test_pts_frame_shift():
-    dir = TESTS_FILE_PATH2
-    dir2p = dir / 'Sample' / '00_Dummy-Data'
-    file = str(dir2p / test_files2[16])
+    file = TESTS_FILE_PATH2 / 'Sample' / '00_Dummy-Data' / test_files2[16]
 
     # without frame shift
     ref = hs.load(file, read_em_image=True, only_valid_data=False,

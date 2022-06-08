@@ -1,4 +1,4 @@
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 from hyperspy.components1d import Gaussian
@@ -54,3 +54,27 @@ class TestSetParameters:
         free_parameters = len(g.free_parameters)
         parameters = len(g.parameters) - 2
         assert free_parameters == parameters
+
+    def test_set_parameters_not_free_linearity(self):
+        g = self.gaussian
+
+        g.set_parameters_not_free(only_nonlinear=True)
+        assert not g.sigma.free
+        assert not g.centre.free
+        assert g.A.free
+
+        g.set_parameters_not_free(only_linear=True)
+        assert not g.sigma.free
+        assert not g.centre.free
+        assert not g.A.free
+
+        g.set_parameters_free(only_linear=True)
+        assert not g.sigma.free
+        assert not g.centre.free
+        assert g.A.free
+
+        g.set_parameters_free(only_nonlinear=True)
+        g.set_parameters_not_free(only_linear=True)
+        assert g.sigma.free
+        assert g.centre.free
+        assert not g.A.free

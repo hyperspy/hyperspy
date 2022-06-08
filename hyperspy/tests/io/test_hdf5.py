@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
 from pathlib import Path
@@ -26,6 +26,7 @@ import h5py
 import numpy as np
 import pytest
 
+from hyperspy import __version__ as hs_version
 from hyperspy.io import load
 from hyperspy.axes import DataAxis, UniformDataAxis, FunctionalDataAxis, AxesManager
 from hyperspy.signal import BaseSignal
@@ -212,7 +213,8 @@ class TestSavingMetadataContainers:
         fname = tmp_path / file
         s.save(fname)
         end = time.time()
-        assert end - start < 1.0  # It should finish in less that 1 s.
+        # It should finish in less that 2 s on CI.
+        assert end - start < 2.0  
 
     @zspy_marker
     def test_numpy_only_inner_lists(self, tmp_path, file):
@@ -369,7 +371,15 @@ class TestSavingMetadataContainers:
               'General': {'date': '2014-07-09',
                           'original_filename': 'test_diffraction_pattern.dm3',
                           'time': '18:56:37',
-                          'title': 'test_diffraction_pattern'},
+                          'title': 'test_diffraction_pattern',
+                          'FileIO': {
+                              '0': {
+                                  'operation': 'load',
+                                  'hyperspy_version': hs_version,
+                                  'io_plugin': 'hyperspy.io_plugins.hspy'
+                              }
+                          }
+              },
               'Signal': {'Noise_properties': {'Variance_linear_model': {'gain_factor': 1.0,
                                                                         'gain_offset': 0.0}},
                          'quantity': 'Intensity',
@@ -379,6 +389,8 @@ class TestSavingMetadataContainers:
                                         'signal_unfolded': False,
                                         'unfolded': False}}}
         s = load(my_path / "hdf5_files" / 'example2_v3.1.hspy')
+        # delete timestamp from metadata since it's runtime dependent
+        del s.metadata.General.FileIO.Number_0.timestamp
         assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 
@@ -391,7 +403,7 @@ def test_rgba16():
     with pytest.warns(VisibleDeprecationWarning):
         print(my_path)
         s = load(my_path / "hdf5_files" / "test_rgba16.hdf5")
-    data = np.load(my_path / "npy_files" / "test_rgba16.npy")
+    data = np.load(my_path / "npz_files" / "test_rgba16.npz")['a']
     assert (s.data == data).all()
 
 
@@ -800,6 +812,22 @@ def test_save_ragged_array(tmp_path, file):
     for i in range(len(s.data)):
         np.testing.assert_allclose(s.data[i], s1.data[i])
     assert s.__class__ == s1.__class__
+
+
+@zspy_marker
+def test_save_ragged_dim2(tmp_path, file):
+    x = np.empty(5, dtype=object)
+    for i in range(1, 6):
+        x[i - 1] = np.array([list(range(i)), list(range(i))])
+
+    s = BaseSignal(x, ragged=True)
+
+    filename = tmp_path / file
+    s.save(filename)
+    s2 = load(filename)
+
+    for i, j in zip(s.data,s2.data):
+        np.testing.assert_array_equal(i,j)
 
 
 def test_load_missing_extension(caplog):

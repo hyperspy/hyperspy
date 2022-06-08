@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <https://www.gnu.org/licenses/#GPL>.
 
 # Plugin to read the mountainsmap surface format (sur)
 #Current state can bring support to the surface format if the file is an
@@ -577,8 +577,10 @@ class DigitalSurfHandler(object):
         #If the signal is of the type spectrum or hypercard
         if self._Object_type in ["_HYPCARD",]:
             self._build_hyperspectral_map()
+            #self._build_hyperspectral_signal_type()
         elif self._Object_type in ["_SPECTRUM"]:
             self._build_spectrum()
+            #self._build_spectrum_signal_type()
         elif self._Object_type in ["_PROFILE"]:
             self._build_general_1D_data()
         elif self._Object_type in ["_PROFILESERIE"]:

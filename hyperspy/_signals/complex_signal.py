@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from functools import wraps
 
@@ -203,11 +203,11 @@ class ComplexSignal(BaseSignal):
     unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def __call__(self, axes_manager=None, power_spectrum=False,
-                 fft_shift=False):
+                 fft_shift=False, as_numpy=None):
         value = super().__call__(axes_manager=axes_manager,
-                                 fft_shift=fft_shift)
+                                 fft_shift=fft_shift, as_numpy=as_numpy)
         if power_spectrum:
-            value = np.abs(value)**2
+            value = abs(value)**2
         return value
 
     def plot(self,
@@ -333,8 +333,9 @@ class ComplexSignal(BaseSignal):
                 raise ValueError('display_range should be array_like, shape(2,2) or shape(2,).')
 
         argand_diagram, real_edges, imag_edges = np.histogram2d(re, im, bins=size, range=range)
-        argand_diagram = Signal2D(argand_diagram.T)
-        argand_diagram.metadata = self.metadata.deepcopy()
+        argand_diagram = Signal2D(argand_diagram.T,
+                                  metadata=self.metadata.as_dictionary(),
+                                  )
         argand_diagram.metadata.General.title = f'Argand diagram of {self.metadata.General.title}'
 
         if self.real.metadata.Signal.has_item('quantity'):
@@ -344,7 +345,7 @@ class ComplexSignal(BaseSignal):
             argand_diagram.axes_manager.signal_axes[0].name = 'Real'
             units_real = None
         argand_diagram.axes_manager.signal_axes[0].offset = real_edges[0]
-        argand_diagram.axes_manager.signal_axes[0].scale = np.abs(real_edges[0] - real_edges[1])
+        argand_diagram.axes_manager.signal_axes[0].scale = abs(real_edges[0] - real_edges[1])
 
         if self.imag.metadata.Signal.has_item('quantity'):
             quantity_imag, units_imag = parse_quantity(self.imag.metadata.Signal.quantity)
@@ -353,7 +354,7 @@ class ComplexSignal(BaseSignal):
             argand_diagram.axes_manager.signal_axes[1].name = 'Imaginary'
             units_imag = None
         argand_diagram.axes_manager.signal_axes[1].offset = imag_edges[0]
-        argand_diagram.axes_manager.signal_axes[1].scale = np.abs(imag_edges[0] - imag_edges[1])
+        argand_diagram.axes_manager.signal_axes[1].scale = abs(imag_edges[0] - imag_edges[1])
         if units_real:
             argand_diagram.axes_manager.signal_axes[0].units = units_real
         if units_imag:

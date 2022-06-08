@@ -17,7 +17,7 @@ fix the style of your code. You can install and run ``black`` by:
    black /path/to/your/file.py
 
 In Linux and MacOS you can run ``black`` automatically after each commit by
-adding a ``post-commit`` file to ``.git/hook`` with the following content:
+adding a ``post-commit`` file to ``.git/hook/`` with the following content:
 
 .. code-block:: bash
 

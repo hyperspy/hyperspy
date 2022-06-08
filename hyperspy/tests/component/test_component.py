@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import pytest
 from unittest import mock
@@ -22,7 +22,7 @@ from unittest import mock
 import numpy as np
 
 from hyperspy.axes import AxesManager
-from hyperspy.component import Component, _get_scaling_factor
+from hyperspy.component import Component, Parameter, _get_scaling_factor
 from hyperspy._signals.signal1d import Signal1D
 
 
@@ -198,6 +198,10 @@ class TestGeneralMethods:
         assert self.c.one.free
         assert self.c.two.free
 
+    def test_set_parameters_free_only_linear_only_nonlinear(self):
+        with pytest.raises(ValueError):
+            self.c.set_parameters_free(only_linear=True, only_nonlinear=True)
+
     def test_set_parameters_free_name(self):
         self.c.set_parameters_free(['one'])
         assert self.c.one.free
@@ -208,12 +212,17 @@ class TestGeneralMethods:
         assert not self.c.one.free
         assert not self.c.two.free
 
+    def test_set_parameters_not_free_only_linear_only_nonlinear(self):
+        with pytest.raises(ValueError):
+            self.c.set_parameters_not_free(
+                only_linear=True, only_nonlinear=True
+                )
+
     def test_set_parameters_not_free_name(self):
         self.c.one.free = True
         self.c.set_parameters_not_free(['two'])
         assert self.c.one.free
         assert not self.c.two.free
-
 
 class TestCallMethods:
 
@@ -285,3 +294,13 @@ def test_get_scaling_parameter(is_binned, non_uniform, dim):
         assert np.all(scaling_factor == 0.5)
     else:
         assert scaling_factor == 1
+
+
+def test_linear_parameter_initialisation():
+
+    C = Component(['one', 'two'], ['one'])
+    P = Parameter()
+
+    assert C.one._linear
+    assert not C.two._linear
+    assert not P._linear

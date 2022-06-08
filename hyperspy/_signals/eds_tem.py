@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import warnings
@@ -25,7 +25,7 @@ import numpy as np
 from scipy import constants
 import pint
 
-from hyperspy.signal import BaseSetMetadataItems
+from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy import utils
 from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.defaults_parser import preferences
@@ -268,7 +268,7 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         """
 
-        self.original_metadata = ref.original_metadata.deepcopy()
+        self._original_metadata = ref.original_metadata.deepcopy()
         # Setup the axes_manager
         ax_m = self.axes_manager.signal_axes[0]
         ax_ref = ref.axes_manager.signal_axes[0]
@@ -399,13 +399,22 @@ class EDSTEMSpectrum(EDSSpectrum):
         --------
         vacuum_mask
         """
+        if (not isinstance(intensities, (list, tuple)) or
+                not isinstance(intensities[0], BaseSignal)):
+            raise ValueError(
+                "The parameter `intensities` must be a list of signals."
+                )
+        elif len(intensities) <= 1:
+            raise ValueError("Several X-ray line intensities are required.")
+        
         if isinstance(navigation_mask, float):
             if self.axes_manager.navigation_dimension > 0:
                 navigation_mask = self.vacuum_mask(navigation_mask, closing)
             else:
                 navigation_mask = None
 
-        xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
+        xray_lines = [intensity.metadata.Sample.xray_lines[0]
+                      for intensity in intensities]
         it = 0
         if absorption_correction:
             if show_progressbar is None:  # pragma: no cover
@@ -559,7 +568,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             utils.plot.plot_signals(composition, **kwargs)
 
         if absorption_correction:
-            _logger.info(f'Conversion found after {it} interations.')
+            _logger.info(f'Convergence reached after {it} interations.')
 
         if method == 'zeta':
             mass_thickness.metadata.General.title = 'Mass thickness'
@@ -611,7 +620,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         if self.axes_manager.navigation_dimension == 0:
             raise RuntimeError('Navigation dimenstion must be higher than 0 '
                                'to estimate a vacuum mask.')
-        from scipy.ndimage.morphology import binary_dilation, binary_erosion
+        from scipy.ndimage import binary_dilation, binary_erosion
         mask = (self.max(-1) <= threshold)
         if closing:
             mask.data = binary_dilation(mask.data, border_value=0)

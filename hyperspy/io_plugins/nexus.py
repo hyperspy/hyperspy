@@ -1,21 +1,21 @@
 """Nexus file reading, writing and inspection."""
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 #
 import logging
 import warnings
@@ -28,7 +28,6 @@ import pprint
 import traits.api as t
 
 from hyperspy.io_plugins.hspy import (get_signal_chunks, overwrite_dataset)
-from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.exceptions import VisibleDeprecationWarning
 
 
@@ -765,8 +764,8 @@ def _find_data(group, search_keys=None, hardlinks_only=False,
                 if isinstance(value, h5py.Dataset):
                     if value.size >= 2:
                         target = _getlink(group, rootkey, key)
-                        if not(value.dtype.type is np.string_ or
-                                value.dtype.type is np.object_):
+                        if not(value.dtype.type is str or
+                                value.dtype.type is object):
                             all_hdf_datasets.append(rootkey)
                             if target is None:
                                 unique_hdf_datasets.append(rootkey)
@@ -1277,12 +1276,6 @@ def file_writer(filename,
         for i, sig in enumerate(signals):
             nxentry = f.create_group("entry%d" % (i + 1))
             nxentry.attrs["NX_class"] = _parse_to_file("NXentry")
-
-            if isinstance(sig.metadata, dict):
-                sig.metadata = DictionaryTreeBrowser(sig.metadata)
-            if isinstance(sig.original_metadata, dict):
-                sig.original_metadata = DictionaryTreeBrowser(
-                    sig.original_metadata)
 
             signal_name = sig.metadata.General.title \
                 if sig.metadata.General.title else 'unnamed__%d' % i

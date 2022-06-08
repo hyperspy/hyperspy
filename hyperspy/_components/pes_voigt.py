@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 import math
@@ -84,12 +84,12 @@ def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
 class Voigt(Component):
     # Legacy class to be removed in v2.0
 
-    r"""This is the legacy Voigt profile component dedicated to photoemission
-    spectroscopy data analysis that will renamed to `PESVoigt` in v2.0. To use
-    the new Voigt lineshape component set `legacy=False`. See the
-    documentation of :meth:`hyperspy._components.voigt.Voigt` for details on
+    r"""Legacy Voigt profile component dedicated to photoemission spectroscopy
+    data analysis that will renamed to `PESVoigt` in v2.0. To use
+    the new Voigt lineshape component set ``legacy=False``. See the
+    documentation of :py:class:`~._components.voigt.Voigt` for details on
     the usage of the new Voigt component and
-    :meth:`hyperspy._components.pes_voigt.PESVoigt` for the legacy component.
+    :py:class:`~._components.pes_voigt.PESVoigt` for the legacy component.
 
     .. math::
         f(x) = G(x) \cdot L(x)
@@ -273,7 +273,8 @@ class PESVoigt(Component):
         Returns
         -------
          : bool
-            Exit status required for the :meth:`remove_background` function.
+            Exit status required for the
+            :py:meth:`~._signals.signal1d.Signal1D.remove_background` function.
 
         Notes
         -----

@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import sys
 from unittest import mock
@@ -306,3 +306,33 @@ class TestOutArg:
         ss = s.sum()  # Sum over navigation, data shape (6,)
         with pytest.raises(ValueError):
             s.sum(axis=s.axes_manager._axes, out=ss)
+
+
+@pytest.mark.parametrize('lazy', [False, True])
+def test_get_current_signal(lazy):
+    data = np.arange(100)
+    s = signals.Signal1D(data.reshape((10, 10)))
+    s.metadata.General.title = 'A signal'
+    if lazy:
+        s = s.as_lazy()
+
+    s.axes_manager.indices = (1,)
+    cs = s.get_current_signal()
+    assert cs.metadata.General.title == 'A signal (1,)'
+    np.testing.assert_allclose(cs.data, np.arange(start=10, stop=20))
+
+    cs = s.get_current_signal(auto_title=False)
+    assert cs.metadata.General.title == 'A signal'
+
+
+def test_to_host():
+    data = np.arange(10)
+    s = signals.BaseSignal(data)
+    s.to_host()
+    s.data is data
+
+
+def test_lazy_to_device():
+    s = signals.BaseSignal(np.arange(10)).as_lazy()
+    with pytest.raises(BaseException):
+        s.to_device()

@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import logging
@@ -268,7 +268,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         max_r = max(self.radius_move, self.radius_resize,
                     self.radius_rotate)
         kwargs = picker_kwargs(max_r)
-        self.patch = [plt.Line2D(
+        self._patch = [plt.Line2D(
             xy[:, 0], xy[:, 1],
             linestyle='-',
             lw=self.linewidth,
@@ -298,14 +298,14 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 lw=self.linewidth,
                 c=self.color,
                 **kwargs)
-            self.patch.append(wi)
+            self._patch.append(wi)
             self._width_indicator_patches.append(wi)
 
     def _remove_size_patch(self):
         if not self._width_indicator_patches:
             return
         for patch in self._width_indicator_patches:
-            self.patch.remove(patch)
+            self._patch.remove(patch)
             patch.remove()
         self._width_indicator_patches = []
 
@@ -475,4 +475,4 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         dn = 2 * np.dot(n, dx)
         if self._selected_artist is self.patch[2]:
             dn *= -1
-        self.size = np.abs(self._drag_store[1] + dn)
+        self.size = abs(self._drag_store[1] + dn)

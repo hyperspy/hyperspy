@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import dask.array as da
 import numpy as np
@@ -51,9 +51,9 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
     a1 = np.sqrt(2 / np.pi)
     b1 = (4 / np.pi - 1) * a1
     m1 = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
-    m2 = np.abs(np.sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 2 * data, i)
+    m2 = abs(np.sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 2 * data, i)
               / np.sum(data, i))
-    m3 = np.abs(np.sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 3 * data, i)
+    m3 = abs(np.sum((X.reshape(X_shape) - m1.reshape(x0_shape)) ** 3 * data, i)
               / np.sum(data, i))
 
     x0 = m1 - a1 * (m3 / b1) ** (1 / 3)
@@ -61,7 +61,7 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
     delta = np.sqrt(1 / (a1**2 + m2 * (b1 / m3) ** (2 / 3)))
     shape = delta / np.sqrt(1 - delta**2)
 
-    iheight = np.argmin(np.abs(X.reshape(X_shape) - x0.reshape(x0_shape)), i)
+    iheight = np.argmin(abs(X.reshape(X_shape) - x0.reshape(x0_shape)), i)
     # height is the value of the function at x0, shich has to be computed
     # differently for dask array (lazy) and depending on the dimension
     if isinstance(data, da.Array):
@@ -131,10 +131,14 @@ class SkewNormal(Expression):
         distribution (Gaussian) is obtained. The distribution is
         right skewed (longer tail to the right) if shape>0 and is
         left skewed if shape<0.
+    **kwargs
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
-
+    Notes
+    -----
     The properties `mean` (position), `variance`, `skewness` and `mode`
-    (=position of maximum) are defined for convenience.
+    (position of maximum) are defined for convenience.
     """
 
     def __init__(self, x0=0., A=1., scale=1., shape=0.,
@@ -244,22 +248,26 @@ class SkewNormal(Expression):
 
     @property
     def mean(self):
+        """Mean (position) of the component."""
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
         return self.x0.value + self.scale.value * delta * np.sqrt(2 / np.pi)
 
     @property
     def variance(self):
+        """Variance of the component."""
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
         return self.scale.value**2 * (1 - 2 * delta**2 / np.pi)
 
     @property
     def skewness(self):
+        """Skewness of the component."""
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
         return (4 - np.pi)/2 * (delta * np.sqrt(2/np.pi))**3 / (1 -
                                                                 2 * delta**2 / np.pi)**(3/2)
 
     @property
     def mode(self):
+        """Mode (position of maximum) of the component."""
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
         muz = np.sqrt(2 / np.pi) * delta
         sigmaz = np.sqrt(1 - muz**2)
@@ -267,5 +275,5 @@ class SkewNormal(Expression):
             return self.x0.value
         else:
             m0 = muz - self.skewness * sigmaz / 2 - np.sign(self.shape.value) \
-                / 2 * np.exp(- 2 * np.pi / np.abs(self.shape.value))
+                / 2 * np.exp(- 2 * np.pi / abs(self.shape.value))
             return self.x0.value + self.scale.value * m0

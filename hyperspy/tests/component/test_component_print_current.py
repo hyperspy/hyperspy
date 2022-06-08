@@ -1,4 +1,4 @@
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import pytest
 
@@ -93,7 +93,7 @@ class TestSetParameters:
     @pytest.mark.parametrize("fancy", (True, False))
     def test_model_current_model_values(self, fancy):
         self.model.print_current_values(fancy=fancy)
-        
+
     @pytest.mark.parametrize("fancy", (True, False))
     def test_component_print_current_values(self, fancy):
         self.model[0].print_current_values(fancy=fancy)
@@ -108,7 +108,10 @@ class TestSetParameters:
 
     def test_zero_in_normal_print(self):
         "Ensure parameters with value=0 are printed too"
-        assert "            a0 |  True |          0 |" in str(current_component_values(self.model[0]).__repr__)
+        assert "            a0 |    True |          0 |" in str(current_component_values(self.model[0]).__repr__)
+
+    def test_twinned_in_print(self):
+        assert "             A | Twinned |" in str(current_component_values(self.model[2]).__repr__()).split('\n')[4]
 
     def test_related_tools(self):
         assert _is_iter([1,2,3])

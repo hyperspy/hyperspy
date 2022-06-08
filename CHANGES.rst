@@ -8,6 +8,106 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 
 .. towncrier release notes start
 
+Hyperspy 1.7.0 (2022-04-26)
+===========================
+
+New features
+------------
+
+- Add ``filter_zero_loss_peak`` argument to the :py:meth:`~._signals.eels.EELSSpectrum.spikes_removal_tool` method (`#1412 <https://github.com/hyperspy/hyperspy/issues/1412>`_)
+- Add :py:meth:`~._signals.signal2d.Signal2D.calibrate` method to :py:class:`~._signals.signal2d.Signal2D` signal, which allows for interactive calibration (`#1791 <https://github.com/hyperspy/hyperspy/issues/1791>`_)
+- Add :py:meth:`~._signals.eels.EELSSpectrum.vacuum_mask` method to :py:class:`~._signals.eels.EELSSpectrum` signal (`#2183 <https://github.com/hyperspy/hyperspy/issues/2183>`_)
+- Support for :ref:`relative slicing <signal.indexing>` (`#2386 <https://github.com/hyperspy/hyperspy/issues/2386>`_)
+- Implement non-uniform axes, not all hyperspy functionalities support non-uniform axes, see this `tracking issue <https://github.com/hyperspy/hyperspy/issues/2398>`_ for progress. (`#2399 <https://github.com/hyperspy/hyperspy/issues/2399>`_)
+- Add (weighted) :ref:`linear least square fitting <linear_fitting-label>`. Close `#488 <https://github.com/hyperspy/hyperspy/issues/488>`_ and `#574 <https://github.com/hyperspy/hyperspy/issues/574>`_. (`#2422 <https://github.com/hyperspy/hyperspy/issues/2422>`_)
+- Support for reading :ref:`JEOL EDS data<jeol_format-label>` (`#2488 <https://github.com/hyperspy/hyperspy/issues/2488>`_)
+- Plot overlayed images - see :ref:`plotting several images<plot.images>` (`#2599 <https://github.com/hyperspy/hyperspy/issues/2599>`_)
+- Add initial support for :ref:`GPU computation<gpu_processing>` using cupy (`#2670 <https://github.com/hyperspy/hyperspy/issues/2670>`_)
+- Add ``height`` property to the :py:class:`~._components.gaussian2d.Gaussian2D` component (`#2688 <https://github.com/hyperspy/hyperspy/issues/2688>`_)
+- Support for reading and writing :ref:`TVIPS image stream data<tvips_format-label>` (`#2780 <https://github.com/hyperspy/hyperspy/issues/2780>`_)
+- Add in :ref:`zspy format<zspy-format>`: hspy specification with the zarr format. Particularly useful to speed up loading and :ref:`saving large datasets<big_data.saving>` by using concurrency. (`#2825 <https://github.com/hyperspy/hyperspy/issues/2825>`_)
+- Support for reading :ref:`DENSsolutions Impulse data<dens-format>` (`#2828 <https://github.com/hyperspy/hyperspy/issues/2828>`_)
+- Add lazy loading for :ref:`JEOL EDS data<jeol_format-label>` (`#2846 <https://github.com/hyperspy/hyperspy/issues/2846>`_)
+- Add :ref:`html representation<lazy._repr_html_>` for lazy signals and the
+  :py:meth:`~._signals.lazy.LazySignal.get_chunk_size` method to get the chunk size
+  of given axes (`#2855 <https://github.com/hyperspy/hyperspy/issues/2855>`_)
+- Add support for Hamamatsu HPD-TA Streak Camera tiff files,
+  with axes and metadata parsing. (`#2908 <https://github.com/hyperspy/hyperspy/issues/2908>`_)
+
+
+Bug Fixes
+---------
+
+- Signals with 1 value in the signal dimension will now be :py:class:`~.signal.BaseSignal` (`#2773 <https://github.com/hyperspy/hyperspy/issues/2773>`_)
+- :py:func:`~.misc.material.density_of_mixture` now throws a Value error when the density of an element is unknown (`#2775 <https://github.com/hyperspy/hyperspy/issues/2775>`_)
+- Improve error message when performing Cliff-Lorimer quantification with a single line intensity (`#2822 <https://github.com/hyperspy/hyperspy/issues/2822>`_)
+- Fix bug for the hydrogenic gdos k edge (`#2859 <https://github.com/hyperspy/hyperspy/issues/2859>`_)
+- Fix bug in axes.UnitConversion: the offset value was initialized by units. (`#2864 <https://github.com/hyperspy/hyperspy/issues/2864>`_)
+- Fix bug where the :py:meth:`~.signal.BaseSignal.map` function wasn't operating properly when an iterating signal was larger than the input signal. (`#2878 <https://github.com/hyperspy/hyperspy/issues/2878>`_)
+- In case the Bruker defined XML element node at SpectrumRegion contains no information on the
+  specific selected X-ray line (if there is only single line available), suppose it is 'Ka' line. (`#2881 <https://github.com/hyperspy/hyperspy/issues/2881>`_)
+- When loading Bruker Bcf, ``cutoff_at_kV=None`` does no cutoff (`#2898 <https://github.com/hyperspy/hyperspy/issues/2898>`_)
+- Fix bug where the :py:meth:`~.signal.BaseSignal.map` function wasn't operating properly when an iterating signal was not an array. (`#2903 <https://github.com/hyperspy/hyperspy/issues/2903>`_)
+- Fix bug for not saving ragged arrays with dimensions larger than 2 in the ragged dimension. (`#2906 <https://github.com/hyperspy/hyperspy/issues/2906>`_)
+- Fix bug with importing some spectra from eelsdb and add progress bar (`#2916 <https://github.com/hyperspy/hyperspy/issues/2916>`_)
+- Fix bug when the spikes_removal_tool would not work interactively for signal with 0-dimension navigation space. (`#2918 <https://github.com/hyperspy/hyperspy/issues/2918>`_)
+
+
+Deprecations
+------------
+
+- Deprecate :py:meth:`~.axes.AxesManager.set_signal_dimension` in favour of using :py:meth:`~.signal.BaseSignal.as_signal1D`, :py:meth:`~.signal.BaseSignal.as_signal2D` or :py:meth:`~.signal.BaseSignal.transpose` of the signal instance instead. (`#2830 <https://github.com/hyperspy/hyperspy/issues/2830>`_)
+
+
+Enhancements
+------------
+
+- :ref:`Region of Interest (ROI)<roi-label>` can now be created without specifying values (`#2341 <https://github.com/hyperspy/hyperspy/issues/2341>`_)
+- mpfit cleanup (`#2494 <https://github.com/hyperspy/hyperspy/issues/2494>`_)
+- Document reading Attolight data with the sur/pro format reader (`#2559 <https://github.com/hyperspy/hyperspy/issues/2559>`_)
+- Lazy signals now caches the current data chunk when using multifit and when plotting, improving performance. (`#2568 <https://github.com/hyperspy/hyperspy/issues/2568>`_)
+- Read cathodoluminescence metadata from digital micrograph files, amended in `PR #2894 <https://github.com/hyperspy/hyperspy/pull/2894>`_ (`#2590 <https://github.com/hyperspy/hyperspy/issues/2590>`_)
+- Add possibility to search/access nested items in DictionaryTreeBrowser (metadata) without providing full path to item. (`#2633 <https://github.com/hyperspy/hyperspy/issues/2633>`_)
+- Improve :py:meth:`~.signal.BaseSignal.map` function in :py:class:`~.signal.BaseSignal` by utilizing dask for both lazy and non-lazy signals. This includes adding a `lazy_output` parameter, meaning non-lazy signals now can output lazy results. See the :ref:`user guide<lazy_output-map-label>` for more information. (`#2703 <https://github.com/hyperspy/hyperspy/issues/2703>`_)
+- :ref:`NeXus<nexus-format>` file with more options when reading and writing (`#2725 <https://github.com/hyperspy/hyperspy/issues/2725>`_)
+- Add ``dtype`` argument to :py:meth:`~.signal.BaseSignal.rebin` (`#2764 <https://github.com/hyperspy/hyperspy/issues/2764>`_)
+- Add option to set output size when :ref:`exporting images<image-format>` (`#2791 <https://github.com/hyperspy/hyperspy/issues/2791>`_)
+- Add :py:meth:`~.axes.AxesManager.switch_iterpath` context manager to switch iterpath (`#2795 <https://github.com/hyperspy/hyperspy/issues/2795>`_)
+- Add options not to close file (lazy signal only) and not to write dataset for hspy file format, see :ref:`hspy-format` for details (`#2797 <https://github.com/hyperspy/hyperspy/issues/2797>`_)
+- Add Github workflow to run test suite of extension from a pull request. (`#2824 <https://github.com/hyperspy/hyperspy/issues/2824>`_)
+- Add :py:attr:`~.signal.BaseSignal.ragged` attribute to :py:class:`~.signal.BaseSignal` to clarify when a signal contains a ragged array. Fix inconsistency caused by ragged array and add a :ref:`ragged array<signal.ragged>` section to the user guide (`#2842 <https://github.com/hyperspy/hyperspy/issues/2842>`_)
+- Import hyperspy submodules lazily to speed up importing hyperspy. Fix autocompletion `signals` submodule (`#2850 <https://github.com/hyperspy/hyperspy/issues/2850>`_)
+- Add support for JEOL SightX tiff file (`#2862 <https://github.com/hyperspy/hyperspy/issues/2862>`_)
+- Add new markers :py:mod:`~.drawing._markers.arrow`, :py:mod:`~.drawing._markers.ellipse` and filled :py:mod:`~.drawing._markers.rectangle`. (`#2871 <https://github.com/hyperspy/hyperspy/issues/2871>`_)
+- Add metadata about the file-reading and saving operations to the Signals
+  produced by :py:func:`~hyperspy.io.load` and :py:meth:`~.signal.BaseSignal.save`
+  (see the :ref:`metadata structure <general-file-metadata>` section of the user guide) (`#2873 <https://github.com/hyperspy/hyperspy/issues/2873>`_)
+- expose Stage coordinates and rotation angle in metada for sem images in bcf reader. (`#2911 <https://github.com/hyperspy/hyperspy/issues/2911>`_)
+
+
+API changes
+-----------
+
+- ``metadata.Signal.binned`` is replaced by an axis parameter, e. g. ``axes_manager[-1].is_binned`` (`#2652 <https://github.com/hyperspy/hyperspy/issues/2652>`_)
+- * when loading Bruker bcf, ``cutoff_at_kV=None`` (default) applies no more automatic cutoff.
+  * New acceptable values ``"zealous"`` and ``"auto"`` do automatic cutoff. (`#2910 <https://github.com/hyperspy/hyperspy/issues/2910>`_)
+- Deprecate the ability to directly set ``metadata`` and ``original_metadata`` Signal 
+  attributes in favor of using :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item` 
+  and :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods or 
+  specifying metadata when creating signals (`#2913 <https://github.com/hyperspy/hyperspy/issues/2913>`_)
+
+
+Maintenance
+-----------
+
+- Fix warning when build doc and formatting user guide (`#2762 <https://github.com/hyperspy/hyperspy/issues/2762>`_)
+- Drop support for python 3.6 (`#2839 <https://github.com/hyperspy/hyperspy/issues/2839>`_)
+- Continuous integration fixes and improvements; Bump minimal version requirement of dask to 2.11.0 and matplotlib to 3.1.3 (`#2866 <https://github.com/hyperspy/hyperspy/issues/2866>`_)
+- Tweak tests tolerance to fix tests failure on aarch64 platform; Add python 3.10 build. (`#2914 <https://github.com/hyperspy/hyperspy/issues/2914>`_)
+- Add support for matplotlib 3.5, simplify maintenance of ``RangeWidget`` and some signal tools. (`#2922 <https://github.com/hyperspy/hyperspy/issues/2922>`_)
+- Compress some tiff tests files to reduce package size (`#2926 <https://github.com/hyperspy/hyperspy/issues/2926>`_)
+
+
 v1.6.5 (2021-10-28)
 ===================
 

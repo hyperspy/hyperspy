@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import os
 import glob
@@ -27,7 +27,9 @@ from natsort import natsorted
 from inspect import isgenerator
 from pathlib import Path
 from collections.abc import MutableMapping
+from datetime import datetime
 
+from hyperspy import __version__ as hs_version
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.io.tools import ensure_directory
@@ -236,10 +238,18 @@ def load(filenames=None,
         pixel. This allows to improve signal and conserve the memory with the
         cost of lower resolution.
     cutoff_at_kV : None, int, float, optional
-        For Bruker bcf files, if set to numerical (default is None),
-        bcf is parsed into array with depth cutoff at coresponding given energy.
+        For Bruker bcf files and Jeol, if set to numerical (default is None),
+        hypermap is parsed into array with depth cutoff at set energy value.
         This allows to conserve the memory by cutting-off unused spectral
         tails, or force enlargement of the spectra size.
+        Bruker bcf reader accepts additional values for semi-automatic cutoff.
+        "zealous" value truncates to the last non zero channel (this option
+        should not be used for stacks, as low beam current EDS can have different
+        last non zero channel per slice).
+        "auto" truncates channels to SEM/TEM acceleration voltage or
+        energy at last channel, depending which is smaller.
+        In case the hv info is not there or hv is off (0 kV) then it fallbacks to
+        full channel range.
     select_type : 'spectrum_image', 'image', 'single_spectrum', None, optional
         If None (default), all data are loaded.
         For Bruker bcf and Velox emd files: if one of 'spectrum_image', 'image'
@@ -530,6 +540,7 @@ def load_with_reader(
             if signal_type is not None:
                 signal_dict['metadata']["Signal"]['signal_type'] = signal_type
             signal = dict2signal(signal_dict, lazy=lazy)
+            signal = _add_file_load_save_metadata('load', signal, reader)
             path = _parse_path(filename)
             folder, filename = os.path.split(os.path.abspath(path))
             filename, extension = os.path.splitext(filename)
@@ -553,7 +564,7 @@ def load_with_reader(
             if convert_units:
                 signal.axes_manager.convert_units()
             if not load_original_metadata:
-                signal.original_metadata = type(signal.original_metadata)()
+                signal._original_metadata = type(signal.original_metadata)()
             signal_list.append(signal)
         else:
             # it's a standalone model
@@ -714,10 +725,12 @@ def dict2signal(signal_dict, lazy=False):
                                     lazy=lazy)(**signal_dict)
     if signal._lazy:
         signal._make_lazy()
-    if signal.axes_manager.signal_dimension != signal_dimension:
-        # This may happen when the signal dimension couldn't be matched with
-        # any specialised subclass
-        signal.axes_manager.set_signal_dimension(signal_dimension)
+
+
+    # This may happen when the signal dimension couldn't be matched with
+    # any specialised subclass
+    signal.axes_manager._set_signal_dimension(signal_dimension)
+
     if "post_process" in signal_dict:
         for f in signal_dict['post_process']:
             signal = f(signal)
@@ -835,6 +848,7 @@ def save(filename, signal, overwrite=None, **kwds):
     if write:
         # Pass as a string for now, pathlib.Path not
         # properly supported in io_plugins
+        signal = _add_file_load_save_metadata('save', signal, writer)
         if not isinstance(filename, MutableMapping):
             writer.file_writer(str(filename), signal, **kwds)
             _logger.info(f'{filename} was created')
@@ -848,3 +862,22 @@ def save(filename, signal, overwrite=None, **kwds):
                 signal.tmp_parameters.set_item('folder', file.parent)
                 signal.tmp_parameters.set_item('filename', file.stem)
                 signal.tmp_parameters.set_item('extension', extension)
+
+
+def _add_file_load_save_metadata(operation, signal, io_plugin):
+    mdata_dict = {
+        'operation': operation,
+        'io_plugin': io_plugin.__loader__.name,
+        'hyperspy_version': hs_version,
+        'timestamp': datetime.now().astimezone().isoformat()
+    }
+
+    # get the largest integer key present under General.FileIO, returning 0
+    # as default if none are present
+    largest_index = max(
+        [int(i.replace('Number_', '')) + 1
+         for i in signal.metadata.get_item('General.FileIO', {}).keys()] + [0])
+
+    signal.metadata.set_item(f"General.FileIO.{largest_index}", mdata_dict)
+
+    return signal

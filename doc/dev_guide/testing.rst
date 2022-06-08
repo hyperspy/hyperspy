@@ -14,9 +14,9 @@ for testing. The tests reside in the ``hyperspy.tests`` module.
 
 Tests are short functions, found in ``hyperspy/tests``, that call your functions
 under some known conditions and check the outputs against known values. They
-should depend on as few other features as possible so that when they break
+should depend on as few other features as possible so that when they break,
 we know exactly what caused it. Ideally, the tests should be written at the
-same time than the code itself, as they are very convenient to run to check
+same time as the code itself, as they are very convenient to run to check
 outputs when coding. Writing tests can seem laborious but you'll probably
 soon find that they are very important, as they force you to sanity-check
 all the work that you do.
@@ -34,7 +34,7 @@ all the work that you do.
   parameters of the same function without having to write to much repetitive
   code, which is often error-prone. See `pytest documentation
   <http://doc.pytest.org/en/latest/parametrize.html>`__ for more details.
-* It is good to check that the tests does not use too much memory after
+* It is good to check that the tests do not use too much memory after
   creating new tests. If you need to explicitly delete your objects and free
   memory, you can do the following to release the memory associated with the
   ``s`` object:
@@ -86,7 +86,7 @@ Or, from HyperSpy's project folder, simply:
   <https://docs.pytest.org/en/latest/customize.html>`_ for more details.
 
 The HyperSpy test suite can also be run in parallel if you have multiple CPUs
-available, using the ```pytest-xdist`` plugin <https://pypi.org/project/pytest-xdist/>`_.
+available, using the `pytest-xdist plugin <https://pypi.org/project/pytest-xdist/>`_.
 If you have the plugin installed, HyperSpy will automatically run the test suite in
 parallel on your machine.
 
@@ -106,7 +106,7 @@ that all tests in a file run in the same worker.
 
     Running tests in parallel using ``pytest-xdist`` will change the content
     and format of the output of ``pytest`` to the console. We recommend installing
-    ```pytest-sugar`` <https://pypi.org/project/pytest-sugar/>`_ to produce
+    `pytest-sugar <https://pypi.org/project/pytest-sugar/>`_ to produce
     nicer-looking output including an animated progressbar.
 
 
@@ -118,7 +118,7 @@ random or non-deterministic behaviour. They may sometimes pass or sometimes fail
 it won't always be clear why. These are usually known as "flaky" tests.
 
 One way to approach flaky tests is to rerun them, to see if the failure was a one-off.
-This can be achieved using the ```pytest-rerunfailures`` plugin <https://pypi.org/project/pytest-rerunfailures/>`_.
+This can be achieved using the `pytest-rerunfailures plugin <https://pypi.org/project/pytest-rerunfailures/>`_.
 
 .. code:: bash
 
@@ -172,7 +172,7 @@ In case of Azure Pipelines, CI helper scripts are pulled from the
 
 The testing matrix is as follows:
 
-- **Github Actions**: test a range of Pythons version on Linux, MacOS and Windows;
+- **Github Actions**: test a range of Python versions on Linux, MacOS and Windows;
   all dependencies are installed from `PyPI <https://pypi.org>`_.
   See ``.github/workflows/tests.yml`` in the HyperSpy repository for further details.
 - **Azure Pipeline**: test a range of Python versions on Linux, MacOS and Windows;
@@ -258,7 +258,7 @@ variable and accordingly set the backend.
 
 Exporting pytest results as HTML
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-With ``pytest-html`` it is possible to export the results of running pytest
+With ``pytest-html``, it is possible to export the results of running pytest
 for easier viewing. It can be installed by conda:
 
 .. code:: bash

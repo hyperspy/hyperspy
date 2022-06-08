@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
 import gc
@@ -115,7 +115,7 @@ def generate_test_model():
 
     s = Signal1D(total)
     s.data = rnd.poisson(lam=s.data) + 0.1
-    s.change_dtype(np.float16)
+    s.change_dtype(float)
     s.estimate_poissonian_noise_variance()
 
     m = s.inav[:, :7].create_model()
@@ -150,7 +150,7 @@ class TestSamfireEmpty:
         self.shape = (7, 15)
         n_im = 50
         s = hs.signals.Signal1D(np.ones(self.shape + (n_im,)) + 3.)
-        s.change_dtype(np.float16)
+        s.change_dtype(float)
         s.estimate_poissonian_noise_variance()
         m = s.create_model()
         m.append(hs.model.components1D.Gaussian())
@@ -190,6 +190,15 @@ class TestSamfireEmpty:
     def test_samfire_init_metadata(self):
         m = self.model
         samf = m.create_samfire(workers=N_WORKERS, setup=False)
+        assert isinstance(samf.metadata, DictionaryTreeBrowser)
+        samf.stop()
+        del samf
+
+    def test_samfire_set_metadata_deprecation(self):
+        m = self.model
+        samf = m.create_samfire(workers=N_WORKERS, setup=False)
+        with pytest.warns(UserWarning):
+            samf.metadata = samf.metadata.as_dictionary()
         assert isinstance(samf.metadata, DictionaryTreeBrowser)
         samf.stop()
         del samf
@@ -410,7 +419,7 @@ class TestSamfireWorker:
             l1.function(ax - self.centres[2])
         s = hs.signals.Signal1D(np.array([d, d]))
         s.add_poissonian_noise()
-        s.change_dtype(np.float16)
+        s.change_dtype(float)
         s.metadata.Signal.set_item("Noise_properties.variance",
                                    s.deepcopy() + 1.)
         m = s.create_model()

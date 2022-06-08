@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 
@@ -53,10 +53,13 @@ class DoublePowerLaw(Expression):
     ratio : float
         Height ratio of the two power law components.
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
-    The `left_cutoff` parameter can be used to set a lower threshold from which
-    the component will return 0.
+    Attributes
+    ----------
+    left_cutoff : float
+        For x <= left_cutoff, the function returns 0. Default value is 0.0.
     """
 
     def __init__(self, A=1e-5, r=3., origin=0., shift=20., ratio=1.,
@@ -77,13 +80,11 @@ class DoublePowerLaw(Expression):
             autodoc=False,
             module=module,
             compute_gradients=compute_gradients,
+            linear_parameter_list=['A'],
+            check_parameter_linearity=False,
             **kwargs,
         )
-
-        self.origin.free = False
-        self.shift.value = 20.
-        self.shift.free = False
-
+    
         # Boundaries
         self.A.bmin = 0.
         self.A.bmax = None
@@ -91,7 +92,7 @@ class DoublePowerLaw(Expression):
         self.r.bmax = 5.
 
         self.isbackground = True
-        self.convolved = False
+        self.convolved = True
 
     def function_nd(self, axis):
         """%s

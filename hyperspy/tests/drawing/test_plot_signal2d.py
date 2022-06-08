@@ -1,19 +1,21 @@
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
+import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -589,6 +591,7 @@ def test_plot_autoscale_data_changed(autoscale):
         np.testing.assert_allclose(imf._vmin, _vmin)
         np.testing.assert_allclose(imf._vmax, _vmax)
 
+
 @pytest.mark.parametrize("axes_decor", ['all', 'off'])
 @pytest.mark.parametrize("label", ['auto', ['b','g']])
 @pytest.mark.parametrize("colors", ['auto', ['b','g']])
@@ -616,3 +619,76 @@ def test_plot_scale_different_sign():
     s2.plot()
     assert s2._plot.signal_plot.pixel_units is not None
     assert s2._plot.signal_plot.scalebar is True
+
+
+def test_plot_images_overlay_colorbar():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    hs.plot.plot_images([s, s], overlay=True, colorbar='single',
+                            axes_decor='off')
+
+
+def test_plot_images_overlay_aspect_ratio():
+    s = hs.signals.Signal2D(np.arange(100).reshape(2, 50))
+    hs.plot.plot_images([s, s], overlay=True, axes_decor='off')
+    f = plt.gcf()
+    np.testing.assert_allclose((f.get_figwidth(), f.get_figheight()), (25.0, 1.0))
+
+    s = hs.signals.Signal2D(np.arange(100).reshape(20, 5))
+    hs.plot.plot_images([s, s], overlay=True, axes_decor='off', scalebar='all')
+    f = plt.gcf()
+    np.testing.assert_allclose((f.get_figwidth(), f.get_figheight()), (2.0, 8.0))
+
+
+def test_plot_images_overlay_figsize():
+    """Test figure size for different aspect ratio of image."""
+    # Set reference figure size
+    plt.rcParams['figure.figsize'] = [6.4, 4.8]
+
+    # aspect_ratio is 1
+    s = hs.signals.Signal2D(np.random.random((10, 10)))
+    hs.plot.plot_images([s, s], overlay=True, scalebar='all', axes_decor='off')
+    f = plt.gcf()
+    np.testing.assert_allclose((f.get_figwidth(), f.get_figheight()), (4.8, 4.8))
+
+    # aspect_ratio is 64 / 48
+    s = hs.signals.Signal2D(np.random.random((48, 64)))
+    hs.plot.plot_images([s, s], overlay=True, scalebar='all', axes_decor='off')
+    f = plt.gcf()
+    np.testing.assert_allclose((f.get_figwidth(), f.get_figheight()), (6.4, 4.8))
+
+    # aspect_ratio is 2
+    s = hs.signals.Signal2D(np.random.random((10, 20)))
+    hs.plot.plot_images([s, s], overlay=True, scalebar='all', axes_decor='off')
+    f = plt.gcf()
+    np.testing.assert_allclose((f.get_figwidth(), f.get_figheight()), (6.4, 3.2))
+    
+    # aspect_ratio is 0.5
+    s = hs.signals.Signal2D(np.random.random((20, 10)))
+    hs.plot.plot_images([s, s], overlay=True, scalebar='all', axes_decor='off')
+    f = plt.gcf()
+    np.testing.assert_allclose((f.get_figwidth(), f.get_figheight()), (2.4, 4.8))
+
+
+def test_plot_images_overlay_vmin_warning(caplog):
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    with caplog.at_level(logging.WARNING):
+        hs.plot.plot_images([s, s], overlay=True, vmin=0)  
+
+    assert "`vmin` is ignored when overlaying images." in caplog.text
+
+
+def test_plot_scalebar_error():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    with pytest.raises(ValueError):
+        hs.plot.plot_images([s, s], scalebar='unsupported_argument')
+
+
+def test_plot_scalebar_list():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    ax0, ax1 = hs.plot.plot_images([s, s], scalebar=[0, 1])
+    assert hasattr(ax0, 'scalebar')
+    assert hasattr(ax1, 'scalebar')
+
+    ax0, ax1 = hs.plot.plot_images([s, s], scalebar=[0])
+    assert hasattr(ax0, 'scalebar')
+    assert not hasattr(ax1, 'scalebar')

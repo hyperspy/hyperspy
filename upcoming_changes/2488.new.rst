@@ -1,1 +1,0 @@
-Support for reading :ref:`JEOL EDS data<jeol_format-label>`

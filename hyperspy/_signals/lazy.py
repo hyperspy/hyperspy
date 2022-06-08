@@ -1,28 +1,28 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import logging
 from functools import partial
+import logging
+import os
 import warnings
 
 import numpy as np
 import dask.array as da
-import dask.delayed as dd
 import dask
 from dask.diagnostics import ProgressBar
 from itertools import product
@@ -30,20 +30,33 @@ from packaging.version import Version
 
 from hyperspy.signal import BaseSignal
 from hyperspy.defaults_parser import preferences
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
+from hyperspy.docstrings.signal import (
+    SHOW_PROGRESSBAR_ARG,
+    MANY_AXIS_PARAMETER,
+    )
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.array_tools import (_requires_linear_rebin,
-                                       get_signal_chunk_slice)
+from hyperspy.misc.array_tools import (
+    _requires_linear_rebin,
+    get_signal_chunk_slice,
+    )
 from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
-from hyperspy.misc.utils import (multiply, dummy_context_manager, isiterable,
-                                 process_function_blockwise, guess_output_signal_size,)
+from hyperspy.misc.utils import multiply, dummy_context_manager, isiterable
 
 
 _logger = logging.getLogger(__name__)
 
 lazyerror = NotImplementedError('This method is not available in lazy signals')
+
+
+try:
+    from dask.widgets import TEMPLATE_PATHS
+    templates_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "..", "misc", "dask_widgets")
+    TEMPLATE_PATHS.append(templates_path)
+except ModuleNotFoundError:
+    _logger.info("Dask widgets not loaded (dask >=2021.11.1 is required)")
 
 
 def to_array(thing, chunks=None):
@@ -163,6 +176,61 @@ class LazySignal(BaseSignal):
         if not self._clear_cache_dask_data in self.events.data_changed.connected:
             self.events.data_changed.connect(self._clear_cache_dask_data)
 
+    def _repr_html_(self):
+        try:
+            from dask import config
+            from dask.array.svg import svg
+            from dask.widgets import get_template
+            from dask.utils import format_bytes
+            nav_chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
+            sig_chunks = self.get_chunk_size(self.axes_manager.signal_axes)
+            if nav_chunks ==():
+                nav_grid = ""
+            else:
+                nav_grid = svg(chunks=nav_chunks,
+                               size=config.get("array.svg.size", 160))
+            if sig_chunks == ():
+                sig_grid = ""
+            else:
+                sig_grid = svg(chunks=sig_chunks,
+                               size=config.get("array.svg.size", 160))
+            nbytes = format_bytes(self.data.nbytes)
+            cbytes = format_bytes(np.prod(self.data.chunksize) * self.data.dtype.itemsize)
+            return get_template("lazy_signal.html.j2").render(nav_grid=nav_grid,
+                                                              sig_grid=sig_grid,
+                                                              dim=self.axes_manager._get_dimension_str(),
+                                                              chunks=self._get_chunk_string(),
+                                                              array=self.data,
+                                                              signal_type=self._signal_type,
+                                                              nbytes=nbytes,
+                                                              cbytes=cbytes,
+                                                              title=self.metadata.General.title
+                                                              )
+
+        except ModuleNotFoundError:
+            return self
+
+    def _get_chunk_string(self):
+        nav_chunks = self.data.chunksize[:len(self.axes_manager.navigation_shape)][::-1]
+        string = "("
+        for chunks, axis in zip(nav_chunks, self.axes_manager.navigation_shape):
+            if chunks == axis:
+                string += "<b>"+str(chunks)+"</b>,"
+            else:
+                string += str(chunks) + ","
+        string = string.rstrip(",")
+        string += "|"
+
+        sig_chunks = self.data.chunksize[len(self.axes_manager.navigation_shape):][::-1]
+        for chunks, axis in zip(sig_chunks, self.axes_manager.signal_shape):
+            if chunks == axis:
+                string += "<b>"+str(chunks)+"</b>,"
+            else:
+                string += str(chunks) + ","
+        string = string.rstrip(",")
+        string += ")"
+        return string
+
     def compute(self, close_file=False, show_progressbar=None, **kwargs):
         """Attempt to store the full signal in memory.
 
@@ -258,7 +326,10 @@ class LazySignal(BaseSignal):
         """
         arrkey = None
         for key in self.data.dask.keys():
-            if "array-original" in key:
+            # The if statement with both "array-original" and "original-array"
+            # is due to dask changing the name of this key. After dask-2022.1.1
+            # the key is "original-array", before it is "array-original"
+            if ("array-original" in key) or ("original-array" in key):
                 arrkey = key
                 break
         if arrkey:
@@ -350,10 +421,41 @@ class LazySignal(BaseSignal):
                 chunks.append((dc.shape[i], ))
         return tuple(chunks)
 
-    def _get_navigation_chunk_size(self):
-        nav_axes = self.axes_manager.navigation_indices_in_array
-        nav_chunks = tuple([self.data.chunks[i] for i in sorted(nav_axes)])
-        return nav_chunks
+    def get_chunk_size(self, axes=None):
+        """
+        Returns the chunk size as tuple for a set of given axes. The order
+        of the returned tuple follows the order of the dask array.
+
+        Parameters
+        ----------
+        axes : %s
+
+        Examples
+        --------
+        >>> import dask.array as da
+        >>> data = da.random.random((10, 200, 300))
+        >>> data.chunksize
+        (10, 200, 300)
+        >>> s = hs.signals.Signal1D(data).as_lazy()
+        >>> s.get_chunk_size() # All navigation axes
+        ((10,), (200,))
+        >>> s.get_chunk_size(0) # The first navigation axis
+        ((200,),)
+        """
+        if axes is None:
+            axes = self.axes_manager.navigation_axes
+
+        axes = self.axes_manager[axes]
+
+        if not np.iterable(axes):
+            axes = (axes,)
+
+        axes = tuple([axis.index_in_array for axis in axes])
+        ax_chunks = tuple([self.data.chunks[i] for i in sorted(axes)])
+
+        return ax_chunks
+
+    get_chunk_size.__doc__ %= (MANY_AXIS_PARAMETER)
 
     def _make_lazy(self, axis=None, rechunk=False, dtype=None):
         self.data = self._lazy_data(axis=axis, rechunk=rechunk, dtype=dtype)
@@ -369,6 +471,7 @@ class LazySignal(BaseSignal):
             dtype = np.dtype(dtype)
         super().change_dtype(dtype)
         self._make_lazy(rechunk=rechunk, dtype=dtype)
+
     change_dtype.__doc__ = BaseSignal.change_dtype.__doc__
 
     def _lazy_data(self, axis=None, rechunk=True, dtype=None):
@@ -470,8 +573,8 @@ class LazySignal(BaseSignal):
         and the slice needed to extract this chunk is in
         s._cache_dask_chunk_slice. To these, use s._clear_cache_dask_data()
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         indices : tuple
             Must be the same length as navigation dimensions in self.
 
@@ -492,12 +595,17 @@ class LazySignal(BaseSignal):
         """
 
         sig_dim = self.axes_manager.signal_dimension
-        chunks = self._get_navigation_chunk_size()
+        chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
         navigation_indices = indices[:-sig_dim]
-        chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, chunks)
+        chunk_slice = _get_navigation_dimension_chunk_slice(
+            navigation_indices,
+            chunks
+            )
+
         if (chunk_slice != self._cache_dask_chunk_slice or
                 self._cache_dask_chunk is None):
-            self._cache_dask_chunk = np.asarray(self.data.__getitem__(chunk_slice))
+            with dummy_context_manager():
+                self._cache_dask_chunk = self.data.__getitem__(chunk_slice).compute()
             self._cache_dask_chunk_slice = chunk_slice
 
         indices = list(indices)
@@ -705,136 +813,6 @@ class LazySignal(BaseSignal):
             da.percentile(_raveled, [75, ]),
             da.nanmax(data), )
         return _mean, _std, _min, _q1, _q2, _q3, _max
-
-    def _map_all(self, function, inplace=True, **kwargs):
-        calc_result = dd(function)(self.data, **kwargs)
-        if inplace:
-            self.data = da.from_delayed(calc_result, shape=self.data.shape,
-                                        dtype=self.data.dtype)
-            return None
-        return self._deepcopy_with_new_data(calc_result)
-
-    def _map_iterate(self,
-                     function,
-                     iterating_kwargs=None,
-                     show_progressbar=None,
-                     parallel=None,
-                     max_workers=None,
-                     ragged=False,
-                     inplace=True,
-                     output_signal_size=None,
-                     output_dtype=None,
-                     **kwargs):
-        # unpacking keyword arguments
-        if iterating_kwargs is None:
-            iterating_kwargs = {}
-        elif isinstance(iterating_kwargs, (tuple, list)):
-            iterating_kwargs = dict((k, v) for k, v in iterating_kwargs)
-
-        nav_indexes = self.axes_manager.navigation_indices_in_array
-        if ragged and inplace:
-            raise ValueError("Ragged and inplace are not compatible with a lazy signal")
-        chunk_span = np.equal(self.data.chunksize, self.data.shape)
-        chunk_span = [chunk_span[i] for i in self.axes_manager.signal_indices_in_array]
-        if not all(chunk_span):
-            _logger.info("The chunk size needs to span the full signal size, rechunking...")
-            old_sig = self.rechunk(inplace=False)
-        else:
-            old_sig = self
-        autodetermine = (output_signal_size is None or output_dtype is None) # try to guess output dtype and sig size?
-        nav_chunks = old_sig._get_navigation_chunk_size()
-        args = ()
-        arg_keys = ()
-
-        for key in iterating_kwargs:
-            if not isinstance(iterating_kwargs[key], BaseSignal):
-                iterating_kwargs[key] = BaseSignal(iterating_kwargs[key].T).T
-                warnings.warn(
-                    "Passing arrays as keyword arguments can be ambigous. "
-                    "This is deprecated and will be removed in HyperSpy 2.0. "
-                    "Pass signal instances instead.",
-                    VisibleDeprecationWarning)
-            if iterating_kwargs[key]._lazy:
-                if iterating_kwargs[key]._get_navigation_chunk_size() != nav_chunks:
-                    iterating_kwargs[key].rechunk(nav_chunks=nav_chunks)
-            else:
-                iterating_kwargs[key] = iterating_kwargs[key].as_lazy()
-                iterating_kwargs[key].rechunk(nav_chunks=nav_chunks)
-            extra_dims = (len(old_sig.axes_manager.signal_shape) -
-                          len(iterating_kwargs[key].axes_manager.signal_shape))
-            if extra_dims > 0:
-                old_shape = iterating_kwargs[key].data.shape
-                new_shape = old_shape + (1,)*extra_dims
-                args += (iterating_kwargs[key].data.reshape(new_shape), )
-            else:
-                args += (iterating_kwargs[key].data, )
-            arg_keys += (key,)
-
-        if autodetermine: #trying to guess the output d-type and size from one signal
-            testing_kwargs = {}
-            for key in iterating_kwargs:
-                test_ind = (0,) * len(old_sig.axes_manager.navigation_axes)
-                testing_kwargs[key] = np.squeeze(iterating_kwargs[key].inav[test_ind].data).compute()
-            testing_kwargs = {**kwargs, **testing_kwargs}
-            test_data = np.array(old_sig.inav[(0,) * len(old_sig.axes_manager.navigation_shape)].data.compute())
-            output_signal_size, output_dtype = guess_output_signal_size(test_signal=test_data,
-                                                                        function=function,
-                                                                        ragged=ragged,
-                                                                        **testing_kwargs)
-        # Dropping/Adding Axes
-        if output_signal_size == old_sig.axes_manager.signal_shape:
-            drop_axis = None
-            new_axis = None
-            axes_changed = False
-        else:
-            axes_changed = True
-            if len(output_signal_size) != len(old_sig.axes_manager.signal_shape):
-                drop_axis = old_sig.axes_manager.signal_indices_in_array
-                new_axis = tuple(range(len(nav_indexes), len(nav_indexes) + len(output_signal_size)))
-            else:
-                drop_axis = [it for (o, i, it) in zip(output_signal_size,
-                                                      old_sig.axes_manager.signal_shape,
-                                                      old_sig.axes_manager.signal_indices_in_array)
-                             if o != i]
-                new_axis = drop_axis
-        chunks = tuple([old_sig.data.chunks[i] for i in sorted(nav_indexes)]) + output_signal_size
-        mapped = da.map_blocks(process_function_blockwise,
-                               old_sig.data,
-                               *args,
-                               function=function,
-                               nav_indexes=nav_indexes,
-                               drop_axis=drop_axis,
-                               new_axis=new_axis,
-                               output_signal_size=output_signal_size,
-                               dtype=output_dtype,
-                               chunks=chunks,
-                               arg_keys=arg_keys,
-                               **kwargs)
-        if inplace:
-            self.data = mapped
-            sig = self
-        else:
-            sig = self._deepcopy_with_new_data(mapped)
-            if ragged:
-                axes_dicts = self.axes_manager._get_axes_dicts(
-                    self.axes_manager.navigation_axes
-                    )
-                sig.axes_manager.__init__(axes_dicts)
-                sig.axes_manager._ragged = True
-                sig._assign_subclass()
-                return sig
-
-        # remove if too many axes
-        if axes_changed:
-            sig.axes_manager.remove(sig.axes_manager.signal_axes[len(output_signal_size):])
-            # add additional required axes
-            for ind in range(
-                    len(output_signal_size) - sig.axes_manager.signal_dimension, 0, -1):
-                sig.axes_manager._append_axis(size=output_signal_size[-ind],
-                                              navigate=False)
-        if not ragged:
-            sig.get_dimensions_from_data()
-        return sig
 
     def _block_iterator(self,
                         flat_signal=True,

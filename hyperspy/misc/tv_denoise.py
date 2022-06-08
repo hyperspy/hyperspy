@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 # Original file from scikits-images
 # Modified by the HyperSpy developers to add _tv_denoise_1d
 
@@ -104,7 +104,7 @@ def _tv_denoise_3d(im, weight=100, eps=2.e-4, keep_type=False, n_iter_max=200):
             E_init = E
             E_previous = E
         else:
-            if np.abs(E_previous - E) < eps * E_init:
+            if abs(E_previous - E) < eps * E_init:
                 break
             else:
                 E_previous = E
@@ -199,7 +199,7 @@ def _tv_denoise_2d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
             E_init = E
             E_previous = E
         else:
-            if np.abs(E_previous - E) < eps * E_init:
+            if abs(E_previous - E) < eps * E_init:
                 break
             else:
                 E_previous = E
@@ -277,7 +277,7 @@ def _tv_denoise_1d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
         out = im + d
         E = (d ** 2).sum()
         gx[:-1] = np.diff(out)
-        norm = np.abs(gx)
+        norm = abs(gx)
         E += weight * norm.sum()
         norm *= 0.5 / weight
         norm += 1
@@ -288,7 +288,7 @@ def _tv_denoise_1d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
             E_init = E
             E_previous = E
         else:
-            if np.abs(E_previous - E) < eps * E_init:
+            if abs(E_previous - E) < eps * E_init:
                 break
             else:
                 E_previous = E

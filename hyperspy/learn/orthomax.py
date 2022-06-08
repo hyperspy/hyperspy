@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 
-from scipy.linalg import svd
+from numpy.linalg import svd
 
 
 def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
@@ -77,7 +77,7 @@ def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
                 S = np.sum(S)
                 B = A @ W
 
-                if np.abs(S - Sold) < tol * S:
+                if abs(S - Sold) < tol * S:
                     converged = True
                     break
 
@@ -103,7 +103,7 @@ def orthomax(A, gamma=1.0, tol=1.4901e-07, max_iter=256):
                     denom = u.T @ u - v.T @ v - gamma * (usum ** 2 - vsum ** 2) * oo_d
 
                     theta = 0.25 * np.arctan2(numer, denom)
-                    maxTheta = max(maxTheta, np.abs(theta))
+                    maxTheta = max(maxTheta, abs(theta))
 
                     R = np.array(
                         [

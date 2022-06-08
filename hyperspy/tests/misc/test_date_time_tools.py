@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 from dateutil import parser, tz
@@ -109,13 +109,16 @@ def test_update_date_time_in_metadata():
     assert_deep_almost_equal(md13.General.date, md2.General.date)
     assert_deep_almost_equal(md13.General.time, md2.General.time)
     assert_deep_almost_equal(md13.General.time_zone, '-05:00')
-    assert_deep_almost_equal(dtt.update_date_time_in_metadata(dt2, md.deepcopy()).as_dictionary(),
-                             md2.as_dictionary())
+    assert_deep_almost_equal(
+        dtt.update_date_time_in_metadata(dt2, md.deepcopy()).as_dictionary(),
+        md2.as_dictionary())
 
-    assert_deep_almost_equal(dtt.update_date_time_in_metadata(iso3, md.deepcopy()).as_dictionary(),
-                             md3.as_dictionary())
-    assert_deep_almost_equal(dtt.update_date_time_in_metadata(dt3, md.deepcopy()).as_dictionary(),
-                             md3.as_dictionary())
+    assert_deep_almost_equal(
+        dtt.update_date_time_in_metadata(iso3, md.deepcopy()).as_dictionary(),
+        md3.as_dictionary())
+    assert_deep_almost_equal(
+        dtt.update_date_time_in_metadata(dt3, md.deepcopy()).as_dictionary(),
+        md3.as_dictionary())
 
 
 def test_serial_date_to_ISO_format():

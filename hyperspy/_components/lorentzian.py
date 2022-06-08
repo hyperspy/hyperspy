@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 import dask.array as da
@@ -44,9 +44,9 @@ def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
     cdf = np.cumsum(data,i)
     cdfnorm = cdf/np.max(cdf, i).reshape(centre_shape)
 
-    icentre = np.argmin(np.abs(0.5 - cdfnorm), i)
-    igamma1 = np.argmin(np.abs(0.75 - cdfnorm), i)
-    igamma2 = np.argmin(np.abs(0.25 - cdfnorm), i)
+    icentre = np.argmin(abs(0.5 - cdfnorm), i)
+    igamma1 = np.argmin(abs(0.75 - cdfnorm), i)
+    igamma2 = np.argmin(abs(0.25 - cdfnorm), i)
 
     if isinstance(data, da.Array):
         icentre, igamma1, igamma2 = da.compute(icentre, igamma1, igamma2)
@@ -79,7 +79,7 @@ class Lorentzian(Expression):
     Parameters
     -----------
     A : float
-        Height parameter, where :math:`A/(\gamma\pi)` is the maximum of the
+        Area parameter, where :math:`A/(\gamma\pi)` is the maximum (height) of
         peak.
     gamma : float
         Scale parameter corresponding to the half-width-at-half-maximum of the
@@ -87,7 +87,8 @@ class Lorentzian(Expression):
     centre : float
         Location of the peak maximum.
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
 
     For convenience the `fwhm` and `height` attributes can be used to get and set
@@ -98,7 +99,7 @@ class Lorentzian(Expression):
         # We use `_gamma` internally to workaround the use of the `gamma`
         # function in sympy
         super().__init__(
-            expression="A / pi * (_gamma / ((x - centre)**2 + _gamma**2))",
+            expression="A / pi * (gamma_ / ((x - centre)**2 + gamma_**2))",
             name="Lorentzian",
             A=A,
             gamma=gamma,
@@ -106,7 +107,7 @@ class Lorentzian(Expression):
             position="centre",
             module=module,
             autodoc=False,
-            rename_pars={"_gamma": "gamma"},
+            rename_pars={"gamma_": "gamma"},
             **kwargs)
 
         # Boundaries

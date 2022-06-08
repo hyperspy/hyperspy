@@ -1,23 +1,24 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
 from multiprocessing import cpu_count
+import warnings
 
 import dill
 import numpy as np
@@ -27,8 +28,7 @@ from hyperspy.misc.utils import slugify
 from hyperspy.misc.math_tools import check_random_state
 from hyperspy.external.progressbar import progressbar
 from hyperspy.signal import BaseSignal
-from hyperspy.samfire_utils.strategy import (LocalStrategy,
-                                             GlobalStrategy)
+from hyperspy.samfire_utils.strategy import LocalStrategy, GlobalStrategy
 from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
 from hyperspy.samfire_utils.global_strategies import HistogramStrategy
 
@@ -137,7 +137,7 @@ class Samfire:
         if workers is None:
             workers = max(1, cpu_count() - 1)
         self.model = model
-        self.metadata = DictionaryTreeBrowser()
+        self._metadata = DictionaryTreeBrowser()
 
         self._scale = 1.0
         # -1 -> done pixel, use
@@ -167,6 +167,21 @@ class Samfire:
             self._setup(**kwargs)
         self.refresh_database()
         self.random_state = check_random_state(random_state)
+
+    @property
+    def metadata(self):
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, d):
+        warnings.warn(
+            "Setting the `metadata` attribute is deprecated and will be removed "
+            "in HyperSpy 2.0. Use the `set_item` and `add_dictionary` methods "
+            "of the `metadata` attribute instead."
+            )
+        if isinstance(d, dict):
+            d = DictionaryTreeBrowser(d)
+        self._metadata = d
 
     @property
     def active_strategy(self):
@@ -269,7 +284,7 @@ class Samfire:
 
     @_active_strategy_ind.setter
     def _active_strategy_ind(self, value):
-        self.__active_strategy_ind = np.abs(int(value))
+        self.__active_strategy_ind = abs(int(value))
 
     def _run_active_strategy(self):
         if self.pool is not None:
@@ -395,7 +410,7 @@ class Samfire:
                 raise ValueError(
                     "The passed object is not in current strategies list")
 
-        new_strat = np.abs(int(new_strat))
+        new_strat = abs(int(new_strat))
         if new_strat == self._active_strategy_ind:
             self.refresh_database()
 

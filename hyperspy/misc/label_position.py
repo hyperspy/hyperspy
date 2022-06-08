@@ -1,26 +1,27 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import copy
 import itertools
 
 import numpy as np
-from hyperspy.drawing.marker import markers
+from hyperspy.utils import markers
+
 
 class SpectrumLabelPosition():
     '''
@@ -96,10 +97,12 @@ class SpectrumLabelPosition():
         dummy_style = copy.deepcopy(self.edge_label_style)
         dummy_style['bbox']['alpha'] = 0
         dummy_style['alpha'] = 0
-        tx = markers.text.Text(x=(self.axis.low_value+self.axis.high_value)/2,
-                               y=(self.smin+self.smax)/2,
-                               text=self._text_parser(dummy_text),
-                               **dummy_style)
+        tx = markers.text(
+            x=(self.axis.low_value+self.axis.high_value)/2,
+            y=(self.smin+self.smax)/2,
+            text=self._text_parser(dummy_text),
+            **dummy_style
+            )
         self.signal.add_marker(tx)
 
         dummybb = self._get_bbox_from_text_artist(tx.marker)
@@ -133,13 +136,18 @@ class SpectrumLabelPosition():
         vls = []
         txs = []
         for xyt in xytext:
-            vl = markers.vertical_line_segment.VerticalLineSegment(x=xyt[0],
-                                                                   y1=xyt[1],
-                                                                   y2=xyt[2],
-                                                                   color=xyt[4])
-            tx = markers.text.Text(x=xyt[0], y=xyt[1],
-                                   text=self._text_parser(xyt[3]), color=xyt[4],
-                                   **self.edge_label_style)
+            vl = markers.vertical_line_segment(
+                x=xyt[0],
+                y1=xyt[1],
+                y2=xyt[2],
+                color=xyt[4]
+                )
+            tx = markers.text(
+                x=xyt[0],
+                y=xyt[1],
+                text=self._text_parser(xyt[3]), color=xyt[4],
+                **self.edge_label_style
+                )
 
             vl.events.closed.connect(self.signal._edge_marker_closed)
             tx.events.closed.connect(self.signal._edge_marker_closed)

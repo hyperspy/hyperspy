@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import math
 import logging
@@ -157,7 +157,7 @@ class HydrogenicGOS(GOSBase):
 
         q = qa02 / zs ** 2
         kh2 = E / (r * zs ** 2) - 1
-        akh = np.sqrt(np.abs(kh2))
+        akh = np.sqrt(abs(kh2))
         if akh < 0.01:
             akh = 0.01
         if kh2 >= 0.0:
@@ -197,7 +197,7 @@ class HydrogenicGOS(GOSBase):
 
         q = qa02 / zs ** 2
         kh2 = E / (r * zs ** 2) - 0.25
-        akh = np.sqrt(np.abs(kh2))
+        akh = np.sqrt(abs(kh2))
         if kh2 >= 0.0:
             d = 1 - np.exp(-2 * np.pi / akh)
             bp = np.arctan(akh / (q - kh2 + 0.25))
@@ -227,6 +227,6 @@ class HydrogenicGOS(GOSBase):
         # The following commented lines are to give a more accurate GOS
         # for edges presenting white lines. However, this is not relevant
         # for quantification by curve fitting.
-        # if np.abs(iz - 11) <= 5 and E - el3 <= 20:
+        # if abs(iz - 11) <= 5 and E - el3 <= 20:
         #     rf = 1
         return rf * 32 * g * c / a / d * E / r / r / zs ** 4

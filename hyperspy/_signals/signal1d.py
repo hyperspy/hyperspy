@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import os
 import logging
@@ -25,7 +25,7 @@ import numpy as np
 import dask.array as da
 from scipy import interpolate
 from scipy.signal import savgol_filter, medfilt
-from scipy.ndimage.filters import gaussian_filter1d
+from scipy.ndimage import gaussian_filter1d
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal1d import CommonSignal1D
@@ -173,7 +173,7 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         # centering and scaling
                         yynz = yy != 0
                         coef = np.polyfit(
-                            xxf[yynz], np.log10(np.abs(yy[yynz])), 2)
+                            xxf[yynz], np.log10(abs(yy[yynz])), 2)
                         c1 = coef[2]
                         c2 = coef[1]
                         c3 = coef[0]
@@ -186,7 +186,7 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         # of y in the sub-group of points near peak.
                         if peakgroup < 7:
                             height = np.max(yy)
-                            position = xx[np.argmin(np.abs(yy - height))]
+                            position = xx[np.argmin(abs(yy - height))]
                         else:
                             position = - ((stdev * c2 / (2 * c3)) - avg)
                             height = np.exp(c1 - c3 * (c2 / (2 * c3)) ** 2)
@@ -268,8 +268,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if kwargs.get('ragged', False):
             raise ValueError("Signal1D can't be ragged.")
         super().__init__(*args, **kwargs)
-        if self.axes_manager.signal_dimension != 1:
-            self.axes_manager.set_signal_dimension(1)
 
     def _get_spikes_diagnosis_histogram_data(self, signal_mask=None,
                                              navigation_mask=None,
@@ -282,7 +280,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             axis = axis[~signal_mask]
         if navigation_mask is not None:
             dc = dc[~navigation_mask, :]
-        der = np.abs(np.gradient(dc, axis, axis=-1))
+        der = abs(np.gradient(dc, axis, axis=-1))
         n = ((~navigation_mask).sum() if navigation_mask else
              self.axes_manager.navigation_size)
 
@@ -558,11 +556,13 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 **kwargs)
             dat[i1:i2] = dat_int(list(range(i1, i2)))
             return dat
-        self._map_iterate(interpolating_function,
-                          ragged=False,
-                          parallel=parallel,
-                          show_progressbar=show_progressbar,
-                          max_workers=max_workers)
+        self.map(
+            interpolating_function,
+            ragged=False,
+            parallel=parallel,
+            show_progressbar=show_progressbar,
+            max_workers=max_workers,
+        )
         self.events.data_changed.trigger(obj=self)
 
     interpolate_in_between.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
@@ -671,7 +671,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if interpolate is True:
             shift_array = shift_array / ip
         shift_array = shift_array * axis.scale
-        if self._lazy:
+        if shift_signal._lazy:
             # We must compute right now because otherwise any changes to the
             # axes_manager of the signal later in the workflow may result in
             # a wrong shift_array
@@ -842,9 +842,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             "instead.")
         deprecation_warning(msg)
 
-        if signal_range == 'interactive':
+        if signal_range == 'interactive':  # pragma: no cover
             self_copy = self.deepcopy()
-            ia = IntegrateArea(self_copy, signal_range)
+            ia = IntegrateArea(self_copy)
             ia.gui(display=display, toolkit=toolkit)
             integrated_signal1D = self_copy
         else:
@@ -1488,7 +1488,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                          ragged=True,
                          parallel=parallel,
                          max_workers=max_workers,
-                         inplace=False)
+                         inplace=False,
+                         lazy_output=False)
         return peaks.data
 
     find_peaks1D_ohaver.__doc__ %= (PARALLEL_ARG, MAX_WORKERS_ARG)
@@ -1556,19 +1557,20 @@ class Signal1D(BaseSignal, CommonSignal1D):
             )
             parallel = False
 
-        axis = self.axes_manager.signal_axes[0]
-        # x = axis.axis
+        # axis is a keyword already used by self.map so calling this axis_arg
+        # to avoid "parameter collision
+        axis_arg = self.axes_manager.signal_axes[0]
         maxval = self.axes_manager.navigation_size
         show_progressbar = show_progressbar and maxval > 0
 
         def estimating_function(spectrum,
                                 window=None,
                                 factor=0.5,
-                                axis=None):
-            x = axis.axis
+                                axis_arg=None):
+            x = axis_arg.axis
             if window is not None:
-                vmax = axis.index2value(spectrum.argmax())
-                slices = axis._get_array_slices(
+                vmax = axis_arg.index2value(spectrum.argmax())
+                slices = axis_arg._get_array_slices(
                     slice(vmax - window * 0.5, vmax + window * 0.5))
                 spectrum = spectrum[slices]
                 x = x[slices]
@@ -1582,15 +1584,17 @@ class Signal1D(BaseSignal, CommonSignal1D):
             else:
                 return np.full((2,), np.nan)
 
-        both = self._map_iterate(estimating_function,
-                                 window=window,
-                                 factor=factor,
-                                 axis=axis,
-                                 ragged=False,
-                                 inplace=False,
-                                 parallel=parallel,
-                                 show_progressbar=show_progressbar,
-                                 max_workers=None)
+        both = self.map(
+            estimating_function,
+            window=window,
+            factor=factor,
+            axis_arg=axis_arg,
+            ragged=False,
+            inplace=False,
+            parallel=parallel,
+            show_progressbar=show_progressbar,
+            max_workers=max_workers,
+        )
         left, right = both.T.split()
         width = right - left
         if factor == 0.5:
@@ -1613,7 +1617,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 self.metadata.General.title +
                 " full-width at %.1f maximum right position" % factor)
         for signal in (left, width, right):
-            signal.axes_manager.set_signal_dimension(0)
+            signal = signal.transpose(signal_axes=[])
             signal.set_signal_type("")
         if return_interval is True:
             return [width, left, right]
@@ -1651,10 +1655,4 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
 class LazySignal1D(LazySignal, Signal1D):
 
-    """
-    """
     _lazy = True
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.axes_manager.set_signal_dimension(1)

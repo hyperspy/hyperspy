@@ -1,24 +1,25 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
+from packaging.version import Version
 
 import numpy as np
 import pytest
-from distutils.version import LooseVersion
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
@@ -27,6 +28,9 @@ from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 from hyperspy.misc.machine_learning.tools import amari
 from hyperspy.signals import BaseSignal
+
+
+skip_sklearn = pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
 
 
 def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):
@@ -70,7 +74,7 @@ def test_amari_distance(n=16, tol=1e-6):
     np.testing.assert_allclose(amari(X, A), 0.0, rtol=tol)
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 def test_bss_FastICA_object():
     """Tests that a simple sklearn pipeline is an acceptable algorithm."""
     rng = np.random.RandomState(123)
@@ -88,7 +92,7 @@ def test_bss_FastICA_object():
     assert hasattr(out, "components_")
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 def test_bss_pipeline():
     """Tests that a simple sklearn pipeline is an acceptable algorithm."""
     rng = np.random.RandomState(123)
@@ -150,7 +154,7 @@ def test_factors_error():
         s.blind_source_separation(2, factors=factors)
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 @pytest.mark.parametrize("num_components", [None, 2])
 def test_num_components(num_components):
     s = artificial_data.get_core_loss_eels_line_scan_signal()
@@ -158,7 +162,7 @@ def test_num_components(num_components):
     s.blind_source_separation(number_of_components=num_components)
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 def test_components_list():
     s = artificial_data.get_core_loss_eels_line_scan_signal()
     s.decomposition(output_dimension=3)
@@ -166,7 +170,7 @@ def test_components_list():
     assert s.learning_results.unmixing_matrix.shape == (2, 2)
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 def test_num_components_error():
     s = artificial_data.get_core_loss_eels_line_scan_signal()
     s.decomposition()
@@ -186,7 +190,7 @@ def test_algorithm_error():
         s.blind_source_separation(2, algorithm="uniform")
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 def test_normalize_components_errors():
     rng = np.random.RandomState(123)
     s = Signal1D(rng.random_sample(size=(20, 100)))
@@ -201,7 +205,7 @@ def test_normalize_components_errors():
         s.normalize_bss_components(target="uniform")
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 def test_sklearn_convergence_warning():
     # Import here to avoid error if sklearn missing
     from sklearn.exceptions import ConvergenceWarning
@@ -223,7 +227,7 @@ def test_sklearn_convergence_warning():
         )
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 @pytest.mark.parametrize("whiten_method", [None, "PCA", "ZCA"])
 def test_fastica_whiten_method(whiten_method):
     rng = np.random.RandomState(123)
@@ -237,7 +241,7 @@ def test_fastica_whiten_method(whiten_method):
     assert s.learning_results.unmixing_matrix.shape == A.shape
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 @lazifyTestClass
 class TestReverseBSS:
     def setup_method(self, method):
@@ -267,7 +271,7 @@ class TestReverseBSS:
             self.s.blind_source_separation(2, reverse_component_criterion="toto")
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 @lazifyTestClass
 class TestBSS1D:
     def setup_method(self, method):
@@ -325,7 +329,7 @@ class TestBSS1D:
         )
 
 
-@pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+@skip_sklearn
 @lazifyTestClass
 class TestBSS2D:
     def setup_method(self, method):
@@ -352,8 +356,6 @@ class TestBSS2D:
         self.mask_nav = mask_nav
         self.mask_sig = mask_sig
 
-    @pytest.mark.skipif(LooseVersion(np.__version__) < LooseVersion("1.17"),
-                        reason="derivative of lazy signal isn't supported with numpy < 1.17.0")
     def test_diff_axes_string_with_mask(self):
         self.s.learning_results.factors[5, :] = np.nan
         factors = self.s.get_decomposition_factors().inav[:3]
@@ -391,8 +393,6 @@ class TestBSS2D:
             matrix, self.s.learning_results.unmixing_matrix, atol=1e-5
         )
 
-    @pytest.mark.skipif(LooseVersion(np.__version__) < LooseVersion("1.17"),
-                        reason="derivative of lazy signal isn't supported with numpy < 1.17.0")
     def test_diff_axes_string_without_mask(self):
         factors = self.s.get_decomposition_factors().inav[:3].derivative(
             axis="x", order=1)
@@ -407,8 +407,6 @@ class TestBSS2D:
             matrix, self.s.learning_results.unmixing_matrix, atol=1e-3
         )
 
-    @pytest.mark.skipif(LooseVersion(np.__version__) < LooseVersion("1.17"),
-                        reason="derivative of lazy signal isn't supported with numpy < 1.17.0")
     def test_diff_axes_without_mask(self):
         factors = self.s.get_decomposition_factors().inav[:3].derivative(
             axis="y", order=1)
@@ -479,7 +477,7 @@ class TestPrintInfo:
         captured = capfd.readouterr()
         assert "Blind source separation info:" in captured.out
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     def test_bss_sklearn(self, capfd):
         self.s.blind_source_separation(2)
         captured = capfd.readouterr()
@@ -499,10 +497,10 @@ class TestReturnInfo:
             is None
         )
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     def test_bss_supported_return_true(self):
         assert self.s.blind_source_separation(return_info=True) is not None
 
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    @skip_sklearn
     def test_bss_supported_return_false(self):
         assert self.s.blind_source_separation(return_info=False) is None

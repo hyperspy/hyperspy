@@ -1,26 +1,28 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
+import logging
 
 import numpy as np
-import logging
 
 from hyperspy._components.expression import Expression
 
+from hyperspy.misc.utils import get_numpy_kwargs
 
 _logger = logging.getLogger(__name__)
 
@@ -51,11 +53,13 @@ class PowerLaw(Expression):
     origin : float
         Location parameter.
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
-
-    The `left_cutoff` parameter can be used to set a lower threshold from which
-    the component will return 0.
+    Attributes
+    ----------
+    left_cutoff : float
+        For x <= left_cutoff, the function returns 0. Default value is 0.0.
     """
 
     def __init__(self, A=10e5, r=3., origin=0., left_cutoff=0.0,
@@ -71,6 +75,8 @@ class PowerLaw(Expression):
             module=module,
             autodoc=False,
             compute_gradients=compute_gradients,
+            linear_parameter_list=['A'],
+            check_parameter_linearity=False,
             **kwargs,
         )
 
@@ -127,24 +133,22 @@ class PowerLaw(Expression):
         else:
             s = signal
         if s._lazy:
-            import dask.array as da
-            log = da.log
             I1 = s.isig[i1:i3].integrate1D(2j).data
             I2 = s.isig[i3:i2].integrate1D(2j).data
         else:
             from hyperspy.signal import BaseSignal
             shape = s.data.shape[:-1]
-            I1_s = BaseSignal(np.empty(shape, dtype='float'))
-            I2_s = BaseSignal(np.empty(shape, dtype='float'))
+            kw = get_numpy_kwargs(s.data)
+            I1_s = BaseSignal(np.empty(shape, dtype='float', **kw))
+            I2_s = BaseSignal(np.empty(shape, dtype='float', **kw))
             # Use the `out` parameters to avoid doing the deepcopy
             s.isig[i1:i3].integrate1D(2j, out=I1_s)
             s.isig[i3:i2].integrate1D(2j, out=I2_s)
             I1 = I1_s.data
             I2 = I2_s.data
-            log = np.log
         with np.errstate(divide='raise'):
             try:
-                r = 2 * (log(I1) - log(I2)) / (log(x2) - log(x1))
+                r = 2 * (np.log(I1) - np.log(I2)) / (np.log(x2) - np.log(x1))
                 k = 1 - r
                 A = k * I2 / (x2 ** k - x3 ** k)
                 if s._lazy:
@@ -157,15 +161,15 @@ class PowerLaw(Expression):
                 _logger.warning('Power-law parameter estimation failed '
                                 'because of a "divide-by-zero" error.')
                 return False
+
         if only_current is True:
             self.r.value = r
             self.A.value = A
             return True
+
         if out:
             return A, r
         else:
-            if self.A.map is None:
-                self._create_arrays()
             self.A.map['values'][:] = A
             self.A.map['is_set'][:] = True
             self.r.map['values'][:] = r

@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import gc
@@ -137,6 +137,18 @@ class TestModelStoring:
         self.m.store('b')
         with pytest.raises(KeyError):
             s.models.restore('a')
+
+
+@pytest.mark.parametrize('save_std', [True, False])
+@pytest.mark.parametrize('only_free', [True, False])
+@pytest.mark.parametrize('only_active', [True, False])
+def test_model_export(tmp_path, save_std, only_free, only_active):
+    s = Signal1D(range(100))
+    m = s.create_model()
+    m.append(Gaussian())
+    m.fit()
+    m.export_results(tmp_path, save_std=save_std, only_free=only_free,
+                     only_active=only_active)
 
 
 class TestModelSaving:

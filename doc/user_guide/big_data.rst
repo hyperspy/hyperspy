@@ -264,6 +264,62 @@ instead:
     <LazySignal2D, title: , dimensions: (200, 200|512, 512)>
     >>> s.plot(navigator='slider')
 
+.. versionadded:: 1.7
+
+.. _big_data.gpu:
+
+GPU support
+-----------
+
+Lazy data processing on GPUs requires explicitly transferring the data to the
+GPU.
+
+On linux, it is recommended to use the
+`dask_cuda <https://docs.rapids.ai/api/dask-cuda/stable/index.html>`_ library 
+(not supported on windows) to manage the dask scheduler. As for CPU lazy
+processing, if the dask scheduler is not specified, the default scheduler
+will be used.
+
+.. code-block:: python
+
+    >>> from dask_cuda import LocalCUDACluster
+    >>> from dask.distributed import Client
+    >>> cluster = LocalCUDACluster()
+    >>> client = Client(cluster)
+
+.. code-block:: python
+
+    >>> import hyperspy.api as hs
+    >>> import cupy as cp
+    >>> import dask.array as da
+    >>> # Create a dask array
+    >>> data = da.random.random(size=(20, 20, 100, 100))
+    >>> print(data)
+    ... dask.array<random_sample, shape=(20, 20, 100, 100), dtype=float64,
+    ... chunksize=(20, 20, 100, 100), chunktype=numpy.ndarray>
+    >>> # convert the dask chunks from numpy array to cupy array
+    >>> data = data.map_blocks(cp.asarray)
+    >>> print(data)
+    ... dask.array<random_sample, shape=(20, 20, 100, 100), dtype=float64,
+    ... chunksize=(20, 20, 100, 100), chunktype=cupy.ndarray>
+    >>> # Create the signal
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+
+.. note::
+    See the dask blog on `Richardson Lucy (RL) deconvolution <https://blog.dask.org/2020/11/12/deconvolution>`_
+    for an example of lazy processing on GPUs using dask and cupy
+
+
+.. _FitBigData-label:
+
+Model fitting
+-------------
+Most curve-fitting functionality will automatically work on models created from
+lazily loaded signals. HyperSpy extracts the relevant chunk from the signal and fits to that.
+
+The linear ``'lstsq'`` optimizer supports fitting the entire dataset in a vectorised manner
+using :py:func:`dask.array.linalg.lstsq`. This can give potentially enormous performance benefits over fitting 
+with a nonlinear fitter, but comes with the restrictions explained in the :ref:`linear fitting<linear_fitting-label>` section.
 
 Practical tips
 --------------
@@ -288,18 +344,33 @@ The following example shows how to chunk one of the two navigation dimensions in
 .. code-block:: python
 
     >>> import dask.array as da
-    >>> data = da.random.random((10,200,300))
+    >>> data = da.random.random((10, 200, 300))
     >>> data.chunksize
     (10, 200, 300)
 
-    >>> s = hs.signals.Signal1D(data)
+    >>> s = hs.signals.Signal1D(data).as_lazy()
     >>> s # Note the reversed order of navigation dimensions
-    <Signal1D, title: , dimensions: (200, 10|300)>
+    <LazSignal1D, title: , dimensions: (200, 10|300)>
 
     >>> s.save('chunked_signal.hspy', chunks=(10, 100, 300)) # Chunking first hyperspy dimension (second array dimension)
     >>> s2 = hs.load('chunked_signal.hspy', lazy=True)
     >>> s2.data.chunksize
     (10, 100, 300)
+
+To get the chunk size of given axes, the :py:meth:`~._signals.lazy.LazySignal.get_chunk_size`
+method can be used:
+
+.. code-block:: python
+
+    >>> import dask.array as da
+    >>> data = da.random.random((10, 200, 300))
+    >>> data.chunksize
+    (10, 200, 300)
+    >>> s = hs.signals.Signal1D(data).as_lazy()
+    >>> s.get_chunk_size() # All navigation axes
+    ((10,), (200,))
+    >>> s.get_chunk_size(0) # The first navigation axis
+    ((200,),)
 
 .. versionadded:: 1.3.2
 
@@ -308,6 +379,25 @@ it is sometimes possible to manually set a more optimal chunking manually. There
 many operations take a ``rechunk`` or ``optimize`` keyword argument to disable
 automatic rechunking.
 
+.. versionadded:: 1.7.0
+
+.. _lazy._repr_html_:
+
+For more recent versions of dask (dask>2021.11) when using hyperspy in a jupyter
+notebook a helpful html representation is available.
+
+.. code-block:: python
+
+    >>> import numpy as np
+    >>> import hyperspy.api as hs
+    >>> data = np.zeros((20, 20, 10, 10, 10))
+    >>> s = hs.signals.Signal2D(data)
+    >>> s
+
+.. figure:: images/chunks.png
+
+This helps to visualize the chunk structure and identify axes where the chunk spans the entire
+axis (bolded axes).
 
 Computing lazy signals
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -402,9 +492,8 @@ Other minor differences
 Saving Big Data
 ^^^^^^^^^^^^^^^^^
 
-The most efficient format supported by HyperSpy to write data is the :ref:` zspy format <zspy-format>`,
+The most efficient format supported by HyperSpy to write data is the :ref:`zspy format <zspy-format>`,
 mainly because it supports writing currently from concurrently from multiple threads or processes.
-
 This also allows for smooth interaction with dask-distributed for efficient scaling.
 
 .. _lazy_details:

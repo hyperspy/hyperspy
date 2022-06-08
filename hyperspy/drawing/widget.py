@@ -1,23 +1,26 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from __future__ import division
+from packaging.version import Version
 
+
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backend_bases import MouseEvent
 import numpy as np
@@ -57,7 +60,7 @@ class WidgetBase(object):
         self._pos = np.array([0.])
         self._is_on = True
         self.background = None
-        self.patch = []
+        self._patch = []
         self.color = color
         self.alpha = alpha
         self.cids = list()
@@ -86,6 +89,10 @@ class WidgetBase(object):
             """, arguments=['obj'])
         self._navigating = False
         super(WidgetBase, self).__init__(**kwargs)
+
+    @property
+    def patch(self):
+        return tuple(self._patch)
 
     def _get_axes(self):
         return self._axes
@@ -125,7 +132,10 @@ class WidgetBase(object):
                         self.ax.texts]:
                     for p in self.patch:
                         if p in container:
-                            container.remove(p)
+                            if Version(matplotlib.__version__) >= Version('3.5.0'):
+                                p.remove()
+                            else:  # pragma: no cover
+                                container.remove(p)
                 self.disconnect()
         if hasattr(super(WidgetBase, self), 'set_on'):
             super(WidgetBase, self).set_on(value)
@@ -575,7 +585,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
 
     def _get_step(self, axis):
         # TODO: need to check if this is working fine, particularly with
-        """ Use to determine the size of the widget with support for non 
+        """ Use to determine the size of the widget with support for non
         uniform axis.
         """
         if axis.index >= axis.size - 1:
@@ -898,7 +908,7 @@ class ResizersMixin(object):
                         ax.texts]:
                     for r in self._resizer_handles:
                         if r in container:
-                            container.remove(r)
+                            r.remove()
             self._resizers_on = value
 
     def _get_resizer_size(self):
@@ -909,7 +919,7 @@ class ResizersMixin(object):
         if self.resize_pixel_size is None:
             rsize = [ax.scale for ax in self.axes]
         else:
-            rsize = np.abs(invtrans.transform(self.resize_pixel_size) -
+            rsize = abs(invtrans.transform(self.resize_pixel_size) -
                            invtrans.transform((0, 0)))
         return rsize
 
@@ -920,8 +930,8 @@ class ResizersMixin(object):
         invtrans = self.ax.transData.inverted()
         border = self.border_thickness
         # Transform the border thickness into data values
-        dl = np.abs(invtrans.transform((border, border)) -
-                    invtrans.transform((0, 0))) / 2
+        dl = abs(invtrans.transform((border, border)) -
+                 invtrans.transform((0, 0))) / 2
         rsize = self._get_resizer_size()
         return rsize / 2 + dl
 
@@ -931,8 +941,8 @@ class ResizersMixin(object):
         invtrans = self.ax.transData.inverted()
         border = self.border_thickness
         # Transform the border thickness into data values
-        dl = np.abs(invtrans.transform((border, border)) -
-                    invtrans.transform((0, 0))) / 2
+        dl = abs(invtrans.transform((border, border)) -
+                 invtrans.transform((0, 0))) / 2
         rsize = self._get_resizer_size()
         xs, ys = self._size
 

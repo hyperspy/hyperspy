@@ -1,23 +1,39 @@
 import os
+from packaging.version import Version
+from pathlib import Path
 import tempfile
+import warnings
+import zipfile
+
 
 import numpy as np
 import pytest
 import traits.api as t
-from packaging.version import Version
 import tifffile
-
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal
+from hyperspy import __version__ as hs_version
+import hyperspy.io_plugins.tiff
+
 
 MY_PATH = os.path.dirname(__file__)
 MY_PATH2 = os.path.join(MY_PATH, "tiff_files")
+TMP_DIR = tempfile.TemporaryDirectory()
+
+
+def teardown_module():
+    TMP_DIR.cleanup()
 
 
 def test_rgba16():
-    s = hs.load(os.path.join(MY_PATH2, "test_rgba16.tif"))
-    data = np.load(os.path.join(MY_PATH, "npy_files", "test_rgba16.npy"))
+    path = Path(TMP_DIR.name)
+    zipf = os.path.join(MY_PATH2, "test_rgba16.zip")
+    with zipfile.ZipFile(zipf, 'r') as zipped:
+        zipped.extractall(path)
+    
+    s = hs.load(path / 'test_rgba16.tif')
+    data = np.load(Path(MY_PATH) / "npz_files" / "test_rgba16.npz")['a']
     assert (s.data == data).all()
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined
@@ -387,7 +403,13 @@ FEI_Helios_metadata = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 
                                    'title': '',
                                    'authors': 'supervisor',
                                    'date': '2016-06-13',
-                                   'time': '17:06:40'},
+                                   'time': '17:06:40',
+                                   'FileIO': {'0': {
+                                       'operation': 'load',
+                                       'hyperspy_version': hs_version,
+                                       'io_plugin': 'hyperspy.io_plugins.tiff'
+                                   }}
+                                   },
                        'Signal': {'signal_type': ''},
                        '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                                  'original_shape': None,
@@ -395,96 +417,135 @@ FEI_Helios_metadata = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 
                                                  'unfolded': False}}}
 
 
-def test_read_FEI_SEM_scale_metadata_8bits():
-    fname = os.path.join(MY_PATH2, 'FEI-Helios-Ebeam-8bits.tif')
-    s = hs.load(fname, convert_units=True)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
-    assert s.data.dtype == 'uint8'
-    FEI_Helios_metadata['General'][
-        'original_filename'] = 'FEI-Helios-Ebeam-8bits.tif'
-    assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
+class TestReadFEIHelios:
+    
+    path = Path(TMP_DIR.name)
+    
+    @classmethod
+    def setup_class(cls):
+        zipf = os.path.join(MY_PATH2, "tiff_FEI_Helios.zip")
+        with zipfile.ZipFile(zipf, 'r') as zipped:
+            zipped.extractall(cls.path)
+
+    def test_read_FEI_SEM_scale_metadata_8bits(self):
+        fname = self.path / 'FEI-Helios-Ebeam-8bits.tif'
+        s = hs.load(fname, convert_units=True)
+        assert s.axes_manager[0].units == 'µm'
+        assert s.axes_manager[1].units == 'µm'
+        np.testing.assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
+        np.testing.assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
+        assert s.data.dtype == 'uint8'
+        # delete timestamp from metadata since it's runtime dependent
+        del s.metadata.General.FileIO.Number_0.timestamp
+        FEI_Helios_metadata['General'][
+            'original_filename'] = 'FEI-Helios-Ebeam-8bits.tif'
+        assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
+    
+    def test_read_FEI_SEM_scale_metadata_16bits(self):
+        fname = self.path / 'FEI-Helios-Ebeam-16bits.tif'
+        s = hs.load(fname, convert_units=True)
+        assert s.axes_manager[0].units == 'µm'
+        assert s.axes_manager[1].units == 'µm'
+        np.testing.assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
+        np.testing.assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
+        assert s.data.dtype == 'uint16'
+        # delete timestamp from metadata since it's runtime dependent
+        del s.metadata.General.FileIO.Number_0.timestamp
+        FEI_Helios_metadata['General'][
+            'original_filename'] = 'FEI-Helios-Ebeam-16bits.tif'
+        assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
 
-def test_read_FEI_SEM_scale_metadata_16bits():
-    fname = os.path.join(MY_PATH2, 'FEI-Helios-Ebeam-16bits.tif')
-    s = hs.load(fname, convert_units=True)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
-    assert s.data.dtype == 'uint16'
-    FEI_Helios_metadata['General'][
-        'original_filename'] = 'FEI-Helios-Ebeam-16bits.tif'
-    assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
+class TestReadZeissSEM:
+    
+    path = Path(TMP_DIR.name)
+    
+    @classmethod
+    def setup_class(cls):
+        zipf = os.path.join(MY_PATH2, "tiff_Zeiss_SEM.zip")
+        with zipfile.ZipFile(zipf, 'r') as zipped:
+            zipped.extractall(cls.path)
 
+    def test_read_Zeiss_SEM_scale_metadata_1k_image(self):
+        md = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 10.2,
+                                                           'tilt': -0.0,
+                                                           'x': 75.6442,
+                                                           'y': 60.4901,
+                                                           'z': 25.193},
+                                                 'Detector':{'detector_type':
+                                                     'HE-SE2'},
+                                                 'beam_current': 1.0,
+                                                 'beam_energy': 25.0,
+                                                 'dwell_time': 5e-08,
+                                                 'magnification': 105.0,
+                                                 'microscope': 'Merlin-61-08',
+                                                 'working_distance': 14.808}},
+              'General': {'authors': 'LIM',
+                          'date': '2015-12-23',
+                          'original_filename': 'test_tiff_Zeiss_SEM_1k.tif',
+                          'time': '09:40:32',
+                          'title': '',
+                          'FileIO': {'0': {
+                              'operation': 'load',
+                              'hyperspy_version': hs_version,
+                              'io_plugin': 'hyperspy.io_plugins.tiff'
+                          }}
+                          },
+              'Signal': {'signal_type': ''},
+              '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                        'original_shape': None,
+                                        'signal_unfolded': False,
+                                        'unfolded': False}}}
+        
+        fname = self.path / 'test_tiff_Zeiss_SEM_1k.tif'
+        s = hs.load(fname, convert_units=True)
+    
+        assert s.axes_manager[0].units == 'µm'
+        assert s.axes_manager[1].units == 'µm'
+        np.testing.assert_allclose(s.axes_manager[0].scale, 2.614514, rtol=1E-6)
+        np.testing.assert_allclose(s.axes_manager[1].scale, 2.614514, rtol=1E-6)
+        assert s.data.dtype == 'uint8'
+        # delete timestamp from metadata since it's runtime dependent
+        del s.metadata.General.FileIO.Number_0.timestamp
+        assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
-def test_read_Zeiss_SEM_scale_metadata_1k_image():
-    md = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 10.2,
-                                                       'tilt': -0.0,
-                                                       'x': 75.6442,
-                                                       'y': 60.4901,
-                                                       'z': 25.193},
-                                             'Detector':{'detector_type':
-                                                 'HE-SE2'},
-                                             'beam_current': 1.0,
-                                             'beam_energy': 25.0,
-                                             'dwell_time': 5e-08,
-                                             'magnification': 105.0,
-                                             'microscope': 'Merlin-61-08',
-                                             'working_distance': 14.808}},
-          'General': {'authors': 'LIM',
-                      'date': '2015-12-23',
-                      'original_filename': 'test_tiff_Zeiss_SEM_1k.tif',
-                      'time': '09:40:32',
-                      'title': ''},
-          'Signal': {'signal_type': ''},
-          '_HyperSpy': {'Folding': {'original_axes_manager': None,
-                                    'original_shape': None,
-                                    'signal_unfolded': False,
-                                    'unfolded': False}}}
-
-    fname = os.path.join(MY_PATH2, 'test_tiff_Zeiss_SEM_1k.tif')
-    s = hs.load(fname, convert_units=True)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 2.614514, rtol=1E-6)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 2.614514, rtol=1E-6)
-    assert s.data.dtype == 'uint8'
-    assert_deep_almost_equal(s.metadata.as_dictionary(), md)
-
-
-def test_read_Zeiss_SEM_scale_metadata_512_image():
-    md = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 245.8,
-                                                       'tilt': 0.0,
-                                                       'x': 62.9961,
-                                                       'y': 65.3168,
-                                                       'z': 44.678},
-                                             'beam_energy': 5.0,
-                                             'magnification': '50.00 K X',
-                                             'microscope': 'ULTRA 55-36-06',
-                                             'working_distance': 3.9}},
-          'General': {'authors': 'LIBERATO',
-                      'date': '2018-09-25',
-                      'original_filename': 'test_tiff_Zeiss_SEM_512pix.tif',
-                      'time': '08:20:42',
-                      'title': ''},
-          'Signal': {'signal_type': ''},
-          '_HyperSpy': {'Folding': {'original_axes_manager': None,
-                                    'original_shape': None,
-                                    'signal_unfolded': False,
-                                    'unfolded': False}}}
-
-    fname = os.path.join(MY_PATH2, 'test_tiff_Zeiss_SEM_512pix.tif')
-    s = hs.load(fname, convert_units=True)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
-    np.testing.assert_allclose(s.axes_manager[0].scale, 0.011649976, rtol=1E-6)
-    np.testing.assert_allclose(s.axes_manager[1].scale, 0.011649976, rtol=1E-6)
-    assert s.data.dtype == 'uint8'
-    assert_deep_almost_equal(s.metadata.as_dictionary(), md)
+    def test_read_Zeiss_SEM_scale_metadata_512_image(self):
+        md = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 245.8,
+                                                           'tilt': 0.0,
+                                                           'x': 62.9961,
+                                                           'y': 65.3168,
+                                                           'z': 44.678},
+                                                 'beam_energy': 5.0,
+                                                 'magnification': '50.00 K X',
+                                                 'microscope': 'ULTRA 55-36-06',
+                                                 'working_distance': 3.9}},
+              'General': {'authors': 'LIBERATO',
+                          'date': '2018-09-25',
+                          'original_filename': 'test_tiff_Zeiss_SEM_512pix.tif',
+                          'time': '08:20:42',
+                          'title': '',
+                          'FileIO': {'0': {
+                              'operation': 'load',
+                              'hyperspy_version': hs_version,
+                              'io_plugin': 'hyperspy.io_plugins.tiff'
+                          }}
+                          },
+              'Signal': {'signal_type': ''},
+              '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                        'original_shape': None,
+                                        'signal_unfolded': False,
+                                        'unfolded': False}}}
+    
+        fname = self.path / 'test_tiff_Zeiss_SEM_512pix.tif'
+        s = hs.load(fname, convert_units=True)
+        assert s.axes_manager[0].units == 'µm'
+        assert s.axes_manager[1].units == 'µm'
+        np.testing.assert_allclose(s.axes_manager[0].scale, 0.011649976, rtol=1E-6)
+        np.testing.assert_allclose(s.axes_manager[1].scale, 0.011649976, rtol=1E-6)
+        assert s.data.dtype == 'uint8'
+        # delete timestamp from metadata since it's runtime dependent
+        del s.metadata.General.FileIO.Number_0.timestamp
+        assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 
 def test_read_RGB_Zeiss_optical_scale_metadata():
@@ -499,6 +560,8 @@ def test_read_RGB_Zeiss_optical_scale_metadata():
     np.testing.assert_allclose(s.axes_manager[1].scale, 1.0, rtol=1E-5)
     assert s.metadata.General.date == '2016-06-13'
     assert s.metadata.General.time == '15:59:52'
+    assert s.metadata.General.FileIO.Number_0.hyperspy_version == hs_version
+    assert s.metadata.General.FileIO.Number_0.io_plugin == 'hyperspy.io_plugins.tiff'
 
 
 def test_read_BW_Zeiss_optical_scale_metadata():
@@ -563,20 +626,33 @@ def test_read_TVIPS_metadata():
                                              'magnification': 32000.0}},
           'General': {'original_filename': 'TVIPS_bin4.tif',
                       'time': '9:01:17',
-                      'title': ''},
+                      'title': '',
+                      'FileIO': {'0': {
+                          'operation': 'load',
+                          'hyperspy_version': hs_version,
+                          'io_plugin': 'hyperspy.io_plugins.tiff'
+                      }}
+                      },
           'Signal': {'signal_type': ''},
           '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                     'original_shape': None,
                                     'signal_unfolded': False,
                                     'unfolded': False}}}
-    fname = os.path.join(MY_PATH2, 'TVIPS_bin4.tif')
-    s = hs.load(fname, convert_units=True)
+    
+    zipf = os.path.join(MY_PATH2, "TVIPS_bin4.zip")
+    path = Path(TMP_DIR.name)
+    with zipfile.ZipFile(zipf, 'r') as zipped:
+        zipped.extractall(path)
+        s = hs.load(path / 'TVIPS_bin4.tif', convert_units=True)
+        
     assert s.data.dtype == np.uint8
     assert s.data.shape == (1024, 1024)
     assert s.axes_manager[0].units == 'nm'
     assert s.axes_manager[1].units == 'nm'
     np.testing.assert_allclose(s.axes_manager[0].scale, 1.42080, rtol=1E-5)
     np.testing.assert_allclose(s.axes_manager[1].scale, 1.42080, rtol=1E-5)
+    # delete timestamp from metadata since it's runtime dependent
+    del s.metadata.General.FileIO.Number_0.timestamp
     assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 
@@ -644,3 +720,142 @@ def test_save_angstrom_units():
         assert s2.axes_manager[0].scale == s.axes_manager[0].scale
         assert s2.axes_manager[0].offset == s.axes_manager[0].offset
         assert s2.axes_manager[0].is_binned == s.axes_manager[0].is_binned
+
+
+def test_JEOL_SightX():
+    files = [ ("JEOL-SightX-Ronchigram-dummy.tif.gz", 1.0, t.Undefined),
+              ("JEOL-SightX-SAED-dummy.tif.gz", 0.2723, "1 / nm"),
+              ("JEOL-SightX-TEM-mag-dummy.tif.gz", 1.8208, "nm") ]
+    for file in files:
+        fname = file[0]
+        if fname[-3:]==".gz":
+            import tempfile
+            import gzip
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                with gzip.open(os.path.join(MY_PATH2,fname),'rb') as f:
+                    content = f.read()
+                fname = os.path.join(tmp_dir, fname[:-3])
+                with open(fname,"wb") as f2:
+                    f2.write(content)
+                s = hs.load(fname)
+        else:
+            fname = os.path.join(MY_PATH2, file[0])
+            s = hs.load(fname)
+        for i in range(2): # x, y
+            assert s.axes_manager[i].size == 556
+            np.testing.assert_allclose(s.axes_manager[i].scale, file[1], rtol=1E-3)
+            assert s.axes_manager[i].units == file[2]
+
+
+class TestReadHamamatsu:
+    
+    path = Path(TMP_DIR.name)
+    
+    @classmethod
+    def setup_class(cls):
+        zipf = os.path.join(MY_PATH2, "tiff_hamamatsu.zip")
+        with zipfile.ZipFile(zipf, 'r') as zipped:
+            zipped.extractall(cls.path)
+
+
+    def test_hamamatsu_streak_loadwarnings(self):
+        file = 'test_hamamatsu_streak_SCAN.tif'
+        fname = os.path.join(self.path, file)
+    
+        # No hamamatsu_streak_axis_type argument should :
+        # - raise warning
+        # - Initialise uniform data axis
+        with pytest.warns(UserWarning):
+            s = hs.load(fname)
+            assert s.axes_manager.all_uniform
+    
+        #Invalid hamamatsu_streak_axis_type argument should:
+        # - raise warning
+        # - Initialise uniform data axis
+        with pytest.warns(UserWarning):
+            s = hs.load(fname,hamamatsu_streak_axis_type='xxx')
+            assert s.axes_manager.all_uniform
+    
+        #Explicitly calling hamamatsu_streak_axis_type='uniform'
+        # should NOT raise a warning
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            s = hs.load(fname, hamamatsu_streak_axis_type='uniform')
+            assert s.axes_manager.all_uniform
+
+    def test_hamamatsu_streak_scanfile(self):
+        file = 'test_hamamatsu_streak_SCAN.tif'
+        fname = os.path.join(self.path, file)
+    
+        with pytest.warns(UserWarning):
+            s = hs.load(fname)
+    
+        assert s.data.shape == (508, 672)
+        assert s.axes_manager[1].units == 'ps'
+        np.testing.assert_allclose(s.axes_manager[1].scale, 2.3081, rtol=1E-3)
+        np.testing.assert_allclose(s.axes_manager[1].offset, 652.3756, rtol=1E-3)
+        np.testing.assert_allclose(s.axes_manager[0].scale, 0.01714, rtol=1E-3)
+        np.testing.assert_allclose(s.axes_manager[0].offset, 231.0909, rtol=1E-3)
+    
+    def test_hamamatsu_streak_focusfile(self):
+        file = 'test_hamamatsu_streak_FOCUS.tif'
+        fname = os.path.join(self.path, file)
+    
+        with pytest.warns(UserWarning):
+            s = hs.load(fname)
+    
+        assert s.data.shape == (508, 672)
+        assert s.axes_manager[1].units == ''
+        np.testing.assert_allclose(s.axes_manager[1].scale, 1.0, rtol=1E-3)
+        np.testing.assert_allclose(s.axes_manager[1].offset, 0.0, rtol=1E-3, atol=1e-5)
+        np.testing.assert_allclose(s.axes_manager[0].scale, 0.01714, rtol=1E-3)
+        np.testing.assert_allclose(s.axes_manager[0].offset, 231.0909, rtol=1E-3)
+    
+    def test_hamamatsu_streak_non_uniform_load(self):
+        file = 'test_hamamatsu_streak_SCAN.tif'
+        fname = os.path.join(self.path, file)
+    
+        s = hs.load(fname, hamamatsu_streak_axis_type='data')
+    
+        np.testing.assert_allclose(
+            s.original_metadata.ImageDescriptionParsed.Scaling.ScalingYaxis,
+            s.axes_manager[1].axis, rtol=1e-5
+            )
+    
+        s = hs.load(fname, hamamatsu_streak_axis_type='functional')
+    
+        np.testing.assert_allclose(
+            s.original_metadata.ImageDescriptionParsed.Scaling.ScalingYaxis,
+            s.axes_manager[1].axis, rtol=1e-5
+            )
+    
+    def test_is_hamamatsu_streak(self):
+        file = 'test_hamamatsu_streak_SCAN.tif'
+        fname = os.path.join(self.path, file)
+    
+        with pytest.warns(UserWarning):
+            s = hs.load(fname)
+    
+        omd = s.original_metadata.as_dictionary()
+    
+        omd['Artist'] = "TAPTAP"
+    
+        assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
+    
+        _ = omd.pop('Artist')
+    
+        assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
+    
+        omd.update({'Artist': "Copyright Hamamatsu GmbH, 2018"})
+    
+        omd['Software'] = "TAPTAPTAP"
+    
+        assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
+    
+        _ = omd.pop('Software')
+    
+        assert not hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)
+    
+        omd.update({'Software': "HPD-TA 9.5 pf4"})
+    
+        assert hyperspy.io_plugins.tiff._is_streak_hamamatsu(omd)

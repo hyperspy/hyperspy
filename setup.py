@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2020 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from __future__ import print_function
 
@@ -46,7 +46,7 @@ setup_path = os.path.dirname(__file__)
 
 
 install_req = ['scipy>=1.1',
-               'matplotlib>=3.1.0,<3.5',
+               'matplotlib>=3.1.3',
                'numpy>=1.17.1',
                'traits>=4.5.0',
                'natsort',
@@ -55,10 +55,13 @@ install_req = ['scipy>=1.1',
                'sympy',
                'dill',
                'h5py>=2.3',
+               'jinja2',
                'packaging',
                'python-dateutil>=2.5.0',
                'ipyparallel',
-               'dask[array]>=2.1.0',
+               # https://github.com/ipython/ipython/pull/13466
+               'ipython!=8.0.*',
+               'dask[array]>=2.11.0',
                # fsspec is missing from dask dependencies for dask < 2021.3.1
                'fsspec',
                'scikit-image>=0.15',
@@ -71,18 +74,21 @@ install_req = ['scipy>=1.1',
                # prettytable is maintained and ptable is an unmaintained fork
                'prettytable',
                'tifffile>=2020.2.16',
-               'numba',
+               # non-uniform axis requirement
+               'numba>=0.52',
                 # included in stdlib since v3.8, but this required version requires Python 3.10
                 # We can remove this requirement when the minimum supported version becomes Python 3.10
                'importlib_metadata>=3.6',
+               'toolz',
                # numcodecs currently only supported on x86_64/AMD64 machines
-               'zarr;platform_machine=="x86_64" or platform_machine=="AMD64"',
+               'zarr>=2.9.0;platform_machine=="x86_64" or platform_machine=="AMD64"',
                ]
 
 extras_require = {
     # exclude scikit-learn==1.0 on macOS (wheels issue)
     # See https://github.com/scikit-learn/scikit-learn/pull/21227
-    "learning": ['scikit-learn!=1.0;sys_platform=="darwin"'],
+    "learning": ['scikit-learn!=1.0.0;sys_platform=="darwin"',
+                 'scikit-learn;sys_platform!="darwin"'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
@@ -92,7 +98,7 @@ extras_require = {
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
     "tests": ["pytest>=3.6", "pytest-mpl", "pytest-xdist", "pytest-rerunfailures", "pytest-instafail", "matplotlib>=3.1"],
-    "coverage":["pytest-cov", "codecov"],
+    "coverage":["pytest-cov"],
     # required to build the docs
     "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme", "sphinx-toggleprompt", "sphinxcontrib-mermaid", "sphinxcontrib-towncrier"],
 }
@@ -301,8 +307,9 @@ with update_version_when_dev() as version:
                   'hyperspy.misc.holography',
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
-                  'hyperspy.external.mpfit',
                   'hyperspy.external.astropy',
+                  'hyperspy.external.matplotlib',
+                  'hyperspy.external.mpfit',
                   'hyperspy.samfire_utils',
                   'hyperspy.samfire_utils.segmenters',
                   'hyperspy.samfire_utils.weights',
@@ -324,6 +331,7 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_model1d/*.png',
                 'tests/drawing/plot_model/*.png',
                 'tests/drawing/plot_roi/*.png',
+                'misc/dask_widgets/*.html.j2',
                 'misc/eds/example_signals/*.hspy',
                 'misc/holography/example_signals/*.hdf5',
                 'tests/drawing/plot_mva/*.png',
@@ -353,9 +361,14 @@ with update_version_when_dev() as version:
                 'tests/io/hdf5_files/*.hspy',
                 'tests/io/JEOL_files/*',
                 'tests/io/JEOL_files/Sample/00_View000/*',
+                'tests/io/JEOL_files/InvalidFrame/*',
+                'tests/io/JEOL_files/InvalidFrame/Sample/00_Dummy-Data/*',
+                'tests/io/tiff_files/*.zip',
                 'tests/io/tiff_files/*.tif',
+                'tests/io/tiff_files/*.tif.gz',
                 'tests/io/tiff_files/*.dm3',
-                'tests/io/npy_files/*.npy',
+                'tests/io/tvips_files/*.tvips'
+                'tests/io/npz_files/*.npz',
                 'tests/io/unf_files/*.unf',
                 'tests/io/bruker_data/*.bcf',
                 'tests/io/bruker_data/*.json',
@@ -393,6 +406,7 @@ with update_version_when_dev() as version:
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
             "Development Status :: 4 - Beta",
             "Environment :: Console",
             "Intended Audience :: Science/Research",
