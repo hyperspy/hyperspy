@@ -334,8 +334,8 @@ class BaseInteractiveROI(BaseROI):
         """Internal function for updating the associated widgets to the
         geometry contained in the ROI.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         exclude : set()
             A set of widgets to exclude from the update. Useful e.g. if a
             widget has triggered a change in the ROI: Then all widgets,
@@ -379,10 +379,10 @@ class BaseInteractiveROI(BaseROI):
     def interactive(self, signal, navigation_signal="same", out=None,
                     color="green", snap=True, **kwargs):
         """Creates an interactively sliced Signal (sliced by this ROI) via
-        hyperspy.interactive.
+        :py:func:`~.interactive.interactive`.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         signal : Signal
             The source signal to slice.
         navigation_signal : Signal, None or "same" (default)
@@ -405,6 +405,12 @@ class BaseInteractiveROI(BaseROI):
         **kwargs
             All kwargs are passed to the roi __call__ method which is called
             interactively on any roi parameter change.
+
+        Returns
+        -------
+        :py:class:`~hyperspy.signal.BaseSignal` or one of its subclass
+            Signal updated with the current ROI selection 
+            when the ROI is changed.
 
         """
         if hasattr(signal, '_plot_kwargs'):
@@ -460,8 +466,8 @@ class BaseInteractiveROI(BaseROI):
         changes in either are reflected in the other. Note that only one
         widget can be added per signal/axes combination.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         signal : Signal
             The signal to which the widget is added. This is used to determine
             which plot to add the widget to, and it supplies the axes_manager
@@ -479,6 +485,10 @@ class BaseInteractiveROI(BaseROI):
             True.
         kwargs:
             All keyword arguments are passed to the widget constructor.
+
+        Returns
+        -------
+        The widget of the ROI.
         """
 
         axes = self._parse_axes(axes, signal.axes_manager,)

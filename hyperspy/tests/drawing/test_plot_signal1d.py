@@ -402,3 +402,19 @@ def test_plot_spectra_linestyle_error():
 
     with pytest.raises(ValueError):
         hs.plot.plot_spectra(s, linestyle='invalid')
+
+
+def test_plot_empty_slice_autoscale():
+    s = hs.signals.Signal1D(np.arange(100))
+    s.plot()
+    r = hs.roi.SpanROI()
+    s_span = r.interactive(s)
+    s_span.plot(autoscale='x')
+    # change span selector to an "empty" slice and trigger update
+    r.left = 24
+    r.right = 24.1
+
+    s_span.plot(autoscale='v')
+    # change span selector to an "empty" slice and trigger update
+    r.left = 23
+    r.right = 23.1

@@ -321,6 +321,9 @@ def test_plot_complex_representation():
     imag_ref = np.arange(9).reshape((3, 3)) + 9
     comp_ref = real_ref + 1j * imag_ref
     s = hs.signals.ComplexSignal1D(comp_ref)
+    s.plot()
+    # change indices to trigger update
+    s.axes_manager.indices = (1, )    
     s.plot(representation='polar', same_axes=True)
     s.plot(representation='polar', same_axes=False)
     with pytest.raises(ValueError):

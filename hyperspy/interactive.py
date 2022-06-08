@@ -127,8 +127,18 @@ class Interactive:
 
 
 def interactive(f, event="auto", recompute_out_event="auto", *args, **kwargs):
+    """
+    %s
+
+    Returns
+    -------
+    :py:class:`~hyperspy.signal.BaseSignal` or one of its subclass
+        Signal updated with the operation result when a given event is
+        triggered.
+
+    """
     cls = Interactive(f, event, recompute_out_event, *args, **kwargs)
     return cls.out
 
 
-interactive.__doc__ = Interactive.__init__.__doc__
+interactive.__doc__ %= Interactive.__init__.__doc__
