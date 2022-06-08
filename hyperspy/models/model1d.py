@@ -469,7 +469,7 @@ class Model1D(BaseModel):
         if i2 is not None:
             i2 += 1
         self.channel_switches[i1:i2] = True
-        self.update_plot()
+        self.update_plot(render_figure=True)
 
     def _parse_signal_range_values(self, x1=None, x2=None):
         """Parse signal range values to be used by the `set_signal_range`,

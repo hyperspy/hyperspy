@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
+from hyperspy.datasets.artificial_data import get_core_loss_eels_model
 from hyperspy import signals, components1d, datasets
 from hyperspy.signal_tools import (
     ImageContrastEditor,
@@ -269,6 +270,17 @@ def test_span_selector_in_signal1d():
     calibration_tool.span_selector_changed()
     calibration_tool.span_selector.extents = (10.1, 10.2)
     calibration_tool.span_selector_changed()
+
+
+def test_span_selector_in_signal1d_model():
+    m = get_core_loss_eels_model()
+    calibration_tool = SpanSelectorInSignal1D(m)
+    assert len(m.signal._plot.signal_plot.ax_lines) == 2
+    assert m.signal is calibration_tool.signal
+    calibration_tool.span_selector.extents = (420, 460)
+    calibration_tool.span_selector_changed()
+    calibration_tool.span_selector_switch(False)
+    assert calibration_tool.span_selector is None
 
 
 def test_signal1d_calibration():
