@@ -1,0 +1,1 @@
+Fix missing API documentation of several signal classes.
