@@ -310,8 +310,8 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
 class Signal2D(BaseSignal, CommonSignal2D):
 
-    """
-    """
+    """General 2D signal class."""
+
     _signal_dimension = 2
 
     def __init__(self, *args, **kwargs):

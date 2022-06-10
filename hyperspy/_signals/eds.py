@@ -39,6 +39,8 @@ _logger = logging.getLogger(__name__)
 
 class EDSSpectrum(Signal1D):
 
+    """General 1D signal class for EDS spectra."""
+
     _signal_type = "EDS"
 
     def __init__(self, *args, **kwards):
