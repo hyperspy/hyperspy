@@ -79,6 +79,8 @@ class EDSTEMParametersUI(BaseSetMetadataItems):
 
 class EDSTEMSpectrum(EDSSpectrum):
 
+    """1D signal class for EDS spectra measured in a TEM."""
+
     _signal_type = "EDS_TEM"
 
     def __init__(self, *args, **kwards):

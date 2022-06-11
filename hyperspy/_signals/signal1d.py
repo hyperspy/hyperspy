@@ -260,8 +260,9 @@ def _shift1D(data, **kwargs):
 
 
 class Signal1D(BaseSignal, CommonSignal1D):
-    """
-    """
+
+    """General 1D signal class."""
+
     _signal_dimension = 1
 
     def __init__(self, *args, **kwargs):

@@ -71,6 +71,8 @@ class EELSTEMParametersUI(BaseSetMetadataItems):
 
 class EELSSpectrum(Signal1D):
 
+    """1D signal class for EELS spectra."""
+
     _signal_type = "EELS"
     _alias_signal_types = ["TEM EELS"]
 
