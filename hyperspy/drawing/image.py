@@ -333,7 +333,9 @@ class ImagePlot(BlittedFigure):
         if self.axes_off:
             self.ax.axis('off')
 
-    def plot(self, data_function_kwargs={}, display_range=None, **kwargs):
+    def plot(self, data_function_kwargs=None, display_range=None, **kwargs):
+        if data_function_kwargs is None:
+            data_function_kwargs = {}
         if display_range is None:
             display_range = (None, ) * 4
         self.data_function_kwargs = data_function_kwargs

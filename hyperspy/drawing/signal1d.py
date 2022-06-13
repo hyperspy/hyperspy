@@ -171,14 +171,16 @@ class Signal1DFigure(BlittedFigure):
                 self._color_cycles[line.type].color_cycle.remove(
                     rgba_color)
 
-    def plot(self, data_function_kwargs={}, display_range=None, **kwargs):
+    def plot(self, data_function_kwargs=None, display_range=None, **kwargs):
+        if data_function_kwargs is None:
+            data_function_kwargs = {}
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
         self.ax.set_title(self.title)
-        
+
         if display_range is None:
             display_range = (None, ) * 2
-        
+
         if len(display_range) != 2:
             raise ValueError('`display_range` must be of length 2.')
 
@@ -188,7 +190,7 @@ class Signal1DFigure(BlittedFigure):
 
         for marker in self.ax_markers:
             marker.plot(render_figure=False)
-        
+
         # Remove default matplotlib margins for consistency with our autoscale
         # When 'x' or 'y' are not in line.autoscale, the default matplotlib
         # margins will be used
