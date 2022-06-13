@@ -692,3 +692,15 @@ def test_plot_scalebar_list():
     ax0, ax1 = hs.plot.plot_images([s, s], scalebar=[0])
     assert hasattr(ax0, 'scalebar')
     assert not hasattr(ax1, 'scalebar')
+
+
+@pytest.mark.parametrize('display_range', (None, (150, 400, 200, 450),))
+def test_plot_limits(display_range):
+    s = hs.datasets.example_signals.object_hologram()
+    s.plot(display_range=display_range)
+    if display_range is None:
+        display_range = (-0.4598758, 470.4530, 654.4033, 183.49045)
+    ax = s._plot.signal_plot.ax
+    np.testing.assert_allclose(ax.get_xlim(), display_range[:2])
+    np.testing.assert_allclose(ax.get_ylim(), display_range[2:])
+    

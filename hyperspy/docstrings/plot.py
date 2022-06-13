@@ -125,6 +125,11 @@ PLOT2D_DOCSTRING = \
             position. If 'v' (for values) is in the string, the contrast of the
             image will be set automatically according to `vmin` and `vmax` when
             the data or navigation indices change. Default is 'v'.
+        display_range : None or 4-tuple of None or float
+            Define the minimum and maximum of the horizontal and vertical axis,
+            with the order ``(xmin, xmax, ymin, ymax)``.
+            If None, the values are defined by the extrema of the data to plot,
+            otherwise the specified values are used. Default is None.
         saturated_pixels : scalar
             The percentage of pixels that are left out of the bounds.
             For example, the low and high bounds of a value of 1 are the 0.5%
