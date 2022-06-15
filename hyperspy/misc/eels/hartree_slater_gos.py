@@ -35,6 +35,22 @@ _logger = logging.getLogger(__name__)
 R = constants.value("Rydberg constant times hc in eV")
 a0 = constants.value("Bohr radius")
 
+# This dictionary accounts for conventions chosen in naming the data files, as well as normalisation.
+# These cross sections contain only odd-number edges such as N3, or M5, and are normalised accordingly.
+# Other edges can be obtained as scaled copies of the provided ones.
+conventions = { 'K' : {'table': 'K1', 'factor': 1},
+                'L1': {'table': 'L1', 'factor': 1},
+                    'L2,3': {'table':'L3', 'factor': 3/2}, 'L2': {'table':'L3', 'factor': 1/2}, 'L3': {'table':'L3', 'factor': 1},
+                'M1': {'table': 'M1', 'factor': 1},
+                    'M2,3': {'table':'M3', 'factor': 3/2}, 'M2': {'table':'M3', 'factor': 1/2}, 'M3': {'table':'M3', 'factor': 1},
+                            'M4,5': {'table':'M5', 'factor': 5/3}, 'M4': {'table':'M5', 'factor': 2/3}, 'M5': {'table':'M5', 'factor': 1},
+                'N1': {'table': 'N1', 'factor': 1},
+                    'N2,3': {'table':'N3', 'factor': 3/2}, 'N2': {'table':'N3', 'factor': 1/2}, 'N3': {'table':'N3', 'factor': 1},
+                            'N4,5': {'table':'N5', 'factor': 5/3}, 'N4': {'table':'N5', 'factor': 2/3}, 'N5': {'table':'N5', 'factor': 1},
+                                'N6,7': {'table': 'N7', 'factor': 7/4}, 'N6': {'table':'N7', 'factor': 4/7}, 'N7': {'table':'N7', 'factor': 1},
+                'O1': {'table': 'O1', 'factor': 1},
+                    'O2,3': {'table':'O3', 'factor': 3/2}, 'O2': {'table':'O3', 'factor': 1/2}, 'O3': {'table':'O3', 'factor': 1},
+                        'O4,5': {'table':'O5', 'factor': 5/3}, 'O4': {'table':'O5', 'factor': 2/3}, 'O5': {'table':'O5', 'factor': 1}}
 
 class HartreeSlaterGOS(GOSBase):
 
@@ -117,15 +133,15 @@ class HartreeSlaterGOS(GOSBase):
         )
         element = self.element
         subshell = self.subshell
+        table = conventions[subshell]['table']
+        self.subshell_factor = conventions[subshell]['factor']
 
         # Check if the Peter Rez's Hartree Slater GOS distributed by
         # Gatan are available. Otherwise exit
         gos_root = Path(preferences.EELS.eels_gos_files_path)
         gos_file = gos_root.joinpath(
             (
-                elements[element]["Atomic_properties"]["Binding_energies"][subshell][
-                    "filename"
-                ]
+                "{}.{}".format(element,table)
             )
         )
 

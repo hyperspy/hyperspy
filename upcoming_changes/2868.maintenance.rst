@@ -1,0 +1,1 @@
+Minor refactor of the EELS subshells in the ``elements`` dictionary.
