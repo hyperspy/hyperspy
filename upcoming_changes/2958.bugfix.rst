@@ -1,0 +1,1 @@
+Add ``display_range`` argument to :py:meth:`~.signal.BaseSignal.plot` to improve default display of EDS spectra with low-count and high intensity of zero-energy peak
