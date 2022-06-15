@@ -108,6 +108,10 @@ PLOT1D_DOCSTRING = \
             corresponding horizontal or vertical axis limits are set to their
             maxima and the axis limits will reset when the data or the
             navigation indices are changed. Default is 'v'.
+        display_range : None or 2-tuple of None or float
+            Define the minimum and maximum of the horizontal axis.
+            If None, the values are defined by the extrema of the data to plot,
+            otherwise the specified values are used. Default is None.
         """
 
 

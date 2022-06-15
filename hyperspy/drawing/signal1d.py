@@ -171,25 +171,53 @@ class Signal1DFigure(BlittedFigure):
                 self._color_cycles[line.type].color_cycle.remove(
                     rgba_color)
 
-    def plot(self, data_function_kwargs={}, **kwargs):
+    def plot(self, data_function_kwargs={}, display_range=None, **kwargs):
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
         self.ax.set_title(self.title)
-        x_axis_upper_lims = []
-        x_axis_lower_lims = []
+        
+        if display_range is None:
+            display_range = (None, ) * 2
+        
+        if len(display_range) != 2:
+            raise ValueError('`display_range` must be of length 2.')
 
         for line in self.ax_lines:
-            line.plot(data_function_kwargs=data_function_kwargs, **kwargs)
-            if len(line.axis.axis) > 1:
-                x_axis_lower_lims.append(line.axis.axis[0])
-                x_axis_upper_lims.append(line.axis.axis[-1])
+            line.plot(data_function_kwargs=data_function_kwargs,
+                      render_figure=False, **kwargs)
 
         for marker in self.ax_markers:
             marker.plot(render_figure=False)
+        
+        # Remove default matplotlib margins for consistency with our autoscale
+        # When 'x' or 'y' are not in line.autoscale, the default matplotlib
+        # margins will be used
+        self.ax.autoscale(tight=True)
 
-        plt.xlim(min(x_axis_lower_lims, default=None),
-                 max(x_axis_upper_lims, default=None)
-                 )
+        # Calculate the x limits according to the maximum x range of the values
+        # of all lines; `display_range` supercedes the calculation
+        xmin, xmax = display_range
+        x_axis_lower_lims, x_axis_upper_lims = [], []
+
+        for line in self.ax_lines:
+            # Consider autoscale only when enable and possible
+            if 'x' in line.autoscale and len(line.axis.axis) > 0:
+                x_axis_lower_lims.append(line.axis.axis[0])
+                x_axis_upper_lims.append(line.axis.axis[-1])
+
+        if xmin is not None:
+            x_axis_lower_lims = [xmin]
+
+        if xmax is not None:
+            x_axis_upper_lims = [xmax]
+
+        self.ax.set_xlim(
+            min(x_axis_lower_lims, default=None),
+            max(x_axis_upper_lims, default=None)
+            )    
+
+        # Call update to make sure the y limits are corrects
+        self.update(render_figure=False)
 
         self.axes_manager.events.indices_changed.connect(self.update, [])
         self.events.closed.connect(
@@ -203,7 +231,7 @@ class Signal1DFigure(BlittedFigure):
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
                 pass
-        self.render_figure()
+        self.render_figure()   
 
     def _on_close(self):
         _logger.debug('Closing Signal1DFigure.')
@@ -214,7 +242,7 @@ class Signal1DFigure(BlittedFigure):
         super(Signal1DFigure, self)._on_close()
         _logger.debug('Signal1DFigure Closed.')
 
-    def update(self):
+    def update(self, render_figure=True):
         """
         Update lines, markers and render at the end.
         This method is connected to the `indices_changed` event of the
@@ -241,7 +269,8 @@ class Signal1DFigure(BlittedFigure):
         if self.right_ax is not None:
             update_lines(self.right_ax, self.right_ax_lines)
 
-        self.render_figure()
+        if render_figure:
+            self.render_figure()
 
 
 class Signal1DLine(object):
@@ -395,7 +424,7 @@ class Signal1DLine(object):
             plt.setp(self.line, **self.line_properties)
             self.ax.figure.canvas.draw_idle()
 
-    def plot(self, data=1, **kwargs):
+    def plot(self, data=1, render_figure=True, **kwargs):
         for key, value in kwargs.items():
             if hasattr(self, key):
                 setattr(self, key, value)
@@ -433,7 +462,8 @@ class Signal1DLine(object):
                                      color=self.line.get_color(),
                                      animated=self.ax.figure.canvas.supports_blit)
         self._y_min, self._y_max = self.ax.get_ylim()
-        self.ax.hspy_fig.render_figure()
+        if render_figure:
+            self.ax.hspy_fig.render_figure()
 
     def _get_data(self, real_part=False):
         if self._plot_imag and not real_part:

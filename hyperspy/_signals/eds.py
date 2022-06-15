@@ -855,6 +855,7 @@ class EDSSpectrum(Signal1D):
              navigator="auto",
              plot_markers=True,
              autoscale='v',
+             display_range=None,
              norm="auto",
              axes_manager=None,
              navigator_kwds={},
@@ -926,9 +927,15 @@ class EDSSpectrum(Signal1D):
         set_elements, add_elements, estimate_integration_windows,
         get_lines_intensity, estimate_background_windows
         """
+        if display_range is None:
+            axis = self.axes_manager[-1].axis
+            if len(axis) > 1 and axis[0] < 0.1:
+                display_range = (0.1, None)
+            
         super().plot(navigator=navigator,
                      plot_markers=plot_markers,
                      autoscale=autoscale,
+                     display_range=display_range,
                      norm=norm,
                      axes_manager=axes_manager,
                      navigator_kwds=navigator_kwds,
