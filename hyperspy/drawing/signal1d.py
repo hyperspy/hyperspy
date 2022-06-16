@@ -216,7 +216,7 @@ class Signal1DFigure(BlittedFigure):
         self.ax.set_xlim(
             min(x_axis_lower_lims, default=None),
             max(x_axis_upper_lims, default=None)
-            )    
+            )
 
         # Call update to make sure the y limits are corrects
         self.update(render_figure=False)
@@ -233,7 +233,7 @@ class Signal1DFigure(BlittedFigure):
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
                 pass
-        self.render_figure()   
+        self.render_figure()
 
     def _on_close(self):
         _logger.debug('Closing Signal1DFigure.')
@@ -260,6 +260,12 @@ class Signal1DFigure(BlittedFigure):
                                        update_ylimits=False)
                 y_min = np.nanmin([y_min, line._y_min])
                 y_max = np.nanmax([y_max, line._y_max])
+            if line.norm == 'log':
+                # For log scale, values need to be positive
+                if y_min <= 0:
+                    y_min = None
+                if y_max <= 0:
+                    y_max = None
             ax.set_ylim(y_min, y_max)
 
         for marker in self.ax_markers:
