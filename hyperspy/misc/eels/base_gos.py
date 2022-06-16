@@ -22,7 +22,7 @@ from hyperspy.misc.math_tools import get_linear_interpolation
 from hyperspy.misc.elements import elements
 
 
-class GOSBase(object):
+class GOSBase:
 
     def read_elements(self):
         element = self.element
