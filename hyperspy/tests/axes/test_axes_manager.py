@@ -20,7 +20,7 @@ from unittest import mock
 
 import numpy as np
 
-from hyperspy.axes import AxesManager, _serpentine_iter, _flyback_iter, GeneratorLen
+from hyperspy.axes import AxesManager, _serpentine_iter, _flyback_iter, GeneratorLen, BaseDataAxis
 from hyperspy.defaults_parser import preferences
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 
@@ -113,6 +113,16 @@ class TestAxesManager:
         assert self.am.all_uniform == True
         self.am[-1].convert_to_non_uniform_axis()
         assert self.am.all_uniform == False
+
+    def test_get_axis(self):
+        am = self.am
+        assert am[0] == am["d"]
+        assert am[-1] == am["b"]
+        axis = am[1]
+        assert am[axis] == axis
+        with pytest.raises(ValueError):
+            axis = BaseDataAxis()
+            am[axis]
 
 
 class TestAxesManagerScaleOffset:
