@@ -126,8 +126,14 @@ class TestUtilsStack:
 
     def test_stack_not_default(self):
         s = self.signal
-        s1 = s.inav[:, :-1] + 1
-        s2 = s.inav[:, ::2] * 4
+        # Add variance to metadata to check that it also stacks correctly
+        s.metadata.set_item("Signal.Noise_properties.variance", s.deepcopy())
+        def get_variance_data(s):
+            return s.metadata.Signal.Noise_properties.variance.data
+        s1 = s.inav[:, :-1]
+        s1.data += 1
+        s2 = s.inav[:, ::2]
+        s2.data *= 4
         result_signal = utils.stack([s, s1, s2], axis=1)
         axis_size = s.axes_manager[1].size
         axs1 = s1.axes_manager[1].size
@@ -142,6 +148,20 @@ class TestUtilsStack:
                 s1.data, rs.inav[:, axis_size:axis_size + axs1].data)
             np.testing.assert_array_almost_equal(
                 s2.data, rs.inav[:, axis_size + axs1:].data)
+            np.testing.assert_array_almost_equal(
+                get_variance_data(result_list[0]), get_variance_data(rs.inav[:, :axis_size]))
+            np.testing.assert_array_almost_equal(
+                get_variance_data(s),
+                get_variance_data(rs.inav[:, :axis_size])
+            )
+            np.testing.assert_array_almost_equal(
+                get_variance_data(s1),
+                get_variance_data(rs.inav[:, axis_size:axis_size + axs1])
+            )
+            np.testing.assert_array_almost_equal(
+                get_variance_data(s2),
+                get_variance_data(rs.inav[:, axis_size + axs1:])
+            )
 
     def test_stack_bigger_than_ten(self):
         s = self.signal
