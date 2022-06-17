@@ -25,7 +25,6 @@ from scipy import constants, integrate, interpolate
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.eels.base_gos import GOSBase
-from hyperspy.misc.elements import elements
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary, load_from_dictionary)
 
@@ -51,6 +50,7 @@ conventions = { 'K' : {'table': 'K1', 'factor': 1},
                 'O1': {'table': 'O1', 'factor': 1},
                     'O2,3': {'table':'O3', 'factor': 3/2}, 'O2': {'table':'O3', 'factor': 1/2}, 'O3': {'table':'O3', 'factor': 1},
                         'O4,5': {'table':'O5', 'factor': 5/3}, 'O4': {'table':'O5', 'factor': 2/3}, 'O5': {'table':'O5', 'factor': 1}}
+
 
 class HartreeSlaterGOS(GOSBase):
 
@@ -124,6 +124,10 @@ class HartreeSlaterGOS(GOSBase):
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
         return dic
 
+    def read_elements(self):
+        super().read_elements()
+        self.subshell_factor = conventions[self.subshell]['factor']
+
     def readgosfile(self):
         _logger.info(
             "Hartree-Slater GOS\n"
@@ -134,7 +138,6 @@ class HartreeSlaterGOS(GOSBase):
         element = self.element
         subshell = self.subshell
         table = conventions[subshell]['table']
-        self.subshell_factor = conventions[subshell]['factor']
 
         # Check if the Peter Rez's Hartree Slater GOS distributed by
         # Gatan are available. Otherwise exit
