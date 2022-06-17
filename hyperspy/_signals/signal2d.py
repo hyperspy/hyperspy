@@ -181,7 +181,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
     Returns
     -------
     shifts: np.array
-        containing the estimate shifts
+        containing the estimate shifts in pixels
     max_value : float
         The maximum value of the correlation
 
