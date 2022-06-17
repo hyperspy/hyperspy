@@ -1664,7 +1664,7 @@ class MVA:
             if signal_mask is None:
                 signal_mask = slice(None)
             else:
-                signal_mask = ~signal_mask
+                signal_mask = ~signal_mask.ravel()
 
             if dc[:, signal_mask][navigation_mask, :].size == 0:
                 raise ValueError("All the data are masked, change the mask.")
