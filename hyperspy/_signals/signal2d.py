@@ -625,8 +625,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
         fill_value : int, float, nan
             The areas with missing data are filled with the given value.
             Default is nan.
-        shifts : None or list of tuples
-            If None the shifts are estimated using
+        shifts : None or array.
+            The array of shifts must be in pixel units. The shape must be
+            the navigation shape using numpy order convention. If `None`
+            the shifts are estimated using 
             :py:meth:`~._signals.signal2D.estimate_shift2D`.
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
