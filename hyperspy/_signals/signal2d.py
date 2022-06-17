@@ -463,8 +463,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Returns
         -------
-        shifts : list of array
-            List of estimated shifts
+        shifts : array
+            Estimated shifts in pixels. 
 
         Notes
         -----
