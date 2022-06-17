@@ -126,6 +126,9 @@ class TestNdAxes:
         # Check that views of the data don't change. See #871
         np.testing.assert_array_equal(s1.inav[0, 0, 0].data, s1n000.data)
 
+    def test_consistency_poissonian_masked(self):
+        s1 = self.s1
+
 
 @lazifyTestClass
 class TestGetModel:
