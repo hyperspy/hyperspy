@@ -22,6 +22,7 @@ Bug Fixes
 - Fix stacking signals that contain their variance in metadata. Previously it was raising an error when specifying the stacking axis. (`#2954 <https://github.com/hyperspy/hyperspy/issues/2954>`_)
 - Fix missing API documentation of several signal classes. (`#2957 <https://github.com/hyperspy/hyperspy/issues/2957>`_)
 - Fix two bugs in :py:meth:`~.learn.mva.MVA.decomposition`:
+
    * The poisson noise normalization was not applied when giving a `signal_mask`
    * An error was raised when applying a ``signal_mask`` on a signal with signal dimension larger than 1. (`#2964 <https://github.com/hyperspy/hyperspy/issues/2964>`_)
 
