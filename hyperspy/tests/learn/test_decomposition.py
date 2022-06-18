@@ -126,6 +126,33 @@ class TestNdAxes:
         # Check that views of the data don't change. See #871
         np.testing.assert_array_equal(s1.inav[0, 0, 0].data, s1n000.data)
 
+    @pytest.mark.parametrize("poisson", [True, False])
+    def test_consistency_masked(self, poisson):
+        s1 = self.s1
+        sig_mask = s1._get_signal_signal(dtype="bool")
+        nav_mask = s1._get_navigation_signal(dtype="bool").T
+        sig_mask.data[:1, :] = True
+        nav_mask.data[:1, :, :] = True
+        s1s = s1.isig[:, 1:]
+        s1n = s1.inav[:, :, 1:]
+        s1sn = s1n.isig[:, 1:]
+        s1.decomposition(poisson, signal_mask=sig_mask)
+        s1s.decomposition(poisson)
+        np.testing.assert_array_almost_equal(
+            s1s.learning_results.explained_variance,
+            s1.learning_results.explained_variance)
+
+        s1.decomposition(poisson, navigation_mask=nav_mask)
+        s1n.decomposition(poisson)
+        np.testing.assert_array_almost_equal(
+            s1n.learning_results.explained_variance,
+            s1.learning_results.explained_variance)
+
+        s1.decomposition(poisson, navigation_mask=nav_mask, signal_mask=sig_mask)
+        s1sn.decomposition(poisson)
+        np.testing.assert_array_almost_equal(
+            s1sn.learning_results.explained_variance,
+            s1.learning_results.explained_variance)
 
 @lazifyTestClass
 class TestGetModel:

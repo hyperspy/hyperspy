@@ -1664,7 +1664,7 @@ class MVA:
             if signal_mask is None:
                 signal_mask = slice(None)
             else:
-                signal_mask = ~signal_mask
+                signal_mask = ~signal_mask.ravel()
 
             if dc[:, signal_mask][navigation_mask, :].size == 0:
                 raise ValueError("All the data are masked, change the mask.")
@@ -1686,10 +1686,22 @@ class MVA:
             # We ignore numpy's warning when the result of an
             # operation produces nans - instead we set 0/0 = 0
             with np.errstate(divide="ignore", invalid="ignore"):
-                dc[:, signal_mask][navigation_mask, :] /= self._root_aG * self._root_bH
-                dc[:, signal_mask][navigation_mask, :] = np.nan_to_num(
-                    dc[:, signal_mask][navigation_mask, :]
-                )
+                # Boolean indexing always makes a copy of data. Therefore, we cannot modify the
+                # data using `data[nav_mask, :][:, sig_mask] /= [...]` that would make
+                # the code compact but doesn't work. Instead, we treat each case differently.
+                if type(signal_mask) is slice and type(navigation_mask) is not slice:
+                    dc[navigation_mask, :] /= self._root_aG * self._root_bH
+                    dc[navigation_mask, :] = np.nan_to_num(dc[navigation_mask, :])
+                elif type(signal_mask) is not slice and type(navigation_mask) is slice:
+                    dc[:, signal_mask] /= self._root_aG * self._root_bH
+                    dc[:, signal_mask] = np.nan_to_num(dc[:, signal_mask])
+                elif type(signal_mask) is not slice and type(navigation_mask) is not slice:
+                    mask = navigation_mask[:, np.newaxis] & signal_mask[np.newaxis, :]
+                    dc[mask] /= (self._root_aG * self._root_bH).flat
+                    dc[mask] = np.nan_to_num(dc[mask])
+                else:
+                    dc /= self._root_aG * self._root_bH
+                    dc = np.nan_to_num(dc)
 
     def undo_treatments(self):
         """Undo Poisson noise normalization and other pre-treatments.
