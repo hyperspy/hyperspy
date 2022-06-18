@@ -147,7 +147,7 @@ def file_writer(filename, signal, close_file=True, **kwds):
     """
     if "compressor" not in kwds:
         kwds["compressor"] = numcodecs.Blosc(
-            cname='zstd', clevel=1, shuffle=Blosc.SHUFFLE
+            cname='zstd', clevel=1, shuffle=numcodecs.Blosc.SHUFFLE
             )
 
     if isinstance(filename, MutableMapping):

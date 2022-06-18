@@ -24,6 +24,7 @@ import warnings
 import numpy as np
 import dask.array as da
 import dask
+from dask.diagnostics import ProgressBar
 from itertools import product
 from packaging.version import Version
 
@@ -50,9 +51,10 @@ lazyerror = NotImplementedError('This method is not available in lazy signals')
 
 
 try:
+    from dask.widgets import TEMPLATE_PATHS
     templates_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                   "..", "misc", "dask_widgets")
-    dask.widgets.TEMPLATE_PATHS.append(templates_path)
+    TEMPLATE_PATHS.append(templates_path)
 except ModuleNotFoundError:
     _logger.info("Dask widgets not loaded (dask >=2021.11.1 is required)")
 
@@ -176,21 +178,25 @@ class LazySignal(BaseSignal):
 
     def _repr_html_(self):
         try:
+            from dask import config
+            from dask.array.svg import svg
+            from dask.widgets import get_template
+            from dask.utils import format_bytes
             nav_chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
             sig_chunks = self.get_chunk_size(self.axes_manager.signal_axes)
             if nav_chunks ==():
                 nav_grid = ""
             else:
-                nav_grid = dask.array.svg.svg(chunks=nav_chunks,
-                               size=dask.config.get("array.svg.size", 160))
+                nav_grid = svg(chunks=nav_chunks,
+                               size=config.get("array.svg.size", 160))
             if sig_chunks == ():
                 sig_grid = ""
             else:
-                sig_grid = dask.array.svg.svg(chunks=sig_chunks,
-                               size=dask.config.get("array.svg.size", 160))
-            nbytes = dask.utils.format_bytes(self.data.nbytes)
-            cbytes = dask.utils.format_bytes(np.prod(self.data.chunksize) * self.data.dtype.itemsize)
-            return dask.widgets.get_template("lazy_signal.html.j2").render(nav_grid=nav_grid,
+                sig_grid = svg(chunks=sig_chunks,
+                               size=config.get("array.svg.size", 160))
+            nbytes = format_bytes(self.data.nbytes)
+            cbytes = format_bytes(np.prod(self.data.chunksize) * self.data.dtype.itemsize)
+            return get_template("lazy_signal.html.j2").render(nav_grid=nav_grid,
                                                               sig_grid=sig_grid,
                                                               dim=self.axes_manager._get_dimension_str(),
                                                               chunks=self._get_chunk_string(),
@@ -252,7 +258,7 @@ class LazySignal(BaseSignal):
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
-        cm = dask.diagnostics.ProgressBar if show_progressbar else dummy_context_manager
+        cm = ProgressBar if show_progressbar else dummy_context_manager
 
         with cm():
             da = self.data
@@ -1070,6 +1076,7 @@ class LazySignal(BaseSignal):
             # LEARN
             if algorithm == "SVD":
                 reproject = False
+                from dask.array.linalg import svd
 
                 try:
                     self._unfolded4decomposition = self.unfold()
@@ -1077,7 +1084,7 @@ class LazySignal(BaseSignal):
                     if navigation_mask is not None or signal_mask is not None:
                         raise NotImplementedError("Masking is not yet implemented for lazy SVD")
 
-                    U, S, V = dask.array.linalg.svd(self.data)
+                    U, S, V = svd(self.data)
 
                     if output_dimension is None:
                         min_shape = min(min(U.shape), min(V.shape))
