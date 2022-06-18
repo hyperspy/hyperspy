@@ -367,6 +367,7 @@ with update_version_when_dev() as version:
                 'tests/io/tiff_files/*.tif',
                 'tests/io/tiff_files/*.tif.gz',
                 'tests/io/tiff_files/*.dm3',
+                'tests/io/tvips_files/*.tvips',
                 'tests/io/npz_files/*.npz',
                 'tests/io/unf_files/*.unf',
                 'tests/io/bruker_data/*.bcf',

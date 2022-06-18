@@ -30,6 +30,7 @@ from pathlib import Path
 import warnings
 
 import dask.array as da
+from dask.diagnostics import ProgressBar
 from matplotlib import pyplot as plt
 import numpy as np
 from pint import UndefinedUnitError
@@ -52,7 +53,7 @@ from hyperspy.misc.utils import (
     add_scalar_axis,
     DictionaryTreeBrowser,
     guess_output_signal_size,
-    is_binned, # remove in v2.0
+    is_binned,  # remove in v2.0
     is_cupy_array,
     isiterable,
     iterable_not_string,
@@ -66,9 +67,7 @@ from hyperspy.misc.hist_tools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
-from hyperspy.misc.utils import (
-    _get_block_pattern
-    )
+from hyperspy.misc.utils import _get_block_pattern
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
     RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
@@ -4898,6 +4897,9 @@ class BaseSignal(FancySlicing,
         else:
             kwargs["output_signal_size"] = output_signal_size
             kwargs["output_dtype"] = output_dtype
+            if show_progressbar is None:
+                from hyperspy.defaults_parser import preferences
+                show_progressbar = preferences.General.show_progressbar
             # Iteration over coordinates.
             result = self._map_iterate(
                 function,
@@ -5029,6 +5031,10 @@ class BaseSignal(FancySlicing,
 
         data_stored = False
 
+        if show_progressbar:
+            pbar = ProgressBar()
+            pbar.register()
+
         if inplace:
             if (
                 not self._lazy
@@ -5074,6 +5080,9 @@ class BaseSignal(FancySlicing,
 
         if not lazy_output and not data_stored:
             sig.data = sig.data.compute(num_workers=max_workers)
+
+        if show_progressbar:
+            pbar.unregister()
 
         return sig
 

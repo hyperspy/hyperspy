@@ -297,7 +297,7 @@ class TestLinearEELSFitting:
         lm = m.as_signal()
         std_lm = m.p_std
         diff = linear - lm
-        np.testing.assert_allclose(diff.data.sum(), 0.0, atol=3E-7)
+        np.testing.assert_allclose(diff.data.sum(), 0.0, atol=1E-6)
         np.testing.assert_allclose(std_linear, std_lm)
 
     def test_nonconvolved(self):

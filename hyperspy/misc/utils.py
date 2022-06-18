@@ -1235,7 +1235,7 @@ def stack(
             ]
         ):
             variance = stack(
-                [s.metadata.Signal.Noise_properties.variance for s in signal_list], axis
+                [s.metadata.Signal.Noise_properties.variance for s in signal_list], axis_input,
             )
             signal.metadata.set_item("Signal.Noise_properties.variance", variance)
     else:

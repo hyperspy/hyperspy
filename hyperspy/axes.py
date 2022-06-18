@@ -1540,8 +1540,11 @@ class AxesManager(t.HasTraits):
         return ans
 
     def _axes_getter(self, y):
-        if y in self._axes:
-            return y
+        if isinstance(y, BaseDataAxis):
+            if y in self._axes:
+                return y
+            else:
+                raise ValueError(f"{y} is not in {self}")
         if isinstance(y, str):
             axes = list(self._get_axes_in_natural_order())
             while axes:

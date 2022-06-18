@@ -161,21 +161,19 @@ def test_load_datacube(SI_dtype):
 
 def test_load_datacube_rebin_energy():
     filename = TESTS_FILE_PATH / 'Sample' / '00_View000' / test_files[7]
-    s = hs.load(filename, cutoff_at_kV=1)
+    s = hs.load(filename, cutoff_at_kV=0.1)
     s_sum = s.sum()
 
     ref_data = hs.signals.Signal1D(
-        np.array([1032, 1229, 1409, 1336, 1239, 1169, 969, 850, 759, 782, 773,
-                  779, 853, 810, 825, 927, 1110, 1271, 1656, 1948])
+        np.array([   3,   23,   77,  200,  487,  984, 1599, 2391])
         )
-    np.testing.assert_allclose(s_sum.isig[0.5:0.7].data, ref_data.data)
+    np.testing.assert_allclose(s_sum.data[88:96], ref_data.data)
 
-    rebin_energy = 2
+    rebin_energy = 8
     s2 = hs.load(filename, rebin_energy=rebin_energy)
     s2_sum = s2.sum()
 
-    ref_data2 = ref_data.rebin(scale=(rebin_energy,))
-    np.testing.assert_allclose(s2_sum.isig[0.5:0.7].data, ref_data2.data)
+    np.testing.assert_allclose(s2_sum.data[11:12], ref_data.data.sum())
 
     with pytest.raises(ValueError, match='must be a multiple'):
         _ = hs.load(filename, rebin_energy=10)

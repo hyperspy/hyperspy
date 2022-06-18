@@ -27,6 +27,8 @@ from hyperspy.misc.eels.tools import eels_constant
 
 class DielectricFunction(ComplexSignal1D):
 
+    """Complex signal class for dielectric functions."""
+
     _signal_type = "DielectricFunction"
     _alias_signal_types = ["dielectric function"]
 

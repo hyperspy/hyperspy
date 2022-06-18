@@ -22,7 +22,7 @@ from hyperspy.misc.math_tools import get_linear_interpolation
 from hyperspy.misc.elements import elements
 
 
-class GOSBase(object):
+class GOSBase:
 
     def read_elements(self):
         element = self.element
@@ -45,13 +45,6 @@ class GOSBase(object):
                 'Binding_energies'][
                 subshell][
                 'onset_energy (eV)']
-        self.subshell_factor = \
-            elements[
-                element][
-                'Atomic_properties'][
-                'Binding_energies'][
-                subshell][
-                'factor']
         self.Z = elements[element]['General_properties']['Z']
         self.element_dict = elements[element]
 
