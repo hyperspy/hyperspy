@@ -276,10 +276,10 @@ class ImagePlot(BlittedFigure):
         else:
             vmin, vmax = self._vmin_numeric, self._vmax_numeric
         # provided vmin, vmax override the calculated value
-        if isinstance(vmin, (int, float)):
-            vmin = vmin
-        if isinstance(vmax, (int, float)):
-            vmax = vmax
+        if isinstance(self.vmin, (int, float)):
+            vmin = self.vmin
+        if isinstance(self.vmax, (int, float)):
+            vmax = self.vmax
         if vmin == np.nan:
             vmin = None
         if vmax == np.nan:
@@ -440,7 +440,7 @@ class ImagePlot(BlittedFigure):
         if rgb_tools.is_rgbx(data):
             self.colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
-            data = self._current_data = data
+            self._current_data = data
             self._is_rgb = True
         ims = self.ax.images
 

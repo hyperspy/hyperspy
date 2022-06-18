@@ -2743,9 +2743,9 @@ class BaseSignal(FancySlicing,
             self._plot.close()
         if 'power_spectrum' in kwargs:
             if not np.issubdtype(self.data.dtype, np.complexfloating):
-                raise ValueError('The parameter `power_spectrum` required a '
-                                 'signal with complex data type.')
                 del kwargs['power_spectrum']
+                raise ValueError('The parameter `power_spectrum` requires a '
+                                 'signal with complex data type.')
 
         if axes_manager is None:
             axes_manager = self.axes_manager
@@ -3181,7 +3181,7 @@ class BaseSignal(FancySlicing,
 
         if new_shape is None and scale is None:
             raise ValueError("One of new_shape, or scale must be specified")
-        elif new_shape is None and scale is None:
+        elif new_shape is not None and scale is not None:
             raise ValueError(
                 "Only one out of new_shape or scale should be specified. "
                 "Not both.")
@@ -5503,7 +5503,6 @@ class BaseSignal(FancySlicing,
             e.g., ``numpy.int8``.  The default is the data type of the current
             signal data.
         """
-        from dask.array import Array
         if data is not None:
             ref_shape = (self.axes_manager._navigation_shape_in_array
                          if self.axes_manager.navigation_dimension != 0
@@ -5537,7 +5536,7 @@ class BaseSignal(FancySlicing,
                 data,
                 axes=self.axes_manager._get_navigation_axes_dicts()
                 ).T
-        if isinstance(data, Array):
+        if isinstance(data, da.Array):
             s = s.as_lazy()
         return s
 
@@ -5556,7 +5555,6 @@ class BaseSignal(FancySlicing,
             e.g., ``numpy.int8``.  The default is the data type of the current
             signal data.
         """
-        from dask.array import Array
         if data is not None:
             ref_shape = (self.axes_manager._signal_shape_in_array
                          if self.axes_manager.signal_dimension != 0
@@ -5581,7 +5579,7 @@ class BaseSignal(FancySlicing,
         else:
             s = self.__class__(data,
                                axes=self.axes_manager._get_signal_axes_dicts())
-        if isinstance(data, Array):
+        if isinstance(data, da.Array):
             s = s.as_lazy()
         return s
 
