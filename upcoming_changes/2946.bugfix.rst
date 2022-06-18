@@ -1,1 +1,0 @@
-Respect ``show_progressbar`` parameter in :py:meth:`~.signal.BaseSignal.map`

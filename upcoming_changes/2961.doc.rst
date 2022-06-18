@@ -1,1 +1,0 @@
-Fix and complete docstrings of :py:meth:`~._signals.signal2d.Signal2D.align2D` and :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`.
