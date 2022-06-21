@@ -26,12 +26,14 @@ from packaging.version import Version
 from pathlib import Path
 
 import hyperspy
+from hyperspy.axes import AxesManager
 from hyperspy.misc.utils import slugify, is_binned
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
     load_from_dictionary
 from hyperspy.events import Events, Event
+from hyperspy.model import BaseModel
 from hyperspy.ui_registry import add_gui_method
 from IPython.display import display_pretty, display
 from hyperspy.misc.model_tools import current_component_values
@@ -115,7 +117,7 @@ class Parameter(t.HasTraits):
     _free = True
     _bounds = (None, None)
     __twin = None
-    _axes_manager = None
+    _axes_manager: AxesManager | None = None
     __ext_bounded = False
     __ext_force_positive = False
 
@@ -123,13 +125,13 @@ class Parameter(t.HasTraits):
     # (it bugs out, because both editor shares the object, and Array editors
     # don't like non-sequence objects). TextEditor() works well, so does
     # RangeEditor() as it works with bmin/bmax.
-    value = t.Property(t.Either([t.CFloat(0), Array()]))
+    value: float = t.Property(t.Either([t.CFloat(0), Array()]))
 
-    units = t.Str('')
-    free = t.Property(t.CBool(True))
+    units: str = t.Str('')
+    free: bool = t.Property(t.CBool(True))
 
-    bmin = t.Property(NoneFloat(), label="Lower bounds")
-    bmax = t.Property(NoneFloat(), label="Upper bounds")
+    bmin: float = t.Property(NoneFloat(), label="Lower bounds")
+    bmax: float = t.Property(NoneFloat(), label="Upper bounds")
     _twin_function_expr = ""
     _twin_inverse_function_expr = ""
     twin_function = None
@@ -155,11 +157,11 @@ class Parameter(t.HasTraits):
         self.std = None
         self.component = None
         self.grad = None
-        self.name = ''
-        self.units = ''
+        self.name: str = ''
+        self.units: str = ''
         self._linear = False
         self.map = None
-        self.model = None
+        self.model: BaseModel | None = None
         self._whitelist = {'_id_name': None,
                            'value': None,
                            'std': None,
@@ -214,7 +216,7 @@ class Parameter(t.HasTraits):
         text = '<' + text + '>'
         return text
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self._number_of_elements
 
     @property
@@ -289,7 +291,7 @@ class Parameter(t.HasTraits):
     def twin_inverse_function(self, value):
         self._twin_inverse_function = value
 
-    def _get_value(self):
+    def _get_value(self) -> float:
         if self.twin is None:
             return self.__value
         else:
@@ -298,7 +300,7 @@ class Parameter(t.HasTraits):
             else:
                 return self.twin.value
 
-    def _set_value(self, value):
+    def _set_value(self, value: float):
         try:
             # Use try/except instead of hasattr("__len__") because a numpy
             # memmap has a __len__ wrapper even for numbers that raises a
@@ -732,7 +734,7 @@ class Parameter(t.HasTraits):
 
 @add_gui_method(toolkey="hyperspy.Component")
 class Component(t.HasTraits):
-    __axes_manager = None
+    __axes_manager: AxesManager | None = None
 
     active = t.Property(t.CBool(True))
     name = t.Property(t.Str(''))
@@ -1072,7 +1074,7 @@ class Component(t.HasTraits):
         return component_array
 
     def _component2plot(self, axes_manager, out_of_range2nans=True):
-        old_axes_manager = None
+        old_axes_manager: AxesManager | None = None
         if axes_manager is not self.model.axes_manager:
             old_axes_manager = self.model.axes_manager
             self.model.axes_manager = axes_manager

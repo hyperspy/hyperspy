@@ -23,7 +23,7 @@ from scipy.special import huber
 import traits.api as t
 
 import hyperspy.drawing.signal1d
-from hyperspy.axes import generate_uniform_axis
+from hyperspy.axes import AxesManager, generate_uniform_axis
 from hyperspy.exceptions import WrongObjectError, SignalDimensionError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import LabelWidget, VerticalLineWidget
@@ -694,7 +694,7 @@ class Model1D(BaseModel):
             * np.clip(self._errfunc(param, y, weights), -huber_delta, huber_delta)
         ).sum(axis=1)
 
-    def _model2plot(self, axes_manager, out_of_range2nans=True):
+    def _model2plot(self, axes_manager: AxesManager, out_of_range2nans=True):
         old_axes_manager = None
         if axes_manager is not self.axes_manager:
             old_axes_manager = self.axes_manager

@@ -19,6 +19,7 @@
 import numpy as np
 
 from hyperspy._signals.signal2d import Signal2D
+from hyperspy.axes import AxesManager
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
@@ -249,7 +250,7 @@ class Model2D(BaseModel):
     def _gradient_huber(self, param, y, weights=None, huber_delta=None):
         raise NotImplementedError
 
-    def _model2plot(self, axes_manager, out_of_range2nans=True):
+    def _model2plot(self, axes_manager: AxesManager, out_of_range2nans=True):
         old_axes_manager = None
         if axes_manager is not self.axes_manager:
             old_axes_manager = self.axes_manager

@@ -42,6 +42,7 @@ from scipy.optimize import (
     minimize,
     OptimizeResult
 )
+from hyperspy.axes import AxesManager
 from hyperspy.component import Component
 from hyperspy.components1d import Expression
 from hyperspy.defaults_parser import preferences
@@ -923,7 +924,7 @@ class BaseModel(list):
                 counter += component._nfree_param
 
     def _model2plot(self, axes_manager, out_of_range2nans=True):
-        old_axes_manager = None
+        old_axes_manager: AxesManager | None = None
         if axes_manager is not self.axes_manager:
             old_axes_manager = self.axes_manager
             self.axes_manager = axes_manager
