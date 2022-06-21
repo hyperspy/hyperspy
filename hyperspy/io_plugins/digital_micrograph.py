@@ -1135,4 +1135,5 @@ def file_reader(filename, record_by=None, order=None, lazy=False,
                  })
 
     return imd
-    file_reader.__doc__ %= (OPTIMIZE_ARG.replace('False', 'True'))
+
+file_reader.__doc__ %= (OPTIMIZE_ARG.replace('False', 'True'))

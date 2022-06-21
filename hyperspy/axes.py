@@ -356,7 +356,7 @@ class BaseDataAxis(t.HasTraits):
             self.index = new_index
             if new == self.axis[self.index]:
                 self.events.value_changed.trigger(obj=self, value=new)
-        elif old_index == new_index:
+        else:
             new_value = self.index2value(new_index)
             if new_value == old:
                 self._suppress_value_changed_trigger = True
