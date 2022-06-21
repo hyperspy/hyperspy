@@ -3624,7 +3624,7 @@ class BaseSignal(FancySlicing,
         # if the value was loaded from a file its type can be np.bool_
         if folding.unfolded is True:
             self.data = self.data.reshape(folding.original_shape)
-            self.axes_manager = folding.original_axes_manager
+            self.axes_manager: AxesManager = folding.original_axes_manager
             folding.original_shape = None
             folding.original_axes_manager = None
             folding.unfolded = False

@@ -16,10 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from __future__ import annotations
+
 from contextlib import contextmanager
 import copy
 import math
 import logging
+from collections.abc import Sequence
 
 import dask.array as da
 import numpy as np
@@ -266,19 +269,19 @@ class BaseDataAxis(t.HasTraits):
     is_binned : bool, optional
         True if data along the axis is binned. Default False.
     """
-    name = t.Str()
-    units = t.Str()
-    size = t.CInt()
-    low_value = t.Float()
-    high_value = t.Float()
+    name: str = t.Str()
+    units: str = t.Str()
+    size: int = t.CInt()
+    low_value: int|float = t.Float()
+    high_value: int|float = t.Float()
     value = t.Range('low_value', 'high_value')
-    low_index = t.Int(0)
-    high_index = t.Int()
+    low_index: int = t.Int(0)
+    high_index: int = t.Int()
     slice = t.Instance(slice)
-    navigate = t.Bool(False)
-    is_binned = t.Bool(t.Undefined)
-    index = t.Range('low_index', 'high_index')
-    axis = t.Array()
+    navigate: bool = t.Bool(False)
+    is_binned: bool = t.Bool(t.Undefined)
+    index: int = t.Range('low_index', 'high_index')
+    axis: np.ndarray = t.Array()
 
     def __init__(self,
                  index_in_array=None,
@@ -331,7 +334,7 @@ class BaseDataAxis(t.HasTraits):
         self.index = 0
         self.navigate = navigate
         self.is_binned = is_binned
-        self.axes_manager = None
+        self.axes_manager: AxesManager | None = None
         self._is_uniform = False
 
         # The slice must be updated even if the default value did not
@@ -507,7 +510,7 @@ class BaseDataAxis(t.HasTraits):
             self.low_value, self.high_value = (
                 self.axis.min(), self.axis.max())
 
-    def _update_slice(self, value):
+    def _update_slice(self, value: bool):
         if value is False:
             self.slice = slice(None)
         else:
@@ -683,7 +686,7 @@ class BaseDataAxis(t.HasTraits):
                 i2 = self.value2index(v2)
         return i1, i2
 
-    def update_from(self, axis, attributes):
+    def update_from(self, axis: BaseDataAxis, attributes: Sequence[str]):
         """Copy values of specified axes fields from the passed AxesManager.
 
         Parameters
@@ -1457,8 +1460,8 @@ class AxesManager(t.HasTraits):
     """
 
     _axes = t.List(BaseDataAxis)
-    signal_axes = t.Tuple()
-    navigation_axes = t.Tuple()
+    signal_axes: tuple[BaseDataAxis] = t.Tuple()
+    navigation_axes: tuple[BaseDataAxis] = t.Tuple()
     _step = t.Int(1)
 
     def __init__(self, axes_list):
@@ -1527,7 +1530,7 @@ class AxesManager(t.HasTraits):
                  [1, ])[::-1]
         return ndindex_nat(*shape)
 
-    def __getitem__(self, y):
+    def __getitem__(self, y) -> BaseDataAxis | tuple[BaseDataAxis]:
         """x.__getitem__(y) <==> x[y]
 
         """
