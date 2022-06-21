@@ -105,6 +105,8 @@ def get_configuration_directory_path():
     import hyperspy.misc.config_dir
     return hyperspy.misc.config_dir.config_path
 
+
+# Eager imports when type checking since VSCode pylance doesn't support lazy loading
 if TYPE_CHECKING:
     from hyperspy import datasets, interactive, model, signals
     from hyperspy.io import load

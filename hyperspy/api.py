@@ -19,6 +19,7 @@
 
 import importlib
 import logging
+from typing import TYPE_CHECKING
 
 import hyperspy.api_nogui
 from hyperspy.api_nogui import __doc__, get_configuration_directory_path
@@ -29,8 +30,43 @@ from hyperspy.Release import version as __version__
 
 _logger = logging.getLogger(__name__)
 
+# Eager imports when type checking since VSCode pylance doesn't support lazy loading
+if TYPE_CHECKING:
+    from hyperspy import datasets, interactive, model, signals
+    from hyperspy.io import load
+    from hyperspy.misc.utils import stack, transpose
+    from hyperspy.utils import (
+        eds,
+        markers,
+        material,
+        plot,
+        print_known_signal_types,
+        roi,
+        samfire
+        )
 
-__all__ = hyperspy.api_nogui.__all__
+# We can't link __all__ to api_nogui.__all__ due to VSCode autocomplete not supporting it.
+# See https://github.com/microsoft/pyright/issues/3595
+__all__ = [
+    'datasets',
+    'eds',
+    'get_configuration_directory_path',
+    'interactive',
+    'load',
+    'markers',
+    'material',
+    'model',
+    'plot',
+    'preferences',
+    'print_known_signal_types',
+    'roi',
+    'samfire',
+    'set_log_level',
+    'signals',
+    'stack',
+    'transpose',
+    '__version__',
+    ]
 _import_mapping = hyperspy.api_nogui._import_mapping
 
 
