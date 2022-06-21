@@ -389,24 +389,24 @@ class BaseModel(list):
     def insert(self, **kwargs):
         raise NotImplementedError
 
-    def append(self, thing: Component):
+    def append(self, component: Component):
         """Add component to Model.
 
         Parameters
         ----------
-        thing: `Component` instance.
+        component: `Component` instance.
         """
-        if not isinstance(thing, Component):
+        if not isinstance(component, Component):
             raise ValueError(
                 "Only `Component` instances can be added to a model")
         # Check if any of the other components in the model has the same name
-        if thing in self:
+        if component in self:
             raise ValueError("Component already in model")
         component_name_list = [component.name for component in self]
-        if thing.name:
-            name_string = thing.name
+        if component.name:
+            name_string = component.name
         else:
-            name_string = thing.__class__.__name__
+            name_string = component.__class__.__name__
 
         if name_string in component_name_list:
             temp_name_string = name_string
@@ -415,16 +415,16 @@ class BaseModel(list):
                 temp_name_string = name_string + "_" + str(index)
                 index += 1
             name_string = temp_name_string
-        thing.name = name_string
+        component.name = name_string
 
-        thing._axes_manager = self.axes_manager
-        thing._create_arrays()
-        list.append(self, thing)
-        thing.model = self
+        component._axes_manager = self.axes_manager
+        component._create_arrays()
+        list.append(self, component)
+        component.model = self
         setattr(self.components, slugify(name_string,
-                                         valid_variable_name=True), thing)
+                                         valid_variable_name=True), component)
         if self._plot_active:
-            self._connect_parameters2update_plot(components=[thing])
+            self._connect_parameters2update_plot(components=[component])
             self.signal._plot.signal_plot.update()
 
     def extend(self, iterable: list[Component]):
