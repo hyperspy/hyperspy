@@ -16,16 +16,21 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from __future__ import annotations
+
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 import dask.array as da
 import logging
+from typing import TYPE_CHECKING
 import warnings
 
 from scipy import ndimage
 
-from hyperspy.models.model2d import Model2D
+if TYPE_CHECKING:
+    from hyperspy.models.model2d import Model2D
+
 try:
     # For scikit-image >= 0.17.0
     from skimage.registration._phase_cross_correlation import _upsampled_dft

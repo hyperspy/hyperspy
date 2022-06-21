@@ -16,15 +16,20 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from __future__ import annotations
+
 import numbers
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 import dask.array as da
 import traits.api as t
 from scipy import constants
 from prettytable import PrettyTable
-from hyperspy.models.eelsmodel import EELSModel
+
+if TYPE_CHECKING:
+    from hyperspy.models.eelsmodel import EELSModel
 
 from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)

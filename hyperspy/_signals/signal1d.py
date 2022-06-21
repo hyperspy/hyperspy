@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from __future__ import annotations
+
 import os
 import logging
 import math
@@ -27,10 +29,12 @@ from scipy import interpolate
 from scipy.signal import savgol_filter, medfilt
 from scipy.ndimage import gaussian_filter1d
 
+
+
+from hyperspy.models.model1d import Model1D
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal1d import CommonSignal1D
 from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
-from hyperspy.models.model1d import Model1D
 from hyperspy.misc.lowess_smooth import lowess
 from hyperspy.misc.utils import is_binned # remove in v2.0
 
@@ -1249,7 +1253,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         self._check_signal_dimension_equals_one()
         # Create model here, so that we can return it
-        from hyperspy.models.model1d import Model1D
+
         model = Model1D(self)
         if signal_range == 'interactive':
             br = BackgroundRemoval(self, background_type=background_type,

@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from __future__ import annotations
+
 import copy
 import importlib
 import logging
@@ -375,13 +377,13 @@ class BaseModel(list):
 
     def _get_component(self, component: Component) -> Component | list[Component]:
         if isinstance(component, int) or isinstance(component, str):
-            comp = self[component]
+            component = self[component]
         elif np.iterable(component):
-            comp: list[Component] = [self._get_component(entry) for entry in component]
-            return comp
+            component: list[Component] = [self._get_component(entry) for entry in component]
+            return component
         elif not isinstance(component, Component):
             raise ValueError("Not a component or component id.")
-        if comp in self:
+        if component in self:
             return component
         else:
             raise ValueError("The component is not in the model.")
