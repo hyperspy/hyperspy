@@ -39,12 +39,12 @@ from scipy import signal as sp_signal
 import traits.api as t
 from tlz import concat
 
-import hyperspy
+import hyperspy.io as hypio
+import hyperspy.misc.array_tools as hypat
 from hyperspy.axes import AxesManager
 from hyperspy.api_nogui import _ureg
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
 from hyperspy.learn.mva import MVA, LearningResults
-from hyperspy.io import assign_signal_subclass
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
@@ -3000,7 +3000,7 @@ class BaseSignal(FancySlicing,
             filename = Path(filename)
             if extension is not None:
                 filename = filename.with_suffix(f".{extension}")
-        hyperspy.io.save(filename, self, overwrite=overwrite, **kwds)
+        hypio.save(filename, self, overwrite=overwrite, **kwds)
 
     def _replot(self):
         if self._plot is not None:
@@ -3278,8 +3278,7 @@ class BaseSignal(FancySlicing,
             new_shape=new_shape,
             scale=scale,)
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
-        data = hyperspy.misc.array_tools.rebin(
-            self.data, scale=factors, crop=crop, dtype=dtype)
+        data = hypat.rebin(self.data, scale=factors, crop=crop, dtype=dtype)
 
         if out:
             if out._lazy:
@@ -5458,7 +5457,7 @@ class BaseSignal(FancySlicing,
                         key_dict[key] = marker.get_data_position(key)
                     marker.set_data(**key_dict)
 
-        class_ = hyperspy.io.assign_signal_subclass(
+        class_ = hypio.assign_signal_subclass(
             dtype=self.data.dtype,
             signal_dimension=self.axes_manager.signal_dimension,
             signal_type=self._signal_type,
@@ -5695,7 +5694,7 @@ class BaseSignal(FancySlicing,
 
     def _assign_subclass(self):
         mp = self.metadata
-        self.__class__ = assign_signal_subclass(
+        self.__class__ = hypio.assign_signal_subclass(
             dtype=self.data.dtype,
             signal_dimension=self.axes_manager.signal_dimension,
             signal_type=mp.Signal.signal_type

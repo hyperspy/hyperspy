@@ -23,8 +23,7 @@ import warnings
 import logging
 from datetime import datetime, timedelta
 from dateutil import parser
-from tifffile import imwrite, TiffFile, TIFF
-import tifffile
+from tifffile import imwrite, TiffFile, TIFF, __version__
 import traits.api as t
 import numpy as np
 from packaging.version import Version
@@ -207,7 +206,7 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
                           'formats': [dtype] * lastshape})
         shape = shape[:-1]
 
-    if Version(tifffile.__version__) >= Version("2020.2.16"):
+    if Version(__version__) >= Version("2020.2.16"):
         op = {tag.name: tag.value for tag in page.tags}
     else:
         op = {key: tag.value for key, tag in page.tags.items()}
