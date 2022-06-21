@@ -22,6 +22,7 @@
 import logging
 import importlib
 import sys
+from typing import TYPE_CHECKING
 
 _logger = logging.getLogger(__name__)
 from hyperspy.logger import set_log_level
@@ -104,6 +105,19 @@ def get_configuration_directory_path():
     import hyperspy.misc.config_dir
     return hyperspy.misc.config_dir.config_path
 
+if TYPE_CHECKING:
+    from hyperspy import datasets, interactive, model, signals
+    from hyperspy.io import load
+    from hyperspy.misc.utils import stack, transpose
+    from hyperspy.utils import (
+        eds,
+        markers,
+        material,
+        plot,
+        print_known_signal_types,
+        roi,
+        samfire
+        )
 
 __all__ = [
     'datasets',
