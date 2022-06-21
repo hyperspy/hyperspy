@@ -24,6 +24,8 @@ import logging
 import warnings
 
 from scipy import ndimage
+
+from hyperspy.models.model2d import Model2D
 try:
     # For scikit-image >= 0.17.0
     from skimage.registration._phase_cross_correlation import _upsampled_dft
@@ -378,7 +380,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
     plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
                      PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
-    def create_model(self, dictionary=None):
+    def create_model(self, dictionary=None) -> Model2D:
         """Create a model for the current signal
 
         Parameters

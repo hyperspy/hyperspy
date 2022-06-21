@@ -24,6 +24,7 @@ import traits.api as t
 import numpy as np
 from scipy import constants
 import pint
+from hyperspy.models.edstemmodel import EDSTEMModel
 
 from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy import utils
@@ -746,7 +747,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             self.learning_results.loadings)
 
     def create_model(self, auto_background=True, auto_add_lines=True,
-                     *args, **kwargs):
+                     *args, **kwargs) -> EDSTEMModel:
         """Create a model for the current TEM EDS data.
 
         Parameters

@@ -25,6 +25,7 @@ import inspect
 from itertools import product
 import logging
 import numbers
+from typing_extensions import Self
 from packaging.version import Version
 from pathlib import Path
 import warnings
@@ -3804,7 +3805,7 @@ class BaseSignal(FancySlicing,
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
-    def sum(self, axis=None, out=None, rechunk=True):
+    def sum(self, axis=None, out=None, rechunk=True) -> Self:
         """Sum the data over the given axes.
 
         Parameters

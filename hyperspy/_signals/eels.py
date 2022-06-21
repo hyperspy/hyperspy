@@ -24,6 +24,7 @@ import dask.array as da
 import traits.api as t
 from scipy import constants
 from prettytable import PrettyTable
+from hyperspy.models.eelsmodel import EELSModel
 
 from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
@@ -1537,7 +1538,7 @@ class EELSSpectrum(Signal1D):
             return eps, output
 
     def create_model(self, ll=None, auto_background=True, auto_add_edges=True,
-                     GOS=None, dictionary=None):
+                     GOS=None, dictionary=None) -> EELSModel:
         """Create a model for the current EELS data.
 
         Parameters

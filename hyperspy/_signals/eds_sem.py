@@ -22,6 +22,7 @@ import traits.api as t
 
 from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.defaults_parser import preferences
+from hyperspy.models.edstemmodel import EDSTEMModel
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.signal import BaseSetMetadataItems
 
@@ -278,7 +279,7 @@ class EDSSEMSpectrum(EDSSpectrum):
             return False
 
     def create_model(self, auto_background=True, auto_add_lines=True,
-                     *args, **kwargs):
+                     *args, **kwargs) -> EDSTEMModel:
         """Create a model for the current SEM EDS data.
 
         Parameters
