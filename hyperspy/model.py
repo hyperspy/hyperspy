@@ -373,16 +373,16 @@ class BaseModel(list):
         else:
             return "<%s>" % class_name
 
-    def _get_component(self, thing):
-        if isinstance(thing, int) or isinstance(thing, str):
-            thing = self[thing]
-        elif np.iterable(thing):
-            thing = [self._get_component(athing) for athing in thing]
-            return thing
-        elif not isinstance(thing, Component):
+    def _get_component(self, component: Component) -> Component | list[Component]:
+        if isinstance(component, int) or isinstance(component, str):
+            comp = self[component]
+        elif np.iterable(component):
+            comp: list[Component] = [self._get_component(entry) for entry in component]
+            return comp
+        elif not isinstance(component, Component):
             raise ValueError("Not a component or component id.")
-        if thing in self:
-            return thing
+        if comp in self:
+            return component
         else:
             raise ValueError("The component is not in the model.")
 
@@ -441,7 +441,7 @@ class BaseModel(list):
         thing = self.__getitem__(thing)
         self.remove(thing)
 
-    def remove(self, thing):
+    def remove(self, component: Component | str | int):
         """Remove component from model.
 
         Examples
@@ -465,18 +465,18 @@ class BaseModel(list):
         >>> m.remove(0)
 
         """
-        thing = self._get_component(thing)
-        if not np.iterable(thing):
-            thing = [thing, ]
-        for athing in thing:
-            for parameter in athing.parameters:
+        component = self._get_component(component)
+        if not np.iterable(component):
+            component = [component, ]
+        for entry in component:
+            for parameter in entry.parameters:
                 # Remove the parameter from its twin _twins
                 parameter.twin = None
                 for twin in [twin for twin in parameter._twins]:
                     twin.twin = None
 
-            list.remove(self, athing)
-            athing.model = None
+            list.remove(self, entry)
+            entry.model = None
         if self._plot_active:
             self.signal._plot.signal_plot.update()
 
@@ -2480,7 +2480,7 @@ class BaseModel(list):
                 else:
                     _component._active_array.fill(value)
 
-    def __getitem__(self, value):
+    def __getitem__(self, value: int | str) -> Component:
         """x.__getitem__(y) <==> x[y]"""
         if isinstance(value, str):
             component_list = []
