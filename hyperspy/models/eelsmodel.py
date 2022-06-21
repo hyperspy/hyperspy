@@ -22,6 +22,7 @@ import warnings
 
 from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
+from hyperspy.component import Component
 from hyperspy.components1d import EELSCLEdge, PowerLaw
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
 from hyperspy.misc.utils import dummy_context_manager
@@ -108,7 +109,7 @@ class EELSModel(Model1D):
                 "but an object of type %s was provided" %
                 str(type(value)))
 
-    def append(self, component):
+    def append(self, component: Component):
         """Append component to EELS model.
 
         Parameters
@@ -139,7 +140,7 @@ class EELSModel(Model1D):
 
     append.__doc__ = Model1D.append.__doc__
 
-    def remove(self, component):
+    def remove(self, component: Component):
         super().remove(component)
         self._classify_components()
 

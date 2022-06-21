@@ -389,7 +389,7 @@ class BaseModel(list):
     def insert(self, **kwargs):
         raise NotImplementedError
 
-    def append(self, thing):
+    def append(self, thing: Component):
         """Add component to Model.
 
         Parameters
@@ -427,7 +427,7 @@ class BaseModel(list):
             self._connect_parameters2update_plot(components=[thing])
             self.signal._plot.signal_plot.update()
 
-    def extend(self, iterable):
+    def extend(self, iterable: list[Component]):
         """Append multiple components to the model.
 
         Parameters
