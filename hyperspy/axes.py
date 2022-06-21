@@ -23,7 +23,6 @@ import copy
 import math
 import logging
 from collections.abc import Sequence
-from typing_extensions import Self
 
 import dask.array as da
 import numpy as np
@@ -2192,7 +2191,7 @@ class AxesManager(t.HasTraits):
     def copy(self):
         return copy.copy(self)
 
-    def deepcopy(self) -> Self:
+    def deepcopy(self) -> AxesManager:
         return copy.deepcopy(self)
 
     def __deepcopy__(self, *args):

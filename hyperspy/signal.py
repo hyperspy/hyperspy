@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from __future__ import annotations
+
 from collections.abc import MutableMapping
 from contextlib import contextmanager
 import copy
@@ -25,7 +27,6 @@ import inspect
 from itertools import product
 import logging
 import numbers
-from typing_extensions import Self
 from packaging.version import Version
 from pathlib import Path
 import warnings
@@ -2148,7 +2149,6 @@ class BaseSetMetadataItems(t.HasTraits):
             if getattr(self, value) != t.Undefined:
                 self.signal.metadata.set_item(key, getattr(self, value))
 
-
 class BaseSignal(FancySlicing,
                  MVA,
                  MVATools,):
@@ -3805,7 +3805,7 @@ class BaseSignal(FancySlicing,
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
-    def sum(self, axis=None, out=None, rechunk=True) -> Self:
+    def sum(self, axis=None, out=None, rechunk=True) -> BaseSignal:
         """Sum the data over the given axes.
 
         Parameters
