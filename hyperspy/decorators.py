@@ -1,22 +1,21 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-# custom exceptions
 from functools import wraps
 
 
@@ -101,21 +100,9 @@ def interactive_range_selector(cm):
         if not args and not kwargs:
             range_selector = Signal1DRangeSelector(self)
             range_selector.on_close.append((cm, self))
-            get_gui(range_selector, toolkey="interactive_range_selector")
+            get_gui(
+                range_selector,
+                toolkey="hyperspy.interactive_range_selector")
         else:
             cm(self, *args, **kwargs)
     return wrapper
-
-
-def jit_ifnumba(*args, **kwargs):
-    try:
-        import numba
-        if "nopython" not in kwargs:
-            kwargs["nopython"] = True
-        return numba.jit(*args, **kwargs)
-    except ImportError:
-        def wrap1(func):
-            def wrap2(*args2, **kwargs2):
-                return func(*args2, **kwargs2)
-            return wrap2
-        return wrap1

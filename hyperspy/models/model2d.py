@@ -1,27 +1,27 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 
-from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy._signals.signal2d import Signal2D
-from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
+from hyperspy.exceptions import WrongObjectError
+from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 
 
 class Model2D(BaseModel):
@@ -95,12 +95,11 @@ class Model2D(BaseModel):
         self._plot_components = False
         self._suspend_update = False
         self._model_line = None
-        self._adjust_position_all = None
         self.xaxis, self.yaxis = np.meshgrid(
             self.axes_manager.signal_axes[0].axis,
             self.axes_manager.signal_axes[1].axis)
         self.axes_manager.events.indices_changed.connect(
-            self.fetch_stored_values, [])
+            self._on_navigating, [])
         self.channel_switches = np.ones(self.xaxis.shape, dtype=bool)
         self.chisq = signal2D._get_navigation_signal()
         self.chisq.change_dtype("float")
@@ -140,31 +139,50 @@ class Model2D(BaseModel):
         else:
             raise WrongObjectError(str(type(value)), 'Signal2D')
 
-    def __call__(self, non_convolved=True, onlyactive=False):
+    def __call__(self, non_convolved=True, onlyactive=False,
+                 component_list=None, binned=None):
         """Returns the corresponding 2D model for the current coordinates
 
         Parameters
         ----------
-        only_active : bool
-            If true, only the active components will be used to build the
+        non_convolved : bool
+            Not Implemented for Model2D
+        onlyactive : bool
+            If True, only the active components will be used to build the
             model.
+        component_list : list or None
+            If None, the sum of all the components is returned. If list, only
+            the provided components are returned
+        binned : None
+            Not Implemented for Model2D
 
         Returns
         -------
         numpy array
         """
+        if component_list is None:
+            component_list = self
+        if not isinstance(component_list, (list, tuple)):
+            raise ValueError(
+                "'Component_list' parameter needs to be a list or None."
+                )
+
+        if onlyactive:
+            component_list = [
+                component for component in component_list if component.active]
 
         sum_ = np.zeros_like(self.xaxis)
         if onlyactive is True:
-            for component in self:  # Cut the parameters list
+            for component in component_list:  # Cut the parameters list
                 if component.active:
                     np.add(sum_, component.function(self.xaxis, self.yaxis),
                            sum_)
         else:
-            for component in self:  # Cut the parameters list
+            for component in component_list:  # Cut the parameters list
                 np.add(sum_, component.function(self.xaxis, self.yaxis),
                        sum_)
-        return sum_
+
+        return sum_[self.channel_switches]
 
     def _errfunc(self, param, y, weights=None):
         if weights is None:
@@ -199,7 +217,21 @@ class Model2D(BaseModel):
     def reset_the_signal_range(self):
         raise NotImplementedError
 
+    def _check_analytical_jacobian(self):
+        """Check all components have analytical gradients.
+
+        If they do, return True and an empty string.
+        If they do not, return False and an error message.
+        """
+        return False, "Analytical gradients not implemented for Model2D"
+
     def _jacobian(self, param, y, weights=None):
+        raise NotImplementedError
+
+    def _function4odr(self, param, x):
+        raise NotImplementedError
+
+    def _jacobian4odr(self, param, x):
         raise NotImplementedError
 
     def _poisson_likelihood_function(self, param, y, weights=None):
@@ -209,6 +241,12 @@ class Model2D(BaseModel):
         raise NotImplementedError
 
     def _gradient_ls(self, param, y, weights=None):
+        raise NotImplementedError
+
+    def _huber_loss_function(self, param, y, weights=None, huber_delta=None):
+        raise NotImplementedError
+
+    def _gradient_huber(self, param, y, weights=None, huber_delta=None):
         raise NotImplementedError
 
     def _model2plot(self, axes_manager, out_of_range2nans=True):
@@ -233,6 +271,10 @@ class Model2D(BaseModel):
 
     @staticmethod
     def _connect_component_line(component):
+        raise NotImplementedError
+
+    @staticmethod
+    def _disconnect_component_line(component):
         raise NotImplementedError
 
     def _plot_component(self, component):

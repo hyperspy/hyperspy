@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 from scipy import constants
@@ -25,7 +25,9 @@ from hyperspy._signals.complex_signal1d import (ComplexSignal1D,
 from hyperspy.misc.eels.tools import eels_constant
 
 
-class DielectricFunction_mixin:
+class DielectricFunction(ComplexSignal1D):
+
+    """Complex signal class for dielectric functions."""
 
     _signal_type = "DielectricFunction"
     _alias_signal_types = ["dielectric function"]
@@ -35,31 +37,24 @@ class DielectricFunction_mixin:
         rule.
 
         The Bethe f-sum rule gives rise to two definitions of the effective
-        number (see [Egerton2011]_), neff1 and neff2:
+        number (see [*]_), neff1 and neff2:
 
-            .. math::
+        .. math::
 
-                n_{\mathrm{eff_{1}}} = n_{\mathrm{eff}}\left(-\Im\left(\epsilon^{-1}\right)\right)
+            n_{\mathrm{eff_{1}}} = n_{\mathrm{eff}}\left(-\Im\left(\epsilon^{-1}\right)\right)
 
         and:
 
-            .. math::
+        .. math::
 
-                n_{\mathrm{eff_{2}}} = n_{\mathrm{eff}}\left(\epsilon_{2}\right)
+            n_{\mathrm{eff_{2}}} = n_{\mathrm{eff}}\left(\epsilon_{2}\right)
 
         This method computes and return both.
 
         Parameters
         ----------
         nat: float
-            Number of atoms (or molecules) per unit volume of the
-            sample.
-        cumulative : bool
-            If False calculate the number of effective electrons up to the
-            higher energy-loss of the spectrum. If True, calculate the
-            number of effective electrons as a function of the energy-loss up
-            to the higher energy-loss of the spectrum. *True is only supported
-            by SciPy newer than 0.13.2*.
+            Number of atoms (or molecules) per unit volume of the sample.
 
         Returns
         -------
@@ -72,8 +67,8 @@ class DielectricFunction_mixin:
 
         Notes
         -----
-        .. [Egerton2011] Ray Egerton, "Electron Energy-Loss
-        Spectroscopy in the Electron Microscope", Springer-Verlag, 2011.
+        .. [*] Ray Egerton, "Electron Energy-Loss Spectroscopy 
+           in the Electron Microscope", Springer-Verlag, 2011.
 
         """
 
@@ -119,6 +114,10 @@ class DielectricFunction_mixin:
         return neff1, neff2
 
     def get_electron_energy_loss_spectrum(self, zlp, t):
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "The function is not implemented for non-uniform axes.")
         data = ((-1 / self.data).imag * eels_constant(self, zlp, t).data *
                 self.axes_manager.signal_axes[0].scale)
         s = self._deepcopy_with_new_data(data)
@@ -127,10 +126,6 @@ class DielectricFunction_mixin:
         s.metadata.General.title = ("EELS calculated from " +
                                     self.metadata.General.title)
         return s
-
-
-class DielectricFunction(DielectricFunction_mixin, ComplexSignal1D):
-    pass
 
 
 class LazyDielectricFunction(DielectricFunction, LazyComplexSignal1D):

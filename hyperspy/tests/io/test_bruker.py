@@ -1,13 +1,12 @@
-import os
-
 import json
+import os
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 
-from hyperspy.io import load
+from hyperspy import __version__ as hs_version
 from hyperspy import signals
+from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 test_files = ['30x30_instructively_packed_16bit_compressed.bcf',
@@ -40,6 +39,8 @@ def test_load_16bit():
     np.testing.assert_array_equal(hype.data[:, :, 222:224],
                                   np.load(np_filename))
     assert hype.data.shape == (30, 30, 2048)
+    assert bse.metadata.get_item('Stage.x', full_path=False) == 66940.81
+    assert hype.metadata.get_item('Stage.x', full_path=False) == 66940.81
 
 
 def test_load_16bit_reduced():
@@ -57,6 +58,20 @@ def test_load_16bit_reduced():
     assert bse.data.dtype == np.uint16
     # hypermaps should always return unsigned integers:
     assert str(hype.data.dtype)[0] == 'u'
+
+
+def test_load_16bit_cutoff_zealous():
+    filename = os.path.join(my_path, 'bruker_data', test_files[0])
+    print('testing downsampled 16bit bcf with cutoff_at_kV=zealous...')
+    hype = load(filename, cutoff_at_kV="zealous", select_type="spectrum_image")
+    assert hype.data.shape == (30, 30, 2048)
+
+
+def test_load_16bit_cutoff_auto():
+    filename = os.path.join(my_path, 'bruker_data', test_files[0])
+    print('testing downsampled 16bit bcf with cutoff_at_kV=auto...')
+    hype = load(filename, cutoff_at_kV="auto", select_type="spectrum_image")
+    assert hype.data.shape == (30, 30, 2048)
 
 
 def test_load_8bit():
@@ -78,18 +93,19 @@ def test_hyperspy_wrap():
     with pytest.warns(VisibleDeprecationWarning):
         hype = load(filename, select_type='spectrum')
     hype = load(filename, select_type='spectrum_image')
-    assert_allclose(
+    np.testing.assert_allclose(
         hype.axes_manager[0].scale,
         1.66740910949362,
         atol=1E-12)
-    assert_allclose(
+    np.testing.assert_allclose(
         hype.axes_manager[1].scale,
         1.66740910949362,
         atol=1E-12)
     assert hype.axes_manager[1].units == 'µm'
-    assert_allclose(hype.axes_manager[2].scale, 0.009999)
-    assert_allclose(hype.axes_manager[2].offset, -0.47225277)
+    np.testing.assert_allclose(hype.axes_manager[2].scale, 0.009999)
+    np.testing.assert_allclose(hype.axes_manager[2].offset, -0.47225277)
     assert hype.axes_manager[2].units == 'keV'
+    assert hype.axes_manager[2].is_binned == True
 
     md_ref = {
         'Acquisition_instrument': {
@@ -114,7 +130,14 @@ def test_hyperspy_wrap():
                 '30x30_instructively_packed_16bit_compressed.bcf',
             'title': 'EDX',
             'date': '2018-10-04',
-            'time': '13:02:07'},
+            'time': '13:02:07',
+            'FileIO': {
+                '0': {
+                    'operation': 'load',
+                    'hyperspy_version': hs_version,
+                    'io_plugin': 'hyperspy.io_plugins.bruker',
+                }
+            }},
         'Sample': {
             'name': 'chevkinite',
             'elements': ['Al', 'C', 'Ca', 'Ce', 'Fe', 'Gd', 'K', 'Mg', 'Na',
@@ -124,7 +147,6 @@ def test_hyperspy_wrap():
                            'O_Ka', 'P_Ka', 'Si_Ka', 'Sm_La', 'Th_Ma',
                            'Ti_Ka']},
         'Signal': {
-            'binned': True,
             'quantity': 'X-rays (Counts)',
             'signal_type': 'EDS_SEM'},
         '_HyperSpy': {
@@ -139,6 +161,8 @@ def test_hyperspy_wrap():
     with open(filename_omd) as fn:
         # original_metadata:
         omd_ref = json.load(fn)
+    # delete FileIO timestamp since it's runtime dependent
+    del hype.metadata.General.FileIO.Number_0.timestamp
     assert_deep_almost_equal(hype.metadata.as_dictionary(), md_ref)
     assert_deep_almost_equal(hype.original_metadata.as_dictionary(), omd_ref)
     assert hype.metadata.General.date == "2018-10-04"
@@ -150,11 +174,11 @@ def test_hyperspy_wrap_downsampled():
     filename = os.path.join(my_path, 'bruker_data', test_files[0])
     print('testing bcf wrap to hyperspy signal...')
     hype = load(filename, select_type='spectrum_image', downsample=5)
-    assert_allclose(
+    np.testing.assert_allclose(
         hype.axes_manager[0].scale,
         8.337045547468101,
         atol=1E-12)
-    assert_allclose(
+    np.testing.assert_allclose(
         hype.axes_manager[1].scale,
         8.337045547468101,
         atol=1E-12)
@@ -218,6 +242,7 @@ def test_decimal_regex():
     for j in dummy_xml_negative:
         assert b'.' not in fix_dec_patterns.sub(b'\\1.\\2', j)
 
+
 def test_all_spx_loads():
     for spxfile in spx_files:
         filename = os.path.join(my_path, 'bruker_data', spxfile)
@@ -225,8 +250,19 @@ def test_all_spx_loads():
         assert s.data.dtype == np.uint64
         assert s.metadata.Signal.signal_type == 'EDS_SEM'
 
+
 def test_stand_alone_spx():
     filename = os.path.join(my_path, 'bruker_data', 'bruker_nano.spx')
     s = load(filename)
     assert s.metadata.Sample.elements == ['Fe', 'S', 'Cu']
     assert s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time == 7.385
+
+
+def test_bruker_XRF():
+    # See https://github.com/hyperspy/hyperspy/issues/2689
+    # Bruker M6 Jetstream SPX
+    filename = os.path.join(my_path, 'bruker_data',
+                            'bruker_m6_jetstream_file_example.spx')
+    s = load(filename)
+    assert s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time == 28.046
+    assert s.metadata.Acquisition_instrument.TEM.beam_energy == 50

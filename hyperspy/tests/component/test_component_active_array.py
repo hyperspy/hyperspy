@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -13,13 +13,14 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import numpy as np
+
 from hyperspy.components1d import Gaussian
-from hyperspy.signals import Signal1D
 from hyperspy.misc.utils import stash_active_state
+from hyperspy.signals import Signal1D
 
 
 class TestParametersAsSignals:

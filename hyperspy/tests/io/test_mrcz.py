@@ -1,45 +1,37 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
+import os
+import tempfile
+from time import perf_counter, sleep
 
 import numpy as np
 import numpy.testing as npt
-import os
-import tempfile
 import pytest
-from time import perf_counter, sleep
-try:
-    import blosc
-    blosc_installed = True
-except BaseException:
-    blosc_installed = False
-try:
-    import mrcz
-    mrcz_installed = True
-except BaseException:
-    mrcz_installed = False
+from datetime import datetime
 
-from hyperspy.io import load, save
 from hyperspy import signals
+from hyperspy.io import load, save
 from hyperspy.misc.test_utils import assert_deep_almost_equal
+from hyperspy import __version__ as hs_version
 
 
-pytestmark = pytest.mark.skipif(
-    not mrcz_installed, reason="mrcz not installed")
+mrcz = pytest.importorskip("mrcz", reason="mrcz not installed")
 
 
 #==============================================================================
@@ -86,6 +78,19 @@ class TestPythonMrcz:
         testSignal = signals.Signal2D(testData)
         if lazy:
             testSignal = testSignal.as_lazy()
+
+        # Add "File" metadata to testSignal
+        testSignal.metadata.General.add_dictionary({
+            'FileIO': {
+                '0': {
+                    'operation': 'load',
+                    'hyperspy_version': hs_version,
+                    'io_plugin': 'hyperspy.io_plugins.mrcz',
+                    'timestamp': datetime.now().astimezone().isoformat()
+                }
+            }
+        })
+
         # Unfortunately one cannot iterate over axes_manager in a Pythonic way
         # for axis in testSignal.axes_manager:
         testSignal.axes_manager[0].name = 'z'
@@ -123,13 +128,18 @@ class TestPythonMrcz:
                     sleep(0.001)
             print("Time to save file: {} s".format(
                 perf_counter() - (t_stop - MAX_ASYNC_TIME)))
-            sleep(0.005)
+            sleep(0.1)
 
         reSignal = load(mrcName)
         try:
             os.remove(mrcName)
         except IOError:
             print("Warning: file {} left on disk".format(mrcName))
+
+        # change file timestamp to make the metadata of both signals equal
+        testSignal.metadata.General.FileIO.Number_0.timestamp = (
+            reSignal.metadata.General.FileIO.Number_0.timestamp
+        )
 
         npt.assert_array_almost_equal(
             testSignal.data.shape,
@@ -154,6 +164,9 @@ class TestPythonMrcz:
             assert isinstance(reSignal, signals.ComplexSignal2D)
         else:
             assert isinstance(reSignal, signals.Signal2D)
+
+        # delete last load operation from reSignal metadata so we can compare
+        del reSignal.metadata.General.FileIO.Number_2
         assert_deep_almost_equal(testSignal.axes_manager.as_dictionary(),
                                  reSignal.axes_manager.as_dictionary())
         assert_deep_almost_equal(testSignal.metadata.as_dictionary(),
@@ -165,6 +178,14 @@ class TestPythonMrcz:
                              _generate_parameters())
     def test_MRC(self, dtype, compressor, clevel, lazy):
         t_start = perf_counter()
+
+        try:
+            import blosc
+
+            blosc_installed = True
+        except BaseException:
+            blosc_installed = False
+
         if not blosc_installed and compressor is not None:
             with pytest.raises(ImportError):
                 return self.compareSaveLoad([2, 64, 32], dtype=dtype,
@@ -179,17 +200,9 @@ class TestPythonMrcz:
 
     @pytest.mark.parametrize("dtype", dtype_list)
     def test_Async(self, dtype):
-        pytest.importorskip('blosc')
+        blosc = pytest.importorskip('blosc', reason="skipping test_async, requires blosc")
         t_start = perf_counter()
         self.compareSaveLoad([2, 64, 32], dtype=dtype, compressor='zstd',
                              clevel=1, do_async=True)
         print("MRCZ Asychronous test finished in {} s".format(
             perf_counter() - t_start))
-
-
-if __name__ == '__main__':
-    theSuite = TestPythonMrcz()
-    parameters = _generate_parameters()
-    for parameter in parameters:
-        theSuite.test_MRC(*parameter)
-    theSuite.test_Async(parameter[0])

@@ -1,27 +1,29 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import math
 
 import numpy as np
 import dask.array as da
 
+from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
+from hyperspy.misc.utils import is_binned # remove in v2.0
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -31,6 +33,7 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
     axis = signal.axes_manager.signal_axes[0]
     i1, i2 = axis.value_range_to_indices(x1, x2)
     X = axis.axis[i1:i2]
+
     if only_current is True:
         data = signal()[i1:i2]
         X_shape = (len(X),)
@@ -46,20 +49,11 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
         centre_shape = list(data.shape)
         centre_shape[i] = 1
 
-    if isinstance(data, da.Array):
-        _sum = da.sum
-        _sqrt = da.sqrt
-        _abs = abs
-    else:
-        _sum = np.sum
-        _sqrt = np.sqrt
-        _abs = np.abs
-
-    centre = _sum(X.reshape(X_shape) * data, i) / _sum(data, i)
-
-    sigma = _sqrt(_abs(_sum((X.reshape(X_shape) - centre.reshape(
-        centre_shape)) ** 2 * data, i) / _sum(data, i)))
+    centre = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
+    sigma = np.sqrt(abs(np.sum((X.reshape(X_shape) - centre.reshape(
+        centre_shape)) ** 2 * data, i) / np.sum(data, i)))
     height = data.max(i)
+
     if isinstance(data, da.Array):
         return da.compute(centre, height, sigma)
     else:
@@ -85,30 +79,34 @@ class Gaussian(Expression):
 
 
     Parameters
-    -----------
+    ----------
     A : float
-        Height scaled by :math:`\sigma\sqrt{(2\pi)}`. ``GaussianHF`` 
-        implements the Gaussian function with a height parameter 
+        Area, equals height scaled by :math:`\sigma\sqrt{(2\pi)}`.
+        ``GaussianHF`` implements the Gaussian function with a height parameter
         corresponding to the peak height.
     sigma : float
-        Scale parameter of the Gaussian distribution. 
+        Scale parameter of the Gaussian distribution.
     centre : float
         Location of the Gaussian maximum (peak position).
     **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        Extra keyword arguments are passed to the
+        :py:class:`~._components.expression.Expression` component.
 
-
-    For convenience the `fwhm` attribute can be used to get and set
-    the full-with-half-maximum.
+    Attributes
+    ----------
+    fwhm : float
+        Convenience attribute to get and set the full width at half maximum.
+    height : float
+        Convenience attribute to get and set the height.
 
 
     See also
     --------
-    hyperspy._components.gaussianhf.GaussianHF
+    ~._components.gaussianhf.GaussianHF
     """
 
     def __init__(self, A=1., sigma=1., centre=0., module="numexpr", **kwargs):
-        super(Gaussian, self).__init__(
+        super().__init__(
             expression="A * (1 / (sigma * sqrt(2*pi))) * exp(-(x - centre)**2 \
                         / (2 * sigma**2))",
             name="Gaussian",
@@ -162,29 +160,34 @@ class Gaussian(Expression):
         >>> data = np.zeros((32, 32, 2000))
         >>> data[:] = g.function(x).reshape((1, 1, 2000))
         >>> s = hs.signals.Signal1D(data)
-        >>> s.axes_manager._axes[-1].offset = -10
-        >>> s.axes_manager._axes[-1].scale = 0.01
+        >>> s.axes_manager[-1].offset = -10
+        >>> s.axes_manager[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
         """
-        
-        super(Gaussian, self)._estimate_parameters(signal)
+
+        super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
+        scaling_factor = _get_scaling_factor(signal, axis, centre)
+
         if only_current is True:
             self.centre.value = centre
             self.sigma.value = sigma
             self.A.value = height * sigma * sqrt2pi
-            if self.binned:
-                self.A.value /= axis.scale
+            if is_binned(signal):
+            # in v2 replace by
+            #if axis.is_binned:
+                self.A.value /= scaling_factor
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * sigma * sqrt2pi
-
-            if self.binned:
-                self.A.map['values'] /= axis.scale
+            if is_binned(signal):
+            # in v2 replace by
+            #if axis.is_binned:
+                self.A.map['values'] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma
             self.sigma.map['is_set'][:] = True
@@ -200,3 +203,11 @@ class Gaussian(Expression):
     @fwhm.setter
     def fwhm(self, value):
         self.sigma.value = value / sigma2fwhm
+
+    @property
+    def height(self):
+        return self.A.value / (self.sigma.value * sqrt2pi)
+
+    @height.setter
+    def height(self, value):
+        self.A.value = value * self.sigma.value * sqrt2pi

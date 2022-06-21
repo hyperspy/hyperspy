@@ -1,28 +1,29 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
 from collections import OrderedDict
 import scipy.constants as constants
 import numpy as np
 from dask.array import Array as daArray
-from pint import UnitRegistry, UndefinedUnitError
+from pint import UndefinedUnitError
 
+from hyperspy.api_nogui import _ureg
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
@@ -30,7 +31,7 @@ from hyperspy._signals.lazy import LazySignal
 from hyperspy.misc.holography.reconstruct import (
     reconstruct, estimate_sideband_position, estimate_sideband_size)
 from hyperspy.misc.holography.tools import calculate_carrier_frequency, estimate_fringe_contrast_fourier
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
 
 _logger = logging.getLogger(__name__)
 
@@ -97,14 +98,13 @@ def _parse_sb_size(s, reference, sb_position, sb_size, parallel):
                 sb_size = BaseSignal(sb_size)
             if isinstance(sb_size.data, daArray):
                 sb_size = sb_size.as_lazy()
-
     if sb_size.axes_manager.navigation_size != s.axes_manager.navigation_size:
         if sb_size.axes_manager.navigation_size:
             raise ValueError('Sideband size dimensions do not match '
                              'neither reference nor hologram dimensions.')
         # sb_position navdim=0, therefore map function should not iterate:
         else:
-            sb_size_temp = np.float64(sb_size.data)
+            sb_size_temp = float(sb_size.data)
     else:
         sb_size_temp = sb_size.deepcopy()
     return sb_size, sb_size_temp
@@ -176,12 +176,15 @@ class HologramImage(Signal2D):
                 "Acquisition_instrument.TEM.Stage.tilt_alpha",
                 tilt_stage)
 
-    def estimate_sideband_position(self,
-                                   ap_cb_radius=None,
-                                   sb='lower',
-                                   high_cf=True,
-                                   show_progressbar=False,
-                                   parallel=None):
+    def estimate_sideband_position(
+        self,
+        ap_cb_radius=None,
+        sb='lower',
+        high_cf=True,
+        show_progressbar=False,
+        parallel=None,
+        max_workers=None,
+    ):
         """
         Estimates the position of the sideband and returns its position.
 
@@ -196,10 +199,16 @@ class HologramImage(Signal2D):
             half of the Nyquist frequency (Default: True).
         %s
         %s
+        %s
 
         Returns
         -------
         Signal1D instance of sideband positions (y, x), referred to the unshifted FFT.
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
 
         Examples
         --------
@@ -211,6 +220,10 @@ class HologramImage(Signal2D):
 
         array([124, 452])
         """
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
 
         sb_position = self.map(
             estimate_sideband_position,
@@ -222,6 +235,7 @@ class HologramImage(Signal2D):
             show_progressbar=show_progressbar,
             inplace=False,
             parallel=parallel,
+            max_workers=max_workers,
             ragged=False)
 
         # Workaround to a map disfunctionality:
@@ -229,26 +243,35 @@ class HologramImage(Signal2D):
 
         return sb_position
 
-    estimate_sideband_position.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+    estimate_sideband_position.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
-    def estimate_sideband_size(self,
-                               sb_position,
-                               show_progressbar=False,
-                               parallel=None):
+    def estimate_sideband_size(
+        self,
+        sb_position,
+        show_progressbar=False,
+        parallel=None,
+        max_workers=None,
+    ):
         """
         Estimates the size of the sideband and returns its size.
 
         Parameters
         ----------
-        sb_position : :class:`~hyperspy.signals.BaseSignal
+        sb_position : BaseSignal
             The sideband position (y, x), referred to the non-shifted FFT.
-        show_progressbar: boolean
-            Shows progressbar while iterating over different slices of the signal (passes the parameter to map method).
+        %s
+        %s
         %s
 
         Returns
         -------
-        Signal 1D instance with sideband size, referred to the unshifted FFT.
+        sb_size : Signal1D
+            Sideband size referred to the unshifted FFT.
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
 
         Examples
         --------
@@ -257,9 +280,12 @@ class HologramImage(Signal2D):
         >>> sb_position = s.estimate_sideband_position()
         >>> sb_size = s.estimate_sideband_size(sb_position)
         >>> sb_size.data
-
         array([ 68.87670143])
         """
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
 
         sb_size = sb_position.map(
             estimate_sideband_size,
@@ -267,44 +293,49 @@ class HologramImage(Signal2D):
             show_progressbar=show_progressbar,
             inplace=False,
             parallel=parallel,
+            max_workers=max_workers,
             ragged=False)
 
         return sb_size
 
-    estimate_sideband_size.__doc__ %= (PARALLEL_ARG)
+    estimate_sideband_size.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
-    def reconstruct_phase(self,
-                          reference=None,
-                          sb_size=None,
-                          sb_smoothness=None,
-                          sb_unit=None,
-                          sb='lower',
-                          sb_position=None,
-                          high_cf=True,
-                          output_shape=None,
-                          plotting=False,
-                          show_progressbar=False,
-                          store_parameters=True,
-                          parallel=None):
+    def reconstruct_phase(
+        self,
+        reference=None,
+        sb_size=None,
+        sb_smoothness=None,
+        sb_unit=None,
+        sb='lower',
+        sb_position=None,
+        high_cf=True,
+        output_shape=None,
+        plotting=False,
+        store_parameters=True,
+        show_progressbar=False,
+        parallel=None,
+        max_workers=None,
+    ):
         """Reconstruct electron holograms. Operates on multidimensional
         hyperspy signals. There are several usage schemes:
-         1. Reconstruct 1d or Nd hologram without reference
-         2. Reconstruct 1d or Nd hologram using single reference hologram
-         3. Reconstruct Nd hologram using Nd reference hologram (applies each
-         reference to each hologram in Nd stack)
 
-         The reconstruction parameters (sb_position, sb_size, sb_smoothness)
-         have to be 1d or to have same dimensionality as the hologram.
+         * Reconstruct 1d or Nd hologram without reference
+         * Reconstruct 1d or Nd hologram using single reference hologram
+         * Reconstruct Nd hologram using Nd reference hologram (applies each
+           reference to each hologram in Nd stack)
+
+        The reconstruction parameters (sb_position, sb_size, sb_smoothness)
+        have to be 1d or to have same dimensionality as the hologram.
 
         Parameters
         ----------
-        reference : ndarray, :class:`~hyperspy.signals.Signal2D, None
+        reference : ndarray, Signal2D, None
             Vacuum reference hologram.
-        sb_size : float, ndarray, :class:`~hyperspy.signals.BaseSignal, None
+        sb_size : float, ndarray, BaseSignal, None
             Sideband radius of the aperture in corresponding unit (see
             'sb_unit'). If None, the radius of the aperture is set to 1/3 of
             the distance between sideband and center band.
-        sb_smoothness : float, ndarray, :class:`~hyperspy.signals.BaseSignal, None
+        sb_smoothness : float, ndarray, BaseSignal, None
             Smoothness of the aperture in the same unit as sb_size.
         sb_unit : str, None
             Unit of the two sideband parameters 'sb_size' and 'sb_smoothness'.
@@ -313,28 +344,34 @@ class HologramImage(Signal2D):
             'mrad': Size and smoothness of the aperture are given in mrad.
         sb : str, None
             Select which sideband is selected. 'upper' or 'lower'.
-        sb_position : tuple, :class:`~hyperspy.signals.Signal1D, None
+        sb_position : tuple, Signal1D, None
             The sideband position (y, x), referred to the non-shifted FFT. If
             None, sideband is determined automatically from FFT.
         high_cf : bool, optional
-            If False, the highest carrier frequency allowed for the sideband location is equal to
-            half of the Nyquist frequency (Default: True).
+            If False, the highest carrier frequency allowed for the sideband
+            location is equal to half of the Nyquist frequency (Default: True).
         output_shape: tuple, None
             Choose a new output shape. Default is the shape of the input
             hologram. The output shape should not be larger than the input
             shape.
-        plotting : boolean
+        plotting : bool
             Shows details of the reconstruction (i.e. SB selection).
-        %s
-        %s
-        store_parameters : boolean
+        store_parameters : bool
             Store reconstruction parameters in metadata
+        %s
+        %s
+        %s
 
         Returns
         -------
-        wave : :class:`~hyperspy.signals.WaveImage
-            Reconstructed electron wave. By default object wave is devided by
-            reference wave
+        wave : ComplexSignal2D
+            Reconstructed electron wave. By default object wave is divided by
+            reference wave.
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
 
         Examples
         --------
@@ -342,7 +379,6 @@ class HologramImage(Signal2D):
         >>> s = hs.datasets.example_signals.object_hologram()
         >>> sb_position = s.estimate_sideband_position()
         >>> sb_size = s.estimate_sideband_size(sb_position)
-        >>> sb_size.data
         >>> wave = s.reconstruct_phase(sb_position=sb_position, sb_size=sb_size)
 
         """
@@ -350,6 +386,11 @@ class HologramImage(Signal2D):
         # TODO: Use defaults for choosing sideband, smoothness, relative filter
         # size and output shape if not provided
         # TODO: Plot FFT with marked SB and SB filter if plotting is enabled
+
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
 
         # Parsing reference:
         if not isinstance(reference, HologramImage):
@@ -421,7 +462,7 @@ class HologramImage(Signal2D):
             # sb_position navdim=0, therefore map function should not iterate
             # it:
             else:
-                sb_smoothness_temp = np.float64(sb_smoothness.data)
+                sb_smoothness_temp = float(sb_smoothness.data)
         else:
             sb_smoothness_temp = sb_smoothness.deepcopy()
 
@@ -464,9 +505,9 @@ class HologramImage(Signal2D):
         if output_shape is None:
             # Future improvement will give a possibility to choose
             # if sb_size.axes_manager.navigation_size > 0:
-            #     output_shape = (np.int(sb_size.inav[0].data*2), np.int(sb_size.inav[0].data*2))
+            #     output_shape = (int(sb_size.inav[0].data*2), int(sb_size.inav[0].data*2))
             # else:
-            #     output_shape = (np.int(sb_size.data*2), np.int(sb_size.data*2))
+            #     output_shape = (int(sb_size.data*2), int(sb_size.data*2))
             output_shape = self.axes_manager.signal_shape
             output_shape = output_shape[::-1]
 
@@ -492,6 +533,7 @@ class HologramImage(Signal2D):
             show_progressbar=show_progressbar,
             inplace=False,
             parallel=parallel,
+            max_workers=max_workers,
             ragged=False)
 
         # Reconstructing reference wave and applying it (division):
@@ -519,7 +561,7 @@ class HologramImage(Signal2D):
             if reference.axes_manager.navigation_size == 0 and \
                sb_smoothness.axes_manager.navigation_size > 0:
                 # 1d reference, but parameters are multidimensional
-                sb_smoothness_ref = np.float64(
+                sb_smoothness_ref = float(
                     _first_nav_pixel_data(sb_smoothness_temp))
             else:
                 sb_smoothness_ref = sb_smoothness_temp
@@ -537,6 +579,7 @@ class HologramImage(Signal2D):
                 show_progressbar=show_progressbar,
                 inplace=False,
                 parallel=parallel,
+                max_workers=max_workers,
                 ragged=False)
 
         else:
@@ -552,6 +595,7 @@ class HologramImage(Signal2D):
                 show_progressbar=show_progressbar,
                 inplace=False,
                 parallel=parallel,
+                max_workers=max_workers,
                 ragged=False)
 
         wave_image = wave_object / wave_reference
@@ -582,17 +626,20 @@ class HologramImage(Signal2D):
 
         return wave_image
 
-    reconstruct_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+    reconstruct_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
-    def statistics(self,
-                   sb_position=None,
-                   sb='lower',
-                   high_cf=False,
-                   fringe_contrast_algorithm='statistical',
-                   apodization='hanning',
-                   single_values=True,
-                   show_progressbar=False,
-                   parallel=None):
+    def statistics(
+        self,
+        sb_position=None,
+        sb='lower',
+        high_cf=False,
+        fringe_contrast_algorithm='statistical',
+        apodization='hanning',
+        single_values=True,
+        show_progressbar=False,
+        parallel=None,
+        max_workers=None,
+    ):
         """
         Calculates following statistics for off-axis electron holograms:
 
@@ -604,7 +651,7 @@ class HologramImage(Signal2D):
 
         Parameters
         ----------
-        sb_position : tuple, :class:`~hyperspy.signals.Signal1D, None
+        sb_position : tuple, Signal1D, None
             The sideband position (y, x), referred to the non-shifted FFT.
             It has to be tuple or to have the same dimensionality as the hologram.
             If None, sideband is determined automatically from FFT.
@@ -616,16 +663,14 @@ class HologramImage(Signal2D):
         fringe_contrast_algorithm : str
             Select fringe contrast algorithm between:
 
-            'fourier'
-                fringe contrast is estimated as:
-                2 * <I(k_0)> / <I(0)>,
-                where I(k_0) is intensity of sideband and I(0) is the intensity of central band (FFT origin).
-                This method delivers also reasonable estimation if
-                interference pattern do not cover full field of view.
-            'statistical'
-                fringe contrast is estimated by dividing standard deviation by mean
-                of the hologram intensity in real space. This algorithm relays on that the fringes are regular and
-                covering entire field of view.
+            * 'fourier': fringe contrast is estimated as 2 * <I(k_0)> / <I(0)>,
+              where I(k_0) is intensity of sideband and I(0) is the intensity of central band (FFT origin).
+              This method delivers also reasonable estimation if the
+              interference pattern do not cover full field of view.
+            * 'statistical': fringe contrast is estimated by dividing the
+              standard deviation by the mean of the hologram intensity in real
+              space. This algorithm relies on regularly spaced fringes and
+              covering the entire field of view.
 
             (Default: 'statistical')
         apodization: str or None, optional
@@ -638,11 +683,17 @@ class HologramImage(Signal2D):
             returns the values as single floats (Default: True)
         %s
         %s
+        %s
 
         Returns
         -------
         statistics_dict :
             Dictionary with the statistics
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axes are non-uniform axes.
 
         Examples
         --------
@@ -658,6 +709,10 @@ class HologramImage(Signal2D):
         'Carrier frequency (1 / nm)': 0.28685808994016415}
         """
 
+        for axis in self.axes_manager.signal_axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                    "This operation is not yet implemented for non-uniform energy axes.")
         # Testing match of navigation axes of reference and self
         # (exception: reference nav_dim=1):
 
@@ -679,12 +734,12 @@ class HologramImage(Signal2D):
                                        inplace=False,
                                        ragged=False,
                                        show_progressbar=show_progressbar,
-                                       parallel=parallel)
+                                       parallel=parallel,
+                                       max_workers=max_workers)
         fringe_sampling = np.divide(1., carrier_freq_px)
 
-        ureg = UnitRegistry()
         try:
-            units = ureg.parse_expression(
+            units = _ureg.parse_expression(
                 str(self.axes_manager.signal_axes[0].units))
         except UndefinedUnitError:
             raise ValueError('Signal axes units should be defined.')
@@ -709,7 +764,8 @@ class HologramImage(Signal2D):
                                           inplace=False,
                                           ragged=False,
                                           show_progressbar=show_progressbar,
-                                          parallel=parallel)
+                                          parallel=parallel,
+                                          max_workers=max_workers)
         fringe_spacing = np.divide(1., carrier_freq_units)
 
         # Calculate carrier frequency in mrad:
@@ -725,7 +781,7 @@ class HologramImage(Signal2D):
                     1000 / (2 * constants.m_e * constants.c ** 2))
         wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
         carrier_freq_quantity = wavelength * \
-            ureg('nm') * carrier_freq_units / units * ureg('rad')
+            _ureg('nm') * carrier_freq_units / units * _ureg('rad')
         carrier_freq_mrad = carrier_freq_quantity.to('mrad').magnitude
 
         # Calculate fringe contrast:
@@ -742,7 +798,8 @@ class HologramImage(Signal2D):
                                            inplace=False,
                                            ragged=False,
                                            show_progressbar=show_progressbar,
-                                           parallel=parallel)
+                                           parallel=parallel,
+                                           max_workers=max_workers)
         elif fringe_contrast_algorithm == 'statistical':
             if single_values:
                 fringe_contrast = _first_nav_pixel_data(
@@ -760,7 +817,7 @@ class HologramImage(Signal2D):
                 'Carrier frequency ({:~})'.format((1. / units).units): carrier_freq_units,
                 'Carrier frequency (mrad)': carrier_freq_mrad}
 
-    statistics.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+    statistics.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
 
 
 class LazyHologramImage(LazySignal, HologramImage):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -10,11 +10,11 @@
 #
 # HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy.  If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import numpy as np
@@ -22,7 +22,6 @@ import os
 from datetime import datetime as dt
 import warnings
 import logging
-from distutils.version import LooseVersion
 
 
 # Plugin characteristics
@@ -39,6 +38,9 @@ reads_spectrum = False
 reads_spectrum_image = False
 # Writing capabilities
 writes = False
+non_uniform_axis = False
+# ----------------------
+
 
 _logger = logging.getLogger(__name__)
 
@@ -138,13 +140,10 @@ class ProtochipsCSV(object):
 
     def _read_data(self):
         names = [name.replace(' ', '_') for name in self.column_name]
-        # Necessary for numpy >= 1.14
-        kwargs = {'encoding': 'latin1'} if np.__version__ >= LooseVersion("1.14") else {
-        }
         data = np.genfromtxt(self.filename, delimiter=',', dtype=None,
                              names=names,
                              skip_header=self.header_last_line_number,
-                             unpack=True, **kwargs)
+                             encoding='latin1')
 
         self._data_dictionary = dict()
         for i, name, name_dtype in zip(range(len(names)), self.column_name,
@@ -181,9 +180,9 @@ class ProtochipsCSV(object):
         if self.time_units == 'Milliseconds':
             scale /= 1000
             max_diff /= 1000
-            # Once we support non-linear axis, don't forgot to update the
+            # Once we support non-uniform axis, don't forgot to update the
             # documentation of the protochips reader
-            _logger.warning("The time axis is not linear, the time step is "
+            _logger.warning("The time axis is not uniform, the time step is "
                             "thus extrapolated to {0} {1}. The maximal step in time step is {2} {1}".format(
                                 scale, units, max_diff))
         else:

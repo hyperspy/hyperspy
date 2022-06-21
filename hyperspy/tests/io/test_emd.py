@@ -1,50 +1,49 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
 
 # The EMD format is a hdf5 standard proposed at Lawrence Berkeley
 # National Lab (see http://emdatasets.com/ for more information).
 # NOT to be confused with the FEI EMD format which was developed later.
 
-
-import os.path
-from os import remove
-import shutil
-import tempfile
-import gc
-
-from numpy.testing import assert_allclose
-import numpy as np
-import h5py
-from dateutil import tz
+import dask.array as da
 from datetime import datetime
+from dateutil import tz
+import gc
+import h5py
+import numpy as np
+import os
 import pytest
+import tempfile
+import shutil
 
+from hyperspy import __version__ as hs_version
 from hyperspy.io import load
-from hyperspy.signals import BaseSignal, Signal2D, Signal1D, EDSTEMSpectrum
 from hyperspy.misc.test_utils import assert_deep_almost_equal
-
+from hyperspy.signals import (BaseSignal, EDSTEMSpectrum, Signal1D, Signal2D,
+                              ComplexSignal2D)
 
 my_path = os.path.dirname(__file__)
 
 # Reference data:
-data_signal = np.arange(27).reshape((3, 3, 3))
-data_image = np.arange(9).reshape((3, 3))
-data_spectrum = np.arange(3)
+data_signal = np.arange(27).reshape((3, 3, 3)).T
+data_image = np.arange(9).reshape((3, 3)).T
+data_spectrum = np.arange(3).T
 data_save = np.arange(24).reshape((2, 3, 4))
 sig_metadata = {'a': 1, 'b': 2}
 user = {'name': 'John Doe', 'institution': 'TestUniversity',
@@ -52,11 +51,15 @@ user = {'name': 'John Doe', 'institution': 'TestUniversity',
 microscope = {'name': 'Titan', 'voltage': '300kV'}
 sample = {'material': 'TiO2', 'preparation': 'FIB'}
 comments = {'comment': 'Test'}
-test_title = '/signals/This is a test!'
+test_title = 'This is a test!'
 
 
-def test_signal_3d_loading():
-    signal = load(os.path.join(my_path, 'emd_files', 'example_signal.emd'))
+@pytest.mark.parametrize("lazy", (True, False))
+def test_signal_3d_loading(lazy):
+    signal = load(os.path.join(my_path, 'emd_files', 'example_signal.emd'),
+                  lazy=lazy)
+    if lazy:
+        signal.compute(close_file=True)
     np.testing.assert_equal(signal.data, data_signal)
     assert isinstance(signal, BaseSignal)
 
@@ -75,20 +78,13 @@ def test_spectrum_1d_loading():
 
 def test_metadata():
     signal = load(os.path.join(my_path, 'emd_files', 'example_metadata.emd'))
+    om = signal.original_metadata
     np.testing.assert_equal(signal.data, data_image)
     np.testing.assert_equal(signal.metadata.General.title, test_title)
-    np.testing.assert_equal(signal.metadata.General.user.as_dictionary(), user)
-    np.testing.assert_equal(
-        signal.metadata.General.microscope.as_dictionary(),
-        microscope)
-    np.testing.assert_equal(
-        signal.metadata.General.sample.as_dictionary(), sample)
-    np.testing.assert_equal(
-        signal.metadata.General.comments.as_dictionary(),
-        comments)
-    for key, ref_value in sig_metadata.items():
-        np.testing.assert_equal(
-            signal.metadata.Signal.as_dictionary().get(key), ref_value)
+    np.testing.assert_equal(om.user.as_dictionary(), user)
+    np.testing.assert_equal(om.microscope.as_dictionary(), microscope)
+    np.testing.assert_equal(om.sample.as_dictionary(), sample)
+    np.testing.assert_equal(om.comments.as_dictionary(), comments)
     assert isinstance(signal, Signal2D)
 
 
@@ -103,14 +99,15 @@ def test_metadata_with_bytes_string():
     f.close()
     assert isinstance(dim1_name, np.bytes_)
     assert isinstance(dim1_units, np.bytes_)
-    signal = load(os.path.join(my_path, 'emd_files', filename))
+    _ = load(os.path.join(my_path, 'emd_files', filename))
 
 
 def test_data_numpy_object_dtype():
     filename = os.path.join(
         my_path, 'emd_files', 'example_object_dtype_data.emd')
     signal = load(filename)
-    assert len(signal) == 0
+    np.testing.assert_equal(signal.data,
+                            np.array([['a, 2, test1', 'a, 2, test1']]))
 
 
 def test_data_axis_length_1():
@@ -129,14 +126,14 @@ class TestDatasetName:
         f.attrs.create('version_major', 0)
         f.attrs.create('version_minor', 2)
 
-        dataset_name_list = [
-            '/experimental/science_data_0',
-            '/experimental/science_data_1',
-            '/processed/science_data_0']
+        dataset_path_list = [
+            '/experimental/science_data_0/data',
+            '/experimental/science_data_1/data',
+            '/processed/science_data_0/data']
         data_size_list = [(50, 50), (20, 10), (16, 32)]
 
-        for dataset_name, data_size in zip(dataset_name_list, data_size_list):
-            group = f.create_group(dataset_name)
+        for dataset_path, data_size in zip(dataset_path_list, data_size_list):
+            group = f.create_group(os.path.dirname(dataset_path))
             group.attrs.create('emd_group_type', 1)
             group.create_dataset(name='data', data=np.random.random(data_size))
             group.create_dataset(name='dim1', data=range(data_size[0]))
@@ -146,42 +143,46 @@ class TestDatasetName:
 
         self.hdf5_dataset_path = hdf5_dataset_path
         self.tmpdir = tmpdir
-        self.dataset_name_list = dataset_name_list
+        self.dataset_path_list = dataset_path_list
         self.data_size_list = data_size_list
 
     def teardown_method(self):
         self.tmpdir.cleanup()
 
-    def test_load_with_dataset_name(self):
+    def test_load_with_dataset_path(self):
         s = load(self.hdf5_dataset_path)
-        assert len(s) == len(self.dataset_name_list)
-        for dataset_name, data_size in zip(
-                self.dataset_name_list, self.data_size_list):
-            s = load(self.hdf5_dataset_path, dataset_name=dataset_name)
-            assert s.metadata.General.title == dataset_name
-            assert s.data.shape == data_size
+        assert len(s) == len(self.dataset_path_list)
+        for dataset_path, data_size in zip(
+                self.dataset_path_list, self.data_size_list):
+            s = load(self.hdf5_dataset_path, dataset_path=dataset_path)
+            title = os.path.basename(os.path.dirname(dataset_path))
+            assert s.metadata.General.title == title
+            assert s.data.shape == data_size[::-1]
 
-    def test_load_with_dataset_name_several(self):
-        dataset_name = self.dataset_name_list[0:2]
-        s = load(self.hdf5_dataset_path, dataset_name=dataset_name)
-        assert len(s) == len(dataset_name)
-        assert s[0].metadata.General.title in dataset_name
-        assert s[1].metadata.General.title in dataset_name
+    def test_load_with_dataset_path_several(self):
+        dataset_path = self.dataset_path_list[0:2]
+        s = load(self.hdf5_dataset_path, dataset_path=dataset_path)
+        assert len(s) == len(dataset_path)
+        assert s[0].metadata.General.title in dataset_path[0]
+        assert s[1].metadata.General.title in dataset_path[1]
 
-    def test_wrong_dataset_name(self):
+    def test_wrong_dataset_path(self):
         with pytest.raises(IOError):
-            load(self.hdf5_dataset_path, dataset_name='a_wrong_name')
+            load(self.hdf5_dataset_path, dataset_path='a_wrong_name')
         with pytest.raises(IOError):
             load(self.hdf5_dataset_path,
-                 dataset_name=[self.dataset_name_list[0], 'a_wrong_name'])
+                 dataset_path=[self.dataset_path_list[0], 'a_wrong_name'])
+
+    def test_deprecated_dataset_name(self):
+        with pytest.warns(UserWarning):
+            dataset_name = os.path.dirname(self.dataset_path_list[0])
+            load(self.hdf5_dataset_path, dataset_name=dataset_name)
 
 
-class TestMinimalSave():
-
-    def test_minimal_save(self):
-        self.signal = Signal1D([0, 1])
-        with tempfile.TemporaryDirectory() as tmp:
-            self.signal.save(os.path.join(tmp, 'testfile.emd'))
+def test_minimal_save():
+    signal = Signal1D([0, 1])
+    with tempfile.TemporaryDirectory() as tmp:
+        signal.save(os.path.join(tmp, 'testfile.emd'))
 
 
 class TestReadSeveralDatasets:
@@ -193,7 +194,9 @@ class TestReadSeveralDatasets:
         f.attrs.create('version_major', 0)
         f.attrs.create('version_minor', 2)
 
-        group_path_list = ['/exp/data_0', '/exp/data_1', '/calc/data_0']
+        group_path_list = ['/exp/data_0/data',
+                           '/exp/data_1/data',
+                           '/calc/data_0/data']
 
         for group_path in group_path_list:
             group = f.create_group(group_path)
@@ -215,13 +218,14 @@ class TestReadSeveralDatasets:
     def test_load_file(self):
         s = load(self.hdf5_dataset_path)
         assert len(s) == len(self.group_path_list)
-        title_list = [s_temp.metadata.General.title for s_temp in s]
-        assert sorted(self.group_path_list) == sorted(title_list)
+        for _s, path in zip(s, self.group_path_list):
+            assert _s.metadata.General.title in path
 
 
 class TestCaseSaveAndRead():
 
-    def test_save_and_read(self):
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_save_and_read(self, lazy):
         signal_ref = BaseSignal(data_save)
         signal_ref.metadata.General.title = test_title
         signal_ref.axes_manager[0].name = 'x'
@@ -236,11 +240,18 @@ class TestCaseSaveAndRead():
         signal_ref.axes_manager[0].units = 'nm'
         signal_ref.axes_manager[1].units = 'µm'
         signal_ref.axes_manager[2].units = 'mm'
+        signal_ref.original_metadata.add_dictionary({'user':user})
+        signal_ref.original_metadata.add_dictionary({'microscope':microscope})
+        signal_ref.original_metadata.add_dictionary({'sample':sample})
+        signal_ref.original_metadata.add_dictionary({'comments':comments})
+
         signal_ref.save(os.path.join(my_path, 'emd_files', 'example_temp.emd'),
-                        overwrite=True, signal_metadata=sig_metadata,
-                        user=user, microscope=microscope, sample=sample,
-                        comments=comments)
-        signal = load(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
+                        overwrite=True)
+        signal = load(os.path.join(my_path, 'emd_files', 'example_temp.emd'),
+                      lazy=lazy)
+        if lazy:
+            signal.compute(close_file=True)
+        om = signal.original_metadata
         np.testing.assert_equal(signal.data, signal_ref.data)
         np.testing.assert_equal(signal.axes_manager[0].name, 'x')
         np.testing.assert_equal(signal.axes_manager[1].name, 'y')
@@ -255,22 +266,40 @@ class TestCaseSaveAndRead():
         np.testing.assert_equal(signal.axes_manager[1].units, 'µm')
         np.testing.assert_equal(signal.axes_manager[2].units, 'mm')
         np.testing.assert_equal(signal.metadata.General.title, test_title)
-        np.testing.assert_equal(
-            signal.metadata.General.user.as_dictionary(), user)
-        np.testing.assert_equal(
-            signal.metadata.General.microscope.as_dictionary(),
-            microscope)
-        np.testing.assert_equal(
-            signal.metadata.General.sample.as_dictionary(), sample)
-        np.testing.assert_equal(
-            signal.metadata.General.comments.as_dictionary(), comments)
-        for key, ref_value in sig_metadata.items():
-            np.testing.assert_equal(
-                signal.metadata.Signal.as_dictionary().get(key), ref_value)
+        np.testing.assert_equal(om.user.as_dictionary(), user)
+        np.testing.assert_equal(om.microscope.as_dictionary(), microscope)
+        np.testing.assert_equal(om.sample.as_dictionary(), sample)
+        np.testing.assert_equal(om.comments.as_dictionary(), comments)
+
         assert isinstance(signal, BaseSignal)
 
     def teardown_method(self, method):
-        remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
+        os.remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
+
+
+def test_chunking_saving_lazy():
+    s = Signal2D(da.zeros((50, 100, 100))).as_lazy()
+    s.data = s.data.rechunk([50, 25, 25])
+    with tempfile.TemporaryDirectory() as tmp:
+        filename = os.path.join(tmp, 'test_chunking_saving_lazy.emd')
+        filename2 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_True.emd')
+        filename3 = os.path.join(tmp, 'test_chunking_saving_lazy_chunks_specify.emd')
+    s.save(filename)
+    s1 = load(filename, lazy=True)
+    assert s.data.chunks == s1.data.chunks
+
+    # with chunks=True, use h5py chunking
+    s.save(filename2, chunks=True)
+    s2 = load(filename2, lazy=True)
+    assert tuple([c[0] for c in s2.data.chunks]) == (13, 25, 13)
+    s1.close_file()
+    s2.close_file()
+
+    # Specify chunks
+    chunks = (50, 20, 20)
+    s.save(filename3, chunks=chunks)
+    s3 = load(filename3, lazy=True)
+    assert tuple([c[0] for c in s3.data.chunks]) == chunks
 
 
 def _generate_parameters():
@@ -313,8 +342,16 @@ class TestFeiEMD():
                           'date': '2017-03-06',
                           'time': '09:56:41',
                           'time_zone': 'BST',
-                          'title': 'HAADF'},
-              'Signal': {'binned': False, 'signal_type': 'image'},
+                          'title': 'HAADF',
+                          'FileIO': {
+                              '0': {
+                                  'operation': 'load',
+                                  'hyperspy_version': hs_version,
+                                  'io_plugin': 'hyperspy.io_plugins.emd'
+                              }
+                          }
+              },
+              'Signal': {'signal_type': ''},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                         'original_shape': None,
                                         'signal_unfolded': False,
@@ -330,18 +367,22 @@ class TestFeiEMD():
 
         signal = load(os.path.join(self.fei_files_path, 'fei_emd_image.emd'),
                       lazy=lazy)
+        # delete timestamp from metadata since it's runtime dependent
+        del signal.metadata.General.FileIO.Number_0.timestamp
         if lazy:
             assert signal._lazy
             signal.compute(close_file=True)
         fei_image = np.load(os.path.join(self.fei_files_path,
                                          'fei_emd_image.npy'))
         assert signal.axes_manager[0].name == 'x'
-        assert signal.axes_manager[0].units == 'um'
-        assert_allclose(signal.axes_manager[0].scale, 0.00530241, rtol=1E-5)
+        assert signal.axes_manager[0].units == 'µm'
+        assert signal.axes_manager[0].is_binned == False
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 0.00530241, rtol=1E-5)
         assert signal.axes_manager[1].name == 'y'
-        assert signal.axes_manager[1].units == 'um'
-        assert_allclose(signal.axes_manager[1].scale, 0.00530241, rtol=1E-5)
-        assert_allclose(signal.data, fei_image)
+        assert signal.axes_manager[1].units == 'µm'
+        assert signal.axes_manager[1].is_binned == False
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 0.00530241, rtol=1E-5)
+        np.testing.assert_allclose(signal.data, fei_image)
         assert_deep_almost_equal(signal.metadata.as_dictionary(), md)
         assert isinstance(signal, Signal2D)
 
@@ -381,15 +422,15 @@ class TestFeiEMD():
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
         assert signal.axes_manager[0].units == 'nm'
-        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].size == 50
         assert signal.axes_manager[1].units == 'nm'
-        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[2].name == 'X-ray energy'
         assert signal.axes_manager[2].size == 4096
         assert signal.axes_manager[2].units == 'keV'
-        assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
 
         signal0 = s[0]
         if lazy:
@@ -399,10 +440,48 @@ class TestFeiEMD():
         assert signal0.axes_manager[0].name == 'x'
         assert signal0.axes_manager[0].size == 10
         assert signal0.axes_manager[0].units == 'nm'
-        assert_allclose(signal0.axes_manager[0].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal0.axes_manager[0].scale, 1.234009, atol=1E-5)
         assert signal0.axes_manager[1].name == 'y'
         assert signal0.axes_manager[1].size == 50
         assert signal0.axes_manager[1].units == 'nm'
+
+        s = load(os.path.join(
+            self.fei_files_path, 'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
+            lazy=lazy,
+            load_SI_image_stack=True)
+        signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute(close_file=True)
+        assert isinstance(signal, EDSTEMSpectrum)
+        assert signal.axes_manager[0].name == 'x'
+        assert signal.axes_manager[0].size == 10
+        assert signal.axes_manager[0].units == 'nm'
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[1].name == 'y'
+        assert signal.axes_manager[1].size == 50
+        assert signal.axes_manager[1].units == 'nm'
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[2].name == 'X-ray energy'
+        assert signal.axes_manager[2].size == 4096
+        assert signal.axes_manager[2].units == 'keV'
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
+
+        signal0 = s[0]
+        if lazy:
+            assert signal0._lazy
+            signal0.compute(close_file=True)
+        assert isinstance(signal0, Signal2D)
+        assert signal0.axes_manager[0].name == 'Time'
+        assert signal0.axes_manager[0].size == 10
+        assert signal0.axes_manager[0].units == 's'
+        assert signal0.axes_manager[1].name == 'x'
+        assert signal0.axes_manager[1].size == 10
+        assert signal0.axes_manager[1].units == 'nm'
+        np.testing.assert_allclose(signal0.axes_manager[1].scale, 1.234009, atol=1E-5)
+        assert signal0.axes_manager[2].name == 'y'
+        assert signal0.axes_manager[2].size == 50
+        assert signal0.axes_manager[2].units == 'nm'
 
         s = load(os.path.join(self.fei_files_path,
                               'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
@@ -419,19 +498,19 @@ class TestFeiEMD():
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
         assert signal.axes_manager[0].units == 'nm'
-        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].size == 50
         assert signal.axes_manager[1].units == 'nm'
-        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[2].name == 'Time'
         assert signal.axes_manager[2].size == 10
         assert signal.axes_manager[2].units == 's'
-        assert_allclose(signal.axes_manager[2].scale, 0.76800, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.76800, atol=1E-5)
         assert signal.axes_manager[3].name == 'X-ray energy'
         assert signal.axes_manager[3].size == 16
         assert signal.axes_manager[3].units == 'keV'
-        assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
 
         s = load(os.path.join(self.fei_files_path,
                               'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
@@ -449,19 +528,19 @@ class TestFeiEMD():
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
         assert signal.axes_manager[0].units == 'nm'
-        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].size == 50
         assert signal.axes_manager[1].units == 'nm'
-        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[2].name == 'Time'
         assert signal.axes_manager[2].size == 5
         assert signal.axes_manager[2].units == 's'
-        assert_allclose(signal.axes_manager[2].scale, 0.76800, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.76800, atol=1E-5)
         assert signal.axes_manager[3].name == 'X-ray energy'
         assert signal.axes_manager[3].size == 16
         assert signal.axes_manager[3].units == 'keV'
-        assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
 
         s = load(os.path.join(self.fei_files_path,
                               'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
@@ -479,19 +558,19 @@ class TestFeiEMD():
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
         assert signal.axes_manager[0].units == 'nm'
-        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].size == 50
         assert signal.axes_manager[1].units == 'nm'
-        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[2].name == 'Time'
         assert signal.axes_manager[2].size == 6
         assert signal.axes_manager[2].units == 's'
-        assert_allclose(signal.axes_manager[2].scale, 0.76800, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.76800, atol=1E-5)
         assert signal.axes_manager[3].name == 'X-ray energy'
         assert signal.axes_manager[3].size == 16
         assert signal.axes_manager[3].units == 'keV'
-        assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_non_square_20frames(self, lazy):
@@ -507,15 +586,15 @@ class TestFeiEMD():
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
         assert signal.axes_manager[0].units == 'nm'
-        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].size == 50
         assert signal.axes_manager[1].units == 'nm'
-        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[2].name == 'X-ray energy'
         assert signal.axes_manager[2].size == 4096
         assert signal.axes_manager[2].units == 'keV'
-        assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_non_square_20frames_2eV(self, lazy):
@@ -531,15 +610,15 @@ class TestFeiEMD():
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
         assert signal.axes_manager[0].units == 'nm'
-        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].size == 50
         assert signal.axes_manager[1].units == 'nm'
-        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
         assert signal.axes_manager[2].name == 'X-ray energy'
         assert signal.axes_manager[2].size == 4096
         assert signal.axes_manager[2].units == 'keV'
-        assert_allclose(signal.axes_manager[2].scale, 0.002, atol=1E-5)
+        np.testing.assert_allclose(signal.axes_manager[2].scale, 0.002, atol=1E-5)
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_frame_range(self, lazy):
@@ -573,7 +652,7 @@ class TestFeiEMD():
             os.path.join(
                 self.fei_files_path,
                 '1532 Camera Ceta.emd'))
-        assert_allclose(signal.data, np.zeros((64, 64)))
+        np.testing.assert_allclose(signal.data, np.zeros((64, 64)))
         assert isinstance(signal, Signal2D)
         date, time = self._convert_datetime(1512055942.914275).split('T')
         assert signal.metadata.General.date == date
@@ -584,7 +663,7 @@ class TestFeiEMD():
             os.path.join(
                 self.fei_files_path,
                 '1854 Camera Ceta.emd'))
-        assert_allclose(signal.data, np.zeros((64, 64)))
+        np.testing.assert_allclose(signal.data, np.zeros((64, 64)))
         assert isinstance(signal, Signal2D)
 
     def _convert_datetime(self, unix_time):
@@ -616,3 +695,40 @@ class TestFeiEMD():
         plt.plot(frame_offsets, time_data)
         plt.xlabel('Frame offset')
         plt.xlabel('Loading time (s)')
+
+
+def test_fei_complex_loading():
+    signal = load(os.path.join(my_path, 'emd_files', 'fei_example_complex_fft.emd'))
+    assert isinstance(signal, ComplexSignal2D)
+
+def test_fei_complex_loading_lazy():
+    signal = load(os.path.join(my_path, 'emd_files', 'fei_example_complex_fft.emd'), lazy=True)
+    assert isinstance(signal, ComplexSignal2D)
+
+def test_fei_no_frametime():
+    signal = load(os.path.join(my_path, 'emd_files', 'fei_example_tem_stack.emd'))
+    assert isinstance(signal, Signal2D)
+    assert signal.data.shape == (2, 3, 3)
+    assert signal.axes_manager["Time"].scale == 0.8
+
+
+def test_fei_dpc_loading():
+    signals = load(os.path.join(my_path, 'emd_files', 'fei_example_dpc_titles.emd'))
+    assert signals[0].metadata.General.title == "B-D"
+    assert signals[1].metadata.General.title == "DPC"
+    assert signals[2].metadata.General.title == "iDPC"
+    assert signals[3].metadata.General.title == "DF4-C"
+    assert signals[4].metadata.General.title == "DF4-B"
+    assert signals[5].metadata.General.title == "DF4-A"
+    assert signals[6].metadata.General.title == "A-C"
+    assert signals[7].metadata.General.title == "DF4-D"
+    assert signals[8].metadata.General.title == "Filtered iDPC"
+    assert isinstance(signals[0], Signal2D)
+    assert isinstance(signals[1], ComplexSignal2D)
+    assert isinstance(signals[2], Signal2D)
+    assert isinstance(signals[3], Signal2D)
+    assert isinstance(signals[4], Signal2D)
+    assert isinstance(signals[5], Signal2D)
+    assert isinstance(signals[6], Signal2D)
+    assert isinstance(signals[7], Signal2D)
+    assert isinstance(signals[8], Signal2D)

@@ -1,4 +1,5 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -13,14 +14,18 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import numpy as np
 import pytest
 
 from hyperspy._signals.signal1d import Signal1D
-from hyperspy.components1d import Gaussian
+from hyperspy._signals.signal2d import Signal2D
+from hyperspy.components1d import Gaussian, Offset
+from hyperspy.models.model1d import ComponentFit
+from hyperspy.exceptions import SignalDimensionError
+from hyperspy.decorators import lazifyTestClass
 
 
 class TestFitOneComponent:
@@ -36,23 +41,34 @@ class TestFitOneComponent:
         self.model = m
         self.g = g
         self.axis = axis
-        self.rtol = 0.00
 
-    def test_fit_component(self):
+    @pytest.mark.parametrize("signal_range", [(4000, 6000), 'interactive'])
+    def test_fit_component(self, signal_range):
         m = self.model
         axis = self.axis
+        g = self.g
 
         g1 = Gaussian()
         m.append(g1)
-        m.fit_component(g1, signal_range=(4000, 6000))
-        np.testing.assert_allclose(self.g.function(axis),
+        cf = ComponentFit(m, g1, signal_range=signal_range)
+        if signal_range == 'interactive':
+            cf.ss_left_value, cf.ss_right_value = (4000, 6000)
+        cf._fit_fired()
+        np.testing.assert_allclose(g.function(axis),
                                    g1.function(axis),
-                                   rtol=self.rtol,
+                                   rtol=0.0,
                                    atol=10e-3)
 
     def test_component_not_in_model(self):
         with pytest.raises(ValueError):
             self.model.fit_component(self.g)
+
+
+def test_Component_fit_wrong_signal():
+    s = Signal2D(np.arange(2*3*4).reshape(2, 3, 4))
+    m = s.create_model()
+    with pytest.raises(SignalDimensionError):
+        ComponentFit(m, Gaussian())
 
 
 class TestFitSeveralComponent:
@@ -169,9 +185,60 @@ class TestFitSI:
     def test_fit_spectrum_image(self):
         m = self.model
         G = self.G
-        m.fit_component(G, signal_range=(2, 7), only_current=False)
+        # HyperSpy 2.0: remove setting iterpath='serpentine'
+        m.fit_component(G, signal_range=(2, 7), only_current=False,
+                        iterpath='serpentine')
         m.axes_manager.indices = (0, 0)
         A = G.A.value
         m.axes_manager.indices = (1, 1)
         B = G.A.value
         assert not A == B
+
+
+@lazifyTestClass
+class TestStdWithMultipleFitters:
+    """
+    Test that error estimation is approximately the same for all
+    fitters, with both positive and negative components
+    """
+
+    def setup_method(self, method):
+        np.random.seed(1)
+        c1, c2 = 10, 12
+        A1, A2 = -50, 20
+        G1 = Gaussian(centre=c1, A=A1, sigma=1)
+        G2 = Gaussian(centre=c2, A=A2, sigma=1)
+
+        x = np.linspace(0, 20, 1000)
+        y = G1.function(x) + G2.function(x) + 5
+        error = np.random.normal(size=y.shape)
+        y = y + error
+
+        s = Signal1D(y)
+        s.axes_manager[-1].scale = x[1] - x[0]
+
+        self.m = s.create_model()
+        g1 = Gaussian(centre=c1, A=1, sigma=1)
+        g2 = Gaussian(centre=c2, A=1, sigma=1)
+        offset = Offset()
+        self.m.extend([g1, g2, offset])
+
+        g1.centre.free = False
+        g1.sigma.free = False
+        g2.centre.free = False
+        g2.sigma.free = False
+
+        self.g1, self.g2 = g1, g2
+
+    @pytest.mark.parametrize("optimizer", ['lm', 'lstsq', 'ridge_regression'])
+    def test_fitters(self, optimizer):
+        if optimizer == "ridge_regression":
+            pytest.importorskip("sklearn")
+
+        if self.m.signal._lazy and optimizer == "ridge_regression":
+            with pytest.raises(ValueError):
+                self.m.fit(optimizer=optimizer)
+        else:
+            self.m.fit(optimizer=optimizer)
+            np.testing.assert_almost_equal(self.g1.A.std, 0.29659216)
+            np.testing.assert_almost_equal(self.g1.A.std, self.g2.A.std)

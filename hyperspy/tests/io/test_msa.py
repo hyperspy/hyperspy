@@ -1,9 +1,10 @@
+import copy
 import os.path
 import tempfile
-import copy
 
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
+from hyperspy import __version__ as hs_version
 
 my_path = os.path.dirname(__file__)
 
@@ -22,11 +23,15 @@ example1_metadata = {'Acquisition_instrument': {'TEM': example1_TEM},
                      'General': {'original_filename': "example1.msa",
                                  'title': "NIO EELS OK SHELL",
                                  'date': "1991-10-01",
-                                 'time': "12:00:00"},
+                                 'time': "12:00:00",
+                                 'FileIO': {'0': {
+                                     'operation': 'load',
+                                     'hyperspy_version': hs_version,
+                                     'io_plugin': 'hyperspy.io_plugins.msa'}}
+                                 },
                      'Sample': {'thickness': 50.0,
                                 'thickness_units': "nm"},
-                     'Signal': {'binned': True,
-                                # bit silly...
+                     'Signal': {# bit silly...
                                 'quantity': "Counts (Intensity)",
                                 'signal_type': 'EELS'},
                      '_HyperSpy': {'Folding': {'original_axes_manager': None,
@@ -101,11 +106,15 @@ example2_metadata = {'Acquisition_instrument': {'TEM': example2_TEM},
                      'General': {'original_filename': "example2.msa",
                                  'title': "NIO Windowless Spectra OK NiL",
                                  'date': "1991-10-01",
-                                 'time': "12:00:00"},
+                                 'time': "12:00:00",
+                                 'FileIO': {'0': {
+                                     'operation': 'load',
+                                     'hyperspy_version': hs_version,
+                                     'io_plugin': 'hyperspy.io_plugins.msa'}}
+                                 },
                      'Sample': {'thickness': 50.0,
                                 'thickness_units': "nm"},
-                     'Signal': {'binned': False,
-                                'quantity': "X-RAY INTENSITY (Intensity)",
+                     'Signal': {'quantity': "X-RAY INTENSITY (Intensity)",
                                 'signal_type': 'EDS'},
                      '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                                'unfolded': False,
@@ -164,6 +173,8 @@ class TestExample1:
             my_path,
             "msa_files",
             "example1.msa"))
+        # delete timestamp from metadata since it's runtime dependent
+        del self.s.metadata.General.FileIO.Number_0.timestamp
 
     def test_data(self):
         assert (
@@ -203,6 +214,11 @@ class TestExample1:
             fname2 = os.path.join(tmpdir, "example1-export.msa")
             self.s.save(fname2)
             s2 = load(fname2)
+            # delete timestamp from metadata since it's runtime dependent
+            del s2.metadata.General.FileIO.Number_0.timestamp
+            del self.s.metadata.General.FileIO.Number_1
+            if 'timestamp' in self.s.metadata.General.FileIO.Number_0:
+                del self.s.metadata.General.FileIO.Number_0.timestamp
             assert (s2.metadata.General.original_filename ==
                     "example1-export.msa")
             s2.metadata.General.original_filename = "example1.msa"
@@ -216,6 +232,8 @@ class TestExample1WrongDate:
             my_path,
             "msa_files",
             "example1_wrong_date.msa"))
+        # delete timestamp from metadata since it's runtime dependent
+        del self.s.metadata.General.FileIO.Number_0.timestamp
 
     def test_metadata(self):
         md = copy.copy(example1_metadata)
@@ -235,6 +253,8 @@ class TestExample2:
             my_path,
             "msa_files",
             "example2.msa"))
+        # delete timestamp from metadata since it's runtime dependent
+        del self.s.metadata.General.FileIO.Number_0.timestamp
 
     def test_data(self):
         assert (
@@ -336,6 +356,9 @@ class TestExample2:
             assert (s2.metadata.General.original_filename ==
                     "example2-export.msa")
             s2.metadata.General.original_filename = "example2.msa"
+            # delete timestamp from metadata since it's runtime dependent
+            del s2.metadata.General.FileIO.Number_0.timestamp
+            del self.s.metadata.General.FileIO.Number_1
             assert_deep_almost_equal(self.s.metadata.as_dictionary(),
                                      s2.metadata.as_dictionary())
 

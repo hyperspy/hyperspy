@@ -1,32 +1,30 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import os.path
-from os import remove
 import tempfile
-
+from os import remove
 
 import numpy as np
 import pytest
 
 from hyperspy.io import load
-from hyperspy.signals import BaseSignal, Signal2D, Signal1D, ComplexSignal
-
+from hyperspy.signals import BaseSignal, ComplexSignal, Signal1D, Signal2D
 
 my_path = os.path.dirname(__file__)
 
@@ -182,9 +180,3 @@ class TestCaseSaveAndReadByte():
 
     def teardown_method(self, method):
         remove(os.path.join(my_path, 'unf_files', 'example_temp.unf'))
-
-
-if __name__ == '__main__':
-
-    import pytest
-    pytest.main(__name__)

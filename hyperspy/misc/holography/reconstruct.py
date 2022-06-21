@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 from scipy.fftpack import fft2, ifft2, fftshift
@@ -69,23 +69,23 @@ def estimate_sideband_position(
         fft_filtered.shape[1] //
         2)  # cb: center band
     if sb == 'lower':
-        fft_sb = np.abs(fft_filtered[:cb_position[0], :])
+        fft_sb = abs(fft_filtered[:cb_position[0], :])
         sb_position = np.asarray(
             np.unravel_index(
                 fft_sb.argmax(),
                 fft_sb.shape))
     elif sb == 'upper':
-        fft_sb = np.abs(fft_filtered[cb_position[0]:, :])
+        fft_sb = abs(fft_filtered[cb_position[0]:, :])
         sb_position = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
         sb_position = np.asarray(np.add(sb_position, (cb_position[0], 0)))
     elif sb == 'left':
-        fft_sb = np.abs(fft_filtered[:, :cb_position[1]])
+        fft_sb = abs(fft_filtered[:, :cb_position[1]])
         sb_position = np.asarray(
             np.unravel_index(
                 fft_sb.argmax(),
                 fft_sb.shape))
     elif sb == 'right':
-        fft_sb = np.abs(fft_filtered[:, cb_position[1]:])
+        fft_sb = abs(fft_filtered[:, cb_position[1]:])
         sb_position = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
         sb_position = np.asarray(np.add(sb_position, (0, cb_position[1])))
     # Return sideband position:
@@ -137,7 +137,7 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness,
         Smoothness of the aperture in pixel.
     output_shape: tuple, optional
         New output shape.
-    plotting : boolean
+    plotting : bool
         Plots the masked sideband used for reconstruction.
 
     Returns
@@ -166,7 +166,7 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness,
 
     if plotting:
         _, axs = plt.subplots(1, 1, figsize=(4, 4))
-        axs.imshow(np.abs(fftshift(fft_aperture)), clim=(0, 0.1))
+        axs.imshow(abs(fftshift(fft_aperture)), clim=(0, 0.1))
         axs.scatter(
             sb_position[1],
             sb_position[0],
@@ -208,7 +208,7 @@ def aperture_function(r, apradius, rsmooth):
         Smoothness in halfwidth. rsmooth = 1 will cause a decay from 1 to 0 over 2 pixel.
     """
 
-    return 0.5 * (1. - np.tanh((np.absolute(r) - apradius) / (0.5 * rsmooth)))
+    return 0.5 * (1. - np.tanh((abs(r) - apradius) / (0.5 * rsmooth)))
 
 
 def freq_array(shape, sampling):

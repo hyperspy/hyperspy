@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 # INFORMATION ABOUT THE SEMPER FORMAT LABEL:
 # Picture labels consist of a sequence of bytes
@@ -90,14 +90,15 @@ _logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
-format_name = 'SEMPER UNF (unformatted)'
-description = 'Read data from SEMPER UNF files.'
+format_name = 'SEMPER'
+description = 'Read data from SEMPER UNF (unformatted) files.'
 full_support = True  # Hopefully?
 # Recognised file extension
 file_extensions = ('unf', 'UNF')
 default_extension = 0
-# Writing features
+# Writing capabilities
 writes = [(1, 0), (1, 1), (1, 2), (2, 0), (2, 1)]  # All up to 3D
+non_uniform_axis = False
 # ----------------------
 
 
@@ -442,7 +443,7 @@ class SemperFormat(object):
         ----------
         filename : string, optional
             The name of the unf-file to which the data should be written.
-        skip_header : boolean, optional
+        skip_header : bool, optional
             Determines if the header, title and label should be skipped (useful
             for some other programs). Default is False.
 

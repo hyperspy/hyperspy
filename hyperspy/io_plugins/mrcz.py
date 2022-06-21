@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from distutils.version import LooseVersion
+from packaging.version import Version
 import mrcz as _mrcz
 import logging
 
@@ -32,6 +32,8 @@ file_extensions = ['mrc', 'MRC', 'mrcz', 'MRCZ']
 default_extension = 2
 # Writing capabilities:
 writes = True
+non_uniform_axis = False
+# ----------------------
 
 
 _POP_FROM_HEADER = ['compressor', 'MRCtype', 'C3', 'dimensions', 'dtype',
@@ -44,7 +46,7 @@ _WRITE_ORDER = [0, 2, 1]
 
 # API changes in mrcz 0.5
 def _parse_metadata(metadata):
-    if LooseVersion(_mrcz.__version__) < LooseVersion("0.5"):
+    if Version(_mrcz.__version__) < Version("0.5"):
         return metadata[0]
     else:
         return metadata

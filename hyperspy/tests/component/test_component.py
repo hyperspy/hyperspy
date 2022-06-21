@@ -1,8 +1,29 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2022 The HyperSpy developers
+#
+# This file is part of HyperSpy.
+#
+# HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
+import pytest
+from unittest import mock
+
 import numpy as np
 
-from hyperspy.component import Component
 from hyperspy.axes import AxesManager
-from unittest import mock
+from hyperspy.component import Component, Parameter, _get_scaling_factor
+from hyperspy._signals.signal1d import Signal1D
 
 
 class TestMultidimensionalActive:
@@ -177,6 +198,10 @@ class TestGeneralMethods:
         assert self.c.one.free
         assert self.c.two.free
 
+    def test_set_parameters_free_only_linear_only_nonlinear(self):
+        with pytest.raises(ValueError):
+            self.c.set_parameters_free(only_linear=True, only_nonlinear=True)
+
     def test_set_parameters_free_name(self):
         self.c.set_parameters_free(['one'])
         assert self.c.one.free
@@ -187,12 +212,17 @@ class TestGeneralMethods:
         assert not self.c.one.free
         assert not self.c.two.free
 
+    def test_set_parameters_not_free_only_linear_only_nonlinear(self):
+        with pytest.raises(ValueError):
+            self.c.set_parameters_not_free(
+                only_linear=True, only_nonlinear=True
+                )
+
     def test_set_parameters_not_free_name(self):
         self.c.one.free = True
         self.c.set_parameters_not_free(['two'])
         assert self.c.one.free
         assert not self.c.two.free
-
 
 class TestCallMethods:
 
@@ -217,14 +247,14 @@ class TestCallMethods:
     def test_plotting_not_active_component(self):
         c = self.c
         c.active = False
-        c.model.signal.metadata.Signal.binned = False
+        c.model.signal.axes_manager[-1].is_binned = False
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=False)
         assert np.isnan(res).all()
 
     def test_plotting_active_component_notbinned(self):
         c = self.c
         c.active = True
-        c.model.signal.metadata.Signal.binned = False
+        c.model.signal.axes_manager[-1].is_binned = False
         c.model.__call__.return_value = np.array([1.3])
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=False)
         np.testing.assert_array_equal(res, np.array([1.3, ]))
@@ -232,7 +262,7 @@ class TestCallMethods:
     def test_plotting_active_component_binned(self):
         c = self.c
         c.active = True
-        c.model.signal.metadata.Signal.binned = True
+        c.model.signal.axes_manager[-1].is_binned = True
         c.model.__call__.return_value = np.array([1.3])
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=False)
         np.testing.assert_array_equal(res, np.array([1.3, ]))
@@ -240,7 +270,37 @@ class TestCallMethods:
     def test_plotting_active_component_out_of_range(self):
         c = self.c
         c.active = True
-        c.model.signal.metadata.Signal.binned = False
+        c.model.signal.axes_manager[-1].is_binned = False
         c.model.__call__.return_value = np.array([1.1, 1.3])
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=True)
         np.testing.assert_array_equal(res, np.array([1.1, np.nan, 1.3]))
+
+
+@pytest.mark.parametrize('is_binned', [True, False])
+@pytest.mark.parametrize('non_uniform', [True, False])
+@pytest.mark.parametrize('dim', [1, 2, 3])
+def test_get_scaling_parameter(is_binned, non_uniform, dim):
+    shape = [10 + i for i in range(dim)]
+    signal = Signal1D(np.arange(np.prod(shape)).reshape(shape[::-1]))
+    axis = signal.axes_manager.signal_axes[0]
+    axis.is_binned = is_binned
+    axis.scale = 0.5
+    if non_uniform:
+        axis.convert_to_non_uniform_axis()
+    centre = np.ones(shape[::-2])
+    scaling_factor = _get_scaling_factor(signal, axis, centre)
+
+    if is_binned:
+        assert np.all(scaling_factor == 0.5)
+    else:
+        assert scaling_factor == 1
+
+
+def test_linear_parameter_initialisation():
+
+    C = Component(['one', 'two'], ['one'])
+    P = Parameter()
+
+    assert C.one._linear
+    assert not C.two._linear
+    assert not P._linear

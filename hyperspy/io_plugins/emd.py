@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 # The EMD format is a hdf5 standard proposed at Lawrence Berkeley
 # National Lab (see http://emdatasets.com/ for more information).
@@ -29,6 +29,8 @@ import json
 import os
 from datetime import datetime
 import time
+import warnings
+import math
 import logging
 import traits.api as t
 
@@ -36,10 +38,13 @@ import h5py
 import numpy as np
 import dask.array as da
 from dateutil import tz
-import pint
 
+from hyperspy.api_nogui import _ureg
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.elements import atomic_number2name
 import hyperspy.misc.io.fei_stream_readers as stream_readers
+from hyperspy.io_plugins.hspy import get_signal_chunks
+
 
 # Plugin characteristics
 # ----------------------
@@ -53,46 +58,13 @@ default_extension = 0
 reads_images = True
 reads_spectrum = True
 reads_spectrum_image = True
-# Writing features
+# Writing capabilities
 writes = True  # Only Berkeley emd
+non_uniform_axis = False
 EMD_VERSION = '0.2'
 # ----------------------
 
 _logger = logging.getLogger(__name__)
-
-
-def calculate_chunks(shape, dtype, chunk_size_mb=100):
-    """Calculate chunks to get target chunk size.
-
-    The chunks are optimized for C-order reading speed.
-
-    Parameters
-    ----------
-    shape: tuple of ints
-        The shape of the array
-    dtype: string or numpy dtype
-        The dtype of the array
-    chunk_size_mb: int
-        The maximum size of the resulting chunks in MB. The default is
-        100MB as reccommended by the dask documentation.
-
-    """
-
-    target = chunk_size_mb * 1e6
-    items = int(target // np.dtype(dtype).itemsize)
-    chunks = ()
-    dimsize = np.cumprod(shape[::-1])[::-1][1:]
-    for i, ds in enumerate(dimsize):
-        chunk = items // ds
-        if not chunk:
-            chunks += (1,)
-        elif chunk <= shape[i]:
-            chunks += (chunk, )
-        else:
-            chunks += (shape[i],)
-    # At least one signal
-    chunks += (shape[-1], )
-    return chunks
 
 
 class EMD(object):
@@ -128,6 +100,11 @@ class EMD(object):
 
     def __init__(self, signals=None, user=None,
                  microscope=None, sample=None, comments=None):
+        msg = (
+            "Direct instantiation of the EMD class is deprecated and will be "
+            "removed in HyperSpy v2.0. Please use the `hs.load` function "
+            "instead.")
+        warnings.warn(msg, VisibleDeprecationWarning)
         self._log.debug('Calling __init__')
         # Create dictionaries if not present:
         if signals is None:
@@ -252,7 +229,7 @@ class EMD(object):
         metadata = {}
         for key, value in group.attrs.items():
             metadata[key] = value
-        if signal.data.dtype == np.object:
+        if signal.data.dtype == object:
             self._log.warning('HyperSpy could not load the data in {}, '
                               'skipping it'.format(name))
         else:
@@ -326,15 +303,15 @@ class EMD(object):
 
         Parameters
         ----------
-        filename : string
+        filename : str
             The name of the emd-file from which to load the signals. Standard
-            format is '*.emd'.
+            file extesnion is '.emd'.
         False : bool, optional
             If False (default) loads data to memory. If True, enables loading
             only if requested.
-        dataset_name : string or iterable, optional
+        dataset_name : str or iterable, optional
             Only add dataset with specific name. Note, this has to be the full
-            group path in the file. For example `/experimental/science_data'.
+            group path in the file. For example '/experimental/science_data'.
             If the dataset is not found, an IOError with the possible
             datasets will be raised. Several names can be specified
             in the form of a list.
@@ -483,26 +460,435 @@ class EMD(object):
         self._log.info(info_str)
 
 
-def fei_check(filename):
-    """Function to check if the EMD file is an FEI file.
+class EMD_NCEM:
 
-    Parameters
+    """Class for reading and writing the Berkeley variant of the electron
+    microscopy datasets (EMD) file format. It reads files EMD NCEM, including
+    files generated by the prismatic software.
+
+    Attributes
     ----------
-    filename : string
-        The name of the emd-file from which to load the signals. Standard
-        format is '*.emd'.
-
-    Returns
-    -------
-    Boolean
-
+    dictionaries: list
+        List of dictionaries which are passed to the file_reader.
     """
-    with h5py.File(filename, 'r') as f:
-        if 'Version' in list(f.keys()):
-            version = f.get('Version')
-            v_dict = json.loads(version[0].decode('utf-8'))
-            if v_dict['format'] in ['Velox', 'DevelopersKit']:
-                return True
+
+    def read_file(self, file, lazy=None, dataset_path=None, stack_group=None):
+        """
+        Read the data from an emd file
+
+        Parameters
+        ----------
+        file : file handle
+            Handle of the file to read the data from.
+        lazy : bool, optional
+            Load the data lazily. The default is False.
+        dataset_path : None, str or list of str
+            Path of the dataset. If None, load all supported datasets,
+            otherwise the specified dataset. The default is None.
+        stack_group : bool, optional
+            Stack datasets of groups with common name. Relevant for emd file
+            version >= 0.5 where groups can be named 'group0000', 'group0001',
+            etc.
+        """
+        self.file = file
+        self.lazy = lazy
+
+        if isinstance(dataset_path, list):
+            if stack_group:
+                _logger.warning("The argument 'dataset_path' and "
+                                "'stack_group' are not compatible.")
+            stack_group = False
+            dataset_path = dataset_path.copy()
+        elif isinstance(dataset_path, str):
+            dataset_path = [dataset_path]
+        # if 'datasets' is not provided, we load all valid datasets
+        elif dataset_path is None:
+            dataset_path = self.find_dataset_paths(file)
+            if stack_group is None:
+                stack_group = True
+
+        self.dictionaries = []
+
+        while len(dataset_path) > 0:
+            path = dataset_path.pop(0)
+            group_paths = [os.path.dirname(path)]
+            dataset_name = os.path.basename(path)
+
+            if stack_group:
+                # Find all the datasets in this group which are also listed
+                # in dataset_path:
+                # 1. add them to 'group_paths'
+                # 2. remove them from 'dataset_path'
+                group_basename = group_paths[0]
+                if self._is_prismatic_file and 'ppotential' not in path:
+                    # In prismatic file, the group name have '0000' except
+                    # for 'ppotential'
+                    group_basename = group_basename[:-4]
+                for _path in dataset_path[:]:
+                    if path != _path and group_basename in _path:
+                        group_paths.append(os.path.dirname(_path))
+                        dataset_path.remove(_path)
+                title = os.path.basename(group_basename)
+            else:
+                title = os.path.basename(group_paths[0])
+
+            _logger.debug(f'Loading dataset: {path}')
+
+            om = self._parse_original_metadata()
+            data, axes = self._read_data_from_groups(
+                group_paths,
+                dataset_name,
+                title,
+                om)
+
+            md = self._parse_metadata(group_paths[0], title=title)
+            d = {'data': data,
+                 'axes': axes,
+                 'metadata': md,
+                 'original_metadata': om,
+                 }
+            self.dictionaries.append(d)
+
+    @classmethod
+    def find_dataset_paths(cls, file, supported_dataset=True):
+        """
+        Find the paths of all groups containing valid EMD data.
+
+        Parameters
+        ----------
+        file : hdf5 file handle
+        supported_dataset : bool, optional
+            If True (default), returns the paths of all supported datasets,
+            otherwise returns the path of the non-supported other dataset.
+            This is relevant for groups containing auxiliary dataset(s) which
+            are not supported by HyperSpy or described in the EMD NCEM dataset
+            specification.
+
+        Returns
+        -------
+        datasets : list
+            List of path to these group.
+
+        """
+        def print_dataset_only(item_name, item, dataset_only):
+            if supported_dataset is os.path.basename(item_name).startswith(
+                    ('data', 'counted_datacube', 'datacube', 'diffractionslice',
+                     'realslice', 'pointlistarray', 'pointlist')):
+                if isinstance(item, h5py.Dataset):
+                    grp = file.get(os.path.dirname(item_name))
+                    if cls._get_emd_group_type(grp):
+                        dataset_path.append(item_name)
+
+        f = lambda item_name, item: print_dataset_only(item_name, item,
+                                                       supported_dataset)
+
+        dataset_path = []
+        file.visititems(f)
+
+        return dataset_path
+
+    @property
+    def _is_prismatic_file(self):
+        return True if '4DSTEM_simulation' in self.file.keys() else False
+
+    @property
+    def _is_py4DSTEM_file(self):
+        return True if '4DSTEM_experiment' in self.file.keys() else False
+
+    @staticmethod
+    def _get_emd_group_type(group):
+        """ Return the value of the 'emd_group_type' attribute if it exist,
+        otherwise returns False
+        """
+        return group.attrs.get('emd_group_type', False)
+
+    @staticmethod
+    def _read_dataset(dataset):
+        """Read dataset and use the h5py AsStrWrapper when the dataset is of
+        string type (h5py 3.0 and newer)
+        """
+        chunks = dataset.chunks
+        if chunks is None:
+            chunks = 'auto'
+        if (h5py.check_string_dtype(dataset.dtype) and
+            hasattr(dataset, 'asstr')):
+            # h5py 3.0 and newer
+            # https://docs.h5py.org/en/3.0.0/strings.html
+            dataset = dataset.asstr()[:]
+        return dataset, chunks
+
+    def _read_emd_version(self, group):
+        """ Return the group version if the group is an EMD group, otherwise
+        return None.
+        """
+        if 'version_major' in group.attrs.keys():
+            version = [str(group.attrs.get(v))
+                       for v in ['version_major', 'version_minor']]
+            version =  ".".join(version)
+            return version
+
+    def _read_data_from_groups(self, group_path, dataset_name, stack_key=None,
+                               original_metadata={}):
+        axes = []
+        transpose_required = True if dataset_name != 'datacube' else False
+
+        array_list = [self.file.get(f'{key}/{dataset_name}') for key in group_path]
+
+        if None in array_list:
+            raise IOError("Dataset can't be found.")
+
+        if len(array_list) > 1:
+            # Squeeze the data only when
+            if self.lazy:
+                data_list = [da.from_array(*self._read_dataset(d))
+                             for d in array_list]
+                if transpose_required:
+                    data_list = [da.transpose(d) for d in data_list]
+                data = da.stack(data_list)
+                data = da.squeeze(data)
+            else:
+                data_list = [np.asanyarray(self._read_dataset(d)[0])
+                             for d in array_list]
+                if transpose_required:
+                    data_list = [np.transpose(d) for d in data_list]
+                data = np.stack(data_list).squeeze()
+        else:
+            d = array_list[0]
+            if self.lazy:
+                data = da.from_array(*self._read_dataset(d))
+            else:
+                data = np.asanyarray(self._read_dataset(d)[0])
+            if transpose_required:
+                data = data.transpose()
+
+        shape = data.shape
+
+        if len(array_list) > 1:
+            offset, scale, units = 0, 1, t.Undefined
+            if self._is_prismatic_file and 'depth' in stack_key:
+                simu_om = original_metadata.get('simulation_parameters', {})
+                if 'numSlices' in simu_om.keys():
+                    scale = simu_om['numSlices']
+                    scale *= simu_om.get('sliceThickness', 1.0)
+                if 'zStart' in simu_om.keys():
+                    offset = simu_om['zStart']
+                    # when zStart = 0, the first image is not at zero but
+                    # the first output: numSlices * sliceThickness (=scale)
+                    if offset == 0:
+                        offset = scale
+                units = 'Å'
+                total_thickness = (simu_om.get('tile', 0)[2] *
+                                   simu_om.get('cellDimension', 0)[0])
+                if not math.isclose(total_thickness, len(array_list) * scale,
+                                    rel_tol=1e-4):
+                    _logger.warning("Depth axis is non-uniform and its offset "
+                                    "and scale can't be set accurately.")
+                    # When non-uniform/non-linear axis are implemented, adjust
+                    # the final depth to the "total_thickness"
+                    offset, scale, units = 0, 1, t.Undefined
+            axes.append({'index_in_array': 0,
+                         'name': stack_key if stack_key is not None else t.Undefined,
+                         'offset': offset,
+                         'scale': scale,
+                         'size': len(array_list),
+                         'units': units,
+                         'navigate': True})
+
+            array_indices = np.arange(1, len(shape))
+            dim_indices = array_indices
+        else:
+            array_indices = np.arange(0, len(shape))
+            # dim indices start form 1
+            dim_indices = array_indices + 1
+
+        if transpose_required:
+            dim_indices = dim_indices[::-1]
+
+        for arr_index, dim_index in zip(array_indices, dim_indices):
+            dim = self.file.get(f'{group_path[0]}/dim{dim_index}')
+            offset, scale = self._parse_axis(dim)
+            if self._is_prismatic_file:
+                if dataset_name == 'datacube':
+                    # For datacube (4D STEM), the signal is detector coordinate
+                    sig_dim = ['dim3', 'dim4']
+                else:
+                    sig_dim = ['dim1', 'dim2']
+
+                navigate = dim.name.split('/')[-1] not in sig_dim
+
+            else:
+                navigate = False
+            axes.append({'index_in_array': arr_index,
+                         'name': self._parse_attribute(dim, 'name'),
+                         'units': self._parse_attribute(dim, 'units'),
+                         'size': shape[arr_index],
+                         'offset': offset,
+                         'scale': scale,
+                         'navigate': navigate,
+                         })
+        return data, axes
+
+    def _parse_attribute(self, obj, key):
+        value = obj.attrs.get(key)
+        if value is None:
+            value = t.Undefined
+        else:
+            if not isinstance(value, str):
+                value = value.decode()
+            if key == 'units':
+                # Get all the units
+                units_list = re.findall(r"(\[.+?\])", value)
+                units_list = [u[1:-1].replace("_", "") for u in units_list]
+                value = ' * '.join(units_list)
+                try:
+                    units = _ureg.parse_units(value)
+                    value = f"{units:~}"
+                except:
+                    pass
+        return value
+
+    def _parse_metadata(self, group_basename, title=''):
+        filename = self.file if isinstance(self.file, str) else self.file.filename
+        md = {
+            'General': {'title': title.replace('_depth', ''),
+                'original_filename': os.path.split(filename)[1]},
+            "Signal": {'signal_type': ""}
+            }
+        if 'CBED' in group_basename:
+            md['Signal']['signal_type'] = 'electron_diffraction'
+        return md
+
+    def _parse_original_metadata(self):
+        f = self.file
+        om = {'EMD_version':self._read_emd_version(self.file.get('/'))}
+        for group_name in ['microscope', 'sample', 'user', 'comments']:
+            group = f.get(group_name)
+            if group is not None:
+                om.update({group_name:{key:value for key, value in group.attrs.items()}})
+
+        if self._is_prismatic_file:
+            md_mapping = {'i':'filenameAtoms', 'a': 'algorithm',
+                'fx':'interpolationFactorX', 'fy':'interpolationFactorY',
+                'F':'numFP', 'ns':'numSlices', 'te':'includeThermalEffects',
+                'oc':'includeOccupancy', '3D':'save3DOutput', '4D': 'save3DOutput',
+                'DPC':'saveDPC_CoM', 'ps':'savePotentialSlices', 'nqs':'nyquistSampling',
+                'px':'realspacePixelSizeX', 'py':'realspacePixelSizeY',
+                'P':'potBound', 's':'sliceThickness', 'zs': 'zStart', 'E':'E0',
+                'A':'alphaBeamMax', 'rx':'probeStepX', 'ry':'probeStepY',
+                'df':'probeDefocus', 'sa':'probeSemiangle', 'd':'detectorAngleStep',
+                'tx':'probeXtilt', 'ty':'probeYtilt', 'c':'cellDimension',
+                't':'tile', 'wx':'scanWindowX', 'wy':'scanWindowY',
+                'wxr':'scanWindowX_r', 'wyr':'scanWindowY_r','2D':'integrationAngle'}
+            simu_md = f.get(
+                '4DSTEM_simulation/metadata/metadata_0/original/simulation_parameters')
+            om['simulation_parameters'] = {md_mapping.get(k, k):v for k, v in
+                                           simu_md.attrs.items()}
+
+        return om
+
+    @staticmethod
+    def _parse_axis(axis_data):
+        """
+        Estimate, offset, scale from a 1D array
+        """
+        if axis_data.ndim > 0 and np.issubdtype(axis_data.dtype, np.number):
+            offset, scale = axis_data[0], np.diff(axis_data).mean()
+        else:
+            # This is a string, return default values
+            # When non-uniform axis is supported we should be able to parse
+            # string
+            offset, scale = 0, 1
+        return offset, scale
+
+    def write_file(self, file, signal, **kwargs):
+        """
+        Write signal to file.
+
+        Parameters
+        ----------
+        file : str of h5py file handle
+            If str, filename of the file to write, otherwise a h5py file handle
+        signal : instance of hyperspy signal
+            The signal to save.
+        **kwargs : dict
+            Keyword argument are passed to the ``h5py.Group.create_dataset``
+            method.
+
+        """
+        if isinstance(file, str):
+            emd_file = h5py.File(file, 'w')
+        # Write version:
+        ver_maj, ver_min = EMD_VERSION.split('.')
+        emd_file.attrs['version_major'] = ver_maj
+        emd_file.attrs['version_minor'] = ver_min
+
+        # Write attribute from the original_metadata
+        om = signal.original_metadata
+        for group_name in ['microscope', 'sample', 'user', 'comments']:
+            group = emd_file.require_group(group_name)
+            d = om.get_item(group_name, None)
+            if d is not None:
+                for key, value in d.as_dictionary().items():
+                    group.attrs[key] = value
+
+        # Write signals:
+        signal_group = emd_file.require_group('signals')
+        signal_group.attrs['emd_group_type'] = 1
+        self._write_signal_to_group(signal_group, signal, **kwargs)
+        emd_file.close()
+
+    def _write_signal_to_group(self, signal_group, signal, chunks=None,
+                               **kwargs):
+        # Save data:
+        title = signal.metadata.General.title or '__unnamed__'
+        dataset = signal_group.require_group(title)
+        data = signal.data.T
+        maxshape = tuple(None for _ in data.shape)
+        if np.issubdtype(data.dtype, np.dtype('U')):
+            # Saving numpy unicode type is not supported in h5py
+            data = data.astype(np.dtype('S'))
+        if chunks is None:
+            if isinstance(data, da.Array):
+                # For lazy dataset, by default, we use the current dask chunking
+                chunks = tuple([c[0] for c in data.chunks])
+            else:
+                signal_axes = signal.axes_manager.signal_indices_in_array
+                chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
+        # when chunks=True, we leave it to h5py `guess_chunk`
+        elif chunks is not True:
+            # Need to reverse since the data is transposed when saving
+            chunks = chunks[::-1]
+
+        dataset.create_dataset('data', data=data, maxshape=maxshape,
+                               chunks=chunks, **kwargs)
+
+        array_indices = np.arange(0, len(data.shape))
+        dim_indices = (array_indices + 1)[::-1]
+        # Iterate over all dimensions:
+        for i, dim_index in zip(array_indices, dim_indices):
+            key = f'dim{dim_index}'
+            axis = signal.axes_manager._axes[i]
+            offset = axis.offset
+            scale = axis.scale
+            dim = dataset.create_dataset(key, data=[offset, offset + scale])
+            name = axis.name
+            if name is t.Undefined:
+                name = ''
+            dim.attrs['name'] = name
+            units = axis.units
+            if units is t.Undefined:
+                units = ''
+            else:
+                units = '[{}]'.format('_'.join(list(units)))
+            dim.attrs['units'] = units
+        # Write metadata:
+        dataset.attrs['emd_group_type'] = 1
+        for key, value in signal.metadata.Signal:
+            try:  # If something h5py can't handle is saved in the metadata...
+                dataset.attrs[key] = value
+            except Exception:  # ...let the user know what could not be added!
+                _logger.warning("The following information couldn't be "
+                                f"written in the file: {key}: {value}")
 
 
 def _get_keys_from_group(group):
@@ -512,22 +898,12 @@ def _get_keys_from_group(group):
 
 def _parse_sub_data_group_metadata(sub_data_group):
     metadata_array = sub_data_group['Metadata'][:, 0].T
-    mdata_string = metadata_array.tostring().decode("utf-8")
+    mdata_string = metadata_array.tobytes().decode("utf-8")
     return json.loads(mdata_string.rstrip('\x00'))
 
 
 def _parse_metadata(data_group, sub_group_key):
     return _parse_sub_data_group_metadata(data_group[sub_group_key])
-
-
-def _parse_detector_name(original_metadata):
-    try:
-        name = original_metadata['BinaryResult']['Detector']
-    except KeyError:
-        # if the `BinaryResult/Detector` is not available, there should be
-        # only one detector in `Detectors`
-        name = original_metadata['Detectors']['Detector-01']['DetectorName']
-    return name
 
 
 def _get_detector_metadata_dict(om, detector_name):
@@ -555,14 +931,14 @@ class FeiEMDReader(object):
 
     """
 
-    def __init__(self, filename, select_type=None, first_frame=0,
+    def __init__(self, filename=None, select_type=None, first_frame=0,
                  last_frame=None, sum_frames=True, sum_EDS_detectors=True,
                  rebin_energy=1, SI_dtype=None, load_SI_image_stack=False,
                  lazy=False):
         # TODO: Finish lazy implementation using the `FrameLocationTable`
         # Parallelise streams reading
         self.filename = filename
-        self.ureg = pint.UnitRegistry()
+        self.select_type = select_type
         self.dictionaries = []
         self.first_frame = first_frame
         self.last_frame = last_frame
@@ -573,22 +949,17 @@ class FeiEMDReader(object):
         self.load_SI_image_stack = load_SI_image_stack
         self.lazy = lazy
         self.detector_name = None
-
         self.original_metadata = {}
-        try:
-            f = h5py.File(filename, 'r')
-            self.d_grp = f.get('Data')
-            self._check_im_type()
-            self._parse_metadata_group(f.get('Operations'), 'Operations')
-            if self.im_type == 'SpectrumStream':
-                self.p_grp = f.get('Presentation')
-                self._parse_image_display()
-            self._read_data(select_type)
-        except Exception as e:
-            raise e
-        finally:
-            if not self.lazy:
-                f.close()
+
+    def read_file(self, f):
+        self.filename = f.filename
+        self.d_grp = f.get('Data')
+        self._check_im_type()
+        self._parse_metadata_group(f.get('Operations'), 'Operations')
+        if self.im_type == 'SpectrumStream':
+            self.p_grp = f.get('Presentation')
+            self._parse_image_display()
+        self._read_data(self.select_type)
 
     def _read_data(self, select_type):
         self.load_images = self.load_SI = self.load_single_spectrum = True
@@ -652,6 +1023,10 @@ class FeiEMDReader(object):
                                             spectrum_sub_group_key)
         original_metadata.update(self.original_metadata)
 
+        # Can be used in more recent version of velox emd files
+        self.detector_information = self._get_detector_information(
+                original_metadata)
+
         dispersion, offset, unit = self._get_dispersion_offset(
             original_metadata)
         axes = []
@@ -708,28 +1083,56 @@ class FeiEMDReader(object):
         image_sub_group = image_group[image_sub_group_key]
         original_metadata = _parse_metadata(image_group, image_sub_group_key)
         original_metadata.update(self.original_metadata)
-        if 'Detector' in original_metadata['BinaryResult'].keys():
-            self.detector_name = _parse_detector_name(original_metadata)
+
+        # Can be used in more recent version of velox emd files
+        self.detector_information = self._get_detector_information(
+                original_metadata)
+        self.detector_name = self._get_detector_name(image_sub_group_key)
 
         read_stack = (self.load_SI_image_stack or self.im_type == 'Image')
         h5data = image_sub_group['Data']
         # Get the scanning area shape of the SI from the images
         self.spatial_shape = h5data.shape[:-1]
-        # Set the axes in frame, y, x order
-        if self.lazy:
-            data = da.transpose(
-                da.from_array(
-                    h5data,
-                    chunks=h5data.chunks),
-                axes=[2, 0, 1])
+        # For Velox FFT data, dtype must be specified and lazy is not
+        # supported due to special dtype. The data is loaded as-is; to get
+        # a traditional view the negative half must be created and the data
+        # must be re-centered
+        # Similar story for DPC signal
+        fft_dtype = [('realFloatHalfEven', '<f4'),
+                     ('imagFloatHalfEven', '<f4')]
+        dpc_dtype = [('realFloat', '<f4'),
+                     ('imagFloat', '<f4')]
+        if h5data.dtype == fft_dtype or h5data.dtype == dpc_dtype:
+            _logger.debug("Found an FFT or DPC, loading as Complex2DSignal")
+            real = h5data.dtype.descr[0][0]
+            imag = h5data.dtype.descr[1][0]
+            if self.lazy:
+                data = da.from_array(h5data, chunks=h5data.chunks)
+                data = data[real] + 1j * data[imag]
+                data = da.transpose(data, axes=[2, 0, 1])
+            else:
+                data = np.empty(h5data.shape, h5data.dtype)
+                h5data.read_direct(data)
+                data = data[real] + 1j * data[imag]
+                # Set the axes in frame, y, x order
+                data = np.rollaxis(data, axis=2)
         else:
-            # Workaround for a h5py bug https://github.com/h5py/h5py/issues/977
-            # Change back to standard API once issue #977 is fixed.
-            # Preallocate the numpy array and use read_direct method, which is
-            # much faster in case of chunked data.
-            data = np.empty(h5data.shape)
-            h5data.read_direct(data)
-            data = np.rollaxis(data, axis=2)
+            if self.lazy:
+                data = da.transpose(
+                    da.from_array(
+                        h5data,
+                        chunks=h5data.chunks),
+                    axes=[2, 0, 1])
+            else:
+                # Workaround for a h5py bug https://github.com/h5py/h5py/issues/977
+                # Change back to standard API once issue #977 is fixed.
+                # Preallocate the numpy array and use read_direct method, which is
+                # much faster in case of chunked data.
+                # Do not specify dtype in np.empty, slows down substantially!
+                data = np.empty(h5data.shape)
+                h5data.read_direct(data)
+                # Set the axes in frame, y, x order
+                data = np.rollaxis(data, axis=2)
 
         pix_scale = original_metadata['BinaryResult'].get(
             'PixelSize', {'height': 1.0, 'width': 1.0})
@@ -748,7 +1151,12 @@ class FeiEMDReader(object):
             data = data[0, ...]
             i = 0
         else:
-            frame_time = original_metadata['Scan']['FrameTime']
+            if "FrameTime" in original_metadata["Scan"]:
+                frame_time = original_metadata['Scan']['FrameTime']
+            else:
+                _logger.debug("No Frametime found, likely TEM image stack")
+                det_ind = original_metadata["BinaryResult"]["DetectorIndex"]
+                frame_time = original_metadata["Detectors"][f"Detector-{det_ind}"]["ExposureTime"]
             frame_time, time_unit = self._convert_scale_units(
                 frame_time, 's', 2 * data.shape[0])
             axes.append({'index_in_array': 0,
@@ -784,7 +1192,6 @@ class FeiEMDReader(object):
                      ])
 
         md = self._get_metadata_dict(original_metadata)
-        md['Signal']['signal_type'] = 'image'
         if self.detector_name is not None:
             original_metadata['DetectorMetadata'] = _get_detector_metadata_dict(
                 original_metadata,
@@ -799,6 +1206,75 @@ class FeiEMDReader(object):
                 'original_metadata': original_metadata,
                 'mapping': self._get_mapping(map_selected_element=False,
                                              parse_individual_EDS_detector_metadata=False)}
+
+    def _get_detector_name(self, key):
+        def iDPC_or_dDPC(metadata):
+            return 'iDPC' if metadata == 'true' else 'dDPC'
+
+        om = self.original_metadata['Operations']
+        keys = ['CameraInputOperation',
+                'StemInputOperation',
+                'SurfaceReconstructionOperation',
+                'MathematicsOperation',
+                'DpcOperation',
+                'IntegrationOperation',
+                'FftOperation',
+                ]
+
+        for k in keys:
+            if k in om.keys() and k == keys[0]:
+                for metadata in om[k].items():
+                    # Find the metadata group matching the key in the dataPath
+                    if key in metadata[1]['dataPath']:
+                        return metadata[1]['cameraName']
+            if k in om.keys() and k == keys[1]:
+                for metadata in om[k].items():
+                    # Find the metadata group matching the key in the dataPath
+                    if key in metadata[1]['dataPath']:
+                        return metadata[1]['detector']
+            if k in om.keys() and k == keys[2]:
+                for metadata in om[k].items():
+                    # Look first for the key in the unfilteredDataPath
+                    if 'unfilteredDataPath' in metadata[1].keys() and (
+                            key in metadata[1]['unfilteredDataPath']):
+                        return iDPC_or_dDPC(metadata[1]['integrationMode'])
+                    # Then look for the key in the DataPath
+                    if key in metadata[1]['dataPath']:
+                        detector_name = iDPC_or_dDPC(metadata[1]['integrationMode'])
+                        if metadata[1]['enableFilter'] == 'true':
+                            detector_name = "Filtered {}".format(detector_name)
+                        return detector_name
+            if k in om.keys() and k == keys[3]:
+                for metadata in om[k].items():
+                    if key in metadata[1]["dataPath"]:
+                        if metadata[1]["outputs"][0]["inputIndex"] == "0":
+                            return "A-C"
+                        elif metadata[1]["outputs"][0]["inputIndex"] == "1":
+                            return "B-D"
+            if k in om.keys() and k == keys[4]:
+                for metadata in om[k].items():
+                    if key in metadata[1]['dataPath']:
+                        return "DPC"
+            if k in om.keys() and k == keys[5]:
+                for metadata in om[k].items():
+                    if key in metadata[1]['dataPath']:
+                        return "DCFI"
+            if k in om.keys() and k == keys[6]:
+                for metadata in om[k].items():
+                    if key in metadata[1]['imageOutputPath']:
+                        return "Half FFT"
+        return "Unrecognized_image_signal"
+
+    def _get_detector_information(self, om):
+        # if the `BinaryResult/Detector` is not available, there should be only
+        # one detector in `Detectors`:
+        # e.g. original_metadata['Detectors']['Detector-0']
+        if 'BinaryResult' in om.keys():
+            detector_index = om['BinaryResult'].get('DetectorIndex')
+        else:
+            detector_index = 0
+        if detector_index is not None:
+            return om['Detectors']['Detector-{}'.format(detector_index)]
 
     def _parse_frame_time(self, original_metadata, factor=1):
         try:
@@ -912,6 +1388,10 @@ class FeiEMDReader(object):
         original_metadata = streams[0].original_metadata
         original_metadata.update(self.original_metadata)
 
+        # Can be used in more recent version of velox emd files
+        self.detector_information = self._get_detector_information(
+                original_metadata)
+
         pixel_size, offsets, original_units = \
             streams[0].get_pixelsize_offset_unit()
         dispersion, offset, unit = self._get_dispersion_offset(
@@ -993,7 +1473,7 @@ class FeiEMDReader(object):
         if units == t.Undefined:
             return value, units
         factor /= 2
-        v = np.float(value) * self.ureg(units)
+        v = float(value) * _ureg(units)
         converted_v = (factor * v).to_compact()
         converted_value = float(converted_v.magnitude / factor)
         converted_units = '{:~}'.format(converted_v.units)
@@ -1226,34 +1706,144 @@ class FeiSpectrumStream(object):
         return spectrum_image
 
 
-def file_reader(filename, log_info=False,
-                lazy=False, **kwds):
-    dictionaries = []
-    if fei_check(filename) == True:
-        _logger.debug('EMD is FEI format')
-        emd = FeiEMDReader(filename, lazy=lazy, **kwds)
-        dictionaries = emd.dictionaries
+def read_emd_version(group):
+    """Function to read the emd file version from a group. The EMD version is
+    saved in the attributes 'version_major' and 'version_minor'.
+
+    Parameters
+    ----------
+    group : hdf5 group
+        The group to extract the version from.
+
+    Returns
+    -------
+    file version : str
+        Empty string if the file version is not defined in this group
+
+    """
+    major = group.attrs.get('version_major', None)
+    minor = group.attrs.get('version_minor', None)
+    if major is not None and minor is not None:
+        return f"{major}.{minor}"
     else:
-        emd = EMD.load_from_emd(filename, lazy, **kwds)
-        if log_info:
-            emd.log_info()
-        for signal in emd.signals.values():
-            dictionaries.append(signal._to_dictionary())
+        return ""
+
+
+def is_EMD_NCEM(file):
+    """
+    Parameters
+    ----------
+    file : h5py file handle
+        DESCRIPTION.
+
+    Returns
+    -------
+    bool
+        DESCRIPTION.
+
+    """
+    def _is_EMD_NCEM(file):
+        for group in file:
+            if read_emd_version != '':
+                return True
+        return False
+
+    if isinstance(file, str):
+        with h5py.File(file, 'r') as f:
+            return _is_EMD_NCEM(f)
+    else:
+        return _is_EMD_NCEM(file)
+
+
+def is_EMD_Velox(file):
+    """Function to check if the EMD file is an Velox file.
+
+    Parameters
+    ----------
+    file : string or HDF5 file handle
+        The name of the emd-file from which to load the signals. Standard
+        file extension is 'emd'.
+
+    Returns
+    -------
+    True if the file is a Velox file, otherwise False
+
+    """
+    def _is_EMD_velox(file):
+        if 'Version' in list(file.keys()):
+            version = file.get('Version')
+            v_dict = json.loads(version[0].decode('utf-8'))
+            if v_dict['format'] in ['Velox', 'DevelopersKit']:
+                return True
+        return False
+
+    if isinstance(file, str):
+        with h5py.File(file, 'r') as f:
+            return _is_EMD_velox(f)
+    else:
+        return _is_EMD_velox(file)
+
+
+def file_reader(filename, lazy=False, **kwds):
+    """
+    Read EMD file, which can be a NCEM or a Velox variant of the EMD format.
+
+    Parameters
+    ----------
+    filename : str
+        Filename of the file to write.
+    lazy : bool
+        Open the data lazily. Default is False.
+    **kwds : dict
+        Keyword argument pass to the EMD NCEM or EMD Velox reader. See user
+        guide or the docstring of the `load` function for more information.
+    """
+    file = h5py.File(filename, 'r')
+    dictionaries = []
+    try:
+        if is_EMD_Velox(file):
+            _logger.debug('EMD file is a Velox variant.')
+            emd_reader = FeiEMDReader(lazy=lazy, **kwds)
+            emd_reader.read_file(file)
+        elif is_EMD_NCEM(file):
+            _logger.debug('EMD file is a Berkeley variant.')
+            dataset_name = kwds.pop('dataset_name', None)
+            if dataset_name is not None:
+                msg = (
+                    "Using 'dataset_name' is deprecated and will be removed "
+                    "in HyperSpy 2.0, use 'dataset_path' instead.")
+                warnings.warn(msg, VisibleDeprecationWarning)
+                dataset_path = f"{dataset_name}/data"
+            dataset_path = kwds.pop('dataset_path', None)
+            stack_group = kwds.pop('stack_group', None)
+            emd_reader = EMD_NCEM(**kwds)
+            emd_reader.read_file(file, lazy=lazy, dataset_path=dataset_path,
+                                 stack_group=stack_group)
+        else:
+            raise IOError("The file is not a supported EMD file.")
+    except Exception as e:
+        raise e
+    finally:
+        if not lazy:
+            file.close()
+
+    dictionaries = emd_reader.dictionaries
 
     return dictionaries
 
 
-def file_writer(filename, signal, signal_metadata=None, user=None,
-                microscope=None, sample=None, comments=None, **kwds):
-    metadata = signal.metadata.General.as_dictionary()
-    user = user or metadata.get('user', None)
-    microscope = microscope or metadata.get('microscope', None)
-    sample = sample or metadata.get('sample', None)
-    comments = comments or metadata.get('comments', None)
-    emd = EMD(
-        user=user,
-        microscope=microscope,
-        sample=sample,
-        comments=comments)
-    emd.add_signal(signal, metadata=signal_metadata)
-    emd.save_to_emd(filename)
+def file_writer(filename, signal, **kwds):
+    """
+    Write signal to EMD NCEM file.
+
+    Parameters
+    ----------
+    file : str of h5py file handle
+        If str, filename of the file to write, otherwise a h5py file handle
+    signal : instance of hyperspy signal
+        The signal to save.
+    **kwargs : dict
+        Dictionary containing metadata which will be written as attribute
+        of the root group.
+    """
+    EMD_NCEM().write_file(filename, signal, **kwds)

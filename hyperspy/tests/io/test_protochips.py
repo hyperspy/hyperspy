@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -10,18 +10,16 @@
 #
 # HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy.  If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import os
 
 import numpy as np
 import pytest
-
-from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 from hyperspy.io_plugins.protochips import ProtochipsCSV, invalid_file_error
@@ -45,7 +43,7 @@ def create_numpy_file(filename, obj):
 
 def test_read_protochips_gas_cell():
     filename = os.path.join(dirpath, 'protochips_gas_cell.csv')
-    s = hs.load(filename)
+    s = hs.load(filename, reader='protochips')
     assert len(s) == 5
     assert (s[0].metadata.General.title ==
             'Holder Temperature (Degrees C)')
@@ -86,7 +84,7 @@ def test_loading_random_csv_file():
 def test_loading_invalid_protochips_file():
     filename = os.path.join(dirpath, 'invalid_protochips_file.csv')
     with pytest.raises(IOError) as cm:
-        hs.load(filename)
+        hs.load(filename, reader='protochips')
         cm.match(invalid_file_error)
 
 
@@ -94,7 +92,7 @@ class TestProtochipsGasCellCSV():
 
     def setup_method(self, method):
         filename = os.path.join(dirpath, 'protochips_gas_cell.csv')
-        self.s_list = hs.load(filename)
+        self.s_list = hs.load(filename, reader='protochips')
 
     def test_read_metadata(self):
         date, time, dt_np = datetime_gas_cell
@@ -102,7 +100,7 @@ class TestProtochipsGasCellCSV():
             assert s.metadata.General.date == date
             assert s.metadata.General.time == time
             assert s.axes_manager[0].units == 's'
-            assert_allclose(s.axes_manager[0].scale, 0.25995, atol=1E-5)
+            np.testing.assert_allclose(s.axes_manager[0].scale, 0.25995, atol=1E-5)
             assert s.axes_manager[0].offset == 0
 
     def test_read_original_metadata(self):
@@ -125,7 +123,7 @@ class TestProtochipsGasCellCSVNoUser():
 
     def setup_method(self, method):
         filename = os.path.join(dirpath, 'protochips_gas_cell_no_user.csv')
-        self.s_list = hs.load(filename)
+        self.s_list = hs.load(filename, reader='protochips')
 
     def test_read_metadata(self):
         date, time, dt_np = datetime_gas_cell_no_user
@@ -133,7 +131,7 @@ class TestProtochipsGasCellCSVNoUser():
             assert s.metadata.General.date == date
             assert s.metadata.General.time == time
             assert s.axes_manager[0].units == 's'
-            assert_allclose(s.axes_manager[0].scale, 0.26029, atol=1E-5)
+            np.testing.assert_allclose(s.axes_manager[0].scale, 0.26029, atol=1E-5)
             assert s.axes_manager[0].offset == 0
 
     def test_read_original_metadata(self):
@@ -195,7 +193,7 @@ class TestProtochipsGasCellCSVReader():
 
 def test_read_protochips_electrical():
     filename = os.path.join(dirpath, 'protochips_electrical.csv')
-    s = hs.load(filename)
+    s = hs.load(filename, reader='protochips')
     assert len(s) == 6
     assert s[0].metadata.General.title == 'Channel A Current (Amps)'
     assert s[0].metadata.Signal.signal_type == ''
@@ -253,7 +251,7 @@ class TestProtochipsElectricalCSVReader():
 
 def test_read_protochips_thermal():
     filename = os.path.join(dirpath, 'protochips_thermal.csv')
-    s = hs.load(filename)
+    s = hs.load(filename, reader='protochips')
     assert (s.metadata.General.title ==
             'Channel A Temperature (Degrees C)')
     assert s.metadata.Signal.signal_type == ''
@@ -293,7 +291,7 @@ class TestProtochipsThermallCSVReader():
 
 def test_read_protochips_electrothermal():
     filename = os.path.join(dirpath, 'protochips_electrothermal.csv')
-    s = hs.load(filename)
+    s = hs.load(filename, reader='protochips')
     assert len(s) == 4
     assert (s[0].metadata.General.title ==
             'Channel A Temperature (Degrees C)')

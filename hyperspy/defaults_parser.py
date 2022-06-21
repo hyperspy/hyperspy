@@ -1,60 +1,60 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
-import os.path
 import configparser
 import logging
+import os
+from pathlib import Path
 
 import traits.api as t
 
-from hyperspy.misc.config_dir import config_path, os_name, data_path
+from hyperspy.misc.config_dir import config_path, data_path
 from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
 from hyperspy.ui_registry import add_gui_method
 
-defaults_file = os.path.join(config_path, 'hyperspyrc')
-eels_gos_files = os.path.join(data_path, 'EELS_GOS.tar.gz')
+defaults_file = Path(config_path, 'hyperspyrc')
+eels_gos_files = Path(data_path, 'EELS_GOS.tar.gz')
 
 _logger = logging.getLogger(__name__)
 
 
 def guess_gos_path():
-    if os_name == 'windows':
+    if os.name in ["nt", "dos"]:
         # If DM is installed, use the GOS tables from the default
         # installation
         # location in windows
         program_files = os.environ['PROGRAMFILES']
         gos = 'Gatan\\DigitalMicrograph\\EELS Reference Data\\H-S GOS Tables'
-        gos_path = os.path.join(program_files, gos)
+        gos_path = Path(program_files, gos)
 
         # Else, use the default location in the .hyperspy forlder
-        if os.path.isdir(gos_path) is False and \
-                'PROGRAMFILES(X86)' in os.environ:
+        if not gos_path.is_dir() and 'PROGRAMFILES(X86)' in os.environ:
             program_files = os.environ['PROGRAMFILES(X86)']
-            gos_path = os.path.join(program_files, gos)
-            if os.path.isdir(gos_path) is False:
-                gos_path = os.path.join(config_path, 'EELS_GOS')
+            gos_path = Path(program_files, gos)
+            if not gos_path.is_dir():
+                gos_path = Path(config_path, 'EELS_GOS')
     else:
-        gos_path = os.path.join(config_path, 'EELS_GOS')
+        gos_path = Path(config_path, 'EELS_GOS')
     return gos_path
 
 
-if os.path.isfile(defaults_file):
+if defaults_file.is_file():
     # Remove config file if obsolated
     with open(defaults_file) as f:
         if 'Not really' in f.readline():
@@ -134,10 +134,25 @@ class GUIs(t.HasTraits):
         "Requires installing hyperspy_gui_traitsui.")
     warn_if_guis_are_missing = t.CBool(
         True,
-        desc="Display warnings, if hyperspy_gui_ipywidgets or hyperspy_gui_traitsui are missing.")
+        desc="Not necessary anymore and deprecated.")
 
 
 class PlotConfig(t.HasTraits):
+    saturated_pixels = t.CFloat(0.,
+                                label='Saturated pixels (deprecated)',
+                                desc='Warning: this is deprecated and will be removed in HyperSpy v2.0'
+                                )
+    # Don't use t.Enum to list all possible matplotlib colormap to
+    # avoid importing matplotlib and building the list of colormap
+    # when importing hyperpsy
+    cmap_navigator = t.Str('gray',
+                           label='Color map navigator',
+                           desc='Set the default color map for the navigator.',
+                           )
+    cmap_signal = t.Str('gray',
+                        label='Color map signal',
+                        desc='Set the default color map for the signal plot.',
+                        )
     dims_024_increase = t.Str('right',
                               label='Navigate right'
                               )
@@ -156,6 +171,10 @@ class PlotConfig(t.HasTraits):
                                'ctrl+alt+shift'], label='Modifier key for 3rd and 4th dimensions')  # 0 elem is default
     modifier_dims_45 = t.Enum(['alt', 'ctrl', 'shift', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
                                'ctrl+alt+shift'], label='Modifier key for 5th and 6th dimensions')  # 0 elem is default
+    pick_tolerance = t.CFloat(7.5,
+                              label='Pick tolerance',
+                              desc='The pick tolerance of ROIs in screen pixels.'
+                              )
 
 
 class EDSConfig(t.HasTraits):
@@ -187,9 +206,9 @@ template = {
     'Plot': PlotConfig(),
 }
 
+
 # Set the enums defaults
 template['General'].logging_level = 'WARNING'
-
 # Defaults template definition ends ######################################
 
 
@@ -250,7 +269,7 @@ if not defaults_file_exists or rewrite is True:
 config2template(template, config)
 
 
-@add_gui_method(toolkey="Preferences")
+@add_gui_method(toolkey="hyperspy.Preferences")
 class Preferences(t.HasTraits):
     EELS = t.Instance(EELSConfig)
     EDS = t.Instance(EDSConfig)
@@ -271,6 +290,7 @@ preferences = Preferences(
     GUIs=template['GUIs'],
     Plot=template['Plot'],
 )
+
 
 if preferences.General.logger_on:
     turn_logging_on(verbose=0)

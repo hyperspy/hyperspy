@@ -1,23 +1,22 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from datetime import datetime as dt
-import warnings
 import codecs
 import os
 import logging
@@ -25,7 +24,6 @@ import logging
 import numpy as np
 from traits.api import Undefined
 
-from hyperspy.misc.config_dir import os_name
 from hyperspy import Release
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
@@ -40,6 +38,7 @@ file_extensions = ('msa', 'ems', 'mas', 'emsa', 'EMS', 'MAS', 'EMSA', 'MSA')
 default_extension = 0
 # Writing capabilities
 writes = [(1, 0), ]
+non_uniform_axis = False
 # ----------------------
 
 # For a description of the EMSA/MSA format, incluiding the meaning of the
@@ -160,8 +159,8 @@ def parse_msa_string(string, filename=None):
     --------
     file_data_list: list
         The list containts a dictionary that contains the parsed
-        information. It can be used to create a `:class:BaseSignal`
-        using `:func:hyperspy.io.dict2signal`.
+        information. It can be used to create a :py:class:`~.signal.BaseSignal`
+        using :py:func:`~.io.dict2signal`.
 
     """
     if not hasattr(string, "readlines"):
@@ -212,18 +211,26 @@ def parse_msa_string(string, filename=None):
         else:
             clean_par, units = parameter, None
         if clean_par in keywords:
+            type_ = keywords[clean_par]['dtype']
             try:
-                parameters[parameter] = keywords[clean_par]['dtype'](value)
+                parameters[parameter] = type_(value)
             except BaseException:
-                # Normally the offending mispelling is a space in the scientic
-                # notation, e.g. 2.0 E-06, so we try to correct for it
-                try:
-                    parameters[parameter] = keywords[clean_par]['dtype'](
-                        value.replace(' ', ''))
-                except BaseException:
-                    _logger.exception(
-                        "The %s keyword value, %s could not be converted to "
-                        "the right type", parameter, value)
+                error = f"The {parameter} keyword value, {value} could \
+                    not be converted to the right type."
+                if 'e' in value.lower():
+                    # Normally, the offending misspelling is a space in the 
+                    # scientific notation, e.g. 2.0 E-06
+                    try:
+                        parameters[parameter] = type_(value.replace(' ', ''))
+                    except BaseException:  # pragma: no cover
+                        _logger.exception(error)
+                else:
+                    # Some files have two values separated by a space
+                    # https://eelsdb.eu/wp-content/uploads/2017/03/Cu4O3-O-K.msa
+                    try:
+                        parameters[parameter] = type_(value.split(' ')[0])
+                    except BaseException:  # pragma: no cover
+                        _logger.exception(error)
 
             if keywords[clean_par]['mapped_to'] is not None:
                 mapped.set_item(keywords[clean_par]['mapped_to'],
@@ -236,9 +243,10 @@ def parse_msa_string(string, filename=None):
             time = dt.strptime(parameters['TIME'], "%H:%M")
             mapped.set_item('General.time', time.time().isoformat())
         except ValueError as e:
-            _logger.warning('Possible malformed TIME field in msa file. The time information could not be retrieved.: %s' % e)
-    else:
-        _logger.warning('TIME information missing.')
+            _logger.warning(
+                'Possible malformed TIME field in msa file. The time '
+                f'information could not be retrieved.: {e}'
+                )
 
     malformed_date_error = 'Possibly malformed DATE in msa file. The date information could not be retrieved.'
     if "DATE" in parameters and parameters["DATE"]:

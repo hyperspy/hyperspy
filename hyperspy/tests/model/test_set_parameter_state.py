@@ -1,4 +1,5 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -13,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import numpy as np
@@ -130,3 +131,48 @@ class TestSetParameterInModel:
         assert not g3.A.free
         assert not g3.sigma.free
         assert not g3.centre.free
+
+    def test_set_parameter_in_model_linearity(self):
+        m = self.model
+        g1 = self.g1
+        g2 = self.g2
+        g3 = self.g3
+
+        m.set_parameters_not_free(only_linear=True)
+        assert not g1.A.free
+        assert not g2.A.free
+        assert not g3.A.free
+        assert g1.sigma.free
+        assert g1.centre.free
+
+        m.set_parameters_not_free(only_nonlinear=True)
+        assert not g1.A.free
+        assert not g2.A.free
+        assert not g3.A.free
+        assert not g1.sigma.free
+        assert not g1.centre.free
+
+        m.set_parameters_free([g1], only_linear=True)
+        assert g1.A.free
+        assert not g1.sigma.free
+        assert not g1.centre.free
+        assert not g2.A.free
+        assert not g2.sigma.free
+        assert not g2.centre.free
+
+        m.set_parameters_free(only_linear=True)
+        assert g1.A.free
+        assert not g1.sigma.free
+        assert not g1.centre.free
+        assert g2.A.free
+        assert not g2.sigma.free
+        assert not g2.centre.free
+
+        m.set_parameters_not_free(only_linear=True)
+        m.set_parameters_free(only_nonlinear=True)
+        assert not g2.A.free
+        assert g2.sigma.free
+        assert g2.centre.free
+        assert not g3.A.free
+        assert g3.sigma.free
+        assert g3.centre.free

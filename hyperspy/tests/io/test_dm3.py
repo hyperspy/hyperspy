@@ -1,32 +1,35 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
+import json
 import os
 
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
 
+from hyperspy import __version__ as hs_version
+from hyperspy.io import load
+from hyperspy.io_plugins.digital_micrograph import (DigitalMicrographReader,
+                                                    ImageObject)
+from hyperspy.signals import Signal1D, Signal2D
 from hyperspy.tests.io.generate_dm_testing_files import (dm3_data_types,
                                                          dm4_data_types)
-from hyperspy.io import load
-from hyperspy.io_plugins.digital_micrograph import DigitalMicrographReader, ImageObject
 
 MY_PATH = os.path.dirname(__file__)
 
@@ -66,7 +69,12 @@ class TestImageObject():
 
     def test_parse_string(self):
         assert self.imageobject._parse_string("") is None
-        assert self.imageobject._parse_string("string") is "string"
+        assert self.imageobject._parse_string("string") == "string"
+
+    def test_parse_string_convert_float(self):
+        assert self.imageobject._parse_string("5", False) == '5'
+        assert self.imageobject._parse_string("5", True) == 5
+        assert self.imageobject._parse_string("Imaging", True) == None
 
 
 def test_missing_tag():
@@ -74,8 +82,8 @@ def test_missing_tag():
                          "test_diffraction_pattern_tags_removed.dm3")
     s = load(fname)
     md = s.metadata
-    assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
-    assert_allclose(md.Acquisition_instrument.TEM.Camera.exposure, 0.2)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Camera.exposure, 0.2)
     assert md.General.date == "2014-07-09"
     assert md.General.time == "18:56:37"
     assert md.General.title == "test_diffraction_pattern_tags_removed"
@@ -86,9 +94,9 @@ def test_read_TEM_metadata():
     s = load(fname)
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "TEM"
-    assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
-    assert_allclose(md.Acquisition_instrument.TEM.Camera.exposure, 0.5)
-    assert_allclose(md.Acquisition_instrument.TEM.magnification, 51.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Camera.exposure, 0.5)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.magnification, 51.0)
     assert md.Acquisition_instrument.TEM.microscope == "FEI Tecnai"
     assert md.General.date == "2015-07-20"
     assert md.General.original_filename == "test_dm_image_um_unit.dm3"
@@ -106,9 +114,9 @@ def test_read_Diffraction_metadata():
     s = load(fname)
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "TEM"
-    assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
-    assert_allclose(md.Acquisition_instrument.TEM.Camera.exposure, 0.2)
-    assert_allclose(md.Acquisition_instrument.TEM.camera_length, 320.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Camera.exposure, 0.2)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.camera_length, 320.0)
     assert md.Acquisition_instrument.TEM.microscope == "FEI Tecnai"
     assert md.General.date == "2014-07-09"
     assert (
@@ -125,10 +133,10 @@ def test_read_STEM_metadata():
     s = load(fname)
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
-    assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
-    assert_allclose(md.Acquisition_instrument.TEM.dwell_time, 3.5E-6)
-    assert_allclose(md.Acquisition_instrument.TEM.camera_length, 135.0)
-    assert_allclose(
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.dwell_time, 3.5E-6)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.camera_length, 135.0)
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.magnification,
         225000.0)
     assert md.Acquisition_instrument.TEM.microscope == "FEI Titan"
@@ -145,28 +153,28 @@ def test_read_EELS_metadata():
     s = load(fname)
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
-    assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
     assert md.Acquisition_instrument.TEM.microscope == "FEI Titan"
-    assert_allclose(md.Acquisition_instrument.TEM.camera_length, 135.0)
-    assert_allclose(
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.camera_length, 135.0)
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.magnification,
         640000.0)
-    assert_allclose(md.Acquisition_instrument.TEM.Stage.tilt_alpha, 24.95,
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Stage.tilt_alpha, 24.95,
                     atol=1E-2)
-    assert_allclose(md.Acquisition_instrument.TEM.Stage.x, -0.478619,
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Stage.x, -0.478619,
                     atol=1E-2)
-    assert_allclose(md.Acquisition_instrument.TEM.Stage.y, 0.0554612,
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Stage.y, 0.0554612,
                     atol=1E-2)
-    assert_allclose(md.Acquisition_instrument.TEM.Stage.z, 0.036348,
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Stage.z, 0.036348,
                     atol=1E-2)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.convergence_angle, 21.0)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EELS.collection_angle, 0.0)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EELS.exposure,
         0.0035)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EELS.frame_number, 50)
     assert (
         md.Acquisition_instrument.TEM.Detector.EELS.spectrometer ==
@@ -180,12 +188,32 @@ def test_read_EELS_metadata():
     assert md.General.time == "19:35:17"
     assert md.Signal.quantity == "Electrons (Counts)"
     assert md.Signal.signal_type == "EELS"
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Signal.Noise_properties.Variance_linear_model.gain_factor,
         0.1285347)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Signal.Noise_properties.Variance_linear_model.gain_offset,
         0.0)
+
+
+def test_read_SI_metadata():
+    fname = os.path.join(MY_PATH, "dm4_3D_data", "EELS_SI.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
+    assert md.General.date == "2019-05-14"
+    assert md.General.time == "20:50:13"
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.TEM.Detector.EELS.aperture_size, 5.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.TEM.convergence_angle, 21.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.TEM.Detector.EELS.collection_angle, 62.0)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.TEM.Detector.EELS.frame_number, 1)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.TEM.Detector.EELS.dwell_time,
+        1.9950125E-2)
 
 
 def test_read_EDS_metadata():
@@ -193,22 +221,22 @@ def test_read_EDS_metadata():
     s = load(fname)
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EDS.azimuth_angle, 45.0)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EDS.elevation_angle, 18.0)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa, 130.0)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EDS.live_time, 3.806)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EDS.real_time, 4.233)
-    assert_allclose(md.Acquisition_instrument.TEM.Stage.tilt_alpha, 24.95,
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.Stage.tilt_alpha, 24.95,
                     atol=1E-2)
-    assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
     assert md.Acquisition_instrument.TEM.microscope == "FEI Titan"
-    assert_allclose(md.Acquisition_instrument.TEM.camera_length, 135.0)
-    assert_allclose(
+    np.testing.assert_allclose(md.Acquisition_instrument.TEM.camera_length, 135.0)
+    np.testing.assert_allclose(
         md.Acquisition_instrument.TEM.magnification,
         320000.0)
     assert md.General.date == "2016-08-08"
@@ -217,13 +245,205 @@ def test_read_EDS_metadata():
     assert md.General.time == "21:46:19"
     assert md.Signal.quantity == "X-rays (Counts)"
     assert md.Signal.signal_type == "EDS_TEM"
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Signal.Noise_properties.Variance_linear_model.gain_factor,
         1.0)
-    assert_allclose(
+    np.testing.assert_allclose(
         md.Signal.Noise_properties.Variance_linear_model.gain_offset,
         0.0)
+    assert s.axes_manager[-1].units == "keV"
 
+def test_read_MonoCL_pmt_metadata():
+    fname = os.path.join(MY_PATH, "dm4_1D_data", "test-MonoCL_spectrum-pmt.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.format == "Spectrum"
+    assert md.Signal.quantity == "Intensity (Counts)"
+    assert md.General.date == "2020-10-27"
+    assert md.General.original_filename == "test-MonoCL_spectrum-pmt.dm4"
+    assert md.General.title == "test-CL_spectrum-pmt"
+    assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Serial dispersive"
+    assert md.Acquisition_instrument.Detector.detector_type == "PMT"
+    assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 1200
+    assert md.Acquisition_instrument.Detector.integration_time == 1.0
+    assert md.Acquisition_instrument.Spectrometer.step_size == 0.5
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Spectrometer.start_wavelength, 166.233642)
+
+def test_read_MonarcCL_pmt_metadata():
+    fname = os.path.join(MY_PATH, "dm4_1D_data", "test-MonarcCL_spectrum-pmt.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.format == "Spectrum"
+    assert md.Signal.quantity == "Intensity (Counts)"
+    assert md.General.date == "2022-01-17"
+    assert md.General.original_filename == "test-MonarcCL_spectrum-pmt.dm4"
+    assert md.General.title == "CL_15kX_3-60_pmt2s"
+    assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Serial dispersive"
+    assert md.Acquisition_instrument.Detector.detector_type == "PMT"
+    assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 300
+    assert md.Acquisition_instrument.Detector.integration_time == 2.0
+    assert md.Acquisition_instrument.Spectrometer.step_size == 1.0
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Spectrometer.start_wavelength, 160.067505)
+
+def test_read_MonoCL_ccd_metadata():
+    fname = os.path.join(MY_PATH, "dm4_1D_data", "test-MonoCL_spectrum-ccd.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.format == "Spectrum"
+    assert md.Signal.quantity == "Intensity (Counts)"
+    assert md.General.date == "2020-09-11"
+    assert md.General.time == "17:04:19"
+    assert md.General.original_filename == "test-MonoCL_spectrum-ccd.dm4"
+    assert md.General.title == "test-CL_spectrum-ccd"
+    assert md.Acquisition_instrument.Detector.detector_type == "CCD"
+    assert md.Acquisition_instrument.SEM.acquisition_mode == "SEM"
+    assert md.Acquisition_instrument.SEM.microscope == "Ultra55"
+    assert md.Acquisition_instrument.SEM.beam_energy == 5.0
+    assert md.Acquisition_instrument.SEM.magnification == 10104.515625
+    assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Parallel dispersive"
+    assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 300.0
+    assert md.Acquisition_instrument.Detector.exposure_per_frame == 30.0
+    assert md.Acquisition_instrument.Detector.frames == 1.0
+    assert md.Acquisition_instrument.Detector.integration_time == 30.0
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Spectrometer.central_wavelength, 949.974182)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Detector.saturation_fraction, 0.01861909)
+    assert md.Acquisition_instrument.Detector.binning == (1, 100)
+    assert md.Acquisition_instrument.Detector.processing == "Dark Subtracted"
+    assert md.Acquisition_instrument.Detector.sensor_roi == (0, 0, 100, 1336)
+    assert md.Acquisition_instrument.Detector.pixel_size == 20.0
+
+def test_read_MonarcCL_ccd_metadata():
+    fname = os.path.join(MY_PATH, "dm4_1D_data", "test-MonarcCL_spectrum-ccd.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.format == "Spectrum"
+    assert md.Signal.quantity == "Intensity (Counts)"
+    assert md.General.date == "2022-01-17"
+    assert md.General.time == "16:09:21"
+    assert md.General.original_filename == "test-MonarcCL_spectrum-ccd.dm4"
+    assert md.General.title == "CL_15kX_3-60_CCD300s_bin2"
+    assert md.Acquisition_instrument.Detector.detector_type == "CCD"
+    assert md.Acquisition_instrument.SEM.acquisition_mode == "SEM"
+    assert md.Acquisition_instrument.SEM.microscope == "Ultra55"
+    assert md.Acquisition_instrument.SEM.beam_energy == 3.0
+    assert md.Acquisition_instrument.SEM.magnification == 15000.0
+    assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Parallel dispersive"
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Spectrometer.central_wavelength, 320.049683)
+    assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 300.0
+    assert md.Acquisition_instrument.Detector.exposure_per_frame == 300.0
+    assert md.Acquisition_instrument.Detector.frames == 1.0
+    assert md.Acquisition_instrument.Detector.integration_time == 300.0
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Detector.saturation_fraction, 0.08890307)
+    assert md.Acquisition_instrument.Detector.binning == (2, 100)
+    assert md.Acquisition_instrument.Detector.processing == "Dark Subtracted"
+    assert md.Acquisition_instrument.Detector.sensor_roi == (0, 0, 100, 1336)
+    assert md.Acquisition_instrument.Detector.pixel_size == 20.0
+    #assert md.Acquisition_instrument.Spectrometer.entrance_slit_width == 1
+
+def test_read_MonoCL_SI_metadata():
+    fname = os.path.join(MY_PATH, "dm4_2D_data", "test-MonoCL_spectrum-SI.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.format == "Spectrum image"
+    assert md.Signal.quantity == "Intensity (Counts)"
+    assert md.General.date == "2020-04-11"
+    assert md.General.time == "14:41:01"
+    assert md.General.original_filename == "test-MonoCL_spectrum-SI.dm4"
+    assert md.General.title == "test-CL_spectrum-SI"
+    assert md.Acquisition_instrument.Detector.detector_type == "CCD"
+    assert md.Acquisition_instrument.SEM.acquisition_mode == "SEM"
+    assert md.Acquisition_instrument.SEM.microscope == "Ultra55"
+    assert md.Acquisition_instrument.SEM.beam_energy == 5.0
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.SEM.magnification, 31661.427734)
+    assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Parallel dispersive"
+    assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 600.0
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Detector.exposure_per_frame, 0.05)
+    assert md.Acquisition_instrument.Detector.frames == 1
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Detector.integration_time, 0.05)
+    assert md.Acquisition_instrument.Detector.pixel_size == 20.0
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Spectrometer.central_wavelength, 869.983825)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Detector.saturation_fraction[0], 0.09676377)
+    assert md.Acquisition_instrument.Detector.binning == (1, 100)
+    assert md.Acquisition_instrument.Detector.processing == "Dark Subtracted"
+    assert md.Acquisition_instrument.Detector.sensor_roi == (0, 0, 100, 1336)
+    assert md.Acquisition_instrument.Spectrum_image.drift_correction_periodicity == 1
+    assert md.Acquisition_instrument.Spectrum_image.drift_correction_units == "second(s)"
+    assert md.Acquisition_instrument.Spectrum_image.mode == "LineScan"
+
+def test_read_MonarcCL_SI_metadata():
+    fname = os.path.join(MY_PATH, "dm4_2D_data", "test-MonarcCL_spectrum-SI.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.format == "Spectrum image"
+    assert md.Signal.quantity == "Intensity (Counts)"
+    assert md.General.date == "2021-09-16"
+    assert md.General.time == "12:06:16"
+    assert md.General.original_filename == "test-MonarcCL_spectrum-SI.dm4"
+    assert md.General.title == "Monarc_SI_9pix"
+    assert md.Acquisition_instrument.Detector.detector_type == "CCD"
+    assert md.Acquisition_instrument.SEM.acquisition_mode == "SEM"
+    assert md.Acquisition_instrument.SEM.microscope == "Zeiss SEM COM"
+    assert md.Acquisition_instrument.SEM.beam_energy == 5.0
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.SEM.magnification, 5884.540039)
+    assert md.Acquisition_instrument.Spectrometer.acquisition_mode == "Parallel dispersive"
+    assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 1200.0
+    assert md.Acquisition_instrument.Spectrometer.entrance_slit_width == 0.256
+    assert md.Acquisition_instrument.Spectrometer.bandpass == 0.9984
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Detector.exposure_per_frame, 0.05)
+    assert md.Acquisition_instrument.Detector.frames == 1
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Detector.integration_time, 0.05)
+    assert md.Acquisition_instrument.Detector.pixel_size == 20.0
+    #np.testing.assert_allclose(
+    #    md.Acquisition_instrument.Spectrometer.central_wavelength, 869.9838)
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Detector.saturation_fraction[0], 0.004867628)
+    assert md.Acquisition_instrument.Detector.binning == (2, 400)
+    assert md.Acquisition_instrument.Detector.processing == "Dark Subtracted"
+    assert md.Acquisition_instrument.Detector.sensor_roi == (0, 0, 400, 1340)
+    #assert md.Acquisition_instrument.Spectrum_image.drift_correction_periodicity == 1
+    #assert md.Acquisition_instrument.Spectrum_image.drift_correction_units == "second(s)"
+    assert md.Acquisition_instrument.Spectrum_image.mode == "2D Array"
+
+def test_read_MonarcCL_image_metadata():
+    fname = os.path.join(MY_PATH, "dm4_2D_data", "test-MonarcCL_mono-image.dm4")
+    s = load(fname)
+    md = s.metadata
+    assert md.Signal.signal_type == "CL"
+    assert md.Signal.quantity == "Intensity (counts)"
+    assert md.General.date == "2021-05-14"
+    assert md.General.time == "11:41:07"
+    assert md.General.original_filename == "test-MonarcCL_mono-image.dm4"
+    assert md.General.title == "MonoCL-image-rebin"
+    assert md.Acquisition_instrument.SEM.acquisition_mode == "SEM"
+    assert md.Acquisition_instrument.SEM.microscope == "Zeiss SEM COM"
+    assert md.Acquisition_instrument.SEM.beam_energy == 3.0
+    assert md.Acquisition_instrument.SEM.magnification == 2500.
+    assert md.Acquisition_instrument.SEM.dwell_time == 1e-5
+    assert md.Acquisition_instrument.Spectrometer.Grating.groove_density == 300.0
+    assert md.Acquisition_instrument.Spectrometer.entrance_slit_width == 0.961
+    np.testing.assert_allclose(
+        md.Acquisition_instrument.Spectrometer.bandpass, 14.9915999)
+    assert md.Acquisition_instrument.Detector.pmt_voltage == 1000
 
 def test_location():
     fname_list = ['Fei HAADF-DE_location.dm3', 'Fei HAADF-FR_location.dm3',
@@ -240,6 +460,112 @@ def test_location():
     s = load(os.path.join(MY_PATH, "dm3_locale", fname_list[3]))
     assert s.metadata.General.date == "2016-08-27"
     assert s.metadata.General.time == "20:52:30"
+
+def test_multi_signal():
+    fname = os.path.join(MY_PATH, "dm3_2D_data", "multi_signal.dm3")
+    s = load(fname)
+
+    # Make sure file is read as a list, and exactly two signals are found
+    assert isinstance(s, list)
+    assert len(s) == 2
+
+    s1, s2 = s
+
+    # First signal is an image, second is a plot
+    assert isinstance(s1, Signal2D)
+    assert isinstance(s2, Signal1D)
+
+    s1_md_truth = {
+        '_HyperSpy': {
+            'Folding': {
+                'unfolded': False,
+                'signal_unfolded': False,
+                'original_shape': None,
+                'original_axes_manager': None}},
+        'General': {'title': 'HAADF',
+                    'original_filename': 'multi_signal.dm3',
+                    'date': '2019-12-10',
+                    'time': '15:32:41',
+                    'authors': 'JohnDoe',
+                    'FileIO': {
+                        '0': {
+                            'operation': 'load',
+                            'hyperspy_version': hs_version,
+                            'io_plugin':
+                                'hyperspy.io_plugins.digital_micrograph'
+                        }
+                    }
+        },
+        'Signal': {'signal_type': '',
+                   'quantity': 'Intensity',
+                   'Noise_properties': {
+                       'Variance_linear_model': {
+                           'gain_factor': 1.0,
+                           'gain_offset': 0.0}}},
+        'Acquisition_instrument': {
+            'TEM': {
+                'beam_energy': 300.0,
+                'Stage': {
+                    'tilt_alpha': 0.001951998453075299,
+                    'x': 0.07872150000000001,
+                    'y': 0.100896,
+                    'z': -0.0895279},
+                'acquisition_mode': 'STEM',
+                'beam_current': 0.0,
+                'camera_length': 77.0,
+                'magnification': 10000000.0,
+                'microscope': 'Example Microscope',
+                'dwell_time': 3.2400001525878905e-05}},
+        'Sample': {
+            'description': 'PrecipitateA'}
+    }
+
+    s2_md_truth = {
+        '_HyperSpy': {
+            'Folding': {
+                'unfolded': False,
+                'signal_unfolded': False,
+                'original_shape': None,
+                'original_axes_manager': None}},
+        'General': {
+            'title': 'Plot',
+            'original_filename': 'multi_signal.dm3',
+            'FileIO': {
+                '0': {
+                    'operation': 'load',
+                    'hyperspy_version': hs_version,
+                    'io_plugin': 'hyperspy.io_plugins.digital_micrograph'
+                }
+            }},
+        'Signal': {
+            'signal_type': '',
+            'quantity': 'Intensity',
+            'Noise_properties': {
+                'Variance_linear_model': {
+                    'gain_factor': 1.0,
+                    'gain_offset': 0.0}}}
+    }
+    # remove timestamps from metadata since these are runtime dependent
+    del s1.metadata.General.FileIO.Number_0.timestamp
+    del s2.metadata.General.FileIO.Number_0.timestamp
+
+    # make sure the metadata dictionaries are as we expect
+    assert s1.metadata.as_dictionary() == s1_md_truth
+    assert s2.metadata.as_dictionary() == s2_md_truth
+
+    # rather than testing all of original metadata (huge), use length as a proxy
+    assert len(json.dumps(s1.original_metadata.as_dictionary())) == 17779
+    assert len(json.dumps(s2.original_metadata.as_dictionary())) == 15024
+    
+    # test axes
+    assert s1.axes_manager[-1].is_binned == False
+    assert s2.axes_manager[-1].is_binned == False
+
+    # simple tests on the data itself:
+    assert s1.data.sum() == 949490255
+    assert s1.data.shape == (512, 512)
+    assert s2.data.sum() == pytest.approx(28.085794, 0.01)
+    assert s2.data.shape == (512,)
 
 
 def generate_parameters():
@@ -265,8 +591,11 @@ def generate_parameters():
 
 
 @pytest.mark.parametrize("pdict", generate_parameters())
-def test_data(pdict):
-    s = load(pdict["filename"])
+@pytest.mark.parametrize("lazy", (True, False))
+def test_data(pdict, lazy):
+    s = load(pdict["filename"], lazy=lazy)
+    if lazy:
+        s.compute(close_file=True)
     key = pdict["key"]
     assert s.data.dtype == np.dtype(dm4_data_types[key])
     subfolder = pdict["subfolder"]
@@ -286,3 +615,8 @@ def test_data(pdict):
                                   err_msg='content %s type % i: '
                                   '\n%s not equal to \n%s' %
                                   (subfolder, key, str(s.data), str(dat)))
+
+def test_axes_bug_for_image():
+    fname = os.path.join(MY_PATH, "dm3_2D_data", "test_STEM_image.dm3")
+    s = load(fname)
+    assert s.axes_manager[1].name == 'y'

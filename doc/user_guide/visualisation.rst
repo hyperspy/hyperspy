@@ -68,19 +68,20 @@ in ``s.axes_manager.indices`` or as calibrated coordinates in
 An extra cursor can be added by pressing the ``e`` key. Pressing ``e`` once
 more will disable the extra cursor:
 
-In matplotlib, left and right arrow keys are by default set to navigate the 
-"zoom" history. To avoid the problem of changing zoom while navigating, 
-Ctrl + arrows can be used instead. Navigating without using the modifier keys
+In matplotlib, left and right arrow keys are by default set to navigate the
+"zoom" history. To avoid the problem of changing zoom while navigating,
+``Ctrl`` + arrows can be used instead. Navigating without using the modifier keys
 will be deprecated in version 2.0.
 
 To navigate navigation dimensions larger than 2, modifier keys can be used.
-The defaults are Shift + left/right and Shift + up/down, (Alt + left/right and Alt + up/down) 
+The defaults are ``Shift`` + ``left``/``right`` and ``Shift`` + ``up``/``down``,
+(``Alt`` + ``left``/``right`` and ``Alt`` + ``up``/``down``)
 for navigating dimensions 2 and 3 (4 and 5) respectively. Modifier keys do not work with the numpad.
 
-Hotkeys and modifier keys for navigating the plot can be set in the ``hs.preferences.gui()``.
+Hotkeys and modifier keys for navigating the plot can be set in the
+:ref:`HyperSpy plot preferences <configuring-hyperspy-label>`.
 Note that some combinations will not work for all platforms, as some systems reserve them for
 other purposes.
-.. _second_pointer.png:
 
 .. figure::  images/second_pointer.png
    :align:   center
@@ -120,10 +121,17 @@ To close all the figures run the following command:
 
 .. NOTE::
 
-    This is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command.
+    ``plt.close('all')`` is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command.
     Matplotlib is the library that HyperSpy uses to produce the plots. You can
     learn how to pan/zoom and more  `in the matplotlib documentation
     <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
+
+
+.. NOTE::
+
+    Plotting ``float16`` images is currently not supported by matplotlib; however, it is
+    possible to convert the type of the data by using the
+    :py:meth:`~.signal.BaseSignal.change_dtype` method, e.g. ``s.change_dtype('float32')``.
 
 Multidimensional image data
 ===========================
@@ -176,20 +184,16 @@ The following keyboard shortcuts are availalbe when the 2D signal figure is in f
 Customising image plot
 ======================
 
-.. versionadded:: 0.8
-
 The image plot can be customised by passing additional arguments when plotting.
 Colorbar, scalebar and contrast controls are HyperSpy-specific, however
-`matplotlib.imshow
-<http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.imshow>`_
-arguments are supported as well:
+:py:meth:`matplotlib.axes.Axes.imshow` arguments are supported as well:
 
 .. code-block:: python
 
     >>> import scipy
     >>> img = hs.signals.Signal2D(scipy.misc.ascent())
     >>> img.plot(colorbar=True, scalebar=False,
-    ... 	 axes_ticks=True, cmap='RdYlBu_r', saturated_pixels=0)
+    ... 	 axes_ticks=True, cmap='RdYlBu_r')
 
 
 .. figure::  images/custom_cmap.png
@@ -202,43 +206,34 @@ arguments are supported as well:
 .. versionadded:: 1.4
    ``norm`` keyword argument
 
-The ``norm`` keyword argument can be used to select between linear, logarithmic or
-custom (using a matplotlib norm) intensity scale. The default, "auto", automatically
-selects a logarithmic scale when plotting a power spectrum.
+The ``norm`` keyword argument can be used to select between linear, logarithmic
+or custom (using a matplotlib norm) intensity scale. The default, "auto",
+automatically selects a logarithmic scale when plotting a power spectrum.
 
-.. versionadded:: 1.1.2
-   Passing keyword arguments to the navigator plot.
+.. versionadded:: 1.6
+   ``autoscale`` keyword argument
 
-The same options can be passed to the navigator, albeit separately, by specifying
-them as a dictionary in ``navigator_kwds`` argument when plotting:
+The ``autoscale`` keyword argument can be used to specify which axis limits are
+reset when the data or navigation indices change. It can take any combinations
+of the following characters:
+
+* ``'x'``: to reset the horizontal axes
+* ``'y'``: to reset the vertical axes
+* ``'v'``: to reset the contrast of the image  according to ``vmin`` and ``vmax``
+
+By default (``autoscale='v'``), only the contrast of the image will be reset
+automatically. For example, to reset the extent of the image (x and y) to their
+maxima but not the contrast, use ``autoscale='xy'``; To reset all limits,
+including the contrast of the image, use ``autoscale='xyv'``:
 
 .. code-block:: python
 
     >>> import numpy as np
-    >>> import scipy
-    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
-    >>> ims = hs.signals.BaseSignal(np.random.rand(15,13)).T * im
-    >>> ims.metadata.General.title = 'My Images'
-    >>> ims.plot(colorbar=False,
-    ...          scalebar=False,
-    ...          axes_ticks=False,
-    ...          cmap='viridis',
-    ...          navigator_kwds=dict(colorbar=True,
-    ...                              scalebar_color='red',
-    ...                              cmap='Blues',
-    ...                              axes_ticks=False)
-    ...          )
+    >>> img = hs.signals.Signal2D(np.arange(10*10*10).reshape(10, 10, 10))
+    >>> img.plot(autoscale='xyv')
 
-.. figure::  images/custom_nav_opts.png
-   :align:   center
-   :height:   250
-
-   Custom different options for both signal and navigator image plots
 
 .. _plot.divergent_colormaps-label:
-
-
-.. versionadded:: 0.8.1
 
 When plotting using divergent colormaps, if ``centre_colormap`` is ``True``
 (default) the contrast is automatically adjusted so that zero corresponds to
@@ -283,11 +278,44 @@ The same example with the feature disabled:
    :align:   center
    :width:   500
 
-   Divergent color map with ``Centre colormap`` disabled.
+   Divergent color map with ``centre_colormap`` disabled.
 
+
+.. _plot.customize_navigator:
 
 Customizing the "navigator"
 ===========================
+
+.. versionadded:: 1.1.2
+   Passing keyword arguments to the navigator plot.
+
+The navigator can be customised by using the ``navigator_kwds`` argument. For
+example, in case of a image navigator, all image plot arguments mentioned in
+the section :ref:`plot.customize_images` can be passed as a dictionary to the
+``navigator_kwds`` argument:
+
+.. code-block:: python
+
+    >>> import numpy as np
+    >>> import scipy
+    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> ims = hs.signals.BaseSignal(np.random.rand(15,13)).T * im
+    >>> ims.metadata.General.title = 'My Images'
+    >>> ims.plot(colorbar=False,
+    ...          scalebar=False,
+    ...          axes_ticks=False,
+    ...          cmap='viridis',
+    ...          navigator_kwds=dict(colorbar=True,
+    ...                              scalebar_color='red',
+    ...                              cmap='Blues',
+    ...                              axes_ticks=False)
+    ...          )
+
+.. figure::  images/custom_nav_opts.png
+   :align:   center
+   :height:   250
+
+   Custom different options for both signal and navigator image plots
 
 Data files used in the following examples can be downloaded using
 
@@ -304,13 +332,13 @@ Data files used in the following examples can be downloaded using
 
 .. NOTE::
     See also the
-    `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-demos/blob/master/electron_microscopy/EDS/>`_ .
+    `SEM EDS tutorials <https://nbviewer.org/github/hyperspy/hyperspy-demos/tree/main/electron_microscopy/EDS/>`_ .
 
 .. NOTE::
 
     The sample and the data used in this chapter are described in
     P. Burdet, `et al.`, Acta Materialia, 61, p. 3090-3098 (2013) (see
-    `abstract <http://infoscience.epfl.ch/record/185861/>`_).
+    `abstract <https://infoscience.epfl.ch/record/185861/>`_).
 
 Stack of 2D images can be imported as an 3D image and plotted with a slider
 instead of the 2D navigator as in the previous example.
@@ -397,6 +425,8 @@ the "maximum spectrum" for which each channel is the maximum of all pixels.
 
 Lastly, if no navigator is needed, "navigator=None" can be used.
 
+.. _visualization_3D_EDS-label:
+
 Using Mayavi to visualize 3D data
 =================================
 
@@ -410,15 +440,15 @@ Data files used in the following examples can be downloaded using
 
 .. NOTE::
     See also the
-    `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-demos/blob/master/electron_microscopy/EDS/>`_ .
+    `EDS tutorials <https://nbviewer.org/github/hyperspy/hyperspy-demos/tree/main/electron_microscopy/EDS/>`_ .
 
 Although HyperSpy does not currently support plotting when signal_dimension is
-greater than 2, `Mayavi <http://docs.enthought.com/mayavi/mayavi/>`_ can be
+greater than 2, `Mayavi <https://docs.enthought.com/mayavi/mayavi/>`_ can be
 used for this purpose.
 
-In the following example we also use `scikit-image <http://scikit-image.org/>`_
+In the following example we also use `scikit-image <https://scikit-image.org/>`_
 for noise reduction. More details about
-:py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity` method can be
+:py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` method can be
 found in :ref:`EDS lines intensity<get_lines_intensity>`.
 
 .. code-block:: python
@@ -438,12 +468,14 @@ found in :ref:`EDS lines intensity<get_lines_intensity>`.
 
 .. NOTE::
     See also the
-    `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-demos/blob/master/electron_microscopy/EDS/>`_ .
+    `SEM EDS tutorials <https://nbviewer.org/github/hyperspy/hyperspy-demos/tree/main/electron_microscopy/EDS/>`_ .
 
 .. NOTE::
 
     The sample and the data used in this chapter are described in
     P. Burdet, `et al.`, Ultramicroscopy, 148, p. 158-167 (2015).
+
+
 .. _plot_spectra:
 
 Plotting multiple signals
@@ -459,12 +491,10 @@ other signals): :py:func:`~.drawing.utils.plot_images`,
 Plotting several images
 -----------------------
 
-.. versionadded:: 0.8
-
 :py:func:`~.drawing.utils.plot_images` is used to plot several images in the
 same figure. It supports many configurations and has many options available
 to customize the resulting output. The function returns a list of
-`matplotlib axes <http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.axes>`_,
+:py:class:`matplotlib.axes.Axes`,
 which can be used to further customize the figure. Some examples are given
 below. Plots generated from another installation may look slightly different
 due to ``matplotlib`` GUI backends and default font sizes. To change the
@@ -472,7 +502,7 @@ font size globally, use the command ``matplotlib.rcParams.update({'font
 .size': 8})``.
 
 .. versionadded:: 1.5
-   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation 
+   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation
    dimension 2 and signal dimension 0.
 
 A common usage for :py:func:`~.drawing.utils.plot_images` is to view the
@@ -585,8 +615,7 @@ to get a representative figure of the X-ray line intensities of an EDS
 spectrum image. This example also demonstrates changing the colormap (with
 `cmap`), adding scalebars to the plots (with `scalebar`), and changing the
 `padding` between the images. The padding is specified as a dictionary,
-which is used to call subplots_adjust method of matplotlib
-(see `documentation <http://matplotlib.org/api/figure_api.html#matplotlib.figure.Figure.subplots_adjust>`_).
+which is passed to :py:meth:`matplotlib.figure.Figure.subplots_adjust`.
 
 .. code-block:: python
 
@@ -594,7 +623,7 @@ which is used to call subplots_adjust method of matplotlib
     >>> im = si_EDS.get_lines_intensity()
     >>> hs.plot.plot_images(im,
     ...     tight_layout=True, cmap='RdYlBu_r', axes_decor='off',
-    ...     colorbar='single', saturated_pixels=2, scalebar='all',
+    ...     colorbar='single', vmin='1th', vmax='99th', scalebar='all',
     ...     scalebar_color='black', suptitle_fontsize=16,
     ...     padding={'top':0.8, 'bottom':0.10, 'left':0.05,
     ...              'right':0.85, 'wspace':0.20, 'hspace':0.10})
@@ -604,7 +633,7 @@ which is used to call subplots_adjust method of matplotlib
   :width:   500
 
   Using :py:func:`~.drawing.utils.plot_images` to plot the output of
-  :py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity`.
+  :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`.
 
 .. |subplots_adjust| image:: images/plot_images_subplots.png
 
@@ -625,7 +654,7 @@ generator:
     >>> im = si_EDS.get_lines_intensity()
     >>> hs.plot.plot_images(im,
     >>>    tight_layout=True, cmap=['viridis', 'plasma'], axes_decor='off',
-    >>>    colorbar='multi', saturated_pixels=2, scalebar=[0],
+    >>>    colorbar='multi', vmin='1th', vmax='99th', scalebar=[0],
     >>>    scalebar_color='white', suptitle_fontsize=16)
 
 .. figure::  images/plot_images_eds_cmap_list.png
@@ -633,7 +662,7 @@ generator:
   :width:   500
 
   Using :py:func:`~.drawing.utils.plot_images` to plot the output of
-  :py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity` using a unique
+  :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` using a unique
   colormap for each image.
 
 The ``cmap`` argument can also be given as ``'mpl_colors'``, and as a result,
@@ -650,7 +679,7 @@ __ plot.spectra_
 
     >>> si_EDS = hs.load("core_shell.hdf5")
     >>> si_EDS.change_dtype('float')
-    >>> si_EDS.decomposition(True, algorithm='nmf', output_dimension=3)
+    >>> si_EDS.decomposition(True, algorithm='NMF', output_dimension=3)
     >>> factors = si_EDS.get_decomposition_factors()
     >>>
     >>> # the first factor is a very strong carbon background component, so we
@@ -705,6 +734,25 @@ __ plot.spectra_
     functionality is only enabled if a ``matplotlib`` backend that supports the
     ``button_press_event`` in the figure canvas is being used.
 
+It is also possible to plot multiple images overlayed on the same figure by 
+passing the argument ``overlay=True`` to the 
+:py:func:`~.drawing.utils.plot_images` function. This should only be done when
+images have the same scale (eg. for elemental maps from the same dataset).
+Using the same data as above, the Fe and Pt signals can be plotted using
+different colours. Any color can be input via matplotlib color characters or
+hex values.
+
+.. code-block:: python
+
+    >>> si_EDS = hs.load("core_shell.hdf5")
+    >>> im = si_EDS.get_lines_intensity()
+    >>> hs.plot.plot_images(im,scalebar='all', overlay=True, suptitle=False, 
+    >>>                     axes_decor='off')
+
+.. figure::  images/plot_images_overlay.png
+  :align:   center
+  :width:   500
+
 .. _plot.spectra:
 
 Plotting several spectra
@@ -712,11 +760,10 @@ Plotting several spectra
 
 :py:func:`~.drawing.utils.plot_spectra` is used to plot several spectra in the
 same figure. It supports different styles, the default
-being "overlap". The default style is configurable in :ref:`preferences
-<configuring-hyperspy-label>`.
+being "overlap".
 
 .. versionadded:: 1.5
-   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation 
+   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation
    dimension 1 and signal dimension 0.
 
 In the following example we create a list of 9 single spectra (gaussian
@@ -787,9 +834,9 @@ and provide the legend labels:
     >>> import scipy.misc
     >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
     >>> color_list = ['red', 'red', 'blue', 'blue', 'red', 'red']
-    >>> line_style_list = ['-','--','steps','-.',':','-']
+    >>> linestyle_list = ['-', '--', '-.', ':', '-']
     >>> hs.plot.plot_spectra(s, style='cascade', color=color_list,
-    >>> line_style=line_style_list,legend='auto')
+    >>>                      linestyle=linestyle_list, legend='auto')
 
 .. figure::  images/plot_spectra_color.png
   :align:   center
@@ -860,7 +907,7 @@ There are also two other styles, "heatmap" and "mosaic":
   `mosaic` style.
 
 For the "heatmap" style, different
-`matplotlib color schemes <http://matplotlib.org/examples/color/colormaps_reference.html>`_
+`matplotlib color schemes <https://matplotlib.org/stable/gallery/color/colormap_reference.html>`_
 can be used:
 
 .. code-block:: python
@@ -945,6 +992,38 @@ and "overlap" styles:
 
   Plotting on existing matplotlib axes.
 
+
+.. _plot_profiles_interactive-label:
+
+Plotting profiles interactively
+-------------------------------
+
+Spectra or line profile can be plotted interactively on the same figure using
+the :py:func:`~.drawing.utils.plot_spectra` function. For example, profiles
+obtained from different Signal2D using the :py:class:`~.roi.Line2DROI` ROI can
+be plotted interactively:
+
+.. code-block:: python
+
+    >>> im0 = hs.datasets.example_signals.reference_hologram()
+    >>> im1 = hs.datasets.example_signals.object_hologram()
+    >>> im0.plot()
+    >>> im1.plot()
+    >>> # Create the ROI
+    >>> line_profile = hs.roi.Line2DROI(400, 250, 220, 600)
+    >>> # Obtain the signals to plot by "slicing" the signals with the ROI
+    >>> line0 = line_profile.interactive(im0)
+    >>> line1 = line_profile.interactive(im1)
+    >>> # Plotting the profile on the same figure
+    >>> hs.plot.plot_spectra([line0, line1])
+
+.. figure::  images/interactive_profiles.gif
+  :align:   center
+  :width:   1024
+
+  Plotting profiles from different images interactively.
+
+
 .. _plot.signals:
 
 Plotting several signals
@@ -972,7 +1051,7 @@ same time:
 The navigator can be specified by using the navigator argument, where the
 different options are "auto", None, "spectrum", "slider" or Signal.
 For more details about the different navigators,
-see :ref:`navigator_options`.
+see :ref:`the navigator options<plot.customize_navigator>`.
 To specify the navigator:
 
 .. code-block:: python
@@ -1030,8 +1109,6 @@ each plot:
 
 Markers
 =======
-
-.. versionadded:: 0.8
 
 HyperSpy provides an easy access to the main marker of matplotlib. The markers
 can be used in a static way
@@ -1098,6 +1175,8 @@ Each slice is indicated with the same text on the navigator.
 
   Multi-dimensional markers.
 
+Permanent markers
+-----------------
 
 .. versionadded:: 1.2
    Permanent markers.
@@ -1252,3 +1331,45 @@ Permanent markers are stored in the HDF5 file if the signal is saved:
     >>> s1 = hs.load("storing_marker.hdf5")
     >>> s1.metadata.Markers
     └── point = <hyperspy.drawing._markers.point.Point object at 0x7efcfadb06d8>
+
+Supported markers
+-----------------
+
+The markers currently supported in HyperSpy are:
+
+.. table:: List of supported markers, their signature and their corresponding matplotlib objects.
+    :widths: 20 40 40
+
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | HyperSpy markers                                                             | Signature                         | Matplotlib objects                                 |
+    +==============================================================================+===================================+====================================================+
+    | :py:class:`~.drawing._markers.arrow.Arrow`                                   | ``x1, y1, x2, y2, **kwargs``      |  :py:class:`matplotlib.patches.FancyArrowPatch`    |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.ellipse.Ellipse`                               | ``x, y, width, height, **kwargs`` |  :py:class:`matplotlib.patches.Ellipse`            |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.horizontal_line.HorizontalLine`                | ``y, **kwargs``                   |  :py:meth:`matplotlib.axes.Axes.hlines`            |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.horizontal_line_segment.HorizontalLineSegment` | ``x1, x2, y, **kwargs``           |  :py:meth:`matplotlib.axes.Axes.hlines`            |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.line_segment.LineSegment`                      | ``x1, y1, x2, y2, **kwargs``      |  :py:meth:`matplotlib.axes.Axes.plot`              |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.point.Point`                                   | ``x1, y1, **kwargs``              |  :py:meth:`matplotlib.axes.Axes.scatter`           |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.rectangle.Rectangle`                           | ``x1, y1, x2, y2, **kwargs``      |  :py:class:`matplotlib.patches.Rectangle`          |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.text.Text`                                     | ``x, y, text, **kwargs``          |  :py:meth:`matplotlib.axes.Axes.text`              |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.vertical_line.VerticalLine`                    | ``x, **kwargs``                   |  :py:meth:`matplotlib.axes.Axes.axvline`           |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.vertical_line_segment.VerticalLineSegment`     | ``x, y1, y2, **kwargs``           |  :py:meth:`matplotlib.axes.Axes.axvline`           |
+    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+
+
+Marker properties
+------------------
+
+The optional parameters (``**kwargs``, keyword arguments) can be used for extra parameters used in matplotlib.
+(The ``color`` property in rectangle marker is an alias of ``edgecolor`` for backward compatibility)
+
+
+

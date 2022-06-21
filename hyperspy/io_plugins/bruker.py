@@ -10,12 +10,12 @@
 #
 # This library is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with any project and source this library is coupled.
-# If not, see <http://www.gnu.org/licenses/>.
+# If not, see <https://www.gnu.org/licenses/#GPL>.
 #
 # This python library subset provides read functionality of
 #  Bruker bcf files.
@@ -26,7 +26,22 @@
 
 # Plugin characteristics
 # ----------------------
-format_name = 'bruker composite file bcf'
+from os.path import splitext, basename
+from math import ceil
+import re
+import logging
+from zlib import decompress as unzip_block
+from struct import unpack as strct_unp
+import dask.delayed as dd
+import dask.array as da
+import numpy as np
+from datetime import datetime, timedelta
+from ast import literal_eval
+import codecs
+import xml.etree.ElementTree as ET
+from collections import defaultdict
+import io
+format_name = 'Bruker'
 description = """the proprietary format used by Bruker's
 Esprit(R) software to save hypermaps together with 16bit SEM imagery,
 EDS spectra and metadata describing the dimentions of the data and
@@ -41,23 +56,9 @@ reads_spectrum = True
 reads_spectrum_image = True
 # Writing capabilities
 writes = False
+non_uniform_axis = False
+# ----------------------
 
-import io
-
-from collections import defaultdict
-import xml.etree.ElementTree as ET
-import codecs
-from ast import literal_eval
-from datetime import datetime, timedelta
-import numpy as np
-import dask.array as da
-import dask.delayed as dd
-from struct import unpack as strct_unp
-from zlib import decompress as unzip_block
-import logging
-import re
-from math import ceil
-from os.path import splitext, basename
 
 _logger = logging.getLogger(__name__)
 
@@ -300,11 +301,10 @@ class SFS_reader(object):
     This class can be used stand alone or inherited in construction of
     file readers using sfs technolgy.
 
-    Attributes:
+    Attributes
+    ----------
     filename
 
-    Methods:
-    get_file
     """
 
     def __init__(self, filename):
@@ -332,11 +332,12 @@ class SFS_reader(object):
         """Setup the virtual file system tree represented as python dictionary
         with values populated with SFSTreeItem instances
 
-        See also:
+        See also
+        --------
         SFSTreeItem
         """
         with open(self.filename, 'rb') as fn:
-            #check if file tree do not exceed one chunk:
+            # check if file tree do not exceed one chunk:
             n_file_tree_chunks = ceil((self.n_tree_items * 0x200) /
                                       (self.chunksize - 0x20))
             if n_file_tree_chunks == 1:
@@ -421,21 +422,27 @@ class SFS_reader(object):
         """Return the SFSTreeItem (aka internal file) object from
         sfs container.
 
-        Arguments:
-        path -- internal file path in sfs file tree. Path accepts only
+        Parameters
+        ----------
+        path : str
+            Internal file path in sfs file tree. Path accepts only
             standard - forward slash for directories.
 
-        Returns:
-        object (SFSTreeItem), which can be read into byte stream, in
-        chunks or whole using objects methods.
+        Returns
+        -------
+        object : SFSTreeItem
+            SFSTreeItem, which can be read into byte stream, in chunks or
+            whole using objects methods.
 
-        Example:
+        Example
+        -------
         to get "file" object 'kitten.png' in folder 'catz' which
         resides in root directory of sfs, you would use:
 
         >>> instance_of_SFSReader.get_file('catz/kitten.png')
 
-        See also:
+        See also
+        --------
         SFSTreeItem
         """
         item = self.vfs
@@ -490,9 +497,11 @@ class EDXSpectrum(object):
         Wrap the objectified bruker EDS spectrum xml part
         to the python object, leaving all the xml and bruker clutter behind.
 
-        Arguments:
-        spectrum -- etree xml object, where spectrum.attrib['Type'] should
-            be 'TRTSpectrum'
+        Parameters
+        ----------
+        spectrum : etree xml object
+            etree xml object, where spectrum.attrib['Type'] should
+            be 'TRTSpectrum'.
         """
         TRTHeader = spectrum.find('./TRTHeaderedClass')
         hardware_header = TRTHeader.find(
@@ -505,6 +514,7 @@ class EDXSpectrum(object):
         # ESMA could stand for Electron Scanning Microscope Analysis
         spectrum_header = spectrum.find(
             "./ClassInstance[@Type='TRTSpectrumHeader']")
+        xrf_header = TRTHeader.find("./ClassInstance[@Type='TRTXrfHeader']")
 
         # map stuff from harware xml branch:
         self.hardware_metadata = dictionarize(hardware_header)
@@ -523,15 +533,21 @@ class EDXSpectrum(object):
             self.detector_metadata['DetLayers'][i.tag] = dict(i.attrib)
 
         # map stuff from esma xml branch:
-        self.esma_metadata = dictionarize(esma_header)
+        if esma_header:
+            self.esma_metadata = dictionarize(esma_header)
+        if xrf_header:
+            xrf_header_dict = dictionarize(xrf_header)
+            self.esma_metadata = {
+                'PrimaryEnergy':xrf_header_dict['Voltage'],
+                'ElevationAngle':xrf_header_dict['ExcitationAngle']
+                }
         # USED:
         self.hv = self.esma_metadata['PrimaryEnergy']
         self.elev_angle = self.esma_metadata['ElevationAngle']
         date_time = gen_iso_date_time(spectrum_header)
         if date_time is not None:
             self.date, self.time = date_time
-        
-        # map stuff from spectra xml branch:
+
         self.spectrum_metadata = dictionarize(spectrum_header)
         self.offset = self.spectrum_metadata['CalibAbs']
         self.scale = self.spectrum_metadata['CalibLin']
@@ -539,6 +555,10 @@ class EDXSpectrum(object):
         # main data:
         self.data = np.fromstring(spectrum.find('./Channels').text,
                                   dtype='Q', sep=",")
+    
+    def last_non_zero_channel(self):
+        """return index of last nonzero channel"""
+        return self.data.nonzero()[0][-1]
 
     def energy_to_channel(self, energy, kV=True):
         """ convert energy to channel index,
@@ -565,9 +585,10 @@ class HyperHeader(object):
     If Bcf is version 2, the bcf can contain stacks
     of hypermaps - thus header part  can contain multiply sum eds spectras
     and it's metadata per hypermap slice which can be selected using index.
-    Bcf can record number of imagery from different
-    imagining detectors (BSE, SEI, ARGUS, etc...): access to imagery
-    is throught image index.
+    Bcf can record number of images from different single dimentional value
+    detectors (BSE, SEI, ARGUS, etc...). images representing signals are
+    internaly ordered and right signal image can be accessed using image
+    index (do not confuse with dataset index).
     """
 
     def __init__(self, xml_str, indexes, instrument=None):
@@ -580,7 +601,7 @@ class HyperHeader(object):
             _logger.info("hypermap have no name. Giving it 'Undefined' name")
         hd = root.find("./Header")
         self.date, self.time = gen_iso_date_time(hd)
-        self.version = int(hd.find('./FileVersion').text)
+        self.version = int(literal_eval(hd.find('./FileVersion').text))
         # fill the sem and stage attributes:
         self._set_microscope(root)
         self._set_mode(instrument)
@@ -647,30 +668,33 @@ class HyperHeader(object):
         """parse image from bruker xml image node."""
         if overview:
             rect_node = xml_node.find("./ChildClassInstances"
-                "/ClassInstance["
-                #"@Type='TRTRectangleOverlayElement' and "
-                "@Name='Map']/TRTSolidOverlayElement/"
-                "TRTBasicLineOverlayElement/TRTOverlayElement")
+                                      "/ClassInstance["
+                                      #"@Type='TRTRectangleOverlayElement' and "
+                                      "@Name='Map']/TRTSolidOverlayElement/"
+                                      "TRTBasicLineOverlayElement/TRTOverlayElement")
             if rect_node is not None:
-                over_rect = dictionarize(rect_node)['TRTOverlayElement']['Rect']
+                over_rect = dictionarize(rect_node)[
+                    'TRTOverlayElement']['Rect']
                 rect = {'y1': over_rect['Top'] * self.y_res,
                         'x1': over_rect['Left'] * self.x_res,
                         'y2': over_rect['Bottom'] * self.y_res,
                         'x2': over_rect['Right'] * self.x_res}
                 over_dict = {'marker_type': 'Rectangle',
-                            'plot_on_signal': True,
-                            'data': rect,
-                            'marker_properties': {'color': 'yellow',
-                                                'linewidth': 2}}
+                             'plot_on_signal': True,
+                             'data': rect,
+                             'marker_properties': {'color': 'yellow',
+                                                   'linewidth': 2}}
         image = Container()
         image.width = int(xml_node.find('./Width').text)  # in pixels
         image.height = int(xml_node.find('./Height').text)  # in pixels
-        image.dtype = 'u' + xml_node.find('./ItemSize').text  # in bytes ('u1','u2','u4') 
+        # in bytes ('u1','u2','u4')
+        image.dtype = 'u' + xml_node.find('./ItemSize').text
         image.plane_count = int(xml_node.find('./PlaneCount').text)
         image.images = []
         for i in range(image.plane_count):
             img = xml_node.find("./Plane" + str(i))
-            raw = codecs.decode((img.find('./Data').text).encode('ascii'),'base64')
+            raw = codecs.decode(
+                (img.find('./Data').text).encode('ascii'), 'base64')
             array1 = np.frombuffer(raw, dtype=image.dtype)
             if any(array1):
                 item = self.gen_hspy_item_dict_basic()
@@ -724,9 +748,11 @@ class HyperHeader(object):
             for j in elements.findall(
                     "./ClassInstance[@Type='TRTSpectrumRegion']"):
                 tmp_d = dictionarize(j)
-                self.elements[tmp_d['XmlClassName']] = {'line': tmp_d['Line'],
-                                                        'energy': tmp_d['Energy'],
-                                                        'width': tmp_d['Width']}
+                # In case no information on the specific selected X-ray line is
+                # available, assume it is a 'Ka' line, reflecting the fact that element
+                # tables in Bruker Esprit (1.9 and 2.1) store a single K line for Li-Al
+                self.elements[tmp_d['XmlClassName']] = {'line': tmp_d.get('Line', 'Ka'),
+                                                        'energy': tmp_d.get('Energy')}
         except AttributeError:
             _logger.info('no element selection present in the spectra..')
 
@@ -736,44 +762,58 @@ class HyperHeader(object):
                 "./SpectrumData{0}/ClassInstance".format(str(i)))
             self.spectra_data[i] = EDXSpectrum(spec_node)
 
-    def estimate_map_channels(self, index=0):
-        """estimate minimal size of energy axis so any spectra from any pixel
-        would not be truncated.
+    def get_consistent_min_channels(self, index=0):
+        """Estimate consistent minimal size of energy axis by comparing energy
+        at last recorded channel vs electron beam potential and return channel
+        number corresponding to least energy. This method is safe to use with
+        sliced datasets (consistent between slices) which were acquired using
+        the same electron potential.
 
-        Arguments:
-        index -- index of the map if multiply hypermaps are present
-        in the same bcf.
+        Parameters
+        ----------
+        index : int
+            Index of the map if multiple hypermaps are present in the same bcf.
 
-        Returns:
+        Returns
+        -------
         optimal channel number
         """
-        bruker_hv_range = self.spectra_data[index].amplification / 1000
-        if self.hv >= bruker_hv_range:
-            return self.spectra_data[index].data.shape[0]
-        else:
+        eds_max_energy = self.spectra_data[index].amplification / 1000  # in kV
+        if hasattr(self, "hv") and (self.hv > 0) and (self.hv < eds_max_energy):
             return self.spectra_data[index].energy_to_channel(self.hv)
+        if (not hasattr(self, "hv")) or (self.hv == 0):
+            logging.warn('bcf header contains no node for electron beam '
+                         'voltage or such node is absent.\n'
+                         'Using full range of recorded channels.')
+        return self.spectra_data[index].data.shape[0]
 
     def estimate_map_depth(self, index=0, downsample=1, for_numpy=False):
-        """estimate minimal dtype of array using cumulative spectra
+        """Estimate minimal dtype of array using cumulative spectra
         of the all pixels so that no data would be truncated.
-
-        Arguments:
-        index -- index of the hypermap if multiply hypermaps are
-          present in the same bcf. (default 0)
-        downsample -- downsample factor (should be integer; default 1)
-        for_numpy -- False produce unsigned, True signed (or unsigned) types:
-          if hypermap will be loaded using the pure python
-          function where numpy's inplace integer addition will be used --
-          the dtype should be signed; if cython implementation will
-          be used (default), then any returned dtypes can be safely
-          unsigned. (default False)
-
-        Returns:
-        numpy dtype large enought to use in final hypermap numpy array.
 
         The method estimates the value from sum eds spectra, dividing
         the maximum  energy pulse value from raster x and y and to be on the
         safe side multiplying by 2.
+
+        Parameters
+        ----------
+        index : int
+            Index of the hypermap if multiply hypermaps are present in the
+            same bcf. (default 0)
+        downsample : int
+            Downsample factor. (default 1)
+        for_numpy : bool
+            If False produce unsigned, otherwise signed types: if hypermap
+            will be loaded using the pure python function where numpy's inplace
+            integer addition will be used, the dtype should be signed;
+            If cython implementation will be used (default), then any returned
+            dtypes can be safely unsigned. (default False)
+
+        Returns
+        -------
+        depth : numpy.dtype
+            numpy dtype large enought to use in final hypermap numpy array.
+
         """
         sum_eds = self.spectra_data[index].data
         # the most intensive peak is Bruker reference peak at 0kV:
@@ -820,12 +860,12 @@ class HyperHeader(object):
         """calculate and return real time for whole hypermap
         in seconds
         """
-        line_cnt_sum = np.sum(self.line_counter)
+        line_cnt_sum = np.sum(self.line_counter, dtype=float)
         line_avg = self.dsp_metadata['LineAverage']
         pix_avg = self.dsp_metadata['PixelAverage']
         pix_time = self.dsp_metadata['PixelTime']
         width = self.image.width
-        real_time = line_cnt_sum * line_avg * pix_avg * pix_time * width / 1000000.0
+        real_time = line_cnt_sum * line_avg * pix_avg * pix_time * width * 1E-6
         return float(real_time)
 
     def gen_hspy_item_dict_basic(self):
@@ -846,7 +886,8 @@ class HyperHeader(object):
                  'Microscope': self.sem_metadata,
                  'DSP Configuration': self.dsp_metadata,
                  'Stage': self.stage_metadata
-        }
+        },
+             'mapping': get_mapping(self.mode)
         }
         return i
 
@@ -885,7 +926,7 @@ class BCF_reader(SFS_reader):
 
     def check_index_valid(self, index):
         """check and return if index is valid"""
-        if type(index) != int:
+        if not isinstance(index, int):
             raise TypeError("provided index should be integer")
         if index not in self.available_indexes:
             raise IndexError("requisted index is not in the list of available indexes. "
@@ -902,30 +943,47 @@ class BCF_reader(SFS_reader):
         cython/memoryview/numpy implimentation if compilied and present
         (fast) is used.
 
-        Arguments:
-        index -- the index of hypermap in bcf if there is more than one
+        Parameters
+        ----------
+        index : None or int
+            The index of hypermap in bcf if there is more than one
             hyper map in file.
-        downsample -- downsampling factor (integer). Diferently than
-            block_reduce from skimage.measure, the parser populates
-            reduced array by suming results of pixels, thus having lower
-            memory requiriments. (default 1)
-        cutoff_at_kV -- value in keV to truncate the array at. Helps reducing
-          size of array. (default None)
-        lazy -- return dask.array (True) or numpy.array (False) (default False)
+        downsample : int
+            Downsampling factor. Differently than block_reduce from
+            skimage.measure, the parser populates reduced array by suming
+            results of pixels, thus having lower memory requiriments. Default
+            is 1.
+        cutoff_at_kV : None, float, int or str
+            Value or method to truncate the array at energy in kV. Helps reducing size of the returned
+            array. Default value is None (does not truncate). Numerical value should be in kV.
+            Two methods for automatic cutoff is available:
+              "zealous" - truncates to the last non zero channel (should not be used for stacks).
+              "auto" - truncates to hv of electron microscope (good for stacks if hv is consistent).
+        lazy : bool
+            It True, returns dask.array otherwise a numpy.array. Default is
+            False.
 
-        Returns:
-        numpy or dask array of bruker hypermap, with (y,x,E) shape.
+        Returns
+        -------
+        result : numpy.ndarray or dask.array.array
+            Bruker hypermap, with (y,x,E) shape.
         """
         if index is None:
             index = self.def_index
+
         if type(cutoff_at_kV) in (int, float):
             eds = self.header.spectra_data[index]
-            max_chan = eds.energy_to_channel(cutoff_at_kV)
-        else:
-            max_chan = self.header.estimate_map_channels(index=index)
+            n_channels = eds.energy_to_channel(cutoff_at_kV)
+        elif cutoff_at_kV == 'zealous':
+            n_channels = self.header.spectra_data[index].last_non_zero_channel() + 1
+        elif cutoff_at_kV == 'auto':
+            n_channels = self.header.get_consistent_min_channels(index=index)
+        else:  # None
+            n_channels = self.header.spectra_data[index].data.size
+
         shape = (ceil(self.header.image.height / downsample),
                  ceil(self.header.image.width / downsample),
-                 max_chan)
+                 n_channels)
         sfs_file = SFS_reader(self.filename)
         vrt_file_hand = sfs_file.get_file(
             'EDSDatabase/SpectrumData' + str(index))
@@ -953,6 +1011,7 @@ class BCF_reader(SFS_reader):
         item['metadata']['General']['original_filename'] = \
             basename(self.filename)
 
+
 def spx_reader(filename, lazy=False):
     with open(filename, 'br') as fn:
         xml_str = fn.read()
@@ -977,24 +1036,24 @@ def spx_reader(filename, lazy=False):
                # where is no way to determine what kind of instrument was used:
                # TEM or SEM
                {'Acquisition_instrument': {
-                 mode: {'Detector':
-                            gen_detector_node(spectrum),
-                         'beam_energy': spectrum.hv}
+                   mode: {'Detector':
+                          gen_detector_node(spectrum),
+                          'beam_energy': spectrum.hv}
                },
-                'General': {'original_filename': basename(filename),
-                            'title': 'EDX',
-                            'date': spectrum.date,
-                             'time': spectrum.time},
-                 'Sample': {'name': name},
-                 'Signal': {'signal_type': 'EDS_%s' % mode,
-                            'record_by': 'spectrum',
-                            'quantity': 'X-rays (Counts)'}
+                   'General': {'original_filename': basename(filename),
+                               'title': 'EDX',
+                               'date': spectrum.date,
+                               'time': spectrum.time},
+                   'Sample': {'name': name},
+                   'Signal': {'signal_type': 'EDS_%s' % mode,
+                              'record_by': 'spectrum',
+                              'quantity': 'X-rays (Counts)'}
                },
                'original_metadata': {'Hardware': spectrum.hardware_metadata,
                                      'Detector': spectrum.detector_metadata,
                                      'Analysis': spectrum.esma_metadata,
-                                     'Spectrum': spectrum.spectrum_metadata,}
-              }
+                                     'Spectrum': spectrum.spectrum_metadata, }
+               }
     if results_xml is not None:
         hy_spec['original_metadata']['Results'] = dictionarize(results_xml)
     if elements_xml is not None:
@@ -1022,8 +1081,8 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
     The method is only meant to be used if for some
     reason c (generated with cython) version of the parser is not compiled.
 
-    Arguments:
-    ---------
+    Parameters
+    ----------
     virtual_file -- virtual file handle returned by SFS_reader instance
         or by object inheriting it (e.g. BCF_reader instance)
     shape -- numpy shape
@@ -1034,8 +1093,8 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
     to be properly calculated otherwise wrong output or segfault
     is expected
 
-    Returns:
-    ---------
+    Return
+    ------
     numpy array of bruker hypermap, with (y, x, E) shape.
     """
     iter_data, size_chnk = virtual_file.get_iter_and_properties()[:2]
@@ -1093,7 +1152,7 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
                 switched_i2 = np.frombuffer(data1,
                                             dtype='<u2'
                                             ).copy().byteswap(True)
-                data2 = np.frombuffer(switched_i2.tostring(),
+                data2 = np.frombuffer(switched_i2.tobytes(),
                                       dtype=np.uint8
                                       ).copy().repeat(2)
                 mask = np.ones_like(data2, dtype=bool)
@@ -1101,7 +1160,7 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
                 # Reinterpret expanded as 16-bit:
                 # string representation of array after switch will have
                 # always BE independently from endianess of machine
-                exp16 = np.frombuffer(data2[mask].tostring(),
+                exp16 = np.frombuffer(data2[mask].tobytes(),
                                       dtype='>u2', count=n_of_pulses).copy()
                 exp16[0::2] >>= 4           # Shift every second short by 4
                 exp16 &= np.uint16(0x0FFF)  # Mask all shorts to 12bit
@@ -1196,21 +1255,27 @@ def bcf_reader(filename, select_type=None, index=None,  # noqa
     then wraps it into appropriate hyperspy required list of dictionaries
     used by hyperspy.api.load() method.
 
-    Keyword arguments:
-    select_type -- One of: spectrum_image, image. If none specified, then function
-      loads everything, else if specified, loads either just sem imagery,
-      or just hyper spectral mapping data (default None).
-    index -- index of dataset in bcf v2 can be None integer and 'all'
-      (default None); None will select first available mapping if more than one.
-      'all' will return all maps if more than one present;
-      integer will return only selected map.
-    downsample -- the downsample ratio of hyperspectral array (downsampling
-      height and width only), can be integer from 1 to inf, where '1' means
-      no downsampling will be applied (default 1).
-    cutoff_at_kV -- if set (can be int of float >= 0) can be used either, to
-       crop or enlarge energy range at max values. (default None)
-    instrument -- str, either 'TEM' or 'SEM'. Default is None.
-      """
+    Parameters
+    ----------
+    select_type : str or None
+        One of: spectrum_image, image. If none specified, then function
+        loads everything, else if specified, loads either just sem imagery,
+        or just hyper spectral mapping data (default None).
+    index : int, None or str
+        Index of dataset in bcf v2 can be None integer and 'all'
+        (default None); None will select first available mapping if more than
+        one. 'all' will return all maps if more than one present;
+        integer will return only selected map.
+    downsample : int
+        the downsample ratio of hyperspectral array (downsampling
+        height and width only), can be integer from 1 to inf, where '1' means
+        no downsampling will be applied. (default 1)
+    cutoff_at_kV : int, float or None
+        if set (can be int of float >= 0) can be used either, to
+        crop or enlarge energy range at max values. (default None)
+    instrument : str or None
+        Can be either 'TEM' or 'SEM'. Default is None.
+    """
 
     # objectified bcf file:
     obj_bcf = BCF_reader(filename, instrument=instrument)
@@ -1360,6 +1425,7 @@ def get_mapping(mode):
         ("Acquisition_instrument.%s.Stage.z" % mode, None),
     }
 
+
 def guess_mode(hv):
     """there is no way to determine what kind of instrument
     was used from metadata: TEM or SEM.
@@ -1376,15 +1442,17 @@ def guess_mode(hv):
         "keyword.")
     return mode
 
+
 def gen_detector_node(spectrum):
     eds_dict = {'EDS': {'elevation_angle': spectrum.elev_angle,
-                        'detector_type': spectrum.detector_type,}}
+                        'detector_type': spectrum.detector_type, }}
     if 'AzimutAngle' in spectrum.esma_metadata:
         eds_dict['EDS']['azimuth_angle'] = spectrum.esma_metadata['AzimutAngle']
     if 'RealTime' in spectrum.hardware_metadata:
         eds_dict['EDS']['real_time'] = spectrum.hardware_metadata['RealTime'] / 1000
         eds_dict['EDS']['live_time'] = spectrum.hardware_metadata['LifeTime'] / 1000
     return eds_dict
+
 
 def gen_iso_date_time(node):
     date_xml = node.find('./Date')

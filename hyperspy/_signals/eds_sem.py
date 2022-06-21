@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
 
@@ -29,7 +29,7 @@ from hyperspy.signal import BaseSetMetadataItems
 _logger = logging.getLogger(__name__)
 
 
-@add_gui_method(toolkey="microscope_parameters_EDS_SEM")
+@add_gui_method(toolkey="hyperspy.microscope_parameters_EDS_SEM")
 class EDSSEMParametersUI(BaseSetMetadataItems):
 
     beam_energy = t.Float(t.Undefined,
@@ -57,7 +57,9 @@ class EDSSEMParametersUI(BaseSetMetadataItems):
         'energy_resolution_MnKa', }
 
 
-class EDSSEM_mixin:
+class EDSSEMSpectrum(EDSSpectrum):
+
+    """1D signal class for EDS spectra measured in an SEM."""
 
     _signal_type = "EDS_SEM"
 
@@ -88,6 +90,11 @@ class EDSSEM_mixin:
             is divided by the number of pixel (spectrums), giving an
             average live time.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Examples
         --------
         >>> ref = hs.datasets.example_signals.EDS_SEM_Spectrum()
@@ -101,10 +108,14 @@ class EDSSEM_mixin:
 
         """
 
-        self.original_metadata = ref.original_metadata.deepcopy()
+        self._original_metadata = ref.original_metadata.deepcopy()
         # Setup the axes_manager
         ax_m = self.axes_manager.signal_axes[0]
         ax_ref = ref.axes_manager.signal_axes[0]
+        for _axis in [ax_m, ax_ref]:
+            if not _axis.is_uniform:
+                raise NotImplementedError(
+                    "The function is not implemented for non-uniform axes.")
         ax_m.scale = ax_ref.scale
         ax_m.units = ax_ref.units
         ax_m.offset = ax_ref.offset
@@ -295,10 +306,6 @@ class EDSSEM_mixin:
                             auto_add_lines=auto_add_lines,
                             *args, **kwargs)
         return model
-
-
-class EDSSEMSpectrum(EDSSEM_mixin, EDSSpectrum):
-    pass
 
 
 class LazyEDSSEMSpectrum(EDSSEMSpectrum, LazyEDSSpectrum):

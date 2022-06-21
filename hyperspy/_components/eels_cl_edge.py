@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import math
@@ -33,7 +33,7 @@ from hyperspy.ui_registry import add_gui_method
 _logger = logging.getLogger(__name__)
 
 
-@add_gui_method(toolkey="EELSCLEdge_Component")
+@add_gui_method(toolkey="hyperspy.EELSCLEdge_Component")
 class EELSCLEdge(Component):
 
     """EELS core loss ionisation edge from hydrogenic or tabulated
@@ -46,8 +46,8 @@ class EELSCLEdge(Component):
     software. If Digital Micrograph is installed in the system HyperSpy in the
     standard location HyperSpy should find the path to the HS GOS folder.
     Otherwise, the location of the folder can be defined in HyperSpy
-    preferences, which can be done through hs.preferences.gui() or the
-    hs.preferences.EELS.eels_gos_files_path variable.
+    preferences, which can be done through ``hs.preferences.gui()`` or the
+    ``hs.preferences.EELS.eels_gos_files_path`` variable.
 
     Parameters
     ----------
@@ -55,7 +55,6 @@ class EELSCLEdge(Component):
         Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
         subshell. If a dictionary is passed, it is assumed that Hartree Slater
         GOS was exported using `GOS.as_dictionary`, and will be reconstructed.
-
     GOS : {'hydrogenic', 'Hartree-Slater', None}
         The GOS to use. If None it will use the Hartree-Slater GOS if
         they are available, otherwise it will use the hydrogenic GOS.
@@ -80,7 +79,6 @@ class EELSCLEdge(Component):
     fine_structure_smoothing : float between 0 and 1
         Controls the level of smoothing of the fine structure model.
         Decreasing the value increases the level of smoothing.
-
     fine_structure_active : bool
         Activates/deactivates the fine structure feature.
 
@@ -89,11 +87,12 @@ class EELSCLEdge(Component):
 
     def __init__(self, element_subshell, GOS=None):
         # Declare the parameters
-        Component.__init__(self,
-                           ['intensity',
-                            'fine_structure_coeff',
-                            'effective_angle',
-                            'onset_energy'])
+        Component.__init__(
+            self,
+            ['intensity', 'fine_structure_coeff', 'effective_angle',
+             'onset_energy'],
+            linear_parameter_list=['intensity']
+            )
         if isinstance(element_subshell, dict):
             self.element = element_subshell['element']
             self.subshell = element_subshell['subshell']
@@ -218,12 +217,6 @@ class EELSCLEdge(Component):
 
     @property
     def fine_structure_smoothing(self):
-        """Controls the level of the smoothing of the fine structure.
-
-        It must a real number between 0 and 1. The higher close to 0
-        the higher the smoothing.
-
-        """
         return self._fine_structure_smoothing
 
     @fine_structure_smoothing.setter
@@ -286,8 +279,8 @@ class EELSCLEdge(Component):
         E2 = self.GOS.energy_axis[-1] + self.GOS.energy_shift
         y1 = self.GOS.qint[-2]  # in m**2/bin */
         y2 = self.GOS.qint[-1]  # in m**2/bin */
-        self.r = math.log(y2 / y1) / math.log(E1 / E2)
-        self.A = y1 / E1 ** -self.r
+        self._power_law_r = math.log(y2 / y1) / math.log(E1 / E2)
+        self._power_law_A = y1 / E1 ** -self._power_law_r
 
     def _calculate_knots(self):
         start = self.onset_energy.value
@@ -329,7 +322,7 @@ class EELSCLEdge(Component):
         itab = bsignal * (E <= Emax)
         cts[itab] = self.tab_xsection(E[itab])
         bsignal[itab] = False
-        cts[bsignal] = self.A * E[bsignal] ** -self.r
+        cts[bsignal] = self._power_law_A * E[bsignal] ** -self._power_law_r
         return cts * self.intensity.value
 
     def grad_intensity(self, E):

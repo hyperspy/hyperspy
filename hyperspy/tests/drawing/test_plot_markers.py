@@ -1,29 +1,32 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
+import logging
 
 import numpy as np
 import pytest
+import re
 
-from hyperspy.misc.test_utils import update_close_figure, sanitize_dict
-from hyperspy.signals import Signal2D, Signal1D, BaseSignal
-from hyperspy.utils import markers, stack
-from hyperspy.drawing.marker import dict2marker
+from hyperspy.datasets.artificial_data import get_core_loss_eels_line_scan_signal
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
-
+from hyperspy.drawing.marker import dict2marker
+from hyperspy.misc.test_utils import sanitize_dict, update_close_figure
+from hyperspy.signals import BaseSignal, Signal1D, Signal2D
+from hyperspy.utils import markers, stack
 
 default_tol = 2.0
 baseline_dir = 'plot_markers'
@@ -111,14 +114,18 @@ class TestMarkers:
         m2 = markers.point(((12, 2, 9), (1, 2, 3)), ((2, 5, 1), (3, 9, 2)))
         m3 = markers.vertical_line(((12, 2), (2, 5), (9, 2)))
         m4 = markers.point(5, 5)
-        m4.data['x1'][()] = np.array(None, dtype=np.object)
-        m4.data['y1'][()] = np.array(None, dtype=np.object)
+        m4.data['x1'][()] = np.array(None, dtype=object)
+        m4.data['y1'][()] = np.array(None, dtype=object)
         m5 = markers.vertical_line(9)
         m6 = markers.rectangle(1, 5, 6, 8)
         m7 = markers.rectangle((1, 2), (5, 6), (6, 7), (8, 9))
         m8 = markers.point(
             np.arange(256).reshape(2, 2, 2, 2, 2, 2, 2, 2),
             np.arange(256).reshape(2, 2, 2, 2, 2, 2, 2, 2))
+        m9 = markers.arrow(2, 3, 4, 5)
+        m10 = markers.arrow((2, 3), (4, 5), (6, 7), (8, 9))
+        m11 = markers.ellipse(4, 5, 2, 3)
+        m12 = markers.ellipse((2, 3), (4, 5), (6, 7), (8, 9))
         assert m0._get_data_shape() == ()
         assert m1._get_data_shape() == (2,)
         assert m2._get_data_shape() == (2, 3)
@@ -129,6 +136,10 @@ class TestMarkers:
         assert m6._get_data_shape() == ()
         assert m7._get_data_shape() == (2,)
         assert m8._get_data_shape() == (2, 2, 2, 2, 2, 2, 2, 2)
+        assert m9._get_data_shape() == ()
+        assert m10._get_data_shape() == (2,)
+        assert m11._get_data_shape() == ()
+        assert m12._get_data_shape() == (2,)
 
     def test_add_marker_not_plot(self):
         # This will do nothing, since plot_marker=False and permanent=False
@@ -141,11 +152,23 @@ class TestMarkers:
         s = Signal1D(np.zeros((3, 50, 50)))
         m0 = markers.point(5, 5)
         m1 = markers.point((5, 10), (10, 15))
-        m2 = markers.point(np.zeros((50, 3)), np.zeros((50, 3)))
+        m2 = markers.point(np.zeros((3, 50)), np.zeros((3, 50)))
         s.add_marker(m0)
         with pytest.raises(ValueError):
             s.add_marker(m1)
         s.add_marker(m2)
+
+    def test_add_marker_signal2d_navigation_dim_vertical_line(self):
+        s = Signal2D(np.arange(2 * 3 * 8 * 9).reshape(2, 3, 8, 9))
+        marker_pos_list = [[1, 3, 5], [2, 4, 6]]
+        m = markers.vertical_line(marker_pos_list)
+        s.add_marker(m)
+        s.axes_manager.indices = (0, 1)
+        for iy, temp_marker_list in enumerate(marker_pos_list):
+            for ix, value in enumerate(temp_marker_list):
+                s.axes_manager.indices = (ix, iy)
+                vertical_line = s._plot.signal_plot.ax.lines[1]
+                assert value == vertical_line.get_data()[0]
 
     def test_add_marker_signal2d_navigation_dim(self):
         s = Signal2D(np.zeros((3, 50, 50)))
@@ -163,6 +186,13 @@ class TestMarkers:
         for i in range(12):
             marker_list.append(markers.point(4, 8))
         s.add_marker(marker_list)
+
+    def test_check_if_plot_is_not_active(self):
+        s = Signal1D(np.arange(100).reshape([10,10]))
+        m = markers.vertical_line(np.arange(10))
+        s.add_marker(m)
+        s._plot.close()
+        s.add_marker(m)
 
 
 class Test_permanent_markers:
@@ -226,6 +256,8 @@ class Test_permanent_markers:
         m_hline_segment = markers.horizontal_line_segment(x1=1, x2=9, y=5)
         m_rect = markers.rectangle(x1=1, x2=3, y1=5, y2=10)
         m_text = markers.text(x=1, y=5, text="test")
+        m_arrow = markers.arrow(x1=4, y1=5, x2=6, y2=6, arrowstyle='<->')
+        m_ellipse = markers.ellipse(x=10, y=11, width=4, height=6)
         s.add_marker(m_point, permanent=True)
         s.add_marker(m_line, permanent=True)
         s.add_marker(m_vline, permanent=True)
@@ -234,7 +266,9 @@ class Test_permanent_markers:
         s.add_marker(m_hline_segment, permanent=True)
         s.add_marker(m_rect, permanent=True)
         s.add_marker(m_text, permanent=True)
-        assert len(list(s.metadata.Markers)) == 8
+        s.add_marker(m_arrow, permanent=True)
+        s.add_marker(m_ellipse, permanent=True)
+        assert len(list(s.metadata.Markers)) == 10
         with pytest.raises(ValueError):
             s.add_marker(m_rect, permanent=True)
 
@@ -288,6 +322,8 @@ class Test_permanent_markers:
         assert m.marker_properties['color'] == m1.marker_properties['color']
 
     def test_dict2marker(self):
+        m_arrow = markers.arrow(x1=5, x2=6, y1=7, y2=8)
+        m_ellipse = markers.ellipse(x=4, y=5, width=2, height=3)
         m_point0 = markers.point(x=5, y=5)
         m_point1 = markers.point(x=(5, 10), y=(1, 5))
         m_line = markers.line_segment(x1=5, x2=10, y1=5, y2=10)
@@ -298,6 +334,8 @@ class Test_permanent_markers:
         m_rect = markers.rectangle(x1=1, x2=3, y1=5, y2=10)
         m_text = markers.text(x=1, y=5, text="test")
 
+        m_arrow_new = dict2marker(m_arrow._to_dictionary(), m_arrow.name)
+        m_ellipse_new = dict2marker(m_ellipse._to_dictionary(), m_ellipse.name)
         m_point0_new = dict2marker(m_point0._to_dictionary(), m_point0.name)
         m_point1_new = dict2marker(m_point1._to_dictionary(), m_point1.name)
         m_line_new = dict2marker(m_line._to_dictionary(), m_line.name)
@@ -310,6 +348,8 @@ class Test_permanent_markers:
         m_rect_new = dict2marker(m_rect._to_dictionary(), m_rect.name)
         m_text_new = dict2marker(m_text._to_dictionary(), m_text.name)
 
+        m_arrow_dict = sanitize_dict(m_arrow._to_dictionary())
+        m_ellipse_dict = sanitize_dict(m_ellipse._to_dictionary())
         m_point0_dict = sanitize_dict(m_point0._to_dictionary())
         m_point1_dict = sanitize_dict(m_point1._to_dictionary())
         m_line_dict = sanitize_dict(m_line._to_dictionary())
@@ -320,6 +360,8 @@ class Test_permanent_markers:
         m_rect_dict = sanitize_dict(m_rect._to_dictionary())
         m_text_dict = sanitize_dict(m_text._to_dictionary())
 
+        m_arrow_new_dict = sanitize_dict(m_arrow_new._to_dictionary())
+        m_ellipse_new_dict = sanitize_dict(m_ellipse_new._to_dictionary())
         m_point0_new_dict = sanitize_dict(m_point0_new._to_dictionary())
         m_point1_new_dict = sanitize_dict(m_point1_new._to_dictionary())
         m_line_new_dict = sanitize_dict(m_line_new._to_dictionary())
@@ -331,6 +373,8 @@ class Test_permanent_markers:
             m_hline_segment_new._to_dictionary())
         m_rect_new_dict = sanitize_dict(m_rect_new._to_dictionary())
         m_text_new_dict = sanitize_dict(m_text_new._to_dictionary())
+        assert m_arrow_dict == m_arrow_new_dict
+        assert m_ellipse_dict == m_ellipse_new_dict
         assert m_point0_dict == m_point0_new_dict
         assert m_point1_dict == m_point1_new_dict
         assert m_line_dict == m_line_new_dict
@@ -342,7 +386,7 @@ class Test_permanent_markers:
         assert m_text_dict == m_text_new_dict
 
 
-def _test_plot_rectange_markers():
+def _test_plot_rectangle_markers():
     # Create test image 100x100 pixels:
     im = Signal2D(np.arange(100).reshape([10, 10]))
 
@@ -372,14 +416,14 @@ def _test_plot_rectange_markers():
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_rectange_markers():
-    im = _test_plot_rectange_markers()
+def test_plot_rectangle_markers():
+    im = _test_plot_rectangle_markers()
     return im._plot.signal_plot.figure
 
 
-@update_close_figure
-def test_plot_rectange_markers_close():
-    return _test_plot_rectange_markers()  # return for @update_close_figure
+@update_close_figure()
+def test_plot_rectangle_markers_close():
+    return _test_plot_rectangle_markers()  # return for @update_close_figure
 
 
 def _test_plot_point_markers():
@@ -402,7 +446,7 @@ def test_plot_point_markers():
     return s._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_point_markers_close():
     return _test_plot_point_markers()
 
@@ -433,7 +477,7 @@ def test_plot_text_markers_sig():
     return s._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_text_markers_close():
     return _test_plot_text_markers()
 
@@ -460,7 +504,7 @@ def test_plot_line_markers():
     return im._plot.signal_plot.figure
 
 
-@update_close_figure
+@update_close_figure()
 def test_plot_line_markers_close():
     return _test_plot_line_markers()
 
@@ -473,6 +517,45 @@ def test_plot_eds_lines():
     s.plot(True)
     s.axes_manager.navigation_axes[0].index = 1
     return s._plot.signal_plot.figure
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl,
+    filename='test_plot_eds_lines.png')
+def test_plot_xray_lines():
+    # It should be the same image as with previous test (test_plot_eds_lines)
+    a = EDS_TEM_Spectrum()
+    s = stack([a, a * 5])
+    s.plot()
+    s._plot_xray_lines(xray_lines=True)
+    s.axes_manager.navigation_axes[0].index = 1
+    return s._plot.signal_plot.figure
+
+
+def test_plot_eds_lines_not_in_range(caplog):
+    s = EDS_TEM_Spectrum().isig[5.0:8.0]
+    s.plot()
+    with caplog.at_level(logging.WARNING):
+        s._plot_xray_lines(xray_lines=['Pt_Ka'])
+
+    assert "Pt_Ka is not in the data energy range." in caplog.text
+
+
+def test_plot_eds_lines_background():
+    s = EDS_TEM_Spectrum().isig[5.0:8.0]
+    s.plot()
+    bw = s.estimate_background_windows()
+    s._plot_xray_lines(background_windows=bw)
+
+
+def test_plot_add_background_windows():
+    s = EDS_TEM_Spectrum().isig[5.0:8.0]
+    s.plot()
+    bw = s.estimate_background_windows()
+    s._add_background_windows_markers(bw)
+    # Add integration windows
+    iw = s.estimate_integration_windows(windows_width=2.0, xray_lines=['Fe_Ka'])
+    s._add_vertical_lines_groups(iw, linestyle='--')
 
 
 def test_iterate_markers():
@@ -491,11 +574,16 @@ def test_iterate_markers():
         ims.add_marker(m, plot_marker=True, permanent=True)
     xs = index[:, :, 1]
     ys = index[:, :, 0]
-    m = markers.rectangle(np.min(xs, 1),
-                          np.min(ys, 1),
-                          np.max(xs, 1),
-                          np.max(ys, 1),
-                          color='green')
+    x1 = np.min(xs, 1)
+    y1 = np.min(ys, 1)
+    x2 = np.max(xs, 1)
+    y2 = np.max(ys, 1)
+    m = markers.rectangle(x1, y1, x2, y2, color='green')
+    ims.add_marker(m, plot_marker=True, permanent=True)
+    m = markers.arrow(x1, y1, x2, y2, arrowstyle='<->',edgecolor='red')
+    ims.add_marker(m, plot_marker=True, permanent=True)
+    m = markers.ellipse((x1+x2)/2, (y1+y2)/2, x2-x1, y2-y1,
+                      edgecolor='yellow')
     ims.add_marker(m, plot_marker=True, permanent=True)
 
     for im in ims:
@@ -509,11 +597,11 @@ def test_iterate_markers():
             assert mo.get_data_position('x1') == mi.get_data_position('x1')
             assert mo.get_data_position('y1') == mi.get_data_position('y1')
             assert mo.get_data_position('text') == mi.get_data_position('text')
-            assert mo.marker_properties['color'] == \
-                mi.marker_properties['color']
+            for propkey in mo.marker_properties:
+                assert mo.marker_properties[propkey] == \
+                    mi.marker_properties[propkey]
 
-
-@update_close_figure
+@update_close_figure()
 def test_plot_eds_markers_close():
     s = EDS_TEM_Spectrum()
     s.plot(True)
@@ -524,3 +612,156 @@ def test_plot_eds_markers_no_energy():
     s = EDS_TEM_Spectrum()
     del s.metadata.Acquisition_instrument.TEM.beam_energy
     s.plot(True)
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_eels_labels():
+    s = get_core_loss_eels_line_scan_signal(True, random_state=10)
+    s.add_elements(['Cr'])
+    s.plot(plot_edges=True)
+    return s._plot.signal_plot.figure
+
+
+def test_plot_eels_labels_nav():
+    s = get_core_loss_eels_line_scan_signal(True)
+    s.add_elements(['Cr', 'Fe'])
+    s.plot(plot_edges=True)
+    s.axes_manager.indices = (10, )
+    s._plot.close()
+
+
+@pytest.mark.parametrize('reversed_order', [True, False])
+@pytest.mark.mpl_image_compare(
+    filename='test_plot_markers_zorder.png',
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_markers_zorder(reversed_order):
+    s = Signal2D(np.full((10,10),20))
+    s.axes_manager[0].name='x'
+    s.axes_manager[0].scale=10
+    s.axes_manager[1].scale=10
+    s.plot()
+
+    marker_list = [
+        markers.rectangle(35, 45, 65, 75, edgecolor="yellow", facecolor="cyan", zorder=3),
+        markers.text(10, 20, "Text", color="white", size=30, zorder=4),
+        markers.ellipse(40, 60, 30, 25, edgecolor='white', facecolor='red', linewidth=4, zorder=8),
+        markers.arrow(10, 10, 50, 50, arrowstyle='<|-|>', edgecolor='white', facecolor='red', linewidth=1, shrinkA=2, shrinkB=2, zorder=8.5),
+        markers.arrow(10, 15, 50, 60, arrowstyle='<->', edgecolor='red', facecolor='red', linewidth=3, shrinkA=2, shrinkB=2, zorder=2.8),
+        markers.rectangle(10, 20, 60, 70, edgecolor="red", facecolor="green", fill=True, zorder=2.7),
+        markers.text(50, 60, "Text", color="white", backgroundcolor="blue", size=40, zorder=6.6),
+        markers.ellipse(70, 40, 30, 25, edgecolor='blue', facecolor='red', fill=True, linewidth=4, zorder=7.5),
+        markers.line_segment(50, 10, 40, 80, color='cyan', linewidth=3, zorder=3.2),
+    ]
+
+    if reversed_order:
+        marker_list.reverse()
+    s.add_marker(marker_list)
+
+    return s._plot.signal_plot.figure
+
+
+def _test_plot_markers_repr(m, keys):
+    match_str = r'<marker\.'+m.__class__.__name__+', '+m.name+r' \((.*)\)>'
+    mm = re.match(match_str,repr(m))
+    assert mm is not None
+    props = re.sub('=.*$','',re.sub('=.*?,',',',mm.group(1))).split(',')
+    for key in keys:
+        assert key in props
+
+
+def test_plot_markers_mpl_options():
+    # check if required parameters are shown in repr
+    _test_plot_markers_repr(markers.arrow(10, 20, 30, 40),
+                            ['x1', 'y1', 'x2', 'y2',
+                             'edgecolor', 'arrowstyle'])
+    _test_plot_markers_repr(markers.ellipse(10, 20, 30, 40, color='red'),
+                            ['x', 'y', 'width', 'height',
+                             'edgecolor'])
+    _test_plot_markers_repr(markers.horizontal_line(10),
+                            ['y', 'color'])
+    _test_plot_markers_repr(markers.horizontal_line_segment(10, 20, 30),
+                            ['x1', 'x2', 'y', 'color'])
+    _test_plot_markers_repr(markers.line_segment(10, 20, 30,40),
+                            ['x1', 'x2', 'y1', 'y2', 'color'])
+    _test_plot_markers_repr(markers.point(10, 20),
+                            ['x', 'x', 'color', 'size'])
+    m = markers.rectangle(10, 20, 30, 40, color='red')
+    _test_plot_markers_repr(m, ['edgecolor'])
+    # check if 'color' property is converted to 'edgecolor'
+    assert 'color' not in m.marker_properties
+    assert 'edgecolor' in m.marker_properties
+    assert m.marker_properties['edgecolor'] == 'red'
+
+    _test_plot_markers_repr(markers.text(10,20,"test"),
+                            ['x', 'y', 'text', 'color'])
+    _test_plot_markers_repr(markers.vertical_line(10),
+                            ['x', 'color'])
+    m = markers.vertical_line_segment(10, 20, 30)
+    _test_plot_markers_repr(m,['x', 'y1', 'y2', 'color'])
+
+
+def test_vertical_horizontal_line_segment_with_None():
+    m0 = markers.horizontal_line_segment(None, None, 1)
+    m1 = markers.vertical_line_segment(1, None, None)
+    w = 2
+    h = 3
+    s = Signal2D(np.arange(w * h).reshape(h, w))
+    s.add_marker(m0)
+    s.add_marker(m1)
+    np.testing.assert_allclose(m0.marker.get_segments()[0], [[-0.5, 1.],[w - 0.5, 1.]])
+    np.testing.assert_allclose(m1.marker.get_segments()[0], [[1., h - 0.5],[1., -0.5]])
+
+
+def test_markers_auto_update():
+    # test data for fixed marker
+    pos = [1, 2, 3, 4]
+    # test data for auto_update marker
+    pos_list = np.array([[1, 3, 5], [2, 4, 6]])
+    pos_2d = [pos_list + pos[i] for i in range(4)]
+
+    s = Signal2D(np.arange(2 * 3 * 4 * 5).reshape(2, 3, 4, 5))
+    marker_list = []
+    for _auto_update, _pos in [(False, pos), (True, pos_2d)]:
+        _markers = [
+            markers.vertical_line(_pos[0]),
+            markers.horizontal_line(_pos[0]),
+            markers.vertical_line_segment(*(_pos[0:3])),
+            markers.horizontal_line_segment(*(_pos[0:3])),
+            markers.rectangle(*_pos),
+            markers.ellipse(*_pos),
+            markers.arrow(*_pos),
+            markers.line_segment(*_pos),
+            markers.point(_pos[0], _pos[1]),
+            markers.text(_pos[0], _pos[1], "test"),
+        ]
+        for marker in _markers:
+            assert marker.auto_update is _auto_update
+        marker_list += _markers
+    assert len(marker_list) == 20
+    s.add_marker(marker_list)
+    for iy, temp_marker_list in enumerate(pos_list):
+        for ix, value in enumerate(temp_marker_list):
+            s.axes_manager.indices = (ix, iy)
+            for marker in marker_list:
+                _xy = [marker.get_data_position(ax) for ax in ('x1','y1','x2','y2')]
+                if marker.auto_update is False:
+                    _xy2 = pos
+                else:
+                    _xy2 = [pos_2d[i][iy, ix] for i in range(4)]
+                _name = marker.name
+                if marker.auto_update is False:
+                    if _name == 'vertical_line':
+                        assert _xy2[0] == _xy[0]
+                    elif _name == 'horizontal_line':
+                        assert _xy2[0] == _xy[1]
+                    elif _name == 'vertical_line_segment':
+                        assert _xy2[0:3] == [_xy[i] for i in (0,1,3)]
+                    elif _name == 'horizontal_line_segment':
+                        assert _xy2[0:3] == [_xy[i] for i in (0,2,1)]
+                    elif _name in ('rectangle', 'ellipse', 'arrow', 'line_segment'):
+                        assert _xy2 == _xy
+                    elif _name in ('point', 'text'):
+                        assert _xy2[0:2] == _xy[0:2]
+                    else:
+                        raise ValueError('Unknown marker : ' + _name)

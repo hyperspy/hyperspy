@@ -1,54 +1,63 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 
-from hyperspy.component import Component, Parameter
+from hyperspy._components.expression import Expression
 
+class Bleasdale(Expression):
 
-class Bleasdale(Component):
+    r"""Bleasdale function component.
 
-    """Bleasdale function component.
+    Also called the Bleasdale-Nelder function. Originates from the description of the yield-density relationship in crop growth.
 
-    f(x) = (a+b*x)^(-1/c)
+    .. math::
 
-    Attributes
-    ----------
-    a : Float
-    b : Float
-    c : Float
+        f(x) = \left(a+b\cdot x\right)^{-1/c}
 
+    Parameters
+    -----------
+        a : Float
+
+        b : Float
+
+        c : Float
+
+        **kwargs
+            Extra keyword arguments are passed to the
+            :py:class:`~._components.expression.Expression` component.
+
+    For :math:`(a+b\cdot x)\leq0`, the component will be set to 0.
     """
 
-    def __init__(self):
-        # Define the parameters
-        Component.__init__(self, ('a', 'b', 'c'))
-        self.c.value = 1.0
-        # Define the name of the component
-
-    def function(self, x):
-        """
-        """
-        a = self.a.value
-        b = self.b.value
-        c = self.c.value
-        abx = (a + b * x)
-        return np.where(abx > 0., abx ** (-1 / c), 0.)
+    def __init__(self, a=1., b=1., c=1., module="numexpr", **kwargs):
+        super().__init__(
+            expression="where((a + b * x) > 0, (a + b * x) ** (-1 / c), 0)",
+            name="Bleasdale",
+            a=a,
+            b=b,
+            c=c,
+            module=module,
+            autodoc=False,
+            compute_gradients=False,
+            linear_parameter_list=['b'],
+            check_parameter_linearity=False,
+            **kwargs)
 
     def grad_a(self, x):
         """
@@ -58,7 +67,7 @@ class Bleasdale(Component):
         b = self.b.value
         c = self.c.value
 
-        return -(b * x + a) ** (-1. / c - 1.) / c
+        return np.where((a + b * x) > 0, -(a + b * x) ** (-1 / c - 1) / c, 0)
 
     def grad_b(self, x):
         """
@@ -68,7 +77,8 @@ class Bleasdale(Component):
         b = self.b.value
         c = self.c.value
 
-        return -(x * (b * x + a) ** (-1 / c - 1)) / c
+        return np.where((a + b * x) > 0, -x * (a + b * x) ** (-1 / c - 1) / c
+               , 0)
 
     def grad_c(self, x):
         """
@@ -77,4 +87,5 @@ class Bleasdale(Component):
         a = self.a.value
         b = self.b.value
         c = self.c.value
-        return np.log(b * x + a) / (c ** 2. * (b * x + a) ** (1. / c))
+        return np.where((a + b * x) > 0, np.log(a + b * x) / (c ** 2. *
+               (b * x + a) ** (1. / c)), 0)

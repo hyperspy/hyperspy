@@ -6,11 +6,12 @@ Metadata structure
 
 The :class:`~.signal.BaseSignal` class stores metadata in the
 :attr:`~.signal.BaseSignal.metadata` attribute that has a tree structure. By
-convention, the nodes labels are capitalized and the leaves are not
+convention, the node labels are capitalized and the leaves are not
 capitalized.
 
 When a leaf contains a quantity that is not dimensionless, the units can be
 given in an extra leaf with the same label followed by the "_units" suffix.
+For example, an "energy" leaf should be accompanied by an "energy_units" leaf.
 
 The metadata structure is represented in the following tree diagram. The
 default units are given in parentheses. Details about the leaves can be found
@@ -77,6 +78,18 @@ in the following sections of this chapter.
     │           ├── y (mm)
     │           └── z (mm)
     ├── General
+    |   |── FileIO
+    |   |   ├── 0
+    |   |   |   ├── operation
+    |   |   |   ├── hyperspy_version
+    |   |   |   ├── io_plugin
+    |   │   |   └── timestamp
+    |   |   ├── 1
+    |   |   |   ├── operation
+    |   |   |   ├── hyperspy_version
+    |   |   |   ├── io_plugin
+    |   │   |   └── timestamp
+    |   |   └── ...
     │   ├── authors
     │   ├── date
     │   ├── doi
@@ -101,7 +114,6 @@ in the following sections of this chapter.
         │   │   ├── gain_offset
         │   │   └── parameters_estimation_method
         │   └── variance
-        ├── binned
         ├── quantity
         ├── signal_type
         └── signal_origin
@@ -154,6 +166,47 @@ notes
     type: Str
 
     Notes about the data.
+
+.. _general-file-metadata:
+
+FileIO
+------
+
+Contains information about the software packages and versions used any time the
+Signal was created by reading the original data format (added in HyperSpy
+v1.7) or saved by one of HyperSpy's IO tools. If the signal is saved to one
+of the ``hspy``, ``zspy`` or ``nxs`` formats, the metadata within the ``FileIO``
+node will represent a history of the software configurations used when the 
+conversion was made from the proprietary/original format to HyperSpy's
+format, as well as any time the signal was subsequently loaded from and saved
+to disk. Under the ``FileIO`` node will be one or more nodes named ``0``,
+``1``, ``2``, etc., each with the following structure:
+
+operation
+   type: Str
+
+   This value will be either ``"load"`` or ``"save"`` to indicate whether
+   this node represents a load from, or save to disk operation, respectively.
+
+hyperspy_version
+    type: Str
+
+    The version number of the HyperSpy software used to extract a Signal from
+    this data file or save this Signal to disk
+
+io_plugin
+    type: Str
+
+    The specific input/output plugin used to originally extract this data file
+    into a HyperSpy Signal or save it to disk -- will be of the form
+    ``hyperspy.io_plugins.<plugin_name>``.
+
+timestamp
+    type: Str
+
+    The timestamp of the computer running the data loading/saving process (in a
+    timezone-aware format). The timestamp will be in ISO 8601 format, as
+    produced by the ``isoformat()`` method of the ``datetime`` class.
 
 Acquisition_instrument
 ======================
@@ -431,7 +484,7 @@ signal_type
 
     A term that describes the signal type, e.g. EDS, PES... This information
     can be used by HyperSpy to load the file as a specific signal class and
-    therefore the naming should be standarised. Currently HyperSpy provides
+    therefore the naming should be standardised. Currently, HyperSpy provides
     special signal class for photoemission spectroscopy, electron energy
     loss spectroscopy and energy dispersive spectroscopy. The signal_type in
     these cases should be respectively PES, EELS and EDS_TEM (EDS_SEM).
@@ -444,10 +497,11 @@ signal_origin
 
 record_by
     .. deprecated:: 1.2
+
     type: Str
 
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
-    If 'spectrum' the spectral data is stored in the faster index.
+    If 'spectrum', the spectral data is stored in the faster index.
 
 quantity
     type: Str
@@ -496,17 +550,17 @@ correlation_factor
 parameters_estimation_method
     type: Str
 
+
 _Internal_parameters
 ====================
 
 This node is "private" and therefore is not displayed when printing the
-:attr:`~.signal.BaseSignal.metadata` attribute. For example, an "energy" leaf
-should be accompanied by an "energy_units" leaf.
+:attr:`~.signal.BaseSignal.metadata` attribute.
 
 Stacking_history
 ----------------
 
-Generated when using :py:meth:`~.utils.stack`. Used by
+Generated when using :py:meth:`~.misc.utils.stack`. Used by
 :py:meth:`~.signal.BaseSignal.split`, to retrieve the former list of signal.
 
 step_sizes
@@ -523,3 +577,79 @@ Folding
 -------
 
 Constains parameters that related to the folding/unfolding of signals.
+
+
+Functions to handle the metadata
+================================
+
+Existing nodes can be directly read out or set by adding the path in the
+metadata tree:
+
+::
+
+    s.metadata.General.title = 'FlyingCircus'
+    s.metadata.General.title
+
+
+The following functions can operate on the metadata tree. An example with the
+same functionality as the above would be:
+
+::
+
+    s.metadata.set_item('General.title', 'FlyingCircus')
+    s.metadata.get_item('General.title')
+
+
+Adding items
+------------
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item`
+    Given a ``path`` and ``value``, easily set metadata items, creating any
+    necessary nodes on the way.
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary`
+    Add new items from a given ``dictionary``.
+
+
+Output metadata
+---------------
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item`
+    Given an ``item_path``, return the ``value`` of the metadata item.
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.as_dictionary`
+    Returns a dictionary representation of the metadata tree.
+    
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.export`
+    Saves the metadata tree in pretty tree printing format in a text file.
+    Takes ``filename`` as parameter.
+
+
+Searching for keys
+------------------
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
+    Given an ``item_path``, returns ``True`` if the item exists anywhere
+    in the metadata tree.
+
+Using the option ``full_path=False``, the functions
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item` and
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item` can also find items by
+their key in the metadata when the exact path is not known. By default, only
+an exact match of the search string with the item key counts. The additional 
+setting ``wild=True`` allows to search for a case-insensitive substring of the
+item key. The search functionality also accepts item keys preceded by one or
+several nodes of the path (separated by the usual full stop).
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
+    For ``full_path=False``, given a ``item_key``, returns ``True`` if the item
+    exists anywhere in the metadata tree.
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
+    For ``full_path=False, return_path=True``, returns the path or list of
+    paths to any matching item(s).
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item`
+    For ``full_path=False``, returns the value or list of values for any
+    matching item(s). Setting ``return_path=True``, a tuple (value, path) is
+    returned -- or lists of tuples for multiple occurences.

@@ -1,29 +1,27 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
-from dateutil import tz, parser
-
-from numpy.testing import assert_allclose
+from dateutil import parser, tz
 
 import hyperspy.misc.date_time_tools as dtt
-from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.test_utils import assert_deep_almost_equal
+from hyperspy.misc.utils import DictionaryTreeBrowser
 
 
 def _get_example(date, time, time_zone=None):
@@ -111,13 +109,16 @@ def test_update_date_time_in_metadata():
     assert_deep_almost_equal(md13.General.date, md2.General.date)
     assert_deep_almost_equal(md13.General.time, md2.General.time)
     assert_deep_almost_equal(md13.General.time_zone, '-05:00')
-    assert_deep_almost_equal(dtt.update_date_time_in_metadata(dt2, md.deepcopy()).as_dictionary(),
-                             md2.as_dictionary())
+    assert_deep_almost_equal(
+        dtt.update_date_time_in_metadata(dt2, md.deepcopy()).as_dictionary(),
+        md2.as_dictionary())
 
-    assert_deep_almost_equal(dtt.update_date_time_in_metadata(iso3, md.deepcopy()).as_dictionary(),
-                             md3.as_dictionary())
-    assert_deep_almost_equal(dtt.update_date_time_in_metadata(dt3, md.deepcopy()).as_dictionary(),
-                             md3.as_dictionary())
+    assert_deep_almost_equal(
+        dtt.update_date_time_in_metadata(iso3, md.deepcopy()).as_dictionary(),
+        md3.as_dictionary())
+    assert_deep_almost_equal(
+        dtt.update_date_time_in_metadata(dt3, md.deepcopy()).as_dictionary(),
+        md3.as_dictionary())
 
 
 def test_serial_date_to_ISO_format():
@@ -146,17 +147,17 @@ def test_serial_date_to_ISO_format():
 def test_ISO_format_to_serial_date():
     res1 = dtt.ISO_format_to_serial_date(
         dt1.date().isoformat(), dt1.time().isoformat(), timezone=dt1.tzname())
-    assert_allclose(res1, serial1, atol=1E-5)
+    np.testing.assert_allclose(res1, serial1, atol=1E-5)
     dt = dt2.astimezone(tz.tzlocal())
     res2 = dtt.ISO_format_to_serial_date(
         dt.date().isoformat(), dt.time().isoformat(), timezone=dt.tzname())
-    assert_allclose(res2, serial2, atol=1E-5)
+    np.testing.assert_allclose(res2, serial2, atol=1E-5)
     res3 = dtt.ISO_format_to_serial_date(
         dt3.date().isoformat(), dt3.time().isoformat(), timezone=dt3.tzname())
-    assert_allclose(res3, serial3, atol=1E-5)
+    np.testing.assert_allclose(res3, serial3, atol=1E-5)
 
 
 def test_datetime_to_serial_date():
-    assert_allclose(dtt.datetime_to_serial_date(dt1), serial1, atol=1E-5)
-    assert_allclose(dtt.datetime_to_serial_date(dt2), serial2, atol=1E-5)
-    assert_allclose(dtt.datetime_to_serial_date(dt3), serial3, atol=1E-5)
+    np.testing.assert_allclose(dtt.datetime_to_serial_date(dt1), serial1, atol=1E-5)
+    np.testing.assert_allclose(dtt.datetime_to_serial_date(dt2), serial2, atol=1E-5)
+    np.testing.assert_allclose(dtt.datetime_to_serial_date(dt3), serial3, atol=1E-5)

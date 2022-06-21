@@ -4,13 +4,14 @@ Working with big data
 *********************
 
 .. warning:: All the features described in this chapter are in beta state.
-   Although most of them work, their opearation may not always be optimal,
-   well documented and/or consistent with their in-memory counterparts.
+
+   Although most of them work as described, their operation may not always
+   be optimal, well-documented and/or consistent with their in-memory counterparts.
+
    Therefore, although efforts will be taken to minimise major disruptions,
    the syntax and features described here may change in patch and minor
    HyperSpy releases. If you experience issues with HyperSpy's lazy features
    please report them to the developers.
-
 
 .. versionadded:: 1.2
 
@@ -116,14 +117,262 @@ operations are only performed lazily, use the
     >>> sl
     <LazySignal1D, title: , dimensions: (3|50)>
 
+
+.. _big_data.decomposition:
+
+Machine learning
+----------------
+
+:ref:`mva.decomposition` algorithms for machine learning often perform
+large matrix manipulations, requiring significantly more memory than the data size.
+To perform decomposition operation lazily, HyperSpy provides access to several "online"
+algorithms  as well as `dask <https://dask.pydata.org/>`_'s lazy SVD algorithm.
+Online algorithms perform the decomposition by operating serially on chunks of
+data, enabling the lazy decomposition of large datasets. In line with the
+standard HyperSpy signals, lazy :py:meth:`~._signals.lazy.LazySignal.decomposition`
+offers the following online algorithms:
+
+.. _lazy_decomposition-table:
+
+.. table:: Available lazy decomposition algorithms in HyperSpy
+
+   +--------------------------+----------------------------------------------------------------+
+   | Algorithm                | Method                                                         |
+   +==========================+================================================================+
+   | "SVD" (default)          | :py:func:`dask.array.linalg.svd`                               |
+   +--------------------------+----------------------------------------------------------------+
+   | "PCA"                    | :py:class:`sklearn.decomposition.IncrementalPCA`               |
+   +--------------------------+----------------------------------------------------------------+
+   | "ORPCA"                  | :py:class:`~.learn.rpca.ORPCA`                                 |
+   +--------------------------+----------------------------------------------------------------+
+   | "ORNMF"                  | :py:class:`~.learn.ornmf.ORNMF`                                |
+   +--------------------------+----------------------------------------------------------------+
+
+.. seealso::
+
+  :py:meth:`~.learn.mva.MVA.decomposition` for more details on decomposition
+  with non-lazy signals.
+
+
+Navigator plot
+--------------
+
+The default signal navigator is the sum of the signal across all signal
+dimensions and all but 1 or 2 navigation dimensions. If the dataset is large,
+this can take a significant amount of time to perform with every plot.
+By default, a navigator is computed with minimally required approach to obtain
+a good signal-to-noise ratio image: the sum is taken on a single chunk of the
+signal space, in order to avoid to compute the navigator for the whole dataset.
+In the following example, the signal space is divided in 25 chunks (5 along on
+each axis), and therefore computing the navigation will only be perfomed over
+a small subset of the whole dataset by taking the sum on only 1 chunk out
+of 25:
+
+.. code-block:: python
+
+    >>> import dask.array as da
+    >>> import hyperspy.api as hs
+    >>> data = da.random.random((100, 100, 1000, 1000), chunks=('auto', 'auto', 200, 200))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> s.plot()
+
+In the example above, the calculation of the navigation is fast but the actual
+visualisation of the dataset is slow, each for each navigation index change,
+25 chunks of the dataset needs to be fetched from the harddrive. In the
+following example, the signal space contains a single chunk (instead of 25, in
+the previous example) and the calculating the navigator will then be slower (~20x)
+because the whole dataset will need to processed, however in this case, the
+visualisation will be faster, because only a single chunk will fetched from the
+harddrive when changing navigation indices:
+
+.. code-block:: python
+
+    >>> data = da.random.random((100, 100, 1000, 1000), chunks=('auto', 'auto', 1000, 1000))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> s.plot()
+
+This approach depends heavily on the chunking of the data and may not be
+always suitable. The :py:meth:`~hyperspy._signals.lazy.LazySignal.compute_navigator`
+can be used to calculate the navigator efficient and store the navigator, so
+that it can be used when plotting and saved for the later loading of the dataset.
+The :py:meth:`~hyperspy._signals.lazy.LazySignal.compute_navigator` has optional
+argument to specify the index where the sum needs to be calculated and how to
+rechunk the dataset when calculating the navigator. This allows to
+efficiently calculate the navigator without changing the actual chunking of the
+dataset, since the rechunking only takes during the computation of the navigator:
+
+.. code-block:: python
+
+    >>> data = da.random.random((100, 100, 1000, 1000), chunks=('auto', 'auto', 100, 100))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> s.compute_navigator(chunks_number=5)
+    >>> s.plot()
+
+.. code-block:: python
+
+    >>> data = da.random.random((100, 100, 2000, 400), chunks=('auto', 'auto', 100, 100))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> s
+    <LazySignal2D, title: , dimensions: (100, 100|400, 2000)>
+    >>> s.compute_navigator(chunks_number=(2, 10))
+    >>> s.plot()
+    >>> s.navigator.original_metadata
+    └── sum_from = [slice(200, 400, None), slice(1000, 1200, None)]
+
+The index can also be specified following the
+:ref:`HyperSpy indexing signal1D <signal.indexing>` syntax for float and
+interger.
+
+.. code-block:: python
+
+    >>> data = da.random.random((100, 100, 2000, 400), chunks=('auto', 'auto', 100, 100))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> s
+    <LazySignal2D, title: , dimensions: (100, 100|400, 2000)>
+    >>> s.compute_navigator(index=0, chunks_number=(2, 10))
+    >>> s.navigator.original_metadata
+    └── sum_from = [slice(0, 200, None), slice(0, 200, None)]
+
+An alternative is to calculate the navigator separately and store it in the
+signal using the :py:attr:`~hyperspy._signals.lazy.LazySignal.navigator` setter.
+
+
+.. code-block:: python
+
+    >>> data = da.random.random((100, 100, 1000, 1000), chunks=('auto', 'auto', 100, 100))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> s
+    <LazySignal2D, title: , dimensions: (100, 100|1000, 1000)>
+    >>> # for fastest results, just pick one signal space pixel
+    >>> nav = s.isig[500, 500]
+    >>> # Alternatively, sum as per default behaviour of non-lazy signal
+    >>> nav = s.sum(s.axes_manager.signal_axes)
+    >>> nav
+    <LazySignal2D, title: , dimensions: (|100, 100)>
+    >>> # Compute the result
+    >>> nav.compute()
+    [########################################] | 100% Completed | 13.1s
+    >>> s.navigator = nav
+    >>> s.plot()
+
+Alternatively, it is possible to not have a navigator, and use sliders
+instead:
+
+.. code-block:: python
+
+    >>> s
+    <LazySignal2D, title: , dimensions: (200, 200|512, 512)>
+    >>> s.plot(navigator='slider')
+
+.. versionadded:: 1.7
+
+.. _big_data.gpu:
+
+GPU support
+-----------
+
+Lazy data processing on GPUs requires explicitly transferring the data to the
+GPU.
+
+On linux, it is recommended to use the
+`dask_cuda <https://docs.rapids.ai/api/dask-cuda/stable/index.html>`_ library 
+(not supported on windows) to manage the dask scheduler. As for CPU lazy
+processing, if the dask scheduler is not specified, the default scheduler
+will be used.
+
+.. code-block:: python
+
+    >>> from dask_cuda import LocalCUDACluster
+    >>> from dask.distributed import Client
+    >>> cluster = LocalCUDACluster()
+    >>> client = Client(cluster)
+
+.. code-block:: python
+
+    >>> import hyperspy.api as hs
+    >>> import cupy as cp
+    >>> import dask.array as da
+    >>> # Create a dask array
+    >>> data = da.random.random(size=(20, 20, 100, 100))
+    >>> print(data)
+    ... dask.array<random_sample, shape=(20, 20, 100, 100), dtype=float64,
+    ... chunksize=(20, 20, 100, 100), chunktype=numpy.ndarray>
+    >>> # convert the dask chunks from numpy array to cupy array
+    >>> data = data.map_blocks(cp.asarray)
+    >>> print(data)
+    ... dask.array<random_sample, shape=(20, 20, 100, 100), dtype=float64,
+    ... chunksize=(20, 20, 100, 100), chunktype=cupy.ndarray>
+    >>> # Create the signal
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+
+.. note::
+    See the dask blog on `Richardson Lucy (RL) deconvolution <https://blog.dask.org/2020/11/12/deconvolution>`_
+    for an example of lazy processing on GPUs using dask and cupy
+
+
+.. _FitBigData-label:
+
+Model fitting
+-------------
+Most curve-fitting functionality will automatically work on models created from
+lazily loaded signals. HyperSpy extracts the relevant chunk from the signal and fits to that.
+
+The linear ``'lstsq'`` optimizer supports fitting the entire dataset in a vectorised manner
+using :py:func:`dask.array.linalg.lstsq`. This can give potentially enormous performance benefits over fitting 
+with a nonlinear fitter, but comes with the restrictions explained in the :ref:`linear fitting<linear_fitting-label>` section.
+
 Practical tips
 --------------
 
 Despite the limitations detailed below, most HyperSpy operations can be
-performed lazily. Important points of note are:
+performed lazily. Important points are:
+
+.. _big_data.chunking:
 
 Chunking
 ^^^^^^^^
+
+Data saved in the HDF5 format is typically divided into smaller chunks which can be loaded separately into memory,
+allowing lazy loading. Chunk size can dramatically affect the speed of various HyperSpy algorithms, so chunk size is
+worth careful consideration when saving a signal. HyperSpy's default chunking sizes are probably not optimal
+for a given data analysis technique. For more comprehensible documentation on chunking,
+see the dask `array chunks
+<https://docs.dask.org/en/latest/array-chunks.html>`_ and `best practices
+<https://docs.dask.org/en/latest/array-best-practices.html>`_ docs. The chunks saved into HDF5 will
+match the dask array chunks in ``s.data.chunks`` when lazy loading.
+Chunk shape should follow the axes order of the numpy shape (``s.data.shape``), not the hyperspy shape.
+The following example shows how to chunk one of the two navigation dimensions into smaller chunks:
+
+.. code-block:: python
+
+    >>> import dask.array as da
+    >>> data = da.random.random((10, 200, 300))
+    >>> data.chunksize
+    (10, 200, 300)
+
+    >>> s = hs.signals.Signal1D(data).as_lazy()
+    >>> s # Note the reversed order of navigation dimensions
+    <LazSignal1D, title: , dimensions: (200, 10|300)>
+
+    >>> s.save('chunked_signal.hspy', chunks=(10, 100, 300)) # Chunking first hyperspy dimension (second array dimension)
+    >>> s2 = hs.load('chunked_signal.hspy', lazy=True)
+    >>> s2.data.chunksize
+    (10, 100, 300)
+
+To get the chunk size of given axes, the :py:meth:`~._signals.lazy.LazySignal.get_chunk_size`
+method can be used:
+
+.. code-block:: python
+
+    >>> import dask.array as da
+    >>> data = da.random.random((10, 200, 300))
+    >>> data.chunksize
+    (10, 200, 300)
+    >>> s = hs.signals.Signal1D(data).as_lazy()
+    >>> s.get_chunk_size() # All navigation axes
+    ((10,), (200,))
+    >>> s.get_chunk_size(0) # The first navigation axis
+    ((200,),)
 
 .. versionadded:: 1.3.2
 
@@ -132,6 +381,25 @@ it is sometimes possible to manually set a more optimal chunking manually. There
 many operations take a ``rechunk`` or ``optimize`` keyword argument to disable
 automatic rechunking.
 
+.. versionadded:: 1.7.0
+
+.. _lazy._repr_html_:
+
+For more recent versions of dask (dask>2021.11) when using hyperspy in a jupyter
+notebook a helpful html representation is available.
+
+.. code-block:: python
+
+    >>> import numpy as np
+    >>> import hyperspy.api as hs
+    >>> data = np.zeros((20, 20, 10, 10, 10))
+    >>> s = hs.signals.Signal2D(data)
+    >>> s
+
+.. figure:: images/chunks.png
+
+This helps to visualize the chunk structure and identify axes where the chunk spans the entire
+axis (bolded axes).
 
 Computing lazy signals
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -151,40 +419,6 @@ signal) it has a :py:meth:`~._signals.lazy.LazySignal.compute` method:
     <Signal2D, title: , dimensions: (|512, 512)>
 
 
-Navigator plot
-^^^^^^^^^^^^^^
-
-The default signal navigator is the sum of the signal across all signal
-dimensions and all but 1 or 2 navigation dimensions. If the dataset is large,
-this can take a significant amount of time to perform with every plot. A more
-convenient alternative is to calculate the summed navigation signal manually
-once, and only pass it for all other plots. Pay attention to the transpose
-(``.T``):
-
-.. code-block:: python
-
-    >>> s
-    <LazySignal2D, title: , dimensions: (200, 200|512, 512)>
-    >>> # for fastest results, just pick one signal space pixel
-    >>> nav = s.transpose(optimize=True).inav[256, 256]
-    >>> # Alternatively, sum as per default behaviour
-    >>> nav = s.sum(s.axes_manager.signal_axes).T
-    >>> nav
-    <LazySignal2D, title: , dimensions: (|200, 200)>
-    >>> # Compute the result
-    >>> nav.compute()
-    [########################################] | 100% Completed | 13.1s
-    >>> s.plot(navigator=nav)
-
-Alternatively, it is possible to not have a navigator, and use sliders
-instead:
-
-.. code-block:: python
-
-    >>> s
-    <LazySignal2D, title: , dimensions: (200, 200|512, 512)>
-    >>> s.plot(navigator='slider')
-
 Lazy operations that affect the axes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -196,7 +430,7 @@ of a given function that is computed lazily depends on the value of the
 axes parameters that *may have changed* before the computation is requested.
 Therefore, in order to avoid such issues, it is reccomended to explicitly
 compute the result of all functions that are affected by the axes
-paramters. This is the reason why e.g. the result of
+parameters. This is the reason why e.g. the result of
 :py:meth:`~._signals.signal1d.Signal1D.shift1D` is not lazy.
 
 
@@ -245,32 +479,6 @@ Or even better:
     >>> s = hs.signals.BaseSignal([0]).as_lazy()
     >>> s1 = s + 1
 
-Machine learning (decomposition)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-:ref:`decomposition` algorithms often performs large matrix manipulations,
-requiring significantly more memory than the data size. To perform
-decomposition operation lazily HyperSpy provides several "online" algorithms and
-`dask <https://dask.pydata.org/>`_'s lazy SVD algorithm.
-Online algorithms perform the decomposition by operating serially on chunks of
-data, enabling the lazy decomposition of large datasets. In line with the
-standard HyperSpy signals,
-:py:meth:`~._signals.lazy.LazySignal.decomposition` offers  the following
-online algorithms:
-
-* **PCA** (``algorithm='PCA'``): performs `IncrementalPCA <http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.IncrementalPCA.html#sklearn.decomposition.IncrementalPCA>`_
-  from ``scikit-learn``. Please refer to its documentation for a description
-  of the several keyword arguments taken by its :meth:``fit`` method.
-* **ORPCA** (``algorithm='ORPCA'``): performs Online Robust PCA. Please
-  refer to the docstring of :py:meth:`~.learn.rpca.ORPCA` for details on
-  usage and keyword arguments.
-* **NMF** (``algorithm='ONMF'``): performs Online Robust NMF, as per "OPGD"
-  algorithm in :ref:`[Zhao2016] <Zhao2016>`. Please
-  refer to the docstring of :py:meth:`~.learn.onmf.ONMF` for details on
-  usage and keyword arguments.
-
-
-
 Other minor differences
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -281,6 +489,14 @@ Other minor differences
   convenience, ``nansum``, ``nanmean`` and other ``nan*`` signal methods were
   added to mimic the workflow as closely as possible.
 
+.. _big_data.saving:
+
+Saving Big Data
+^^^^^^^^^^^^^^^^^
+
+The most efficient format supported by HyperSpy to write data is the :ref:`zspy format <zspy-format>`,
+mainly because it supports writing currently from concurrently from multiple threads or processes.
+This also allows for smooth interaction with dask-distributed for efficient scaling.
 
 .. _lazy_details:
 
@@ -307,9 +523,9 @@ requested, the way to the root is found and evaluated in the correct sequence
 on the correct blocks.
 
 The "magic" is performed by (for the sake of simplicity) storing the data not
-as ``numpy.ndarray``, but ``dask.array.Array`` (more information `here
-<https://dask.readthedocs.io/en/latest/>`_). ``dask`` offers a couple of
-advantages:
+as ``numpy.ndarray``, but ``dask.array.Array`` (see the
+`dask documentation <https://dask.readthedocs.io/en/latest/>`_). ``dask``
+offers a couple of advantages:
 
 * **Arbitrary-sized data processing is possible**. By only loading a couple of
   chunks at a time, theoretically any signal can be processed, albeit slower.
@@ -320,8 +536,8 @@ advantages:
   not required for the final result, it will not be loaded at all, saving time
   and resources.
 * **Able to extend to a distributed computing environment (clusters)**.
-  ``dask.distributed`` (documentation `here
-  <https://distributed.readthedocs.io/en/latest/>`_) offers a straightforward
-  way to expand the effective memory for computations to that of a cluster,
-  which allows performing the operations significantly faster than on a single
-  machine.
+  :py:``dask.distributed`` (see
+  `the dask documentation <https://distributed.readthedocs.io/en/latest/>`_) offers
+  a straightforward way to expand the effective memory for computations to that
+  of a cluster, which allows performing the operations significantly faster
+  than on a single machine.

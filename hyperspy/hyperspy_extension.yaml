@@ -1,0 +1,272 @@
+signals:
+  BaseSignal:
+    signal_type: ""
+    signal_dimension: -1
+    dtype: real
+    lazy: False
+    module: hyperspy.signal
+  LazySignal:
+    signal_type: ""
+    signal_dimension: -1
+    dtype: real
+    lazy: True
+    module: hyperspy._signals.lazy
+  Signal1D:
+    signal_type: ""
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    module: hyperspy._signals.signal1d
+  LazySignal1D:
+    signal_type: ""
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    module: hyperspy._signals.signal1d
+  Signal2D:
+    signal_type: ""
+    signal_dimension: 2
+    dtype: real
+    lazy: False
+    module: hyperspy._signals.signal2d
+  LazySignal2D:
+    signal_type: ""
+    signal_dimension: 2
+    dtype: real
+    lazy: True
+    module: hyperspy._signals.signal2d
+  ComplexSignal:
+    signal_type: ""
+    signal_dimension: -1
+    dtype: complex
+    lazy: False
+    module: hyperspy._signals.complex_signal
+  LazyComplexSignal:
+    signal_type: ""
+    signal_dimension: -1
+    dtype: complex
+    lazy: True
+    module: hyperspy._signals.complex_signal
+  ComplexSignal1D:
+    signal_type: ""
+    signal_dimension: 1
+    dtype: complex
+    lazy: False
+    module: hyperspy._signals.complex_signal1d
+  LazyComplexSignal1D:
+    signal_type: ""
+    signal_dimension: 1
+    dtype: complex
+    lazy: True
+    module: hyperspy._signals.complex_signal1d
+  ComplexSignal2D:
+    signal_type: ""
+    signal_dimension: 2
+    dtype: complex
+    lazy: False
+    module: hyperspy._signals.complex_signal2d
+  LazyComplexSignal2D:
+    signal_type: ""
+    signal_dimension: 2
+    dtype: complex
+    lazy: True
+    module: hyperspy._signals.complex_signal2d
+  HologramImage:
+    signal_type: hologram
+    signal_dimension: 2
+    dtype: real
+    lazy: False
+    module: hyperspy._signals.hologram_image
+  LazyHologramImage:
+    signal_type: hologram
+    signal_dimension: 2
+    dtype: real
+    lazy: True
+    module: hyperspy._signals.hologram_image
+  EELSSpectrum:
+    signal_type: EELS
+    signal_type_aliases:
+      - TEM EELS
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    module: hyperspy._signals.eels
+  LazyEELSSpectrum:
+    signal_type: EELS
+    signal_type_aliases:
+      - TEM EELS
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    module: hyperspy._signals.eels
+  EDSTEMSpectrum:
+    signal_type: EDS_TEM
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    module: hyperspy._signals.eds_tem
+  LazyEDSTEMSpectrum:
+    signal_type: EDS_TEM
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    module: hyperspy._signals.eds_tem
+  EDSSEMSpectrum:
+    signal_type: EDS_SEM
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    module: hyperspy._signals.eds_sem
+  LazyEDSSEMSpectrum:
+    signal_type: EDS_SEM
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    module: hyperspy._signals.eds_sem
+  DielectricFunction:
+    signal_type: DielectricFunction
+    signal_type_aliases:
+      - dielectric function
+    signal_dimension: 1
+    dtype: complex
+    lazy: False
+    module: hyperspy._signals.dielectric_function
+  LazyDielectricFunction:
+    signal_type: DielectricFunction
+    signal_type_aliases:
+      - dielectric function
+    signal_dimension: 1
+    dtype: complex
+    lazy: True
+    module: hyperspy._signals.dielectric_function
+
+components1D:
+  Arctan:
+    module: hyperspy._components.eels_arctan
+    class: Arctan
+  Bleasdale:
+    module: hyperspy._components.bleasdale
+    class: Bleasdale
+  Doniach:
+    module: hyperspy._components.doniach
+    class: Doniach
+  DoublePowerLaw:
+    module: hyperspy._components.eels_double_power_law
+    class: DoublePowerLaw
+  EELSArctan:
+    module: hyperspy._components.eels_arctan
+    class: EELSArctan
+  EELSCLEdge:
+    module: hyperspy._components.eels_cl_edge
+    class: EELSCLEdge
+  Erf:
+    module: hyperspy._components.error_function
+    class: Erf
+  Exponential:
+    module: hyperspy._components.exponential
+    class: Exponential
+  Expression:
+    module: hyperspy._components.expression
+    class: Expression
+  Gaussian:
+    module: hyperspy._components.gaussian
+    class: Gaussian
+  GaussianHF:
+    module: hyperspy._components.gaussianhf
+    class: GaussianHF
+  HeavisideStep:
+    module: hyperspy._components.heaviside
+    class: HeavisideStep
+  Logistic:
+    module: hyperspy._components.logistic
+    class: Logistic
+  Lorentzian:
+    module: hyperspy._components.lorentzian
+    class: Lorentzian
+  Offset:
+    module: hyperspy._components.offset
+    class: Offset
+  PESCoreLineShape:
+    module: hyperspy._components.pes_core_line_shape
+    class: PESCoreLineShape
+  PESVoigt:
+    module: hyperspy._components.pes_voigt
+    class: PESVoigt
+  Polynomial:
+    module: hyperspy._components.polynomial_deprecated
+    class: Polynomial
+  eab91275-88db-4855-917a-cdcbe7209592:
+    module: hyperspy._components.polynomial
+    class: Polynomial
+  PowerLaw:
+    module: hyperspy._components.power_law
+    class: PowerLaw
+  RC:
+    module: hyperspy._components.rc
+    class: RC
+  SEE:
+    module: hyperspy._components.pes_see
+    class: SEE
+  ScalableFixedPattern:
+    module: hyperspy._components.scalable_fixed_pattern
+    class: ScalableFixedPattern
+  SkewNormal:
+    module: hyperspy._components.skew_normal
+    class: SkewNormal
+  SplitVoigt:
+    module: hyperspy._components.split_voigt
+    class: SplitVoigt
+  Vignetting:
+    module: hyperspy._components.eels_vignetting
+    class: Vignetting
+  Voigt:
+    module: hyperspy._components.pes_voigt
+    class: Voigt
+  VolumePlasmonDrude:
+    module: hyperspy._components.volume_plasmon_drude
+    class: VolumePlasmonDrude
+
+components2D:
+  Expression:
+    module: hyperspy._components.expression
+    class: Expression
+  Gaussian2D:
+    module: hyperspy._components.gaussian2d
+    class: Gaussian2D
+
+GUI:
+  toolkeys:
+    - hyperspy.interactive_range_selector
+    - hyperspy.navigation_sliders
+    - hyperspy.load
+    - hyperspy.Preferences
+    - hyperspy.DataAxis
+    - hyperspy.AxesManager
+    - hyperspy.Parameter
+    - hyperspy.Component
+    - hyperspy.EELSCLEdge_Component
+    - hyperspy.EELSSpectrum.print_edges_table
+    - hyperspy.ScalableFixedPattern_Component
+    - hyperspy.Signal1D.calibrate
+    - hyperspy.Signal1D.smooth_savitzky_golay
+    - hyperspy.Signal1D.smooth_lowess
+    - hyperspy.Signal1D.smooth_total_variation
+    - hyperspy.Signal1D.smooth_butterworth
+    - hyperspy.Signal1D.contrast_editor
+    - hyperspy.Signal1D.integrate_in_range
+    - hyperspy.Signal1D.remove_background
+    - hyperspy.SimpleMessage
+    - hyperspy.Signal1D.spikes_removal_tool
+    - hyperspy.Signal2D.find_peaks
+    - hyperspy.Signal2D.calibrate
+    - hyperspy.Point1DROI
+    - hyperspy.Point2DROI
+    - hyperspy.SpanROI
+    - hyperspy.RectangularROI
+    - hyperspy.CircleROI
+    - hyperspy.Line2DROI
+    - hyperspy.Model
+    - hyperspy.Model1D.fit_component
+    - hyperspy.microscope_parameters_EELS
+    - hyperspy.microscope_parameters_EDS_TEM
+    - hyperspy.microscope_parameters_EDS_SEM

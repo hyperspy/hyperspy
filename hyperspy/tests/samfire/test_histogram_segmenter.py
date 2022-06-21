@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -13,14 +13,12 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 
-
+from hyperspy.misc.hist_tools import histogram
 from hyperspy.samfire_utils.segmenters.histogram import HistogramSegmenter
-from hyperspy.misc.utils import DictionaryTreeBrowser
-from hyperspy.external.astroML.histtools import histogram
 
 
 def compare_two_value_dicts(ans_r, ans):
@@ -67,7 +65,7 @@ class TestHistogramSegmenter:
         s = self.s
         assert s.database is None
         assert s._min_points == 4
-        assert s.bins == 'freedman'
+        assert s.bins == 'fd'
 
     def test_most_frequent(self):
         s = self.s
