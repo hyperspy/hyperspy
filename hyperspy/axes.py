@@ -23,6 +23,7 @@ import copy
 import math
 import logging
 from collections.abc import Sequence
+from typing_extensions import Self
 
 import dask.array as da
 import numpy as np
@@ -1464,7 +1465,7 @@ class AxesManager(t.HasTraits):
     navigation_axes: tuple[BaseDataAxis] = t.Tuple()
     _step = t.Int(1)
 
-    def __init__(self, axes_list):
+    def __init__(self, axes_list: list[BaseDataAxis | dict]):
         super().__init__()
         self.events = Events()
         self.events.indices_changed = Event("""
@@ -2044,22 +2045,22 @@ class AxesManager(t.HasTraits):
         self._update_max_index()
 
     @property
-    def signal_axes(self):
+    def signal_axes(self) -> tuple[BaseDataAxis]:
         """The signal axes as a tuple."""
         return self._signal_axes
 
     @property
-    def navigation_axes(self):
+    def navigation_axes(self) -> tuple[BaseDataAxis]:
         """The navigation axes as a tuple."""
         return self._navigation_axes
 
     @property
-    def signal_shape(self):
+    def signal_shape(self) -> tuple[int]:
         """The shape of the signal space."""
         return tuple([axis.size for axis in self._signal_axes])
 
     @property
-    def navigation_shape(self):
+    def navigation_shape(self) -> tuple[int] | tuple[()]:
         """The shape of the navigation space."""
         if self.navigation_dimension != 0:
             return tuple([axis.size for axis in self._navigation_axes])
@@ -2067,22 +2068,22 @@ class AxesManager(t.HasTraits):
             return ()
 
     @property
-    def signal_size(self):
+    def signal_size(self) -> int:
         """The size of the signal space."""
         return self._signal_size
 
     @property
-    def navigation_size(self):
+    def navigation_size(self) -> int:
         """The size of the navigation space."""
         return self._navigation_size
 
     @property
-    def navigation_dimension(self):
+    def navigation_dimension(self) -> int:
         """The dimension of the navigation space."""
         return self._navigation_dimension
 
     @property
-    def signal_dimension(self):
+    def signal_dimension(self) -> int:
         """The dimension of the signal space."""
         return self._signal_dimension
 
@@ -2191,7 +2192,7 @@ class AxesManager(t.HasTraits):
     def copy(self):
         return copy.copy(self)
 
-    def deepcopy(self):
+    def deepcopy(self) -> Self:
         return copy.deepcopy(self)
 
     def __deepcopy__(self, *args):
@@ -2350,7 +2351,7 @@ class AxesManager(t.HasTraits):
             self.events.indices_changed.trigger(obj=self)
 
     @property
-    def indices(self):
+    def indices(self) -> tuple[int]:
         """
         Get and set the current indices, if the navigation dimension
         is not 0. If the navigation dimension is 0, it raises
@@ -2359,7 +2360,7 @@ class AxesManager(t.HasTraits):
         return tuple([axis.index for axis in self.navigation_axes])
 
     @indices.setter
-    def indices(self, indices):
+    def indices(self, indices: tuple[int]):
         # See class docstring
         if len(indices) != self.navigation_dimension:
             raise AttributeError(
@@ -2401,11 +2402,11 @@ class AxesManager(t.HasTraits):
             setattr(axis, attr, value)
 
     @property
-    def navigation_indices_in_array(self):
+    def navigation_indices_in_array(self) -> tuple[int]:
         return tuple([axis.index_in_array for axis in self.navigation_axes])
 
     @property
-    def signal_indices_in_array(self):
+    def signal_indices_in_array(self) -> tuple[int]:
         return tuple([axis.index_in_array for axis in self.signal_axes])
 
     @property
