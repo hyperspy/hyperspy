@@ -144,7 +144,7 @@ __all__ = [
 # mapping following the pattern: from value import key
 _import_mapping = {
     'eds':'.utils',
-    'interactive': '.utils',
+    'interactive':'.utils',
     'load': '.io',
     'markers': '.utils',
     'material': '.utils',
@@ -153,8 +153,8 @@ _import_mapping = {
     'print_known_signal_types': '.utils',
     'roi': '.utils',
     'samfire': '.utils',
-    'stack': '.utils',
-    'transpose': '.utils',
+    'stack': '.misc.utils',
+    'transpose': '.misc.utils',
     }
 
 
