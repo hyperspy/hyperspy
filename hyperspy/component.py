@@ -16,6 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import numpy as np
 from dask.array import Array as dArray
 import traits.api as t
@@ -26,14 +29,15 @@ from packaging.version import Version
 from pathlib import Path
 
 import hyperspy
-from hyperspy.axes import AxesManager
+if TYPE_CHECKING:
+    from hyperspy.axes import AxesManager
+    from hyperspy.model import BaseModel
 from hyperspy.misc.utils import slugify, is_binned
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
     load_from_dictionary
 from hyperspy.events import Events, Event
-from hyperspy.model import BaseModel
 from hyperspy.ui_registry import add_gui_method
 from IPython.display import display_pretty, display
 from hyperspy.misc.model_tools import current_component_values

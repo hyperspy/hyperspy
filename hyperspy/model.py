@@ -21,6 +21,7 @@ import importlib
 import logging
 import os
 import tempfile
+from typing import TYPE_CHECKING
 import warnings
 from contextlib import contextmanager
 from packaging.version import Version
@@ -42,7 +43,9 @@ from scipy.optimize import (
     minimize,
     OptimizeResult
 )
-from hyperspy.axes import AxesManager
+if TYPE_CHECKING:
+    from hyperspy.axes import AxesManager
+    
 from hyperspy.component import Component
 from hyperspy.components1d import Expression
 from hyperspy.defaults_parser import preferences
