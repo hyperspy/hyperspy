@@ -1056,8 +1056,6 @@ class LazySignal(BaseSignal):
                     if signal_mask is None
                     else to_array(signal_mask, chunks=sig_chunks)
                 )
-                ndim = self.axes_manager.navigation_dimension
-                sdim = self.axes_manager.signal_dimension
                 bH, aG = da.compute(
                     data.sum(axis=tuple(range(ndim))),
                     data.sum(axis=tuple(range(ndim, ndim + sdim))),
