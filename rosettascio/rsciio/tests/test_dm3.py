@@ -28,7 +28,7 @@ from hyperspy.io import load
 from rsciio.digital_micrograph import (DigitalMicrographReader,
                                                     ImageObject)
 from hyperspy.signals import Signal1D, Signal2D
-from hyperspy.tests.io.generate_dm_testing_files import (dm3_data_types,
+from rsciio.tests.generate_dm_testing_files import (dm3_data_types,
                                                          dm4_data_types)
 
 MY_PATH = os.path.dirname(__file__)
