@@ -22,7 +22,7 @@ import numpy as np
 import pytest
 
 import hyperspy.api as hs
-from hyperspy.io_plugins.impulse import (
+from rsciio.impulse import (
     ImpulseCSV,
     invalid_file_error,
     invalid_filenaming_error

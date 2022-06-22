@@ -36,7 +36,7 @@ from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.io.tools import overwrite as overwrite_method
 from hyperspy.misc.utils import strlist2enumeration
 from hyperspy.misc.utils import stack as stack_method
-from hyperspy.io_plugins import io_plugins, default_write_ext
+from rsciio import io_plugins, default_write_ext
 from hyperspy.ui_registry import get_gui
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
@@ -84,7 +84,7 @@ def _infer_file_reader(string):
             "Will attempt to load the file with the Python imaging library."
         )
 
-        from hyperspy.io_plugins import image
+        from rsciio import image
 
         reader = image
     else:

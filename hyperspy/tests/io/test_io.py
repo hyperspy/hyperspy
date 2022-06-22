@@ -29,7 +29,7 @@ import pytest
 import hyperspy.api as hs
 from hyperspy.signals import Signal1D
 from hyperspy.axes import DataAxis
-from hyperspy.io_plugins import io_plugins
+from rsciio import io_plugins
 from hyperspy import __version__ as hs_version
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
@@ -230,7 +230,7 @@ def test_file_reader_options():
         np.testing.assert_allclose(t.data, np.arange(10))
 
         # Test object reader
-        from hyperspy.io_plugins import hspy
+        from rsciio import hspy
 
         t = hs.load(Path(dirpath, "temp.hspy"), reader=hspy)
         assert len(t) == 1
@@ -271,7 +271,7 @@ def test_load_save_filereader_metadata():
     my_path = os.path.dirname(__file__)
     s = hs.load(os.path.join(my_path, "msa_files", "example1.msa"))
     assert s.metadata.General.FileIO.Number_0.io_plugin == \
-           'hyperspy.io_plugins.msa'
+           'rsciio.msa'
     assert s.metadata.General.FileIO.Number_0.operation == 'load'
     assert s.metadata.General.FileIO.Number_0.hyperspy_version == hs_version
 
@@ -280,17 +280,17 @@ def test_load_save_filereader_metadata():
         s.save(f)
         expected = {
             '0': {
-                'io_plugin': 'hyperspy.io_plugins.msa',
+                'io_plugin': 'rsciio.msa',
                 'operation': 'load',
                 'hyperspy_version': hs_version
             },
             '1': {
-                'io_plugin': 'hyperspy.io_plugins.hspy',
+                'io_plugin': 'rsciio.hspy',
                 'operation': 'save',
                 'hyperspy_version': hs_version
             },
             '2': {
-                'io_plugin': 'hyperspy.io_plugins.hspy',
+                'io_plugin': 'rsciio.hspy',
                 'operation': 'load',
                 'hyperspy_version': hs_version
             },

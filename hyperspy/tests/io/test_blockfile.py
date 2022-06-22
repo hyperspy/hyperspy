@@ -27,7 +27,7 @@ from skimage.exposure import rescale_intensity
 import pytest
 
 import hyperspy.api as hs
-from hyperspy.io_plugins.blockfile import get_default_header
+from rsciio.blockfile import get_default_header
 from hyperspy.misc.array_tools import sarray2dict
 from hyperspy.misc.date_time_tools import serial_date_to_ISO_format
 from hyperspy.misc.test_utils import assert_deep_almost_equal
@@ -290,7 +290,7 @@ def test_save_load_cycle(save_path, convert_units):
     )
     # assert file reading tests here, then delete so we can compare
     # entire metadata structure at once:
-    plugin = 'hyperspy.io_plugins.blockfile'
+    plugin = 'rsciio.blockfile'
     assert signal.metadata.General.FileIO.Number_0.operation == 'load'
     assert signal.metadata.General.FileIO.Number_0.io_plugin == plugin
     assert signal.metadata.General.FileIO.Number_1.operation == 'save'

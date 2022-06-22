@@ -85,7 +85,7 @@ class TestPythonMrcz:
                 '0': {
                     'operation': 'load',
                     'hyperspy_version': hs_version,
-                    'io_plugin': 'hyperspy.io_plugins.mrcz',
+                    'io_plugin': 'rsciio.mrcz',
                     'timestamp': datetime.now().astimezone().isoformat()
                 }
             }

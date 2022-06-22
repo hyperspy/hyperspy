@@ -39,7 +39,7 @@ from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
 from hyperspy.roi import Point2DROI
 from hyperspy.utils import markers
-from hyperspy.io_plugins.hspy import get_signal_chunks
+from rsciio.hspy import get_signal_chunks
 
 
 
@@ -376,7 +376,7 @@ class TestSavingMetadataContainers:
                               '0': {
                                   'operation': 'load',
                                   'hyperspy_version': hs_version,
-                                  'io_plugin': 'hyperspy.io_plugins.hspy'
+                                  'io_plugin': 'rsciio.hspy'
                               }
                           }
               },

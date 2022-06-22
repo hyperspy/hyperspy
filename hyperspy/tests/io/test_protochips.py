@@ -22,7 +22,7 @@ import numpy as np
 import pytest
 
 import hyperspy.api as hs
-from hyperspy.io_plugins.protochips import ProtochipsCSV, invalid_file_error
+from rsciio.protochips import ProtochipsCSV, invalid_file_error
 
 testdirpath = os.path.dirname(__file__)
 dirpath = os.path.join(testdirpath, 'protochips_data')

@@ -8,7 +8,7 @@ import pytest
 
 import hyperspy.signals as signals
 from hyperspy.io import load
-from hyperspy.io_plugins import ripple
+from rsciio import ripple
 
 # Tuple of tuples (data shape, signal_dimensions)
 SHAPES_SDIM = (((3,), (1, )),

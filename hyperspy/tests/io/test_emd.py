@@ -347,7 +347,7 @@ class TestFeiEMD():
                               '0': {
                                   'operation': 'load',
                                   'hyperspy_version': hs_version,
-                                  'io_plugin': 'hyperspy.io_plugins.emd'
+                                  'io_plugin': 'rsciio.emd'
                               }
                           }
               },

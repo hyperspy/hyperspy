@@ -44,10 +44,10 @@ def set_log_level(level):
     >>> import hyperspy.api as hs
     >>> hs.set_log_level('INFO')
     >>> hs.load(r'my_file.dm3')
-    INFO:hyperspy.io_plugins.digital_micrograph:DM version: 3
-    INFO:hyperspy.io_plugins.digital_micrograph:size 4796607 B
-    INFO:hyperspy.io_plugins.digital_micrograph:Is file Little endian? True
-    INFO:hyperspy.io_plugins.digital_micrograph:Total tags in root group: 15
+    INFO:rsciio.digital_micrograph:DM version: 3
+    INFO:rsciio.digital_micrograph:size 4796607 B
+    INFO:rsciio.digital_micrograph:Is file Little endian? True
+    INFO:rsciio.digital_micrograph:Total tags in root group: 15
     <Signal2D, title: My file, dimensions: (|1024, 1024)>
 
     If you need the log output during the initial import of hyperspy, you

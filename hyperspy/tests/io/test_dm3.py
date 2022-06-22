@@ -25,7 +25,7 @@ import pytest
 
 from hyperspy import __version__ as hs_version
 from hyperspy.io import load
-from hyperspy.io_plugins.digital_micrograph import (DigitalMicrographReader,
+from rsciio.digital_micrograph import (DigitalMicrographReader,
                                                     ImageObject)
 from hyperspy.signals import Signal1D, Signal2D
 from hyperspy.tests.io.generate_dm_testing_files import (dm3_data_types,
@@ -492,7 +492,7 @@ def test_multi_signal():
                             'operation': 'load',
                             'hyperspy_version': hs_version,
                             'io_plugin':
-                                'hyperspy.io_plugins.digital_micrograph'
+                                'rsciio.digital_micrograph'
                         }
                     }
         },
@@ -534,7 +534,7 @@ def test_multi_signal():
                 '0': {
                     'operation': 'load',
                     'hyperspy_version': hs_version,
-                    'io_plugin': 'hyperspy.io_plugins.digital_micrograph'
+                    'io_plugin': 'rsciio.digital_micrograph'
                 }
             }},
         'Signal': {
