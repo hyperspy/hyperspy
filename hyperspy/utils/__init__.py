@@ -109,7 +109,7 @@ _import_mapping = {
 def __getattr__(name):
     if name in __all__:
         if name in _import_mapping.keys():
-            import_path = 'hyperspy' + _import_mapping.get(name)
+            import_path = 'hyperspy' + _import_mapping[name]
             return getattr(importlib.import_module(import_path), name)
         else:
             return importlib.import_module(

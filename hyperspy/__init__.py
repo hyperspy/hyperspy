@@ -18,6 +18,7 @@
 
 import importlib
 import logging
+from typing import TYPE_CHECKING
 from hyperspy import docstrings
 
 _logger = logging.getLogger(__name__)
@@ -40,6 +41,9 @@ More details in the :mod:`~hyperspy.api` docstring.
 
 """ % docstrings.START_HSPY
 
+if TYPE_CHECKING:
+    from hyperspy import api
+    from hyperspy.Release import version as __version__
 
 __all__ = [
     "api",
@@ -59,7 +63,7 @@ _import_mapping = {
 def __getattr__(name):
     if name in __all__:
         if name in _import_mapping.keys():
-            import_path = 'hyperspy' + _import_mapping.get(name)
+            import_path = 'hyperspy' + _import_mapping[name]
             return getattr(importlib.import_module(import_path), name)
         else:  # pragma: no cover
             # We can't get this block covered in the test suite because it is
