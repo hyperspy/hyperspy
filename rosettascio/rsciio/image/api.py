@@ -26,18 +26,6 @@ import traits.api as t
 from hyperspy.api_nogui import _ureg
 from hyperspy.misc import rgb_tools
 
-# Plugin characteristics
-# ----------------------
-format_name = 'Image'
-description = 'Import/Export standard image formats using pillow, freeimage or matplotlib (with scalebar)'
-full_support = False
-file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg',
-                   'msp', 'pcx', 'ppm', "pbm", "pgm", 'xbm', 'spi', ]
-default_extension = 0  # png
-# Writing capabilities
-writes = [(2, 0), (0, 2)]
-non_uniform_axis = False
-# ----------------------
 
 _logger = logging.getLogger(__name__)
 

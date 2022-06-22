@@ -35,20 +35,6 @@ from hyperspy.misc.utils import DictionaryTreeBrowser, multiply
 _logger = logging.getLogger(__name__)
 
 
-ser_extensions = ('ser', 'SER')
-emi_extensions = ('emi', 'EMI')
-# Plugin characteristics
-# ----------------------
-format_name = 'FEI TIA'
-description = ''
-full_support = False
-# Recognised file extension
-file_extensions = ser_extensions + emi_extensions
-default_extension = 0
-# Writing capabilities
-writes = False
-non_uniform_axis = False
-# ----------------------
 
 data_types = {
     '1': '<u1',

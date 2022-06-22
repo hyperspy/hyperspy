@@ -50,19 +50,6 @@ from hyperspy.exceptions import MountainsMapFileError
 
 _logger = logging.getLogger(__name__)
 
-# Plugin characteristics
-# ----------------------
-format_name = 'Digital Surf Surface'
-description = """Read data from the proprietary .sur file format from Digital
-Surf. Allows hyperspy to interact with the mountains map software"""
-full_support = False #Check with the boys once this is done
-# Recognised file extension
-file_extensions = ('sur', 'SUR','pro','PRO')
-default_extension = 0
-# Writing features
-writes = False #First we will check with the load
-non_uniform_axis = False
-# ----------------------
 
 class DigitalSurfHandler(object):
     """ Class to read Digital Surf MountainsMap files.

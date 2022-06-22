@@ -46,23 +46,7 @@ import hyperspy.misc.io.fei_stream_readers as stream_readers
 from hyperspy.io_plugins.hspy import get_signal_chunks
 
 
-# Plugin characteristics
-# ----------------------
-format_name = 'Electron Microscopy Data (EMD)'
-description = 'Read data from Berkeleys EMD files.'
-full_support = False  # Hopefully?
-# Recognised file extension
-file_extensions = ('emd', 'EMD')
-default_extension = 0
-# Reading capabilities
-reads_images = True
-reads_spectrum = True
-reads_spectrum_image = True
-# Writing capabilities
-writes = True  # Only Berkeley emd
-non_uniform_axis = False
 EMD_VERSION = '0.2'
-# ----------------------
 
 _logger = logging.getLogger(__name__)
 

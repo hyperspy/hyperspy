@@ -22,18 +22,6 @@ import logging
 
 
 _logger = logging.getLogger(__name__)
-# Plugin characteristics
-# ----------------------
-format_name = 'MRCZ'
-description = 'Compressed MRC file format extension with blosc meta-compression'
-full_support = False
-# Recognised file extension
-file_extensions = ['mrc', 'MRC', 'mrcz', 'MRCZ']
-default_extension = 2
-# Writing capabilities:
-writes = True
-non_uniform_axis = False
-# ----------------------
 
 
 _POP_FROM_HEADER = ['compressor', 'MRCtype', 'C3', 'dimensions', 'dtype',

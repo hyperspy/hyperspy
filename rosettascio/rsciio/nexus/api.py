@@ -33,21 +33,6 @@ from hyperspy.exceptions import VisibleDeprecationWarning
 
 _logger = logging.getLogger(__name__)
 
-# Plugin characteristics
-# ----------------------
-format_name = 'Nexus'
-description = \
-    'Read NXdata sets from Nexus files and metadata. Data and metadata can '\
-    'also be examined from general hdf5 files'
-full_support = False
-# Recognised file extension
-file_extensions = ['nxs', 'NXS']
-default_extension = 0
-# Writing capabilities:
-writes = True
-non_uniform_axis = False
-# ----------------------
-
 
 
 def _byte_to_string(value):

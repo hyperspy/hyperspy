@@ -39,18 +39,6 @@ from hyperspy.docstrings.signal import OPTIMIZE_ARG
 _logger = logging.getLogger(__name__)
 
 
-# Plugin characteristics
-# ----------------------
-format_name = 'Digital Micrograph'
-description = 'Read data from Gatan Digital Micrograph (TM) files'
-full_support = False
-# Recognised file extension
-file_extensions = ('dm3', 'DM3', 'dm4', 'DM4')
-default_extension = 0
-# Writing capabilities
-writes = False
-non_uniform_axis = False
-# ----------------------
 
 
 class DigitalMicrographReader(object):

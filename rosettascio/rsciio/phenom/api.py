@@ -46,22 +46,6 @@ import tifffile
 from hyperspy.misc import rgb_tools
 import xml.etree.ElementTree as ET
 
-# Plugin characteristics
-# ----------------------
-format_name = 'Phenom Element Identification (ELID)'
-description = 'Read data from Phenom ELID files.'
-full_support = False
-# Recognised file extension
-file_extensions = ('elid', 'ELID')
-default_extension = 0
-# Reading capabilities
-reads_images = False
-reads_spectrum = True
-reads_spectrum_image = True
-# Writing features
-writes = False
-non_uniform_axis = False
-# ----------------------
 
 def element_symbol(z):
     elements = ['',

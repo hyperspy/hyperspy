@@ -23,19 +23,6 @@ import scipy
 from datetime import datetime
 
 
-# Plugin characteristics
-# ----------------------
-format_name = 'DENS'
-description = 'Reads heater log from a DENS heating holder'
-version = '3.1'
-full_support = False
-# Recognised file extension
-file_extensions = ['dens', 'DENS']
-default_extension = 0
-# Writing capabilities
-writes = False
-non_uniform_axis = False
-# ----------------------
 
 
 def _cnv_time(timestr):

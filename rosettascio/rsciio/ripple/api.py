@@ -35,22 +35,6 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 _logger = logging.getLogger(__name__)
 
 
-# Plugin characteristics
-# ----------------------
-format_name = 'Ripple'
-description = 'RPL file contains the information on how to read\n'
-description += 'the RAW file with the same name.'
-description += '\nThis format may not provide information on the calibration.'
-description += '\nIf so, you should add that after loading the file.'
-full_support = False  # but maybe True
-# Recognised file extension
-file_extensions = ['rpl', 'RPL']
-default_extension = 0
-# Writing capabilities
-writes = [(1, 0), (1, 1), (1, 2), (2, 0), (2, 1), ]
-non_uniform_axis = False
-# ----------------------
-
 # The format only support the followng data types
 newline = ('\n', '\r\n')
 comment = ';'

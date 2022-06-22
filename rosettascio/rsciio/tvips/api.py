@@ -35,18 +35,6 @@ from hyperspy.misc.utils import dummy_context_manager
 from hyperspy.defaults_parser import preferences
 from hyperspy.api_nogui import _ureg
 
-# Plugin characteristics
-# ----------------------
-format_name = 'tvips'
-description = ('Read support for TVIPS CMOS camera stream/movie files. Can be'
-               'used for in-situ movies or 4D-STEM datasets.')
-full_support = False
-# Recognised file extension
-file_extensions = ['tvips', 'TVIPS']
-default_extension = 0
-# Writing capabilities:
-writes = False
-non_uniform_axis = False
 
 
 _logger = logging.getLogger(__name__)

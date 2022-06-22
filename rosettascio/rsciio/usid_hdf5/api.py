@@ -11,27 +11,6 @@ import sidpy
 _logger = logging.getLogger(__name__)
 
 
-# Plugin characteristics
-# ----------------------
-format_name = 'USID'
-description = \
-    'Data structured according to the Universal Spectroscopic and Imaging ' \
-    'Data (USID) model written into Hierarchical Data Format (HDF5) files'
-full_support = False
-# Recognised file extension
-file_extensions = ['h5', 'hdf5']
-default_extension = 0
-# Reading capabilities
-reads_images = True
-reads_spectrum = True
-reads_spectrum_image = True
-# Writing capabilities
-writes_images = True
-writes_spectrum = True
-writes_spectrum_image = True
-# Writing capabilities
-writes = True
-non_uniform_axis = False
 version = usid.__version__
 
 # ######### UTILITIES THAT SIMPLIFY READING FROM H5USID FILES #################

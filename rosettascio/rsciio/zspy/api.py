@@ -31,18 +31,6 @@ from hyperspy.io_plugins._hierarchical import (
 _logger = logging.getLogger(__name__)
 
 
-# Plugin characteristics
-# ----------------------
-format_name = 'ZSpy'
-description = 'A default file format for HyperSpy based on the zarr standard'
-full_support = False
-# Recognised file extension
-file_extensions = ['zspy']
-default_extension = 0
-# Writing capabilities
-non_uniform_axis = True
-writes = True
-
 # -----------------------
 # File format description
 # -----------------------

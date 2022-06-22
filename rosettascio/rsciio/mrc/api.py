@@ -30,21 +30,6 @@ from hyperspy.misc.array_tools import sarray2dict
 
 _logger = logging.getLogger(__name__)
 
-
-# Plugin characteristics
-# ----------------------
-format_name = 'MRC'
-description = ''
-full_support = False
-# Recognised file extension
-file_extensions = ['mrc', 'MRC', 'ALI', 'ali']
-default_extension = 0
-# Writing capabilities
-writes = False
-non_uniform_axis = False
-# ----------------------
-
-
 def get_std_dtype_list(endianess='<'):
     end = endianess
     dtype_list = \

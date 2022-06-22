@@ -28,23 +28,6 @@ import numba
 _logger = logging.getLogger(__name__)
 
 
-# Plugin characteristics
-# ----------------------
-format_name = "JEOL"
-description = "Read JEOL files output by Analysis Station software"
-full_support = False  # Whether all the Hyperspy features are supported
-# Recognised file extension
-file_extensions = ("ASW", "asw", "img", "map", "pts", "eds")
-default_extension = 0  # Index of the extension that will be used by default
-# Reading capabilities
-reads_images = True
-reads_spectrum = True
-reads_spectrum_image = True
-# Writing capabilities
-writes = False
-non_uniform_axis = False
-# ----------------------
-
 
 jTYPE = {
     1: "B",

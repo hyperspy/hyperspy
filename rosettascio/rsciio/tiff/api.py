@@ -35,18 +35,6 @@ from hyperspy.misc.date_time_tools import get_date_time_from_metadata
 
 _logger = logging.getLogger(__name__)
 
-# Plugin characteristics
-# ----------------------
-format_name = 'TIFF'
-description = ('Import/Export standard image formats Christoph Gohlke\'s '
-               'tifffile library')
-full_support = False
-file_extensions = ['tif', 'tiff']
-default_extension = 0  # tif
-# Writing capabilities
-writes = [(2, 0), (2, 1)]
-non_uniform_axis = False
-# ----------------------
 
 
 axes_label_codes = {

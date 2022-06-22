@@ -30,21 +30,6 @@ from hyperspy.misc.io.tools import convert_xml_to_dict
 _logger = logging.getLogger(__name__)
 
 
-# Plugin characteristics
-# ----------------------
-format_name = 'empad'
-description = ''
-full_support = False
-# Recognised file extension
-file_extensions = ['xml', 'XML']
-default_extension = 0
-
- # Writing capabilities:
-writes = False
-non_uniform_axis = False
-# ----------------------
-
-
 def _read_raw(info, fp, lazy=False):
 
     raw_height = info['raw_height']

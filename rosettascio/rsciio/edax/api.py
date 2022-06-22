@@ -29,27 +29,6 @@ from hyperspy.misc.elements import atomic_number2name
 
 _logger = logging.getLogger(__name__)
 
-# Plugin characteristics
-# ----------------------
-format_name = 'EDAX TEAM'
-description = 'Reader for EDS maps and spectra saved by the EDAX TEAM' \
-              'software: \n' \
-              'An SPD file contains map data. The spectral information is ' \
-              '\nheld in an SPC file with the same name, while the spatial ' \
-              '\ncalibration is held in a related IPR file. If an SPD file ' \
-              '\nis loaded, the result will be a Hyperspy EDSSpectrum map, ' \
-              '\nand the calibration will be loaded from appropriate SPC ' \
-              '\nand IPR files (if available). \n' \
-              'If an SPC file is loaded, the result will be a single \n' \
-              'EDSSpectrum with no other files needed for calibration.'
-full_support = False
-# Recognised file extension
-file_extensions = ['spd', 'SPD', 'spc', 'SPC']
-default_extension = 0
-# Writing capabilities
-writes = False
-non_uniform_axis = False
-# ----------------------
 
 
 spd_extensions = ('spd', 'SPD', 'Spd')
