@@ -39,7 +39,7 @@ from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
 from hyperspy.roi import Point2DROI
 from hyperspy.utils import markers
-from rsciio.hspy import get_signal_chunks
+from rsciio.hspy.api import get_signal_chunks
 
 
 

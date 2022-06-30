@@ -27,7 +27,7 @@ from skimage.exposure import rescale_intensity
 import pytest
 
 import hyperspy.api as hs
-from rsciio.blockfile import get_default_header
+from rsciio.blockfile.api import get_default_header
 from hyperspy.misc.array_tools import sarray2dict
 from hyperspy.misc.date_time_tools import serial_date_to_ISO_format
 from hyperspy.misc.test_utils import assert_deep_almost_equal

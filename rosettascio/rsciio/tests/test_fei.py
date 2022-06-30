@@ -23,7 +23,7 @@ import pytest
 import traits.api as t
 
 from hyperspy.io import load
-from rsciio.fei import load_ser_file
+from rsciio.fei.api import load_ser_file
 
 
 MY_PATH = os.path.dirname(__file__)
@@ -437,7 +437,7 @@ class TestFEIReader():
                         10000.0, rtol=1E-5)
 
     def test_guess_units_from_mode(self):
-        from rsciio.fei import _guess_units_from_mode, \
+        from rsciio.fei.api import _guess_units_from_mode, \
             convert_xml_to_dict, get_xml_info_from_emi
         fname0_emi = os.path.join(
             self.dirpathold, '64x64_TEM_images_acquire.emi')

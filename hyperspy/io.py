@@ -36,7 +36,7 @@ from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.io.tools import overwrite as overwrite_method
 from hyperspy.misc.utils import strlist2enumeration
 from hyperspy.misc.utils import stack as stack_method
-from rsciio import io_plugins, default_write_ext
+from rsciio import IO_PLUGINS
 from hyperspy.ui_registry import get_gui
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
@@ -71,11 +71,11 @@ def _infer_file_reader(string):
         The inferred file reader.
 
     """
-    for reader in io_plugins:
-        if string.lower() == reader.format_name.lower():
+    for reader in IO_PLUGINS:
+        if string.lower() == reader["format_name"].lower():
             return reader
 
-    rdrs = [rdr for rdr in io_plugins if string.lower() in rdr.file_extensions]
+    rdrs = [rdr for rdr in IO_PLUGINS if string.lower() in rdr["file_extensions"]]
 
     if not rdrs:
         # Try to load it with the python imaging library
@@ -84,9 +84,7 @@ def _infer_file_reader(string):
             "Will attempt to load the file with the Python imaging library."
         )
 
-        from rsciio import image
-
-        reader = image
+        reader, = [reader for reader in IO_PLUGINS if reader["format_name"] == "image"]
     else:
         # Just take the first match for now
         reader = rdrs[0]
@@ -530,7 +528,8 @@ def load_with_reader(
     ):
     """Load a supported file with a given reader."""
     lazy = kwds.get('lazy', False)
-    file_data_list = reader.file_reader(filename, **kwds)
+    file_data_list = importlib.import_module(reader["api"]).file_reader(filename,
+                                                                        **kwds)
     signal_list = []
 
     for signal_dict in file_data_list:
@@ -787,9 +786,15 @@ def save(filename, signal, overwrite=None, **kwds):
             filename = filename.with_suffix(extension)
 
     writer = None
-    for plugin in io_plugins:
+    default_write_ext = set()
+    for plugin in IO_PLUGINS:
+        if plugin["writes"]:
+            default_write_ext.add(
+                plugin["file_extensions"][plugin["default_extension"]])
+
+    for plugin in IO_PLUGINS:
         # Drop the "." separator from the suffix
-        if extension[1:].lower() in plugin.file_extensions:
+        if extension[1:].lower() in plugin["file_extensions"]:
             writer = plugin
             break
 
@@ -803,24 +808,24 @@ def save(filename, signal, overwrite=None, **kwds):
     sd = signal.axes_manager.signal_dimension
     nd = signal.axes_manager.navigation_dimension
 
-    if writer.writes is False:
+    if writer["writes"] is False:
         raise ValueError(
             "Writing to this format is not supported. "
             f"Supported file extensions are: {strlist2enumeration(default_write_ext)}"
         )
 
-    if writer.writes is not True and (sd, nd) not in writer.writes:
-        compatible_writers = [plugin.format_name for plugin in io_plugins
-                      if plugin.writes is True or
-                      plugin.writes is not False and
-                      (sd, nd) in plugin.writes]
+    if writer["writes"] is not True and (sd, nd) not in writer["writes"]:
+        compatible_writers = [plugin["format_name"] for plugin in IO_PLUGINS
+                      if plugin["writes"] is True or
+                      plugin["writes"] is not False and
+                      (sd, nd) in plugin["writes"]]
 
         raise TypeError(
             "This file format does not support this data. "
             f"Please try one of {strlist2enumeration(compatible_writers)}"
         )
 
-    if not writer.non_uniform_axis and not signal.axes_manager.all_uniform:
+    if not writer["non_uniform_axis"] and not signal.axes_manager.all_uniform:
         compatible_writers = [plugin.format_name for plugin in io_plugins
                       if plugin.non_uniform_axis is True]
         raise TypeError("Writing to this format is not supported for "
@@ -850,7 +855,7 @@ def save(filename, signal, overwrite=None, **kwds):
         # properly supported in io_plugins
         signal = _add_file_load_save_metadata('save', signal, writer)
         if not isinstance(filename, MutableMapping):
-            writer.file_writer(str(filename), signal, **kwds)
+            importlib.import_module(writer["api"]).file_writer(str(filename), signal, **kwds)
             _logger.info(f'{filename} was created')
             signal.tmp_parameters.set_item('folder', filename.parent)
             signal.tmp_parameters.set_item('filename', filename.stem)

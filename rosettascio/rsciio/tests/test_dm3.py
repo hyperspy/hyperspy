@@ -25,7 +25,7 @@ import pytest
 
 from hyperspy import __version__ as hs_version
 from hyperspy.io import load
-from rsciio.digital_micrograph import (DigitalMicrographReader,
+from rsciio.digital_micrograph.api import (DigitalMicrographReader,
                                                     ImageObject)
 from hyperspy.signals import Signal1D, Signal2D
 from rsciio.tests.generate_dm_testing_files import (dm3_data_types,
