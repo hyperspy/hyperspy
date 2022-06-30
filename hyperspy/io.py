@@ -528,8 +528,12 @@ def load_with_reader(
     ):
     """Load a supported file with a given reader."""
     lazy = kwds.get('lazy', False)
-    file_data_list = importlib.import_module(reader["api"]).file_reader(filename,
+    if isinstance(reader, dict):
+        file_data_list = importlib.import_module(reader["api"]).file_reader(filename,
                                                                         **kwds)
+    else:
+        # We assume it is a module
+        file_data_list = reader.file_reader(filename, **kwds)
     signal_list = []
 
     for signal_dict in file_data_list:
@@ -826,8 +830,8 @@ def save(filename, signal, overwrite=None, **kwds):
         )
 
     if not writer["non_uniform_axis"] and not signal.axes_manager.all_uniform:
-        compatible_writers = [plugin.format_name for plugin in io_plugins
-                      if plugin.non_uniform_axis is True]
+        compatible_writers = [plugin["format_name"] for plugin in IO_PLUGINS
+                      if plugin["non_uniform_axis"] is True]
         raise TypeError("Writing to this format is not supported for "
                       "non-uniform axes. Use one of the following "
                       f"formats: {strlist2enumeration(compatible_writers)}"
@@ -872,7 +876,7 @@ def save(filename, signal, overwrite=None, **kwds):
 def _add_file_load_save_metadata(operation, signal, io_plugin):
     mdata_dict = {
         'operation': operation,
-        'io_plugin': io_plugin["api"],
+        'io_plugin': io_plugin["api"] if isinstance(io_plugin, dict) else io_plugin.__loader__.name,
         'hyperspy_version': hs_version,
         'timestamp': datetime.now().astimezone().isoformat()
     }

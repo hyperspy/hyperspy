@@ -29,7 +29,7 @@ import pytest
 import hyperspy.api as hs
 from hyperspy.signals import Signal1D
 from hyperspy.axes import DataAxis
-from rsciio import io_plugins
+from rsciio import IO_PLUGINS
 from hyperspy import __version__ as hs_version
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
@@ -110,19 +110,18 @@ class TestNonUniformAxisCheck:
             self.s.save('tmp.msa', overwrite = True)
 
     def test_nonuniform_writer_characteristic(self):
-        for plugin in io_plugins:
-            try:
-                plugin.non_uniform_axis is True
-            except AttributeError:
+        for plugin in IO_PLUGINS:
+            if not "non_uniform_axis" in plugin:
                 print(plugin.format_name + ' IO-plugin is missing the '
                       'characteristic `non_uniform_axis`')
 
     def test_nonuniform_error(self):
         assert(self.s.axes_manager[0].is_uniform == False)
-        incompatible_writers = [plugin.file_extensions[plugin.default_extension]
-                      for plugin in io_plugins if (plugin.writes is True or
-                      plugin.writes is not False and (1, 0) in plugin.writes)
-                      and plugin.non_uniform_axis is False]
+        incompatible_writers = [
+            plugin["file_extensions"][plugin["default_extension"]]
+            for plugin in IO_PLUGINS if (plugin["writes"] is True or
+                      plugin["writes"] is not False and [1, 0] in plugin["writes"])
+                      and not plugin["non_uniform_axis"]]
         for ext in incompatible_writers:
             with pytest.raises(TypeError, match = "not supported for non-uniform"):
                 filename = 'tmp.' + ext
@@ -232,7 +231,7 @@ def test_file_reader_options():
         # Test object reader
         from rsciio import hspy
 
-        t = hs.load(Path(dirpath, "temp.hspy"), reader=hspy)
+        t = hs.load(Path(dirpath, "temp.hspy"), reader=hspy.api)
         assert len(t) == 1
         np.testing.assert_allclose(t.data, np.arange(10))
 
@@ -271,7 +270,7 @@ def test_load_save_filereader_metadata():
     my_path = os.path.dirname(__file__)
     s = hs.load(os.path.join(my_path, "msa_files", "example1.msa"))
     assert s.metadata.General.FileIO.Number_0.io_plugin == \
-           'rsciio.msa'
+           'rsciio.msa.api'
     assert s.metadata.General.FileIO.Number_0.operation == 'load'
     assert s.metadata.General.FileIO.Number_0.hyperspy_version == hs_version
 
@@ -280,17 +279,17 @@ def test_load_save_filereader_metadata():
         s.save(f)
         expected = {
             '0': {
-                'io_plugin': 'rsciio.msa',
+                'io_plugin': 'rsciio.msa.api',
                 'operation': 'load',
                 'hyperspy_version': hs_version
             },
             '1': {
-                'io_plugin': 'rsciio.hspy',
+                'io_plugin': 'rsciio.hspy.api',
                 'operation': 'save',
                 'hyperspy_version': hs_version
             },
             '2': {
-                'io_plugin': 'rsciio.hspy',
+                'io_plugin': 'rsciio.hspy.api',
                 'operation': 'load',
                 'hyperspy_version': hs_version
             },
