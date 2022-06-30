@@ -23,7 +23,7 @@ from pathlib import Path
 import dask.array as da
 import h5py
 
-from hyperspy.io_plugins._hierarchical import (
+from rsciio._hierarchical import (
     # hyperspy.io_plugins.hspy.get_signal_chunks is in the hyperspy public API
     HierarchicalWriter, HierarchicalReader, version, get_signal_chunks
     )
@@ -91,7 +91,7 @@ default_version = Version(version)
 
 class HyperspyReader(HierarchicalReader):
 
-    _file_type = format_name.lower()
+    _file_type = "hspy"
 
     def __init__(self, file):
         super().__init__(file)

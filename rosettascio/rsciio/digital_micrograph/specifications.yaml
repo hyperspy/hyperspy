@@ -4,3 +4,5 @@ full_support: False
 file_extensions: ['dm3', 'DM3', 'dm4', 'DM4']
 default_extension: 0
 writes: False
+non_uniform_axis: False
+

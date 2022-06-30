@@ -11,3 +11,4 @@ reads_spectrum: True
 reads_spectrum_image: True
 # Writing features
 writes: True  # Only Berkeley emd
+non_uniform_axis: False

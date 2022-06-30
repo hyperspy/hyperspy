@@ -4,3 +4,4 @@ full_support: False
 file_extensions: ["h5", "hdf5"]
 default_extension: 0
 writes: False
+non_uniform_axis: False

@@ -814,11 +814,11 @@ def save(filename, signal, overwrite=None, **kwds):
             f"Supported file extensions are: {strlist2enumeration(default_write_ext)}"
         )
 
-    if writer["writes"] is not True and (sd, nd) not in writer["writes"]:
+    if writer["writes"] is not True and [sd, nd] not in writer["writes"]:
         compatible_writers = [plugin["format_name"] for plugin in IO_PLUGINS
                       if plugin["writes"] is True or
                       plugin["writes"] is not False and
-                      (sd, nd) in plugin["writes"]]
+                      [sd, nd] in plugin["writes"]]
 
         raise TypeError(
             "This file format does not support this data. "
@@ -872,11 +872,10 @@ def save(filename, signal, overwrite=None, **kwds):
 def _add_file_load_save_metadata(operation, signal, io_plugin):
     mdata_dict = {
         'operation': operation,
-        'io_plugin': io_plugin.__loader__.name,
+        'io_plugin': io_plugin["api"],
         'hyperspy_version': hs_version,
         'timestamp': datetime.now().astimezone().isoformat()
     }
-
     # get the largest integer key present under General.FileIO, returning 0
     # as default if none are present
     largest_index = max(

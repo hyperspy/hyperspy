@@ -492,7 +492,7 @@ def test_multi_signal():
                             'operation': 'load',
                             'hyperspy_version': hs_version,
                             'io_plugin':
-                                'rsciio.digital_micrograph'
+                                'rsciio.digital_micrograph.api'
                         }
                     }
         },
@@ -534,7 +534,7 @@ def test_multi_signal():
                 '0': {
                     'operation': 'load',
                     'hyperspy_version': hs_version,
-                    'io_plugin': 'rsciio.digital_micrograph'
+                    'io_plugin': 'rsciio.digital_micrograph.api'
                 }
             }},
         'Signal': {

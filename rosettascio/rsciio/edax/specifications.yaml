@@ -14,3 +14,4 @@ full_support: False
 file_extensions: ['spd', 'SPD', 'spc', 'SPC']
 default_extension: 0
 writes: False
+non_uniform_axis: False

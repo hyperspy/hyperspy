@@ -28,7 +28,7 @@ import pytest
 import dask
 
 import hyperspy.api as hs
-from rsciio.tvips import (
+from rsciio.tvips.api import (
     _guess_image_mode,
     _get_main_header_from_signal,
     _get_frame_record_dtype_from_signal,

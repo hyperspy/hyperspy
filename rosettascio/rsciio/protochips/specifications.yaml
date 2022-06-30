@@ -4,3 +4,4 @@ full_support: False
 file_extensions: [csv, CSV]
 default_extension: 0
 writes: False
+non_uniform_axis: False

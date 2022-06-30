@@ -290,7 +290,7 @@ def test_save_load_cycle(save_path, convert_units):
     )
     # assert file reading tests here, then delete so we can compare
     # entire metadata structure at once:
-    plugin = 'rsciio.blockfile'
+    plugin = 'rsciio.blockfile.api'
     assert signal.metadata.General.FileIO.Number_0.operation == 'load'
     assert signal.metadata.General.FileIO.Number_0.io_plugin == plugin
     assert signal.metadata.General.FileIO.Number_1.operation == 'save'

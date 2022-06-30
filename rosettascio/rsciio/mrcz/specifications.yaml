@@ -4,3 +4,4 @@ full_support: False
 file_extensions: [mrc, MRC, mrcz, MRCZ]
 default_extension: 2
 writes: True
+non_uniform_axis: False

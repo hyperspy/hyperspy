@@ -4,3 +4,4 @@ full_support: False
 file_extensions: [tif, tiff]
 default_extension: 0  # tif
 writes: [[2, 0], [2, 1]]
+non_uniform_axis: False

@@ -23,7 +23,7 @@ import pytest
 import traits.api as t
 
 import hyperspy.api as hs
-from rsciio.empad import _parse_xml
+from rsciio.empad.api import _parse_xml
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "empad_data")

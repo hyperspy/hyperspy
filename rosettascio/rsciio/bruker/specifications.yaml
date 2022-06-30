@@ -8,3 +8,4 @@ full_support: False
 file_extensions: ['bcf', 'spx']
 default_extension: 0
 writes: False
+non_uniform_axis: False

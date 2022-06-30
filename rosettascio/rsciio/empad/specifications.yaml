@@ -6,3 +6,4 @@ file_extensions: ['xml', 'XML']
 default_extension: 0
 # Writing features
 writes: False
+non_uniform_axis: False
