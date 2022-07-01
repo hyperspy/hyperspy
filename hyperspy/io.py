@@ -907,7 +907,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
             signal.tmp_parameters.set_item('filename', filename.stem)
             signal.tmp_parameters.set_item('extension', extension)
         else:
-            writer.file_writer(filename, signal, **kwds)
+            importlib.import_module(writer["api"]).file_writer(filename, signal, **kwds)
             if hasattr(filename, "path"):
                 file = Path(filename.path).resolve()
                 signal.tmp_parameters.set_item('folder', file.parent)

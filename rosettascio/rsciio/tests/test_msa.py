@@ -27,7 +27,7 @@ example1_metadata = {'Acquisition_instrument': {'TEM': example1_TEM},
                                  'FileIO': {'0': {
                                      'operation': 'load',
                                      'hyperspy_version': hs_version,
-                                     'io_plugin': 'rsciio.msa'}}
+                                     'io_plugin': 'rsciio.msa.api'}}
                                  },
                      'Sample': {'thickness': 50.0,
                                 'thickness_units': "nm"},
@@ -110,7 +110,7 @@ example2_metadata = {'Acquisition_instrument': {'TEM': example2_TEM},
                                  'FileIO': {'0': {
                                      'operation': 'load',
                                      'hyperspy_version': hs_version,
-                                     'io_plugin': 'rsciio.msa'}}
+                                     'io_plugin': 'rsciio.msa.api'}}
                                  },
                      'Sample': {'thickness': 50.0,
                                 'thickness_units': "nm"},
