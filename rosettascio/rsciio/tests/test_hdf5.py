@@ -473,7 +473,7 @@ def test_lazy_loading(tmp_path):
         chunks=True)
     f.close()
 
-    s = load(fname, lazy=True)
+    s = load(fname, lazy=True, reader="HSPY")
     assert shape == s.data.shape
     assert isinstance(s.data, da.Array)
     assert s._lazy
