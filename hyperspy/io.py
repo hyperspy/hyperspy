@@ -85,8 +85,13 @@ def _infer_file_reader(string):
         )
 
         reader, = [reader for reader in IO_PLUGINS if reader["format_name"] == "image"]
+    elif len(rdrs) > 1:
+        names = [rdr["format_name"] for rdr in rdrs]
+        raise ValueError(
+            f"There are multiple file readers that could read the file. "
+            f"Please select one from the list below with the `reader` keyword. "
+            f"File readers for your file: {names}")
     else:
-        # Just take the first match for now
         reader = rdrs[0]
 
     return reader
