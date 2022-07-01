@@ -52,6 +52,12 @@ f_error_fmt = (
     "\t\t%d signals\n"
     "\t\tPath: %s")
 
+def _format_name_to_reader(format_name):
+    for reader in IO_PLUGINS:
+        if format_name.lower() == reader["format_name"].lower():
+            return reader
+    raise ValueError("The format_name given does not match any format available.")
+
 
 def _infer_file_reader(string):
     """Return a file reader from the plugins list based on the format name or
@@ -71,9 +77,11 @@ def _infer_file_reader(string):
         The inferred file reader.
 
     """
-    for reader in IO_PLUGINS:
-        if string.lower() == reader["format_name"].lower():
-            return reader
+    try:
+        reader = _format_name_to_reader(string)
+        return reader
+    except ValueError:
+        pass
 
     rdrs = [rdr for rdr in IO_PLUGINS if string.lower() in rdr["file_extensions"]]
 
@@ -96,6 +104,47 @@ def _infer_file_reader(string):
 
     return reader
 
+def _infer_file_writer(string):
+    """Return a file reader from the plugins list based on the file extension.
+
+    If the extension is not found or understood, returns
+    the Python imaging library as the file reader.
+
+    Parameters
+    ----------
+    string : str
+        File extension, without initial "." separator
+
+    Returns
+    -------
+    reader : func
+        The inferred file reader.
+
+    """
+    plugins = [plugin for plugin in IO_PLUGINS if string.lower() in plugin["file_extensions"]]
+    writers = [plugin for plugin in plugins if plugin["writes"]]
+    if not writers:
+        extensions = [plugin["file_extensions"][plugin["default_extension"]] for plugin in IO_PLUGINS if plugin["writes"]]
+        if not plugins:
+            raise ValueError(
+                f"The .{string} extension does not correspond to any supported format. "
+                f"Supported file extensions are: {strlist2enumeration(extensions)}.")
+        else:
+            raise ValueError(
+                "Writing to this format is not supported. "
+                f"Supported file extensions are: {strlist2enumeration(extensions)}."
+            )
+
+    elif len(writers) > 1:
+        names = [writer["format_name"] for writer in writers]
+        raise ValueError(
+            f"There are multiple file formats matching the extension of your file. "
+            f"Please select one from the list below with the `format` keyword. "
+            f"File formats for your file: {names}")
+    else:
+        writer = writers[0]
+
+    return writer
 
 def _escape_square_brackets(text):
     """Escapes pairs of square brackets in strings for glob.glob().
@@ -759,7 +808,7 @@ def dict2signal(signal_dict, lazy=False):
     return signal
 
 
-def save(filename, signal, overwrite=None, **kwds):
+def save(filename, signal, overwrite=None, file_format=None, **kwds):
     """Save hyperspy signal to a file.
 
     A list of plugins supporting file saving can be found here:
@@ -779,49 +828,37 @@ def save(filename, signal, overwrite=None, **kwds):
         to overwrite. If False and a file exists, the file will not be written.
         If True and a file exists, the file will be overwritten without
         prompting
+    file_format: string
+        The file format of choice to save the file. If not given, it is inferred
+        from the file extension.
 
     Returns
     -------
     None
 
     """
+    writer = None
     if isinstance(filename, MutableMapping):
         extension =".zspy"
+        writer = _format_name_to_reader("ZSPY")
     else:
         filename = Path(filename).resolve()
         extension = filename.suffix
         if extension == '':
-            extension = ".hspy"
+            if file_format:
+                writer = _format_name_to_reader(file_format)
+                extension = "." + writer["file_extensions"][writer["default_extension"]]
+            else:
+                extension = ".hspy"
+                writer = _format_name_to_reader("HSPY")
             filename = filename.with_suffix(extension)
-
-    writer = None
-    default_write_ext = set()
-    for plugin in IO_PLUGINS:
-        if plugin["writes"]:
-            default_write_ext.add(
-                plugin["file_extensions"][plugin["default_extension"]])
-
-    for plugin in IO_PLUGINS:
-        # Drop the "." separator from the suffix
-        if extension[1:].lower() in plugin["file_extensions"]:
-            writer = plugin
-            break
-
-    if writer is None:
-        raise ValueError(
-            f"{extension} does not correspond to any supported format. "
-            f"Supported file extensions are: {strlist2enumeration(default_write_ext)}"
-        )
+        else:
+            writer = _infer_file_writer(extension[1:])
 
     # Check if the writer can write
     sd = signal.axes_manager.signal_dimension
     nd = signal.axes_manager.navigation_dimension
 
-    if writer["writes"] is False:
-        raise ValueError(
-            "Writing to this format is not supported. "
-            f"Supported file extensions are: {strlist2enumeration(default_write_ext)}"
-        )
 
     if writer["writes"] is not True and [sd, nd] not in writer["writes"]:
         compatible_writers = [plugin["format_name"] for plugin in IO_PLUGINS
