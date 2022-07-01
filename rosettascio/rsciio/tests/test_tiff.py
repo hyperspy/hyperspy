@@ -407,7 +407,7 @@ FEI_Helios_metadata = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 
                                    'FileIO': {'0': {
                                        'operation': 'load',
                                        'hyperspy_version': hs_version,
-                                       'io_plugin': 'rsciio.tiff'
+                                       'io_plugin': 'rsciio.tiff.api'
                                    }}
                                    },
                        'Signal': {'signal_type': ''},
@@ -421,7 +421,7 @@ FEI_navcam_metadata = {
                               'original_shape': None, 'original_axes_manager': None}},
     'General': {'original_filename': 'FEI-Helios-navcam-with-no-IRBeam.tif',
                 'title': '', 'date': '2022-05-17', 'time': '09:07:08', 'authors': 'user',
-                'FileIO': {'0': {'operation': 'load', 'io_plugin': 'rsciio.tiff'}}},
+                'FileIO': {'0': {'operation': 'load', 'io_plugin': 'rsciio.tiff.api'}}},
     'Signal': {'signal_type': ''},
     'Acquisition_instrument': {'SEM': {'Stage': {'x': 0.0699197, 'y': 0.000811186, 'z': 0,
                                                  'rotation': 1.07874, 'tilt': 6.54498e-06},
@@ -542,7 +542,7 @@ class TestReadZeissSEM:
                           'FileIO': {'0': {
                               'operation': 'load',
                               'hyperspy_version': hs_version,
-                              'io_plugin': 'rsciio.tiff'
+                              'io_plugin': 'rsciio.tiff.api'
                           }}
                           },
               'Signal': {'signal_type': ''},
@@ -581,7 +581,7 @@ class TestReadZeissSEM:
                           'FileIO': {'0': {
                               'operation': 'load',
                               'hyperspy_version': hs_version,
-                              'io_plugin': 'rsciio.tiff'
+                              'io_plugin': 'rsciio.tiff.api'
                           }}
                           },
               'Signal': {'signal_type': ''},
@@ -615,7 +615,7 @@ def test_read_RGB_Zeiss_optical_scale_metadata():
     assert s.metadata.General.date == '2016-06-13'
     assert s.metadata.General.time == '15:59:52'
     assert s.metadata.General.FileIO.Number_0.hyperspy_version == hs_version
-    assert s.metadata.General.FileIO.Number_0.io_plugin == 'rsciio.tiff'
+    assert s.metadata.General.FileIO.Number_0.io_plugin == 'rsciio.tiff.api'
 
 
 def test_read_BW_Zeiss_optical_scale_metadata():
@@ -684,7 +684,7 @@ def test_read_TVIPS_metadata():
                       'FileIO': {'0': {
                           'operation': 'load',
                           'hyperspy_version': hs_version,
-                          'io_plugin': 'rsciio.tiff'
+                          'io_plugin': 'rsciio.tiff.api'
                       }}
                       },
           'Signal': {'signal_type': ''},
@@ -894,22 +894,22 @@ class TestReadHamamatsu:
     
         omd['Artist'] = "TAPTAP"
     
-        assert not rsciio.tiff._is_streak_hamamatsu(omd)
+        assert not rsciio.tiff.api._is_streak_hamamatsu(omd)
     
         _ = omd.pop('Artist')
     
-        assert not rsciio.tiff._is_streak_hamamatsu(omd)
+        assert not rsciio.tiff.api._is_streak_hamamatsu(omd)
     
         omd.update({'Artist': "Copyright Hamamatsu GmbH, 2018"})
     
         omd['Software'] = "TAPTAPTAP"
     
-        assert not rsciio.tiff._is_streak_hamamatsu(omd)
+        assert not rsciio.tiff.api._is_streak_hamamatsu(omd)
     
         _ = omd.pop('Software')
     
-        assert not rsciio.tiff._is_streak_hamamatsu(omd)
+        assert not rsciio.tiff.api._is_streak_hamamatsu(omd)
     
         omd.update({'Software': "HPD-TA 9.5 pf4"})
     
-        assert rsciio.tiff._is_streak_hamamatsu(omd)
+        assert rsciio.tiff.api._is_streak_hamamatsu(omd)
