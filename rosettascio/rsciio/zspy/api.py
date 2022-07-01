@@ -23,7 +23,7 @@ import dask.array as da
 import numcodecs
 import zarr
 
-from hyperspy.io_plugins._hierarchical import (
+from rsciio._hierarchical import (
     HierarchicalWriter, HierarchicalReader, version
     )
 
@@ -61,7 +61,7 @@ _logger = logging.getLogger(__name__)
 
 class ZspyReader(HierarchicalReader):
 
-    _file_type = format_name.lower()
+    _file_type = "zspy"
 
     def __init__(self, file):
         super().__init__(file)

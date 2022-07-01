@@ -43,7 +43,7 @@ from hyperspy.api_nogui import _ureg
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.elements import atomic_number2name
 import hyperspy.misc.io.fei_stream_readers as stream_readers
-from hyperspy.io_plugins.hspy import get_signal_chunks
+from rsciio.hspy.api import get_signal_chunks
 
 
 EMD_VERSION = '0.2'

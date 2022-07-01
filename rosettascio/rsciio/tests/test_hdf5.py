@@ -376,7 +376,7 @@ class TestSavingMetadataContainers:
                               '0': {
                                   'operation': 'load',
                                   'hyperspy_version': hs_version,
-                                  'io_plugin': 'rsciio.hspy'
+                                  'io_plugin': 'rsciio.hspy.api'
                               }
                           }
               },

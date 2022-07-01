@@ -285,6 +285,8 @@ def emi_reader(filename, dump_xml=False, **kwds):
 
 def file_reader(filename, *args, **kwds):
     ext = os.path.splitext(filename)[1][1:]
+    ser_extensions = ('ser', 'SER')
+    emi_extensions = ('emi', 'EMI')
     if ext in ser_extensions:
         return [ser_reader(filename, *args, **kwds), ]
     elif ext in emi_extensions:

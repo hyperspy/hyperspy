@@ -135,7 +135,7 @@ def test_hyperspy_wrap():
                 '0': {
                     'operation': 'load',
                     'hyperspy_version': hs_version,
-                    'io_plugin': 'rsciio.bruker',
+                    'io_plugin': 'rsciio.bruker.api',
                 }
             }},
         'Sample': {
@@ -229,7 +229,7 @@ def test_fast_bcf():
 
 
 def test_decimal_regex():
-    from rsciio.bruker import fix_dec_patterns
+    from rsciio.bruker.api import fix_dec_patterns
     dummy_xml_positive = [b'<dummy_tag>85,658</dummy_tag>',
                           b'<dummy_tag>85,658E-8</dummy_tag>',
                           b'<dummy_tag>-85,658E-8</dummy_tag>',
