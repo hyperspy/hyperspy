@@ -269,7 +269,7 @@ def test_load_eds_file(filename_as_string):
                                         'operation': 'load',
                                         'hyperspy_version': hs_version,
                                         'io_plugin':
-                                            'rsciio.jeol'
+                                            'rsciio.jeol.api'
                                     }
                                   }
                                   }

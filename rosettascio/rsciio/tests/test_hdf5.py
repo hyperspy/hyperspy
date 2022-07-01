@@ -460,7 +460,7 @@ def test_nonuniformFDA(tmp_path, file, lazy):
 def test_lazy_loading(tmp_path):
     s = BaseSignal(np.empty((5, 5, 5)))
     fname = tmp_path / 'tmp.hdf5'
-    s.save(fname, overwrite=True)
+    s.save(fname, overwrite=True, file_format="HSPY")
     shape = (10000, 10000, 100)
     del s
     f = h5py.File(fname, mode='r+')
@@ -482,7 +482,7 @@ def test_lazy_loading(tmp_path):
 
 def test_passing_compression_opts_saving(tmp_path):
     filename = tmp_path / 'testfile.hdf5'
-    BaseSignal([1, 2, 3]).save(filename, compression_opts=8)
+    BaseSignal([1, 2, 3]).save(filename, compression_opts=8, file_format="HSPY")
 
     f = h5py.File(filename, mode='r+')
     d = f['Experiments/__unnamed__/data']

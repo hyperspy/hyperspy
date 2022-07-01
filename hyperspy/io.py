@@ -853,7 +853,10 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
                 writer = _format_name_to_reader("HSPY")
             filename = filename.with_suffix(extension)
         else:
-            writer = _infer_file_writer(extension[1:])
+            if file_format:
+                writer = _format_name_to_reader(file_format)
+            else:
+                writer = _infer_file_writer(extension[1:])
 
     # Check if the writer can write
     sd = signal.axes_manager.signal_dimension
