@@ -214,7 +214,7 @@ def test_wrong_file():
 
 
 def test_fast_bcf():
-    thingy = pytest.importorskip("rsciio.unbcf_fast")
+    thingy = pytest.importorskip("rsciio.bruker.unbcf_fast")
     from rsciio.bruker import api as bruker
     for bcffile in test_files:
         filename = os.path.join(my_path, 'bruker_data', bcffile)

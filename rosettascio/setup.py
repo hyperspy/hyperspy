@@ -99,7 +99,8 @@ assert isinstance(compiler, distutils.ccompiler.CCompiler)
 distutils.sysconfig.customize_compiler(compiler)
 try:
     compiler.compile(
-        [os.path.join(setup_path, 'tests_data', 'test_compilers.c')])
+        [os.path.join(setup_path, 'rsciio', 'tests', 'bruker_data',
+                      'test_compilers.c')])
 except (CompileError, DistutilsPlatformError):
     warnings.warn("""WARNING: C compiler can't be found.
 Only slow pure python alternative functions will be available.
