@@ -39,10 +39,10 @@ import warnings
 
 #Maybe later we can implement reading the class with the io utils tools instead
 #of re-defining read functions in the class
-#import hyperspy.misc.io.utils_readfile as iou
+#import rsciio.utils.utils_readfile as iou
 
 #This module will prove useful when we write the export function
-#import hyperspy.misc.io.tools
+#import rsciio.utils.tools
 
 #DictionaryTreeBrowser class handles the fancy metadata dictionnaries
 #from hyperspy.misc.utils import DictionaryTreeBrowser

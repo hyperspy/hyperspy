@@ -744,7 +744,7 @@ def _readcube(rawdata, frame_start_index, frame_list,
             return hypermap[:target_frame_num,:height,:width], em_image[:target_frame_num,:height,:width], has_em_image, frame_num, frame_start_index, valid, max_shift, frame_shifts
         
     # for lazy loading
-    from hyperspy.misc.io.fei_stream_readers import DenseSliceCOO
+    from rsciio.utils.fei_stream_readers import DenseSliceCOO
     length = np.sum([len(d) for d in data_list])
     # length = number of data points
 

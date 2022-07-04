@@ -449,7 +449,7 @@ def _axes_jeol_sightx(tiff, op, shape, names):
     scales, offsets, units = _axes_defaults()
 
     jeol_xml = ''.join([line.strip(" \r\n\t\x01\x00") for line in op['ImageDescription'].split('\n')])
-    from hyperspy.misc.io.tools import convert_xml_to_dict
+    from rsciio.utils.tools import convert_xml_to_dict
     jeol_dict = convert_xml_to_dict(jeol_xml)
     op['ImageDescription'] = jeol_dict['TemReporter']
     eos = op["ImageDescription"]["Eos"]["EosMode"]

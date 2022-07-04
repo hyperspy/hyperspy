@@ -24,7 +24,7 @@ import logging
 import traits.api as t
 
 from hyperspy.api_nogui import _ureg
-from hyperspy.misc.io.tools import convert_xml_to_dict
+from rsciio.utils.tools import convert_xml_to_dict
 
 
 _logger = logging.getLogger(__name__)
