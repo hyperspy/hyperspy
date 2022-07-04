@@ -32,7 +32,7 @@ from copy import deepcopy
 import rsciio.utils.utils_readfile as iou
 from hyperspy.exceptions import DM3TagIDError, DM3DataTypeError, DM3TagTypeError
 import rsciio.utils.tools
-from hyperspy.misc.utils import DictionaryTreeBrowser
+from box import Box
 from hyperspy.docstrings.signal import OPTIMIZE_ARG
 
 
@@ -438,7 +438,7 @@ class DigitalMicrographReader(object):
 class ImageObject(object):
 
     def __init__(self, imdict, file, order="C", record_by=None):
-        self.imdict = DictionaryTreeBrowser(imdict)
+        self.imdict = Box(imdict, box_dots=True)
         self.file = file
         self._order = order if order else "C"
         self._record_by = record_by
@@ -446,7 +446,7 @@ class ImageObject(object):
     @property
     def shape(self):
         dimensions = self.imdict.ImageData.Dimensions
-        shape = tuple([dimension[1] for dimension in dimensions])
+        shape = tuple([dimension for dimension in dimensions.values()])
         return shape[::-1]  # DM uses image indexing X, Y, Z...
 
     # For some image stacks created using plugins in Digital Micrograph
@@ -460,7 +460,7 @@ class ImageObject(object):
     def offsets(self):
         dimensions = self.imdict.ImageData.Calibrations.Dimension
         len_diff = len(self.shape) - len(dimensions)
-        origins = np.array([dimension[1].Origin for dimension in dimensions])
+        origins = np.array([dimension.Origin for dimension in dimensions.values()])
         origins = np.append(origins, (0.0,) * len_diff)
         return -1 * origins[::-1] * self.scales
 
@@ -468,7 +468,7 @@ class ImageObject(object):
     def scales(self):
         dimensions = self.imdict.ImageData.Calibrations.Dimension
         len_diff = len(self.shape) - len(dimensions)
-        scales = np.array([dimension[1].Scale for dimension in dimensions])
+        scales = np.array([dimension.Scale for dimension in dimensions.values()])
         scales = np.append(scales, (1.0,) * len_diff)
         return scales[::-1]
 
@@ -476,9 +476,9 @@ class ImageObject(object):
     def units(self):
         dimensions = self.imdict.ImageData.Calibrations.Dimension
         len_diff = len(self.shape) - len(dimensions)
-        return (tuple([dimension[1].Units
-                       if dimension[1].Units else ""
-                       for dimension in dimensions]) + ('',) * len_diff)[::-1]
+        return (tuple([dimension.Units
+                       if dimension.Units else ""
+                       for dimension in dimensions.values()]) + ('',) * len_diff)[::-1]
 
     @property
     def names(self):
@@ -500,7 +500,7 @@ class ImageObject(object):
 
     @property
     def title(self):
-        title = self.imdict.get_item("Name", "")
+        title = self.imdict.get("Name", "")
         # ``if title else ""`` below is there to account for when Name
         # contains an empty list.
         # See https://github.com/hyperspy/hyperspy/issues/1937
@@ -512,19 +512,19 @@ class ImageObject(object):
             return self._record_by
         if len(self.scales) == 1:
             return "spectrum"
-        elif (('ImageTags.Meta_Data.Format' in self.imdict and
+        elif ((self.imdict.get('ImageTags.Meta Data.Format') is not None and
                self.imdict.ImageTags.Meta_Data.Format in ("Spectrum image",
                                                           "Spectrum")) or (
-                "ImageTags.spim" in self.imdict)) and len(self.scales) == 2:
+                self.imdict.get("ImageTags.spim") is not None)) and len(self.scales) == 2:
             return "spectrum"
         else:
             return "image"
 
     @property
     def to_spectrum(self):
-        if (('ImageTags.Meta_Data.Format' in self.imdict and
+        if ((self.imdict.get('ImageTags.Meta Data.Format') is not None and
                 self.imdict.ImageTags.Meta_Data.Format == "Spectrum image") or
-                ("ImageTags.spim" in self.imdict)) and len(self.scales) > 2:
+                (self.imdict.get("ImageTags.spim") is not None)) and len(self.scales) > 2:
             return True
         else:
             return False
@@ -535,7 +535,7 @@ class ImageObject(object):
 
     @property
     def intensity_calibration(self):
-        ic = self.imdict.ImageData.Calibrations.Brightness.as_dictionary()
+        ic = self.imdict.ImageData.Calibrations.Brightness.to_dict()
         if not ic['Units']:
             ic['Units'] = ""
         return ic
@@ -574,13 +574,13 @@ class ImageObject(object):
 
     @property
     def signal_type(self):
-        md_signal = self.imdict.get_item('ImageTags.Meta_Data.Signal', "")
+        md_signal = self.imdict.get('ImageTags.Meta Data.Signal', "")
         if md_signal == 'X-ray':
             return "EDS_TEM"
-        elif md_signal == 'CL'  or 'ImageTags.Acquisition.Monarc_Spectrometer' in self.imdict:
+        elif md_signal == 'CL'  or self.imdict.get('ImageTags.Acquisition.Monarc Spectrometer') is not None:
             return "CL"
         # 'ImageTags.spim.eels' is Orsay's tag group
-        elif md_signal == 'EELS' or 'ImageTags.spim.eels' in self.imdict:
+        elif md_signal == 'EELS' or self.imdict.get('ImageTags.spim.eels') is not None:
             return "EELS"
         else:
             return ""
@@ -764,12 +764,18 @@ class ImageObject(object):
 
     def _get_microscope_name(self, ImageTags):
         locations = (
-            "Session_Info.Microscope",
-            "Microscope_Info.Name",
-            "Microscope_Info.Microscope",
+            "Session Info.Microscope",
+            "Microscope Info.Name",
+            "Microscope Info.Microscope",
         )
         for loc in locations:
-            mic = ImageTags.get_item(loc)
+            # Currentl rsciio uses Box while HyperSpy uses its own
+            # DictionaryTreeBrowser. ImageTags can be one or the 
+            # other due to the `mapping` feature.
+            if hasattr(ImageTags, "get"):
+                mic = ImageTags.get(loc)
+            else: # it is DictionaryTreeBrowser
+                mic = ImageTags.get_item(loc)
             if mic and mic != "[]":
                 return mic
         _logger.info("Microscope name not present")
@@ -857,26 +863,25 @@ class ImageObject(object):
                 "Sample.description", self._parse_string),
         }
 
-        if "Microscope_Info" in image_tags_dict.keys():
+        if "Microscope Info" in image_tags_dict.keys():
             is_TEM = is_diffraction = None
-            if "Illumination_Mode" in image_tags_dict['Microscope_Info'].keys(
+            if "Illumination Mode" in image_tags_dict['Microscope Info'].keys(
             ):
                 is_TEM = (
                     'TEM' == image_tags_dict.Microscope_Info.Illumination_Mode)
-            if "Imaging_Mode" in image_tags_dict['Microscope_Info'].keys():
+            if "Imaging Mode" in image_tags_dict['Microscope Info'].keys():
                 is_diffraction = (
                     'DIFFRACTION' == image_tags_dict.Microscope_Info.Imaging_Mode)
-
             if is_TEM:
                 if is_diffraction:
                     mapping.update({
-                        "{}.Microscope Info.Indicated Magnification".format(tags_path): (
+                        "{}.Microscope_Info.Indicated_Magnification".format(tags_path): (
                             "Acquisition_instrument.TEM.camera_length",
                             None),
                     })
                 else:
                     mapping.update({
-                        "{}.Microscope Info.Indicated Magnification".format(tags_path): (
+                        "{}.Microscope_Info.Indicated_Magnification".format(tags_path): (
                             "Acquisition_instrument.TEM.magnification",
                             None),
                     })
@@ -1090,7 +1095,7 @@ def file_reader(filename, record_by=None, order=None, lazy=False,
 
         for image in images:
             dm.tags_dict['ImageList'][
-                'TagGroup0'] = image.imdict.as_dictionary()
+                'TagGroup0'] = image.imdict.to_dict()
             axes = image.get_axes_dict()
             mp = image.get_metadata()
             mp['General']['original_filename'] = os.path.split(filename)[1]

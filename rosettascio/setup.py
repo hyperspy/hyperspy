@@ -274,6 +274,7 @@ setup(
         'sparse',
         'imageio',
         'dask[array]>=0.18',
+        'python-box>=6.0',
     ],  # Optional
 
     # List additional groups of dependencies here (e.g. development
