@@ -30,7 +30,7 @@ import traits.api as t
 import numpy as np
 
 from hyperspy import Release
-from hyperspy.misc.utils import DictionaryTreeBrowser
+from rsciio.utils.tools import DTBox
 
 _logger = logging.getLogger(__name__)
 
@@ -458,7 +458,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     if 'height-name' in rpl_info:
         names[iheight] = rpl_info['height-name']
 
-    mp = DictionaryTreeBrowser({
+    mp = DTBox({
         'General': {'original_filename': os.path.split(filename)[1],
                     'date': rpl_info['date'],
                     'time': rpl_info['time'],
@@ -466,7 +466,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
                     },
         "Signal": {'signal_type': rpl_info['signal'],
                    'record_by': record_by},
-    })
+    }, box_dots=True)
     if 'convergence-angle' in rpl_info:
         mp.set_item('Acquisition_instrument.TEM.convergence_angle',
                     rpl_info['convergence-angle'])
@@ -517,7 +517,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     dictionary = {
         'data': data.squeeze(),
         'axes': axes,
-        'metadata': mp.as_dictionary(),
+        'metadata': mp.to_dict(),
         'original_metadata': rpl_info
     }
     return [dictionary, ]
