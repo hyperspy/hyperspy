@@ -27,7 +27,7 @@ import numpy as np
 from traits.api import Undefined
 
 from hyperspy import Release
-from box import Box
+from rsciio.utils.tools import DTBox
 
 _logger = logging.getLogger(__name__)
 
@@ -134,23 +134,6 @@ keywords = {
     'EDSDET': {'dtype': str, 'mapped_to':
                'Acquisition_instrument.TEM.Detector.EDS.EDS_det'},
 }
-
-
-class DTBox(Box):
-    def add_node(self, path):
-        keys = path.split(".")
-        for key in keys:
-            if self.get(key) is None:
-                self[key] = {}
-            self = self[key]
-
-    def set_item(self, path, value):
-        if self.get(path) is None:
-            self.add_node(path)
-        self[path] = value
-
-    def has_item(self, path):
-        return self.get(path) is not None
 
 
 def parse_msa_string(string, filename=None):

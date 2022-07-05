@@ -21,6 +21,7 @@ import logging
 import xml.etree.ElementTree as ET
 from pathlib import Path
 import os
+from box import Box
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
@@ -149,3 +150,18 @@ def convert_xml_to_dict(xml_object):
     op = DictionaryTreeBrowser()
     xml2dtb(xml_object, op)
     return op
+
+
+class DTBox(Box):
+    def add_node(self, path):
+        keys = path.split(".")
+        for key in keys:
+            if self.get(key) is None:
+                self[key] = {}
+            self = self[key]
+    def set_item(self, path, value):
+        if self.get(path) is None:
+            self.add_node(path)
+        self[path] = value
+    def has_item(self, path):
+        return self.get(path) is not None

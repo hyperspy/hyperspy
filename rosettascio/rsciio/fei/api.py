@@ -29,7 +29,7 @@ import numpy as np
 import traits.api as t
 
 from hyperspy.misc.array_tools import sarray2dict
-from hyperspy.misc.utils import DictionaryTreeBrowser, multiply
+from rsciio.utils.tools import DTBox
 
 
 _logger = logging.getLogger(__name__)
@@ -270,7 +270,7 @@ def emi_reader(filename, dump_xml=False, **kwds):
             continue
 
         index = int(os.path.splitext(f)[0].split("_")[-1]) - 1
-        op = DictionaryTreeBrowser(sers[-1]['original_metadata'])
+        op = DTBox(sers[-1]['original_metadata'], dot_box=True)
 
         # defend against condition where more ser files are present than object
         # metadata defined in emi
@@ -279,7 +279,7 @@ def emi_reader(filename, dump_xml=False, **kwds):
         else:
             _logger.warning(f'{orig_fname} did not contain any metadata for '
                             f'{f}, so only .ser header information was read')
-        sers[-1]['original_metadata'] = op.as_dictionary()
+        sers[-1]['original_metadata'] = op.to_dict()
     return sers
 
 
@@ -465,7 +465,7 @@ def get_axes_from_position(header, data):
 
 
 def convert_xml_to_dict(xml_object):
-    op = DictionaryTreeBrowser()
+    op = DTBox(dot_box=True)
     emixml2dtb(ET.fromstring(xml_object), op)
     return op
 
@@ -638,7 +638,7 @@ def load_only_data(filename, array_shape, record_by, num_axes, data=None,
     # if the shapes of the retrieved array does not match that of the data
     # dimensions we must fill the rest with zeros or (better) nans if the
     # dtype is float
-    if multiply(array_shape) != multiply(data['Array'].shape):
+    if np.prod(array_shape) != np.prod(data['Array'].shape):
         if int(header['NumberDimensions']) == 1 and only_valid_data:
             # No need to fill with zeros if `TotalNumberElements !=
             # ValidNumberElements` for series data.
@@ -647,7 +647,7 @@ def load_only_data(filename, array_shape, record_by, num_axes, data=None,
             array_shape[0] = header['ValidNumberElements'][0]
         else:
             # Maps will need to be filled with zeros or nans
-            dc = np.zeros(multiply(array_shape),
+            dc = np.zeros(np.prod(array_shape),
                           dtype=data['Array'].dtype)
             if dc.dtype is np.dtype('f') or dc.dtype is np.dtype('f8'):
                 dc[:] = np.nan
