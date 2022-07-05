@@ -20,12 +20,14 @@ from datetime import datetime as dt
 import codecs
 import os
 import logging
+from pydoc import doc
+from turtle import dot
 
 import numpy as np
 from traits.api import Undefined
 
 from hyperspy import Release
-from hyperspy.misc.utils import DictionaryTreeBrowser
+from box import Box
 
 _logger = logging.getLogger(__name__)
 
@@ -134,6 +136,23 @@ keywords = {
 }
 
 
+class DTBox(Box):
+    def add_node(self, path):
+        keys = path.split(".")
+        for key in keys:
+            if self.get(key) is None:
+                self[key] = {}
+            self = self[key]
+
+    def set_item(self, path, value):
+        if self.get(path) is None:
+            self.add_node(path)
+        self[path] = value
+
+    def has_item(self, path):
+        return self.get(path) is not None
+
+
 def parse_msa_string(string, filename=None):
     """Parse an EMSA/MSA file content.
 
@@ -155,7 +174,7 @@ def parse_msa_string(string, filename=None):
     if not hasattr(string, "readlines"):
         string = string.splitlines()
     parameters = {}
-    mapped = DictionaryTreeBrowser({})
+    mapped = DTBox(box_dots=True)
     y = []
     # Read the keywords
     data_section = False
@@ -295,7 +314,7 @@ def parse_msa_string(string, filename=None):
     dictionary = {
         'data': np.array(y),
         'axes': axes,
-        'metadata': mapped.as_dictionary(),
+        'metadata': mapped.to_dict(),
         'original_metadata': parameters
     }
     file_data_list = [dictionary, ]
