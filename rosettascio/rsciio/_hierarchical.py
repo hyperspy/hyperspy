@@ -7,6 +7,7 @@ import warnings
 import dask.array as da
 import h5py
 import numpy as np
+from rosettascio.rsciio.exceptions import VisibleDeprecationWarning
 from traits.api import Undefined
 
 from hyperspy.axes import AxesManager

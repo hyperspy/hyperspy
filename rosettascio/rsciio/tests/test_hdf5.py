@@ -34,7 +34,6 @@ from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
 from hyperspy.roi import Point2DROI
@@ -148,8 +147,7 @@ class TestExample1_11(Example1):
 class TestLoadingNewSavedMetadata:
 
     def setup_method(self, method):
-        with pytest.warns(VisibleDeprecationWarning):
-            self.s = load(my_path / "hdf5_files" / "with_lists_etc.hdf5", reader="HSPY")
+        self.s = load(my_path / "hdf5_files" / "with_lists_etc.hdf5", reader="HSPY")
 
     def test_signal_inside(self):
         np.testing.assert_array_almost_equal(
@@ -400,9 +398,8 @@ def test_none_metadata():
 
 
 def test_rgba16():
-    with pytest.warns(VisibleDeprecationWarning):
-        print(my_path)
-        s = load(my_path / "hdf5_files" / "test_rgba16.hdf5", reader="HSPY")
+    print(my_path)
+    s = load(my_path / "hdf5_files" / "test_rgba16.hdf5", reader="HSPY")
     data = np.load(my_path / "npz_files" / "test_rgba16.npz")['a']
     assert (s.data == data).all()
 
@@ -755,9 +752,8 @@ class Test_permanent_markers_io:
     def test_load_unknown_marker_type(self):
         # test_marker_bad_marker_type.hdf5 has 5 markers,
         # where one of them has an unknown marker type
-        with pytest.warns(VisibleDeprecationWarning):
-            fname = my_path / "hdf5_files" / "test_marker_bad_marker_type.hdf5"
-            s = load(fname, reader="HSPY")
+        fname = my_path / "hdf5_files" / "test_marker_bad_marker_type.hdf5"
+        s = load(fname, reader="HSPY")
         assert len(s.metadata.Markers) == 4
 
     def test_load_missing_y2_value(self):
@@ -766,8 +762,7 @@ class Test_permanent_markers_io:
         # the point marker only needs the x1 and y1 value to work
         # so this should load
         fname = my_path / "hdf5_files" / "test_marker_point_y2_data_deleted.hdf5"
-        with pytest.warns(VisibleDeprecationWarning):
-            s = load(fname, reader="HSPY")
+        s = load(fname, reader="HSPY")
         assert len(s.metadata.Markers) == 5
 
 

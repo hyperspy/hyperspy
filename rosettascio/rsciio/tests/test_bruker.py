@@ -89,7 +89,7 @@ def test_load_8bit():
 def test_hyperspy_wrap():
     filename = os.path.join(my_path, 'bruker_data', test_files[0])
     print('testing bcf wrap to hyperspy signal...')
-    from hyperspy.exceptions import VisibleDeprecationWarning
+    from rsciio.exceptions import VisibleDeprecationWarning
     with pytest.warns(VisibleDeprecationWarning):
         hype = load(filename, select_type='spectrum')
     hype = load(filename, select_type='spectrum_image')

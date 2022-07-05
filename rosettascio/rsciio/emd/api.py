@@ -40,7 +40,7 @@ import dask.array as da
 from dateutil import tz
 
 from hyperspy.api_nogui import _ureg
-from hyperspy.exceptions import VisibleDeprecationWarning
+from rsciio.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.elements import atomic_number2name
 import rsciio.utils.fei_stream_readers as stream_readers
 from rsciio.hspy.api import get_signal_chunks

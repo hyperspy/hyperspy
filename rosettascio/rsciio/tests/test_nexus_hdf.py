@@ -26,7 +26,7 @@ import h5py
 import hyperspy.api as hs
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
-from hyperspy.exceptions import VisibleDeprecationWarning
+from rsciio.exceptions import VisibleDeprecationWarning
 from hyperspy.io import load
 from rsciio.nexus.api import (_byte_to_string, _fix_exclusion_keys,
                                        _is_int, _is_numeric_data, file_writer,
