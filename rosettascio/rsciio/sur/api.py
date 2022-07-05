@@ -46,7 +46,7 @@ import warnings
 
 #DictionaryTreeBrowser class handles the fancy metadata dictionnaries
 #from hyperspy.misc.utils import DictionaryTreeBrowser
-from hyperspy.exceptions import MountainsMapFileError
+from rsciio.exceptions import MountainsMapFileError
 
 _logger = logging.getLogger(__name__)
 

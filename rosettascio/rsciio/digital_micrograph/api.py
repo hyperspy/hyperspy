@@ -30,7 +30,7 @@ import traits.api as t
 from copy import deepcopy
 
 import rsciio.utils.utils_readfile as iou
-from hyperspy.exceptions import DM3TagIDError, DM3DataTypeError, DM3TagTypeError
+from rsciio.exceptions import DM3TagIDError, DM3DataTypeError, DM3TagTypeError
 import rsciio.utils.tools
 from box import Box
 from hyperspy.docstrings.signal import OPTIMIZE_ARG

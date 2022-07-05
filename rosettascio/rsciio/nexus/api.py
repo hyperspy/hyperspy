@@ -28,7 +28,7 @@ import pprint
 import traits.api as t
 
 from hyperspy.io_plugins.hspy import (get_signal_chunks, overwrite_dataset)
-from hyperspy.exceptions import VisibleDeprecationWarning
+from rsciio.exceptions import VisibleDeprecationWarning
 
 
 _logger = logging.getLogger(__name__)

@@ -24,7 +24,7 @@
 import struct
 import logging
 
-from hyperspy.exceptions import ByteOrderError
+from rsciio.exceptions import ByteOrderError
 
 _logger = logging.getLogger(__name__)
 
