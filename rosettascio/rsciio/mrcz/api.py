@@ -97,12 +97,6 @@ def file_reader(filename, endianess='<', lazy=False, mmap_mode='c',
 
 def file_writer(filename, signal, do_async=False, compressor=None, clevel=1,
                 n_threads=None, **kwds):
-    import hyperspy.signals
-    if not isinstance(signal,
-                      (hyperspy.signals.Signal2D, hyperspy.signals.ComplexSignal2D)):
-        raise TypeError("MRCZ supports 2D and 3D data only. type(signal) is "
-                        "{}".format(type(signal)))
-
     endianess = kwds.pop('endianess', '<')
     mrcz_endian = 'le' if endianess == '<' else 'be'
 
