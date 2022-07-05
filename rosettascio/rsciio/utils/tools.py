@@ -23,8 +23,6 @@ from pathlib import Path
 import os
 from box import Box
 
-from hyperspy.misc.utils import DictionaryTreeBrowser
-
 
 _logger = logging.getLogger(__name__)
 
@@ -134,23 +132,14 @@ def overwrite(fname):
 
 def xml2dtb(et, dictree):
     if et.text:
-        dictree[et.tag] = et.text
+        dictree.set_item(et.tag, et.text)
         return
     else:
         dictree.add_node(et.tag)
         if et.attrib:
-            dictree[et.tag].add_dictionary(et.attrib)
+            dictree[et.tag].merge_update(et.attrib)
         for child in et:
             xml2dtb(child, dictree[et.tag])
-
-
-def convert_xml_to_dict(xml_object):
-    if isinstance(xml_object, str):
-        xml_object = ET.fromstring(xml_object)
-    op = DictionaryTreeBrowser()
-    xml2dtb(xml_object, op)
-    return op
-
 
 class DTBox(Box):
     def add_node(self, path):
@@ -165,3 +154,12 @@ class DTBox(Box):
         self[path] = value
     def has_item(self, path):
         return self.get(path) is not None
+
+def convert_xml_to_dict(xml_object):
+    if isinstance(xml_object, str):
+        xml_object = ET.fromstring(xml_object)
+    op = DTBox(box_dots=True)
+    xml2dtb(xml_object, op)
+    return op
+
+

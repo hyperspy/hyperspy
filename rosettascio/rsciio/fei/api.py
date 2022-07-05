@@ -270,7 +270,7 @@ def emi_reader(filename, dump_xml=False, **kwds):
             continue
 
         index = int(os.path.splitext(f)[0].split("_")[-1]) - 1
-        op = DTBox(sers[-1]['original_metadata'], dot_box=True)
+        op = DTBox(sers[-1]['original_metadata'], box_dots=True)
 
         # defend against condition where more ser files are present than object
         # metadata defined in emi
@@ -465,7 +465,7 @@ def get_axes_from_position(header, data):
 
 
 def convert_xml_to_dict(xml_object):
-    op = DTBox(dot_box=True)
+    op = DTBox(box_dots=True)
     emixml2dtb(ET.fromstring(xml_object), op)
     return op
 

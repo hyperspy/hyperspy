@@ -131,7 +131,7 @@ def file_reader(filename, lazy=False, **kwds):
     if not 'series_count' in info.keys():
         try:
             fov = ast.literal_eval(
-                om.root.iom_measurements.opticsget_full_scan_field_of_view)
+                om.root.iom_measurements.optics.get_full_scan_field_of_view)
             for i in range(2):
                 value = fov[i] / sizes[i]
                 scales[i], units[i] = _convert_scale_units(value, 'm', sizes[i])
@@ -166,7 +166,7 @@ def file_reader(filename, lazy=False, **kwds):
         'data': data.squeeze(),
         'axes': axes,
         'metadata': md,
-        'original_metadata': om.as_dictionary()
+        'original_metadata': om.to_dict()
     }
 
     return [dictionary, ]
