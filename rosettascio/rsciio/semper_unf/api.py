@@ -570,7 +570,8 @@ class SemperFormat(object):
                          'ICLAYN': data.shape[0] // 2 + 1})
         return cls(data, title, offsets, scales, units, metadata)
 
-    def to_signal(self, lazy=False):
+    
+    def to_dictionary(self, lazy=False):
         """Export a :class:`~.SemperFormat` object to a
         :class:`~hyperspy.signals.Signal` object.
 
@@ -584,34 +585,38 @@ class SemperFormat(object):
             The exported signal.
 
         """
-        import hyperspy.api as hp
         data = self.data.squeeze()  # Reduce unneeded dimensions!
-        iclass = self.ICLASS_DICT.get(self.metadata.get('ICLASS'))
-        if iclass == 'spectrum':
-            signal = hp.signals.Signal1D(data)
-        elif iclass == 'image':
-            signal = hp.signals.Signal2D(data)
-        else:  # Class is not given, but can be determined by the data shape:
-            if len(data.shape) == 1:
-                signal = hp.signals.Signal1D(data)
-            elif len(data.shape) == 2:
-                signal = hp.signals.Signal2D(data)
-            else:  # 3D data!
-                signal = hp.signals.BaseSignal(data)
-        for i in range(len(data.shape)):
-            signal.axes_manager[i].name = {0: 'x', 1: 'y', 2: 'z'}[i]
-            signal.axes_manager[i].scale = self.scales[i]
-            signal.axes_manager[i].offset = self.offsets[i]
-            signal.axes_manager[i].units = self.units[i]
-        signal.metadata.set_item('General.title', self.title)
+        axes = []
+        for name, scale, offset, units, size in zip(("x", "y", "z"), self.scales, self.offsets, self.units, data.shape):
+            axes.append(
+                {
+                    '_type': 'UniformDataAxis',
+                    'name': name,
+                    'units': units,
+                    'navigate': False,
+                    'is_binned': False,
+                    'size': size,
+                    'scale': scale,
+                    'offset': offset,
+                }
+            )
+        metadata = {}
+        metadata["General"] = {}
+        metadata["General"]["title"] = self.title
         if 'DATE' in self.metadata.keys():
             date, time = self._convert_date_time_from_label()
-            signal.metadata.set_item('General.date', date)
-            signal.metadata.set_item('General.time', time)
+            metadata['General']['date'] = date
+            metadata['General']['time'] = time
         if lazy:
             signal = signal.as_lazy()
-        signal.original_metadata.add_dictionary(self.metadata)
-        return signal
+        signal_dic = {
+            "data": data,
+            "metadata": metadata,
+            "original_metadata": self.metadata,
+            "axes": axes,
+            'attributes': {'_lazy': lazy, 'ragged': False},
+        }
+        return signal_dic
 
     def _convert_date_time_from_label(self):
         # Convert the label['DATE'] to ISO 8601 for metadata
@@ -692,7 +697,7 @@ def file_reader(filename, **kwds):
     lazy = kwds.get('lazy', False)
     semper = SemperFormat.load_from_unf(filename, lazy=lazy)
     semper.log_info()
-    return [semper.to_signal(lazy=lazy)._to_dictionary()]
+    return [semper.to_dictionary(lazy=lazy)]
 
 
 def file_writer(filename, signal, **kwds):
