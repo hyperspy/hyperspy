@@ -38,8 +38,7 @@ from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
 from hyperspy.roi import Point2DROI
 from hyperspy.utils import markers
-from rsciio.hspy.api import get_signal_chunks
-
+from rsciio._hierarchical import get_signal_chunks
 
 
 my_path = Path(__file__).parent
@@ -212,7 +211,7 @@ class TestSavingMetadataContainers:
         s.save(fname)
         end = time.time()
         # It should finish in less that 2 s on CI.
-        assert end - start < 2.0  
+        assert end - start < 2.0
 
     @zspy_marker
     def test_numpy_only_inner_lists(self, tmp_path, file):
