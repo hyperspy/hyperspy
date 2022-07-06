@@ -41,7 +41,7 @@ from rsciio.tvips.api import (
     file_reader,
 )
 from hyperspy.misc.utils import DictionaryTreeBrowser
-from hyperspy.misc.utils import dummy_context_manager
+from rsciio.utils.tools import dummy_context_manager
 
 
 try:

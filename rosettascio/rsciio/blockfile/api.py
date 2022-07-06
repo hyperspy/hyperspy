@@ -33,8 +33,7 @@ from rsciio.utils.date_time_tools import (
     serial_date_to_ISO_format,
     datetime_to_serial_date,
 )
-from hyperspy.misc.utils import dummy_context_manager
-from hyperspy.defaults_parser import preferences
+from rsciio.utils.tools import dummy_context_manager
 
 _logger = logging.getLogger(__name__)
 
@@ -413,8 +412,6 @@ def file_writer(filename, signal, **kwds):
     file_memmap["MAGIC"] = magics
     file_memmap["ID"] = ids
     if signal._lazy:
-        if show_progressbar is None:
-            show_progressbar = preferences.General.show_progressbar
         cm = ProgressBar if show_progressbar else dummy_context_manager
         with cm():
             signal.data.store(file_memmap["IMG"])

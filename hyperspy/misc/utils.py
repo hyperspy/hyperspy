@@ -34,7 +34,7 @@ import dask.array as da
 import numpy as np
 
 from hyperspy.misc.signal_tools import broadcast_signals
-from rsciio.exceptions import VisibleDeprecationWarning, LazyCupyConversion
+from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
 
