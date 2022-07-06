@@ -48,7 +48,7 @@ _logger = logging.getLogger(__name__)
 warn_once = True
 
 try:
-    from hyperspy.io_plugins import unbcf_fast
+    from rsciio.bruker import unbcf_fast
     fast_unbcf = True
     _logger.info("The fast cython based bcf unpacking library were found")
 except ImportError:  # pragma: no cover
