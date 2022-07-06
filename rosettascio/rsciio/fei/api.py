@@ -28,7 +28,7 @@ from collections import OrderedDict
 import numpy as np
 import traits.api as t
 
-from hyperspy.misc.array_tools import sarray2dict
+from rsciio.utils.tools import sarray2dict
 from rsciio.utils.tools import DTBox
 
 

@@ -30,7 +30,7 @@ import pint
 from dask.diagnostics import ProgressBar
 from numba import njit
 
-from hyperspy.misc.array_tools import sarray2dict
+from rsciio.utils.tools import sarray2dict
 from hyperspy.misc.utils import dummy_context_manager
 from hyperspy.defaults_parser import preferences
 from hyperspy.api_nogui import _ureg

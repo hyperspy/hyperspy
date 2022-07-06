@@ -23,7 +23,7 @@
 import os
 import logging
 import numpy as np
-from hyperspy.misc.array_tools import sarray2dict
+from rsciio.utils.tools import sarray2dict
 import traits.api as t
 from hyperspy.misc.elements import atomic_number2name
 

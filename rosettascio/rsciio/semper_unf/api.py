@@ -82,7 +82,7 @@ from datetime import datetime
 import numpy as np
 from traits.api import Undefined
 
-from hyperspy.misc.array_tools import sarray2dict
+from rsciio.utils.tools import sarray2dict
 
 
 _logger = logging.getLogger(__name__)

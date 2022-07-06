@@ -28,7 +28,7 @@ import warnings
 import datetime
 import dateutil
 
-from hyperspy.misc.array_tools import sarray2dict, dict2sarray
+from rsciio.utils.tools import sarray2dict, dict2sarray
 from hyperspy.misc.date_time_tools import (
     serial_date_to_ISO_format,
     datetime_to_serial_date,
