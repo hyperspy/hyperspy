@@ -27,7 +27,7 @@ import numpy as np
 import pprint
 import traits.api as t
 
-from hyperspy.io_plugins.hspy import (get_signal_chunks, overwrite_dataset)
+from rsciio.hspy import (get_signal_chunks, overwrite_dataset)
 from rsciio.exceptions import VisibleDeprecationWarning
 
 
