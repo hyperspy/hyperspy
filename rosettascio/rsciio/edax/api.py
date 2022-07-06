@@ -25,7 +25,7 @@ import logging
 import numpy as np
 from rsciio.utils.tools import sarray2dict
 import traits.api as t
-from hyperspy.misc.elements import atomic_number2name
+from rsciio.utils.elements import atomic_number2name
 
 _logger = logging.getLogger(__name__)
 
