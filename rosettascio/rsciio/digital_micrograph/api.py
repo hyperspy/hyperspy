@@ -33,7 +33,6 @@ import rsciio.utils.utils_readfile as iou
 from rsciio.exceptions import DM3TagIDError, DM3DataTypeError, DM3TagTypeError
 import rsciio.utils.tools
 from box import Box
-from hyperspy.docstrings.signal import OPTIMIZE_ARG
 
 
 _logger = logging.getLogger(__name__)
@@ -1081,7 +1080,14 @@ def file_reader(filename, record_by=None, order=None, lazy=False,
         One of 'C' or 'F'
     lazy : bool, default False
         Load the signal lazily.
-    %s
+    optimize : bool
+        If ``True``, the location of the data in memory is optimised for the
+        fastest iteration over the navigation axes. This operation can
+        cause a peak of memory usage and requires considerable processing
+        times for large datasets and/or low specification hardware.
+        See the :ref:`signal.transpose` section of the HyperSpy user guide
+        for more information. When operating on lazy signals, if ``True``,
+        the chunks are optimised for the new axes configuration.
     """
 
     with open(filename, "rb") as f:
@@ -1128,4 +1134,3 @@ def file_reader(filename, record_by=None, order=None, lazy=False,
                  })
 
     return imd
-    file_reader.__doc__ %= (OPTIMIZE_ARG.replace('False', 'True'))
