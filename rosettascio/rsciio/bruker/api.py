@@ -32,15 +32,19 @@ import re
 import logging
 from zlib import decompress as unzip_block
 from struct import unpack as strct_unp
-import dask.delayed as dd
-import dask.array as da
-import numpy as np
+import warnings
 from datetime import datetime, timedelta
 from ast import literal_eval
 import codecs
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 import io
+
+import dask.delayed as dd
+import dask.array as da
+import numpy as np
+
+from rsciio.exceptions import VisibleDeprecationWarning
 
 
 _logger = logging.getLogger(__name__)
@@ -1264,12 +1268,11 @@ def bcf_reader(filename, select_type=None, index=None,  # noqa
     obj_bcf = BCF_reader(filename, instrument=instrument)
     if select_type == 'spectrum':
         select_type = 'spectrum_image'
-        from hyperspy.misc.utils import deprecation_warning
         msg = (
             "The 'spectrum' option for the `select_type` parameter is "
             "deprecated and will be removed in v2.0. Use 'spectrum_image' "
             "instead.")
-        deprecation_warning(msg)
+        warnings.warn(msg, VisibleDeprecationWarning)
     if select_type == 'image':
         return bcf_images(obj_bcf)
     elif select_type == 'spectrum_image':
