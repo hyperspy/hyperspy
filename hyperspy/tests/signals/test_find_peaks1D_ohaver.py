@@ -33,7 +33,7 @@ class TestFindPeaks1DOhaver:
                 .resolve()
                 .parent.joinpath("data/test_find_peaks1D_ohaver.hdf5")
             )
-            self.signal = load(filepath)
+            self.signal = load(filepath, reader='hspy')
 
     def test_find_peaks1D_ohaver_high_amp_thres(self):
         signal1D = self.signal

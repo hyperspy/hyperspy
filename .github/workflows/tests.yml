@@ -73,6 +73,11 @@ jobs:
         run: |
           pip install ${{ env.PIP_ARGS }} .'${{ matrix.PIP_SELECTOR }}'
 
+      - name: Install rosettascio
+        shell: bash
+        run: |
+          pip install -e ./rosettascio
+
       - name: Pip list
         run: |
           pip list
@@ -80,6 +85,10 @@ jobs:
       - name: Run test suite
         run: |
           pytest ${{ env.PYTEST_ARGS }} ${{ matrix.PYTEST_ARGS_COVERAGE }}
+
+      - name: Run test suite (rosettascio)
+        run: |
+          pytest --pyargs rosettascio
 
       - name: Upload coverage to Codecov
         if: ${{ always() }} && ${{ matrix.PYTEST_ARGS_COVERAGE }}

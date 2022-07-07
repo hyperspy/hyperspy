@@ -27,11 +27,13 @@ import numpy as np
 import pprint
 import traits.api as t
 
-from rsciio.hspy import (get_signal_chunks, overwrite_dataset)
 from rsciio.exceptions import VisibleDeprecationWarning
+from rsciio._hierarchical import get_signal_chunks
+from rsciio.hspy.api import overwrite_dataset
 
 
 _logger = logging.getLogger(__name__)
+
 
 
 
