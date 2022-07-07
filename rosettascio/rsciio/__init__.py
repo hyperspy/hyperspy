@@ -20,6 +20,8 @@ import logging
 import yaml
 import os
 
+from rsciio.version import __version__
+
 IO_PLUGINS = []
 _logger = logging.getLogger(__name__)
 
