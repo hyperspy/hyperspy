@@ -33,7 +33,7 @@ from numba import njit
 from rsciio.utils.tools import sarray2dict
 from rsciio.utils.tools import dummy_context_manager
 from hyperspy.defaults_parser import preferences
-from hyperspy.api_nogui import _ureg
+from rsciio.utils.tools import _UREG
 
 
 
@@ -88,7 +88,7 @@ def _guess_image_mode(signal):
     unit = signal.axes_manager[-1].units
     mode = None
     try:
-        pixel_size = scale * _ureg(unit)
+        pixel_size = scale * _UREG(unit)
     except (AttributeError, pint.UndefinedUnitError):
         pass
     else:
@@ -119,9 +119,9 @@ def _get_main_header_from_signal(signal, version=2, frame_header_extra_bytes=0):
     else:
         to_unit = ""
     if to_unit:
-        scale = round((scale * _ureg(unit)).to(to_unit).magnitude)
-        offsetx = round((offsetx * _ureg(unit)).to(to_unit).magnitude)
-        offsety = round((offsety * _ureg(unit)).to(to_unit).magnitude)
+        scale = round((scale * _UREG(unit)).to(to_unit).magnitude)
+        offsetx = round((offsetx * _UREG(unit)).to(to_unit).magnitude)
+        offsety = round((offsety * _UREG(unit)).to(to_unit).magnitude)
     else:
         warnings.warn("Image scale units could not be converted, "
                       "saving axes scales as is.", UserWarning)
@@ -521,7 +521,7 @@ def file_writer(filename, signal, **kwds):
     nav_units = signal.axes_manager[0].units
     nav_increment = signal.axes_manager[0].scale
     try:
-        time_increment = (nav_increment * _ureg(nav_units)).to("ms").magnitude
+        time_increment = (nav_increment * _UREG(nav_units)).to("ms").magnitude
     except (AttributeError, pint.UndefinedUnitError, pint.DimensionalityError):
         time_increment = 1
     # imaging or diffraction

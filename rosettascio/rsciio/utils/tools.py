@@ -27,6 +27,9 @@ from contextlib import contextmanager
 
 import numpy as np
 from box import Box
+from pint import UnitRegistry
+
+_UREG = UnitRegistry()
 
 
 _logger = logging.getLogger(__name__)

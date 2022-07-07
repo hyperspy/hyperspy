@@ -32,3 +32,5 @@ for sub, _, _ in os.walk(here):
             specs = yaml.safe_load(stream)
             specs["api"] = "rsciio.%s.api" % os.path.split(sub)[1]
             IO_PLUGINS.append(specs)
+
+

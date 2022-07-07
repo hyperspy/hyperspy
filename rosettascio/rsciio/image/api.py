@@ -23,7 +23,7 @@ from imageio import imread, imwrite
 from matplotlib.figure import Figure
 import traits.api as t
 
-from hyperspy.api_nogui import _ureg
+from rsciio.utils.tools import _UREG
 from hyperspy.misc import rgb_tools
 
 
@@ -148,7 +148,7 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
             if units == t.Undefined:
                 units = "px"
                 scalebar_kwds['dimension'] = "pixel-length"
-            if _ureg.Quantity(units).check('1/[length]'):
+            if _UREG.Quantity(units).check('1/[length]'):
                 scalebar_kwds['dimension'] = "si-length-reciprocal"
 
             scalebar = ScaleBar(axis.scale, units, **scalebar_kwds)

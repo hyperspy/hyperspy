@@ -39,7 +39,7 @@ import numpy as np
 import dask.array as da
 from dateutil import tz
 
-from hyperspy.api_nogui import _ureg
+from rsciio.utils.tools import _UREG
 from rsciio.exceptions import VisibleDeprecationWarning
 from rsciio.utils.elements import atomic_number2name
 import rsciio.utils.fei_stream_readers as stream_readers
@@ -725,7 +725,7 @@ class EMD_NCEM:
                 units_list = [u[1:-1].replace("_", "") for u in units_list]
                 value = ' * '.join(units_list)
                 try:
-                    units = _ureg.parse_units(value)
+                    units = _UREG.parse_units(value)
                     value = f"{units:~}"
                 except:
                     pass
@@ -1457,7 +1457,7 @@ class FeiEMDReader(object):
         if units == t.Undefined:
             return value, units
         factor /= 2
-        v = float(value) * _ureg(units)
+        v = float(value) * _UREG(units)
         converted_v = (factor * v).to_compact()
         converted_value = float(converted_v.magnitude / factor)
         converted_units = '{:~}'.format(converted_v.units)
