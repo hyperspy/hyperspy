@@ -29,7 +29,7 @@ import traits.api as t
 
 import numpy as np
 
-from hyperspy import Release
+from rsciio.version import __version__
 from rsciio.utils.tools import DTBox
 
 _logger = logging.getLogger(__name__)
@@ -662,7 +662,7 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
 def write_rpl(filename, keys_dictionary, encoding='ascii'):
     f = codecs.open(filename, 'w', encoding=encoding,
                     errors='ignore')
-    f.write(';File created by HyperSpy version %s\n' % Release.version)
+    f.write(';File created by RosettaSciIO version %s\n' % __version__)
     f.write('key\tvalue\n')
     # Even if it is not necessary, we sort the keywords when writing
     # to make the rpl file more human friendly

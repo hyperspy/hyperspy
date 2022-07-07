@@ -26,7 +26,7 @@ from turtle import dot
 import numpy as np
 from traits.api import Undefined
 
-from hyperspy import Release
+from rsciio.version import __version__
 from rsciio.utils.tools import DTBox
 
 _logger = logging.getLogger(__name__)
@@ -363,7 +363,7 @@ def file_writer(filename, signal, format=None, separator=', ',
         if signal.axes_manager._axes[0].units is not Undefined
         else "",
         #        'YUNITS' : '',
-        'COMMENT': 'File created by HyperSpy version %s' % Release.version,
+        'COMMENT': 'File created by RosettaSciIO version %s' % __version__,
         # Microscope
         #        'BEAMKV' : ,
         #        'EMISSION' : ,
