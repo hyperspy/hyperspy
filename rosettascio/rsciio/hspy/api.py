@@ -24,8 +24,7 @@ import dask.array as da
 import h5py
 
 from rsciio._hierarchical import (
-    # hyperspy.io_plugins.hspy.get_signal_chunks is in the hyperspy public API
-    HierarchicalWriter, HierarchicalReader, version, get_signal_chunks
+    HierarchicalWriter, HierarchicalReader, version
     )
 
 
