@@ -317,10 +317,9 @@ def file_writer(filename, signal, format=None, separator=', ',
                 encoding='latin-1'):
     loc_kwds = {}
     FORMAT = "EMSA/MAS Spectral Data File"
-    md = signal.metadata
-    if hasattr(signal.original_metadata, 'FORMAT') and \
-            signal.original_metadata.FORMAT == FORMAT:
-        loc_kwds = signal.original_metadata.as_dictionary()
+    md = DTBox(signal["metadata"], box_dots=True)
+    if signal["original_metadata"].get("FORMAT", None) == FORMAT:
+        loc_kwds = signal["original_metadata"]
         if format is not None:
             loc_kwds['DATATYPE'] = format
         else:
@@ -329,13 +328,13 @@ def file_writer(filename, signal, format=None, separator=', ',
     else:
         if format is None:
             format = 'Y'
-        if md.has_item("General.date"):
+        if "General.date" in md:
             date = dt.strptime(md.General.date, "%Y-%m-%d")
             date_str = date.strftime("%d-%m-%Y")
             day, month, year = date_str.split("-")
             month = US_MONTHS_D2A[month]
             loc_kwds['DATE'] = "-".join((day, month, year)) 
-        if md.has_item("General.time"):
+        if "General.item" in md:
             time = dt.strptime(md.General.time, "%H:%M:%S")
             loc_kwds['TIME'] = time.strftime("%H:%M")
     keys_from_signal = {
@@ -346,22 +345,16 @@ def file_writer(filename, signal, format=None, separator=', ',
         'DATE': '',
         'TIME': '',
         'OWNER': '',
-        'NPOINTS': signal.axes_manager._axes[0].size,
+        'NPOINTS': signal["axes"][0]["size"],
         'NCOLUMNS': 1,
         'DATATYPE': format,
-        'SIGNALTYPE': signal.metadata.Signal.signal_type,
-        'XPERCHAN': signal.axes_manager._axes[0].scale,
-        'OFFSET': signal.axes_manager._axes[0].offset,
+        'SIGNALTYPE': md.Signal.signal_type,
+        'XPERCHAN': signal["axes"][0]["scale"],
+        'OFFSET': signal["axes"][0]["offset"],
         # Signal1D characteristics
-
-        'XLABEL': signal.axes_manager._axes[0].name
-        if signal.axes_manager._axes[0].name is not Undefined
-        else "",
-
+        'XLABEL': signal["axes"][0]["name"],
         #        'YLABEL' : '',
-        'XUNITS': signal.axes_manager._axes[0].units
-        if signal.axes_manager._axes[0].units is not Undefined
-        else "",
+        'XUNITS': signal["axes"][0]["units"],
         #        'YUNITS' : '',
         'COMMENT': 'File created by RosettaSciIO version %s' % __version__,
         # Microscope
@@ -395,11 +388,10 @@ def file_writer(filename, signal, format=None, separator=', ',
     for key, dic in keywords.items():
 
         if dic['mapped_to'] is not None:
-            if 'SEM' in signal.metadata.Signal.signal_type:
+            if 'SEM' in md.Signal.signal_type:
                 dic['mapped_to'] = dic['mapped_to'].replace('TEM', 'SEM')
-            if signal.metadata.has_item(dic['mapped_to']):
-                loc_kwds[key] = eval('signal.metadata.%s' %
-                                     dic['mapped_to'])
+            if dic['mapped_to'] in md:
+                loc_kwds[key] = eval('md.%s' % dic['mapped_to'])
 
     with codecs.open(
             filename,
@@ -422,11 +414,13 @@ def file_writer(filename, signal, format=None, separator=', ',
         f.write('#%-12s: Spectral Data Starts Here\u000D\u000A' % 'SPECTRUM')
 
         if format == 'XY':
-            for x, y in zip(signal.axes_manager._axes[0].axis, signal.data):
+            axis_dict = signal["axes"][0]
+            axis = axis_dict["offset"] + axis_dict["scale"] * np.arange(axis_dict["size"])
+            for x, y in zip(axis, signal["data"]):
                 f.write("%g%s%g" % (x, separator, y))
                 f.write('\u000D\u000A')
         elif format == 'Y':
-            for y in signal.data:
+            for y in signal["data"]:
                 f.write('%f%s' % (y, separator))
                 f.write('\u000D\u000A')
         else:
