@@ -43,7 +43,6 @@ import io
 from datetime import datetime
 from dateutil import tz
 import tifffile
-from hyperspy.misc import rgb_tools
 import xml.etree.ElementTree as ET
 
 
@@ -172,7 +171,12 @@ class ElidReader:
         with tifffile.TiffFile(bytes) as tiff:
             data = tiff.asarray()
             if len(data.shape) > 2:
-               data = rgb_tools.regular_array2rgbx(data)
+                try:
+                    # HyperSpy uses struct arrays to store RGB data
+                    from hyperspy.misc import rgb_tools
+                    data = rgb_tools.regular_array2rgbx(data)
+                except ImportError:
+                    pass
             tags = tiff.pages[0].tags
             if 'FEI_TITAN' in tags:
                 metadata = make_metadata_dict(tags['FEI_TITAN'].value)
