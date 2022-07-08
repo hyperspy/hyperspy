@@ -168,57 +168,66 @@ class EMD(object):
 
     def _read_signal_from_group(self, name, group, lazy=False):
         self._log.debug('Calling _read_signal_from_group')
-        from hyperspy import signals
+        signal_dict = {}
         # Extract essential data:
         data = group.get('data')
         if lazy:
             data = da.from_array(data, chunks=data.chunks)
         else:
             data = np.asanyarray(data)
-        # EMD does not have a standard way to describe the signal axis.
-        # Therefore we return a BaseSignal
-        signal = signals.BaseSignal(data)
-        # Set signal properties:
-        signal.set_signal_origin = group.attrs.get('signal_origin', '')
-        signal.set_signal_type = group.attrs.get('signal_type', '')
+        signal_dict["data"] = data
         # Iterate over all dimensions:
+        # EMD does not have a standard way to describe the signal axis.
+        # Therefore we don't set the `navigate` attribute of the axes
+        axes = []
         for i in range(len(data.shape)):
+            axis_dic = {}
             dim = group.get('dim{}'.format(i + 1))
-            axis = signal.axes_manager._axes[i]
             axis_name = dim.attrs.get('name', '')
             if isinstance(axis_name, bytes):
                 axis_name = axis_name.decode('utf-8')
-            axis.name = axis_name
 
             axis_units = dim.attrs.get('units', '')
             if isinstance(axis_units, bytes):
                 axis_units = axis_units.decode('utf-8')
             units = re.findall(r'[^_\W]+', axis_units)
-            axis.units = ''.join(units)
             try:
                 if len(dim) == 1:
-                    axis.scale = 1.
+                    scale = 1.
                     self._log.warning(
                         'Could not calculate scale of axis {}. '
                         'Setting scale to 1'.format(i))
                 else:
-                    axis.scale = dim[1] - dim[0]
-                axis.offset = dim[0]
+                    scale = dim[1] - dim[0]
+                offset = dim[0]
             # HyperSpy then uses defaults (1.0 and 0.0)!
             except (IndexError, TypeError) as e:
                 self._log.warning(
                     'Could not calculate scale/offset of '
                     'axis {}: {}'.format(i, e))
+            axis_dic["scale"] = scale
+            axis_dic["offset"] = offset
+            axis_dic["units"] = units
+            axis_dic["name"] = name
+            axis_dic['_type'] = 'UniformDataAxis'
+            axes.append(axis_dict)
         # Extract metadata:
+        signal_dict["axes"] = axes
         metadata = {}
         for key, value in group.attrs.items():
             metadata[key] = value
-        if signal.data.dtype == object:
-            self._log.warning('HyperSpy could not load the data in {}, '
+        metadata["General"]['user'] = self.user
+        metadata["General"]['microscope'] = self.microscope
+        metadata["General"]['sample'] = self.sample
+        metadata["General"]['comments'] = self.comments
+        signal_dict["metadata"] = metadata
+        signal_dict["original_metadata"] = original_metadata
+        if data.dtype == object:
+            self._log.warning('RosettaSciIO could not load the data in {}, '
                               'skipping it'.format(name))
         else:
             # Add signal:
-            self.add_signal(signal, name, metadata)
+            self.signals[name] = signal_dict
 
     def add_signal(self, signal, name=None, metadata=None):
         """Add a HyperSpy signal to the EMD instance and make sure all
@@ -254,10 +263,9 @@ class EMD(object):
         # Create metadata if not present:
         if metadata is None:
             metadata = {}
+        signal_md = {}
         # Check and save title:
-        if name is not None:  # Overwrite Signal title!
-            signal.metadata.General.title = name
-        else:
+        if name is None:  # Overwrite Signal title!
             # Take title of Signal!
             if signal.metadata.General.title != '':
                 name = signal.metadata.General.title
