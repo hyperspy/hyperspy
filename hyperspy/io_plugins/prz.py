@@ -18,11 +18,17 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
-import numpy as np
 from datetime import datetime as dt
+import logging
+import os
+
+import numpy as np
+
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
+
+_logger = logging.getLogger(__name__)
+
 
 # Plugin characteristics
 # ----------------------
@@ -61,12 +67,17 @@ def file_reader(filename, **kwds):
 
 def file_writer(filename, signal, **kwds):
     data, meta_data = export_pr(signal=signal)
-    np.savez_compressed(file=filename, data=data, meta_data=[meta_data], file_format_version=2, data_model=[{}])
-    
+    with open(filename, mode='wb') as f:
+        # use open file to avoid numpy adding the npz extension
+        np.savez_compressed(file=f, data=data, meta_data=[meta_data],
+                            file_format_version=2, data_model=[{}]
+                            )
+
 
 def import_pr(data, meta_data, filename = None):
-    """Converts metadata from PantaRhei to hyperspy format, and corrects the order of data axes if needed.
-    
+    """Converts metadata from PantaRhei to hyperspy format, and corrects
+    the order of data axes if needed.
+
     Parameters
     ----------
     data: ndarray
@@ -88,11 +99,11 @@ def import_pr(data, meta_data, filename = None):
     for axis in range(data_dimensions):
         try:
             calib = meta_data['device.calib'][axis]
-        except IndexError:
+        except (IndexError, KeyError):
             calib = None
         calibrations.append(calib)
 
-    if not content_type:
+    if content_type is None:
         if data_type in ('Stack', '3D'):
             content_type = [None, None, 'Index']
         elif data_type == '1D' and data_dimensions == 3:
@@ -109,28 +120,29 @@ def import_pr(data, meta_data, filename = None):
         elif len(content_type) == 2 and data_dimensions == 3:
             content_type = [None, 'PlotIndex', 'Index']
         elif len(content_type) != data_dimensions:
-            raise Exception(f"Content type is not known for all dimensions {content_type}, {data.shape}")
+            raise Exception(
+                "Content type is not known for all dimensions "
+                f"{content_type}, {data.shape}."
+                )
 
     navigation_dimensions = ['ScanY', 'ScanX', 'Index', 'PlotIndex']
     signal_dimensions = ['CameraY', 'CameraX', 'Pixel', 'Energy', '*']
 
-
     content_type_np_order = content_type[::-1]
     calibrations_np_order = calibrations[::-1]
-    assert len(content_type_np_order) == data_dimensions
+    if len(content_type_np_order) != data_dimensions:  # pragma: no cover
+        raise RuntimeError("Unsupported file, please report the error in the "
+                           "the HyperSpy issue tracker.")
 
     trivial_indices = [i for i, _ in enumerate(content_type_np_order)
                         if data.shape[i] == 1
                         and 'Index' in content_type_np_order[i]]
 
-
-
-
     content_type_np_order = [c for i, c in enumerate(content_type_np_order)
                                 if i not in trivial_indices]
     calibrations_np_order = [c for i, c in enumerate(calibrations_np_order)
                                 if i not in trivial_indices]
-    
+
     data = np.squeeze(data, axis=tuple(trivial_indices))
 
     def _navigation_first(i):
@@ -176,11 +188,10 @@ def import_pr(data, meta_data, filename = None):
             meta_data[key] = []
             for i in range(data.ndim):
                 try:
-                    meta_data[key].append(
-                        item_in_numpy_order[new_order[i]])
-                except Exception as e:
-                    print("Could not load meta data: {} "
-                        "in hyperspy file: {}".format(key, e))
+                    meta_data[key].append(item_in_numpy_order[new_order[i]])
+                except Exception as e:  # pragma: no cover
+                    raise Exception(f"Could not load meta data: {key} "
+                                    f"in hyperspy file: {e}.")
     axes = []
     for i, (label, calib) in enumerate(zip(data_labels, calibration_ordered)):
         ax = { 'navigate' : label in navigation_dimensions,
@@ -214,11 +225,13 @@ def import_pr(data, meta_data, filename = None):
         'original_metadata': meta_data
     }
     file_data_list = [dictionary, ]
+
     return file_data_list
+
 
 def export_pr(signal):
     """Extracts from the signal the data array and the metadata in PantaRhei format
-    
+
     Parameters
     ----------
     signal: BaseSignal
@@ -239,13 +252,16 @@ def export_pr(signal):
     axes_info = [axes[name] for name in axes]
     if 'ref_size' not in meta_data:
         meta_data['ref_size'] = data.shape[::-1]
-        
+
     ref_size = meta_data['ref_size'][::-1] #switch to numpy order
     pixel_factors = [ref_size[i]/data.shape[i] for i in range(data.ndim)]
-    axes_meta_data = get_metadata_from_axes_info(axes_info, pixel_factors=pixel_factors)
+    axes_meta_data = get_metadata_from_axes_info(
+        axes_info, pixel_factors=pixel_factors
+        )
     for k in axes_meta_data:
         meta_data[k] = axes_meta_data[k]
     return data, meta_data
+
 
 def _metadata_converter_in(meta_data, axes, filename):
     mapped = DictionaryTreeBrowser({})
@@ -270,11 +286,11 @@ def _metadata_converter_in(meta_data, axes, filename):
 
     if collection_angle:
         collection_angle_mrad = collection_angle * 1e3
-        mapped.set_item('Acquisition_instrument.TEM.Detector.EELS/collection_angle', collection_angle_mrad)
+        mapped.set_item('Acquisition_instrument.TEM.Detector.EELS.collection_angle', collection_angle_mrad)
 
     if meta_data.get('filter.mode') == 'EELS' and signal_dimensions == 1 :
         mapped.set_item('Signal.signal_type', 'EELS')
-    
+
     name = meta_data.get('repo_id').split('.')[0]
     mapped.set_item('General.title', name)
 
@@ -296,19 +312,23 @@ def _metadata_converter_in(meta_data, axes, filename):
         if 'mm' in aperture:
             aperture = aperture.split('mm')[0]
             aperture = aperture.rstrip()
-            try:
-                aperture = float(aperture)
-            except:
-                pass
-        mapped.set_item('Acquisition_instrument.TEM.EELS.aperture_size', aperture)
+        mapped.set_item(
+            'Acquisition_instrument.TEM.Detector.EELS.aperture_size',
+            float(aperture)
+            )
 
     source_type = meta_data.get('source.type')
-    magnification = meta_data.get('projector.magnification')
+
     if source_type == 'scan_generator':
         acquisition_mode = 'STEM'
-        magnification = meta_data.get('scan_driver.magnification')
+        key = 'scan_driver'
     elif source_type == 'camera':
         acquisition_mode = 'TEM'
+        key = 'projector'
+    else:
+        acquisition_mode = None
+        key = None
+    magnification = meta_data.get(f'{key}.magnification')
     camera_length = meta_data.get('projector.camera_length')
 
     if acquisition_mode is not None:
@@ -318,16 +338,17 @@ def _metadata_converter_in(meta_data, axes, filename):
     if camera_length is not None:
         mapped.set_item('Acquisition_instrument.TEM.camera_length', camera_length)
 
-    mapped.set_item('Acquisition_instrument.TEM.Detector.EELS.spectrometer', 'CEOS CEFID')
     return mapped
 
+
 def _metadata_converter_out(metadata, original_metadata=None):
-    original_fname = metadata.get_item('General.original_filename')
+
+    original_fname = metadata.get_item('General.original_filename', '')
     original_extension = os.path.splitext(original_fname)[1]
-    if original_metadata['ref_size'] :
+    if original_metadata.get_item('ref_size'):
         PR_metadata_present = True
 
-    if original_extension == '.prz' and PR_metadata_present :
+    if original_extension == '.prz' and PR_metadata_present:
         meta_data = original_metadata.as_dictionary()
         meta_data['ref_size'] = meta_data['ref_size'][::-1]
         for key in ['content.types',
@@ -344,23 +365,9 @@ def _metadata_converter_out(metadata, original_metadata=None):
 
     else:
         meta_data = {}
-        
-        beam_energy = metadata.get_item('Acquisition_instrument.TEM.beam_energy')
-        convergence_angle = metadata.get_item('Acquisition_instrument.TEM.convergence_angle')
-        collection_angle = metadata.get_item('Acquisition_instrument.TEM.Detector.EELS/collection_angle')
-        
-        if beam_energy is not None:
-            beam_energy_ev = beam_energy*1e3
-            meta_data['electron_gun.voltage'] = beam_energy_ev
-        if convergence_angle is not None:
-            convergence_angle_rad = convergence_angle/1e3
-            meta_data['condenser.convergence_semi_angle'] = convergence_angle_rad
-        if collection_angle is not None:
-            collection_angle_rad = collection_angle/1e3
-            meta_data['filter.collection_semi_angle'] = collection_angle_rad
         if metadata.get_item('Signal.signal_type') == 'EELS':
             meta_data['filter.mode'] = 'EELS'
-        
+
         name = metadata.get_item('General.title')
         if name is not None:
             meta_data['repo_id'] = name + '.0'
@@ -371,40 +378,53 @@ def _metadata_converter_out(metadata, original_metadata=None):
             timestamp = date + 'T' + time
             meta_data['acquisition.time'] = timestamp
 
-        aperture = metadata.get_item('Acquisition_instrument.TEM.EELS.aperture_size')
-        if aperture is not None:
-            if type(aperture) in (float, int):
-                aperture = str(aperture) + ' mm'
-            meta_data['filter.aperture'] = aperture
-        
-        acquisition_mode = metadata.get_item('Acquisition_instrument.TEM.acquisition_mode')
-        magnification = metadata.get_item('Acquisition_instrument.TEM.magnification')
-        camera_length = metadata.get_item('Acquisition_instrument.TEM.camera_length')
-        if acquisition_mode == 'STEM':
-            meta_data['source_type'] = 'scan_generator'
+        md_TEM = metadata.get_item('Acquisition_instrument.TEM')
+        if md_TEM is not None:
+            beam_energy = md_TEM.get_item('beam_energy')
+            convergence_angle = md_TEM.get_item('convergence_angle')
+            collection_angle = md_TEM.get_item('Detector.EELS.collection_angle')
+            aperture = md_TEM.get_item('Detector.EELS.aperture_size')
+            acquisition_mode = md_TEM.get_item('acquisition_mode')
+            magnification = md_TEM.get_item('magnification')
+            camera_length = md_TEM.get_item('camera_length')
+
+            if aperture is not None:
+                if type(aperture) in (float, int):
+                    aperture = str(aperture) + ' mm'
+                meta_data['filter.aperture'] = aperture
+            if beam_energy is not None:
+                beam_energy_ev = beam_energy*1e3
+                meta_data['electron_gun.voltage'] = beam_energy_ev
+            if convergence_angle is not None:
+                convergence_angle_rad = convergence_angle / 1e3
+                meta_data['condenser.convergence_semi_angle'] = convergence_angle_rad
+            if collection_angle is not None:
+                collection_angle_rad = collection_angle / 1e3
+                meta_data['filter.collection_semi_angle'] = collection_angle_rad
             if camera_length is not None:
                 meta_data['projector.camera_length'] = camera_length
+            if acquisition_mode == 'STEM':
+                key = 'scan_driver'
+                meta_data['source.type'] = 'scan_generator'
+            else:
+                key = 'projector'
+                meta_data['source.type'] = 'camera'
             if magnification is not None:
-                meta_data['scan_driver.magnification'] = magnification
-        if acquisition_mode == 'TEM':
-            meta_data['source_type'] = 'camera'
-            if camera_length is not None:
-                meta_data['projector.camera_length'] = camera_length
-            if magnification is not None:
-                meta_data['projector.magnification'] = magnification
+                meta_data[f'{key}.magnification'] = magnification
 
     return meta_data
-    
-    
+
+
 def get_metadata_from_axes_info(axes_info, pixel_factors=None):
-    """ Return a dict with calibration metadata obtained from the passed axes info.
+    """
+    Return a dict with calibration metadata obtained from the passed axes info.
 
     Parameters
     ----------
     axes_info: list of dict
     A list of dicts containing axis information. The list is sorted by the axis index,
     Each item in the list refers to one axis.
-    
+
     Returns
     -------
     :param pixel_factors: A list of pixel factors.
@@ -440,7 +460,6 @@ def get_metadata_from_axes_info(axes_info, pixel_factors=None):
         # -> Create a default calibration and
         # set all available information.
         if any([v for k, v in imported_calib_dict.items()]):
-
             calib = {}
 
             if imported_calib_dict['scale'] is not None:
@@ -479,6 +498,10 @@ def get_metadata_from_axes_info(axes_info, pixel_factors=None):
         axes_meta_data['inherited.calib'] = imported_calibs[::-1]
     if any(content_types):
         axes_meta_data['content.types'] = content_types[::-1]
+    else:
+        if len([nav for nav in navigate_axes if not nav]) == 1:
+            axes_meta_data['type'] = '1D'
+
     if display_axes:
         # Only add display axes tag, if not all axes are displayed
         # (which means that data is 3D or 4D data).
@@ -490,29 +513,31 @@ def get_metadata_from_axes_info(axes_info, pixel_factors=None):
 
     return axes_meta_data
 
+
 def _guess_from_unit(scale, unit, allowed_base_units=None):
     """Guess the base unit according to the passed unit (with possible prefix).
-    
+
     Parameters
     ----------
     scale: float
         the calibration value as given by the imported format
     unit: str
-        the calibration unit as given by the imported format. May start with a unit prefix (like 'm', 'u', etc.)
+        the calibration unit as given by the imported format.
+        May start with a unit prefix (like 'm', 'u', etc.)
     allowed_base_units: list
-        An optional list of allowed base units. If None is passed, all units that start with
-        'm', 'n', 'p' or 'u' are assumed to be units with prefixes.
-    
+        An optional list of allowed base units. If None is passed, all units
+        that start with 'm', 'n', 'p' or 'u' are assumed to be units with prefixes.
+
     Returns
     -------
     scale: float
     the calibration value scaled with the prefix-factor.
     unit: str
     the base unit without the prefix
-    
+
     """
     prefixes = {'m': 1e-3, 'u': 1e-6, 'µ': 1e-6, 'n': 1e-9, 'p': 1e-12}
-    if len(unit) > 1 and unit[0] in prefixes:
+    if isinstance(unit, str) and len(unit) > 1 and unit[0] in prefixes:
         if allowed_base_units is None or (unit[1:] in allowed_base_units):
             scale *= prefixes[unit[0]]
             unit = unit[1:]
