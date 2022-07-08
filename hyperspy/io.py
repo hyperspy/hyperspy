@@ -904,13 +904,15 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         # properly supported in io_plugins
         signal = _add_file_load_save_metadata('save', signal, writer)
         if not isinstance(filename, MutableMapping):
-            importlib.import_module(writer["api"]).file_writer(str(filename), signal, **kwds)
+            importlib.import_module(writer["api"]).file_writer(
+                str(filename), signal._to_dictionary(), **kwds)
             _logger.info(f'{filename} was created')
             signal.tmp_parameters.set_item('folder', filename.parent)
             signal.tmp_parameters.set_item('filename', filename.stem)
             signal.tmp_parameters.set_item('extension', extension)
         else:
-            importlib.import_module(writer["api"]).file_writer(filename, signal, **kwds)
+            importlib.import_module(writer["api"]).file_writer(
+                filename, signal._to_dictionary(), **kwds)
             if hasattr(filename, "path"):
                 file = Path(filename.path).resolve()
                 signal.tmp_parameters.set_item('folder', file.parent)
