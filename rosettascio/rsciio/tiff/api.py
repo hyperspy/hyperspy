@@ -30,11 +30,11 @@ from tifffile import imwrite, TiffFile, TIFF
 import tifffile
 import traits.api as t
 
-from rsciio.utils.tools import _UREG, get_date_time_from_metadata
-from hyperspy.misc import rgb_tools
+from rsciio.utils.tools import DTBox, _UREG
+from rsciio.utils.date_time_tools import get_date_time_from_metadata
+
 
 _logger = logging.getLogger(__name__)
-
 
 
 axes_label_codes = {
@@ -70,12 +70,16 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
         appropriate tags.
     """
 
-    data = signal.data
-    if signal.is_rgbx is True:
-        data = rgb_tools.rgbx2regular_array(data)
-        photometric = "RGB"
-    else:
-        photometric = "MINISBLACK"
+    data = signal['data']
+    photometric = "MINISBLACK"
+    try:
+        # HyperSpy uses struct arrays to store RGBA data
+        from hyperspy.misc import rgb_tools
+        if rgb_tools.is_rgbx(data):
+            data = rgb_tools.rgbx2regular_array(data)
+            photometric = "RGB"
+    except ImportError:
+        pass
     if 'description' in kwds.keys() and export_scale:
         kwds.pop('description')
         _logger.warning(
@@ -92,9 +96,10 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
             # (https://github.com/cgohlke/tifffile/issues/21)
             kwds['metadata'] = None
 
-    if 'date' in signal.metadata['General']:
-        dt = get_date_time_from_metadata(signal.metadata,
-                                         formatting='datetime')
+    if signal['metadata']['General'].get('date'):
+        dt = get_date_time_from_metadata(
+            signal['metadata'], formatting='datetime'
+            )
         kwds['datetime'] = dt
 
     imwrite(filename,
@@ -175,7 +180,8 @@ def _build_axes_dictionaries(shape, names=None, scales=None, offsets=None,
 
 
 def _read_serie(tiff, serie, filename, force_read_resolution=False,
-                lazy=False, memmap=None, **kwds):
+                lazy=False, memmap=None, RGB_as_structured_array=True,
+                **kwds):
     axes = serie.axes
     page = serie.pages[0]
     if hasattr(serie, 'shape'):
@@ -185,7 +191,7 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
         shape = serie['shape']
         dtype = serie['dtype']
 
-    is_rgb = page.photometric == TIFF.PHOTOMETRIC.RGB
+    is_rgb = page.photometric == TIFF.PHOTOMETRIC.RGB and RGB_as_structured_array
     _logger.debug("Is RGB: %s" % is_rgb)
     if is_rgb:
         axes = axes[:-1]
@@ -279,7 +285,13 @@ def _load_data(serie, is_rgb, sl=None, memmap=None, **kwds):
     dc = serie.asarray(out=memmap)
     _logger.debug("data shape: {0}".format(dc.shape))
     if is_rgb:
-        dc = rgb_tools.regular_array2rgbx(dc)
+        try:
+            from hyperspy.misc import rgb_tools
+            dc = rgb_tools.regular_array2rgbx(dc)
+        except ImportError:
+            raise ValueError(
+                "Converting RGB to structured array requires hyperspy."
+                )
     if sl is not None:
         dc = dc[tuple(sl)]
     return dc
@@ -748,38 +760,42 @@ def _get_scales_from_x_y_resolution(op, factor=1.0):
 
 
 def _get_tags_dict(signal, extratags=[], factor=int(1E8)):
-    """ Get the tags to export the scale and the unit to be used in
-        Digital Micrograph and ImageJ.
     """
-    scales, units, offsets = _get_scale_unit(signal, encoding=None)
+    Get the tags to export the scale and the unit to be used in Digital
+    Micrograph and ImageJ.
+    """
+    axes = signal['axes']
+    nav_dim = len([ax for ax in axes if ax['navigate']])
+    scales, units, offsets = _get_scale_unit(axes, encoding=None)
     _logger.debug("{0}".format(units))
-    tags_dict = _get_imagej_kwargs(signal, scales, units, factor=factor)
-    scales, units, offsets = _get_scale_unit(signal, encoding='latin-1')
+    tags_dict = _get_imagej_kwargs(scales, units, nav_dim, factor=factor)
+    scales, units, offsets = _get_scale_unit(axes, encoding='latin-1')
 
     tags_dict["extratags"].extend(
         _get_dm_kwargs_extratag(
             signal,
             scales,
             units,
-            offsets))
+            offsets,
+            nav_dim))
     tags_dict["extratags"].extend(extratags)
     return tags_dict
 
 
-def _get_imagej_kwargs(signal, scales, units, factor=int(1E8)):
+def _get_imagej_kwargs(scales, units, nav_dim, factor=int(1E8)):
     resolution = ((factor, int(scales[-1] * factor)),
                   (factor, int(scales[-2] * factor)))
-    if len(signal.axes_manager.navigation_axes) == 1:  # For stacks
-        spacing = '%s' % scales[0]
+    if nav_dim == 1:  # For stacks
+        spacing = f'{scales[0]}'
     else:
         spacing = None
     description_string = _imagej_description(unit=units[1], spacing=spacing)
-    _logger.debug("Description tag: %s" % description_string)
+    _logger.debug("Description tag: {description_string}")
     extratag = [(270, 's', 1, description_string, False)]
     return {"resolution": resolution, "extratags": extratag}
 
 
-def _get_dm_kwargs_extratag(signal, scales, units, offsets):
+def _get_dm_kwargs_extratag(signal, scales, units, offsets, nav_dim):
     extratags = [(65003, 's', 3, units[-1], False),  # x unit
                  (65004, 's', 3, units[-2], False),  # y unit
                  (65006, 'd', 1, offsets[-1], False),  # x origin
@@ -791,19 +807,14 @@ def _get_dm_kwargs_extratag(signal, scales, units, offsets):
     #                 (65015, 'i', 1, 1, False), # don't know
     #                 (65016, 'i', 1, 1, False), # don't know
     #                 (65026, 'i', 1, 1, False)] # don't know
-    md = signal.metadata
-    if md.has_item('Signal.quantity'):
-        try:
-            intensity_units = md.Signal.quantity
-        except BaseException:
-            _logger.info("The units of the 'intensity axes' couldn't be"
-                         "retrieved, please report the bug.")
-            intensity_units = ""
+    md = DTBox(signal["metadata"], box_dots=True)
+    if 'Signal.quantity' in md:
+        intensity_units = md['Signal'].get('quantity', "")
         extratags.extend([(65022, 's', 3, intensity_units, False),
                           (65023, 's', 3, intensity_units, False)])
-    if md.has_item('Signal.Noise_properties.Variance_linear_model'):
+    dic = md.get('Signal.Noise_properties.Variance_linear_model', None)
+    if dic:
         try:
-            dic = md.Signal.Noise_properties.Variance_linear_model
             intensity_offset = dic.gain_offset
             intensity_scale = dic.gain_factor
         except BaseException:
@@ -813,7 +824,7 @@ def _get_dm_kwargs_extratag(signal, scales, units, offsets):
             intensity_scale = 1.0
         extratags.extend([(65024, 'd', 1, intensity_offset, False),
                           (65025, 'd', 1, intensity_scale, False)])
-    if signal.axes_manager.navigation_dimension > 0:
+    if nav_dim > 0:
         extratags.extend([(65005, 's', 3, units[0], False),  # z unit
                           (65008, 'd', 1, offsets[0], False),  # z origin
                           (65011, 'd', 1, float(scales[0]), False),  # z scale
@@ -822,13 +833,24 @@ def _get_dm_kwargs_extratag(signal, scales, units, offsets):
     return extratags
 
 
-def _get_scale_unit(signal, encoding=None):
-    """ Return a list of scales and units, the length of the list is equal to
-        the signal dimension. """
-    signal_axes = signal.axes_manager._axes
-    scales = [signal_axis.scale for signal_axis in signal_axes]
-    units = [signal_axis.units for signal_axis in signal_axes]
-    offsets = [signal_axis.offset for signal_axis in signal_axes]
+def _get_scale_unit(axes, encoding=None):
+    """
+    Return a list of scales and units, the length of the list is equal to
+    the signal dimension.
+
+    Parameters
+    ----------
+    axes : list
+        List of dictionary of axes
+
+    Returns
+    -------
+    scales, units, offsets : list
+        List of scales, units and offsets
+    """
+    scales = [ax['scale'] for ax in axes]
+    units = [ax['units'] for ax in axes]
+    offsets = [ax['offset'] for ax in axes]
     for i, unit in enumerate(units):
         if unit == t.Undefined:
             units[i] = ''
