@@ -19,6 +19,7 @@
 from packaging.version import Version
 import mrcz as _mrcz
 import logging
+from rsciio.utils.tools import DTBox
 
 
 _logger = logging.getLogger(__name__)
@@ -29,7 +30,7 @@ _POP_FROM_HEADER = ['compressor', 'MRCtype', 'C3', 'dimensions', 'dtype',
                     'metaId', 'packedBytes', 'pixelsize', 'pixelunits', 'voltage']
 # Hyperspy uses an unusual mixed Fortran- and C-ordering scheme
 _READ_ORDER = [1, 2, 0]
-_WRITE_ORDER = [0, 2, 1]
+_WRITE_ORDER = [0, 1, 2]
 
 
 # API changes in mrcz 0.5
@@ -100,28 +101,25 @@ def file_writer(filename, signal, do_async=False, compressor=None, clevel=1,
     endianess = kwds.pop('endianess', '<')
     mrcz_endian = 'le' if endianess == '<' else 'be'
 
-    meta = signal.metadata.as_dictionary()
+    md = DTBox(signal["metadata"], box_dots=True)
 
     # Get pixelsize and pixelunits from the axes
-    pixelunits = signal.axes_manager[-1].units
-
-    pixelsize = [signal.axes_manager[I].scale for I in _WRITE_ORDER]
+    pixelunits = signal['axes'][-1]['units']
+    pixelsize = [signal['axes'][I]['scale'] for I in _WRITE_ORDER]
 
     # Strip out voltage from meta-data
-    voltage = signal.metadata.get_item(
-        'Acquisition_instrument.TEM.beam_energy')
+    voltage = md.get('Acquisition_instrument.TEM.beam_energy')
     # There aren't hyperspy fields for spherical aberration or detector gain
     C3 = 0.0
-    gain = signal.metadata.get_item("Signal.Noise_properties."
-                                    "Variance_linear_model.gain_factor", 1.0)
+    gain = md.get("Signal.Noise_properties.Variance_linear_model.gain_factor", 1.0)
     if do_async:
-        _mrcz.asyncWriteMRC(signal.data, filename, meta=meta, endian=mrcz_endian,
+        _mrcz.asyncWriteMRC(signal['data'], filename, meta=md, endian=mrcz_endian,
                             pixelsize=pixelsize, pixelunits=pixelunits,
                             voltage=voltage, C3=C3, gain=gain,
                             compressor=compressor, clevel=clevel,
                             n_threads=n_threads)
     else:
-        _mrcz.writeMRC(signal.data, filename, meta=meta, endian=mrcz_endian,
+        _mrcz.writeMRC(signal['data'], filename, meta=md, endian=mrcz_endian,
                        pixelsize=pixelsize, pixelunits=pixelunits,
                        voltage=voltage, C3=C3, gain=gain,
                        compressor=compressor, clevel=clevel,
