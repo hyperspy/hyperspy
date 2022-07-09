@@ -16,22 +16,22 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import os
-import re
 import csv
-import warnings
-import logging
 from datetime import datetime, timedelta
 from dateutil import parser
+import logging
+import os
+from packaging.version import Version
+import re
+import warnings
+
+import numpy as np
 from tifffile import imwrite, TiffFile, TIFF
 import tifffile
 import traits.api as t
-import numpy as np
-from packaging.version import Version
 
-from rsciio.utils.tools import _UREG
+from rsciio.utils.tools import _UREG, get_date_time_from_metadata
 from hyperspy.misc import rgb_tools
-from hyperspy.misc.date_time_tools import get_date_time_from_metadata
 
 _logger = logging.getLogger(__name__)
 
