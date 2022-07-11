@@ -416,7 +416,7 @@ def test_saving_multi_signals(tmp_path):
 
     fname = tmp_path / 'test.nxs'
     sig.save(fname)
-    file_writer(fname, [sig, sig2])
+    file_writer(fname, [sig._to_dictionary(), sig2._to_dictionary()])
     lin = load(fname, nxdata_only=True)
     assert len(lin) == 2
     assert lin[0].original_metadata.stage_y.value == 4.0
@@ -554,6 +554,7 @@ class TestCheckSearchKeys():
         with pytest.raises(ValueError):
             _check_search_keys(np.array(['123', '456']))
 
+
 class TestLoadDatasetKey():
 
     def test_int_signal_attrs(self):
@@ -571,11 +572,13 @@ class TestLoadDatasetKey():
             with pytest.raises(ValueError):
                 _nexus_dataset_to_signal(f, '/entry1/testdata/nexustest3')
 
+
 def test_dataset_with_chunks_attrs():
     with h5py.File(file5, 'r') as f:
         d = _nexus_dataset_to_signal(f, '/entry1/testdata/nexustest1',
                                      lazy=True)
     assert d['data'].chunksize == (1, 1, 2)
+
 
 def test_extract_hdf5():
     s = load(file5, lazy=False)
@@ -584,12 +587,14 @@ def test_extract_hdf5():
     assert len(s) == 6
     assert len(s_lazy) == 6
 
+
 def test_getlink_same_rootkey_key():
     with h5py.File(file5, 'r') as f:
         target = _getlink(f['/entry1/testdata/nexustest2'],
                           '/entry1/testdata/nexustest2',
                           'data')
     assert target is None
+
 
 def test_axes_key_str_or_bytes_with_nonlinear_axis():
     with h5py.File(file5, 'r') as f:

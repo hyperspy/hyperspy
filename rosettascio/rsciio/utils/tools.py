@@ -111,7 +111,7 @@ def overwrite(fname):
 
     Returns
     -------
-    bool : 
+    bool :
         Whether to overwrite file.
 
     """
@@ -152,6 +152,7 @@ def xml2dtb(et, dictree):
         for child in et:
             xml2dtb(child, dictree[et.tag])
 
+
 class DTBox(Box):
     def add_node(self, path):
         keys = path.split(".")
@@ -166,12 +167,14 @@ class DTBox(Box):
     def has_item(self, path):
         return self.get(path) is not None
 
+
 def convert_xml_to_dict(xml_object):
     if isinstance(xml_object, str):
         xml_object = ET.fromstring(xml_object)
     op = DTBox(box_dots=True)
     xml2dtb(xml_object, op)
     return op
+
 
 def sarray2dict(sarray, dictionary=None):
     """Converts a struct array to an ordered dictionary
@@ -223,5 +226,3 @@ def dict2sarray(dictionary, sarray=None, dtype=None):
         else:
             sarray[name] = dictionary[name]
     return sarray
-
-

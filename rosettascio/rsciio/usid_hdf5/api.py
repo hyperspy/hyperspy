@@ -339,19 +339,19 @@ def _axes_list_to_dimensions(axes_list, data_shape, is_spec):
     for dim_ind, dim in enumerate(axes_list):
         dim = axes_list[dim_ind]
         dim_name = dim_type + '_Dim_' + str(dim_ind)
-        if isinstance(dim.name, str):
-            temp = dim.name.strip()
+        if isinstance(dim['name'], str):
+            temp = dim['name'].strip()
             if len(temp) > 0:
                 dim_name = temp
         dim_units = 'a. u.'
-        if isinstance(dim.units, str):
-            temp = dim.units.strip()
+        if isinstance(dim['units'], str):
+            temp = dim['units'].strip()
             if len(temp) > 0:
                 dim_units = temp
                 # use REAL dimension size rather than what is presented in the
                 # axes manager
         dim_size = data_shape[len(data_shape) - 1 - dim_ind]
-        ar = np.arange(dim_size) * dim.scale + dim.offset
+        ar = np.arange(dim_size) * dim['scale'] + dim['offset']
         dim_list.append(usid.Dimension(dim_name, dim_units, ar))
     if len(dim_list) == 0:
         return usid.Dimension('Arb', 'a. u.', 1)
@@ -434,43 +434,35 @@ def file_writer(filename, object2save, **kwds):
     if os.path.exists(filename):
         append = True
 
-    hs_shape = object2save.data.shape
+    hs_shape = object2save['data'].shape
 
-    # Not sure how to safely ignore spurious / additional dimensions
-    if len(object2save.axes_manager.shape) != len(hs_shape):
-        raise ValueError('Number of dimensions in data (shape: {}) does not '
-                         'match number of axes: ({})'
-                         '.'.format(hs_shape,
-                                    len(object2save.axes_manager.shape)))
-
-    parm_dict = _flatten_dict(object2save.metadata.as_dictionary())
-    temp = object2save.original_metadata.as_dictionary()
+    parm_dict = _flatten_dict(object2save['metadata'])
+    temp = object2save['original_metadata']
     parm_dict.update(_flatten_dict(temp, parent_key='Original'))
 
-    num_pos_dims = object2save.axes_manager.navigation_dimension
-    nav_axes = object2save.axes_manager.navigation_axes
-    sig_axes = object2save.axes_manager.signal_axes
+    axes = object2save['axes']
+    nav_axes = [ax for ax in axes if ax['navigate']][::-1]
+    sig_axes = [ax for ax in axes if not ax['navigate']][::-1]
+    nav_dim = len(nav_axes)
 
-    data_2d = object2save.data
-    # data_2d is assumed to have dimensions arranged from slowest to fastest
+    data = object2save['data']
+    # data is assumed to have dimensions arranged from slowest to fastest
     # varying dimensions
-    if num_pos_dims > 0 and object2save.axes_manager.signal_dimension > 0:
+    if nav_dim > 0 and len(sig_axes) > 0:
         # now flatten to 2D:
-        data_2d = data_2d.reshape(np.prod(hs_shape[:num_pos_dims]),
-                                  np.prod(hs_shape[num_pos_dims:]))
-        pos_dims = _axes_list_to_dimensions(nav_axes,
-                                            hs_shape[:num_pos_dims], False)
-        spec_dims = _axes_list_to_dimensions(sig_axes,
-                                             hs_shape[num_pos_dims:], True)
-    elif num_pos_dims == 0:
+        data = data.reshape(np.prod(hs_shape[:nav_dim]),
+                            np.prod(hs_shape[nav_dim:]))
+        pos_dims = _axes_list_to_dimensions(nav_axes, hs_shape[:nav_dim], False)
+        spec_dims = _axes_list_to_dimensions(sig_axes, hs_shape[nav_dim:], True)
+    elif nav_dim == 0:
         # only spectroscopic:
         # now flatten to 2D:
-        data_2d = data_2d.reshape(1, -1)
+        data = data.reshape(1, -1)
         pos_dims = _axes_list_to_dimensions(nav_axes, [], False)
         spec_dims = _axes_list_to_dimensions(sig_axes, hs_shape, True)
     else:
         # now flatten to 2D:
-        data_2d = data_2d.reshape(-1, 1)
+        data = data.reshape(-1, 1)
         pos_dims = _axes_list_to_dimensions(nav_axes, hs_shape, False)
         spec_dims = _axes_list_to_dimensions(sig_axes, [], True)
 
@@ -483,7 +475,7 @@ def file_writer(filename, object2save, **kwds):
 
     if not append:
         tran = usid.NumpyTranslator()
-        _ = tran.translate(filename, dset_name, data_2d, phy_quant, phy_units,
+        _ = tran.translate(filename, dset_name, data, phy_quant, phy_units,
                            pos_dims, spec_dims, parm_dict=parm_dict,
                            slow_to_fast=True, **kwds)
     else:
@@ -491,7 +483,7 @@ def file_writer(filename, object2save, **kwds):
             h5_grp = usid.hdf_utils.create_indexed_group(h5_f, 'Measurement')
             usid.hdf_utils.write_simple_attrs(h5_grp, parm_dict)
             h5_grp = usid.hdf_utils.create_indexed_group(h5_grp, 'Channel')
-            _ = usid.hdf_utils.write_main_dataset(h5_grp, data_2d, dset_name,
+            _ = usid.hdf_utils.write_main_dataset(h5_grp, data, dset_name,
                                                   phy_quant, phy_units,
                                                   pos_dims,  spec_dims,
                                                   slow_to_fast=True, **kwds)

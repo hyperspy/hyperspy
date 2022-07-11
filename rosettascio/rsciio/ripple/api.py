@@ -283,7 +283,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     which HyperSpy reads the image parameters for a raw file.
 
     ========================  =======  =================================================
-    Key                       Type     Description 
+    Key                       Type     Description
     ========================  =======  =================================================
     width                     int      pixels per row
     height                    int      number of rows
@@ -320,7 +320,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     tilt-stage                float    The tilt of the stage
     date                      str      date in ISO 8601
     time                      str      time in ISO 8601
-    title                     str      title of the signal to be stored 
+    title                     str      title of the signal to be stored
     ========================  =======  =================================================
 
 
@@ -529,69 +529,61 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
     ev_per_chan = None
 
     # Check if the dtype is supported
-    dc = signal.data
-    dtype_name = signal.data.dtype.name
+    dc = signal['data']
+    md = DTBox(signal["metadata"], box_dots=True)
+    dtype_name = dc.dtype.name
     if dtype_name not in dtype2keys.keys():
-        err = 'The ripple format does not support writting data of %s type' % (
-            dtype_name)
-        raise IOError(err)
+        raise IOError(
+            "The ripple format does not support writting data of {dtype_name} type"
+            )
     # Check if the dimensions are supported
-    dimension = len(signal.data.shape)
+    dimension = len(dc.shape)
     if dimension > 3:
-        err = 'This file format does not support %i dimension data' % (
-            dimension)
-        raise IOError(err)
+        raise IOError(
+            f"This file format does not support {dimension} dimension data"
+            )
 
     # Gather the information to write the rpl
-    data_type, data_length = dtype2keys[dc.dtype.name]
+    data_type, data_length = dtype2keys[dtype_name]
     byte_order = endianess2rpl[dc.dtype.byteorder.replace('|', '=')]
     offset = 0
-    if signal.metadata.has_item("Signal.signal_type"):
-        signal_type = signal.metadata.Signal.signal_type
-    else:
-        signal_type = ""
-    if signal.metadata.has_item("General.date"):
-        date = signal.metadata.General.date
-    else:
-        date = ""
-    if signal.metadata.has_item("General.time"):
-        time = signal.metadata.General.time
-    else:
-        time = ""
-    if signal.metadata.has_item("General.title"):
-        title = signal.metadata.General.title
-    else:
-        title = ""
-    if signal.axes_manager.signal_dimension == 1:
+
+    signal_type = md.get('Signal.signal_type', "")
+    date = md.get('General.date', "")
+    time = md.get('General.time', "")
+    title = md.get('General.title', "")
+
+    sig_axes = [ax for ax in signal['axes'] if not ax['navigate']][::-1]
+    nav_axes = [ax for ax in signal['axes'] if ax['navigate']][::-1]
+
+    if len(sig_axes) == 1:
         record_by = 'vector'
-        depth_axis = signal.axes_manager.signal_axes[0]
-        ev_per_chan = int(round(depth_axis.scale))
+        depth_axis = sig_axes[0]
+        ev_per_chan = int(round(depth_axis['scale']))
         if dimension == 3:
-            width_axis = signal.axes_manager.navigation_axes[0]
-            height_axis = signal.axes_manager.navigation_axes[1]
+            width_axis, height_axis = nav_axes
             depth, width, height = \
-                depth_axis.size, width_axis.size, height_axis.size
+                depth_axis['size'], width_axis['size'], height_axis['size']
         elif dimension == 2:
-            width_axis = signal.axes_manager.navigation_axes[0]
-            depth, width, height = depth_axis.size, width_axis.size, 1
+            width_axis = nav_axes[0]
+            depth, width, height = depth_axis['size'], width_axis['size'], 1
         elif dimension == 1:
             record_by == 'dont-care'
-            depth, width, height = depth_axis.size, 1, 1
+            depth, width, height = depth_axis['size'], 1, 1
 
-    elif signal.axes_manager.signal_dimension == 2:
-        width_axis = signal.axes_manager.signal_axes[0]
-        height_axis = signal.axes_manager.signal_axes[1]
+    elif len(sig_axes) == 2:
+        width_axis, height_axis = sig_axes
         if dimension == 3:
-            depth_axis = signal.axes_manager.navigation_axes[0]
+            depth_axis = nav_axes[0]
             record_by = 'image'
             depth, width, height =  \
-                depth_axis.size, width_axis.size, height_axis.size
+                depth_axis['size'], width_axis['size'], height_axis['size']
         elif dimension == 2:
             record_by = 'dont-care'
-            width, height, depth = width_axis.size, height_axis.size, 1
+            width, height, depth = width_axis['size'], height_axis['size'], 1
         elif dimension == 1:
             record_by = 'dont-care'
-            depth, width, height = width_axis.size, 1, 1
+            depth, width, height = width_axis['size'], 1, 1
     else:
         _logger.info("Only Signal1D and Signal2D objects can be saved")
         return
@@ -616,47 +608,43 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
     keys = ['depth', 'height', 'width']
     for key in keys:
         if eval(key) > 1:
-            keys_dictionary['%s-scale' % key] = eval(
-                '%s_axis.scale' % key)
-            keys_dictionary['%s-origin' % key] = eval(
-                '%s_axis.offset' % key)
-            keys_dictionary['%s-units' % key] = eval(
-                '%s_axis.units' % key)
-            keys_dictionary['%s-name' % key] = eval(
-                '%s_axis.name' % key)
-    if signal.metadata.Signal.signal_type == "EELS":
-        if "Acquisition_instrument.TEM" in signal.metadata:
-            mp = signal.metadata.Acquisition_instrument.TEM
-            if mp.has_item('beam_energy'):
+            keys_dictionary[f'{key}-scale'] = eval(f"{key}_axis['scale']")
+            keys_dictionary[f'{key}-origin'] = eval(f"{key}_axis['offset']")
+            keys_dictionary[f'{key}-units'] = eval(f"{key}_axis['units']")
+            keys_dictionary[f'{key}-name'] = eval(f"{key}_axis['name']")
+    if signal_type == "EELS":
+        mp = md.get("Acquisition_instrument.TEM")
+        if mp is not None:
+            if 'beam_energy' in mp:
                 keys_dictionary['beam-energy'] = mp.beam_energy
-            if mp.has_item('convergence_angle'):
+            if 'convergence_angle' in mp:
                 keys_dictionary['convergence-angle'] = mp.convergence_angle
-            if mp.has_item('Detector.EELS.collection_angle'):
+            if 'Detector.EELS.collection_angle' in mp:
                 keys_dictionary[
                     'collection-angle'] = mp.Detector.EELS.collection_angle
-    if "EDS" in signal.metadata.Signal.signal_type:
-        if signal.metadata.Signal.signal_type == "EDS_SEM":
-            mp = signal.metadata.Acquisition_instrument.SEM
-        elif signal.metadata.Signal.signal_type == "EDS_TEM":
-            mp = signal.metadata.Acquisition_instrument.TEM
-        if mp.has_item('beam_energy'):
+    if "EDS" in signal_type:
+        if signal_type == "EDS_SEM":
+            mp = md.Acquisition_instrument.SEM
+        elif signal_type == "EDS_TEM":
+            mp = md.Acquisition_instrument.TEM
+        if 'beam_energy' in mp:
             keys_dictionary['beam-energy'] = mp.beam_energy
-        if mp.has_item('Detector.EDS.elevation_angle'):
+        if 'Detector.EDS.elevation_angle' in mp:
             keys_dictionary[
                 'elevation-angle'] = mp.Detector.EDS.elevation_angle
-        if mp.has_item('Stage.tilt_alpha'):
+        if 'Stage.tilt_alpha' in mp:
             keys_dictionary['tilt-stage'] = mp.Stage.tilt_alpha
-        if mp.has_item('Detector.EDS.azimuth_angle'):
+        if 'Detector.EDS.azimuth_angle' in mp:
             keys_dictionary['azimuth-angle'] = mp.Detector.EDS.azimuth_angle
-        if mp.has_item('Detector.EDS.live_time'):
+        if 'Detector.EDS.live_time' in mp:
             keys_dictionary['live-time'] = mp.Detector.EDS.live_time
-        if mp.has_item('Detector.EDS.energy_resolution_MnKa'):
+        if 'Detector.EDS.energy_resolution_MnKa' in mp:
             keys_dictionary[
                 'detector-peak-width-ev'] = \
                 mp.Detector.EDS.energy_resolution_MnKa
 
     write_rpl(filename, keys_dictionary, encoding)
-    write_raw(filename, signal, record_by)
+    write_raw(filename, signal, record_by, sig_axes, nav_axes)
 
 
 def write_rpl(filename, keys_dictionary, encoding='ascii'):
@@ -673,8 +661,9 @@ def write_rpl(filename, keys_dictionary, encoding='ascii'):
     f.close()
 
 
-def write_raw(filename, signal, record_by):
-    """Writes the raw file object
+def write_raw(filename, signal, record_by, sig_axes, nav_axes):
+    """
+    Writes the raw file object
 
     Parameters
     ----------
@@ -683,23 +672,20 @@ def write_raw(filename, signal, record_by):
     record_by : str
          'vector' or 'image'
 
-        """
+    """
     filename = os.path.splitext(filename)[0] + '.raw'
-    dshape = signal.data.shape
-    data = signal.data
+    data = signal['data']
+    dshape = data.shape
     if len(dshape) == 3:
         if record_by == 'vector':
-            np.rollaxis(
-                data, signal.axes_manager.signal_axes[0].index_in_array, 3
+            np.rollaxis(data, signal['axes'].index(sig_axes[0]), 3
             ).ravel().tofile(filename)
         elif record_by == 'image':
-            data = np.rollaxis(
-                data, signal.axes_manager.navigation_axes[0].index_in_array, 0
+            data = np.rollaxis(data, signal['axes'].index(nav_axes[0]), 0
             ).ravel().tofile(filename)
     elif len(dshape) == 2:
         if record_by == 'vector':
-            np.rollaxis(
-                data, signal.axes_manager.signal_axes[0].index_in_array, 2
+            np.rollaxis(data, signal['axes'].index(sig_axes[0]), 2
             ).ravel().tofile(filename)
         elif record_by in ('image', 'dont-care'):
             data.ravel().tofile(filename)

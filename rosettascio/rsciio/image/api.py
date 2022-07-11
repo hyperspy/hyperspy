@@ -41,7 +41,7 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
         The resource to write the image to, e.g. a filename, pathlib.Path or
         file object, see the docs for more info. The file format is defined by
         the file extension that is any one supported by imageio.
-    signal: a Signal instance
+    signal: a Signal dictionary
     scalebar : bool, optional
         Export the image with a scalebar. Default is False.
     scalebar_kwds : dict, optional
@@ -73,7 +73,9 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
         :py:func:`~matplotlib.pyplot.savefig`
 
     """
-    data = signal.data
+    data = signal['data']
+    sig_axes = [ax for ax in signal['axes'] if not ax['navigate']]
+    nav_axes = [ax for ax in signal['axes'] if ax['navigate']]
 
     if scalebar_kwds is None:
         scalebar_kwds = dict()
@@ -102,11 +104,11 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
             imshow_kwds = dict()
         imshow_kwds.setdefault('cmap', 'gray')
 
-        if len(signal.axes_manager.signal_axes) == 2:
-            axes = signal.axes_manager.signal_axes
-        elif len(signal.axes_manager.navigation_axes) == 2:
+        if len(sig_axes) == 2:
+            axes = sig_axes
+        elif len(nav_axes) == 2:
             # Use navigation axes
-            axes = signal.axes_manager.navigation_axes
+            axes = nav_axes
 
         aspect_ratio = imshow_kwds.get('aspect', None)
         if not isinstance(aspect_ratio, (int, float)):
@@ -115,7 +117,7 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
         if output_size is None:
             # fall back to image size taking into account aspect_ratio
             ratio = (1,  aspect_ratio)
-            output_size = [axis.size * r for axis, r in zip(axes, ratio)]
+            output_size = [axis['size'] * r for axis, r in zip(axes, ratio)]
         elif isinstance(output_size, (int, float)):
             output_size = [output_size, output_size * aspect_ratio]
 
@@ -135,7 +137,7 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
         # Sanity check of the axes
         # This plugin doesn't support non-uniform axes, we don't need to check
         # if the axes have a scale attribute
-        if axes[0].scale != axes[1].scale or axes[0].units != axes[1].units:
+        if axes[0]['scale'] != axes[1]['scale'] or axes[0]['units'] != axes[1]['units']:
             raise ValueError("Scale and units must be the same for each axes "
                              "to export images with a scale bar.")
 
@@ -147,14 +149,14 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
         if scalebar:
             # Add scalebar
             axis = axes[0]
-            units = axis.units
+            units = axis['units']
             if units == t.Undefined:
                 units = "px"
                 scalebar_kwds['dimension'] = "pixel-length"
             if _UREG.Quantity(units).check('1/[length]'):
                 scalebar_kwds['dimension'] = "si-length-reciprocal"
 
-            scalebar = ScaleBar(axis.scale, units, **scalebar_kwds)
+            scalebar = ScaleBar(axis['scale'], units, **scalebar_kwds)
             ax.add_artist(scalebar)
 
         fig.savefig(filename, dpi=dpi, pil_kwargs=kwds)
