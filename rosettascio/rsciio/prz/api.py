@@ -24,31 +24,9 @@ import os
 
 import numpy as np
 
-
-from hyperspy.misc.utils import DictionaryTreeBrowser
+from rsciio.utils.tools import DTBox
 
 _logger = logging.getLogger(__name__)
-
-
-# Plugin characteristics
-# ----------------------
-format_name = 'PantaRhei'
-description = 'File format used by CEOS PantaRhei. Based on simple numpy arrays and dictionaries.'
-full_support = False # Whether all the Hyperspy features are supported
-# Recognised file extension
-file_extensions = ('prz')
-default_extension = 0 # Index of the extension that will be used by default
-# Reading capabilities
-reads_images = True
-reads_spectrum = True
-reads_spectrum_image = True
-# Writing capabilities
-writes = True
-writes_images = True
-writes_spectrum = True
-writes_spectrum_image = True
-# Support for non-uniform axis
-non_uniform_axis = False
 
 
 # -----------------------
@@ -221,7 +199,7 @@ def import_pr(data, meta_data, filename = None):
     dictionary = {
         'data': data,
         'axes': axes,
-        'metadata': mapped.as_dictionary(),
+        'metadata': mapped.to_dict(),
         'original_metadata': meta_data
     }
     file_data_list = [dictionary, ]
@@ -264,7 +242,7 @@ def export_pr(signal):
 
 
 def _metadata_converter_in(meta_data, axes, filename):
-    mapped = DictionaryTreeBrowser({})
+    mapped = DTBox(box_dots=True)
 
     signal_dimensions = 0
     for ax in axes:
