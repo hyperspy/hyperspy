@@ -82,7 +82,7 @@ from datetime import datetime
 import numpy as np
 from traits.api import Undefined
 
-from rsciio.utils.tools import sarray2dict
+from rsciio.utils.tools import sarray2dict, DTBox
 
 
 _logger = logging.getLogger(__name__)
@@ -529,18 +529,19 @@ class SemperFormat(object):
         None
 
         """
-        data = signal.data
+        data = signal["data"]
+        smetadata = DTBox(signal["metadata"], box_dots=True)
         assert len(data.shape) <= 3, \
             'Only up to 3-dimensional datasets can be handled!'
         scales, offsets, units = [1.] * 3, [0.] * \
             3, [Undefined] * 3  # Defaults!
         for i in range(len(data.shape)):
-            scales[i] = signal.axes_manager[i].scale
-            offsets[i] = signal.axes_manager[i].offset
-            units[i] = signal.axes_manager[i].units
+            scales[i] = signal["axes"][i]["scale"]
+            offsets[i] = signal["axes"][i]["offset"]
+            units[i] = signal["axes"][i]["units"]
         # Make sure data is 3D!
         data = data[tuple(None for _ in range(3 - len(data.shape)))]
-        signal_dimension = signal.axes_manager.signal_dimension
+        signal_dimension = len([axis for axis in signal["axes"] if not axis["navigate"]])
         if signal_dimension == 1:
             record_by = "spectrum"
         elif signal_dimension == 2:
@@ -549,12 +550,12 @@ class SemperFormat(object):
             record_by = ""
         iclass = cls.ICLASS_DICT_INV.get(record_by, 6)  # 6: undefined
         data, iform = cls._check_format(data)
-        title = signal.metadata.General.as_dictionary().get('title', Undefined)
+        title = smetadata.General.to_dict().get('title', Undefined)
         metadata = OrderedDict()
-        if 'date' in signal.metadata.General.keys(
-        ) and 'time' in signal.metadata.General.keys():
-            dt = "%s %s" % (signal.metadata.General.date,
-                            signal.metadata.General.time)
+        if 'date' in smetadata.General.keys(
+        ) and 'time' in smetadata.General.keys():
+            dt = "%s %s" % (smetadata.General.date,
+                            smetadata.General.time)
         else:
             dt = "%s" % datetime.now()
 

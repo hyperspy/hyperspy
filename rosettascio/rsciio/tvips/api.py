@@ -492,10 +492,10 @@ def file_writer(filename, signal, **kwds):
     # only signal2d is allowed
     axes = signal["axes"]
     metadata = DTBox(signal["metadata"], box_dots=True)
-    signal_size = len([axis for axis in axes if not axis["navigate"]])
+    signal_dim = len([axis for axis in axes if not axis["navigate"]])
     nav_shape = ([axis["size"] for axis in axes if axis["navigate"]])
     num_frames = np.prod(nav_shape) if nav_shape else 0
-    if signal_size != 2:
+    if signal_dim != 2:
         raise ValueError("Only Signal2D supported for writing to TVIPS file.")
     fnb, ext = os.path.splitext(filename)
     if fnb.endswith("_000"):
