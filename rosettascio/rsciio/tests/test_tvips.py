@@ -181,7 +181,7 @@ def fake_signals(fake_signal_3D, fake_signal_4D, fake_signal_5D):
 def test_guess_image_mode(unit, expected_mode, sig, fake_signals):
     signal = fake_signals[sig]
     signal.axes_manager[-1].units = unit
-    mode = _guess_image_mode(signal)
+    mode = _guess_image_mode(signal._to_dictionary())
     assert mode == expected_mode
 
 
@@ -214,7 +214,7 @@ def test_main_header_from_signal(unit, expected_scale_factor, version, fheb,
     else:
         cm = dummy_context_manager()
     with cm:
-        header = _get_main_header_from_signal(signal, version, fheb)
+        header = _get_main_header_from_signal(signal._to_dictionary(), version, fheb)
     assert header["size"] == np.dtype(TVIPS_RECORDER_GENERAL_HEADER).itemsize
     assert header["version"] == version
     assert header["dimx"] == signal.axes_manager[-2].size
@@ -245,7 +245,7 @@ def test_main_header_from_signal(unit, expected_scale_factor, version, fheb,
 )
 def test_get_frame_record_dtype(sig, fake_signals, extra_bytes):
     signal = fake_signals[sig]
-    dt_fh = _get_frame_record_dtype_from_signal(signal, extra_bytes=extra_bytes)
+    dt_fh = _get_frame_record_dtype_from_signal(signal._to_dictionary(), extra_bytes=extra_bytes)
     dimx = signal.axes_manager[-2].size
     dimy = signal.axes_manager[-1].size
     total_size = np.dtype(TVIPS_RECORDER_FRAME_HEADER).itemsize + extra_bytes + dimx * dimy * signal.data.itemsize
@@ -427,7 +427,7 @@ def test_file_writer(sig, meta, max_file_size, fheb, fake_signals, fake_metadata
     with tempfile.TemporaryDirectory() as tmp:
         filepath = os.path.join(tmp, "test_tvips_save_000.tvips")
         scan_shape = signal.axes_manager.navigation_shape
-        file_writer(filepath, signal, max_file_size=max_file_size, frame_header_extra_bytes=fheb)
+        file_writer(filepath, signal._to_dictionary(), max_file_size=max_file_size, frame_header_extra_bytes=fheb)
         if max_file_size is None:
             assert len(os.listdir(tmp)) == 1
         else:
@@ -449,4 +449,4 @@ def test_file_writer_fail():
     signal = hs.signals.Signal1D(np.array([1, 2, 3]))
     with tempfile.TemporaryDirectory() as tmp:
         filepath = os.path.join(tmp, "test.tvips")
-        file_writer(filepath, signal)
+        file_writer(filepath, signal._to_dictionary())

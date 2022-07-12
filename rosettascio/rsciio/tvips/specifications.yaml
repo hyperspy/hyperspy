@@ -3,5 +3,5 @@ description: Read support for TVIPS CMOS camera stream/movie files. Can be used 
 full_support: False
 file_extensions: [tvips, TVIPS]
 default_extension: 0
-writes: False
+writes: True # Actually it only supports writing images of any nav_dim but there is no way to express this
 non_uniform_axis: False

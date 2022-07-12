@@ -30,7 +30,7 @@ import pint
 from dask.diagnostics import ProgressBar
 from numba import njit
 
-from rsciio.utils.tools import sarray2dict
+from rsciio.utils.tools import DTBox, sarray2dict
 from rsciio.utils.tools import dummy_context_manager
 from hyperspy.defaults_parser import preferences
 from rsciio.utils.tools import _UREG
@@ -84,8 +84,8 @@ def _guess_image_mode(signal):
     If no decent guess can be made, None is returned.
     """
     # original pixel scale
-    scale = signal.axes_manager[-1].scale
-    unit = signal.axes_manager[-1].units
+    scale = signal["axes"][-2]["scale"]
+    unit = signal["axes"][-2]["units"]
     mode = None
     try:
         pixel_size = scale * _UREG(unit)
@@ -108,10 +108,11 @@ def _get_main_header_from_signal(signal, version=2, frame_header_extra_bytes=0):
     header['version'] = version
     # original pixel scale
     mode = _guess_image_mode(signal)
-    scale = signal.axes_manager[-1].scale
-    offsetx = signal.axes_manager[-2].offset
-    offsety = signal.axes_manager[-1].offset
-    unit = signal.axes_manager[-1].units
+    axes = signal["axes"]
+    scale = axes[0]["scale"]
+    offsetx = axes[-1]["offset"]
+    offsety = axes[-2]["offset"]
+    unit = axes[-2]["units"]
     if mode == 1:
         to_unit = "nm"
     elif mode == 2:
@@ -125,20 +126,21 @@ def _get_main_header_from_signal(signal, version=2, frame_header_extra_bytes=0):
     else:
         warnings.warn("Image scale units could not be converted, "
                       "saving axes scales as is.", UserWarning)
-    header['dimx'] = signal.axes_manager[-2].size
-    header['dimy'] = signal.axes_manager[-1].size
+    metadata = DTBox(signal["metadata"], box_dots=True)
+    header['dimx'] = axes[-1]["size"]
+    header['dimy'] = axes[-2]["size"]
     header['offsetx'] = offsetx
     header['offsety'] = offsety
     header['pixelsize'] = scale
-    header['bitsperpixel'] = signal.data.dtype.itemsize * 8
+    header['bitsperpixel'] = signal["data"].dtype.itemsize * 8
     header['binx'] = 1
     header['biny'] = 1
     dtf = np.dtype(TVIPS_RECORDER_FRAME_HEADER)
     header['frameheaderbytes'] = dtf.itemsize + frame_header_extra_bytes
     header['dummy'] = "HYPERSPY " * 22 + "HYPERS"
-    header['ht'] = signal.metadata.get_item("Acquisition_instrument.TEM.beam_energy", 0)
-    cl = signal.metadata.get_item("Acquisition_instrument.TEM.camera_length", 0)
-    mag = signal.metadata.get_item("Acquisition_instrument.TEM.magnification", 0)
+    header['ht'] = metadata.get("Acquisition_instrument.TEM.beam_energy", 0)
+    cl = metadata.get("Acquisition_instrument.TEM.camera_length", 0)
+    mag = metadata.get("Acquisition_instrument.TEM.magnification", 0)
     if (cl != 0 and mag != 0):
         header['magtotal'] = 0
     elif (cl != 0 and mode == 2):
@@ -154,9 +156,9 @@ def _get_frame_record_dtype_from_signal(signal, extra_bytes=0):
     fhdtype = TVIPS_RECORDER_FRAME_HEADER.copy()
     if extra_bytes > 0:
         fhdtype.append(("extra", bytes, extra_bytes))
-    dimx = signal.axes_manager[-2].size
-    dimy = signal.axes_manager[-1].size
-    fhdtype.append(("data", signal.data.dtype, (dimy, dimx)))
+    dimx = signal["axes"][-1]["size"]
+    dimy = signal["axes"][-2]["size"]
+    fhdtype.append(("data", signal["data"].dtype, (dimy, dimx)))
     dt = np.dtype(fhdtype)
     return dt
 
@@ -488,8 +490,12 @@ def file_writer(filename, signal, **kwds):
         guessed from signal type and signal units.
     """
     # only signal2d is allowed
-    from hyperspy._signals.signal2d import Signal2D
-    if not isinstance(signal, Signal2D):
+    axes = signal["axes"]
+    metadata = DTBox(signal["metadata"], box_dots=True)
+    signal_size = len([axis for axis in axes if not axis["navigate"]])
+    nav_shape = ([axis["size"] for axis in axes if axis["navigate"]])
+    num_frames = np.prod(nav_shape) if nav_shape else 0
+    if signal_size != 2:
         raise ValueError("Only Signal2D supported for writing to TVIPS file.")
     fnb, ext = os.path.splitext(filename)
     if fnb.endswith("_000"):
@@ -499,7 +505,6 @@ def file_writer(filename, signal, **kwds):
     main_header = _get_main_header_from_signal(signal, version, fheb)
     # frame header + frame dtype
     record_dtype = _get_frame_record_dtype_from_signal(signal, fheb)
-    num_frames = signal.axes_manager.navigation_size
     total_file_size = main_header.itemsize + num_frames * record_dtype.itemsize
     max_file_size = kwds.pop("max_file_size", None)
     if max_file_size is None:
@@ -509,80 +514,83 @@ def file_writer(filename, signal, **kwds):
         warnings.warn(f"The minimum file size for this dataset is {minimum_file_size} bytes")
         max_file_size = minimum_file_size
     # frame metadata
-    start_date_str = signal.metadata.get_item("General.date", "1970-01-01")
-    start_time_str = signal.metadata.get_item("General.time", "00:00:00")
-    tz = signal.metadata.get_item("General.time_zone", "UTC")
+    start_date_str = metadata.get("General.date", "1970-01-01")
+    start_time_str = metadata.get("General.time", "00:00:00")
+    tz = metadata.get("General.time_zone", "UTC")
     datetime_str = f"{start_date_str} {start_time_str} {tz}"
     time_dt = dtparse(datetime_str)
     time_dt_utc = time_dt.astimezone(timezone.utc)
     # workaround for timestamp not working on Windows, see https://bugs.python.org/issue37527
     BEGIN = datetime(1970, 1, 1, 0).replace(tzinfo=timezone.utc)
     timestamp = (time_dt_utc - BEGIN).total_seconds()
-    nav_units = signal.axes_manager[0].units
-    nav_increment = signal.axes_manager[0].scale
-    try:
-        time_increment = (nav_increment * _UREG(nav_units)).to("ms").magnitude
-    except (AttributeError, pint.UndefinedUnitError, pint.DimensionalityError):
-        time_increment = 1
+    if num_frames:
+        nav_units = signal["axes"][-3]["units"]
+        nav_increment = signal["axes"][-3]["scale"]
+        try:
+            time_increment = (nav_increment * _UREG(nav_units)).to("ms").magnitude
+        except (AttributeError, pint.UndefinedUnitError, pint.DimensionalityError):
+            time_increment = 1
     # imaging or diffraction
     mode = kwds.pop("mode", None)
     if mode is None:
         mode = _guess_image_mode(signal)
     mode = 2 if mode is None else mode
-    stagex = signal.metadata.get_item("Acquisition_instrument.TEM.Stage.x", 0)
-    stagey = signal.metadata.get_item("Acquisition_instrument.TEM.Stage.y", 0)
-    stagez = signal.metadata.get_item("Acquisition_instrument.TEM.Stage.z", 0)
-    stagea = signal.metadata.get_item("Acquisition_instrument.TEM.tilt_alpha", 0)
-    stageb = signal.metadata.get_item("Acquisition_instrument.TEM.tilt_beta", 0)
+    stagex = metadata.get("Acquisition_instrument.TEM.Stage.x", 0)
+    stagey = metadata.get("Acquisition_instrument.TEM.Stage.y", 0)
+    stagez = metadata.get("Acquisition_instrument.TEM.Stage.z", 0)
+    stagea = metadata.get("Acquisition_instrument.TEM.tilt_alpha", 0)
+    stageb = metadata.get("Acquisition_instrument.TEM.tilt_beta", 0)
     # TODO: is fcurrent actually beam current??
-    fcurrent = signal.metadata.get_item("Acquisition_instrument.TEM.beam_current", 0)
-    frames_to_save = num_frames
+    fcurrent = metadata.get("Acquisition_instrument.TEM.beam_current", 0)
+    frames_to_save = num_frames if num_frames else 1
     current_frame = 0
     file_index = 0
-    with signal.unfolded(unfold_navigation=True, unfold_signal=False):
-        while (frames_to_save != 0):
-            suffix = "_" + (f"{file_index}".zfill(3))
-            filename = fnb + suffix + ext
-            if file_index == 0:
-                with open(filename, "wb") as f:
-                    main_header.tofile(f)
-                    file_location = f.tell()
-                    open_mode = "r+"
-            else:
-                file_location = 0
-                open_mode = "w+"
-            frames_saved = (max_file_size - file_location) // record_dtype.itemsize
-            # last file can contain fewer images
-            if frames_to_save < frames_saved:
-                frames_saved = frames_to_save
-            file_memmap = np.memmap(
-                filename, dtype=record_dtype, mode=open_mode,
-                offset=file_location, shape=frames_saved,
-            )
-            # fill in the metadata
-            file_memmap["mode"] = mode
-            file_memmap["stagex"] = stagex
-            file_memmap["stagey"] = stagey
-            file_memmap["stagez"] = stagez
-            file_memmap["stagea"] = stagea
-            file_memmap["stageb"] = stageb
-            file_memmap['fcurrent'] = fcurrent
-            rotator = np.arange(current_frame, current_frame + frames_saved)
-            milliseconds = rotator * time_increment
-            timestamps = (timestamp + milliseconds / 1000).astype(int)
-            milliseconds = milliseconds % 1000
-            file_memmap["timestamp"] = timestamps
-            file_memmap["ms"] = milliseconds
-            file_memmap["rotidx"] = rotator + 1
-            data = signal.data[current_frame:current_frame + frames_saved]
-            if signal._lazy:
-                show_progressbar = kwds.get("show_progressbar", preferences.General.show_progressbar)
-                cm = ProgressBar if show_progressbar else dummy_context_manager
-                with cm():
-                    data.store(file_memmap["data"])
-            else:
-                file_memmap["data"] = data
-            file_memmap.flush()
-            file_index += 1
-            frames_to_save -= frames_saved
-            current_frame += frames_saved
+    data = signal["data"]
+    if num_frames:
+        fdata = data.reshape((num_frames, axes[-2]["size"], axes[-1]["size"]))
+    while (frames_to_save != 0):
+        suffix = "_" + (f"{file_index}".zfill(3))
+        filename = fnb + suffix + ext
+        if file_index == 0:
+            with open(filename, "wb") as f:
+                main_header.tofile(f)
+                file_location = f.tell()
+                open_mode = "r+"
+        else:
+            file_location = 0
+            open_mode = "w+"
+        frames_saved = (max_file_size - file_location) // record_dtype.itemsize
+        # last file can contain fewer images
+        if frames_to_save < frames_saved:
+            frames_saved = frames_to_save
+        file_memmap = np.memmap(
+            filename, dtype=record_dtype, mode=open_mode,
+            offset=file_location, shape=frames_saved,
+        )
+        # fill in the metadata
+        file_memmap["mode"] = mode
+        file_memmap["stagex"] = stagex
+        file_memmap["stagey"] = stagey
+        file_memmap["stagez"] = stagez
+        file_memmap["stagea"] = stagea
+        file_memmap["stageb"] = stageb
+        file_memmap['fcurrent'] = fcurrent
+        rotator = np.arange(current_frame, current_frame + frames_saved)
+        milliseconds = rotator * time_increment
+        timestamps = (timestamp + milliseconds / 1000).astype(int)
+        milliseconds = milliseconds % 1000
+        file_memmap["timestamp"] = timestamps
+        file_memmap["ms"] = milliseconds
+        file_memmap["rotidx"] = rotator + 1
+        data = fdata[current_frame:current_frame + frames_saved]
+        if signal['attributes']['_lazy']:
+            show_progressbar = kwds.get("show_progressbar", preferences.General.show_progressbar)
+            cm = ProgressBar if show_progressbar else dummy_context_manager
+            with cm():
+                data.store(file_memmap["data"])
+        else:
+            file_memmap["data"] = data
+        file_memmap.flush()
+        file_index += 1
+        frames_to_save -= frames_saved
+        current_frame += frames_saved
