@@ -39,7 +39,7 @@ import numpy as np
 import dask.array as da
 from dateutil import tz
 
-from rsciio.utils.tools import _UREG
+from rsciio.utils.tools import _UREG, DTBox
 from rsciio.exceptions import VisibleDeprecationWarning
 from rsciio.utils.elements import atomic_number2name
 import rsciio.utils.fei_stream_readers as stream_readers
@@ -815,12 +815,12 @@ class EMD_NCEM:
         emd_file.attrs['version_minor'] = ver_min
 
         # Write attribute from the original_metadata
-        om = signal.original_metadata
+        om = DTBox(signal["original_metadata"], box_dots=True)
         for group_name in ['microscope', 'sample', 'user', 'comments']:
             group = emd_file.require_group(group_name)
-            d = om.get_item(group_name, None)
+            d = om.get(group_name, None)
             if d is not None:
-                for key, value in d.as_dictionary().items():
+                for key, value in d.items():
                     group.attrs[key] = value
 
         # Write signals:
@@ -832,9 +832,9 @@ class EMD_NCEM:
     def _write_signal_to_group(self, signal_group, signal, chunks=None,
                                **kwargs):
         # Save data:
-        title = signal.metadata.General.title or '__unnamed__'
+        title = signal["metadata"]["General"]["title"] or '__unnamed__'
         dataset = signal_group.require_group(title)
-        data = signal.data.T
+        data = signal["data"].T
         maxshape = tuple(None for _ in data.shape)
         if np.issubdtype(data.dtype, np.dtype('U')):
             # Saving numpy unicode type is not supported in h5py
@@ -844,7 +844,7 @@ class EMD_NCEM:
                 # For lazy dataset, by default, we use the current dask chunking
                 chunks = tuple([c[0] for c in data.chunks])
             else:
-                signal_axes = signal.axes_manager.signal_indices_in_array
+                signal_axes = [i for i, axis in enumerate(signal["axes"]) if not axis["navigate"]]
                 chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
         # when chunks=True, we leave it to h5py `guess_chunk`
         elif chunks is not True:
@@ -859,15 +859,15 @@ class EMD_NCEM:
         # Iterate over all dimensions:
         for i, dim_index in zip(array_indices, dim_indices):
             key = f'dim{dim_index}'
-            axis = signal.axes_manager._axes[i]
-            offset = axis.offset
-            scale = axis.scale
+            axis = signal["axes"][i]
+            offset = axis["offset"]
+            scale = axis["scale"]
             dim = dataset.create_dataset(key, data=[offset, offset + scale])
-            name = axis.name
+            name = axis["name"]
             if name is t.Undefined:
                 name = ''
             dim.attrs['name'] = name
-            units = axis.units
+            units = axis["units"]
             if units is t.Undefined:
                 units = ''
             else:
@@ -875,7 +875,7 @@ class EMD_NCEM:
             dim.attrs['units'] = units
         # Write metadata:
         dataset.attrs['emd_group_type'] = 1
-        for key, value in signal.metadata.Signal:
+        for key, value in signal["metadata"]["Signal"].items():
             try:  # If something h5py can't handle is saved in the metadata...
                 dataset.attrs[key] = value
             except Exception:  # ...let the user know what could not be added!
