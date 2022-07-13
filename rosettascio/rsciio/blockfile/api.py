@@ -17,23 +17,24 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import os
-from traits.api import Undefined
-import numpy as np
-import dask
-from dask.diagnostics import ProgressBar
-from skimage.exposure import rescale_intensity
-from skimage import dtype_limits
 import logging
 import warnings
 import datetime
 import dateutil
 
-from rsciio.utils.tools import sarray2dict, dict2sarray
+from traits.api import Undefined
+import numpy as np
+import dask
+from dask.diagnostics import ProgressBar
+from skimage import dtype_limits
+
+from rsciio.utils.skimage_exposure import rescale_intensity
+from rsciio.utils.tools import DTBox, sarray2dict, dict2sarray
 from rsciio.utils.date_time_tools import (
     serial_date_to_ISO_format,
     datetime_to_serial_date,
 )
-from rsciio.utils.tools import dummy_context_manager
+from rsciio.utils.tools import dummy_context_manager, convert_units
 
 _logger = logging.getLogger(__name__)
 
@@ -103,45 +104,79 @@ def get_default_header(endianess="<"):
 
 def get_header_from_signal(signal, endianess="<"):
     header = get_default_header(endianess)
-    if "blockfile_header" in signal.original_metadata:
+    if "blockfile_header" in signal["original_metadata"]:
         header = dict2sarray(
-            signal.original_metadata["blockfile_header"], sarray=header
+            signal["original_metadata"]["blockfile_header"], sarray=header
         )
-        note = signal.original_metadata["blockfile_header"]["Note"]
+        note = signal["original_metadata"]["blockfile_header"]["Note"]
     else:
         note = ""
     # The navigation and signal units are 'nm' and 'cm', respectively, so we
     # convert the units accordingly before saving the signal
-    axes_manager = signal.axes_manager.deepcopy()
-    try:
-        axes_manager.convert_units("navigation", "nm")
-        axes_manager.convert_units("signal", "cm")
-    except Exception:
-        warnings.warn(
-            "BLO file expects cm units in signal dimensions and nm in navigation dimensions. "
-            "Existing units could not be converted; saving "
-            "axes scales as is. Beware that scales "
-            "will likely be incorrect in the file.",
-            UserWarning,
-        )
+    axes = signal["axes"]
+    sig_axes = [axis for axis in axes if not axis["navigate"]]
+    nav_axes = [axis for axis in axes if axis["navigate"]]
+    for axis in sig_axes:
+        if axis["units"]:
+            try:
+                axis["scale"] = convert_units(axis["scale"], axis["units"], "cm")
+                axis["offset"] = convert_units(axis["offset"], axis["units"], "cm")
+            except Exception:
+                warnings.warn(
+                    "BLO file expects cm units in signal dimensions. "
+                    f"Existing units, {axis['units']} could not be converted; saving "
+                    "axes scales as is. Beware that scales "
+                    "will likely be incorrect in the file.",
+                    UserWarning,
+                )
+        else:
+            warnings.warn(
+                "BLO file expects cm units in signal dimensions. "
+                f"The {axis['names']} does not have units; saving "
+                "axes scales as is. Beware that scales "
+                "will likely be incorrect in the file.",
+                UserWarning,
+            )
+    for axis in nav_axes:
+        if axis["units"]:
+            try:
+                axis["scale"] = convert_units(axis["scale"], axis["units"], "nm")
+                axis["offset"] = convert_units(axis["offset"], axis["units"], "nm")
+            except Exception:
+                warnings.warn(
+                    "BLO file expects nm units in navigation dimensions. "
+                    f"Existing units, {axis['units']} could not be converted; saving "
+                    "axes scales as is. Beware that scales "
+                    "will likely be incorrect in the file.",
+                    UserWarning,
+                )
+        else:
+            warnings.warn(
+                "BLO file expects nm units in navigation dimensions. "
+                f"The {axis['names']} does not have units; saving "
+                "axes scales as is. Beware that scales "
+                "will likely be incorrect in the file.",
+                UserWarning,
+            )
 
-    if axes_manager.navigation_dimension == 2:
-        NX, NY = axes_manager.navigation_shape
-        SX = axes_manager.navigation_axes[0].scale
-        SY = axes_manager.navigation_axes[1].scale
-    elif axes_manager.navigation_dimension == 1:
-        NX = axes_manager.navigation_shape[0]
+    if len(nav_axes) == 2:
+        NX = nav_axes[1]["size"]
+        NY = nav_axes[0]["size"]
+        SX = nav_axes[1]["scale"]
+        SY = nav_axes[0]["scale"]
+    elif len(nav_axes) == 1:
+        NX = nav_axes[0]["size"]
         NY = 1
-        SX = axes_manager.navigation_axes[0].scale
+        SX = nav_axes[0]["scale"]
         SY = SX
-    elif axes_manager.navigation_dimension == 0:
+    elif len(nav_axes) == 0:
         NX = NY = SX = SY = 1
 
-    DP_SZ = axes_manager.signal_shape
+    DP_SZ = [axis["size"] for axis in sig_axes][::-1]
     if DP_SZ[0] != DP_SZ[1]:
         raise ValueError("Blockfiles require signal shape to be square!")
     DP_SZ = DP_SZ[0]
-    SDP = 100.0 / axes_manager.signal_axes[0].scale
+    SDP = 100.0 / sig_axes[1]["scale"]
 
     offset2 = NX * NY + header["Data_offset_1"]
     # Based on inspected files, the DPs are stored at 16-bit boundary...
@@ -297,7 +332,7 @@ def file_writer(filename, signal, **kwds):
         '<' (default) or '>' determining how the bits are written to the file
     intensity_scaling : str or 2-Tuple of float/int
         If the signal datatype is not uint8 this argument provides intensity
-        linear scaling strategies. If 'dtype', the entire dtype range is mapped
+        linear scaling strategies. If 'dtyTraduit avec www.DeepL.com/Translator (version gratuite)pe', the entire dtype range is mapped
         to 0-255, if 'minmax' the range between the minimum and maximum intensity is
         mapped to 0-255, if 'crop' the range between 0-255 is conserved without
         overflow, if a tuple of values the values between this range is mapped
@@ -316,9 +351,10 @@ def file_writer(filename, signal, **kwds):
     scale_strategy = kwds.pop("intensity_scaling", None)
     vbf_strategy = kwds.pop("navigator_signal", "navigator")
     show_progressbar = kwds.pop("show_progressbar", None)
+    smetadata = DTBox(signal["metadata"], box_dots=True)
     if scale_strategy is None:
         # to distinguish from the tuple case
-        if signal.data.dtype != "u1":
+        if signal["data"].dtype != "u1":
             warnings.warn(
                 "Data does not have uint8 dtype: values outside the "
                 "range 0-255 may result in overflow. To avoid this "
@@ -326,13 +362,13 @@ def file_writer(filename, signal, **kwds):
                 UserWarning,
             )
     elif scale_strategy == "dtype":
-        original_scale = dtype_limits(signal.data)
+        original_scale = dtype_limits(signal["data"])
         if original_scale[1] == 1.0:
             raise ValueError("Signals with float dtype can not use 'dtype'")
     elif scale_strategy == "minmax":
-        minimum = signal.data.min()
-        maximum = signal.data.max()
-        if signal._lazy:
+        minimum = signal["data"].min()
+        maximum = signal["data"].max()
+        if signal['attributes']['_lazy']:
             minimum, maximum = dask.compute(minimum, maximum)
         original_scale = (minimum, maximum)
     elif scale_strategy == "crop":
@@ -354,22 +390,21 @@ def file_writer(filename, signal, **kwds):
         np.zeros((zero_pad,), np.byte).tofile(f)
         # Write virtual bright field
         if vbf_strategy is None:
-            vbf = np.zeros((signal.data.shape[0], signal.data.shape[1]))
+            vbf = np.zeros((signal["data"].shape[0], signal["data"].shape[1]))
         elif isinstance(vbf_strategy, str) and (vbf_strategy == "navigator"):
-            if signal.navigator is not None:
-                vbf = signal.navigator.data
+            if smetadata.get("_HyperSpy._sig_navigator", False):
+                vbf = smetadata["_HyperSpy._sig_navigator.data"]
             else:
-                if signal._lazy:
-                    signal.compute_navigator()
-                    vbf = signal.navigator.data
-                else:
-                    # TODO workaround for non-lazy datasets
-                    sigints = signal.axes_manager.signal_indices_in_array[:2]
-                    vbf = signal.mean(axis=sigints).data
+                vbf = signal["data"].mean(axis=(-2, -1))
         else:
-            vbf = vbf_strategy.data
+            if hasattr(vbf_strategy, "shape"):
+                # Is numpy array-like
+                vbf = vbf_strategy
+            else:
+                # Is Hyperspy signal. For compatibility with HyperSpy <2.0
+                vbf = vbf_strategy.data
             # check that the shape is ok
-            if vbf.shape != signal.data.shape[:-2]:
+            if vbf.shape != signal["data"].shape[:2]:
                 raise ValueError(
                     "Size of the provided VBF does not match the "
                     "navigation dimensions of the dataset."
@@ -377,7 +412,7 @@ def file_writer(filename, signal, **kwds):
         if scale_strategy is not None:
             vbf = rescale_intensity(vbf, in_range=original_scale, out_range=np.uint8)
         vbf = vbf.astype(endianess + "u1")
-        vbf.tofile(f)
+        np.asanyarray(vbf).tofile(f)
         # Zero pad until next data block
         if f.tell() > int(header["Data_offset_2"]):
             raise ValueError(
@@ -388,13 +423,10 @@ def file_writer(filename, signal, **kwds):
         file_location = f.tell()
 
     if scale_strategy is not None:
-        signal = signal.map(
-            rescale_intensity,
-            in_range=original_scale,
-            out_range=np.uint8,
-            inplace=False,
-        )
-    array_data = signal.data.astype(endianess + "u1")
+        array_data = rescale_intensity(signal["data"], in_range=original_scale, out_range=np.uint8,)
+    else:
+        array_data = signal["data"]
+    array_data = array_data.astype(endianess + "u1")
     # Write full data stack:
     # We need to pad each image with magic 'AA55', then a u32 serial
     pixels = array_data.shape[-2:]
@@ -411,10 +443,10 @@ def file_writer(filename, signal, **kwds):
     )
     file_memmap["MAGIC"] = magics
     file_memmap["ID"] = ids
-    if signal._lazy:
+    if signal['attributes']['_lazy']:
         cm = ProgressBar if show_progressbar else dummy_context_manager
         with cm():
-            signal.data.store(file_memmap["IMG"])
+            array_data.store(file_memmap["IMG"])
     else:
-        file_memmap["IMG"] = signal.data
+        file_memmap["IMG"] = array_data
     file_memmap.flush()

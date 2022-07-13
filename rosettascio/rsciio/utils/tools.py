@@ -226,3 +226,7 @@ def dict2sarray(dictionary, sarray=None, dtype=None):
         else:
             sarray[name] = dictionary[name]
     return sarray
+
+
+def convert_units(value, units, to_units):
+    return (value * _UREG(units)).to(to_units).magnitude
