@@ -23,6 +23,7 @@ from pathlib import Path
 import os
 from collections import OrderedDict
 from contextlib import contextmanager
+import importlib
 
 import numpy as np
 from box import Box
@@ -229,3 +230,42 @@ def dict2sarray(dictionary, sarray=None, dtype=None):
 
 def convert_units(value, units, to_units):
     return (value * _UREG(units)).to(to_units).magnitude
+
+def get_object_package_info(obj):
+    """Get info about object package
+
+    Returns
+    -------
+    dic: dict
+        Dictionary containing ``package`` and ``package_version`` (if available)
+    """
+    dic = {}
+    # Note that the following can be "__main__" if the component was user
+    # defined
+    dic["package"] = obj.__module__.split(".")[0]
+    if dic["package"] != "__main__":
+        try:
+            dic["package_version"] = importlib.import_module(dic["package"]).__version__
+        except AttributeError:
+            dic["package_version"] = ""
+            _logger.warning(
+                "The package {package} does not set its version in "
+                + "{package}.__version__. Please report this issue to the "
+                + "{package} developers.".format(package=dic["package"])
+            )
+    else:
+        dic["package_version"] = ""
+    return dic
+
+
+def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
+    if not isinstance(stuff, (bytes, np.string_)):
+        return stuff
+    else:
+        string = stuff
+    try:
+        string = string.decode(encoding)
+    except BaseException:
+        string = string.decode(encoding2, errors="ignore")
+    return string
+

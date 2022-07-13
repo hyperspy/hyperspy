@@ -10,8 +10,7 @@ import numpy as np
 from traits.api import Undefined
 
 from hyperspy.axes import AxesManager
-from hyperspy.misc.utils import ensure_unicode, get_object_package_info
-from hyperspy.misc.utils import multiply
+from rsciio.utils.tools import ensure_unicode, get_object_package_info
 
 
 version = "3.1"
@@ -46,7 +45,7 @@ def get_signal_chunks(shape, dtype, signal_axes=None, target_size=1e6):
         return h5py._hl.filters.guess_chunk(shape, None, typesize)
 
     # largely based on the guess_chunk in h5py
-    bytes_per_signal = multiply([shape[i] for i in signal_axes]) * typesize
+    bytes_per_signal = np.prod([shape[i] for i in signal_axes]) * typesize
     signals_per_chunk = int(np.floor_divide(target_size, bytes_per_signal))
     navigation_axes = tuple(i for i in range(len(shape)) if i not in
                             signal_axes)
