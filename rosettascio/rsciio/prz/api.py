@@ -222,12 +222,11 @@ def export_pr(signal):
     meta_data: dict
         metadata dictionary in PantaRhei format
     """
-    data = signal.data
-    metadata = signal.metadata
-    original_metadata = signal.original_metadata
-    axes = signal.axes_manager.as_dictionary()
+    data = signal["data"]
+    metadata = signal["metadata"]
+    original_metadata = signal["original_metadata"]
+    axes_info = signal["axes"]
     meta_data = _metadata_converter_out(metadata, original_metadata)
-    axes_info = [axes[name] for name in axes]
     if 'ref_size' not in meta_data:
         meta_data['ref_size'] = data.shape[::-1]
 
@@ -320,14 +319,15 @@ def _metadata_converter_in(meta_data, axes, filename):
 
 
 def _metadata_converter_out(metadata, original_metadata=None):
-
-    original_fname = metadata.get_item('General.original_filename', '')
+    metadata = DTBox(metadata, box_dots=True)
+    original_metadata = DTBox(original_metadata, box_dots=True)
+    original_fname = metadata.get('General.original_filename', '')
     original_extension = os.path.splitext(original_fname)[1]
-    if original_metadata.get_item('ref_size'):
+    if original_metadata.get('ref_size'):
         PR_metadata_present = True
 
     if original_extension == '.prz' and PR_metadata_present:
-        meta_data = original_metadata.as_dictionary()
+        meta_data = original_metadata
         meta_data['ref_size'] = meta_data['ref_size'][::-1]
         for key in ['content.types',
                     'user.calib',
@@ -343,28 +343,28 @@ def _metadata_converter_out(metadata, original_metadata=None):
 
     else:
         meta_data = {}
-        if metadata.get_item('Signal.signal_type') == 'EELS':
+        if metadata.get('Signal.signal_type') == 'EELS':
             meta_data['filter.mode'] = 'EELS'
 
-        name = metadata.get_item('General.title')
+        name = metadata.get('General.title')
         if name is not None:
             meta_data['repo_id'] = name + '.0'
 
-        date = metadata.get_item('General.date')
-        time = metadata.get_item('General.time')
+        date = metadata.get('General.date')
+        time = metadata.get('General.time')
         if date is not None and time is not None:
             timestamp = date + 'T' + time
             meta_data['acquisition.time'] = timestamp
 
-        md_TEM = metadata.get_item('Acquisition_instrument.TEM')
+        md_TEM = metadata.get('Acquisition_instrument.TEM')
         if md_TEM is not None:
-            beam_energy = md_TEM.get_item('beam_energy')
-            convergence_angle = md_TEM.get_item('convergence_angle')
-            collection_angle = md_TEM.get_item('Detector.EELS.collection_angle')
-            aperture = md_TEM.get_item('Detector.EELS.aperture_size')
-            acquisition_mode = md_TEM.get_item('acquisition_mode')
-            magnification = md_TEM.get_item('magnification')
-            camera_length = md_TEM.get_item('camera_length')
+            beam_energy = md_TEM.get('beam_energy')
+            convergence_angle = md_TEM.get('convergence_angle')
+            collection_angle = md_TEM.get('Detector.EELS.collection_angle')
+            aperture = md_TEM.get('Detector.EELS.aperture_size')
+            acquisition_mode = md_TEM.get('acquisition_mode')
+            magnification = md_TEM.get('magnification')
+            camera_length = md_TEM.get('camera_length')
 
             if aperture is not None:
                 if type(aperture) in (float, int):
