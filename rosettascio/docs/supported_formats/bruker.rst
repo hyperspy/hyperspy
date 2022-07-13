@@ -1,7 +1,10 @@
-.. _bcf-format:
+.. _bruker-format:
 
-Bruker composite file
-^^^^^^^^^^^^^^^^^^^^^
+Bruker
+------
+
+Bruker composite file (bcf)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 HyperSpy can read "hypermaps" saved with Bruker's Esprit v1.x or v2.x in bcf
 hybrid (virtual file system/container with xml and binary data, optionally
