@@ -205,7 +205,7 @@ def load(filenames=None,
     """Load potentially multiple supported files into HyperSpy.
 
     Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw),
-    Bruker bcf and spx, FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc,
+    Bruker bcf and spx, FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc, CEOS prz
     tif, and a number of image formats.
 
     Depending on the number of datasets to load in the file, this function will

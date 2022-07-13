@@ -22,7 +22,6 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 import os
 from collections import OrderedDict
-from collections.abc import Iterable, Mapping
 from contextlib import contextmanager
 
 import numpy as np
