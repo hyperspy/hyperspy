@@ -9,7 +9,7 @@ import h5py
 import numpy as np
 from traits.api import Undefined
 
-from rsciio.utils.tools import ensure_unicode, get_object_package_info
+from rsciio.utils.tools import ensure_unicode, get_object_package_info, DTBox
 
 
 version = "3.1"
@@ -512,7 +512,7 @@ class HierarchicalReader:
                         ans = np.array(dat)
                     dictionary[kn] = ans
                 elif key.startswith('_hspy_AxesManager_'):
-                    dictionary[key[len('_hspy_AxesManager_'):]] = [
+                    dictionary[key] = [
                             i for k, i in sorted(
                                 iter(self._group2dict(group[key], lazy=lazy).items()))]
                 elif key.startswith('_list_'):
@@ -661,18 +661,10 @@ class HierarchicalWriter:
     def write_signal(self, signal, group, write_dataset=True, chunks=None,
                      **kwds):
         "Writes a hyperspy signal to a hdf5 group"
-        group.attrs.update(get_object_package_info(signal))
+        group.attrs.update(signal["package_info"])
 
-        if Version(version) < Version("1.2"):
-            metadata = "mapped_parameters"
-            original_metadata = "original_parameters"
-        else:
-            metadata = "metadata"
-            original_metadata = "original_metadata"
-
-        for axis in signal.axes_manager._axes:
-            axis_dict = axis.get_axis_dictionary()
-            group_name = f'axis-{axis.index_in_array}'
+        for i, axis_dict in enumerate(signal["axes"]):
+            group_name = f'axis-{i}'
             # delete existing group in case the file have been open in 'a' mode
             # and we are saving a different type of axis, to avoid having
             # incompatible axis attributes from previously saved axis.
@@ -681,15 +673,15 @@ class HierarchicalWriter:
             coord_group = group.create_group(group_name)
             self.dict2group(axis_dict, coord_group, **kwds)
 
-        mapped_par = group.require_group(metadata)
-        metadata_dict = signal.metadata.as_dictionary()
+        mapped_par = group.require_group("metadata")
+        metadata_dict = signal["metadata"]
 
         if write_dataset:
             self.overwrite_dataset(
                 group,
-                signal.data,
+                signal["data"],
                 'data',
-                signal_axes=signal.axes_manager.signal_indices_in_array,
+                signal_axes=[idx for idx, axis in enumerate(signal["axes"]) if not axis["navigate"]],
                 chunks=chunks,
                 **kwds
                 )
@@ -699,22 +691,16 @@ class HierarchicalWriter:
                 metadata_dict.pop("_HyperSpy")
 
         self.dict2group(metadata_dict, mapped_par, **kwds)
-        original_par = group.require_group(original_metadata)
-        self.dict2group(signal.original_metadata.as_dictionary(), original_par,
+        original_par = group.require_group("original_metadata")
+        self.dict2group(signal["original_metadata"], original_par,
                       **kwds)
         learning_results = group.require_group('learning_results')
-        self.dict2group(signal.learning_results.__dict__,
+        self.dict2group(signal["learning_results"],
                       learning_results, **kwds)
 
-        if hasattr(signal, 'peak_learning_results'):  # pragma: no cover
-            peak_learning_results = group.require_group(
-                'peak_learning_results')
-            self.dict2group(signal.peak_learning_results.__dict__,
-                          peak_learning_results, **kwds)
-
-        if len(signal.models):
+        if signal["models"]:
             model_group = self.file.require_group('Analysis/models')
-            self.dict2group(signal.models._models.as_dictionary(),
+            self.dict2group(signal["models"],
                           model_group, **kwds)
             for model in model_group.values():
                 model.attrs['_signal'] = group.name
@@ -722,22 +708,9 @@ class HierarchicalWriter:
     def dict2group(self, dictionary, group, **kwds):
         "Recursive writer of dicts and signals"
 
-        from hyperspy.misc.utils import DictionaryTreeBrowser
-        from hyperspy.signal import BaseSignal
-
         for key, value in dictionary.items():
             if isinstance(value, dict):
                 self.dict2group(value, group.require_group(key), **kwds)
-
-            elif isinstance(value, DictionaryTreeBrowser):
-                self.dict2group(value.as_dictionary(),
-                                group.require_group(key),
-                                **kwds)
-
-            elif isinstance(value, BaseSignal):
-                kn = key if key.startswith('_sig_') else '_sig_' + key
-                self.write_signal(value, group.require_group(kn))
-
             elif isinstance(value, (np.ndarray, self.Dataset, da.Array)):
                 self.overwrite_dataset(group, value, key, **kwds)
 
@@ -755,11 +728,6 @@ class HierarchicalWriter:
 
             elif isinstance(value, str):
                 group.attrs[key] = value
-
-            elif isinstance(value, AxesManager):
-                self.dict2group(value.as_dictionary(),
-                                group.require_group('_hspy_AxesManager_'+key),
-                                **kwds)
 
             elif isinstance(value, list):
                 if len(value):
@@ -785,12 +753,11 @@ class HierarchicalWriter:
                         f"information in the file: {key} : {value}")
 
     def parse_structure(self, key, group, value, _type, **kwds):
-        from hyperspy.signal import BaseSignal
         try:
             # Here we check if there are any signals in the container, as
             # casting a long list of signals to a numpy array takes a very long
             # time. So we check if there are any, and save numpy the trouble
-            if np.any([isinstance(t, BaseSignal) for t in value]):
+            if np.any([isinstance(t, dict) and "_sig_" in t for t in value]):
                 tmp = np.array([[0]])
             else:
                 tmp = np.array(value)

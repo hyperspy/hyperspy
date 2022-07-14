@@ -28,15 +28,15 @@ from inspect import isgenerator
 from pathlib import Path
 from collections.abc import MutableMapping
 from datetime import datetime
+from rsciio.utils.tools import ensure_directory
+from rsciio.utils.tools import overwrite as overwrite_method
+from rsciio import IO_PLUGINS
 
 from hyperspy import __version__ as hs_version
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.exceptions import VisibleDeprecationWarning
-from rsciio.utils.tools import ensure_directory
-from rsciio.utils.tools import overwrite as overwrite_method
-from hyperspy.misc.utils import strlist2enumeration
+from hyperspy.misc.utils import strlist2enumeration, get_object_package_info
 from hyperspy.misc.utils import stack as stack_method
-from rsciio import IO_PLUGINS
 from hyperspy.ui_registry import get_gui
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
@@ -729,22 +729,6 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
         return signal_class
 
 
-def dict2hspy(dic, lazy):
-    """Recursively walk nested dicts converting dict to HyperSpy objects
-
-    Parameters
-    ----------
-    d: dictionary
-
-    """
-    for key in dic:
-        if type(dic[key])==type({}):
-            dict2hspy(dic[key], lazy=lazy)
-        elif key.startswith('_sig_'):
-            dic[key[len('_sig_'):]] = dict2signal(dic[key], lazy=lazy)
-        elif key.startswith('_hspy_AxesManager_'):
-            dic[key[len('_hspy_AxesManager_'):]] = AxesManager(dic[key])
-
 
 def dict2signal(signal_dict, lazy=False):
     """Create a signal (or subclass) instance defined by a dictionary.
@@ -785,8 +769,6 @@ def dict2signal(signal_dict, lazy=False):
             signal_type = mp["Signal"]['signal_type']
     if "attributes" in signal_dict and "_lazy" in signal_dict["attributes"]:
         lazy = signal_dict["attributes"]["_lazy"]
-    # Convert dics to hyperspy objects in metadata
-    dict2hspy(mp, lazy=lazy)
     # "Estimate" signal_dimension from axes. It takes precedence over record_by
     if ("axes" in signal_dict and
         len(signal_dict["axes"]) == len(
@@ -924,16 +906,18 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         # Pass as a string for now, pathlib.Path not
         # properly supported in io_plugins
         signal = _add_file_load_save_metadata('save', signal, writer)
+        signal_dic = signal._to_dictionary(add_models=True)
+        signal_dic["package_info"] = get_object_package_info(signal)
         if not isinstance(filename, MutableMapping):
             importlib.import_module(writer["api"]).file_writer(
-                str(filename), signal._to_dictionary(), **kwds)
+                str(filename), signal_dic, **kwds)
             _logger.info(f'{filename} was created')
             signal.tmp_parameters.set_item('folder', filename.parent)
             signal.tmp_parameters.set_item('filename', filename.stem)
             signal.tmp_parameters.set_item('extension', extension)
         else:
             importlib.import_module(writer["api"]).file_writer(
-                filename, signal._to_dictionary(), **kwds)
+                filename, signal_dic, **kwds)
             if hasattr(filename, "path"):
                 file = Path(filename.path).resolve()
                 signal.tmp_parameters.set_item('folder', file.parent)

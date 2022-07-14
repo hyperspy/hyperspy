@@ -526,6 +526,26 @@ class DictionaryTreeBrowser:
                     key = "_sig_" + key
                 elif hasattr(item_["_dtb_value_"], "_to_dictionary"):
                     item = item_["_dtb_value_"]._to_dictionary()
+                elif hasattr(item_["_dtb_value_"], "as_dictionary"):
+                    item = item_["_dtb_value_"].as_dictionary()
+                    key = "_hspy_AxesManager_" + key
+                elif type(item_["_dtb_value_"]) in (list, tuple):
+                    signals = []
+                    container =  item_["_dtb_value_"]
+                    # Support storing signals in containers
+                    for i, item in enumerate(container):
+                        if isinstance(item, BaseSignal):
+                            signals.append(i)
+                    if signals:
+                        to_tuple = False
+                        if type(container) is tuple:
+                            container = list(container)
+                            to_tuple = True
+                        for i in signals:
+                            container[i] = {"_sig_" :container[i]._to_dictionary()}
+                        if to_tuple:
+                            container = tuple(container)
+                    item = container
                 else:
                     item = item_["_dtb_value_"]
                 par_dict.update({key: item})

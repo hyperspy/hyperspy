@@ -27,6 +27,7 @@ import dask
 from dask.diagnostics import ProgressBar
 from itertools import product
 from packaging.version import Version
+from rsciio.utils.tools import get_file_handle
 
 from hyperspy.signal import BaseSignal
 from hyperspy.defaults_parser import preferences
@@ -316,30 +317,10 @@ class LazySignal(BaseSignal):
 
         """
         try:
-            self._get_file_handle().close()
+            get_file_handle(self.data).close()
         except AttributeError:
             _logger.warning("Failed to close lazy signal file")
 
-    def _get_file_handle(self, warn=True):
-        """Return file handle when possible; currently only hdf5 file are
-        supported.
-        """
-        arrkey = None
-        for key in self.data.dask.keys():
-            # The if statement with both "array-original" and "original-array"
-            # is due to dask changing the name of this key. After dask-2022.1.1
-            # the key is "original-array", before it is "array-original"
-            if ("array-original" in key) or ("original-array" in key):
-                arrkey = key
-                break
-        if arrkey:
-            try:
-                return self.data.dask[arrkey].file
-            except (AttributeError, ValueError):
-                if warn:
-                    _logger.warning("Failed to retrieve file handle, either "
-                                    "the file is already closed or it is not "
-                                    "an hdf5 file.")
 
     def _clear_cache_dask_data(self, obj=None):
         self._cache_dask_chunk = None

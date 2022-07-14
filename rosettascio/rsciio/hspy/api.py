@@ -26,6 +26,7 @@ import h5py
 from rsciio._hierarchical import (
     HierarchicalWriter, HierarchicalReader, version
     )
+from rsciio.utils.tools import get_file_handle
 
 
 _logger = logging.getLogger(__name__)
@@ -111,7 +112,7 @@ class HyperspyWriter(HierarchicalWriter):
         self.Dataset = h5py.Dataset
         self.Group = h5py.Group
         self.unicode_kwds = {"dtype": h5py.special_dtype(vlen=str)}
-        self.ragged_kwds = {"dtype": h5py.special_dtype(vlen=signal.data[0].dtype)}
+        self.ragged_kwds = {"dtype": h5py.special_dtype(vlen=signal["data"][0].dtype)}
 
 
     @staticmethod
@@ -193,14 +194,14 @@ def file_writer(filename, signal, close_file=True, **kwds):
         # Use shuffle by default to improve compression
         kwds["shuffle"] = True
 
-    folder = signal.tmp_parameters.get_item('original_folder', '')
-    fname = signal.tmp_parameters.get_item('original_filename', '')
-    ext = signal.tmp_parameters.get_item('original_extension', '')
+    folder = signal["tmp_parameters"].get('original_folder', '')
+    fname = signal["tmp_parameters"].get('original_filename', '')
+    ext = signal["tmp_parameters"].get('original_extension', '')
     original_path = Path(folder, f"{fname}.{ext}")
 
     f = None
-    if (signal._lazy and Path(filename).absolute() == original_path):
-        f = signal._get_file_handle(warn=False)
+    if (signal['attributes']['_lazy'] and Path(filename).absolute() == original_path):
+        f = get_file_handle(signal["data"], warn=False)
         if f is not None and f.mode == 'r':
             # when the file is read only, force to reopen it in writing mode
             raise OSError("File opened in read only mode. To overwrite file "
@@ -222,28 +223,29 @@ def file_writer(filename, signal, close_file=True, **kwds):
     f.attrs['file_format'] = "HyperSpy"
     f.attrs['file_format_version'] = version
     exps = f.require_group('Experiments')
-    group_name = signal.metadata.General.title if \
-        signal.metadata.General.title else '__unnamed__'
-    # / is a invalid character, see #942
+    title = signal["metadata"]["General"]["title"]
+    group_name =  title if title else '__unnamed__'
+    # / is a invalid character, see https://github.com/hyperspy/hyperspy/issues/942
     if "/" in group_name:
         group_name = group_name.replace("/", "-")
     expg = exps.require_group(group_name)
 
     # Add record_by metadata for backward compatibility
-    smd = signal.metadata.Signal
-    if signal.axes_manager.signal_dimension == 1:
-        smd.record_by = "spectrum"
-    elif signal.axes_manager.signal_dimension == 2:
-        smd.record_by = "image"
+    signal_dimension = len([axis for axis in signal["axes"] if not axis["navigate"]])
+    smd = signal["metadata"]["Signal"]
+    if signal_dimension == 1:
+        smd["record_by"] = "spectrum"
+    elif signal_dimension == 2:
+        smd["record_by"] = "image"
     else:
-        smd.record_by = ""
+        smd["record_by"] = ""
     try:
         writer = HyperspyWriter(f, signal, expg, **kwds)
         writer.write()
     except BaseException:
         raise
     finally:
-        del smd.record_by
+        del smd["record_by"]
 
     if close_file:
         f.close()

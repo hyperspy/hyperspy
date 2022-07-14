@@ -39,6 +39,7 @@ from hyperspy.misc.test_utils import sanitize_dict as san_dict
 from hyperspy.roi import Point2DROI
 from hyperspy.utils import markers
 from rsciio._hierarchical import get_signal_chunks
+from rsciio.utils.tools import get_file_handle
 
 
 my_path = Path(__file__).parent
@@ -880,19 +881,19 @@ def test_saving_close_file(tmp_path):
     s.save(fname, close_file=True)
 
     s2 = load(fname, lazy=True, mode='a')
-    assert s2._get_file_handle() is not None
+    assert get_file_handle(s2.data) is not None
     s2.save(fname, close_file=True, overwrite=True)
-    assert s2._get_file_handle() is None
+    assert get_file_handle(s2.data) is None
 
     s3 = load(fname, lazy=True, mode='a')
-    assert s3._get_file_handle() is not None
+    assert get_file_handle(s3.data) is not None
     s3.save(fname, close_file=False, overwrite=True)
-    assert s3._get_file_handle() is not None
+    assert get_file_handle(s3.data) is not None
     s3.close_file()
-    assert s3._get_file_handle() is None
+    assert get_file_handle(s3.data) is None
 
     s4 = load(fname, lazy=True)
-    assert s4._get_file_handle() is not None
+    assert get_file_handle(s4.data) is not None
     with pytest.raises(OSError):
         s4.save(fname, overwrite=True)
 

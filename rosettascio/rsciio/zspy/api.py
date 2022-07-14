@@ -155,21 +155,22 @@ def file_writer(filename, signal, close_file=True, **kwds):
     f.attrs['file_format'] = "ZSpy"
     f.attrs['file_format_version'] = version
     exps = f.require_group('Experiments')
-    group_name = signal.metadata.General.title if \
-        signal.metadata.General.title else '__unnamed__'
-    # / is a invalid character, see #942
+    title = signal["metadata"]["General"]["title"]
+    group_name =  title if title else '__unnamed__'
+    # / is a invalid character, see https://github.com/hyperspy/hyperspy/issues/942
     if "/" in group_name:
         group_name = group_name.replace("/", "-")
     expg = exps.require_group(group_name)
 
     # Add record_by metadata for backward compatibility
-    smd = signal.metadata.Signal
-    if signal.axes_manager.signal_dimension == 1:
-        smd.record_by = "spectrum"
-    elif signal.axes_manager.signal_dimension == 2:
-        smd.record_by = "image"
+    signal_dimension = len([axis for axis in signal["axes"] if not axis["navigate"]])
+    smd = signal["metadata"]["Signal"]
+    if signal_dimension == 1:
+        smd["record_by"] = "spectrum"
+    elif signal_dimension == 2:
+        smd["record_by"] = "image"
     else:
-        smd.record_by = ""
+        smd["record_by"] = ""
 
     try:
         writer = ZspyWriter(f, signal, expg, **kwds)
@@ -177,7 +178,7 @@ def file_writer(filename, signal, close_file=True, **kwds):
     except BaseException:
         raise
     finally:
-        del smd.record_by
+        del smd["record_by"]
 
     if isinstance(store, (zarr.ZipStore, zarr.DBMStore, zarr.LMDBStore)):
         if close_file:

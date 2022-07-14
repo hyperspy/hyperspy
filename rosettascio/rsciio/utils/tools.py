@@ -269,3 +269,24 @@ def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
         string = string.decode(encoding2, errors="ignore")
     return string
 
+
+def get_file_handle(data, warn=True):
+    """Return file handle of a dask array when possible; currently only hdf5 file are
+    supported.
+    """
+    arrkey = None
+    for key in data.dask.keys():
+        # The if statement with both "array-original" and "original-array"
+        # is due to dask changing the name of this key. After dask-2022.1.1
+        # the key is "original-array", before it is "array-original"
+        if ("array-original" in key) or ("original-array" in key):
+            arrkey = key
+            break
+    if arrkey:
+        try:
+            return data.dask[arrkey].file
+        except (AttributeError, ValueError):
+            if warn:
+                _logger.warning("Failed to retrieve file handle, either "
+                                "the file is already closed or it is not "
+                                "an hdf5 file.")

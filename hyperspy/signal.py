@@ -91,6 +91,58 @@ try:
 except ImportError:
     CUPY_INSTALLED = False
 
+def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers):
+    for key in dic:
+        if type(dic[key])==type({}):
+            _dic_get_hs_obj_paths(
+                dic[key],
+                axes_managers=axes_managers,
+                signals=signals,
+                containers=containers)
+        elif key.startswith('_sig_'):
+            signals.append((key, dic))
+        elif key.startswith('_hspy_AxesManager_'):
+            axes_managers.append((key, dic))
+        elif type(dic[key]) in (list, tuple):
+            signals = []
+            container =  dic[key]
+            # Support storing signals in containers
+            for i, item in enumerate(container):
+                if isinstance(item, dict) and "_sig_" in item:
+                    signals.append(i)
+            if signals:
+                containers.append(((dic, key), signals))
+
+def _obj_in_dict2hspy(dic, lazy):
+    """Recursively walk nested dicts substituting dicts with their hyperspy object where relevant
+
+    Parameters
+    ----------
+    d: dictionary
+        The nested dictionary
+    lazy: bool
+
+    """
+    from hyperspy.io import dict2signal
+    axes_managers, signals, containers = [], [], []
+    _dic_get_hs_obj_paths(dic, axes_managers=axes_managers, signals=signals, containers=containers)
+    for key, dic in axes_managers:
+        dic[key[len('_hspy_AxesManager_'):]] = AxesManager(dic[key])
+        del dic[key]
+    for key, dic in signals:
+        dic[key[len('_sig_'):]] = dict2signal(dic[key], lazy=lazy)
+        del dic[key]
+    for dickey, signals_idx in containers:
+        dic, key = dickey
+        container = dic[key]
+        to_tuple = False
+        if type(container) is tuple:
+            container = list(container)
+            to_tuple = True
+        for idx in signals_idx:
+            container[idx] = dict2signal(container[idx]["_sig_"], lazy=lazy)
+        if to_tuple:
+            dic[key] = tuple(container)
 
 class ModelManager(object):
 
@@ -2571,6 +2623,9 @@ class BaseSignal(FancySlicing,
             self.models._add_dictionary(file_data_dict['models'])
         if 'metadata' not in file_data_dict:
             file_data_dict['metadata'] = {}
+        else:
+            # Get all hspy object back from their dictionary representation
+            _obj_in_dict2hspy(file_data_dict["metadata"], lazy=self._lazy)
         if 'original_metadata' not in file_data_dict:
             file_data_dict['original_metadata'] = {}
 
