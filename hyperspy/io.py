@@ -41,6 +41,7 @@ from hyperspy.ui_registry import get_gui
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
+from hyperspy.axes import AxesManager
 
 
 _logger = logging.getLogger(__name__)
@@ -728,6 +729,23 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
         return signal_class
 
 
+def dict2hspy(dic, lazy):
+    """Recursively walk nested dicts converting dict to HyperSpy objects
+
+    Parameters
+    ----------
+    d: dictionary
+
+    """
+    for key in dic:
+        if type(dic[key])==type({}):
+            dict2hspy(dic[key], lazy=lazy)
+        elif key.startswith('_sig_'):
+            dic[key[len('_sig_'):]] = dict2signal(dic[key], lazy=lazy)
+        elif key.startswith('_hspy_AxesManager_'):
+            dic[key[len('_hspy_AxesManager_'):]] = AxesManager(dic[key])
+
+
 def dict2signal(signal_dict, lazy=False):
     """Create a signal (or subclass) instance defined by a dictionary.
 
@@ -754,6 +772,7 @@ def dict2signal(signal_dict, lazy=False):
     signal_dimension = -1  # undefined
     signal_type = ""
     if "metadata" in signal_dict:
+
         mp = signal_dict["metadata"]
         if "Signal" in mp and "record_by" in mp["Signal"]:
             record_by = mp["Signal"]['record_by']
@@ -766,6 +785,8 @@ def dict2signal(signal_dict, lazy=False):
             signal_type = mp["Signal"]['signal_type']
     if "attributes" in signal_dict and "_lazy" in signal_dict["attributes"]:
         lazy = signal_dict["attributes"]["_lazy"]
+    # Convert dics to hyperspy objects in metadata
+    dict2hspy(mp, lazy=lazy)
     # "Estimate" signal_dimension from axes. It takes precedence over record_by
     if ("axes" in signal_dict and
         len(signal_dict["axes"]) == len(

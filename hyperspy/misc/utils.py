@@ -821,6 +821,20 @@ def strlist2enumeration(lst):
         return "%s, " * (len(lst) - 2) % lst[:-2] + "%s and %s" % lst[-2:]
 
 
+
+def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
+    if not isinstance(stuff, (bytes, np.string_)):
+        return stuff
+    else:
+        string = stuff
+    try:
+        string = string.decode(encoding)
+    except BaseException:
+        string = string.decode(encoding2, errors="ignore")
+    return string
+
+
+
 def check_long_string(value, max_len):
     "Checks whether string is too long for printing in html metadata"
     if not isinstance(value, (str, np.string_)):

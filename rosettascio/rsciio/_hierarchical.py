@@ -9,7 +9,6 @@ import h5py
 import numpy as np
 from traits.api import Undefined
 
-from hyperspy.axes import AxesManager
 from rsciio.utils.tools import ensure_unicode, get_object_package_info
 
 
@@ -479,10 +478,9 @@ class HierarchicalReader:
         if not isinstance(group, self.Dataset):
             for key in group.keys():
                 if key.startswith('_sig_'):
-                    from hyperspy.io import dict2signal
-                    dictionary[key[len('_sig_'):]] = (
-                        dict2signal(self.group2signaldict(
-                            group[key], lazy=lazy)))
+                    dictionary[key] = (
+                        self.group2signaldict(
+                            group[key]))
                 elif isinstance(group[key], self.Dataset):
                     dat = group[key]
                     kn = key
@@ -514,11 +512,9 @@ class HierarchicalReader:
                         ans = np.array(dat)
                     dictionary[kn] = ans
                 elif key.startswith('_hspy_AxesManager_'):
-                    dictionary[key[len('_hspy_AxesManager_'):]] = AxesManager(
-                        [i for k, i in sorted(iter(
-                            self._group2dict(
-                                group[key], lazy=lazy).items()
-                        ))])
+                    dictionary[key[len('_hspy_AxesManager_'):]] = [
+                            i for k, i in sorted(
+                                iter(self._group2dict(group[key], lazy=lazy).items()))]
                 elif key.startswith('_list_'):
                     dictionary[key[7 + key[6:].find('_'):]] = \
                         [i for k, i in sorted(iter(
