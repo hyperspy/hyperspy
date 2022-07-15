@@ -93,13 +93,7 @@ except ImportError:
 
 def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers):
     for key in dic:
-        if type(dic[key])==type({}):
-            _dic_get_hs_obj_paths(
-                dic[key],
-                axes_managers=axes_managers,
-                signals=signals,
-                containers=containers)
-        elif key.startswith('_sig_'):
+        if key.startswith('_sig_'):
             signals.append((key, dic))
         elif key.startswith('_hspy_AxesManager_'):
             axes_managers.append((key, dic))
@@ -112,6 +106,12 @@ def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers):
                     signals.append(i)
             if signals:
                 containers.append(((dic, key), signals))
+        elif type(dic[key])==type({}):
+            _dic_get_hs_obj_paths(
+                dic[key],
+                axes_managers=axes_managers,
+                signals=signals,
+                containers=containers)
 
 def _obj_in_dict2hspy(dic, lazy):
     """Recursively walk nested dicts substituting dicts with their hyperspy object where relevant
