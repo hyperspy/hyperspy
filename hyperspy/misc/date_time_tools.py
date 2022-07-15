@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 import datetime
@@ -52,11 +52,11 @@ def get_date_time_from_metadata(metadata, formatting='ISO'):
 
         >>> s = get_date_time_from_metadata(s.metadata)
         '1991-10-01T12:00:00'
-        >>> s = get_date_time_from_metadata(s.metadata, format='ISO')
+        >>> s = get_date_time_from_metadata(s.metadata, formatting='ISO')
         '1991-10-01T12:00:00'
-        >>> s = get_date_time_from_metadata(s.metadata, format='datetime')
+        >>> s = get_date_time_from_metadata(s.metadata, formatting='datetime')
 
-        >>> s = get_date_time_from_metadata(s.metadata, format='datetime64')
+        >>> s = get_date_time_from_metadata(s.metadata, formatting='datetime64')
 
     """
     date = metadata.get_item('General.date')
@@ -89,30 +89,31 @@ def get_date_time_from_metadata(metadata, formatting='ISO'):
 
 
 def update_date_time_in_metadata(dt, metadata):
-    """ Update the date and time in a metadata tree.
+    """
+    Update the date and time in a metadata tree.
 
-        Parameters
-        ----------
-            dt : date and time information: it can be a ISO 8601 string,
-                a datetime.datetime or a numpy.datetime64 object
-            metadata : metadata object to update
+    Parameters
+    ----------
+        dt : date and time information: it can be a ISO 8601 string,
+            a datetime.datetime or a numpy.datetime64 object
+        metadata : metadata object to update
 
-        Return
-        ----------
-            metadata object
+    Return
+    ------
+        metadata object
 
-        Example
-        -------
-        >>> s = hs.load("example1.msa")
-        >>> dt = '2016-12-12T12:12:12-05:00'
-        >>> s.metadata = update_date_time_in_metadata(dt, s.metadata)
-        >>> s.metadata
-            ├── General
-            │   ├── date = 2016-12-12
-            │   ├── original_filename = example1.msa
-            │   ├── time = 12:12:12
-            │   ├── time_zone = 'EST'
-            │   └── title = NIO EELS OK SHELL
+    Example
+    -------
+    >>> s = hs.load("example1.msa")
+    >>> dt = '2016-12-12T12:12:12-05:00'
+    >>> s.metadata = update_date_time_in_metadata(dt, s.metadata)
+    >>> s.metadata
+        ├── General
+        │   ├── date = 2016-12-12
+        │   ├── original_filename = example1.msa
+        │   ├── time = 12:12:12
+        │   ├── time_zone = 'EST'
+        │   └── title = NIO EELS OK SHELL
     """
     time_zone = None
     if isinstance(dt, str):
@@ -152,7 +153,10 @@ def ISO_format_to_serial_date(date, time, timezone='UTC'):
     """ Convert ISO format to a serial date. """
     if timezone is None or timezone == 'Coordinated Universal Time':
         timezone = 'UTC'
-    dt = parser.parse('%sT%s' % (date, time)).replace(tzinfo=tz.gettz(timezone))
+    dt = parser.parse(
+        '%sT%s' %
+        (date, time)).replace(
+        tzinfo=tz.gettz(timezone))
     return datetime_to_serial_date(dt)
 
 

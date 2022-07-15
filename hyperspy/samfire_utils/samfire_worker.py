@@ -1,4 +1,5 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -13,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
 import os
@@ -62,7 +63,7 @@ class Worker:
                 par.map = par.map.copy()
 
         if self.model.signal.metadata.has_item(
-            'Signal.Noise_properties.variance'):
+                'Signal.Noise_properties.variance'):
             var = self.model.signal.metadata.Signal.Noise_properties.variance
             if isinstance(var, BaseSignal):
                 var.data = var.data.copy()
@@ -115,7 +116,7 @@ class Worker:
                     try:
                         getattr(self.model[comp_name],
                                 parameter_name).value = value
-                    except:
+                    except BaseException:
                         e = sys.exc_info()[0]
                         to_send = ('Error',
                                    (self.identity,
@@ -165,10 +166,17 @@ class Worker:
         self.value_dict = value_dict
 
         self.fitting_kwargs = self.value_dict.pop('fitting_kwargs', {})
+        if 'min_function' in self.fitting_kwargs:
+            self.fitting_kwargs['min_function'] = dill.loads(
+                self.fitting_kwargs['min_function'])
+        if 'min_function_grad' in self.fitting_kwargs and isinstance(
+                self.fitting_kwargs['min_function_grad'], bytes):
+            self.fitting_kwargs['min_function_grad'] = dill.loads(
+                self.fitting_kwargs['min_function_grad'])
         self.model.signal.data[:] = self.value_dict.pop('signal.data')
 
         if self.model.signal.metadata.has_item(
-            'Signal.Noise_properties.variance'):
+                'Signal.Noise_properties.variance'):
             var = self.model.signal.metadata.Signal.Noise_properties.variance
             if isinstance(var, BaseSignal):
                 var.data[:] = self.value_dict.pop('variance.data')
@@ -196,8 +204,8 @@ class Worker:
         new_AICc = AICc(self.model)
 
         AICc_test = new_AICc < (self._AICc_fraction * self.best_AICc)
-        AICc_absolute_test = np.abs(new_AICc - self.best_AICc) <= \
-            np.abs(self._AICc_fraction * self.best_AICc)
+        AICc_absolute_test = abs(new_AICc - self.best_AICc) <= \
+            abs(self._AICc_fraction * self.best_AICc)
         dof_test = len(self.model.p0) < self.best_dof
 
         if AICc_test or AICc_absolute_test and dof_test:
@@ -216,7 +224,7 @@ class Worker:
         if len(self.best_values):  # i.e. we have a good result
             _logger.debug('we have a good result in worker '
                           '{}'.format(self.identity))
-            result = {k+'.data': np.array(v) for k, v in
+            result = {k + '.data': np.array(v) for k, v in
                       self.parameters.items()}
             result['components'] = self.best_values
             found_solution = True

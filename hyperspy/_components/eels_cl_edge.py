@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import math
@@ -23,16 +23,18 @@ import logging
 import numpy as np
 from scipy.interpolate import splev
 
-from hyperspy.defaults_parser import preferences
+
 from hyperspy.component import Component
 from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
 from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
 from hyperspy.misc.eels.effective_angle import effective_angle
+from hyperspy.ui_registry import add_gui_method
 
 
 _logger = logging.getLogger(__name__)
 
 
+@add_gui_method(toolkey="hyperspy.EELSCLEdge_Component")
 class EELSCLEdge(Component):
 
     """EELS core loss ionisation edge from hydrogenic or tabulated
@@ -45,8 +47,8 @@ class EELSCLEdge(Component):
     software. If Digital Micrograph is installed in the system HyperSpy in the
     standard location HyperSpy should find the path to the HS GOS folder.
     Otherwise, the location of the folder can be defined in HyperSpy
-    preferences, which can be done through hs.preferences.gui() or the
-    hs.preferences.EELS.eels_gos_files_path variable.
+    preferences, which can be done through ``hs.preferences.gui()`` or the
+    ``hs.preferences.EELS.eels_gos_files_path`` variable.
 
     Parameters
     ----------
@@ -54,7 +56,6 @@ class EELSCLEdge(Component):
         Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
         subshell. If a dictionary is passed, it is assumed that Hartree Slater
         GOS was exported using `GOS.as_dictionary`, and will be reconstructed.
-
     GOS : {'hydrogenic', 'Hartree-Slater', None}
         The GOS to use. If None it will use the Hartree-Slater GOS if
         they are available, otherwise it will use the hydrogenic GOS.
@@ -79,24 +80,22 @@ class EELSCLEdge(Component):
     fine_structure_smoothing : float between 0 and 1
         Controls the level of smoothing of the fine structure model.
         Decreasing the value increases the level of smoothing.
-
     fine_structure_active : bool
-        Activates/deactivates the fine structure feature. Its
-        default value can be choosen in the preferences.
+        Activates/deactivates the fine structure feature.
 
     """
-    _fine_structure_smoothing = \
-        preferences.EELS.fine_structure_smoothing
+    _fine_structure_smoothing = 0.3
 
     def __init__(self, element_subshell, GOS=None):
         # Declare the parameters
         self.int_fine_structure = True
         self.ext_fine_structure = []
-        Component.__init__(self,
-                           ['intensity',
-                            'fine_structure_coeff',
-                            'effective_angle',
-                            'onset_energy'])
+        Component.__init__(
+            self,
+            ['intensity', 'fine_structure_coeff', 'effective_angle',
+             'onset_energy'],
+            linear_parameter_list=['intensity']
+            )
         if isinstance(element_subshell, dict):
             self.element = element_subshell['element']
             self.subshell = element_subshell['subshell']
@@ -105,8 +104,8 @@ class EELSCLEdge(Component):
         self.name = "_".join([self.element, self.subshell])
         self.energy_scale = None
         self.effective_angle.free = False
-        self.fine_structure_active = preferences.EELS.fine_structure_active
-        self.fine_structure_width = preferences.EELS.fine_structure_width
+        self.fine_structure_active = False
+        self.fine_structure_width = 30.
         self.fine_structure_coeff.ext_force_positive = False
         self.GOS = None
         # Set initial actions
@@ -221,7 +220,7 @@ class EELSCLEdge(Component):
                 self.GOS.onset_energy,
                 self.convergence_angle,
                 self.collection_angle)
-        except:
+        except BaseException:
             # All the parameters may not be defined yet...
             pass
 
@@ -413,48 +412,3 @@ class EELSCLEdge(Component):
             '_', ' ') + ' fine structure'
 
         return s
-
-    def notebook_interaction(self, display=True):
-
-        from ipywidgets import (Checkbox, FloatSlider, VBox)
-        from traitlets import TraitError as TraitletError
-        from IPython.display import display as ip_display
-
-        try:
-            active = Checkbox(description='active', value=self.active)
-
-            def on_active_change(change):
-                self.active = change['new']
-            active.observe(on_active_change, names='value')
-
-            fine_structure = Checkbox(description='Fine structure',
-                                      value=self.fine_structure_active)
-
-            def on_fine_structure_active_change(change):
-                self.fine_structure_active = change['new']
-            fine_structure.observe(on_fine_structure_active_change,
-                                   names='value')
-
-            fs_smoothing = FloatSlider(description='Fine structure smoothing',
-                                       min=0, max=1, step=0.001,
-                                       value=self.fine_structure_smoothing)
-
-            def on_fs_smoothing_change(change):
-                self.fine_structure_smoothing = change['new']
-            fs_smoothing.observe(on_fs_smoothing_change, names='value')
-
-            container = VBox([active, fine_structure, fs_smoothing])
-            for parameter in [self.intensity, self.effective_angle,
-                              self.onset_energy]:
-                container.children += parameter.notebook_interaction(False),
-
-            if not display:
-                return container
-            ip_display(container)
-        except TraitletError:
-            if display:
-                print('This function is only avialable when running in a'
-                      ' notebook')
-            else:
-                raise
-    notebook_interaction.__doc__ = Component.notebook_interaction.__doc__

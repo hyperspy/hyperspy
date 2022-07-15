@@ -1,0 +1,22 @@
+;File created by HyperSpy version 1.1.2+dev
+key	value
+byte-order	dont-care
+data-length	4
+data-type	float
+date	2016-08-06
+depth	1
+height	2
+height-name	1
+height-origin	0.5
+height-scale	100.0
+height-units	eV
+offset	0
+record-by	dont-care
+signal	
+time	10:55:00
+title	Test title
+width	3
+width-name	2
+width-origin	1.0
+width-scale	200.0
+width-units	eV

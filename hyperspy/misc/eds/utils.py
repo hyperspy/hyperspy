@@ -1,13 +1,39 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2022 The HyperSpy developers
+#
+# This file is part of HyperSpy.
+#
+# HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 import math
 from scipy import constants
-
+from hyperspy.misc.utils import stack
 from hyperspy.misc.elements import elements as elements_db
 from functools import reduce
 
+
 eV2keV = 1000.
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
+
+
+_ABSORPTION_CORRECTION_DOCSTRING = \
+"""absorption_correction : numpy.ndarray or None
+        If None (default), absorption correction is ignored, otherwise, the
+        array must contain values between 0 and 1 to correct the intensities
+        based on estimated absorption.
+"""
 
 
 def _get_element_and_line(xray_line):
@@ -19,7 +45,7 @@ def _get_element_and_line(xray_line):
     """
     lim = xray_line.find('_')
     if lim == -1:
-        raise ValueError("Invalid xray-line: %" % xray_line)
+        raise ValueError(f"Invalid xray-line: {xray_line}")
     return xray_line[:lim], xray_line[lim + 1:]
 
 
@@ -95,7 +121,7 @@ def get_xray_lines_near_energy(energy, width=0.2, only_lines=None):
             if E_min <= line_energy <= E_max:
                 # Store line in Element_Line format, and energy difference
                 valid_lines.append((element + "_" + line,
-                                    np.abs(line_energy - energy)))
+                                    abs(line_energy - energy)))
     # Sort by energy difference, but return only the line names
     return [line for line, _ in sorted(valid_lines, key=lambda x: x[1])]
 
@@ -236,9 +262,7 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
             np.power(beam_energy, 1.67) * math.cos(math.radians(tilt)))
 
 
-def take_off_angle(tilt_stage,
-                   azimuth_angle,
-                   elevation_angle):
+def take_off_angle(tilt_stage, azimuth_angle, elevation_angle, beta_tilt=0.0):
     """Calculate the take-off-angle (TOA).
 
     TOA is the angle with which the X-rays leave the surface towards
@@ -246,14 +270,17 @@ def take_off_angle(tilt_stage,
 
     Parameters
     ----------
-    tilt_stage: float
-        The tilt of the stage in degrees. The sample is facing the detector
+    alpha_tilt: float
+        The alpha-tilt of the stage in degrees. The sample is facing the detector
         when positively tilted.
     azimuth_angle: float
-        The azimuth of the detector in degrees. 0 is perpendicular to the tilt
-        axis.
+        The azimuth of the detector in degrees. 0 is perpendicular to the alpha
+        tilt axis.
     elevation_angle: float
         The elevation of the detector in degrees.
+    beta_tilt: float
+        The beta-tilt of the stage in degrees. The sample is facing positive 90
+        in the azimuthal direction when positively tilted.
 
     Returns
     -------
@@ -262,23 +289,41 @@ def take_off_angle(tilt_stage,
 
     Examples
     --------
-    >>> hs.eds.take_off_angle(tilt_stage=10.,
+    >>> hs.eds.take_off_angle(alpha_tilt=10., beta_tilt=0.
     >>>                          azimuth_angle=45., elevation_angle=22.)
     28.865971201155283
-
-    Notes
-    -----
-    Defined by M. Schaffer et al., Ultramicroscopy 107(8), pp 587-597 (2007)
-
     """
 
-    a = math.radians(90 + tilt_stage)
-    b = math.radians(azimuth_angle)
-    c = math.radians(elevation_angle)
+    if tilt_stage is None:
+        raise ValueError(
+            "Unable to calculate take-off angle. The metadata property "
+            "`Stage.tilt_alpha` is not set."
+        )
 
-    return math.degrees(np.arcsin(-math.cos(a) * math.cos(b) * math.cos(c) +
-                                  math.sin(a) * math.sin(c)))
+    if azimuth_angle is None:
+        raise ValueError(
+            "Unable to calculate take-off angle. The metadata property "
+            "`Detector.EDS.azimuth_angle` is not set."
+        )
 
+    if elevation_angle is None:
+        raise ValueError(
+            "Unable to calculate take-off angle. The metadata property "
+            "`Detector.EDS.elevation_angle` is not set."
+        )
+
+    alpha = math.radians(tilt_stage)
+    beta = -math.radians(beta_tilt)
+    phi = math.radians(azimuth_angle)
+    theta = -math.radians(elevation_angle)
+
+    return 90 - math.degrees(
+        np.arccos(
+            math.sin(alpha) * math.cos(beta) * math.cos(phi) * math.cos(theta)
+            - math.sin(beta) * math.sin(phi) * math.cos(theta)
+            - math.cos(alpha) * math.cos(beta) * math.sin(theta)
+        )
+    )
 
 def xray_lines_model(elements,
                      beam_energy=200,
@@ -308,7 +353,7 @@ def xray_lines_model(elements,
 
     Example
     -------
-    >>> s = utils_eds.simulate_model(['Cu', 'Fe'], beam_energy=30)
+    >>> s = xray_lines_model(['Cu', 'Fe'], beam_energy=30)
     >>> s.plot()
     """
     from hyperspy._signals.eds_tem import EDSTEMSpectrum
@@ -342,8 +387,8 @@ def xray_lines_model(elements,
                         weight_percent / 100 * ratio_line
                     m.append(g)
     else:
-        raise ValueError("The number of elements specified is not the same \
-                         as the number of weight_percents")
+        raise ValueError("The number of elements specified is not the same "
+                         "as the number of weight_percents")
 
     s.data = m.as_signal().data
     return s
@@ -351,6 +396,7 @@ def xray_lines_model(elements,
 
 def quantification_cliff_lorimer(intensities,
                                  kfactors,
+                                 absorption_correction=None,
                                  mask=None):
     """
     Quantification using Cliff-Lorimer
@@ -363,7 +409,8 @@ def quantification_cliff_lorimer(intensities,
     kfactors: list of float
         The list of kfactor in same order as intensities eg. kfactors =
         [1, 1.47, 1.72] for ['Al_Ka','Cr_Ka', 'Ni_Ka']
-    mask: array of bool
+    %s
+    mask: array of bool, signal of bool or None
         The mask with the dimension of intensities[0]. If a pixel is True,
         the composition is set to zero.
 
@@ -375,44 +422,46 @@ def quantification_cliff_lorimer(intensities,
     # Value used as an threshold to prevent using zeros as denominator
     min_intensity = 0.1
     dim = intensities.shape
-    if len(dim) > 1:
-        dim2 = reduce(lambda x, y: x * y, dim[1:])
-        intens = intensities.reshape(dim[0], dim2)
-        intens = intens.astype('float')
-        for i in range(dim2):
-            index = np.where(intens[:, i] > min_intensity)[0]
-            if len(index) > 1:
-                ref_index, ref_index2 = index[:2]
-                intens[:, i] = _quantification_cliff_lorimer(
-                    intens[:, i], kfactors, ref_index, ref_index2)
-            else:
-                intens[:, i] = np.zeros_like(intens[:, i])
-                if len(index) == 1:
-                    intens[index[0], i] = 1.
-        intens = intens.reshape(dim)
-        if mask is not None:
-            for i in range(dim[0]):
-                intens[i][mask] = 0
-        return intens
+    dim2 = reduce(lambda x, y: x * y, dim[1:])
+    intens = intensities.reshape(dim[0], dim2).astype(float)
+
+    if absorption_correction is None:
+        # default to ones
+        absorption_correction = np.ones_like(intens, dtype=float)
     else:
-        # intens = intensities.copy()
-        # intens = intens.astype('float')
-        index = np.where(intensities > min_intensity)[0]
+        absorption_correction = absorption_correction.reshape(dim[0], dim2)
+
+    for i in range(dim2):
+        index = np.where(intens[:, i] > min_intensity)[0]
         if len(index) > 1:
             ref_index, ref_index2 = index[:2]
-            intens = _quantification_cliff_lorimer(
-                intensities, kfactors, ref_index, ref_index2)
+            intens[:, i] = _quantification_cliff_lorimer(
+                intens[:, i], kfactors, absorption_correction[:, i],
+                ref_index, ref_index2)
         else:
-            intens = np.zeros_like(intensities)
+            intens[:, i] = np.zeros_like(intens[:, i])
             if len(index) == 1:
-                intens[index[0]] = 1.
-        return intens
+                intens[index[0], i] = 1.
+                
+    intens = intens.reshape(dim)
+    if mask is not None:
+        from hyperspy.signals import BaseSignal
+        if isinstance(mask, BaseSignal):
+            mask = mask.data
+        for i in range(dim[0]):
+            intens[i][(mask==True)] = 0
+
+    return intens
+
+quantification_cliff_lorimer.__doc__ %= (_ABSORPTION_CORRECTION_DOCSTRING)
 
 
 def _quantification_cliff_lorimer(intensities,
                                   kfactors,
+                                  absorption_correction,
                                   ref_index=0,
-                                  ref_index2=1):
+                                  ref_index2=1
+                                  ):
     """
     Quantification using Cliff-Lorimer
 
@@ -421,6 +470,9 @@ def _quantification_cliff_lorimer(intensities,
     intensities: numpy.array
         the intensities for each X-ray lines. The first axis should be the
         elements axis.
+    absorption_correction: numpy.ndarray
+        value between 0 and 1 in order to correct the intensities based on
+        estimated absorption.
     kfactors: list of float
         The list of kfactor in same order as  intensities eg. kfactors =
         [1, 1.47, 1.72] for ['Al_Ka','Cr_Ka', 'Ni_Ka']
@@ -436,16 +488,18 @@ def _quantification_cliff_lorimer(intensities,
     if len(intensities) != len(kfactors):
         raise ValueError('The number of kfactors must match the size of the '
                          'first axis of intensities.')
+
     ab = np.zeros_like(intensities, dtype='float')
     composition = np.ones_like(intensities, dtype='float')
     # ab = Ia/Ib / kab
-
     other_index = list(range(len(kfactors)))
     other_index.pop(ref_index)
     for i in other_index:
-        ab[i] = intensities[ref_index] * kfactors[ref_index]  \
-            / intensities[i] / kfactors[i]
+        ab[i] = (intensities[ref_index] * absorption_correction[ref_index]) \
+            / (intensities[i] * absorption_correction[i]) \
+            *( kfactors[ref_index] / kfactors[i])
     # Ca = ab /(1 + ab + ab/ac + ab/ad + ...)
+    ab = ab
     for i in other_index:
         if i == ref_index2:
             composition[ref_index] += ab[ref_index2]
@@ -460,7 +514,8 @@ def _quantification_cliff_lorimer(intensities,
 
 def quantification_zeta_factor(intensities,
                                zfactors,
-                               dose):
+                               dose,
+                               absorption_correction=None):
     """
     Quantification using the zeta-factor method
 
@@ -476,33 +531,69 @@ def quantification_zeta_factor(intensities,
         The total electron dose given by i*t*N, i the current,
         t the acquisition time and
         N the number of electrons per unit electric charge (1/e).
+    %s
 
     Returns
     ------
     A numpy.array containing the weight fraction with the same
     shape as intensities and mass thickness in kg/m^2.
     """
+    if absorption_correction is None:
+        # default to ones
+        absorption_correction = np.ones_like(intensities, dtype='float')
 
     sumzi = np.zeros_like(intensities[0], dtype='float')
     composition = np.zeros_like(intensities, dtype='float')
-    for intensity, zfactor in zip(intensities, zfactors):
-        sumzi = sumzi + intensity * zfactor
-    for i, (intensity, zfactor) in enumerate(zip(intensities, zfactors)):
-        composition[i] = intensity * zfactor / sumzi
+    for intensity, zfactor, acf in zip(intensities, zfactors, absorption_correction):
+        sumzi = sumzi + (intensity * zfactor * acf)
+    for i, (intensity, zfactor, acf) in enumerate(zip(intensities, zfactors, absorption_correction)):
+        composition[i] = intensity * zfactor * acf / sumzi
     mass_thickness = sumzi / dose
     return composition, mass_thickness
+
+quantification_zeta_factor.__doc__ %= (_ABSORPTION_CORRECTION_DOCSTRING)
+
+
+
+def get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle):
+    """
+    Calculate absorption correction terms.
+
+    Parameters
+    ----------
+    weight_percent: list of signal
+        Composition in weight percent.
+    mass_thickness: signal
+        Density-thickness map in kg/m^2
+    take_off_angle: float
+        X-ray take-off angle in degrees.
+    """
+    from hyperspy.misc import material
+
+    toa_rad = np.radians(take_off_angle)
+    csc_toa = 1.0/np.sin(toa_rad)
+    # convert from cm^2/g to m^2/kg
+    mac = stack(
+        material.mass_absorption_mixture(weight_percent=weight_percent),
+        show_progressbar=False
+        ) * 0.1
+    expo = mac.data * mass_thickness.data * csc_toa
+    acf = expo/(1.0 - np.exp(-(expo)))
+    return acf
 
 
 def quantification_cross_section(intensities,
                                  cross_sections,
-                                 dose):
+                                 dose,
+                                 absorption_correction=None):
     """
     Quantification using EDX cross sections
     Calculate the atomic compostion and the number of atoms per pixel
     from the raw X-ray intensity
+
     Parameters
     ----------
-    intensity : numpy.array
+    intensity : numpy.ndarray
         The integrated intensity for each X-ray line, where the first axis
         is the element axis.
     cross_sections : list of floats
@@ -512,6 +603,7 @@ def quantification_cross_section(intensities,
         the dose per unit area given by i*t*N/A, i the current,
         t the acquisition time, and
         N the number of electron by unit electric charge.
+    %s
 
     Returns
     -------
@@ -521,17 +613,62 @@ def quantification_cross_section(intensities,
     shape as the intensity input.
     """
 
-    total_atoms = np.zeros_like(intensities[0], dtype='float')
-    composition = np.zeros_like(intensities, dtype='float')
-    number_of_atoms = np.zeros_like(intensities, dtype='float')
-    for intensity, cross_section in zip(intensities, cross_sections):
-        total_atoms = total_atoms + \
-            (intensity / (dose * cross_section * 1e-10))
-    for i, (intensity, cross_section) in enumerate(zip(intensities,
-                                                       cross_sections)):
-        number_of_atoms[i] = (intensity) / (dose * cross_section * 1e-10)
-        composition[i] = number_of_atoms[i] / total_atoms
+
+    if absorption_correction is None:
+        # default to ones
+        absorption_correction = np.ones_like(intensities, dtype=float)
+
+    shp = len(intensities.shape) - 1
+    slices = (slice(None),) + (None,) * shp
+    x_sections = np.array(cross_sections, dtype=float)[slices]
+    number_of_atoms = intensities / (x_sections * dose * 1e-10) * absorption_correction
+    total_atoms = np.cumsum(number_of_atoms, axis=0)[-1]
+    composition = number_of_atoms / total_atoms
+
     return composition, number_of_atoms
+
+quantification_cross_section.__doc__ %= (_ABSORPTION_CORRECTION_DOCSTRING)
+
+
+def get_abs_corr_cross_section(composition, number_of_atoms, take_off_angle,
+                               probe_area):
+    """
+    Calculate absorption correction terms.
+
+    Parameters
+    ----------
+    number_of_atoms: list of signal
+        Stack of maps with number of atoms per pixel.
+    take_off_angle: float
+        X-ray take-off angle in degrees.
+    """
+    from hyperspy.misc import material
+
+    toa_rad = np.radians(take_off_angle)
+    Av = constants.Avogadro
+    elements = [intensity.metadata.Sample.elements[0] for intensity in number_of_atoms]
+    atomic_weights = np.array(
+        [elements_db[element]['General_properties']['atomic_weight']
+            for element in elements])
+
+    number_of_atoms = stack(number_of_atoms, show_progressbar=False).data
+
+    #calculate the total_mass in kg/m^2, or mass thickness.
+    total_mass = np.zeros_like(number_of_atoms[0], dtype = 'float')
+    for i, (weight) in enumerate(atomic_weights):
+        total_mass += (number_of_atoms[i] * weight / Av / 1E3 / probe_area / 1E-18)
+    # determine mass absorption coefficients and convert from cm^2/g to m^2/kg.
+    to_stack = material.mass_absorption_mixture(
+        weight_percent=material.atomic_to_weight(composition)
+        )
+    mac = stack(to_stack, show_progressbar=False) * 0.1
+    acf = np.zeros_like(number_of_atoms)
+    csc_toa = 1/math.sin(toa_rad)
+    #determine an absorption coeficient per element per pixel.
+    for i, (weight) in enumerate(atomic_weights):
+        expo = (mac.data[i] * total_mass * csc_toa)
+        acf[i] = expo/(1 - np.exp(-expo))
+    return acf
 
 
 def edx_cross_section_to_zeta(cross_sections, elements):

@@ -1,26 +1,23 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.import
-# nose.tools
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import pytest
 
-import nose.tools as nt
-
-from hyperspy.misc.utils import attrsetter
-from hyperspy.misc.utils import DictionaryTreeBrowser
+from hyperspy.misc.utils import DictionaryTreeBrowser, attrsetter
 
 
 class DummyThing(object):
@@ -35,7 +32,7 @@ class DummyThing(object):
 
 class TestAttrSetter:
 
-    def setUp(self):
+    def setup_method(self, method):
         tree = DictionaryTreeBrowser(
             {
                 "Node1": {"leaf11": 11,
@@ -52,20 +49,20 @@ class TestAttrSetter:
     def test_dtb_settattr(self):
         t = self.tree
         attrsetter(t, 'Node1.leaf11', 119)
-        nt.assert_equal(t.Node1.leaf11, 119)
+        assert t.Node1.leaf11 == 119
         attrsetter(t, 'Leaf3', 39)
-        nt.assert_equal(t.Leaf3, 39)
+        assert t.Leaf3 == 39
 
-    @nt.raises(AttributeError)
     def test_wrong_item(self):
         t = self.tree
-        attrsetter(t, 'random.name.with.more.than.one', 13)
+        with pytest.raises(AttributeError):
+            attrsetter(t, 'random.name.with.more.than.one', 13)
 
     def test_dummy(self):
         d = self.dummy
         d.multiply()
         attrsetter(d, 'another.name', 'New dummy')
-        nt.assert_equal(d.another.name, 'New dummy')
+        assert d.another.name == 'New dummy'
         d.another.multiply()
         attrsetter(d, 'another.another.name', 'super New dummy')
-        nt.assert_equal(d.another.another.name, 'super New dummy')
+        assert d.another.another.name == 'super New dummy'

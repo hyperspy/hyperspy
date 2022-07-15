@@ -1,4 +1,5 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -13,17 +14,15 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import nose.tools as nt
-
-from hyperspy.samfire import (Samfire, StrategyList)
 from hyperspy.misc.utils import DictionaryTreeBrowser
+from hyperspy.samfire import StrategyList
 
 
 class TestStrategyList:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.w1 = DictionaryTreeBrowser()
         self.w2 = DictionaryTreeBrowser()
 
@@ -33,27 +32,27 @@ class TestStrategyList:
         self.sl = StrategyList(self.samf)
 
     def test_append(self):
-        nt.assert_false(self.w1.samf is self.samf)
-        nt.assert_false(self.w1 in self.sl)
+        assert not self.w1.samf is self.samf
+        assert not self.w1 in self.sl
         self.sl.append(self.w1)
-        nt.assert_true(self.w1.samf is self.samf)
-        nt.assert_true(self.w1 in self.sl)
+        assert self.w1.samf is self.samf
+        assert self.w1 in self.sl
 
     def test_extend(self):
         self.sl.extend([self.w1, self.w2])
-        nt.assert_true(self.w1 in self.sl)
-        nt.assert_true(self.w1.samf is self.samf)
-        nt.assert_true(self.w2 in self.sl)
-        nt.assert_true(self.w2.samf is self.samf)
+        assert self.w1 in self.sl
+        assert self.w1.samf is self.samf
+        assert self.w2 in self.sl
+        assert self.w2.samf is self.samf
 
     def test_remove_int(self):
         self.sl.append(self.w1)
         self.sl.remove(0)
-        nt.assert_false(self.w1.samf is self.samf)
-        nt.assert_false(self.w1 in self.sl)
+        assert not self.w1.samf is self.samf
+        assert not self.w1 in self.sl
 
     def test_remove_object(self):
         self.sl.append(self.w1)
         self.sl.remove(self.w1)
-        nt.assert_false(self.w1.samf is self.samf)
-        nt.assert_false(self.w1 in self.sl)
+        assert not self.w1.samf is self.samf
+        assert not self.w1 in self.sl

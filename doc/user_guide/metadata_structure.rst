@@ -6,11 +6,12 @@ Metadata structure
 
 The :class:`~.signal.BaseSignal` class stores metadata in the
 :attr:`~.signal.BaseSignal.metadata` attribute that has a tree structure. By
-convention, the nodes labels are capitalized and the leaves are not
+convention, the node labels are capitalized and the leaves are not
 capitalized.
 
 When a leaf contains a quantity that is not dimensionless, the units can be
 given in an extra leaf with the same label followed by the "_units" suffix.
+For example, an "energy" leaf should be accompanied by an "energy_units" leaf.
 
 The metadata structure is represented in the following tree diagram. The
 default units are given in parentheses. Details about the leaves can be found
@@ -21,6 +22,7 @@ in the following sections of this chapter.
     ├── Acquisition_instrument
     │   ├── SEM
     │   │   ├── Detector
+    │   │   │   ├── detector_type
     │   │   │   └── EDS
     │   │   │       ├── azimuth_angle (º)
     │   │   │       ├── elevation_angle (º)
@@ -29,10 +31,18 @@ in the following sections of this chapter.
     │   │   │       └── real_time (s)
     │   │   ├── beam_current (nA)
     │   │   ├── beam_energy (keV)
+    │   │   ├── probe_area (nm²)
     │   │   ├── convergence_angle (mrad)
     │   │   ├── magnification
     │   │   ├── microscope
-    │   │   └── tilt_stage (º)
+    │   │   ├── Stage
+    │   │   │   ├── rotation (º)
+    │   │   │   ├── tilt_alpha (º)
+    │   │   │   ├── tilt_beta (º)
+    │   │   │   ├── x (mm)
+    │   │   │   ├── y (mm)
+    │   │   │   └── z (mm)
+    │   │   └── working_distance (mm)
     │   └── TEM
     │       ├── Detector
     │       │   ├── EDS
@@ -55,12 +65,31 @@ in the following sections of this chapter.
     │       ├── acquisition_mode
     │       ├── beam_current (nA)
     │       ├── beam_energy (keV)
+    │       ├── probe_area (nm²)
     │       ├── camera_length (mm)
     │       ├── convergence_angle (mrad)
     │       ├── magnification
     │       ├── microscope
-    │       └── tilt_stage (º)
+    │       └── Stage
+    │           ├── rotation (º)
+    │           ├── tilt_alpha (º)
+    │           ├── tilt_beta (º)
+    │           ├── x (mm)
+    │           ├── y (mm)
+    │           └── z (mm)
     ├── General
+    |   |── FileIO
+    |   |   ├── 0
+    |   |   |   ├── operation
+    |   |   |   ├── hyperspy_version
+    |   |   |   ├── io_plugin
+    |   │   |   └── timestamp
+    |   |   ├── 1
+    |   |   |   ├── operation
+    |   |   |   ├── hyperspy_version
+    |   |   |   ├── io_plugin
+    |   │   |   └── timestamp
+    |   |   └── ...
     │   ├── authors
     │   ├── date
     │   ├── doi
@@ -76,6 +105,8 @@ in the following sections of this chapter.
     │   ├── thickness
     │   └── xray_lines
     └── Signal
+        ├── FFT
+        │   └── shifted
         ├── Noise_properties
         │   ├── Variance_linear_model
         │   │   ├── correlation_factor
@@ -83,7 +114,6 @@ in the following sections of this chapter.
         │   │   ├── gain_offset
         │   │   └── parameters_estimation_method
         │   └── variance
-        ├── binned
         ├── quantity
         ├── signal_type
         └── signal_origin
@@ -105,23 +135,27 @@ original_filename
 time_zone
     type: Str
 
-    The time zone as supported by the python-dateutil library, e.g. "UTC", "Europe/London", etc. It can also be a time offset, e.g. "+03:00" or "-05:00".
+    The time zone as supported by the python-dateutil library, e.g. "UTC",
+    "Europe/London", etc. It can also be a time offset, e.g. "+03:00" or
+    "-05:00".
 
 time
     type: Str
 
-    The acquisition or creation time in ISO 8601 time format.
+    The acquisition or creation time in ISO 8601 time format, e.g. '13:29:10'.
 
 date
     type: Str
 
-    The acquisition or creation date in ISO 8601 date format
+    The acquisition or creation date in ISO 8601 date format, e.g.
+    '2018-01-28'.
 
 
 authors
     type: Str
 
-    The authors of the data, in Latex format: Surname1, Name1 and Surname2, Name2, etc.
+    The authors of the data, in Latex format: Surname1, Name1 and Surname2,
+    Name2, etc.
 
 doi
     type: Str
@@ -132,6 +166,47 @@ notes
     type: Str
 
     Notes about the data.
+
+.. _general-file-metadata:
+
+FileIO
+------
+
+Contains information about the software packages and versions used any time the
+Signal was created by reading the original data format (added in HyperSpy
+v1.7) or saved by one of HyperSpy's IO tools. If the signal is saved to one
+of the ``hspy``, ``zspy`` or ``nxs`` formats, the metadata within the ``FileIO``
+node will represent a history of the software configurations used when the 
+conversion was made from the proprietary/original format to HyperSpy's
+format, as well as any time the signal was subsequently loaded from and saved
+to disk. Under the ``FileIO`` node will be one or more nodes named ``0``,
+``1``, ``2``, etc., each with the following structure:
+
+operation
+   type: Str
+
+   This value will be either ``"load"`` or ``"save"`` to indicate whether
+   this node represents a load from, or save to disk operation, respectively.
+
+hyperspy_version
+    type: Str
+
+    The version number of the HyperSpy software used to extract a Signal from
+    this data file or save this Signal to disk
+
+io_plugin
+    type: Str
+
+    The specific input/output plugin used to originally extract this data file
+    into a HyperSpy Signal or save it to disk -- will be of the form
+    ``hyperspy.io_plugins.<plugin_name>``.
+
+timestamp
+    type: Str
+
+    The timestamp of the computer running the data loading/saving process (in a
+    timezone-aware format). The timestamp will be in ISO 8601 format, as
+    produced by the ``isoformat()`` method of the ``datetime`` class.
 
 Acquisition_instrument
 ======================
@@ -171,6 +246,11 @@ beam_current
 
     The beam current in nA.
 
+probe_area
+    type: Float
+
+    The illumination area of the electron beam in nm\ :sup:`2`.
+
 dwell_time
     type: Float
 
@@ -185,11 +265,6 @@ magnification
     type: Float
 
     The magnification.
-
-tilt_stage
-    type: Float
-
-    The tilt of the stage in degree.
 
 SEM
 ---
@@ -216,15 +291,52 @@ beam_current
 
     The beam current in nA.
 
+probe_area
+    type: Float
+
+    The illumination area of the electron beam in nm\ :sup:`2`.
+
 magnification
     type: Float
 
     The magnification.
 
-tilt_stage
+working_distance
     type: Float
 
-    The tilt of the stage in degree.
+    The working distance in mm.
+
+Stage
+-----
+tilt_alpha
+    type: Float
+
+    A tilt of the stage in degree.
+
+tilt_beta
+    type: Float
+
+    Another tilt of the stage in degree.
+
+rotation
+    type: Float
+
+    The rotation of the stage in degree.
+
+x
+    type: Float
+
+    The position of the stage in mm along the x axis.
+
+y
+    type: Float
+
+    The position of the stage in mm along the y axis.
+
+z
+    type: Float
+
+    The position of the stage in mm along the z axis.
 
 Detector
 --------
@@ -232,6 +344,11 @@ Detector
 All instruments can contain a "Detector" node with information about the
 detector used to acquire the signal. EDX and EELS detectors should follow the
 following structure:
+
+detector_type
+    type: Str
+
+    The type of the detector, e.g. SE for SEM
 
 EELS
 ^^^^
@@ -285,8 +402,8 @@ azimuth_angle
 elevation_angle
     type: Float
 
-    The elevation angle of the detector in degree. The detector is perpendicular
-    to the surface with an angle of 90.
+    The elevation angle of the detector in degree. The detector is
+    perpendicular to the surface with an angle of 90.
 
 energy_resolution_MnKa
     type: Float
@@ -319,7 +436,8 @@ azimuth_angle (º)
 position
     type: Str
 
-    Position of the biprism in microscope column, e.g. Selected area aperture plane
+    Position of the biprism in microscope column, e.g. Selected area aperture
+    plane
 
 voltage
     type: Float
@@ -366,27 +484,41 @@ signal_type
 
     A term that describes the signal type, e.g. EDS, PES... This information
     can be used by HyperSpy to load the file as a specific signal class and
-    therefore the naming should be standarised. Currently HyperSpy provides
+    therefore the naming should be standardised. Currently, HyperSpy provides
     special signal class for photoemission spectroscopy, electron energy
-    loss spectroscopy and energy dispersive spectroscopy. The signal_type in these cases should be respectively
-    PES, EELS and EDS_TEM (EDS_SEM).
+    loss spectroscopy and energy dispersive spectroscopy. The signal_type in
+    these cases should be respectively PES, EELS and EDS_TEM (EDS_SEM).
 
 signal_origin
     type: Str
 
     Describes the origin of the signal e.g. 'simulation' or 'experiment'.
 
+
 record_by
+    .. deprecated:: 1.2
+
     type: Str
-    .. deprecated:: 2.1 (HyperSpy v1.0)
 
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
-    If 'spectrum' the spectral data is stored in the faster index.
+    If 'spectrum', the spectral data is stored in the faster index.
 
 quantity
     type: Str
 
-    The name of the quantity of the "intensity axis" with the units in round brackets if required, for example Temperature (K).
+    The name of the quantity of the "intensity axis" with the units in round
+    brackets if required, for example Temperature (K).
+
+
+FFT
+---
+
+shifted
+    type: bool.
+
+    Specify if the FFT has the zero-frequency component shifted to the center of 
+    the signal.
+
 
 Noise_properties
 ----------------
@@ -395,14 +527,16 @@ variance
     type: float or BaseSignal instance.
 
     The variance of the data. It can be a float when the noise is Gaussian or a
-    :class:`~.signal.BaseSignal` instance if the noise is heteroscedastic, in which
-    case it must have the same dimensions as :attr:`~.signal.BaseSignal.data`.
+    :class:`~.signal.BaseSignal` instance if the noise is heteroscedastic,
+    in which case it must have the same dimensions as
+    :attr:`~.signal.BaseSignal.data`.
 
 Variance_linear_model
 ^^^^^^^^^^^^^^^^^^^^^
 
-In some cases the variance can be calculated from the data using a simple linear
-model: ``variance = (gain_factor * data + gain_offset) * correlation_factor``.
+In some cases the variance can be calculated from the data using a simple
+linear model: ``variance = (gain_factor * data + gain_offset) *
+correlation_factor``.
 
 gain_factor
     type: Float
@@ -416,17 +550,17 @@ correlation_factor
 parameters_estimation_method
     type: Str
 
+
 _Internal_parameters
 ====================
 
 This node is "private" and therefore is not displayed when printing the
-:attr:`~.signal.BaseSignal.metadata` attribute. For example, an "energy" leaf
-should be accompanied by an "energy_units" leaf.
+:attr:`~.signal.BaseSignal.metadata` attribute.
 
 Stacking_history
 ----------------
 
-Generated when using :py:meth:`~.utils.stack`. Used by
+Generated when using :py:meth:`~.misc.utils.stack`. Used by
 :py:meth:`~.signal.BaseSignal.split`, to retrieve the former list of signal.
 
 step_sizes
@@ -443,3 +577,79 @@ Folding
 -------
 
 Constains parameters that related to the folding/unfolding of signals.
+
+
+Functions to handle the metadata
+================================
+
+Existing nodes can be directly read out or set by adding the path in the
+metadata tree:
+
+::
+
+    s.metadata.General.title = 'FlyingCircus'
+    s.metadata.General.title
+
+
+The following functions can operate on the metadata tree. An example with the
+same functionality as the above would be:
+
+::
+
+    s.metadata.set_item('General.title', 'FlyingCircus')
+    s.metadata.get_item('General.title')
+
+
+Adding items
+------------
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item`
+    Given a ``path`` and ``value``, easily set metadata items, creating any
+    necessary nodes on the way.
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary`
+    Add new items from a given ``dictionary``.
+
+
+Output metadata
+---------------
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item`
+    Given an ``item_path``, return the ``value`` of the metadata item.
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.as_dictionary`
+    Returns a dictionary representation of the metadata tree.
+    
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.export`
+    Saves the metadata tree in pretty tree printing format in a text file.
+    Takes ``filename`` as parameter.
+
+
+Searching for keys
+------------------
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
+    Given an ``item_path``, returns ``True`` if the item exists anywhere
+    in the metadata tree.
+
+Using the option ``full_path=False``, the functions
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item` and
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item` can also find items by
+their key in the metadata when the exact path is not known. By default, only
+an exact match of the search string with the item key counts. The additional 
+setting ``wild=True`` allows to search for a case-insensitive substring of the
+item key. The search functionality also accepts item keys preceded by one or
+several nodes of the path (separated by the usual full stop).
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
+    For ``full_path=False``, given a ``item_key``, returns ``True`` if the item
+    exists anywhere in the metadata tree.
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item`
+    For ``full_path=False, return_path=True``, returns the path or list of
+    paths to any matching item(s).
+
+:py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item`
+    For ``full_path=False``, returns the value or list of values for any
+    matching item(s). Setting ``return_path=True``, a tuple (value, path) is
+    returned -- or lists of tuples for multiple occurences.

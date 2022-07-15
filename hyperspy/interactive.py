@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import inspect
 
@@ -42,43 +42,46 @@ class Interactive:
 
         Parameters
         ----------
-        f: function or method
+        f : function or method
             A function that returns an object and that optionally can place the
             result in an object given through the `out` keyword.
-        event: {Event, "auto", None, iterable of events}
+        event : {Event, "auto", None, iterable of events}
             Update the result of the operation when the event is triggered.
             If "auto" and `f` is a method of a Signal class instance its
             `data_changed` event is selected if the function takes an `out`
             argument. If None, `update` is not connected to any event. The
             default is "auto". It is also possible to pass an iterable of
             events, in which case all the events are connected.
-        recompute_out_event: {Event, "auto", None, iterable of events}
+        recompute_out_event : {Event, "auto", None, iterable of events}
             Optional argument. If supplied, this event causes a full
             recomputation of a new object. Both the data and axes of the new
             object are then copied over to the existing `out` object. Only
             useful for `Signal` or other objects that have an attribute
             `axes_manager`. If "auto" and `f` is a method of a Signal class
-            instance its `AxesManager` `any_axis_chaged` event is selected.
-            Otherwise the `Signal`
-            `data_changed` event is selected. If None, `recompute_out` is not
-            connected to any event. The default is "auto". It is also possible
-            to pass an iterable of events, in which case all the events are
-            connected.
-
-
-        *args, **kwargs
-            Arguments and keyword arguments to be passed to `f`.
+            instance its `AxesManager` `any_axis_changed` event is selected.
+            Otherwise the `Signal` `data_changed` event is selected.
+            If None, `recompute_out` is not connected to any event.
+            The default is "auto". It is also possible to pass an iterable of
+            events, in which case all the events are connected.
+        *args
+            Arguments to be passed to `f`.
+        **kwargs
+            Keyword arguments to be passed to `f`.
 
         """
         from hyperspy.signal import BaseSignal
         self.f = f
         self.args = args
         self.kwargs = kwargs
+        _plot_kwargs = self.kwargs.pop('_plot_kwargs', None)
         if 'out' in self.kwargs:
             self.f(*self.args, **self.kwargs)
             self.out = self.kwargs.pop('out')
         else:
             self.out = self.f(*self.args, **self.kwargs)
+        # Reuse the `_plot_kwargs` for the roi if available
+        if _plot_kwargs and 'signal' in self.kwargs:
+            self.out._plot_kwargs = self.kwargs['signal']._plot_kwargs
         try:
             fargs = list(inspect.signature(self.f).parameters.keys())
         except TypeError:
@@ -108,15 +111,15 @@ class Interactive:
 
     def recompute_out(self):
         out = self.f(*self.args, **self.kwargs)
+        if out is None:
+            return
         if out.data.shape == self.out.data.shape:
             # Keep the same array if possible.
             self.out.data[:] = out.data[:]
         else:
             self.out.data = out.data
-        # The following may trigger an `any_axis_changed` event and, therefore,
-        # it must precede the `data_changed` trigger below.
         self.out.axes_manager.update_axes_attributes_from(
-            out.axes_manager._axes, attributes=["scale", "offset", "size"])
+            out.axes_manager._axes)
         self.out.events.data_changed.trigger(self.out)
 
     def update(self):
@@ -124,7 +127,18 @@ class Interactive:
 
 
 def interactive(f, event="auto", recompute_out_event="auto", *args, **kwargs):
+    """
+    %s
+
+    Returns
+    -------
+    :py:class:`~hyperspy.signal.BaseSignal` or one of its subclass
+        Signal updated with the operation result when a given event is
+        triggered.
+
+    """
     cls = Interactive(f, event, recompute_out_event, *args, **kwargs)
     return cls.out
 
-interactive.__doc__ = Interactive.__init__.__doc__
+
+interactive.__doc__ %= Interactive.__init__.__doc__

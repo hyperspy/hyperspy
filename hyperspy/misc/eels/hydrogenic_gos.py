@@ -1,13 +1,28 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2022 The HyperSpy developers
+#
+# This file is part of HyperSpy.
+#
+# HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import math
 import logging
 
 import numpy as np
-import scipy as sp
-import scipy.interpolate
+from scipy import integrate, interpolate, constants
 
 from hyperspy.misc.eels.base_gos import GOSBase
-from hyperspy.misc.physical_constants import R
 
 _logger = logging.getLogger(__name__)
 
@@ -19,6 +34,8 @@ XU = [
 
 # IE1=[118,149,189,229,270,320,377,438,500,564,628,695,769,846,
 # 926,1008,1096,1194,1142,1248,1359,1476,1596,1727]
+
+R = constants.value("Rydberg constant times hc in eV")
 
 
 class HydrogenicGOS(GOSBase):
@@ -122,12 +139,11 @@ class HydrogenicGOS(GOSBase):
 
             # dsbyde IS THE ENERGY-DIFFERENTIAL X-SECN (barn/eV/atom)
             qint[i] = 3.5166e8 * (R / T) * (R / E) * (
-                scipy.integrate.quad(
+                integrate.quad(
                     lambda x: self.gosfunc(E, np.exp(x)),
                     math.log(qa0sqmin), math.log(qa0sqmax))[0])
         self.qint = qint
-        return sp.interpolate.interp1d(self.energy_axis + energy_shift,
-                                       qint)
+        return interpolate.interp1d(self.energy_axis + energy_shift, qint)
 
     def gosfuncK(self, E, qa02):
         # gosfunc calculates (=DF/DE) which IS PER EV AND PER ATOM
@@ -141,11 +157,11 @@ class HydrogenicGOS(GOSBase):
 
         q = qa02 / zs ** 2
         kh2 = E / (r * zs ** 2) - 1
-        akh = np.sqrt(np.abs(kh2))
+        akh = np.sqrt(abs(kh2))
         if akh < 0.01:
             akh = 0.01
         if kh2 >= 0.0:
-            d = 1 - np.e ** (-2 * np.pi / kh2)
+            d = 1 - np.e ** (-2 * np.pi / akh)
             bp = np.arctan(2 * akh / (q - kh2 + 1))
             if bp < 0:
                 bp = bp + np.pi
@@ -175,13 +191,13 @@ class HydrogenicGOS(GOSBase):
             u = .1
         else:
             # Egerton's correction to the Hydrogenic XS
-            u = XU[np.int(iz)]
+            u = XU[int(iz)]
         el3 = self.onset_energy_L3 + self.energy_shift
         el1 = self.onset_energy_L1 + self.energy_shift
 
         q = qa02 / zs ** 2
         kh2 = E / (r * zs ** 2) - 0.25
-        akh = np.sqrt(np.abs(kh2))
+        akh = np.sqrt(abs(kh2))
         if kh2 >= 0.0:
             d = 1 - np.exp(-2 * np.pi / akh)
             bp = np.arctan(akh / (q - kh2 + 0.25))
@@ -211,6 +227,6 @@ class HydrogenicGOS(GOSBase):
         # The following commented lines are to give a more accurate GOS
         # for edges presenting white lines. However, this is not relevant
         # for quantification by curve fitting.
-        # if np.abs(iz - 11) <= 5 and E - el3 <= 20:
+        # if abs(iz - 11) <= 5 and E - el3 <= 20:
         #     rf = 1
         return rf * 32 * g * c / a / d * E / r / r / zs ** 4

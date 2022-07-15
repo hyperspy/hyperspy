@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 # The details of the format were taken from
 # http://www.biochem.mpg.de/doc_tom/TOM_Release_2008/IOfun/tom_mrcread.html
@@ -25,7 +25,7 @@ import logging
 import numpy as np
 from hyperspy.misc.array_tools import sarray2dict
 import traits.api as t
-from hyperspy.misc.elements import elements_db
+from hyperspy.misc.elements import atomic_number2name
 
 _logger = logging.getLogger(__name__)
 
@@ -46,24 +46,14 @@ full_support = False
 # Recognised file extension
 file_extensions = ['spd', 'SPD', 'spc', 'SPC']
 default_extension = 0
-
 # Writing capabilities
 writes = False
+non_uniform_axis = False
+# ----------------------
 
-spd_extensions = ('spd', 'SPD')
-spc_extensions = ('spc', 'SPC')
 
-# read dictionary of atomic numbers from HyperSpy, and add the elements that
-# do not currently exist in the database (in case anyone is doing EDS on
-# Ununpentium...)
-atomic_num_dict = dict((p.General_properties.Z, e) for (e, p) in elements_db)
-atomic_num_dict.update({93: 'Np', 94: 'Pu', 95: 'Am', 96: 'Cm', 97: 'Bk',
-                        98: 'Cf', 99: 'Es', 100: 'Fm', 101: 'Md', 102: 'No',
-                        103: 'Lr', 104: 'Rf', 105: 'Db', 106: 'Sg', 107: 'Bh',
-                        108: 'Hs', 109: 'Mt', 110: 'Ds', 111: 'Rg', 112: 'Cp',
-                        113: 'Uut', 114: 'Uuq', 115: 'Uup', 116: 'Uuh',
-                        117: 'Uus',
-                        118: 'Uuo'})
+spd_extensions = ('spd', 'SPD', 'Spd')
+spc_extensions = ('spc', 'SPC', 'Spc')
 
 
 def get_spd_dtype_list(endianess='<'):
@@ -114,7 +104,45 @@ def get_spd_dtype_list(endianess='<'):
     return dtype_list
 
 
-def get_spc_dtype_list(load_all=False, endianess='<'):
+def __get_spc_header(f, endianess, load_all_spc):
+    """
+    Get the header of an spc file, checking for the file version as necessary
+
+    Parameters
+    ----------
+    f : file
+        A file object for the .spc file to be read (i.e. file should be
+        already opened with ``open()``)
+    endianess : char
+        Byte-order of data to read
+    load_all_spc : bool
+        Switch to control if all of the .spc header is read, or just the parts
+        relevant to HyperSpy
+
+    Returns
+    -------
+    spc_header : np.ndarray
+        Array containing the binary information read from the .spc file
+    """
+    version = np.fromfile(f,
+                          dtype=[('version', '{}f4'.format(endianess))],
+                          count=1)
+    version = round(float(version.item()[0]), 2)  # convert to scalar
+    f.seek(0)
+
+    spc_header = np.fromfile(f,
+                             dtype=get_spc_dtype_list(
+                                 load_all=load_all_spc,
+                                 endianess=endianess,
+                                 version=version),
+                             count=1)
+
+    _logger.debug(' .spc version is {}'.format(version))
+
+    return spc_header
+
+
+def get_spc_dtype_list(load_all=False, endianess='<', version=0.61):
     """
     Get the data type list for an SPC spectrum.
     Further information about the file format is available `here
@@ -125,6 +153,13 @@ def get_spc_dtype_list(load_all=False, endianess='<'):
     load_all : bool
         Switch to control if all the data is loaded, or if just the
         important pieces of the signal will be read (speeds up loading time)
+    endianess : char
+        byte-order used to read the data
+    version : float
+        version of spc file to read (only 0.61 and 0.70 have been tested)
+        Default is 0.61 to be as backwards-compatible as possible, but the
+        file version can be read from the file anyway, so this parameter
+        should always be set programmatically
 
     Table of header tags:
         - fVersion: 4 byte float; *File format Version*
@@ -286,16 +321,13 @@ def get_spc_dtype_list(load_all=False, endianess='<'):
         - longImageFileName: 256 array of 1 byte char; *Associated long image file name*
         - ADCTimeConstantNew: 4 byte float; *Time constant: 2.5… 100 OR 1.6… 102.4 us*
 
+        # the following datatypes are only included for version 0.70:
+
         - filler9: 60 byte;
 
         - numZElements: 2 byte short; *number of Z List elements for quant*
         - zAtoms: 48 array of 2 byte short; *Z List Atomic numbers*
         - zShells: 48 array of 2 byte short; *Z List Shell numbers*
-
-
-    Parameters
-    ----------
-    endianess : byte-order used to read the data
 
     Returns
     -------
@@ -465,6 +497,10 @@ def get_spc_dtype_list(load_all=False, endianess='<'):
                 ('s', end + '4096i4'),  # 3840
                 ('longFileName', end + '256i1'),  # 20224
                 ('longImageFileName', end + '256i1'),  # 20480
+            ]
+
+        if version >= 0.7:
+            dtype_list.extend([
                 ('ADCTimeConstantNew', end + 'f4'),  # 20736
 
                 ('filler9', 'V60'),  # 20740
@@ -472,7 +508,8 @@ def get_spc_dtype_list(load_all=False, endianess='<'):
                 ('numZElements', end + 'i2'),  # 20800
                 ('zAtoms', end + '48i2'),  # 20802
                 ('zShells', end + '48i2'),  # 20898
-            ]
+            ])
+
     else:
         dtype_list = \
             [
@@ -510,19 +547,53 @@ def get_spc_dtype_list(load_all=False, endianess='<'):
                 ('numElem', end + 'i2'),  # 638 **
                 ('at', end + '48u2'),  # 640 **
 
-                ('filler7', 'V20258'),  # 736
+                ('filler7', 'V20004'),  # 736
 
             ]
     return dtype_list
 
 
-def get_ipr_dtype_list(endianess='<'):
+def __get_ipr_header(f, endianess):
+    """
+    Get the header of an spc file, checking for the file version as necessary
+
+    Parameters
+    ----------
+    f : file
+        A file object for the .spc file to be read (i.e. file should be
+        already opened with ``open()``)
+    endianess : char
+        Byte-order of data to read
+
+    Returns
+    -------
+    ipr_header : np.ndarray
+        Array containing the binary information read from the .ipr file
+    """
+    version = np.fromfile(f,
+                          dtype=[('version', '{}i2'.format(endianess))],
+                          count=1)
+    version = version.item()[0]  # convert to scalar
+    f.seek(0)
+    _logger.debug(' .ipr version is {}'.format(version))
+
+    ipr_header = np.fromfile(f,
+                             dtype=get_ipr_dtype_list(
+                                 endianess=endianess,
+                                 version=version),
+                             count=1)
+
+    return ipr_header
+
+
+def get_ipr_dtype_list(endianess='<', version=333):
     """
     Get the data type list for an IPR image description file.
     Further information about the file format is available `here
     <https://github.com/hyperspy/hyperspy/files/29507/ImageIPR.pdf>`__.
 
     Table of header tags:
+
         -  version: 2 byte unsigned short; *Current version number: 334*
         -  imageType: 2 byte unsigned short; *0=empty; 1=electron; 2=xmap; 3=disk; 4=overlay*
         -  label: 8 byte char array; *Image label*
@@ -551,18 +622,28 @@ def get_ipr_dtype_list(endianess='<'):
         -  wd: 2 byte unsigned short; *Working distance [mm]*
         -  mppX: 4 byte float; *Microns per pixel in X direction*
         -  mppY: 4 byte float; *Microns per pixel in Y direction*
-        -  nTextLines: 2 byte unsigned short; *No. of comment lines *
+        -  nTextLines: 2 byte unsigned short; *No. of comment lines*
         -  charText: (4 x 32) byte character array; *Comment text*
         -  reserved3: 4 byte float; *Not used*
         -  nOverlayElements: 2 byte unsigned short; *No. of overlay elements*
         -  overlayColors: 16 array of 2 byte unsigned short; *Overlay colors*
+
+    These two are specific to V334 of the file format, and are omitted
+    for compatibility with V333 of the IPR format:
+
         -  timeConstantNew: 4 byte float; *Amplifier time constant [usec]*
         -  reserved4: 2 array of 4 byte float; *Not used*
 
 
     Parameters
     ----------
-    endianess : byte-order used to read the data
+    endianess : char
+        byte-order used to read the data
+    version : float
+        version of .ipr file to read (only 333 and 334 have been tested)
+        Default is 333 to be as backwards-compatible as possible, but the
+        file version can be read from the file anyway, so this parameter
+        should always be set programmatically
 
     Returns
     -------
@@ -605,10 +686,14 @@ def get_ipr_dtype_list(endianess='<'):
             ('charText', end + '4a32'),
             ('reserved3', end + '4f4'),
             ('nOverlayElements', end + 'u2'),
-            ('overlayColors', end + '16u2'),
+            ('overlayColors', end + '16u2')]
+
+    if version >= 334:
+        dtype_list.extend([
             ('timeConstantNew', end + 'f4'),
             ('reserved4', end + '2f4'),
-        ]
+        ])
+
     return dtype_list
 
 
@@ -638,16 +723,16 @@ def _add_spc_metadata(metadata, spc_header):
                       'energy_resolution_MnKa': spc_header['detReso'],
                       'live_time': spc_header['liveTime']}},
              'beam_energy': spc_header['kV'],
-             'tilt_stage': spc_header['tilt']}
+             'Stage': {'tilt_alpha': spc_header['tilt']}}
     }
 
     # Get elements stored in spectrum:
     num_elem = spc_header['numElem']
     if num_elem > 0:
-        element_list = sorted([atomic_num_dict[i] for
+        element_list = sorted([atomic_number2name[i] for
                                i in spc_header['at'][:num_elem]])
         metadata['Sample'] = {'elements': element_list}
-        _logger.info("Elemental information found in the spectral metadata "
+        _logger.info(" Elemental information found in the spectral metadata "
                      "was added to the signal.\n"
                      "Elements found were: {}\n".format(element_list))
 
@@ -680,11 +765,8 @@ def spc_reader(filename,
         hyperspy.io.load_with_reader
     """
     with open(filename, 'rb') as f:
-        spc_header = np.fromfile(f,
-                                 dtype=get_spc_dtype_list(
-                                     load_all=load_all_spc,
-                                     endianess=endianess),
-                                 count=1)
+        _logger.debug(' Reading {}'.format(filename))
+        spc_header = __get_spc_header(f, endianess, load_all_spc)
 
         spc_dict = sarray2dict(spc_header)
         original_metadata = {'spc_header': spc_dict}
@@ -693,6 +775,9 @@ def spc_reader(filename,
         data_offset = original_metadata['spc_header']['dataStart']
 
         mode = kwargs.pop('mode', 'c')
+        lazy = kwargs.pop('lazy', False)
+        if lazy:
+            mode = 'r'
 
         # Read data from file into a numpy memmap object
         data = np.memmap(f, mode=mode, offset=data_offset,
@@ -725,7 +810,6 @@ def spc_reader(filename,
 
 def spd_reader(filename,
                endianess='<',
-               nav_units=None,
                spc_fname=None,
                ipr_fname=None,
                load_all_spc=False,
@@ -739,10 +823,6 @@ def spd_reader(filename,
         Name of SPD file to read
     endianess : char
         Byte-order of data to read
-    nav_units : 'nm', 'um', or None
-        Default navigation units for EDAX data is in microns, so this is the
-        default unit to save in the signal. Can also be specified as 'nm',
-        which will output a signal with nm scale instead.
     spc_fname : None or str
         Name of file from which to read the spectral calibration. If data
         was exported fully from EDAX TEAM software, an .spc file with the
@@ -753,14 +833,14 @@ def spd_reader(filename,
     ipr_fname : None or str
         Name of file from which to read the spatial calibration. If data
         was exported fully from EDAX TEAM software, an .ipr file with the
-        same name as the .spd (plus a \"_Img\" suffix) should be present.
+        same name as the .spd (plus a "_Img" suffix) should be present.
         If `None`, the default filename will be searched for.
         Otherwise, the name of the .ipr file to use for spatial calibration
         can be explicitly given as a string.
     load_all_spc : bool
         Switch to control if all of the .spc header is read, or just the
         important parts for import into HyperSpy
-    kwargs**
+    **kwargs
         Remaining arguments are passed to the Numpy ``memmap`` function
 
     Returns
@@ -785,8 +865,10 @@ def spd_reader(filename,
                      '2': 'u2',
                      '4': 'u4'}[str(original_metadata['spd_header'][
                          'countBytes'])]
-
+        lazy = kwargs.pop('lazy', False)
         mode = kwargs.pop('mode', 'c')
+        if lazy:
+            mode = 'r'
 
         # Read data from file into a numpy memmap object
         data = np.memmap(f, mode=mode, offset=data_offset, dtype=data_type,
@@ -822,10 +904,18 @@ def spd_reader(filename,
     # Read the .ipr header (if possible)
     if read_ipr:
         with open(ipr_fname, 'rb') as f:
-            ipr_header = np.fromfile(f,
-                                     dtype=get_ipr_dtype_list(endianess),
-                                     count=1)
+            _logger.debug(' From .spd reader - '
+                          'reading .ipr {}'.format(ipr_fname))
+            ipr_header = __get_ipr_header(f, endianess)
             original_metadata['ipr_header'] = sarray2dict(ipr_header)
+
+            # Workaround for type error when saving hdf5:
+            # save as list of strings instead of numpy unicode array
+            # see https://github.com/hyperspy/hyperspy/pull/2007 and
+            #     https://github.com/h5py/h5py/issues/289 for context
+            original_metadata['ipr_header']['charText'] = \
+                [np.string_(i) for i in
+                 original_metadata['ipr_header']['charText']]
     else:
         _logger.warning('Could not find .ipr file named {}.\n'
                         'No spatial calibration will be loaded.'
@@ -834,11 +924,9 @@ def spd_reader(filename,
     # Read the .spc header (if possible)
     if read_spc:
         with open(spc_fname, 'rb') as f:
-            spc_header = np.fromfile(f,
-                                     dtype=get_spc_dtype_list(
-                                         load_all=load_all_spc,
-                                         endianess=endianess),
-                                     count=1)
+            _logger.debug(' From .spd reader - '
+                          'reading .spc {}'.format(spc_fname))
+            spc_header = __get_spc_header(f, endianess, load_all_spc)
             spc_dict = sarray2dict(spc_header)
             original_metadata['spc_header'] = spc_dict
     else:
@@ -858,20 +946,13 @@ def spd_reader(filename,
         'units': 'keV' if read_spc else t.Undefined,
     }
 
-    # Handle navigation units input:
-    scale = 1000 if nav_units == 'nm' else 1
-    if nav_units is not 'nm':
-        if nav_units not in [None, 'um']:
-            _logger.warning("Did not understand nav_units input \"{}\". "
-                            "Defaulting to microns.\n".format(nav_units))
-        nav_units = '$\mu m$'
-
+    nav_units = 'µm'
     # Create navigation axes dictionaries:
     x_axis = {
         'size': data.shape[1],
         'index_in_array': 1,
         'name': 'x',
-        'scale': original_metadata['ipr_header']['mppX'] * scale if read_ipr
+        'scale': original_metadata['ipr_header']['mppX'] if read_ipr
         else 1,
         'offset': 0,
         'units': nav_units if read_ipr else t.Undefined,
@@ -881,7 +962,7 @@ def spd_reader(filename,
         'size': data.shape[0],
         'index_in_array': 0,
         'name': 'y',
-        'scale': original_metadata['ipr_header']['mppY'] * scale if read_ipr
+        'scale': original_metadata['ipr_header']['mppY'] if read_ipr
         else 1,
         'offset': 0,
         'units': nav_units if read_ipr else t.Undefined,

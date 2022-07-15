@@ -2,47 +2,13 @@
  Citing HyperSpy
 ================
 
-If HyperSpy has been significant to a project that leads to an academic publication,
-please acknowledge that fact by citing the software. You can use the following bibtex
-entry
+If HyperSpy has been significant to a project that leads to an academic
+publication, please acknowledge that fact by citing it. The DOI in the
+badge below is the `Concept DOI <https://help.zenodo.org/#versioning>`_ of
+HyperSpy. It can be used to cite the project without referring to a specific
+version. If you are citing HyperSpy because you have used it to process data,
+please use the DOI of the specific version that you have employed. You can
+find iy by clicking on the DOI badge below.
 
-.. code-block:: bibtex
-
-    @misc{francisco_de_la_pena_2017_240660,
-      author       = {Francisco de la Peña and
-                      Tomas Ostasevicius and
-                      Vidar Tonaas Fauske and
-                      Pierre Burdet and
-                      Petras Jokubauskas and
-                      Mike Sarahan and
-                      Duncan Johnstone and
-                      Magnus Nord and
-                      Joshua Taillon and
-                      Jan Caron and
-                      Eric Prestat and
-                      Tom Furnival and
-                      Katherine E. MacArthur and
-                      Alberto Eljarrat and
-                      Stefano Mazzucco and
-                      Vadim Migunov and
-                      Thomas Aarholt and
-                      Michael Walls and
-                      FWin22 and
-                      Ben Martineau and
-                      Gaël Donval and
-                      Luiz Fernando Zagonel and
-                      Andreas Garmannslund and
-                      Christoph Gohlke and
-                      iygr and
-                      Huang-Wei Chang},
-      title        = {hyperspy/hyperspy: HyperSpy 1.1.2},
-      month        = jan,
-      year         = 2017,
-      doi          = {10.5281/zenodo.240660},
-      url          = {https://doi.org/10.5281/zenodo.240660}
-}
-
-or click on the DOI badge below for more citation formats.
-
-.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.240660.svg
-   :target: http://dx.doi.org/10.5281/zenodo.240660
+.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.592838.svg
+   :target: https://doi.org/10.5281/zenodo.592838

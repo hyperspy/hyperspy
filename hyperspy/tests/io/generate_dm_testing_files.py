@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 """Creates Digital Micrograph scripts to generate the dm3 testing files
 """
@@ -59,35 +59,41 @@ dm4_data_types = {
 
 
 def generate_1D_files(f, data_types, dmversion):
+    subfolder = f"dm{dmversion}_1D_data"
+    f.write(f'CreateDirectory(path+"{subfolder}")\n')
     for key in data_types.keys():
         f.write(
-            'filename = "'
-            'dm%i_1D_data\\\\test-%i.dm%i"\n'
-            'im := NewImage("test", %i, 2)\n'
+            'filename = path+"'
+            f'\\\\{subfolder}\\\\test-{key}.dm{dmversion}"\n'
+            f'im := NewImage("test", {key}, 2)\n'
             'im[0,1] = 1\n'
             'im[1,2] = 2\n'
-            'im.SaveImage(filename)\n' % (dmversion, key, dmversion, key))
+            'im.SaveAsGatan(filename)\n')
 
 
 def generate_2D_files(f, data_types, dmversion):
+    subfolder = f"dm{dmversion}_2D_data"
+    f.write(f'CreateDirectory(path+"{subfolder}")\n')
     for key in data_types.keys():
         f.write(
-            'filename = "'
-            'dm%i_2D_data\\\\test-%i.dm%i"\n'
-            'im := NewImage("test", %i, 2, 2)\n'
+            'filename = path+"'
+            f'\\\\{subfolder}\\\\test-{key}.dm{dmversion}"\n'
+            f'im := NewImage("test", {key}, 2, 2)\n'
             'im[0,0,1,1] = 1\n'
             'im[0,1,1,2] = 2\n'
             'im[1,0,2,1] = 3\n'
             'im[1,1,2,2] = 4\n'
-            'im.SaveImage(filename)\n' % (dmversion, key, dmversion, key))
+            'im.SaveAsGatan(filename)\n')
 
 
 def generate_3D_files(f, data_types, dmversion):
+    subfolder = f"dm{dmversion}_3D_data"
+    f.write(f'CreateDirectory(path+"{subfolder}")\n')
     for key in data_types.keys():
         f.write(
-            'filename = "'
-            'dm%i_3D_data\\\\test-%i.dm%i"\n'
-            'im := NewImage("test", %i, 2, 2,2)\n'
+            'filename = path+"'
+            f'\\\\{subfolder}\\\\test-{key}.dm{dmversion}"\n'
+            f'im := NewImage("test", {key}, 2, 2,2)\n'
             'im[0,0,0,1,1,1] = 1\n'
             'im[1,0,0,2,1,1] = 2\n'
             'im[0,1,0,1,2,1] = 3\n'
@@ -96,15 +102,17 @@ def generate_3D_files(f, data_types, dmversion):
             'im[1,0,1,2,1,2] = 6\n'
             'im[0,1,1,1,2,2] = 7\n'
             'im[1,1,1,2,2,2] = 8\n'
-            'im.SaveImage(filename)\n' % (dmversion, key, dmversion, key))
+            'im.SaveAsGatan(filename)\n')
 
 
 def generate_4D_files(f, data_types, dmversion):
+    subfolder = f"dm{dmversion}_4D_data"
+    f.write(f'CreateDirectory(path+"{subfolder}")\n')
     for key in data_types.keys():
         f.write(
-            'filename = "'
-            'dm%i_4D_data\\\\test-%i.dm%i"\n'
-            'im := NewImage("test", %i, 2,2,2,2)\n'
+            'filename = path+"'
+            f'\\\\{subfolder}\\\\test-{key}.dm{dmversion}"\n'
+            f'im := NewImage("test", %i, 2,2,2,2)\n'
             'im[0,0,0,0,1,1,1,1] = 1\n'
             'im[1,0,0,0,2,1,1,1] = 2\n'
             'im[0,1,0,0,1,2,1,1] = 3\n'
@@ -121,12 +129,15 @@ def generate_4D_files(f, data_types, dmversion):
             'im[1,0,1,1,2,1,2,2] = 14\n'
             'im[0,1,1,1,1,2,2,2] = 15\n'
             'im[1,1,1,1,2,2,2,2] = 16\n'
-            'im.SaveImage(filename)\n' % (dmversion, key, dmversion, key))
+            'im.SaveAsGatan(filename)\n' % (dmversion, key, dmversion, key))
 
 if __name__ == '__main__':
     with open("generate_dm3_test_files.s", "w") as f1, open("generate_dm4_test_files.s", "w") as f2:
-        f1.write('image im\nstring filename\n')
-        f2.write('image im\nstring filename\n')
+        for f in (f1, f2):
+            f.write('image im\n')
+            f.write('string filename, path\n')
+            f.write('path = GetApplicationDirectory(2, 0)\n')
+            f.write('result("\\nThe file will be saved to: " + path + "\\n")\n')
         for f, dmv, dt in zip(
                 (f1, f2), (3, 4), (dm3_data_types, dm4_data_types)):
             generate_1D_files(f, dt, dmv)

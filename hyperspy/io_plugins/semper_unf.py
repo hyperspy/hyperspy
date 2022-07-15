@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 # INFORMATION ABOUT THE SEMPER FORMAT LABEL:
 # Picture labels consist of a sequence of bytes
@@ -90,14 +90,15 @@ _logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
-format_name = 'SEMPER UNF (unformatted)'
-description = 'Read data from SEMPER UNF files.'
+format_name = 'SEMPER'
+description = 'Read data from SEMPER UNF (unformatted) files.'
 full_support = True  # Hopefully?
 # Recognised file extension
 file_extensions = ('unf', 'UNF')
 default_extension = 0
-# Writing features
+# Writing capabilities
 writes = [(1, 0), (1, 1), (1, 2), (2, 0), (2, 1)]  # All up to 3D
+non_uniform_axis = False
 # ----------------------
 
 
@@ -340,10 +341,10 @@ class SemperFormat(object):
             iform = 0  # byte
         elif np.issubdtype(data.dtype, np.int16):
             iform = 1  # int16
-        elif np.issubdtype(data.dtype, float) and data.dtype.itemsize <= 4:
+        elif np.issubdtype(data.dtype, np.floating) and data.dtype.itemsize <= 4:
             data = data.astype(np.float32)
             iform = 2  # float (4 byte or less)
-        elif np.issubdtype(data.dtype, complex) and data.dtype.itemsize <= 8:
+        elif np.issubdtype(data.dtype, np.complexfloating) and data.dtype.itemsize <= 8:
             data = data.astype(np.complex64)
             iform = 3  # complex (8 byte or less)
         elif np.issubdtype(data.dtype, np.int32):
@@ -358,8 +359,8 @@ class SemperFormat(object):
         return data, iform
 
     @classmethod
-    def load_from_unf(cls, filename):
-        """Load a `.unf`-file into a :class:`~.SemperFormat` object.
+    def load_from_unf(cls, filename, lazy=False):
+        r"""Load a `.unf`-file into a :class:`~.SemperFormat` object.
 
         Parameters
         ----------
@@ -414,22 +415,16 @@ class SemperFormat(object):
                     warning += ' (Error message: {})'.format(str(e))
                     warnings.warn(warning)
             # Read picture data:
-            nlay, nrow, ncol = metadata['NLAY'], metadata[
-                'NROW'], metadata['NCOL']
-            data = np.empty((nlay, nrow, ncol), dtype=data_format)
-            for k in range(nlay):
-                for j in range(nrow):
-                    rec_length = np.fromfile(f, dtype='<i4', count=1)[0]
-                    # Not always ncol, see below
-                    count = rec_length // np.dtype(data_format).itemsize
-                    row = np.fromfile(f, dtype=data_format, count=count)
-                    # [:ncol] is used because Semper always writes an even
-                    # number of bytes which is a problem when reading in single
-                    # bytes (IFORM = 0, np.byte). If ncol is odd, an empty
-                    # byte (0) is added which has to be skipped during read in:
-                    data[k, j, :] = row[:ncol]
-                    test = np.fromfile(f, dtype='<i4', count=1)[0]
-                    assert test == rec_length
+            pos = f.tell()
+            shape = metadata['NLAY'], metadata['NROW'], metadata['NCOL']
+            if lazy:
+                from dask.array import from_delayed
+                from dask import delayed
+                task = delayed(_read_data)(f, filename, pos, data_format,
+                                           shape)
+                data = from_delayed(task, shape=shape, dtype=data_format)
+            else:
+                data = _read_data(f, filename, pos, data_format, shape)
         offsets = (metadata.get('X0V0', 0.),
                    metadata.get('Y0V2', 0.),
                    metadata.get('Z0V4', 0.))
@@ -448,7 +443,7 @@ class SemperFormat(object):
         ----------
         filename : string, optional
             The name of the unf-file to which the data should be written.
-        skip_header : boolean, optional
+        skip_header : bool, optional
             Determines if the header, title and label should be skipped (useful
             for some other programs). Default is False.
 
@@ -588,7 +583,7 @@ class SemperFormat(object):
                          'ICLAYN': data.shape[0] // 2 + 1})
         return cls(data, title, offsets, scales, units, metadata)
 
-    def to_signal(self):
+    def to_signal(self, lazy=False):
         """Export a :class:`~.SemperFormat` object to a
         :class:`~hyperspy.signals.Signal` object.
 
@@ -603,7 +598,7 @@ class SemperFormat(object):
 
         """
         import hyperspy.api as hp
-        data = np.squeeze(self.data)  # Reduce unneeded dimensions!
+        data = self.data.squeeze()  # Reduce unneeded dimensions!
         iclass = self.ICLASS_DICT.get(self.metadata.get('ICLASS'))
         if iclass == 'spectrum':
             signal = hp.signals.Signal1D(data)
@@ -626,6 +621,8 @@ class SemperFormat(object):
             date, time = self._convert_date_time_from_label()
             signal.metadata.set_item('General.date', date)
             signal.metadata.set_item('General.time', time)
+        if lazy:
+            signal = signal.as_lazy()
         signal.original_metadata.add_dictionary(self.metadata)
         return signal
 
@@ -682,10 +679,33 @@ def pack_to_intbytes(fmt, value):
     return [int(c) for c in struct.pack(fmt, value)]
 
 
+def _read_data(fobj, fname, position, data_format, shape):
+    if fobj.closed:
+        fobj = open(fname, 'rb')
+    fobj.seek(position)
+    nlay, nrow, ncol = shape
+    data = np.empty(shape, dtype=data_format)
+    for k in range(nlay):
+        for j in range(nrow):
+            rec_length = np.fromfile(fobj, dtype='<i4', count=1)[0]
+            # Not always ncol, see below
+            count = rec_length // np.dtype(data_format).itemsize
+            row = np.fromfile(fobj, dtype=data_format, count=count)
+            # [:ncol] is used because Semper always writes an even
+            # number of bytes which is a problem when reading in single
+            # bytes (IFORM = 0, np.byte). If ncol is odd, an empty
+            # byte (0) is added which has to be skipped during read in:
+            data[k, j, :] = row[:ncol]
+            test = np.fromfile(fobj, dtype='<i4', count=1)[0]
+            assert test == rec_length
+    return data
+
+
 def file_reader(filename, **kwds):
-    semper = SemperFormat.load_from_unf(filename)
+    lazy = kwds.get('lazy', False)
+    semper = SemperFormat.load_from_unf(filename, lazy=lazy)
     semper.log_info()
-    return [semper.to_signal()._to_dictionary()]
+    return [semper.to_signal(lazy=lazy)._to_dictionary()]
 
 
 def file_writer(filename, signal, **kwds):

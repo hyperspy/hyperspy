@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2022 The HyperSpy developers
+#
+# This file is part of HyperSpy.
+#
+# HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
 import math
 import numbers
 import logging
@@ -7,7 +25,7 @@ import matplotlib.pyplot as plt
 from scipy import constants
 
 from hyperspy.misc.array_tools import rebin
-from hyperspy.gui import messages as messagesui
+from hyperspy.misc.elements import elements as elements_db
 import hyperspy.defaults_parser
 
 _logger = logging.getLogger(__name__)
@@ -88,7 +106,8 @@ def estimate_variance_parameters(
         higher_than=None,
         return_results=False,
         plot_results=True,
-        weighted=False):
+        weighted=False,
+        store_results="ask"):
     """Find the scale and offset of the Poissonian noise
 
     By comparing an SI with its denoised version (i.e. by PCA),
@@ -106,10 +125,10 @@ def estimate_variance_parameters(
         The order of the polynomy.
     higher_than: float
         To restrict the fit to counts over the given value.
-
     return_results : Bool
-
     plot_results : Bool
+    store_results: {True, False, "ask"}, default "ask"
+        If True, it stores the result in the signal metadata
 
     Returns
     -------
@@ -149,11 +168,15 @@ def estimate_variance_parameters(
         message = ("Gain factor: %.2f\n" % results0['fit'][0] +
                    "Gain offset: %.2f\n" % results0['fit'][1] +
                    "Correlation factor: %.2f\n" % c)
-        is_ok = True
-        if hyperspy.defaults_parser.preferences.General.interactive is True:
-            is_ok = messagesui.information(
-                message + "Would you like to store the results?")
+        if store_results == "ask":
+            is_ok = ""
+            while is_ok not in ("Yes", "No"):
+                is_ok = input(
+                    message +
+                    "Would you like to store the results (Yes/No)?")
+            is_ok = is_ok == "Yes"
         else:
+            is_ok = store_results
             _logger.info(message)
         if is_ok:
             noisy_signal.metadata.set_item(
@@ -205,14 +228,16 @@ def ratio(edge_A, edge_B):
 
 
 def eels_constant(s, zlp, t):
-    """Calculate the constant of proportionality (k) in the relationship
+    r"""Calculate the constant of proportionality (k) in the relationship
     between the EELS signal and the dielectric function.
     dielectric function from a single scattering distribution (SSD) using
     the Kramers-Kronig relations.
 
-    $S(E)=\frac{I_{0}t}{\pi a_{0}m_{0}v^{2}}\ln\left[1+\left(\frac{\beta}
-    {\theta_{E}}\right)^{2}\right]\Im(\frac{-1}{\epsilon(E)})=
-    k\Im(\frac{-1}{\epsilon(E)})$
+        .. math::
+
+            S(E)=\frac{I_{0}t}{\pi a_{0}m_{0}v^{2}}\ln\left[1+\left(\frac{\beta}
+            {\theta_{E}}\right)^{2}\right]\Im(\frac{-1}{\epsilon(E)})=
+            k\Im(\frac{-1}{\epsilon(E)})
 
 
     Parameters
@@ -244,14 +269,14 @@ def eels_constant(s, zlp, t):
     # Mapped parameters
     try:
         e0 = s.metadata.Acquisition_instrument.TEM.beam_energy
-    except:
+    except BaseException:
         raise AttributeError("Please define the beam energy."
                              "You can do this e.g. by using the "
                              "set_microscope_parameters method")
     try:
         beta = s.metadata.Acquisition_instrument.\
             TEM.Detector.EELS.collection_angle
-    except:
+    except BaseException:
         raise AttributeError("Please define the collection semi-angle."
                              "You can do this e.g. by using the "
                              "set_microscope_parameters method")
@@ -268,18 +293,20 @@ def eels_constant(s, zlp, t):
             if zlp.axes_manager.signal_dimension == 0:
                 i0 = zlp.data
             else:
-                i0 = zlp.data.sum(axis.index_in_array)
+                i0 = zlp.integrate1D(axis.index_in_axes_manager).data
         else:
             raise ValueError('The ZLP signal dimensions are not '
                              'compatible with the dimensions of the '
                              'low-loss signal')
-        i0 = i0.reshape(
-            np.insert(i0.shape, axis.index_in_array, 1))
+        # The following prevents errors if the signal is a single spectrum
+        if len(i0) != 1:
+            i0 = i0.reshape(
+                np.insert(i0.shape, axis.index_in_array, 1))
     elif isinstance(zlp, numbers.Number):
         i0 = zlp
     else:
-        raise ValueError('The zero-loss peak input must be a Hyperspy signal\
-                         or a number.')
+        raise ValueError('The zero-loss peak input is not valid, it must be\
+                         in the BaseSignal class or a Number.')
 
     if isinstance(t, hyperspy.signal.BaseSignal):
         if (t.axes_manager.navigation_dimension ==
@@ -300,3 +327,90 @@ def eels_constant(s, zlp, t):
         data=(t * i0 / (332.5 * ke)) * np.log(1 + (beta * tgt / eaxis) ** 2))
     k.metadata.General.title = "EELS proportionality constant K"
     return k
+
+def get_edges_near_energy(energy, width=10, only_major=False, order='closest'):
+    """Find edges near a given energy that are within the given energy
+    window.
+
+    Parameters
+    ----------
+    energy : float
+        Energy to search, in eV
+    width : float
+        Width of window, in eV, around energy in which to find nearby
+        energies, i.e. a value of 10 eV (the default) means to
+        search +/- 5 eV. The default is 10.
+    only_major : bool
+        Whether to show only the major edges. The default is False.
+    order : str
+        Sort the edges, if 'closest', return in the order of energy difference,
+        if 'ascending', return in ascending order, similarly for 'descending'
+
+    Returns
+    -------
+    edges : list
+        All edges that are within the given energy window, sorted by
+        energy difference to the given energy.
+    """
+
+    if width < 0:
+        raise ValueError("Provided width needs to be >= 0.")
+    if order not in ('closest', 'ascending', 'descending'):
+        raise ValueError("order needs to be 'closest', 'ascending' or "
+                         "'descending'")
+
+    Emin, Emax = energy - width/2, energy + width/2
+
+    # find all subshells that have its energy within range
+    valid_edges = []
+    for element, element_info in elements_db.items():
+        try:
+            for shell, shell_info in element_info[
+                'Atomic_properties']['Binding_energies'].items():
+                if only_major:
+                    if shell_info['relevance'] != 'Major':
+                        continue
+                if shell[-1] != 'a' and \
+                    Emin <= shell_info['onset_energy (eV)'] <= Emax:
+                    subshell = '{}_{}'.format(element, shell)
+                    Ediff = abs(shell_info['onset_energy (eV)'] - energy)
+                    valid_edges.append((subshell,
+                                        shell_info['onset_energy (eV)'],
+                                        Ediff))
+        except KeyError:
+            continue
+
+    # Sort according to 'order' and return only the edges
+    if order == 'closest':
+        edges = [edge for edge, _, _ in sorted(valid_edges, key=lambda x: x[2])]
+    elif order == 'ascending':
+        edges = [edge for edge, _, _ in sorted(valid_edges, key=lambda x: x[1])]
+    elif order == 'descending':
+        edges = [edge for edge, _, _ in sorted(valid_edges, key=lambda x: x[1],
+                                               reverse=True)]
+
+    return edges
+
+def get_info_from_edges(edges):
+    """Return the information of a sequence of edges as a list of dictionaries
+
+    Parameters
+    ----------
+    edges : str or iterable
+        the sequence of edges, each entry in the format of 'element_subshell'.
+
+    Returns
+    -------
+    info : list
+        a list of dictionaries with information corresponding to the provided
+        edges.
+    """
+
+    edges = np.atleast_1d(edges)
+    info = []
+    for edge in edges:
+        element, subshell = edge.split('_')
+        d = elements_db[element]['Atomic_properties']['Binding_energies'][subshell]
+        info.append(d)
+
+    return info

@@ -6,55 +6,106 @@ Getting started
 
 Starting Python in Windows
 ----------------------------
-If you used the bundle installation you should be able to use the context menus to get started. Right-click on the folder containing the data you wish to analyse and select "Jupyter notebook here" or "Jupyter qtconsole here". We recommend the former, since notebooks have many advantages over conventional consoles, as will be illustrated in later sections. The examples in some later sections assume Notebook operation. A new tab should appear in your default browser listing the files in the selected folder. To start a python notebook choose "Python 3" in the "New" drop-down menu at the top right of the page. Another new tab will open which is your Notebook.
+If you used the bundle installation you should be able to use the context menus
+to get started. Right-click on the folder containing the data you wish to
+analyse and select "Jupyter notebook here" or "Jupyter qtconsole here". We
+recommend the former, since notebooks have many advantages over conventional
+consoles, as will be illustrated in later sections. The examples in some later
+sections assume Notebook operation. A new tab should appear in your default
+browser listing the files in the selected folder. To start a python notebook
+choose "Python 3" in the "New" drop-down menu at the top right of the page.
+Another new tab will open which is your Notebook.
 
 Starting Python in Linux and MacOS
 ------------------------------------
 
 You can start IPython by opening a system terminal and executing ``ipython``,
-(optionally followed by the "frontend": "qtconsole" for example). However, in most cases, **the most agreeable way**
-to work with HyperSpy interactively is using the `Jupyter Notebook
-<http://jupyter.org>`_ (previously known as the IPython Notebook), which can be started as follows:
+(optionally followed by the "frontend": "qtconsole" for example). However, in
+most cases, **the most agreeable way** to work with HyperSpy interactively
+is using the `Jupyter Notebook <http://jupyter.org>`_ (previously known as
+the IPython Notebook), which can be started as follows:
 
 .. code-block:: bash
 
     $ jupyter notebook
 
-Linux users may find it more convenient to start Jupyter/IPython from the `file manager
-context menu <https://github.com/hyperspy/start_jupyter_cm>`_ . In either OS you can also start by
-`double-clicking a notebook file <https://github.com/takluyver/nbopen>`_ if one already exists.
+Linux users may find it more convenient to start Jupyter/IPython from the
+`file manager context menu <https://github.com/hyperspy/start_jupyter_cm>`_.
+In either OS you can also start by `double-clicking a notebook file
+<https://github.com/takluyver/nbopen>`_ if one already exists.
 
 Starting HyperSpy in the notebook (or terminal)
 -----------------------------------------------
 Typically you will need to `set up IPython for interactive plotting with
 matplotlib
 <http://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using
-``%matplotlib`` (which is known as a 'Jupyter magic') *before executing any plotting command*. So, typically,
-after starting IPython, you can import HyperSpy and set up interactive matplotlib plotting by executing the following
-two lines in the IPython terminal (In these docs we normally use the general Python prompt symbol ``>>>`` but you will probably see ``In [1]:`` etc.):
+``%matplotlib`` (which is known as a 'Jupyter magic')
+*before executing any plotting command*. So, typically, after starting
+IPython, you can import HyperSpy and set up interactive matplotlib plotting by
+executing the following two lines in the IPython terminal (In these docs we
+normally use the general Python prompt symbol ``>>>`` but you will probably
+see ``In [1]:`` etc.):
 
 .. code-block:: python
 
    >>> %matplotlib qt
    >>> import hyperspy.api as hs
 
-Note that to execute lines of code in the notebook you must press ``Shift+Return``. (For details about notebooks and their functionality try the help menu in the notebook).
-Next, import two useful modules: numpy and matplotlib.pyplot, as follows:
+Note that to execute lines of code in the notebook you must press
+``Shift+Return``. (For details about notebooks and their functionality try
+the help menu in the notebook). Next, import two useful modules: numpy and
+matplotlib.pyplot, as follows:
 
 .. code-block:: python
 
    >>> import numpy as np
    >>> import matplotlib.pyplot as plt
 
-The rest of the documentation will assume you have done this. Now you are ready to load your data (see below).
+The rest of the documentation will assume you have done this. It also assumes
+that you have installed at least one of HyperSpy's GUI packages:
+`jupyter widgets GUI <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
+and the
+`traitsui GUI <https://github.com/hyperspy/hyperspy_gui_traitsui>`_.
 
-**Notes for experienced users:** We also fully support the wx backend. Other backends are supported for plotting
-but some features such as navigation sliders may be missing.
+Possible warnings when importing HyperSpy?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. warning::
-        When using the qt4 backend in Python 2 the matplotlib magic must be
-        executed after importing hyperspy and qt must be the default hyperspy
-        backend.
+HyperSpy supports different GUIs and 
+`matplotlib backends <https://matplotlib.org/tutorials/introductory/usage.html#backends>`_ 
+which in specific cases can lead to warnings when importing HyperSpy. Most of the time 
+there is nothing to worry about — the warnings simply inform you of several choices you have.
+There may be several causes for a warning, for example:
+
+- not all the GUIs packages are installed. If none is installed, we reccomend you to install
+  at least the ``hyperspy-gui-ipywidgets`` package is your are planning to perform interactive
+  data analysis in the Jupyter Notebook. Otherwise, you can simply disable the warning in
+  :ref:`preferences <configuring-hyperspy-label>` as explained below.
+- the ``hyperspy-gui-traitsui`` package is installed and you are using an incompatible matplotlib
+  backend (e.g. ``notebook``, ``nbagg`` or ``widget``).
+
+   - If you want to use the traitsui GUI, use the ``qt`` matplotlib backend instead.
+   - Alternatively, if you prefer to use the ``notebook`` or ``widget`` matplotlib backend,
+     and if you don't want to see the (harmless) warning, make sure that you have the
+     ``hyperspy-gui-ipywidgets`` installed and disable the traitsui
+     GUI in the :ref:`preferences <configuring-hyperspy-label>`.
+
+
+By default, HyperSpy warns the user if one of the GUI packages is not installed.
+These warnings can be turned off using the
+:ref:`preferences <configuring-hyperspy-label>` GUI or programmatically as follows:
+
+    .. code-block:: python
+
+       >>> import hyperspy.api as hs
+       >>> hs.preferences.GUIs.warn_if_guis_are_missing = False
+       >>> hs.preferences.save()
+
+
+.. versionchanged:: v1.3
+    HyperSpy works with all matplotlib backends, including the ``notebook`` 
+    (also called ``nbAgg``) backend that enables interactive plotting embedded 
+    in the jupyter notebook.
+
 
 .. NOTE::
 
@@ -69,23 +120,17 @@ but some features such as navigation sliders may be missing.
        >>> import hyperspy.api as hs
 
 
-
-
-
-
-
 Getting help
 ------------
 
-When using IPython, the documentation (docstring in Python jargon) can be accessed by adding a
-question mark to the name of a function. e.g.:
+When using IPython, the documentation (docstring in Python jargon) can be
+accessed by adding a question mark to the name of a function. e.g.:
 
+.. code-block:: none
 
-.. code-block:: python
-
-    >>> hs?
-    >>> hs.load?
-    >>> hs.signals?
+   >>> hs?
+   >>> hs.load?
+   >>> hs.signals?
 
 This syntax is a shortcut to the standard way one of displaying the help
 associated to a given functions (docstring in Python jargon) and it is one of
@@ -114,7 +159,7 @@ working with HyperSpy/Python interactively.
 Loading data
 ------------
 
-Once hyperspy is running, to load from a supported file format (see
+Once HyperSpy is running, to load from a supported file format (see
 :ref:`supported-formats`) simply type:
 
 .. code-block:: python
@@ -146,7 +191,7 @@ HyperSpy can operate on any numpy array by assigning it to a BaseSignal class.
 This is useful e.g. for loading data stored in a format that is not yet
 supported by HyperSpy—supposing that they can be read with another Python
 library—or to explore numpy arrays generated by other Python
-libraries. Simply select the most appropiate signal from the
+libraries. Simply select the most appropriate signal from the
 :py:mod:`~.signals` module and create a new instance by passing a numpy array
 to the constructor e.g.
 
@@ -163,7 +208,7 @@ of the signal class.
 .. _example-data-label:
 
 Loading example data and data from online databases
-----------------------------------------------------
+---------------------------------------------------
 
 HyperSpy is distributed with some example data that can be found in
 `hs.datasets.example_signals`. The following example plots one of the example
@@ -173,11 +218,18 @@ signals:
 
     >>> hs.datasets.example_signals.EDS_TEM_Spectrum().plot()
 
-.. _eelsdb-label:
-    
-.. versionadded:: 1.0
-    :py:func:`~.misc.eels.eelsdb.eelsdb` function.
+.. versionadded:: 1.4
+    :py:mod:`~.datasets.artificial_data`
 
+There are also artificial datasets, which are made to resemble real
+experimental data.
+
+.. code-block:: python
+
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> s.plot()
+
+.. _eelsdb-label:
 
 The :py:func:`~.misc.eels.eelsdb.eelsdb` function in `hs.datasets` can
 directly load spectra from `The EELS Database <http://eelsdb.eu>`_. For
@@ -187,22 +239,24 @@ available in the database:
 .. code-block:: python
 
     >>> hs.datasets.eelsdb(formula="B2O3")
-    [<EELSSpectrum, title: Boron oxide, dimensions: (|520)>, <EELSSpectrum, title: Boron oxide, dimensions: (|520)>]
+    [<EELSSpectrum, title: Boron oxide, dimensions: (|520)>,
+     <EELSSpectrum, title: Boron oxide, dimensions: (|520)>]
 
 
 The navigation and signal dimensions
 ------------------------------------
 
 In HyperSpy the data is interpreted as a signal array and, therefore, the data
-axes are not equivalent. HyperSpy distiguises between *signal* and *navigation*
-axes and most functions operate on the *signal* axes and iterate on the
-*navigation* axes. For example, an EELS spectrum image (i.e. a 2D array of
-spectra) has three dimensions X, Y and energy-loss. In HyperSpy, X and Y are
-the *navigation* dimensions an the energy-loss is the *signal* dimension. To
-make this distinction more explicit the representation of the object includes
-a separator ``|`` between the navigaton and signal dimensions e.g.
+axes are not equivalent. HyperSpy distinguishes between *signal* and
+*navigation* axes and most functions operate on the *signal* axes and
+iterate on the *navigation* axes. For example, an EELS spectrum image (i.e.
+a 2D array of spectra) has three dimensions X, Y and energy-loss. In
+HyperSpy, X and Y are the *navigation* dimensions and the energy-loss is the
+*signal* dimension. To make this distinction more explicit the
+representation of the object includes a separator ``|`` between the
+navigation and signal dimensions e.g.
 
-In Hyperpsy a spectrum image has signal dimension 1 and navigation dimension 2
+In HyperSpy a spectrum image has signal dimension 1 and navigation dimension 2
 and is stored in the Signal1D subclass.
 
 .. code-block:: python
@@ -221,56 +275,59 @@ in the Signal2D subclass.
     >>> im
     <Signal2D, title: , dimensions: (30|20, 10)>
 
-Note the HyperSpy rearranges the axes position to match the following pattern:
-(navigatons axis 0,..., navigation axis n|signal axis 0,..., signal axis n).
-This is the order used for :ref:`indexing the BaseSignal class <signal.indexing>`.
+Note that HyperSpy rearranges the axes when compared to the array order. The
+following few paragraphs explain how and why it does it.
 
-.. _Setting_axis_properties:
+Depending how the array is arranged, some axes are faster to iterate than
+others. Consider an example of a book as the dataset in question. It is
+trivially simple to look at letters in a line, and then lines down the page,
+and finally pages in the whole book.  However if your words are written
+vertically, it can be inconvenient to read top-down (the lines are still
+horizontal, it's just the meaning that's vertical!). It's very time-consuming
+if every letter is on a different page, and for every word you have to turn 5-6
+pages. Exactly the same idea applies here - in order to iterate through the
+data (most often for plotting, but applies for any other operation too), you
+want to keep it ordered for "fast access".
 
-Setting axis properties
------------------------
+In Python (more explicitly `numpy`) the "fast axes order" is C order (also
+called row-major order). This means that the **last** axis of a numpy array is
+fastest to iterate over (i.e. the lines in the book). An alternative ordering
+convention is F order (column-major), where it is the reverse - the first axis
+of an array is the fastest to iterate over. In both cases, the further an axis
+is from the `fast axis` the slower it  is to iterate over it. In the book
+analogy you could think, for example, think about reading the first lines of
+all pages, then the second and so on.
 
-The axes are managed and stored by the :py:class:`~.axes.AxesManager` class
-that is stored in the :py:attr:`~.signal.BaseSignal.axes_manager` attribute of
-the signal class. The indidual axes can be accessed by indexing the AxesManager
-e.g.
+When data is acquired sequentially it is usually stored in acquisition order.
+When a dataset is loaded, HyperSpy generally stores it in memory in the same
+order, which is good for the computer. However, HyperSpy will reorder and
+classify the axes to make it easier for humans. Let's imagine a single numpy
+array that contains pictures of a scene acquired with different exposure times
+on different days. In numpy the array dimensions are  ``(D, E, Y, X)``. This
+order makes it fast to iterate over the images in the order in which they were
+acquired. From a human point of view, this dataset is just a collection of
+images, so HyperSpy first classifies the image axes (``X`` and ``Y``) as
+`signal axes` and the remaining axes the `navigation axes`. Then it reverses
+the order of each sets of axes because many humans are used to get the ``X``
+axis first and, more generally the axes in acquisition order from left to
+right. So, the same axes in HyperSpy are displayed like this: ``(E, D | X,
+Y)``.
 
-.. code-block:: python
+Extending this to arbitrary dimensions, by default, we reverse the numpy axes,
+chop it into two chunks (signal and navigation), and then swap those chunks, at
+least when printing. As an example:
 
-    >>> s = hs.signals.Signal1D(np.random.random((10, 20 , 100)))
-    >>> s
-    <Signal1D, title: , dimensions: (20, 10|100)>
-    >>> s.axes_manager
-    <Axes manager, axes: (<Unnamed 0th axis, size: 20, index: 0>, <Unnamed 1st
-    axis, size: 10, index: 0>|<Unnamed 2nd axis, size: 100>)>
-    >>> s.axes_manager[0]
-    <Unnamed 0th axis, size: 20, index: 0>
+.. code-block:: bash
 
+    (a1, a2, a3, a4, a5, a6) # original (numpy)
+    (a6, a5, a4, a3, a2, a1) # reverse
+    (a6, a5) (a4, a3, a2, a1) # chop
+    (a4, a3, a2, a1) (a6, a5) # swap (HyperSpy)
 
-The axis properties can be set by setting the :py:class:`~.axes.DataAxis`
-attributes e.g.
+In the background, HyperSpy also takes care of storing the data in memory in
+a "machine-friendly" way, so that iterating over the navigation axes is always
+fast.
 
-.. code-block:: python
-
-    >>> s.axes_manager[0].name = "X"
-    >>> s.axes_manager[0]
-    <X axis, size: 20, index: 0>
-
-
-Once the name of an axis has been defined it is possible to request it by its
-name e.g.:
-
-.. code-block:: python
-
-    >>> s.axes_manager["X"]
-    <X axis, size: 20, index: 0>
-    >>> s.axes_manager["X"].scale = 0.2
-    >>> s.axes_manager["X"].units = nm
-    >>> s.axes_manager["X"].offset = 100
-
-
-It is also possible to set the axes properties using a GUI by calling the
-:py:meth:`~.axes.AxesManager.gui` method of the :py:class:`~.axes.AxesManager`.
 
 .. _saving:
 
@@ -288,12 +345,12 @@ the extension of the filename.
     >>> d.save("example_processed.tif")
     >>> # save the data as a png
     >>> d.save("example_processed.png")
-    >>> # save the data as an hdf5 file
-    >>> d.save("example_processed.hdf5")
+    >>> # save the data as an hspy file
+    >>> d.save("example_processed.hspy")
 
 Some file formats are much better at maintaining the information about
-how you processed your data.  The preferred format in HyperSpy is hdf5,
-the hierarchical data format.  This format keeps the most information
+how you processed your data.  The preferred format in HyperSpy is hspy,
+which is based on the HDF5 format.  This format keeps the most information
 possible.
 
 There are optional flags that may be passed to the save function. See
@@ -303,8 +360,8 @@ Accessing and setting the metadata
 ----------------------------------
 
 When loading a file HyperSpy stores all metadata in the BaseSignal
-:py:attr:`~.signal.BaseSignal.original_metadata` attribute. In addition, some of
-those metadata and any new metadata generated by HyperSpy are stored in
+:py:attr:`~.signal.BaseSignal.original_metadata` attribute. In addition,
+some of those metadata and any new metadata generated by HyperSpy are stored in
 :py:attr:`~.signal.BaseSignal.metadata` attribute.
 
 
@@ -372,7 +429,8 @@ calling the :meth:`gui` method:
 
     >>> hs.preferences.gui()
 
-This command should raise the Preferences user interface:
+This command should raise the Preferences user interface if one of the
+hyperspy gui packages are installed and enabled:
 
 .. _preferences_image:
 
@@ -381,17 +439,39 @@ This command should raise the Preferences user interface:
 
    Preferences user interface.
 
+.. versionadded:: 1.3
+    Possibility to enable/disable GUIs in the preferences.
+
+It is also possible to set the preferences programmatically. For example,
+to disable the traitsui GUI elements and save the changes to disk:
+
+.. code-block:: python
+
+    >>> hs.preferences.GUIs.enable_traitsui_gui = False
+    >>> hs.preferences.save()
+    >>> # if not saved, this setting will be used until the next jupyter kernel shutdown
+
+.. versionchanged:: 1.3
+
+   The following items were removed from preferences:
+   ``General.default_export_format``, ``General.lazy``,
+   ``Model.default_fitter``, ``Machine_learning.multiple_files``,
+   ``Machine_learning.same_window``, ``Plot.default_style_to_compare_spectra``,
+   ``Plot.plot_on_load``, ``Plot.pylab_inline``, ``EELS.fine_structure_width``,
+   ``EELS.fine_structure_active``, ``EELS.fine_structure_smoothing``,
+   ``EELS.synchronize_cl_with_ll``, ``EELS.preedge_safe_window_width``,
+   ``EELS.min_distance_between_edges_for_fine_structure``.
+
+
 
 .. _logger-label:
 
 Messages log
 ------------
 
-.. versionadded:: 1.0
-
 HyperSpy writes messages to the `Python logger
 <https://docs.python.org/3/howto/logging.html#logging-basic-tutorial>`_. The
-deafault log level is "WARNING", meaning that only warnings and more severe
+default log level is "WARNING", meaning that only warnings and more severe
 event messages will be displayed. The default can be set in the
 :ref:`preferences <configuring-hyperspy-label>`. Alternatively, it can be set
 using :py:func:`~.logger.set_log_level` e.g.:

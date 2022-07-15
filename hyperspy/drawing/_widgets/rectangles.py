@@ -1,25 +1,31 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 import matplotlib.pyplot as plt
+import logging
 
 from hyperspy.drawing.widgets import Widget2DBase, ResizersMixin
+
+
+_logger = logging.getLogger(__name__)
+# Track if we have already warned when the widget is out of range
+already_warn_out_of_range = False
 
 
 class SquareWidget(Widget2DBase):
@@ -31,8 +37,8 @@ class SquareWidget(Widget2DBase):
     bounds only correspond to pure indices for odd sizes.
     """
 
-    def __init__(self, axes_manager):
-        super(SquareWidget, self).__init__(axes_manager)
+    def __init__(self, axes_manager, **kwargs):
+        super(SquareWidget, self).__init__(axes_manager, **kwargs)
 
     def _set_patch(self):
         """Sets the patch to a matplotlib Rectangle with the correct geometry.
@@ -40,12 +46,12 @@ class SquareWidget(Widget2DBase):
         """
         xy = self._get_patch_xy()
         xs, ys = self.size
-        self.patch = [plt.Rectangle(
+        self._patch = [plt.Rectangle(
             xy, xs, ys,
-            animated=self.blit,
             fill=False,
             lw=self.border_thickness,
             ec=self.color,
+            alpha=self.alpha,
             picker=True,)]
         super(SquareWidget, self)._set_patch()
 
@@ -105,12 +111,16 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         """
         Set bounds by indices. Bounds can either be specified in order left,
         bottom, width, height; or by keywords:
-         * 'bounds': tuple (left, top, width, height)
-         OR
-         * 'x'/'left'
-         * 'y'/'top'
-         * 'w'/'width', alternatively 'right'
-         * 'h'/'height', alternatively 'bottom'
+
+        * 'bounds': tuple (left, top, width, height)
+
+        OR
+
+        * 'x'/'left'
+        * 'y'/'top'
+        * 'w'/'width', alternatively 'right'
+        * 'h'/'height', alternatively 'bottom'
+
         If specifying with keywords, any unspecified dimensions will be kept
         constant (note: width/height will be kept, not right/bottom).
         """
@@ -131,26 +141,79 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         """
         Set bounds by values. Bounds can either be specified in order left,
         bottom, width, height; or by keywords:
-         * 'bounds': tuple (left, top, width, height)
-         OR
-         * 'x'/'left'
-         * 'y'/'top'
-         * 'w'/'width', alternatively 'right' (x+w)
-         * 'h'/'height', alternatively 'bottom' (y+h)
+
+        * 'bounds': tuple (left, top, width, height)
+
+        OR
+
+        * 'x'/'left'
+        * 'y'/'top'
+        * 'w'/'width', alternatively 'right' (x+w)
+        * 'h'/'height', alternatively 'bottom' (y+h)
+
         If specifying with keywords, any unspecified dimensions will be kept
         constant (note: width/height will be kept, not right/bottom).
         """
-
+        global already_warn_out_of_range
         x, y, w, h = self._parse_bounds_args(args, kwargs)
 
-        if not (self.axes[0].low_value <= x <= self.axes[0].high_value):
-            raise ValueError()
-        if not (self.axes[1].low_value <= y <= self.axes[1].high_value):
-            raise ValueError()
-        if not (self.axes[0].low_value <= x + w <= self.axes[0].high_value):
-            raise ValueError()
-        if not (self.axes[1].low_value <= y + h <= self.axes[1].high_value):
-            raise ValueError()
+        def warn(obj, parameter, value):
+            global already_warn_out_of_range
+            if not already_warn_out_of_range:
+                _logger.info('{}: {} is out of range. It is therefore set '
+                             'to the value of {}'.format(obj, parameter, value))
+                already_warn_out_of_range = True
+
+        scale = [axis.scale for axis in self.axes]
+        l0, h0 = self.axes[0].low_value, self.axes[0].high_value
+        l1, h1 = self.axes[1].low_value, self.axes[1].high_value
+
+        in_range = 0
+        if x < l0:
+            x = l0
+            warn(self, '`x`', x)
+        elif h0 <= x:
+            x = h0 - scale[0]
+            warn(self, '`x`', x)
+        else:
+            in_range += 1
+        if y < l1:
+            y = l1
+            warn(self, '`y`', y)
+        elif h1 <= y:
+            warn(self, '`y`', y)
+            y = h1 - scale[1]
+        else:
+            in_range += 1
+        if w < scale[0]:
+            w = scale[0]
+            warn(self, '`width` or `right`', w)
+        elif not (l0 + scale[0] <= x + w <= h0 + scale[0]):
+            if self.size[0] != w:  # resize
+                w = h0 + scale[0] - self.position[0]
+                warn(self, '`width` or `right`', w)
+            if self.position[0] != x:  # moved
+                x = h0 + scale[0] - self.size[0]
+                warn(self, '`x`', x)
+        else:
+            in_range += 1
+        if h < scale[1]:
+            h = scale[1]
+            warn(self, '`height` or `bottom`', h)
+        elif not (l1 + scale[1] <= y + h <= h1 + scale[1]):
+            if self.size[1] != h:  # resize
+                h = h1 + scale[1] - self.position[1]
+                warn(self, '`height` or `bottom`', h)
+            if self.position[1] != y:  # moved
+                y = h1 + scale[1] - self.size[1]
+                warn(self, '`y`', y)
+        else:
+            in_range += 1
+
+        # if we are in range again, reset `already_warn_out_of_range` to False
+        if in_range == 4 and already_warn_out_of_range:
+            _logger.info('{} back in range.'.format(self.__class__.__name__))
+            already_warn_out_of_range = False
 
         old_position, old_size = self.position, self.size
         self._pos = np.array([x, y])
@@ -175,9 +238,11 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         if value == self.width:
             return
         ix = self.indices[0] + value
-        if value <= 0 or \
-                not (self.axes[0].low_index <= ix <= self.axes[0].high_index):
-            raise ValueError()
+        il0, ih0 = self.axes[0].low_index, self.axes[0].high_index
+        if value <= 0 or not (il0 < ix <= ih0):
+            raise ValueError('`width` value is not in range. The '
+                             '`width` is {} and should be in range '
+                             '{}-{}.'.format(ix, il0 + 1, ih0))
         self._set_a_size(0, value)
 
     @property
@@ -189,9 +254,11 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         if value == self.height:
             return
         iy = self.indices[1] + value
-        if value <= 0 or \
-                not (self.axes[1].low_index <= iy <= self.axes[1].high_index):
-            raise ValueError()
+        il1, ih1 = self.axes[1].low_index, self.axes[1].high_index
+        if value <= 0 or not (il1 < iy <= ih1):
+            raise ValueError('`height` value is not in range. The '
+                             '`height` is {} and should be in range '
+                             '{}-{}.'.format(iy, il1 + 1, ih1))
         self._set_a_size(1, value)
 
     # --------- Internal functions ---------
@@ -263,14 +330,14 @@ class RectangleWidget(SquareWidget, ResizersMixin):
 
     def _update_patch_position(self):
         # Override to include resizer positioning
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].set_xy(self._get_patch_xy())
             self._update_resizers()
             self.draw_patch()
 
     def _update_patch_geometry(self):
         # Override to include resizer positioning
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].set_bounds(*self._get_patch_bounds())
             self._update_resizers()
             self.draw_patch()

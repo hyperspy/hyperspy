@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.drawing.marker import MarkerBase
 
@@ -24,18 +24,18 @@ class Text(MarkerBase):
     """Text marker that can be added to the signal figure
 
     Parameters
-    ---------
-    x: array or float
+    ----------
+    x : array or float
         The position of the text in x. If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
-        have the same dimensions in the nagivation axes.
-    y: array or float
+        have the same dimensions in the navigation axes.
+    y : array or float
         The position of the text in y. see x arguments
-    text: array or str
+    text : array or str
         The text. see x arguments
-    kwargs:
-        Kewywords argument of axvline valid properties (i.e. recognized by
-        mpl.plot).
+    kwargs :
+        Keyword arguments are passed to
+        :py:meth:`matplotlib.axes.Axes.text`.
 
     Example
     -------
@@ -46,9 +46,14 @@ class Text(MarkerBase):
     >>>                                 x=i, text='abcdefghij'[i])
     >>>     s.add_marker(m, plot_on_signal=False)
     >>> m = hs.plot.markers.text(x=5, y=range(7,110, 10),
-    >>>                             text=[i for i in 'abcdefghij'])
+    >>>                          text=[i for i in 'abcdefghij'])
     >>> s.add_marker(m)
 
+    Add a marker permanently to a signal
+
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape([10,10]))
+    >>> m = hs.plot.markers.text(5, 5, "a_text")
+    >>> s.add_marker(m, permanent=True)
     """
 
     def __init__(self, x, y, text, **kwargs):
@@ -57,6 +62,18 @@ class Text(MarkerBase):
         self.marker_properties = lp
         self.set_data(x1=x, y1=y, text=text)
         self.set_marker_properties(**kwargs)
+        self.name = 'text'
+
+    def __repr__(self):
+        string = "<marker.{}, {} (x={},y={},text={},color={})>".format(
+            self.__class__.__name__,
+            self.name,
+            self.get_data_position('x1'),
+            self.get_data_position('y1'),
+            self.get_data_position('text'),
+            self.marker_properties['color'],
+        )
+        return(string)
 
     def update(self):
         if self.auto_update is False:
@@ -65,17 +82,7 @@ class Text(MarkerBase):
                                   self.get_data_position('y1')])
         self.marker.set_text(self.get_data_position('text'))
 
-    def plot(self):
-        if self.ax is None:
-            raise AttributeError(
-                "To use this method the marker needs to be first add to a " +
-                "figure using `s._plot.signal_plot.add_marker(m)` or " +
-                "`s._plot.navigator_plot.add_marker(m)`")
+    def _plot_marker(self):
         self.marker = self.ax.text(
             self.get_data_position('x1'), self.get_data_position('y1'),
             self.get_data_position('text'), **self.marker_properties)
-        self.marker.set_animated(True)
-        try:
-            self.ax.hspy_fig._draw_animated()
-        except:
-            pass

@@ -1,12 +1,9 @@
-;File created by HyperSpy version 1.1+dev
+;File created by HyperSpy version 1.1.2+dev
 key	value
-beam-energy	100.0
 byte-order	dont-care
-collection-angle	10.0
-convergence-angle	1.0
 data-length	4
 data-type	float
-date	2016-08-06
+date	
 depth	4
 depth-name	3
 depth-origin	1.5
@@ -21,7 +18,8 @@ height-units	m
 offset	0
 record-by	vector
 signal	EELS
-time	10:55:00
+time	
+title	
 width	3
 width-name	2
 width-origin	1.0

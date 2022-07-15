@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 from __future__ import division
@@ -23,7 +23,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from hyperspy.drawing.figure import BlittedFigure
-from hyperspy.drawing import utils
 
 
 class HistogramTilePlot(BlittedFigure):
@@ -32,16 +31,6 @@ class HistogramTilePlot(BlittedFigure):
         self.figure = None
         self.title = ''
         self.ax = None
-
-    def create_figure(self):
-        self.figure = utils.create_figure(
-            window_title=("Figure " + self.title
-                          if self.title
-                          else None))
-        canvas = self.figure.canvas
-        self._background = canvas.copy_from_bbox(self.figure.bbox)
-        self.figure.canvas.mpl_connect('draw_event', self._on_draw)
-        utils.on_figure_window_close(self.figure, self.close)
 
     def create_axis(self, ncols=1, nrows=1, number=1, title=''):
         ax = self.figure.add_subplot(ncols, nrows, number)
@@ -91,12 +80,11 @@ class HistogramTilePlot(BlittedFigure):
                         bin_edges[0] - width * 0.1, bin_edges[-1] + width * 0.1)
                     ax.set_ylim(0, np.max(hist) * 1.1)
                     # ax.set_title(c_n + ' ' + p_n)
-        self._draw_animated()
-        self.figure.canvas.draw()
+        self.figure.canvas.draw_idle()
 
     def close(self):
         try:
             plt.close(self.figure)
-        except:
+        except BaseException:
             pass
         self.figure = None

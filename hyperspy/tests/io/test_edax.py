@@ -1,217 +1,474 @@
-import nose.tools as nt
-
-import gzip
+import gc
 import hashlib
-import os.path
 import os
-import shutil
+import os.path
+import tempfile
+import zipfile
+
 import numpy as np
+import pytest
+import requests
 
-from hyperspy.io import load
 from hyperspy import signals
+from hyperspy.io import load
 
-test_files = ['Live Map 2_Img.ipr',
-              'single_spect.spc',
-              'spd_map.spc',
-              'spd_map.spd']
-my_path = os.path.dirname(__file__)
+MY_PATH = os.path.dirname(__file__)
+ZIPF = os.path.join(MY_PATH, "edax_files.zip")
+TMP_DIR = tempfile.TemporaryDirectory()
+TEST_FILES_OK = os.path.isfile(ZIPF)
+REASON = ""
+SHA256SUM = "e217c71efbd208da4b52e9cf483443f9da2175f2924a96447ed393086fe32008"
 
 
-class TestSpcSpectrum:
+# The test files are not included in HyperSpy v1.4 because their file size is 36.5MB
+# taking the HyperSpy source distribution file size above PyPI's 60MB limit.
+# As a temporary solution, we attempt to download the test files from GitHub
+# and skip the tests if the download fails.
+if not TEST_FILES_OK:
+    try:
+        r = requests.get(
+            "https://github.com/hyperspy/hyperspy/blob/e7a323a3bb9b237c24bd9267d2cc4fcb31bb99f3/hyperspy/tests/io/edax_files.zip?raw=true")
 
-    def setUp(self):
-        print('testing single spc spectrum...')
-        self.spc = load(os.path.join(
-            my_path,
-            "edax_files",
-            test_files[1]))
+        SHA256SUM_GOT = hashlib.sha256(r.content).hexdigest()
+        if SHA256SUM_GOT == SHA256SUM:
+            with open(ZIPF, 'wb') as f:
+                f.write(r.content)
+            TEST_FILES_OK = True
+        else:
+            REASON = "wrong sha256sum of downloaded file. Expected: %s, got: %s" % SHA256SUM, SHA256SUM_GOT
+    except BaseException as e:
+        REASON = "download of EDAX test files failed: %s" % e
+
+
+def setup_module():
+    if TEST_FILES_OK:
+        with zipfile.ZipFile(ZIPF, 'r') as zipped:
+            zipped.extractall(TMP_DIR.name)
+
+
+pytestmark = pytest.mark.skipif(not TEST_FILES_OK,
+                                reason=REASON)
+
+
+def teardown_module():
+    TMP_DIR.cleanup()
+
+
+class TestSpcSpectrum_v061_xrf:
+
+    @classmethod
+    def setup_class(cls):
+        cls.spc = load(os.path.join(TMP_DIR.name, "spc0_61-ipr333_xrf.spc"))
+        cls.spc_loadAll = load(os.path.join(TMP_DIR.name,
+                                            "spc0_61-ipr333_xrf.spc"),
+                               load_all_spc=True)
+
+    @classmethod
+    def teardown_class(cls):
+        del cls.spc, cls.spc_loadAll
+        gc.collect()
 
     def test_data(self):
-        nt.assert_equal(np.uint32, self.spc.data.dtype)     # test datatype
-        nt.assert_equal((4096,), self.spc.data.shape)       # test data shape
-        nt.assert_equal(
-            [0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 10, 4, 10, 10, 45, 87, 146, 236,
-             312, 342], self.spc.data[:20].tolist())   # test 1st 20 datapoints
+        # test datatype
+        assert np.uint32 == TestSpcSpectrum_v061_xrf.spc.data.dtype
+        # test data shape
+        assert (4000,) == TestSpcSpectrum_v061_xrf.spc.data.shape
+        # test 40 datapoints
+        assert (
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 319, 504, 639, 924,
+             1081, 1326, 1470, 1727, 1983, 2123, 2278, 2509, 2586, 2639,
+             2681, 2833, 2696, 2704, 2812, 2745, 2709, 2647, 2608, 2620,
+             2571, 2669] == TestSpcSpectrum_v061_xrf.spc.data[:40].tolist())
 
     def test_parameters(self):
-        elements = self.spc.metadata.as_dictionary()['Sample']['elements']
-        sem_dict = self.spc.metadata.as_dictionary()[
-            'Acquisition_instrument']['SEM']
+        elements = TestSpcSpectrum_v061_xrf.spc.metadata.as_dictionary()[
+            'Sample']['elements']
+        sem_dict = TestSpcSpectrum_v061_xrf.spc.metadata.as_dictionary()[
+            'Acquisition_instrument']['SEM']  # this will eventually need to
+        #  be changed when XRF-specific
+        #  features are added
         eds_dict = sem_dict['Detector']['EDS']
-        signal_dict = self.spc.metadata.as_dictionary()['Signal']
+        signal_dict = TestSpcSpectrum_v061_xrf.spc.metadata.as_dictionary()[
+            'Signal']
 
         # Testing SEM parameters
-        nt.assert_almost_equal(22, sem_dict['beam_energy'])
-        nt.assert_almost_equal(0, sem_dict['tilt_stage'])
+        np.testing.assert_allclose(30, sem_dict['beam_energy'])
+        np.testing.assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
 
         # Testing EDS parameters
-        nt.assert_almost_equal(0, eds_dict['azimuth_angle'])
-        nt.assert_almost_equal(34, eds_dict['elevation_angle'])
-        nt.assert_almost_equal(129.31299, eds_dict['energy_resolution_MnKa'],
-                               places=5)
-        nt.assert_almost_equal(50.000004, eds_dict['live_time'], places=6)
+        np.testing.assert_allclose(45, eds_dict['azimuth_angle'])
+        np.testing.assert_allclose(35, eds_dict['elevation_angle'])
+        np.testing.assert_allclose(137.92946, eds_dict['energy_resolution_MnKa'],
+                        atol=1E-5)
+        np.testing.assert_allclose(2561.0, eds_dict['live_time'], atol=1E-6)
 
         # Testing elements
-        nt.assert_set_equal({'Al', 'C', 'Ce', 'Cu', 'F', 'Ho', 'Mg', 'O'},
-                            set(elements))
+        assert ({'Al', 'Ca', 'Cl', 'Cr', 'Fe', 'K', 'Mg', 'Mn', 'Si', 'Y'} ==
+                set(elements))
 
         # Testing HyperSpy parameters
-        nt.assert_equal(True, signal_dict['binned'])
-        nt.assert_equal('EDS_SEM', signal_dict['signal_type'])
-        nt.assert_is_instance(self.spc, signals.EDSSEMSpectrum)
+        assert 'EDS_SEM' == signal_dict['signal_type']
+        assert isinstance(TestSpcSpectrum_v061_xrf.spc, signals.EDSSEMSpectrum)
 
     def test_axes(self):
-        spc_ax_manager = {'axis-0': {'name': 'Energy',
+        spc_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
+                                     'name': 'Energy',
                                      'navigate': False,
+                                     'is_binned': True,
+                                     'offset': 0.0,
+                                     'scale': 0.01,
+                                     'size': 4000,
+                                     'units': 'keV'}}
+        assert (spc_ax_manager ==
+                TestSpcSpectrum_v061_xrf.spc.axes_manager.as_dictionary())
+
+    def test_load_all_spc(self):
+        spc_header = TestSpcSpectrum_v061_xrf.spc_loadAll.original_metadata[
+            'spc_header']
+
+        np.testing.assert_allclose(4, spc_header['analysisType'])
+        np.testing.assert_allclose(4, spc_header['analyzerType'])
+        np.testing.assert_allclose(2013, spc_header['collectDateYear'])
+        np.testing.assert_allclose(9, spc_header['collectDateMon'])
+        np.testing.assert_allclose(26, spc_header['collectDateDay'])
+        np.testing.assert_equal(b'Garnet1.', spc_header['fileName'].view('|S8')[0])
+        np.testing.assert_allclose(45, spc_header['xRayTubeZ'])
+
+
+class TestSpcSpectrum_v070_eds:
+
+    @classmethod
+    def setup_class(cls):
+        cls.spc = load(os.path.join(TMP_DIR.name, "single_spect.spc"))
+        cls.spc_loadAll = load(os.path.join(TMP_DIR.name,
+                                            "single_spect.spc"),
+                               load_all_spc=True)
+
+    @classmethod
+    def teardown_class(cls):
+        del cls.spc, cls.spc_loadAll
+        gc.collect()
+
+    def test_data(self):
+        # test datatype
+        assert np.uint32 == TestSpcSpectrum_v070_eds.spc.data.dtype
+        # test data shape
+        assert (4096,) == TestSpcSpectrum_v070_eds.spc.data.shape
+        # test 1st 20 datapoints
+        assert (
+            [0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 10, 4, 10, 10, 45, 87, 146, 236,
+             312, 342] == TestSpcSpectrum_v070_eds.spc.data[:20].tolist())
+
+    def test_parameters(self):
+        elements = TestSpcSpectrum_v070_eds.spc.metadata.as_dictionary()[
+            'Sample']['elements']
+        sem_dict = TestSpcSpectrum_v070_eds.spc.metadata.as_dictionary()[
+            'Acquisition_instrument']['SEM']
+        eds_dict = sem_dict['Detector']['EDS']
+        signal_dict = TestSpcSpectrum_v070_eds.spc.metadata.as_dictionary()[
+            'Signal']
+
+        # Testing SEM parameters
+        np.testing.assert_allclose(22, sem_dict['beam_energy'])
+        np.testing.assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
+
+        # Testing EDS parameters
+        np.testing.assert_allclose(0, eds_dict['azimuth_angle'])
+        np.testing.assert_allclose(34, eds_dict['elevation_angle'])
+        np.testing.assert_allclose(129.31299, eds_dict['energy_resolution_MnKa'],
+                        atol=1E-5)
+        np.testing.assert_allclose(50.000004, eds_dict['live_time'], atol=1E-6)
+
+        # Testing elements
+        assert ({'Al', 'C', 'Ce', 'Cu', 'F', 'Ho', 'Mg', 'O'} ==
+                set(elements))
+
+        # Testing HyperSpy parameters
+        assert 'EDS_SEM' == signal_dict['signal_type']
+        assert isinstance(TestSpcSpectrum_v070_eds.spc, signals.EDSSEMSpectrum)
+
+    def test_axes(self):
+        spc_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
+                                     'name': 'Energy',
+                                     'navigate': False,
+                                     'is_binned': True,
                                      'offset': 0.0,
                                      'scale': 0.01,
                                      'size': 4096,
                                      'units': 'keV'}}
-        nt.assert_dict_equal(spc_ax_manager,
-                             self.spc.axes_manager.as_dictionary())
+        assert (spc_ax_manager ==
+                TestSpcSpectrum_v070_eds.spc.axes_manager.as_dictionary())
+
+    def test_load_all_spc(self):
+        spc_header = TestSpcSpectrum_v070_eds.spc_loadAll.original_metadata[
+            'spc_header']
+
+        np.testing.assert_allclose(4, spc_header['analysisType'])
+        np.testing.assert_allclose(5, spc_header['analyzerType'])
+        np.testing.assert_allclose(2016, spc_header['collectDateYear'])
+        np.testing.assert_allclose(4, spc_header['collectDateMon'])
+        np.testing.assert_allclose(19, spc_header['collectDateDay'])
+        np.testing.assert_equal(b'C:\\ProgramData\\EDAX\\jtaillon\\Cole\\Mapping\\Lsm\\'
+                     b'GFdCr\\950\\Area 1\\spectrum20160419153851427_0.spc',
+                     spc_header['longFileName'].view('|S256')[0])
+        np.testing.assert_allclose(0, spc_header['xRayTubeZ'])
 
 
-class TestSpdMap:
-
-    @classmethod
-    def setup_class(self):
-        print('testing spd map...')
-        spd_fname = os.path.join(my_path,
-                                 "edax_files",
-                                 test_files[3])
-
-        if not os.path.isfile(spd_fname):
-            with gzip.open(os.path.join(my_path,
-                                        "edax_files",
-                                        test_files[3] + ".gz")) as f_in:
-                with open(spd_fname, 'wb') as f_out:
-                    f_out.write(f_in.read())
-                print('Successfully decompressed test map data!')
-
-        if hashlib.md5(open(spd_fname, 'rb').read()).hexdigest() != \
-                'a0c29793146c9e7438fa9b2e1ca05046':
-            raise ValueError('Something went wrong with decompressing the test'
-                             ' file. Please try again.')
-        self.spd = load(os.path.join(my_path,
-                                     "edax_files",
-                                     test_files[3]))
+class TestSpdMap_070_eds:
 
     @classmethod
-    def teardown_class(self):
-        spd_fname = os.path.join(my_path,
-                                 "edax_files",
-                                 test_files[3])
+    def setup_class(cls):
+        cls.spd = load(os.path.join(TMP_DIR.name, "spd_map.spd"),
+                       convert_units=True)
 
-        # hack to release memmap object to allow deleting uncompressed spd map
-        self.spd.data._mmap.close()
-
-        os.remove(spd_fname)
+    @classmethod
+    def teardown_class(cls):
+        del cls.spd
+        gc.collect()
 
     def test_data(self):
-        nt.assert_equal(np.uint16, self.spd.data.dtype)     # test d_type
-        nt.assert_equal((200, 256, 2500), self.spd.data.shape)  # test d_shape
-        nt.assert_equal([[[0, 0, 0, 0, 0],              # test random data
-                          [0, 0, 1, 0, 1],
-                          [0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0]],
-                         [[0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0],
-                          [0, 0, 0, 1, 0],
-                          [0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0]],
-                         [[0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 1],
-                          [0, 1, 1, 0, 0],
-                          [0, 0, 0, 0, 0]],
-                         [[0, 1, 0, 0, 0],
-                          [0, 0, 0, 1, 0],
-                          [0, 0, 0, 0, 0],
-                          [0, 0, 1, 0, 0],
-                          [0, 0, 0, 1, 0]],
-                         [[0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0],
-                          [0, 0, 1, 0, 1],
-                          [0, 0, 0, 1, 0],
-                          [0, 0, 0, 0, 0]]],
-                        self.spd.data[15:20, 15:20, 15:20].tolist())
+        # test d_type
+        assert np.uint16 == TestSpdMap_070_eds.spd.data.dtype
+        # test d_shape
+        assert (200, 256, 2500) == TestSpdMap_070_eds.spd.data.shape
+        assert ([[[0, 0, 0, 0, 0],              # test random data
+                  [0, 0, 1, 0, 1],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0]],
+                 [[0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0]],
+                 [[0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 1],
+                  [0, 1, 1, 0, 0],
+                  [0, 0, 0, 0, 0]],
+                 [[0, 1, 0, 0, 0],
+                  [0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 1, 0, 0],
+                  [0, 0, 0, 1, 0]],
+                 [[0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 1, 0, 1],
+                  [0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 0]]] ==
+                TestSpdMap_070_eds.spd.data[15:20, 15:20, 15:20].tolist())
 
     def test_parameters(self):
-        elements = self.spd.metadata.as_dictionary()['Sample']['elements']
-        sem_dict = self.spd.metadata.as_dictionary()[
+        elements = TestSpdMap_070_eds.spd.metadata.as_dictionary()[
+            'Sample']['elements']
+        sem_dict = TestSpdMap_070_eds.spd.metadata.as_dictionary()[
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
-        signal_dict = self.spd.metadata.as_dictionary()['Signal']
+        signal_dict = TestSpdMap_070_eds.spd.metadata.as_dictionary()['Signal']
 
         # Testing SEM parameters
-        nt.assert_almost_equal(22, sem_dict['beam_energy'])
-        nt.assert_almost_equal(0, sem_dict['tilt_stage'])
+        np.testing.assert_allclose(22, sem_dict['beam_energy'])
+        np.testing.assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
 
         # Testing EDS parameters
-        nt.assert_almost_equal(0, eds_dict['azimuth_angle'])
-        nt.assert_almost_equal(34, eds_dict['elevation_angle'])
-        nt.assert_almost_equal(126.60252, eds_dict['energy_resolution_MnKa'],
-                               places=5)
-        nt.assert_almost_equal(2621.4399, eds_dict['live_time'], places=4)
+        np.testing.assert_allclose(0, eds_dict['azimuth_angle'])
+        np.testing.assert_allclose(34, eds_dict['elevation_angle'])
+        np.testing.assert_allclose(126.60252, eds_dict['energy_resolution_MnKa'],
+                        atol=1E-5)
+        np.testing.assert_allclose(2621.4399, eds_dict['live_time'], atol=1E-4)
 
         # Testing elements
-        nt.assert_set_equal({'Ce', 'Co', 'Cr', 'Fe', 'Gd', 'La', 'Mg', 'O',
-                             'Sr'}, set(elements))
+        assert {'Ce', 'Co', 'Cr', 'Fe', 'Gd', 'La', 'Mg', 'O',
+                'Sr'} == set(elements)
 
         # Testing HyperSpy parameters
-        nt.assert_equal(True, signal_dict['binned'])
-        nt.assert_equal('EDS_SEM', signal_dict['signal_type'])
-        nt.assert_is_instance(self.spd, signals.EDSSEMSpectrum)
+        assert 'EDS_SEM' == signal_dict['signal_type']
+        assert isinstance(TestSpdMap_070_eds.spd, signals.EDSSEMSpectrum)
 
     def test_axes(self):
-        spd_ax_manager = {'axis-0': {'name': 'y',
+        spd_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
+                                     'name': 'y',
                                      'navigate': True,
+                                     'is_binned': False,
                                      'offset': 0.0,
-                                     'scale': 0.014227345585823059,
+                                     'scale': 14.227345585823057,
                                      'size': 200,
-                                     'units': '$\\mu m$'},
-                          'axis-1': {'name': 'x',
+                                     'units': 'nm'},
+                          'axis-1': {'_type': 'UniformDataAxis',
+                                     'name': 'x',
                                      'navigate': True,
+                                     'is_binned': False,
                                      'offset': 0.0,
-                                     'scale': 0.014235896058380604,
+                                     'scale': 14.235896058380602,
                                      'size': 256,
-                                     'units': '$\\mu m$'},
-                          'axis-2': {'name': 'Energy',
+                                     'units': 'nm'},
+                          'axis-2': {'_type': 'UniformDataAxis',
+                                     'name': 'Energy',
                                      'navigate': False,
+                                     'is_binned': True,
                                      'offset': 0.0,
                                      'scale': 0.0050000000000000001,
                                      'size': 2500,
                                      'units': 'keV'}}
-        nt.assert_dict_equal(spd_ax_manager,
-                             self.spd.axes_manager.as_dictionary())
+        assert (spd_ax_manager ==
+                TestSpdMap_070_eds.spd.axes_manager.as_dictionary())
 
     def test_ipr_reading(self):
-        ipr_header = self.spd.original_metadata['ipr_header']
-        nt.assert_almost_equal(0.014235896, ipr_header['mppX'])
-        nt.assert_almost_equal(0.014227346, ipr_header['mppY'])
+        ipr_header = TestSpdMap_070_eds.spd.original_metadata['ipr_header']
+        np.testing.assert_allclose(0.014235896, ipr_header['mppX'])
+        np.testing.assert_allclose(0.014227346, ipr_header['mppY'])
 
     def test_spc_reading(self):
         # Test to make sure that spc metadata matches spd metadata
-        spc_header = self.spd.original_metadata['spc_header']
+        spc_header = TestSpdMap_070_eds.spd.original_metadata['spc_header']
 
-        elements = self.spd.metadata.as_dictionary()['Sample']['elements']
-        sem_dict = self.spd.metadata.as_dictionary()[
+        elements = TestSpdMap_070_eds.spd.metadata.as_dictionary()[
+            'Sample']['elements']
+        sem_dict = TestSpdMap_070_eds.spd.metadata.as_dictionary()[
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
 
-        nt.assert_almost_equal(spc_header.azimuth,
-                               eds_dict['azimuth_angle'])
-        nt.assert_almost_equal(spc_header.detReso,
-                               eds_dict['energy_resolution_MnKa'])
-        nt.assert_almost_equal(spc_header.elevation,
-                               eds_dict['elevation_angle'])
-        nt.assert_almost_equal(spc_header.liveTime,
-                               eds_dict['live_time'])
-        nt.assert_almost_equal(spc_header.evPerChan,
-                               self.spd.axes_manager[2].scale * 1000)
-        nt.assert_almost_equal(spc_header.kV,
-                               sem_dict['beam_energy'])
-        nt.assert_almost_equal(spc_header.numElem,
-                               len(elements))
+        np.testing.assert_allclose(spc_header.azimuth,
+                        eds_dict['azimuth_angle'])
+        np.testing.assert_allclose(spc_header.detReso,
+                        eds_dict['energy_resolution_MnKa'])
+        np.testing.assert_allclose(spc_header.elevation,
+                        eds_dict['elevation_angle'])
+        np.testing.assert_allclose(spc_header.liveTime,
+                        eds_dict['live_time'])
+        np.testing.assert_allclose(spc_header.evPerChan,
+                        TestSpdMap_070_eds.spd.axes_manager[2].scale * 1000)
+        np.testing.assert_allclose(spc_header.kV,
+                        sem_dict['beam_energy'])
+        np.testing.assert_allclose(spc_header.numElem,
+                        len(elements))
 
+
+class TestSpdMap_061_xrf:
+
+    @classmethod
+    def setup_class(cls):
+        cls.spd = load(os.path.join(TMP_DIR.name, "spc0_61-ipr333_xrf.spd"),
+                       convert_units=True)
+
+    @classmethod
+    def teardown_class(cls):
+        del cls.spd
+        gc.collect()
+
+    def test_data(self):
+        # test d_type
+        assert np.uint16 == TestSpdMap_061_xrf.spd.data.dtype
+        # test d_shape
+        assert (200, 256, 2000) == TestSpdMap_061_xrf.spd.data.shape
+        assert ([[[0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 1, 0]],
+                 [[0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0]],
+                 [[0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 1]],
+                 [[0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 1]],
+                 [[0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0]]] ==
+                TestSpdMap_061_xrf.spd.data[15:20, 15:20, 15:20].tolist())
+
+    def test_parameters(self):
+        elements = TestSpdMap_061_xrf.spd.metadata.as_dictionary()['Sample'][
+            'elements']
+        sem_dict = TestSpdMap_061_xrf.spd.metadata.as_dictionary()[
+            'Acquisition_instrument']['SEM']
+        eds_dict = sem_dict['Detector']['EDS']
+        signal_dict = TestSpdMap_061_xrf.spd.metadata.as_dictionary()['Signal']
+
+        # Testing SEM parameters
+        np.testing.assert_allclose(30, sem_dict['beam_energy'])
+        np.testing.assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
+
+        # Testing EDS parameters
+        np.testing.assert_allclose(45, eds_dict['azimuth_angle'])
+        np.testing.assert_allclose(35, eds_dict['elevation_angle'])
+        np.testing.assert_allclose(137.92946, eds_dict['energy_resolution_MnKa'],
+                        atol=1E-5)
+        np.testing.assert_allclose(2561.0, eds_dict['live_time'], atol=1E-4)
+
+        # Testing elements
+        assert {'Al', 'Ca', 'Cl', 'Cr', 'Fe', 'K', 'Mg', 'Mn', 'Si',
+                'Y'} == set(elements)
+
+        # Testing HyperSpy parameters
+        assert 'EDS_SEM' == signal_dict['signal_type']
+        assert isinstance(TestSpdMap_061_xrf.spd, signals.EDSSEMSpectrum)
+
+    def test_axes(self):
+        spd_ax_manager = {'axis-0': {'_type': 'UniformDataAxis',
+                                     'name': 'y',
+                                     'navigate': True,
+                                     'is_binned': False,
+                                     'offset': 0.0,
+                                     'scale': 0.5651920166015625,
+                                     'size': 200,
+                                     'units': 'mm'},
+                          'axis-1': {'_type': 'UniformDataAxis',
+                                     'name': 'x',
+                                     'navigate': True,
+                                     'is_binned': False,
+                                     'offset': 0.0,
+                                     'scale': 0.5651920166015625,
+                                     'size': 256,
+                                     'units': 'mm'},
+                          'axis-2': {'_type': 'UniformDataAxis',
+                                     'name': 'Energy',
+                                     'navigate': False,
+                                     'is_binned': True,
+                                     'offset': 0.0,
+                                     'scale': 0.01,
+                                     'size': 2000,
+                                     'units': 'keV'}}
+        assert (spd_ax_manager ==
+                TestSpdMap_061_xrf.spd.axes_manager.as_dictionary())
+
+    def test_ipr_reading(self):
+        ipr_header = TestSpdMap_061_xrf.spd.original_metadata['ipr_header']
+        np.testing.assert_allclose(565.1920166015625, ipr_header['mppX'])
+        np.testing.assert_allclose(565.1920166015625, ipr_header['mppY'])
+
+    def test_spc_reading(self):
+        # Test to make sure that spc metadata matches spd_061_xrf metadata
+        spc_header = TestSpdMap_061_xrf.spd.original_metadata['spc_header']
+
+        elements = TestSpdMap_061_xrf.spd.metadata.as_dictionary()['Sample'][
+            'elements']
+        sem_dict = TestSpdMap_061_xrf.spd.metadata.as_dictionary()[
+            'Acquisition_instrument']['SEM']
+        eds_dict = sem_dict['Detector']['EDS']
+
+        np.testing.assert_allclose(spc_header.azimuth,
+                        eds_dict['azimuth_angle'])
+        np.testing.assert_allclose(spc_header.detReso,
+                        eds_dict['energy_resolution_MnKa'])
+        np.testing.assert_allclose(spc_header.elevation,
+                        eds_dict['elevation_angle'])
+        np.testing.assert_allclose(spc_header.liveTime,
+                        eds_dict['live_time'])
+        np.testing.assert_allclose(spc_header.evPerChan,
+                        TestSpdMap_061_xrf.spd.axes_manager[2].scale * 1000)
+        np.testing.assert_allclose(spc_header.kV,
+                        sem_dict['beam_energy'])
+        np.testing.assert_allclose(spc_header.numElem,
+                        len(elements))

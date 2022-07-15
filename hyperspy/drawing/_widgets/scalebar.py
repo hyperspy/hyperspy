@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 from hyperspy.misc.math_tools import closest_nice_number
@@ -27,11 +27,11 @@ class ScaleBar(object):
                  animated=False):
         """Add a scale bar to an image.
 
-        Parameteres
-        -----------
+        Parameters
+        ----------
         ax : matplotlib axes
             The axes where to draw the scale bar.
-        units : string
+        units : str
         pixel_size : {None, float}
             If None the axes of the image are supposed to be calibrated.
             Otherwise the pixel size must be specified.
@@ -101,9 +101,9 @@ class ScaleBar(object):
 
     def remove(self):
         if self.line is not None:
-            self.ax.lines.remove(self.line)
+            self.line.remove()
         if self.text is not None:
-            self.ax.texts.remove(self.text)
+            self.text.remove()
 
     def plot_scale(self, line_width=1):
         self.remove()
@@ -121,7 +121,7 @@ class ScaleBar(object):
                                  animated=self.animated)
         self.ax.set_xlim(self.xmin, self.xmax)
         self.ax.set_ylim(self.ymin, self.ymax)
-        self.ax.figure.canvas.draw()
+        self.ax.figure.canvas.draw_idle()
 
     def _set_position(self, x, y):
         self.position = x, y

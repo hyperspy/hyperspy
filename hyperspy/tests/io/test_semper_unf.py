@@ -1,31 +1,30 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import os.path
-from os import remove
 import tempfile
+from os import remove
 
-import nose.tools as nt
 import numpy as np
+import pytest
 
 from hyperspy.io import load
-from hyperspy.signals import BaseSignal, Signal2D, Signal1D, ComplexSignal
-
+from hyperspy.signals import BaseSignal, ComplexSignal, Signal1D, Signal2D
 
 my_path = os.path.dirname(__file__)
 
@@ -46,12 +45,11 @@ def test_writing_unsupported_data_type():
     data = np.arange(5 * 10).reshape((5, 10))
     s = BaseSignal(data.astype('int64'))
     with tempfile.TemporaryDirectory() as tmpdir:
-        with nt.assert_raises(IOError) as cm:
+        with pytest.raises(IOError) as cm:
             fname = os.path.join(tmpdir,
                                  'test_writing_unsupported_data_type.unf')
             s.save(fname)
-    nt.assert_in("The SEMPER file format does not support int64 data type",
-                 cm.exception.args[0])
+            cm.match("The SEMPER file format does not support int64 data type",)
 
 
 def test_writing_loading_metadata():
@@ -64,22 +62,22 @@ def test_writing_loading_metadata():
         s.save(fname)
         s2 = load(fname)
         np.testing.assert_allclose(s.data, s2.data)
-        nt.assert_equal(s.metadata.General.date, s2.metadata.General.date)
-        nt.assert_equal(s.metadata.General.time, s2.metadata.General.time)
+        assert s.metadata.General.date == s2.metadata.General.date
+        assert s.metadata.General.time == s2.metadata.General.time
 
 
 def test_signal_3d_loading():
     signal = load(os.path.join(my_path, 'unf_files', 'example_signal_3d.unf'))
     np.testing.assert_equal(signal.data, data_signal)
     np.testing.assert_equal(signal.original_metadata.IFORM, 2)  # float
-    nt.assert_is_instance(signal, BaseSignal)
+    assert isinstance(signal, BaseSignal)
 
 
 def test_image_2d_loading():
     signal = load(os.path.join(my_path, 'unf_files', 'example_image_2d.unf'))
     np.testing.assert_equal(signal.data, data_image)
     np.testing.assert_equal(signal.original_metadata.IFORM, 2)  # float
-    nt.assert_is_instance(signal, Signal2D)
+    assert isinstance(signal, Signal2D)
 
 
 def test_spectrum_1d_loading():
@@ -90,14 +88,14 @@ def test_spectrum_1d_loading():
             'example_spectrum_1d.unf'))
     np.testing.assert_equal(signal.data, data_spectrum)
     np.testing.assert_equal(signal.original_metadata.IFORM, 2)  # float
-    nt.assert_is_instance(signal, Signal1D)
+    assert isinstance(signal, Signal1D)
 
 
 def test_image_byte_loading():
     signal = load(os.path.join(my_path, 'unf_files', 'example_image_byte.unf'))
     np.testing.assert_equal(signal.data, data_image_byte)
     np.testing.assert_equal(signal.original_metadata.IFORM, 0)  # byte
-    nt.assert_is_instance(signal, Signal2D)
+    assert isinstance(signal, Signal2D)
 
 
 def test_image_int16_loading():
@@ -108,7 +106,7 @@ def test_image_int16_loading():
             'example_image_int16.unf'))
     np.testing.assert_equal(signal.data, data_image_int16)
     np.testing.assert_equal(signal.original_metadata.IFORM, 1)  # int16
-    nt.assert_is_instance(signal, Signal2D)
+    assert isinstance(signal, Signal2D)
 
 
 def test_image_int32_loading():
@@ -119,7 +117,7 @@ def test_image_int32_loading():
             'example_image_int32.unf'))
     np.testing.assert_equal(signal.data, data_image_int32)
     np.testing.assert_equal(signal.original_metadata.IFORM, 4)  # int32
-    nt.assert_is_instance(signal, Signal2D)
+    assert isinstance(signal, Signal2D)
 
 
 def test_image_complex_loading():
@@ -130,7 +128,7 @@ def test_image_complex_loading():
             'example_image_complex.unf'))
     np.testing.assert_equal(signal.data, data_image_complex)
     np.testing.assert_equal(signal.original_metadata.IFORM, 3)  # complex
-    nt.assert_is_instance(signal, ComplexSignal)
+    assert isinstance(signal, ComplexSignal)
 
 
 def test_with_title_loading():
@@ -138,14 +136,14 @@ def test_with_title_loading():
     np.testing.assert_equal(signal.data, data_image)
     np.testing.assert_equal(signal.original_metadata.IFORM, 2)  # float
     np.testing.assert_equal(signal.metadata.General.title, test_title)
-    nt.assert_is_instance(signal, Signal2D)
+    assert isinstance(signal, Signal2D)
 
 
 def test_no_label_loading():
     signal = load(os.path.join(my_path, 'unf_files', 'example_no_label.unf'))
     np.testing.assert_equal(signal.data, data_image)
     np.testing.assert_equal(signal.original_metadata.ILABEL, 0)
-    nt.assert_is_instance(signal, Signal2D)
+    assert isinstance(signal, Signal2D)
 
 
 class TestCaseSaveAndReadImage():
@@ -162,9 +160,9 @@ class TestCaseSaveAndReadImage():
         signal = load(os.path.join(my_path, 'unf_files', 'example_temp.unf'))
         np.testing.assert_equal(signal.data, signal_ref.data)
         np.testing.assert_equal(signal.metadata.General.title, test_title)
-        nt.assert_is_instance(signal, Signal2D)
+        assert isinstance(signal, Signal2D)
 
-    def tearDown(self):
+    def teardown_method(self, method):
         remove(os.path.join(my_path, 'unf_files', 'example_temp.unf'))
 
 
@@ -178,12 +176,7 @@ class TestCaseSaveAndReadByte():
         signal = load(os.path.join(my_path, 'unf_files', 'example_temp.unf'))
         np.testing.assert_equal(signal.data, signal_ref.data)
         np.testing.assert_equal(signal.metadata.General.title, test_title)
-        nt.assert_is_instance(signal, Signal2D)
+        assert isinstance(signal, Signal2D)
 
-    def tearDown(self):
+    def teardown_method(self, method):
         remove(os.path.join(my_path, 'unf_files', 'example_temp.unf'))
-
-
-if __name__ == '__main__':
-    import nose
-    nose.run(defaultTest=__name__)

@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -13,14 +13,12 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
-import nose.tools as nt
 
+from hyperspy.misc.hist_tools import histogram
 from hyperspy.samfire_utils.segmenters.histogram import HistogramSegmenter
-from hyperspy.misc.utils import DictionaryTreeBrowser
-from hyperspy.external.astroML.histtools import histogram
 
 
 def compare_two_value_dicts(ans_r, ans):
@@ -32,16 +30,16 @@ def compare_two_value_dicts(ans_r, ans):
                 test = test and p in ans[k]
                 if test:
                     if isinstance(pv, tuple):
-                        nt.assert_true(np.all(pv[0] == ans[k][p][0]))
-                        nt.assert_true(np.all(pv[1] == ans[k][p][1]))
+                        assert np.all(pv[0] == ans[k][p][0])
+                        assert np.all(pv[1] == ans[k][p][1])
                     else:
-                        nt.assert_true(np.all(pv == ans[k][p]))
+                        assert np.all(pv == ans[k][p])
     return test
 
 
 class TestHistogramSegmenter:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.test_dict = {'one': {'A': np.array([10.])},
                           'two': {'centre': np.array([0., 1.]),
                                   'sigma': np.array([-3., 0., 3., 1., 1.5, 2.,
@@ -65,9 +63,9 @@ class TestHistogramSegmenter:
 
     def test_init(self):
         s = self.s
-        nt.assert_is_none(s.database)
-        nt.assert_equal(s._min_points, 4)
-        nt.assert_equal(s.bins, 'freedman')
+        assert s.database is None
+        assert s._min_points == 4
+        assert s.bins == 'fd'
 
     def test_most_frequent(self):
         s = self.s
@@ -75,7 +73,7 @@ class TestHistogramSegmenter:
         freq = s.most_frequent()
         res = {'one': {'A': np.array([10.05])},
                'two': {'centre': np.array([0.05, 0.95]), 'sigma': np.array([0.75])}}
-        nt.assert_true(compare_two_value_dicts(res, freq))
+        assert compare_two_value_dicts(res, freq)
 
     def test_update(self):
         s = self.s
@@ -85,4 +83,4 @@ class TestHistogramSegmenter:
         print(self.test_database)
         print('--------------------------------------\n calculated:')
         print(s.database)
-        nt.assert_true(compare_two_value_dicts(s.database, self.test_database))
+        assert compare_two_value_dicts(s.database, self.test_database)

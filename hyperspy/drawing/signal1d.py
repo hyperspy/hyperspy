@@ -1,29 +1,38 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import logging
+import inspect
+from functools import partial
 
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
 from hyperspy.events import Event, Events
+from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.misc.test_utils import ignore_warning
+
+
+_logger = logging.getLogger(__name__)
 
 
 class Signal1DFigure(BlittedFigure):
@@ -31,14 +40,13 @@ class Signal1DFigure(BlittedFigure):
     """
     """
 
-    def __init__(self, title=""):
-        super(Signal1DFigure, self).__init__()
+    def __init__(self, title="", **kwargs):
+        super().__init__()
         self.figure = None
         self.ax = None
         self.right_ax = None
         self.ax_lines = list()
         self.right_ax_lines = list()
-        self.ax_markers = list()
         self.axes_manager = None
         self.right_axes_manager = None
 
@@ -46,7 +54,7 @@ class Signal1DFigure(BlittedFigure):
         self.xlabel = ''
         self.ylabel = ''
         self.title = title
-        self.create_figure()
+        self.create_figure(**kwargs)
         self.create_axis()
 
         # Color cycles
@@ -55,28 +63,84 @@ class Signal1DFigure(BlittedFigure):
             'step': utils.ColorCycle(),
             'scatter': utils.ColorCycle(), }
 
-    def create_figure(self):
-        self.figure = utils.create_figure(
-            window_title="Figure " + self.title if self.title
-            else None)
-        utils.on_figure_window_close(self.figure, self._on_close)
-        self.figure.canvas.mpl_connect('draw_event', self._on_draw)
-
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
-        self.ax.yaxis.set_animated(True)
-        self.ax.xaxis.set_animated(True)
+        animated = self.figure.canvas.supports_blit
+        self.ax.yaxis.set_animated(animated)
+        self.ax.xaxis.set_animated(animated)
         self.ax.hspy_fig = self
 
-    def create_right_axis(self):
+    def create_right_axis(self, color='black', adjust_layout=True):
+        """
+        Add an axis on the right hand side of the figure.
+
+        Parameters
+        ----------
+        adjust_layout : bool, optional
+            Whether to call ``plt.tight_layout`` or not. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
         if self.ax is None:
             self.create_axis()
         if self.right_ax is None:
             self.right_ax = self.ax.twinx()
             self.right_ax.hspy_fig = self
-            self.right_ax.yaxis.set_animated(True)
+            self.right_ax.yaxis.set_animated(self.figure.canvas.supports_blit)
+            self.right_ax.tick_params(axis='y', labelcolor=color)
+            # Needs to set the zorder of the ax to get the mouse event for ax
+            # See https://github.com/matplotlib/matplotlib/issues/10009
+            self.ax.set_zorder(self.right_ax.get_zorder() + 1)
+            self.ax.patch.set_visible(False)
+        if adjust_layout:
+            plt.tight_layout()
 
-    def add_line(self, line, ax='left'):
+    def close_right_axis(self, adjust_layout=True):
+        """
+        Remove the axis on the right hand side of the figure
+
+        Parameters
+        ----------
+        adjust_layout : bool, optional
+            Whether to call ``plt.tight_layout`` or not. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
+        if self.right_ax is not None:
+            for lines in self.right_ax_lines:
+                lines.close()
+            self.right_ax.remove()
+            self.right_ax = None
+        if adjust_layout:
+            plt.tight_layout()
+
+    def add_line(self, line, ax='left', connect_navigation=False):
+        """
+        Add Signal1DLine to figure
+
+        Parameters
+        ----------
+        line : Signal1DLine object
+            Line to be added to the figure.
+        ax : {'left', 'right'}, optional
+            Position the y axis, either 'left'. The default is 'left'.
+        connect_navigation : bool, optional
+            Connect the update of the line to the `indices_changed` event of
+            the axes_manager. This only necessary when adding a line to the
+            left since the `indices_changed` event is already connected to
+            the `update` method of `Signal1DFigure`. The default is False.
+
+        Returns
+        -------
+        None.
+
+        """
         if ax == 'left':
             line.ax = self.ax
             if line.axes_manager is None:
@@ -89,6 +153,12 @@ class Signal1DFigure(BlittedFigure):
             line.sf_lines = self.right_ax_lines
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
+        if connect_navigation:
+            f = partial(line._auto_update_line, update_ylimits=True)
+            line.axes_manager.events.indices_changed.connect(f, [])
+            line.events.closed.connect(
+                lambda: line.axes_manager.events.indices_changed.disconnect(f),
+                [])
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
@@ -101,47 +171,77 @@ class Signal1DFigure(BlittedFigure):
                 self._color_cycles[line.type].color_cycle.remove(
                     rgba_color)
 
-    def plot(self):
+    def plot(self, data_function_kwargs={}, **kwargs):
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
         self.ax.set_title(self.title)
         x_axis_upper_lims = []
         x_axis_lower_lims = []
+
         for line in self.ax_lines:
-            line.plot()
-            x_axis_lower_lims.append(line.axis.axis[0])
-            x_axis_upper_lims.append(line.axis.axis[-1])
+            line.plot(data_function_kwargs=data_function_kwargs, **kwargs)
+            if len(line.axis.axis) > 1:
+                x_axis_lower_lims.append(line.axis.axis[0])
+                x_axis_upper_lims.append(line.axis.axis[-1])
+
         for marker in self.ax_markers:
-            marker.plot()
-        plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
-        # To be discussed
+            marker.plot(render_figure=False)
+
+        plt.xlim(min(x_axis_lower_lims, default=None),
+                 max(x_axis_upper_lims, default=None)
+                 )
+
         self.axes_manager.events.indices_changed.connect(self.update, [])
         self.events.closed.connect(
             lambda: self.axes_manager.events.indices_changed.disconnect(
                 self.update), [])
+
         if hasattr(self.figure, 'tight_layout'):
             try:
                 self.figure.tight_layout()
-            except:
+            except BaseException:
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
                 pass
+        self.render_figure()
 
     def _on_close(self):
+        _logger.debug('Closing Signal1DFigure.')
         if self.figure is None:
             return  # Already closed
         for line in self.ax_lines + self.right_ax_lines:
             line.close()
         super(Signal1DFigure, self)._on_close()
+        _logger.debug('Signal1DFigure Closed.')
 
     def update(self):
+        """
+        Update lines, markers and render at the end.
+        This method is connected to the `indices_changed` event of the
+        `axes_manager`.
+        """
+
+        def update_lines(ax, ax_lines):
+            y_min, y_max = np.nan, np.nan
+            for line in ax_lines:
+                # save on figure rendering and do it at the end
+                # don't update the y limits
+                line._auto_update_line(render_figure=False,
+                                       update_ylimits=False)
+                y_min = np.nanmin([y_min, line._y_min])
+                y_max = np.nanmax([y_max, line._y_max])
+            ax.set_ylim(y_min, y_max)
+
         for marker in self.ax_markers:
             marker.update()
-        for line in self.ax_lines + \
-                self.right_ax_lines:
-            line.update()
-        # To be discussed
-        # self.ax.hspy_fig._draw_animated()
+
+        # Left and right axis needs to be updated separetely to set the
+        # correct y limits of each axes
+        update_lines(self.ax, self.ax_lines)
+        if self.right_ax is not None:
+            update_lines(self.right_ax, self.right_ax_lines)
+
+        self.render_figure()
 
 
 class Signal1DLine(object):
@@ -157,6 +257,9 @@ class Signal1DLine(object):
         containing valid line properties. In addition it understands
         the keyword `type` that can take the following values:
         {'scatter', 'step', 'line'}
+    auto_update: bool
+        If False, executing ``_auto_update_line`` does not update the
+        line plot.
 
     Methods
     -------
@@ -184,19 +287,31 @@ class Signal1DLine(object):
         self.ax = None
         # Data attributes
         self.data_function = None
+        # args to pass to `__call__`
+        self.data_function_kwargs = {}
         self.axis = None
         self.axes_manager = None
-        self.auto_update = True
-        self.get_complex = False
+        self._plot_imag = False
+        self.norm = 'linear'
 
         # Properties
+        self.auto_update = True
+        self.autoscale = 'v'
+        self._y_min = np.nan
+        self._y_max = np.nan
         self.line = None
-        self.autoscale = False
         self.plot_indices = False
         self.text = None
         self.text_position = (-0.1, 1.05,)
         self._line_properties = {}
         self.type = "line"
+
+    @property
+    def get_complex(self):
+        warnings.warn("The `get_complex` attribute is deprecated and will be"
+                      "removed in 2.0, please use `_plot_imag` instead.",
+                      VisibleDeprecationWarning)
+        return self._plot_imag
 
     @property
     def line_properties(self):
@@ -220,7 +335,7 @@ class Signal1DLine(object):
                 self._line_properties[key] = item
         if self.line is not None:
             plt.setp(self.line, **self.line_properties)
-            self.ax.figure.canvas.draw()
+            self.ax.figure.canvas.draw_idle()
 
     def set_line_properties(self, **kwargs):
         self.line_properties = kwargs
@@ -278,23 +393,34 @@ class Signal1DLine(object):
 
         if self.line is not None:
             plt.setp(self.line, **self.line_properties)
-            self.ax.figure.canvas.draw()
+            self.ax.figure.canvas.draw_idle()
 
-    def plot(self, data=1):
-        f = self.data_function
-        if self.get_complex is False:
-            data = f(axes_manager=self.axes_manager).real
-        else:
-            data = f(axes_manager=self.axes_manager).imag
+    def plot(self, data=1, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
+        data = self._get_data()
         if self.line is not None:
             self.line.remove()
-        self.line, = self.ax.plot(self.axis.axis, data,
-                                  **self.line_properties)
-        self.line.set_animated(True)
-        self.axes_manager.events.indices_changed.connect(self.update, [])
-        self.events.closed.connect(
-            lambda: self.axes_manager.events.indices_changed.disconnect(
-                self.update), [])
+
+        norm = self.norm
+        if norm == 'log':
+            plot = self.ax.semilogy
+        elif (isinstance(norm, mpl.colors.Normalize) or
+              (inspect.isclass(norm) and issubclass(norm, mpl.colors.Normalize))
+              ):
+            raise ValueError("Matplotlib Normalize instance or subclass can "
+                             "be used for Signal2D only.")
+        elif norm not in ["auto", "linear"]:
+            raise ValueError("`norm` paramater should be 'auto', 'linear' or "
+                             "'log' for Signal1D.")
+        else:
+            plot = self.ax.plot
+        # If axis is a DataAxis instance, take the axis attribute
+        axis = getattr(self.axis, 'axis', self.axis)
+        self.line, = plot(axis, data, **self.line_properties,
+                          animated=self.ax.figure.canvas.supports_blit)
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
@@ -305,66 +431,135 @@ class Signal1DLine(object):
                                      transform=self.ax.transAxes,
                                      fontsize=12,
                                      color=self.line.get_color(),
-                                     animated=True)
-        self.ax.figure.canvas.draw()
+                                     animated=self.ax.figure.canvas.supports_blit)
+        self._y_min, self._y_max = self.ax.get_ylim()
+        self.ax.hspy_fig.render_figure()
 
-    def update(self, force_replot=False):
-        """Update the current spectrum figure"""
-        if self.auto_update is False:
-            return
+    def _get_data(self, real_part=False):
+        if self._plot_imag and not real_part:
+            ydata = self.data_function(axes_manager=self.axes_manager,
+                                       **self.data_function_kwargs).imag
+        else:
+            ydata = self.data_function(axes_manager=self.axes_manager,
+                                       **self.data_function_kwargs).real
+        return ydata
+
+    def _auto_update_line(self, update_ylimits=False, **kwargs):
+        """Updates the line plot only if `auto_update` is `True`.
+
+        This is useful to connect to events that automatically update the line.
+
+        """
+        if self.auto_update:
+            if 'render_figure' not in kwargs.keys():
+                # if markers are plotted, we don't render the figure now but
+                # once the markers have been updated
+                kwargs['render_figure'] = (
+                    len(self.ax.hspy_fig.ax_markers) == 0)
+            self.update(self, update_ylimits=update_ylimits, **kwargs)
+
+    def update(self, force_replot=False, render_figure=True,
+               update_ylimits=False):
+        """Update the current spectrum figure
+
+        Parameters
+        ----------
+        force_replot : bool
+            If True, close and open the figure. Default is False.
+        render_figure : bool
+            If True, render the figure. Useful to avoid firing matplotlib
+            drawing events too often. Default is True.
+        update_ylimits : bool
+            If True, update the y-limits. This is useful to avoid the figure
+            flickering when different lines update the y-limits consecutively,
+            in which case, this is done in `Signal1DFigure.update`.
+            Default is False.
+
+        """
         if force_replot is True:
             self.close()
-            self.plot()
-        if self.get_complex is False:
-            ydata = self.data_function(axes_manager=self.axes_manager).real
-        else:
-            ydata = self.data_function(axes_manager=self.axes_manager).imag
+            self.plot(data_function_kwargs=self.data_function_kwargs,
+                      norm=self.norm)
 
-        old_xaxis = self.line.get_xdata()
-        if len(old_xaxis) != self.axis.size or \
-                np.any(np.not_equal(old_xaxis, self.axis.axis)):
-            self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
-            self.line.set_data(self.axis.axis, ydata)
+        self._y_min, self._y_max = self.ax.get_ylim()
+        ydata = self._get_data()
+
+        # If axis is a DataAxis instance, take the axis attribute
+        axis = getattr(self.axis, 'axis', self.axis)
+        if not np.array_equiv(self.line.get_xdata(), axis):
+            self.line.set_data(axis, ydata)
         else:
             self.line.set_ydata(ydata)
 
-        if self.autoscale is True:
+        # Don't change xlim if axis has 0 length (unnecessary)
+        if 'x' in self.autoscale and len(axis) > 0:
+            x_min, x_max = axis[0], axis[-1]
+            if x_min == x_max:
+                # To avoid matplotlib UserWarning when calling `set_ylim`
+                x_min, x_max = (x_min - 0.1, x_min + 0.1)
+            self.ax.set_xlim(x_min, x_max)
+
+        # Don't change ymin if data has 0 length (unnecessary)
+        if 'v' in self.autoscale and len(ydata) > 0:
             self.ax.relim()
-            y1, y2 = np.searchsorted(self.axis.axis,
-                                     self.ax.get_xbound())
-            y2 += 2
-            y1, y2 = np.clip((y1, y2), 0, len(ydata - 1))
-            clipped_ydata = ydata[y1:y2]
-            y_max, y_min = (np.nanmax(clipped_ydata),
-                            np.nanmin(clipped_ydata))
-            if self.get_complex:
-                yreal = self.data_function(axes_manager=self.axes_manager).real
-                clipped_yreal = yreal[y1:y2]
-                y_min = min(y_min, clipped_yreal.min())
-                y_max = max(y_max, clipped_yreal.max())
-            self.ax.set_ylim(y_min, y_max)
+            # Based on the current zoom of the x axis, find the corresponding
+            # y range of data and calculate the y_min, y_max accordingly
+            i1, i2 = np.searchsorted(axis, self.ax.get_xbound())
+            # Make interval wider on both side and clip to allowed range
+            i1, i2 = np.clip((i1-1, i2+1), 0, len(ydata - 1))
+            ydata = ydata[i1:i2]
+
+            with ignore_warning(category=RuntimeWarning):
+                # In case of "All-NaN slices"
+                y_max, y_min = np.nanmax(ydata), np.nanmin(ydata)
+
+            if self._plot_imag:
+                # Add real plot
+                yreal = self._get_data(real_part=True)[i1:i2]
+                with ignore_warning(category=RuntimeWarning):
+                    # In case of "All-NaN slices"
+                    y_min = min(y_min, np.nanmin(yreal))
+                    y_max = max(y_max, np.nanmin(yreal))
+
+            if y_min == y_max:
+                # To avoid matplotlib UserWarning when calling `set_ylim`
+                y_min, y_max = y_min - 0.1, y_max + 0.1
+            if not np.isfinite(y_min):
+                y_min = None  # data are -inf or all NaN
+            if not np.isfinite(y_max):
+                y_max = None  # data are inf or all NaN
+            if y_min is not None:
+                self._y_min = y_min
+            if y_max is not None:
+                self._y_max = y_max
+            if update_ylimits:
+                # Most of the time, we don't want to call `set_ylim` now to
+                # avoid flickering of the figure. However, we use the values
+                # `self._y_min` and `self._y_max` in `Signal1DFigure.update`
+                self.ax.set_ylim(self._y_min, self._y_max)
+
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)
-        try:
-            self.ax.hspy_fig._draw_animated()
-        except:
-            # There may be errors if the figure does no longer exist.
-            pass
+
+        if render_figure:
+            self.ax.hspy_fig.render_figure()
 
     def close(self):
+        _logger.debug('Closing `Signal1DLine`.')
         if self.line in self.ax.lines:
-            self.ax.lines.remove(self.line)
+            self.line.remove()
         if self.text and self.text in self.ax.texts:
-            self.ax.texts.remove(self.text)
+            self.text.remove()
         if self.sf_lines and self in self.sf_lines:
             self.sf_lines.remove(self)
         self.events.closed.trigger(obj=self)
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
         try:
-            self.ax.figure.canvas.draw()
-        except:
+            self.ax.figure.canvas.draw_idle()
+        except BaseException:
             pass
+        _logger.debug('`Signal1DLine` closed.')
 
 
 def _plot_component(factors, idx, ax=None, cal_axis=None,

@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import copy
@@ -23,7 +23,7 @@ import numpy as np
 from traits.api import Undefined
 
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
-from hyperspy.drawing import signal1d, utils
+from hyperspy.drawing import signal1d
 
 
 class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
@@ -73,29 +73,31 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         else:
             self.remove_right_pointer()
 
-    def plot_signal(self):
-        if self.signal_plot is not None:
-            self.signal_plot.plot()
-            return
+    def plot_signal(self, **kwargs):
+        super().plot_signal()
         # Create the figure
-        self.xlabel = '%s' % str(self.axes_manager.signal_axes[0])
-        if self.axes_manager.signal_axes[0].units is not Undefined:
-            self.xlabel += ' (%s)' % self.axes_manager.signal_axes[0].units
-        self.ylabel = self.quantity_label
         self.axis = self.axes_manager.signal_axes[0]
         sf = signal1d.Signal1DFigure(title=self.signal_title +
                                      " Signal")
+        sf.axis = self.axis
+        if sf.ax is None:
+            sf.create_axis()
+        sf.axes_manager = self.axes_manager
+        self.xlabel = '{}'.format(self.axes_manager.signal_axes[0])
+        if self.axes_manager.signal_axes[0].units is not Undefined:
+            self.xlabel += ' ({})'.format(
+                self.axes_manager.signal_axes[0].units)
+        self.ylabel = self.quantity_label if self.quantity_label != '' \
+            else 'Intensity'
         sf.xlabel = self.xlabel
         sf.ylabel = self.ylabel
-        sf.axis = self.axis
-        sf.create_axis()
-        sf.axes_manager = self.axes_manager
+
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
-        is_complex = any(np.iscomplex(self.signal_data_function()))
         sl = signal1d.Signal1DLine()
-        sl.autoscale = True if not is_complex else False
+        is_complex = np.iscomplexobj(self.signal_data_function())
         sl.data_function = self.signal_data_function
+        kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         sl.plot_indices = True
         if self.pointer is not None:
             color = self.pointer.color
@@ -108,34 +110,34 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         # default coordinates
         if is_complex:
             sl = signal1d.Signal1DLine()
-            sl.autoscale = True
             sl.data_function = self.signal_data_function
             sl.plot_coordinates = True
-            sl.get_complex = True
+            sl._plot_imag = True
             sl.set_line_properties(color="blue", type='step')
             # Add extra line to the figure
             sf.add_line(sl)
 
         self.signal_plot = sf
-        sf.plot()
-        if self.navigator_plot is not None and sf.figure is not None:
-            self.navigator_plot.events.closed.connect(
-                self._on_navigator_plot_closing, [])
-            sf.events.closed.connect(self.close_navigator_plot, [])
-            self.signal_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.axes_manager.key_navigator)
-            self.navigator_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.axes_manager.key_navigator)
-            self.signal_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.key2switch_right_pointer)
-            self.navigator_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.key2switch_right_pointer)
+        sf.plot(**kwargs)
+        if sf.figure is not None:
+            if self.axes_manager.navigation_axes:
+                self.signal_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.axes_manager.key_navigator)
+            if self.navigator_plot is not None:
+                sf.events.closed.connect(self.close_navigator_plot, [])
+                self.signal_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.key2switch_right_pointer)
+                self.navigator_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.key2switch_right_pointer)
+                self.navigator_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.axes_manager.key_navigator)
+            sf.events.closed.connect(self._on_signal_plot_closing, [])
 
     def key2switch_right_pointer(self, event):
         if event.key == "e":
             self.right_pointer_on = not self.right_pointer_on
 
-    def add_right_pointer(self):
+    def add_right_pointer(self, **kwargs):
         if self.signal_plot.right_axes_manager is None:
             self.signal_plot.right_axes_manager = \
                 copy.deepcopy(self.axes_manager)
@@ -157,16 +159,18 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
                 self.signal_plot.right_axes_manager._axes[
                     axis.index_in_array] = axis
         rl = signal1d.Signal1DLine()
-        rl.autoscale = True
         rl.data_function = self.signal_data_function
         rl.set_line_properties(color=self.right_pointer.color,
                                type='step')
         self.signal_plot.create_right_axis()
-        self.signal_plot.add_line(rl, ax='right')
+        self.signal_plot.add_line(rl, ax='right', connect_navigation=True)
         rl.plot_indices = True
         rl.text_position = (1., 1.05,)
-        rl.plot()
+        rl.plot(**kwargs)
         self.right_pointer_on = True
+        # because we added the right axis, we need to redraw the canvas to
+        # update the background
+        self.signal_plot.figure.canvas.draw_idle()
 
     def remove_right_pointer(self):
         for line in self.signal_plot.right_ax_lines:
@@ -174,4 +178,3 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             line.close()
         self.right_pointer.close()
         self.right_pointer = None
-        self.navigator_plot.update()

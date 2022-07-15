@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 import numpy as np
@@ -106,21 +106,21 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         super(CircleWidget, self)._set_patch()
         xy = self._get_patch_xy()
         ro, ri = self.size
-        self.patch = [plt.Circle(
+        self._patch = [plt.Circle(
             xy, radius=ro,
-            animated=self.blit,
             fill=False,
             lw=self.border_thickness,
             ec=self.color,
+            alpha=self.alpha,
             picker=True,)]
         if ri > 0:
-            self.patch.append(
+            self._patch.append(
                 plt.Circle(
-                    xy, radius=ro,
-                    animated=self.blit,
+                    xy, radius=ri,
                     fill=False,
                     lw=self.border_thickness,
                     ec=self.color,
+                    alpha=self.alpha,
                     picker=True,))
 
     def _validate_pos(self, value):
@@ -140,7 +140,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         return np.array(self._size / self.axes[0].scale)
 
     def _update_patch_position(self):
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             self.patch[0].center = self._get_patch_xy()
             if self.size[1] > 0:
                 self.patch[1].center = self.patch[0].center
@@ -148,16 +148,23 @@ class CircleWidget(Widget2DBase, ResizersMixin):
             self.draw_patch()
 
     def _update_patch_size(self):
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             ro, ri = self.size
             self.patch[0].radius = ro
             if ri > 0:
+                # Add the inner circle
+                if len(self.patch) == 1:
+                    # Need to remove the previous patch before using
+                    # `_add_patch_to`
+                    self._patch[0].remove()
+                    self._patch = []
+                    self._add_patch_to(self.ax)
                 self.patch[1].radius = ri
             self._update_resizers()
             self.draw_patch()
 
     def _update_patch_geometry(self):
-        if self.is_on() and self.patch:
+        if self.is_on and self.patch:
             ro, ri = self.size
             self.patch[0].center = self._get_patch_xy()
             self.patch[0].radius = ro
@@ -188,7 +195,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
 
     def _get_resizer_pos(self):
         positions = []
-        indices = (0, 1) if self.size[1] > 0 else (0, )
+        indices = (0, 1) if len(self.size) > 1 else (0, )
         for i in indices:
             r = self._size[i]
             rsize = self._get_resizer_size() / 2

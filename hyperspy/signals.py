@@ -1,7 +1,25 @@
-"""
-The Signal class and its specilized subclasses:
+# -*- coding: utf-8 -*-
+# Copyright 2007-2022 The HyperSpy developers
+#
+# This file is part of HyperSpy.
+#
+# HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-    Signal
+"""
+The Signal class and its specialized subclasses:
+
+    BaseSignal
         For generic data with arbitrary signal_dimension. All other signal
         classes inherit from this one. It should only be used with none of
         the others is appropriated.
@@ -38,16 +56,22 @@ The Signal class and its specilized subclasses:
         ComplexSignal2D can be reconstructed from them.
 """
 
-# -*- coding: utf-8 -*-
-from hyperspy._signals.signal1d import Signal1D
-from hyperspy._signals.signal2d import Signal2D
-from hyperspy._signals.complex_signal import ComplexSignal
-from hyperspy._signals.complex_signal1d import ComplexSignal1D
-from hyperspy._signals.complex_signal2d import ComplexSignal2D
-from hyperspy._signals.eels import EELSSpectrum
-from hyperspy._signals.eds_sem import EDSSEMSpectrum
-from hyperspy._signals.eds_tem import EDSTEMSpectrum
-from hyperspy._signals.dielectric_function import DielectricFunction
-from hyperspy.signal import BaseSignal
-from hyperspy._signals.hologram_image import HologramImage
+from hyperspy.extensions import EXTENSIONS as EXTENSIONS_
+import importlib
 
+
+__all__ = [
+    signal_ for signal_, specs_ in EXTENSIONS_["signals"].items()
+    if not specs_["lazy"]
+    ]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
+def __getattr__(name):
+    if name in __all__:
+        spec = EXTENSIONS_["signals"][name]
+        return getattr(importlib.import_module(spec['module']), name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

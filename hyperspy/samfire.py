@@ -1,36 +1,36 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
 from multiprocessing import cpu_count
+import warnings
 
 import dill
 import numpy as np
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import slugify
+from hyperspy.misc.math_tools import check_random_state
 from hyperspy.external.progressbar import progressbar
 from hyperspy.signal import BaseSignal
-from hyperspy.samfire_utils.strategy import (LocalStrategy,
-                                             GlobalStrategy)
+from hyperspy.samfire_utils.strategy import LocalStrategy, GlobalStrategy
 from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
 from hyperspy.samfire_utils.global_strategies import HistogramStrategy
-from hyperspy.samfire_utils.samfire_pool import SamfirePool
 
 
 _logger = logging.getLogger(__name__)
@@ -85,7 +85,6 @@ class Samfire:
 
     Attributes
     ----------
-
     model : Model instance
         The complete model
     optional_components : list
@@ -116,35 +115,9 @@ class Samfire:
     save_every : int
         When running, samfire saves results every time save_every good fits are
         found.
+    random_state : None or int or RandomState instance, default None
+        Random seed used to select the next pixels.
 
-    Methods
-    -------
-
-    start
-        start SAMFire
-    stop
-        stop SAMFire
-    plot
-        force plot of currently selected active strategy
-    refresh_database
-        refresh current active strategy database. No previous structure is
-        preserved
-    backup
-        backs up the current version of the model
-    change_strategy
-        changes strategy to a new one. Certain rules apply
-    append
-        appends strategy to the strategies list
-    extend
-        extends strategies list
-    remove
-        removes strategy from strategies list
-    update
-        updates the current model with values, received from a worker
-    log
-        if _log exists, logs the arguments to the list.
-    generate_values
-        creates a generator to calculate values to be sent to the workers
     """
 
     __active_strategy_ind = 0
@@ -159,12 +132,12 @@ class Samfire:
     _args = None
     count = 0
 
-    def __init__(self, model, workers=None, setup=True, **kwargs):
+    def __init__(self, model, workers=None, setup=True, random_state=None, **kwargs):
         # constants:
         if workers is None:
             workers = max(1, cpu_count() - 1)
         self.model = model
-        self.metadata = DictionaryTreeBrowser()
+        self._metadata = DictionaryTreeBrowser()
 
         self._scale = 1.0
         # -1 -> done pixel, use
@@ -193,10 +166,25 @@ class Samfire:
         if len(kwargs) or setup:
             self._setup(**kwargs)
         self.refresh_database()
+        self.random_state = check_random_state(random_state)
+
+    @property
+    def metadata(self):
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, d):
+        warnings.warn(
+            "Setting the `metadata` attribute is deprecated and will be removed "
+            "in HyperSpy 2.0. Use the `set_item` and `add_dictionary` methods "
+            "of the `metadata` attribute instead."
+            )
+        if isinstance(d, dict):
+            d = DictionaryTreeBrowser(d)
+        self._metadata = d
 
     @property
     def active_strategy(self):
-        """Returns the active strategy"""
         return self.strategies[self._active_strategy_ind]
 
     @active_strategy.setter
@@ -205,6 +193,7 @@ class Samfire:
 
     def _setup(self, **kwargs):
         """Set up SAMFire - configure models, set up pool if necessary"""
+        from hyperspy.samfire_utils.samfire_pool import SamfirePool
         self._figure = None
         self.metadata._gt_dump = dill.dumps(self.metadata.goodness_test)
         self._enable_optional_components()
@@ -224,16 +213,22 @@ class Samfire:
             self.pool.prepare_workers(self)
 
     def start(self, **kwargs):
-        """Starts SAMFire.
+        """Start SAMFire.
 
         Parameters
         ----------
-        **kwargs : key-word arguments
-            Any key-word arguments to be passed to Model.fit() call
+        **kwargs : dict
+            Any keyword arguments to be passed to
+            :py:meth:`~.model.BaseModel.fit`
         """
         self._setup()
         if self._workers and self.pool is not None:
             self.pool.update_parameters()
+        if 'min_function' in kwargs:
+            kwargs['min_function'] = dill.dumps(kwargs['min_function'])
+        if 'min_function_grad' in kwargs:
+            kwargs['min_function_grad'] = dill.dumps(
+                kwargs['min_function_grad'])
         self._args = kwargs
         num_of_strat = len(self.strategies)
         total_size = self.model.axes_manager.navigation_size - self.pixels_done
@@ -249,13 +244,14 @@ class Samfire:
                     # last one just finished running
                     break
                 self.change_strategy(self._active_strategy_ind + 1)
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  # pragma: no cover
             if self.pool is not None:
-                _logger.warning('Collecting already started pixels, please wait')
+                _logger.warning(
+                    'Collecting already started pixels, please wait')
                 self.pool.collect_results()
 
     def append(self, strategy):
-        """appends the given strategy to the end of the strategies list
+        """Append the given strategy to the end of the strategies list
 
         Parameters
         ----------
@@ -264,7 +260,7 @@ class Samfire:
         self.strategies.append(strategy)
 
     def extend(self, iterable):
-        """extend the strategies list by the given iterable
+        """Extend the strategies list by the given iterable
 
         Parameters
         ----------
@@ -288,7 +284,7 @@ class Samfire:
 
     @_active_strategy_ind.setter
     def _active_strategy_ind(self, value):
-        self.__active_strategy_ind = np.abs(int(value))
+        self.__active_strategy_ind = abs(int(value))
 
     def _run_active_strategy(self):
         if self.pool is not None:
@@ -330,14 +326,14 @@ class Samfire:
             self.backup(on_count=True)
 
     def backup(self, filename=None, on_count=True):
-        """Backs-up the samfire results in a file
+        """Backup the samfire results in a file.
 
         Parameters
         ----------
-        filename: {str, None}
-            the filename. If None, a default value of "backup_"+signal_title is
-            used
-        on_count: bool
+        filename : {str, None}
+            the filename. If None, a default value of ``backup_`` + signal_title
+            is used.
+        on_count : bool
             if True (default), only saves on the required count of steps
         """
         if filename is None:
@@ -378,8 +374,8 @@ class Samfire:
             self._swap_dict_and_model(ind, results)
 
     def refresh_database(self):
-        """Refreshes currently selected strategy without preserving any
-        "ignored" pixels
+        """Refresh currently selected strategy without preserving any
+        "ignored" pixels; no previous structure is preserved.
         """
         # updates current active strategy database / prob.
         # Assume when chisq is not None, it's relevant
@@ -398,7 +394,7 @@ class Samfire:
         """Changes current strategy to a new one. Certain rules apply:
         diffusion -> diffusion : resets all "ignored" pixels
         diffusion -> segmenter : saves already calculated pixels to be ignored
-            when(if) subsequently diffusion strategy is run
+        when(if) subsequently diffusion strategy is run
 
         Parameters
         ----------
@@ -414,7 +410,7 @@ class Samfire:
                 raise ValueError(
                     "The passed object is not in current strategies list")
 
-        new_strat = np.abs(int(new_strat))
+        new_strat = abs(int(new_strat))
         if new_strat == self._active_strategy_ind:
             self.refresh_database()
 
@@ -463,14 +459,21 @@ class Samfire:
                 value_dict['fitting_kwargs'] = self._args
                 value_dict['signal.data'] = \
                     self.model.signal.data[ind + (...,)]
+                if self.model.signal._lazy:
+                    value_dict['signal.data'] = value_dict[
+                        'signal.data'].compute()
                 if self.model.signal.metadata.has_item(
                         'Signal.Noise_properties.variance'):
                     var = self.model.signal.metadata.Signal.Noise_properties.variance
                     if isinstance(var, BaseSignal):
-                        value_dict['variance.data'] = var.data[ind + (...,)]
-                if hasattr(self.model, 'low_loss') and self.model.low_loss is not None:
-                    value_dict['low_loss.data'] = \
-                        self.model.low_loss.data[ind + (...,)]
+                        dat = var.data[ind + (...,)]
+                        value_dict['variance.data'] = dat.compute(
+                        ) if var._lazy else dat
+                if hasattr(self.model,
+                           'low_loss') and self.model.low_loss is not None:
+                    dat = self.model.low_loss.data[ind + (...,)]
+                    value_dict['low_loss.data'] = dat.compute(
+                    ) if self.model.low_loss._lazy else dat
 
                 self.running_pixels.append(ind)
                 self.metadata.marker[ind] = 0.
@@ -482,7 +485,7 @@ class Samfire:
         if best > 0.0:
             ind_list = np.where(self.metadata.marker == best)
             while number and ind_list[0].size > 0:
-                i = np.random.randint(len(ind_list[0]))
+                i = self.random_state.randint(len(ind_list[0]))
                 ind = tuple([lst[i] for lst in ind_list])
                 if ind not in self.running_pixels:
                     inds.append(ind)
@@ -585,7 +588,7 @@ class Samfire:
                 connect_other_navigation1), [])
 
     def plot(self, on_count=False):
-        """(if possible) plots current strategy plot. Local strategies plot
+        """If possible, plot current strategy plot. Local strategies plot
         grayscale navigation signal with brightness representing order of the
         pixel selection. Global strategies plot a collection of histograms,
         one per parameter.
@@ -601,12 +604,12 @@ class Samfire:
             if self.strategies:
                 try:
                     self._figure = self.active_strategy.plot(self._figure)
-                except:
+                except BaseException:
                     self._figure = None
                     self._figure = self.active_strategy.plot(self._figure)
 
     def log(self, *args):
-        """If has a list named "_log", appends the arguments there
+        """If has a list named "_log" as attribute, appends the arguments there
         """
         if hasattr(self, '_log') and isinstance(self._log, list):
             self._log.append(args)
@@ -616,3 +619,8 @@ class Samfire:
         ans += self.model.signal.metadata.General.title
         ans += u"'>"
         return ans
+
+    def stop(self):
+        """Stop SAMFire."""
+        if hasattr(self, "pool") and self.pool is not None:
+            self.pool.stop()

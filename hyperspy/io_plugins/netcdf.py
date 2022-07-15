@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import os
 import logging
@@ -27,15 +27,15 @@ no_netcdf = False
 try:
     from netCDF4 import Dataset
     which_netcdf = 'netCDF4'
-except:
+except BaseException:
     try:
         from netCDF3 import Dataset
         which_netcdf = 'netCDF3'
-    except:
+    except BaseException:
         try:
             from Scientific.IO.NetCDF import NetCDFFile as Dataset
             which_netcdf = 'Scientific Python'
-        except:
+        except BaseException:
             no_netcdf = True
 
 # Plugin characteristics
@@ -45,11 +45,9 @@ description = ''
 full_support = True
 file_extensions = ('nc', 'NC')
 default_extension = 0
-
-
-# Writing features
+# Writing capabilities
 writes = False
-
+non_uniform_axis = False
 # ----------------------
 
 
@@ -107,8 +105,7 @@ def file_reader(filename, *args, **kwds):
             dictionary = nc_hyperspy_reader_0dot1(
                 ncfile,
                 filename,
-                *
-                args,
+                *args,
                 **kwds)
     else:
         ncfile.close()
@@ -131,8 +128,8 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             else:
                 calibration_dict[attrib[0]] = value
         else:
-            _logger.warn("Warning: the attribute '%s' is not defined in the "
-                         "file '%s'", attrib[0], filename)
+            _logger.warning("Warning: the attribute '%s' is not defined in "
+                            "the file '%s'", attrib[0], filename)
     for attrib in acquisition2netcdf.items():
         if hasattr(dc, attrib[1]):
             value = eval('dc.' + attrib[1])
@@ -141,14 +138,14 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             else:
                 acquisition_dict[attrib[0]] = value
         else:
-            _logger.warn("Warning: the attribute '%s' is not defined in the "
-                         "file '%s'", attrib[0], filename)
+            _logger.warning("Warning: the attribute '%s' is not defined in "
+                            "the file '%s'", attrib[0], filename)
     for attrib in treatments2netcdf.items():
         if hasattr(dc, attrib[1]):
             treatments_dict[attrib[0]] = eval('dc.' + attrib[1])
         else:
-            _logger.warn("Warning: the attribute '%s' is not defined in the "
-                         "file '%s'", attrib[0], filename)
+            _logger.warning("Warning: the attribute '%s' is not defined in "
+                            "the file '%s'", attrib[0], filename)
     original_metadata = {'record_by': ncfile.type,
                          'calibration': calibration_dict,
                          'acquisition': acquisition_dict,

@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -13,18 +13,17 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
-import nose.tools as nt
 
-from hyperspy.samfire_utils.weights.red_chisq import ReducedChiSquaredWeight
 from hyperspy.misc.utils import DictionaryTreeBrowser
+from hyperspy.samfire_utils.weights.red_chisq import ReducedChiSquaredWeight
 
 
 class Test_Red_chisq_weight:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.w = ReducedChiSquaredWeight()
         artificial_model = DictionaryTreeBrowser()
         artificial_model.add_node('red_chisq.data')
@@ -34,12 +33,12 @@ class Test_Red_chisq_weight:
     def test_function(self):
         w = self.w
         ind = (2, 3)
-        nt.assert_equal(w.function(ind), 16)
+        assert w.function(ind) == 16
 
     def test_map_noslice(self):
         w = self.w
         mask = np.ones((5, 7), dtype=bool)
         mask[0, 0] = False
         ans = w.map(mask)
-        nt.assert_true(np.all(w.model.red_chisq.data[mask] - 1 == ans[mask]))
-        nt.assert_true(np.isnan(ans[0, 0]))
+        assert np.all(w.model.red_chisq.data[mask] - 1 == ans[mask])
+        assert np.isnan(ans[0, 0])

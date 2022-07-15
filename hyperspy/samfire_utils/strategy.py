@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
 
@@ -300,7 +300,7 @@ class LocalStrategy(SamfireStrategy):
             par = []
             for radius in radii:
                 radius_top = np.ceil(radius)
-                par.append(np.abs(np.arange(-radius_top, radius_top + 1)))
+                par.append(abs(np.arange(-radius_top, radius_top + 1)))
             meshg = np.array(np.meshgrid(*par, indexing='ij'))
             self._untruncated = np.sqrt(np.sum(meshg ** 2.0, axis=0))
             distance_mask = np.array(
@@ -463,14 +463,16 @@ class GlobalStrategy(SamfireStrategy):
         """Refreshes the database (i.e. constructs it again from scratch)
         """
         scale = self.samf._scale
+        mark = self.samf.metadata.marker
+        mark = np.where(np.isnan(mark), np.inf, mark)
         if overwrite:
             if given_pixels is None:
-                good_pixels = self.samf.metadata.marker < 0
+                good_pixels = mark < 0
             else:
                 good_pixels = given_pixels
             self.samf.metadata.marker[good_pixels] = -scale
         else:
-            good_pixels = self.samf.metadata.marker < 0
+            good_pixels = mark < 0
             if given_pixels is not None:
                 good_pixels = np.logical_and(good_pixels, given_pixels)
         self.samf.metadata.marker[~good_pixels] = scale

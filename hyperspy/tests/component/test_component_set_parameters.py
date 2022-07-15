@@ -1,4 +1,4 @@
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -13,30 +13,29 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
-import nose.tools
 from hyperspy.components1d import Gaussian
 
 
 class TestSetParameters:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.gaussian = Gaussian()
 
     def test_set_parameters_not_free1(self):
         g = self.gaussian
         g.set_parameters_not_free()
         free_parameters = len(g.free_parameters)
-        nose.tools.assert_equal(free_parameters, 0)
+        assert free_parameters == 0
 
     def test_set_parameters_not_free2(self):
         g = self.gaussian
         g.set_parameters_not_free(parameter_name_list=['A'])
         free_parameters = len(g.free_parameters)
         parameters = len(g.parameters) - 1
-        nose.tools.assert_equal(free_parameters, parameters)
+        assert free_parameters == parameters
 
     def test_set_parameters_free1(self):
         g = self.gaussian
@@ -44,7 +43,7 @@ class TestSetParameters:
         g.set_parameters_free()
         free_parameters = len(g.free_parameters)
         parameters = len(g.parameters)
-        nose.tools.assert_equal(free_parameters, parameters)
+        assert free_parameters == parameters
 
     def test_set_parameters_free2(self):
         g = self.gaussian
@@ -54,4 +53,28 @@ class TestSetParameters:
         g.set_parameters_free(parameter_name_list=['A'])
         free_parameters = len(g.free_parameters)
         parameters = len(g.parameters) - 2
-        nose.tools.assert_equal(free_parameters, parameters)
+        assert free_parameters == parameters
+
+    def test_set_parameters_not_free_linearity(self):
+        g = self.gaussian
+
+        g.set_parameters_not_free(only_nonlinear=True)
+        assert not g.sigma.free
+        assert not g.centre.free
+        assert g.A.free
+
+        g.set_parameters_not_free(only_linear=True)
+        assert not g.sigma.free
+        assert not g.centre.free
+        assert not g.A.free
+
+        g.set_parameters_free(only_linear=True)
+        assert not g.sigma.free
+        assert not g.centre.free
+        assert g.A.free
+
+        g.set_parameters_free(only_nonlinear=True)
+        g.set_parameters_not_free(only_linear=True)
+        assert g.sigma.free
+        assert g.centre.free
+        assert not g.A.free

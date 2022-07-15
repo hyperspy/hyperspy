@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from __future__ import division
 
@@ -31,6 +31,8 @@ from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 import hyperspy.components1d as create_component
+from hyperspy.misc.test_utils import ignore_warning
+
 
 _logger = logging.getLogger(__name__)
 
@@ -42,17 +44,10 @@ def _get_weight(element, line, weight_line=None):
     if weight_line is None:
         weight_line = elements_db[
             element]['Atomic_properties']['Xray_lines'][line]['weight']
-    return lambda x: x * weight_line
+    return "x * {}".format(weight_line)
 
 
-def _get_iweight(element, line, weight_line=None):
-    if weight_line is None:
-        weight_line = elements_db[
-            element]['Atomic_properties']['Xray_lines'][line]['weight']
-    return lambda x: x / weight_line
-
-
-def _get_sigma(E, E_ref, units_factor):
+def _get_sigma(E, E_ref, units_factor, return_f=False):
     """
     Calculates an approximate sigma value, accounting for peak broadening due
     to the detector, for a peak at energy E given a known width at a reference
@@ -84,17 +79,21 @@ def _get_sigma(E, E_ref, units_factor):
         Microanalysis", Plenum, third edition, p 315.
     """
     energy2sigma_factor = 2.5 / (eV2keV * (sigma2fwhm**2))
-    return lambda sig_ref: math.sqrt(abs(
-        energy2sigma_factor * (E - E_ref) * units_factor +
-        np.power(sig_ref, 2)))
+    if return_f:
+        return lambda sig_ref: math.sqrt(abs(
+            energy2sigma_factor * (E - E_ref) * units_factor +
+            np.power(sig_ref, 2)))
+    else:
+        return "sqrt(abs({} * ({} - {}) * {} + sig_ref ** 2))".format(
+            energy2sigma_factor, E, E_ref, units_factor)
 
 
 def _get_offset(diff):
-    return lambda E: E + diff
+    return "x + {}".format(diff)
 
 
 def _get_scale(E1, E_ref1, fact):
-    return lambda E: E1 + fact * (E - E_ref1)
+    return "{} + {} * (x - {})".format(E1, fact, E_ref1)
 
 
 class EDSModel(Model1D):
@@ -103,14 +102,13 @@ class EDSModel(Model1D):
 
     Parameters
     ----------
-    spectrum : an EDSSpectrum (or any EDSSpectrum subclass) instance.
+    spectrum : EDSSpectrum (or any EDSSpectrum subclass) instance.
 
-    auto_add_lines : boolean
+    auto_add_lines : bool
         If True, automatically add Gaussians for all X-rays generated
         in the energy range by an element, using the edsmodel.add_family_lines
         method.
-
-    auto_background : boolean
+    auto_background : bool
         If True, adds automatically a polynomial order 6 to the model,
         using the edsmodel.add_polynomial_background method.
 
@@ -138,15 +136,15 @@ class EDSModel(Model1D):
         self.start_energy = self.axes_manager.signal_axes[0].low_value
         self.background_components = list()
         if 'dictionary' in kwargs or len(args) > 1:
+            auto_add_lines = False
+            auto_background = False
             d = args[1] if len(args) > 1 else kwargs['dictionary']
             if len(d['xray_lines']) > 0:
                 self.xray_lines.extend(
                     [self[name] for name in d['xray_lines']])
-                auto_add_lines = False
             if len(d['background_components']) > 0:
                 self.background_components.extend(
                     [self[name] for name in d['background_components']])
-                auto_background = False
         if auto_background is True:
             self.add_polynomial_background()
         if auto_add_lines is True:
@@ -205,7 +203,16 @@ class EDSModel(Model1D):
             those. If 'from_elements', add all lines from the elements contains
             in `metadata`. Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols. (eg. ('Al_Ka','Zn_Ka')).
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
+        # Test that signal axis is uniform
+        if not self.axes_manager[-1].is_uniform:
+            raise NotImplementedError("This function is not yet implemented "
+                                      "for non-uniform axes.")
 
         only_one = False
         only_lines = ("Ka", "La", "Ma")
@@ -243,11 +250,15 @@ class EDSModel(Model1D):
             component.name = xray_line
             self.append(component)
             self.xray_lines.append(component)
-            self[xray_line].A.map[
-                'values'] = self.signal.isig[line_energy].data * \
-                line_FWHM / self.signal.axes_manager[-1].scale
-            self[xray_line].A.map['is_set'] = (
-                np.ones(self.signal.isig[line_energy].data.shape) == 1)
+            if self.signal._lazy:
+                # For lazy signal, use a default value to avoid having
+                # to do out-of-core computation
+                component.A.map['values'] = 10
+            else:
+                component.A.map[
+                    'values'] = self.signal.isig[line_energy].data * \
+                    line_FWHM / self.signal.axes_manager[-1].scale
+            component.A.map['is_set'] = True
             component.A.ext_force_positive = True
             for li in elements_db[element]['Atomic_properties']['Xray_lines']:
                 if line[0] in li and line != li:
@@ -264,9 +275,7 @@ class EDSModel(Model1D):
                         component_sub.centre.free = False
                         component_sub.sigma.free = False
                         component_sub.name = xray_sub
-                        component_sub.A.twin_function = _get_weight(
-                            element, li)
-                        component_sub.A.twin_inverse_function = _get_iweight(
+                        component_sub.A.twin_function_expr = _get_weight(
                             element, li)
                         component_sub.A.twin = component.A
                         self.append(component_sub)
@@ -276,7 +285,7 @@ class EDSModel(Model1D):
     @property
     def _active_background_components(self):
         return [bc for bc in self.background_components
-                if bc.coefficients.free]
+                if bc.free_parameters]
 
     def add_polynomial_background(self, order=6):
         """
@@ -289,7 +298,8 @@ class EDSModel(Model1D):
         order: int
             The order of the polynomial
         """
-        background = create_component.Polynomial(order=order)
+        with ignore_warning(message="The API of the `Polynomial` component"):
+            background = create_component.Polynomial(order=order, legacy=False)
         background.name = 'background_order_' + str(order)
         background.isbackground = True
         self.append(background)
@@ -300,14 +310,14 @@ class EDSModel(Model1D):
         Free the yscale of the background components.
         """
         for component in self.background_components:
-            component.coefficients.free = True
+            component.set_parameters_free()
 
     def fix_background(self):
         """
         Fix the background components.
         """
         for component in self._active_background_components:
-            component.coefficients.free = False
+            component.set_parameters_not_free()
 
     def enable_xray_lines(self):
         """Enable the X-ray lines components.
@@ -358,7 +368,7 @@ class EDSModel(Model1D):
             If 'single' fit only the current location. If 'multi'
             use multifit.
         **kwargs : extra key word arguments
-            All extra key word arguments are passed to fit or
+            All extra key word arguments are passed to fit or multifit
 
         See also
         --------
@@ -412,11 +422,10 @@ class EDSModel(Model1D):
             else:
                 component.sigma.free = True
                 E = component.centre.value
-                component.sigma.twin_function = _get_sigma(
-                    E, E_ref, self.units_factor)
-                component.sigma.twin_inverse_function = _get_sigma(
+                component.sigma.twin_inverse_function_expr = _get_sigma(
                     E_ref, E, self.units_factor)
-                component.sigma.twin = component_ref.sigma
+                component.sigma.twin_function_expr = _get_sigma(
+                    E, E_ref, self.units_factor)
 
     def _set_energy_resolution(self, xray_lines, *args, **kwargs):
         """
@@ -434,7 +443,8 @@ class EDSModel(Model1D):
                                                                    'auto')
         FWHM_MnKa_old *= eV2keV / self.units_factor
         get_sigma_Mn_Ka = _get_sigma(
-            energy_Mn_Ka, self[xray_lines[0]].centre.value, self.units_factor)
+            energy_Mn_Ka, self[xray_lines[0]].centre.value, self.units_factor,
+            return_f=True)
         FWHM_MnKa = get_sigma_Mn_Ka(self[xray_lines[0]].sigma.value
                                     ) * eV2keV / self.units_factor * sigma2fwhm
         if FWHM_MnKa < 110:
@@ -443,8 +453,9 @@ class EDSModel(Model1D):
         else:
             self.signal.set_microscope_parameters(
                 energy_resolution_MnKa=FWHM_MnKa)
-            warnings.warn("Energy resolution (FWHM at Mn Ka) changed from " +
-                          "%lf to %lf eV" % (FWHM_MnKa_old, FWHM_MnKa))
+            _logger.info("Energy resolution (FWHM at Mn Ka) changed from " +
+                         "{:.2f} to {:.2f} eV".format(
+                             FWHM_MnKa_old, FWHM_MnKa))
             for component in self:
                 if component.isbackground is False:
                     line_FWHM = self.signal._get_line_energy(
@@ -475,9 +486,8 @@ class EDSModel(Model1D):
                 component.centre.free = True
                 E = component.centre.value
                 fact = float(ax.value2index(E)) / ax.value2index(E_ref)
-                component.centre.twin_function = _get_scale(E, E_ref, fact)
-                component.centre.twin_inverse_function = _get_scale(
-                    E_ref, E, 1. / fact)
+                component.centre.twin_function_expr = _get_scale(
+                    E, E_ref, fact)
                 component.centre.twin = component_ref.centre
                 ref.append(E)
         return ref
@@ -493,7 +503,17 @@ class EDSModel(Model1D):
             The X-ray lines. If 'all_alpha', fit all using all alpha lines
         ref: list of float
             The centres, before fitting, of the X-ray lines included
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
+        # Test that signal axis is uniform
+        if not self.axes_manager[-1].is_uniform:
+            raise NotImplementedError("This function is not yet implemented "
+                                      "for non-uniform axes.")
+
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
         ax = self.signal.axes_manager[-1]
@@ -531,8 +551,7 @@ class EDSModel(Model1D):
                 component.centre.free = True
                 E = component.centre.value
                 diff = E_ref - E
-                component.centre.twin_function = _get_offset(-diff)
-                component.centre.twin_inverse_function = _get_offset(diff)
+                component.centre.twin_function_expr = _get_offset(-diff)
                 component.centre.twin = component_ref.centre
                 ref.append(E)
         return ref
@@ -548,7 +567,17 @@ class EDSModel(Model1D):
             The Xray lines. If 'all_alpha', fit all using all alpha lines
         ref: list of float
             The centres, before fitting, of the X-ray lines included
+
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
         """
+        # Test that signal axis is uniform
+        if not self.axes_manager[-1].is_uniform:
+            raise NotImplementedError("This function is not yet implemented "
+                                      "for non-uniform axes.")
+
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
         diff = self[xray_lines[0]].centre.value - ref[0]
@@ -573,11 +602,10 @@ class EDSModel(Model1D):
         calibrate: 'resolution' or 'scale' or 'offset'
             If 'resolution', fits the width of Gaussians place at all x-ray
             lines. The width is given by a model of the detector resolution,
-            obtained by extrapolating the `energy_resolution_MnKa` in `metadata`
-            `metadata`.
+            obtained by extrapolating the `energy_resolution_MnKa` in `metadata`.
             This method will update the value of `energy_resolution_MnKa`.
-            If 'scale', calibrate the scale of the energy axis
-            If 'offset', calibrate the offset of the energy axis
+            If 'scale', calibrate the scale of the energy axis.
+            If 'offset', calibrate the offset of the energy axis.
         xray_lines: list of str or 'all_alpha'
             The Xray lines. If 'all_alpha', fit all using all alpha lines
         **kwargs : extra key word arguments
@@ -612,12 +640,13 @@ class EDSModel(Model1D):
 
         Parameters
         ----------
-        xray_lines: list of str or 'all'
+        xray_lines : list of str or 'all'
             The Xray lines. If 'all', fit all lines
-        bounds: float
+        bound : float
             Bound the height of the peak to a fraction of
             its height
         """
+
         def free_twin(component):
             component.A.twin = None
             component.A.free = True
@@ -645,6 +674,7 @@ class EDSModel(Model1D):
 
         Establish the twin on the height of sub-Xray lines (non alpha)
         """
+
         def fix_twin(component):
             component.A.bmin = 0.0
             component.A.bmax = None
@@ -657,9 +687,7 @@ class EDSModel(Model1D):
                         component_sub.A.bmin = 1e-10
                         component_sub.A.bmax = None
                         weight_line = component_sub.A.value / component.A.value
-                        component_sub.A.twin_function = _get_weight(
-                            element, li, weight_line)
-                        component_sub.A.twin_inverse_function = _get_iweight(
+                        component_sub.A.twin_function_expr = _get_weight(
                             element, li, weight_line)
                         component_sub.A.twin = component.A
                     else:
@@ -798,15 +826,17 @@ class EDSModel(Model1D):
             fix = self.fix_xray_lines_width
 
         free(xray_lines=xray_lines, bound=bound)
-        if kind == 'single':
-            self.fit(bounded=True, fitter='mpfit', **kwargs)
-        elif kind == 'multi':
-            self.multifit(bounded=True, fitter='mpfit', **kwargs)
+        if kind == "single":
+            self.fit(bounded=True, **kwargs)
+        elif kind == "multi":
+            self.multifit(bounded=True, **kwargs)
         fix(xray_lines=xray_lines)
 
     def get_lines_intensity(self,
                             xray_lines=None,
                             plot_result=False,
+                            only_one=True,
+                            only_lines=("a",),
                             **kwargs):
         """
         Return the fitted intensity of the X-ray lines.
@@ -815,14 +845,25 @@ class EDSModel(Model1D):
 
         Parameters
         ----------
-        xray_lines: list of str or None or 'from_metadata'
-            If None, all main X-ray lines (alpha)
-            If 'from_metadata', take the Xray_lines stored in the `metadata`
-            of the spectrum. Alternatively, provide an iterable containing
+        xray_lines: {None, list of string}
+            If None,
+            if `metadata.Sample.elements.xray_lines` contains a
+            list of lines use those.
+            If `metadata.Sample.elements.xray_lines` is undefined
+            or empty but `metadata.Sample.elements` is defined,
+            use the same syntax as `add_line` to select a subset of lines
+            for the operation.
+            Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols.
         plot_result : bool
             If True, plot the calculated line intensities. If the current
             object is a single spectrum it prints the result instead.
+        only_one : bool
+            If False, use all the lines of each element in the data spectral
+            range. If True use only the line at the highest energy
+            above an overvoltage of 2 (< beam energy / 2).
+        only_lines : {None, list of strings}
+            If not None, use only the given lines.
         kwargs
             The extra keyword arguments for plotting. See
             `utils.plot.plot_signals`
@@ -838,16 +879,19 @@ class EDSModel(Model1D):
         >>> m.get_lines_intensity(["C_Ka", "Ta_Ma"])
         """
         from hyperspy import utils
+
         intensities = []
+
         if xray_lines is None:
             xray_lines = [component.name for component in self.xray_lines]
         else:
-            if xray_lines == 'from_metadata':
-                xray_lines = self.signal.metadata.Sample.xray_lines
-            xray_lines = filter(lambda x: x in [a.name for a in
-                                                self], xray_lines)
-        if not xray_lines:
+            xray_lines = self.signal._parse_xray_lines(
+                xray_lines, only_one, only_lines)
+            xray_lines = list(filter(lambda x: x in [a.name for a in
+                                                     self], xray_lines))
+        if len(xray_lines) == 0:
             raise ValueError("These X-ray lines are not part of the model.")
+
         for xray_line in xray_lines:
             element, line = utils_eds._get_element_and_line(xray_line)
             line_energy = self.signal._get_line_energy(xray_line)
@@ -862,10 +906,7 @@ class EDSModel(Model1D):
                  line_energy,
                  self.signal.axes_manager.signal_axes[0].units,
                  self.signal.metadata.General.title))
-            if img.axes_manager.navigation_dimension >= 2:
-                img = img.as_signal2D([0, 1])
-            elif img.axes_manager.navigation_dimension == 1:
-                img.axes_manager.set_signal_dimension(1)
+            img = img.transpose(signal_axes=[])
             if plot_result and img.axes_manager.signal_dimension == 0:
                 print("%s at %s %s : Intensity = %.2f"
                       % (xray_line,
@@ -878,3 +919,16 @@ class EDSModel(Model1D):
         if plot_result and img.axes_manager.signal_dimension != 0:
             utils.plot.plot_signals(intensities, **kwargs)
         return intensities
+
+    def remove(self, thing):
+        thing = self._get_component(thing)
+        if not np.iterable(thing):
+            thing = [thing, ]
+        for comp in thing:
+            if comp in self.xray_lines:
+                self.xray_lines.remove(comp)
+            elif comp in self.family_lines:
+                self.family_lines.remove(comp)
+            elif comp in self.background_components:
+                self.background_components.remove(comp)
+        super().remove(thing)

@@ -1,35 +1,70 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2022 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
-#  HyperSpy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  HyperSpy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import logging
 
 import traits.api as t
 
-from hyperspy._signals.eds import EDSSpectrum
+from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.defaults_parser import preferences
-from hyperspy.decorators import only_interactive
+from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
+from hyperspy.signal import BaseSetMetadataItems
+
+
+_logger = logging.getLogger(__name__)
+
+
+@add_gui_method(toolkey="hyperspy.microscope_parameters_EDS_SEM")
+class EDSSEMParametersUI(BaseSetMetadataItems):
+
+    beam_energy = t.Float(t.Undefined,
+                          label='Beam energy (keV)')
+    live_time = t.Float(t.Undefined,
+                        label='Live time (s)')
+    tilt_stage = t.Float(t.Undefined,
+                         label='Stage tilt (degree)')
+    azimuth_angle = t.Float(t.Undefined,
+                            label='Azimuth angle (degree)')
+    elevation_angle = t.Float(t.Undefined,
+                              label='Elevation angle (degree)')
+    energy_resolution_MnKa = t.Float(t.Undefined,
+                                     label='Energy resolution MnKa (eV)')
+    mapping = {
+        'Acquisition_instrument.SEM.beam_energy': 'beam_energy',
+        'Acquisition_instrument.TEM.Stage.tilt_alpha': 'tilt_stage',
+        'Acquisition_instrument.SEM.Detector.EDS.live_time':
+        'live_time',
+        'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle':
+        'azimuth_angle',
+        'Acquisition_instrument.SEM.Detector.EDS.elevation_angle':
+        'elevation_angle',
+        'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa':
+        'energy_resolution_MnKa', }
 
 
 class EDSSEMSpectrum(EDSSpectrum):
 
+    """1D signal class for EDS spectra measured in an SEM."""
+
     _signal_type = "EDS_SEM"
 
     def __init__(self, *args, **kwards):
-        EDSSpectrum.__init__(self, *args, **kwards)
+        super().__init__(*args, **kwards)
         # Attributes defaults
         if 'Acquisition_instrument.SEM.Detector.EDS' not in self.metadata:
             if 'Acquisition_instrument.TEM' in self.metadata:
@@ -55,6 +90,11 @@ class EDSSEMSpectrum(EDSSpectrum):
             is divided by the number of pixel (spectrums), giving an
             average live time.
 
+        Raises
+        ------
+        NotImplementedError
+            If the signal axis is a non-uniform axis.
+
         Examples
         --------
         >>> ref = hs.datasets.example_signals.EDS_SEM_Spectrum()
@@ -68,10 +108,14 @@ class EDSSEMSpectrum(EDSSpectrum):
 
         """
 
-        self.original_metadata = ref.original_metadata.deepcopy()
+        self._original_metadata = ref.original_metadata.deepcopy()
         # Setup the axes_manager
         ax_m = self.axes_manager.signal_axes[0]
         ax_ref = ref.axes_manager.signal_axes[0]
+        for _axis in [ax_m, ax_ref]:
+            if not _axis.is_uniform:
+                raise NotImplementedError(
+                    "The function is not implemented for non-uniform axes.")
         ax_m.scale = ax_ref.scale
         ax_m.units = ax_ref.units
         ax_m.offset = ax_ref.offset
@@ -117,9 +161,9 @@ class EDSSEMSpectrum(EDSSpectrum):
 
         """
         mp = self.metadata
-        if "Acquisition_instrument.SEM.tilt_stage" not in mp:
+        if "Acquisition_instrument.SEM.Stage.tilt_alpha" not in mp:
             mp.set_item(
-                "Acquisition_instrument.SEM.tilt_stage",
+                "Acquisition_instrument.SEM.Stage.tilt_alpha",
                 preferences.EDS.eds_tilt_stage)
         if "Acquisition_instrument.SEM.Detector.EDS.elevation_angle" not in mp:
             mp.set_item(
@@ -142,8 +186,40 @@ class EDSSEMSpectrum(EDSSpectrum):
                                   tilt_stage=None,
                                   azimuth_angle=None,
                                   elevation_angle=None,
-                                  energy_resolution_MnKa=None):
-        """Set the microscope parameters.
+                                  energy_resolution_MnKa=None,
+                                  display=True, toolkit=None):
+        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
+                elevation_angle, energy_resolution_MnKa]) == {None}:
+            tem_par = EDSSEMParametersUI(self)
+            return tem_par.gui(toolkit=toolkit, display=display)
+        md = self.metadata
+
+        if beam_energy is not None:
+            md.set_item("Acquisition_instrument.SEM.beam_energy", beam_energy)
+        if live_time is not None:
+            md.set_item(
+                "Acquisition_instrument.SEM.Detector.EDS.live_time",
+                live_time)
+        if tilt_stage is not None:
+            md.set_item(
+                "Acquisition_instrument.SEM.Stage.tilt_alpha",
+                tilt_stage)
+        if azimuth_angle is not None:
+            md.set_item(
+                "Acquisition_instrument.SEM.Detector.EDS.azimuth_angle",
+                azimuth_angle)
+        if elevation_angle is not None:
+            md.set_item(
+                "Acquisition_instrument.SEM.Detector.EDS.elevation_angle",
+                elevation_angle)
+        if energy_resolution_MnKa is not None:
+            md.set_item(
+                "Acquisition_instrument.SEM.Detector.EDS."
+                "energy_resolution_MnKa",
+                energy_resolution_MnKa)
+    set_microscope_parameters.__doc__ = \
+        """
+        Set the microscope parameters.
 
         If no arguments are given, raises an interactive mode to fill
         the values.
@@ -162,6 +238,8 @@ class EDSSEMSpectrum(EDSSpectrum):
             In degree
         energy_resolution_MnKa : float
             In eV
+        {}
+        {}
 
         Examples
         --------
@@ -176,72 +254,7 @@ class EDSSEMSpectrum(EDSSpectrum):
         Default value 130.0 eV
         Now set to 135.0 eV
 
-        """
-        md = self.metadata
-
-        if beam_energy is not None:
-            md.set_item("Acquisition_instrument.SEM.beam_energy", beam_energy)
-        if live_time is not None:
-            md.set_item(
-                "Acquisition_instrument.SEM.Detector.EDS.live_time",
-                live_time)
-        if tilt_stage is not None:
-            md.set_item("Acquisition_instrument.SEM.tilt_stage", tilt_stage)
-        if azimuth_angle is not None:
-            md.set_item(
-                "Acquisition_instrument.SEM.Detector.EDS.azimuth_angle",
-                azimuth_angle)
-        if elevation_angle is not None:
-            md.set_item(
-                "Acquisition_instrument.SEM.Detector.EDS.elevation_angle",
-                elevation_angle)
-        if energy_resolution_MnKa is not None:
-            md.set_item(
-                "Acquisition_instrument.SEM.Detector.EDS."
-                "energy_resolution_MnKa",
-                energy_resolution_MnKa)
-
-        if {beam_energy, live_time, tilt_stage, azimuth_angle,
-                elevation_angle, energy_resolution_MnKa} == {None}:
-            self._are_microscope_parameters_missing()
-
-    @only_interactive
-    def _set_microscope_parameters(self):
-        from hyperspy.gui.eds import SEMParametersUI
-        tem_par = SEMParametersUI()
-        mapping = {
-            'Acquisition_instrument.SEM.beam_energy': 'tem_par.beam_energy',
-            'Acquisition_instrument.SEM.tilt_stage': 'tem_par.tilt_stage',
-            'Acquisition_instrument.SEM.Detector.EDS.live_time':
-            'tem_par.live_time',
-            'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle':
-            'tem_par.azimuth_angle',
-            'Acquisition_instrument.SEM.Detector.EDS.elevation_angle':
-            'tem_par.elevation_angle',
-            'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa':
-            'tem_par.energy_resolution_MnKa', }
-
-        for key, value in mapping.items():
-            if self.metadata.has_item(key):
-                exec('%s = self.metadata.%s' % (value, key))
-        tem_par.edit_traits()
-
-        mapping = {
-            'Acquisition_instrument.SEM.beam_energy': tem_par.beam_energy,
-            'Acquisition_instrument.SEM.tilt_stage': tem_par.tilt_stage,
-            'Acquisition_instrument.SEM.Detector.EDS.live_time':
-            tem_par.live_time,
-            'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle':
-            tem_par.azimuth_angle,
-            'Acquisition_instrument.SEM.Detector.EDS.elevation_angle':
-            tem_par.elevation_angle,
-            'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa':
-            tem_par.energy_resolution_MnKa, }
-
-        for key, value in mapping.items():
-            if value != t.Undefined:
-                self.metadata.set_item(key, value)
-        self._are_microscope_parameters_missing()
+        """.format(DISPLAY_DT, TOOLKIT_DT)
 
     def _are_microscope_parameters_missing(self):
         """Check if the EDS parameters necessary for quantification
@@ -249,7 +262,6 @@ class EDSSEMSpectrum(EDSSpectrum):
         raises an UI item to fill the values
 
         """
-        import hyperspy.gui.messages as messagesui
         must_exist = (
             'Acquisition_instrument.SEM.beam_energy',
             'Acquisition_instrument.SEM.Detector.EDS.live_time', )
@@ -260,18 +272,8 @@ class EDSSEMSpectrum(EDSSpectrum):
             if exists is False:
                 missing_parameters.append(item)
         if missing_parameters:
-            if preferences.General.interactive is True:
-                par_str = "The following parameters are missing:\n"
-                for par in missing_parameters:
-                    par_str += '%s\n' % par
-                par_str += 'Please set them in the following wizard'
-                is_ok = messagesui.information(par_str)
-                if is_ok:
-                    self._set_microscope_parameters()
-                else:
-                    return True
-            else:
-                return True
+            _logger.info("Missing parameters {}".format(missing_parameters))
+            return True
         else:
             return False
 
@@ -304,3 +306,7 @@ class EDSSEMSpectrum(EDSSpectrum):
                             auto_add_lines=auto_add_lines,
                             *args, **kwargs)
         return model
+
+
+class LazyEDSSEMSpectrum(EDSSEMSpectrum, LazyEDSSpectrum):
+    pass
