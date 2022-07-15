@@ -290,6 +290,7 @@ setup(
     extras_require={  # Optional
         "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
         "tests": ["pytest>=3.6", ],  # for testing
+        "docs": ["pydata-sphinx-theme"],  # for building the docs
     },
 
     # If there are data files included in your packages that need to be
