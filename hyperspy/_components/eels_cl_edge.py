@@ -89,7 +89,7 @@ class EELSCLEdge(Component):
     def __init__(self, element_subshell, GOS=None):
         # Declare the parameters
         self.int_fine_structure = True
-        self.ext_fine_structure = []
+        self.ext_fine_structure = set()
         Component.__init__(
             self,
             ['intensity', 'fine_structure_coeff', 'effective_angle',
