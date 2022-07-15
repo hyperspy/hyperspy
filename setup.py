@@ -59,7 +59,7 @@ install_req = ['scipy>=1.1',
                'dask[array]>=2.11.0',
                # fsspec is missing from dask dependencies for dask < 2021.3.1
                'fsspec',
-               'scikit-image>=0.15',
+               'scikit-image>=0.18',
                'pint>=0.10',
                'numexpr',
                'pyyaml',
