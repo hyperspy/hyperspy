@@ -349,7 +349,7 @@ class EELSCLEdge(Component):
             if self.where_ext_fine_structure_zero:
                 itab = (E < Emax) & (E >= ifsx2)
             else:
-                itab = E < Emax & E >= self.onset_energy.value
+                itab = (E < Emax) & (E >= self.onset_energy.value)
                 if self.int_fine_structure:
                     itab[bifs] = False
         else:
