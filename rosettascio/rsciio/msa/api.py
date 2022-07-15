@@ -24,7 +24,6 @@ from pydoc import doc
 from turtle import dot
 
 import numpy as np
-from traits.api import Undefined
 
 from rsciio.version import __version__
 from rsciio.utils.tools import DTBox
