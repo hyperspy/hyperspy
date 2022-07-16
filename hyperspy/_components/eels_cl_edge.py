@@ -146,6 +146,9 @@ class EELSCLEdge(Component):
         self._whitelist['fine_structure_active'] = None
         self._whitelist['fine_structure_width'] = None
         self._whitelist['fine_structure_smoothing'] = None
+        self._whitelist["fine_structure_onset"] = None
+        self._whitelist["int_fine_structure"] = None
+        self._whitelist["where_ext_fine_structure_zero"] = None
         self.effective_angle.events.value_changed.connect(
             self._integrate_GOS, [])
         self.onset_energy.events.value_changed.connect(self._integrate_GOS, [])
@@ -167,6 +170,11 @@ class EELSCLEdge(Component):
         if self.int_fine_structure and arg is False:
             self.fine_structure_coeff.free = False
         for comp in self.ext_fine_structure:
+            if isinstance(comp, str):
+                # Loading from a dictionary and the
+                # external fine structure components
+                # are still strings
+                break
             comp.active = arg
         self.__fine_structure_active = arg
         # Force replot
@@ -412,3 +420,9 @@ class EELSCLEdge(Component):
             '_', ' ') + ' fine structure'
 
         return s
+
+    def as_dictionary(self, fullcopy=True):
+        dic = super().as_dictionary(fullcopy=fullcopy)
+        dic["ext_fine_structure"] = [t.name for t in self.ext_fine_structure]
+        dic["_whitelist"]["ext_fine_structure"] = ""
+        return dic

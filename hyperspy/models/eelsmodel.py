@@ -86,6 +86,11 @@ class EELSModel(Model1D):
             auto_background = False
             auto_add_edges = False
             self._load_dictionary(dictionary)
+            for edge in self.edges:
+                ext_fine_structure = set()
+                for comp_name in edge.ext_fine_structure:
+                    ext_fine_structure.add(self[comp_name])
+                edge.ext_fine_structure = ext_fine_structure
 
         if auto_background is True:
             background = PowerLaw()
