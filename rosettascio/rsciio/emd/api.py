@@ -146,12 +146,11 @@ class EMD(object):
             scale = axis.scale
             dim = dataset.create_dataset(key, data=[offset, offset + scale])
             name = axis.name
-            from traits.trait_base import _Undefined
-            if isinstance(name, _Undefined):
+            if name is None:
                 name = ''
             dim.attrs['name'] = name
             units = axis.units
-            if isinstance(units, _Undefined):
+            if units is None:
                 units = ''
             else:
                 units = '[{}]'.format('_'.join(list(units)))
@@ -181,7 +180,7 @@ class EMD(object):
         # Therefore we don't set the `navigate` attribute of the axes
         axes = []
         for i in range(len(data.shape)):
-            axis_dic = {}
+            axis_dict = {}
             dim = group.get('dim{}'.format(i + 1))
             axis_name = dim.attrs.get('name', '')
             if isinstance(axis_name, bytes):
@@ -205,11 +204,11 @@ class EMD(object):
                 self._log.warning(
                     'Could not calculate scale/offset of '
                     'axis {}: {}'.format(i, e))
-            axis_dic["scale"] = scale
-            axis_dic["offset"] = offset
-            axis_dic["units"] = units
-            axis_dic["name"] = name
-            axis_dic['_type'] = 'UniformDataAxis'
+            axis_dict["scale"] = scale
+            axis_dict["offset"] = offset
+            axis_dict["units"] = units
+            axis_dict["name"] = name
+            axis_dict['_type'] = 'UniformDataAxis'
             axes.append(axis_dict)
         # Extract metadata:
         signal_dict["axes"] = axes
@@ -221,7 +220,6 @@ class EMD(object):
         metadata["General"]['sample'] = self.sample
         metadata["General"]['comments'] = self.comments
         signal_dict["metadata"] = metadata
-        signal_dict["original_metadata"] = original_metadata
         if data.dtype == object:
             self._log.warning('RosettaSciIO could not load the data in {}, '
                               'skipping it'.format(name))
@@ -864,11 +862,11 @@ class EMD_NCEM:
             scale = axis["scale"]
             dim = dataset.create_dataset(key, data=[offset, offset + scale])
             name = axis["name"]
-            if name is t.Undefined:
+            if name is None:
                 name = ''
             dim.attrs['name'] = name
             units = axis["units"]
-            if units is t.Undefined:
+            if units is None:
                 units = ''
             else:
                 units = '[{}]'.format('_'.join(list(units)))

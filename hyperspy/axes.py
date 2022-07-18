@@ -278,7 +278,7 @@ class BaseDataAxis(t.HasTraits):
     high_index = t.Int()
     slice = t.Instance(slice)
     navigate = t.Bool(False)
-    is_binned = t.Bool(t.Undefined)
+    is_binned = t.Bool(False)
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
 
@@ -521,8 +521,8 @@ class BaseDataAxis(t.HasTraits):
 
     def get_axis_dictionary(self):
         return {'_type': self.__class__.__name__,
-                'name': self.name,
-                'units': self.units,
+                'name': _parse_axis_attribute(self.name),
+                'units': _parse_axis_attribute(self.units),
                 'navigate': self.navigate,
                 'is_binned': self.is_binned,
                 }
@@ -936,7 +936,7 @@ class FunctionalDataAxis(BaseDataAxis):
                  name=None,
                  units=None,
                  navigate=False,
-                 size=None,
+                 size=1,
                  is_binned=False,
                  **parameters):
         super().__init__(
@@ -946,8 +946,6 @@ class FunctionalDataAxis(BaseDataAxis):
             navigate=navigate,
             is_binned=is_binned,
             **parameters)
-        if size is None:
-            size = t.Undefined
         # These trait needs to added dynamically to be removed when necessary
         self.add_trait("x", t.Instance(BaseDataAxis))
         if x is None:
@@ -1015,7 +1013,7 @@ class FunctionalDataAxis(BaseDataAxis):
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
         d['expression'] = self._expression
-        d.update({'size': self.size, })
+        d.update({'size': _parse_axis_attribute(self.size), })
         d.update({'x': self.x.get_axis_dictionary(), })
         for kwarg in self.parameters_list:
             d[kwarg] = getattr(self, kwarg)
@@ -2494,3 +2492,11 @@ class GeneratorLen:
 
     def __iter__(self):
         return self.gen
+
+
+def _parse_axis_attribute(value):
+    """Parse axis attribute"""
+    if value is t.Undefined:
+        return None
+    else:
+        return value

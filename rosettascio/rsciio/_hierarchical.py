@@ -740,9 +740,6 @@ class HierarchicalWriter:
                 else:
                     group.attrs['_tuple_empty_' + key] = '_None_'
 
-            elif value is Undefined:
-                continue
-
             else:
                 try:
                     group.attrs[key] = value
