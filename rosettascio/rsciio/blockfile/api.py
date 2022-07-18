@@ -22,7 +22,6 @@ import warnings
 import datetime
 import dateutil
 
-from traits.api import Undefined
 import numpy as np
 import dask
 from dask.diagnostics import ProgressBar
@@ -239,7 +238,7 @@ def file_reader(filename, endianess="<", mmap_mode=None, lazy=False, **kwds):
     if header["SDP"]:
         SDP = 100.0 / header["SDP"]
     else:
-        SDP = Undefined
+        SDP = 1 #  Set default scale to 1
     original_metadata = {"blockfile_header": header}
 
     # Get data:

@@ -542,7 +542,7 @@ class EDXSpectrum(object):
         # main data:
         self.data = np.fromstring(spectrum.find('./Channels').text,
                                   dtype='Q', sep=",")
-    
+
     def last_non_zero_channel(self):
         """return index of last nonzero channel"""
         return self.data.nonzero()[0][-1]
@@ -584,7 +584,7 @@ class HyperHeader(object):
         try:
             self.name = str(root.attrib['Name'])
         except KeyError:
-            self.name = 'Undefinded'
+            self.name = 'Undefined'
             _logger.info("hypermap have no name. Giving it 'Undefined' name")
         hd = root.find("./Header")
         self.date, self.time = gen_iso_date_time(hd)

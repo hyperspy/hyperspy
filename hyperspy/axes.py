@@ -122,7 +122,9 @@ def create_axis(**kwargs):
 
 class UnitConversion:
 
-    def __init__(self, units=t.Undefined, scale=1.0, offset=0.0):
+    def __init__(self, units=None, scale=1.0, offset=0.0):
+        if units is None:
+            units = t.Undefined
         self.units = units
         self.scale = scale
         self.offset = offset
@@ -282,12 +284,16 @@ class BaseDataAxis(t.HasTraits):
 
     def __init__(self,
                  index_in_array=None,
-                 name=t.Undefined,
-                 units=t.Undefined,
+                 name=None,
+                 units=None,
                  navigate=False,
                  is_binned=False,
                  **kwargs):
         super().__init__()
+        if name is None:
+            name = t.Undefined
+        if units is None:
+            units = t.Undefined
 
         self.events = Events()
         if '_type' in kwargs:
@@ -774,8 +780,8 @@ class DataAxis(BaseDataAxis):
 
     def __init__(self,
                  index_in_array=None,
-                 name=t.Undefined,
-                 units=t.Undefined,
+                 name=None,
+                 units=None,
                  navigate=False,
                  is_binned=False,
                  axis=[1],
@@ -927,10 +933,10 @@ class FunctionalDataAxis(BaseDataAxis):
                  expression,
                  x=None,
                  index_in_array=None,
-                 name=t.Undefined,
-                 units=t.Undefined,
+                 name=None,
+                 units=None,
                  navigate=False,
-                 size=t.Undefined,
+                 size=None,
                  is_binned=False,
                  **parameters):
         super().__init__(
@@ -940,6 +946,8 @@ class FunctionalDataAxis(BaseDataAxis):
             navigate=navigate,
             is_binned=is_binned,
             **parameters)
+        if size is None:
+            size = t.Undefined
         # These trait needs to added dynamically to be removed when necessary
         self.add_trait("x", t.Instance(BaseDataAxis))
         if x is None:
@@ -1110,8 +1118,8 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
     """
     def __init__(self,
                  index_in_array=None,
-                 name=t.Undefined,
-                 units=t.Undefined,
+                 name=None,
+                 units=None,
                  navigate=False,
                  size=1,
                  scale=1.,

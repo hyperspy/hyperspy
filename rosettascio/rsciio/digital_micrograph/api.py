@@ -481,7 +481,7 @@ class ImageObject(object):
 
     @property
     def names(self):
-        names = [t.Undefined] * len(self.shape)
+        names = [None] * len(self.shape)
         indices = list(range(len(self.shape)))
 
         if self.signal_type == "EELS":
@@ -769,7 +769,7 @@ class ImageObject(object):
         )
         for loc in locations:
             # Currentl rsciio uses Box while HyperSpy uses its own
-            # DictionaryTreeBrowser. ImageTags can be one or the 
+            # DictionaryTreeBrowser. ImageTags can be one or the
             # other due to the `mapping` feature.
             if hasattr(ImageTags, "get"):
                 mic = ImageTags.get(loc)
@@ -830,7 +830,7 @@ class ImageObject(object):
             tags_path = 'ImageList.TagGroup0.ImageTags'
             image_tags_dict = self.imdict.ImageTags
         is_scanning = "DigiScan" in image_tags_dict.keys()
-        # check if instrument is SEM or TEM 
+        # check if instrument is SEM or TEM
         if "Microscope Info" in self.imdict.ImageTags and "Illumination Mode" in self.imdict.ImageTags["Microscope Info"]:
             microscope = "SEM" if self._get_mode(self.imdict.ImageTags["Microscope Info"]["Illumination Mode"]) == "SEM" else "TEM"
         else:
@@ -1010,7 +1010,7 @@ class ImageObject(object):
                 "{}.Acquisition.Parameters.High_Level.Processing".format(tags_path): (
                     "Acquisition_instrument.Detector.processing", None),
                 "{}.Acquisition.Device.CCD.Pixel_Size_um".format(tags_path): (
-                    "Acquisition_instrument.Detector.pixel_size", 
+                    "Acquisition_instrument.Detector.pixel_size",
                     lambda x: x[0] if (isinstance(x, tuple) and x[0] == x[1]) else x),
                 # Serial Spectrum
                 "{}.CL.Acquisition.Acquisition_begin".format(tags_path): (

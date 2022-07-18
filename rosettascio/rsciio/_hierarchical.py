@@ -7,9 +7,8 @@ import warnings
 import dask.array as da
 import h5py
 import numpy as np
-from traits.api import Undefined
 
-from rsciio.utils.tools import ensure_unicode, get_object_package_info, DTBox
+from rsciio.utils.tools import ensure_unicode
 
 
 version = "3.1"

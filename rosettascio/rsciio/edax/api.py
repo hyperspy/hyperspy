@@ -23,12 +23,12 @@
 import os
 import logging
 import numpy as np
+
 from rsciio.utils.tools import sarray2dict
-import traits.api as t
 from rsciio.utils.elements import atomic_number2name
 
-_logger = logging.getLogger(__name__)
 
+_logger = logging.getLogger(__name__)
 
 
 spd_extensions = ('spd', 'SPD', 'Spd')
@@ -922,7 +922,7 @@ def spd_reader(filename,
         read_spc else 1,
         'offset': original_metadata['spc_header']['startEnergy'] if
         read_spc else 1,
-        'units': 'keV' if read_spc else t.Undefined,
+        'units': 'keV' if read_spc else None,
     }
 
     nav_units = 'µm'
@@ -934,7 +934,7 @@ def spd_reader(filename,
         'scale': original_metadata['ipr_header']['mppX'] if read_ipr
         else 1,
         'offset': 0,
-        'units': nav_units if read_ipr else t.Undefined,
+        'units': nav_units if read_ipr else None,
     }
 
     y_axis = {
@@ -944,7 +944,7 @@ def spd_reader(filename,
         'scale': original_metadata['ipr_header']['mppY'] if read_ipr
         else 1,
         'offset': 0,
-        'units': nav_units if read_ipr else t.Undefined,
+        'units': nav_units if read_ipr else None,
     }
 
     # Assign metadata for spectrum image:
