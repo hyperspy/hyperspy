@@ -233,6 +233,8 @@ class EELSCLEdge(Component):
             pass
 
     def _set_active_ext_fine_structure(self, active, **kwargs):
+        if not self.fine_structure_active:
+            return
         for comp in self.ext_fine_structure:
             comp.active = active
 
