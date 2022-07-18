@@ -334,6 +334,18 @@ def load(filenames=None,
 
     >>> s = hs.load('a_nexus_file.h5', reader='nxs')
 
+    Loading a file containing several datasets:
+
+    >>> s = hs.load("spameggsandham.nxs")
+    >>> s
+    [<Signal1D, title: spam, dimensions: (32,32|1024)>,
+     <Signal1D, title: eggs, dimensions: (32,32|1024)>,
+     <Signal1D, title: ham, dimensions: (32,32|1024)>]
+    >>> # Use list indexation to access single signal
+    >>> s[0]
+    <Signal1D, title: spam, dimensions: (32,32|1024)>
+
+
     """
     deprecated = ['mmap_dir', 'load_to_memory']
     warn_str = "'{}' argument is deprecated, please use 'lazy' instead"
