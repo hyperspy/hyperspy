@@ -1,7 +1,7 @@
 .. _unf-format:
 
-SEMPER UNF binary format
-------------------------
+SEMPER binary format (UNF)
+--------------------------
 
 SEMPER is a fully portable system of programs for image processing, particularly
 suitable for applications in electron microscopy developed by Owen Saxton (see
