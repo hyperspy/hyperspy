@@ -26,7 +26,6 @@ import xml.etree.ElementTree as ET
 from collections import OrderedDict
 
 import numpy as np
-import traits.api as t
 
 from rsciio.utils.tools import sarray2dict
 from rsciio.utils.tools import DTBox
@@ -509,12 +508,12 @@ def ser_reader(filename, objects=None, lazy=False, only_valid_data=False):
                     header['Dim-%i_DimensionSize' % (i + 1)][0] != 1):
                 units = (header['Dim-%i_Units' % (idim)][0].decode('utf-8')
                          if header['Dim-%i_UnitsLength' % (idim)] > 0
-                         else t.Undefined)
+                         else None)
                 if units == "meters":
                     name = (spatial_axes.pop() if order == "F"
                             else spatial_axes.pop(-1))
                 else:
-                    name = t.Undefined
+                    name = None
                 axes.append({
                     'offset': header['Dim-%i_CalibrationOffset' % idim][0],
                     'scale': header['Dim-%i_CalibrationDelta' % idim][0],

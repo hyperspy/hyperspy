@@ -7,9 +7,8 @@ import warnings
 import dask.array as da
 import h5py
 import numpy as np
-from traits.api import Undefined
 
-from rsciio.utils.tools import ensure_unicode, get_object_package_info, DTBox
+from rsciio.utils.tools import ensure_unicode
 
 
 version = "3.1"
@@ -740,9 +739,6 @@ class HierarchicalWriter:
                     self.parse_structure(key, group, value, '_tuple_', **kwds)
                 else:
                     group.attrs['_tuple_empty_' + key] = '_None_'
-
-            elif value is Undefined:
-                continue
 
             else:
                 try:

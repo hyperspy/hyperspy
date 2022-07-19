@@ -41,7 +41,6 @@ from hyperspy.ui_registry import get_gui
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
-from hyperspy.axes import AxesManager
 
 
 _logger = logging.getLogger(__name__)

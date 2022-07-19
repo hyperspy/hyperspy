@@ -22,7 +22,6 @@ import warnings
 import datetime
 import dateutil
 
-from traits.api import Undefined
 import numpy as np
 import dask
 from dask.diagnostics import ProgressBar
@@ -132,7 +131,7 @@ def get_header_from_signal(signal, endianess="<"):
         else:
             warnings.warn(
                 "BLO file expects cm units in signal dimensions. "
-                f"The {axis['names']} does not have units; saving "
+                f"The {axis['name']} does not have units; saving "
                 "axes scales as is. Beware that scales "
                 "will likely be incorrect in the file.",
                 UserWarning,
@@ -153,7 +152,7 @@ def get_header_from_signal(signal, endianess="<"):
         else:
             warnings.warn(
                 "BLO file expects nm units in navigation dimensions. "
-                f"The {axis['names']} does not have units; saving "
+                f"The {axis['name']} does not have units; saving "
                 "axes scales as is. Beware that scales "
                 "will likely be incorrect in the file.",
                 UserWarning,
@@ -239,7 +238,7 @@ def file_reader(filename, endianess="<", mmap_mode=None, lazy=False, **kwds):
     if header["SDP"]:
         SDP = 100.0 / header["SDP"]
     else:
-        SDP = Undefined
+        SDP = 1 #  Set default scale to 1
     original_metadata = {"blockfile_header": header}
 
     # Get data:

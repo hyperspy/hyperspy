@@ -21,7 +21,6 @@ import ast
 import xml.etree.ElementTree as ET
 import numpy as np
 import logging
-import traits.api as t
 
 from rsciio.utils.tools import _UREG
 from rsciio.utils.tools import convert_xml_to_dict
@@ -105,9 +104,9 @@ def file_reader(filename, lazy=False, **kwds):
         date, time = om.root.timestamp.isoformat.split('T')
         md['General'].update({"date":date, "time":time})
 
-    units = [t.Undefined, t.Undefined]
-    scales = [1, 1]
-    origins = [-64, -64]
+    units = [None, ] * 2
+    scales = [1, ] * 2
+    origins = [-64, ] * 2
     axes = []
     index_in_array = 0
     names = ['height', 'width']
