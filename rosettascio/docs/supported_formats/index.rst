@@ -4,7 +4,7 @@ Supported formats
 =================
 
 Here is a summary of the different formats that are currently supported by
-HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
+RosettaSciIO. The "lazy" column specifies if lazy evaluation is supported.
 
 .. include:: supported_formats.rst
 
