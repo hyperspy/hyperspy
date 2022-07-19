@@ -8,7 +8,7 @@ Bruker formats
 Bruker composite file (BCF)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-HyperSpy can read "hypermaps" saved with Bruker's Esprit v1.x or v2.x in ``.bcf``
+RosettaSciIO can read "hypermaps" saved with Bruker's Esprit v1.x or v2.x in ``.bcf``
 hybrid (virtual file system/container with xml and binary data, optionally
 compressed) format. Most ``.bcf``` import functionality is implemented. Both
 high-resolution 16-bit SEM images and hyperspectral EDX data can be retrieved
@@ -20,7 +20,7 @@ for whole map is calculated from pixelAverage, lineAverage, pixelTime,
 lineCounter and map height parameters.
 
 Note that Bruker Esprit uses a similar format for EBSD data, but it is not
-currently supported by HyperSpy.
+currently supported by RosettaSciIO.
 
 Extra loading arguments
 +++++++++++++++++++++++
@@ -86,6 +86,7 @@ images for navigation in the plotting.
 SPX (xml) format
 ^^^^^^^^^^^^^^^^
 
-Hyperspy can read Bruker's ``.spx`` format (single spectra format based on XML).
+RosettaSciIO can read Bruker's ``.spx`` format (single spectra format based on XML).
 The format contains extensive list of details and parameters of EDS analyses
-which are mapped in hyperspy to metadata and original_metadata dictionaries.
+which in `HyperSpy <https://hyperspy.org>`_ are mapped to ``metadata`` and 
+``original_metadata`` dictionaries.

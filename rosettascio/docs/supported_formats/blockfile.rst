@@ -3,7 +3,7 @@
 Blockfile
 ---------
 
-HyperSpy can read and write the blockfile format from NanoMegas ASTAR software.
+RosettaSciIO can read and write the blockfile format from NanoMegas ASTAR software.
 It is used to store a series of diffraction patterns from scanning precession
 electron diffraction (SPED) measurements, with a limited set of metadata. The
 header of the blockfile contains information about centering and distortions

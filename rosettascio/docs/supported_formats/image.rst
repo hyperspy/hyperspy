@@ -3,7 +3,7 @@
 Image formats
 -------------
 
-HyperSpy can read and write data to `all the image formats
+RosettaSciIO can read and write data to `all the image formats
 <https://imageio.readthedocs.io/en/stable/formats.html>`_ supported by
 `imageio <https://imageio.readthedocs.io/>`_, which uses the 
 `Python Image Library (PIL/pillow) <https://pillow.readthedocs.io>`_.

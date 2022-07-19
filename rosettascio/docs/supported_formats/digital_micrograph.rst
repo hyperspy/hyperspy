@@ -29,6 +29,6 @@ Extra loading arguments
     any binned data stores the _averages_ of the binned channels or pixels,
     rather than the _sum_, which would be required for proper statistical
     analysis. We therefore strongly recommend that all binning is performed
-    using Hyperspy where possible.
+    using python, e.g. `HyperSpy <https://hyperspy.org>`_, where possible.
 
     See the original `bug report here <https://github.com/hyperspy/hyperspy/issues/1624>`_.

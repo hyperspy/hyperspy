@@ -6,7 +6,7 @@ TVIPS format
 The ``.tvips`` format is the default format for image series collected by pixelated
 cameras from the TVIPS company. Typically individual images captured by these
 cameras are stored in the :ref:`TIFF format<tiff-format>` which can also be 
-loaded by Hyperspy. This format instead serves to store image streams from 
+loaded by RosettaSciIO. This format instead serves to store image streams from 
 in-situ and 4D-STEM experiments. During collection, the maximum file size is
 typically capped meaning the dataset is typically split over multiple files
 ending in `_xyz.tvips`. The `_000.tvips` will contain the main header and

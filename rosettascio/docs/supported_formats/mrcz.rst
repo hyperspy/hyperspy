@@ -25,13 +25,13 @@ install the `mrcz` and optionally the `blosc` Python packages.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-- ``do_async``: currently supported within HyperSpy for writing only, this will
+- ``do_async``: currently supported within RosettaSciIO for writing only, this will
   save  the file in a background thread and return immediately. Defaults
   to `False`.
 
 .. Warning::
 
-    There is no method currently implemented within Hyperspy to tell if an
+    There is no method currently implemented within RosettaSciIO to tell if an
     asychronous write has finished.
 
 

@@ -53,7 +53,7 @@ EMD (Velox)
 ^^^^^^^^^^^
 
 This is a non-compliant variant of the standard EMD format developed by
-Thermo-Fisher (former FEI). HyperSpy supports importing images, EDS spectrum and EDS
+Thermo-Fisher (former FEI). RosettaSciIO supports importing images, EDS spectrum and EDS
 spectrum streams (spectrum images stored in a sparse format). For spectrum
 streams, there are several loading options (described below) to control the frames
 and detectors to load and if to sum them on loading.  The default is
@@ -64,8 +64,8 @@ the data size in memory.
 .. note::
 
     Pruned Velox EMD files only contain the spectrum image in a proprietary
-    format that HyperSpy cannot read. Therefore, don't prune Velox EMD files
-    if you intend to read them with HyperSpy.
+    format that RosettaSciIO cannot read. Therefore, don't prune Velox EMD files
+    if you intend to read them with RosettaSciIO.
 
 .. code-block:: python
 
@@ -75,13 +75,14 @@ the data size in memory.
 
 .. note::
 
-    FFTs made in Velox are loaded in as-is as a HyperSpy ComplexSignal2D object.
+    When using `HyperSpy <https://hyperspy.org`_, FFTs made in Velox are loaded
+    in as-is as a HyperSpy ComplexSignal2D object.
     The FFT is not centered and only positive frequencies are stored in the file.
     Making FFTs with HyperSpy from the respective image datasets is recommended.
 
 .. note::
 
-    DPC data is loaded in as a HyperSpy ComplexSignal2D object.
+    When using `HyperSpy <https://hyperspy.org`_, DPC data is loaded in as a HyperSpy ComplexSignal2D object.
 
 .. note::
 
@@ -94,7 +95,7 @@ the data size in memory.
 
    This format is still not stable and files generated with the most recent
    version of Velox may not be supported. If you experience issues loading
-   a file, please report it  to the HyperSpy developers so that they can
+   a file, please report it  to the RosettaSciIO developers so that they can
    add support for newer versions of the format.
 
 

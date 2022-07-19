@@ -3,14 +3,15 @@
 EDAX TEAM/Genesis (SPC, SPD)
 ----------------------------
 
-HyperSpy can read both ``.spd`` (spectrum image) and ``.spc`` (single spectra)
+RosettaSciIO can read both ``.spd`` (spectrum image) and ``.spc`` (single spectra)
 files from the EDAX TEAM software and its predecessor EDAX Genesis.
 If reading an ``.spd`` file, the calibration of the
 spectrum image is loaded from the corresponding ``.ipr`` and ``.spc`` files
 stored in the same directory, or from specific files indicated by the user.
 If these calibration files are not available, the data from the ``.spd``
 file will still be loaded, but with no spatial or energy calibration.
-If elemental information has been defined in the spectrum image, those
+When using `HyperSpy <https://hyperspy.org>`_, if elemental information has been
+defined in the spectrum image, those
 elements will automatically be added to the signal loaded by HyperSpy.
 
 Currently, loading an EDAX TEAM spectrum or spectrum image will load an

@@ -3,7 +3,7 @@
 Tagges image file format (TIFF)
 -------------------------------
 
-HyperSpy can read and write 2D and 3D ``.tiff`` files using using
+RosettaSciIO can read and write 2D and 3D ``.tiff`` files using using
 Christoph Gohlke's `tifffile <https://github.com/cgohlke/tifffile/>`_ library.
 In particular, it supports reading and
 writing of TIFF, BigTIFF, OME-TIFF, STK, LSM, NIH, and FluoView files. Most of
@@ -16,10 +16,10 @@ bio-scientific imaging. See `the library webpage
    Add support for writing/reading scale and unit to tif files to be read with
    ImageJ or DigitalMicrograph
 
-Currently HyperSpy has limited support for reading and saving the TIFF tags.
-However, the way that HyperSpy reads and saves the scale and the units of ``.tiff``
+Currently RosettaSciIO has limited support for reading and saving the TIFF tags.
+However, the way that RosettaSciIO reads and saves the scale and the units of ``.tiff``
 files is compatible with ImageJ/Fiji and Gatan Digital Micrograph software.
-HyperSpy can also import the scale and the units from ``.tiff`` files saved using
+RosettaSciIO can also import the scale and the units from ``.tiff`` files saved using
 FEI, Zeiss SEM, Olympus SIS, Jeol SightX and Hamamatsu HPD-TA (streak camera)
 software.
 

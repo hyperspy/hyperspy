@@ -4,7 +4,7 @@ JEOL Analyst Station (ASW, ...)
 -------------------------------
 
 This is the file format used by the `JEOL Analysist Station software` for which
-hyperspy can read the ``.asw``, ``.pts``, ``.map`` and ``.eds`` format. To read the
+RosettaSciIO can read the ``.asw``, ``.pts``, ``.map`` and ``.eds`` format. To read the
 calibration, it is required to load the ``.asw`` file, which will load all others
 files automatically.
 

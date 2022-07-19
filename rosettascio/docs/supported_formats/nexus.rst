@@ -11,16 +11,16 @@ developed by the neutron and x-ray science x-ray communities. It is still being
 developed as an international standard by scientists and programmers
 representing major scientific facilities in order to facilitate greater
 cooperation in the analysis and visualization of data.
-Nexus uses a variety of classes to record data, values,
+NeXus uses a variety of classes to record data, values,
 units and other experimental metadata associated with an experiment.
 For specific types of experiments an Application Definition may exist, which
 defines an agreed common layout that facilities can adhere to.
 
-Nexus metadata and data are stored in Hierarchical Data Format Files (HDF5) with
+NeXus metadata and data are stored in Hierarchical Data Format Files (HDF5) with
 a ``.nxs`` extension although standards HDF5 extensions are sometimes used.
 Files must use the ``.nxs`` file extension in order to use this IO plugin.
-Using the ``.nxs`` extension will default to the Nexus loader. If your file has
-an HDF5 extension, you can also explicitly set the Nexus file reader:
+Using the ``.nxs`` extension will default to the NeXus loader. If your file has
+an HDF5 extension, you can also explicitly set the NeXus file reader:
 
 .. code-block:: python
 
@@ -28,23 +28,23 @@ an HDF5 extension, you can also explicitly set the Nexus file reader:
     >>> s = hs.load("filename.h5", reader="nxs")
 
 The loader will follow version 3 of the
-`Nexus data rules <https://manual.nexusformat.org/datarules.html#version-3>`_.
+`NeXus data rules <https://manual.nexusformat.org/datarules.html#version-3>`_.
 The signal type, Signal1D or Signal2D, will be inferred by the ``interpretation``
 attribute, if this is set to ``spectrum`` or ``image``, in the ``NXdata``
 description. If the `interpretation
 <https://manual.nexusformat.org/design.html#design-attributes>`_ attribute is
 not set, the loader will return a ``BaseSignal``, which must then be converted
-to the appropriate signal type. Following the Nexus data rules, if a ``default``
+to the appropriate signal type. Following the NeXus data rules, if a ``default``
 dataset is not defined, the loader will load NXdata
 and HDF datasets according to the keyword options in the reader.
-A number of the `Nexus examples <https://github.com/nexusformat/exampledata>`_
-from large facilties do not use NXdata or use older versions of the Nexus
+A number of the `NeXus examples <https://github.com/nexusformat/exampledata>`_
+from large facilties do not use NXdata or use older versions of the NeXus
 implementation. Data can still be loaded from these files but information or
 associations may be missing. However, this missing information can be recovered
 from within the  ``original_metadata`` which contains the overall structure of
 the entry.
 
-As the Nexus format uses the HDF5 format and needs to read both data and
+As the NeXus format uses the HDF5 format and needs to read both data and
 metadata structured in different ways, the loader is written to be quite
 flexible and can also be used to inspect any hdf5 based file.
 
@@ -52,18 +52,19 @@ flexible and can also be used to inspect any hdf5 based file.
 Differences with respect to hspy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-HyperSpy metadata structure stores arrays as hdf datasets without attributes
+The `HyperSpy metadata structure <https://hyperspy.org/hyperspy-doc/current/user_guide/metadata_structure.html>`_
+stores arrays as hdf datasets without attributes
 and stores floats, ints and strings as attributes.
-Nexus formats typically use hdf datasets attributes to store additional
+NeXus formats typically use hdf datasets attributes to store additional
 information such as an indication of the units for an axis or the NX_class which
-the dataset structure follows. The metadata, hyperspy  or original_metadata,
+the dataset structure follows. The metadata, HyperSpy or ``original_metadata``,
 therefore needs to be able to indicate the values and attributes of a dataset.
 To implement this structure the ``value`` and ``attrs`` of a dataset can also be
 defined. The value of a dataset is set using a ``value`` key.
 The attributes of a dataset are defined by an ``attrs`` key.
 
 For example, to store an array called ``axis_x``, with a units attribute within
-original_metadata, the following structure would be used:
+``original_metadata``, the following structure would be used:
 
 ::
 
@@ -93,7 +94,7 @@ To modify the axis information:
     >>> original_metadata.axis_x.value = [2.0,3.0,4.0,5.0,6.0]
     >>> original_metadata.axis_x.attrs.units = "um"
 
-To store data in a Nexus monochromator format, ``value``
+To store data in a NeXus monochromator format, ``value``
 and ``attrs`` keys can define additional attributes:
 
 ::
@@ -106,7 +107,7 @@ and ``attrs`` keys can define additional attributes:
     │   │   │   ├── NXclass : NXmonochromator
 
 
-The ``attrs`` key can also be used to define Nexus structures for the definition
+The ``attrs`` key can also be used to define NeXus structures for the definition
 of structures and relationships between data:
 
 ::
@@ -131,8 +132,8 @@ and metadata values can also be set, read or modified in the normal way.
 
     >>> original_metadata.monochromator.energy = 12.5
 
-HyperSpy metadata is stored within the Nexus file and should be automatically
-restored when a signal is loaded from a previously saved Nexus file.
+HyperSpy metadata is stored within the NeXus file and should be automatically
+restored when a signal is loaded from a previously saved NeXus file.
 
 .. note::
 
@@ -141,11 +142,11 @@ restored when a signal is loaded from a previously saved Nexus file.
 
 Reading
 ^^^^^^^
-Nexus files can contain multiple datasets within the same file, but the
+NeXus files can contain multiple datasets within the same file, but the
 ordering of datasets can vary depending on the setup of an experiment or
 processing step when the data was collected.
 For example, in one experiment Fe, Ca, P, Pb were collected but in the next experiment
-Ca, P, K, Fe, Pb were collected. HyperSpy supports reading in one or more datasets
+Ca, P, K, Fe, Pb were collected. RosettaSciIO supports reading in one or more datasets
 and returns a list of signals but in this example case the indexing is different.
 To control which data or metadata is loaded and in what order
 some additional loading arguments are provided.
@@ -172,7 +173,7 @@ Extra loading arguments
     or when using :py:meth:`~._signals.lazy.LazySignal.compute` with ``close_file=True``.
 
 
-Reading a Nexus file (a single Nexus dataset):
+Reading a NeXus file (a single NeXus dataset):
 
 .. code-block:: python
 
@@ -233,7 +234,7 @@ Metadata can also be filtered in the same way using ``metadata_key``:
 
 .. note::
 
-    The Nexus loader removes any NXdata blocks from the metadata.
+    The NeXus loader removes any NXdata blocks from the metadata.
 
 Metadata that are arrays can be skipped by using ``skip_array_metadata``:
 
@@ -242,11 +243,11 @@ Metadata that are arrays can be skipped by using ``skip_array_metadata``:
     >>> # Load data while skipping metadata that are arrays
     >>> hs.load("sample.nxs", skip_array_metadata=True)
 
-Nexus files also support parameters or dimensions that have been varied
-non-linearly. Since HyperSpy Signals expect linear variation of parameters /
-axes, such non-linear information would be lost in the axes manager and
+NeXus files also support parameters or dimensions that have been varied
+non-linearly. Since the reading of non-uniform axes is not yet implemented for the 
+NeXus plugin, such non-linear information would be lost in the axes manager and
 replaced with indices.
-Nexus and HDF can result in large metadata structures with large datasets within the loaded
+NeXus and HDF can result in large metadata structures with large datasets within the loaded
 original_metadata. If lazy loading is used this may not be a concern but care must be taken
 when saving the data. To control whether large datasets are loaded or saved,
 use the ``metadata_key`` to load only the most relevant information. Alternatively,
@@ -255,14 +256,14 @@ set ``skip_array_metadata`` to ``True`` to avoid loading those large datasets in
 
 Writing
 ^^^^^^^
-Signals can be written to new Nexus files using the standard :py:meth:`~.signal.BaseSignal.save`
+Signals can be written to new NeXus files using the standard :py:meth:`~.signal.BaseSignal.save`
 function.
 
 Extra saving arguments
 ++++++++++++++++++++++
 - ``save_original_metadata``: ``bool`` - Default is True, option to save the original_metadata when storing to file.
 - ``skip_metadata_key``: ``bool`` - ``None``, ``str`` or ``list`` of strings - Default is ``None``. Option to skip certain metadata keys when storing to file.
-- ``use_default``: ``bool`` - Default is False. Set the ``default`` attribute for the Nexus file.
+- ``use_default``: ``bool`` - Default is False. Set the ``default`` attribute for the NeXus file.
 
 .. code-block:: python
 
@@ -304,7 +305,8 @@ To save multiple signals, the file_writer method can be called directly.
 
 When saving multiple signals, a default signal can be defined. This can be used when storing
 associated data or processing steps along with a final result. All signals can be saved but
-a single signal can be marked as the default for easier loading in HyperSpy or plotting with Nexus tools.
+a single signal can be marked as the default for easier loading using RosettaSciIO
+or plotting with NeXus tools.
 The default signal is selected as the first signal in the list:
 
 .. code-block:: python
@@ -341,14 +343,14 @@ The output will be arranged by signal name:
     Signals saved as ``.nxs`` by this plugin can be loaded normally and the
     original_metadata, signal data, axes, metadata and learning_results
     will be restored. Model information is not currently stored.
-    Nexus does not store how the data should be displayed.
+    NeXus does not store how the data should be displayed.
     To preserve the signal details an additional navigation attribute
     is added to each axis to indicate if it is a navigation axis.
 
 
 Inspecting
 ^^^^^^^^^^
-Looking in a Nexus or HDF file for specific metadata is often useful - e.g. to find
+Looking in a NeXus or HDF file for specific metadata is often useful - e.g. to find
 what position a specific stage was at. The methods ``read_metadata_from_file``
 and ``list_datasets_in_file`` can be used to load the file contents or
 list the hdf datasets contained in a file. The inspection methods use the same ``metadata_key`` or ``dataset_key`` as when loading.

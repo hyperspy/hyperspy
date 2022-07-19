@@ -26,14 +26,14 @@ Requirements
 
 1. Reading and writing h5USID files require the
    `installation of pyUSID <https://pycroscopy.github.io/pyUSID/install.html>`_.
-2. Files must use the ``.h5`` file extension in order to use this io plugin.
-   Using the ``.hdf5`` extension will default to HyperSpy's own plugin.
+2. Files must use the ``.h5`` file extension in order to use this IO plugin.
+   Using the ``.hdf5`` extension will default to the :ref:`HyperSpy plugin <hspy-format>`.
 
 Reading
 ^^^^^^^
 
 h5USID files can contain multiple USID datasets within the same file.
-HyperSpy supports reading in one or more USID datasets.
+RosettaSciIO supports reading in one or more USID datasets.
 
 Extra loading arguments
 +++++++++++++++++++++++
@@ -98,8 +98,8 @@ h5USID files also support parameters or dimensions that have been varied non-uni
 This capability is important in several spectroscopy techniques where the bias is varied as a
 `bi-polar triangular waveform <https://pycroscopy.github.io/pyUSID/auto_examples/beginner/plot_usi_dataset.html#values-for-each-dimension>`_
 rather than uniformly from the minimum value to the maximum value.
-Since HyperSpy Signals expect uniform variation of parameters / axes, such non-uniform information
-would be lost in the axes manager. The USID plugin will default to a warning
+So far, the reading of non-uniform axes is not implemented in RosettaSciIO and as the non-uniform information
+would be lost in the axes manager, the USID plugin will default to a warning
 when it encounters a parameter that has been varied non-uniformly:
 
 .. code-block:: python
@@ -108,7 +108,6 @@ when it encounters a parameter that has been varied non-uniformly:
     UserWarning: Ignoring non-uniformity of dimension: Bias
     <BaseSignal, title: , dimensions: (|7, 3, 5, 2)>
 
-Obviously, the
 In order to prevent accidental misinterpretation of information downstream, the keyword argument
 ``ignore_non_uniform_dims`` can be set to ``False`` which will result in a ``ValueError`` instead.
 

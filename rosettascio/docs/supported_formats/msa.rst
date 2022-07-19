@@ -25,7 +25,7 @@ calibrated energy data. It is possible to personalise the separator with the
 .. Warning::
 
     However, if a different separator is chosen the resulting file will not
-    comply with the MSA/EMSA standard and HyperSpy and other software may not
+    comply with the MSA/EMSA standard and RosettaSciIO and other software may not
     be able to read it.
 
 The default encoding is `latin-1`. It is possible to set a different encoding

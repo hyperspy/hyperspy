@@ -3,7 +3,7 @@
 HSpy - HyperSpy's HDF5 Specification
 ------------------------------------
 
-This is HyperSpy's default format and it is the only one that guarantees that no
+This is `HyperSpy's <https://hyperspy.org>`_ default format and it is the only one that guarantees that no
 information will be lost in the writing process and that supports saving data
 of arbitrary dimensions. It is based on the `HDF5 open standard
 <http://www.hdfgroup.org/HDF5/>`_. The HDF5 file format is supported by `many
@@ -73,7 +73,7 @@ This feature is particularly useful when using
 .. versionadded:: 1.3.1
     ``chunks`` keyword argument
 
-The hyperspy HDF5 format supports chunking the data into smaller pieces to make it possible to load only part
+The HyperSpy HDF5 format supports chunking the data into smaller pieces to make it possible to load only part
 of a dataset at a time. By default, the data is saved in chunks that are optimised to contain at least one
 full signal.  It is possible to
 customise the chunk shape using the ``chunks`` keyword.
@@ -105,7 +105,7 @@ Extra saving arguments
 
     .. note::
 
-        HyperSpy uses h5py for reading and writing HDF5 files and, therefore, it
+        RosettaSciIO uses h5py for reading and writing HDF5 files and, therefore, it
         supports all `compression filters supported by h5py <https://docs.h5py.org/en/stable/high/dataset.html#dataset-compression>`_.
         The default is ``'gzip'``. It is possible to enable other compression filters
         such as ``blosc`` by installing e.g. `hdf5plugin <https://github.com/silx-kit/hdf5plugin>`_.
