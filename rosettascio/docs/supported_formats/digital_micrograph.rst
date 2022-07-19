@@ -19,7 +19,7 @@ Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 - ``optimize``: bool, default is True. During loading, the data is replaced by its
-  :ref:`optimized copy <signal.transpose_optimize>` to speed up operations,
+  :external+hyperspy:ref:`optimized copy <signal.transpose_optimize>` to speed up operations,
   e. g. iteration over navigation axes. The cost of this speed improvement is to
   double the memory requirement during data loading.
 

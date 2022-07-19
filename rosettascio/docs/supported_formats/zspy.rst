@@ -7,7 +7,8 @@ Similarly to the :ref:`hspy format <hspy-format>`, the zspy format guarantees th
 information will be lost in the writing process and that supports saving data
 of arbitrary dimensions. It is based on the `Zarr project <https://zarr.readthedocs.io/en/stable/index.html>`_. Which exists as a drop in
 replacement for hdf5 with the intention to fix some of the speed and scaling
-issues with the hdf5 format and is therefore suitable for saving :ref:`big data <big_data.saving>`.
+issues with the hdf5 format and is therefore suitable for saving 
+:external+hyperspy:ref:`big data <big_data.saving>`.
 
 
 .. code-block:: python

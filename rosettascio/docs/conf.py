@@ -29,7 +29,12 @@ author = 'HyperSpy Developers'
 # ones.
 extensions = [
     'sphinx.ext.githubpages',
+    'sphinx.ext.intersphinx',
 ]
+
+intersphinx_mapping = {
+    "hyperspy": ("https://hyperspy.org/hyperspy-doc/current/", None),
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

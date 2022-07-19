@@ -3,13 +3,13 @@
 HSpy - HyperSpy's HDF5 Specification
 ------------------------------------
 
-This is the default format and it is the only one that guarantees that no
+This is HyperSpy's default format and it is the only one that guarantees that no
 information will be lost in the writing process and that supports saving data
 of arbitrary dimensions. It is based on the `HDF5 open standard
 <http://www.hdfgroup.org/HDF5/>`_. The HDF5 file format is supported by `many
 applications
 <http://www.hdfgroup.org/products/hdf5_tools/SWSummarybyName.htm>`_.
-Part of the specification is documented in :ref:`metadata_structure`.
+Part of the specification is documented in :external+hyperspy:ref:`metadata_structure`.
 
 .. versionadded:: 1.2
     Enable saving HSpy files with the ``.hspy`` extension. Previously only the
@@ -95,7 +95,7 @@ constrain of storing at least one signal per chunks. For example, for the signal
 passing ``chunks=True`` results in ``(7, 7, 256)`` chunks.
 
 Choosing the correct chunk-size can significantly affect the speed of reading, writing and performance of many HyperSpy algorithms.
-See the :ref:`chunking section <big_data.chunking>` for more information.
+See the :external+hyperspy:ref:`chunking section <big_data.chunking>` for more information.
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^

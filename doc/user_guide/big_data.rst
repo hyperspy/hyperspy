@@ -494,7 +494,8 @@ Other minor differences
 Saving Big Data
 ^^^^^^^^^^^^^^^^^
 
-The most efficient format supported by HyperSpy to write data is the :ref:`zspy format <zspy-format>`,
+The most efficient format supported by HyperSpy to write data is the
+:external+rsciio:py:ref:`zspy format <zspy-format>`,
 mainly because it supports writing currently from concurrently from multiple threads or processes.
 This also allows for smooth interaction with dask-distributed for efficient scaling.
 
