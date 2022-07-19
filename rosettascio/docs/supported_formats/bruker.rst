@@ -1,16 +1,16 @@
 .. _bruker-format:
 
-Bruker
-------
+Bruker formats
+--------------
 
 .. _bcf-format:
 
-Bruker composite file (bcf)
+Bruker composite file (BCF)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-HyperSpy can read "hypermaps" saved with Bruker's Esprit v1.x or v2.x in bcf
+HyperSpy can read "hypermaps" saved with Bruker's Esprit v1.x or v2.x in ``.bcf``
 hybrid (virtual file system/container with xml and binary data, optionally
-compressed) format. Most bcf import functionality is implemented. Both
+compressed) format. Most ``.bcf``` import functionality is implemented. Both
 high-resolution 16-bit SEM images and hyperspectral EDX data can be retrieved
 simultaneously.
 
@@ -29,7 +29,7 @@ Extra loading arguments
   corresponding type of data, either spectrum or image, is returned.
   By default (None), all data are loaded.
 - ``index`` : one of (None, int, "all"). Allow to select the index of the dataset
-  in the bcf file, which can contains several datasets. Default None value
+  in the ``.bcf`` file, which can contains several datasets. Default None value
   result in loading the first dataset. When set to 'all', all available datasets
   will be loaded and returned as separate signals.
 - ``downsample`` : the downsample ratio of hyperspectral array (height and width
@@ -50,7 +50,7 @@ Extra loading arguments
   full channel range.
 
 Example of loading reduced (downsampled, and with energy range cropped)
-"spectrum only" data from bcf (original shape: 80keV EDS range (4096 channels),
+"spectrum only" data from ``.bcf`` (original shape: 80keV EDS range (4096 channels),
 100x75 pixels; SEM acceleration voltage: 20kV):
 
 .. code-block:: python
@@ -83,9 +83,9 @@ images for navigation in the plotting.
 
 .. _spx-format:
 
-SPX format
-^^^^^^^^^^
+SPX (xml) format
+^^^^^^^^^^^^^^^^
 
-Hyperspy can read Bruker's spx format (single spectra format based on XML).
+Hyperspy can read Bruker's ``.spx`` format (single spectra format based on XML).
 The format contains extensive list of details and parameters of EDS analyses
 which are mapped in hyperspy to metadata and original_metadata dictionaries.

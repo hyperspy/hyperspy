@@ -35,7 +35,7 @@ filename e.g.:
     >>> s.save('test.hdf5')
 
 
-When saving to ``hspy``, all supported objects in the signal's
+When saving to ``.hspy``, all supported objects in the signal's
 :py:attr:`~.signal.BaseSignal.metadata` is stored. This includes lists, tuples and signals.
 Please note that in order to increase saving efficiency and speed, if possible,
 the inner-most structures are converted to numpy arrays when saved. This

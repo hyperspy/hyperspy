@@ -1,7 +1,7 @@
 .. _nexus-format:
 
-Nexus
------
+NeXus data format
+-----------------
 
 Background
 ^^^^^^^^^^
@@ -17,8 +17,8 @@ For specific types of experiments an Application Definition may exist, which
 defines an agreed common layout that facilities can adhere to.
 
 Nexus metadata and data are stored in Hierarchical Data Format Files (HDF5) with
-a .nxs extension although standards HDF5 extensions are sometimes used.
-Files must use the ``.nxs`` file extension in order to use this io plugin.
+a ``.nxs`` extension although standards HDF5 extensions are sometimes used.
+Files must use the ``.nxs`` file extension in order to use this IO plugin.
 Using the ``.nxs`` extension will default to the Nexus loader. If your file has
 an HDF5 extension, you can also explicitly set the Nexus file reader:
 
@@ -338,7 +338,7 @@ The output will be arranged by signal name:
 
 .. note::
 
-    Signals saved as nxs by this plugin can be loaded normally and the
+    Signals saved as ``.nxs`` by this plugin can be loaded normally and the
     original_metadata, signal data, axes, metadata and learning_results
     will be restored. Model information is not currently stored.
     Nexus does not store how the data should be displayed.

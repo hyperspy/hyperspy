@@ -1,9 +1,9 @@
 .. _netcdf-format:
 
-NetCDF
-------
+NetCDF (EELSlab) format
+-----------------------
 
-This was the default format in HyperSpy's predecessor, EELSLab, but it has been
+The ``.nc`` format was the default format in HyperSpy's predecessor, EELSLab, but it has been
 superseded by :ref:`hspy-format` in HyperSpy. We provide only reading capabilities
 but we do not support writing to this format.
 

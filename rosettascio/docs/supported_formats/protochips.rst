@@ -1,10 +1,10 @@
 .. _protochips-format:
 
-Protochips log
---------------
+Protochips logfile
+------------------
 
-HyperSpy can read heater, biasing and gas cell log files for Protochips holder.
-The format stores all the captured data together with a small header in a csv
+HyperSpy can read heater, biasing and gas cell ``.log`` files for Protochips holder.
+The format stores all the captured data together with a small header in a ``.csv``
 file. The reader extracts the measured quantity (e. g. temperature, pressure,
 current, voltage) along the time axis, as well as the notes saved during the
 experiment. The reader returns a list of signal with each signal corresponding

@@ -1,7 +1,7 @@
 .. _usid-format:
 
-USID
-----
+Universal Spectroscopy and Imaging Data (h5USID)
+----------------------------------------------
 
 Background
 ^^^^^^^^^^
@@ -10,8 +10,8 @@ Background
 (USID) is an open, community-driven, self-describing, and standardized schema for
 representing imaging and spectroscopy data of any size, dimensionality, precision,
 instrument of origin, or modality. USID data is typically stored in
-Hierarchical Data Format Files (HDF5) and the combination of USID within HDF5 files is
-referred to as h5USID.
+Hierarchical Data Format Files (HDF5) and the combination of USID within ``.hdf5``
+files is referred to as h5USID.
 
 `pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_
 provides a convenient interface to I/O operations on such h5USID files. USID

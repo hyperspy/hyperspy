@@ -1,12 +1,12 @@
 .. _mrcz-format:
 
-MRCZ
-----
+MRCZ format
+-----------
 
-MRCZ is an extension of the CCP-EM MRC2014 file format. `CCP-EM MRC2014
-<http://www.ccpem.ac.uk/mrc_format/mrc2014.php>`_ file format.  It uses the
-`blosc` meta-compression library to bitshuffle and compress files in a blocked,
-multi-threaded environment. The supported data types are:
+The ``.mrcz`` format is an extension of the CCP-EM MRC2014 file format.
+`CCP-EM MRC2014 <http://www.ccpem.ac.uk/mrc_format/mrc2014.php>`_ file format.
+It uses the `blosc` meta-compression library to bitshuffle and compress files in
+a blocked, multi-threaded environment. The supported data types are:
 
 [`float32`,`int8`,`uint16`,`int16`,`complex64`]
 

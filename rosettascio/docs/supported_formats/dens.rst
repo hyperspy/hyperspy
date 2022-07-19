@@ -10,10 +10,10 @@ as the legacy heating software DigiHeater.
 DENSsolutions Impulse logfile
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Impulse logfiles are stored in csv format. All metadata linked to the experiment
-is stored in a separate metadata.log file. This metadata file contains crucial
+Impulse logfiles are stored in ``.csv`` format. All metadata linked to the experiment
+is stored in a separate ``metadata.log`` file. This metadata file contains crucial
 information about the experiment and should be included in the same folder with
-the csv file when reading data into Hyperspy.
+the ``.csv`` file when reading data into Hyperspy.
 
 To read Impulse logfiles, use the reader argument to define the correct file reader:
 

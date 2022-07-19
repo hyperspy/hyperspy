@@ -1,11 +1,11 @@
 .. _jeol-format:
 
-JEOL ASW format
----------------
+JEOL Analyst Station (ASW, ...)
+-------------------------------
 
 This is the file format used by the `JEOL Analysist Station software` for which
-hyperspy can read the ``asw``, ``pts``, ``map`` and ``eds`` format. To read the
-calibration, it is required to load the ``asw`` file, which will load all others
+hyperspy can read the ``.asw``, ``.pts``, ``.map`` and ``.eds`` format. To read the
+calibration, it is required to load the ``.asw`` file, which will load all others
 files automatically.
 
 Extra loading arguments
@@ -31,26 +31,26 @@ Extra loading arguments
   dataset, it can be integer or a tuple of length 2 to define ``x`` and ``y``
   separetely and it must be a mutiple of the size of the navigation dimension.
 - ``only_valid_data`` : bool, default True.
-  for ``pts`` file only, ignore incomplete and partly
+  for ``.pts`` file only, ignore incomplete and partly
   acquired last frame, which typically occurs when the acquisition was
   interrupted. When loading incomplete data (``only_valid_data=False``),
   the missing data are filled with zeros. If ``sum_frames=True``, this argument
   will be ignored to enforce consistent sum over the mapped area. 
 - ``read_em_image`` : bool, default False.
-  for ``pts`` file only, If ``read_em_image=True``,
-  read SEM/STEM image from pts file if available. In this case, both
+  for ``.pts`` file only, If ``read_em_image=True``,
+  read SEM/STEM image from ``.pts`` file if available. In this case, both
   spectrum Image and SEM/STEM Image will be returned as list.
 - ``frame_list`` : list of integer or None, default None
-  for ``pts`` file only, frames in frame_list will be loaded.
+  for ``.pts`` file only, frames in frame_list will be loaded.
   for example, ``frame_list=[1,3]`` means second and forth frame will be loaded.
   If ``None``, all frames are loaded.
 - ``frame_shifts`` : list of [int, int], list of [int, int, int], or None, default None
-  for ``pts`` file only, each frame will be loaded with offset of
+  for ``.pts`` file only, each frame will be loaded with offset of
   [dy, dx (, and optionary dEnergy)]. Units are pixels/channels.
   The result of estimate_shift2D() can be used as a parameter of frame_shifts.
   This is useful for express drift correction. Not suitable for accurate analysis.
 - ``lazy`` : bool, default False
-  for ``pts`` file only, spectrum image is loaded as a dask.array if lazy == true.
+  for ``.pts`` file only, spectrum image is loaded as a dask.array if lazy == true.
   This is useful to reduce memory usage, with cost of cpu time for calculation.
 
 

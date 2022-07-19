@@ -1,9 +1,9 @@
 .. _fei-format:
 
-FEI TIA SER and EMI
+FEI TIA (SER & EMI)
 -------------------
 
-HyperSpy can read ``ser`` and ``emi`` files but the reading features are not
+HyperSpy can read ``.ser`` and ``.emi`` files but the reading features are not
 complete (and probably they will be unless FEI releases the specifications of
 the format). That said we know that this is an important feature and if loading
 a particular ser or emi file fails for you, please report it as an issue in the

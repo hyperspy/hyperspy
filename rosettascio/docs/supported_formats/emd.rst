@@ -1,9 +1,9 @@
 .. _emd-format:
 
-EMD
----
+Electron Microscopy Dataset (EMD)
+---------------------------------
 
-EMD stands for “Electron Microscopy Dataset.” It is a subset of the open source
+EMD stands for “Electron Microscopy Dataset”. It is a subset of the open source
 HDF5 wrapper format. N-dimensional data arrays of any standard type can be
 stored in an HDF5 file, as well as tags and other metadata.
 

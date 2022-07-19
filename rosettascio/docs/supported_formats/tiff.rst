@@ -1,9 +1,9 @@
 .. _tiff-format:
 
-TIFF
-----
+Tagges image file format (TIFF)
+-------------------------------
 
-HyperSpy can read and write 2D and 3D TIFF files using using
+HyperSpy can read and write 2D and 3D ``.tiff`` files using using
 Christoph Gohlke's `tifffile <https://github.com/cgohlke/tifffile/>`_ library.
 In particular, it supports reading and
 writing of TIFF, BigTIFF, OME-TIFF, STK, LSM, NIH, and FluoView files. Most of
@@ -17,9 +17,9 @@ bio-scientific imaging. See `the library webpage
    ImageJ or DigitalMicrograph
 
 Currently HyperSpy has limited support for reading and saving the TIFF tags.
-However, the way that HyperSpy reads and saves the scale and the units of TIFF
+However, the way that HyperSpy reads and saves the scale and the units of ``.tiff``
 files is compatible with ImageJ/Fiji and Gatan Digital Micrograph software.
-HyperSpy can also import the scale and the units from TIFF files saved using
+HyperSpy can also import the scale and the units from ``.tiff`` files saved using
 FEI, Zeiss SEM, Olympus SIS, Jeol SightX and Hamamatsu HPD-TA (streak camera)
 software.
 
