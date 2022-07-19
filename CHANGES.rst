@@ -20,14 +20,14 @@ New features
 - Support for :ref:`relative slicing <signal.indexing>` (`#2386 <https://github.com/hyperspy/hyperspy/issues/2386>`_)
 - Implement non-uniform axes, not all hyperspy functionalities support non-uniform axes, see this `tracking issue <https://github.com/hyperspy/hyperspy/issues/2398>`_ for progress. (`#2399 <https://github.com/hyperspy/hyperspy/issues/2399>`_)
 - Add (weighted) :ref:`linear least square fitting <linear_fitting-label>`. Close `#488 <https://github.com/hyperspy/hyperspy/issues/488>`_ and `#574 <https://github.com/hyperspy/hyperspy/issues/574>`_. (`#2422 <https://github.com/hyperspy/hyperspy/issues/2422>`_)
-- Support for reading :ref:`JEOL EDS data<jeol_format-label>` (`#2488 <https://github.com/hyperspy/hyperspy/issues/2488>`_)
+- Support for reading :external+rsciio:ref:`JEOL EDS data<jeol-format>` (`#2488 <https://github.com/hyperspy/hyperspy/issues/2488>`_)
 - Plot overlayed images - see :ref:`plotting several images<plot.images>` (`#2599 <https://github.com/hyperspy/hyperspy/issues/2599>`_)
 - Add initial support for :ref:`GPU computation<gpu_processing>` using cupy (`#2670 <https://github.com/hyperspy/hyperspy/issues/2670>`_)
 - Add ``height`` property to the :py:class:`~._components.gaussian2d.Gaussian2D` component (`#2688 <https://github.com/hyperspy/hyperspy/issues/2688>`_)
-- Support for reading and writing :ref:`TVIPS image stream data<tvips_format-label>` (`#2780 <https://github.com/hyperspy/hyperspy/issues/2780>`_)
-- Add in :ref:`zspy format<zspy-format>`: hspy specification with the zarr format. Particularly useful to speed up loading and :ref:`saving large datasets<big_data.saving>` by using concurrency. (`#2825 <https://github.com/hyperspy/hyperspy/issues/2825>`_)
-- Support for reading :ref:`DENSsolutions Impulse data<dens-format>` (`#2828 <https://github.com/hyperspy/hyperspy/issues/2828>`_)
-- Add lazy loading for :ref:`JEOL EDS data<jeol_format-label>` (`#2846 <https://github.com/hyperspy/hyperspy/issues/2846>`_)
+- Support for reading and writing :external+rsciio:ref:`TVIPS image stream data<tvips-format>` (`#2780 <https://github.com/hyperspy/hyperspy/issues/2780>`_)
+- Add in :external+rsciio:ref:`zspy format<zspy-format>`: hspy specification with the zarr format. Particularly useful to speed up loading and :ref:`saving large datasets<big_data.saving>` by using concurrency. (`#2825 <https://github.com/hyperspy/hyperspy/issues/2825>`_)
+- Support for reading :external+rsciio:ref:`DENSsolutions Impulse data<dens-format>` (`#2828 <https://github.com/hyperspy/hyperspy/issues/2828>`_)
+- Add lazy loading for :external+rsciio:ref:`JEOL EDS data<jeol-format>` (`#2846 <https://github.com/hyperspy/hyperspy/issues/2846>`_)
 - Add :ref:`html representation<lazy._repr_html_>` for lazy signals and the
   :py:meth:`~._signals.lazy.LazySignal.get_chunk_size` method to get the chunk size
   of given axes (`#2855 <https://github.com/hyperspy/hyperspy/issues/2855>`_)
@@ -69,11 +69,11 @@ Enhancements
 - Read cathodoluminescence metadata from digital micrograph files, amended in `PR #2894 <https://github.com/hyperspy/hyperspy/pull/2894>`_ (`#2590 <https://github.com/hyperspy/hyperspy/issues/2590>`_)
 - Add possibility to search/access nested items in DictionaryTreeBrowser (metadata) without providing full path to item. (`#2633 <https://github.com/hyperspy/hyperspy/issues/2633>`_)
 - Improve :py:meth:`~.signal.BaseSignal.map` function in :py:class:`~.signal.BaseSignal` by utilizing dask for both lazy and non-lazy signals. This includes adding a `lazy_output` parameter, meaning non-lazy signals now can output lazy results. See the :ref:`user guide<lazy_output-map-label>` for more information. (`#2703 <https://github.com/hyperspy/hyperspy/issues/2703>`_)
-- :ref:`NeXus<nexus-format>` file with more options when reading and writing (`#2725 <https://github.com/hyperspy/hyperspy/issues/2725>`_)
+- :external+rsciio:ref:`NeXus<nexus-format>` file with more options when reading and writing (`#2725 <https://github.com/hyperspy/hyperspy/issues/2725>`_)
 - Add ``dtype`` argument to :py:meth:`~.signal.BaseSignal.rebin` (`#2764 <https://github.com/hyperspy/hyperspy/issues/2764>`_)
-- Add option to set output size when :ref:`exporting images<image-format>` (`#2791 <https://github.com/hyperspy/hyperspy/issues/2791>`_)
+- Add option to set output size when :external+rsciio:ref:`exporting images<image-format>` (`#2791 <https://github.com/hyperspy/hyperspy/issues/2791>`_)
 - Add :py:meth:`~.axes.AxesManager.switch_iterpath` context manager to switch iterpath (`#2795 <https://github.com/hyperspy/hyperspy/issues/2795>`_)
-- Add options not to close file (lazy signal only) and not to write dataset for hspy file format, see :ref:`hspy-format` for details (`#2797 <https://github.com/hyperspy/hyperspy/issues/2797>`_)
+- Add options not to close file (lazy signal only) and not to write dataset for hspy file format, see :external+rsciio:ref:`hspy-format` for details (`#2797 <https://github.com/hyperspy/hyperspy/issues/2797>`_)
 - Add Github workflow to run test suite of extension from a pull request. (`#2824 <https://github.com/hyperspy/hyperspy/issues/2824>`_)
 - Add :py:attr:`~.signal.BaseSignal.ragged` attribute to :py:class:`~.signal.BaseSignal` to clarify when a signal contains a ragged array. Fix inconsistency caused by ragged array and add a :ref:`ragged array<signal.ragged>` section to the user guide (`#2842 <https://github.com/hyperspy/hyperspy/issues/2842>`_)
 - Import hyperspy submodules lazily to speed up importing hyperspy. Fix autocompletion `signals` submodule (`#2850 <https://github.com/hyperspy/hyperspy/issues/2850>`_)
@@ -292,12 +292,12 @@ NEW
 
 * Support for the following file formats:
 
-  * :ref:`sur-format`
-  * :ref:`elid_format-label`
-  * :ref:`nexus-format`
-  * :ref:`usid-format`
-  * :ref:`empad-format`
-  * Prismatic EMD format, see :ref:`emd-format`
+  * :external+rsciio:ref:`sur-format`
+  * :external+rsciio:ref:`elid-format`
+  * :external+rsciio:ref:`nexus-format`
+  * :external+rsciio:ref:`usid-format`
+  * :external+rsciio:ref:`empad-format`
+  * Prismatic EMD format, see :external+rsciio:ref:`emd-format`
 * :meth:`~._signals.eels.EELSSpectrum.print_edges_near_energy` method
   that, if the `hyperspy-gui-ipywidgets package
   <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
@@ -574,9 +574,9 @@ NEW
 
 * Support for three new file formats:
 
-    * Reading FEI's Velox EMD file format based on the HDF5 open standard. See :ref:`emd_fei-format`.
-    * Reading Bruker's SPX format. See :ref:`spx-format`.
-    * Reading and writing the mrcz open format. See :ref:`mrcz-format`.
+    * Reading FEI's Velox EMD file format based on the HDF5 open standard. See :external+rsciio:ref:`emd_fei-format`.
+    * Reading Bruker's SPX format. See :external+rsciio:ref:`spx-format`.
+    * Reading and writing the mrcz open format. See :external+rsciio:ref:`mrcz-format`.
 * New :mod:`~.datasets.artificial_data` module which contains functions for generating
   artificial data, for use in things like docstrings or for people to test
   HyperSpy functionalities. See :ref:`example-data-label`.
@@ -665,7 +665,7 @@ Enhancements
 ------------
 * Creating many markers is now much faster.
 * New "Stage" metadata node. See :ref:`metadata_structure` for details.
-* The Brucker file reader now supports the new version of the format. See :ref:`bcf-format`.
+* The Brucker file reader now supports the new version of the format. See :external+rsciio:ref:`bcf-format`.
 * HyperSpy is now compatible with all matplotlib backends, including the nbagg which is
   particularly convenient for interactive data analysis in the
   `Jupyter Notebook <http://jupyter.org>`__ in combination with the new
@@ -702,7 +702,7 @@ API changes
     * :py:meth:`~.signal.MVATools.plot_decomposition_factors`.
 
 * The default extension when saving to HDF5 following HyperSpy's specification
-  is now ``hspy`` instead of ``hdf5``. See :ref:`hspy-format`.
+  is now ``hspy`` instead of ``hdf5``. See :external+rsciio:ref:`hspy-format`.
 
 * The following methods are deprecated and will be removed in HyperSpy 2.0
 
@@ -765,7 +765,7 @@ NEW
   it internally (a good fraction of HyperSpy's functionaly). See
   :ref:`map-label`.
 * :ref:`electron-holography-label` reconstruction.
-* Support for reading :ref:`edax-format` files.
+* Support for reading :external+rsciio:ref:`edax-format` files.
 * New signal methods :py:meth:`~.signal.BaseSignal.indexmin` and
   :py:meth:`~.signal.BaseSignal.valuemin`.
 
@@ -786,7 +786,7 @@ Enhancements
 * Markers can now be saved to hdf5 and creating many markers is easier and
   faster. See :ref:`plot.markers`.
 * Add option to save to HDF5 file using the ".hspy" extension instead of
-  ".hdf5". See :ref:`hspy-format`. This will be the default extension in
+  ".hdf5". See :external+rsciio:ref:`hspy-format`. This will be the default extension in
   HyperSpy 1.3.
 
 For developers
@@ -842,7 +842,7 @@ NEW
 ---
 
 * :ref:`signal.transpose`.
-* :ref:`protochips-format` reader.
+* :external+rsciio:ref:`protochips-format` reader.
 
 Enhancements
 ------------
@@ -903,17 +903,17 @@ EDS
 IO
 ^^
 * Support for reading certain files without :ref:`loading them to memory <load_to_memory-label>`.
-* :ref:`Bruker's composite file (bcf) <bcf-format>` reading support.
-* :ref:`Electron Microscopy Datasets (EMD) <emd-format>` read and write support.
-* :ref:`SEMPER unf <unf-format>` read and write support.
-* :ref:`DENS heat log <dens-format>` read support.
-* :ref:`NanoMegas blockfile <blockfile-format>` read and write support.
+* :external+rsciio:ref:`Bruker's composite file (bcf) <bcf-format>` reading support.
+* :external+rsciio:ref:`Electron Microscopy Datasets (EMD) <emd-format>` read and write support.
+* :external+rsciio:ref:`SEMPER unf <unf-format>` read and write support.
+* :external+rsciio:ref:`DENS heat log <dens-format>` read support.
+* :external+rsciio:ref:`NanoMegas blockfile <blockfile-format>` read and write support.
 
 Enhancements
 ------------
 * More useful ``AxesManager`` repr string with html repr for Jupyter Notebook.
 * Better progress bar (`tqdm <https://github.com/noamraph/tqdm>`__).
-* Add support for :ref:`writing/reading scale and unit to tif files
+* Add support for :external+rsciio:ref:`writing/reading scale and unit to tif files
   <tiff-format>` to be read with ImageJ or DigitalMicrograph.
 
 Documentation

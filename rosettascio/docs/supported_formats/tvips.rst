@@ -1,4 +1,4 @@
-.. _tvips_format-label:
+.. _tvips-format:
 
 TVIPS format
 ------------

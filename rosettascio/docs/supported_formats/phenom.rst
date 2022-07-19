@@ -1,4 +1,4 @@
-.. _elid_format-label:
+.. _elid-format:
 
 Phenom ELID format
 ------------------

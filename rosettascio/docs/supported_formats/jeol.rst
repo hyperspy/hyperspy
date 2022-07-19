@@ -1,4 +1,4 @@
-.. _jeol_format-label:
+.. _jeol-format:
 
 JEOL ASW format
 ---------------
