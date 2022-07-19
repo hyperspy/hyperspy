@@ -3,6 +3,8 @@
 Bruker
 ------
 
+.. _bcf-format:
+
 Bruker composite file (bcf)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

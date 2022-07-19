@@ -5,6 +5,8 @@ DENSsolutions formats
 HyperSpy can read any logfile from DENSsolutions' new Impulse software as well
 as the legacy heating software DigiHeater.
 
+.. _dens_impulse-format:
+
 DENSsolutions Impulse logfile
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -19,6 +21,8 @@ To read Impulse logfiles, use the reader argument to define the correct file rea
 
     >>> hs.load("filename.csv", reader="impulse")
 
+
+.. _dens_heater-format:
 
 DENSsolutions DigiHeater logfile
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

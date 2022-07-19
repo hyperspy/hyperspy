@@ -4,7 +4,8 @@ TIFF
 ----
 
 HyperSpy can read and write 2D and 3D TIFF files using using
-Christoph Gohlke's ``tifffile`` library. In particular, it supports reading and
+Christoph Gohlke's `tifffile <https://github.com/cgohlke/tifffile/>`_ library.
+In particular, it supports reading and
 writing of TIFF, BigTIFF, OME-TIFF, STK, LSM, NIH, and FluoView files. Most of
 these are uncompressed or losslessly compressed 2**(0 to 6) bit integer, 16, 32
 and 64-bit float, grayscale and RGB(A) images, which are commonly used in
