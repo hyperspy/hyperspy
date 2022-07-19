@@ -1,7 +1,7 @@
 .. _usid-format:
 
 Universal Spectroscopy and Imaging Data (h5USID)
-----------------------------------------------
+------------------------------------------------
 
 Background
 ^^^^^^^^^^

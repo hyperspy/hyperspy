@@ -75,14 +75,14 @@ the data size in memory.
 
 .. note::
 
-    When using `HyperSpy <https://hyperspy.org`_, FFTs made in Velox are loaded
+    When using `HyperSpy <https://hyperspy.org>`_, FFTs made in Velox are loaded
     in as-is as a HyperSpy ComplexSignal2D object.
     The FFT is not centered and only positive frequencies are stored in the file.
     Making FFTs with HyperSpy from the respective image datasets is recommended.
 
 .. note::
 
-    When using `HyperSpy <https://hyperspy.org`_, DPC data is loaded in as a HyperSpy ComplexSignal2D object.
+    When using `HyperSpy <https://hyperspy.org>`_, DPC data is loaded in as a HyperSpy ComplexSignal2D object.
 
 .. note::
 
