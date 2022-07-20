@@ -24,7 +24,7 @@ import warnings
 import numpy as np
 import dask.array as da
 import dask.threaded as dt
-import dask.__version__ as daskversion
+from dask import __version__ as daskversion
 from dask.diagnostics import ProgressBar
 from itertools import product
 from packaging.version import Version
