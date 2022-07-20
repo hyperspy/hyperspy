@@ -18,6 +18,7 @@
 
 from functools import wraps
 import numpy as np
+import sympy
 from sympy.utilities.lambdify import lambdify
 
 import warnings
@@ -236,7 +237,6 @@ class Expression(Component):
         possible.
         Useful to recompile the function and gradient with a different module.
         """
-        import sympy
         try:  # Expression is just a constant
             float(self._str_expression)
         except ValueError:
