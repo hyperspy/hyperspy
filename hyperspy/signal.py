@@ -3181,7 +3181,7 @@ class BaseSignal(FancySlicing,
 
         if new_shape is None and scale is None:
             raise ValueError("One of new_shape, or scale must be specified")
-        elif new_shape is None and scale is None:
+        elif new_shape is not None and scale is not None:
             raise ValueError(
                 "Only one out of new_shape or scale should be specified. "
                 "Not both.")
