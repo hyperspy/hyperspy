@@ -168,8 +168,8 @@ Once HyperSpy is running, to load from a supported file format (see
 
 .. note::
 
-   When the file contains several datasets, the :py:func:`~.io.load`  function
-   will return a list of hyperspy signal, instead of a single hyperspy signal. 
+   When the file contains several datasets, the :py:func:`~.io.load` function
+   will return a list of HyperSpy signals, instead of a single HyperSpy signal. 
    Each signal can then be accessed using list indexation.
 
    .. code-block:: python
@@ -180,7 +180,7 @@ Once HyperSpy is running, to load from a supported file format (see
        <Signal1D, title: eggs, dimensions: (32,32|1024)>,
        <Signal1D, title: ham, dimensions: (32,32|1024)>]
 
-   Using indexation to assess the first signal (index 0):
+   Using indexation to access the first signal (index 0):
    
    .. code-block:: python
 
