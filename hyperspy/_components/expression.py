@@ -18,7 +18,6 @@
 
 from functools import wraps
 import numpy as np
-import sympy
 from sympy.utilities.lambdify import lambdify
 
 import warnings

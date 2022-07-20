@@ -902,7 +902,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
         """
         yy, xx = np.indices(self.axes_manager._signal_shape_in_array)
         if self._lazy:
-            import dask.array as da
             ramp = offset * da.ones(self.data.shape, dtype=self.data.dtype,
                                     chunks=self.data.chunks)
         else:

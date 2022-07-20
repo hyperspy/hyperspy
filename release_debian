@@ -13,7 +13,6 @@ parser.add_argument('-i', '--install', action='store_true',
 args = parser.parse_args()
 
 import os
-from subprocess import call
 import hyperspy.Release as Release
 release_name = 'hyperspy-' + Release.version.replace('.dev', '~dev')
 # Delete the deb_dist folder to avoid an error if it contains
