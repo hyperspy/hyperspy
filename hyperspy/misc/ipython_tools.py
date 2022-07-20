@@ -30,8 +30,8 @@ def get_ipython():
     """
     if is_it_running_from_ipython is False:
         return None
-    import IPython
-    ipy_version = Version(IPython.__version__)
+    from IPython import __version__ as ipythonversion
+    ipy_version = Version(ipythonversion)
     if ipy_version < Version("0.11"):
         from IPython import ipapi
         ip = ipapi.get()
@@ -39,7 +39,8 @@ def get_ipython():
         from IPython.core import ipapi
         ip = ipapi.get()
     else:
-        ip = IPython.get_ipython()
+        from IPython import get_ipython
+        ip = get_ipython()
     return ip
 
 
@@ -63,8 +64,8 @@ def turn_logging_on(verbose=1):
     ip = get_ipython()
     if ip is None:
         return
-    import IPython
-    ipy_version = Version(IPython.__version__)
+    from IPython import __version__ as ipythonversion
+    ipy_version = Version(ipythonversion)
     if ipy_version < Version("0.11"):
         if verbose == 1:
             print("Logging is not supported by this version of IPython")
@@ -94,8 +95,8 @@ def turn_logging_off():
     ip = get_ipython()
     if ip is None:
         return
-    import IPython
-    ipy_version = Version(IPython.__version__)
+    from IPython import __version__ as ipythonversion
+    ipy_version = Version(ipythonversion)
     if ipy_version < Version("0.11"):
         print("Logging is not supported by this version of IPython")
         return
