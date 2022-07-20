@@ -236,4 +236,4 @@ If you want to save to the :external+rsciio:ref:`ripple format <ripple-format>` 
     >>> s.save('spectrum.rpl')
 
 Some formats take extra arguments. See the corresponding pages at
-:external+rsciio:ref:``supported-formats` for more information.
+:external+rsciio:ref:`supported-formats` for more information.
