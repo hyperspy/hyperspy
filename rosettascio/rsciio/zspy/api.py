@@ -134,9 +134,8 @@ def file_writer(filename, signal, close_file=True, **kwds):
         :py:meth:`zarr.hierarchy.Group.require_dataset` function.
     """
     if "compressor" not in kwds:
-        from numcodecs import Blosc
-        kwds["compressor"] = Blosc(
-            cname='zstd', clevel=1, shuffle=Blosc.SHUFFLE
+        kwds["compressor"] = numcodecs.Blosc(
+            cname='zstd', clevel=1, shuffle=numcodecs.Blosc.SHUFFLE
             )
 
     if isinstance(filename, MutableMapping):
