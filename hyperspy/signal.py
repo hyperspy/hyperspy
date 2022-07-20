@@ -39,12 +39,13 @@ from scipy import signal as sp_signal
 import traits.api as t
 from tlz import concat
 
-import hyperspy
 from hyperspy.axes import AxesManager
 from hyperspy.api_nogui import _ureg
+from hyperspy.misc.array_tools import rebin as hsrebin
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
 from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.io import assign_signal_subclass
+from hyperspy.io import save as hssave
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
@@ -3000,7 +3001,7 @@ class BaseSignal(FancySlicing,
             filename = Path(filename)
             if extension is not None:
                 filename = filename.with_suffix(f".{extension}")
-        hyperspy.io.save(filename, self, overwrite=overwrite, **kwds)
+        hssave(filename, self, overwrite=overwrite, **kwds)
 
     def _replot(self):
         if self._plot is not None:
@@ -3278,7 +3279,7 @@ class BaseSignal(FancySlicing,
             new_shape=new_shape,
             scale=scale,)
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
-        data = hyperspy.misc.array_tools.rebin(
+        data = hsrebin(
             self.data, scale=factors, crop=crop, dtype=dtype)
 
         if out:
