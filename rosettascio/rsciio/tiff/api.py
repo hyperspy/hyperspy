@@ -27,7 +27,7 @@ import warnings
 
 import numpy as np
 from tifffile import imwrite, TiffFile, TIFF
-import tifffile.__version__ as tiffversion
+from tifffile import __version__ as tiffversion
 import traits.api as t
 
 from rsciio.utils.tools import DTBox, _UREG
