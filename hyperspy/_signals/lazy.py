@@ -23,7 +23,8 @@ import warnings
 
 import numpy as np
 import dask.array as da
-import dask
+import dask.threaded as dt
+import dask.__version__ as daskversion
 from dask.diagnostics import ProgressBar
 from itertools import product
 from packaging.version import Version
@@ -816,7 +817,7 @@ class LazySignal(BaseSignal):
 
     def _block_iterator(self,
                         flat_signal=True,
-                        get=dask.threaded.get,
+                        get=dt.get,
                         navigation_mask=None,
                         signal_mask=None):
         """A function that allows iterating lazy signal data by blocks,
@@ -900,7 +901,7 @@ class LazySignal(BaseSignal):
         output_dimension=None,
         signal_mask=None,
         navigation_mask=None,
-        get=dask.threaded.get,
+        get=dt.get,
         num_chunks=None,
         reproject=True,
         print_info=True,
@@ -1295,7 +1296,7 @@ class LazySignal(BaseSignal):
             # Needs to reverse the chunks list to match dask chunking order
             signal_chunks = list(signal_chunks)[::-1]
             navigation_chunks = ['auto'] * len(self.axes_manager.navigation_shape)
-            if Version(dask.__version__) >= Version("2.30.0"):
+            if Version(daskversion) >= Version("2.30.0"):
                 kwargs = {'balance':True}
             else:
                 kwargs = {}

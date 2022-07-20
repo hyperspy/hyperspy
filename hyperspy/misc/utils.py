@@ -1081,7 +1081,6 @@ def stack(
     """
     from hyperspy.signals import BaseSignal
     from hyperspy.axes import FunctionalDataAxis, UniformDataAxis, DataAxis
-    import dask.array as da
     from numbers import Number
 
     for k in [k for k in ["mmap", "mmap_dir"] if k in kwargs]:
