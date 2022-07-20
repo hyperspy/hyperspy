@@ -731,7 +731,7 @@ Saving in the main file
 -----------------------
 
 If you save the dataset on which you've performed machine learning analysis in
-the :ref:`hspy-format` format (the default in HyperSpy) (see
+the :external+rsciio:ref:`HSpy-HDF5 <hspy-format>` format (the default in HyperSpy, see
 :ref:`saving_files`), the result of the analysis is also saved in the same
 file automatically, and it is loaded along with the rest of the data when you
 next open the file.

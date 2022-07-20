@@ -3,9 +3,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-############################
-RosettaSciIO's documentation
-############################
+##########################
+RosettaSciIO documentation
+##########################
 
 The **Rosetta Scientific Input Output library** aims at providing easy reading and
 writing capabilities in Python for a wide range of

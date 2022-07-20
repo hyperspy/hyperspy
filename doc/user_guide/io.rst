@@ -4,24 +4,31 @@
 Loading and saving data
 ***********************
 
-.. contents::
-   :depth: 3
+.. note::
+
+    The IO plugins formerly developed within HyperSpy have now been moved to
+    the separate `RosettaSciIO repository <https://github.com/hyperspy/rosettasciio>`_
+    in order to facilitate a wider use also by other packages. Plugins supporting
+    additional formats or corrections/enhancements to existing plugins should now
+    be contributed to the `RosettaSciIO repository <https://github.com/hyperspy/rosettasciio>`_
+    and file format specific issues should be reported to the `RosettaSciIO issue
+    tracker <https://github.com/hyperspy/rosettasciio/issues>`_.
 
 .. _loading_files:
 
 Loading files: the load function
 ================================
 
-HyperSpy can read and write to multiple formats (see :ref:`supported-formats`).
+HyperSpy can read and write to multiple formats (see :external+rsciio:ref:`supported-formats`).
 To load data use the :py:func:`~.load` command. For example, to load the
-image spam.jpg you can type:
+image ``spam.jpg``, you can type:
 
 .. code-block:: python
 
     >>> s = hs.load("spam.jpg")
 
 If loading was successful, the variable ``s`` contains a HyperSpy signal or any
-type of signal defined in on of the :ref:`HyperSpy extensions <hyperspy_extensions-label>`
+type of signal defined in one of the :ref:`HyperSpy extensions <hyperspy_extensions-label>`
 - see available :ref:`signal subclasses <transforming_signal-label>` for more
 information. To list the signal types available on your local installation use:
 
@@ -39,7 +46,7 @@ available subclasses of signal, e.g.:
     >>> s = hs.load("filename", signal_type="EELS")
 
 If the loaded file contains several datasets, the :py:func:`~.io.load`
-functions will return a list of the corresponding signals:
+function will return a list of the corresponding signals:
 
 .. code-block:: python
 
@@ -64,12 +71,12 @@ override this using the ``reader`` keyword:
     # Load a .hspy file with an unknown extension
     >>> s = hs.load("filename.some_extension", reader="hspy")
 
-Some file formats store some extra information about the data (metadata) and
-HyperSpy reads most of them and stores them in the
-:py:attr:`~.signal.BaseSignal.original_metadata` attribute. Also, depending on
-the file format, a part of this information will be mapped by HyperSpy to the
-:py:attr:`~.signal.BaseSignal.metadata` attribute, where it can be used by
-e.g. routines operating on the signal. See :ref:`metadata structure
+Most scientific file formats store some extra information about the data and the
+conditions under which it was acquired (metadata). HyperSpy reads most of them and
+stores them in the :py:attr:`~.signal.BaseSignal.original_metadata` attribute.
+Also, depending on the file format, a part of this information will be mapped by
+HyperSpy to the :py:attr:`~.signal.BaseSignal.metadata` attribute, where it can
+for example be used by routines operating on the signal. See the :ref:`metadata structure
 <metadata_structure>` for details.
 
 .. note::
@@ -77,8 +84,8 @@ e.g. routines operating on the signal. See :ref:`metadata structure
     Extensive metadata can slow down loading and processing, and
     loading the :py:attr:`~.signal.BaseSignal.original_metadata` can be disabled
     using the ``load_original_metadata`` argument of the :py:func:`~.load`
-    function; in this case, the :py:attr:`~.signal.BaseSignal.metadata` will
-    still be populated.
+    function. If this argument is set to `False`, the
+    :py:attr:`~.signal.BaseSignal.metadata` will still be populated.
 
 To print the content of the attributes simply use:
 
@@ -97,24 +104,27 @@ using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
 .. _load_to_memory-label:
 
+Lazy loading of large datasets
+------------------------------
+
 .. deprecated:: 1.2
    ``memmap_dir`` and ``load_to_memory`` :py:func:`~.io.load` keyword
    arguments. Use ``lazy`` instead of ``load_to_memory``. ``lazy`` makes
    ``memmap_dir`` unnecessary.
 
-.. versionadd: 1.2
+.. versionadded:: 1.2
    ``lazy`` keyword argument.
 
 Almost all file readers support `lazy` loading, which means accessing the data
-without loading it to memory (see :ref:`supported-formats` for a list). This
-feature can be useful when analysing large files. To use this feature set
-``lazy`` to ``True`` e.g.:
+without loading it to memory (see :external+rsciio:ref:`supported-formats` for a
+list). This feature can be useful when analysing large files. To use this feature,
+set ``lazy`` to ``True`` e.g.:
 
 .. code-block:: python
 
     >>> s = hs.load("filename.hspy", lazy=True)
 
-More details on lazy evaluation support in :ref:`big-data-label`.
+More details on lazy evaluation support can be found in :ref:`big-data-label`.
 
 The units of the navigation and signal axes can be converted automatically
 during loading using the ``convert_units`` parameter. If `True`, the
@@ -210,20 +220,20 @@ Saving data to files
 To save data to a file use the :py:meth:`~.signal.BaseSignal.save` method. The
 first argument is the filename and the format is defined by the filename
 extension. If the filename does not contain the extension, the default format
-(:ref:`hspy-format`) is used. For example, if the :py:const:`s` variable
+(:external+rsciio:ref:`HSpy-HDF5 <hspy-format>`) is used. For example, if the :py:const:`s` variable
 contains the :py:class:`~.signal.BaseSignal` that you want to write to a file,
 the following will write the data to a file called :file:`spectrum.hspy` in the
-default :ref:`hspy-format` format:
+default :external+rsciio:ref:`HSpy-HDF5 <hspy-format>` format:
 
 .. code-block:: python
 
     >>> s.save('spectrum')
 
-If you want to save to the :ref:`ripple format <ripple-format>` instead, write:
+If you want to save to the :external+rsciio:ref:`ripple format <ripple-format>` instead, write:
 
 .. code-block:: python
 
     >>> s.save('spectrum.rpl')
 
-Some formats take extra arguments. See the relevant subsections of
-:ref:`supported-formats` for more information.
+Some formats take extra arguments. See the corresponding pages at
+:external+rsciio:ref:``supported-formats` for more information.
