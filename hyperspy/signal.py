@@ -5459,7 +5459,7 @@ class BaseSignal(FancySlicing,
                         key_dict[key] = marker.get_data_position(key)
                     marker.set_data(**key_dict)
 
-        class_ = hyperspy.io.assign_signal_subclass(
+        class_ = assign_signal_subclass(
             dtype=self.data.dtype,
             signal_dimension=self.axes_manager.signal_dimension,
             signal_type=self._signal_type,
