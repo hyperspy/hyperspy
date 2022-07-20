@@ -7,7 +7,7 @@ RosettaSciIO can read ``.ser`` and ``.emi`` files but the reading features are n
 complete (and probably they will be unless FEI releases the specifications of
 the format). That said we know that this is an important feature and if loading
 a particular ser or emi file fails for you, please report it as an issue in the
-`issues tracker <https://github.com/hyperspy/hyperspy/issues>`__ to make us
+`issues tracker <https://github.com/hyperspy/rosettasciio/issues>`__ to make us
 aware of the problem.
 
 RosettaSciIO (unlike TIA) can read data directly from the ``.ser`` files. However,

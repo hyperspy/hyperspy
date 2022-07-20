@@ -8,7 +8,7 @@ not complete (and probably they will remain so, unless Gatan releases the
 specifications of the format). That said, we understand that this is an
 important feature and if loading a particular Digital Micrograph file fails for
 you, please report it as an issue in the `issues tracker
-<https://github.com/hyperspy/hyperspy/issues>`_ to make
+<https://github.com/hyperspy/rosettasciio/issues>`_ to make
 us aware of the problem.
 
 Some of the tags in the DM-files are added to the metadata of the signal

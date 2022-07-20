@@ -16,8 +16,8 @@ elements will automatically be added to the signal loaded by HyperSpy.
 
 Currently, loading an EDAX TEAM spectrum or spectrum image will load an
 ``EDSSEMSpectrum`` Signal. If support for TEM EDS data is needed, please
-open an issue in the `issues tracker <https://github.com/hyperspy/hyperspy/issues>`_ to
-alert the developers of the need.
+open an issue in the `issues tracker <https://github.com/hyperspy/rosettasciio/issues>`_
+to alert the developers of the need.
 
 For further reference, file specifications for the formats are
 available publicly available from EDAX and are on Github
