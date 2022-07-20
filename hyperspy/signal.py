@@ -2743,9 +2743,9 @@ class BaseSignal(FancySlicing,
             self._plot.close()
         if 'power_spectrum' in kwargs:
             if not np.issubdtype(self.data.dtype, np.complexfloating):
+                del kwargs['power_spectrum']
                 raise ValueError('The parameter `power_spectrum` required a '
                                  'signal with complex data type.')
-                del kwargs['power_spectrum']
 
         if axes_manager is None:
             axes_manager = self.axes_manager
