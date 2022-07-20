@@ -1291,7 +1291,6 @@ class FeiEMDReader(object):
                 self.map_label_dict[data_key] = v['display']['label']
         except KeyError:
             _logger.warning("The image label can't be read from the metadata.")
-            pass
 
     def _parse_metadata_group(self, group, group_name):
         d = {}
