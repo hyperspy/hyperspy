@@ -25,7 +25,6 @@ import dask.array as da
 import h5py
 import numpy as np
 import pprint
-import traits.api as t
 
 from rsciio.exceptions import VisibleDeprecationWarning
 from rsciio._hierarchical import get_signal_chunks
@@ -1004,7 +1003,7 @@ def _write_nexus_groups(dictionary, group, skip_keys=None, **kwds):
         elif isinstance(value, (int, float, str, bytes)):
             group.create_dataset(key, data=_parse_to_file(value))
         else:
-            if value is not None and value != t.Undefined and key not in group:
+            if value is not None and key not in group:
                 _write_nexus_groups(value, group.require_group(key),
                                     skip_keys=skip_keys, **kwds)
 
@@ -1193,7 +1192,7 @@ def _write_signal(signal, nxgroup, signal_name, **kwds):
                       **kwds)
     axis_names = [_parse_to_file(".")] * len(data.shape)
     for i, ax in enumerate(signal['axes']):
-        if ax['name'] != t.Undefined:
+        if ax['name'] is not None:
             index_in_array = signal['axes'].index(ax)
             indices = _parse_to_file(ax['name'] + "_indices")
             nxdata.attrs[indices] = _parse_to_file(index_in_array)
@@ -1210,7 +1209,7 @@ def _write_signal(signal, nxgroup, signal_name, **kwds):
             dset = nxdata.require_dataset(
                 ax['name'], data=data, shape=data.shape, dtype=data.dtype
                 )
-            if ax['units'] != t.Undefined:
+            if ax['units'] is not None:
                 dset.attrs['units'] = ax['units']
             axis_names[index_in_array] = ax['name']
 

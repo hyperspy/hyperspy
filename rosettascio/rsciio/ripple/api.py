@@ -25,7 +25,6 @@ import codecs
 import os.path
 from io import StringIO
 import logging
-import traits.api as t
 
 import numpy as np
 
@@ -498,7 +497,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         mp.set_item('Acquisition_instrument.TEM.Detector.EDS.live_time',
                     rpl_info['live-time'])
 
-    units = [t.Undefined if unit == '<undefined>' else unit for unit in units]
+    units = [None if unit == '<undefined>' else unit for unit in units]
 
     axes = []
     index_in_array = 0

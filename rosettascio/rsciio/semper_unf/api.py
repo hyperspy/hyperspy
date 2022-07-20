@@ -80,7 +80,6 @@ import warnings
 from datetime import datetime
 
 import numpy as np
-from traits.api import Undefined
 
 from rsciio.utils.tools import sarray2dict, DTBox
 
@@ -117,7 +116,7 @@ class SemperFormat(object):
     """
 
     ICLASS_DICT = {1: 'image', 2: 'macro', 3: 'fourier', 4: 'spectrum',
-                   5: 'correlation', 6: Undefined, 7: 'walsh',
+                   5: 'correlation', 6: None, 7: 'walsh',
                    8: 'position list', 9: 'histogram',
                    10: 'display look-up table'}
 
@@ -180,9 +179,9 @@ class SemperFormat(object):
     def __init__(self,
                  data,
                  title='',
-                 offsets=(0., 0., 0.),
-                 scales=(1., 1., 1.),
-                 units=(Undefined, Undefined, Undefined),
+                 offsets=(0., ) * 3,
+                 scales=(1., ) * 3,
+                 units=(None, ) * 3,
                  metadata=None):
         if metadata is None:
             metadata = {}
@@ -314,11 +313,11 @@ class SemperFormat(object):
         label['X0V0'] = pack(self.offsets[0])  # X0
         label['NTITLE'] = len(title)
         label['TITLE'][:, :len(title)] = [ord(s) for s in title]
-        xunit = self.units[0] if self.units[0] is not Undefined else ''
+        xunit = self.units[0] if self.units[0] is not None else ''
         label['XUNIT'][:, :len(xunit)] = [ord(c) for c in xunit]
-        yunit = self.units[0] if self.units[0] is not Undefined else ''
+        yunit = self.units[0] if self.units[0] is not None else ''
         label['YUNIT'][:, :len(yunit)] = [ord(c) for c in yunit]
-        zunit = self.units[0] if self.units[0] is not Undefined else ''
+        zunit = self.units[0] if self.units[0] is not None else ''
         label['ZUNIT'][:, :len(zunit)] = [ord(c) for c in zunit]
         return label
 
@@ -418,9 +417,9 @@ class SemperFormat(object):
         scales = (metadata.get('DXV1', 1.),
                   metadata.get('DYV3', 1.),
                   metadata.get('DZV5', 1.))
-        units = (metadata.get('XUNIT', Undefined),
-                 metadata.get('YUNIT', Undefined),
-                 metadata.get('ZUNIT', Undefined))
+        units = (metadata.get('XUNIT', None),
+                 metadata.get('YUNIT', None),
+                 metadata.get('ZUNIT', None))
         return cls(data, title, offsets, scales, units, metadata)
 
     def save_to_unf(self, filename='semper.unf', skip_header=False):
@@ -441,7 +440,7 @@ class SemperFormat(object):
         """
         nlay, nrow, ncol = self.data.shape
         data, iform = self._check_format(self.data)
-        title = self.title if self.title is not Undefined else ''
+        title = self.title if self.title is not None else ''
         with open(filename, 'wb') as f:
             if not skip_header:
                 # Create header:
@@ -534,7 +533,7 @@ class SemperFormat(object):
         assert len(data.shape) <= 3, \
             'Only up to 3-dimensional datasets can be handled!'
         scales, offsets, units = [1.] * 3, [0.] * \
-            3, [Undefined] * 3  # Defaults!
+            3, [None] * 3  # Defaults!
         for i in range(len(data.shape)):
             scales[i] = signal["axes"][i]["scale"]
             offsets[i] = signal["axes"][i]["offset"]
@@ -550,7 +549,7 @@ class SemperFormat(object):
             record_by = ""
         iclass = cls.ICLASS_DICT_INV.get(record_by, 6)  # 6: undefined
         data, iform = cls._check_format(data)
-        title = smetadata.General.to_dict().get('title', Undefined)
+        title = smetadata.General.to_dict().get('title', None)
         metadata = OrderedDict()
         if 'date' in smetadata.General.keys(
         ) and 'time' in smetadata.General.keys():
@@ -571,7 +570,7 @@ class SemperFormat(object):
                          'ICLAYN': data.shape[0] // 2 + 1})
         return cls(data, title, offsets, scales, units, metadata)
 
-    
+
     def to_dictionary(self, lazy=False):
         """Export a :class:`~.SemperFormat` object to a
         :class:`~hyperspy.signals.Signal` object.
@@ -608,8 +607,7 @@ class SemperFormat(object):
             date, time = self._convert_date_time_from_label()
             metadata['General']['date'] = date
             metadata['General']['time'] = time
-        if lazy:
-            signal = signal.as_lazy()
+
         signal_dic = {
             "data": data,
             "metadata": metadata,

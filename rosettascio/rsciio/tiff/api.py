@@ -28,7 +28,6 @@ import warnings
 import numpy as np
 from tifffile import imwrite, TiffFile, TIFF
 from tifffile import __version__ as tiffversion
-import traits.api as t
 
 from rsciio.utils.tools import DTBox, _UREG
 from rsciio.utils.date_time_tools import get_date_time_from_metadata
@@ -53,8 +52,8 @@ axes_label_codes = {
     'H': "lifetime",
     'L': "exposure",
     'V': "event",
-    'Q': t.Undefined,
-    '_': t.Undefined}
+    'Q': None,
+    '_': None}
 
 
 def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
@@ -145,7 +144,7 @@ def _order_axes_by_name(names: list, scales: dict, offsets: dict, units: dict):
     """order axes by names in lists"""
     scales_new = [1.0] * len(names)
     offsets_new = [0.0] * len(names)
-    units_new = [t.Undefined] * len(names)
+    units_new = [None] * len(names)
     for i, name in enumerate(names):
         if name == 'height':
             scales_new[i] = scales['x']
@@ -172,7 +171,7 @@ def _build_axes_dictionaries(shape, names=None, scales=None, offsets=None,
     if scales is None:
         scales = [0.0] * len(shape)
     if units is None:
-        scales = [t.Undefined] * len(shape)
+        scales = [None] * len(shape)
 
     axes = [{'size': size, 'name': str(name), 'scale': scale, 'offset': offset, 'units': unit}
             for size, name, scale, offset, unit in zip(shape, names, scales, offsets, units)]
@@ -302,7 +301,7 @@ def _axes_defaults():
     axes_labels = ['x', 'y', 'z']
     scales = {axis: 1.0 for axis in axes_labels}
     offsets = {axis: 0.0 for axis in axes_labels}
-    units = {axis: t.Undefined for axis in axes_labels}
+    units = {axis: None for axis in axes_labels}
 
     return scales, offsets, units
 
@@ -506,7 +505,7 @@ def _axes_jeol_sightx(tiff, op, shape, names):
             camera_len /= 100
         scale /= camera_len * wave_len(ht) * 1e9  # in nm
         scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op, factor=scale)
-        units = {"x": "1 / nm", "y": "1 / nm", "z": t.Undefined}
+        units = {"x": "1 / nm", "y": "1 / nm", "z": None}
 
     scales, offsets, units = _order_axes_by_name(names, scales, offsets, units)
 
@@ -852,7 +851,7 @@ def _get_scale_unit(axes, encoding=None):
     units = [ax['units'] for ax in axes]
     offsets = [ax['offset'] for ax in axes]
     for i, unit in enumerate(units):
-        if unit == t.Undefined:
+        if unit == None:
             units[i] = ''
         if encoding is not None:
             units[i] = units[i].encode(encoding)

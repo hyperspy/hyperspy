@@ -150,7 +150,7 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
             # Add scalebar
             axis = axes[0]
             units = axis['units']
-            if units == t.Undefined:
+            if units is None:
                 units = "px"
                 scalebar_kwds['dimension'] = "pixel-length"
             if _UREG.Quantity(units).check('1/[length]'):

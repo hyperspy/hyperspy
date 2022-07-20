@@ -122,7 +122,9 @@ def create_axis(**kwargs):
 
 class UnitConversion:
 
-    def __init__(self, units=t.Undefined, scale=1.0, offset=0.0):
+    def __init__(self, units=None, scale=1.0, offset=0.0):
+        if units is None:
+            units = t.Undefined
         self.units = units
         self.scale = scale
         self.offset = offset
@@ -276,18 +278,22 @@ class BaseDataAxis(t.HasTraits):
     high_index = t.Int()
     slice = t.Instance(slice)
     navigate = t.Bool(False)
-    is_binned = t.Bool(t.Undefined)
+    is_binned = t.Bool(False)
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
 
     def __init__(self,
                  index_in_array=None,
-                 name=t.Undefined,
-                 units=t.Undefined,
+                 name=None,
+                 units=None,
                  navigate=False,
                  is_binned=False,
                  **kwargs):
         super().__init__()
+        if name is None:
+            name = t.Undefined
+        if units is None:
+            units = t.Undefined
 
         self.events = Events()
         if '_type' in kwargs:
@@ -515,8 +521,8 @@ class BaseDataAxis(t.HasTraits):
 
     def get_axis_dictionary(self):
         return {'_type': self.__class__.__name__,
-                'name': self.name,
-                'units': self.units,
+                'name': _parse_axis_attribute(self.name),
+                'units': _parse_axis_attribute(self.units),
                 'navigate': self.navigate,
                 'is_binned': self.is_binned,
                 }
@@ -774,8 +780,8 @@ class DataAxis(BaseDataAxis):
 
     def __init__(self,
                  index_in_array=None,
-                 name=t.Undefined,
-                 units=t.Undefined,
+                 name=None,
+                 units=None,
                  navigate=False,
                  is_binned=False,
                  axis=[1],
@@ -927,10 +933,10 @@ class FunctionalDataAxis(BaseDataAxis):
                  expression,
                  x=None,
                  index_in_array=None,
-                 name=t.Undefined,
-                 units=t.Undefined,
+                 name=None,
+                 units=None,
                  navigate=False,
-                 size=t.Undefined,
+                 size=1,
                  is_binned=False,
                  **parameters):
         super().__init__(
@@ -1007,7 +1013,7 @@ class FunctionalDataAxis(BaseDataAxis):
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
         d['expression'] = self._expression
-        d.update({'size': self.size, })
+        d.update({'size': _parse_axis_attribute(self.size), })
         d.update({'x': self.x.get_axis_dictionary(), })
         for kwarg in self.parameters_list:
             d[kwarg] = getattr(self, kwarg)
@@ -1110,8 +1116,8 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
     """
     def __init__(self,
                  index_in_array=None,
-                 name=t.Undefined,
-                 units=t.Undefined,
+                 name=None,
+                 units=None,
                  navigate=False,
                  size=1,
                  scale=1.,
@@ -2486,3 +2492,11 @@ class GeneratorLen:
 
     def __iter__(self):
         return self.gen
+
+
+def _parse_axis_attribute(value):
+    """Parse axis attribute"""
+    if value is t.Undefined:
+        return None
+    else:
+        return value

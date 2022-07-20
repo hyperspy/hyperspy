@@ -24,11 +24,12 @@ import os
 import logging
 
 import numpy as np
-from traits.api import Undefined
 
 from rsciio.utils.tools import sarray2dict
 
+
 _logger = logging.getLogger(__name__)
+
 
 def get_std_dtype_list(endianess='<'):
     end = endianess
@@ -178,7 +179,7 @@ def file_reader(filename, endianess='<', **kwds):
         scales = [1, ] + [fei_header['pixel_size'][0] * 10 ** 9, ] * 2
         offsets = [0, ] * 3
 
-    units = [Undefined, 'nm', 'nm']
+    units = [None, 'nm', 'nm']
     names = ['z', 'y', 'x']
     metadata = {'General': {'original_filename': os.path.split(filename)[1]},
                 "Signal": {'signal_type': "",
