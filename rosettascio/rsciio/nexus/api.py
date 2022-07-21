@@ -96,8 +96,6 @@ def _parse_from_file(value, lazy=False):
         toreturn = toreturn[0]
     if isinstance(toreturn, bytes):
         toreturn = _byte_to_string(toreturn)
-    if isinstance(toreturn, (int, float)):
-        toreturn = toreturn
     if isinstance(toreturn, (np.ndarray)) and toreturn.dtype.char == "U":
         toreturn = toreturn.astype("S")
     return toreturn

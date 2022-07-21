@@ -27,7 +27,7 @@ import warnings
 
 import numpy as np
 from tifffile import imwrite, TiffFile, TIFF
-import tifffile
+from tifffile import __version__ as tiffversion
 
 from rsciio.utils.tools import DTBox, _UREG
 from rsciio.utils.date_time_tools import get_date_time_from_metadata
@@ -200,7 +200,7 @@ def _read_serie(tiff, serie, filename, force_read_resolution=False,
                           'formats': [dtype] * lastshape})
         shape = shape[:-1]
 
-    if Version(tifffile.__version__) >= Version("2020.2.16"):
+    if Version(tiffversion) >= Version("2020.2.16"):
         op = {tag.name: tag.value for tag in page.tags}
     else:
         op = {key: tag.value for key, tag in page.tags.items()}

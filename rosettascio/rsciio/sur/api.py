@@ -1097,7 +1097,6 @@ class DigitalSurfHandler(object):
         else:
             warnings.warn("""RGB-announced data could not be converted to
             uint8 or uint16 datatype""")
-            pass
 
         return signal
 
