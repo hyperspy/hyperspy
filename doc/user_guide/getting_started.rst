@@ -164,7 +164,14 @@ Once HyperSpy is running, to load from a supported file format (see
 
 .. code-block:: python
 
-    >>> s = hs.load("filename")
+    >>> s = hs.load("filename.ext")
+
+The used IO-plugin will be inferred from the file extension. If you want to force
+the use of a specific IO-plugin, you can provide the ``reader`` attribute:
+
+.. code-block:: python
+
+    >>> s = hs.load("spam.ham", reader="hspy")
 
 .. note::
 
