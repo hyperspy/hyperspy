@@ -28,6 +28,7 @@ from dask.diagnostics import ProgressBar
 from itertools import product
 from packaging.version import Version
 from rsciio.utils.tools import get_file_handle
+from rsciio.utils import rgb_tools
 
 from hyperspy.signal import BaseSignal
 from hyperspy.defaults_parser import preferences
@@ -446,7 +447,7 @@ class LazySignal(BaseSignal):
         # 'dask_auto' in favour of a chunking which doesn't split signal space.
         if rechunk:
             rechunk = 'dask_auto'
-        from hyperspy.misc import rgb_tools
+
         if not isinstance(dtype, np.dtype) and (dtype not in
                                                 rgb_tools.rgb_dtypes):
             dtype = np.dtype(dtype)

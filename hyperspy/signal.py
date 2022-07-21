@@ -38,6 +38,8 @@ from scipy import integrate
 from scipy import signal as sp_signal
 import traits.api as t
 from tlz import concat
+from rsciio.utils import rgb_tools
+from rsciio.utils.tools import ensure_directory
 
 import hyperspy
 from hyperspy.axes import AxesManager
@@ -46,9 +48,7 @@ from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
 from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.io import assign_signal_subclass
 from hyperspy.drawing import signal as sigdraw
-from rsciio.utils.tools import ensure_directory
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
-from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import (
     add_scalar_axis,
     DictionaryTreeBrowser,

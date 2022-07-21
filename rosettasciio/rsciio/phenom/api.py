@@ -171,12 +171,10 @@ class ElidReader:
         with tifffile.TiffFile(bytes) as tiff:
             data = tiff.asarray()
             if len(data.shape) > 2:
-                try:
-                    # HyperSpy uses struct arrays to store RGB data
-                    from hyperspy.misc import rgb_tools
-                    data = rgb_tools.regular_array2rgbx(data)
-                except ImportError:
-                    pass
+                # HyperSpy uses struct arrays to store RGB data
+                from rsciio.utils import rgb_tools
+                data = rgb_tools.regular_array2rgbx(data)
+
             tags = tiff.pages[0].tags
             if 'FEI_TITAN' in tags:
                 metadata = make_metadata_dict(tags['FEI_TITAN'].value)
