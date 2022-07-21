@@ -164,7 +164,36 @@ Once HyperSpy is running, to load from a supported file format (see
 
 .. code-block:: python
 
-    >>> s = hs.load("filename")
+    >>> s = hs.load("filename.ext")
+
+The used IO-plugin will be inferred from the file extension. If you want to force
+the use of a specific IO-plugin, you can provide the ``reader`` attribute:
+
+.. code-block:: python
+
+    >>> s = hs.load("spam.ham", reader="hspy")
+
+.. note::
+
+   When the file contains several datasets, the :py:func:`~.io.load` function
+   will return a list of HyperSpy signals, instead of a single HyperSpy signal. 
+   Each signal can then be accessed using list indexation.
+
+   .. code-block:: python
+
+      >>> s = hs.load("spameggsandham.hspy")
+      >>> s
+      [<Signal1D, title: spam, dimensions: (32,32|1024)>,
+       <Signal1D, title: eggs, dimensions: (32,32|1024)>,
+       <Signal1D, title: ham, dimensions: (32,32|1024)>]
+
+   Using indexation to access the first signal (index 0):
+   
+   .. code-block:: python
+
+      >>> s[0]
+      <Signal1D, title: spam, dimensions: (32,32|1024)>
+
 
 .. HINT::
 
@@ -182,7 +211,7 @@ allows to select a single file through your OS file manager, e.g.:
     >>> s = hs.load()
 
 It is also possible to load multiple files at once or even stack multiple
-files. For more details read :ref:`loading_files`
+files. For more details read :ref:`loading_files`.
 
 "Loading" data from a numpy array
 ---------------------------------
