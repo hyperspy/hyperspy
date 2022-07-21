@@ -270,7 +270,6 @@ setup(
     install_requires=[
         "scipy",
         'numpy>=1.10, !=1.13.0',
-        'traits>=4.5.0',
         'h5py',
         'pint>=0.8',
         'sparse',
