@@ -71,9 +71,9 @@ steps:
 
 - bash: |
     source activate $ENV_NAME
-    pip install -e ./rosettascio
+    pip install -e ./rosettasciio
     conda list
-  displayName: Install package (rosettascio)
+  displayName: Install package (rosettasciio)
 
 # Note we must use `-n 2` argument for pytest-xdist due to
 # https://github.com/pytest-dev/pytest-xdist/issues/9.
@@ -84,8 +84,8 @@ steps:
 
 - bash: |
     source activate $ENV_NAME
-    pytest --pyargs rosettascio --reruns 3 --instafail
-  displayName: Run test suite (rosettascio)
+    pytest --pyargs rosettasciio --reruns 3 --instafail
+  displayName: Run test suite (rosettasciio)
 
 - publish: $(System.DefaultWorkingDirectory)/$(RESULT_IMAGES_FOLDER)
   artifact: $(Agent.JobName)-result_images
