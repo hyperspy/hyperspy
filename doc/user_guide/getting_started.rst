@@ -160,7 +160,7 @@ Loading data
 ------------
 
 Once HyperSpy is running, to load from a supported file format (see
-:ref:`supported-formats`) simply type:
+:external+rsciio:ref:`supported-formats`) simply type:
 
 .. code-block:: python
 

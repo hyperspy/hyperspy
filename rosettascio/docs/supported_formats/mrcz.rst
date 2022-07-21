@@ -1,12 +1,12 @@
 .. _mrcz-format:
 
-MRCZ
-----
+MRCZ format
+-----------
 
-MRCZ is an extension of the CCP-EM MRC2014 file format. `CCP-EM MRC2014
-<http://www.ccpem.ac.uk/mrc_format/mrc2014.php>`_ file format.  It uses the
-`blosc` meta-compression library to bitshuffle and compress files in a blocked,
-multi-threaded environment. The supported data types are:
+The ``.mrcz`` format is an extension of the CCP-EM MRC2014 file format.
+`CCP-EM MRC2014 <http://www.ccpem.ac.uk/mrc_format/mrc2014.php>`_ file format.
+It uses the `blosc` meta-compression library to bitshuffle and compress files in
+a blocked, multi-threaded environment. The supported data types are:
 
 [`float32`,`int8`,`uint16`,`int16`,`complex64`]
 
@@ -25,13 +25,13 @@ install the `mrcz` and optionally the `blosc` Python packages.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-- ``do_async``: currently supported within HyperSpy for writing only, this will
+- ``do_async``: currently supported within RosettaSciIO for writing only, this will
   save  the file in a background thread and return immediately. Defaults
   to `False`.
 
 .. Warning::
 
-    There is no method currently implemented within Hyperspy to tell if an
+    There is no method currently implemented within RosettaSciIO to tell if an
     asychronous write has finished.
 
 

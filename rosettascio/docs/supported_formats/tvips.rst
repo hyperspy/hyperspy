@@ -1,12 +1,12 @@
-.. _tvips_format-label:
+.. _tvips-format:
 
 TVIPS format
 ------------
 
-The TVIPS format is the default format for image series collected by pixelated
+The ``.tvips`` format is the default format for image series collected by pixelated
 cameras from the TVIPS company. Typically individual images captured by these
 cameras are stored in the :ref:`TIFF format<tiff-format>` which can also be 
-loaded by Hyperspy. This format instead serves to store image streams from 
+loaded by RosettaSciIO. This format instead serves to store image streams from 
 in-situ and 4D-STEM experiments. During collection, the maximum file size is
 typically capped meaning the dataset is typically split over multiple files
 ending in `_xyz.tvips`. The `_000.tvips` will contain the main header and
@@ -16,13 +16,13 @@ will not work if no such file is found.
 
 .. warning::
 
-   While TVIPS files are supported, it is a proprietary format, and future
+   While ``.tvips`` files are supported, it is a proprietary format, and future
    versions of the format might therefore not be readable. Complete
    interoperability with the official software can neither be guaranteed.
 
 .. warning::
     
-   The TVIPS format currently stores very limited amount of metadata about
+   The ``.tvips`` format currently stores very limited amount of metadata about
    scanning experiments. To reconstruct scan data, e.g. 4D-STEM datasets,
    parameters like the shape and scales of the scan dimensions should be
    manually recorded.
@@ -50,7 +50,7 @@ Extra loading arguments
   second row by the indicated number of scan points to align even and odd scan
   rows. Default is 0, no hysteresis.
 - ``rechunking``: only relevant when using lazy loading. If set to `False`
-  each TVIPS file is loaded as a single chunk. For a better experience, with the
+  each ``.tvips`` file is loaded as a single chunk. For a better experience, with the
   default setting of `auto` rechunking is performed such that the navigation axes
   are optimally chunked and the signal axes are not chunked. If set to anything else, the
   value will be passed to the `chunks` argument in `dask.array.rechunk`.
@@ -63,7 +63,7 @@ Extra saving arguments
   at least the size of the main header in the first file plus one frame and its
   frame header. By default there is no maximum and the entire dataset is saved
   to one file.
-- ``version``: TVIPS file format version, defaults to version 2. Only version
+- ``version``: ``.tvips`` file format version, defaults to version 2. Only version
   1 and 2 are currently supported.
 - ``frame_header_extra_bytes``: the number of bytes to pad the frame headers
   with. By default this is 0.

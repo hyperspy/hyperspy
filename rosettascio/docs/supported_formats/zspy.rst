@@ -3,11 +3,12 @@
 ZSpy - HyperSpy's Zarr Specification
 ------------------------------------
 
-Similarly to the :ref:`hspy format <hspy-format>`, the zspy format guarantees that no
+Similarly to the :ref:`hspy format <hspy-format>`, the ``.zspy`` format guarantees that no
 information will be lost in the writing process and that supports saving data
 of arbitrary dimensions. It is based on the `Zarr project <https://zarr.readthedocs.io/en/stable/index.html>`_. Which exists as a drop in
 replacement for hdf5 with the intention to fix some of the speed and scaling
-issues with the hdf5 format and is therefore suitable for saving :ref:`big data <big_data.saving>`.
+issues with the hdf5 format and is therefore suitable for saving 
+:external+hyperspy:ref:`big data <big_data.saving>`.
 
 
 .. code-block:: python
@@ -27,7 +28,7 @@ numbers as strings if any other strings are present:
 By default, a :py:class:`zarr.storage.NestedDirectoryStore` is used, but other
 zarr store can be used by providing a `zarr store <https://zarr.readthedocs.io/en/stable/api/storage.html>`_
 instead as argument to the :py:meth:`~.signal.BaseSignal.save` or the
-:py:func:`~.io.load` function. If a zspy file has been saved with a different
+:py:func:`~.io.load` function. If a ``.zspy`` file has been saved with a different
 store, it would need to be loaded by passing a store of the same type:
 
 .. code-block:: python

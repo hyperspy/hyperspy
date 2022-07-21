@@ -1,10 +1,10 @@
 .. _ripple-format:
 
-Ripple
-------
+Ripple format
+-------------
 
-This *open standard format* developed at NIST as native format for
-`Lispix <http://www.nist.gov/lispix/>`_ is widely used to exchange
+The ``.rpl`` format is an *open standard format* developed at NIST as native format for
+`Lispix <http://www.nist.gov/lispix/>`_ and is widely used to exchange
 multidimensional data. However, it only supports data of up to three
 dimensions. It can also be used to exchange data with Bruker and used in
 combination with the :ref:`import-rpl` it is very useful for exporting data

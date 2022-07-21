@@ -1,9 +1,9 @@
 .. _mrc-format:
 
-MRC
----
+MRC format
+----------
 
-This is a format widely used for tomographic data. Our implementation is based
+The ``.mrc`` format is widely used for tomographic data. Our implementation is based
 on `this specification
 <https://www2.mrc-lmb.cam.ac.uk/research/locally-developed-software/image-processing-software/>`_. We also
 partly support FEI's custom header. We do not provide writing features for this

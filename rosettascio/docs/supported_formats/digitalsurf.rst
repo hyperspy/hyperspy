@@ -1,9 +1,9 @@
 .. _sur-format:
 
-SUR and PRO format
-------------------
+DigitalSurf format (SUR & PRO)
+------------------------------
 
-This is a format developed by the digitalsurf company to handle various types of
+The ``.sur`` and ``.pro`` files are a format developed by the digitalsurf company to handle various types of
 scientific measurements data such as profilometer, SEM, AFM, RGB(A) images, multilayer
 surfaces and profiles. Even though it is essentially a surfaces format, 1D signals
 are supported for spectra and spectral maps. Specifically, this file format is used
