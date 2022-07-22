@@ -33,6 +33,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.colors import LinearSegmentedColormap, BASE_COLORS, to_rgba
 import matplotlib.pyplot as plt
+from rsciio.utils import rgb_tools
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import to_numpy
@@ -673,7 +674,6 @@ def plot_images(images,
                              'arguments.')
 
     from hyperspy.drawing.widgets import ScaleBar
-    from hyperspy.misc import rgb_tools
     from hyperspy.signal import BaseSignal
 
     # Check that we have a hyperspy signal
@@ -876,7 +876,7 @@ def plot_images(images,
     # Set overall figure size and define figure (if not pre-existing)
     if fig is None:
         w, h = plt.rcParams['figure.figsize']
-        dpi = plt.rcParams['figure.dpi']  
+        dpi = plt.rcParams['figure.dpi']
         if overlay and axes_decor == 'off':
             shape = images[0].axes_manager.signal_shape
             if pixel_size_factor is None:
@@ -971,7 +971,7 @@ def plot_images(images,
                 images[0].axes_manager[0].scale):
                 raise ValueError("Images are not the same scale and so should"
                                  "not be overlayed.")
-        
+
         if vmin is not None:
             _logger.warning('`vmin` is ignored when overlaying images.')
 
@@ -1003,7 +1003,7 @@ def plot_images(images,
             #Set vmin and vmax
             centre = next(centre_colormaps)   # get next value for centreing
             data = _parse_array(im)
-            
+
             _vmin = data.min()
             _vmax = vmax[idx] if isinstance(vmax, (tuple, list)) else vmax
             _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
@@ -1688,4 +1688,3 @@ def picker_kwargs(value, kwargs={}):
         kwargs['picker'] = value
 
     return kwargs
-    

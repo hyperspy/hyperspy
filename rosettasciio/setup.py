@@ -154,7 +154,7 @@ setup(
     # There are some restrictions on what makes a valid project name
     # specification here:
     # https://packaging.python.org/specifications/core-metadata/#name
-    name='RosettaSCIIO',  # Required
+    name='RosettaSciIO',  # Required
 
     # Versions should comply with PEP 440:
     # https://www.python.org/dev/peps/pep-0440/
@@ -270,7 +270,6 @@ setup(
     install_requires=[
         "scipy",
         'numpy>=1.10, !=1.13.0',
-        'traits>=4.5.0',
         'h5py',
         'pint>=0.8',
         'sparse',

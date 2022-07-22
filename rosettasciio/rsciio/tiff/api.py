@@ -71,14 +71,12 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
 
     data = signal['data']
     photometric = "MINISBLACK"
-    try:
-        # HyperSpy uses struct arrays to store RGBA data
-        from hyperspy.misc import rgb_tools
-        if rgb_tools.is_rgbx(data):
-            data = rgb_tools.rgbx2regular_array(data)
-            photometric = "RGB"
-    except ImportError:
-        pass
+    # HyperSpy uses struct arrays to store RGBA data
+    from rsciio.utils import rgb_tools
+    if rgb_tools.is_rgbx(data):
+        data = rgb_tools.rgbx2regular_array(data)
+        photometric = "RGB"
+
     if 'description' in kwds.keys() and export_scale:
         kwds.pop('description')
         _logger.warning(
@@ -284,13 +282,9 @@ def _load_data(serie, is_rgb, sl=None, memmap=None, **kwds):
     dc = serie.asarray(out=memmap)
     _logger.debug("data shape: {0}".format(dc.shape))
     if is_rgb:
-        try:
-            from hyperspy.misc import rgb_tools
-            dc = rgb_tools.regular_array2rgbx(dc)
-        except ImportError:
-            raise ValueError(
-                "Converting RGB to structured array requires hyperspy."
-                )
+        from rsciio.utils import rgb_tools
+        dc = rgb_tools.regular_array2rgbx(dc)
+
     if sl is not None:
         dc = dc[tuple(sl)]
     return dc

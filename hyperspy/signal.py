@@ -38,6 +38,8 @@ from scipy import integrate
 from scipy import signal as sp_signal
 import traits.api as t
 from tlz import concat
+from rsciio.utils import rgb_tools
+from rsciio.utils.tools import ensure_directory
 
 import hyperspy
 from hyperspy.axes import AxesManager
@@ -46,9 +48,7 @@ from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
 from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.io import assign_signal_subclass
 from hyperspy.drawing import signal as sigdraw
-from rsciio.utils.tools import ensure_directory
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
-from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import (
     add_scalar_axis,
     DictionaryTreeBrowser,
@@ -91,30 +91,34 @@ try:
 except ImportError:
     CUPY_INSTALLED = False
 
+
 def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers):
     for key in dic:
         if key.startswith('_sig_'):
             signals.append((key, dic))
         elif key.startswith('_hspy_AxesManager_'):
             axes_managers.append((key, dic))
-        elif type(dic[key]) in (list, tuple):
+        elif isinstance(dic[key], (list, tuple)):
             signals = []
-            container =  dic[key]
             # Support storing signals in containers
-            for i, item in enumerate(container):
+            for i, item in enumerate(dic[key]):
                 if isinstance(item, dict) and "_sig_" in item:
                     signals.append(i)
             if signals:
                 containers.append(((dic, key), signals))
-        elif type(dic[key])==type({}):
+        elif isinstance(dic[key], dict):
             _dic_get_hs_obj_paths(
                 dic[key],
                 axes_managers=axes_managers,
                 signals=signals,
-                containers=containers)
+                containers=containers
+                )
+
 
 def _obj_in_dict2hspy(dic, lazy):
-    """Recursively walk nested dicts substituting dicts with their hyperspy object where relevant
+    """
+    Recursively walk nested dicts substituting dicts with their hyperspy
+    object where relevant
 
     Parameters
     ----------
@@ -125,7 +129,12 @@ def _obj_in_dict2hspy(dic, lazy):
     """
     from hyperspy.io import dict2signal
     axes_managers, signals, containers = [], [], []
-    _dic_get_hs_obj_paths(dic, axes_managers=axes_managers, signals=signals, containers=containers)
+    _dic_get_hs_obj_paths(
+        dic,
+        axes_managers=axes_managers,
+        signals=signals,
+        containers=containers
+        )
     for key, dic in axes_managers:
         dic[key[len('_hspy_AxesManager_'):]] = AxesManager(dic[key])
         del dic[key]
@@ -143,6 +152,7 @@ def _obj_in_dict2hspy(dic, lazy):
             container[idx] = dict2signal(container[idx]["_sig_"], lazy=lazy)
         if to_tuple:
             dic[key] = tuple(container)
+
 
 class ModelManager(object):
 

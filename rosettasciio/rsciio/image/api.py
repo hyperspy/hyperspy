@@ -21,7 +21,6 @@ import logging
 
 from imageio import imread, imwrite
 from matplotlib.figure import Figure
-import traits.api as t
 
 from rsciio.utils.tools import _UREG
 
@@ -81,13 +80,11 @@ def file_writer(filename, signal, scalebar=False, scalebar_kwds=None,
         scalebar_kwds = dict()
     scalebar_kwds.setdefault('box_alpha', 0.75)
     scalebar_kwds.setdefault('location', 'lower left')
-    try:
-        # HyperSpy uses struct arrays to store RGBA data
-        from hyperspy.misc import rgb_tools
-        if rgb_tools.is_rgbx(data):
-            data = rgb_tools.rgbx2regular_array(data)
-    except ImportError:
-        pass
+
+    # HyperSpy uses struct arrays to store RGBA data
+    from rsciio.utils import rgb_tools
+    if rgb_tools.is_rgbx(data):
+        data = rgb_tools.rgbx2regular_array(data)
 
     if scalebar:
         try:
@@ -210,10 +207,8 @@ def _read_data(filename, **kwds):
                 (dc[:, :, 1] == dc[:, :, 2]).all():
             dc = dc[:, :, 0]
         else:
-            try:
-                # HyperSpy uses struct arrays to store RGB data
-                from hyperspy.misc import rgb_tools
-                dc = rgb_tools.regular_array2rgbx(dc)
-            except ImportError:
-                pass
+            # HyperSpy uses struct arrays to store RGB data
+            from rsciio.utils import rgb_tools
+            dc = rgb_tools.regular_array2rgbx(dc)
+
     return dc
