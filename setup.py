@@ -19,15 +19,11 @@
 from __future__ import print_function
 
 import hyperspy.Release as Release
-from distutils.errors import CompileError, DistutilsPlatformError
-import distutils.ccompiler
-import distutils.sysconfig
 import itertools
 import subprocess
 import os
 import warnings
-from tempfile import TemporaryDirectory
-from setuptools import setup, Extension, Command
+from setuptools import setup
 import sys
 
 v = sys.version_info
@@ -54,7 +50,6 @@ install_req = ['scipy>=1.1',
                'tqdm>=4.9.0',
                'sympy',
                'dill',
-               'h5py>=2.3',
                'jinja2',
                'packaging',
                'python-dateutil>=2.5.0',
@@ -64,24 +59,18 @@ install_req = ['scipy>=1.1',
                'dask[array]>=2.11.0',
                # fsspec is missing from dask dependencies for dask < 2021.3.1
                'fsspec',
-               'scikit-image>=0.15',
+               'scikit-image>=0.18',
                'pint>=0.10',
                'numexpr',
-               'sparse',
-               'imageio',
                'pyyaml',
                # prettytable and ptable are API compatible
                # prettytable is maintained and ptable is an unmaintained fork
                'prettytable',
-               'tifffile>=2020.2.16',
                # non-uniform axis requirement
                'numba>=0.52',
                 # included in stdlib since v3.8, but this required version requires Python 3.10
                 # We can remove this requirement when the minimum supported version becomes Python 3.10
                'importlib_metadata>=3.6',
-               'toolz',
-               # numcodecs currently only supported on x86_64/AMD64 machines
-               'zarr>=2.9.0;platform_machine=="x86_64" or platform_machine=="AMD64"',
                ]
 
 extras_require = {
@@ -91,7 +80,6 @@ extras_require = {
                  'scikit-learn;sys_platform!="darwin"'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
-    "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
     "speed": ["cython", "imagecodecs>=2020.1.31"],
     "usid": ["pyUSID>=0.0.7", "sidpy"],
     "scalebar": ["matplotlib-scalebar"],
@@ -124,115 +112,6 @@ def update_version(version):
     with open(release_path, "w") as f:
         f.writelines(lines)
 
-
-# Extensions. Add your extension here:
-raw_extensions = [Extension("hyperspy.io_plugins.unbcf_fast",
-                            [os.path.join('hyperspy', 'io_plugins', 'unbcf_fast.pyx')]),
-                  ]
-
-cleanup_list = []
-for leftover in raw_extensions:
-    path, ext = os.path.splitext(leftover.sources[0])
-    if ext in ('.pyx', '.py'):
-        cleanup_list.append(''.join([os.path.join(setup_path, path), '.c*']))
-        if os.name == 'nt':
-            bin_ext = '.cpython-*.pyd'
-        else:
-            bin_ext = '.cpython-*.so'
-        cleanup_list.append(''.join([os.path.join(setup_path, path), bin_ext]))
-
-
-def count_c_extensions(extensions):
-    c_num = 0
-    for extension in extensions:
-        # if first source file with extension *.c or *.cpp exists
-        # it is cythonised or pure c/c++ extension:
-        sfile = extension.sources[0]
-        path, ext = os.path.splitext(sfile)
-        if os.path.exists(path + '.c') or os.path.exists(path + '.cpp'):
-            c_num += 1
-    return c_num
-
-
-def cythonize_extensions(extensions):
-    try:
-        from Cython.Build import cythonize
-        return cythonize(extensions, compiler_directives={'language_level' : "3"})
-    except ImportError:
-        warnings.warn("""WARNING: cython required to generate fast c code is not found on this system.
-Only slow pure python alternative functions will be available.
-To use fast implementation of some functions writen in cython either:
-a) install cython and re-run the installation,
-b) try alternative source distribution containing cythonized C versions of fast code,
-c) use binary distribution (i.e. wheels, egg).""")
-        return []
-
-
-def no_cythonize(extensions):
-    for extension in extensions:
-        sources = []
-        for sfile in extension.sources:
-            path, ext = os.path.splitext(sfile)
-            if ext in ('.pyx', '.py'):
-                if extension.language == 'c++':
-                    ext = '.cpp'
-                else:
-                    ext = '.c'
-                sfile = path + ext
-            sources.append(sfile)
-        extension.sources[:] = sources
-    return extensions
-
-
-# to cythonize, or not to cythonize... :
-if len(raw_extensions) > count_c_extensions(raw_extensions):
-    extensions = cythonize_extensions(raw_extensions)
-else:
-    extensions = no_cythonize(raw_extensions)
-
-
-# to compile or not to compile... depends if compiler is present:
-compiler = distutils.ccompiler.new_compiler()
-assert isinstance(compiler, distutils.ccompiler.CCompiler)
-distutils.sysconfig.customize_compiler(compiler)
-try:
-    with TemporaryDirectory() as tmpdir:
-        compiler.compile([os.path.join(setup_path, 'hyperspy', 'misc', 'etc',
-                                   'test_compilers.c')], output_dir=tmpdir)
-except (CompileError, DistutilsPlatformError):
-    warnings.warn("""WARNING: C compiler can't be found.
-Only slow pure python alternative functions will be available.
-To use fast implementation of some functions writen in cython/c either:
-a) check that you have compiler (EXACTLY SAME as your python
-distribution was compiled with) installed,
-b) use binary distribution of hyperspy (i.e. wheels, egg, (only osx and win)).
-Installation will continue in 5 sec...""")
-    extensions = []
-    from time import sleep
-    sleep(5)  # wait 5 secs for user to notice the message
-
-
-class Recythonize(Command):
-
-    """cythonize all extensions"""
-    description = "(re-)cythonize all changed cython extensions"
-
-    user_options = []
-
-    def initialize_options(self):
-        """init options"""
-        pass
-
-    def finalize_options(self):
-        """finalize options"""
-        pass
-
-    def run(self):
-        # if there is no cython it is supposed to fail:
-        from Cython.Build import cythonize
-        global raw_extensions
-        global extensions
-        cythonize(extensions)
 
 
 class update_version_when_dev:
@@ -274,12 +153,10 @@ with update_version_when_dev() as version:
         name="hyperspy",
         package_dir={'hyperspy': 'hyperspy'},
         version=version,
-        ext_modules=extensions,
         packages=['hyperspy',
                   'hyperspy.datasets',
                   'hyperspy._components',
                   'hyperspy.datasets',
-                  'hyperspy.io_plugins',
                   'hyperspy.docstrings',
                   'hyperspy.drawing',
                   'hyperspy.drawing._markers',
@@ -292,7 +169,6 @@ with update_version_when_dev() as version:
                   'hyperspy.tests.component',
                   'hyperspy.tests.datasets',
                   'hyperspy.tests.drawing',
-                  'hyperspy.tests.io',
                   'hyperspy.tests.learn',
                   'hyperspy.tests.model',
                   'hyperspy.tests.samfire',
@@ -303,7 +179,6 @@ with update_version_when_dev() as version:
                   'hyperspy.misc',
                   'hyperspy.misc.eels',
                   'hyperspy.misc.eds',
-                  'hyperspy.misc.io',
                   'hyperspy.misc.holography',
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
@@ -337,54 +212,6 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_mva/*.png',
                 'tests/drawing/plot_widgets/*.png',
                 'tests/drawing/plot_signal_tools/*.png',
-                'tests/io/blockfile_data/*.blo',
-                'tests/io/dens_data/*.dens',
-                'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
-                'tests/io/dm3_1D_data/*.dm3',
-                'tests/io/dm3_2D_data/*.dm3',
-                'tests/io/dm3_3D_data/*.dm3',
-                'tests/io/dm4_1D_data/*.dm4',
-                'tests/io/dm4_2D_data/*.dm4',
-                'tests/io/dm4_3D_data/*.dm4',
-                'tests/io/dm3_locale/*.dm3',
-                'tests/io/FEI_new/*.emi',
-                'tests/io/FEI_new/*.ser',
-                'tests/io/FEI_old/*.emi',
-                'tests/io/FEI_old/*.ser',
-                'tests/io/FEI_old/*.npy',
-                'tests/io/FEI_old/*.tar.gz',
-                'tests/io/impulse_data/*.csv',
-                'tests/io/impulse_data/*.log',
-                'tests/io/impulse_data/*.npy',
-                'tests/io/msa_files/*.msa',
-                'tests/io/hdf5_files/*.hdf5',
-                'tests/io/hdf5_files/*.hspy',
-                'tests/io/JEOL_files/*',
-                'tests/io/JEOL_files/Sample/00_View000/*',
-                'tests/io/JEOL_files/InvalidFrame/*',
-                'tests/io/JEOL_files/InvalidFrame/Sample/00_Dummy-Data/*',
-                'tests/io/tiff_files/*.zip',
-                'tests/io/tiff_files/*.tif',
-                'tests/io/tiff_files/*.tif.gz',
-                'tests/io/tiff_files/*.dm3',
-                'tests/io/tvips_files/*.tvips',
-                'tests/io/npz_files/*.npz',
-                'tests/io/unf_files/*.unf',
-                'tests/io/bruker_data/*.bcf',
-                'tests/io/bruker_data/*.json',
-                'tests/io/bruker_data/*.npy',
-                'tests/io/bruker_data/*.spx',
-                'tests/io/ripple_files/*.rpl',
-                'tests/io/ripple_files/*.raw',
-                'tests/io/emd_files/*.emd',
-                'tests/io/emd_files/fei_emd_files.zip',
-                'tests/io/protochips_data/*.npy',
-                'tests/io/protochips_data/*.csv',
-                'tests/io/nexus_files/*.nxs',
-                'tests/io/empad_data/*.xml',
-                'tests/io/phenom_data/*.elid',
-                'tests/io/sur_data/*.pro',
-                'tests/io/sur_data/*.sur',
                 'tests/signals/data/test_find_peaks1D_ohaver.hdf5',
                 'tests/signals/data/*.hspy',
                 'hyperspy_extension.yaml',
@@ -398,9 +225,6 @@ with update_version_when_dev() as version:
         url=Release.url,
         project_urls=Release.PROJECT_URLS,
         keywords=Release.keywords,
-        cmdclass={
-            'recythonize': Recythonize,
-        },
         classifiers=[
             "Programming Language :: Python :: 3",
             "Programming Language :: Python :: 3.7",

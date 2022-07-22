@@ -38,6 +38,8 @@ from scipy import integrate
 from scipy import signal as sp_signal
 import traits.api as t
 from tlz import concat
+from rsciio.utils import rgb_tools
+from rsciio.utils.tools import ensure_directory
 
 import hyperspy
 from hyperspy.axes import AxesManager
@@ -46,9 +48,7 @@ from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
 from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.io import assign_signal_subclass
 from hyperspy.drawing import signal as sigdraw
-from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
-from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import (
     add_scalar_axis,
     DictionaryTreeBrowser,
@@ -90,6 +90,68 @@ try:
     CUPY_INSTALLED = True  # pragma: no cover
 except ImportError:
     CUPY_INSTALLED = False
+
+
+def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers):
+    for key in dic:
+        if key.startswith('_sig_'):
+            signals.append((key, dic))
+        elif key.startswith('_hspy_AxesManager_'):
+            axes_managers.append((key, dic))
+        elif isinstance(dic[key], (list, tuple)):
+            signals = []
+            # Support storing signals in containers
+            for i, item in enumerate(dic[key]):
+                if isinstance(item, dict) and "_sig_" in item:
+                    signals.append(i)
+            if signals:
+                containers.append(((dic, key), signals))
+        elif isinstance(dic[key], dict):
+            _dic_get_hs_obj_paths(
+                dic[key],
+                axes_managers=axes_managers,
+                signals=signals,
+                containers=containers
+                )
+
+
+def _obj_in_dict2hspy(dic, lazy):
+    """
+    Recursively walk nested dicts substituting dicts with their hyperspy
+    object where relevant
+
+    Parameters
+    ----------
+    d: dictionary
+        The nested dictionary
+    lazy: bool
+
+    """
+    from hyperspy.io import dict2signal
+    axes_managers, signals, containers = [], [], []
+    _dic_get_hs_obj_paths(
+        dic,
+        axes_managers=axes_managers,
+        signals=signals,
+        containers=containers
+        )
+    for key, dic in axes_managers:
+        dic[key[len('_hspy_AxesManager_'):]] = AxesManager(dic[key])
+        del dic[key]
+    for key, dic in signals:
+        dic[key[len('_sig_'):]] = dict2signal(dic[key], lazy=lazy)
+        del dic[key]
+    for dickey, signals_idx in containers:
+        dic, key = dickey
+        container = dic[key]
+        to_tuple = False
+        if type(container) is tuple:
+            container = list(container)
+            to_tuple = True
+        for idx in signals_idx:
+            container[idx] = dict2signal(container[idx]["_sig_"], lazy=lazy)
+        if to_tuple:
+            dic[key] = tuple(container)
 
 
 class ModelManager(object):
@@ -2571,6 +2633,9 @@ class BaseSignal(FancySlicing,
             self.models._add_dictionary(file_data_dict['models'])
         if 'metadata' not in file_data_dict:
             file_data_dict['metadata'] = {}
+        else:
+            # Get all hspy object back from their dictionary representation
+            _obj_in_dict2hspy(file_data_dict["metadata"], lazy=self._lazy)
         if 'original_metadata' not in file_data_dict:
             file_data_dict['original_metadata'] = {}
 
@@ -2910,7 +2975,7 @@ class BaseSignal(FancySlicing,
     plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
                      PLOT1D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
-    def save(self, filename=None, overwrite=None, extension=None, **kwds):
+    def save(self, filename=None, overwrite=None, extension=None, file_format=None, **kwds):
         """Saves the signal in the specified format.
 
         The function gets the format from the specified extension (see
@@ -2980,6 +3045,9 @@ class BaseSignal(FancySlicing,
         close_file : bool, optional
             Only for hdf5-based files and some zarr store. Close the file after
             writing. Default is True.
+        file_format: string
+            The file format of choice to save the file. If not given, it is inferred
+            from the file extension.
 
         """
         if filename is None:
@@ -3000,7 +3068,7 @@ class BaseSignal(FancySlicing,
             filename = Path(filename)
             if extension is not None:
                 filename = filename.with_suffix(f".{extension}")
-        hyperspy.io.save(filename, self, overwrite=overwrite, **kwds)
+        hyperspy.io.save(filename, self, overwrite=overwrite, file_format=file_format, **kwds)
 
     def _replot(self):
         if self._plot is not None:

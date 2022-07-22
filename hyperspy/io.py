@@ -28,15 +28,15 @@ from inspect import isgenerator
 from pathlib import Path
 from collections.abc import MutableMapping
 from datetime import datetime
+from rsciio.utils.tools import ensure_directory
+from rsciio.utils.tools import overwrite as overwrite_method
+from rsciio import IO_PLUGINS
 
 from hyperspy import __version__ as hs_version
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.misc.io.tools import ensure_directory
-from hyperspy.misc.io.tools import overwrite as overwrite_method
-from hyperspy.misc.utils import strlist2enumeration
+from hyperspy.misc.utils import strlist2enumeration, get_object_package_info
 from hyperspy.misc.utils import stack as stack_method
-from hyperspy.io_plugins import io_plugins, default_write_ext
 from hyperspy.ui_registry import get_gui
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
@@ -51,6 +51,12 @@ f_error_fmt = (
     "\tFile %d:\n"
     "\t\t%d signals\n"
     "\t\tPath: %s")
+
+def _format_name_to_reader(format_name):
+    for reader in IO_PLUGINS:
+        if format_name.lower() == reader["format_name"].lower():
+            return reader
+    raise ValueError("The format_name given does not match any format available.")
 
 
 def _infer_file_reader(string):
@@ -71,11 +77,13 @@ def _infer_file_reader(string):
         The inferred file reader.
 
     """
-    for reader in io_plugins:
-        if string.lower() == reader.format_name.lower():
-            return reader
+    try:
+        reader = _format_name_to_reader(string)
+        return reader
+    except ValueError:
+        pass
 
-    rdrs = [rdr for rdr in io_plugins if string.lower() in rdr.file_extensions]
+    rdrs = [rdr for rdr in IO_PLUGINS if string.lower() in rdr["file_extensions"]]
 
     if not rdrs:
         # Try to load it with the python imaging library
@@ -84,15 +92,59 @@ def _infer_file_reader(string):
             "Will attempt to load the file with the Python imaging library."
         )
 
-        from hyperspy.io_plugins import image
-
-        reader = image
+        reader, = [reader for reader in IO_PLUGINS if reader["format_name"] == "image"]
+    elif len(rdrs) > 1:
+        names = [rdr["format_name"] for rdr in rdrs]
+        raise ValueError(
+            f"There are multiple file readers that could read the file. "
+            f"Please select one from the list below with the `reader` keyword. "
+            f"File readers for your file: {names}")
     else:
-        # Just take the first match for now
         reader = rdrs[0]
 
     return reader
 
+def _infer_file_writer(string):
+    """Return a file reader from the plugins list based on the file extension.
+
+    If the extension is not found or understood, returns
+    the Python imaging library as the file reader.
+
+    Parameters
+    ----------
+    string : str
+        File extension, without initial "." separator
+
+    Returns
+    -------
+    reader : func
+        The inferred file reader.
+
+    """
+    plugins = [plugin for plugin in IO_PLUGINS if string.lower() in plugin["file_extensions"]]
+    writers = [plugin for plugin in plugins if plugin["writes"]]
+    if not writers:
+        extensions = [plugin["file_extensions"][plugin["default_extension"]] for plugin in IO_PLUGINS if plugin["writes"]]
+        if not plugins:
+            raise ValueError(
+                f"The .{string} extension does not correspond to any supported format. "
+                f"Supported file extensions are: {strlist2enumeration(extensions)}.")
+        else:
+            raise ValueError(
+                "Writing to this format is not supported. "
+                f"Supported file extensions are: {strlist2enumeration(extensions)}."
+            )
+
+    elif len(writers) > 1:
+        names = [writer["format_name"] for writer in writers]
+        raise ValueError(
+            f"There are multiple file formats matching the extension of your file. "
+            f"Please select one from the list below with the `format` keyword. "
+            f"File formats for your file: {names}")
+    else:
+        writer = writers[0]
+
+    return writer
 
 def _escape_square_brackets(text):
     """Escapes pairs of square brackets in strings for glob.glob().
@@ -153,7 +205,7 @@ def load(filenames=None,
     """Load potentially multiple supported files into HyperSpy.
 
     Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw),
-    Bruker bcf and spx, FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc,
+    Bruker bcf and spx, FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc, CEOS prz
     tif, and a number of image formats.
 
     Depending on the number of datasets to load in the file, this function will
@@ -530,7 +582,12 @@ def load_with_reader(
     ):
     """Load a supported file with a given reader."""
     lazy = kwds.get('lazy', False)
-    file_data_list = reader.file_reader(filename, **kwds)
+    if isinstance(reader, dict):
+        file_data_list = importlib.import_module(reader["api"]).file_reader(filename,
+                                                                        **kwds)
+    else:
+        # We assume it is a module
+        file_data_list = reader.file_reader(filename, **kwds)
     signal_list = []
 
     for signal_dict in file_data_list:
@@ -671,6 +728,7 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
         return signal_class
 
 
+
 def dict2signal(signal_dict, lazy=False):
     """Create a signal (or subclass) instance defined by a dictionary.
 
@@ -697,6 +755,7 @@ def dict2signal(signal_dict, lazy=False):
     signal_dimension = -1  # undefined
     signal_type = ""
     if "metadata" in signal_dict:
+
         mp = signal_dict["metadata"]
         if "Signal" in mp and "record_by" in mp["Signal"]:
             record_by = mp["Signal"]['record_by']
@@ -751,7 +810,7 @@ def dict2signal(signal_dict, lazy=False):
     return signal
 
 
-def save(filename, signal, overwrite=None, **kwds):
+def save(filename, signal, overwrite=None, file_format=None, **kwds):
     """Save hyperspy signal to a file.
 
     A list of plugins supporting file saving can be found here:
@@ -771,58 +830,55 @@ def save(filename, signal, overwrite=None, **kwds):
         to overwrite. If False and a file exists, the file will not be written.
         If True and a file exists, the file will be overwritten without
         prompting
+    file_format: string
+        The file format of choice to save the file. If not given, it is inferred
+        from the file extension.
 
     Returns
     -------
     None
 
     """
+    writer = None
     if isinstance(filename, MutableMapping):
         extension =".zspy"
+        writer = _format_name_to_reader("ZSPY")
     else:
         filename = Path(filename).resolve()
         extension = filename.suffix
         if extension == '':
-            extension = ".hspy"
+            if file_format:
+                writer = _format_name_to_reader(file_format)
+                extension = "." + writer["file_extensions"][writer["default_extension"]]
+            else:
+                extension = ".hspy"
+                writer = _format_name_to_reader("HSPY")
             filename = filename.with_suffix(extension)
-
-    writer = None
-    for plugin in io_plugins:
-        # Drop the "." separator from the suffix
-        if extension[1:].lower() in plugin.file_extensions:
-            writer = plugin
-            break
-
-    if writer is None:
-        raise ValueError(
-            f"{extension} does not correspond to any supported format. "
-            f"Supported file extensions are: {strlist2enumeration(default_write_ext)}"
-        )
+        else:
+            if file_format:
+                writer = _format_name_to_reader(file_format)
+            else:
+                writer = _infer_file_writer(extension[1:])
 
     # Check if the writer can write
     sd = signal.axes_manager.signal_dimension
     nd = signal.axes_manager.navigation_dimension
 
-    if writer.writes is False:
-        raise ValueError(
-            "Writing to this format is not supported. "
-            f"Supported file extensions are: {strlist2enumeration(default_write_ext)}"
-        )
 
-    if writer.writes is not True and (sd, nd) not in writer.writes:
-        compatible_writers = [plugin.format_name for plugin in io_plugins
-                      if plugin.writes is True or
-                      plugin.writes is not False and
-                      (sd, nd) in plugin.writes]
+    if writer["writes"] is not True and [sd, nd] not in writer["writes"]:
+        compatible_writers = [plugin["format_name"] for plugin in IO_PLUGINS
+                      if plugin["writes"] is True or
+                      plugin["writes"] is not False and
+                      [sd, nd] in plugin["writes"]]
 
         raise TypeError(
             "This file format does not support this data. "
             f"Please try one of {strlist2enumeration(compatible_writers)}"
         )
 
-    if not writer.non_uniform_axis and not signal.axes_manager.all_uniform:
-        compatible_writers = [plugin.format_name for plugin in io_plugins
-                      if plugin.non_uniform_axis is True]
+    if not writer["non_uniform_axis"] and not signal.axes_manager.all_uniform:
+        compatible_writers = [plugin["format_name"] for plugin in IO_PLUGINS
+                      if plugin["non_uniform_axis"] is True]
         raise TypeError("Writing to this format is not supported for "
                       "non-uniform axes. Use one of the following "
                       f"formats: {strlist2enumeration(compatible_writers)}"
@@ -849,14 +905,18 @@ def save(filename, signal, overwrite=None, **kwds):
         # Pass as a string for now, pathlib.Path not
         # properly supported in io_plugins
         signal = _add_file_load_save_metadata('save', signal, writer)
+        signal_dic = signal._to_dictionary(add_models=True)
+        signal_dic["package_info"] = get_object_package_info(signal)
         if not isinstance(filename, MutableMapping):
-            writer.file_writer(str(filename), signal, **kwds)
+            importlib.import_module(writer["api"]).file_writer(
+                str(filename), signal_dic, **kwds)
             _logger.info(f'{filename} was created')
             signal.tmp_parameters.set_item('folder', filename.parent)
             signal.tmp_parameters.set_item('filename', filename.stem)
             signal.tmp_parameters.set_item('extension', extension)
         else:
-            writer.file_writer(filename, signal, **kwds)
+            importlib.import_module(writer["api"]).file_writer(
+                filename, signal_dic, **kwds)
             if hasattr(filename, "path"):
                 file = Path(filename.path).resolve()
                 signal.tmp_parameters.set_item('folder', file.parent)
@@ -867,11 +927,10 @@ def save(filename, signal, overwrite=None, **kwds):
 def _add_file_load_save_metadata(operation, signal, io_plugin):
     mdata_dict = {
         'operation': operation,
-        'io_plugin': io_plugin.__loader__.name,
+        'io_plugin': io_plugin["api"] if isinstance(io_plugin, dict) else io_plugin.__loader__.name,
         'hyperspy_version': hs_version,
         'timestamp': datetime.now().astimezone().isoformat()
     }
-
     # get the largest integer key present under General.FileIO, returning 0
     # as default if none are present
     largest_index = max(

@@ -159,8 +159,8 @@ working with HyperSpy/Python interactively.
 Loading data
 ------------
 
-Once HyperSpy is running, to load from a supported file format (see
-:ref:`supported-formats`) simply type:
+Once HyperSpy is running, to load from a :external+rsciio:ref:`file format
+supported by RosettaSciIO <supported-formats>`, simply type:
 
 .. code-block:: python
 

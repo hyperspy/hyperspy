@@ -108,3 +108,13 @@ There are 3 key points to get right when starting out as a contributor:
 3. Bear in mind that every new function you write will need 
    :ref:`tests <testing-label>` and
    :ref:`user documentation <writing_documentation-label>`!
+
+.. note::
+
+    The IO plugins formerly developed within HyperSpy have now been moved to
+    the separate `RosettaSciIO repository <https://github.com/hyperspy/rosettasciio>`_
+    in order to facilitate a wider use also by other packages. Plugins supporting
+    additional formats or corrections/enhancements to existing plugins should now
+    be contributed to the `RosettaSciIO repository <https://github.com/hyperspy/rosettasciio>`_
+    and file format specific issues should be reported to the `RosettaSciIO issue
+    tracker <https://github.com/hyperspy/rosettasciio/issues>`_.

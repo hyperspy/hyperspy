@@ -27,7 +27,7 @@ from pathlib import Path
 
 import hyperspy
 from hyperspy.misc.utils import slugify, is_binned
-from hyperspy.misc.io.tools import (incremental_filename,
+from rsciio.utils.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
     load_from_dictionary

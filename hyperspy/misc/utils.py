@@ -513,6 +513,7 @@ class DictionaryTreeBrowser:
         par_dict = {}
 
         from hyperspy.signal import BaseSignal
+        from hyperspy.axes import AxesManager
 
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
@@ -526,6 +527,26 @@ class DictionaryTreeBrowser:
                     key = "_sig_" + key
                 elif hasattr(item_["_dtb_value_"], "_to_dictionary"):
                     item = item_["_dtb_value_"]._to_dictionary()
+                elif isinstance(item_["_dtb_value_"], AxesManager):
+                    item = item_["_dtb_value_"]._get_axes_dicts()
+                    key = "_hspy_AxesManager_" + key
+                elif type(item_["_dtb_value_"]) in (list, tuple):
+                    signals = []
+                    container =  item_["_dtb_value_"]
+                    # Support storing signals in containers
+                    for i, item in enumerate(container):
+                        if isinstance(item, BaseSignal):
+                            signals.append(i)
+                    if signals:
+                        to_tuple = False
+                        if type(container) is tuple:
+                            container = list(container)
+                            to_tuple = True
+                        for i in signals:
+                            container[i] = {"_sig_" :container[i]._to_dictionary()}
+                        if to_tuple:
+                            container = tuple(container)
+                    item = container
                 else:
                     item = item_["_dtb_value_"]
                 par_dict.update({key: item})
@@ -821,6 +842,7 @@ def strlist2enumeration(lst):
         return "%s, " * (len(lst) - 2) % lst[:-2] + "%s and %s" % lst[-2:]
 
 
+
 def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
     if not isinstance(stuff, (bytes, np.string_)):
         return stuff
@@ -831,6 +853,7 @@ def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
     except BaseException:
         string = string.decode(encoding2, errors="ignore")
     return string
+
 
 
 def check_long_string(value, max_len):

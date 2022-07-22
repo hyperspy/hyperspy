@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import FuncFormatter, MaxNLocator
 
-import hyperspy.misc.io.tools as io_tools
+import rsciio.utils.tools as io_tools
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.learn.mlpca import mlpca
 from hyperspy.learn.ornmf import ornmf

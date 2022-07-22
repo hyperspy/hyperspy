@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 import hyperspy.api as hs
-from hyperspy.misc import rgb_tools
+from rsciio.utils import rgb_tools
 
 
 class TestRGBA8:

@@ -27,12 +27,12 @@ from traits.api import Undefined
 import logging
 import inspect
 import copy
+from rsciio.utils import rgb_tools
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
 from hyperspy.signal_tools import ImageContrastEditor
 from hyperspy.misc import math_tools
-from hyperspy.misc import rgb_tools
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.plot import PLOT2D_DOCSTRING

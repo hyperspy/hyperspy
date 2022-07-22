@@ -1,0 +1,7 @@
+format_name: Protochips
+description: Reads Protochips log files (heating/baising and gas cell)
+full_support: False
+file_extensions: [csv, CSV]
+default_extension: 0
+writes: False
+non_uniform_axis: False
