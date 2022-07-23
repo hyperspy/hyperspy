@@ -1,1 +1,0 @@
-Fix regression in :py:meth:`~.models.model1d.Model1D.set_signal_range` which was raising an error when used interactively

@@ -8,6 +8,38 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 
 .. towncrier release notes start
 
+Hyperspy 1.7.1 (2022-06-18)
+===========================
+
+Bug Fixes
+---------
+
+- Fixes invalid file chunks when saving some signals to hspy/zspy formats. (`#2940 <https://github.com/hyperspy/hyperspy/issues/2940>`_)
+- Fix issue where a TIFF image from an FEI FIB/SEM navigation camera image would not be read due to missing metadata (`#2941 <https://github.com/hyperspy/hyperspy/issues/2941>`_)
+- Respect ``show_progressbar`` parameter in :py:meth:`~.signal.BaseSignal.map` (`#2946 <https://github.com/hyperspy/hyperspy/issues/2946>`_)
+- Fix regression in :py:meth:`~.models.model1d.Model1D.set_signal_range` which was raising an error when used interactively (`#2948 <https://github.com/hyperspy/hyperspy/issues/2948>`_)
+- Fix :py:class:`~.roi.SpanROI` regression: the output of :py:meth:`~.roi.BaseInteractiveROI.interactive` was not updated when the ROI was changed. Fix errors with updating limits when plotting empty slice of data. Improve docstrings and test coverage. (`#2952 <https://github.com/hyperspy/hyperspy/issues/2952>`_)
+- Fix stacking signals that contain their variance in metadata. Previously it was raising an error when specifying the stacking axis. (`#2954 <https://github.com/hyperspy/hyperspy/issues/2954>`_)
+- Fix missing API documentation of several signal classes. (`#2957 <https://github.com/hyperspy/hyperspy/issues/2957>`_)
+- Fix two bugs in :py:meth:`~.learn.mva.MVA.decomposition`:
+
+   * The poisson noise normalization was not applied when giving a `signal_mask`
+   * An error was raised when applying a ``signal_mask`` on a signal with signal dimension larger than 1. (`#2964 <https://github.com/hyperspy/hyperspy/issues/2964>`_)
+
+
+Improved Documentation
+----------------------
+
+- Fix and complete docstrings of :py:meth:`~._signals.signal2d.Signal2D.align2D` and :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`. (`#2961 <https://github.com/hyperspy/hyperspy/issues/2961>`_)
+
+
+Maintenance
+-----------
+
+- Minor refactor of the EELS subshells in the ``elements`` dictionary. (`#2868 <https://github.com/hyperspy/hyperspy/issues/2868>`_)
+- Fix packaging of test suite and tweak tests to pass on different platform of blas implementation (`#2933 <https://github.com/hyperspy/hyperspy/issues/2933>`_)
+
+
 Hyperspy 1.7.0 (2022-04-26)
 ===========================
 
