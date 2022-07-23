@@ -1,1 +1,0 @@
-Fix packaging of test suite and tweak tests to pass on different platform of blas implementation
