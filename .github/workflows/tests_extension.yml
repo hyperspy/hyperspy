@@ -10,7 +10,7 @@ on:
 
 jobs:
   integration_test:
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'run-extension-tests') }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'run-extension-tests') || github.event_name == 'workflow_dispatch' }}
     name: Extension_${{ matrix.EXTENSION_VERSION }}
     runs-on: ubuntu-latest
     strategy:
