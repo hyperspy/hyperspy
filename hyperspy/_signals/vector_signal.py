@@ -36,7 +36,9 @@ class BaseVectorSignal(BaseSignal):
     def nav_to_vector(self,
                       inplace=True,
                       axis=None):
-        """Converts the navigation positions to vectors
+        """Converts the navigation positions to vectors. Useful if you want to
+        preform additional vector operations rather than a ragged array. If lazy
+        this will compute the vectors.
 
         Parameters
         ----------

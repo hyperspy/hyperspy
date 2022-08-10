@@ -52,13 +52,20 @@ class TestVectorSignal:
         assert len(new.axes_manager.signal_axes) ==4
         assert new.data.shape == (1,)
 
-    def test_all_to_vector_axis(self, two_d_vector):
-        new = two_d_vector.nav_to_vector(axis=0, inplace=False)
-        assert len(new.axes_manager.signal_axes) ==3
-        assert new.data.shape == (3,)
-        new = two_d_vector.nav_to_vector(axis=1, inplace=False)
-        assert len(new.axes_manager.signal_axes) ==3
-        assert new.data.shape == (4,)
+    @pytest.mark.parametrize('axis', [0, 1, None])
+    def test_all_to_vector_axis(self, two_d_vector, axis):
+        new = two_d_vector.nav_to_vector(axis=axis, inplace=False)
+        if axis is None:
+            assert len(new.axes_manager.signal_axes) == 4
+            assert new.data.shape == (1,)
+        else:
+            assert len(new.axes_manager.signal_axes) == 3
+            assert new.data.shape == (two_d_vector.axes_manager.navigation_shape[axis],)
 
-    def test_to_markers(self,two_d_vector):
+    def test_get_real_vectors(self, two_d_vector):
+
+
+    def test_to_markers(self, two_d_vector):
         markers = two_d_vector.to_markers()
+        print(markers)
+
