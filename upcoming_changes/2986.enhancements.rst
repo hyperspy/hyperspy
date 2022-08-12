@@ -1,0 +1,1 @@
+Added user-facing type hints to make it easier to write hyperspy code using editors that take advantage of type hints.
