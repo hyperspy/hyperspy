@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from typing import TYPE_CHECKING
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
@@ -50,7 +51,9 @@ from hyperspy.utils.peakfinders2D import (
 
 _logger = logging.getLogger(__name__)
 
-
+if TYPE_CHECKING:
+    from hyperspy.models.model2d import Model2D
+    
 def shift_image(im, shift=0, interpolation_order=1, fill_value=np.nan):
     if not np.any(shift):
         return im
@@ -378,7 +381,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
     plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
                      PLOT2D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
-    def create_model(self, dictionary=None):
+    def create_model(self, dictionary=None) -> "Model2D":
         """Create a model for the current signal
 
         Parameters

@@ -19,6 +19,7 @@
 import os
 import logging
 import math
+from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -52,6 +53,10 @@ from hyperspy.docstrings.signal import (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_
                                         SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG)
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT1D_DOCSTRING)
+
+if TYPE_CHECKING:
+    from hyperspy.models.model1d import Model1D
+
 
 _logger = logging.getLogger(__name__)
 
@@ -357,7 +362,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
     spikes_removal_tool.__doc__ = SPIKES_REMOVAL_TOOL_DOCSTRING % (
         SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG, "", DISPLAY_DT, TOOLKIT_DT,)
 
-    def create_model(self, dictionary=None):
+    def create_model(self, dictionary=None) -> "Model1D":
         """Create a model for the current data.
 
         Returns

@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
+from typing import TYPE_CHECKING
 
 import traits.api as t
 
@@ -25,6 +26,8 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.signal import BaseSetMetadataItems
 
+if TYPE_CHECKING:
+    from hyperspy.models.edssemmodel import EDSSEMModel
 
 _logger = logging.getLogger(__name__)
 
@@ -278,7 +281,7 @@ class EDSSEMSpectrum(EDSSpectrum):
             return False
 
     def create_model(self, auto_background=True, auto_add_lines=True,
-                     *args, **kwargs):
+                     *args, **kwargs) -> "EDSSEMModel":
         """Create a model for the current SEM EDS data.
 
         Parameters

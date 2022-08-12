@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
+from typing import TYPE_CHECKING
 import warnings
 import logging
 
@@ -38,6 +39,8 @@ from hyperspy.axes import DataAxis
 
 _logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from hyperspy.models.edstemmodel import EDSTEMModel
 
 @add_gui_method(toolkey="hyperspy.microscope_parameters_EDS_TEM")
 class EDSTEMParametersUI(BaseSetMetadataItems):
@@ -746,7 +749,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             self.learning_results.loadings)
 
     def create_model(self, auto_background=True, auto_add_lines=True,
-                     *args, **kwargs):
+                     *args, **kwargs) -> "EDSTEMModel":
         """Create a model for the current TEM EDS data.
 
         Parameters
