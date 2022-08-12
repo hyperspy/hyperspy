@@ -18,6 +18,7 @@
 
 import os
 import glob
+from typing import TYPE_CHECKING
 import warnings
 import logging
 import importlib
@@ -41,6 +42,9 @@ from hyperspy.ui_registry import get_gui
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
+
+if TYPE_CHECKING:
+    from hyperspy.signal import BaseSignal
 
 
 _logger = logging.getLogger(__name__)
@@ -149,7 +153,7 @@ def load(filenames=None,
          stack_metadata=True,
          load_original_metadata=True,
          show_progressbar=None,
-         **kwds):
+         **kwds) -> "BaseSignal":
     """Load potentially multiple supported files into HyperSpy.
 
     Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw),
