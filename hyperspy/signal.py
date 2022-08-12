@@ -3809,7 +3809,7 @@ class BaseSignal(FancySlicing,
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
-    def sum(self, axis=None, out=None, rechunk=True):
+    def sum(self, axis=None, out=None, rechunk=True) -> "BaseSignal":
         """Sum the data over the given axes.
 
         Parameters
@@ -3934,7 +3934,7 @@ class BaseSignal(FancySlicing,
             np.min, axis, out=out, rechunk=rechunk)
     min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def mean(self, axis=None, out=None, rechunk=True):
+    def mean(self, axis=None, out=None, rechunk=True) -> "BaseSignal":
         """Returns a signal with the average of the signal along at least one
         axis.
 
