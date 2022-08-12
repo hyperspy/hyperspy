@@ -1527,7 +1527,7 @@ class AxesManager(t.HasTraits):
                  [1, ])[::-1]
         return ndindex_nat(*shape)
 
-    def __getitem__(self, y):
+    def __getitem__(self, y) -> BaseDataAxis:
         """x.__getitem__(y) <==> x[y]
 
         """
