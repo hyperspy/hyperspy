@@ -238,9 +238,6 @@ class HologramImage(Signal2D):
             max_workers=max_workers,
             ragged=False)
 
-        # Workaround to a map disfunctionality:
-        sb_position.set_signal_type('signal1d')
-
         return sb_position
 
     estimate_sideband_position.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)

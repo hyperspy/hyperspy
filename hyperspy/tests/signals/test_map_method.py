@@ -466,6 +466,7 @@ class TestLazyResultInplace:
 
 
 class TestOutputDtype:
+
     @pytest.mark.parametrize("dtype", [np.uint16, np.uint32, np.uint64, np.int32, np.float32])
     def test_output_dtype_specified_not_inplace(self, dtype):
         def a_function_dtype(data):
@@ -496,8 +497,6 @@ class TestOutputDtype:
         s_out.compute()
         assert s_out.data.dtype == dtype
 
-
-class TestOutputDtype:
     @pytest.mark.parametrize("output_signal_size", [(10,), (10, 20), (10, 20, 30)])
     def test_output_signal_size(self, output_signal_size):
         def a_function_signal_size(data, output_signal_size_for_function):
@@ -671,7 +670,6 @@ class TestGetBlockPattern:
         chunks = (10,) * len(input_shape)
         dask_array = da.random.random(input_shape, chunks=chunks)
         s = hs.signals.Signal1D(dask_array).as_lazy()
-        output_signal_size = input_shape[-1:]
         arg_pairs, adjust_chunks, new_axis, output_pattern = _get_block_pattern((s.data,), input_shape)
         assert new_axis == {}
         assert adjust_chunks == {}
@@ -832,10 +830,9 @@ class TestMapIterate:
     def test_iterating_kwargs_none(self):
         s = self.s
         s_out = s._map_iterate(np.sum, iterating_kwargs=None)
-        s_out.compute()
         assert (s_out.data == self.dx * self.dy).all()
 
-    def test_iterating_kwargs_none(self):
+    def test_iterating_kwargs_dict(self):
         def add_sum(image, add):
             out = np.sum(image) + add
             return out

@@ -4994,7 +4994,9 @@ class BaseSignal(FancySlicing,
             testing_kwargs = {}
             for ikey, key in enumerate(arg_keys):
                 test_ind = (0,) * len(os_am.navigation_axes)
-                testing_kwargs[key] = np.squeeze(args[ikey][test_ind]).compute()
+                # For discussion on if squeeze is necessary, see
+                # https://github.com/hyperspy/hyperspy/pull/2981
+                testing_kwargs[key] = np.squeeze(args[ikey][test_ind].compute())[()]
             testing_kwargs = {**kwargs, **testing_kwargs}
             test_data = np.array(
                 old_sig.inav[(0,) * len(os_am.navigation_shape)].data.compute()

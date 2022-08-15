@@ -69,6 +69,11 @@ steps:
     conda list
   displayName: Install package
 
+- bash: |
+    source activate $ENV_NAME
+    conda clean --all -y
+  displayName: Clean conda cache
+
 # Note we must use `-n 2` argument for pytest-xdist due to
 # https://github.com/pytest-dev/pytest-xdist/issues/9.
 - bash: |
@@ -88,4 +93,3 @@ steps:
 #     # Set the token generated with github from the developer settings/personal
 #     # access tokens menu in azure pipeline
 #     github_token_name: ''
-
