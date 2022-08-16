@@ -20,12 +20,14 @@ import numpy as np
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.drawing._markers.point import Point
+from hyperspy.roi import _get_mpl_ax
 from hyperspy.axes import VectorDataAxis
 
 
 class BaseVectorSignal(BaseSignal):
     """A generic class for a ragged signal representing a set of vectors.
     """
+
     def __init__(self, *args, **kwargs):
         if "vector" not in kwargs:
             kwargs["vector"] = True
@@ -33,9 +35,7 @@ class BaseVectorSignal(BaseSignal):
             kwargs["ragged"] = True
         super().__init__(*args, **kwargs)
 
-    def nav_to_vector(self,
-                      inplace=True,
-                      axis=None):
+    def nav_to_vector(self, inplace=True, axis=None):
         """Converts the navigation positions to vectors. Useful if you want to
         preform additional vector operations rather than a ragged array. If lazy
         this will compute the vectors.
@@ -68,8 +68,11 @@ class BaseVectorSignal(BaseSignal):
             vector_indexes = np.array(list(np.ndindex(tuple(vector_shape))))
             for i, pos in zip(ind, np.argwhere(n_ind)):
                 vector_indexes = np.insert(vector_indexes, pos, i, axis=1)
-            new[ind] = [np.append(ind[v_ind], v) for ind in vector_indexes
-                        for v in self.data[ind]]
+            new[ind] = [
+                np.append(ind[v_ind], v)
+                for ind in vector_indexes
+                for v in self.data[ind]
+            ]
         vectors.data = new
         for a in axis:
             if not isinstance(a, VectorDataAxis):
@@ -77,7 +80,9 @@ class BaseVectorSignal(BaseSignal):
             a.navigate = False
         return vectors
 
-    def get_real_vectors(self, nav_axis=(), sig_axis="all", real_units=True, flatten=False):
+    def get_real_vectors(
+        self, nav_axis=(), sig_axis="all", real_units=True, flatten=False
+    ):
         """Returns the vectors in real units. Using the scale and offset as determined by the axes manager.
         If navigation axes are included the navigation axes will be transformed into vectors.
 
@@ -118,13 +123,17 @@ class BaseVectorSignal(BaseSignal):
             # check to see if we need to find the navigation axis index...
             real_vector = nav_positions[..., nav_indexes]
         else:  # Both navigation and vector axes...
+            real_vector = np.empty(self.data.shape, dtype=object)
             nav_positions = self._get_navigation_positions(flatten=True)
+            nav_positions = nav_positions[..., nav_indexes]
             for ind, nav_pos in zip(np.ndindex(self.data.shape), nav_positions):
                 vectors = self.data[ind][:, sig_indexes]
                 real = vectors * sig_scales + sig_offsets
                 real_vector[ind] = np.array([np.append(nav_pos, v) for v in real])
         if flatten:  # Unpack object into one array
-            real_vector = np.array([v for ind in np.ndindex(self.data.shape) for v in real_vector[ind]])
+            real_vector = np.array(
+                [v for ind in np.ndindex(self.data.shape) for v in real_vector[ind]]
+            )
 
         return real_vector
 
@@ -156,9 +165,7 @@ class BaseVectorSignal(BaseSignal):
         vectors.data = new
         return vectors
 
-    def _get_navigation_positions(self,
-                                  flatten=False,
-                                  real_units=True):
+    def _get_navigation_positions(self, flatten=False, real_units=True):
         nav_indexes = np.array(list(np.ndindex(self.axes_manager.navigation_shape)))
         np.zeros(shape=self.axes_manager.navigation_shape)
         if not real_units:
@@ -169,15 +176,23 @@ class BaseVectorSignal(BaseSignal):
             offsets = [a.offset for a in self.axes_manager.navigation_axes]
 
         if flatten:
-            real_nav = np.array([np.array(ind) * scales + offsets for ind in np.array(list(nav_indexes))])
+            real_nav = np.array(
+                [
+                    np.array(ind) * scales + offsets
+                    for ind in np.array(list(nav_indexes))
+                ]
+            )
         else:
-            real_nav = np.reshape([np.array(ind) * scales + offsets for ind in np.array(list(nav_indexes))],
-                                   self.axes_manager.navigation_shape+(-1,))
+            real_nav = np.reshape(
+                [
+                    np.array(ind) * scales + offsets
+                    for ind in np.array(list(nav_indexes))
+                ],
+                self.axes_manager.navigation_shape + (-1,),
+            )
         return real_nav
 
-    def cluster(self, func,
-                axis="all", real_units=True,
-                inplace=True,**kwargs):
+    def cluster(self, func, axis="all", real_units=True, inplace=True, **kwargs):
         """
         Clusters the vectors based on the function given. This is a generic method
         for clustering some
@@ -200,18 +215,17 @@ class BaseVectorSignal(BaseSignal):
             vectors = self
         else:
             vectors = self.deepcopy()
-        real_vectors = vectors.get_real_vectors(axis=axis,
-                                                real_units=real_units,
-                                                flatten=True)
+        real_vectors = vectors.get_real_vectors(
+            axis=axis, real_units=real_units, flatten=True
+        )
         labels = func(real_vectors, **kwargs)
-        groups = np.array([real_vectors[labels == l] for l in range(max(labels))], dtype=object)
+        groups = np.array(
+            [real_vectors[labels == l] for l in range(max(labels))], dtype=object
+        )
         vectors.data = groups
         return vectors
 
-    def to_markers(self,
-                   x_axis=(-2,),
-                   y_axis=(-1,),
-                   **kwargs):
+    def to_markers(self, x_axis=(-2,), y_axis=(-1,), **kwargs):
         """ Converts the vector to a set of markers given the axes.
 
         Parameters
@@ -229,5 +243,6 @@ class BaseVectorSignal(BaseSignal):
         y_vectors = self.get_real_vectors(sig_axis=y_axis).T
         return Point(x_vectors, y_vectors, **kwargs)
 
-class LazyBaseVectorSignal(LazySignal,BaseVectorSignal):
+
+class LazyBaseVectorSignal(LazySignal, BaseVectorSignal):
     _lazy = True

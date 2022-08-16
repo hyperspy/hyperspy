@@ -280,11 +280,12 @@ class FancySlicing(object):
 
     def _slicer(self, slices, isNavigation=None, out=None):
         if self.axes_manager.vector and self.axes_manager._ragged and not isNavigation:
-
-            if not isinstance(slices, tuple):
-                slices = (slices,)
             slices = np.array([[s.start, s.stop] for s in slices])
             for i, s in enumerate(slices):
+                if isinstance(s[0], float):
+                    s[0]=self.axes_manager.signal_axes[i].value2index(s[0])
+                if isinstance(s[1], float):
+                    s[1]=self.axes_manager.signal_axes[i].value2index(s[1])
                 if s[0] is None:
                     slices[i][0] = -np.inf
                 if s[1] is None:

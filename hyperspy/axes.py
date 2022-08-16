@@ -1234,7 +1234,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
                 raise ValueError("A value is out of the axis limits")
         else:
             index = int(index)
-            if self.size > index >= 0:
+            if self.size > index >= 0 or self.size==t.Undefined:
                 return index
             else:
                 raise ValueError("The value is out of the axis limits")
@@ -1349,7 +1349,9 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         self.__class__ = VectorDataAxis
         d["_type"] = 'VectorDataAxis'
         d["vector"] = True
-        self.remove_trait('size')
+        self.high_value = np.inf
+        self.low_value = -np.inf
+        self.size = t.Undefined
         self.__init__(**d)
         self.axes_manager = axes_manager
 
@@ -1366,7 +1368,7 @@ class VectorDataAxis(UniformDataAxis):
                  units=t.Undefined,
                  navigate=False,
                  scale=1.,
-                 size=1,
+                 size=t.Undefined,
                  offset=0.,
                  is_binned=False,
                  **kwargs):
@@ -1385,6 +1387,12 @@ class VectorDataAxis(UniformDataAxis):
         self.update_axis()
         self.vector = True
         self.remove_trait('size')
+        self.low_value = -np.inf
+        self.high_value = np.inf
+
+    def update_axis(self):
+        self.axis = t.Undefined
+
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()

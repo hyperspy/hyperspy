@@ -2630,8 +2630,6 @@ class BaseSignal(FancySlicing,
                         setattr(getattr(self, key), k, v)
                 else:
                     setattr(self, key, value)
-        if vector is not None:
-            self.vector = True
         if 'models' in file_data_dict:
             self.models._add_dictionary(file_data_dict['models'])
         if 'metadata' not in file_data_dict:
