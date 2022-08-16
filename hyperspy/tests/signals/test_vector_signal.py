@@ -87,11 +87,10 @@ class TestVectorSignal:
             assert new[0, 0].shape[1] == output_len
             assert new.shape == two_d_vector.data.shape
 
-
     @pytest.mark.parametrize("top", [0.5, 5])
     def test_slicing_vector(self, two_d_vector, top):
         sliced = two_d_vector.isig[0:top, :]
-        is_between = np.all([np.all(0.5 > sliced.data[i][:, 0]) for i in np.ndindex((4, 3))])
+        is_between = np.all([np.all(5 > sliced.data[i][:, 0]) for i in np.ndindex((4, 3))])
         assert is_between
         assert isinstance(sliced, BaseVectorSignal)
         assert len(sliced.axes_manager.signal_axes) == 2

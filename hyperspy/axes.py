@@ -1234,7 +1234,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
                 raise ValueError("A value is out of the axis limits")
         else:
             index = int(index)
-            if self.size > index >= 0 or self.size==t.Undefined:
+            if self.size == t.Undefined or self.size > index >= 0:
                 return index
             else:
                 raise ValueError("The value is out of the axis limits")
@@ -1349,6 +1349,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         self.__class__ = VectorDataAxis
         d["_type"] = 'VectorDataAxis'
         d["vector"] = True
+        self._signal_shape=None
         self.high_value = np.inf
         self.low_value = -np.inf
         self.size = t.Undefined
@@ -1388,6 +1389,7 @@ class VectorDataAxis(UniformDataAxis):
         self.vector = True
         self.low_value = -np.inf
         self.high_value = np.inf
+        self._signal_shape = None
 
     def update_axis(self):
         self.axis = t.Undefined
@@ -2127,7 +2129,7 @@ class AxesManager(t.HasTraits):
     @property
     def signal_shape(self):
         """The shape of the signal space."""
-        return tuple([axis.size for axis in self._signal_axes])
+        return tuple([axis.size for axis in self._signal_axes if axis.size != t.Undefined])
 
     @property
     def navigation_shape(self):
