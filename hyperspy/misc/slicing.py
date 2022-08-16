@@ -161,7 +161,6 @@ def copy_slice_from_whitelist(
             attrsetter(_to, key, target)
             continue
 
-
 class SpecialSlicers(object):
 
     def __init__(self, obj, isNavigation):
@@ -228,9 +227,12 @@ class FancySlicing(object):
 
         nav_idx = [el.index_in_array for el in
                    self.axes_manager.navigation_axes]
-        signal_idx = [el.index_in_array for el in
-                      self.axes_manager.signal_axes]
-
+        if self.axes_manager.vector:
+            signal_idx = [el.index_in_vector_array for el in
+                          self.axes_manager.signal_axes]
+        else:
+            signal_idx = [el.index_in_array for el in
+                          self.axes_manager.signal_axes]
         if not has_signal:
             idx = nav_idx
         elif not has_nav:
@@ -255,10 +257,13 @@ class FancySlicing(object):
         if len(_orig_slices) > len(idx):
             raise IndexError("too many indices")
 
-        if self.axes_manager._ragged:
+        if self.axes_manager._ragged and not self.axes_manager.vector:
             slices = np.array([slice(None,)] *
                               len(self.axes_manager.navigation_axes))
             ax = self.axes_manager.navigation_axes
+        elif self.axes_manager.vector:
+            slices = np.array(slices)
+            ax = self.axes_manager.signal_axes
         else:
             slices = np.array([slice(None,)] *
                             len(self.axes_manager._axes))
@@ -280,6 +285,7 @@ class FancySlicing(object):
 
     def _slicer(self, slices, isNavigation=None, out=None):
         if self.axes_manager.vector and self.axes_manager._ragged and not isNavigation:
+            slices = self._get_array_slices(slices, isNavigation)
             slices = np.array([[s.start, s.stop] for s in slices])
             for i, s in enumerate(slices):
                 if isinstance(s[0], float):

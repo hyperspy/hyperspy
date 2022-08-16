@@ -35,3 +35,7 @@ class TestVectorAxis:
         assert self.axis.is_uniform == True
         assert self.axis.axis is t.Undefined
         assert self.axis.size is t.Undefined
+
+    def test_axis_in_vector_array(self):
+        with pytest.raises(AttributeError):
+            self.axis.index_in_vector_array

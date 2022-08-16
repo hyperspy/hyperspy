@@ -1407,8 +1407,16 @@ class VectorDataAxis(UniformDataAxis):
         d["vector"] = self.vector
         return d
 
-    def _get_array_slices(self, slice_):
-        return ()
+
+    @property
+    def index_in_vector_array(self):
+        if self.axes_manager is not None:
+            return self.axes_manager._axes.index(self)-len(self.axes_manager.navigation_axes)
+        else:
+            raise AttributeError(
+                "This {} does not belong to an AxesManager"
+                " and therefore its index_in_vector_array attribute "
+                " is not defined".format(self.__class__.__name__))
 
 
 def _serpentine_iter(shape):
