@@ -1386,13 +1386,17 @@ class VectorDataAxis(UniformDataAxis):
         # These traits need to added dynamically to be removed when necessary
         self.update_axis()
         self.vector = True
-        self.remove_trait('size')
         self.low_value = -np.inf
         self.high_value = np.inf
 
     def update_axis(self):
         self.axis = t.Undefined
 
+    def update_index_bounds(self):
+        return
+
+    def _update_bounds(self):
+        return
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
