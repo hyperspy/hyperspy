@@ -184,11 +184,11 @@ class Signal2DCalibration(LineInSignal2D):
 
     def apply(self):
         if self.new_length is t.Undefined:
-            _logger.warn("Input a new length before pressing apply.")
+            _logger.warning("Input a new length before pressing apply.")
             return
         x0, y0, x1, y1 = self.x0, self.y0, self.x1, self.y1
         if np.isnan(x0) or np.isnan(y0) or np.isnan(x1) or np.isnan(y1):
-            _logger.warn("Line position is not valid")
+            _logger.warning("Line position is not valid")
             return
         self.signal._calibrate(
             x0=x0, y0=y0, x1=x1, y1=y1, new_length=self.new_length, units=self.units
@@ -208,7 +208,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
         # Plot the signal (or model) if it is not already plotted
         if signal._plot is None or not signal._plot.is_active:
             signal.plot()
-        
+
         from hyperspy.model import BaseModel
         if isinstance(signal, BaseModel):
             signal = signal.signal
@@ -257,7 +257,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
             return
 
         x0, x1 = sorted(self.span_selector.extents)
-        
+
         # typically during initialisation
         if x0 == x1:
             return
@@ -267,7 +267,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
             x0 = self.axis.low_value
         if x1 > self.axis.high_value or x1 < self.axis.low_value:
             x1 = self.axis.high_value
-        
+
         if np.diff(self.axis.value2index(np.array([x0, x1]))) == 0:
             return
 
@@ -1180,7 +1180,7 @@ class ImageContrastEditor(t.HasTraits):
         if self.auto and self._is_selector_visible and clear_selector:
             # in auto mode, the displayed contrast cover the full range
             # and we need to reset the span selector
-            # no need to clear the line, it will updated 
+            # no need to clear the line, it will updated
             self.span_selector.clear()
 
         self.update_line()
