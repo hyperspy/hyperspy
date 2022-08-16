@@ -288,10 +288,6 @@ class FancySlicing(object):
             slices = self._get_array_slices(slices, isNavigation)
             slices = np.array([[s.start, s.stop] for s in slices])
             for i, s in enumerate(slices):
-                if isinstance(s[0], float):
-                    s[0]=self.axes_manager.signal_axes[i].value2index(s[0])
-                if isinstance(s[1], float):
-                    s[1]=self.axes_manager.signal_axes[i].value2index(s[1])
                 if s[0] is None:
                     slices[i][0] = -np.inf
                 if s[1] is None:

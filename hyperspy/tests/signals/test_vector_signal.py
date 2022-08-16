@@ -64,28 +64,34 @@ class TestVectorSignal:
 
     @pytest.mark.parametrize("flatten", [True, False])
     @pytest.mark.parametrize("nav_axis", [(), (0,), (0, 1), "all"])
-    @pytest.mark.parametrize("sig_axis", ["all", (0,), (0, 1)])
+    @pytest.mark.parametrize("sig_axis", ["all", (0,), (0, 1), ()])
     @pytest.mark.parametrize("real_units", [True, False])
     def test_get_real_vectors(
         self, two_d_vector, nav_axis, sig_axis, real_units, flatten
     ):
-        new = two_d_vector.get_real_vectors(
-            sig_axis=sig_axis, real_units=real_units, nav_axis=nav_axis, flatten=flatten
-        )
-        if sig_axis == "all":
-            sig_axis = (2, 3)
-        if nav_axis == "all":
-            nav_axis = (0, 1)
-        output_len = len(sig_axis) + len(nav_axis)
-        if flatten:
-            assert new.shape[1] == output_len
-            if real_units:
-                assert np.max(new) < 1
-            else:
-                assert np.max(new) < 10
+        if nav_axis == () and sig_axis == ():
+            with pytest.raises(ValueError):
+                new = two_d_vector.get_real_vectors(
+                    sig_axis=sig_axis, real_units=real_units, nav_axis=nav_axis, flatten=flatten
+                )
         else:
-            assert new[0, 0].shape[1] == output_len
-            assert new.shape == two_d_vector.data.shape
+            new = two_d_vector.get_real_vectors(
+                sig_axis=sig_axis, real_units=real_units, nav_axis=nav_axis, flatten=flatten
+            )
+            if sig_axis == "all":
+                sig_axis = (2, 3)
+            if nav_axis == "all":
+                nav_axis = (0, 1)
+            output_len = len(sig_axis) + len(nav_axis)
+            if flatten:
+                assert new.shape[1] == output_len
+                if real_units:
+                    assert np.max(new) < 1
+                else:
+                    assert np.max(new) < 10
+            else:
+                assert new[0, 0].shape[1] == output_len
+                assert new.shape == two_d_vector.data.shape
 
     @pytest.mark.parametrize("top", [0.5, 5,])
     def test_slicing_vector(self, two_d_vector, top):
@@ -104,6 +110,13 @@ class TestVectorSignal:
         assert len(sliced.axes_manager.signal_axes) == 2
         assert sliced.axes_manager.navigation_shape == (2, 4)
 
+    @pytest.mark.parametrize("inplace", [True, False, ])
+    def test_flatten(self, two_d_vector, inplace):
+        flat = two_d_vector.flatten(inplace=inplace)
+        if inplace:
+            flat = two_d_vector
+        assert len(flat.axes_manager.signal_axes) == 4
+
     def test_deepcopy(self, two_d_vector):
         s = two_d_vector.deepcopy()
         assert isinstance(s, BaseVectorSignal)
@@ -118,6 +131,9 @@ class TestVectorSignal:
             assert len(new.axes_manager.signal_axes) == 3
             assert new.data.shape == (two_d_vector.axes_manager.navigation_shape[axis],)
 
+    @pytest.mark.parametrize(axis)
+    def test_cluster(self, two_d_vector):
+
+
     def test_to_markers(self, two_d_vector):
         markers = two_d_vector.to_markers()
-        print(markers)
