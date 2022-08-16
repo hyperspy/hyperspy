@@ -31,7 +31,6 @@ from hyperspy.signals import Signal1D
 from hyperspy.axes import DataAxis
 from rsciio import IO_PLUGINS
 from hyperspy import __version__ as hs_version
-from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
 FULLFILENAME = Path(__file__).resolve().parent.joinpath("test_io_overwriting.hspy")
@@ -102,7 +101,7 @@ class TestNonUniformAxisCheck:
         axis = DataAxis(axis = 1/(np.arange(10)+1), navigate = False)
         self.s = Signal1D(np.arange(10), axes=(axis.get_axis_dictionary(), ))
         # make sure we start from a clean state
-    
+
     def test_io_nonuniform(self):
         assert(self.s.axes_manager[0].is_uniform == False)
         self.s.save('tmp.hspy', overwrite = True)
@@ -132,7 +131,7 @@ class TestNonUniformAxisCheck:
             os.remove('tmp.hspy')
         if os.path.exists('tmp.msa'):
             os.remove('tmp.msa')
-            
+
 
 def test_glob_wildcards():
     s = Signal1D(np.arange(10))
@@ -189,120 +188,110 @@ def test_file_not_found_error():
             _ = hs.load([temp_fname])
 
 
-def test_file_reader_error():
+def test_file_reader_error(tmp_path):
     # Only None, str or objects with attr "file_reader" are supported
     s = Signal1D(np.arange(10))
 
-    with tempfile.TemporaryDirectory() as dirpath:
-        f = os.path.join(dirpath, "temp.hspy")
-        s.save(f)
+    f = tmp_path / "temp.hspy"
+    s.save(f)
 
-        with pytest.raises(ValueError, match="reader"):
-            _ = hs.load(f, reader=123)
+    with pytest.raises(ValueError, match="reader"):
+        _ = hs.load(f, reader=123)
 
 
-def test_file_reader_warning(caplog):
+def test_file_reader_warning(caplog, tmp_path):
     # Test fallback to Pillow imaging library
     s = Signal1D(np.arange(10))
 
-    with tempfile.TemporaryDirectory() as dirpath:
-        f = os.path.join(dirpath, "temp.hspy")
-        s.save(f)
+    f = tmp_path / "temp.hspy"
+    s.save(f)
 
-        with pytest.raises(ValueError, match="Could not load"):
-            with caplog.at_level(logging.WARNING):
-                _ = hs.load(f, reader="some_unknown_file_extension")
+    with pytest.raises(ValueError, match="Could not load"):
+        with caplog.at_level(logging.WARNING):
+            _ = hs.load(f, reader="some_unknown_file_extension")
 
-            assert "Unable to infer file type from extension" in caplog.text
+        assert "Unable to infer file type from extension" in caplog.text
 
 
-def test_file_reader_options():
+def test_file_reader_options(tmp_path):
     s = Signal1D(np.arange(10))
 
-    with tempfile.TemporaryDirectory() as dirpath:
-        f = os.path.join(dirpath, "temp.hspy")
-        s.save(f)
+    s.save(tmp_path / "temp.hspy")
 
-        # Test string reader
-        t = hs.load(Path(dirpath, "temp.hspy"), reader="hspy")
-        assert len(t) == 1
-        np.testing.assert_allclose(t.data, np.arange(10))
+    # Test string reader
+    t = hs.load(tmp_path / "temp.hspy", reader="hspy")
+    assert len(t) == 1
+    np.testing.assert_allclose(t.data, np.arange(10))
 
-        # Test object reader
-        from rsciio import hspy
+    # Test object reader
+    from rsciio import hspy
 
-        t = hs.load(Path(dirpath, "temp.hspy"), reader=hspy.api)
-        assert len(t) == 1
-        np.testing.assert_allclose(t.data, np.arange(10))
+    t = hs.load(tmp_path / "temp.hspy", reader=hspy.api)
+    assert len(t) == 1
+    np.testing.assert_allclose(t.data, np.arange(10))
 
 
-def test_save_default_format():
+def test_save_default_format(tmp_path):
     s = Signal1D(np.arange(10))
 
-    with tempfile.TemporaryDirectory() as dirpath:
-        f = os.path.join(dirpath, "temp")
-        s.save(f)
+    s.save(tmp_path / "temp")
 
-        t = hs.load(Path(dirpath, "temp.hspy"))
-        assert len(t) == 1
+    t = hs.load(tmp_path / "temp.hspy")
+    assert len(t) == 1
 
 
-def test_load_original_metadata():
+def test_load_original_metadata(tmp_path):
     s = Signal1D(np.arange(10))
     s.original_metadata.a = 0
 
-    with tempfile.TemporaryDirectory() as dirpath:
-        f = os.path.join(dirpath, "temp")
-        s.save(f)
-        assert s.original_metadata.as_dictionary() != {}
+    s.save(tmp_path / "temp")
+    assert s.original_metadata.as_dictionary() != {}
 
-        t = hs.load(Path(dirpath, "temp.hspy"))
-        assert t.original_metadata.as_dictionary() == s.original_metadata.as_dictionary()
+    t = hs.load(tmp_path / "temp.hspy")
+    assert t.original_metadata.as_dictionary() == s.original_metadata.as_dictionary()
 
-        t = hs.load(Path(dirpath, "temp.hspy"), load_original_metadata=False)
-        assert t.original_metadata.as_dictionary() == {}
+    t = hs.load(tmp_path / "temp.hspy", load_original_metadata=False)
+    assert t.original_metadata.as_dictionary() == {}
 
 
-def test_load_save_filereader_metadata():
+def test_load_save_filereader_metadata(tmp_path):
     # tests that original FileReader metadata is correctly persisted and
     # appended through a save and load cycle
 
-    my_path = os.path.dirname(__file__)
-    s = hs.load(os.path.join(my_path, "msa_files", "example1.msa"))
+    s = hs.datasets.example_signals.EDS_TEM_Spectrum()
     assert s.metadata.General.FileIO.Number_0.io_plugin == \
-           'rsciio.msa.api'
+           'rsciio.hspy.api'
     assert s.metadata.General.FileIO.Number_0.operation == 'load'
     assert s.metadata.General.FileIO.Number_0.hyperspy_version == hs_version
 
-    with tempfile.TemporaryDirectory() as dirpath:
-        f = os.path.join(dirpath, "temp")
-        s.save(f)
-        expected = {
-            '0': {
-                'io_plugin': 'rsciio.msa.api',
-                'operation': 'load',
-                'hyperspy_version': hs_version
-            },
-            '1': {
-                'io_plugin': 'rsciio.hspy.api',
-                'operation': 'save',
-                'hyperspy_version': hs_version
-            },
-            '2': {
-                'io_plugin': 'rsciio.hspy.api',
-                'operation': 'load',
-                'hyperspy_version': hs_version
-            },
-        }
-        del s.metadata.General.FileIO.Number_0.timestamp  # runtime dependent
-        del s.metadata.General.FileIO.Number_1.timestamp  # runtime dependent
-        assert \
-            s.metadata.General.FileIO.Number_0.as_dictionary() == expected['0']
-        assert \
-            s.metadata.General.FileIO.Number_1.as_dictionary() == expected['1']
+    f = tmp_path / "temp"
+    s.save(f)
+    expected = {
+        '0': {
+            'io_plugin': 'rsciio.hspy.api',
+            'operation': 'load',
+            'hyperspy_version': hs_version
+        },
+        '1': {
+            'io_plugin': 'rsciio.hspy.api',
+            'operation': 'save',
+            'hyperspy_version': hs_version
+        },
+        '2': {
+            'io_plugin': 'rsciio.hspy.api',
+            'operation': 'load',
+            'hyperspy_version': hs_version
+        },
+    }
+    del s.metadata.General.FileIO.Number_0.timestamp  # runtime dependent
+    del s.metadata.General.FileIO.Number_1.timestamp  # runtime dependent
+    assert \
+        s.metadata.General.FileIO.Number_0.as_dictionary() == expected['0']
+    assert \
+        s.metadata.General.FileIO.Number_1.as_dictionary() == expected['1']
 
-        t = hs.load(Path(dirpath, "temp.hspy"))
-        del t.metadata.General.FileIO.Number_0.timestamp  # runtime dependent
-        del t.metadata.General.FileIO.Number_1.timestamp  # runtime dependent
-        del t.metadata.General.FileIO.Number_2.timestamp  # runtime dependent
-        assert t.metadata.General.FileIO.as_dictionary() == expected
+    t = hs.load(tmp_path / "temp.hspy")
+    del t.metadata.General.FileIO.Number_0.timestamp  # runtime dependent
+    del t.metadata.General.FileIO.Number_1.timestamp  # runtime dependent
+    del t.metadata.General.FileIO.Number_2.timestamp  # runtime dependent
+    assert t.metadata.General.FileIO.as_dictionary() == expected
