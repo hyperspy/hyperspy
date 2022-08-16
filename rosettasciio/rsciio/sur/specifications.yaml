@@ -1,7 +1,0 @@
-format_name: Digital Surf Surface
-description: Read data from the proprietary .sur file format from Digital Surf.
-full_support: False
-file_extensions: [sur, SUR, pro, PRO]
-default_extension: 0
-writes: False
-non_uniform_axis: False

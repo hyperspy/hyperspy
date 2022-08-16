@@ -1,7 +1,0 @@
-format_name: JEOL
-description: Read JEOL files output by Analysis Station software
-full_support: False
-file_extensions: [ASW, asw, img, map, pts, eds]
-default_extension: 0
-writes: False
-non_uniform_axis: False

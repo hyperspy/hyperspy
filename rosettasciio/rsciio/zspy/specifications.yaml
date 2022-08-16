@@ -1,7 +1,0 @@
-format_name: ZSpy
-description: A default file format for HyperSpy based on the zarr standard
-full_support: True
-file_extensions: ['zspy', 'ZSPY']
-default_extension: 0
-non_uniform_axis: True
-writes: True

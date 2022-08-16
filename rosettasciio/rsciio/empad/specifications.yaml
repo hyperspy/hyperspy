@@ -1,9 +1,0 @@
-format_name: 'EMPAD'
-description: 'File format used by the Electron Microscope Pixel Array Detector (EMPAD)'
-full_support: False
-# Recognised file extension
-file_extensions: ['xml', 'XML']
-default_extension: 0
-# Writing features
-writes: False
-non_uniform_axis: False
