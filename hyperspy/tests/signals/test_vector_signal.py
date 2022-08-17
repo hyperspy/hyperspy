@@ -131,8 +131,20 @@ class TestVectorSignal:
             assert len(new.axes_manager.signal_axes) == 3
             assert new.data.shape == (two_d_vector.axes_manager.navigation_shape[axis],)
 
-    @pytest.mark.parametrize(axis)
-    def test_cluster(self, two_d_vector):
+    @pytest.mark.parametrize("sig_axis", ["all", (), 1])
+    @pytest.mark.parametrize("nav_axis", ["all", (), 1])
+    @pytest.mark.parametrize("real_units", [True, False])
+    @pytest.mark.parametrize("inplace", [True, False])
+    def test_cluster(self, two_d_vector, sig_axis, nav_axis, real_units, inplace):
+        from sklearn.cluster import KMeans
+        clustering = KMeans(4)
+        clustered = two_d_vector.cluster(clustering)
+        assert len(clustered.data) == 3
+        assert clustered.data[0].shape[1] == 4
+        assert clustered.learning_results is not None
+
+
+
 
 
     def test_to_markers(self, two_d_vector):

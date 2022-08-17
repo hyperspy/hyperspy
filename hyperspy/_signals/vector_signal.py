@@ -195,15 +195,14 @@ class BaseVectorSignal(BaseSignal):
             )
         return real_nav
 
-    def cluster(self, func,
+    def cluster(self, method,
                 sig_axis="all",
                 nav_axis="all",
                 real_units=True,
-                inplace=True,
-                **kwargs):
+                inplace=True,):
         """
-        Clusters the vectors based on the function given. This is a generic method
-        for clustering some
+        Clusters the vectors based on the clustering object given. The clustering
+        object should have a 'fit' method which
         Parameters
         ----------
         method: func
@@ -223,15 +222,24 @@ class BaseVectorSignal(BaseSignal):
             vectors = self
         else:
             vectors = self.deepcopy()
-        real_vectors = vectors.get_real_vectors(sig_axis=sig_axis,
-                                                nav_axis=nav_axis,
-                                                real_units=real_units,
-                                                flatten=True)
-        labels = func(real_vectors, **kwargs)
+
+        # This copies the vector array...
+        all_vectors = vectors.get_real_vectors(sig_axis="all",
+                                               nav_axis="all",
+                                               real_units=False,
+                                               flatten=True)
+        sub_vectors = vectors.get_real_vectors(sig_axis=sig_axis,
+                                               nav_axis=nav_axis,
+                                               real_units=real_units,
+                                               flatten=True)
+
+        cluster = method.fit(sub_vectors)
+        labels = cluster.labels_
         groups = np.array(
-            [real_vectors[labels == l] for l in range(max(labels))], dtype=object
+            [all_vectors[labels == l] for l in range(max(labels))], dtype=object
         )
         vectors.data = groups
+        vectors.learning_results = cluster
         return vectors
 
     def to_markers(self, x_axis=(-2,), y_axis=(-1,), **kwargs):
