@@ -22,7 +22,6 @@ import hyperspy.Release as Release
 import itertools
 import subprocess
 import os
-import warnings
 from setuptools import setup
 import sys
 
@@ -70,7 +69,7 @@ install_req = ['scipy>=1.1',
                'numba>=0.52',
                 # included in stdlib since v3.8, but this required version requires Python 3.10
                 # We can remove this requirement when the minimum supported version becomes Python 3.10
-               'importlib_metadata>=3.6',
+               'importlib-metadata>=3.6',
                ]
 
 extras_require = {
@@ -80,11 +79,6 @@ extras_require = {
                  'scikit-learn;sys_platform!="darwin"'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
-    "speed": ["cython", "imagecodecs>=2020.1.31"],
-    "usid": ["pyUSID>=0.0.7", "sidpy"],
-    "scalebar": ["matplotlib-scalebar"],
-    # bug in pip: matplotib is ignored here because it is already present in
-    # install_requires.
     "tests": ["pytest>=3.6", "pytest-mpl", "pytest-xdist", "pytest-rerunfailures", "pytest-instafail", "matplotlib>=3.1"],
     "coverage":["pytest-cov"],
     # required to build the docs

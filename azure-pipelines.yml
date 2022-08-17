@@ -71,7 +71,7 @@ steps:
 
 - bash: |
     source activate $ENV_NAME
-    pip install -e ./rosettasciio
+    pip install https://github.com/hyperspy/rosettasciio/archive/refs/heads/main.zip#egg=rosettasciio[all]
     conda list
   displayName: Install package (rosettasciio)
 
@@ -86,11 +86,6 @@ steps:
     source activate $ENV_NAME
     pytest --mpl --pyargs hyperspy --reruns 3 --instafail --mpl-results-path $RESULT_IMAGES_FOLDER
   displayName: Run test suite
-
-- bash: |
-    source activate $ENV_NAME
-    pytest --pyargs rosettasciio --reruns 3 --instafail
-  displayName: Run test suite (rosettasciio)
 
 - publish: $(System.DefaultWorkingDirectory)/$(RESULT_IMAGES_FOLDER)
   artifact: $(Agent.JobName)-result_images
