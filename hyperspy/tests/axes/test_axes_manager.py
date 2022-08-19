@@ -622,7 +622,10 @@ class TestVectorAxisManager:
         assert self.am.signal_size == 0
         assert self.am.navigation_size == (2,)
         assert self.am._ragged
-
-    def test_index_in_vector_array(self):
+        assert self.am.signal_extent == (-np.inf, np.inf, -np.inf, np.inf)
         assert self.am.signal_axes[0].index_in_vector_array == 1
         assert self.am.signal_axes[1].index_in_vector_array == 0
+        assert self.am.signal_axes[1].index_in_array == ()
+        assert self.am.signal_axes[0].index_in_array == ()
+        assert self.am.signal_dimension == 0
+        assert self.am._signal_shape_in_array == ()

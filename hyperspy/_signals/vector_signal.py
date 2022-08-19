@@ -81,7 +81,7 @@ class BaseVectorSignal(BaseSignal):
         return vectors
 
     def get_real_vectors(
-        self, nav_axis=(), sig_axis="all", real_units=True, flatten=False
+        self, axis=None, real_units=True, flatten=False
     ):
         """Returns the vectors in real units. Using the scale and offset as determined by the axes manager.
         If navigation axes are included the navigation axes will be transformed into vectors.
@@ -96,17 +96,17 @@ class BaseVectorSignal(BaseSignal):
         pixel_units: bool
             Returns the vectors in pixel units rather than using the axes manager.
         """
-        if nav_axis == () and sig_axis == ():
-            raise ValueError("One of nav_axis or sig_axis must be some tuple or 'all'")
-        if nav_axis == "all":
+        if axis is None:
             nav_axis = self.axes_manager.navigation_axes
+            sig_axis = self.axes_manager.signal_axes
         else:
-            nav_axis = self.axes_manager[nav_axis]
+            if not np.iterable(axis):
+                axis = tuple(axis)
+            axis = self.axes_manager[axis]
+            nav_axis = [a for a in axis if a.navigate]
+            sig_axis = [a for a in axis if not a.navigate]
         nav_indexes = tuple([a.index_in_array for a in nav_axis])
-        if sig_axis is "all":
-            sig_indexes = np.array(range(self.axes_manager.signal_dimension), dtype=int)
-        else:
-            sig_indexes = np.array(sig_axis, dtype=int)
+        sig_indexes = tuple([a.index_in_vector_array for a in sig_axis])
         navigate = len(nav_indexes) > 0
         if not real_units:
             sig_scales = np.ones(len(sig_indexes))
@@ -158,7 +158,7 @@ class BaseVectorSignal(BaseSignal):
             vectors = self
         else:
             vectors = self.deepcopy()
-        new_vectors = self.get_real_vectors(nav_axis="all", real_units=False, flatten=True)
+        new_vectors = self.get_real_vectors(real_units=False, flatten=True)
         for axis in vectors.axes_manager._axes:
             if not isinstance(axis, VectorDataAxis):
                 axis.convert_to_vector_axis()
@@ -196,8 +196,7 @@ class BaseVectorSignal(BaseSignal):
         return real_nav
 
     def cluster(self, method,
-                sig_axis="all",
-                nav_axis="all",
+                axis=None,
                 real_units=True,
                 inplace=True,):
         """
@@ -224,12 +223,10 @@ class BaseVectorSignal(BaseSignal):
             vectors = self.deepcopy()
 
         # This copies the vector array...
-        all_vectors = vectors.get_real_vectors(sig_axis="all",
-                                               nav_axis="all",
+        all_vectors = vectors.get_real_vectors(axis=None,
                                                real_units=False,
                                                flatten=True)
-        sub_vectors = vectors.get_real_vectors(sig_axis=sig_axis,
-                                               nav_axis=nav_axis,
+        sub_vectors = vectors.get_real_vectors(axis=axis,
                                                real_units=real_units,
                                                flatten=True)
 
@@ -252,12 +249,8 @@ class BaseVectorSignal(BaseSignal):
         y_axis: int
             The index for the y axis
         """
-        if isinstance(x_axis, int):
-            x_axis = (x_axis,)
-        if isinstance(y_axis, int):
-            y_axis = (y_axis,)
-        x_vectors = self.get_real_vectors(sig_axis=x_axis).T
-        y_vectors = self.get_real_vectors(sig_axis=y_axis).T
+        x_vectors = self.get_real_vectors(axis=x_axis).T
+        y_vectors = self.get_real_vectors(axis=y_axis).T
         return Point(x_vectors, y_vectors, **kwargs)
 
 

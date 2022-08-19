@@ -493,8 +493,11 @@ class BaseDataAxis(t.HasTraits):
         return name
 
     def __repr__(self):
-        text = '<%s axis, size: %i' % (self._get_name(),
-                                       self.size,)
+        if self.size == t.Undefined:
+            text = '<%s axis, size: vect' % self._get_name()
+        else:
+            text = '<%s axis, size: %i' % (self._get_name(),
+                                           self.size,)
         if self.navigate is True:
             text += ", index: %i" % self.index
         text += ">"
@@ -1400,6 +1403,16 @@ class VectorDataAxis(UniformDataAxis):
     def _update_bounds(self):
         return
 
+    @property
+    def index_in_array(self):
+        if self.axes_manager is not None:
+            return ()
+        else:
+            raise AttributeError(
+                "This {} does not belong to an AxesManager"
+                " and therefore its index_in_array attribute "
+                " is not defined".format(self.__class__.__name__))
+
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
         d.update({'scale': self.scale,
@@ -2111,7 +2124,7 @@ class AxesManager(t.HasTraits):
         self._navigation_axes = navigation_axes[::-1]
         self._getitem_tuple = tuple(getitem_tuple)
 
-        if len(self.signal_axes) == 1 and self.signal_axes[0].size == 1:
+        if len(self.signal_axes) == 1 and self.signal_axes[0].size == 1 or self.vector:
             self._signal_dimension = 0
         else:
             self._signal_dimension = len(self.signal_axes)
@@ -2327,7 +2340,7 @@ class AxesManager(t.HasTraits):
     def __repr__(self):
         text = ('<Axes manager, axes: %s>\n' %
                 self._get_dimension_str())
-        ax_signature_uniform = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
+        ax_signature_uniform = "% 16s | %6s | %6s | %7.2g | %7.2g | %6s "
         ax_signature_non_uniform = "% 16s | %6g | %6s | non-uniform axis | %6s "
         signature = "% 16s | %6s | %6s | %7s | %7s | %6s "
         text += signature % ('Name', 'size', 'index', 'offset', 'scale',
@@ -2338,9 +2351,10 @@ class AxesManager(t.HasTraits):
 
         def axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform):
             if ax.is_uniform:
-                return ax_signature_uniform % (str(ax.name)[:16], ax.size,
+                return ax_signature_uniform % (str(ax.name)[:16], str(ax.size),
                                               str(ax.index), ax.offset,
                                               ax.scale, ax.units)
+
             else:
                 return ax_signature_non_uniform % (str(ax.name)[:16], ax.size,
                                                   str(ax.index), ax.units)
