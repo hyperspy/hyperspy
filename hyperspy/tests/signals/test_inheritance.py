@@ -30,7 +30,10 @@ from hyperspy.signals import BaseVectorSignal
 def test_lazy_signal_inheritance(signal):
     bs = getattr(hyperspy.signals, signal)
     if bs == BaseVectorSignal:
-        s = bs(np.empty((2,), dtype=object))
+        data = np.empty((2,),dtype=object)
+        data[0] = np.ones((2, 3))
+        data[1] = np.ones((4, 3))
+        s = bs(data, dtype=object)
     else:
         s = bs(np.empty((2,) * bs._signal_dimension))
     ls = s.as_lazy()

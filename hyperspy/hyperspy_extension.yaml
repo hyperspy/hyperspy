@@ -140,20 +140,18 @@ signals:
     lazy: True
     module: hyperspy._signals.dielectric_function
   BaseVectorSignal:
-    signal_type: BaseVectorSignal
-    signal_type_aliases:
-      - vector
+    signal_type: ""
     signal_dimension: -1
     dtype: real
     lazy: False
+    vector: True
     module: hyperspy._signals.vector_signal
   LazyBaseVectorSignal:
-    signal_type: BaseVectorSignal
-    signal_type_aliases:
-      - vector
+    signal_type: ""
     signal_dimension: -1
     dtype: real
     lazy: True
+    vector: True
     module: hyperspy._signals.vector_signal
 
 components1D:

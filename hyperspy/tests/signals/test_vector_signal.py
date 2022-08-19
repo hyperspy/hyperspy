@@ -22,6 +22,7 @@ import dask.array as da
 
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.signals import BaseVectorSignal, BaseSignal
+from hyperspy.drawing.marker import MarkerBase
 
 
 class TestVectorSignal:
@@ -140,9 +141,14 @@ class TestVectorSignal:
         assert clustered.data[0].shape[1] == 4
         assert clustered.learning_results is not None
 
-
-
-
-
     def test_to_markers(self, two_d_vector):
         markers = two_d_vector.to_markers()
+        assert isinstance(markers, MarkerBase)
+
+    def test_map(self, two_d_vector):
+        def return_vect(arr):
+            return np.ones((4, 2))
+        v = two_d_vector.map(return_vect, inplace=False)
+        assert v.ragged
+
+

@@ -2478,36 +2478,7 @@ class BaseSignal(FancySlicing,
 
     @vector.setter
     def vector(self, value):
-        if value:
-            if self.data.dtype != object:
-                raise ValueError("The array is not ragged.")
-            num_axes = 0
-
-            nav_shape = self.axes_manager.navigation_shape
-            if nav_shape == ():
-                nav_shape = 1
-            for d in np.ndindex(nav_shape):
-                object_shape = np.shape(self.data[d])
-                if len(object_shape) < 1:
-                    continue
-                else:
-                    num_axes = object_shape[-1]
-                    break
-            if len(self.axes_manager.signal_axes) == num_axes:
-                [i.convert_to_vector_axis() for i in self.axes_manager.signal_axes]
-            else:
-                for i in range(num_axes):
-                    axis = {'index_in_array': None, 'vector': True}
-                    self.axes_manager._append_axis(**axis)
-            self.axes_manager._ragged = True
-
-    @property
-    def vector(self):
-        return self.axes_manager._vector
-
-    @vector.setter
-    def vector(self, value):
-        if value:
+        if value and self.vector != value:
             if self.data.dtype != object:
                 raise ValueError("The array is not ragged.")
             num_axes = 0
@@ -2615,7 +2586,6 @@ class BaseSignal(FancySlicing,
         oldlazy = self._lazy
         attributes = file_data_dict.get('attributes', {})
         ragged = file_data_dict.get('ragged')
-        vector = file_data_dict.get('vector')
         if ragged is not None:
             attributes['ragged'] = ragged
         if 'axes' not in file_data_dict:
@@ -2758,7 +2728,7 @@ class BaseSignal(FancySlicing,
             dic['models'] = self.models._models.as_dictionary()
         return dic
 
-    def _get_undefined_axes_list(self, ragged=False, vector=False):
+    def _get_undefined_axes_list(self, ragged=False):
         """Returns default list of axes construct from the data array shape."""
         axes = []
         for s in self.data.shape:
@@ -4896,8 +4866,6 @@ class BaseSignal(FancySlicing,
             nd_nav_shape = kwargs[key].axes_manager.navigation_shape
             if nd_nav_shape == self_nav_shape:
                 ndkwargs[key] = kwargs.pop(key)
-            elif nd_nav_shape == () or nd_nav_shape == (1,) and self_nav_shape == () or self_nav_shape == (1,):
-                ndkwargs[key] = kwargs.pop(key)
             elif nd_nav_shape == () or nd_nav_shape == (1,):
                 # This really isn't an iterating signal.
                 kwargs[key] = np.squeeze(kwargs[key].data)
@@ -5030,13 +4998,11 @@ class BaseSignal(FancySlicing,
 
 
         nav_indexes = s_input.axes_manager.navigation_indices_in_array
-        if self.ragged:
-            chunk_span = [True]
-        else:
-            chunk_span = np.equal(s_input.data.chunksize, s_input.data.shape)
-            chunk_span = [
-                chunk_span[i] for i in s_input.axes_manager.signal_indices_in_array
-            ]
+
+        chunk_span = np.equal(s_input.data.chunksize, s_input.data.shape)
+        chunk_span = [
+            chunk_span[i] for i in s_input.axes_manager.signal_indices_in_array if i != ()
+        ]
         if not all(chunk_span):
             _logger.info(
                 "The chunk size needs to span the full signal size, rechunking..."
@@ -5774,7 +5740,8 @@ class BaseSignal(FancySlicing,
             signal_type=mp.Signal.signal_type
             if "Signal.signal_type" in mp
             else self._signal_type,
-            lazy=self._lazy)
+            lazy=self._lazy,
+            vector=self.vector)
         if self._alias_signal_types:  # In case legacy types exist:
             mp.Signal.signal_type = self._signal_type  # set to default!
         self.__init__(self.data, full_initialisation=False)

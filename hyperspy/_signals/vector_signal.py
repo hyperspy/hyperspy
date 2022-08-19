@@ -29,11 +29,10 @@ class BaseVectorSignal(BaseSignal):
     """
 
     def __init__(self, *args, **kwargs):
-        if "vector" not in kwargs:
-            kwargs["vector"] = True
         if "ragged" not in kwargs:
             kwargs["ragged"] = True
         super().__init__(*args, **kwargs)
+        self.vector=True
 
     def nav_to_vector(self, inplace=True, axis=None):
         """Converts the navigation positions to vectors. Useful if you want to
