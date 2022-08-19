@@ -150,5 +150,3 @@ class TestVectorSignal:
             return np.ones((4, 2))
         v = two_d_vector.map(return_vect, inplace=False)
         assert v.ragged
-
-

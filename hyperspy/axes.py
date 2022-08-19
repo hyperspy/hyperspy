@@ -2150,7 +2150,7 @@ class AxesManager(t.HasTraits):
     @property
     def signal_shape(self):
         """The shape of the signal space."""
-        return tuple([axis.size for axis in self._signal_axes if axis.size != t.Undefined])
+        return tuple([axis.size for axis in self._signal_axes if not axis.size == t.Undefined])
 
     @property
     def navigation_shape(self):
