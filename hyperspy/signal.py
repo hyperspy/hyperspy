@@ -5136,12 +5136,7 @@ class BaseSignal(FancySlicing,
             axes_dicts = self.axes_manager._get_navigation_axes_dicts()
             sig.axes_manager.__init__(axes_dicts)
             sig.axes_manager._ragged = True
-            if am.navigation_dimension == 0:
-                am._append_axis(size=1,
-                                scale=1,
-                                offset=0,
-                                name="Scalar",
-                                navigate=True)
+
         elif axes_changed:
             am.remove(am.signal_axes[len(output_signal_size) :])
             for ind in range(len(output_signal_size) - am.signal_dimension, 0, -1):

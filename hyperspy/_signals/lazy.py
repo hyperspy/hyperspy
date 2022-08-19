@@ -26,6 +26,7 @@ import dask
 import dask.array as da
 from itertools import product
 from packaging.version import Version
+from traits.api import Undefined
 
 from hyperspy.signal import BaseSignal
 from hyperspy.defaults_parser import preferences
@@ -42,6 +43,8 @@ from hyperspy.misc.array_tools import (
 from hyperspy.misc.hist_tools import histogram_dask
 from hyperspy.misc.machine_learning import import_sklearn
 from hyperspy.misc.utils import multiply, dummy_context_manager, isiterable
+
+
 
 
 _logger = logging.getLogger(__name__)
@@ -367,7 +370,7 @@ class LazySignal(BaseSignal):
         dc = self.data
         dcshape = dc.shape
         for _axis in self.axes_manager._axes:
-            if _axis.index_in_array < len(dcshape):
+            if _axis.index_in_array != () and _axis.index_in_array < len(dcshape):
                 _axis.size = int(dcshape[_axis.index_in_array])
 
         if axis is not None:
@@ -383,7 +386,7 @@ class LazySignal(BaseSignal):
             dtype = np.dtype(dtype)
         typesize = max(dtype.itemsize, dc.dtype.itemsize)
         want_to_keep = multiply([ax.size for ax in need_axes
-                                 if ax.size > 0]) * typesize
+                                 if ax.size != Undefined and ax.size > 0]) * typesize
 
         # @mrocklin reccomends to have around 100MB chunks, so we do that:
         num_that_fit = int(100. * 2.**20 / want_to_keep)
@@ -450,7 +453,7 @@ class LazySignal(BaseSignal):
         if not np.iterable(axes):
             axes = (axes,)
 
-        axes = tuple([axis.index_in_array for axis in axes])
+        axes = tuple([axis.index_in_array for axis in axes if axis.index_in_array is not ()])
         ax_chunks = tuple([self.data.chunks[i] for i in sorted(axes)])
 
         return ax_chunks

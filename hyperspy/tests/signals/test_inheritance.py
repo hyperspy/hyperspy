@@ -22,12 +22,16 @@ import pytest
 import hyperspy.signals
 from hyperspy.misc.utils import find_subclasses
 from hyperspy.signal import BaseSignal
+from hyperspy.signals import BaseVectorSignal
 
 
 @pytest.mark.parametrize("signal",
                          find_subclasses(hyperspy.signals, BaseSignal))
 def test_lazy_signal_inheritance(signal):
     bs = getattr(hyperspy.signals, signal)
-    s = bs(np.empty((2,) * bs._signal_dimension))
+    if bs == BaseVectorSignal:
+        s = bs(np.empty((2,), dtype=object))
+    else:
+        s = bs(np.empty((2,) * bs._signal_dimension))
     ls = s.as_lazy()
     assert isinstance(ls, bs)
