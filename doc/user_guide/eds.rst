@@ -577,6 +577,14 @@ background.
     Zr_Lb3
     background_order_6
 
+The background fitting can be improved with
+:py:meth:`~.models.edsmodel.EDSModel.fit_background` by enabling only energy
+ranges containing no X-ray lines. Once fitted, the background is fixed:
+
+.. code-block:: python
+
+    >>> m.fit_background()
+
 The width and the energies are fixed, while the heights of the sub-X-ray
 lines are linked to the main X-ray lines (alpha lines). The model can now be
 fitted:
@@ -584,15 +592,7 @@ fitted:
 .. code-block:: python
 
     >>> m.fit()
-
-The background fitting can be improved with
-:py:meth:`~.models.edsmodel.EDSModel.fit_background` by enabling only energy
-ranges containing no X-ray lines:
-
-.. code-block:: python
-
-    >>> m.fit_background()
-
+    
 The width of the X-ray lines is defined from the energy resolution (FWHM at
 Mn Ka) provided by `energy_resolution_MnKa` in `metadata`. This parameter
 can be calibrated by fitting with
