@@ -1,7 +1,0 @@
-format_name: SEMPER UNF (unformatted)
-description: Read data from SEMPER UNF files.
-full_support: True 
-file_extensions: [unf, UNF]
-default_extension: 0
-writes: [[1, 0], [1, 1], [1, 2], [2, 0], [2, 1]]
-non_uniform_axis: False

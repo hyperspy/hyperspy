@@ -6,18 +6,16 @@ dependencies:
 - dill
 # dask-core < 2021.3.1 doesn't have fsspec as dependency
 - fsspec
-- h5py
-- imageio
+- importlib-metadata
 - ipyparallel
 - ipython !=8.0.*
 - jinja2
 - matplotlib-base
-- matplotlib-scalebar
-- mrcz
 - natsort
 - numba
 - numexpr
 - numpy
+- packaging
 - pint
 - prettytable
 - python-dateutil
@@ -26,12 +24,6 @@ dependencies:
 - scikit-image
 - scikit-learn
 - scipy
-- sparse
 - sympy
-- tifffile >=2019.07.26,!=2021.3.31
-- toolz
 - tqdm
 - traits
-- zarr
-
-

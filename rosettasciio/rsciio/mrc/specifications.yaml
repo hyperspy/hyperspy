@@ -1,7 +1,0 @@
-format_name: MRC
-description: ''
-full_support: False
-file_extensions: [mrc, MRC, ALI, ali]
-default_extension: 0
-writes: False
-non_uniform_axis: False

@@ -1,9 +1,0 @@
-format_name: image
-description: Import/Export standard image formats using PIL or freeimage
-full_support: False
-file_extensions: ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg',
-                   'msp', 'pcx', 'ppm', "pbm", "pgm", 'xbm', 'spi', ]
-default_extension: 0  # png
-# Writing features
-writes: [[2, 0], [0, 2]]
-non_uniform_axis: False

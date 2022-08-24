@@ -1,7 +1,0 @@
-format_name: 'FEI TIA'
-description: ''
-full_support: False
-file_extensions: [ser, SER, emi, EMI]
-default_extension: 0
-writes: False
-non_uniform_axis: False

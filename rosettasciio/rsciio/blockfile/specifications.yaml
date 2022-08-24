@@ -1,7 +1,0 @@
-format_name: Blockfile
-description: Read/write support for ASTAR blockfiles
-full_support: False
-file_extensions: [blo, BLO]
-default_extension: 0
-writes: [[2, 2], [2, 1], [2, 0]]
-non_uniform_axis: False

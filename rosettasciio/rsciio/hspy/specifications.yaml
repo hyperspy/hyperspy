@@ -1,7 +1,0 @@
-format_name: HSPY
-description: The default file format for HyperSpy based on the HDF5 standard.
-full_support: False
-file_extensions: ['hspy', 'hdf5']
-default_extension: 0
-writes: True
-non_uniform_axis: True

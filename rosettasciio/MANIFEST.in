@@ -1,6 +1,0 @@
-include *.txt
-include *.rst
-recursive-include rsciio *.pyx
-recursive-include doc *.txt *.rst
-include rsciio/tests/bruker_data/test_compilers.c
-

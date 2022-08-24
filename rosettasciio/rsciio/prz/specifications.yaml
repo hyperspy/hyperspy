@@ -1,7 +1,0 @@
-format_name: PantaRhei
-description: File format used by CEOS PantaRhei. Based on simple numpy arrays and dictionaries
-full_support: False
-file_extensions: [prz, PRZ]
-default_extension: 0
-writes: True
-non_uniform_axis: False

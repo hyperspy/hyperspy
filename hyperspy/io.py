@@ -418,6 +418,8 @@ def load(filenames=None,
             lazy = load_ui.lazy
         if filenames is None:
             raise ValueError("No file provided to reader")
+
+    pattern = None
     if isinstance(filenames, str):
         pattern = filenames
         if escape_square_brackets:
@@ -427,10 +429,8 @@ def load(filenames=None,
                                if os.path.isfile(f) or (os.path.isdir(f) and
                                                         os.path.splitext(f)[1] == '.zspy')])
 
-        if not filenames:
-            raise ValueError(f'No filename matches the pattern "{pattern}"')
-
     elif isinstance(filenames, Path):
+        pattern = filenames
         # Just convert to list for now, pathlib.Path not
         # fully supported in io_plugins
         filenames = [f for f in [filenames]
@@ -446,7 +446,8 @@ def load(filenames=None,
         )
 
     if not filenames:
-        raise ValueError('No file(s) provided to reader.')
+        # in case, the file doesn't exist
+        raise ValueError(f'No filename matches the pattern "{pattern}"')
 
     if isinstance(filenames, MutableMapping):
         filenames = [filenames]

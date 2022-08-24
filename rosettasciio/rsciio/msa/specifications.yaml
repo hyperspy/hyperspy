@@ -1,6 +1,0 @@
-format_name: MSA
-full_support: False
-file_extensions: [msa, ems, mas, emsa, EMS, MAS, EMSA, MSA]
-default_extension: 0
-writes: [[1, 0]]
-non_uniform_axis: False

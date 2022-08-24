@@ -1,7 +1,0 @@
-format_name: MRCZ
-description: Compressed MRC file format extension with blosc meta-compression
-full_support: False
-file_extensions: [mrc, MRC, mrcz, MRCZ]
-default_extension: 2
-writes: [[2, 0], [2, 1], [2, 2], [3, 0]]
-non_uniform_axis: False
