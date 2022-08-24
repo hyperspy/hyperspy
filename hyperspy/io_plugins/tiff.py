@@ -679,7 +679,9 @@ def _is_digital_micrograph(op) -> bool:
     return any(search_result)
 
 
-def _intensity_axis_digital_micrograph(op, intensity_axis = {}):
+def _intensity_axis_digital_micrograph(op, intensity_axis=None):
+    if intensity_axis is None:
+        intensity_axis = {}
     if '65022' in op:
         intensity_axis['units'] = op['65022']  # intensity units
     if '65024' in op:
