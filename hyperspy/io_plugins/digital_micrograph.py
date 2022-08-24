@@ -111,8 +111,8 @@ class DigitalMicrographReader(object):
         """Parse the DM file into a dictionary.
 
         """
-        if group_dict is None:
-            group_dict = {}
+        if group_dict is None: #pragma: no cover
+            group_dict = {}    # currently this default value is not used in this script
         unnammed_data_tags = 0
         unnammed_group_tags = 0
         for tag in range(ntags):
