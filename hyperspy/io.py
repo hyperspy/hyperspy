@@ -399,13 +399,7 @@ def load(filenames=None,
 
 
     """
-    deprecated = ['mmap_dir', 'load_to_memory']
-    warn_str = "'{}' argument is deprecated, please use 'lazy' instead"
-    for k in deprecated:
-        if k in kwds:
-            lazy = True
-            warnings.warn(warn_str.format(k), VisibleDeprecationWarning)
-            del kwds[k]
+
     kwds['signal_type'] = signal_type
     kwds['convert_units'] = convert_units
     kwds['load_original_metadata'] = load_original_metadata

@@ -21,12 +21,6 @@ import pytest
 
 from hyperspy import utils
 from hyperspy.signals import BaseSignal, Signal1D
-from hyperspy.exceptions import VisibleDeprecationWarning
-
-
-def test_stack_warning():
-    with pytest.warns(VisibleDeprecationWarning, match="deprecated"):
-        _ = utils.stack([BaseSignal([1]), BaseSignal([2])], mmap=True)
 
 
 class TestUtilsStack:
@@ -223,4 +217,3 @@ class TestUtilsStack:
         s2.axes_manager[0].x.convert_to_non_uniform_axis()
         rs = utils.stack([s, s2], axis=0)
         assert rs.axes_manager[0].axis.size == rs.data.shape[1]
-        
