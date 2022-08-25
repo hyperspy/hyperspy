@@ -30,7 +30,6 @@ from traits.trait_errors import TraitError
 
 from hyperspy.api_nogui import _ureg
 from hyperspy.events import Events, Event
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.array_tools import (
     numba_closest_index_round,
     numba_closest_index_floor,
@@ -2114,25 +2113,6 @@ class AxesManager(t.HasTraits):
             # _update_attribute
             axis.navigate = tl.pop(0)
 
-    def set_signal_dimension(self, value):
-        """Set the dimension of the signal.
-
-        Attributes
-        ----------
-        value : int
-
-        Raises
-        ------
-        ValueError
-            If value if greater than the number of axes or is negative.
-
-        """
-        warnings.warn(("Using `set_signal_dimension` is deprecated, use "
-                       "`as_signal1D`, `as_signal2D` or `transpose` of the "
-                       "signal instance instead."),
-                      VisibleDeprecationWarning)
-        self._set_signal_dimension(value)
-
     def key_navigator(self, event):
         'Set hotkeys for controlling the indices of the navigator plot'
 
@@ -2221,13 +2201,6 @@ class AxesManager(t.HasTraits):
     def _get_navigation_axes_dicts(self):
         return [axis.get_axis_dictionary() for axis in
                 self.navigation_axes[::-1]]
-
-    def show(self):
-        msg = (
-            "The `AxesManager.show` method is deprecated and will be removed "
-            "in v2.0. Use `gui` instead.")
-        warnings.warn(msg, VisibleDeprecationWarning)
-        self.gui()
 
     def _get_dimension_str(self):
         string = "("

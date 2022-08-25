@@ -6,6 +6,16 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 
 .. towncrier-draft-entries:: |release| [UNRELEASED]
 
+
+API Removed
+===========
+
+Following deprecation cycle, the following methods and functions have been removed:
+
+- :py:meth:`AxesManager.show` is removed, use :py:meth:`~.axes.AxesManager.gui` instead.
+- :py:meth:`AxesManager.set_signal_dimension` is removed, use :py:meth:`~.signal.BaseSignal.as_signal1D`,
+  :py:meth:`~.signal.BaseSignal.as_signal2D` or :py:meth:`~.signal.BaseSignal.transpose` of the signal instance instead.
+
 .. towncrier release notes start
 
 API Removal
@@ -138,9 +148,9 @@ API changes
 - ``metadata.Signal.binned`` is replaced by an axis parameter, e. g. ``axes_manager[-1].is_binned`` (`#2652 <https://github.com/hyperspy/hyperspy/issues/2652>`_)
 - * when loading Bruker bcf, ``cutoff_at_kV=None`` (default) applies no more automatic cutoff.
   * New acceptable values ``"zealous"`` and ``"auto"`` do automatic cutoff. (`#2910 <https://github.com/hyperspy/hyperspy/issues/2910>`_)
-- Deprecate the ability to directly set ``metadata`` and ``original_metadata`` Signal 
-  attributes in favor of using :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item` 
-  and :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods or 
+- Deprecate the ability to directly set ``metadata`` and ``original_metadata`` Signal
+  attributes in favor of using :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item`
+  and :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods or
   specifying metadata when creating signals (`#2913 <https://github.com/hyperspy/hyperspy/issues/2913>`_)
 
 
