@@ -26,7 +26,7 @@ from scipy.optimize import OptimizeResult
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.exceptions import VisibleDeprecationWarning
+
 
 TOL = 1e-5
 
@@ -145,12 +145,9 @@ class TestModelFitBinnedLeastSquares:
         self.m[0].sigma.bmin = 3.5
         self.m[0].sigma.bmax = 4.9
 
-        with pytest.warns(
-            VisibleDeprecationWarning, match="`ext_bounding=True` has been deprecated",
-        ):
-            self.m.fit(optimizer="lm", ext_bounding=True)
+        self.m.fit(optimizer="lm", bounded=True)
 
-        expected = (200.0, 51.0, 4.9)
+        expected = (245.6, 51.0, 4.9)
         self._check_model_values(self.m[0], expected, rtol=TOL)
 
 
@@ -423,21 +420,6 @@ class TestFitErrorsAndWarnings:
         g.centre.value = 0.5
         g.A.value = 1000
         self.m = m
-
-    @pytest.mark.parametrize("optimizer", ["fmin", "mpfit", "leastsq"])
-    def test_deprecated_optimizers(self, optimizer):
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match=r".* has been deprecated and will be removed",
-        ):
-            self.m.fit(optimizer=optimizer)
-
-    def test_deprecated_fitter(self):
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match=r"fitter=.* has been deprecated and will be removed",
-        ):
-            self.m.fit(fitter="lm")
 
     def test_wrong_loss_function(self):
         with pytest.raises(ValueError, match="loss_function must be one of"):

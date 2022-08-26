@@ -1312,72 +1312,6 @@ class BaseModel(list):
             else dummy_context_manager
         )
 
-        # ---------------------------------------------
-        # Deprecated arguments (remove in HyperSpy 2.0)
-        # ---------------------------------------------
-
-        # Deprecate "fitter" argument
-        check_fitter = kwargs.pop("fitter", None)
-        if check_fitter:
-            warnings.warn(
-                f"`fitter='{check_fitter}'` has been deprecated and will be removed "
-                f"in HyperSpy 2.0. Please use `optimizer='{check_fitter}'` instead.",
-                VisibleDeprecationWarning,
-            )
-            optimizer = check_fitter
-
-        # Deprecate loss_function
-        if loss_function == "ml":
-            warnings.warn(
-                "`loss_function='ml'` has been deprecated and will be removed in "
-                "HyperSpy 2.0. Please use `loss_function='ML-poisson'` instead.",
-                VisibleDeprecationWarning,
-            )
-            loss_function = "ML-poisson"
-
-        # Deprecate grad=True/False
-        if isinstance(grad, bool):
-            alt_grad = "analytical" if grad else None
-            warnings.warn(
-                f"`grad={grad}` has been deprecated and will be removed in "
-                f"HyperSpy 2.0. Please use `grad={alt_grad}` instead.",
-                VisibleDeprecationWarning,
-            )
-            grad = alt_grad
-
-        # Deprecate ext_bounding
-        ext_bounding = kwargs.pop("ext_bounding", False)
-        if ext_bounding:
-            warnings.warn(
-                "`ext_bounding=True` has been deprecated and will be removed "
-                "in HyperSpy 2.0. Please use `bounded=True` instead.",
-                VisibleDeprecationWarning,
-            )
-
-        # Deprecate custom min_function
-        min_function = kwargs.pop("min_function", None)
-        if min_function:
-            warnings.warn(
-                "`min_function` has been deprecated and will be removed "
-                "in HyperSpy 2.0. Please use `loss_function` instead.",
-                VisibleDeprecationWarning,
-            )
-            loss_function = min_function
-
-        # Deprecate custom min_function
-        min_function_grad = kwargs.pop("min_function_grad", None)
-        if min_function_grad:
-            warnings.warn(
-                "`min_function_grad` has been deprecated and will be removed "
-                "in HyperSpy 2.0. Please use `grad` instead.",
-                VisibleDeprecationWarning,
-            )
-            grad = min_function_grad
-
-        # ---------------------------
-        # End of deprecated arguments
-        # ---------------------------
-
         # Supported losses and optimizers
         _supported_global = {
             "Differential Evolution": differential_evolution,
@@ -1503,7 +1437,7 @@ class BaseModel(list):
             self._set_p0()
             old_p0 = self.p0
 
-            if ext_bounding:
+            if bounded:
                 self._enable_ext_bounding()
 
             # Get weights if metadata.Signal.Noise_properties.variance
@@ -1741,7 +1675,7 @@ class BaseModel(list):
             self._calculate_chisq()
             self._set_current_degrees_of_freedom()
 
-            if ext_bounding:
+            if bounded:
                 self._disable_ext_bounding()
 
         if np.any(old_p0 != self.p0):

@@ -17,32 +17,42 @@ Following deprecation cycle, the following methods and functions have been remov
   :py:meth:`~.signal.BaseSignal.as_signal2D` or :py:meth:`~.signal.BaseSignal.transpose` of the signal instance instead.
 - The arguments ``'mmap_dir'`` and ``'load_to_memory'`` of the :py:func:`~.io.load` function have been removed, use the ``lazy`` argument instead.
 - The ``iterpath`` default value have changed from ``'flyback'`` to ``'serpentine'``.
-- The list of possible value for the ``optimizer`` argument of the :py:meth:`~.model.BaseModel.fit` and :py:meth:`~.model.BaseModel.multifit` has been changed according to the following table:
+- Changes in the arguments of the :py:meth:`~.model.BaseModel.fit` and :py:meth:`~.model.BaseModel.multifit` methods:
 
-  .. list-table:: Renaming of the ``optimizer`` argument
-     :widths: 50 50
-     :header-rows: 1
+  - The ``fitter`` argument has been renamed to ``optimizer``.
+  - The list of possible values for the ``optimizer`` argument has been renamed according to the following table:
 
-     * - hyperspy < 2.0
-       - hyperspy >= 2.0
-     * - fmin
-       - Nelder-Mead
-     * - fmin_cg
-       - CG
-     * - fmin_ncg
-       - Newton-CG
-     * - fmin_bfgs
-       - Newton-BFGS
-     * - fmin_l_bfgs_b
-       - L-BFGS-B
-     * - fmin_tnc
-       - TNC
-     * - fmin_powell
-       - Powell
-     * - mpfit
-       - lm
-     * - leastsq
-       - lm
+    .. list-table:: Renaming of the ``optimizer`` argument
+       :widths: 50 50
+       :header-rows: 1
+
+       * - hyperspy < 2.0
+         - hyperspy >= 2.0
+       * - fmin
+         - Nelder-Mead
+       * - fmin_cg
+         - CG
+       * - fmin_ncg
+         - Newton-CG
+       * - fmin_bfgs
+         - Newton-BFGS
+       * - fmin_l_bfgs_b
+         - L-BFGS-B
+       * - fmin_tnc
+         - TNC
+       * - fmin_powell
+         - Powell
+       * - mpfit
+         - lm
+       * - leastsq
+         - lm
+
+    - ``loss_function="ml"`` has been renamed to ``loss_function="ML-poisson"``.
+    - ``grad=True`` has been changed to ``grad="analytical"``.
+    - The ``ext_bounding`` argument has been renamed to ``bounded``.
+    - The ``min_function`` argument has been removed, use the ``loss_function`` argument instead.
+    - The ``min_function_grad`` argument has been removed, use the ``grad`` argument instead.
+
 
 .. towncrier release notes start
 
