@@ -517,14 +517,12 @@ class TestMultifit:
         m[0].A.value = 100
 
     def test_fetch_only_fixed_false(self):
-        # HyperSpy 2.0: remove setting iterpath='serpentine'
-        self.m.multifit(fetch_only_fixed=False, iterpath="serpentine", optimizer="trf")
+        self.m.multifit(fetch_only_fixed=False, optimizer="trf")
         np.testing.assert_array_almost_equal(self.m[0].r.map["values"], [3.0, 100.0])
         np.testing.assert_array_almost_equal(self.m[0].A.map["values"], [2.0, 2.0])
 
     def test_fetch_only_fixed_true(self):
-        # HyperSpy 2.0: remove setting iterpath='serpentine'
-        self.m.multifit(fetch_only_fixed=True, iterpath="serpentine", optimizer="trf")
+        self.m.multifit(fetch_only_fixed=True, optimizer="trf")
         np.testing.assert_array_almost_equal(self.m[0].r.map["values"], [3.0, 3.0])
         np.testing.assert_array_almost_equal(self.m[0].A.map["values"], [2.0, 2.0])
 
@@ -533,8 +531,7 @@ class TestMultifit:
         rs = self.m[0].r.as_signal(field="values")
         np.testing.assert_allclose(rs.data, np.array([2.0, 100.0]))
         assert rs.get_noise_variance() is None
-        # HyperSpy 2.0: remove setting iterpath='serpentine'
-        self.m.multifit(fetch_only_fixed=True, iterpath="serpentine")
+        self.m.multifit(fetch_only_fixed=True)
         rs = self.m[0].r.as_signal(field="values")
         assert rs.get_noise_variance() is not None
         assert isinstance(rs.get_noise_variance(), hs.signals.Signal1D)
@@ -546,27 +543,13 @@ class TestMultifit:
         m.signal.data *= 2.0
         m[0].A.value = 2.0
         m[0].A.bmin = 3.0
-        # HyperSpy 2.0: remove setting iterpath='serpentine'
-        m.multifit(optimizer=optimizer, bounded=True, iterpath="serpentine")
+        m.multifit(optimizer=optimizer, bounded=True)
         np.testing.assert_allclose(self.m[0].r.map["values"], [3.0, 3.0], rtol=TOL)
         np.testing.assert_allclose(self.m[0].A.map["values"], [4.0, 4.0], rtol=TOL)
 
-    @pytest.mark.parametrize("iterpath", ["flyback", "serpentine"])
+    @pytest.mark.parametrize("iterpath", [None, "flyback", "serpentine"])
     def test_iterpaths(self, iterpath):
         self.m.multifit(iterpath=iterpath)
-
-    def test_iterpath_none(self):
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match="default will change from 'flyback' to 'serpentine'",
-        ):
-            self.m.multifit()  # iterpath = None by default
-
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match="default will change from 'flyback' to 'serpentine'",
-        ):
-            self.m.multifit(iterpath=None)
 
 
 @lazifyTestClass
@@ -590,8 +573,7 @@ class TestMultiFitSignalVariance:
         self.var = (variance + std ** 2).data
 
     def test_std1_red_chisq(self):
-        # HyperSpy 2.0: remove setting iterpath='serpentine'
-        self.m.multifit(iterpath="serpentine")
+        self.m.multifit()
         np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109, rtol=TOL)
         np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727, rtol=TOL)
 

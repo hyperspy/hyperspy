@@ -3730,9 +3730,6 @@ class BaseSignal(FancySlicing,
         """
         original_index = self.axes_manager.indices
 
-        if iterpath is None:
-            _logger.warning('The default iterpath will change in HyperSpy 2.0.')
-
         with self.axes_manager.switch_iterpath(iterpath):
             self.axes_manager.indices = tuple(
                 [0 for _ in self.axes_manager.navigation_axes]

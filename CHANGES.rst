@@ -16,6 +16,7 @@ Following deprecation cycle, the following methods and functions have been remov
 - :py:meth:`AxesManager.set_signal_dimension` is removed, use :py:meth:`~.signal.BaseSignal.as_signal1D`,
   :py:meth:`~.signal.BaseSignal.as_signal2D` or :py:meth:`~.signal.BaseSignal.transpose` of the signal instance instead.
 - The arguments ``'mmap_dir'`` and ``'load_to_memory'`` of the :py:func:`~.io.load` function have been removed, use the ``lazy`` argument instead.
+- The ``iterpath`` default value have changed from ``'flyback'`` to ``'serpentine'``.
 
 .. towncrier release notes start
 

@@ -333,7 +333,7 @@ class TestPolynomial:
         s_2d.data += 100 * np.array([np.random.randint(50, size=10)]*100).T
         m_2d = s_2d.create_model()
         m_2d.append(hs.model.components1D.Polynomial(order=1, legacy=False))
-        m_2d.multifit(iterpath='serpentine', grad='analytical')
+        m_2d.multifit(grad='analytical')
         np.testing.assert_allclose(m_2d.red_chisq.data.sum(), 0.0, atol=1E-7)
 
     @pytest.mark.parametrize(("order"), (2, 12))

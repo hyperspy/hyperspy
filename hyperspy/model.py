@@ -113,7 +113,7 @@ def _twinned_parameter(parameter):
     construct a mapping between the twinned parameter and the parameter
     component to which the (non-free) twinned parameter component value needs
     to be added.
-    
+
     Returns
     -------
     parameter when there is a twin and this twin is free
@@ -1842,9 +1842,7 @@ class BaseModel(list):
                 manner instead of beginning each new row at the first index.
                 Works for n-dimensional navigation space, not just 2D.
             If None:
-                Currently ``None -> "flyback"``. The default argument will use
-                the ``"flyback"`` iterpath, but shows a warning that this will
-                change to ``"serpentine"`` in version 2.0.
+                Use the value of :py:attr:`~axes.AxesManager.iterpath`.
         **kwargs : keyword arguments
             Any extra keyword argument will be passed to the fit method.
             See the documentation for :py:meth:`~hyperspy.model.BaseModel.fit`
@@ -1883,20 +1881,6 @@ class BaseModel(list):
         linear_fitting = kwargs.get("optimizer", "") in [
             "lstsq", "ridge_regression"
             ]
-        if iterpath is None:
-            if self.axes_manager.iterpath == "flyback" and not linear_fitting:
-                # flyback is set by default in axes_manager.iterpath
-                # on signal creation
-                warnings.warn(
-                    "The `iterpath` default will change from 'flyback' to "
-                    "'serpentine' in HyperSpy version 2.0. Change the "
-                    "'iterpath' argument to other than None to suppress "
-                    "this warning.",
-                    VisibleDeprecationWarning,
-                )
-            # otherwise use whatever is set at m.axes_manager.iterpath
-        else:
-            self.axes_manager.iterpath = iterpath
 
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager._get_iterpath_size(masked_elements)
@@ -1999,33 +1983,34 @@ class BaseModel(list):
         with self.axes_manager.events.indices_changed.suppress_callback(
             self.fetch_stored_values
         ):
-            if interactive_plot:
-                outer = dummy_context_manager
-                inner = self.suspend_update
-            else:
-                outer = self.suspend_update
-                inner = dummy_context_manager
+            with self.axes_manager.switch_iterpath(iterpath):
+                if interactive_plot:
+                    outer = dummy_context_manager
+                    inner = self.suspend_update
+                else:
+                    outer = self.suspend_update
+                    inner = dummy_context_manager
 
-            with outer(update_on_resume=True):
-                with progressbar(
-                    total=maxval, disable=not show_progressbar, leave=True
-                ) as pbar:
-                    for index in self.axes_manager:
-                        with inner(update_on_resume=True):
-                            if mask is None or not mask[index[::-1]]:
-                                # first check if model has set initial values in
-                                # parameters.map['values'][indices],
-                                # otherwise use values from previous fit
-                                self.fetch_stored_values(only_fixed=fetch_only_fixed)
-                                self.fit(**kwargs)
-                                i += 1
-                                pbar.update(1)
+                with outer(update_on_resume=True):
+                    with progressbar(
+                        total=maxval, disable=not show_progressbar, leave=True
+                    ) as pbar:
+                        for index in self.axes_manager:
+                            with inner(update_on_resume=True):
+                                if mask is None or not mask[index[::-1]]:
+                                    # first check if model has set initial values in
+                                    # parameters.map['values'][indices],
+                                    # otherwise use values from previous fit
+                                    self.fetch_stored_values(only_fixed=fetch_only_fixed)
+                                    self.fit(**kwargs)
+                                    i += 1
+                                    pbar.update(1)
 
-                            if autosave and i % autosave_every == 0:
-                                self.save_parameters2file(autosave_fn)
-            # Trigger the indices_changed event to update to current indices,
-            # since the callback was suppressed
-            self.axes_manager.events.indices_changed.trigger(self.axes_manager)
+                                if autosave and i % autosave_every == 0:
+                                    self.save_parameters2file(autosave_fn)
+                # Trigger the indices_changed event to update to current indices,
+                # since the callback was suppressed
+                self.axes_manager.events.indices_changed.trigger(self.axes_manager)
 
         if autosave is True:
             _logger.info(f"Deleting temporary file: {autosave_fn}.npz")
