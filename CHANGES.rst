@@ -58,6 +58,8 @@ Following deprecation cycle, the following methods and functions have been remov
   - :py:meth:`~.model.BaseModel.set_boundaries`
   - :py:meth:`~.model.BaseModel.set_mpfit_parameters_info`
 
+- The arguments ``parallel`` and ``max_workers`` have been removed from the :py:meth:`~.model.BaseModel.as_signal` methods.
+
 .. towncrier release notes start
 
 API Removal

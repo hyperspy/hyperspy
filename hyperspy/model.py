@@ -48,7 +48,6 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.events import Event, Events, EventSuppressor
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.external.progressbar import progressbar
@@ -489,12 +488,6 @@ class BaseModel(list):
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
-
-        for k in [k for k in ["parallel", "max_workers"] if k in kwargs]:
-            warnings.warn(
-                f"`{k}` argument has been deprecated and will be removed in HyperSpy 2.0",
-                VisibleDeprecationWarning,
-            )
 
         if out is None:
             data = np.empty(self.signal.data.shape, dtype='float')
