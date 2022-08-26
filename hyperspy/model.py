@@ -81,32 +81,6 @@ _COMPONENTS = ALL_EXTENSIONS["components1D"]
 _COMPONENTS.update(ALL_EXTENSIONS["components1D"])
 
 
-def _check_deprecated_optimizer(optimizer):
-    """Can be removed in HyperSpy 2.0"""
-    deprecated_optimizer_dict = {
-        "fmin": "Nelder-Mead",
-        "fmin_cg": "CG",
-        "fmin_ncg": "Newton-CG",
-        "fmin_bfgs": "BFGS",
-        "fmin_l_bfgs_b": "L-BFGS-B",
-        "fmin_tnc": "TNC",
-        "fmin_powell": "Powell",
-        "mpfit": "lm",
-        "leastsq": "lm",
-    }
-    check_optimizer = deprecated_optimizer_dict.get(optimizer, None)
-
-    if check_optimizer:
-        warnings.warn(
-            f"`{optimizer}` has been deprecated and will be removed "
-            f"in HyperSpy 2.0. Please use `{check_optimizer}` instead.",
-            VisibleDeprecationWarning,
-        )
-        optimizer = check_optimizer
-
-    return optimizer
-
-
 def _twinned_parameter(parameter):
     """
     Used in linear fitting. Since twinned parameters are not free, we need to
@@ -1351,9 +1325,6 @@ class BaseModel(list):
                 VisibleDeprecationWarning,
             )
             optimizer = check_fitter
-
-        # Deprecated optimization algorithms
-        optimizer = _check_deprecated_optimizer(optimizer)
 
         # Deprecate loss_function
         if loss_function == "ml":
