@@ -7,7 +7,7 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 .. towncrier-draft-entries:: |release| [UNRELEASED]
 
 
-API Removed
+API Removal
 ===========
 
 Following deprecation cycle, the following methods and functions have been removed:
@@ -53,6 +53,10 @@ Following deprecation cycle, the following methods and functions have been remov
     - The ``min_function`` argument has been removed, use the ``loss_function`` argument instead.
     - The ``min_function_grad`` argument has been removed, use the ``grad`` argument instead.
 
+- The following :py:class:`~.model.BaseModel` methods have been removed:
+
+  - :py:meth:`~.model.BaseModel.set_boundaries`
+  - :py:meth:`~.model.BaseModel.set_mpfit_parameters_info`
 
 .. towncrier release notes start
 
@@ -515,7 +519,6 @@ API changes
 
   * :py:meth:`~.model.BaseModel.set_boundaries`
   * :py:meth:`~.model.BaseModel.set_mpfit_parameters_info`
-  * :py:meth:`~.model.BaseModel.set_boundaries`
 
 * The ``comp_label`` keyword of the machine learning plotting functions
   has been renamed to ``title``.

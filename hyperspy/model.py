@@ -692,14 +692,6 @@ class BaseModel(list):
                            if parameter._number_of_elements == 1
                            else self.p0 + parameter.value)
 
-    def set_boundaries(self, bounded=True):
-        warnings.warn(
-            "`set_boundaries()` has been deprecated and "
-            "will be made private in HyperSpy 2.0.",
-            VisibleDeprecationWarning,
-        )
-        self._set_boundaries(bounded=bounded)
-
     def _set_boundaries(self, bounded=True):
         """Generate the boundary list.
 
@@ -736,14 +728,6 @@ class BaseModel(list):
             (a if a is not None else -np.inf, b if b is not None else np.inf)
             for a, b in self.free_parameters_boundaries
         )
-
-    def set_mpfit_parameters_info(self, bounded=True):
-        warnings.warn(
-            "`set_mpfit_parameters_info()` has been deprecated and "
-            "will be made private in HyperSpy 2.0.",
-            VisibleDeprecationWarning,
-        )
-        self._set_mpfit_parameters_info(bounded=bounded)
 
     def _set_mpfit_parameters_info(self, bounded=True):
         """Generate the boundary list for mpfit.

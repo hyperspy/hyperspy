@@ -218,11 +218,7 @@ class TestModelSettingPZero:
         m.append(hs.model.components1D.Gaussian())
         m[-1].active = False
 
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match=r".* has been deprecated and will be made private",
-        ):
-            m.set_boundaries()
+        m._set_boundaries()
 
         assert m.free_parameters_boundaries == [(0.1, 0.11), (0.2, 0.21), (0.3, 0.31)]
 
@@ -234,11 +230,7 @@ class TestModelSettingPZero:
         m.append(hs.model.components1D.Gaussian())
         m[-1].active = False
 
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match=r".* has been deprecated and will be made private",
-        ):
-            m.set_mpfit_parameters_info()
+        m._set_mpfit_parameters_info()
 
         assert m.mpfit_parinfo == [
             {"limited": [True, False], "limits": [0.1, 0]},
@@ -836,17 +828,6 @@ class TestAdjustPosition:
         assert len(self.m._position_widgets) == 0
 
 
-def test_deprecated_private_functions():
-    s = hs.signals.Signal1D(np.zeros(1))
-    m = s.create_model()
-
-    with pytest.warns(VisibleDeprecationWarning, match=r".* has been deprecated"):
-        m.set_boundaries()
-
-    with pytest.warns(VisibleDeprecationWarning, match=r".* has been deprecated"):
-        m.set_mpfit_parameters_info()
-
-
 def generate():
     for i in range(3):
         yield (i,i)
@@ -907,4 +888,3 @@ class TestSignalRange:
         m = self.m
         roi = hs.roi.SpanROI(105, 110)
         assert m._parse_signal_range_values(roi) == (5, 10)
-
