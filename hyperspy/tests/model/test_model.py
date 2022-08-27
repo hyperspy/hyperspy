@@ -23,10 +23,9 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.misc.utils import slugify
-from hyperspy.axes import GeneratorLen
+
 
 class TestModelJacobians:
     def setup_method(self, method):
@@ -819,39 +818,6 @@ class TestAdjustPosition:
         assert len(list(self.m._position_widgets.values())[0]) == 2
         self.m.disable_adjust_position()
         assert len(self.m._position_widgets) == 0
-
-
-def generate():
-    for i in range(3):
-        yield (i,i)
-
-
-class Test_multifit_iterpath():
-    def setup_method(self, method):
-        data = np.ones((3, 3, 10))
-        s = hs.signals.Signal1D(data)
-        ax = s.axes_manager
-        m = s.create_model()
-        G = hs.model.components1D.Gaussian()
-        m.append(G)
-        self.m = m
-        self.ax = ax
-
-    def test_custom_iterpath(self):
-        indices = np.array([(0,0), (1,1), (2,2)])
-        self.ax.iterpath = indices
-        self.m.multifit(iterpath=indices)
-        set_indices = np.array(np.where(self.m[0].A.map['is_set'])).T
-        np.testing.assert_array_equal(set_indices, indices[:,::-1])
-
-    def test_model_generator(self):
-        gen = generate()
-        self.m.axes_manager.iterpath = gen
-        self.m.multifit()
-
-    def test_model_GeneratorLen(self):
-        gen = GeneratorLen(generate(), 3)
-        self.m.axes_manager.iterpath = gen
 
 
 class TestSignalRange:

@@ -25,6 +25,7 @@ import scipy
 from scipy.optimize import OptimizeResult
 
 import hyperspy.api as hs
+from hyperspy.axes import GeneratorLen
 from hyperspy.decorators import lazifyTestClass
 
 
@@ -532,6 +533,47 @@ class TestMultifit:
     @pytest.mark.parametrize("iterpath", [None, "flyback", "serpentine"])
     def test_iterpaths(self, iterpath):
         self.m.multifit(iterpath=iterpath)
+
+    def test_interactive_plot(self):
+        m = self.m
+        m.multifit(interactive_plot=True)
+
+    def test_autosave(self):
+        m = self.m
+        m.multifit(autosave=True, autosave_every=1)
+
+
+def _generate():
+    for i in range(3):
+        yield (i,i)
+
+
+class Test_multifit_iterpath():
+    def setup_method(self, method):
+        data = np.ones((3, 3, 10))
+        s = hs.signals.Signal1D(data)
+        ax = s.axes_manager
+        m = s.create_model()
+        G = hs.model.components1D.Gaussian()
+        m.append(G)
+        self.m = m
+        self.ax = ax
+
+    def test_custom_iterpath(self):
+        indices = np.array([(0,0), (1,1), (2,2)])
+        self.ax.iterpath = indices
+        self.m.multifit(iterpath=indices)
+        set_indices = np.array(np.where(self.m[0].A.map['is_set'])).T
+        np.testing.assert_array_equal(set_indices, indices[:,::-1])
+
+    def test_model_generator(self):
+        gen = _generate()
+        self.m.axes_manager.iterpath = gen
+        self.m.multifit()
+
+    def test_model_GeneratorLen(self):
+        gen = GeneratorLen(_generate(), 3)
+        self.m.axes_manager.iterpath = gen
 
 
 @lazifyTestClass
