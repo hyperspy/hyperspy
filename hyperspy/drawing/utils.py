@@ -1400,16 +1400,6 @@ def plot_spectra(
 
     """
     from hyperspy.signal import BaseSignal
-    if 'line_style' in kwargs.keys():
-        from hyperspy.misc.utils import deprecation_warning
-        deprecation_warning("`line_style` has been renamed to `linestyle` and "
-                            "will be removed in HyperSpy 2.0.")
-        if linestyle is None:
-            linestyle = kwargs.pop('line_style')
-        else:
-            raise ValueError("Both argument `line_style` and `linestyle` have "
-                             "been provided and only one should be used: use "
-                             "`linestyle` only.")
 
     def _reverse_legend(ax_, legend_loc_):
         """
