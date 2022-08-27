@@ -641,13 +641,6 @@ def test_centering_error():
     with pytest.raises(ValueError, match="'centre' must be one of"):
         s.decomposition(centre="random")
 
-    for centre in ["variables", "trials"]:
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match="centre='{}' has been deprecated".format(centre),
-        ):
-            s.decomposition(centre=centre)
-
 
 @pytest.mark.parametrize('mask_as_array', [True, False])
 def test_decomposition_navigation_mask(mask_as_array):

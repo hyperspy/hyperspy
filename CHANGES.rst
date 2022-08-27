@@ -43,7 +43,20 @@ Machine Learning
 
 - The argument ``learning_rate`` of the ``ORPCA`` algorithm has been renamed to ``subspace_learning_rate``.
 - The argument ``momentum`` of the ``ORPCA`` algorithm has been renamed to ``subspace_momentum``.
-       
+- The list of possible values for the ``centre`` keyword argument of the :py:meth:`~.learn.mva.decomposition` method
+  when using the ``SVD`` algorithm has been changed according to the following table:
+
+  .. list-table:: Change of the ``centre`` argument
+     :widths: 50 50
+     :header-rows: 1
+
+     * - hyperspy < 2.0
+       - hyperspy >= 2.0
+     * - trials
+       - navigation
+     * - variables
+       - signal
+
 Axes
 ----
 
