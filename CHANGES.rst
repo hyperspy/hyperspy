@@ -41,6 +41,9 @@ Machine Learning
      * - RPCA_GoDec
        - RPCA
 
+- The argument ``learning_rate`` of the ``ORPCA`` algorithm has been renamed to ``subspace_learning_rate``.
+- The argument ``momentum`` of the ``ORPCA`` algorithm has been renamed to ``subspace_momentum``.
+       
 Axes
 ----
 
