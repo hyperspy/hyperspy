@@ -71,7 +71,10 @@ steps:
 
 - bash: |
     source activate $ENV_NAME
-    pip install https://github.com/hyperspy/rosettasciio/archive/refs/heads/main.zip#egg=rosettasciio[all]
+    # don't install pyusid, because pip install pyusid fails
+    #pip install https://github.com/hyperspy/rosettasciio/archive/refs/heads/main.zip#egg=rosettasciio[all]
+    pip install https://github.com/hyperspy/rosettasciio/archive/refs/heads/main.zip#egg=rosettasciio[blockfile,mrcz,blockfile,zspy]
+
     conda list
   displayName: Install package (rosettasciio)
 
