@@ -1680,7 +1680,9 @@ def plot_histograms(signal_list,
                         legend=legend, fig=fig)
 
 
-def picker_kwargs(value, kwargs={}):
+def picker_kwargs(value, kwargs=None):
+    if kwargs is None:
+        kwargs = {}
     # picker is deprecated in favor of pickradius
     if Version(mpl.__version__) >= Version("3.3.0"):
         kwargs.update({'pickradius': value, 'picker':True})
