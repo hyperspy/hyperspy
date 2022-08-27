@@ -133,6 +133,7 @@ Data Visualisation
 
 - The :py:meth:`~._signals.signal2d.Signal2D.plot` keyword argument
   ``saturated_pixels`` is removed, use ``vmin`` and/or ``vmax`` instead.
+- The ``get_complex`` property of :py:class:`~.drawing.signal1d.Signal1DLine` is removed.
 
 
 .. towncrier release notes start
