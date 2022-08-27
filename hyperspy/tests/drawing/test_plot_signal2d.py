@@ -229,8 +229,8 @@ class _TestIteratedSignal:
         return axes_manager
 
 
-class TestPlotNonLinearAxis:   
-    
+class TestPlotNonLinearAxis:
+
     def setup_method(self):
         dict0 = {'axis': np.arange(10)**0.5, 'name':'Non uniform 0', 'units':'A',
                  'navigate':True}
@@ -592,6 +592,24 @@ def test_plot_autoscale_data_changed(autoscale):
         np.testing.assert_allclose(imf._vmax, _vmax)
 
 
+def test_plot_vmin_vmax_error():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    with pytest.raises(TypeError):
+        s.plot(vmin=[0])
+
+    with pytest.raises(TypeError):
+        s.plot(vmin=np.array([0]))
+
+    with pytest.raises(TypeError):
+        s.plot(vmin=(0, ))
+
+    with pytest.raises(TypeError):
+        s.plot(vmax=[100])
+
+    with pytest.raises(TypeError):
+        s.plot(vmin=[0], vmax=[100])
+
+
 @pytest.mark.parametrize("axes_decor", ['all', 'off'])
 @pytest.mark.parametrize("label", ['auto', ['b','g']])
 @pytest.mark.parametrize("colors", ['auto', ['b','g']])
@@ -661,7 +679,7 @@ def test_plot_images_overlay_figsize():
     hs.plot.plot_images([s, s], overlay=True, scalebar='all', axes_decor='off')
     f = plt.gcf()
     np.testing.assert_allclose((f.get_figwidth(), f.get_figheight()), (6.4, 3.2))
-    
+
     # aspect_ratio is 0.5
     s = hs.signals.Signal2D(np.random.random((20, 10)))
     hs.plot.plot_images([s, s], overlay=True, scalebar='all', axes_decor='off')
@@ -672,7 +690,7 @@ def test_plot_images_overlay_figsize():
 def test_plot_images_overlay_vmin_warning(caplog):
     s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     with caplog.at_level(logging.WARNING):
-        hs.plot.plot_images([s, s], overlay=True, vmin=0)  
+        hs.plot.plot_images([s, s], overlay=True, vmin=0)
 
     assert "`vmin` is ignored when overlaying images." in caplog.text
 

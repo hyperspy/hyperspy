@@ -128,6 +128,12 @@ migration of the IO plugins to `RosettaSciIO
   and ``metadata_keys`` keywords were removed. Use ``dataset_key``, ``dataset_path``
   and ``metadata_key`` instead.
 
+Data Visualisation
+------------------
+
+- The :py:meth:`~._signals.signal2d.Signal2D.plot` keyword argument
+  ``saturated_pixels`` is removed, use ``vmin`` and/or ``vmax`` instead.
+
 
 .. towncrier release notes start
 
