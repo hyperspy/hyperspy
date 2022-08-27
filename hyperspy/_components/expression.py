@@ -19,7 +19,6 @@
 from functools import wraps
 import numpy as np
 import sympy
-from sympy.utilities.lambdify import lambdify
 
 import warnings
 
@@ -287,7 +286,7 @@ class Expression(Component):
         parameters.sort(key=lambda x: x.name)  # to have a reliable order
         # Create compiled function
         variables = [x, y] if self._is2D else [x]
-        self._f = lambdify(variables + parameters, eval_expr,
+        self._f = sympy.utilities.lambdify(variables + parameters, eval_expr,
                            modules=module, dummify=False)
 
         if self._is2D:
@@ -307,7 +306,7 @@ class Expression(Component):
                 for p in parameters:
                     grad_expr = sympy.diff(eval_expr, p)
                     name = self._rename_pars.get(p.name, p.name)
-                    f_grad = lambdify(variables + parameters,
+                    f_grad = sympy.utilities.lambdify(variables + parameters,
                                       grad_expr.evalf(),
                                       modules=module,
                                       dummify=False)
@@ -397,7 +396,7 @@ class Expression(Component):
             element_names = \
                 set([str(p) for p in element.free_symbols]) - set(variables)
             free_pseudo_components[para.name] = {
-                'function': lambdify(variables + tuple(element_names),
+                'function': sympy.utilities.lambdify(variables + tuple(element_names),
                                      element, modules=self._module),
                 'parameters': [getattr(self, self._rename_pars.get(e, e))
                                for e in element_names]
@@ -408,7 +407,7 @@ class Expression(Component):
             set(variables)
 
         fixed_pseudo_components = {
-            'function': lambdify(variables + tuple(element_names),
+            'function': sympy.utilities.lambdify(variables + tuple(element_names),
                                  remaining_elements, modules=self._module),
             'parameters': [getattr(self, self._rename_pars.get(e, e))
                            for e in element_names]

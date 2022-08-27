@@ -30,17 +30,13 @@ def get_ipython():
     """
     if is_it_running_from_ipython is False:
         return None
-    from IPython import __version__ as ipythonversion
-    ipy_version = Version(ipythonversion)
-    if ipy_version < Version("0.11"):
-        from IPython import ipapi
-        ip = ipapi.get()
-    elif ipy_version < Version("1.0"):
-        from IPython.core import ipapi
-        ip = ipapi.get()
+    import IPython
+    if Version(IPython.__version__) < Version("0.11"):
+        ip = IPython.ipapi.get()
+    elif Version(IPython.__version__) < Version("1.0"):
+        ip = IPython.core.ipapi.get()
     else:
-        from IPython import get_ipython
-        ip = get_ipython()
+        ip = IPython.get_ipython()
     return ip
 
 
