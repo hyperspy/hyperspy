@@ -519,6 +519,16 @@ def test_plot_eds_lines():
     return s._plot.signal_plot.figure
 
 
+@pytest.mark.parametrize("norm", [None, "log", "auto", "linear"])
+def test_plot_eds_lines_norm(norm):
+    a = EDS_TEM_Spectrum()
+    s = stack([a, a * 5])
+    # When norm is None, don't specify (use default)
+    # otherwise use specify value
+    kwargs = {"norm":norm} if norm else {}
+    s.plot(True, **kwargs)
+
+
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl,
     filename='test_plot_eds_lines.png')
