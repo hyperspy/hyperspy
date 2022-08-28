@@ -154,6 +154,8 @@ Signal
      * - freedman
        - fd
 
+- The ``integrate_in_range`` method is removed, use :py:class:`~.roi.SpanRoi`
+  followed by :py:meth:`~.signal.BaseSignal.integrate1D` instead.
 
 .. towncrier release notes start
 

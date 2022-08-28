@@ -45,7 +45,7 @@ from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.signal_tools import BackgroundRemoval
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.signal_tools import IntegrateArea, _get_background_estimator
+from hyperspy.signal_tools import _get_background_estimator
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC, SPIKES_REMOVAL_TOOL_DOCSTRING
 from hyperspy.docstrings.signal import (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
@@ -799,76 +799,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                expand=expand,
                                show_progressbar=show_progressbar)
     align1D.__doc__ %= (CROP_PARAMETER_DOC, SHOW_PROGRESSBAR_ARG)
-
-    def integrate_in_range(self, signal_range='interactive',
-                           display=True, toolkit=None):
-        """Sums the spectrum over an energy range, giving the integrated
-        area.
-        The energy range can either be selected through a GUI or the command
-        line.
-
-        Parameters
-        ----------
-        signal_range : a tuple of this form (l, r) or "interactive"
-            l and r are the left and right limits of the range. They can be
-            numbers or None, where None indicates the extremes of the interval.
-            If l and r are floats the `signal_range` will be in axis units (for
-            example eV). If l and r are integers the `signal_range` will be in
-            index units. When `signal_range` is "interactive" (default) the
-            range is selected using a GUI. Note that ROIs can be used
-            in place of a tuple.
-
-        Returns
-        --------
-        integrated_spectrum : `BaseSignal` subclass
-
-        See Also
-        --------
-        integrate_simpson
-
-        Examples
-        --------
-        Using the GUI
-
-        >>> s = hs.signals.Signal1D(range(1000))
-        >>> s.integrate_in_range() #doctest: +SKIP
-
-        Using the CLI
-
-        >>> s_int = s.integrate_in_range(signal_range=(560,None))
-
-        Selecting a range in the axis units, by specifying the
-        signal range with floats.
-
-        >>> s_int = s.integrate_in_range(signal_range=(560.,590.))
-
-        Selecting a range using the index, by specifying the
-        signal range with integers.
-
-        >>> s_int = s.integrate_in_range(signal_range=(100,120))
-        """
-        from hyperspy.misc.utils import deprecation_warning
-        msg = (
-            "The `Signal1D.integrate_in_range` method is deprecated and will "
-            "be removed in v2.0. Use a `roi.SpanRoi` followed by `integrate1D` "
-            "instead.")
-        deprecation_warning(msg)
-
-        if signal_range == 'interactive':  # pragma: no cover
-            self_copy = self.deepcopy()
-            ia = IntegrateArea(self_copy)
-            ia.gui(display=display, toolkit=toolkit)
-            integrated_signal1D = self_copy
-        else:
-            integrated_signal1D = self._integrate_in_range_commandline(
-                signal_range)
-        return integrated_signal1D
-
-    def _integrate_in_range_commandline(self, signal_range):
-        e1 = signal_range[0]
-        e2 = signal_range[1]
-        integrated_signal1D = self.isig[e1:e2].integrate1D(-1)
-        return integrated_signal1D
 
     def calibrate(self, display=True, toolkit=None):
         """
