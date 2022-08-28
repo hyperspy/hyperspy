@@ -21,7 +21,7 @@ import logging
 
 import numpy as np
 
-from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
+from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 from hyperspy.defaults_parser import preferences
 
 from hyperspy.external.matplotlib.widgets import SpanSelector

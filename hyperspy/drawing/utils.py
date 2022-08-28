@@ -322,7 +322,7 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 
     """
 
-    import hyperspy.signal
+    from hyperspy.signal import BaseSignal
 
     if navigator_list:
         if not (len(signal_list) == len(navigator_list)):
@@ -339,7 +339,7 @@ def plot_signals(signal_list, sync=True, navigator="auto",
             navigator_list = []
         if navigator is None:
             navigator_list.extend([None] * len(signal_list))
-        elif isinstance(navigator, hyperspy.signal.BaseSignal):
+        elif isinstance(navigator, BaseSignal):
             navigator_list.append(navigator)
             navigator_list.extend([None] * (len(signal_list) - 1))
         elif navigator == "slider":
@@ -1399,7 +1399,7 @@ def plot_spectra(
         An array is returned when `style` is 'mosaic'.
 
     """
-    import hyperspy.signal
+    from hyperspy.signal import BaseSignal
     if 'line_style' in kwargs.keys():
         from hyperspy.misc.utils import deprecation_warning
         deprecation_warning("`line_style` has been renamed to `linestyle` and "
@@ -1501,14 +1501,14 @@ def plot_spectra(
             ax.set_ylabel('Intensity')
             if legend is not None:
                 ax.set_title(legend)
-            if not isinstance(spectra, hyperspy.signal.BaseSignal):
+            if not isinstance(spectra, BaseSignal):
                 _set_spectrum_xlabel(spectrum, ax)
-        if isinstance(spectra, hyperspy.signal.BaseSignal):
+        if isinstance(spectra, BaseSignal):
             _set_spectrum_xlabel(spectrum, ax)
         fig.tight_layout()
 
     elif style == 'heatmap':
-        if not isinstance(spectra, hyperspy.signal.BaseSignal):
+        if not isinstance(spectra, BaseSignal):
             import hyperspy.utils
             spectra = [_transpose_if_required(spectrum, 1) for spectrum in
                        spectra]
@@ -1680,7 +1680,9 @@ def plot_histograms(signal_list,
                         legend=legend, fig=fig)
 
 
-def picker_kwargs(value, kwargs={}):
+def picker_kwargs(value, kwargs=None):
+    if kwargs is None:
+        kwargs = {}
     # picker is deprecated in favor of pickradius
     if Version(mpl.__version__) >= Version("3.3.0"):
         kwargs.update({'pickradius': value, 'picker':True})
@@ -1688,4 +1690,3 @@ def picker_kwargs(value, kwargs={}):
         kwargs['picker'] = value
 
     return kwargs
-    

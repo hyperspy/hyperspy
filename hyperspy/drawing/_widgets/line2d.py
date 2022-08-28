@@ -21,7 +21,7 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 
-from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
+from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 from hyperspy.drawing.utils import picker_kwargs
 
 

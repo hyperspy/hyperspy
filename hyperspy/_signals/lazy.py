@@ -22,9 +22,8 @@ import os
 import warnings
 
 import numpy as np
-import dask.array as da
 import dask
-from dask.diagnostics import ProgressBar
+import dask.array as da
 from itertools import product
 from packaging.version import Version
 
@@ -258,7 +257,7 @@ class LazySignal(BaseSignal):
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
-        cm = ProgressBar if show_progressbar else dummy_context_manager
+        cm = dask.diagnostics.ProgressBar if show_progressbar else dummy_context_manager
 
         with cm():
             da = self.data
@@ -1055,8 +1054,6 @@ class LazySignal(BaseSignal):
                     if signal_mask is None
                     else to_array(signal_mask, chunks=sig_chunks)
                 )
-                ndim = self.axes_manager.navigation_dimension
-                sdim = self.axes_manager.signal_dimension
                 bH, aG = da.compute(
                     data.sum(axis=tuple(range(ndim))),
                     data.sum(axis=tuple(range(ndim, ndim + sdim))),
@@ -1295,7 +1292,7 @@ class LazySignal(BaseSignal):
             # Needs to reverse the chunks list to match dask chunking order
             signal_chunks = list(signal_chunks)[::-1]
             navigation_chunks = ['auto'] * len(self.axes_manager.navigation_shape)
-            if Version(dask.__version__) >= Version("2.30.0"):
+            if Version(dask.__version__ ) >= Version("2.30.0"):
                 kwargs = {'balance':True}
             else:
                 kwargs = {}

@@ -177,7 +177,7 @@ class current_model_values():
         self.model = model
         self.only_free = only_free
         self.only_active = only_active
-        self.component_list = model if component_list == None else component_list
+        self.component_list = model if component_list is None else component_list
         self.model_type = str(self.model.__class__).split("'")[1].split('.')[-1]
 
     def __repr__(self):
