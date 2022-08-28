@@ -17,13 +17,11 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
-import warnings
 
 import dask.array as da
 import numpy as np
 
 from hyperspy.docstrings.signal import HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.astropy.bayesian_blocks import bayesian_blocks
 from hyperspy.external.astropy.histogram import knuth_bin_width
 
@@ -73,17 +71,6 @@ def histogram(a, bins="fd", range=None, max_num_bins=250, weights=None, **kwargs
     """
     if isinstance(a, da.Array):
         return histogram_dask(a, bins=bins, max_num_bins=max_num_bins, **kwargs)
-
-    if isinstance(bins, str):
-        _deprecated_bins = {"scotts": "scott", "freedman": "fd"}
-        new_bins = _deprecated_bins.get(bins, None)
-        if new_bins:
-            warnings.warn(
-                f"`bins='{bins}'` has been deprecated and will be removed "
-                f"in HyperSpy 2.0. Please use `bins='{new_bins}'` instead.",
-                VisibleDeprecationWarning,
-                )
-            bins = new_bins
 
     _old_bins = bins
 
@@ -168,17 +155,6 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
 
     if a.ndim != 1:
         a = a.flatten()
-
-    if isinstance(bins, str):
-        _deprecated_bins = {"scotts": "scott", "freedman": "fd"}
-        new_bins = _deprecated_bins.get(bins, None)
-        if new_bins:
-            warnings.warn(
-                f"`bins='{bins}'` has been deprecated and will be removed "
-                f"in HyperSpy 2.0. Please use `bins='{new_bins}'` instead.",
-                VisibleDeprecationWarning,
-                )
-            bins = new_bins
 
     _old_bins = bins
 
