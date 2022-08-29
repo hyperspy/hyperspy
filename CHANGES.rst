@@ -10,7 +10,10 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 API Removal
 ===========
 
-Following deprecation cycle, the following methods and functions have been removed:
+As the HyperSpy API evolves, APIs are occasionally reorganized or upgraded.
+When APIs evolve, the old API is deprecated and eventually removed in a major
+release. The functions and methods removed in HyperSpy 2.0 are listed below along
+with migration advises:
 
 - :py:meth:`AxesManager.show` is removed, use :py:meth:`~.axes.AxesManager.gui` instead.
 - :py:meth:`AxesManager.set_signal_dimension` is removed, use :py:meth:`~.signal.BaseSignal.as_signal1D`,
