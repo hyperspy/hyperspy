@@ -15,8 +15,7 @@ jobs:
 
       - uses: ericpre/sphinx-action@latest_sphinx
         with:
-          # once numba 0.55 is release, remove "--pre" option to "pip install"
-          pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }} && pip install --pre .[all,build-doc]"
+          pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }} && pip install .[all,build-doc]"
           build-command: make html
           docs-folder: doc/
 
