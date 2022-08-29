@@ -988,7 +988,7 @@ def ordinal(value):
     Notes
     -----
     Author:  Serdar Tumgoren
-    http://code.activestate.com/recipes/576888-format-a-number-as-an-ordinal/
+    https://code.activestate.com/recipes/576888-format-a-number-as-an-ordinal/
     MIT license
     """
     try:
@@ -1583,7 +1583,7 @@ def to_numpy(array):
     Returns
     -------
     array : numpy.ndarray
-    
+
     Raises
     ------
     ValueError

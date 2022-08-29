@@ -1,6 +1,6 @@
 """
-Ported first from the astroML project: http://astroml.org/
-Ported again from the astropy project: http://astropy.org/
+Ported first from the astroML project: https://astroml.org/
+Ported again from the astropy project: https://astropy.org/
 
 Tools for working with distributions
 """

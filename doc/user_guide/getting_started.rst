@@ -22,7 +22,7 @@ Starting Python in Linux and MacOS
 You can start IPython by opening a system terminal and executing ``ipython``,
 (optionally followed by the "frontend": "qtconsole" for example). However, in
 most cases, **the most agreeable way** to work with HyperSpy interactively
-is using the `Jupyter Notebook <http://jupyter.org>`_ (previously known as
+is using the `Jupyter Notebook <https://jupyter.org>`_ (previously known as
 the IPython Notebook), which can be started as follows:
 
 .. code-block:: bash
@@ -38,7 +38,7 @@ Starting HyperSpy in the notebook (or terminal)
 -----------------------------------------------
 Typically you will need to `set up IPython for interactive plotting with
 matplotlib
-<http://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using
+<https://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using
 ``%matplotlib`` (which is known as a 'Jupyter magic')
 *before executing any plotting command*. So, typically, after starting
 IPython, you can import HyperSpy and set up interactive matplotlib plotting by
@@ -141,7 +141,7 @@ Please note that the documentation of the code is a work in progress, so not
 all the objects are documented yet.
 
 Up-to-date documentation is always available in `the HyperSpy website.
-<http://hyperspy.org/documentation.html>`_
+<https://hyperspy.org/documentation.html>`_
 
 
 Autocompletion
@@ -259,7 +259,7 @@ experimental data.
 .. _eelsdb-label:
 
 The :py:func:`~.misc.eels.eelsdb.eelsdb` function in `hs.datasets` can
-directly load spectra from `The EELS Database <http://eelsdb.eu>`_. For
+directly load spectra from `The EELS Database <https://eelsdb.eu>`_. For
 example, the following loads all the boron trioxide spectra currently
 available in the database:
 

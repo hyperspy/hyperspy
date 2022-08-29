@@ -519,7 +519,7 @@ EDS curve fitting
 
 The intensity of X-ray lines can be extracted using curve-fitting in HyperSpy.
 This example uses an EDS-SEM spectrum of a test material (EDS-TM001) provided
-by `BAM <http://www.webshop.bam.de>`_.
+by `BAM <https://www.webshop.bam.de>`_.
 
 First, we load the spectrum, define the chemical composition of the sample and
 set the beam energy:

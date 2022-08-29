@@ -4268,7 +4268,7 @@ class BaseSignal(FancySlicing,
             (default is ``False``).
         apodization : bool or str
             Apply an
-            `apodization window <http://mathworld.wolfram.com/ApodizationFunction.html>`_
+            `apodization window <https://mathworld.wolfram.com/ApodizationFunction.html>`_
             before calculating the FFT in order to suppress streaks.
             Valid string values are {``'hann'`` or ``'hamming'`` or ``'tukey'``}
             If ``True`` or ``'hann'``, applies a Hann window.
@@ -6324,7 +6324,7 @@ class BaseSignal(FancySlicing,
                           hann_order=None, tukey_alpha=0.5, inplace=False):
         """
         Apply an `apodization window
-        <http://mathworld.wolfram.com/ApodizationFunction.html>`_ to a Signal.
+        <https://mathworld.wolfram.com/ApodizationFunction.html>`_ to a Signal.
 
         Parameters
         ----------
