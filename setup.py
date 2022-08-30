@@ -100,7 +100,15 @@ extras_require = {
     "tests": ["pytest>=3.6", "pytest-mpl", "pytest-xdist", "pytest-rerunfailures", "pytest-instafail", "matplotlib>=3.1"],
     "coverage":["pytest-cov"],
     # required to build the docs
-    "build-doc": ["sphinx>=1.7", "sphinx_rtd_theme", "sphinx-toggleprompt", "sphinxcontrib-mermaid", "sphinxcontrib-towncrier"],
+    "build-doc": [
+        "sphinx>=1.7",
+        "sphinx_rtd_theme",
+        "sphinx-toggleprompt",
+        "sphinxcontrib-mermaid",
+        "sphinxcontrib-towncrier",
+        # pin towncrier until https://github.com/sphinx-contrib/sphinxcontrib-towncrier/issues/60 is fixed
+        "towncrier<22.8",
+        ],
 }
 
 # Don't include "tests" and "docs" requirements since "all" is designed to be
