@@ -629,3 +629,7 @@ class TestVectorAxisManager:
         assert self.am.signal_axes[0].index_in_array == ()
         assert self.am.signal_dimension == 0
         assert self.am._signal_shape_in_array == ()
+
+    def test_get_dim_str(self):
+        assert self.am._get_dimension_str() == '(2|Vect , Vect)'
+

@@ -2488,7 +2488,7 @@ class BaseSignal(FancySlicing,
                 nav_shape = 1
             for d in np.ndindex(nav_shape):
                 object_shape = np.shape(self.data[d])
-                if len(object_shape) < 1:
+                if len(object_shape) == 1:
                     continue
                 else:
                     num_axes = object_shape[-1]

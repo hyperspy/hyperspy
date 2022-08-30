@@ -21,7 +21,7 @@ import pytest
 import dask.array as da
 
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.signals import BaseVectorSignal, BaseSignal
+from hyperspy.signals import BaseVectorSignal, Signal2D, BaseSignal
 from hyperspy.drawing.marker import MarkerBase
 
 
@@ -64,7 +64,7 @@ class TestVectorSignal:
             assert new.data.shape == (3,)
 
     @pytest.mark.parametrize("flatten", [True, False])
-    @pytest.mark.parametrize("axis", [None, (0,), (0, 1), (2, 3),])
+    @pytest.mark.parametrize("axis", [None, 0, (0, 1), (2, 3)])
     @pytest.mark.parametrize("real_units", [True, False])
     def test_get_real_vectors(self,
                               two_d_vector,
@@ -78,6 +78,8 @@ class TestVectorSignal:
                                             )
         if axis is None:
             axis = (0, 1, 2, 3)
+        if axis == 0:
+            axis = (0,)
         output_len = len(axis)
         if flatten:
             assert new.shape[1] == output_len
@@ -91,6 +93,19 @@ class TestVectorSignal:
 
     @pytest.mark.parametrize("top", [0.5, 5,])
     def test_slicing_vector(self, two_d_vector, top):
+        sliced = two_d_vector.isig[0:top, :]
+        is_between = np.all(
+            [np.all(5 > sliced.data[i][:, 1]) for i in np.ndindex((4, 3))]
+        )
+
+        assert is_between
+        assert isinstance(sliced, BaseVectorSignal)
+        assert len(sliced.axes_manager.signal_axes) == 2
+
+    @pytest.mark.parametrize("top", [0.5, 5, ])
+    def test_slicing_vector_lazy(self, two_d_vector, top):
+        two_d_vector = two_d_vector.as_lazy()
+        assert isinstance(two_d_vector.data,da.Array)
         sliced = two_d_vector.isig[0:top, :]
         is_between = np.all(
             [np.all(5 > sliced.data[i][:, 1]) for i in np.ndindex((4, 3))]
@@ -150,3 +165,26 @@ class TestVectorSignal:
             return np.ones((4, 2))
         v = two_d_vector.map(return_vect, inplace=False)
         assert v.ragged
+
+    def test_to_vector(self):
+        x = np.empty(shape=(4, 3), dtype=object)
+        for i in np.ndindex(x.shape):
+            x[i] = np.random.random((4, 2)) * 10
+        s = BaseSignal(x).transpose(navigation_axes=(0, 1))
+        s.vector = True
+        assert len(s.axes_manager.signal_axes) == 2
+
+    def test_to_vector_nav_shape_empty(self):
+        x = np.empty(shape=(4, 3), dtype=object)
+        for i in np.ndindex(x.shape):
+            x[i] = np.random.random((4, 2)) * 10
+        x[0, 0] = np.array([])
+        s = BaseSignal(x).transpose(navigation_axes=(0, 1))
+        s.vector = True
+        assert len(s.axes_manager.signal_axes) == 2
+
+    def test_to_vector_fail(self):
+        s = Signal2D(np.ones((10, 10, 10)))
+        with pytest.raises(ValueError):
+            s.vector = True
+

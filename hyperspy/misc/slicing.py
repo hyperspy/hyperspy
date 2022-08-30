@@ -19,10 +19,13 @@
 from operator import attrgetter
 import numpy as np
 import dask.array as da
+import logging
 
 from hyperspy.misc.utils import attrsetter
 from hyperspy.misc.export_dictionary import parse_flag_string
 from hyperspy import roi
+
+_logger = logging.getLogger(__name__)
 
 
 def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
@@ -295,7 +298,7 @@ class FancySlicing(object):
             new_data = np.empty(shape=self.data.shape, dtype=object)
             for ind in np.ndindex(self.data.shape):
                 if self._lazy:
-                    print("Slicing a Vector axis must be non-lazy... Computing")
+                    _logger.warning("Slicing a Vector axis must be non-lazy... Computing")
                     self.compute()
                 is_returned = np.prod([np.multiply(self.data[ind][:, i] >= s[0],
                                                    self.data[ind][:, i] <= s[1])

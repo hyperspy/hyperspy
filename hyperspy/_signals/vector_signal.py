@@ -76,7 +76,6 @@ class BaseVectorSignal(BaseSignal):
         for a in axis:
             if not isinstance(a, VectorDataAxis):
                 a.convert_to_vector_axis()
-            a.navigate = False
         return vectors
 
     def get_real_vectors(
@@ -100,7 +99,7 @@ class BaseVectorSignal(BaseSignal):
             sig_axis = self.axes_manager.signal_axes
         else:
             if not np.iterable(axis):
-                axis = tuple(axis)
+                axis = (axis,)
             axis = self.axes_manager[axis]
             nav_axis = [a for a in axis if a.navigate]
             sig_axis = [a for a in axis if not a.navigate]

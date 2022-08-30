@@ -115,9 +115,7 @@ def create_axis(**kwargs):
         axis_class = DataAxis
     elif 'expression' in kwargs.keys():  # Functional axis
         axis_class = FunctionalDataAxis
-    elif 'vector' in kwargs.keys():  # Functional axis
-        axis_class = VectorDataAxis
-    elif 'vector' in kwargs.keys():  # Functional axis
+    elif 'vector' in kwargs.keys() and kwargs["vector"]:  # Vector axis
         axis_class = VectorDataAxis
     else:  # if not argument is provided fall back to uniform axis
         axis_class = UniformDataAxis
@@ -493,7 +491,7 @@ class BaseDataAxis(t.HasTraits):
         return name
 
     def __repr__(self):
-        if self.size == t.Undefined:
+        if self.size == -1:
             text = '<%s axis, size: vect' % self._get_name()
         else:
             text = '<%s axis, size: %i' % (self._get_name(),
@@ -1348,10 +1346,14 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
     def convert_to_vector_axis(self):
         d = super().get_axis_dictionary()
+        d["scale"] = self.scale
+        d["offset"] = self.offset
+        d["size"] = -1
         axes_manager = self.axes_manager
         self.__class__ = VectorDataAxis
         d["_type"] = 'VectorDataAxis'
         d["vector"] = True
+        self.navigate = False
         self._signal_shape=None
         self.high_value = np.inf
         self.low_value = -np.inf
@@ -1379,7 +1381,7 @@ class VectorDataAxis(UniformDataAxis):
             index_in_array=index_in_array,
             name=name,
             units=units,
-            navigate=navigate,
+            navigate=False,
             is_binned=is_binned,
             scale=scale,
             offset=offset,
@@ -2326,7 +2328,7 @@ class AxesManager(t.HasTraits):
         string = string.rstrip(", ")
         string += "|"
         for axis in self.signal_axes:
-            if axis.size == 0:
+            if axis.size == -1:
                 string += "Vect " + ", "
             else:
                 string += str(axis.size) + ", "
