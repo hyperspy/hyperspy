@@ -22,7 +22,7 @@ Starting Python in Linux and MacOS
 You can start IPython by opening a system terminal and executing ``ipython``,
 (optionally followed by the "frontend": "qtconsole" for example). However, in
 most cases, **the most agreeable way** to work with HyperSpy interactively
-is using the `Jupyter Notebook <http://jupyter.org>`_ (previously known as
+is using the `Jupyter Notebook <https://jupyter.org>`_ (previously known as
 the IPython Notebook), which can be started as follows:
 
 .. code-block:: bash
@@ -38,7 +38,7 @@ Starting HyperSpy in the notebook (or terminal)
 -----------------------------------------------
 Typically you will need to `set up IPython for interactive plotting with
 matplotlib
-<http://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using
+<https://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using
 ``%matplotlib`` (which is known as a 'Jupyter magic')
 *before executing any plotting command*. So, typically, after starting
 IPython, you can import HyperSpy and set up interactive matplotlib plotting by
@@ -70,9 +70,9 @@ and the
 Possible warnings when importing HyperSpy?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-HyperSpy supports different GUIs and 
-`matplotlib backends <https://matplotlib.org/tutorials/introductory/usage.html#backends>`_ 
-which in specific cases can lead to warnings when importing HyperSpy. Most of the time 
+HyperSpy supports different GUIs and
+`matplotlib backends <https://matplotlib.org/stable/users/explain/backends.html>`_
+which in specific cases can lead to warnings when importing HyperSpy. Most of the time
 there is nothing to worry about — the warnings simply inform you of several choices you have.
 There may be several causes for a warning, for example:
 
@@ -102,8 +102,8 @@ These warnings can be turned off using the
 
 
 .. versionchanged:: v1.3
-    HyperSpy works with all matplotlib backends, including the ``notebook`` 
-    (also called ``nbAgg``) backend that enables interactive plotting embedded 
+    HyperSpy works with all matplotlib backends, including the ``notebook``
+    (also called ``nbAgg``) backend that enables interactive plotting embedded
     in the jupyter notebook.
 
 
@@ -134,26 +134,24 @@ accessed by adding a question mark to the name of a function. e.g.:
 
 This syntax is a shortcut to the standard way one of displaying the help
 associated to a given functions (docstring in Python jargon) and it is one of
-the many features of `IPython <http://ipython.scipy.org/moin/>`_, which is the
+the many features of `IPython <https://ipython.readthedocs.io/>`_, which is the
 interactive python shell that HyperSpy uses under the hood.
 
 Please note that the documentation of the code is a work in progress, so not
 all the objects are documented yet.
 
 Up-to-date documentation is always available in `the HyperSpy website.
-<http://hyperspy.org/documentation.html>`_
+<https://hyperspy.org/documentation.html>`_
 
 
 Autocompletion
 --------------
 
-Another useful `IPython <http://ipython.scipy.org/moin/>`_ feature is the
-autocompletion of commands and filenames using the tab and arrow keys. It is
-highly recommended to read the `Ipython documentation
-<http://ipython.scipy.org/moin/Documentation>`_ (specially their `Getting
-started <http://ipython.org/ipython-doc/stable/interactive/tutorial.html>`_
-section) for many more useful features that will boost your efficiency when
-working with HyperSpy/Python interactively.
+Another useful IPython feature is the
+`autocompletion <https://ipython.readthedocs.io/en/stable/interactive/tutorial.html#tab-completion>`_
+of commands and filenames using the tab and arrow keys. It is highly recommended
+to read the `Ipython introduction <https://ipython.readthedocs.io/en/stable/interactive/tutorial.html>`_ for many more useful features that will
+boost your efficiency when working with HyperSpy/Python interactively.
 
 
 Loading data
@@ -176,7 +174,7 @@ the use of a specific IO-plugin, you can provide the ``reader`` attribute:
 .. note::
 
    When the file contains several datasets, the :py:func:`~.io.load` function
-   will return a list of HyperSpy signals, instead of a single HyperSpy signal. 
+   will return a list of HyperSpy signals, instead of a single HyperSpy signal.
    Each signal can then be accessed using list indexation.
 
    .. code-block:: python
@@ -188,7 +186,7 @@ the use of a specific IO-plugin, you can provide the ``reader`` attribute:
        <Signal1D, title: ham, dimensions: (32,32|1024)>]
 
    Using indexation to access the first signal (index 0):
-   
+
    .. code-block:: python
 
       >>> s[0]
@@ -261,7 +259,7 @@ experimental data.
 .. _eelsdb-label:
 
 The :py:func:`~.misc.eels.eelsdb.eelsdb` function in `hs.datasets` can
-directly load spectra from `The EELS Database <http://eelsdb.eu>`_. For
+directly load spectra from `The EELS Database <https://eelsdb.eu>`_. For
 example, the following loads all the boron trioxide spectra currently
 available in the database:
 

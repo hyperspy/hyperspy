@@ -278,7 +278,7 @@ class PESVoigt(Component):
 
         Notes
         -----
-        Adapted from http://www.scipy.org/Cookbook/FittingData
+        Adapted from https://scipy-cookbook.readthedocs.io/items/FittingData.html
 
         Examples
         --------

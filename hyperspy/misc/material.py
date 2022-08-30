@@ -218,7 +218,7 @@ def _density_of_mixture(weight_percent,
         [elements_db[element]['Physical_properties']['density (g/cm^3)']
             for element in elements])
     sum_densities = np.zeros_like(weight_percent, dtype='float')
-    try : 
+    try :
         if mean == 'harmonic':
             for i, weight in enumerate(weight_percent):
                 sum_densities[i] = weight / densities[i]
@@ -232,7 +232,7 @@ def _density_of_mixture(weight_percent,
             sum_weight = np.sum(weight_percent, axis=0)
             density = sum_densities / sum_weight
             return np.where(sum_weight == 0.0, 0.0, density)
-    except TypeError : 
+    except TypeError :
         raise ValueError(
             'The density of one of the elements is unknown (Probably At or Fr).')
 
@@ -312,7 +312,7 @@ def mass_absorption_coefficient(element, energies):
 
     Note
     ----
-    See http://physics.nist.gov/ffast
+    See https://physics.nist.gov/ffast
     Chantler, C.T., Olsen, K., Dragoset, R.A., Kishore, A.R., Kotochigova,
     S.A., and Zucker, D.S. (2005), X-Ray Form Factor, Attenuation and
     Scattering Tables (version 2.1).
@@ -371,7 +371,7 @@ def _mass_absorption_mixture(weight_percent,
 
     Note
     ----
-    See http://physics.nist.gov/ffast
+    See https://physics.nist.gov/ffast
     Chantler, C.T., Olsen, K., Dragoset, R.A., Kishore, A.R., Kotochigova,
     S.A., and Zucker, D.S. (2005), X-Ray Form Factor, Attenuation and
     Scattering Tables (version 2.1).
@@ -434,7 +434,7 @@ def mass_absorption_mixture(weight_percent,
 
     Note
     ----
-    See http://physics.nist.gov/ffast
+    See https://physics.nist.gov/ffast
     Chantler, C.T., Olsen, K., Dragoset, R.A., Kishore, A.R., Kotochigova,
     S.A., and Zucker, D.S. (2005), X-Ray Form Factor, Attenuation and
     Scattering Tables (version 2.1).

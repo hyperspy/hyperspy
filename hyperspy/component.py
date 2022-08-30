@@ -452,7 +452,7 @@ class Parameter(t.HasTraits):
         # Do nothing if the number of arguments stays the same
         if self.__number_of_elements == arg:
             return
-        if arg <= 1:
+        if arg < 1:
             raise ValueError("Please provide an integer number equal "
                              "or greater to 1")
         self._bounds = ((self.bmin, self.bmax),) * arg

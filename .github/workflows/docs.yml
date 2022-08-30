@@ -1,0 +1,52 @@
+name: Docs
+
+on: [push, pull_request]
+
+jobs:
+  build_doc:
+    name: Docs (PR comments)
+    runs-on: ubuntu-latest
+    env:
+      BUILD_DEPS: python3-dev build-essential graphviz
+      LATEX_DEPS: dvipng latexmk texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ericpre/sphinx-action@latest_sphinx
+        with:
+          pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }} && pip install .[all,build-doc]"
+          build-command: make html
+          docs-folder: doc/
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./doc/_build/html/
+          name: doc_build
+
+  check_links:
+    # This build is to check external links
+    name: Check external links
+    runs-on: ubuntu-latest
+    env:
+      DOCS_PATH: ./doc/_build/html/
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v3
+        name: Install Python
+        with:
+          python-version: '3.10'
+
+      - name: Install build docs
+        shell: bash -l {0}
+        run: |
+          pip install .[build-doc]
+
+      - name: Check links
+        shell: bash -l {0}
+        run: |
+          cd doc
+          make linkcheck

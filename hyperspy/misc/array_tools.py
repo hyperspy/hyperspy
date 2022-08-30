@@ -136,9 +136,6 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
         scale = []
         for i, _ in enumerate(a.shape):
             scale.append(a.shape[i] / new_shape[i])
-    else:
-        new_shape = new_shape
-        scale = scale
     if isinstance(dtype, str) and dtype != 'same':
         raise ValueError(
             '`dtype` argument needs to be None, a numpy dtype or '

@@ -264,6 +264,8 @@ class ImagePlot(BlittedFigure):
 
     def _calculate_vmin_max(self, data, auto_contrast=False,
                             vmin=None, vmax=None):
+        vminprovided = vmin
+        vmaxprovided = vmax
         # Calculate vmin and vmax using `utils.contrast_stretching` when:
         # - auto_contrast is True
         # - self.vmin or self.vmax is of tpye str
@@ -276,10 +278,10 @@ class ImagePlot(BlittedFigure):
         else:
             vmin, vmax = self._vmin_numeric, self._vmax_numeric
         # provided vmin, vmax override the calculated value
-        if isinstance(vmin, (int, float)):
-            vmin = vmin
-        if isinstance(vmax, (int, float)):
-            vmax = vmax
+        if isinstance(vminprovided, (int, float)):
+            vmin = vminprovided
+        if isinstance(vmaxprovided, (int, float)):
+            vmax = vmaxprovided
         if vmin == np.nan:
             vmin = None
         if vmax == np.nan:

@@ -61,5 +61,5 @@ that sets its character:
   and
   `hyperspy-gui-traitsui <https://github.com/hyperspy/hyperspy_gui_traitsui>`_
   packages for details. Not enough? If you
-  need a full, standalone GUI, `HyperSpyUI <http://hyperspy.org/hyperspyUI/>`_
+  need a full, standalone GUI, `HyperSpyUI <https://hyperspy.org/hyperspyUI/>`_
   is for you.

@@ -39,12 +39,13 @@ from scipy import signal as sp_signal
 import traits.api as t
 from tlz import concat
 
-import hyperspy
 from hyperspy.axes import AxesManager
 from hyperspy.api_nogui import _ureg
+from hyperspy.misc.array_tools import rebin as array_rebin
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
 from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.io import assign_signal_subclass
+from hyperspy.io import save as io_save
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
@@ -2745,7 +2746,6 @@ class BaseSignal(FancySlicing,
             if not np.issubdtype(self.data.dtype, np.complexfloating):
                 raise ValueError('The parameter `power_spectrum` required a '
                                  'signal with complex data type.')
-                del kwargs['power_spectrum']
 
         if axes_manager is None:
             axes_manager = self.axes_manager
@@ -3000,7 +3000,7 @@ class BaseSignal(FancySlicing,
             filename = Path(filename)
             if extension is not None:
                 filename = filename.with_suffix(f".{extension}")
-        hyperspy.io.save(filename, self, overwrite=overwrite, **kwds)
+        io_save(filename, self, overwrite=overwrite, **kwds)
 
     def _replot(self):
         if self._plot is not None:
@@ -3181,7 +3181,7 @@ class BaseSignal(FancySlicing,
 
         if new_shape is None and scale is None:
             raise ValueError("One of new_shape, or scale must be specified")
-        elif new_shape is None and scale is None:
+        elif new_shape is not None and scale is not None:
             raise ValueError(
                 "Only one out of new_shape or scale should be specified. "
                 "Not both.")
@@ -3278,7 +3278,7 @@ class BaseSignal(FancySlicing,
             new_shape=new_shape,
             scale=scale,)
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
-        data = hyperspy.misc.array_tools.rebin(
+        data = array_rebin(
             self.data, scale=factors, crop=crop, dtype=dtype)
 
         if out:
@@ -4268,7 +4268,7 @@ class BaseSignal(FancySlicing,
             (default is ``False``).
         apodization : bool or str
             Apply an
-            `apodization window <http://mathworld.wolfram.com/ApodizationFunction.html>`_
+            `apodization window <https://mathworld.wolfram.com/ApodizationFunction.html>`_
             before calculating the FFT in order to suppress streaks.
             Valid string values are {``'hann'`` or ``'hamming'`` or ``'tukey'``}
             If ``True`` or ``'hann'``, applies a Hann window.
@@ -5460,7 +5460,7 @@ class BaseSignal(FancySlicing,
                         key_dict[key] = marker.get_data_position(key)
                     marker.set_data(**key_dict)
 
-        class_ = hyperspy.io.assign_signal_subclass(
+        class_ = assign_signal_subclass(
             dtype=self.data.dtype,
             signal_dimension=self.axes_manager.signal_dimension,
             signal_type=self._signal_type,
@@ -5505,7 +5505,6 @@ class BaseSignal(FancySlicing,
             e.g., ``numpy.int8``.  The default is the data type of the current
             signal data.
         """
-        from dask.array import Array
         if data is not None:
             ref_shape = (self.axes_manager._navigation_shape_in_array
                          if self.axes_manager.navigation_dimension != 0
@@ -5539,7 +5538,7 @@ class BaseSignal(FancySlicing,
                 data,
                 axes=self.axes_manager._get_navigation_axes_dicts()
                 ).T
-        if isinstance(data, Array):
+        if isinstance(data, da.Array):
             s = s.as_lazy()
         return s
 
@@ -5558,7 +5557,6 @@ class BaseSignal(FancySlicing,
             e.g., ``numpy.int8``.  The default is the data type of the current
             signal data.
         """
-        from dask.array import Array
         if data is not None:
             ref_shape = (self.axes_manager._signal_shape_in_array
                          if self.axes_manager.signal_dimension != 0
@@ -5583,7 +5581,7 @@ class BaseSignal(FancySlicing,
         else:
             s = self.__class__(data,
                                axes=self.axes_manager._get_signal_axes_dicts())
-        if isinstance(data, Array):
+        if isinstance(data, da.Array):
             s = s.as_lazy()
         return s
 
@@ -6326,7 +6324,7 @@ class BaseSignal(FancySlicing,
                           hann_order=None, tukey_alpha=0.5, inplace=False):
         """
         Apply an `apodization window
-        <http://mathworld.wolfram.com/ApodizationFunction.html>`_ to a Signal.
+        <https://mathworld.wolfram.com/ApodizationFunction.html>`_ to a Signal.
 
         Parameters
         ----------

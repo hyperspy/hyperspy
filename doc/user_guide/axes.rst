@@ -501,7 +501,7 @@ can be set and retrieved as quantity.
          <undefined> |     10 |        |     2.5 | 2.5e+03 |     nm
 
 
-Internally, HyperSpy uses the `pint <http://pint.readthedocs.io>`_ library to
+Internally, HyperSpy uses the `pint <https://pint.readthedocs.io>`_ library to
 manage the scale and offset quantities. The ``scale_as_quantity`` and
 ``offset_as_quantity`` attributes return pint object:
 
@@ -685,4 +685,3 @@ and a manually specified length as inputs:
     >>> from hyperspy.axes import GeneratorLen
     >>> gen = GeneratorLen(reverse_flyback_generator(), 6)
     >>> s.axes_manager.iterpath = gen
-

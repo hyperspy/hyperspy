@@ -162,7 +162,7 @@ Both symbolic and numerical substitutions are allowed:
     ... name="Electron wavelength with voltage")
 
 :py:class:`~._components.expression.Expression` uses `Sympy
-<http://www.sympy.org>`_ internally to turn the string into
+<https://www.sympy.org>`_ internally to turn the string into
 a function. By default it "translates" the expression using
 numpy, but often it is possible to boost performance by using
 `numexpr <https://github.com/pydata/numexpr>`_ instead.
@@ -722,7 +722,7 @@ whether the optimizers find a local or global optima.
 
 .. [2] **All** of the fitting algorithms available in :py:func:`scipy.optimize.minimize` are currently
        supported by HyperSpy; however, only some of them support bounds and/or gradients. For more information,
-       please see the `SciPy documentation <http://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
+       please see the `SciPy documentation <https://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
 
 .. [3] Requires ``scipy >= 1.2.0``.
 
@@ -1638,7 +1638,7 @@ as follows:
     >>> samf = m.create_samfire(workers=None, ipyparallel=False)
 
 By default SAMFire will look for an `ipyparallel
-<http://ipyparallel.readthedocs.io/en/latest/index.html>`_ cluster for the
+<https://ipyparallel.readthedocs.io/>`_ cluster for the
 workers for around 30 seconds. If none is available, it will use
 multiprocessing instead.  However, if you are not planning to use ipyparallel,
 it's recommended specify it explicitly via the ``ipyparallel=False`` argument,

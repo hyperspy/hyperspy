@@ -970,8 +970,7 @@ class EDSSpectrum(Signal1D):
             for xray in xray_not_here:
                 _logger.warning(f"{xray} is not in the data energy range.")
             xray_lines = np.unique(xray_lines)
-            self.add_xray_lines_markers(xray_lines,
-                                        render_figure=False)
+            self.add_xray_lines_markers(xray_lines, render_figure=False)
             if background_windows is not None:
                 self._add_background_windows_markers(background_windows,
                                                      render_figure=False)
@@ -1022,6 +1021,13 @@ class EDSSpectrum(Signal1D):
         xray_lines: list of string
             A valid list of X-ray lines
         """
+        if self._plot is None or not self._plot.is_active:
+            raise RuntimeError("The signal needs to be plotted.")
+
+        # in case of log scale, if some lines have intensity zero, then
+        # the line and label will not be displayed.
+        norm = self._plot.signal_plot.ax_lines[0].norm
+        minimum_intensity = self.data[self.data>0].min() if norm == 'log' else 0
 
         line_energy = []
         intensity = []
@@ -1034,13 +1040,22 @@ class EDSSpectrum(Signal1D):
             idx = self.axes_manager.signal_axes[0].value2index(a_eng)
             intensity.append(self.data[..., idx] * relative_factor)
         for i in range(len(line_energy)):
+            # When using `log` norm, clip value to minimum value > 0
+            if norm == 'log':
+                intensity_ = np.max(
+                    intensity[i], axis=-1, initial=minimum_intensity
+                    )
+            else:
+                intensity_ = intensity[i]
             line = markers.vertical_line_segment(
-                x=line_energy[i], y1=None, y2=intensity[i] * 0.8)
+                x=line_energy[i], y1=None, y2=intensity_ * 0.8)
             self.add_marker(line, render_figure=False)
             string = (r'$\mathrm{%s}_{\mathrm{%s}}$' %
                       utils_eds._get_element_and_line(xray_lines[i]))
             text = markers.text(
-                x=line_energy[i], y=intensity[i] * 1.1, text=string,
+                x=line_energy[i],
+                y=intensity_ * 1.1,
+                text=string,
                 rotation=90)
             self.add_marker(text, render_figure=False)
             self._xray_markers[xray_lines[i]] = [line, text]
