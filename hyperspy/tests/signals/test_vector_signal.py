@@ -146,6 +146,7 @@ class TestVectorSignal:
     @pytest.mark.parametrize("real_units", [True, False])
     @pytest.mark.parametrize("inplace", [True, False])
     def test_cluster(self, two_d_vector, axis, real_units, inplace):
+        pytest.importorskip("sklearn")
         from sklearn.cluster import KMeans
         clustering = KMeans(4)
         clustered = two_d_vector.cluster(clustering,
