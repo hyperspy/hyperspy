@@ -34,7 +34,7 @@ class TestVectorAxis:
         assert not self.axis.is_binned
         assert self.axis.is_uniform == True
         assert self.axis.axis is t.Undefined
-        assert self.axis.size is t.Undefined
+        assert self.axis.size == -1
 
     def test_axis_in_vector_array(self):
         with pytest.raises(AttributeError):
