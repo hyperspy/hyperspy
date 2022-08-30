@@ -5,7 +5,7 @@ datasets.
 Functions:
 
     eelsdb
-        Download spectra from the EELS data base http://eelsdb.eu
+        Download spectra from the EELS data base https://eelsdb.eu
 
 Submodules:
 

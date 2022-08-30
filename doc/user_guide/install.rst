@@ -149,8 +149,8 @@ Installation using pip
 ----------------------
 
 HyperSpy is listed in the `Python Package Index
-<http://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded
-and installed  `pip <http://pypi.python.org/pypi/pip>`__. You may need to
+<https://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded
+and installed  `pip <https://pypi.python.org/pypi/pip>`__. You may need to
 install pip for the following commands to run.
 
 To install all of HyperSpy's functionalities, run:
@@ -170,9 +170,9 @@ See the following list of selectors to select the installation of optional
 dependencies required by specific functionalities:
 
 * ``learning`` for some machine learning features,
-* ``gui-jupyter`` to use the `Jupyter widgets <http://ipywidgets.readthedocs.io/en/stable/>`_
+* ``gui-jupyter`` to use the `Jupyter widgets <https://ipywidgets.readthedocs.io/en/stable/>`_
   GUI elements,
-* ``gui-traitsui`` to use the GUI elements based on `traitsui <http://docs.enthought.com/traitsui/>`_,
+* ``gui-traitsui`` to use the GUI elements based on `traitsui <https://docs.enthought.com/traitsui/>`_,
 * ``mrcz`` to read mrcz file,
 * ``speed`` to speed up some functionalities,
 * ``usid`` to read usid file,
@@ -271,7 +271,7 @@ Clone the hyperspy repository
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To get the development version from our git repository you need to install `git
-<http://git-scm.com//>`_. Then just do:
+<https://git-scm.com//>`_. Then just do:
 
 .. code-block:: bash
 
@@ -287,8 +287,8 @@ To get the development version from our git repository you need to install `git
 
 Installation in a Anaconda/Miniconda distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Optionally, create an environment to separate your hyperspy installation from 
-other anaconda environments (`read more about environments here 
+Optionally, create an environment to separate your hyperspy installation from
+other anaconda environments (`read more about environments here
 <https://conda.io/projects/conda/en/latest/user-guide/concepts/environments.html>`_):
 
 .. code-block:: bash
@@ -307,7 +307,7 @@ The package ``hyperspy-dev`` will install the development dependencies required
 for testing and building the documentation.
 
 From the root folder of your hyperspy repository (folder containing the
-``setup.py`` file) run `pip <http://www.pip-installer.org>`_ in development mode:
+``setup.py`` file) run `pip <https://pip.pypa.io/>`_ in development mode:
 
 .. code-block:: bash
 
@@ -317,7 +317,7 @@ Installation in other (non-system) Python distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 From the root folder of your hyperspy repository (folder containing the
-``setup.py`` file) run `pip <http://www.pip-installer.org>`_ in development mode:
+``setup.py`` file) run `pip <https://pip.pypa.io/>`_ in development mode:
 
 .. code-block:: bash
 
@@ -341,7 +341,7 @@ When using a system Python distribution, it is recommended to install the
 dependencies using your system package manager.
 
 From the root folder of your hyperspy repository (folder containing the
-``setup.py`` file) run `pip <http://www.pip-installer.org>`_ in development mode.
+``setup.py`` file) run `pip <https://pip.pypa.io/>`_ in development mode.
 
 .. code-block:: bash
 
@@ -361,4 +361,3 @@ You can create binaries for Debian/Ubuntu from the source by running the
 
     For this to work, the following packages must be installed in your system
     python-stdeb, debhelper, dpkg-dev and python-argparser are required.
-

@@ -28,7 +28,7 @@ HyperSpy: a multi-dimensional data analysis package for Python
 ==============================================================
 
 Documentation is available in the docstrings and online at
-http://hyperspy.org/hyperspy-doc/current/index.html.
+https://hyperspy.org/hyperspy-doc/current/index.html.
 
 All public packages, functions and classes are in :mod:`~hyperspy.api`. All
 other packages and modules are for internal consumption and should not be

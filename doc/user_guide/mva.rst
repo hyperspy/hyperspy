@@ -502,7 +502,7 @@ links to the appropriate documentation for more information on each one.
    Except :py:func:`~.learn.orthomax.orthomax`, all of the implemented BSS algorithms listed above
    rely on external packages being available on your system. ``sklearn_fastica``, requires
    `scikit-learn <https://scikit-learn.org/>`_ while ``FastICA, JADE, CuBICA, TDSEP``
-   require the `Modular toolkit for Data Processing (MDP) <http://mdp-toolkit.sourceforge.net/>`_.
+   require the `Modular toolkit for Data Processing (MDP) <https://mdp-toolkit.github.io/>`_.
 
 .. _mva.orthomax:
 

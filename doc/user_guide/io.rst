@@ -134,7 +134,7 @@ functions, e.g.:
 
     >>> s = hs.load(["file1.hspy", "file2.hspy"])
 
-or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_:
+or by using `shell-style wildcards <https://docs.python.org/library/glob.html>`_:
 
 .. code-block:: python
 
@@ -1905,7 +1905,7 @@ Extra loading arguments
   acquired last frame, which typically occurs when the acquisition was
   interrupted. When loading incomplete data (``only_valid_data=False``),
   the missing data are filled with zeros. If ``sum_frames=True``, this argument
-  will be ignored to enforce consistent sum over the mapped area. 
+  will be ignored to enforce consistent sum over the mapped area.
 - ``read_em_image`` : bool, default False.
   for ``pts`` file only, If ``read_em_image=True``,
   read SEM/STEM image from pts file if available. In this case, both
@@ -1953,8 +1953,8 @@ TVIPS format
 
 The TVIPS format is the default format for image series collected by pixelated
 cameras from the TVIPS company. Typically individual images captured by these
-cameras are stored in the :ref:`TIFF format<tiff-format>` which can also be 
-loaded by Hyperspy. This format instead serves to store image streams from 
+cameras are stored in the :ref:`TIFF format<tiff-format>` which can also be
+loaded by Hyperspy. This format instead serves to store image streams from
 in-situ and 4D-STEM experiments. During collection, the maximum file size is
 typically capped meaning the dataset is typically split over multiple files
 ending in `_xyz.tvips`. The `_000.tvips` will contain the main header and
@@ -1969,7 +1969,7 @@ will not work if no such file is found.
    interoperability with the official software can neither be guaranteed.
 
 .. warning::
-    
+
    The TVIPS format currently stores very limited amount of metadata about
    scanning experiments. To reconstruct scan data, e.g. 4D-STEM datasets,
    parameters like the shape and scales of the scan dimensions should be
@@ -1982,7 +1982,7 @@ Extra loading arguments
   in the x direction. If this argument is not provided, the data will be loaded
   as a 1D stack of images. `auto` is also an option which aims to reconstruct
   the scan based on the `rotidx` indices in frame headers. Since this only
-  works for square scan grids and is prone to failure, this option is not 
+  works for square scan grids and is prone to failure, this option is not
   recommended.
 - ``scan_start_frame``: index of the first frame of the dataset to consider,
   mainly relevant for 4D-STEM datasets. If `scan_shape="auto"` this parameter
@@ -2002,11 +2002,11 @@ Extra loading arguments
   default setting of `auto` rechunking is performed such that the navigation axes
   are optimally chunked and the signal axes are not chunked. If set to anything else, the
   value will be passed to the `chunks` argument in `dask.array.rechunk`.
-  
+
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-- ``max_file_size``: approximate maximum size of individual files in bytes. 
+- ``max_file_size``: approximate maximum size of individual files in bytes.
   In this way a dataset can be split into multiple files. A file needs to be
   at least the size of the main header in the first file plus one frame and its
   frame header. By default there is no maximum and the entire dataset is saved

@@ -111,7 +111,7 @@ def find_local_max(z, **kwargs):
     **kwargs : dict
         Keyword arguments to be passed to the ``peak_local_max`` method of
         the ``scikit-image`` library. See its documentation for details
-        http://scikit-image.org/docs/dev/api/skimage.feature.html#peak-local-max
+        https://scikit-image.org/docs/dev/api/skimage.feature.html#peak-local-max
 
     Returns
     -------
@@ -459,7 +459,7 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
     min_sigma, max_sigma, sigma_ratio, threshold, overlap, exclude_border :
         Additional parameters to be passed to the algorithm. See `blob_dog`
         documentation for details:
-        http://scikit-image.org/docs/dev/api/skimage.feature.html#blob-dog
+        https://scikit-image.org/docs/dev/api/skimage.feature.html#blob-dog
 
     Returns
     -------
@@ -504,7 +504,7 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
     min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale, exclude_border :
         Additional parameters to be passed to the ``blob_log`` method of the
         ``scikit-image`` library. See its documentation for details:
-        http://scikit-image.org/docs/dev/api/skimage.feature.html#blob-log
+        https://scikit-image.org/docs/dev/api/skimage.feature.html#blob-log
 
     Returns
     -------
