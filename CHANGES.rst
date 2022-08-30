@@ -8,6 +8,21 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 
 .. towncrier release notes start
 
+API Removal
+===========
+
+The following deprecated keywords and attributes have been removed during the
+migration of the IO plugins to `RosettaSciIO
+<https://hyperspy.org/rosettasciio/changes.html>`_:
+
+- :ref:`Bruker composite file (BCF) <bcf-format>`: The 'spectrum' option for the
+  `select_type` parameter was removed. Use 'spectrum_image' instead.
+- :ref:`Electron Microscopy Dataset (EMD) NCEM <emd_ncem-format>`: Using the
+  keyword 'dataset_name' was removed, use 'dataset_path' instead.
+- :ref:`NeXus data format <nexus-format>`: The `dataset_keys`, `dataset_paths`
+  and `metadata_keys` keywords were removed. Use `dataset_key`, `dataset_path`
+  and `metadata_key` instead.
+
 Hyperspy 1.7.1 (2022-06-18)
 ===========================
 
