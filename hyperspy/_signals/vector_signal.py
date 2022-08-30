@@ -98,7 +98,8 @@ class BaseVectorSignal(BaseSignal):
             nav_axis = self.axes_manager.navigation_axes
             sig_axis = self.axes_manager.signal_axes
         else:
-            if not np.iterable(axis):
+            is_iterable = np.iterable(axis)
+            if not is_iterable:
                 axis = (axis,)
             axis = self.axes_manager[axis]
             nav_axis = [a for a in axis if a.navigate]
@@ -112,6 +113,8 @@ class BaseVectorSignal(BaseSignal):
         else:
             sig_scales = [self.axes_manager.signal_axes[i].scale for i in sig_indexes]
             sig_offsets = [self.axes_manager.signal_axes[i].offset for i in sig_indexes]
+        if len(sig_indexes) == 1:
+            sig_indexes =sig_indexes[0]
         if not navigate:  # Only vector axes
             real_vector = np.empty(self.data.shape, dtype=object)
             for ind in np.ndindex(self.data.shape):

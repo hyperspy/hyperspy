@@ -6022,6 +6022,9 @@ class BaseSignal(FancySlicing,
         marker_name_suffix = 1
         for m in marker_list:
             marker_data_shape = m._get_data_shape()[::-1]
+            if marker_data_shape == (1,):
+                marker_data_shape = ()
+
             if (not (len(marker_data_shape) == 0)) and (
                     marker_data_shape != self.axes_manager.navigation_shape):
                 raise ValueError(

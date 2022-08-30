@@ -21,6 +21,7 @@ Welcome to HyperSpy's documentation!
    user_guide/interactive_operations_ROIs.rst
    user_guide/signal1d.rst
    user_guide/signal2d.rst
+   user_guide/vector_signal.rst
    user_guide/visualisation.rst
    user_guide/mva.rst
    user_guide/model.rst

@@ -189,3 +189,12 @@ class TestVectorSignal:
         with pytest.raises(ValueError):
             s.vector = True
 
+    def test_plot_markers(self):
+        import hyperspy.api as hs
+        p = hs.datasets.artificial_data.get_atomic_resolution_tem_signal2d()
+        peaks = p.find_peaks(method="local_max", threshold_abs=.01, interactive=False)
+        peaks = hs.signals.BaseVectorSignal(peaks)
+        peaks = peaks.isig[0:30,0:30]
+        m = peaks.to_markers()
+        p.add_marker(m)
+
