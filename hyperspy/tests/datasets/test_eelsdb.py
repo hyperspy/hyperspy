@@ -41,10 +41,10 @@ def _eelsdb(**kwargs):
 
 def eelsdb_down():
     try:
-        _ = requests.get('http://api.eelsdb.eu', verify=True)
+        _ = requests.get('https://api.eelsdb.eu', verify=True)
         return False
     except SSLError:
-        _ = requests.get('http://api.eelsdb.eu', verify=False)
+        _ = requests.get('https://api.eelsdb.eu', verify=False)
         return False
     except requests.exceptions.ConnectionError:
         return True

@@ -121,10 +121,10 @@ To close all the figures run the following command:
 
 .. NOTE::
 
-    ``plt.close('all')`` is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command.
+    ``plt.close('all')`` is a `matplotlib <https://matplotlib.org/>`_ command.
     Matplotlib is the library that HyperSpy uses to produce the plots. You can
     learn how to pan/zoom and more  `in the matplotlib documentation
-    <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
+    <https://matplotlib.org/stable/users/explain/interactive.html>`_
 
 
 .. NOTE::
@@ -435,7 +435,7 @@ Data files used in the following examples can be downloaded using
 .. code-block:: python
 
     >>> from urllib.request import urlretrieve
-    >>> url = 'http://cook.msm.cam.ac.uk//~hyperspy//EDS_tutorial//'
+    >>> url = 'http://cook.msm.cam.ac.uk/~hyperspy/EDS_tutorial/'
     >>> urlretrieve(url + 'Ni_La_intensity.hdf5', 'Ni_La_intensity.hdf5')
 
 .. NOTE::
@@ -734,8 +734,8 @@ __ plot.spectra_
     functionality is only enabled if a ``matplotlib`` backend that supports the
     ``button_press_event`` in the figure canvas is being used.
 
-It is also possible to plot multiple images overlayed on the same figure by 
-passing the argument ``overlay=True`` to the 
+It is also possible to plot multiple images overlayed on the same figure by
+passing the argument ``overlay=True`` to the
 :py:func:`~.drawing.utils.plot_images` function. This should only be done when
 images have the same scale (eg. for elemental maps from the same dataset).
 Using the same data as above, the Fe and Pt signals can be plotted using
@@ -746,7 +746,7 @@ hex values.
 
     >>> si_EDS = hs.load("core_shell.hdf5")
     >>> im = si_EDS.get_lines_intensity()
-    >>> hs.plot.plot_images(im,scalebar='all', overlay=True, suptitle=False, 
+    >>> hs.plot.plot_images(im,scalebar='all', overlay=True, suptitle=False,
     >>>                     axes_decor='off')
 
 .. figure::  images/plot_images_overlay.png
@@ -1370,6 +1370,3 @@ Marker properties
 
 The optional parameters (``**kwargs``, keyword arguments) can be used for extra parameters used in matplotlib.
 (The ``color`` property in rectangle marker is an alias of ``edgecolor`` for backward compatibility)
-
-
-

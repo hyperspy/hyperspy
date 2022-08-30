@@ -20,7 +20,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from hyperspy.drawing.widgets import Widget2DBase, ResizersMixin
+from hyperspy.drawing.widget import Widget2DBase, ResizersMixin
 
 
 class CircleWidget(Widget2DBase, ResizersMixin):

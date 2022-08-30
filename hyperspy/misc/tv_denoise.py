@@ -149,7 +149,7 @@ def _tv_denoise_2d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     Notes
     -----
     The principle of total variation denoising is explained in
-    http://en.wikipedia.org/wiki/Total_variation_denoising
+    https://en.wikipedia.org/wiki/Total_variation_denoising
 
     This code is an implementation of the algorithm of Rudin, Fatemi and Osher
     that was proposed by Chambolle in [*]_.
@@ -244,7 +244,7 @@ def _tv_denoise_1d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     Notes
     -----
     The principle of total variation denoising is explained in
-    http://en.wikipedia.org/wiki/Total_variation_denoising
+    https://en.wikipedia.org/wiki/Total_variation_denoising
 
     This code is an implementation of the algorithm of Rudin, Fatemi and Osher
     that was proposed by Chambolle in [*]_.
@@ -335,7 +335,7 @@ def tv_denoise(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     Notes
     -----
     The principle of total variation denoising is explained in
-    http://en.wikipedia.org/wiki/Total_variation_denoising
+    https://en.wikipedia.org/wiki/Total_variation_denoising
 
     The principle of total variation denoising is to minimize the
     total variation of the image, which can be roughly described as

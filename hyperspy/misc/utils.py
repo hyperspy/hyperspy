@@ -1011,7 +1011,7 @@ def ordinal(value):
     Notes
     -----
     Author:  Serdar Tumgoren
-    http://code.activestate.com/recipes/576888-format-a-number-as-an-ordinal/
+    https://code.activestate.com/recipes/576888-format-a-number-as-an-ordinal/
     MIT license
     """
     try:
@@ -1104,7 +1104,6 @@ def stack(
     """
     from hyperspy.signals import BaseSignal
     from hyperspy.axes import FunctionalDataAxis, UniformDataAxis, DataAxis
-    import dask.array as da
     from numbers import Number
 
     for k in [k for k in ["mmap", "mmap_dir"] if k in kwargs]:
@@ -1607,7 +1606,7 @@ def to_numpy(array):
     Returns
     -------
     array : numpy.ndarray
-    
+
     Raises
     ------
     ValueError

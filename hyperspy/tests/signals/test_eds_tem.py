@@ -207,7 +207,7 @@ class Test_quantification:
         method = 'CL'
         kfactors = [1, 2.0009344042484134]
         intensities = s.get_lines_intensity()[:1]
-        assert len(intensities) == 1    
+        assert len(intensities) == 1
         with pytest.raises(ValueError):
             _ = s.quantification(intensities, method, kfactors)
 
@@ -294,7 +294,7 @@ class Test_quantification:
                                    atol=1e-3)
         np.testing.assert_allclose(res3[0][0].data, np.ones((2, 2)) * 31.816908,
                                    atol=1e-3)
-        np.testing.assert_allclose(res[0].data, res4[0][0].data, atol=1e-5)     
+        np.testing.assert_allclose(res[0].data, res4[0][0].data, atol=1e-5)
 
     def test_quant_zeta(self):
         s = self.signal
@@ -585,6 +585,7 @@ class Test_eds_markers:
 
     def test_manual_add_line(self):
         s = self.signal
+        s.plot()
         s.add_xray_lines_markers(['Zn_La'])
         assert (
             list(s._xray_markers.keys()) ==
@@ -593,8 +594,14 @@ class Test_eds_markers:
         # Check that the line has both a vertical line marker and text marker:
         assert len(s._xray_markers['Zn_La']) == 2
 
+    def test_manual_add_line_error(self):
+        s = self.signal
+        with pytest.raises(RuntimeError):
+            s.add_xray_lines_markers(['Zn_La'])
+
     def test_manual_remove_element(self):
         s = self.signal
+        s.plot()
         s.add_xray_lines_markers(['Zn_Ka', 'Zn_Kb', 'Zn_La'])
         s.remove_xray_lines_markers(['Zn_Kb'])
         assert sorted(s._xray_markers.keys()) == ['Zn_Ka', 'Zn_La']

@@ -144,7 +144,7 @@ functions, e.g.:
 
     >>> s = hs.load(["file1.hspy", "file2.hspy"])
 
-or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_:
+or by using `shell-style wildcards <https://docs.python.org/library/glob.html>`_:
 
 .. code-block:: python
 

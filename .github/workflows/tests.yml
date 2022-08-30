@@ -88,26 +88,3 @@ jobs:
       - name: Upload coverage to Codecov
         if: ${{ always() }} && ${{ matrix.PYTEST_ARGS_COVERAGE }}
         uses: codecov/codecov-action@v2
-
-  build_doc:
-    name: Build doc
-    runs-on: ubuntu-latest
-    env:
-      BUILD_DEPS: python3-dev build-essential graphviz
-      LATEX_DEPS: dvipng latexmk texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: ericpre/sphinx-action@latest_sphinx
-        with:
-          # once numba 0.55 is release, remove "--pre" option to "pip install"
-          pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }} && pip install --pre .[all,build-doc]"
-          build-command: make html
-          docs-folder: doc/
-
-      - uses: actions/upload-artifact@v3
-        with:
-          path: ./doc/_build/html/
-          name: doc_build
-

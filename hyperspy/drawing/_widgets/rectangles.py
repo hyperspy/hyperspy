@@ -20,7 +20,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import logging
 
-from hyperspy.drawing.widgets import Widget2DBase, ResizersMixin
+from hyperspy.drawing.widget import Widget2DBase, ResizersMixin
 
 
 _logger = logging.getLogger(__name__)

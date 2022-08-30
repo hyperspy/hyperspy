@@ -227,7 +227,7 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
     if show_progressbar is None:
         show_progressbar = preferences.General.show_progressbar
 
-    request = requests.get('http://api.eelsdb.eu/spectra', params=params, verify=verify_certificate)
+    request = requests.get('https://api.eelsdb.eu/spectra', params=params, verify=verify_certificate)
     spectra = []
     jsons = request.json()
     if "message" in jsons:
@@ -236,13 +236,13 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
             "Please report the following error to the HyperSpy developers: "
             f"{jsons['message']}."
             )
-        
+
     for json_spectrum in progressbar(jsons, disable=not show_progressbar):
         download_link = json_spectrum['download_link']
         if download_link.split('.')[-1].lower() != 'msa':
             _logger.exception(
                 "The source file is not a msa file, please report this error "
-                "to http://eelsdb.eu/about with the following details:\n"
+                "to https://eelsdb.eu/about with the following details:\n"
                 f"Title: {json_spectrum['title']}\nid: {json_spectrum['id']}\n"
                 f"Download link: {download_link}\n"
                 f"Permalink: {json_spectrum['permalink']}"
@@ -264,7 +264,7 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
             _logger.exception(
                 "Failed to load the spectrum.\n"
                 "Title: %s id: %s.\n"
-                "Please report this error to http://eelsdb.eu/about \n" %
+                "Please report this error to https://eelsdb.eu/about \n" %
                 (json_spectrum["title"], json_spectrum["id"]))
 
     if not spectra:
@@ -294,7 +294,7 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
                             "element information:\n"
                             "Title: %s id: %s. Elements: %s.\n"
                             "Please report this error in "
-                            "http://eelsdb.eu/about \n" %
+                            "https://eelsdb.eu/about \n" %
                             (json_md.title, json_md.id, json_md.elements))
                 if "collection" in json_md and " mrad" in json_md.collection:
                     beta = float(json_md.collection.replace(" mrad", ""))

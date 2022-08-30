@@ -19,7 +19,7 @@
 import numpy as np
 import matplotlib.transforms as transforms
 
-from hyperspy.drawing.widgets import Widget1DBase
+from hyperspy.drawing.widget import Widget1DBase
 
 
 class LabelWidget(Widget1DBase):
