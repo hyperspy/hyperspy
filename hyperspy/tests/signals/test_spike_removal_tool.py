@@ -32,6 +32,7 @@ def test_spikes_removal_tool():
     s.data[1, 2, 14] += 1
 
     sr = SpikesRemovalInteractive(s)
+    sr._show_derivative_histogram_fired()
     sr.threshold = 1.5
     sr.find()
     assert s.axes_manager.indices == (0, 1)
@@ -60,17 +61,13 @@ def test_spikes_removal_tool():
     assert s.axes_manager.indices == (0, 0)
 
 
-add_noise_params = [
-    [False, 5],
-    [True, 1]
-]
-
-
 def test_spikes_removal_tool_navigation_dimension_0():
     #Artificial Signal
     s = Signal1D(np.ones(1234))
     #Add a spike
-    s.data[333] = 666
+    s.data[333] = 5
+    np.random.seed(1)
+    s.add_gaussian_noise(0.01)
 
     assert s.axes_manager.navigation_dimension == 0
 
@@ -81,7 +78,7 @@ def test_spikes_removal_tool_navigation_dimension_0():
 
     sr.apply()
 
-    np.testing.assert_allclose(s.data[333], 1, atol=1e-4)
+    np.testing.assert_allclose(s.data[333], 1, atol=0.02)
 
 
 @pytest.mark.parametrize(("add_noise, decimal"), [(True, 1), (False, 5)])
@@ -115,8 +112,8 @@ def test_spikes_removal_tool_non_interactive_masking():
     navigation_mask[1, 0] = True
     signal_mask = np.zeros((30,), dtype='bool')
     signal_mask[28:] = True
-    sr = s.spikes_removal_tool(threshold=0.5, interactive=False, add_noise=False,
-                               navigation_mask=navigation_mask, signal_mask=signal_mask)
+    s.spikes_removal_tool(threshold=0.5, interactive=False, add_noise=False,
+                          navigation_mask=navigation_mask, signal_mask=signal_mask)
     np.testing.assert_almost_equal(s.data[1, 0, 1], 3, decimal=5)
     np.testing.assert_almost_equal(s.data[0, 2, 29], 2, decimal=5)
     np.testing.assert_almost_equal(s.data[1, 2, 14], 1, decimal=5)
