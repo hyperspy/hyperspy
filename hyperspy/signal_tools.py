@@ -1757,10 +1757,13 @@ class SpikesRemoval:
             signal.axes_manager.indices = self.coordinates[0]
         if threshold == 'auto':
             # Find the first zero of the spikes diagnosis plot
-            hist = signal._get_spikes_diagnosis_histogram_data(
+            hist = signal._spikes_diagnosis(
                     signal_mask=signal_mask,
                     navigation_mask=navigation_mask,
-                    max_num_bins=max_num_bins)
+                    max_num_bins=max_num_bins,
+                    show_plot=False,
+                    use_gui=False,
+                    )
             zero_index = np.where(hist.data == 0)[0]
             if zero_index.shape[0] > 0:
                 index = zero_index[0]
@@ -1950,9 +1953,13 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
                         title="Instructions"),
 
     def _show_derivative_histogram_fired(self):
-        self.signal.spikes_diagnosis(signal_mask=self.signal_mask,
-                                     navigation_mask=self.navigation_mask,
-                                     max_num_bins=self.max_num_bins)
+        self.signal._spikes_diagnosis(
+            signal_mask=self.signal_mask,
+            navigation_mask=self.navigation_mask,
+            max_num_bins=self.max_num_bins,
+            show_plot=True,
+            use_gui=True,
+            )
 
     def _reset_line(self):
         if self.interpolated_line is not None:
