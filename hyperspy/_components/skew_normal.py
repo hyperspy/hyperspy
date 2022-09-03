@@ -23,7 +23,6 @@ import sympy
 
 from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
-from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 sqrt2pi = np.sqrt(2 * np.pi)
@@ -222,9 +221,7 @@ class SkewNormal(Expression):
             self.A.value = height * sqrt2pi
             self.scale.value = scale
             self.shape.value = shape
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.A.value /= scaling_factor
             return True
         else:
@@ -232,9 +229,7 @@ class SkewNormal(Expression):
                 self._create_arrays()
             self.A.map['values'][:] = height * sqrt2pi
 
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.A.map['values'] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.x0.map['values'][:] = x0
