@@ -127,7 +127,7 @@ migration of the IO plugins to `RosettaSciIO
 - :ref:`NeXus data format <nexus-format>`: The ``dataset_keys``, ``dataset_paths``
   and ``metadata_keys`` keywords were removed. Use ``dataset_key``, ``dataset_path``
   and ``metadata_key`` instead.
-
+  
 Data Visualization
 ------------------
 
@@ -135,6 +135,12 @@ Data Visualization
   ``saturated_pixels`` is removed, use ``vmin`` and/or ``vmax`` instead.
 - The ``get_complex`` property of :py:class:`~.drawing.signal1d.Signal1DLine` is removed.
 - The keyword argument ``line_style`` of :py:func:`~.drawing.utils.plot_spectra` have been renamed to ``linestyle``.
+
+
+Signal
+------
+- ``metadata.Signal.binned`` is removed, use the ``is_binned`` axis attribute
+  instead, e. g. ``s.axes_manager[-1].is_binned``.
 
 
 .. towncrier release notes start

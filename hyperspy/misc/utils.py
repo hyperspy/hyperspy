@@ -1552,17 +1552,6 @@ def nested_dictionary_merge(dict1, dict2):
             dict1[key] = dict2[key]
 
 
-def is_binned(signal, axis=-1):
-    """Backwards compatibility check utility for is_binned attribute.
-
-    Can be removed in v2.0.
-    """
-    if signal.metadata.has_item("Signal.binned"):
-        return signal.metadata.Signal.binned
-    else:
-        return signal.axes_manager[axis].is_binned
-
-
 def is_cupy_array(array):
     """
     Convenience function to determine if an array is a cupy array

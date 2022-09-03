@@ -32,7 +32,6 @@ from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT, add_gui_method
 from hyperspy.misc.utils import dummy_context_manager
-from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 @add_gui_method(toolkey="hyperspy.Model1D.fit_component")
