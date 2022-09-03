@@ -64,7 +64,6 @@ from hyperspy.misc.model_tools import (
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.misc.utils import (
     dummy_context_manager,
-    is_binned,
     shorten_name,
     slugify,
     stash_active_state
@@ -936,7 +935,7 @@ class BaseModel(list):
         """
 
         signal_axes = self.signal.axes_manager.signal_axes
-        if True in [not ax.is_uniform and ax.is_binned for ax in signal_axes]:
+        if any([not ax.is_uniform and ax.is_binned for ax in signal_axes]):
             raise ValueError("Linear fitting doesn't support signal axes, "
                              "which are binned and non-uniform.")
 
@@ -1048,9 +1047,9 @@ class BaseModel(list):
                 (np.prod(sig_shape, dtype=int), )
                 )[:, channel_switches]
 
-        if is_binned(self.signal):
+        if any([ax.is_binned for ax in signal_axes]):
             target_signal = target_signal / np.prod(
-                tuple((ax.scale for ax in self.signal.axes_manager.signal_axes))
+                tuple((ax.scale for ax in signal_axes if ax.is_binned))
             )
 
         target_signal = target_signal - constant_term
