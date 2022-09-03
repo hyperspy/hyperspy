@@ -32,7 +32,6 @@ from hyperspy._signals.common_signal1d import CommonSignal1D
 from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
 from hyperspy.models.model1d import Model1D
 from hyperspy.misc.lowess_smooth import lowess
-from hyperspy.misc.utils import is_binned # remove in v2.0
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.signal_tools import (
@@ -1117,9 +1116,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         else:
             try:
                 axis = self.axes_manager.signal_axes[0]
-                if is_binned(self):
-                # in v2 replace by
-                # if axis.is_binned:
+                if axis.is_binned:
                     if axis.is_uniform:
                         scale_factor = axis.scale
                     else:
