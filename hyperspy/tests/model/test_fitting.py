@@ -318,17 +318,23 @@ class TestModelWeighted:
         np.testing.assert_allclose(self.m.red_chisq.data, 0.02100059)
 
     @pytest.mark.parametrize(
-        "optimizer, binned, expected",
+        "optimizer, binned, non_uniform_axis, expected",
         [
-            ("lm", True, (256.7752411, 49.9770694, 5.3008397)),
-            ("odr", True, (256.7752604, 49.9770693, 5.3008397)),
-            ("lm", False, (25.6775426, 49.9770509, 5.3008481)),
-            ("odr", False, (25.6775411, 49.9770507, 5.3008476)),
+            ("lm", True, True, (256.7752411, 49.9770694, 5.3008397)),
+            ("lm", True, False, (256.7752411, 49.9770694, 5.3008397)),
+            ("odr", True, False, (256.7752604, 49.9770693, 5.3008397)),
+            ("lm", False, False, (25.6775426, 49.9770509, 5.3008481)),
+            ("odr", False, False, (25.6775411, 49.9770507, 5.3008476)),
         ],
     )
-    def test_fit(self, optimizer, binned, expected):
-        self.m.signal.axes_manager[-1].is_binned = binned
-        self.m.fit(optimizer=optimizer)
+    def test_fit(self, non_uniform_axis, optimizer, binned, expected):
+        axis = self.m.signal.axes_manager[-1]
+        axis.is_binned = binned
+        if non_uniform_axis:
+            axis.convert_to_non_uniform_axis()
+
+        # Use analytical gradient to check for non-uniform axis and binned
+        self.m.fit(optimizer=optimizer, grad="analytical")
         self._check_model_values(self.m[0], expected, rtol=TOL)
 
 
