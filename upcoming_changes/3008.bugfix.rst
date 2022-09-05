@@ -1,0 +1,1 @@
+Fix removing horizontal or vertical line widget; regression introduced in hyperspy 1.7.0
