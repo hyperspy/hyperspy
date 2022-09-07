@@ -319,7 +319,7 @@ lazily loaded signals. HyperSpy extracts the relevant chunk from the signal and 
 
 The linear ``'lstsq'`` optimizer supports fitting the entire dataset in a vectorised manner
 using :py:func:`dask.array.linalg.lstsq`. This can give potentially enormous performance benefits over fitting 
-with a nonlinear fitter, but comes with the restrictions explained in the :ref:`linear fitting<linear_fitting-label>` section.
+with a nonlinear optimizer, but comes with the restrictions explained in the :ref:`linear fitting<linear_fitting-label>` section.
 
 Practical tips
 --------------
