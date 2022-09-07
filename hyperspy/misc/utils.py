@@ -1106,14 +1106,6 @@ def stack(
     from hyperspy.axes import FunctionalDataAxis, UniformDataAxis, DataAxis
     from numbers import Number
 
-    for k in [k for k in ["mmap", "mmap_dir"] if k in kwargs]:
-        lazy = True
-        warnings.warn(
-            f"'{k}' argument is deprecated and will be removed in "
-            "HyperSpy v2.0. Please use 'lazy=True' instead.",
-            VisibleDeprecationWarning,
-        )
-
     axis_input = copy.deepcopy(axis)
     signal_list = list(signal_list)
 

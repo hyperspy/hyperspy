@@ -6,6 +6,63 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 
 .. towncrier-draft-entries:: |release| [UNRELEASED]
 
+
+API Removal
+===========
+
+As the HyperSpy API evolves, APIs are occasionally reorganized or upgraded.
+When APIs evolve, the old API is deprecated and eventually removed in a major
+release. The functions and methods removed in HyperSpy 2.0 are listed below along
+with migration advises:
+
+- :py:meth:`AxesManager.show` is removed, use :py:meth:`~.axes.AxesManager.gui` instead.
+- :py:meth:`AxesManager.set_signal_dimension` is removed, use :py:meth:`~.signal.BaseSignal.as_signal1D`,
+  :py:meth:`~.signal.BaseSignal.as_signal2D` or :py:meth:`~.signal.BaseSignal.transpose` of the signal instance instead.
+- The arguments ``'mmap_dir'`` and ``'load_to_memory'`` of the :py:func:`~.io.load` function have been removed, use the ``lazy`` argument instead.
+- The ``iterpath`` default value have changed from ``'flyback'`` to ``'serpentine'``.
+- Changes in the arguments of the :py:meth:`~.model.BaseModel.fit` and :py:meth:`~.model.BaseModel.multifit` methods:
+
+  - The ``fitter`` argument has been renamed to ``optimizer``.
+  - The list of possible values for the ``optimizer`` argument has been renamed according to the following table:
+
+    .. list-table:: Renaming of the ``optimizer`` argument
+       :widths: 50 50
+       :header-rows: 1
+
+       * - hyperspy < 2.0
+         - hyperspy >= 2.0
+       * - fmin
+         - Nelder-Mead
+       * - fmin_cg
+         - CG
+       * - fmin_ncg
+         - Newton-CG
+       * - fmin_bfgs
+         - Newton-BFGS
+       * - fmin_l_bfgs_b
+         - L-BFGS-B
+       * - fmin_tnc
+         - TNC
+       * - fmin_powell
+         - Powell
+       * - mpfit
+         - lm
+       * - leastsq
+         - lm
+
+    - ``loss_function="ml"`` has been renamed to ``loss_function="ML-poisson"``.
+    - ``grad=True`` has been changed to ``grad="analytical"``.
+    - The ``ext_bounding`` argument has been renamed to ``bounded``.
+    - The ``min_function`` argument has been removed, use the ``loss_function`` argument instead.
+    - The ``min_function_grad`` argument has been removed, use the ``grad`` argument instead.
+
+- The following :py:class:`~.model.BaseModel` methods have been removed:
+
+  - :py:meth:`~.model.BaseModel.set_boundaries`
+  - :py:meth:`~.model.BaseModel.set_mpfit_parameters_info`
+
+- The arguments ``parallel`` and ``max_workers`` have been removed from the :py:meth:`~.model.BaseModel.as_signal` methods.
+
 .. towncrier release notes start
 
 API Removal
@@ -138,9 +195,9 @@ API changes
 - ``metadata.Signal.binned`` is replaced by an axis parameter, e. g. ``axes_manager[-1].is_binned`` (`#2652 <https://github.com/hyperspy/hyperspy/issues/2652>`_)
 - * when loading Bruker bcf, ``cutoff_at_kV=None`` (default) applies no more automatic cutoff.
   * New acceptable values ``"zealous"`` and ``"auto"`` do automatic cutoff. (`#2910 <https://github.com/hyperspy/hyperspy/issues/2910>`_)
-- Deprecate the ability to directly set ``metadata`` and ``original_metadata`` Signal 
-  attributes in favor of using :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item` 
-  and :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods or 
+- Deprecate the ability to directly set ``metadata`` and ``original_metadata`` Signal
+  attributes in favor of using :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item`
+  and :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods or
   specifying metadata when creating signals (`#2913 <https://github.com/hyperspy/hyperspy/issues/2913>`_)
 
 
@@ -467,7 +524,6 @@ API changes
 
   * :py:meth:`~.model.BaseModel.set_boundaries`
   * :py:meth:`~.model.BaseModel.set_mpfit_parameters_info`
-  * :py:meth:`~.model.BaseModel.set_boundaries`
 
 * The ``comp_label`` keyword of the machine learning plotting functions
   has been renamed to ``title``.

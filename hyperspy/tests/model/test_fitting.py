@@ -25,8 +25,9 @@ import scipy
 from scipy.optimize import OptimizeResult
 
 import hyperspy.api as hs
+from hyperspy.axes import GeneratorLen
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.exceptions import VisibleDeprecationWarning
+
 
 TOL = 1e-5
 
@@ -145,12 +146,9 @@ class TestModelFitBinnedLeastSquares:
         self.m[0].sigma.bmin = 3.5
         self.m[0].sigma.bmax = 4.9
 
-        with pytest.warns(
-            VisibleDeprecationWarning, match="`ext_bounding=True` has been deprecated",
-        ):
-            self.m.fit(optimizer="lm", ext_bounding=True)
+        self.m.fit(optimizer="lm", bounded=True)
 
-        expected = (200.0, 51.0, 4.9)
+        expected = (245.6, 51.0, 4.9)
         self._check_model_values(self.m[0], expected, rtol=TOL)
 
 
@@ -424,21 +422,6 @@ class TestFitErrorsAndWarnings:
         g.A.value = 1000
         self.m = m
 
-    @pytest.mark.parametrize("optimizer", ["fmin", "mpfit", "leastsq"])
-    def test_deprecated_optimizers(self, optimizer):
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match=r".* has been deprecated and will be removed",
-        ):
-            self.m.fit(optimizer=optimizer)
-
-    def test_deprecated_fitter(self):
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match=r"fitter=.* has been deprecated and will be removed",
-        ):
-            self.m.fit(fitter="lm")
-
     def test_wrong_loss_function(self):
         with pytest.raises(ValueError, match="loss_function must be one of"):
             self.m.fit(loss_function="dummy")
@@ -517,14 +500,12 @@ class TestMultifit:
         m[0].A.value = 100
 
     def test_fetch_only_fixed_false(self):
-        # HyperSpy 2.0: remove setting iterpath='serpentine'
-        self.m.multifit(fetch_only_fixed=False, iterpath="serpentine", optimizer="trf")
+        self.m.multifit(fetch_only_fixed=False, optimizer="trf")
         np.testing.assert_array_almost_equal(self.m[0].r.map["values"], [3.0, 100.0])
         np.testing.assert_array_almost_equal(self.m[0].A.map["values"], [2.0, 2.0])
 
     def test_fetch_only_fixed_true(self):
-        # HyperSpy 2.0: remove setting iterpath='serpentine'
-        self.m.multifit(fetch_only_fixed=True, iterpath="serpentine", optimizer="trf")
+        self.m.multifit(fetch_only_fixed=True, optimizer="trf")
         np.testing.assert_array_almost_equal(self.m[0].r.map["values"], [3.0, 3.0])
         np.testing.assert_array_almost_equal(self.m[0].A.map["values"], [2.0, 2.0])
 
@@ -533,8 +514,7 @@ class TestMultifit:
         rs = self.m[0].r.as_signal(field="values")
         np.testing.assert_allclose(rs.data, np.array([2.0, 100.0]))
         assert rs.get_noise_variance() is None
-        # HyperSpy 2.0: remove setting iterpath='serpentine'
-        self.m.multifit(fetch_only_fixed=True, iterpath="serpentine")
+        self.m.multifit(fetch_only_fixed=True)
         rs = self.m[0].r.as_signal(field="values")
         assert rs.get_noise_variance() is not None
         assert isinstance(rs.get_noise_variance(), hs.signals.Signal1D)
@@ -546,27 +526,54 @@ class TestMultifit:
         m.signal.data *= 2.0
         m[0].A.value = 2.0
         m[0].A.bmin = 3.0
-        # HyperSpy 2.0: remove setting iterpath='serpentine'
-        m.multifit(optimizer=optimizer, bounded=True, iterpath="serpentine")
+        m.multifit(optimizer=optimizer, bounded=True)
         np.testing.assert_allclose(self.m[0].r.map["values"], [3.0, 3.0], rtol=TOL)
         np.testing.assert_allclose(self.m[0].A.map["values"], [4.0, 4.0], rtol=TOL)
 
-    @pytest.mark.parametrize("iterpath", ["flyback", "serpentine"])
+    @pytest.mark.parametrize("iterpath", [None, "flyback", "serpentine"])
     def test_iterpaths(self, iterpath):
         self.m.multifit(iterpath=iterpath)
 
-    def test_iterpath_none(self):
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match="default will change from 'flyback' to 'serpentine'",
-        ):
-            self.m.multifit()  # iterpath = None by default
+    def test_interactive_plot(self):
+        m = self.m
+        m.multifit(interactive_plot=True)
 
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match="default will change from 'flyback' to 'serpentine'",
-        ):
-            self.m.multifit(iterpath=None)
+    def test_autosave(self):
+        m = self.m
+        m.multifit(autosave=True, autosave_every=1)
+
+
+def _generate():
+    for i in range(3):
+        yield (i,i)
+
+
+class Test_multifit_iterpath():
+    def setup_method(self, method):
+        data = np.ones((3, 3, 10))
+        s = hs.signals.Signal1D(data)
+        ax = s.axes_manager
+        m = s.create_model()
+        G = hs.model.components1D.Gaussian()
+        m.append(G)
+        self.m = m
+        self.ax = ax
+
+    def test_custom_iterpath(self):
+        indices = np.array([(0,0), (1,1), (2,2)])
+        self.ax.iterpath = indices
+        self.m.multifit(iterpath=indices)
+        set_indices = np.array(np.where(self.m[0].A.map['is_set'])).T
+        np.testing.assert_array_equal(set_indices, indices[:,::-1])
+
+    def test_model_generator(self):
+        gen = _generate()
+        self.m.axes_manager.iterpath = gen
+        self.m.multifit()
+
+    def test_model_GeneratorLen(self):
+        gen = GeneratorLen(_generate(), 3)
+        self.m.axes_manager.iterpath = gen
 
 
 @lazifyTestClass
@@ -590,8 +597,7 @@ class TestMultiFitSignalVariance:
         self.var = (variance + std ** 2).data
 
     def test_std1_red_chisq(self):
-        # HyperSpy 2.0: remove setting iterpath='serpentine'
-        self.m.multifit(iterpath="serpentine")
+        self.m.multifit()
         np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109, rtol=TOL)
         np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727, rtol=TOL)
 

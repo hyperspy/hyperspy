@@ -43,7 +43,7 @@ class ComponentFit(SpanSelectorInSignal1D):
 
     def __init__(self, model, component, signal_range=None,
                  estimate_parameters=True, fit_independent=False,
-                 only_current=True, iterpath='flyback', **kwargs):
+                 only_current=True, iterpath='serpentine', **kwargs):
         if model.signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 model.signal.axes_manager.signal_dimension, 1)

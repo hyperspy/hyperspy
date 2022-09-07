@@ -284,8 +284,7 @@ class TestMaps:
         s = self.s
 
         m = s.create_model()
-        # HyperSpy 2.0: remove setting iterpath='serpentine'
-        m.multifit(iterpath='serpentine')
+        m.multifit()
         ws = np.array([0.5, 0.7, 0.3, 0.5])
         w = np.zeros((4,) + self.mix.shape)
         for x in range(self.mix.shape[0]):

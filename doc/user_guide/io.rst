@@ -107,11 +107,6 @@ using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 Lazy loading of large datasets
 ------------------------------
 
-.. deprecated:: 1.2
-   ``memmap_dir`` and ``load_to_memory`` :py:func:`~.io.load` keyword
-   arguments. Use ``lazy`` instead of ``load_to_memory``. ``lazy`` makes
-   ``memmap_dir`` unnecessary.
-
 .. versionadded:: 1.2
    ``lazy`` keyword argument.
 
