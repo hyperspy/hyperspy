@@ -1371,7 +1371,7 @@ can be explicitly set using the :py:meth:`~.model.BaseModel.multifit`
 ``iterpath='flyback'`` argument. However, the ``'serpentine'`` strategy is
 usually more robust, as it always moves on to a neighbouring pixel and the fitting
 procedure uses the fit result of the previous pixel as the starting point for the
-next. A common problem in the ``'flyback''` pattern  is that the fitting fails
+next. A common problem in the ``'flyback'`` pattern  is that the fitting fails
 going from the end of one row to the beginning of the next, as the spectrum can
 change abruptly.
 
