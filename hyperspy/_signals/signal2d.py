@@ -323,7 +323,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
              navigator="auto",
              plot_markers=True,
              autoscale='v',
-             saturated_pixels=None,
              norm="auto",
              vmin=None,
              vmax=None,
@@ -356,7 +355,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
             navigator=navigator,
             plot_markers=plot_markers,
             autoscale=autoscale,
-            saturated_pixels=saturated_pixels,
             norm=norm,
             vmin=vmin,
             vmax=vmax,
@@ -464,7 +462,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         Returns
         -------
         shifts : array
-            Estimated shifts in pixels. 
+            Estimated shifts in pixels.
 
         Notes
         -----
@@ -628,7 +626,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         shifts : None or array.
             The array of shifts must be in pixel units. The shape must be
             the navigation shape using numpy order convention. If `None`
-            the shifts are estimated using 
+            the shifts are estimated using
             :py:meth:`~._signals.signal2D.estimate_shift2D`.
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
