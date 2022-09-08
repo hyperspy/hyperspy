@@ -1,0 +1,1 @@
+Extend the IO functions to accept alias names for ``format_name`` as defined in RosettaSciIO.
