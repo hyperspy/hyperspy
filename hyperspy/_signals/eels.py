@@ -18,6 +18,7 @@
 
 import numbers
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 import dask.array as da
@@ -46,6 +47,8 @@ from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG, SIGNAL_MASK_ARG,
     NAVIGATION_MASK_ARG)
 
+if TYPE_CHECKING:
+    from hyperspy.models.eelsmodel import EELSModel
 
 
 _logger = logging.getLogger(__name__)
@@ -1537,7 +1540,7 @@ class EELSSpectrum(Signal1D):
             return eps, output
 
     def create_model(self, ll=None, auto_background=True, auto_add_edges=True,
-                     GOS=None, dictionary=None):
+                     GOS=None, dictionary=None) -> "EELSModel":
         """Create a model for the current EELS data.
 
         Parameters

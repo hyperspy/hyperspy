@@ -24,6 +24,7 @@ import sympy
 from sympy.utilities.lambdify import lambdify
 from packaging.version import Version
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import hyperspy
 from hyperspy.misc.utils import slugify, is_binned
@@ -40,6 +41,9 @@ from hyperspy.misc.utils import get_object_package_info
 import logging
 
 _logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from hyperspy.signal import BaseSignal
 
 
 class NoneFloat(t.CFloat):   # Lazy solution, but usable
@@ -585,7 +589,7 @@ class Parameter(t.HasTraits):
             # from the newly defined arrays
             self.std = None
 
-    def as_signal(self, field='values'):
+    def as_signal(self, field='values') -> "BaseSignal":
         """Get a parameter map as a signal object.
 
         Please note that this method only works when the navigation

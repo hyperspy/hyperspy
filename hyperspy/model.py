@@ -21,6 +21,7 @@ import importlib
 import logging
 import os
 import tempfile
+from typing import Sequence, Union
 import warnings
 from contextlib import contextmanager
 from packaging.version import Version
@@ -385,7 +386,7 @@ class BaseModel(list):
     def insert(self, **kwargs):
         raise NotImplementedError
 
-    def append(self, thing):
+    def append(self, thing: Component):
         """Add component to Model.
 
         Parameters
@@ -423,7 +424,7 @@ class BaseModel(list):
             self._connect_parameters2update_plot(components=[thing])
             self.signal._plot.signal_plot.update()
 
-    def extend(self, iterable):
+    def extend(self, iterable: Sequence[Component]):
         """Append multiple components to the model.
 
         Parameters
@@ -437,7 +438,7 @@ class BaseModel(list):
         thing = self.__getitem__(thing)
         self.remove(thing)
 
-    def remove(self, thing):
+    def remove(self, thing: Component):
         """Remove component from model.
 
         Examples
@@ -477,7 +478,7 @@ class BaseModel(list):
             self.signal._plot.signal_plot.update()
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
-                  show_progressbar=None, out=None, **kwargs):
+                  show_progressbar=None, out=None, **kwargs) -> BaseSignal:
         """Returns a recreation of the dataset using the model.
 
         By default, the signal range outside of the fitted range is filled with nans.
@@ -2476,7 +2477,7 @@ class BaseModel(list):
                 else:
                     _component._active_array.fill(value)
 
-    def __getitem__(self, value):
+    def __getitem__(self, value: Union[int, str]) -> Component:
         """x.__getitem__(y) <==> x[y]"""
         if isinstance(value, str):
             component_list = []

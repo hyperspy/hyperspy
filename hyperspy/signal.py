@@ -25,6 +25,7 @@ import inspect
 from itertools import product
 import logging
 import numbers
+from typing import Union, TYPE_CHECKING
 from packaging.version import Version
 from pathlib import Path
 import warnings
@@ -83,6 +84,10 @@ from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order, check_random_state
 from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
 
+
+if TYPE_CHECKING:
+    from ._signals.signal1d import Signal1D
+    from ._signals.signal2d import Signal2D
 
 _logger = logging.getLogger(__name__)
 
@@ -3804,7 +3809,7 @@ class BaseSignal(FancySlicing,
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
-    def sum(self, axis=None, out=None, rechunk=True):
+    def sum(self, axis=None, out=None, rechunk=True) -> "BaseSignal":
         """Sum the data over the given axes.
 
         Parameters
@@ -3929,7 +3934,7 @@ class BaseSignal(FancySlicing,
             np.min, axis, out=out, rechunk=rechunk)
     min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def mean(self, axis=None, out=None, rechunk=True):
+    def mean(self, axis=None, out=None, rechunk=True) -> "BaseSignal":
         """Returns a signal with the average of the signal along at least one
         axis.
 
@@ -5599,7 +5604,7 @@ class BaseSignal(FancySlicing,
         nitem = nitem if nitem > 0 else 1
         return nitem
 
-    def as_signal1D(self, spectral_axis, out=None, optimize=True):
+    def as_signal1D(self, spectral_axis, out=None, optimize=True) -> "Signal1D":
         """Return the Signal as a spectrum.
 
         The chosen spectral axis is moved to the last index in the
@@ -5642,7 +5647,7 @@ class BaseSignal(FancySlicing,
     as_signal1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG,
                             OPTIMIZE_ARG.replace('False', 'True'))
 
-    def as_signal2D(self, image_axes, out=None, optimize=True):
+    def as_signal2D(self, image_axes, out=None, optimize=True) -> "Signal2D":
         """Convert a signal to image (
         :py:class:`~hyperspy._signals.signal2d.Signal2D`).
 

@@ -21,6 +21,7 @@ import copy
 import numpy as np
 from scipy.special import huber
 import traits.api as t
+from ..component import Component
 
 import hyperspy.drawing.signal1d
 from hyperspy.axes import generate_uniform_axis
@@ -342,7 +343,7 @@ class Model1D(BaseModel):
         self.convolution_axis = generate_uniform_axis(self.axis.offset, step,
                                                      dimension, knot_position)
 
-    def append(self, thing):
+    def append(self, thing: Component):
         """Add component to Model.
 
         Parameters
