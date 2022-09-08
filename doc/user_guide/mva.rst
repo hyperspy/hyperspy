@@ -321,8 +321,8 @@ finding the correct minima. Usually a value between 1 and 2 works well:
 
 You can also use Momentum Stochastic Gradient Descent (MomentumSGD),
 which typically improves the convergence properties of stochastic gradient
-descent. This takes the further parameter "momentum", which should be a
-fraction between 0 and 1.
+descent. This takes the further parameter ``subspace_meomentum``, which should
+be a fraction between 0 and 1.
 
 .. code-block:: python
 
@@ -332,7 +332,7 @@ fraction between 0 and 1.
    ...                 subspace_learning_rate=1.1,
    ...                 subspace_momentum=0.5)
 
-Using the "SGD" or "MomentumSGD" methods enables the subspace,
+Using the ``"SGD"`` or ``"MomentumSGD"`` methods enables the subspace,
 i.e. the underlying low-rank component, to be tracked as it changes
 with each sample update. The default method instead assumes a fixed,
 static subspace.
@@ -347,7 +347,7 @@ Another popular decomposition method is non-negative matrix factorization
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm='NMF')
+   >>> s.decomposition(algorithm="NMF")
 
 Unlike PCA, NMF forces the components to be strictly non-negative, which can
 aid the physical interpretation of components for count data such as images,
@@ -406,7 +406,7 @@ Custom decomposition algorithms
 
 HyperSpy supports passing a custom decomposition algorithm, provided it follows the form of a
 `scikit-learn estimator <https://scikit-learn.org/stable/developers/develop.html>`_.
-Any object that implements ``fit()`` and ``transform()`` methods is acceptable, including
+Any object that implements ``fit`` and ``transform`` methods is acceptable, including
 :py:class:`sklearn.pipeline.Pipeline` and :py:class:`sklearn.model_selection.GridSearchCV`.
 You can access the fitted estimator by passing ``return_info=True``.
 

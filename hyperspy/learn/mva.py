@@ -20,13 +20,13 @@
 import logging
 import types
 import warnings
+
 import dask.array as da
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import FuncFormatter, MaxNLocator
-
 import rsciio.utils.tools as io_tools
-from hyperspy.exceptions import VisibleDeprecationWarning
+
 from hyperspy.learn.mlpca import mlpca
 from hyperspy.learn.ornmf import ornmf
 from hyperspy.learn.orthomax import orthomax
@@ -273,35 +273,6 @@ class MVA:
                 "It is not possible to decompose a dataset with navigation_size < 2"
             )
 
-        # Check for deprecated algorithm arguments
-        algorithms_deprecated = {
-            "fast_svd": "SVD",
-            "svd": "SVD",
-            "fast_mlpca": "MLPCA",
-            "mlpca": "MLPCA",
-            "nmf": "NMF",
-            "RPCA_GoDec": "RPCA",
-        }
-        new_algo = algorithms_deprecated.get(algorithm, None)
-        if new_algo:
-            if "fast" in algorithm:
-                warnings.warn(
-                    f"The algorithm name `{algorithm}` has been deprecated and will be "
-                    f"removed in HyperSpy 2.0. Please use `{new_algo}` along with the "
-                    "argument `svd_solver='randomized'` instead.",
-                    VisibleDeprecationWarning,
-                )
-                svd_solver = "randomized"
-            else:
-                warnings.warn(
-                    f"The algorithm name `{algorithm}` has been deprecated and will be "
-                    f"removed in HyperSpy 2.0. Please use `{new_algo}` instead.",
-                    VisibleDeprecationWarning,
-                )
-
-            # Update algorithm name
-            algorithm = new_algo
-
         # Check algorithms requiring output_dimension
         algorithms_require_dimension = [
             "MLPCA",
@@ -350,16 +321,6 @@ class MVA:
             )
             normalize_poissonian_noise = False
 
-        # Check for deprecated polyfit
-        polyfit = kwargs.get("polyfit", False)
-        if polyfit:
-            warnings.warn(
-                "The `polyfit` argument has been deprecated and will be "
-                "removed in HyperSpy 2.0. Please use `var_func` instead.",
-                VisibleDeprecationWarning,
-            )
-            var_func = polyfit
-
         # Initialize return_info and print_info
         to_return = None
         to_print = [
@@ -369,8 +330,6 @@ class MVA:
             f"  output_dimension={output_dimension}",
             f"  centre={centre}",
         ]
-
-        from hyperspy.signal import BaseSignal
 
         self._check_navigation_mask(navigation_mask)
         self._check_signal_mask(signal_mask)

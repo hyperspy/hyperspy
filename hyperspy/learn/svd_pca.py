@@ -17,14 +17,12 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
-import warnings
 from packaging.version import Version
 
 import numpy as np
-import scipy
 from numpy.linalg import svd
+import scipy
 
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.machine_learning.import_sklearn import (
     randomized_svd,
     sklearn_installed,
@@ -246,26 +244,7 @@ def svd_pca(
 
     if centre is None:
         mean = None
-
     else:
-        # To avoid confusion between terminology in different
-        # machine learning fields, we map the argument here.
-        # See #1159 for some discussion.
-        if centre in ["variables", "trials"]:
-            centre_map = {
-                "trials": "navigation",
-                "variables": "signal",
-            }
-            centre_new = centre_map.get(centre, None)
-
-            warnings.warn(
-                f"centre='{centre}' has been deprecated and will be "
-                f"removed in HyperSpy 2.0. Please use '{centre_new}' instead.",
-                VisibleDeprecationWarning,
-            )
-
-            centre = centre_new
-
         if centre == "signal":
             mean = data.mean(axis=1)[:, np.newaxis]
         elif centre == "navigation":

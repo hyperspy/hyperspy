@@ -15,10 +15,58 @@ When APIs evolve, the old API is deprecated and eventually removed in a major
 release. The functions and methods removed in HyperSpy 2.0 are listed below along
 with migration advises:
 
+Machine Learning
+----------------
+
+- The ``polyfit`` keyword argument has been removed. uUse ``var_func`` instead.
+- The list of possible values for the ``algorithm`` argument of the :py:meth:`~.learn.mva.decomposition` method
+  has been changed according to the following table:
+
+  .. list-table:: Change of the ``algorithm`` argument
+     :widths: 25 75
+     :header-rows: 1
+
+     * - hyperspy < 2.0
+       - hyperspy >= 2.0
+     * - fast_svd
+       - SVD along with the argument svd_solver="randomized"
+     * - svd
+       - SVD
+     * - fast_mlpca
+       - MLPCA along with the argument svd_solver="randomized
+     * - mlpca
+       - MLPCA
+     * - nmf
+       - NMF
+     * - RPCA_GoDec
+       - RPCA
+
+- The argument ``learning_rate`` of the ``ORPCA`` algorithm has been renamed to ``subspace_learning_rate``.
+- The argument ``momentum`` of the ``ORPCA`` algorithm has been renamed to ``subspace_momentum``.
+- The list of possible values for the ``centre`` keyword argument of the :py:meth:`~.learn.mva.decomposition` method
+  when using the ``SVD`` algorithm has been changed according to the following table:
+
+  .. list-table:: Change of the ``centre`` argument
+     :widths: 50 50
+     :header-rows: 1
+
+     * - hyperspy < 2.0
+       - hyperspy >= 2.0
+     * - trials
+       - navigation
+     * - variables
+       - signal
+
+Axes
+----
+
 - :py:meth:`AxesManager.show` is removed, use :py:meth:`~.axes.AxesManager.gui` instead.
 - :py:meth:`AxesManager.set_signal_dimension` is removed, use :py:meth:`~.signal.BaseSignal.as_signal1D`,
   :py:meth:`~.signal.BaseSignal.as_signal2D` or :py:meth:`~.signal.BaseSignal.transpose` of the signal instance instead.
-- The arguments ``'mmap_dir'`` and ``'load_to_memory'`` of the :py:func:`~.io.load` function have been removed, use the ``lazy`` argument instead.
+
+Model fitting
+-------------
+
 - The ``iterpath`` default value have changed from ``'flyback'`` to ``'serpentine'``.
 - Changes in the arguments of the :py:meth:`~.model.BaseModel.fit` and :py:meth:`~.model.BaseModel.multifit` methods:
 
@@ -63,22 +111,25 @@ with migration advises:
 
 - The arguments ``parallel`` and ``max_workers`` have been removed from the :py:meth:`~.model.BaseModel.as_signal` methods.
 
-.. towncrier release notes start
+Loading and Saving data
+-----------------------
 
-API Removal
-===========
-
-The following deprecated keywords and attributes have been removed during the
+The following deprecated keyword arguments have been removed during the
 migration of the IO plugins to `RosettaSciIO
 <https://hyperspy.org/rosettasciio/changes.html>`_:
 
-- :ref:`Bruker composite file (BCF) <bcf-format>`: The 'spectrum' option for the
-  `select_type` parameter was removed. Use 'spectrum_image' instead.
+- The arguments ``mmap_dir`` and ``load_to_memory`` of the :py:func:`~.io.load`
+  function have been removed, use the ``lazy`` argument instead.
+- :ref:`Bruker composite file (BCF) <bcf-format>`: The ``'spectrum'`` option for the
+  ``select_type`` parameter was removed. Use ``'spectrum_image'`` instead.
 - :ref:`Electron Microscopy Dataset (EMD) NCEM <emd_ncem-format>`: Using the
-  keyword 'dataset_name' was removed, use 'dataset_path' instead.
-- :ref:`NeXus data format <nexus-format>`: The `dataset_keys`, `dataset_paths`
-  and `metadata_keys` keywords were removed. Use `dataset_key`, `dataset_path`
-  and `metadata_key` instead.
+  keyword ``dataset_name`` was removed, use ``dataset_path`` instead.
+- :ref:`NeXus data format <nexus-format>`: The ``dataset_keys``, ``dataset_paths``
+  and ``metadata_keys`` keywords were removed. Use ``dataset_key``, ``dataset_path``
+  and ``metadata_key`` instead.
+
+
+.. towncrier release notes start
 
 Hyperspy 1.7.1 (2022-06-18)
 ===========================
