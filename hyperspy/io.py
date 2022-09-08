@@ -56,6 +56,8 @@ def _format_name_to_reader(format_name):
     for reader in IO_PLUGINS:
         if format_name.lower() == reader["format_name"].lower():
             return reader
+        elif reader.get("format_alias") and format_name.lower() == reader.get("format_alias").lower():
+            return reader
     raise ValueError("The format_name given does not match any format available.")
 
 
@@ -92,7 +94,7 @@ def _infer_file_reader(string):
             "Will attempt to load the file with the Python imaging library."
         )
 
-        reader, = [reader for reader in IO_PLUGINS if reader["format_name"] == "image"]
+        reader, = [reader for reader in IO_PLUGINS if reader["format_name"].lower() == "image"]
     elif len(rdrs) > 1:
         names = [rdr["format_name"] for rdr in rdrs]
         raise ValueError(

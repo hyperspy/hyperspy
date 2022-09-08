@@ -216,10 +216,21 @@ def test_file_reader_warning(caplog, tmp_path):
 def test_file_reader_options(tmp_path):
     s = Signal1D(np.arange(10))
 
-    s.save(tmp_path / "temp.hspy")
+    s.save(Path(tmp_path, "temp.hspy"))
+    s.save(Path(tmp_path, "temp.emd"))
 
     # Test string reader
-    t = hs.load(tmp_path / "temp.hspy", reader="hspy")
+    t = hs.load(Path(tmp_path, "temp.hspy"), reader="hspy")
+    assert len(t) == 1
+    np.testing.assert_allclose(t.data, np.arange(10))
+
+    # Test name reader
+    t = hs.load(Path(tmp_path, "temp.emd"), reader="emd")
+    assert len(t) == 1
+    np.testing.assert_allclose(t.data, np.arange(10))
+
+    # Test alias reader
+    t = hs.load(Path(tmp_path, "temp.emd"), reader="Electron Microscopy Data (EMD)")
     assert len(t) == 1
     np.testing.assert_allclose(t.data, np.arange(10))
 
