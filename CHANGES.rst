@@ -118,14 +118,15 @@ The following deprecated keyword arguments have been removed during the
 migration of the IO plugins to `RosettaSciIO
 <https://hyperspy.org/rosettasciio/changes.html>`_:
 
-- The arguments ``'mmap_dir'`` and ``'load_to_memory'`` of the :py:func:`~.io.load` function have been removed, use the ``lazy`` argument instead.
-- :ref:`Bruker composite file (BCF) <bcf-format>`: The 'spectrum' option for the
-  `select_type` parameter was removed. Use 'spectrum_image' instead.
+- The arguments ``mmap_dir`` and ``load_to_memory`` of the :py:func:`~.io.load`
+  function have been removed, use the ``lazy`` argument instead.
+- :ref:`Bruker composite file (BCF) <bcf-format>`: The ``'spectrum'`` option for the
+  ``select_type`` parameter was removed. Use ``'spectrum_image'`` instead.
 - :ref:`Electron Microscopy Dataset (EMD) NCEM <emd_ncem-format>`: Using the
-  keyword 'dataset_name' was removed, use 'dataset_path' instead.
-- :ref:`NeXus data format <nexus-format>`: The `dataset_keys`, `dataset_paths`
-  and `metadata_keys` keywords were removed. Use `dataset_key`, `dataset_path`
-  and `metadata_key` instead.
+  keyword ``dataset_name`` was removed, use ``dataset_path`` instead.
+- :ref:`NeXus data format <nexus-format>`: The ``dataset_keys``, ``dataset_paths``
+  and ``metadata_keys`` keywords were removed. Use ``dataset_key``, ``dataset_path``
+  and ``metadata_key`` instead.
 
 
 .. towncrier release notes start
