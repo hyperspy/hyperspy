@@ -37,7 +37,7 @@ def test_fit_binned():
         np.random.normal(
             scale=2,
             size=10000)).get_histogram()
-    s.axes_manager[-1].binned = True
+    s.axes_manager[-1].is_binned = True
     g = Gaussian()
     m = s.create_model()
     m.append(g)

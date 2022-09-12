@@ -21,7 +21,6 @@ import dask.array as da
 
 from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
-from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
@@ -172,18 +171,14 @@ class Lorentzian(Expression):
             self.centre.value = centre
             self.gamma.value = gamma
             self.A.value = height * gamma * np.pi
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.A.value /= scaling_factor
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * gamma * np.pi
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.A.map['values'] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.gamma.map['values'][:] = gamma

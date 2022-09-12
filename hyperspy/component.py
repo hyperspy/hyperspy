@@ -26,7 +26,7 @@ from packaging.version import Version
 from pathlib import Path
 
 import hyperspy
-from hyperspy.misc.utils import slugify, is_binned
+from hyperspy.misc.utils import slugify
 from rsciio.utils.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
@@ -1355,9 +1355,7 @@ def _get_scaling_factor(signal, axis, parameter):
 
     """
 
-    if is_binned(signal):
-    # in v2 replace by
-    #if axis.is_binned:
+    if axis.is_binned:
         if axis.is_uniform:
             scaling_factor = axis.scale
         else:

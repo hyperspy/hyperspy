@@ -55,3 +55,4 @@ hyperspy/tests/io/edax_files.zip
 tsconfig.json
 jsconfig.json
 *egg-info*
+*__pycache__*

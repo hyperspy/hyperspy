@@ -34,7 +34,6 @@ import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, underline, print_html
-from hyperspy.misc.utils import is_binned # remove in v2.0
 from hyperspy.misc.math_tools import optimal_fft_size
 from hyperspy.misc.eels.tools import get_edges_near_energy
 from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
@@ -768,9 +767,9 @@ class EELSSpectrum(Signal1D):
         else:
             I0 = self.estimate_elastic_scattering_intensity(
                 threshold=threshold,).data
-        
+
         t_over_lambda = np.log(total_intensity / I0)
-        
+
         if density is not None:
             if self._are_microscope_parameters_missing():
                 raise RuntimeError(
@@ -1222,9 +1221,7 @@ class EELSSpectrum(Signal1D):
         # If the signal is binned we need to bin the extrapolated power law
         # what, in a first approximation, can be done by multiplying by the
         # axis step size.
-        if is_binned(self):
-        # in v2 replace by
-        # if self.axes_manager[-1].is_binned:
+        if self.axes_manager[-1].is_binned:
             factor = s.axes_manager[-1].scale
         else:
             factor = 1

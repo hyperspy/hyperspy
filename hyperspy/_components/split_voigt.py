@@ -21,7 +21,7 @@ import numpy as np
 from hyperspy.component import Component, _get_scaling_factor
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
-from hyperspy.misc.utils import is_binned # remove in v2.0
+
 
 sqrt2pi = np.sqrt(2 * np.pi)
 
@@ -201,18 +201,14 @@ class SplitVoigt(Component):
             self.sigma1.value = sigma
             self.sigma2.value = sigma
             self.A.value = height * sigma * sqrt2pi
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.A.value /= scaling_factor
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * sigma * sqrt2pi
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.A.map['values'][:] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.sigma1.map['values'][:] = sigma

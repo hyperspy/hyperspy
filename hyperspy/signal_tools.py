@@ -42,7 +42,6 @@ from hyperspy.misc.label_position import SpectrumLabelPosition
 from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
 from hyperspy.drawing.signal1d import Signal1DFigure
 from hyperspy.misc.array_tools import numba_histogram
-from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 _logger = logging.getLogger(__name__)
@@ -1556,9 +1555,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                 self.axis.axis[from_index:to_index])
             to_return = bg_array
 
-        if is_binned(self.signal) is True:
-        # in v2 replace by
-        #if self.axis.is_binned is True:
+        if self.axis.is_binned:
             if self.axis.is_uniform:
                 to_return *= self.axis.scale
             else:

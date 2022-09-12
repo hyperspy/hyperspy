@@ -20,7 +20,7 @@ import numpy as np
 import logging
 
 from hyperspy._components.expression import Expression
-from hyperspy.misc.utils import is_binned # remove in v2.0
+
 
 _logger = logging.getLogger(__name__)
 
@@ -146,9 +146,8 @@ class Exponential(Expression):
                                 'with a "divide by zero" error (likely log of '
                                 'a zero or negative value).')
                 return False
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+
+            if axis.is_binned:
                 if axis.is_uniform:
                     A /= axis.scale
                 else:

@@ -54,7 +54,6 @@ from hyperspy.misc.utils import (
     add_scalar_axis,
     DictionaryTreeBrowser,
     guess_output_signal_size,
-    is_binned,  # remove in v2.0
     is_cupy_array,
     isiterable,
     iterable_not_string,
@@ -3912,7 +3911,7 @@ class BaseSignal(FancySlicing,
         axes = self.axes_manager[axis]
         if not np.iterable(axes):
             axes = (axes,)
-        if any([not ax.is_uniform and not is_binned(self, ax) for ax in axes]):
+        if any([not ax.is_uniform and not ax.is_binned for ax in axes]):
             warnings.warn("You are summing over an unbinned, non-uniform axis. "
                           "The result can not be used as an approximation of "
                           "the integral of the signal. For this functionality, "
@@ -4533,9 +4532,7 @@ class BaseSignal(FancySlicing,
         (64,64)
 
         """
-        if is_binned(self, axis=axis):
-        # in v2 replace by
-        # self.axes_manager[axis].is_binned
+        if self.axes_manager[axis].is_binned:
             return self.sum(axis=axis, out=out)
         else:
             return self.integrate_simpson(axis=axis, out=out)

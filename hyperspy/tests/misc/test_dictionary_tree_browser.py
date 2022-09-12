@@ -395,11 +395,6 @@ class TestDictionaryBrowser:
             ["Node2.Node21.leaf211", "Node3.leaf211"],
         )
 
-    # Can be removed once metadata.Signal.binned is deprecated in v2.0
-    def test_set_item_binned(self, tree):
-        with pytest.warns(VisibleDeprecationWarning, match="Use of the `binned`"):
-            tree.set_item("Signal.binned", True)
-
     def test_html(self, tree):
         "Test that the method actually runs"
         # We do not have a way to validate html
