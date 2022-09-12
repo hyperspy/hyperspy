@@ -15,6 +15,38 @@ When APIs evolve, the old API is deprecated and eventually removed in a major
 release. The functions and methods removed in HyperSpy 2.0 are listed below along
 with migration advises:
 
+Axes
+----
+
+- :py:meth:`AxesManager.show` is removed, use :py:meth:`~.axes.AxesManager.gui` instead.
+- :py:meth:`AxesManager.set_signal_dimension` is removed, use :py:meth:`~.signal.BaseSignal.as_signal1D`,
+  :py:meth:`~.signal.BaseSignal.as_signal2D` or :py:meth:`~.signal.BaseSignal.transpose` of the signal instance instead.
+  
+Data Visualization
+------------------
+
+- The :py:meth:`~._signals.signal2d.Signal2D.plot` keyword argument
+  ``saturated_pixels`` is removed, use ``vmin`` and/or ``vmax`` instead.
+- The ``get_complex`` property of :py:class:`~.drawing.signal1d.Signal1DLine` is removed.
+- The keyword argument ``line_style`` of :py:func:`~.drawing.utils.plot_spectra` have been renamed to ``linestyle``.
+
+Loading and Saving data
+-----------------------
+
+The following deprecated keyword arguments have been removed during the
+migration of the IO plugins to `RosettaSciIO
+<https://hyperspy.org/rosettasciio/changes.html>`_:
+
+- The arguments ``mmap_dir`` and ``load_to_memory`` of the :py:func:`~.io.load`
+  function have been removed, use the ``lazy`` argument instead.
+- :ref:`Bruker composite file (BCF) <bcf-format>`: The ``'spectrum'`` option for the
+  ``select_type`` parameter was removed. Use ``'spectrum_image'`` instead.
+- :ref:`Electron Microscopy Dataset (EMD) NCEM <emd_ncem-format>`: Using the
+  keyword ``dataset_name`` was removed, use ``dataset_path`` instead.
+- :ref:`NeXus data format <nexus-format>`: The ``dataset_keys``, ``dataset_paths``
+  and ``metadata_keys`` keywords were removed. Use ``dataset_key``, ``dataset_path``
+  and ``metadata_key`` instead.
+
 Machine Learning
 ----------------
 
@@ -56,13 +88,6 @@ Machine Learning
        - navigation
      * - variables
        - signal
-
-Axes
-----
-
-- :py:meth:`AxesManager.show` is removed, use :py:meth:`~.axes.AxesManager.gui` instead.
-- :py:meth:`AxesManager.set_signal_dimension` is removed, use :py:meth:`~.signal.BaseSignal.as_signal1D`,
-  :py:meth:`~.signal.BaseSignal.as_signal2D` or :py:meth:`~.signal.BaseSignal.transpose` of the signal instance instead.
 
 Model fitting
 -------------
@@ -110,32 +135,6 @@ Model fitting
   - :py:meth:`~.model.BaseModel.set_mpfit_parameters_info`
 
 - The arguments ``parallel`` and ``max_workers`` have been removed from the :py:meth:`~.model.BaseModel.as_signal` methods.
-
-Loading and Saving data
------------------------
-
-The following deprecated keyword arguments have been removed during the
-migration of the IO plugins to `RosettaSciIO
-<https://hyperspy.org/rosettasciio/changes.html>`_:
-
-- The arguments ``mmap_dir`` and ``load_to_memory`` of the :py:func:`~.io.load`
-  function have been removed, use the ``lazy`` argument instead.
-- :ref:`Bruker composite file (BCF) <bcf-format>`: The ``'spectrum'`` option for the
-  ``select_type`` parameter was removed. Use ``'spectrum_image'`` instead.
-- :ref:`Electron Microscopy Dataset (EMD) NCEM <emd_ncem-format>`: Using the
-  keyword ``dataset_name`` was removed, use ``dataset_path`` instead.
-- :ref:`NeXus data format <nexus-format>`: The ``dataset_keys``, ``dataset_paths``
-  and ``metadata_keys`` keywords were removed. Use ``dataset_key``, ``dataset_path``
-  and ``metadata_key`` instead.
-  
-Data Visualization
-------------------
-
-- The :py:meth:`~._signals.signal2d.Signal2D.plot` keyword argument
-  ``saturated_pixels`` is removed, use ``vmin`` and/or ``vmax`` instead.
-- The ``get_complex`` property of :py:class:`~.drawing.signal1d.Signal1DLine` is removed.
-- The keyword argument ``line_style`` of :py:func:`~.drawing.utils.plot_spectra` have been renamed to ``linestyle``.
-
 
 Signal
 ------
