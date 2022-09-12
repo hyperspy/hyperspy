@@ -56,8 +56,10 @@ def _format_name_to_reader(format_name):
     for reader in IO_PLUGINS:
         if format_name.lower() == reader["format_name"].lower():
             return reader
-        elif reader.get("format_alias") and format_name.lower() == reader.get("format_alias").lower():
-            return reader
+        elif reader.get("format_name_aliases"):
+            aliases = [s.lower() for s in reader["format_name_aliases"]]
+            if format_name.lower() in aliases: 
+                return reader
     raise ValueError("The format_name given does not match any format available.")
 
 
