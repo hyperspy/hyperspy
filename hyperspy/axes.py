@@ -348,8 +348,7 @@ class BaseDataAxis(t.HasTraits):
                 " is not defined".format(self.__class__.__name__))
 
     def __getitem__(self, item):
-        raise NotImplementedError("This method must be implemented by subclasses")
-
+        return self
 
     def _get_name(self):
         name = (self.name
@@ -363,17 +362,13 @@ class BaseDataAxis(t.HasTraits):
     def __repr__(self):
         text = '<%s axis, size: %i' % (self._get_name(),
                                        self.size,)
-        if self.navigate is True:
+        if self.navigate is True and hasattr(self, "index"):
             text += ", index: %i" % self.index
         text += ">"
         return text
 
     def __str__(self):
         return self._get_name() + " axis"
-
-    def update_index_bounds(self):
-        self.high_index = self.size - 1
-
 
     def get_axis_dictionary(self):
         return {'_type': self.__class__.__name__,
@@ -421,7 +416,7 @@ class BaseDataAxis(t.HasTraits):
         return any_changes
 
 
-class BoundedDataAxis(BaseDataAxis):
+class DataAxis(BaseDataAxis):
     """Defines a common class for all axes that are bounded.  Common features include an axis attribute
        a size and an index. Anything that can be in a numpy array can be an axis label including a string
        an unordered set of numbers or even a set of objects as is sometimes the case for a `ColumnAxis` object
@@ -443,7 +438,7 @@ class BoundedDataAxis(BaseDataAxis):
             navigate=navigate,
             is_binned=is_binned,
             **kwargs)
-        self.axis = axis
+        self._axis = axis
         self.update_axis()
         self.low_index = 0
         self.on_trait_change(self._update_slice, 'navigate')
@@ -462,7 +457,17 @@ class BoundedDataAxis(BaseDataAxis):
             index : The new index
             """.format(_name, _name, _name), arguments=["obj", 'index'])
 
+    def __getitem__(self, item):
+        new_axis = self.__deepcopy__()
+        new_item = self.get_to_numpy_index[item]
+        new_axis.axis = self._axis[new_item]
+        return new_axis
+
     """Additional Class properties"""
+    @property
+    def axis(self):
+        return self._axis
+
     @property
     def is_ordered(self):
         try:
@@ -505,7 +510,7 @@ class BoundedDataAxis(BaseDataAxis):
 
     @property
     def size(self):
-        return len(self.axis)
+        return len(self._axis)
 
     """"Methods for updating index and value on changes (When does value changed get called?)"""
 
@@ -536,24 +541,29 @@ class BoundedDataAxis(BaseDataAxis):
                     self._suppress_value_changed_trigger:
                 self.events.value_changed.trigger(obj=self, value=new)
 
+    def get_axis_dictionary(self):
+        d = super().get_axis_dictionary()
+        d.update({'axis': self.axis})
+        return d
+
     """Methods for converting floats, strs, etc to integer indexes"""
 
-    def _float2index(self, value, rounding=round):
+    def _float2index(self, value, rounding="round"):
         """Converts a float index (or an array of floats) into
         an integer index (or an array of integer indexes"""
         if self.is_ordered:
             value = np.empty(value.shape, dtype=int)
             if np.all((value >= self.low_value) * (value <= self.high_value)):
-                if rounding is round:
+                if rounding == "round":
                     index = numba_closest_index_round(self.axis, value).astype(int)
-                elif rounding is math.ceil:
+                elif rounding == "ceil":
                     index = numba_closest_index_ceil(self.axis, value).astype(int)
-                elif rounding is math.floor:
+                elif rounding == "floor":
                     index = numba_closest_index_floor(self.axis, value).astype(int)
                 else:
                     raise ValueError(
                         'Non-supported rounding function. Use '
-                        '`round`, `math.ceil` or `math.floor`.'
+                        '"round", "ceil" or "floor".'
                     )
                 return np.squeeze(index)[()]
         else:
@@ -648,143 +658,6 @@ class BoundedDataAxis(BaseDataAxis):
         self.axes_manager = axes_manager
 
 
-
-
-class DataAxis(BoundedDataAxis):
-    """DataAxis class for a non-uniform axis defined through an ``axis`` array.
-
-    The most flexible type of axis, where the axis points are directly given by
-    an array named ``axis``. As this can be any array, the property
-    ``is_uniform`` is automatically set to ``False``.
-
-    Parameters
-    ----------
-    axis : numpy array or list
-        The array defining the axis points.
-
-    Examples
-    --------
-    Sample dictionary for a `DataAxis`:
-
-    >>> dict0 = {'axis': np.arange(11)**2}
-    >>> s = hs.signals.Signal1D(np.ones(12), axes=[dict0])
-    >>> s.axes_manager[0].get_axis_dictionary()
-    {'_type': 'DataAxis',
-     'name': <undefined>,
-     'units': <undefined>,
-     'navigate': False,
-     'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100])}
-    """
-
-    low_value = t.Float()
-    high_value = t.Float()
-    value = t.Range('low_value', 'high_value')
-
-    def __init__(self,
-                 index_in_array=None,
-                 name=None,
-                 units=None,
-                 navigate=False,
-                 is_binned=False,
-                 axis=[1],
-                 **kwargs):
-        super().__init__(
-            index_in_array=index_in_array,
-            name=name,
-            units=units,
-            navigate=navigate,
-            is_binned=is_binned,
-            **kwargs)
-        self.axis = axis
-        self.update_axis()
-
-    def _slice_me(self, slice_):
-        """Returns a slice to slice the corresponding data axis and set the
-        axis accordingly.
-
-        Parameters
-        ----------
-        slice_ : {int, slice}
-
-        Returns
-        -------
-        my_slice : slice
-
-        """
-        my_slice = self._get_array_slices(slice_)
-        self.axis = self.axis[my_slice]
-        self.update_axis()
-        return my_slice
-
-    def update_axis(self):
-        """Set the value of an axis. The axis values need to be ordered.
-
-        Parameters
-        ----------
-        axis : numpy array or list
-
-        Raises
-        ------
-        ValueError if the axis values are not ordered.
-
-        """
-        if len(self.axis) > 1:
-            if isinstance(self.axis, list):
-                self.axis = np.asarray(self.axis)
-            if self._is_increasing_order is None:
-                raise ValueError('The non-uniform axis needs to be ordered.')
-        self.size = len(self.axis)
-
-    def get_axis_dictionary(self):
-        d = super().get_axis_dictionary()
-        d.update({'axis': self.axis})
-        return d
-
-    def calibrate(self, *args, **kwargs):
-        raise TypeError("This function works only for uniform axes.")
-
-    def update_from(self, axis, attributes=None):
-        """Copy values of specified axes fields from the passed AxesManager.
-
-        Parameters
-        ----------
-        axis : DataAxis
-            The DataAxis instance to use as a source for values.
-        attributes : iterable container of strings.
-            The name of the attribute to update. If the attribute does not
-            exist in either of the AxesManagers, an AttributeError will be
-            raised. If `None`, `units` will be updated.
-        Returns
-        -------
-        A boolean indicating whether any changes were made.
-
-        """
-        if attributes is None:
-            attributes = ["units"]
-        return super().update_from(axis, attributes)
-
-    def crop(self, start=None, end=None):
-        """Crop the axis in place.
-
-        Parameters
-        ----------
-        start : int, float, or None
-            The beginning of the cropping interval. If type is ``int``,
-            the value is taken as the axis index. If type is ``float`` the index
-            is calculated using the axis calibration. If `start`/`end` is
-            ``None`` the method crops from/to the low/high end of the axis.
-        end : int, float, or None
-            The end of the cropping interval. If type is ``int``,
-            the value is taken as the axis index. If type is ``float`` the index
-            is calculated using the axis calibration. If `start`/`end` is
-            ``None`` the method crops from/to the low/high end of the axis.
-        """
-
-        slice_ = self._get_array_slices(slice(start, end))
-        self.axis = self.axis[slice_]
-        self.size = len(self.axis)
-
-
 class FunctionalDataAxis(DataAxis):
     """DataAxis class for a non-uniform axis defined through an ``expression``.
 
@@ -848,23 +721,22 @@ class FunctionalDataAxis(DataAxis):
             navigate=navigate,
             is_binned=is_binned,
             **parameters)
-        # These trait needs to added dynamically to be removed when necessary
-        self.add_trait("x", t.Instance(BaseDataAxis))
+
         if x is None:
             if size is t.Undefined:
                 raise ValueError("Please provide either `x` or `size`.")
-            self.x = UniformDataAxis(scale=1, offset=0, size=size)
+            self._axis = range(0, size)
+        elif isiterable(x):
+            self._axis = np.asarray(x)
         else:
-            if isinstance(x, dict):
-                self.x = create_axis(**x)
-            else:
-                self.x = x
-                self.size = self.x.size
+            self._axis = None
+
         self._expression = expression
         if '_type' in parameters:
             del parameters['_type']
         # Compile function
         expr = _parse_substitutions(self._expression)
+
         variables = ["x"]
         expr_parameters = [symbol for symbol in expr.free_symbols
                            if symbol.name not in variables]
@@ -872,6 +744,7 @@ class FunctionalDataAxis(DataAxis):
             raise ValueError(
                 "The values of the following expression parameters "
                 f"must be given as keywords: {set(expr_parameters) - set(parameters)}")
+
         self._function = lambdify(
             variables + expr_parameters, expr.evalf(), dummify=False)
         for parameter in parameters.keys():
@@ -880,14 +753,16 @@ class FunctionalDataAxis(DataAxis):
         self.update_axis()
         self.on_trait_change(self.update_axis, self.parameters_list)
 
-    def update_axis(self):
+    @property
+    def axis(self):
         kwargs = {}
-        for kwarg in self.parameters_list:
-            kwargs[kwarg] = getattr(self, kwarg)
-        self.axis = self._function(x=self.x.axis, **kwargs)
-        # Set not valid values to np.nan
-        self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
-        self.size = len(self.axis)
+        for key in self.parameters_list:
+            kwargs[key] = getattr(self, key)
+        self._function(x=self.axis, **kwargs)
+
+    @property
+    def x(self):
+        return self._axis
 
     def update_from(self, axis, attributes=None):
         """Copy values of specified axes fields from the passed AxesManager.
@@ -909,14 +784,10 @@ class FunctionalDataAxis(DataAxis):
             attributes = self.parameters_list
         return super().update_from(axis, attributes)
 
-    def calibrate(self, *args, **kwargs):
-        raise TypeError("This function works only for uniform axes.")
-
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
         d['expression'] = self._expression
-        d.update({'size': _parse_axis_attribute(self.size), })
-        d.update({'x': self.x.get_axis_dictionary(), })
+        d.update({'x': self.x, })
         for kwarg in self.parameters_list:
             d[kwarg] = getattr(self, kwarg)
         return d
@@ -933,55 +804,8 @@ class FunctionalDataAxis(DataAxis):
         self.remove_trait('x')
         self.axes_manager = axes_manager
 
-    def crop(self, start=None, end=None):
-        """Crop the axis in place.
 
-        Parameters
-        ----------
-        start : int, float, or None
-            The beginning of the cropping interval. If type is ``int``,
-            the value is taken as the axis index. If type is ``float`` the index
-            is calculated using the axis calibration. If `start`/`end` is
-            ``None`` the method crops from/to the low/high end of the axis.
-        end : int, float, or None
-            The end of the cropping interval. If type is ``int``,
-            the value is taken as the axis index. If type is ``float`` the index
-            is calculated using the axis calibration. If `start`/`end` is
-            ``None`` the method crops from/to the low/high end of the axis.
-
-        Note
-        ----
-        When cropping an axis with descending axis values based on the axis
-        calibration, the `start`/`end` tuple also has to be in descending
-        order.
-        """
-
-        slice_ = self._get_array_slices(slice(start, end))
-        self.x.crop(start=slice_.start, end=slice_.stop)
-        self.size = self.x.size
-        self.update_axis()
-    crop.__doc__ = DataAxis.crop.__doc__
-
-    def _slice_me(self, slice_):
-        """Returns a slice to slice the 'x' vector of the corresponding
-        functional data axis and set the axis accordingly.
-
-        Parameters
-        ----------
-        slice_ : {float, int, slice}
-
-        Returns
-        -------
-        my_slice : slice
-
-        """
-        my_slice = self._get_array_slices(slice_)
-        self.x._slice_me(my_slice)
-        self.update_axis()
-        return my_slice
-
-
-class UniformDataAxis(FunctionalDataAxis, UnitConversion):
+class UniformDataAxis(DataAxis, UnitConversion):
     """DataAxis class for a uniform axis defined through a ``scale``, an
     ``offset`` and a ``size``.
 
@@ -1044,31 +868,19 @@ class UniformDataAxis(FunctionalDataAxis, UnitConversion):
         self._is_uniform = True
         self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
 
-    def _slice_me(self, _slice):
-        """Returns a slice to slice the corresponding data axis and
-        change the offset and scale of the UniformDataAxis accordingly.
 
-        Parameters
-        ----------
-        _slice : {float, int, slice}
-
-        Returns
-        -------
-        my_slice : slice
-        """
-        my_slice = self._get_array_slices(_slice)
-        start, step = my_slice.start, my_slice.step
-
-        if start is None:
-            if step is None or step > 0:
-                start = 0
-            else:
-                start = self.size - 1
-        self.offset = self.index2value(start)
-        if step is not None:
-            self.scale *= step
-        self.size = len(self.axis[my_slice])
-        return my_slice
+    def __getitem__(self, item):
+        new_axis = self.__deepcopy__()
+        ind = self.get_numpy_index(item)
+        if isinstance(ind, slice):
+            if ind.step is not None:
+                new_axis.scale = ind.step*self.scale
+            new_axis.offset = self.index2value(ind.start)
+            self.size = len(self.axis[ind])
+        else:
+            new_axis = new_axis.convert_to_non_uniform_axis()
+            new_axis.axis[ind]
+        return new_axis
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
