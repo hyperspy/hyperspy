@@ -571,7 +571,20 @@ class DataAxis(BaseDataAxis):
                                       "unordered axes")
 
     def _rel(self, value):
-        raise NotImplementedError("Relative slicing not implemented")
+        if self.is_ordered:
+            try:
+                relative_value = float(value[3:])
+                if relative_value > 1:
+                    raise ValueError
+            except ValueError:
+                raise ValueError("`rel` must be followed by a number in range [0, 1].")
+            value = self.low_value + relative_value * (self.high_value - self.low_value)
+            value = self._float2index(value)
+            return value
+
+        else:
+            NotImplementedError("Relative slicing not implemented for "
+                                "unordered axes")
 
     def _get_value_from_value_with_units(self):
         raise NotImplementedError("Unit conversion is only supported for "
@@ -611,7 +624,7 @@ class DataAxis(BaseDataAxis):
         elif np.issubdtype(dtype, np.bool):
             ind = value  # valid numpy index
         elif np.issubdtype(dtype, np.float):
-            ind = self._float2index(value,**kwargs)  # convert float to index
+            ind = self._float2index(value, **kwargs)  # convert float to index
         elif np.issubdtype(dtype, np.str):
             ind = self._str2index(value)  # convert string to index
         else:
@@ -866,8 +879,6 @@ class UniformDataAxis(DataAxis, UnitConversion):
         self.size = size
         self.update_axis()
         self._is_uniform = True
-        self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
-
 
     def to_numpy_index(self, index):
         """ Takes some index passed by a FancySlicing object and returns the index
