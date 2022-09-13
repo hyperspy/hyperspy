@@ -269,17 +269,8 @@ class BaseDataAxis(t.HasTraits):
     """
     name = t.Str()
     units = t.Str()
-    size = t.CInt()
-    low_value = t.Float()
-    high_value = t.Float()
-    value = t.Range('low_value', 'high_value')
-    low_index = t.Int(0)
-    high_index = t.Int()
-    slice = t.Instance(slice)
     navigate = t.Bool(False)
     is_binned = t.Bool(False)
-    index = t.Range('low_index', 'high_index')
-    axis = t.Array()
 
     def __init__(self,
                  index_in_array=None,
@@ -751,7 +742,42 @@ class BaseDataAxis(t.HasTraits):
             return None
 
 
-class DataAxis(BaseDataAxis):
+class BoundedDataAxis(BaseDataAxis):
+    """Defines a common class for all axes that are bounded.  Common features include an axis attribute
+       a size and an index. Anything that can be in a numpy array can be an axis label including a string
+       an unordered set of numbers or even a set of objects as is sometimes the case for a `ColumnAxis` object
+    """
+    size = t.CInt()
+    low_index = t.Int(0)
+    high_index = t.Int()
+    slice = t.Instance(slice)
+    index = t.Range('low_index', 'high_index')
+    axis = t.Array()
+
+    def __init__(self,
+                 index_in_array=None,
+                 name=None,
+                 units=None,
+                 navigate=False,
+                 is_binned=False,
+                 axis=[1],
+                 **kwargs):
+        super().__init__(
+            index_in_array=index_in_array,
+            name=name,
+            units=units,
+            navigate=navigate,
+            is_binned=is_binned,
+            **kwargs)
+        self.axis = axis
+        self.update_axis()
+        self.low_index = 0
+        self.on_trait_change(self._update_slice, 'navigate')
+        self.on_trait_change(self.update_index_bounds, 'size')
+        self.on_trait_change(self._update_bounds, 'axis')
+
+
+class DataAxis(BoundedDataAxis):
     """DataAxis class for a non-uniform axis defined through an ``axis`` array.
 
     The most flexible type of axis, where the axis points are directly given by
@@ -776,6 +802,10 @@ class DataAxis(BaseDataAxis):
      'navigate': False,
      'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100])}
     """
+
+    low_value = t.Float()
+    high_value = t.Float()
+    value = t.Range('low_value', 'high_value')
 
     def __init__(self,
                  index_in_array=None,
@@ -882,7 +912,7 @@ class DataAxis(BaseDataAxis):
         self.size = len(self.axis)
 
 
-class FunctionalDataAxis(BaseDataAxis):
+class FunctionalDataAxis(DataAxis):
     """DataAxis class for a non-uniform axis defined through an ``expression``.
 
     A `FunctionalDataAxis` is defined based on an ``expression`` that is
@@ -1078,7 +1108,7 @@ class FunctionalDataAxis(BaseDataAxis):
         return my_slice
 
 
-class UniformDataAxis(BaseDataAxis, UnitConversion):
+class UniformDataAxis(FunctionalDataAxis, UnitConversion):
     """DataAxis class for a uniform axis defined through a ``scale``, an
     ``offset`` and a ``size``.
 
