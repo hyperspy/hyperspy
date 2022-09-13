@@ -570,7 +570,15 @@ class DataAxis(BaseDataAxis):
             raise NotImplementedError("Slicing with floats not implemented for "
                                       "unordered axes")
 
-    def _rel(self, value):
+    def _neg_slice(self, value):
+        try:
+            relative_value = float(value)
+        except ValueError:
+            raise ValueError("A negative float index must be followed by some float i.e. '-.3' ")
+        relative_value = self.high_value+relative_value
+        value = self._float2index(value)
+
+    def _rel_slice(self, value):
         if self.is_ordered:
             try:
                 relative_value = float(value[3:])
@@ -596,9 +604,11 @@ class DataAxis(BaseDataAxis):
         value = np.empty(string.shape, dtype=int)
         for i, s in enumerate(string):
             if s.startswith('rel'):# relative slicing
-                value[i] = self._rel(value=s)
+                value[i] = self._rel_slice(value=s)
             elif s in self.axis:  # labeled axes
                 value[i] = np.argwhere(self.axis == s)[0]
+            elif s.startswith("-"):
+                value[i] = self._neg_slice(value)
             elif s[0].isdigit():  # units
                 value[i] = self._get_value_from_value_with_units(s)
             else:
@@ -943,8 +953,8 @@ class UniformDataAxis(DataAxis, UnitConversion):
                         '"round", "ceil" or "floor".'
                     )
         if any(index < 0):
-            raise ValueError("Relative slicing using floats requires using `rel0.5` rather than -0.5"
-                             "as the second case can be ambigious")
+            raise ValueError("Segative slicing using floats requires using `-0.5` rather than -0.5"
+                             "as the second case can be ambiguous")
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
@@ -975,35 +985,6 @@ class UniformDataAxis(DataAxis, UnitConversion):
         if attributes is None:
             attributes = ["scale", "offset", "units"]
         return super().update_from(axis, attributes)
-
-    def crop(self, start=None, end=None):
-        """Crop the axis in place.
-        Parameters
-        ----------
-        start : int, float, or None
-            The beginning of the cropping interval. If type is ``int``,
-            the value is taken as the axis index. If type is ``float`` the index
-            is calculated using the axis calibration. If `start`/`end` is
-            ``None`` the method crops from/to the low/high end of the axis.
-        end : int, float, or None
-            The end of the cropping interval. If type is ``int``,
-            the value is taken as the axis index. If type is ``float`` the index
-            is calculated using the axis calibration. If `start`/`end` is
-            ``None`` the method crops from/to the low/high end of the axis.
-        """
-        if start is None:
-            start = 0
-        if end is None:
-            end = self.size
-        # Use `_get_positive_index` to support reserved indexing
-        i1 = self._get_positive_index(self._get_index(start))
-        i2 = self._get_positive_index(self._get_index(end))
-
-        self.offset = self.index2value(i1)
-        self.size = i2 - i1
-        self.update_axis()
-
-    crop.__doc__ = DataAxis.crop.__doc__
 
     @property
     def scale_as_quantity(self):
