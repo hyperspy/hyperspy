@@ -272,7 +272,7 @@ class EELSCLEdge(Component):
             self._set_fine_structure_coeff()
 
     def _set_fine_structure_coeff(self):
-        if self.energy_scale is None or not self.int_fine_structure:
+        if self.energy_scale is None:
             return
         self.fine_structure_coeff._number_of_elements = int(
             round(self.fine_structure_smoothing *
