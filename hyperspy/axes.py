@@ -592,7 +592,7 @@ class DataAxis(BaseDataAxis):
                 raise ValueError(f"`{string}` is not a suitable string for slicing.")
         return value
 
-    def value2index(self, value):
+    def value2index(self, value, **kwargs):
         """Takes a one dimensional array or scalar value and
         returns the index."""
         is_tuple = False
@@ -611,7 +611,7 @@ class DataAxis(BaseDataAxis):
         elif np.issubdtype(dtype, np.bool):
             ind = value  # valid numpy index
         elif np.issubdtype(dtype, np.float):
-            ind = self._float2index(value)  # convert float to index
+            ind = self._float2index(value,**kwargs)  # convert float to index
         elif np.issubdtype(dtype, np.str):
             ind = self._str2index(value)  # convert string to index
         else:
@@ -869,6 +869,23 @@ class UniformDataAxis(DataAxis, UnitConversion):
         self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
 
 
+    def to_numpy_index(self, index):
+        """ Takes some index passed by a FancySlicing object and returns the index
+        Parameters
+        ----------
+        index
+
+        Returns
+        -------
+
+        """
+        v2i = self.value2index
+        if isinstance(index, slice):
+            new_index = slice(v2i(index.start), v2i(index.stop), v2i(index.step, False))
+        else:
+            new_index = v2i(index)
+        return new_index
+
     def __getitem__(self, item):
         new_axis = self.__deepcopy__()
         ind = self.get_numpy_index(item)
@@ -889,74 +906,34 @@ class UniformDataAxis(DataAxis, UnitConversion):
                   'offset': self.offset})
         return d
 
-    def value2index(self, value, rounding=round):
-        """Return the closest index/indices to the given value(s) if between the axis limits.
+    def _float2index(self, value, rounding="round", include_offset=True):
+        """Overwrites previous float to index method. Faster because it doesn't depend on
+        the `axis` parameter"""
 
-        Parameters
-        ----------
-        value : number or string, or numpy array of number or string
-                if string, should either be a calibrated unit like "20nm"
-                or a relative slicing like "rel0.2".
-        rounding : function
-                Handling of values intermediate between two axis points:
-                If `rounding=round`, use python's standard round-half-to-even strategy to find closest value.
-                If `rounding=math.floor`, round to the next lower value.
-                If `round=math.ceil`, round to the next higher value.
-
-        Returns
-        -------
-        index : integer or numpy array
-
-        Raises
-        ------
-        ValueError
-            If value is out of bounds or contains out of bounds values (array).
-            If value is NaN or contains NaN values (array).
-            If value is incorrectly formatted str or contains incorrectly
-                formatted str (array).
-        """
-
-        if value is None:
-            return None
-
-        value = self._parse_value(value)
-
-        multiplier = 1E12
-        index = 1 / multiplier * np.trunc(
-            (value - self.offset) / self.scale * multiplier
+        if include_offset:
+            multiplier = 1E12
+            index = 1 / multiplier * np.trunc(
+                (value - self.offset) / self.scale * multiplier
             )
-
-        if rounding is round:
-            # When value are negative, we need to use half away from zero
-            # approach on the index, because the index is always positive
-            index = np.where(
-                value >= 0 if np.sign(self.scale) > 0 else value < 0,
-                round_half_towards_zero(index, decimals=0),
-                round_half_away_from_zero(index, decimals=0),
-                )
         else:
-            if rounding is math.ceil:
-                rounding = np.ceil
-            elif rounding is math.floor:
-                rounding = np.floor
+            if include_offset:
+                multiplier = 1E12
+                index = 1 / multiplier * np.trunc(value / self.scale * multiplier)
 
-            index = rounding(index)
-
-        if isinstance(value, np.ndarray):
-            index = index.astype(int)
-            if np.all(self.size > index) and np.all(index >= 0):
-                return index
-            else:
-                raise ValueError("A value is out of the axis limits")
+        if rounding == "round":
+            index = np.round(index)
+        elif rounding == "ceil":
+            index = np.ceil(index)
+        elif rounding =="floor":
+            index = np.floor(index)
         else:
-            index = int(index)
-            if self.size > index >= 0:
-                return index
-            else:
-                raise ValueError("The value is out of the axis limits")
-
-    def update_axis(self):
-        self.axis = self.offset + self.scale * np.arange(self.size)
+            raise ValueError(
+                        'Non-supported rounding function. Use '
+                        '"round", "ceil" or "floor".'
+                    )
+        if any(index < 0):
+            raise ValueError("Relative slicing using floats requires using `rel0.5` rather than -0.5"
+                             "as the second case can be ambigious")
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
