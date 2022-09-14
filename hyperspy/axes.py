@@ -252,6 +252,7 @@ class UnitConversion:
         self._units = s
 
 
+
 @add_gui_method(toolkey="hyperspy.DataAxis")
 class BaseDataAxis(t.HasTraits):
     """Parent class defining common attributes for all DataAxis classes.
@@ -276,7 +277,13 @@ class BaseDataAxis(t.HasTraits):
                  units=None,
                  navigate=False,
                  is_binned=False,
+                 axes_manager=None,
                  **kwargs):
+        if '_type' in kwargs:
+            _type = kwargs.get('_type')
+            if _type != self.__class__.__name__:
+                raise ValueError(f'The passed `_type` ({_type}) of axis is '
+                                 'inconsistent with the given attributes.')
         super().__init__()
         if name is None:
             name = t.Undefined
@@ -286,7 +293,7 @@ class BaseDataAxis(t.HasTraits):
         self.units = units
 
         self.navigate = navigate
-        self.axes_manager = None
+        self.axes_manager = axes_manager
 
     @property
     def index_in_array(self):
@@ -398,6 +405,10 @@ class BaseDataAxis(t.HasTraits):
             self.update_dict(changed)
             any_changes = True
         return any_changes
+
+    def calibrate(self, **kwargs):
+        raise NotImplementedError("The Calibrate function is only"
+                                  "implemented for UniformDataAxis objects")
 
 
 class DataAxis(BaseDataAxis):
@@ -531,6 +542,9 @@ class DataAxis(BaseDataAxis):
             raise NotImplementedError("Slicing with floats not implemented for "
                                       "unordered axes")
 
+    def index2value(self, index):
+        return np.add(np.multiply(index, self.scale), self.offset)
+
     def _neg_slice(self, value):
         try:
             relative_value = float(value)
@@ -570,7 +584,8 @@ class DataAxis(BaseDataAxis):
             elif len(s) == 0:
                 raise ValueError(f"`{string}` is not a suitable string for slicing.")
             elif s[0].isdigit() and hasattr(self, "_get_value_from_value_with_units"):  # units
-                value[i] = self._get_value_from_value_with_units([s, ])
+                new_value = self._get_value_from_value_with_units(s)
+                value[i] = self._float2index(np.array([new_value, ]))[0]
             else:
                 raise ValueError(f"`{string}` is not a suitable string for slicing.")
         return value
@@ -650,15 +665,17 @@ class DataAxis(BaseDataAxis):
         """Convert to a uniform axis."""
         scale = (self.high_value - self.low_value) / self.size
         d = self.get_axis_dictionary()
-        axes_manager = self.axes_manager
+        d["offset"] = self.low_value
+        d["scale"] = scale
+        d["size"] = self.size
+        #axes_manager = self.axes_manager
         del d["axis"]
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
         d["_type"] = 'UniformDataAxis'
         self.__class__ = UniformDataAxis
-        self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
-        self.axes_manager = axes_manager
+        self.__init__(**d)
 
 
 class FunctionalDataAxis(DataAxis):
@@ -753,8 +770,6 @@ class FunctionalDataAxis(DataAxis):
         for parameter in parameters.keys():
             self.add_trait(parameter, t.CFloat(parameters[parameter]))
         self.parameters_list = list(parameters.keys())
-        self.update_axis()
-        self.on_trait_change(self.update_axis, self.parameters_list)
 
     @property
     def axis(self):
@@ -798,13 +813,13 @@ class FunctionalDataAxis(DataAxis):
     def convert_to_non_uniform_axis(self):
         """Convert to a non-uniform axis."""
         d = super().get_axis_dictionary()
-        axes_manager = self.axes_manager
+        #axes_manager = self.axes_manager
         d["_type"] = 'DataAxis'
         self.__class__ = DataAxis
         self.__init__(**d)
         del self._expression
         del self._function
-        self.axes_manager = axes_manager
+        #self.axes_manager = axes_manager
 
 
 class UniformDataAxis(DataAxis, UnitConversion):
@@ -884,14 +899,16 @@ class UniformDataAxis(DataAxis, UnitConversion):
         """
         v2i = self.value2index
         if isinstance(index, slice):
-            new_index = slice(v2i(index.start, **kwargs), v2i(index.stop, **kwargs), v2i(index.step, False,**kwargs))
+            new_index = slice(v2i(index.start,**kwargs),
+                              v2i(index.stop, **kwargs),
+                              v2i(index.step, include_offset=False, **kwargs))
         else:
             new_index = v2i(index, **kwargs)
         return new_index
 
     def __getitem__(self, item):
         new_axis = self.__deepcopy__()
-        ind = self.get_numpy_index(item)
+        ind = self.to_numpy_index(item)
         if isinstance(ind, slice):
             if ind.step is not None:
                 new_axis.scale = ind.step*self.scale
@@ -935,19 +952,21 @@ class UniformDataAxis(DataAxis, UnitConversion):
                         '"round", "ceil" or "floor".'
                     )
 
-        if any(np.isnan(index)):
+        if np.any(np.isnan(index)):
             raise ValueError("Indexes cannot be np.nan")
-        if any(index < 0):
+        if np.any(index < 0):
             _logger.warning("Negative slicing using floats requires using `-0.5`"
                             "rather than -0.5 as the second case can be ambiguous")
             index[index < 0] = 0
-        if any(index > self.high_index):
+        if np.any(index > self.high_index):
             _logger.warning("Value is greater than the max value. Max index is returned")
             index[index > self.high_index] = self.high_index
 
-        np.array(index,dtype=int)
+        index = np.array(index, dtype=int)
 
         return index
+
+
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
@@ -997,7 +1016,7 @@ class UniformDataAxis(DataAxis, UnitConversion):
 
     def convert_to_functional_data_axis(self, expression, units=None, name=None, **kwargs):
         d = super().get_axis_dictionary()  # Calls DataAxis get_axis_dictionary
-        axes_manager = self.axes_manager
+        #axes_manager = self.axes_manager
         if units:
             d["units"] = units
         if name:
@@ -1011,7 +1030,7 @@ class UniformDataAxis(DataAxis, UnitConversion):
         self.__class__ = FunctionalDataAxis
         d["_type"] = 'FunctionalDataAxis'
         self.__init__(expression=expression, **d)
-        self.axes_manager = axes_manager
+        #self.axes_manager = axes_manager
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
@@ -1022,7 +1041,7 @@ class UniformDataAxis(DataAxis, UnitConversion):
         self.remove_trait('offset')
         self.remove_trait('size')
         self.__init__(**d)
-        self.axes_manager = axes_manager
+        #self.axes_manager = axes_manager
 
 
 def _serpentine_iter(shape):

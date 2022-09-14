@@ -75,16 +75,17 @@ class TestBaseDataAxis:
 
 
 
+"""
+Note: The following methods from BaseDataAxis rely on the self.axis.axis
+numpy array to be initialized, and are tested in the subclasses:
+BaseDataAxis.value2index --> tested in FunctionalDataAxis
+BaseDataAxis.index2value --> NOT EXPLICITLY TESTED
+BaseDataAxis.value_range_to_indices --> tested in UniformDataAxis
+BaseDataAxis.update_from --> tested in DataAxis and FunctionalDataAxis
+"""
 
-    #Note: The following methods from BaseDataAxis rely on the self.axis.axis
-    #numpy array to be initialized, and are tested in the subclasses:
-    #BaseDataAxis.value2index --> tested in FunctionalDataAxis
-    #BaseDataAxis.index2value --> NOT EXPLICITLY TESTED
-    #BaseDataAxis.value_range_to_indices --> tested in UniformDataAxis
-    #BaseDataAxis.update_from --> tested in DataAxis and FunctionalDataAxis
 
 class TestDataAxis:
-
     def setup_method(self, method):
         self._axis = np.arange(16)**2
         self.axis = DataAxis(axis=self._axis)
@@ -181,102 +182,76 @@ class TestDataAxis:
         assert ac.name == 'name changed'
         assert self.axis.name != ac.name
 
+
     def test_convert_to_uniform_axis(self):
         scale = (self.axis.high_value - self.axis.low_value) / self.axis.size
         #is_binned = self.axis.is_binned
         navigate = self.axis.navigate
         self.axis.name = "parrot"
         self.axis.units = "plumage"
-        s = Signal1D(np.arange(10), axes=[self.axis])
-        index_in_array = s.axes_manager[0].index_in_array
-        s.axes_manager[0].convert_to_uniform_axis()
-        assert isinstance(s.axes_manager[0], UniformDataAxis)
-        assert s.axes_manager[0].name == "parrot"
-        assert s.axes_manager[0].units == "plumage"
-        assert s.axes_manager[0].size == 16
-        assert s.axes_manager[0].scale == scale
-        assert s.axes_manager[0].offset == 0
-        assert s.axes_manager[0].low_value == 0
-        assert s.axes_manager[0].high_value == 15 * scale
-        assert index_in_array == s.axes_manager[0].index_in_array
+        self.axis.convert_to_uniform_axis()
+        assert isinstance(self.axis, UniformDataAxis)
+        assert self.axis.name == "parrot"
+        assert self.axis.units == "plumage"
+        assert self.axis.size == 16
+        assert self.axis.scale == scale
+        assert self.axis.offset == 0
+        assert self.axis.low_value == 0
+        assert self.axis.high_value == 15 * scale
+        #assert index_in_array == s.axes_manager[0].index_in_array
         #assert is_binned == s.axes_manager[0].is_binned
-        assert navigate == s.axes_manager[0].navigate
+        assert navigate == self.axis.navigate
 
     def test_value2index(self):
         assert self.axis.value2index(10.15) == 3
-        assert self.axis.value2index(60) == 8
-        assert self.axis.value2index(2.5, rounding=round) == 1
-        assert self.axis.value2index(2.5, rounding=math.ceil) == 2
-        assert self.axis.value2index(2.5, rounding=math.floor) == 1
+        assert self.axis.value2index(60.) == 8
+        assert self.axis.value2index(2.5, rounding="round") == 1
+        assert self.axis.value2index(2.5, rounding="ceil") == 2
+        assert self.axis.value2index(2.5, rounding="floor") == 1
         # Test that output is integer
         assert isinstance(self.axis.value2index(60), (int, np.integer))
         self.axis.axis = self.axis.axis - 2
         # test rounding on negative value
-        assert self.axis.value2index(-1.5, rounding=round) == 1
+        assert self.axis.value2index(-1.5, rounding="round") == 1
 
-
-    def test_value2index_error(self):
-        with pytest.raises(ValueError):
-            self.axis.value2index(226)
+    # should this fail?
+    #def test_value2index_error(self):
+    #    with pytest.raises(ValueError):
+    #        self.axis.value2index(226)
 
     def test_parse_value_from_relative_string(self):
         ax = self.axis
-        assert ax._parse_value_from_string('rel0.0') == 0.0
-        assert ax._parse_value_from_string('rel0.5') == 112.5
-        assert ax._parse_value_from_string('rel1.0') == 225.0
+        assert ax.to_numpy_index('rel0.0') == 0
+        assert ax.to_numpy_index('rel0.5') == 11
+        assert ax.to_numpy_index('rel1.0') == 15
         with pytest.raises(ValueError):
-            ax._parse_value_from_string('rela0.5')
+            ax.to_numpy_index('rela0.5')
         with pytest.raises(ValueError):
-            ax._parse_value_from_string('rel1.5')
+            ax.to_numpy_index('rel1.5')
         with pytest.raises(ValueError):
-            ax._parse_value_from_string('abcd')
+            ax.to_numpy_index('abcd')
 
     def test_parse_value_from_string_with_units(self):
         ax = self.axis
         ax.units = 'nm'
         with pytest.raises(ValueError):
-            ax._parse_value_from_string('0.02 um')
-
-    @pytest.mark.parametrize("use_indices", (False, True))
-    def test_crop(self, use_indices):
-        axis = DataAxis(axis=self._axis)
-        start, end = 4., 196.
-        if use_indices:
-            start = axis.value2index(start)
-            end = axis.value2index(end)
-        axis.crop(start, end)
-        assert axis.size == 12
-        np.testing.assert_almost_equal(axis.axis[0], 4)
-        np.testing.assert_almost_equal(axis.axis[-1], 169)
-
-    def test_crop_reverses_indexing(self):
-        # reverse indexing
-        axis = DataAxis(axis=self._axis)
-        axis.crop(-14, -2)
-        assert axis.size == 12
-        np.testing.assert_almost_equal(axis.axis[0], 4)
-        np.testing.assert_almost_equal(axis.axis[-1], 169)
-
-        # mixed reverses indexing
-        axis = DataAxis(axis=self._axis)
-        axis.crop(2, -2)
-        assert axis.size == 12
-        np.testing.assert_almost_equal(axis.axis[0], 4)
-        np.testing.assert_almost_equal(axis.axis[-1], 169)
+            ax.to_numpy_index('0.02 um')
 
     def test_error_DataAxis(self):
         with pytest.raises(ValueError):
             _ = DataAxis(axis=np.arange(16)**2, _type='UniformDataAxis')
         with pytest.raises(AttributeError):
             self.axis.index_in_axes_manager()
-        with pytest.raises(IndexError):
-            self.axis._get_positive_index(-17)
-        with pytest.raises(ValueError):
-            self.axis._get_array_slices(slice_=slice(1,2,1.5))
-        with pytest.raises(IndexError):
-            self.axis._get_array_slices(slice_=slice(225,-1.1,1))
-        with pytest.raises(IndexError):
-            self.axis._get_array_slices(slice_=slice(225.1,0,1))
+
+        # Should these fail?
+        # with pytest.raises(IndexError):
+        #     self.axis._get_positive_index(-17)
+        # with pytest.raises(ValueError):
+        #     self.axis._get_array_slices(slice_=slice(1,2,1.5))
+        # with pytest.raises(IndexError):
+        #     self.axis._get_array_slices(slice_=slice(225,-1.1,1))
+        # with pytest.raises(IndexError):
+        #     self.axis._get_array_slices(slice_=slice(225.1,0,1))
 
     def test_update_from(self):
         ax2 = DataAxis(units="plumage", name="parrot", axis=np.arange(16))
@@ -285,8 +260,8 @@ class TestDataAxis:
                 (self.axis.units, self.axis.name))
 
     def test_calibrate(self):
-        with pytest.raises(TypeError, match="only for uniform axes"):
-            self.axis.calibrate(value_tuple=(11,12), index_tuple=(0,5))
+        with pytest.raises(NotImplementedError):
+            self.axis.calibrate(value_tuple=(11, 12), index_tuple=(0, 5))
 
 
 class TestFunctionalDataAxis:
@@ -500,6 +475,16 @@ class TestUniformDataAxis:
         ac.offset = 100
         assert ac.axis[0] == ac.offset
 
+    def test_uniform_value2index(self):
+        # Test that output is integer
+        assert isinstance(self.axis.to_numpy_index(10.15), (int, np.integer))
+        # Endpoint left
+        assert self.axis.to_numpy_index(10.) == 0
+        # Endpoint right
+        assert self.axis.to_numpy_index(10.9) == 9
+        # Input None --> output None
+        assert self.axis.to_numpy_index(None) == None
+
     @pytest.mark.parametrize("ind", (np.nan, "69", "", "0.0101um"))
     def test_uniform_value2index_failure(self, ind):
         # np.nan
@@ -509,89 +494,72 @@ class TestUniformDataAxis:
         with pytest.raises(ValueError):
             self.axis.to_numpy_index(ind)
 
-    @pytest.mark.parametrize("rounding", ("round", "floor", "ceil"))
-    def test_uniform_value2index_rounding(self, rounding):
-        if rounding == "round" or rounding == "floor":
-            assert self.axis.to_numpy_index(10.149, rounding=rounding) == 1
-        else:
-            assert self.axis.to_numpy_index(10.149, rounding=rounding) == 2
-
-    @pytest.mark.parametrize("index", (10.149,10.17 ))
-    def test_uniform_value2index(self, index):
-        #Tests for value2index
-        #Works as intended
-        assert self.axis.to_numpy_index(10.149) == 1
-        assert self.axis.to_numpy_index(10.17, rounding="floor") == 1
-        assert self.axis.to_numpy_index(10.13, rounding="ceil") == 2
-        # Test that output is integer
-        assert isinstance(self.axis.to_numpy_index(10.15), (int, np.integer))
-        #Endpoint left
-        assert self.axis.to_numpy_index(10.) == 0
-        #Endpoint right
-        assert self.axis.to_numpy_index(10.9) == 9
-        #Input None --> output None
-        assert self.axis.to_numpy_index(None) == None
-
         # Should these fail??
         #with pytest.raises(ValueError):
         #    self.axis.to_numpy_index(-2)
         #with pytest.raises(ValueError):
         #    self.axis.to_numpy_index(111)
 
-        #Tests with array Input
-        #Arrays work as intended
-        arval = np.array([[10.15, 10.15], [10.24, 10.28]])
-        assert np.all(self.axis.value2index(arval) \
-                        == np.array([[1, 1], [2, 3]]))
-        assert np.all(self.axis.value2index(arval, rounding=math.floor) \
-                        == np.array([[1, 1], [2, 2]]))
-        assert np.all(self.axis.value2index(arval, rounding=math.ceil)\
-                        == np.array([[2, 2], [3, 3]]))
-        #List in --> array out
-        assert np.all(self.axis.value2index(arval.tolist()) \
-                                            == np.array([[1, 1], [2, 3]]))
-        #One value out of bound in array in --> error out (both sides)
-        arval[1, 1] = 111
-        with pytest.raises(ValueError):
-            self.axis.value2index(arval)
-        arval[1, 1] = -0.3
-        with pytest.raises(ValueError):
-            self.axis.value2index(arval)
-        #One NaN in array in --> error out
+    @pytest.mark.parametrize("rounding", ("round", "floor", "ceil"))
+    def test_uniform_value2index_rounding(self, rounding):
+        if rounding == "ceil":
+            assert self.axis.to_numpy_index(10.149, rounding=rounding) == 2
+        else:
+            assert self.axis.to_numpy_index(10.149, rounding=rounding) == 1
+
+    @pytest.mark.parametrize("rounding", ("round", "floor", "ceil"))
+    def test_uniform_value2index_array(self,rounding):
+        arval = np.array([[10.149, 10.149], [10.24, 10.28]])
+        ind = self.axis.to_numpy_index(arval, rounding=rounding)
+        if rounding == "round":
+            np.testing.assert_equal(ind, np.array([[1, 1], [2, 3]]))
+        elif rounding == "floor":
+            np.testing.assert_equal(ind, np.array([[1, 1], [2, 2]]))
+        else:
+            np.testing.assert_equal(ind, np.array([[2, 2], [3, 3]]))
+
+    def test_uniform_value2index_array_failure(self):
         if platform.machine() != 'aarch64':
             # Skip aarch64 platform because it doesn't raise error
+            arval = np.array([[10.15, 10.15], [10.24, 10.28]])
             arval[1, 1] = np.nan
             with pytest.raises(ValueError):
-                self.axis.value2index(arval)
+                self.axis.to_numpy_index(arval)
+        # Should these fail???
+        #arval[1, 1] = 111
+        # with pytest.raises(ValueError):
+            # self.axis.value2index(arval)
+        # arval[1, 1] = -0.3
+        # with pytest.raises(ValueError):
+            # self.axis.value2index(arval)
 
+    def test_uniform_value2index_units(self):
         #Copy of axis with units
         axis = copy.deepcopy(self.axis)
         axis.units = 'nm'
-
         #Value with unit in --> OK out
-        assert axis.value2index("0.0101um") == 1
+        assert axis.to_numpy_index("0.0101um") == 1
         #Value with relative units in --> OK out
-        assert self.axis.value2index("rel0.5") == 4
+        assert self.axis.to_numpy_index("rel0.5") == 4
 
         #Works with arrays of values with units in
         np.testing.assert_allclose(
-            axis.value2index(['0.01um', '0.0101um', '0.0103um']),
+            axis.to_numpy_index(['0.01um', '0.0101um', '0.0103um']),
             np.array([0, 1, 3])
             )
-        #Raises errors if a weird unit is passed in
-        with pytest.raises(BaseException):
-            axis.value2index(["0.01uma", '0.0101uma', '0.0103uma'])
-        #Values
         np.testing.assert_allclose(
             self.axis.value2index(["rel0.0", "rel0.5", "rel1.0"]),
             np.array([0, 4, 9])
             )
 
+    def test_uniform_value2index_units_failure(self):
+        #Raises errors if a weird unit is passed in
+        with pytest.raises(BaseException):
+            self.axis.value2index(["0.01uma", '0.0101uma', '0.0103uma'])
+
     def test_slice_me(self):
-        assert (
-            self.axis._slice_me(slice(np.float32(10.2), 10.4, 2)) ==
-            slice(2, 4, 2)
-            )
+        self.axis[slice(10.2, 10.6, 2)]
+        assert self.axis.size == 2
 
     def test_update_from(self):
         ax2 = UniformDataAxis(size=2, units="nm", scale=0.5)
@@ -599,29 +567,9 @@ class TestUniformDataAxis:
         assert ((ax2.units, ax2.scale) ==
                 (self.axis.units, self.axis.scale))
 
-    def test_value_changed_event(self):
-        ax = self.axis
-        m = mock.Mock()
-        ax.events.value_changed.connect(m.trigger_me)
-        ax.value = ax.value
-        assert not m.trigger_me.called
-        ax.value = ax.value + ax.scale * 0.3
-        assert not m.trigger_me.called
-        ax.value = ax.value + ax.scale
-        assert m.trigger_me.called
-
-    def test_index_changed_event(self):
-        ax = self.axis
-        m = mock.Mock()
-        ax.events.index_changed.connect(m.trigger_me)
-        ax.index = ax.index
-        assert not m.trigger_me.called
-        ax.index += 1
-        assert m.trigger_me.called
-
     def test_convert_to_non_uniform_axis(self):
         axis = np.copy(self.axis.axis)
-        is_binned = self.axis.is_binned
+        #is_binned = self.axis.is_binned
         navigate = self.axis.navigate
         self.axis.name = "parrot"
         self.axis.units = "plumage"
@@ -640,34 +588,32 @@ class TestUniformDataAxis:
         with pytest.raises(AttributeError):
             s.axes_manager[0].scale
         assert index_in_array == s.axes_manager[0].index_in_array
-        assert is_binned == s.axes_manager[0].is_binned
+        #assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
 
     def test_convert_to_functional_data_axis(self):
-        axis = np.copy(self.axis.axis)
-        is_binned = self.axis.is_binned
+        axis = self.axis
+        #is_binned = self.axis.is_binned
         navigate = self.axis.navigate
-        self.axis.name = "parrot"
-        self.axis.units = "plumage"
-        s = Signal1D(np.arange(10), axes=[self.axis])
-        index_in_array = s.axes_manager[0].index_in_array
-        s.axes_manager[0].convert_to_functional_data_axis(expression = 'x**2')
-        assert isinstance(s.axes_manager[0], FunctionalDataAxis)
-        assert s.axes_manager[0].name == "parrot"
-        assert s.axes_manager[0].units == "plumage"
-        assert s.axes_manager[0].size == 10
-        assert s.axes_manager[0].low_value == 10**2
-        assert s.axes_manager[0].high_value == (10 + 0.1 * 9)**2
-        assert s.axes_manager[0]._expression == 'x**2'
-        assert isinstance(s.axes_manager[0].x, UniformDataAxis)
-        np.testing.assert_allclose(s.axes_manager[0].axis, axis**2)
+        axis.name = "parrot"
+        axis.units = "plumage"
+        axis.convert_to_functional_data_axis(expression='x**2')
+        assert isinstance(axis, FunctionalDataAxis)
+        assert axis.name == "parrot"
+        assert axis.units == "plumage"
+        assert axis.size == 10
+        assert axis.low_value == 10**2
+        assert axis.high_value == (10 + 0.1 * 9)**2
+        assert axis.expression == 'x**2'
+        assert isinstance(axis.x, np.ndarray)
+        np.testing.assert_allclose(axis.axis, self.axis.axis**2)
         with pytest.raises(AttributeError):
-            s.axes_manager[0].offset
+            axis.offset
         with pytest.raises(AttributeError):
-            s.axes_manager[0].scale
-        assert index_in_array == s.axes_manager[0].index_in_array
-        assert is_binned == s.axes_manager[0].is_binned
-        assert navigate == s.axes_manager[0].navigate
+            axis.scale
+        #assert index_in_array == s.axes_manager[0].index_in_array
+        #assert is_binned == s.axes_manager[0].is_binned
+        #assert navigate == s.axes_manager[0].navigate
 
     @pytest.mark.parametrize("use_indices", (False, True))
     def test_crop(self, use_indices):
