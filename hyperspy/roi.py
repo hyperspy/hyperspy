@@ -158,7 +158,7 @@ class BaseROI(t.HasTraits):
         """
         Utility to get the value ranges that the ROI would select.
 
-        If the ROI is point base or is rectangluar in nature, these can be used
+        If the ROI is point base or is rectangular in nature, these can be used
         to slice a signal. Extracted from
         :meth:`~hyperspy.roi.BaseROI._make_slices` to ease implementation
         in inherited ROIs.
@@ -1509,6 +1509,182 @@ class Line2DROI(BaseInteractiveROI):
                 ax.size = len(profile)
                 ax.scale = length / len(profile)
             out.events.data_changed.trigger(out)
+
+class Polygon2DROI(BaseInteractiveROI):
+
+    points = []
+    _ndim = 2
+
+    def __init__(self, points=None):
+        super(Polygon2DROI, self).__init__()
+        self.points = points if points else []
+
+    @property
+    def parameters(self):
+        propertydict = {}
+        for i, (x, y) in enumerate(self.points):
+            propertydict[f"x{i}"] = x
+            propertydict[f"y{i}"] = y
+        return propertydict
+
+    def is_valid(self):
+        """
+        The polygon is defined as valid if more than two points are fully defined.
+        """
+        return len(self.points) > 2 and \
+            all( ( None not in point and len(point) == 2 ) for point in self.points )
+
+    def update(self):
+        """Function responsible for updating anything that depends on the ROI.
+        It should be called by implementors whenever the ROI changes.
+        The base implementation simply triggers the changed event.
+        """
+        if self.is_valid():
+            self.events.changed.trigger(self)
+
+    def __call__(self, signal, out=None, axes=None):
+        if not self.is_valid():
+            raise ValueError(not_set_error_msg)
+
+        if axes is None and signal in self.signal_map:
+            axes = self.signal_map[signal][1]
+        else:
+            axes = self._parse_axes(axes, signal.axes_manager)
+
+        for axis in axes:
+            if not axis.is_uniform:
+                raise NotImplementedError(
+                        "This ROI cannot operate on a non-uniform axis.")
+        natax = signal.axes_manager._get_axes_in_natural_order()
+        # Slice original data with a circumscribed rectangle
+        left   = min(x for x,y in self.points)
+        right  = max(x for x,y in self.points)
+        top    = min(y for x,y in self.points)
+        bottom = max(y for x,y in self.points)
+
+        ranges = [[left, right],
+                  [top, bottom]]
+        slices = self._make_slices(natax, axes, ranges)
+        ir = [slices[natax.index(axes[0])],
+              slices[natax.index(axes[1])]]
+
+        vx = axes[0].axis[ir[0]]
+        vy = axes[1].axis[ir[1]]
+
+        # convert to cupy array when necessary
+        if is_cupy_array(signal.data):
+            import cupy as cp
+            vx, vy = cp.array(vx), cp.array(vy)
+
+        gx, gy = np.meshgrid(vx, vy)
+        gr = gx**2 + gy**2
+
+        mask = np.zeros((right,bottom), dtype=bool)
+
+        for row in range(mask.shape[1]):
+
+            intersections = []
+            for pointind in range(len(self.points)):
+                x1, y1 = self.points[pointind]
+                x2, y2 = self.points[(pointind+1)%len(self.points)]
+
+                # Only find intersection if line segment passes through row
+                if (y1 > row) != (y2 > row):
+                    intersection = x1 +  (x2 - x1) * (row - y1) /(y2 - y1)
+                    intersections.append(intersection)
+
+            intersections.sort()
+
+            for i in range(1,len(intersections),2):
+                mask[row,round(intersections[i-1]):round(intersections[i])] = True
+
+        mask = mask[top:,left:]
+
+        tiles = []
+        shape = []
+        chunks = []
+        for i in range(len(slices)):
+            if signal._lazy:
+                chunks.append(signal.data.chunks[i][0])
+            if i == natax.index(axes[0]):
+                thisshape = mask.shape[0]
+                tiles.append(thisshape)
+                shape.append(thisshape)
+            elif i == natax.index(axes[1]):
+                thisshape = mask.shape[1]
+                tiles.append(thisshape)
+                shape.append(thisshape)
+            else:
+                tiles.append(signal.axes_manager._axes[i].size)
+                shape.append(1)
+        mask = mask.reshape(shape)
+
+        nav_axes = [ax.navigate for ax in axes]
+        nav_dim = signal.axes_manager.navigation_dimension
+        if True in nav_axes:
+            if False in nav_axes:
+
+                slicer = signal.inav[slices[:nav_dim]].isig.__getitem__
+                slices = slices[nav_dim:]
+            else:
+                slicer = signal.inav.__getitem__
+                slices = slices[0:nav_dim]
+        else:
+            slicer = signal.isig.__getitem__
+            slices = slices[nav_dim:]
+
+        roi = slicer(slices, out=out)
+        roi = out or roi
+        if roi._lazy:
+            import dask.array as da
+            mask = da.from_array(mask, chunks=chunks)
+        mask = np.broadcast_to(mask, tiles)
+        # roi.data = np.ma.masked_array(roi.data, mask, hard_mask=True)
+        roi.data = np.where(mask, np.nan, roi.data)
+        if out is None:
+            return roi
+        else:
+            out.events.data_changed.trigger(out)
+
+    def _parse_axes(self, axes, axes_manager):
+        """Utility function to parse the 'axes' argument to a list of
+        :py:class:`~hyperspy.axes.DataAxis`.
+
+        Parameters
+        ----------
+        %s
+        axes_manager : :py:class:`~hyperspy.axes.AxesManager`
+            The AxesManager to use for parsing axes
+
+        Returns
+        -------
+        tuple of :py:class:`~hyperspy.axes.DataAxis`
+        """
+        nd = self.ndim
+        if axes is None:
+            if axes_manager.navigation_dimension >= nd:
+                axes_out = axes_manager.navigation_axes[:nd]
+            elif axes_manager.signal_dimension >= nd:
+                axes_out = axes_manager.signal_axes[:nd]
+            elif nd == 2 and axes_manager.navigation_dimension == 1 and \
+                    axes_manager.signal_dimension == 1:
+                # We probably have a navigator plot including both nav and sig
+                # axes.
+                axes_out = (axes_manager.signal_axes[0],
+                            axes_manager.navigation_axes[0], )
+            else:
+                raise ValueError("Could not find valid axes configuration.")
+        elif isinstance(axes, (tuple, list)):
+            if len(axes) > nd:
+                raise ValueError("The length of the provided `axes` is larger "
+                                 "than the dimensionality of the ROI.")
+            axes_out = axes_manager[axes]
+        else:
+            axes_out = (axes_manager[axes], )
+
+        return axes_out
+
+    _parse_axes.__doc__ %= PARSE_AXES_DOCSTRING
 
 
 def _get_central_half_limits_of_axis(ax):
