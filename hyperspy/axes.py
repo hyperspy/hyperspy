@@ -253,7 +253,7 @@ class UnitConversion:
 
 
 @add_gui_method(toolkey="hyperspy.DataAxis")
-class BaseDataAxis(t.HasTraits):
+class BaseDataAxis:
     """Parent class defining common attributes for all DataAxis classes.
 
     Parameters
@@ -267,64 +267,21 @@ class BaseDataAxis(t.HasTraits):
     is_binned : bool, optional
         True if data along the axis is binned. Default False.
     """
-    name = t.Str()
-    units = t.Str()
-    navigate = t.Bool(False)
-    is_binned = t.Bool(False)
 
     def __init__(self,
-                 index_in_array=None,
                  name=None,
                  units=None,
                  navigate=False,
                  is_binned=False,
                  **kwargs):
         super().__init__()
-        if name is None:
-            name = t.Undefined
-        if units is None:
-            units = t.Undefined
-
-        self.events = Events()
-        if '_type' in kwargs:
-            _type = kwargs.get('_type')
-            if _type != self.__class__.__name__:
-                raise ValueError(f'The passed `_type` ({_type}) of axis is '
-                                 'inconsistent with the given attributes.')
-        _name = self.__class__.__name__
-        self.events.value_changed = Event("""
-            Event that triggers when the value of the `{}` changes
-
-            Triggers after the internal state of the `{}` has been
-            updated.
-
-            Arguments:
-            ---------
-            obj : The {} that the event belongs to.
-            value : The new value
-            """.format(_name, _name, _name), arguments=["obj", 'value'])
-
-        self._suppress_value_changed_trigger = False
-        self._suppress_update_value = False
         self.name = name
         self.units = units
-        self.on_trait_change(self._update_slice, 'navigate')
-        self.on_trait_change(self.update_index_bounds, 'size')
-        self.on_trait_change(self._update_bounds, 'axis')
 
-        self.index = 0
         self.navigate = navigate
         self.is_binned = is_binned
         self.axes_manager = None
         self._is_uniform = False
-
-        # The slice must be updated even if the default value did not
-        # change to correctly set its value.
-        self._update_slice(self.navigate)
-
-    @property
-    def is_uniform(self):
-        return self._is_uniform
 
     @property
     def index_in_array(self):
@@ -347,8 +304,33 @@ class BaseDataAxis(t.HasTraits):
                 " and therefore its index_in_array attribute "
                 " is not defined".format(self.__class__.__name__))
 
+    @property
+    def slice(self):
+        if self.navigate:
+            return None
+        else:
+            return slice(None)
+
     def __getitem__(self, item):
-        return self
+        raise NotImplementedError
+
+    def __repr__(self):
+        if hasattr(self, "size"):
+            text = '<%s axis, size: %i' % (self._get_name(),
+                                           self.size,)
+        else:
+            text = '<%s axis, size: - ' % self._get_name()
+        if self.navigate is True and hasattr(self, "index"):
+            text += ", index: %i" % self.index
+        text += ">"
+        return text
+
+    def __str__(self):
+        return self._get_name() + " axis"
+
+    def __deepcopy__(self, memodict={}):
+        new_dict = copy.deepcopy(self.get_axis_dictionary())
+        return self.__class__(**new_dict)
 
     def _get_name(self):
         name = (self.name
@@ -359,16 +341,11 @@ class BaseDataAxis(t.HasTraits):
                 else "Unnamed")
         return name
 
-    def __repr__(self):
-        text = '<%s axis, size: %i' % (self._get_name(),
-                                       self.size,)
-        if self.navigate is True and hasattr(self, "index"):
-            text += ", index: %i" % self.index
-        text += ">"
-        return text
+    def copy(self):
+        return copy.copy(self)
 
-    def __str__(self):
-        return self._get_name() + " axis"
+    def deepcopy(self):
+        return self.__deepcopy__()
 
     def get_axis_dictionary(self):
         return {'_type': self.__class__.__name__,
@@ -378,15 +355,18 @@ class BaseDataAxis(t.HasTraits):
                 'is_binned': self.is_binned,
                 }
 
-    def copy(self):
-        return self.__class__(**self.get_axis_dictionary())
+    def to_numpy_index(self, index):
+        raise NotImplementedError("This method is only implemented in subclasses")
 
-    def __copy__(self):
-        return self.copy()
-
-    def __deepcopy__(self, memo):
-        cp = self.copy()
-        return cp
+    def update_dict(self, new_values):
+        """Update an axis from a dict of new values.
+        Parameters
+        ----------
+        new_values: dict
+            A dictionary of new values to replace the old ones. I.e {"name": "x", "units":"nm"}
+        """
+        for key in new_values:
+            self.__setattr__(key, new_values[key])
 
     def update_from(self, axis, attributes):
         """Copy values of specified axes fields from the passed AxesManager.
@@ -411,7 +391,7 @@ class BaseDataAxis(t.HasTraits):
             if getattr(self, f) != getattr(axis, f):
                 changed[f] = getattr(axis, f)
         if len(changed) > 0:
-            self.trait_set(**changed)
+            self.update_dict(changed)
             any_changes = True
         return any_changes
 
@@ -421,8 +401,6 @@ class DataAxis(BaseDataAxis):
        a size and an index. Anything that can be in a numpy array can be an axis label including a string
        an unordered set of numbers or even a set of objects as is sometimes the case for a `ColumnAxis` object
     """
-    axis = t.Array()
-
     def __init__(self,
                  index_in_array=None,
                  name=None,
@@ -438,35 +416,23 @@ class DataAxis(BaseDataAxis):
             navigate=navigate,
             is_binned=is_binned,
             **kwargs)
-        self._axis = axis
-        self.update_axis()
-        self.low_index = 0
-        self.on_trait_change(self._update_slice, 'navigate')
-        self.on_trait_change(self.update_index_bounds, 'size')
-        self.on_trait_change(self._update_bounds, 'axis')
-
-        self.events.index_changed = Event("""
-            Event that triggers when the index of the `{}` changes
-
-            Triggers after the internal state of the `{}` has been
-            updated.
-
-            Arguments:
-            ---------
-            obj : The {} that the event belongs to.
-            index : The new index
-            """.format(_name, _name, _name), arguments=["obj", 'index'])
+        self._axis = np.asarray(axis)
+        self.index = 0
 
     def __getitem__(self, item):
         new_axis = self.__deepcopy__()
-        new_item = self.get_to_numpy_index[item]
-        new_axis.axis = self._axis[new_item]
+        new_item = self.to_numpy_index(item)
+        new_axis._axis = self._axis[new_item]
         return new_axis
 
     """Additional Class properties"""
     @property
     def axis(self):
         return self._axis
+
+    @axis.setter
+    def axis(self, axis):
+        self._axis = axis
 
     @property
     def is_ordered(self):
@@ -483,13 +449,17 @@ class DataAxis(BaseDataAxis):
             return None
 
     @property
+    def value(self):
+        return self.axis[self.index]
+
+    @property
     def high_value(self):
         if self.is_ordered is True:
             return self.axis[-1]
         elif self.is_ordered is False:
             return self.axis[0]
         else:
-            raise ValueError("The axis is not ordered so there is no high/low value")
+            raise NotImplementedError("The axis is not ordered so there is no high/low value")
 
     @property
     def low_value(self):
@@ -498,7 +468,7 @@ class DataAxis(BaseDataAxis):
         elif self.is_ordered is False:
             return self.axis[-1]
         else:
-            raise ValueError("The axis is not ordered so there is no high/low value")
+            raise NotImplementedError("The axis is not ordered so there is no high/low value")
 
     @property
     def low_index(self):
@@ -512,35 +482,6 @@ class DataAxis(BaseDataAxis):
     def size(self):
         return len(self._axis)
 
-    """"Methods for updating index and value on changes (When does value changed get called?)"""
-
-    def _index_changed(self, name, old, new):
-        self.events.index_changed.trigger(obj=self, index=self.index)
-        if not self._suppress_update_value:
-            new_value = self.axis[self.index]
-            if new_value != self.value:
-                self.value = new_value
-
-    def _value_changed(self, name, old, new):
-        old_index = self.index
-        new_index = self.value2index(new)
-        if old_index != new_index:
-            self.index = new_index
-            if new == self.axis[self.index]:
-                self.events.value_changed.trigger(obj=self, value=new)
-        else:
-            new_value = self.index2value(new_index)
-            if new_value == old:
-                self._suppress_value_changed_trigger = True
-                try:
-                    self.value = new_value
-                finally:
-                    self._suppress_value_changed_trigger = False
-
-            elif new_value == new and not\
-                    self._suppress_value_changed_trigger:
-                self.events.value_changed.trigger(obj=self, value=new)
-
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
         d.update({'axis': self.axis})
@@ -552,7 +493,6 @@ class DataAxis(BaseDataAxis):
         """Converts a float index (or an array of floats) into
         an integer index (or an array of integer indexes"""
         if self.is_ordered:
-            value = np.empty(value.shape, dtype=int)
             if np.all((value >= self.low_value) * (value <= self.high_value)):
                 if rounding == "round":
                     index = numba_closest_index_round(self.axis, value).astype(int)
@@ -565,7 +505,7 @@ class DataAxis(BaseDataAxis):
                         'Non-supported rounding function. Use '
                         '"round", "ceil" or "floor".'
                     )
-                return np.squeeze(index)[()]
+                return index
         else:
             raise NotImplementedError("Slicing with floats not implemented for "
                                       "unordered axes")
@@ -576,7 +516,8 @@ class DataAxis(BaseDataAxis):
         except ValueError:
             raise ValueError("A negative float index must be followed by some float i.e. '-.3' ")
         relative_value = self.high_value+relative_value
-        value = self._float2index(value)
+        relative_value = self._float2index(np.array([relative_value, ]))[0]
+        return relative_value
 
     def _rel_slice(self, value):
         if self.is_ordered:
@@ -587,7 +528,7 @@ class DataAxis(BaseDataAxis):
             except ValueError:
                 raise ValueError("`rel` must be followed by a number in range [0, 1].")
             value = self.low_value + relative_value * (self.high_value - self.low_value)
-            value = self._float2index(value)
+            value = self._float2index(np.array([value, ]))[0]
             return value
 
         else:
@@ -608,7 +549,7 @@ class DataAxis(BaseDataAxis):
             elif s in self.axis:  # labeled axes
                 value[i] = np.argwhere(self.axis == s)[0]
             elif s.startswith("-"):
-                value[i] = self._neg_slice(value)
+                value[i] = self._neg_slice(string)
             elif s[0].isdigit():  # units
                 value[i] = self._get_value_from_value_with_units(s)
             else:
@@ -620,9 +561,15 @@ class DataAxis(BaseDataAxis):
         returns the index."""
         is_tuple = False
         is_scalar = False
-        if isinstance(value, tuple):
+
+        if value is None:
+            return None
+        elif isinstance(value, tuple):
             is_tuple = True
             value = np.array(value)
+        elif isinstance(value, str):
+            value = np.array([value, ])
+            is_scalar = True
         elif isiterable(value):
             value = np.asarray(value)
         else:
@@ -658,7 +605,7 @@ class DataAxis(BaseDataAxis):
         """
         v2i = self.value2index
         if isinstance(index, slice):
-            if not self.is_uniform and isfloat(index.step):
+            if isfloat(index.step):
                 raise ValueError(
                     "Float steps are only supported for uniform axes.")
             new_index = slice(*(v2i(i) for i in (index.start, index.stop, index.step)))
@@ -679,6 +626,7 @@ class DataAxis(BaseDataAxis):
         self.__class__ = UniformDataAxis
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
         self.axes_manager = axes_manager
+
 
 
 class FunctionalDataAxis(DataAxis):

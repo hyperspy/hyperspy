@@ -40,8 +40,8 @@ class TestBaseDataAxis:
     def test_initialisation_BaseDataAxis_default(self):
         with pytest.raises(AttributeError):
             assert self.axis.index_in_array is None
-        assert self.axis.name is t.Undefined
-        assert self.axis.units is t.Undefined
+        assert self.axis.name is None
+        assert self.axis.units is None
         assert not self.axis.navigate
         assert not self.axis.is_binned
         assert not self.axis.is_uniform
@@ -61,11 +61,23 @@ class TestBaseDataAxis:
 
     def test_error_BaseDataAxis(self):
         with pytest.raises(NotImplementedError):
-            self.axis._slice_me(1)
-        with pytest.raises(ValueError):
-            self.axis._parse_value_from_string('')
-        with pytest.raises(ValueError):
-            self.axis._parse_value_from_string('spam')
+            self.axis["x"]
+        with pytest.raises(NotImplementedError):
+            self.axis.to_numpy_index([0,1])
+
+    def test_copy(self):
+        copied_axis = copy.copy(self.axis)
+        assert id(self.axis.name) == id(copied_axis.name)
+        assert id(self.axis.name) == id(copied_axis.units)
+
+    def test_get_axis_dictionary(self):
+        new_dict =self.axis.get_axis_dictionary()
+        assert new_dict["_type"] == 'BaseDataAxis'
+        assert new_dict["name"] is None
+        assert new_dict["units"] is None
+
+
+
 
     #Note: The following methods from BaseDataAxis rely on the self.axis.axis
     #numpy array to be initialized, and are tested in the subclasses:
@@ -79,6 +91,9 @@ class TestDataAxis:
     def setup_method(self, method):
         self._axis = np.arange(16)**2
         self.axis = DataAxis(axis=self._axis)
+        self.labeled_axis = DataAxis(name="LabeledAxis",
+                                     axis=["a", "b", "c", "d", "e", "f"])
+        self.random_axis = DataAxis(axis=[0, 10, 2, 3, 5, 12, 13, 14, 20])
 
     def _test_initialisation_parameters(self, axis):
         np.testing.assert_allclose(axis.axis, self._axis)
@@ -91,28 +106,70 @@ class TestDataAxis:
         assert isinstance(axis, DataAxis)
         self._test_initialisation_parameters(axis)
 
+    def test_is_ordered(self):
+        assert self.axis.is_ordered
+        assert self.labeled_axis.is_ordered is None
+        assert self.random_axis.is_ordered is None
+
+    def test_get_high_low_values(self):
+        assert self.axis.high_value == 15**2
+        assert self.axis.low_value == 0
+
+    def test_get_high_low_value_error(self):
+        with pytest.raises(NotImplementedError):
+            self.labeled_axis.high_value
+        with pytest.raises(NotImplementedError):
+            self.labeled_axis.low_value
+
+    def test_get_item_string(self):
+        new_ax = self.labeled_axis[["a", "b"]]
+        np.testing.assert_array_equal(new_ax.axis, ["a", "b"])
+
+        new_ax = self.labeled_axis["a"]
+        np.testing.assert_array_equal(new_ax.axis, ["a",])
+
+    def test_get_item_integer_index(self):
+        new_ax = self.axis[0:5]
+        assert new_ax.size == 5
+
+        new_ax = self.axis[0:6:2]
+        assert new_ax.size == 3
+
+    def test_get_item_float_index(self):
+        new_ax = self.axis[0.:40.]
+        assert new_ax.size == 6
+
+    def test_get_item_relative_slicing(self):
+        new_ax = self.axis[:"rel0.5"]
+        assert new_ax.size == np.sum(self._axis < np.max(self._axis/2))
+
+    def test_get_item_neg_slicing(self):
+        new_ax = self.axis["-200.":]
+        assert new_ax.size == np.sum(self._axis >= 25)
+
+    def test_get_item_bool_slicing(self):
+        new_ax = self.axis[self.axis.axis >= 25]
+        assert new_ax.size == np.sum(self._axis >= 25)
+
     def test_axis_value(self):
         assert_allclose(self.axis.axis, np.arange(16)**2)
         assert self.axis.size == 16
-        assert not self.axis.is_uniform
+        #assert not self.axis.is_uniform
 
     def test_update_axes(self):
         values = np.arange(20)**2
         self.axis.axis = values.tolist()
-        self.axis.update_axis()
         assert self.axis.size == 20
         assert_allclose(self.axis.axis, values)
 
     def test_update_axes2(self):
         values = np.array([3, 4, 10, 40])
         self.axis.axis = values
-        self.axis.update_axis()
         assert_allclose(self.axis.axis, values)
 
     def test_update_axis_from_list(self):
         values = np.arange(16)**2
         self.axis.axis = values.tolist()
-        self.axis.update_axis()
         assert_allclose(self.axis.axis, values)
 
     def test_unsorted_axis(self):
@@ -121,25 +178,8 @@ class TestDataAxis:
 
     def test_index_changed_event(self):
         ax = self.axis
-        m = mock.Mock()
-        ax.events.index_changed.connect(m.trigger_me)
-        ax.index = ax.index
-        assert not m.trigger_me.called
-        ax.index += 1
-        assert m.trigger_me.called
-
-    def test_value_changed_event(self):
-        ax = self.axis
-        m = mock.Mock()
-        ax.events.value_changed.connect(m.trigger_me)
-        ax.value = ax.value
-        assert not m.trigger_me.called
-        ax.value = ax.value + (ax.axis[1] - ax.axis[0]) * 0.4
-        assert not m.trigger_me.called
-        ax.value = ax.value + (ax.axis[1] - ax.axis[0]) / 2
-        assert not m.trigger_me.called
-        ax.value = ax.axis[1]
-        assert m.trigger_me.called
+        ax.index = 1
+        assert ax.value == self.axis.axis[1]
 
     def test_deepcopy(self):
         ac = copy.deepcopy(self.axis)
