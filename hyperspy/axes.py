@@ -253,7 +253,7 @@ class UnitConversion:
 
 
 @add_gui_method(toolkey="hyperspy.DataAxis")
-class BaseDataAxis:
+class BaseDataAxis(t.HasTraits):
     """Parent class defining common attributes for all DataAxis classes.
 
     Parameters
@@ -267,6 +267,9 @@ class BaseDataAxis:
     is_binned : bool, optional
         True if data along the axis is binned. Default False.
     """
+    name = t.Str()
+    units = t.Str()
+    t.navigate = t.Bool()
 
     def __init__(self,
                  name=None,
@@ -275,13 +278,15 @@ class BaseDataAxis:
                  is_binned=False,
                  **kwargs):
         super().__init__()
+        if name is None:
+            name = t.Undefined
+        if units is None:
+            units = t.Undefined
         self.name = name
         self.units = units
 
         self.navigate = navigate
-        self.is_binned = is_binned
         self.axes_manager = None
-        self._is_uniform = False
 
     @property
     def index_in_array(self):
@@ -352,7 +357,6 @@ class BaseDataAxis:
                 'name': _parse_axis_attribute(self.name),
                 'units': _parse_axis_attribute(self.units),
                 'navigate': self.navigate,
-                'is_binned': self.is_binned,
                 }
 
     def to_numpy_index(self, index):
@@ -416,14 +420,19 @@ class DataAxis(BaseDataAxis):
             navigate=navigate,
             is_binned=is_binned,
             **kwargs)
+        self.add_trait("_axis", t.Array)
         self._axis = np.asarray(axis)
-        self.index = 0
+        self.add_trait("index", t.Int)
 
     def __getitem__(self, item):
         new_axis = self.__deepcopy__()
         new_item = self.to_numpy_index(item)
-        new_axis._axis = self._axis[new_item]
-        return new_axis
+        axis = self._axis[new_item]
+        if not isinstance(axis, np.ndarray):  # returns scalar
+            return None
+        else:
+            new_axis._axis = axis
+            return new_axis
 
     """Additional Class properties"""
     @property
@@ -445,6 +454,18 @@ class DataAxis(BaseDataAxis):
             else:
                 # the axis is not ordered
                 return None
+        except:
+            return None
+
+    @property
+    def is_uniform(self):
+        try:
+            steps = self.axis[1:] - self.axis[:-1]
+            steps = np.abs(steps - steps[0])
+            if np.all(steps < 0.0000001):
+                return True
+            else:
+                return False
         except:
             return None
 
@@ -484,7 +505,7 @@ class DataAxis(BaseDataAxis):
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
-        d.update({'axis': self.axis})
+        d["axis"] = self.axis
         return d
 
     """Methods for converting floats, strs, etc to integer indexes"""
@@ -535,10 +556,6 @@ class DataAxis(BaseDataAxis):
             NotImplementedError("Relative slicing not implemented for "
                                 "unordered axes")
 
-    def _get_value_from_value_with_units(self):
-        raise NotImplementedError("Unit conversion is only supported for "
-                                   "uniform axis.")
-
     def _str2index(self, string):
         """Converts a str index (or an array of str) into
         an integer index (or an array of integer indexes"""
@@ -550,8 +567,10 @@ class DataAxis(BaseDataAxis):
                 value[i] = np.argwhere(self.axis == s)[0]
             elif s.startswith("-"):
                 value[i] = self._neg_slice(string)
-            elif s[0].isdigit():  # units
-                value[i] = self._get_value_from_value_with_units(s)
+            elif len(s) == 0:
+                raise ValueError(f"`{string}` is not a suitable string for slicing.")
+            elif s[0].isdigit() and hasattr(self, "_get_value_from_value_with_units"):  # units
+                value[i] = self._get_value_from_value_with_units([s, ])
             else:
                 raise ValueError(f"`{string}` is not a suitable string for slicing.")
         return value
@@ -593,6 +612,20 @@ class DataAxis(BaseDataAxis):
             ind = ind[0]
         return ind
 
+    def value_range_to_indices(self, x1, x2):
+        if x1 is None:
+            ind1 = self.low_index
+        else:
+            ind1 = self.value2index(float(x1))
+        if x2 is None:
+            ind2 = self.high_index
+        else:
+            ind2 = self.value2index(float(x2))
+        if ind2 <= ind1:
+            raise ValueError("x1 cannot be greater than or equal to x2")
+        return ind1, ind2
+
+
     def to_numpy_index(self, index):
         """ Takes some index passed by a FancySlicing object and returns the index
         Parameters
@@ -614,7 +647,7 @@ class DataAxis(BaseDataAxis):
         return new_index
 
     def convert_to_uniform_axis(self):
-        """Convert to an uniform axis."""
+        """Convert to a uniform axis."""
         scale = (self.high_value - self.low_value) / self.size
         d = self.get_axis_dictionary()
         axes_manager = self.axes_manager
@@ -626,7 +659,6 @@ class DataAxis(BaseDataAxis):
         self.__class__ = UniformDataAxis
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
         self.axes_manager = axes_manager
-
 
 
 class FunctionalDataAxis(DataAxis):
@@ -769,10 +801,9 @@ class FunctionalDataAxis(DataAxis):
         axes_manager = self.axes_manager
         d["_type"] = 'DataAxis'
         self.__class__ = DataAxis
-        self.__init__(**d, axis=self.axis)
+        self.__init__(**d)
         del self._expression
         del self._function
-        self.remove_trait('x')
         self.axes_manager = axes_manager
 
 
@@ -822,7 +853,6 @@ class UniformDataAxis(DataAxis, UnitConversion):
                  is_binned=False,
                  **kwargs):
         super().__init__(
-            index_in_array=index_in_array,
             name=name,
             units=units,
             navigate=navigate,
@@ -832,13 +862,17 @@ class UniformDataAxis(DataAxis, UnitConversion):
         # These traits need to added dynamically to be removed when necessary
         self.add_trait("scale", t.CFloat)
         self.add_trait("offset", t.CFloat)
+        self.add_trait("size", t.CInt)
         self.scale = scale
         self.offset = offset
         self.size = size
-        self.update_axis()
-        self._is_uniform = True
 
-    def to_numpy_index(self, index):
+    @property
+    def axis(self):
+        ax = np.add(np.multiply(np.arange(self.size), self.scale), self.offset)
+        return ax
+
+    def to_numpy_index(self, index, **kwargs):
         """ Takes some index passed by a FancySlicing object and returns the index
         Parameters
         ----------
@@ -850,9 +884,9 @@ class UniformDataAxis(DataAxis, UnitConversion):
         """
         v2i = self.value2index
         if isinstance(index, slice):
-            new_index = slice(v2i(index.start), v2i(index.stop), v2i(index.step, False))
+            new_index = slice(v2i(index.start, **kwargs), v2i(index.stop, **kwargs), v2i(index.step, False,**kwargs))
         else:
-            new_index = v2i(index)
+            new_index = v2i(index, **kwargs)
         return new_index
 
     def __getitem__(self, item):
@@ -869,7 +903,7 @@ class UniformDataAxis(DataAxis, UnitConversion):
         return new_axis
 
     def get_axis_dictionary(self):
-        d = super().get_axis_dictionary()
+        d = super(DataAxis, self).get_axis_dictionary()  # don't save the axis object
         d.update({'size': self.size,
                   'scale': self.scale,
                   'offset': self.offset})
@@ -893,16 +927,27 @@ class UniformDataAxis(DataAxis, UnitConversion):
             index = np.round(index)
         elif rounding == "ceil":
             index = np.ceil(index)
-        elif rounding =="floor":
+        elif rounding == "floor":
             index = np.floor(index)
         else:
             raise ValueError(
                         'Non-supported rounding function. Use '
                         '"round", "ceil" or "floor".'
                     )
+
+        if any(np.isnan(index)):
+            raise ValueError("Indexes cannot be np.nan")
         if any(index < 0):
-            raise ValueError("Segative slicing using floats requires using `-0.5` rather than -0.5"
-                             "as the second case can be ambiguous")
+            _logger.warning("Negative slicing using floats requires using `-0.5`"
+                            "rather than -0.5 as the second case can be ambiguous")
+            index[index < 0] = 0
+        if any(index > self.high_index):
+            _logger.warning("Value is greater than the max value. Max index is returned")
+            index[index > self.high_index] = self.high_index
+
+        np.array(index,dtype=int)
+
+        return index
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
@@ -951,19 +996,21 @@ class UniformDataAxis(DataAxis, UnitConversion):
         self._set_quantity(value, 'offset')
 
     def convert_to_functional_data_axis(self, expression, units=None, name=None, **kwargs):
-        d = super().get_axis_dictionary()
+        d = super().get_axis_dictionary()  # Calls DataAxis get_axis_dictionary
         axes_manager = self.axes_manager
         if units:
             d["units"] = units
         if name:
             d["name"] = name
+
+        d["x"] = d.pop("axis")
         d.update(kwargs)
-        this_kwargs = self.get_axis_dictionary()
         self.remove_trait('scale')
         self.remove_trait('offset')
+        self.remove_trait('size')
         self.__class__ = FunctionalDataAxis
         d["_type"] = 'FunctionalDataAxis'
-        self.__init__(expression=expression, x=UniformDataAxis(**this_kwargs), **d)
+        self.__init__(expression=expression, **d)
         self.axes_manager = axes_manager
 
     def convert_to_non_uniform_axis(self):
@@ -973,7 +1020,8 @@ class UniformDataAxis(DataAxis, UnitConversion):
         d["_type"] = 'DataAxis'
         self.remove_trait('scale')
         self.remove_trait('offset')
-        self.__init__(**d, axis=self.axis)
+        self.remove_trait('size')
+        self.__init__(**d)
         self.axes_manager = axes_manager
 
 

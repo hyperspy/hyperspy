@@ -40,24 +40,21 @@ class TestBaseDataAxis:
     def test_initialisation_BaseDataAxis_default(self):
         with pytest.raises(AttributeError):
             assert self.axis.index_in_array is None
-        assert self.axis.name is None
-        assert self.axis.units is None
+        assert self.axis.name == t.Undefined
+        assert self.axis.units == t.Undefined
         assert not self.axis.navigate
-        assert not self.axis.is_binned
-        assert not self.axis.is_uniform
 
     def test_initialisation_BaseDataAxis(self):
         axis = BaseDataAxis(name='named axis', units='s', navigate=True)
         assert axis.name == 'named axis'
         assert axis.units == 's'
         assert axis.navigate
-        assert not self.axis.is_uniform
         assert_deep_almost_equal(axis.get_axis_dictionary(),
                                  {'_type': 'BaseDataAxis',
                                   'name': 'named axis',
                                   'units': 's',
                                   'navigate': True,
-                                  'is_binned': False})
+                                  })
 
     def test_error_BaseDataAxis(self):
         with pytest.raises(NotImplementedError):
@@ -126,7 +123,7 @@ class TestDataAxis:
         np.testing.assert_array_equal(new_ax.axis, ["a", "b"])
 
         new_ax = self.labeled_axis["a"]
-        np.testing.assert_array_equal(new_ax.axis, ["a",])
+        assert new_ax is None
 
     def test_get_item_integer_index(self):
         new_ax = self.axis[0:5]
@@ -172,10 +169,6 @@ class TestDataAxis:
         self.axis.axis = values.tolist()
         assert_allclose(self.axis.axis, values)
 
-    def test_unsorted_axis(self):
-        with pytest.raises(ValueError):
-            DataAxis(axis=np.array([10, 40, 1, 30, 20]))
-
     def test_index_changed_event(self):
         ax = self.axis
         ax.index = 1
@@ -188,19 +181,9 @@ class TestDataAxis:
         assert ac.name == 'name changed'
         assert self.axis.name != ac.name
 
-    def test_slice_me(self):
-        assert self.axis._slice_me(slice(1, 5)) == slice(1, 5)
-        assert self.axis.size == 4
-        np.testing.assert_allclose(self.axis.axis, np.arange(1, 5)**2)
-
-    def test_slice_me_step(self):
-        assert self.axis._slice_me(slice(0, 10, 2)) == slice(0, 10, 2)
-        assert self.axis.size == 5
-        np.testing.assert_allclose(self.axis.axis, np.arange(0, 10, 2)**2)
-
     def test_convert_to_uniform_axis(self):
         scale = (self.axis.high_value - self.axis.low_value) / self.axis.size
-        is_binned = self.axis.is_binned
+        #is_binned = self.axis.is_binned
         navigate = self.axis.navigate
         self.axis.name = "parrot"
         self.axis.units = "plumage"
@@ -216,7 +199,7 @@ class TestDataAxis:
         assert s.axes_manager[0].low_value == 0
         assert s.axes_manager[0].high_value == 15 * scale
         assert index_in_array == s.axes_manager[0].index_in_array
-        assert is_binned == s.axes_manager[0].is_binned
+        #assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
 
     def test_value2index(self):
@@ -510,44 +493,50 @@ class TestUniformDataAxis:
         ac.offset = 100
         assert self.axis.offset != ac.offset
         assert self.axis.navigate == ac.navigate
-        assert self.axis.is_binned == ac.is_binned
+        #assert self.axis.is_binned == ac.is_binned
 
     def test_deepcopy_on_trait_change(self):
         ac = copy.deepcopy(self.axis)
         ac.offset = 100
         assert ac.axis[0] == ac.offset
 
-    def test_uniform_value2index(self):
+    @pytest.mark.parametrize("ind", (np.nan, "69", "", "0.0101um"))
+    def test_uniform_value2index_failure(self, ind):
+        # np.nan
+        # str without unit in --> error out
+        # empty str
+        # Value with unit when axis is unitless --> Error out
+        with pytest.raises(ValueError):
+            self.axis.to_numpy_index(ind)
+
+    @pytest.mark.parametrize("rounding", ("round", "floor", "ceil"))
+    def test_uniform_value2index_rounding(self, rounding):
+        if rounding == "round" or rounding == "floor":
+            assert self.axis.to_numpy_index(10.149, rounding=rounding) == 1
+        else:
+            assert self.axis.to_numpy_index(10.149, rounding=rounding) == 2
+
+    @pytest.mark.parametrize("index", (10.149,10.17 ))
+    def test_uniform_value2index(self, index):
         #Tests for value2index
         #Works as intended
-        assert self.axis.value2index(10.15) == 1
-        assert self.axis.value2index(10.17, rounding=math.floor) == 1
-        assert self.axis.value2index(10.13, rounding=math.ceil) == 2
+        assert self.axis.to_numpy_index(10.149) == 1
+        assert self.axis.to_numpy_index(10.17, rounding="floor") == 1
+        assert self.axis.to_numpy_index(10.13, rounding="ceil") == 2
         # Test that output is integer
-        assert isinstance(self.axis.value2index(10.15), (int, np.integer))
+        assert isinstance(self.axis.to_numpy_index(10.15), (int, np.integer))
         #Endpoint left
-        assert self.axis.value2index(10.) == 0
+        assert self.axis.to_numpy_index(10.) == 0
         #Endpoint right
-        assert self.axis.value2index(10.9) == 9
+        assert self.axis.to_numpy_index(10.9) == 9
         #Input None --> output None
-        assert self.axis.value2index(None) == None
-        #NaN in --> error out
-        with pytest.raises(ValueError):
-            self.axis.value2index(np.nan)
-        #Values in out of bounds --> error out (both sides of axis)
-        with pytest.raises(ValueError):
-            self.axis.value2index(-2)
-        with pytest.raises(ValueError):
-            self.axis.value2index(111)
-        #str without unit in --> error out
-        with pytest.raises(ValueError):
-            self.axis.value2index("69")
-        #Empty str in --> error out
-        with pytest.raises(ValueError):
-            self.axis.value2index("")
-        #Value with unit when axis is unitless --> Error out
-        with pytest.raises(ValueError):
-            self.axis.value2index("0.0101um")
+        assert self.axis.to_numpy_index(None) == None
+
+        # Should these fail??
+        #with pytest.raises(ValueError):
+        #    self.axis.to_numpy_index(-2)
+        #with pytest.raises(ValueError):
+        #    self.axis.to_numpy_index(111)
 
         #Tests with array Input
         #Arrays work as intended
