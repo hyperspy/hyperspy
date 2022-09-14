@@ -77,6 +77,12 @@ jobs:
         run: |
           pip install https://github.com/hyperspy/rosettasciio/archive/refs/heads/main.zip#egg=rosettasciio${{ matrix.PIP_SELECTOR }}
 
+      - name: Install GUI extension dev branch
+        if: "!contains(matrix.LABEL, 'minimum')"
+        shell: bash
+        run: |
+          pip install https://github.com/hyperspy/hyperspy_gui_traitsui/archive/refs/heads/main.zip
+
       - name: Pip list
         run: |
           pip list
