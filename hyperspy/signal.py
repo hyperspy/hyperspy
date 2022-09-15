@@ -3798,7 +3798,7 @@ class BaseSignal(FancySlicing,
 
         # Basically perform unfolding, but only on data. We don't care about
         # the axes since the function will consume it/them.
-        if not isinstance(ar_axes, BaseDataAxis):
+        if isinstance(ar_axes, BaseDataAxis):
             ar_axes = (ar_axes,)
 
         ar_axes = sorted(ar_axes)
@@ -3825,7 +3825,7 @@ class BaseSignal(FancySlicing,
     def _apply_function_on_data_and_remove_axis(self, function, axes,
                                                 out=None, **kwargs):
         axes = self.axes_manager[axes]
-        if not isinstance(axes, BaseDataAxis):
+        if isinstance(axes, BaseDataAxis):
             axes = (axes,)
 
         # Use out argument in numpy function when available for operations that
@@ -3909,7 +3909,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
 
         axes = self.axes_manager[axis]
-        if not isinstance(axes, BaseDataAxis):
+        if isinstance(axes, BaseDataAxis):
             axes = (axes,)
         if any([not ax.is_uniform and not ax.is_binned for ax in axes]):
             warnings.warn("You are summing over an unbinned, non-uniform axis. "
@@ -4107,7 +4107,7 @@ class BaseSignal(FancySlicing,
         if axis is None:
             axis = self.axes_manager.navigation_axes
         axes = self.axes_manager[axis]
-        if not isinstance(axes, BaseDataAxis):
+        if isinstance(axes, BaseDataAxis):
             axes = (axes,)
         if any([not ax.is_uniform for ax in axes]):
             warnings.warn("You are summing over a non-uniform axis. The result "
