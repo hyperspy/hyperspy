@@ -41,7 +41,7 @@ from tlz import concat
 from rsciio.utils import rgb_tools
 from rsciio.utils.tools import ensure_directory
 
-from hyperspy.axes import AxesManager
+from hyperspy.axes import AxesManager, BaseDataAxis
 from hyperspy.api_nogui import _ureg
 from hyperspy.misc.array_tools import rebin as array_rebin
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
@@ -3131,7 +3131,7 @@ class BaseSignal(FancySlicing,
             (slice(None),) * axis.index_in_array + (slice(i1, i2),
                                                     Ellipsis)]
 
-        axis.crop(i1, i2)
+        axis = axis[i1: i2]
         self.get_dimensions_from_data()
         self.squeeze()
         self.events.data_changed.trigger(obj=self)
@@ -3781,7 +3781,7 @@ class BaseSignal(FancySlicing,
     def _remove_axis(self, axes):
         am = self.axes_manager
         axes = am[axes]
-        if not np.iterable(axes):
+        if isinstance(axes, BaseDataAxis):
             axes = (axes,)
         if am.navigation_dimension + am.signal_dimension >= len(axes):
             old_signal_dimension = am.signal_dimension
@@ -3798,7 +3798,7 @@ class BaseSignal(FancySlicing,
 
         # Basically perform unfolding, but only on data. We don't care about
         # the axes since the function will consume it/them.
-        if not np.iterable(ar_axes):
+        if not isinstance(ar_axes, BaseDataAxis):
             ar_axes = (ar_axes,)
 
         ar_axes = sorted(ar_axes)
@@ -3825,7 +3825,7 @@ class BaseSignal(FancySlicing,
     def _apply_function_on_data_and_remove_axis(self, function, axes,
                                                 out=None, **kwargs):
         axes = self.axes_manager[axes]
-        if not np.iterable(axes):
+        if not isinstance(axes, BaseDataAxis):
             axes = (axes,)
 
         # Use out argument in numpy function when available for operations that
@@ -3909,7 +3909,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
 
         axes = self.axes_manager[axis]
-        if not np.iterable(axes):
+        if not isinstance(axes, BaseDataAxis):
             axes = (axes,)
         if any([not ax.is_uniform and not ax.is_binned for ax in axes]):
             warnings.warn("You are summing over an unbinned, non-uniform axis. "
@@ -4107,7 +4107,7 @@ class BaseSignal(FancySlicing,
         if axis is None:
             axis = self.axes_manager.navigation_axes
         axes = self.axes_manager[axis]
-        if not np.iterable(axes):
+        if not isinstance(axes, BaseDataAxis):
             axes = (axes,)
         if any([not ax.is_uniform for ax in axes]):
             warnings.warn("You are summing over a non-uniform axis. The result "
@@ -6343,7 +6343,7 @@ class BaseSignal(FancySlicing,
 
         # reconfigure the axes of the axesmanager:
         ram = res.axes_manager
-        ram._update_trait_handlers(remove=True)
+        #ram._update_trait_handlers(remove=True)
         # _axes are ordered in array order
         ram._axes = [ram._axes[i] for i in array_order]
         for i, ax in enumerate(ram._axes):
@@ -6351,8 +6351,8 @@ class BaseSignal(FancySlicing,
                 ax.navigate = True
             else:
                 ax.navigate = False
-        ram._update_attributes()
-        ram._update_trait_handlers(remove=False)
+        #ram._update_attributes()
+        #ram._update_trait_handlers(remove=False)
         res._assign_subclass()
 
         var = res.get_noise_variance()
