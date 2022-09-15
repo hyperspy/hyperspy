@@ -436,7 +436,7 @@ class DataAxis(BaseDataAxis):
             **kwargs)
         self.add_trait("_axis", t.Array)
         self._axis = np.asarray(axis)
-        self.add_trait("index", t.Int)
+        self.add_trait("_index", t.Int)
 
     def __getitem__(self, item):
         new_axis = self.deepcopy()
@@ -486,6 +486,18 @@ class DataAxis(BaseDataAxis):
     @property
     def value(self):
         return self.axis[self.index]
+
+    @value.setter
+    def value(self, val):
+        self.index = self.value2index(val)
+
+    @property
+    def index(self):
+        return self._index
+
+    @index.setter
+    def index(self, ind):
+        self._index=ind
 
     @property
     def high_value(self):
@@ -916,7 +928,7 @@ class UniformDataAxis(DataAxis, UnitConversion):
         return new_index
 
     def __getitem__(self, item):
-        new_axis = self.__deepcopy__()
+        new_axis = self.deepcopy()
         ind = self.to_numpy_index(item)
         if isinstance(ind, slice):
             if ind.step is not None:
@@ -927,7 +939,7 @@ class UniformDataAxis(DataAxis, UnitConversion):
                 new_axis.offset = self.index2value(ind.start)
             new_axis.size = len(self.axis[ind])
         else:
-            new_axis = new_axis.convert_to_non_uniform_axis()
+            new_axis.convert_to_non_uniform_axis()
             new_axis.axis[ind]
         return new_axis
 
@@ -1247,7 +1259,7 @@ class AxesManager(t.HasTraits):
         """x.__getitem__(y) <==> x[y]
 
         """
-        if isinstance(y, str) or not np.iterable(y):
+        if isinstance(y, str) or isinstance(y, BaseDataAxis) or not np.iterable(y):
             return self[(y,)][0]
         axes = [self._axes_getter(ax) for ax in y]
         _, indices = np.unique(
@@ -1759,45 +1771,46 @@ class AxesManager(t.HasTraits):
     @property
     def signal_axes(self):
         """The signal axes as a tuple."""
-        return self._signal_axes
+        return tuple([a for a in self._axes if not a.navigate][::-1])
 
     @property
     def navigation_axes(self):
         """The navigation axes as a tuple."""
-        return self._navigation_axes
+        return tuple([a for a in self._axes if a.navigate][::-1])
 
     @property
     def signal_shape(self):
         """The shape of the signal space."""
-        return tuple([axis.size for axis in self._signal_axes])
+        return tuple([axis.size if hasattr(axis, "size")
+                      else None for axis in self.signal_axes])
 
     @property
     def navigation_shape(self):
         """The shape of the navigation space."""
         if self.navigation_dimension != 0:
-            return tuple([axis.size for axis in self._navigation_axes])
+            return tuple([axis.size for axis in self.navigation_axes])
         else:
             return ()
 
     @property
     def signal_size(self):
         """The size of the signal space."""
-        return self._signal_size
+        return np.prod(self.signal_shape)
 
     @property
     def navigation_size(self):
         """The size of the navigation space."""
-        return self._navigation_size
+        return np.prod(self.navigation_shape)
 
     @property
     def navigation_dimension(self):
         """The dimension of the navigation space."""
-        return self._navigation_dimension
+        return len(self.navigation_axes)
 
     @property
     def signal_dimension(self):
         """The dimension of the signal space."""
-        return self._signal_dimension
+        return len(self.navigation_axes)
 
     def _set_signal_dimension(self, value):
         if len(self._axes) == 0 or self._signal_dimension == value:
@@ -2027,14 +2040,8 @@ class AxesManager(t.HasTraits):
                 "The number of coordinates must be equal to the "
                 "navigation dimension that is %i" %
                 self.navigation_dimension)
-        changes = False
-        with self.events.indices_changed.suppress():
-            for value, axis in zip(coordinates, self.navigation_axes):
-                changes = changes or (axis.value != value)
-                axis.value = value
-        # Trigger only if the indices are changed
-        if changes:
-            self.events.indices_changed.trigger(obj=self)
+        for value, axis in zip(coordinates, self.navigation_axes):
+            axis.value = value
 
     @property
     def indices(self):
@@ -2053,14 +2060,8 @@ class AxesManager(t.HasTraits):
                 "The number of indices must be equal to the "
                 "navigation dimension that is %i" %
                 self.navigation_dimension)
-        changes = False
-        with self.events.indices_changed.suppress():
-            for index, axis in zip(indices, self.navigation_axes):
-                changes = changes or (axis.index != index)
-                axis.index = index
-        # Trigger only if the indices are changed
-        if changes:
-            self.events.indices_changed.trigger(obj=self)
+        for index, axis in zip(indices, self.navigation_axes):
+            axis.index = index
 
     def _get_axis_attribute_values(self, attr):
         return [getattr(axis, attr) for axis in self._axes]
