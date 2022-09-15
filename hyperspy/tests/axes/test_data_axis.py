@@ -291,21 +291,17 @@ class TestFunctionalDataAxis:
                 size=10,
                 expression=expression,)
 
-    @pytest.mark.parametrize("use_indices", (True, False))
-    def test_crop(self, use_indices):
+    @pytest.mark.parametrize("ind", ((3.9, 72.6), (2, -1)))
+    def test_getitem(self, ind):
         axis = self.axis
-        start, end = 3.9, 72.6
-        if use_indices:
-            start = 2
-            end = -1
-        axis.crop(start, end)
+        self.axis[ind[0]:ind[1]]
         assert axis.size == 7
         np.testing.assert_almost_equal(axis.axis[0], 4.)
         np.testing.assert_almost_equal(axis.axis[-1], 64.)
 
     def test_convert_to_non_uniform_axis(self):
         axis = np.copy(self.axis.axis)
-        is_binned = self.axis.is_binned
+        #is_binned = self.axis.is_binned
         navigate = self.axis.navigate
         self.axis.name = "parrot"
         self.axis.units = "plumage"
@@ -326,7 +322,7 @@ class TestFunctionalDataAxis:
         with pytest.raises(AttributeError):
             s.axes_manager[0].x
         assert index_in_array == s.axes_manager[0].index_in_array
-        assert is_binned == s.axes_manager[0].is_binned
+        #assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
 
     def test_update_from(self):
@@ -336,58 +332,52 @@ class TestFunctionalDataAxis:
                 (self.axis.units, self.axis.power))
 
     def test_slice_me(self):
+        asse
         assert self.axis._slice_me(slice(1, 5)) == slice(1, 5)
         assert self.axis.size == 4
         np.testing.assert_allclose(self.axis.axis, np.arange(1, 5)**2)
 
     def test_calibrate(self):
-        with pytest.raises(TypeError, match="only for uniform axes"):
-            self.axis.calibrate(value_tuple=(11,12), index_tuple=(0,5))
+        with pytest.raises(NotImplementedError):
+            self.axis.calibrate(value_tuple=(11, 12), index_tuple=(0, 5))
 
     def test_functional_value2index(self):
         #Tests for value2index
         #Works as intended
         assert self.axis.value2index(44.7) == 7
-        assert self.axis.value2index(2.5, rounding=round) == 1
-        assert self.axis.value2index(2.5, rounding=math.ceil) == 2
-        assert self.axis.value2index(2.5, rounding=math.floor) == 1
+        assert self.axis.value2index(2.5, rounding="round") == 1
+        assert self.axis.value2index(2.5, rounding="ceil") == 2
+        assert self.axis.value2index(2.5, rounding="floor") == 1
         # Returns integer
         assert isinstance(self.axis.value2index(45), (int, np.integer))
         #Input None --> output None
         assert self.axis.value2index(None) == None
         #NaN in --> error out
-        with pytest.raises(ValueError):
-            self.axis.value2index(np.nan)
-        #Values in out of bounds --> error out (both sides of axis)
-        with pytest.raises(ValueError):
-            self.axis.value2index(-2)
-        with pytest.raises(ValueError):
-            self.axis.value2index(111)
-        #str in --> error out
-        with pytest.raises(TypeError):
-            self.axis.value2index("69")
-        #Empty str in --> error out
-        with pytest.raises(TypeError):
-            self.axis.value2index("")
 
-        #Tests with array Input
-        #Array in --> array out
+    # should -2. and 111. fail?
+    @pytest.mark.parametrize("value", (np.nan, -2., 111., "69", ""))
+    def test_functional_value2index_failure(self, value):
+        with pytest.raises(ValueError):
+            self.axis.value2index(value)
+
+    def test_array_input(self):
         arval = np.array([[0,4],[16.,36.]])
         assert np.all(self.axis.value2index(arval) == np.array([[0,2],[4,6]]))
         #One value out of bound in array in --> error out (both sides)
-        arval[1,1] = 111
+        arval[1,1] = 111.
         with pytest.raises(ValueError):
             self.axis.value2index(arval)
         arval[1,1] = -0.3
         with pytest.raises(ValueError):
             self.axis.value2index(arval)
         #One NaN in array in --> error out
-        arval[1,1] = np.nan
+        arval[1, 1] = np.nan
         with pytest.raises(ValueError):
             self.axis.value2index(arval)
+        # This could potentially introduce bugs in code by having different behavior to numpy arrays.
         #Single-value-array-in --> scalar out
-        arval = np.array([1.0])
-        assert np.isscalar(self.axis.value2index(arval))
+        #arval = np.array([1.0])
+        #assert np.isscalar(self.axis.value2index(arval))
 
 
 class TestReciprocalDataAxis:

@@ -538,6 +538,8 @@ class DataAxis(BaseDataAxis):
                         '"round", "ceil" or "floor".'
                     )
                 return index
+            else:
+                raise ValueError(f"Value {value} is not supported")
         else:
             raise NotImplementedError("Slicing with floats not implemented for "
                                       "unordered axes")
@@ -745,7 +747,7 @@ class FunctionalDataAxis(DataAxis):
         if x is None:
             if size is t.Undefined:
                 raise ValueError("Please provide either `x` or `size`.")
-            self._axis = range(0, size)
+            self._axis = np.arange(0, size)
         elif isiterable(x):
             self._axis = np.asarray(x)
         else:
@@ -760,6 +762,7 @@ class FunctionalDataAxis(DataAxis):
         variables = ["x"]
         expr_parameters = [symbol for symbol in expr.free_symbols
                            if symbol.name not in variables]
+        param_names = set([parameter.name for parameter in expr_parameters])
         if set(parameters) != set([parameter.name for parameter in expr_parameters]):
             raise ValueError(
                 "The values of the following expression parameters "
@@ -776,7 +779,7 @@ class FunctionalDataAxis(DataAxis):
         kwargs = {}
         for key in self.parameters_list:
             kwargs[key] = getattr(self, key)
-        self._function(x=self.axis, **kwargs)
+        return self._function(x=self._axis, **kwargs)
 
     @property
     def x(self):
@@ -803,7 +806,7 @@ class FunctionalDataAxis(DataAxis):
         return super().update_from(axis, attributes)
 
     def get_axis_dictionary(self):
-        d = super().get_axis_dictionary()
+        d = super(DataAxis, self).get_axis_dictionary()
         d['expression'] = self._expression
         d.update({'x': self.x, })
         for kwarg in self.parameters_list:
