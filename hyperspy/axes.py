@@ -524,7 +524,7 @@ class DataAxis(BaseDataAxis):
     def _float2index(self, value, rounding="round"):
         """Converts a float index (or an array of floats) into
         an integer index (or an array of integer indexes"""
-        if self.is_ordered:
+        if self.is_ordered is not None:
             if np.all((value >= self.low_value) * (value <= self.high_value)):
                 if rounding == "round":
                     index = numba_closest_index_round(self.axis, value).astype(int)
@@ -545,6 +545,8 @@ class DataAxis(BaseDataAxis):
                                       "unordered axes")
 
     def index2value(self, index):
+        if index<0:
+            index = self.size+index
         return np.add(np.multiply(index, self.scale), self.offset)
 
     def _neg_slice(self, value):
@@ -916,8 +918,11 @@ class UniformDataAxis(DataAxis, UnitConversion):
         if isinstance(ind, slice):
             if ind.step is not None:
                 new_axis.scale = ind.step*self.scale
-            new_axis.offset = self.index2value(ind.start)
-            self.size = len(self.axis[ind])
+            if ind.start is None:
+                new_axis.offset = self.offset
+            else:
+                new_axis.offset = self.index2value(ind.start)
+            new_axis.size = len(self.axis[ind])
         else:
             new_axis = new_axis.convert_to_non_uniform_axis()
             new_axis.axis[ind]

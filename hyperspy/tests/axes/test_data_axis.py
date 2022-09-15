@@ -388,20 +388,18 @@ class TestReciprocalDataAxis:
     def test_initialisation_parameters(self):
         self._test_initialisation_parameters(self.axis)
 
+    def test_is_ordered(self):
+        assert self.axis.is_ordered == False
+
     def test_create_axis(self):
         axis = create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, FunctionalDataAxis)
         self._test_initialisation_parameters(axis)
 
-
-    @pytest.mark.parametrize("use_indices", (True, False))
-    def test_crop(self, use_indices):
+    @pytest.mark.parametrize("ind", ((10.05, 10.02), (1, 4)))
+    def test_crop(self, ind):
         axis = self.axis
-        start, end = 10.05, 10.02
-        if use_indices:
-            start = axis.value2index(start)
-            end = axis.value2index(end)
-        axis.crop(start, end)
+        axis = axis[ind[0]:ind[1]]
         assert axis.size == 3
         np.testing.assert_almost_equal(axis.axis[0], 10.05)
         np.testing.assert_almost_equal(axis.axis[-1], 10.025)
@@ -540,7 +538,7 @@ class TestUniformDataAxis:
             self.axis.value2index(["0.01uma", '0.0101uma', '0.0103uma'])
 
     def test_slice_me(self):
-        self.axis[slice(10.2, 10.6, 2)]
+        self.axis = self.axis[slice(10.2, 10.6, 2)]
         assert self.axis.size == 2
 
     def test_update_from(self):
@@ -597,46 +595,30 @@ class TestUniformDataAxis:
         #assert is_binned == s.axes_manager[0].is_binned
         #assert navigate == s.axes_manager[0].navigate
 
-    @pytest.mark.parametrize("use_indices", (False, True))
-    def test_crop(self, use_indices):
+    @pytest.mark.parametrize("ind", (10.2, 2))
+    def test_crop(self, ind):
         axis = UniformDataAxis(size=10, scale=0.1, offset=10)
-        start = 10.2
-        if use_indices:
-            start = axis.value2index(start)
-        axis.crop(start)
+        axis = axis[ind:]
         assert axis.size == 8
         np.testing.assert_almost_equal(axis.axis[0], 10.2)
         np.testing.assert_almost_equal(axis.axis[-1], 10.9)
         np.testing.assert_almost_equal(axis.offset, 10.2)
         np.testing.assert_almost_equal(axis.scale, 0.1)
 
+    @pytest.mark.parametrize("ind", (10.4, 4))
+    def test_crop_end(self, ind):
         axis = UniformDataAxis(size=10, scale=0.1, offset=10)
-        end = 10.4
-        if use_indices:
-            end = axis.value2index(end)
-        axis.crop(start, end)
-        assert axis.size == 2
-        np.testing.assert_almost_equal(axis.axis[0], 10.2)
-        np.testing.assert_almost_equal(axis.axis[-1], 10.3)
-        np.testing.assert_almost_equal(axis.offset, 10.2)
-        np.testing.assert_almost_equal(axis.scale, 0.1)
-
-        axis = UniformDataAxis(size=10, scale=0.1, offset=10)
-        axis.crop(None, end)
+        axis = axis[:ind]
         assert axis.size == 4
         np.testing.assert_almost_equal(axis.axis[0], 10.0)
         np.testing.assert_almost_equal(axis.axis[-1], 10.3)
         np.testing.assert_almost_equal(axis.offset, 10.0)
         np.testing.assert_almost_equal(axis.scale, 0.1)
 
-    @pytest.mark.parametrize("mixed", (False, True))
-    def test_crop_reverses_indexing(self, mixed):
+    @pytest.mark.parametrize("ind", ((2, -6), (-8, -6)))
+    def test_crop_reverses_indexing(self, ind):
         axis = UniformDataAxis(size=10, scale=0.1, offset=10)
-        if mixed:
-            i1, i2 = 2, -6
-        else:
-            i1, i2 = -8, -6
-        axis.crop(i1, i2)
+        axis = axis[ind[0]:ind[1]]
         assert axis.size == 2
         np.testing.assert_almost_equal(axis.axis[0], 10.2)
         np.testing.assert_almost_equal(axis.axis[-1], 10.3)
@@ -647,25 +629,25 @@ class TestUniformDataAxis:
         ax = copy.deepcopy(self.axis)
         ax.units = 'nm'
         # slicing by index
-        assert ax._parse_value(5) == 5
-        assert type(ax._parse_value(5)) is int
+        #assert ax._parse_value(5) == 5
+        #assert type(ax._parse_value(5)) is int
         # slicing by calibrated value
-        assert ax._parse_value(10.5) == 10.5
-        assert type(ax._parse_value(10.5)) is float
+        #assert ax._parse_value(10.5) == 10.5
+        #assert type(ax._parse_value(10.5)) is float
         # slicing by unit
-        assert ax._parse_value('10.5nm') == 10.5
-        np.testing.assert_almost_equal(ax._parse_value('10500pm'), 10.5)
+        assert ax.to_numpy_index('10.5nm') == 5
+        assert ax.to_numpy_index('10500pm')==ax.to_numpy_index('10.5nm')
 
     def test_parse_value_from_relative_string(self):
         ax = self.axis
-        assert ax._parse_value_from_string('rel0.0') == 10.0
-        assert ax._parse_value_from_string('rel0.5') == 10.45
-        assert ax._parse_value_from_string('rel1.0') == 10.9
+        assert ax.to_numpy_index('rel0.0') == 0
+        assert ax.to_numpy_index('rel0.5') == 4
+        assert ax.to_numpy_index('rel1.0') == 9
 
     def test_slice_empty_string(self):
         ax = self.axis
         with pytest.raises(ValueError):
-            ax._parse_value("")
+            ax.to_numpy_index("")
 
     def test_calibrate(self):
         offset, scale = self.axis.calibrate(value_tuple=(11,12), \
