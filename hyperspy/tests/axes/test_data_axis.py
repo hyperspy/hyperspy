@@ -265,7 +265,6 @@ class TestDataAxis:
 
 
 class TestFunctionalDataAxis:
-
     def setup_method(self, method):
         expression = "x ** power"
         self.axis = FunctionalDataAxis(
@@ -293,8 +292,7 @@ class TestFunctionalDataAxis:
 
     @pytest.mark.parametrize("ind", ((3.9, 72.6), (2, -1)))
     def test_getitem(self, ind):
-        axis = self.axis
-        self.axis[ind[0]:ind[1]]
+        axis = self.axis[ind[0]:ind[1]]
         assert axis.size == 7
         np.testing.assert_almost_equal(axis.axis[0], 4.)
         np.testing.assert_almost_equal(axis.axis[-1], 64.)
@@ -330,12 +328,6 @@ class TestFunctionalDataAxis:
         self.axis.update_from(ax2, attributes=("units", "power"))
         assert ((ax2.units, ax2.power) ==
                 (self.axis.units, self.axis.power))
-
-    def test_slice_me(self):
-        asse
-        assert self.axis._slice_me(slice(1, 5)) == slice(1, 5)
-        assert self.axis.size == 4
-        np.testing.assert_allclose(self.axis.axis, np.arange(1, 5)**2)
 
     def test_calibrate(self):
         with pytest.raises(NotImplementedError):
@@ -582,7 +574,7 @@ class TestUniformDataAxis:
         assert navigate == s.axes_manager[0].navigate
 
     def test_convert_to_functional_data_axis(self):
-        axis = self.axis
+        axis = self.axis.deepcopy()
         #is_binned = self.axis.is_binned
         navigate = self.axis.navigate
         axis.name = "parrot"
@@ -594,7 +586,7 @@ class TestUniformDataAxis:
         assert axis.size == 10
         assert axis.low_value == 10**2
         assert axis.high_value == (10 + 0.1 * 9)**2
-        assert axis.expression == 'x**2'
+        assert axis._expression == 'x**2'
         assert isinstance(axis.x, np.ndarray)
         np.testing.assert_allclose(axis.axis, self.axis.axis**2)
         with pytest.raises(AttributeError):

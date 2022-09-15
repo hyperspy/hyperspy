@@ -670,7 +670,7 @@ class DataAxis(BaseDataAxis):
         d["offset"] = self.low_value
         d["scale"] = scale
         d["size"] = self.size
-        #axes_manager = self.axes_manager
+        axes_manager = self.axes_manager
         del d["axis"]
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
@@ -678,6 +678,7 @@ class DataAxis(BaseDataAxis):
         d["_type"] = 'UniformDataAxis'
         self.__class__ = UniformDataAxis
         self.__init__(**d)
+        self.axes_manager = axes_manager
 
 
 class FunctionalDataAxis(DataAxis):
@@ -816,13 +817,13 @@ class FunctionalDataAxis(DataAxis):
     def convert_to_non_uniform_axis(self):
         """Convert to a non-uniform axis."""
         d = super().get_axis_dictionary()
-        #axes_manager = self.axes_manager
+        axes_manager = self.axes_manager
         d["_type"] = 'DataAxis'
         self.__class__ = DataAxis
         self.__init__(**d)
         del self._expression
         del self._function
-        #self.axes_manager = axes_manager
+        self.axes_manager = axes_manager
 
 
 class UniformDataAxis(DataAxis, UnitConversion):
@@ -1019,7 +1020,7 @@ class UniformDataAxis(DataAxis, UnitConversion):
 
     def convert_to_functional_data_axis(self, expression, units=None, name=None, **kwargs):
         d = super().get_axis_dictionary()  # Calls DataAxis get_axis_dictionary
-        #axes_manager = self.axes_manager
+        axes_manager = self.axes_manager
         if units:
             d["units"] = units
         if name:
@@ -1033,7 +1034,7 @@ class UniformDataAxis(DataAxis, UnitConversion):
         self.__class__ = FunctionalDataAxis
         d["_type"] = 'FunctionalDataAxis'
         self.__init__(expression=expression, **d)
-        #self.axes_manager = axes_manager
+        self.axes_manager = axes_manager
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
@@ -1044,7 +1045,7 @@ class UniformDataAxis(DataAxis, UnitConversion):
         self.remove_trait('offset')
         self.remove_trait('size')
         self.__init__(**d)
-        #self.axes_manager = axes_manager
+        self.axes_manager = axes_manager
 
 
 def _serpentine_iter(shape):
