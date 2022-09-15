@@ -340,9 +340,12 @@ class BaseDataAxis(t.HasTraits):
     def __str__(self):
         return self._get_name() + " axis"
 
-    def __deepcopy__(self, memodict={}):
-        new_dict = copy.deepcopy(self.get_axis_dictionary())
-        return self.__class__(**new_dict)
+    def __deepcopy__(self, *args):
+        cp = self.copy()
+        return cp
+
+    def __copy__(self):
+        return self.copy()
 
     def _get_name(self):
         name = (self.name
@@ -354,7 +357,7 @@ class BaseDataAxis(t.HasTraits):
         return name
 
     def copy(self):
-        return copy.copy(self)
+        return self.__class__(**self.get_axis_dictionary())
 
     def deepcopy(self):
         return self.__deepcopy__()
@@ -436,7 +439,7 @@ class DataAxis(BaseDataAxis):
         self.add_trait("index", t.Int)
 
     def __getitem__(self, item):
-        new_axis = self.__deepcopy__()
+        new_axis = self.deepcopy()
         new_item = self.to_numpy_index(item)
         axis = self._axis[new_item]
         if not isinstance(axis, np.ndarray):  # returns scalar
@@ -1937,7 +1940,7 @@ class AxesManager(t.HasTraits):
                              '=' * 7, '=' * 7, '=' * 6)
 
         def axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform):
-            if ax.is_uniform:
+            if hasattr(ax, "scale") and hasattr(ax, "offset"):
                 return ax_signature_uniform % (str(ax.name)[:16], ax.size,
                                               str(ax.index), ax.offset,
                                               ax.scale, ax.units)
