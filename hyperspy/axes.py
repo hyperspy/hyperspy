@@ -271,6 +271,7 @@ class BaseDataAxis(t.HasTraits):
     name = t.Str()
     units = t.Str()
     t.navigate = t.Bool()
+    is_binned = t.Bool()
 
     def __init__(self,
                  name=None,
@@ -291,6 +292,7 @@ class BaseDataAxis(t.HasTraits):
             units = t.Undefined
         self.name = name
         self.units = units
+        self.is_binned = is_binned
 
         self.navigate = navigate
         self.axes_manager = axes_manager
@@ -367,9 +369,11 @@ class BaseDataAxis(t.HasTraits):
                 'name': _parse_axis_attribute(self.name),
                 'units': _parse_axis_attribute(self.units),
                 'navigate': self.navigate,
+                'is_binned': self.is_binned,
+                'axes_manager':self.axes_manager
                 }
 
-    def to_numpy_index(self, index):
+    def _get_index(self, index):
         raise NotImplementedError("This method is only implemented in subclasses")
 
     def update_dict(self, new_values):
@@ -440,7 +444,7 @@ class DataAxis(BaseDataAxis):
 
     def __getitem__(self, item):
         new_axis = self.deepcopy()
-        new_item = self.to_numpy_index(item)
+        new_item = self._get_index(item)
         axis = self._axis[new_item]
         if not isinstance(axis, np.ndarray):  # returns scalar
             return None
@@ -456,6 +460,10 @@ class DataAxis(BaseDataAxis):
     @axis.setter
     def axis(self, axis):
         self._axis = axis
+
+    def _slice_me(self, slice):
+        sl = self[slice]
+        self = sl
 
     @property
     def is_ordered(self):
@@ -473,15 +481,7 @@ class DataAxis(BaseDataAxis):
 
     @property
     def is_uniform(self):
-        try:
-            steps = self.axis[1:] - self.axis[:-1]
-            steps = np.abs(steps - steps[0])
-            if np.all(steps < 0.0000001):
-                return True
-            else:
-                return False
-        except:
-            return None
+        return False
 
     @property
     def value(self):
@@ -560,9 +560,9 @@ class DataAxis(BaseDataAxis):
                                       "unordered axes")
 
     def index2value(self, index):
-        if index<0:
+        if index < 0:
             index = self.size+index
-        return np.add(np.multiply(index, self.scale), self.offset)
+        return self.axis[index]
 
     def _neg_slice(self, value):
         try:
@@ -660,7 +660,7 @@ class DataAxis(BaseDataAxis):
         return ind1, ind2
 
 
-    def to_numpy_index(self, index):
+    def _get_index(self, index):
         """ Takes some index passed by a FancySlicing object and returns the index
         Parameters
         ----------
@@ -898,17 +898,34 @@ class UniformDataAxis(DataAxis, UnitConversion):
         # These traits need to added dynamically to be removed when necessary
         self.add_trait("scale", t.CFloat)
         self.add_trait("offset", t.CFloat)
-        self.add_trait("size", t.CInt)
+        self.add_trait("_size", t.CInt)
         self.scale = scale
         self.offset = offset
-        self.size = size
+        self._size = size
 
     @property
     def axis(self):
         ax = np.add(np.multiply(np.arange(self.size), self.scale), self.offset)
         return ax
 
-    def to_numpy_index(self, index, **kwargs):
+    @property
+    def size(self):
+        return self._size
+
+    @size.setter
+    def size(self, value):
+        self._size = value
+
+    @property
+    def is_uniform(self):
+        return True
+
+    def index2value(self, index):
+        if index<0:
+            index = self.size+index
+        return np.add(np.multiply(index, self.scale), self.offset)
+
+    def _get_index(self, index, **kwargs):
         """ Takes some index passed by a FancySlicing object and returns the index
         Parameters
         ----------
@@ -929,7 +946,7 @@ class UniformDataAxis(DataAxis, UnitConversion):
 
     def __getitem__(self, item):
         new_axis = self.deepcopy()
-        ind = self.to_numpy_index(item)
+        ind = self._get_index(item)
         if isinstance(ind, slice):
             if ind.step is not None:
                 new_axis.scale = ind.step*self.scale
@@ -1194,21 +1211,17 @@ class AxesManager(t.HasTraits):
         self.events = Events()
         self.events.indices_changed = Event("""
             Event that triggers when the indices of the `AxesManager` changes
-
             Triggers after the internal state of the `AxesManager` has been
             updated.
-
             Arguments:
             ----------
             obj : The AxesManager that the event belongs to.
             """, arguments=['obj'])
         self.events.any_axis_changed = Event("""
             Event that trigger when the space defined by the axes transforms.
-
             Specifically, it triggers when one or more of the following
             attributes changes on one or more of the axes:
                 `offset`, `size`, `scale`
-
             Arguments:
             ----------
             obj : The AxesManager that the event belongs to.
@@ -1219,24 +1232,14 @@ class AxesManager(t.HasTraits):
             self.remove(self._axes)
         self.create_axes(axes_list)
 
-        self._update_attributes()
-        self._update_trait_handlers()
+        #self._update_attributes()
+        #self._update_trait_handlers()
         self.iterpath = 'flyback'
         self._ragged = False
 
     @property
     def ragged(self):
         return self._ragged
-
-    def _update_trait_handlers(self, remove=False):
-        things = {self._on_index_changed: '_axes.index',
-                  self._on_slice_changed: '_axes.slice',
-                  self._on_size_changed: '_axes.size',
-                  self._on_scale_changed: '_axes.scale',
-                  self._on_offset_changed: '_axes.offset'}
-
-        for k, v in things.items():
-            self.on_trait_change(k, name=v, remove=remove)
 
     def _get_positive_index(self, axis):
         if axis < 0:
@@ -1254,6 +1257,11 @@ class AxesManager(t.HasTraits):
         shape = (self.navigation_shape if self.navigation_size > 0 else
                  [1, ])[::-1]
         return ndindex_nat(*shape)
+
+    @property
+    def _getitem_tuple(self):
+        getitem_tuple = tuple([a.slice if a.slice is not None else a.index for a in self._axes])
+        return getitem_tuple
 
     def __getitem__(self, y):
         """x.__getitem__(y) <==> x[y]
@@ -1580,23 +1588,6 @@ class AxesManager(t.HasTraits):
         axis.axes_manager = self
         self._axes.append(axis)
 
-    def _on_index_changed(self):
-        self._update_attributes()
-        self.events.indices_changed.trigger(obj=self)
-
-    def _on_slice_changed(self):
-        self._update_attributes()
-
-    def _on_size_changed(self):
-        self._update_attributes()
-        self.events.any_axis_changed.trigger(obj=self)
-
-    def _on_scale_changed(self):
-        self.events.any_axis_changed.trigger(obj=self)
-
-    def _on_offset_changed(self):
-        self.events.any_axis_changed.trigger(obj=self)
-
     def convert_units(self, axes=None, units=None, same_units=True,
                       factor=0.25):
         """ Convert the scale and the units of the selected axes. If the unit
@@ -1721,52 +1712,14 @@ class AxesManager(t.HasTraits):
 
         """
 
-        # To only trigger once even with several changes, we suppress here
-        # and trigger manually below if there were any changes.
-        changes = False
-        with self.events.any_axis_changed.suppress():
-            for axis in axes:
-                changed = self._axes[axis.index_in_array].update_from(
-                    axis=axis, attributes=attributes)
-                changes = changes or changed
-        if changes:
-            self.events.any_axis_changed.trigger(obj=self)
+        for axis in axes:
+            self._axes[axis.index_in_array].update_from(axis=axis,
+                                                        attributes=attributes)
 
-    def _update_attributes(self):
-        getitem_tuple = []
-        values = []
-        signal_axes = ()
-        navigation_axes = ()
-        for axis in self._axes:
-            # Until we find a better place, take property of the axes
-            # here to avoid difficult to debug bugs.
-            axis.axes_manager = self
-            if axis.slice is None:
-                getitem_tuple += axis.index,
-                values.append(axis.value)
-                navigation_axes += axis,
-            else:
-                getitem_tuple += axis.slice,
-                signal_axes += axis,
-        if not signal_axes and navigation_axes:
-            getitem_tuple[-1] = slice(axis.index, axis.index + 1)
 
-        self._signal_axes = signal_axes[::-1]
-        self._navigation_axes = navigation_axes[::-1]
-        self._getitem_tuple = tuple(getitem_tuple)
+    def slice_me(self, slices, navigate=False):
+        pass
 
-        if len(self.signal_axes) == 1 and self.signal_axes[0].size == 1:
-            self._signal_dimension = 0
-        else:
-            self._signal_dimension = len(self.signal_axes)
-        self._navigation_dimension = len(self.navigation_axes)
-
-        self._signal_size = (np.prod(self.signal_shape)
-                             if self.signal_shape else 0)
-        self._navigation_size = (np.prod(self.navigation_shape)
-                                 if self.navigation_shape else 0)
-
-        self._update_max_index()
 
     @property
     def signal_axes(self):
@@ -1800,7 +1753,17 @@ class AxesManager(t.HasTraits):
     @property
     def navigation_size(self):
         """The size of the navigation space."""
-        return np.prod(self.navigation_shape)
+        if self.navigation_shape == ():
+            return 0
+        else:
+            return np.prod(self.navigation_shape)
+
+    @property
+    def _max_index(self):
+        ind = np.prod(self.navigation_shape)
+        if ind != 0:
+            ind -=1
+        return ind
 
     @property
     def navigation_dimension(self):
@@ -1810,10 +1773,10 @@ class AxesManager(t.HasTraits):
     @property
     def signal_dimension(self):
         """The dimension of the signal space."""
-        return len(self.navigation_axes)
+        return len(self.signal_axes)
 
     def _set_signal_dimension(self, value):
-        if len(self._axes) == 0 or self._signal_dimension == value:
+        if len(self._axes) == 0 or self.signal_dimension == value:
             # Nothing to be done
             return
         elif self.ragged and value > 0:
@@ -2060,8 +2023,14 @@ class AxesManager(t.HasTraits):
                 "The number of indices must be equal to the "
                 "navigation dimension that is %i" %
                 self.navigation_dimension)
-        for index, axis in zip(indices, self.navigation_axes):
-            axis.index = index
+        changes = False
+        with self.events.indices_changed.suppress():
+            for index, axis in zip(indices, self.navigation_axes):
+                changes = changes or (axis.index != index)
+                axis.index = index
+        # Trigger only if the indices are changed
+        if changes:
+            self.events.indices_changed.trigger(obj=self)
 
     def _get_axis_attribute_values(self, attr):
         return [getattr(axis, attr) for axis in self._axes]

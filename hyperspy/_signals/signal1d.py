@@ -428,12 +428,12 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if minimum < 0:
             ihigh = 1 + axis.value2index(
                 axis.high_value + minimum,
-                rounding=math.floor)
+                rounding="floor")
         else:
             ihigh = axis.high_index + 1
         if maximum > 0:
             ilow = axis.value2index(axis.offset + maximum,
-                                    rounding=math.ceil)
+                                    rounding="ceil")
         else:
             ilow = axis.low_index
         if expand:

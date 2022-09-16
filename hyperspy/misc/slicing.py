@@ -263,13 +263,7 @@ class FancySlicing(object):
 
         array_slices = []
         for slice_, axis in zip(slices, self.axes_manager._axes):
-            if (isinstance(slice_, slice) or
-                    len(self.axes_manager._axes) < 2):
-                array_slices.append(axis._get_array_slices(slice_))
-            else:
-                if isinstance(slice_, float):
-                    slice_ = axis.value2index(slice_)
-                array_slices.append(slice_)
+            array_slices.append(axis._get_index(slice_))
         return tuple(array_slices)
 
     def _slicer(self, slices, isNavigation=None, out=None):

@@ -27,6 +27,7 @@ def test_plot_lazy(ndim):
     N = 10
     dim = ndim + 1
     s = hs.signals.Signal1D(da.arange(N**dim).reshape([N]*dim)).as_lazy()
+    s = hs.signals.Signal1D(da.arange(N**dim).reshape([N]*dim)).as_lazy()
     s.plot()
 
     if ndim == 0:

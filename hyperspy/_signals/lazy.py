@@ -348,9 +348,11 @@ class LazySignal(BaseSignal):
         """
         dc = self.data
         dcshape = dc.shape
-        for _axis in self.axes_manager._axes:
-            if _axis.index_in_array < len(dcshape):
-                _axis.size = int(dcshape[_axis.index_in_array])
+
+        # This seems backwards
+        #for _axis in self.axes_manager._axes:
+        #    if _axis.index_in_array < len(dcshape):
+        #        _axis.size = int(dcshape[_axis.index_in_array])
 
         if axis is not None:
             need_axes = self.axes_manager[axis]
