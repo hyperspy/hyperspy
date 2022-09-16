@@ -169,7 +169,7 @@ Bibliography
 :ref:`[Zhou2011] <Zhou2011>`
    T. Zhou and D. Tao, "GoDec: Randomized Low-rank
    & Sparse Matrix Decomposition in Noisy Case", *ICML-11* (2011): 33–40
-   [`<http://www.icml-2011.org/papers/41_icmlpaper.pdf>`_].
+   [`<https://icml.cc/Conferences/2011/papers/41_icmlpaper.pdf>`_].
 
 .. _Schaffer2004:
 
