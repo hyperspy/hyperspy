@@ -29,6 +29,8 @@ Data Visualization
   ``saturated_pixels`` is removed, use ``vmin`` and/or ``vmax`` instead.
 - The ``get_complex`` property of :py:class:`~.drawing.signal1d.Signal1DLine` is removed.
 - The keyword argument ``line_style`` of :py:func:`~.drawing.utils.plot_spectra` have been renamed to ``linestyle``.
+- Changing navigation coordinates using keyboard ``Arrow`` have been removed, use
+  ``Crtl`` + ``Arrow`` instead.
 
 Loading and Saving data
 -----------------------
@@ -186,7 +188,7 @@ Hyperspy 1.7.2 (2022-09-17)
 Bug Fixes
 ---------
 
-- Fix some errors and remove unnecessary code identified by `LGTM 
+- Fix some errors and remove unnecessary code identified by `LGTM
   <https://lgtm.com/projects/g/hyperspy/hyperspy/>`_. (`#2977 <https://github.com/hyperspy/hyperspy/issues/2977>`_)
 - Fix error which occurs when guessing output size in the :py:meth:`~.signal.BaseSignal.map` function and using dask newer than 2022.7.1 (`#2981 <https://github.com/hyperspy/hyperspy/issues/2981>`_)
 - Fix display of x-ray lines when using log norm and the intensity at the line is 0 (`#2995 <https://github.com/hyperspy/hyperspy/issues/2995>`_)
