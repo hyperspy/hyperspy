@@ -91,8 +91,10 @@ Machine Learning
 - For lazy signals, a possible value of the ``algorithm`` keyword argument of the
   :py:meth:`~._signals.lazy.decomposition` method has been changed
   from ``"ONMF"`` to ``"ORNMF"``.
-- Setting the ``metadata`` and ``original_metadata`` attribute is removed, use
-  the ``set_item`` and ``add_dictionary`` methods of the ``metadata`` attribute instead.
+- Setting the ``metadata`` and ``original_metadata`` attribute of signals is removed, use
+  the :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item` and
+  :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods of the
+  ``metadata`` and ``original_metadata`` attribute instead.
 
 
 Model fitting
@@ -141,6 +143,11 @@ Model fitting
   - :py:meth:`~.model.BaseModel.set_mpfit_parameters_info`
 
 - The arguments ``parallel`` and ``max_workers`` have been removed from the :py:meth:`~.model.BaseModel.as_signal` methods.
+
+- Setting the ``metadata``  attribute of a :py:class:`~.samfire.Samfire` is removed, use
+  the :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item` and
+  :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods of the
+  ``metadata`` attribute instead.
 
 Signal
 ------
