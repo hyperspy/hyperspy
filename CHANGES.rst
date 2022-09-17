@@ -88,6 +88,10 @@ Machine Learning
        - navigation
      * - variables
        - signal
+- For lazy signals, a possible value of the ``algorithm`` keyword argument of the
+  :py:meth:`~._signals.lazy.decomposition` method has been changed
+  from ``"ONMF"`` to ``"ORNMF"``.
+
 
 Model fitting
 -------------
@@ -156,6 +160,9 @@ Signal
 
 - The ``integrate_in_range`` method is removed, use :py:class:`~.roi.SpanRoi`
   followed by :py:meth:`~.signal.BaseSignal.integrate1D` instead.
+- The ``progressbar`` keyword argument of the :py:meth:`~._signals.lazy.compute` method
+  has been removed, use ``show_progressbar`` instead.
+
 
 .. towncrier release notes start
 
