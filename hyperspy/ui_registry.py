@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-r"""Registry of user interface widgets.
+"""Registry of user interface widgets.
 
-Format {"tool_key" : {"toolkit" : <function(obj, display, **kwargs)>}}
+Format {"tool_key" : {"toolkit" : <function(obj, display, \*\*kwargs)>}}
 
 The ``tool_key`` is defined by the "model function" to which the widget provides
 and user interface. That function gets the widget function from this registry
