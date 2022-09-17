@@ -111,7 +111,7 @@ class TestNonUniformAxisCheck:
     def test_nonuniform_writer_characteristic(self):
         for plugin in IO_PLUGINS:
             if not "non_uniform_axis" in plugin:
-                print(plugin.format_name + ' IO-plugin is missing the '
+                print(plugin.name + ' IO-plugin is missing the '
                       'characteristic `non_uniform_axis`')
 
     def test_nonuniform_error(self):

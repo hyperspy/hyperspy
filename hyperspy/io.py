@@ -54,13 +54,13 @@ f_error_fmt = (
 
 def _format_name_to_reader(format_name):
     for reader in IO_PLUGINS:
-        if format_name.lower() == reader["format_name"].lower():
+        if format_name.lower() == reader["name"].lower():
             return reader
-        elif reader.get("format_name_aliases"):
-            aliases = [s.lower() for s in reader["format_name_aliases"]]
+        elif reader.get("name_aliases"):
+            aliases = [s.lower() for s in reader["name_aliases"]]
             if format_name.lower() in aliases: 
                 return reader
-    raise ValueError("The format_name given does not match any format available.")
+    raise ValueError("The `format_name` given does not match any format available.")
 
 
 def _infer_file_reader(string):
@@ -96,9 +96,9 @@ def _infer_file_reader(string):
             "Will attempt to load the file with the Python imaging library."
         )
 
-        reader, = [reader for reader in IO_PLUGINS if reader["format_name"].lower() == "image"]
+        reader, = [reader for reader in IO_PLUGINS if reader["name"].lower() == "image"]
     elif len(rdrs) > 1:
-        names = [rdr["format_name"] for rdr in rdrs]
+        names = [rdr["name"] for rdr in rdrs]
         raise ValueError(
             f"There are multiple file readers that could read the file. "
             f"Please select one from the list below with the `reader` keyword. "
@@ -140,7 +140,7 @@ def _infer_file_writer(string):
             )
 
     elif len(writers) > 1:
-        names = [writer["format_name"] for writer in writers]
+        names = [writer["name"] for writer in writers]
         raise ValueError(
             f"There are multiple file formats matching the extension of your file. "
             f"Please select one from the list below with the `format` keyword. "
@@ -883,7 +883,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
 
 
     if writer["writes"] is not True and [sd, nd] not in writer["writes"]:
-        compatible_writers = [plugin["format_name"] for plugin in IO_PLUGINS
+        compatible_writers = [plugin["name"] for plugin in IO_PLUGINS
                       if plugin["writes"] is True or
                       plugin["writes"] is not False and
                       [sd, nd] in plugin["writes"]]
@@ -894,7 +894,7 @@ def save(filename, signal, overwrite=None, file_format=None, **kwds):
         )
 
     if not writer["non_uniform_axis"] and not signal.axes_manager.all_uniform:
-        compatible_writers = [plugin["format_name"] for plugin in IO_PLUGINS
+        compatible_writers = [plugin["name"] for plugin in IO_PLUGINS
                       if plugin["non_uniform_axis"] is True]
         raise TypeError("Writing to this format is not supported for "
                       "non-uniform axes. Use one of the following "
