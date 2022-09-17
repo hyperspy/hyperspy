@@ -519,7 +519,7 @@ EDS curve fitting
 
 The intensity of X-ray lines can be extracted using curve-fitting in HyperSpy.
 This example uses an EDS-SEM spectrum of a test material (EDS-TM001) provided
-by `BAM <https://www.webshop.bam.de>`_.
+by `BAM <http://www.webshop.bam.de>`_.
 
 First, we load the spectrum, define the chemical composition of the sample and
 set the beam energy:
@@ -532,8 +532,9 @@ set the beam energy:
 
 Next, the model is created with
 :py:meth:`~._signals.eds_sem.EDSSEMSpectrum.create_model`. One Gaussian is
-automatically created per X-ray line, along with a polynomial for the
-background.
+automatically created per X-ray line, along with a polynomial for the 
+background. The gaussian widths and energies are fixed, while the heights
+of the sub-X-ray lines are linked to the main X-ray lines (alpha lines).
 
 .. code-block:: python
 
@@ -577,22 +578,21 @@ background.
     Zr_Lb3
     background_order_6
 
-The width and the energies are fixed, while the heights of the sub-X-ray
-lines are linked to the main X-ray lines (alpha lines). The model can now be
-fitted:
-
-.. code-block:: python
-
-    >>> m.fit()
-
-The background fitting can be improved with
+The background fitting can be performed with
 :py:meth:`~.models.edsmodel.EDSModel.fit_background` by enabling only energy
-ranges containing no X-ray lines:
+ranges containing no X-ray lines. Once fitted, the background is automatically
+fixed:
 
 .. code-block:: python
 
     >>> m.fit_background()
 
+The model components can now be fitted using:
+
+.. code-block:: python
+
+    >>> m.fit()
+    
 The width of the X-ray lines is defined from the energy resolution (FWHM at
 Mn Ka) provided by `energy_resolution_MnKa` in `metadata`. This parameter
 can be calibrated by fitting with
