@@ -172,6 +172,11 @@ Signal
 - The ``progressbar`` keyword argument of the :py:meth:`~._signals.lazy.compute` method
   has been removed, use ``show_progressbar`` instead.
 
+Preferences
+-----------
+- The ``warn_if_guis_are_missing`` HyperSpy preferences setting has been removed,
+  as it is not necessary anymore.
+
 
 .. towncrier release notes start
 
