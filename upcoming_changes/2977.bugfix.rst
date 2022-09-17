@@ -1,2 +1,0 @@
-Fix some errors and remove unnecessary code identified by `LGTM 
-<https://lgtm.com/projects/g/hyperspy/hyperspy/>`_.

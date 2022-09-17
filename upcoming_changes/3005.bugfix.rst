@@ -1,1 +1,0 @@
-Fix handling constant derivative in :py:meth:`~._signals.signal1D.Signal1D.spikes_removal_tool`
