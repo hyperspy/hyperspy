@@ -91,6 +91,8 @@ Machine Learning
 - For lazy signals, a possible value of the ``algorithm`` keyword argument of the
   :py:meth:`~._signals.lazy.decomposition` method has been changed
   from ``"ONMF"`` to ``"ORNMF"``.
+- Setting the ``metadata`` and ``original_metadata`` attribute is removed, use
+  the ``set_item`` and ``add_dictionary`` methods of the ``metadata`` attribute instead.
 
 
 Model fitting

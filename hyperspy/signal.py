@@ -2501,22 +2501,10 @@ class BaseSignal(FancySlicing,
             value = np.asanyarray(value)
         self._data = np.atleast_1d(value)
 
-
     @property
     def metadata(self):
         """The metadata of the signal."""
         return self._metadata
-
-    @metadata.setter
-    def metadata(self, d):
-        warnings.warn(
-            "Setting the `metadata` attribute is deprecated and will be removed "
-            "in HyperSpy 2.0. Use the `set_item` and `add_dictionary` methods "
-            "of the `metadata` attribute instead."
-            )
-        if isinstance(d, dict):
-            d = DictionaryTreeBrowser(d)
-        self._metadata = d
 
     @property
     def original_metadata(self):
