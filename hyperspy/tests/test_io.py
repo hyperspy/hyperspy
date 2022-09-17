@@ -111,7 +111,7 @@ class TestNonUniformAxisCheck:
     def test_nonuniform_writer_characteristic(self):
         for plugin in IO_PLUGINS:
             if not "non_uniform_axis" in plugin:
-                print(plugin.format_name + ' IO-plugin is missing the '
+                print(plugin.name + ' IO-plugin is missing the '
                       'characteristic `non_uniform_axis`')
 
     def test_nonuniform_error(self):
@@ -216,10 +216,34 @@ def test_file_reader_warning(caplog, tmp_path):
 def test_file_reader_options(tmp_path):
     s = Signal1D(np.arange(10))
 
-    s.save(tmp_path / "temp.hspy")
+    s.save(Path(tmp_path, "temp.hspy"))
+    s.save(Path(tmp_path, "temp.emd"))
 
     # Test string reader
-    t = hs.load(tmp_path / "temp.hspy", reader="hspy")
+    t = hs.load(Path(tmp_path, "temp.hspy"), reader="hspy")
+    assert len(t) == 1
+    np.testing.assert_allclose(t.data, np.arange(10))
+    
+    # Test string reader uppercase
+    t = hs.load(Path(tmp_path, "temp.hspy"), reader="HSpy")
+    assert len(t) == 1
+    np.testing.assert_allclose(t.data, np.arange(10))
+
+    # Test string reader alias
+    t = hs.load(Path(tmp_path, "temp.hspy"), reader="hyperspy")
+    assert len(t) == 1
+    np.testing.assert_allclose(t.data, np.arange(10))
+
+    # Test string reader name
+    t = hs.load(Path(tmp_path, "temp.emd"), reader="emd")
+    assert len(t) == 1
+    np.testing.assert_allclose(t.data, np.arange(10))
+
+    # Test string reader aliases
+    t = hs.load(Path(tmp_path, "temp.emd"), reader="Electron Microscopy Data (EMD)")
+    assert len(t) == 1
+    np.testing.assert_allclose(t.data, np.arange(10))
+    t = hs.load(Path(tmp_path, "temp.emd"), reader="Electron Microscopy Data")
     assert len(t) == 1
     np.testing.assert_allclose(t.data, np.arange(10))
 
