@@ -260,17 +260,21 @@ class TestSpikesRemovalToolZLP:
         self.signal.spikes_diagnosis(zero_loss_peak_mask_width=5.0)
 
         zlp_mask = self.signal.get_zero_loss_peak_mask()
-        hist_data = self.signal._get_spikes_diagnosis_histogram_data(
-            signal_mask=zlp_mask, bins=25)
+        hist_data = self.signal._spikes_diagnosis(signal_mask=zlp_mask, bins=25)
         expected_data = np.zeros(25)
         expected_data[0] = 232
         expected_data[12] = 1
         expected_data[-1] = 1
         np.testing.assert_allclose(hist_data.data, expected_data)
 
-        hist_data2 = self.signal._get_spikes_diagnosis_histogram_data(bins=25)
+        hist_data2 = self.signal._spikes_diagnosis(bins=25)
         expected_data2 = np.array([285, 11, 13, 0, 0, 1, 12,  0])
         np.testing.assert_allclose(hist_data2.data[:8], expected_data2)
+
+        # mask all to check that it raises an error when there is no data
+        signal_mask = self.signal.inav[0,1].data.astype(bool)
+        with pytest.raises(ValueError):
+            self.signal.spikes_diagnosis(signal_mask=signal_mask)
 
 
 def test_spikes_removal_tool_no_zlp():
@@ -278,6 +282,23 @@ def test_spikes_removal_tool_no_zlp():
     with pytest.raises(ValueError):
         # Zero not in energy range
         s.spikes_removal_tool(zero_loss_peak_mask_width=5.0)
+
+
+def test_spikes_diagnosis_constant_derivative():
+    s = hs.signals.Signal1D(np.arange(20).reshape(2, 10))
+    with pytest.warns():
+        s._spikes_diagnosis(use_gui=False)
+
+    hs.preferences.GUIs.enable_traitsui_gui = False
+    with pytest.warns():
+        s._spikes_diagnosis(use_gui=True)
+
+    hs.preferences.GUIs.enable_traitsui_gui = True
+    try:
+        import hyperspy_gui_traitsui
+        s._spikes_diagnosis(use_gui=True)
+    except ImportError:
+        pass
 
 
 @lazifyTestClass
