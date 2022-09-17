@@ -1388,28 +1388,6 @@ IMAGE_CONTRAST_EDITOR_HELP_IPYWIDGETS = _IMAGE_CONTRAST_EDITOR_HELP.replace(
     "PERCENTILE", _PERCENTILE_IPYWIDGETS)
 
 
-@add_gui_method(toolkey="hyperspy.Signal1D.integrate_in_range")
-class IntegrateArea(SpanSelectorInSignal1D):
-    integrate = t.Button()
-
-    def apply(self):
-        integrated_spectrum = self.signal._integrate_in_range_commandline(
-            signal_range=(
-                self.ss_left_value,
-                self.ss_right_value)
-        )
-        # Replaces the original signal inplace with the new integrated spectrum
-        plot = False
-        if self.signal._plot and integrated_spectrum.axes_manager.shape != ():
-            self.signal._plot.close()
-            plot = True
-        self.signal.__init__(**integrated_spectrum._to_dictionary())
-        self.signal.transpose(signal_axes=[])
-
-        if plot is True:
-            self.signal.plot()
-
-
 @add_gui_method(toolkey="hyperspy.Signal1D.remove_background")
 class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(

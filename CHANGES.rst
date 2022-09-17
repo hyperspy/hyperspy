@@ -21,7 +21,7 @@ Axes
 - :py:meth:`AxesManager.show` is removed, use :py:meth:`~.axes.AxesManager.gui` instead.
 - :py:meth:`AxesManager.set_signal_dimension` is removed, use :py:meth:`~.signal.BaseSignal.as_signal1D`,
   :py:meth:`~.signal.BaseSignal.as_signal2D` or :py:meth:`~.signal.BaseSignal.transpose` of the signal instance instead.
-  
+
 Data Visualization
 ------------------
 
@@ -140,7 +140,22 @@ Signal
 ------
 - ``metadata.Signal.binned`` is removed, use the ``is_binned`` axis attribute
   instead, e. g. ``s.axes_manager[-1].is_binned``.
+- Some possible values for the ``bins`` argument of the :py:meth:`~.signal.BaseSignal.get_histogram`
+  method have been changed according to the following table:
 
+  .. list-table:: Change of the ``bins`` argument
+     :widths: 50 50
+     :header-rows: 1
+
+     * - hyperspy < 2.0
+       - hyperspy >= 2.0
+     * - scotts
+       - scott
+     * - freedman
+       - fd
+
+- The ``integrate_in_range`` method is removed, use :py:class:`~.roi.SpanRoi`
+  followed by :py:meth:`~.signal.BaseSignal.integrate1D` instead.
 
 .. towncrier release notes start
 
