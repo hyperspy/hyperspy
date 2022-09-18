@@ -1,1 +1,0 @@
-Fix extension test suite CI workflow. Enable workflow manual trigger

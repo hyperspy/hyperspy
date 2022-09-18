@@ -1,1 +1,0 @@
-Fix display of x-ray lines when using log norm and the intensity at the line is 0

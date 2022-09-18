@@ -8,6 +8,36 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 
 .. towncrier release notes start
 
+Hyperspy 1.7.2 (2022-09-17)
+===========================
+
+Bug Fixes
+---------
+
+- Fix some errors and remove unnecessary code identified by `LGTM 
+  <https://lgtm.com/projects/g/hyperspy/hyperspy/>`_. (`#2977 <https://github.com/hyperspy/hyperspy/issues/2977>`_)
+- Fix error which occurs when guessing output size in the :py:meth:`~.signal.BaseSignal.map` function and using dask newer than 2022.7.1 (`#2981 <https://github.com/hyperspy/hyperspy/issues/2981>`_)
+- Fix display of x-ray lines when using log norm and the intensity at the line is 0 (`#2995 <https://github.com/hyperspy/hyperspy/issues/2995>`_)
+- Fix handling constant derivative in :py:meth:`~._signals.signal1D.Signal1D.spikes_removal_tool` (`#3005 <https://github.com/hyperspy/hyperspy/issues/3005>`_)
+- Fix removing horizontal or vertical line widget; regression introduced in hyperspy 1.7.0 (`#3008 <https://github.com/hyperspy/hyperspy/issues/3008>`_)
+
+
+Improved Documentation
+----------------------
+
+- Add a note in the user guide to explain that when a file contains several datasets, :py:func:`~.io.load` returns a list of signals instead of a single signal and that list indexation can be used to access a single signal. (`#2975 <https://github.com/hyperspy/hyperspy/issues/2975>`_)
+
+
+Maintenance
+-----------
+
+- Fix extension test suite CI workflow. Enable workflow manual trigger (`#2982 <https://github.com/hyperspy/hyperspy/issues/2982>`_)
+- Fix deprecation warning and time zone test failing on windows (locale dependent) (`#2984 <https://github.com/hyperspy/hyperspy/issues/2984>`_)
+- Fix external links in the documentation and add CI build to check external links (`#3001 <https://github.com/hyperspy/hyperspy/issues/3001>`_)
+- Fix hyperlink in bibliography (`#3015 <https://github.com/hyperspy/hyperspy/issues/3015>`_)
+- Fix matplotlib ``SpanSelector`` import for matplotlib 3.6 (`#3016 <https://github.com/hyperspy/hyperspy/issues/3016>`_)
+
+
 Hyperspy 1.7.1 (2022-06-18)
 ===========================
 

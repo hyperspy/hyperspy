@@ -1,1 +1,0 @@
-Add a note in the user guide to explain that when a file contains several datasets, :py:func:`~.io.load` returns a list of signals instead of a single signal and that list indexation can be used to access a single signal.
