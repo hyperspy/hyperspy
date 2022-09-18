@@ -172,17 +172,6 @@ class Samfire:
     def metadata(self):
         return self._metadata
 
-    @metadata.setter
-    def metadata(self, d):
-        warnings.warn(
-            "Setting the `metadata` attribute is deprecated and will be removed "
-            "in HyperSpy 2.0. Use the `set_item` and `add_dictionary` methods "
-            "of the `metadata` attribute instead."
-            )
-        if isinstance(d, dict):
-            d = DictionaryTreeBrowser(d)
-        self._metadata = d
-
     @property
     def active_strategy(self):
         return self.strategies[self._active_strategy_ind]

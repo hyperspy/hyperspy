@@ -27,7 +27,6 @@ from hyperspy.misc.utils import (
     replace_html_symbols,
     nested_dictionary_merge,
 )
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.signal import BaseSignal
 
 

@@ -89,18 +89,6 @@ There may be several causes for a warning, for example:
      ``hyperspy-gui-ipywidgets`` installed and disable the traitsui
      GUI in the :ref:`preferences <configuring-hyperspy-label>`.
 
-
-By default, HyperSpy warns the user if one of the GUI packages is not installed.
-These warnings can be turned off using the
-:ref:`preferences <configuring-hyperspy-label>` GUI or programmatically as follows:
-
-    .. code-block:: python
-
-       >>> import hyperspy.api as hs
-       >>> hs.preferences.GUIs.warn_if_guis_are_missing = False
-       >>> hs.preferences.save()
-
-
 .. versionchanged:: v1.3
     HyperSpy works with all matplotlib backends, including the ``notebook``
     (also called ``nbAgg``) backend that enables interactive plotting embedded

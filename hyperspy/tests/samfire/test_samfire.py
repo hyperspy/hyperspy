@@ -194,15 +194,6 @@ class TestSamfireEmpty:
         samf.stop()
         del samf
 
-    def test_samfire_set_metadata_deprecation(self):
-        m = self.model
-        samf = m.create_samfire(workers=N_WORKERS, setup=False)
-        with pytest.warns(UserWarning):
-            samf.metadata = samf.metadata.as_dictionary()
-        assert isinstance(samf.metadata, DictionaryTreeBrowser)
-        samf.stop()
-        del samf
-
     def test_samfire_init_strategy_list(self):
         from hyperspy.samfire import StrategyList
         m = self.model

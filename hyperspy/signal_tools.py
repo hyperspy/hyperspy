@@ -48,11 +48,12 @@ _logger = logging.getLogger(__name__)
 
 
 class LineInSignal2D(t.HasTraits):
-    """Adds a vertical draggable line to a spectrum that reports its
+    """
+    Adds a vertical draggable line to a spectrum that reports its
     position to the position attribute of the class.
 
-    Attributes:
-    -----------
+    Attributes
+    ----------
     x0, y0, x1, y1 : floats
         Position of the line in scaled units.
     length : float

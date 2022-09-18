@@ -467,13 +467,6 @@ class DictionaryTreeBrowser:
         if key in ["_double_lines", "_lazy_attributes"]:
             super().__setattr__(key, value)
             return
-        if key == "binned":
-            warnings.warn(
-                "Use of the `binned` attribute in metadata is "
-                "going to be deprecated in v2.0. Set the "
-                "`axis.is_binned` attribute instead. ",
-                VisibleDeprecationWarning,
-            )
 
         if key.startswith("_sig_"):
             key = key[5:]

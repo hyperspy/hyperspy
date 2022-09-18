@@ -88,6 +88,14 @@ Machine Learning
        - navigation
      * - variables
        - signal
+- For lazy signals, a possible value of the ``algorithm`` keyword argument of the
+  :py:meth:`~._signals.lazy.decomposition` method has been changed
+  from ``"ONMF"`` to ``"ORNMF"``.
+- Setting the ``metadata`` and ``original_metadata`` attribute of signals is removed, use
+  the :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item` and
+  :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods of the
+  ``metadata`` and ``original_metadata`` attribute instead.
+
 
 Model fitting
 -------------
@@ -136,6 +144,11 @@ Model fitting
 
 - The arguments ``parallel`` and ``max_workers`` have been removed from the :py:meth:`~.model.BaseModel.as_signal` methods.
 
+- Setting the ``metadata``  attribute of a :py:class:`~.samfire.Samfire` is removed, use
+  the :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item` and
+  :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods of the
+  ``metadata`` attribute instead.
+
 Signal
 ------
 - ``metadata.Signal.binned`` is removed, use the ``is_binned`` axis attribute
@@ -156,6 +169,14 @@ Signal
 
 - The ``integrate_in_range`` method is removed, use :py:class:`~.roi.SpanRoi`
   followed by :py:meth:`~.signal.BaseSignal.integrate1D` instead.
+- The ``progressbar`` keyword argument of the :py:meth:`~._signals.lazy.compute` method
+  has been removed, use ``show_progressbar`` instead.
+
+Preferences
+-----------
+- The ``warn_if_guis_are_missing`` HyperSpy preferences setting has been removed,
+  as it is not necessary anymore.
+
 
 .. towncrier release notes start
 

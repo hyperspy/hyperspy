@@ -19,7 +19,6 @@
 from functools import partial
 import logging
 import os
-import warnings
 
 import numpy as np
 import dask
@@ -35,7 +34,6 @@ from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
     MANY_AXIS_PARAMETER,
     )
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.array_tools import (
     _requires_linear_rebin,
@@ -248,14 +246,6 @@ class LazySignal(BaseSignal):
         None
 
         """
-        if "progressbar" in kwargs:
-            warnings.warn(
-                "The `progressbar` keyword is deprecated and will be removed "
-                "in HyperSpy 2.0. Use `show_progressbar` instead.",
-                VisibleDeprecationWarning,
-            )
-            show_progressbar = kwargs["progressbar"]
-
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
@@ -940,24 +930,6 @@ class LazySignal(BaseSignal):
         * :py:class:`~.learn.ornmf.ORNMF`
 
         """
-        if kwargs.get("bounds", False):
-            warnings.warn(
-                "The `bounds` keyword is deprecated and will be removed "
-                "in v2.0. Since version > 1.3 this has no effect.",
-                VisibleDeprecationWarning,
-            )
-            kwargs.pop("bounds", None)
-
-        # Deprecate 'ONMF' for 'ORNMF'
-        if algorithm == "ONMF":
-            warnings.warn(
-                "The argument `algorithm='ONMF'` has been deprecated and will "
-                "be removed in future. Please use `algorithm='ORNMF'` instead.",
-                VisibleDeprecationWarning,
-            )
-            algorithm = "ORNMF"
-
-
         # Check algorithms requiring output_dimension
         algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF"]
         if algorithm in algorithms_require_dimension and output_dimension is None:

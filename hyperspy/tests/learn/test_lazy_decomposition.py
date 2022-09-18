@@ -19,7 +19,6 @@
 import numpy as np
 import pytest
 
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 from hyperspy.signals import Signal1D
 
@@ -198,21 +197,6 @@ class TestLazyDecomposition:
     def test_algorithm_error(self):
         with pytest.raises(ValueError, match="'algorithm' not recognised"):
             self.s.decomposition(algorithm="random")
-
-    def test_bounds_warning(self):
-        with pytest.warns(
-            VisibleDeprecationWarning, match="`bounds` keyword is deprecated"
-        ):
-            self.s.decomposition(bounds=True)
-
-    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
-    @pytest.mark.parametrize("algorithm", ["ONMF"])
-    def test_deprecated_algorithms_warning(self, algorithm):
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match="`algorithm='{}'` has been deprecated".format(algorithm),
-        ):
-            self.s.decomposition(output_dimension=3, algorithm=algorithm)
 
 
 class TestPrintInfo:

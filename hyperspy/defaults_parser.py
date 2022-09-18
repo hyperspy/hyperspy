@@ -132,9 +132,6 @@ class GUIs(t.HasTraits):
         True,
         desc="Display traitsui user interface elements. "
         "Requires installing hyperspy_gui_traitsui.")
-    warn_if_guis_are_missing = t.CBool(
-        True,
-        desc="Not necessary anymore and deprecated.")
 
 
 class PlotConfig(t.HasTraits):

@@ -189,29 +189,27 @@ class MVA:
             In the case of sklearn.decomposition objects, this includes the
             values of all arguments of the chosen sklearn algorithm.
         svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
-            If auto:
-                The solver is selected by a default policy based on `data.shape` and
-                `output_dimension`: if the input data is larger than 500x500 and the
-                number of components to extract is lower than 80% of the smallest
-                dimension of the data, then the more efficient "randomized"
-                method is enabled. Otherwise the exact full SVD is computed and
-                optionally truncated afterwards.
-            If full:
-                run exact SVD, calling the standard LAPACK solver via
-                :py:func:`scipy.linalg.svd`, and select the components by postprocessing
-            If arpack:
-                use truncated SVD, calling ARPACK solver via
-                :py:func:`scipy.sparse.linalg.svds`. It requires strictly
-                `0 < output_dimension < min(data.shape)`
-            If randomized:
-                use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
-                to estimate a limited number of components
-             For cupy arrays, only "full" is supported.
+            * If ``"auto"``: the solver is selected by a default policy based on ``data.shape`` and
+              ``output_dimension``: if the input data is larger than 500x500 and the
+              number of components to extract is lower than 80% of the smallest
+              dimension of the data, then the more efficient ``"randomized"``
+              method is enabled. Otherwise the exact full SVD is computed and
+              optionally truncated afterwards.
+            * If ``"full"``: run exact SVD, calling the standard LAPACK solver via
+              :py:func:`scipy.linalg.svd`, and select the components by postprocessing
+            * If ``"arpack"``: use truncated SVD, calling ARPACK solver via
+              :py:func:`scipy.sparse.linalg.svds`. It strictly requires
+              ``0 < output_dimension < min(data.shape)``
+            * If ``"randomized"``: use truncated SVD, call
+              :py:func:`sklearn.utils.extmath.randomized_svd` to estimate a
+              limited number of components
+
+            For cupy arrays, only "full" is supported.
         copy : bool, default True
-            * If True, stores a copy of the data before any pre-treatments
+            * If ``True``, stores a copy of the data before any pre-treatments
               such as normalization in ``s._data_before_treatments``. The original
               data can then be restored by calling ``s.undo_treatments()``.
-            * If False, no copy is made. This can be beneficial for memory
+            * If ``False``, no copy is made. This can be beneficial for memory
               usage, but care must be taken since data will be overwritten.
         **kwargs : extra keyword arguments
             Any keyword arguments are passed to the decomposition algorithm.
