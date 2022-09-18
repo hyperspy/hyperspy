@@ -17,10 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from __future__ import division
-from packaging.version import Version
 
-
-import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backend_bases import MouseEvent
 import numpy as np
@@ -113,7 +110,8 @@ class WidgetBase(object):
         return self._is_on
 
     def set_on(self, value, render_figure=True):
-        """Change the on state of the widget. If turning off, all patches will
+        """
+        Change the on state of the widget. If turning off, all patches will
         be removed from the matplotlib axes and the widget will disconnect from
         all events. If turning on, the patch(es) will be added to the
         matplotlib axes, and the widget will connect to its default events.
@@ -125,17 +123,8 @@ class WidgetBase(object):
                 self._add_patch_to(self.ax)
                 self.connect(self.ax)
             elif value is False:
-                for container in [
-                        self.ax.patches,
-                        self.ax.lines,
-                        self.ax.artists,
-                        self.ax.texts]:
-                    for p in self.patch:
-                        if p in container:
-                            if Version(matplotlib.__version__) >= Version('3.5.0'):
-                                p.remove()
-                            else:  # pragma: no cover
-                                container.remove(p)
+                for p in self.patch:
+                    p.remove()
                 self.disconnect()
         if hasattr(super(WidgetBase, self), 'set_on'):
             super(WidgetBase, self).set_on(value)
@@ -901,14 +890,8 @@ class ResizersMixin(object):
                     ax.add_artist(r)
                     r.set_animated(self.blit)
             else:
-                for container in [
-                        ax.patches,
-                        ax.lines,
-                        ax.artists,
-                        ax.texts]:
-                    for r in self._resizer_handles:
-                        if r in container:
-                            r.remove()
+                for r in self._resizer_handles:
+                    r.remove()
             self._resizers_on = value
 
     def _get_resizer_size(self):

@@ -1,1 +1,0 @@
-Fix error which occurs when guessing output size in the :py:meth:`~.signal.BaseSignal.map` function and using dask newer than 2022.7.1 

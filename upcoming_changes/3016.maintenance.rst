@@ -1,1 +1,0 @@
-Fix matplotlib ``SpanSelector`` import for matplotlib 3.6
