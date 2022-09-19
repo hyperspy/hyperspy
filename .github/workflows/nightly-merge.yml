@@ -15,7 +15,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Nightly Merge
-      uses: robotology/gh-action-nightly-merge@v1.3.3
+      uses: robotology/gh-action-nightly-merge@22f5e45d028f22837d617fa07512925457eec184
       with:
         stable_branch: 'RELEASE_next_patch'
         development_branch: 'RELEASE_next_minor'
