@@ -1029,7 +1029,7 @@ class RectangularROI(BaseInteractiveROI):
 class CircleROI(BaseInteractiveROI):
     """Selects a circular or annular region in a 2D space. The coordinates of
     the center of the circle are stored in the 'cx' and 'cy' attributes. The
-    radious in the `r` attribute. If an internal radius is defined using the
+    radius in the `r` attribute. If an internal radius is defined using the
     `r_inner` attribute, then an annular region is selected instead.
     `CircleROI` can be used in place of a tuple containing `(cx, cy, r)`, `(cx,
     cy, r, r_inner)` when `r_inner` is not `None`.
@@ -1510,7 +1510,14 @@ class Line2DROI(BaseInteractiveROI):
                 ax.scale = length / len(profile)
             out.events.data_changed.trigger(out)
 
+
 class Polygon2DROI(BaseInteractiveROI):
+    """Selects a polygonal region in a 2D space. The coordinates of the
+    polygon vertices are given as tuples (x, y) in the `points` attribute.
+    An edge runs from the final to the first point in the list. If the
+    polygon self overlaps, the overlapping areas may be considered
+    outside of the polygon and masked away.
+    """
 
     points = []
     _ndim = 2
@@ -1531,16 +1538,9 @@ class Polygon2DROI(BaseInteractiveROI):
         """
         The polygon is defined as valid if more than two points are fully defined.
         """
-        return len(self.points) > 2 and \
-            all( ( None not in point and len(point) == 2 ) for point in self.points )
-
-    def update(self):
-        """Function responsible for updating anything that depends on the ROI.
-        It should be called by implementors whenever the ROI changes.
-        The base implementation simply triggers the changed event.
-        """
-        if self.is_valid():
-            self.events.changed.trigger(self)
+        return len(self.points) > 2 and all( 
+            (None not in point and len(point) == 2) for point in self.points
+            )
 
     def __call__(self, signal, out=None, axes=None):
         if not self.is_valid():
@@ -1554,35 +1554,23 @@ class Polygon2DROI(BaseInteractiveROI):
         for axis in axes:
             if not axis.is_uniform:
                 raise NotImplementedError(
-                        "This ROI cannot operate on a non-uniform axis.")
+                        "This ROI cannot operate on a non-uniform axis."
+                )
         natax = signal.axes_manager._get_axes_in_natural_order()
         # Slice original data with a circumscribed rectangle
-        left   = min(x for x,y in self.points)
-        right  = max(x for x,y in self.points) + 1
-        top    = min(y for x,y in self.points)
-        bottom = max(y for x,y in self.points) + 1
+        left = int(np.floor(min(x for x, y in self.points)))
+        right = int(np.ceil(max(x for x, y in self.points))) + 1
+        top = int(np.floor(min(y for x, y in self.points)))
+        bottom = int(np.ceil(max(y for x, y in self.points))) + 1
 
-        ranges = [[left, right],
-                  [top, bottom]]
+        ranges = [[left, right], [top, bottom]]
         slices = self._make_slices(natax, axes, ranges)
-        ir = [slices[natax.index(axes[0])],
-              slices[natax.index(axes[1])]]
+        ir = [slices[natax.index(axes[0])], slices[natax.index(axes[1])]]
 
-        vx = axes[0].axis[ir[0]]
-        vy = axes[1].axis[ir[1]]
+        mask = self._rasterized_mask((bottom, right))
 
-        # convert to cupy array when necessary
-        if is_cupy_array(signal.data):
-            import cupy as cp
-            vx, vy = cp.array(vx), cp.array(vy)
-
-        gx, gy = np.meshgrid(vx, vy)
-        gr = gx**2 + gy**2
-
-        mask = self._rasterized_mask((bottom,right))
-
-        mask = mask[top:,left:]
-        mask = np.logical_not(mask) # Masked out areas should be True
+        mask = mask[ir[1], ir[0]]
+        mask = np.logical_not(mask)  # Masked out areas should be True
 
         tiles = []
         shape = []
@@ -1622,6 +1610,7 @@ class Polygon2DROI(BaseInteractiveROI):
         roi = out or roi
         if roi._lazy:
             import dask.array as da
+
             mask = da.from_array(mask, chunks=chunks)
         mask = np.broadcast_to(mask, tiles)
         # roi.data = np.ma.masked_array(roi.data, mask, hard_mask=True)
@@ -1651,28 +1640,52 @@ class Polygon2DROI(BaseInteractiveROI):
                 axes_out = axes_manager.navigation_axes[:nd]
             elif axes_manager.signal_dimension >= nd:
                 axes_out = axes_manager.signal_axes[:nd]
-            elif nd == 2 and axes_manager.navigation_dimension == 1 and \
-                    axes_manager.signal_dimension == 1:
+            elif (
+                nd == 2
+                and axes_manager.navigation_dimension == 1
+                and axes_manager.signal_dimension == 1
+            ):
                 # We probably have a navigator plot including both nav and sig
                 # axes.
-                axes_out = (axes_manager.signal_axes[0],
-                            axes_manager.navigation_axes[0], )
+                axes_out = (
+                    axes_manager.signal_axes[0],
+                    axes_manager.navigation_axes[0],
+                )
             else:
                 raise ValueError("Could not find valid axes configuration.")
         elif isinstance(axes, (tuple, list)):
             if len(axes) > nd:
-                raise ValueError("The length of the provided `axes` is larger "
-                                 "than the dimensionality of the ROI.")
+                raise ValueError(
+                    "The length of the provided `axes` is larger "
+                    "than the dimensionality of the ROI."
+                )
             axes_out = axes_manager[axes]
         else:
-            axes_out = (axes_manager[axes], )
+            axes_out = (axes_manager[axes],)
 
         return axes_out
 
-    def _rasterized_mask(self, shape):
+    def _rasterized_mask(self, shape, inverted=False):
         """Utility function to rasterize the polygon into a numpy
-            array with shape (y,x) given by `shape`. The interior
-            of the polygon is `True`."""
+            array with shape (y, x) given by `shape`. The interior
+            of the polygon is `True`.
+
+        Parameters
+        ----------
+        shape : tuple
+            The shape of the returned numpy array. Only the two first dimensions
+            will be operated on, with any following dimensions being assigned the
+            same value depending on the two first.
+        inverted : bool, optional
+            Inverts the array. If `True`, interior of polygon is `False` while the
+            exterior is `True`.
+
+        Returns
+        -------
+        return_value : array
+            boolean numpy array of with a shape of `shape`. The entire or parts of
+            the polygon ROI can be within this shape.
+        """
         mask = np.zeros(shape, dtype=bool)
 
         for row in range(mask.shape[0]):
@@ -1680,26 +1693,47 @@ class Polygon2DROI(BaseInteractiveROI):
             intersections = []
             for pointind in range(len(self.points)):
                 x1, y1 = self.points[pointind]
-                x2, y2 = self.points[(pointind+1)%len(self.points)]
+                x2, y2 = self.points[(pointind + 1) % len(self.points)]
 
                 # Only find intersection if line segment passes through row
                 if (y1 > row) != (y2 > row):
-                    intersection = x1 +  (x2 - x1) * (row - y1) /(y2 - y1)
+                    intersection = x1 + (x2 - x1) * (row - y1) / (y2 - y1)
                     intersections.append(intersection)
                 elif y1 == row and y2 == row:
                     # Ensures edges parallel with row are included
-                    mask[row,round(x1):round(x2)] = True
-                
+                    mask[row, round(x1) : round(x2)] = True
 
             intersections.sort()
 
-            for i in range(1,len(intersections),2):
-                mask[row,round(intersections[i-1]):round(intersections[i])] = True
+            for i in range(1, len(intersections), 2):
+                mask[row, round(intersections[i - 1]) : round(intersections[i])] = True
 
+        if inverted:
+            mask = np.logical_not(mask)
+        
         return mask
 
-    def boolean_mask(self,shape):
-        return self._rasterized_mask(shape)
+    def boolean_mask(self, shape, inverted=False):
+        """Rasterizes the polygon into a numpy boolean array. The interior
+        of the polygon is `True` or `False` depending on `inverted`.
+
+        Parameters
+        ----------
+        shape : tuple
+            The shape of the returned numpy array. Only the two first dimensions
+            will be operated on, with any following dimensions being assigned the
+            same value depending on the two first.
+        inverted : bool, optional
+            Inverts the array. If `True`, interior of polygon is `False` while the 
+            exterior is `True`. 
+
+        Returns
+        -------
+        return_value : array
+            boolean numpy array of with a shape of `shape`. The entire or parts of
+            the polygon ROI can be within this shape.
+        """
+        return self._rasterized_mask(shape, inverted=inverted)
 
     _parse_axes.__doc__ %= PARSE_AXES_DOCSTRING
 
