@@ -13,6 +13,8 @@ steps:
     - lscpu
     - mamba install hyperspy-base --only-deps
     - mamba install scikit-learn pytest pytest-xdist
+    # Need rosettasciio
+    - pip install https://github.com/hyperspy/rosettasciio/archive/refs/heads/main.zip
     - pip install -e .
     - pytest -n 4
 
