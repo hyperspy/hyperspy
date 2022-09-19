@@ -1558,9 +1558,9 @@ class Polygon2DROI(BaseInteractiveROI):
         natax = signal.axes_manager._get_axes_in_natural_order()
         # Slice original data with a circumscribed rectangle
         left   = min(x for x,y in self.points)
-        right  = max(x for x,y in self.points)
+        right  = max(x for x,y in self.points) + 1
         top    = min(y for x,y in self.points)
-        bottom = max(y for x,y in self.points)
+        bottom = max(y for x,y in self.points) + 1
 
         ranges = [[left, right],
                   [top, bottom]]
@@ -1579,26 +1579,10 @@ class Polygon2DROI(BaseInteractiveROI):
         gx, gy = np.meshgrid(vx, vy)
         gr = gx**2 + gy**2
 
-        mask = np.zeros((right,bottom), dtype=bool)
-
-        for row in range(mask.shape[1]):
-
-            intersections = []
-            for pointind in range(len(self.points)):
-                x1, y1 = self.points[pointind]
-                x2, y2 = self.points[(pointind+1)%len(self.points)]
-
-                # Only find intersection if line segment passes through row
-                if (y1 > row) != (y2 > row):
-                    intersection = x1 +  (x2 - x1) * (row - y1) /(y2 - y1)
-                    intersections.append(intersection)
-
-            intersections.sort()
-
-            for i in range(1,len(intersections),2):
-                mask[row,round(intersections[i-1]):round(intersections[i])] = True
+        mask = self._rasterized_mask((bottom,right))
 
         mask = mask[top:,left:]
+        mask = np.logical_not(mask) # Masked out areas should be True
 
         tiles = []
         shape = []
@@ -1632,6 +1616,7 @@ class Polygon2DROI(BaseInteractiveROI):
         else:
             slicer = signal.isig.__getitem__
             slices = slices[nav_dim:]
+            # slices = slices[::-1] # Slicing in signal axes is reversed
 
         roi = slicer(slices, out=out)
         roi = out or roi
@@ -1683,6 +1668,38 @@ class Polygon2DROI(BaseInteractiveROI):
             axes_out = (axes_manager[axes], )
 
         return axes_out
+
+    def _rasterized_mask(self, shape):
+        """Utility function to rasterize the polygon into a numpy
+            array with shape (y,x) given by `shape`. The interior
+            of the polygon is `True`."""
+        mask = np.zeros(shape, dtype=bool)
+
+        for row in range(mask.shape[0]):
+
+            intersections = []
+            for pointind in range(len(self.points)):
+                x1, y1 = self.points[pointind]
+                x2, y2 = self.points[(pointind+1)%len(self.points)]
+
+                # Only find intersection if line segment passes through row
+                if (y1 > row) != (y2 > row):
+                    intersection = x1 +  (x2 - x1) * (row - y1) /(y2 - y1)
+                    intersections.append(intersection)
+                elif y1 == row and y2 == row:
+                    # Ensures edges parallel with row are included
+                    mask[row,round(x1):round(x2)] = True
+                
+
+            intersections.sort()
+
+            for i in range(1,len(intersections),2):
+                mask[row,round(intersections[i-1]):round(intersections[i])] = True
+
+        return mask
+
+    def boolean_mask(self,shape):
+        return self._rasterized_mask(shape)
 
     _parse_axes.__doc__ %= PARSE_AXES_DOCSTRING
 
