@@ -2114,14 +2114,13 @@ class AxesManager(t.HasTraits):
             axis.navigate = tl.pop(0)
 
     def key_navigator(self, event):
-        'Set hotkeys for controlling the indices of the navigator plot'
+        """Set hotkeys for controlling the indices of the navigator plot"""
 
         if self.navigation_dimension == 0:
             # No hotkeys exist that do anything in this case
             return
 
         # keyDict values are (axis_index, direction)
-        # Using arrow keys without Ctrl will be deprecated in 2.0
         mod01 = preferences.Plot.modifier_dims_01
         mod23 = preferences.Plot.modifier_dims_23
         mod45 = preferences.Plot.modifier_dims_45
@@ -2141,10 +2140,10 @@ class AxesManager(t.HasTraits):
 
         keyDict = {
             # axes 0, 1
-            **dict.fromkeys(['left', dim0_decrease, '4'], (0, -1)),
-            **dict.fromkeys(['right', dim0_increase, '6'], (0, +1)),
-            **dict.fromkeys(['up', dim1_decrease, '8'], (1, -1)),
-            **dict.fromkeys(['down', dim1_increase, '2'], (1, +1)),
+            **dict.fromkeys([dim0_decrease, '4'], (0, -1)),
+            **dict.fromkeys([dim0_increase, '6'], (0, +1)),
+            **dict.fromkeys([dim1_decrease, '8'], (1, -1)),
+            **dict.fromkeys([dim1_increase, '2'], (1, +1)),
             # axes 2, 3
             **dict.fromkeys([dim2_decrease], (2, -1)),
             **dict.fromkeys([dim2_increase], (2, +1)),
