@@ -83,4 +83,4 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: ${{ always() }} && ${{ matrix.PYTEST_ARGS_COVERAGE }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
