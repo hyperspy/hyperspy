@@ -798,7 +798,6 @@ class DataAxis(BaseDataAxis):
         self.update_axis()
         self.add_trait("_index", t.Int)
 
-
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and set the
         axis accordingly.
@@ -814,27 +813,7 @@ class DataAxis(BaseDataAxis):
         """
         my_slice = self._get_array_slices(slice_)
         self.axis = self.axis[my_slice]
-        self.update_axis()
         return my_slice
-
-    def update_axis(self):
-        """Set the value of an axis. The axis values need to be ordered.
-
-        Parameters
-        ----------
-        axis : numpy array or list
-
-        Raises
-        ------
-        ValueError if the axis values are not ordered.
-
-        """
-        if len(self.axis) > 1:
-            if isinstance(self.axis, list):
-                self.axis = np.asarray(self.axis)
-            if self._is_increasing_order is None:
-                raise ValueError('The non-uniform axis needs to be ordered.')
-        #self.size = len(self.axis)
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
@@ -847,9 +826,10 @@ class DataAxis(BaseDataAxis):
 
     @axis.setter
     def axis(self, axis):
-        self._axis = axis
-
-
+        if isinstance(axis, list):
+            self._axis = np.asarray(axis)
+        else:
+            self._axis = axis
 
     @property
     def low_value(self):
@@ -880,9 +860,6 @@ class DataAxis(BaseDataAxis):
     @property
     def size(self):
         return len(self._axis)
-
-
-
 
     def calibrate(self, *args, **kwargs):
         raise TypeError("This function works only for uniform axes.")
