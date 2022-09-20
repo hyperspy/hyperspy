@@ -739,13 +739,16 @@ class BaseDataAxis(t.HasTraits):
         otherwise.
 
         """
-        steps = self.axis[1:] - self.axis[:-1]
-        if np.all(steps > 0):
-            return True
-        elif np.all(steps < 0):
-            return False
-        else:
-            # the axis is not ordered
+        try:
+            steps = self.axis[1:] - self.axis[:-1]
+            if np.all(steps > 0):
+                return True
+            elif np.all(steps < 0):
+                return False
+            else:
+                # the axis is not ordered
+                return None
+        except:
             return None
 
 
@@ -837,6 +840,49 @@ class DataAxis(BaseDataAxis):
         d = super().get_axis_dictionary()
         d.update({'axis': self.axis})
         return d
+
+    @property
+    def axis(self):
+        return self._axis
+
+    @axis.setter
+    def axis(self, axis):
+        self._axis = axis
+
+
+
+    @property
+    def low_value(self):
+        if self._is_increasing_order is True:
+            return self.axis[0]
+        elif self._is_increasing_order is False:
+            return self.axis[-1]
+        else:
+            raise NotImplementedError("The axis is not ordered so there is no high/low value")
+
+    @property
+    def high_value(self):
+        if self._is_increasing_order is True:
+            return self.axis[-1]
+        elif self._is_increasing_order is False:
+            return self.axis[0]
+        else:
+            raise NotImplementedError("The axis is not ordered so there is no high/low value")
+
+    @property
+    def low_index(self):
+        return 0
+
+    @property
+    def high_index(self):
+        return self.size - 1
+
+    @property
+    def size(self):
+        return len(self._axis)
+
+
+
 
     def calibrate(self, *args, **kwargs):
         raise TypeError("This function works only for uniform axes.")
