@@ -569,17 +569,6 @@ class TestUniformDataAxis:
         assert ((ax2.units, ax2.scale) ==
                 (self.axis.units, self.axis.scale))
 
-    def test_value_changed_event(self):
-        ax = self.axis
-        m = mock.Mock()
-        ax.events.value_changed.connect(m.trigger_me)
-        ax.value = ax.value
-        assert not m.trigger_me.called
-        ax.value = ax.value + ax.scale * 0.3
-        assert not m.trigger_me.called
-        ax.value = ax.value + ax.scale
-        assert m.trigger_me.called
-
     def test_index_changed_event(self):
         ax = self.axis
         m = mock.Mock()

@@ -859,7 +859,7 @@ class DataAxis(BaseDataAxis):
         self.axis = self.axis[slice_]
 
 
-class FunctionalDataAxis(BaseDataAxis):
+class FunctionalDataAxis(DataAxis):
     """DataAxis class for a non-uniform axis defined through an ``expression``.
 
     A `FunctionalDataAxis` is defined based on an ``expression`` that is
@@ -1118,7 +1118,10 @@ class UniformDataAxis(DataAxis, UnitConversion):
         self.offset = offset
         self.size = size
         self._is_uniform = True
-        self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
+
+    @property
+    def axis(self):
+        return np.arange(self.size)*self.scale+self.offset
 
     def _slice_me(self, _slice):
         """Returns a slice to slice the corresponding data axis and
@@ -1147,7 +1150,7 @@ class UniformDataAxis(DataAxis, UnitConversion):
         return my_slice
 
     def get_axis_dictionary(self):
-        d = super().get_axis_dictionary()
+        d = super(DataAxis, self).get_axis_dictionary()  # don't save the axis object
         d.update({'size': self.size,
                   'scale': self.scale,
                   'offset': self.offset})
@@ -1219,8 +1222,6 @@ class UniformDataAxis(DataAxis, UnitConversion):
             else:
                 raise ValueError("The value is out of the axis limits")
 
-    def update_axis(self):
-        self.axis = self.offset + self.scale * np.arange(self.size)
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
@@ -1277,7 +1278,6 @@ class UniformDataAxis(DataAxis, UnitConversion):
 
         self.offset = self.index2value(i1)
         self.size = i2 - i1
-        self.update_axis()
 
     crop.__doc__ = DataAxis.crop.__doc__
 
@@ -1320,7 +1320,8 @@ class UniformDataAxis(DataAxis, UnitConversion):
         d["_type"] = 'DataAxis'
         self.remove_trait('scale')
         self.remove_trait('offset')
-        self.__init__(**d, axis=self.axis)
+        self.remove_trait('size')
+        self.__init__(**d)
         self.axes_manager = axes_manager
 
 
