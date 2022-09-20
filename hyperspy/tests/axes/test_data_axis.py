@@ -281,6 +281,9 @@ class TestFunctionalDataAxis:
             axis.axis,
             np.arange(10)**2)
 
+    def test_low_value(self):
+        assert self.axis.low_value == 0
+
     def test_create_axis(self):
         axis = create_axis(**self.axis.get_axis_dictionary())
         assert isinstance(axis, FunctionalDataAxis)
