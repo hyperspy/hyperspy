@@ -801,9 +801,9 @@ class DataAxis(BaseDataAxis):
 
     @index.setter
     def index(self, value):
+        self.events.index_changed.trigger(obj=self, index=self.index)
         if self._index != value:
             self._index = value
-            self.events.index_changed.trigger(obj=self, index=self.index)
 
     @property
     def low_index(self):
@@ -1496,7 +1496,7 @@ class AxesManager(t.HasTraits):
         return self._ragged
 
     def _update_trait_handlers(self, remove=False):
-        things = {self._on_index_changed: '_axes.index',
+        things = {self._on_index_changed: '_axes._index',
                   self._on_slice_changed: '_axes.slice',
                   self._on_size_changed: '_axes.size',
                   self._on_scale_changed: '_axes.scale',
@@ -1847,23 +1847,6 @@ class AxesManager(t.HasTraits):
         axis.axes_manager = self
         self._axes.append(axis)
 
-    def _on_index_changed(self):
-        self._update_attributes()
-        self.events.indices_changed.trigger(obj=self)
-
-    def _on_slice_changed(self):
-        self._update_attributes()
-
-    def _on_size_changed(self):
-        self._update_attributes()
-        self.events.any_axis_changed.trigger(obj=self)
-
-    def _on_scale_changed(self):
-        self.events.any_axis_changed.trigger(obj=self)
-
-    def _on_offset_changed(self):
-        self.events.any_axis_changed.trigger(obj=self)
-
     def convert_units(self, axes=None, units=None, same_units=True,
                       factor=0.25):
         """ Convert the scale and the units of the selected axes. If the unit
@@ -2034,6 +2017,23 @@ class AxesManager(t.HasTraits):
                                  if self.navigation_shape else 0)
 
         self._update_max_index()
+
+    def _on_index_changed(self):
+        self._update_attributes()
+        self.events.indices_changed.trigger(obj=self)
+
+    def _on_slice_changed(self):
+        self._update_attributes()
+
+    def _on_size_changed(self):
+        self._update_attributes()
+        self.events.any_axis_changed.trigger(obj=self)
+
+    def _on_scale_changed(self):
+        self.events.any_axis_changed.trigger(obj=self)
+
+    def _on_offset_changed(self):
+        self.events.any_axis_changed.trigger(obj=self)
 
     @property
     def _getitem_tuple(self):

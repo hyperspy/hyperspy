@@ -3223,7 +3223,7 @@ class BaseSignal(FancySlicing,
             s.axes_manager._axes,
             index=axis,
             to_index=to_index)
-        s.axes_manager._update_attributes()
+        #s.axes_manager._update_attributes()
         if optimize:
             s._make_sure_data_is_contiguous()
         return s
@@ -6345,7 +6345,7 @@ class BaseSignal(FancySlicing,
 
         # reconfigure the axes of the axesmanager:
         ram = res.axes_manager
-        ram._update_trait_handlers(remove=True)
+        #ram._update_trait_handlers(remove=True)
         # _axes are ordered in array order
         ram._axes = [ram._axes[i] for i in array_order]
         for i, ax in enumerate(ram._axes):
@@ -6353,8 +6353,8 @@ class BaseSignal(FancySlicing,
                 ax.navigate = True
             else:
                 ax.navigate = False
-        ram._update_attributes()
-        ram._update_trait_handlers(remove=False)
+        #ram._update_attributes()
+        #ram._update_trait_handlers(remove=False)
         res._assign_subclass()
 
         var = res.get_noise_variance()
