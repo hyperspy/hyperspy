@@ -269,20 +269,19 @@ class BaseDataAxis(t.HasTraits):
     """
     name = t.Str()
     units = t.Str()
-    size = t.CInt()
-    low_value = t.Float()
-    high_value = t.Float()
-    value = t.Range('low_value', 'high_value')
-    low_index = t.Int(0)
-    high_index = t.Int()
-    slice = t.Instance(slice)
+    #size = t.CInt()
+    #low_value = t.Float()
+    #high_value = t.Float()
+    #value = t.Range('low_value', 'high_value')
+    #low_index = t.Int(0)
+    #high_index = t.Int()
+    #slice = t.Instance(slice)
     navigate = t.Bool(False)
     is_binned = t.Bool(False)
-    index = t.Range('low_index', 'high_index')
-    axis = t.Array()
+    #index = t.Range('low_index', 'high_index')
+    #axis = t.Array()
 
     def __init__(self,
-                 index_in_array=None,
                  name=None,
                  units=None,
                  navigate=False,
@@ -326,14 +325,6 @@ class BaseDataAxis(t.HasTraits):
 
         self._suppress_value_changed_trigger = False
         self._suppress_update_value = False
-        self.name = name
-        self.units = units
-        self.low_index = 0
-        self.on_trait_change(self._update_slice, 'navigate')
-        self.on_trait_change(self.update_index_bounds, 'size')
-        self.on_trait_change(self._update_bounds, 'axis')
-
-        self.index = 0
         self.navigate = navigate
         self.is_binned = is_binned
         self.axes_manager = None
@@ -346,6 +337,13 @@ class BaseDataAxis(t.HasTraits):
     @property
     def is_uniform(self):
         return self._is_uniform
+
+    @property
+    def slice(self):
+        if self.navigate:
+            return None
+        else:
+            return slice(None)
 
     def _index_changed(self, name, old, new):
         self.events.index_changed.trigger(obj=self, index=self.index)
@@ -792,8 +790,11 @@ class DataAxis(BaseDataAxis):
             navigate=navigate,
             is_binned=is_binned,
             **kwargs)
-        self.axis = axis
+        self.add_trait("_axis", t.Array)
+        self._axis = axis
         self.update_axis()
+        self.add_trait("_index", t.Int)
+
 
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and set the
@@ -830,7 +831,7 @@ class DataAxis(BaseDataAxis):
                 self.axis = np.asarray(self.axis)
             if self._is_increasing_order is None:
                 raise ValueError('The non-uniform axis needs to be ordered.')
-        self.size = len(self.axis)
+        #self.size = len(self.axis)
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
