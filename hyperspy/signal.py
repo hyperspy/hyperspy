@@ -3092,6 +3092,9 @@ class BaseSignal(FancySlicing,
         """
         dc = self.data
         for axis in self.axes_manager._axes:
+            if not axis.is_uniform: # Axis must be uniform to set the size
+                axis.convert_to_uniform_axis()
+                _logger.warning(f"converting axis: {axis} to a UniformDataAxis")
             axis.size = int(dc.shape[axis.index_in_array])
 
     def crop(self, axis, start=None, end=None, convert_units=False):
@@ -3163,7 +3166,6 @@ class BaseSignal(FancySlicing,
         am._update_trait_handlers(remove=True)
         c1 = am._axes[axis1]
         c2 = am._axes[axis2]
-        c1.slice, c2.slice = c2.slice, c1.slice
         c1.navigate, c2.navigate = c2.navigate, c1.navigate
         c1.is_binned, c2.is_binned = c2.is_binned, c1.is_binned
         am._axes[axis1] = c2

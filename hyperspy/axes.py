@@ -653,6 +653,7 @@ class BaseDataAxis(t.HasTraits):
         """Convert to an uniform axis."""
         scale = (self.high_value - self.low_value) / self.size
         offset = self.low_value
+        size = self.size
         d = self.get_axis_dictionary()
         axes_manager = self.axes_manager
         del d["axis"]
@@ -661,7 +662,7 @@ class BaseDataAxis(t.HasTraits):
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
         d["_type"] = 'UniformDataAxis'
         self.__class__ = UniformDataAxis
-        self.__init__(**d, size=self.size, scale=scale, offset=offset)
+        self.__init__(**d, size=size, scale=scale, offset=offset)
         self.axes_manager = axes_manager
 
     @property
@@ -935,7 +936,6 @@ class FunctionalDataAxis(DataAxis):
                 self.x = create_axis(**x)
             else:
                 self.x = x
-                self.size = self.x.size
         self._expression = expression
         if '_type' in parameters:
             del parameters['_type']
@@ -1113,17 +1113,25 @@ class UniformDataAxis(DataAxis, UnitConversion):
         # These traits need to added dynamically to be removed when necessary
         self.add_trait("scale", t.CFloat)
         self.add_trait("offset", t.CFloat)
-        self.add_trait("size", t.CInt)
+        self.add_trait("_size", t.CInt)
 
         self.remove_trait("_axis")
         self.scale = scale
         self.offset = offset
-        self.size = size
+        self._size = size
         self._is_uniform = True
 
     @property
     def axis(self):
         return np.arange(self.size)*self.scale+self.offset
+
+    @property
+    def size(self):
+        return self._size
+
+    @size.setter
+    def size(self, value):
+        self._size = value
 
     def _slice_me(self, _slice):
         """Returns a slice to slice the corresponding data axis and
@@ -2012,7 +2020,7 @@ class AxesManager(t.HasTraits):
 
         self._signal_axes = signal_axes[::-1]
         self._navigation_axes = navigation_axes[::-1]
-        self._getitem_tuple = tuple(getitem_tuple)
+        #self._getitem_tuple = tuple(getitem_tuple)
 
         if len(self.signal_axes) == 1 and self.signal_axes[0].size == 1:
             self._signal_dimension = 0
@@ -2028,47 +2036,62 @@ class AxesManager(t.HasTraits):
         self._update_max_index()
 
     @property
+    def _getitem_tuple(self):
+        getitem_tuple = tuple([a.slice if a.slice is not None else a.index for a in self._axes])
+        return getitem_tuple
+
+    @property
     def signal_axes(self):
         """The signal axes as a tuple."""
-        return self._signal_axes
+        return tuple([a for a in self._axes if not a.navigate][::-1])
 
     @property
     def navigation_axes(self):
         """The navigation axes as a tuple."""
-        return self._navigation_axes
+        return tuple([a for a in self._axes if a.navigate][::-1])
 
     @property
     def signal_shape(self):
         """The shape of the signal space."""
-        return tuple([axis.size for axis in self._signal_axes])
+        return tuple([axis.size if hasattr(axis, "size")
+                      else None for axis in self.signal_axes])
 
     @property
     def navigation_shape(self):
         """The shape of the navigation space."""
         if self.navigation_dimension != 0:
-            return tuple([axis.size for axis in self._navigation_axes])
+            return tuple([axis.size for axis in self.navigation_axes])
         else:
             return ()
 
     @property
     def signal_size(self):
         """The size of the signal space."""
-        return self._signal_size
+        if self.signal_shape == ():
+            return 0
+        else:
+            return np.prod(self.signal_shape)
 
     @property
     def navigation_size(self):
         """The size of the navigation space."""
-        return self._navigation_size
+        if self.navigation_shape == ():
+            return 0
+        else:
+            return np.prod(self.navigation_shape)
 
     @property
     def navigation_dimension(self):
         """The dimension of the navigation space."""
-        return self._navigation_dimension
+        return len(self.navigation_axes)
 
     @property
     def signal_dimension(self):
         """The dimension of the signal space."""
-        return self._signal_dimension
+        if len(self.signal_axes) ==1 and self.signal_axes[0].size==1:
+            return 0
+        else:
+            return len(self.signal_axes)
 
     def _set_signal_dimension(self, value):
         if len(self._axes) == 0 or self._signal_dimension == value:

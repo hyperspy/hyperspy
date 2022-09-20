@@ -350,7 +350,14 @@ class LazySignal(BaseSignal):
         dcshape = dc.shape
         for _axis in self.axes_manager._axes:
             if _axis.index_in_array < len(dcshape):
-                _axis.size = int(dcshape[_axis.index_in_array])
+                if _axis.size != int(dcshape[_axis.index_in_array]):
+                    if _axis.is_uniform:
+                        _axis.size = int(dcshape[_axis.index_in_array])
+                    else:
+                        _logger.warning(f"Axis {_axis} converted to a UniformDataAxis")
+                        _axis.convert_to_uniform_axis()
+                        _axis.size = int(dcshape[_axis.index_in_array])
+
 
         if axis is not None:
             need_axes = self.axes_manager[axis]
