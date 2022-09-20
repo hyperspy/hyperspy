@@ -311,28 +311,11 @@ class BaseDataAxis(t.HasTraits):
             obj : The {} that the event belongs to.
             index : The new index
             """.format(_name, _name, _name), arguments=["obj", 'index'])
-        self.events.value_changed = Event("""
-            Event that triggers when the value of the `{}` changes
 
-            Triggers after the internal state of the `{}` has been
-            updated.
-
-            Arguments:
-            ---------
-            obj : The {} that the event belongs to.
-            value : The new value
-            """.format(_name, _name, _name), arguments=["obj", 'value'])
-
-        self._suppress_value_changed_trigger = False
-        self._suppress_update_value = False
         self.navigate = navigate
         self.is_binned = is_binned
         self.axes_manager = None
         self._is_uniform = False
-
-        # The slice must be updated even if the default value did not
-        # change to correctly set its value.
-        self._update_slice(self.navigate)
 
     @property
     def is_uniform(self):
@@ -344,33 +327,6 @@ class BaseDataAxis(t.HasTraits):
             return None
         else:
             return slice(None)
-
-    def _index_changed(self, name, old, new):
-        self.events.index_changed.trigger(obj=self, index=self.index)
-        if not self._suppress_update_value:
-            new_value = self.axis[self.index]
-            if new_value != self.value:
-                self.value = new_value
-
-    def _value_changed(self, name, old, new):
-        old_index = self.index
-        new_index = self.value2index(new)
-        if old_index != new_index:
-            self.index = new_index
-            if new == self.axis[self.index]:
-                self.events.value_changed.trigger(obj=self, value=new)
-        else:
-            new_value = self.index2value(new_index)
-            if new_value == old:
-                self._suppress_value_changed_trigger = True
-                try:
-                    self.value = new_value
-                finally:
-                    self._suppress_value_changed_trigger = False
-
-            elif new_value == new and not\
-                    self._suppress_value_changed_trigger:
-                self.events.value_changed.trigger(obj=self, value=new)
 
     @property
     def index_in_array(self):
@@ -501,20 +457,6 @@ class BaseDataAxis(t.HasTraits):
 
     def __str__(self):
         return self._get_name() + " axis"
-
-    def update_index_bounds(self):
-        self.high_index = self.size - 1
-
-    def _update_bounds(self):
-        if len(self.axis) != 0:
-            self.low_value, self.high_value = (
-                self.axis.min(), self.axis.max())
-
-    def _update_slice(self, value):
-        if value is False:
-            self.slice = slice(None)
-        else:
-            self.slice = None
 
     def get_axis_dictionary(self):
         return {'_type': self.__class__.__name__,
@@ -797,6 +739,7 @@ class DataAxis(BaseDataAxis):
         self._axis = axis
         self.update_axis()
         self.add_trait("_index", t.Int)
+        self._index = 0
 
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and set the
@@ -841,6 +784,14 @@ class DataAxis(BaseDataAxis):
             raise NotImplementedError("The axis is not ordered so there is no high/low value")
 
     @property
+    def value(self):
+        return self.axis[self.index]
+
+    @value.setter
+    def value(self, val):
+        self.index = self.value2index(val)
+
+    @property
     def high_value(self):
         if self._is_increasing_order is True:
             return self.axis[-1]
@@ -848,6 +799,16 @@ class DataAxis(BaseDataAxis):
             return self.axis[0]
         else:
             raise NotImplementedError("The axis is not ordered so there is no high/low value")
+
+    @property
+    def index(self):
+        return self._index
+
+    @index.setter
+    def index(self, value):
+        if self._index != value:
+            self._index = value
+            self.events.index_changed.trigger(obj=self, index=self.index)
 
     @property
     def low_index(self):
