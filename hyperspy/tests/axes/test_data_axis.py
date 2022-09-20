@@ -99,25 +99,24 @@ class TestDataAxis:
     def test_update_axes(self):
         values = np.arange(20)**2
         self.axis.axis = values.tolist()
-        self.axis.update_axis()
         assert self.axis.size == 20
         assert_allclose(self.axis.axis, values)
 
     def test_update_axes2(self):
         values = np.array([3, 4, 10, 40])
         self.axis.axis = values
-        self.axis.update_axis()
         assert_allclose(self.axis.axis, values)
 
     def test_update_axis_from_list(self):
         values = np.arange(16)**2
         self.axis.axis = values.tolist()
-        self.axis.update_axis()
         assert_allclose(self.axis.axis, values)
 
     def test_unsorted_axis(self):
-        with pytest.raises(ValueError):
-            DataAxis(axis=np.array([10, 40, 1, 30, 20]))
+        values = np.array([10, 40, 1, 30, 20])
+        axis = DataAxis(axis=values)
+        assert_allclose(axis.axis, values)
+        assert axis._is_increasing_order is None
 
     def test_index_changed_event(self):
         ax = self.axis
@@ -131,7 +130,7 @@ class TestDataAxis:
     def test_value_changed_event(self):
         ax = self.axis
         m = mock.Mock()
-        ax.events.value_changed.connect(m.trigger_me)
+        ax.events.index_changed.connect(m.trigger_me)
         ax.value = ax.value
         assert not m.trigger_me.called
         ax.value = ax.value + (ax.axis[1] - ax.axis[0]) * 0.4
