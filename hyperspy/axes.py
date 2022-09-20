@@ -269,17 +269,9 @@ class BaseDataAxis(t.HasTraits):
     """
     name = t.Str()
     units = t.Str()
-    #size = t.CInt()
-    #low_value = t.Float()
-    #high_value = t.Float()
-    #value = t.Range('low_value', 'high_value')
-    #low_index = t.Int(0)
-    #high_index = t.Int()
-    #slice = t.Instance(slice)
+
     navigate = t.Bool(False)
     is_binned = t.Bool(False)
-    #index = t.Range('low_index', 'high_index')
-    #axis = t.Array()
 
     def __init__(self,
                  name=None,
@@ -312,6 +304,8 @@ class BaseDataAxis(t.HasTraits):
             index : The new index
             """.format(_name, _name, _name), arguments=["obj", 'index'])
 
+        self.name=name
+        self.units=units
         self.navigate = navigate
         self.is_binned = is_binned
         self.axes_manager = None
@@ -737,7 +731,6 @@ class DataAxis(BaseDataAxis):
             **kwargs)
         self.add_trait("_axis", t.Array)
         self._axis = axis
-        self.update_axis()
         self.add_trait("_index", t.Int)
         self._index = 0
 
@@ -864,7 +857,6 @@ class DataAxis(BaseDataAxis):
 
         slice_ = self._get_array_slices(slice(start, end))
         self.axis = self.axis[slice_]
-        self.size = len(self.axis)
 
 
 class FunctionalDataAxis(BaseDataAxis):
@@ -1063,7 +1055,7 @@ class FunctionalDataAxis(BaseDataAxis):
         return my_slice
 
 
-class UniformDataAxis(BaseDataAxis, UnitConversion):
+class UniformDataAxis(DataAxis, UnitConversion):
     """DataAxis class for a uniform axis defined through a ``scale``, an
     ``offset`` and a ``size``.
 
@@ -1119,10 +1111,12 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         # These traits need to added dynamically to be removed when necessary
         self.add_trait("scale", t.CFloat)
         self.add_trait("offset", t.CFloat)
+        self.add_trait("size", t.CInt)
+
+        self.remove_trait("_axis")
         self.scale = scale
         self.offset = offset
         self.size = size
-        self.update_axis()
         self._is_uniform = True
         self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
 
