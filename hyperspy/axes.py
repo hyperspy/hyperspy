@@ -801,9 +801,9 @@ class DataAxis(BaseDataAxis):
 
     @index.setter
     def index(self, value):
-        self.events.index_changed.trigger(obj=self, index=self.index)
         if self._index != value:
             self._index = value
+            self.events.index_changed.trigger(obj=self, index=self.index)
 
     @property
     def low_index(self):
@@ -1497,7 +1497,6 @@ class AxesManager(t.HasTraits):
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes._index',
-                  self._on_slice_changed: '_axes.slice',
                   self._on_size_changed: '_axes.size',
                   self._on_scale_changed: '_axes.scale',
                   self._on_offset_changed: '_axes.offset'}
@@ -1701,12 +1700,14 @@ class AxesManager(t.HasTraits):
         """
         self._axes[index_in_axes_manager] = axis
 
-    def _update_max_index(self):
-        self._max_index = 1
+    @property
+    def _max_index(self):
+        _max_index = 1
         for i in self.navigation_shape:
-            self._max_index *= i
-        if self._max_index != 0:
-            self._max_index -= 1
+            _max_index *= i
+        if _max_index != 0:
+            _max_index -= 1
+        return _max_index
 
     @property
     def iterpath(self):
@@ -1983,47 +1984,14 @@ class AxesManager(t.HasTraits):
             self.events.any_axis_changed.trigger(obj=self)
 
     def _update_attributes(self):
-        getitem_tuple = []
-        values = []
-        signal_axes = ()
-        navigation_axes = ()
         for axis in self._axes:
             # Until we find a better place, take property of the axes
             # here to avoid difficult to debug bugs.
             axis.axes_manager = self
-            if axis.slice is None:
-                getitem_tuple += axis.index,
-                values.append(axis.value)
-                navigation_axes += axis,
-            else:
-                getitem_tuple += axis.slice,
-                signal_axes += axis,
-        if not signal_axes and navigation_axes:
-            getitem_tuple[-1] = slice(axis.index, axis.index + 1)
-
-        self._signal_axes = signal_axes[::-1]
-        self._navigation_axes = navigation_axes[::-1]
-        #self._getitem_tuple = tuple(getitem_tuple)
-
-        if len(self.signal_axes) == 1 and self.signal_axes[0].size == 1:
-            self._signal_dimension = 0
-        else:
-            self._signal_dimension = len(self.signal_axes)
-        self._navigation_dimension = len(self.navigation_axes)
-
-        self._signal_size = (np.prod(self.signal_shape)
-                             if self.signal_shape else 0)
-        self._navigation_size = (np.prod(self.navigation_shape)
-                                 if self.navigation_shape else 0)
-
-        self._update_max_index()
 
     def _on_index_changed(self):
         self._update_attributes()
         self.events.indices_changed.trigger(obj=self)
-
-    def _on_slice_changed(self):
-        self._update_attributes()
 
     def _on_size_changed(self):
         self._update_attributes()
@@ -2094,7 +2062,7 @@ class AxesManager(t.HasTraits):
             return len(self.signal_axes)
 
     def _set_signal_dimension(self, value):
-        if len(self._axes) == 0 or self._signal_dimension == value:
+        if len(self._axes) == 0 or self.signal_dimension == value:
             # Nothing to be done
             return
         elif self.ragged and value > 0:
