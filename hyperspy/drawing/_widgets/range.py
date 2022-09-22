@@ -18,13 +18,18 @@
 
 import inspect
 import logging
+from packaging.version import Version
 
+import matplotlib
 import numpy as np
 
-from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
+from hyperspy.drawing.widget import ResizableDraggableWidgetBase
 from hyperspy.defaults_parser import preferences
 
-from hyperspy.external.matplotlib.widgets import SpanSelector
+if Version(matplotlib.__version__) >= Version('3.6.0'):
+    from matplotlib.widgets import SpanSelector
+else:
+    from hyperspy.external.matplotlib.widgets import SpanSelector
 
 _logger = logging.getLogger(__name__)
 

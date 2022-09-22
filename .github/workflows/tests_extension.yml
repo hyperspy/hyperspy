@@ -10,7 +10,7 @@ on:
 
 jobs:
   integration_test:
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'run-extension-tests') }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'run-extension-tests') || github.event_name == 'workflow_dispatch' }}
     name: Extension_${{ matrix.EXTENSION_VERSION }}
     runs-on: ubuntu-latest
     strategy:
@@ -63,10 +63,17 @@ jobs:
           pip install https://github.com/pyxem/pyxem/archive/master.zip
           pip install https://gitlab.com/atomap/atomap/-/archive/master/atomap-master.zip
 
+      - name: Install xvfb
+        run: |
+          # required for running kikuchipy test suite
+          sudo apt-get install xvfb
+
       - name: Run Kikuchipy Test Suite
         if: ${{ always() }}
         run: |
-          python -m pytest --pyargs kikuchipy
+          # Virtual buffer (xvfb) required for tests using PyVista
+          sudo apt-get install xvfb
+          xvfb-run python -m pytest --pyargs kikuchipy
 
       - name: Run LumiSpy Test Suite
         if: ${{ always() }}

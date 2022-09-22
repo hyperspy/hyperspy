@@ -16,11 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import os
 import logging
 import math
+import os
+import warnings
 
-import matplotlib.pyplot as plt
 import numpy as np
 import dask.array as da
 from scipy import interpolate
@@ -29,7 +29,8 @@ from scipy.ndimage import gaussian_filter1d
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal1d import CommonSignal1D
-from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
+from hyperspy.signal_tools import (
+    SpikesRemoval, SpikesRemovalInteractive, SimpleMessage)
 from hyperspy.models.model1d import Model1D
 from hyperspy.misc.lowess_smooth import lowess
 from hyperspy.misc.utils import is_binned # remove in v2.0
@@ -270,9 +271,15 @@ class Signal1D(BaseSignal, CommonSignal1D):
             raise ValueError("Signal1D can't be ragged.")
         super().__init__(*args, **kwargs)
 
-    def _get_spikes_diagnosis_histogram_data(self, signal_mask=None,
-                                             navigation_mask=None,
-                                             **kwargs):
+    def _spikes_diagnosis(
+            self,
+            signal_mask=None,
+            navigation_mask=None,
+            show_plot=False,
+            use_gui=False,
+            **kwargs
+            ):
+
         self._check_signal_dimension_equals_one()
         dc = self.data
         axis = self.axes_manager.signal_axes[0].axis
@@ -281,22 +288,41 @@ class Signal1D(BaseSignal, CommonSignal1D):
             axis = axis[~signal_mask]
         if navigation_mask is not None:
             dc = dc[~navigation_mask, :]
+        if dc.size == 0:
+            raise ValueError("The data size must be higher than 0.")
         der = abs(np.gradient(dc, axis, axis=-1))
         n = ((~navigation_mask).sum() if navigation_mask else
              self.axes_manager.navigation_size)
 
         # arbitrary cutoff for number of spectra necessary before histogram
         # data is compressed by finding maxima of each spectrum
-        tmp = BaseSignal(der) if n < 2000 else BaseSignal(
-            np.ravel(der.max(-1)))
+        tmp = BaseSignal(der) if n < 2000 else BaseSignal(np.ravel(der.max(-1)))
 
-        # get histogram signal using smart binning and plot
-        return tmp.get_histogram(**kwargs)
+        s_ = tmp.get_histogram(**kwargs)
+        s_.axes_manager[0].name = "Derivative magnitude"
+        s_.metadata.Signal.quantity = "Counts"
+        s_.metadata.General.title = "Spikes Analysis"
 
-    def spikes_diagnosis(self, signal_mask=None,
-                         navigation_mask=None,
-                         **kwargs):
-        """Plots a histogram to help in choosing the threshold for
+        if s_.data.size == 1:
+            message = "The derivative of the data is constant."
+            if use_gui:
+                m = SimpleMessage(text=message)
+                try:
+                    m.gui()
+                except (NotImplementedError, ImportError):
+                    # This is only available for traitsui, in case of ipywidgets
+                    # we show a warning
+                    warnings.warn(message)
+            else:
+                warnings.warn(message)
+        elif show_plot:
+            s_.plot(norm="log")
+
+        return s_
+
+    def spikes_diagnosis(self, signal_mask=None, navigation_mask=None, **kwargs):
+        """
+        Plots a histogram to help in choosing the threshold for
         spikes removal.
 
         Parameters
@@ -312,27 +338,13 @@ class Signal1D(BaseSignal, CommonSignal1D):
         spikes_removal_tool
 
         """
-        tmph = self._get_spikes_diagnosis_histogram_data(signal_mask,
-                                                         navigation_mask,
-                                                         **kwargs)
-        tmph.plot()
-
-        # Customize plot appearance
-        plt.gca().set_title('')
-        plt.gca().fill_between(tmph.axes_manager[0].axis,
-                               tmph.data,
-                               facecolor='#fddbc7',
-                               interpolate=True,
-                               color='none')
-        ax = tmph._plot.signal_plot.ax
-        axl = tmph._plot.signal_plot.ax_lines[0]
-        axl.set_line_properties(color='#b2182b')
-        plt.xlabel('Derivative magnitude')
-        plt.ylabel('Log(Counts)')
-        ax.set_yscale('log')
-        ax.set_ylim(10 ** -1, plt.ylim()[1])
-        ax.set_xlim(plt.xlim()[0], 1.1 * plt.xlim()[1])
-        plt.draw()
+        self._spikes_diagnosis(
+            signal_mask=signal_mask,
+            navigation_mask=navigation_mask,
+            show_plot=True,
+            use_gui=False,
+            **kwargs
+            )
 
     spikes_diagnosis.__doc__ %= (SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG)
 
@@ -934,8 +946,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self._check_signal_dimension_equals_one()
         if not self.axes_manager.signal_axes[0].is_uniform:
             raise NotImplementedError(
-            "This functionality is not implement for signals with non-uniform axes. ")
-            "Consider using `smooth_lowess` instead."
+            "This functionality is not implemented for signals with non-uniform axes. "
+            "Consider using `smooth_lowess` instead.")
         if (polynomial_order is not None and
                 window_length is not None):
             axis = self.axes_manager.signal_axes[0]
@@ -1041,8 +1053,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self._check_signal_dimension_equals_one()
         if not self.axes_manager.signal_axes[0].is_uniform:
             raise NotImplementedError(
-            "This functionality is not implement for signals with non-uniform axes. ")
-            "Consider using `smooth_lowess` instead."
+            "This functionality is not implemented for signals with non-uniform axes. "
+            "Consider using `smooth_lowess` instead.")
         if smoothing_parameter is None:
             smoother = SmoothingTV(self)
             return smoother.gui(display=display, toolkit=toolkit)
@@ -1076,8 +1088,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         """
         if not self.axes_manager.signal_axes[0].is_uniform:
             raise NotImplementedError(
-            "This functionality is not implement for signals with non-uniform axes. ")
-            "Consider using `smooth_lowess` instead."
+            "This functionality is not implemented for signals with non-uniform axes. "
+            "Consider using `smooth_lowess` instead.")
         self._check_signal_dimension_equals_one()
         smoother = ButterworthFilter(self)
         if cutoff_frequency_ratio is not None:

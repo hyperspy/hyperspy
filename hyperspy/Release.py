@@ -25,7 +25,7 @@ name = 'hyperspy'
 # When running setup.py the ".dev" string will be replaced (if possible)
 # by the output of "git describe" if git is available or the git
 # hash if .git is present.
-version = "1.7.1.dev0"
+version = "1.8.0.dev0"
 __version__ = version
 description = "Multidimensional data analysis toolbox"
 license = 'GPL v3'
@@ -33,10 +33,10 @@ license = 'GPL v3'
 authors = {
     'all': ('The HyperSpy developers',), }
 
-url = 'http://hyperspy.org'
+url = 'https://hyperspy.org'
 
-download_url = 'http://www.hyperspy.org'
-documentation_url = 'http://hyperspy.org/hyperspy-doc/current/index.html'
+download_url = 'https://www.hyperspy.org'
+documentation_url = 'https://hyperspy.org/hyperspy-doc/current/index.html'
 
 PROJECT_URLS = {
     'Bug Tracker': 'https://github.com/hyperspy/hyperspy/issues',
@@ -84,6 +84,6 @@ info = """
     H y p e r S p y
     Version %s
 
-    http://www.hyperspy.org
+    https://www.hyperspy.org
 
     """ % version.replace('_', ' ')

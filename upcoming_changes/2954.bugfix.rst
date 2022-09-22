@@ -1,1 +1,0 @@
-Fix stacking signals that contain their variance in metadata. Previously it was raising an error when specifying the stacking axis.

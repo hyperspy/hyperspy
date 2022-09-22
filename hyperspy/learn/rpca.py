@@ -224,7 +224,7 @@ class ORPCA:
         via Stochastic Optimization", Advances in Neural Information Processing
         Systems 26, (2013), pp. 404-412.
     .. [Ruder2016] Sebastian Ruder, "An overview of gradient descent optimization
-        algorithms", arXiv:1609.04747, (2016), http://arxiv.org/abs/1609.04747.
+        algorithms", arXiv:1609.04747, (2016), https://arxiv.org/abs/1609.04747.
 
     """
 

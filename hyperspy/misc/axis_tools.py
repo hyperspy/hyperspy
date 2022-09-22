@@ -46,7 +46,6 @@ def check_axes_calibration(ax1, ax2, rtol=1e-7):
             unit1 = Unit(ax1.units)
         except:
             unit1 = ax1.units
-            pass
         try:
             unit2 = ax2.units
             unit2 = Unit(ax2.units)

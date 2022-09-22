@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.drawing.widgets import Widget1DBase
+from hyperspy.drawing.widget import Widget1DBase
 from hyperspy.drawing.utils import picker_kwargs
 from hyperspy.defaults_parser import preferences
 
@@ -31,13 +31,19 @@ class VerticalLineWidget(Widget1DBase):
             self.patch[0].set_xdata(self._pos[0])
             self.draw_patch()
 
+    def _add_patch_to(self, ax):
+        """Create and add the matplotlib patches to 'ax'"""
+        self.blit = hasattr(ax, 'hspy_fig') and ax.figure.canvas.supports_blit
+        self._set_patch()
+        for p in self.patch:
+            p.set_animated(self.blit)
+
     def _set_patch(self):
         ax = self.ax
         kwargs = picker_kwargs(preferences.Plot.pick_tolerance)
-        self._patch = [ax.axvline(self._pos[0],
-                                  color=self.color,
-                                  alpha=self.alpha,
-                                  **kwargs)]
+        self._patch = [
+            ax.axvline(self._pos[0], color=self.color, alpha=self.alpha, **kwargs)
+            ]
 
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""

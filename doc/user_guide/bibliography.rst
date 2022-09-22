@@ -28,7 +28,7 @@ Bibliography
    of Atomic Form Factors, Photoelectric Absorption and Scattering Cross
    Section, and Mass Attenuation Coefficients for Z = 1-92 from E = 1-10 eV
    to E = 0.4-1.0 MeV" *NIST Standard Reference Data*
-   [`<http://physics.nist.gov/ffast>`_].
+   [`<https://physics.nist.gov/ffast>`_].
 
 .. _Egerton2011:
 
@@ -169,7 +169,7 @@ Bibliography
 :ref:`[Zhou2011] <Zhou2011>`
    T. Zhou and D. Tao, "GoDec: Randomized Low-rank
    & Sparse Matrix Decomposition in Noisy Case", *ICML-11* (2011): 33–40
-   [`<http://www.icml-2011.org/papers/41_icmlpaper.pdf>`_].
+   [`<https://icml.cc/Conferences/2011/papers/41_icmlpaper.pdf>`_].
 
 .. _Schaffer2004:
 
@@ -199,9 +199,9 @@ Bibliography
 .. _Lerotic2004:
 
 :ref:`[Lerotic2004] <Lerotic2004>`
-   M Lerotic, C Jacobsen, T Schafer, S Vogt 
+   M Lerotic, C Jacobsen, T Schafer, S Vogt
    "Cluster analysis of soft X-ray spectromicroscopy data".
-   Ultramicroscopy 100 (2004) 35–57 
+   Ultramicroscopy 100 (2004) 35–57
    [`<https://doi.org/10.1016/j.ultramic.2004.01.008>`_]
 
 .. _Iakoubovskii2008:

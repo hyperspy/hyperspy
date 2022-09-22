@@ -1,6 +1,6 @@
 """
-Ported first from the astroML project: http://astroml.org/
-Ported again from the astropy project: http://astropy.org/
+Ported first from the astroML project: https://astroml.org/
+Ported again from the astropy project: https://astropy.org/
 
 Bayesian Blocks for Time Series Analysis
 ========================================
@@ -35,8 +35,8 @@ function.
 
 References
 ----------
-.. [1] http://adsabs.harvard.edu/abs/2012arXiv1207.5578S
-.. [2] http://astroml.org/ https://github.com//astroML/astroML/
+.. [1] https://adsabs.harvard.edu/abs/2012arXiv1207.5578S
+.. [2] https://astroml.org/ https://github.com//astroML/astroML/
 """
 import warnings
 
@@ -136,7 +136,7 @@ def bayesian_blocks(t, x=None, sigma=None, fitness="events", **kwargs):
     References
     ----------
     .. [1] Scargle, J et al. (2012)
-       http://adsabs.harvard.edu/abs/2012arXiv1207.5578S
+       https://adsabs.harvard.edu/abs/2012arXiv1207.5578S
 
     See Also
     --------
@@ -193,7 +193,7 @@ class FitnessFunc:
     References
     ----------
     .. [1] Scargle, J et al. (2012)
-       http://adsabs.harvard.edu/abs/2012arXiv1207.5578S
+       https://adsabs.harvard.edu/abs/2012arXiv1207.5578S
     """
 
     def __init__(self, p0=0.05, gamma=None, ncp_prior=None):

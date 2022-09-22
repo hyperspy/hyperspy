@@ -499,7 +499,6 @@ def _quantification_cliff_lorimer(intensities,
             / (intensities[i] * absorption_correction[i]) \
             *( kfactors[ref_index] / kfactors[i])
     # Ca = ab /(1 + ab + ab/ac + ab/ad + ...)
-    ab = ab
     for i in other_index:
         if i == ref_index2:
             composition[ref_index] += ab[ref_index2]

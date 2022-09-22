@@ -814,7 +814,7 @@ augmented binary assignments (+=, -=, \*=, /=, //=, %=, \*\*=, <<=, >>=, &=,
 
 These operations are performed element-wise. When the dimensions of the signals
 are not equal `numpy broadcasting rules apply
-<http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_ independently
+<https://numpy.org/doc/stable/user/basics.broadcasting.html>`_ independently
 for the navigation and signal axes.
 
 .. WARNING::
@@ -919,7 +919,7 @@ the original data, a property that we can use to perform operations on the
 data.  For example, the following code rotates the image at each coordinate  by
 a given angle and uses the :py:func:`~.utils.stack` function in combination
 with `list comprehensions
-<http://docs.python.org/2/tutorial/datastructures.html#list-comprehensions>`_
+<https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions>`_
 to make a horizontal "collage" of the image stack:
 
 .. code-block:: python

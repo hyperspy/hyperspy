@@ -40,6 +40,16 @@ extensions = [
     'sphinxcontrib.towncrier',
 ]
 
+linkcheck_ignore = [
+    'https://www.jstor.org/stable/24307705',  # 403 Client Error: Forbidden for url
+    'https://anaconda.org',  # 403 Client Error: Forbidden for url
+]
+
+linkcheck_exclude_documents = [
+    'user_guide/io/*',
+    'api/hyperspy.io_plugins*',
+    ]
+
 try:
     import sphinxcontrib.spelling
     extensions.append('sphinxcontrib.spelling')
