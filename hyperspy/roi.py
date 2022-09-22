@@ -1511,35 +1511,61 @@ class Line2DROI(BaseInteractiveROI):
             out.events.data_changed.trigger(out)
 
 
-class Polygon2DROI(BaseInteractiveROI):
+class PolygonROI(BaseROI):
     """Selects a polygonal region in a 2D space. The coordinates of the
-    polygon vertices are given as tuples (x, y) in the `points` attribute.
-    An edge runs from the final to the first point in the list. If the
-    polygon self overlaps, the overlapping areas may be considered
+    polygon vertices are given as a list of tuples (x, y) in the `points`
+    attribute. An edge runs from the final to the first point in the list.
+    If the polygon self overlaps, the overlapping areas may be considered
     outside of the polygon and masked away.
     """
 
     points = []
     _ndim = 2
 
-    def __init__(self, points=None):
-        super(Polygon2DROI, self).__init__()
-        self.points = points if points else []
+    def __init__(self, points = None):
+        super(PolygonROI, self).__init__()
+        if points:
+            self.set_vertices(points)
+        else:
+            points = []
 
     @property
     def parameters(self):
         propertydict = {}
-        for i, (x, y) in enumerate(self.points):
-            propertydict[f"x{i}"] = x
-            propertydict[f"y{i}"] = y
+        for i, p in enumerate(self.points):
+            propertydict[f"p{i}"] = p
         return propertydict
+
+    def __repr__(self):
+        para = []
+        for name, value in self.parameters.items():
+            para.append(f"{name}=({value[0]:G}, {value[1]:G})")
+        return f"{self.__class__.__name__}({', '.join(para)})"
 
     def is_valid(self):
         """
         The polygon is defined as valid if more than two points are fully defined.
         """
-        return len(self.points) > 2 and all( 
+        return len(self.points) > 2 and all(
             (None not in point and len(point) == 2) for point in self.points
+            )
+
+    def set_vertices(self, vertices):
+        """Sets the vertices of the polygon to the `points` argument,
+        where each vertex is to be given by (x, y). The list is set to
+        loop around, such that an edge runs from the first to the final
+        vertex in the list.
+
+        Parameters
+        ----------
+        points : list of tuples
+            List of (x, y) values of the vertices of the polygon.
+        """
+        self.points = vertices
+        if not self.is_valid():
+            raise ValueError(
+                f"`points` is not a list of fully defined two-dimensional points with at least \
+                    three entries:\n{vertices}"
             )
 
     def __call__(self, signal, out=None, axes=None):
@@ -1558,16 +1584,16 @@ class Polygon2DROI(BaseInteractiveROI):
                 )
         natax = signal.axes_manager._get_axes_in_natural_order()
         # Slice original data with a circumscribed rectangle
-        left = int(np.floor(min(x for x, y in self.points)))
-        right = int(np.ceil(max(x for x, y in self.points))) + 1
-        top = int(np.floor(min(y for x, y in self.points)))
-        bottom = int(np.ceil(max(y for x, y in self.points))) + 1
+        left = min(x for x, y in self.points)
+        right = max(x for x, y in self.points)
+        top = min(y for x, y in self.points) + axes[0].scale # 
+        bottom = max(y for x, y in self.points) + axes[1].scale
 
         ranges = [[left, right], [top, bottom]]
         slices = self._make_slices(natax, axes, ranges)
         ir = [slices[natax.index(axes[0])], slices[natax.index(axes[1])]]
 
-        mask = self._rasterized_mask((bottom, right))
+        mask = self._rasterized_mask(scale_x=axes[1].scale, scale_y=axes[0].scale)
 
         mask = mask[ir[1], ir[0]]
         mask = np.logical_not(mask)  # Masked out areas should be True
@@ -1620,53 +1646,8 @@ class Polygon2DROI(BaseInteractiveROI):
         else:
             out.events.data_changed.trigger(out)
 
-    def _parse_axes(self, axes, axes_manager):
-        """Utility function to parse the 'axes' argument to a list of
-        :py:class:`~hyperspy.axes.DataAxis`.
-
-        Parameters
-        ----------
-        %s
-        axes_manager : :py:class:`~hyperspy.axes.AxesManager`
-            The AxesManager to use for parsing axes
-
-        Returns
-        -------
-        tuple of :py:class:`~hyperspy.axes.DataAxis`
-        """
-        nd = self.ndim
-        if axes is None:
-            if axes_manager.navigation_dimension >= nd:
-                axes_out = axes_manager.navigation_axes[:nd]
-            elif axes_manager.signal_dimension >= nd:
-                axes_out = axes_manager.signal_axes[:nd]
-            elif (
-                nd == 2
-                and axes_manager.navigation_dimension == 1
-                and axes_manager.signal_dimension == 1
-            ):
-                # We probably have a navigator plot including both nav and sig
-                # axes.
-                axes_out = (
-                    axes_manager.signal_axes[0],
-                    axes_manager.navigation_axes[0],
-                )
-            else:
-                raise ValueError("Could not find valid axes configuration.")
-        elif isinstance(axes, (tuple, list)):
-            if len(axes) > nd:
-                raise ValueError(
-                    "The length of the provided `axes` is larger "
-                    "than the dimensionality of the ROI."
-                )
-            axes_out = axes_manager[axes]
-        else:
-            axes_out = (axes_manager[axes],)
-
-        return axes_out
-
-    def _rasterized_mask(self, shape, inverted=False):
-        """Utility function to rasterize the polygon into a numpy
+    def _rasterized_mask(self, xy_max = None, xy_min = (0,0), inverted=False, scale_x=1, scale_y=1):
+        """Utility function to rasterize the polygon into a boolean numpy
             array with shape (y, x) given by `shape`. The interior
             of the polygon is `True`.
 
@@ -1686,9 +1667,23 @@ class Polygon2DROI(BaseInteractiveROI):
             boolean numpy array of with a shape of `shape`. The entire or parts of
             the polygon ROI can be within this shape.
         """
-        mask = np.zeros(shape, dtype=bool)
+
+        
+        if not xy_max:
+            x_max = max(x for x, y in self.points)
+            y_max = max(y for x, y in self.points)
+            xy_max = (x_max, y_max)
+
+        min_index_x = round(xy_min[0]/scale_x)
+        min_index_y = round(xy_min[1]/scale_y)
+        max_index_x = round(xy_max[0]/scale_x)
+        max_index_y = round(xy_max[1]/scale_y)
+        
+        mask = np.zeros((max_index_y - min_index_y + 1, max_index_x - min_index_x + 1), dtype=bool)
 
         for row in range(mask.shape[0]):
+            row_y = (min_index_y + row) * scale_y
+            # row_y = xy_min[1] + (xy_max[1]-xy_min[1])*row/(mask.shape[0] - 1)
 
             intersections = []
             for pointind in range(len(self.points)):
@@ -1696,17 +1691,23 @@ class Polygon2DROI(BaseInteractiveROI):
                 x2, y2 = self.points[(pointind + 1) % len(self.points)]
 
                 # Only find intersection if line segment passes through row
-                if (y1 > row) != (y2 > row):
-                    intersection = x1 + (x2 - x1) * (row - y1) / (y2 - y1)
+                if (y1 > row_y) != (y2 > row_y):
+                    intersection = x1 + (x2 - x1) * (row_y - y1) / (y2 - y1)
                     intersections.append(intersection)
-                elif y1 == row and y2 == row:
-                    # Ensures edges parallel with row are included
-                    mask[row, round(x1) : round(x2)] = True
+                elif y1 == row_y:
+                    if y1 == y2:
+                        # Ensures edges parallel with row_y are included
+                        mask[row, round(x1/scale_x) - min_index_x : round(x2/scale_x) - min_index_x] = True
+                    else:
+                        # Ensures vertices landing exactly on row_y are included
+                        mask[row, round(x1/scale_x) - min_index_x] = True
 
             intersections.sort()
 
             for i in range(1, len(intersections), 2):
-                mask[row, round(intersections[i - 1]) : round(intersections[i])] = True
+                raster_start = round(intersections[i - 1]/scale_x) - min_index_x
+                raster_end = round(intersections[i]/scale_x) - min_index_x
+                mask[row, raster_start : raster_end + 1] = True
 
         if inverted:
             mask = np.logical_not(mask)
@@ -1724,8 +1725,8 @@ class Polygon2DROI(BaseInteractiveROI):
             will be operated on, with any following dimensions being assigned the
             same value depending on the two first.
         inverted : bool, optional
-            Inverts the array. If `True`, interior of polygon is `False` while the 
-            exterior is `True`. 
+            Inverts the array. If `True`, interior of polygon is `False` while the
+            exterior is `True`.
 
         Returns
         -------
@@ -1734,8 +1735,6 @@ class Polygon2DROI(BaseInteractiveROI):
             the polygon ROI can be within this shape.
         """
         return self._rasterized_mask(shape, inverted=inverted)
-
-    _parse_axes.__doc__ %= PARSE_AXES_DOCSTRING
 
 
 def _get_central_half_limits_of_axis(ax):

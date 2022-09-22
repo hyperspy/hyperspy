@@ -196,12 +196,13 @@ def test_dir_utils_roi():
 
     d = dir(hyperspy.utils.roi)
     assert d == [
-        "CircleROI",
-        "Line2DROI",
-        "Point1DROI",
-        "Point2DROI",
-        "RectangularROI",
-        "SpanROI",
+        'CircleROI',
+        'Line2DROI',
+        'Point1DROI',
+        'Point2DROI',
+        'PolygonROI',
+        'RectangularROI',
+        'SpanROI',
     ]
 
 
