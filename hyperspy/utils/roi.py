@@ -24,7 +24,7 @@ from hyperspy.roi import (
     Point2DROI,
     RectangularROI,
     SpanROI,
-    Polygon2DROI
+    PolygonROI
 )
 
 
@@ -38,7 +38,7 @@ __all__ = [
     'Point2DROI',
     'RectangularROI',
     'SpanROI',
-    'Polygon2DROI'
+    'PolygonROI'
 ]
 
 

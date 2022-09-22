@@ -24,6 +24,7 @@ import hyperspy
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.array_tools import round_half_towards_zero
 from hyperspy.roi import (
+    PolygonROI,
     CircleROI,
     Line2DROI,
     Point1DROI,
@@ -439,6 +440,47 @@ class TestROIs:
         r_ann = CircleROI(20, 25, 20, 15)
         assert tuple(r_ann) == (20, 25, 20, 15)
 
+    def test_polygon_spec(self):
+        s = self.s_s
+        s.data = np.ones_like(s.data)
+        r = PolygonROI([(20, 20), (25, 20), (20, 25)])
+        sr = r(s)
+        scale = s.axes_manager[0].scale
+        n = 6
+        assert sr.axes_manager.navigation_shape == (n, n)
+        # Check that mask is same for all images:
+        for i in range(n):
+            for j in range(n):
+                assert (np.all(sr.data[j, i, :] == np.nan) or
+                        np.all(sr.data[j, i, :] != np.nan))
+        # Check that the correct elements has been masked out:
+        mask = sr.data[:, :, 0]
+        print(mask)   # To help debugging, this shows the shape of the mask
+        np.testing.assert_array_equal(
+            np.where(np.isnan(mask.flatten()))[0],
+            [0, 1, 6, 7, 8, 15, 48, 55, 56, 57, 62, 63])
+        mask_ann = sr_ann.data[:, :, 0]
+        print(mask_ann)   # To help debugging, this shows the shape of the mask
+        np.testing.assert_array_equal(
+            np.where(np.isnan(mask_ann.flatten()))[0],
+            [0, 1, 6, 7, 8, 10, 11, 12, 13, 15, 17, 18, 19, 20, 21, 22, 25,
+             26, 27, 28, 29, 30, 33, 34, 35, 36, 37, 38, 41, 42, 43, 44, 45, 46,
+             48, 50, 51, 52, 53, 55, 56, 57, 62, 63])
+        # Check that mask works for sum
+        assert np.nansum(sr.data) == (n**2 - 3 * 4) * 4
+        assert np.nansum(sr_ann.data) == 4 * 5 * 4
+
+        s.plot()
+        r_signal = r.interactive(signal=s)
+        r_ann_signal = r_ann.interactive(signal=s)
+
+        assert np.sum(r_signal.nansum().data) == (n**2 - 3 * 4) * 4
+        assert np.sum(r_ann_signal.nansum().data) == 4 * 5 * 4
+
+    def test_polygon_getitem(self):
+        r = PolygonROI([(2, 5), (5, 6), (5, 3)])
+        assert tuple(r) == ((2, 5), (5, 6), (5, 3))
+
     def test_2d_line_getitem(self):
         r = Line2DROI(10, 10, 150, 50, 5)
         assert tuple(r) == (10, 10, 150, 50, 5)
@@ -706,6 +748,10 @@ class TestROIs:
                 assert value == t.Undefined
             assert tuple(r)[-1] == 0
             repr(r)
+        for roi in [PolygonROI]:
+            r = roi()
+            assert tuple(r) == tuple()
+            repr(r)
 
     def test_repr_vals(self):
         repr(Point1DROI(1.1))
@@ -715,6 +761,8 @@ class TestROIs:
         repr(SpanROI(3.0, 5.0))
         repr(CircleROI(5, 5, 3))
         repr(CircleROI(5, 5, 3, 1))
+        repr(PolygonROI([(0, 0), (0, 6.0), (2.1, 3)]))
+        repr(PolygonROI([(0, 0), (0, 6.0), (2.1, 3), (1, -1)]))
 
     def test_undefined_call(self):
         for roi in [
@@ -724,6 +772,7 @@ class TestROIs:
             SpanROI,
             Line2DROI,
             CircleROI,
+            PolygonROI,
         ]:
             r = roi()
             with pytest.raises(ValueError, match="not yet been set"):
