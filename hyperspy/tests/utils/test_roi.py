@@ -442,40 +442,45 @@ class TestROIs:
 
     def test_polygon_spec(self):
         s = self.s_s
+
         s.data = np.ones_like(s.data)
-        r = PolygonROI([(20, 20), (25, 20), (20, 25)])
+        r = PolygonROI(
+            [(20, 5), (35, 15), (55, 0), (50, 50), (45, 45), (15, 40), (20, 35)]
+        )
         sr = r(s)
-        scale = s.axes_manager[0].scale
-        n = 6
-        assert sr.axes_manager.navigation_shape == (n, n)
+
+        n_x = int(40 // s.axes_manager[0].scale) + 1
+        n_y = int(50 // s.axes_manager[1].scale) + 1
+        assert sr.axes_manager.navigation_shape == (n_x, n_y)
         # Check that mask is same for all images:
-        for i in range(n):
-            for j in range(n):
-                assert (np.all(sr.data[j, i, :] == np.nan) or
-                        np.all(sr.data[j, i, :] != np.nan))
-        # Check that the correct elements has been masked out:
+        for i in range(n_x):
+            for j in range(n_y):
+                assert np.all(np.isnan(sr.data[j, i, :])) or np.all(
+                    ~np.isnan(sr.data[j, i, :])
+                )
+        
+        # Check that the correct elements have been masked out:
+        desired_mask = """
+            XXXXXXXXO
+            XOXXXXXOO
+            XOOOXOOOO
+            XOOOOOOOO
+            XOOOOOOOO
+            XOOOOOOOX
+            XOOOOOOOX
+            XOOOOOOOX
+            OOOOOOOOX
+            XXXXXXOOX
+            XXXXXXXOX
+        """.strip()
+        desired_mask = [
+            [c == "O" for c in l.strip()] for l in desired_mask.splitlines()
+        ]
+        desired_mask = np.array(desired_mask)
+
         mask = sr.data[:, :, 0]
-        print(mask)   # To help debugging, this shows the shape of the mask
-        np.testing.assert_array_equal(
-            np.where(np.isnan(mask.flatten()))[0],
-            [0, 1, 6, 7, 8, 15, 48, 55, 56, 57, 62, 63])
-        mask_ann = sr_ann.data[:, :, 0]
-        print(mask_ann)   # To help debugging, this shows the shape of the mask
-        np.testing.assert_array_equal(
-            np.where(np.isnan(mask_ann.flatten()))[0],
-            [0, 1, 6, 7, 8, 10, 11, 12, 13, 15, 17, 18, 19, 20, 21, 22, 25,
-             26, 27, 28, 29, 30, 33, 34, 35, 36, 37, 38, 41, 42, 43, 44, 45, 46,
-             48, 50, 51, 52, 53, 55, 56, 57, 62, 63])
-        # Check that mask works for sum
-        assert np.nansum(sr.data) == (n**2 - 3 * 4) * 4
-        assert np.nansum(sr_ann.data) == 4 * 5 * 4
-
-        s.plot()
-        r_signal = r.interactive(signal=s)
-        r_ann_signal = r_ann.interactive(signal=s)
-
-        assert np.sum(r_signal.nansum().data) == (n**2 - 3 * 4) * 4
-        assert np.sum(r_ann_signal.nansum().data) == 4 * 5 * 4
+        print(mask)  # To help debugging, this shows the shape of the mask
+        np.testing.assert_array_equal(~np.isnan(mask), desired_mask)
 
     def test_polygon_getitem(self):
         r = PolygonROI([(2, 5), (5, 6), (5, 3)])
