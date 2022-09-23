@@ -656,7 +656,8 @@ class BaseDataAxis(t.HasTraits):
         size = self.size
         d = self.get_axis_dictionary()
         axes_manager = self.axes_manager
-        del d["axis"]
+        if hasattr(d, "axis"):
+            del d["axis"]
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
@@ -993,7 +994,7 @@ class FunctionalDataAxis(DataAxis):
         raise TypeError("This function works only for uniform axes.")
 
     def get_axis_dictionary(self):
-        d = super(DataAxis,self).get_axis_dictionary()
+        d = super(DataAxis, self).get_axis_dictionary()
         d['expression'] = self._expression
         d.update({'size': _parse_axis_attribute(self.size), })
         d.update({'x': self.x.get_axis_dictionary(), })
@@ -1056,6 +1057,21 @@ class FunctionalDataAxis(DataAxis):
         my_slice = self._get_array_slices(slice_)
         self.x._slice_me(my_slice)
         return my_slice
+
+    def convert_to_uniform_axis(self):
+        """Convert to an uniform axis."""
+        scale = (self.high_value - self.low_value) / self.size
+        offset = self.low_value
+        d = self.get_axis_dictionary()
+        axes_manager = self.axes_manager
+
+        if len(self.axis) > 1:
+            scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
+            _logger.warning('The maximum scale error is {}.'.format(scale_err))
+        d["_type"] = 'UniformDataAxis'
+        self.__class__ = UniformDataAxis
+        self.__init__(**d, scale=scale, offset=offset)
+        self.axes_manager = axes_manager
 
 
 class UniformDataAxis(DataAxis, UnitConversion):
