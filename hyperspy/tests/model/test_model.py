@@ -33,7 +33,9 @@ class TestModelJacobians:
         m = s.create_model()
         self.low_loss = 7.0
         self.weights = 0.3
-        m.axis.axis = np.array([1, 0])
+        m.axis.size = 2
+        m.axis.offset = 1
+        m.axis.scale = -1
         m.channel_switches = np.array([0, 1], dtype=bool)
         m.append(hs.model.components1D.Gaussian())
         m[0].A.value = 1
