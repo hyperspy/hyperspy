@@ -802,8 +802,9 @@ class DataAxis(BaseDataAxis):
     @index.setter
     def index(self, value):
         if self._index != value:
-            self._index = value
-            self.events.index_changed.trigger(obj=self, index=self.index)
+            if self.low_index <= value <= self.high_index:
+                self._index = value
+                self.events.index_changed.trigger(obj=self, index=self.index)
 
     @property
     def low_index(self):
