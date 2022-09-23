@@ -184,6 +184,7 @@ class TestUtilsStack:
         s.axes_manager[1].convert_to_non_uniform_axis()
         s.axes_manager[2].convert_to_non_uniform_axis()
         s2.axes_manager[2].convert_to_non_uniform_axis()
+        assert not s.axes_manager[2].is_uniform
         # test error for overlapping axes
         with pytest.raises(ValueError, match="Signals can only be stacked"):
             rs = utils.stack([s, s], axis=2)

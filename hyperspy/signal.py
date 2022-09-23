@@ -3092,10 +3092,12 @@ class BaseSignal(FancySlicing,
         """
         dc = self.data
         for axis in self.axes_manager._axes:
-            if not axis.is_uniform: # Axis must be uniform to set the size
-                axis.convert_to_uniform_axis()
-                _logger.warning(f"converting axis: {axis} to a UniformDataAxis")
-            axis.size = int(dc.shape[axis.index_in_array])
+            new_size = int(dc.shape[axis.index_in_array])
+            if axis.size != new_size:  # Do nothing if already set
+                if not axis.is_uniform:  # Axis must be uniform to set the size
+                    axis.convert_to_uniform_axis()
+                    _logger.warning(f"converting axis: {axis} to a UniformDataAxis")
+                axis.size = int(dc.shape[axis.index_in_array])
 
     def crop(self, axis, start=None, end=None, convert_units=False):
         """Crops the data in a given axis. The range is given in pixels.
@@ -4744,7 +4746,6 @@ class BaseSignal(FancySlicing,
                 hist_spec.data = hist
 
         if isinstance(bins, str) and bins == 'blocks':
-            hist_spec.axes_manager.signal_axes[0].axis = bin_edges[:-1]
             warnings.warn(
                 "The option `bins='blocks'` is not fully supported in this "
                 "version of HyperSpy. It should be used for plotting purposes "
