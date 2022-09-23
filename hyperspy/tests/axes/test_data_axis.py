@@ -62,9 +62,9 @@ class TestBaseDataAxis:
     def test_error_BaseDataAxis(self):
         with pytest.raises(NotImplementedError):
             self.axis._slice_me(1)
-        with pytest.raises(ValueError):
+        with pytest.raises(AttributeError):
             self.axis._parse_value_from_string('')
-        with pytest.raises(ValueError):
+        with pytest.raises(AttributeError):
             self.axis._parse_value_from_string('spam')
 
     #Note: The following methods from BaseDataAxis rely on the self.axis.axis
@@ -340,6 +340,31 @@ class TestFunctionalDataAxis:
         assert s.axes_manager[0].low_value == 0
         assert s.axes_manager[0].high_value == 81
         np.testing.assert_allclose(s.axes_manager[0].axis, axis)
+        with pytest.raises(AttributeError):
+            s.axes_manager[0]._expression
+        with pytest.raises(AttributeError):
+            s.axes_manager[0]._function
+        with pytest.raises(AttributeError):
+            s.axes_manager[0].x
+        assert index_in_array == s.axes_manager[0].index_in_array
+        assert is_binned == s.axes_manager[0].is_binned
+        assert navigate == s.axes_manager[0].navigate
+
+    def test_convert_to_uniform_axis(self):
+        axis = np.copy(self.axis.axis)
+        is_binned = self.axis.is_binned
+        navigate = self.axis.navigate
+        self.axis.name = "parrot"
+        self.axis.units = "plumage"
+        s = Signal1D(np.arange(10), axes=[self.axis])
+        index_in_array = s.axes_manager[0].index_in_array
+        s.axes_manager[0].convert_to_uniform_axis()
+        assert isinstance(s.axes_manager[0], DataAxis)
+        assert s.axes_manager[0].name == "parrot"
+        assert s.axes_manager[0].units == "plumage"
+        assert s.axes_manager[0].size == 10
+        assert s.axes_manager[0].low_value == 0
+        assert s.axes_manager[0].high_value == 81
         with pytest.raises(AttributeError):
             s.axes_manager[0]._expression
         with pytest.raises(AttributeError):

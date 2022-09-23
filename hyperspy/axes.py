@@ -357,6 +357,203 @@ class BaseDataAxis(t.HasTraits):
         else:
             return value
 
+    def _slice_me(self, slice_):
+        raise NotImplementedError("This method must be implemented by subclasses")
+
+    def _get_name(self):
+        name = (self.name
+                if self.name is not t.Undefined
+                else ("Unnamed " +
+                      ordinal(self.index_in_axes_manager))
+                if self.axes_manager is not None
+                else "Unnamed")
+        return name
+
+    def __repr__(self):
+        text = '<%s axis, size: %i' % (self._get_name(),
+                                       self.size,)
+        if self.navigate is True:
+            text += ", index: %i" % self.index
+        text += ">"
+        return text
+
+    def __str__(self):
+        return self._get_name() + " axis"
+
+    def get_axis_dictionary(self):
+        return {'_type': self.__class__.__name__,
+                'name': _parse_axis_attribute(self.name),
+                'units': _parse_axis_attribute(self.units),
+                'navigate': self.navigate,
+                'is_binned': self.is_binned,
+                }
+
+    def copy(self):
+        return self.__class__(**self.get_axis_dictionary())
+
+    def __copy__(self):
+        return self.copy()
+
+    def __deepcopy__(self, memo):
+        cp = self.copy()
+        return cp
+
+    def update_from(self, axis, attributes):
+        """Copy values of specified axes fields from the passed AxesManager.
+
+        Parameters
+        ----------
+        axis : BaseDataAxis
+            The BaseDataAxis instance to use as a source for values.
+        attributes : iterable container of strings.
+            The name of the attribute to update. If the attribute does not
+            exist in either of the AxesManagers, an AttributeError will be
+            raised.
+
+        Returns
+        -------
+        A boolean indicating whether any changes were made.
+
+        """
+        any_changes = False
+        changed = {}
+        for f in attributes:
+            if getattr(self, f) != getattr(axis, f):
+                changed[f] = getattr(axis, f)
+        if len(changed) > 0:
+            self.trait_set(**changed)
+            any_changes = True
+        return any_changes
+
+
+class DataAxis(BaseDataAxis):
+    """DataAxis class for a non-uniform axis defined through an ``axis`` array.
+
+    The most flexible type of axis, where the axis points are directly given by
+    an array named ``axis``. As this can be any array, the property
+    ``is_uniform`` is automatically set to ``False``.
+
+    Parameters
+    ----------
+    axis : numpy array or list
+        The array defining the axis points.
+
+    Examples
+    --------
+    Sample dictionary for a `DataAxis`:
+
+    >>> dict0 = {'axis': np.arange(11)**2}
+    >>> s = hs.signals.Signal1D(np.ones(12), axes=[dict0])
+    >>> s.axes_manager[0].get_axis_dictionary()
+    {'_type': 'DataAxis',
+     'name': <undefined>,
+     'units': <undefined>,
+     'navigate': False,
+     'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100])}
+    """
+
+    def __init__(self,
+                 index_in_array=None,
+                 name=None,
+                 units=None,
+                 navigate=False,
+                 is_binned=False,
+                 axis=[1],
+                 **kwargs):
+        super().__init__(
+            index_in_array=index_in_array,
+            name=name,
+            units=units,
+            navigate=navigate,
+            is_binned=is_binned,
+            **kwargs)
+        self.add_trait("_axis", t.Array)
+        self._axis = axis
+        self.add_trait("_index", t.Int)
+        self._index = 0
+
+    def _slice_me(self, slice_):
+        """Returns a slice to slice the corresponding data axis and set the
+        axis accordingly.
+
+        Parameters
+        ----------
+        slice_ : {int, slice}
+
+        Returns
+        -------
+        my_slice : slice
+
+        """
+        my_slice = self._get_array_slices(slice_)
+        self.axis = self.axis[my_slice]
+        return my_slice
+
+    def get_axis_dictionary(self):
+        d = super().get_axis_dictionary()
+        d.update({'axis': self.axis})
+        return d
+
+    @property
+    def axis(self):
+        return self._axis
+
+    @axis.setter
+    def axis(self, axis):
+        if isinstance(axis, list):
+            self._axis = np.asarray(axis)
+        else:
+            self._axis = axis
+
+    @property
+    def low_value(self):
+        if self._is_increasing_order is True:
+            return self.axis[0]
+        elif self._is_increasing_order is False:
+            return self.axis[-1]
+        else:
+            raise NotImplementedError("The axis is not ordered so there is no high/low value")
+
+    @property
+    def value(self):
+        return self.axis[self.index]
+
+    @value.setter
+    def value(self, val):
+        self.index = self.value2index(val)
+
+    @property
+    def high_value(self):
+        if self._is_increasing_order is True:
+            return self.axis[-1]
+        elif self._is_increasing_order is False:
+            return self.axis[0]
+        else:
+            raise NotImplementedError("The axis is not ordered so there is no high/low value")
+
+    @property
+    def index(self):
+        return self._index
+
+    @index.setter
+    def index(self, value):
+        if self._index != value:
+            if self.low_index <= value <= self.high_index:
+                self._index = value
+                self.events.index_changed.trigger(obj=self, index=self.index)
+
+    @property
+    def low_index(self):
+        return 0
+
+    @property
+    def high_index(self):
+        return self.size - 1
+
+    @property
+    def size(self):
+        return len(self._axis)
+
     def _get_array_slices(self, slice_):
         """Returns a slice to slice the corresponding data axis.
 
@@ -428,47 +625,6 @@ class BaseDataAxis(t.HasTraits):
             raise ValueError("slice step cannot be zero")
 
         return slice(start, stop, step)
-
-    def _slice_me(self, slice_):
-        raise NotImplementedError("This method must be implemented by subclasses")
-
-    def _get_name(self):
-        name = (self.name
-                if self.name is not t.Undefined
-                else ("Unnamed " +
-                      ordinal(self.index_in_axes_manager))
-                if self.axes_manager is not None
-                else "Unnamed")
-        return name
-
-    def __repr__(self):
-        text = '<%s axis, size: %i' % (self._get_name(),
-                                       self.size,)
-        if self.navigate is True:
-            text += ", index: %i" % self.index
-        text += ">"
-        return text
-
-    def __str__(self):
-        return self._get_name() + " axis"
-
-    def get_axis_dictionary(self):
-        return {'_type': self.__class__.__name__,
-                'name': _parse_axis_attribute(self.name),
-                'units': _parse_axis_attribute(self.units),
-                'navigate': self.navigate,
-                'is_binned': self.is_binned,
-                }
-
-    def copy(self):
-        return self.__class__(**self.get_axis_dictionary())
-
-    def __copy__(self):
-        return self.copy()
-
-    def __deepcopy__(self, memo):
-        cp = self.copy()
-        return cp
 
     def _parse_value_from_string(self, value):
         """Return calibrated value from a suitable string """
@@ -622,33 +778,6 @@ class BaseDataAxis(t.HasTraits):
                 i2 = self.value2index(v2)
         return i1, i2
 
-    def update_from(self, axis, attributes):
-        """Copy values of specified axes fields from the passed AxesManager.
-
-        Parameters
-        ----------
-        axis : BaseDataAxis
-            The BaseDataAxis instance to use as a source for values.
-        attributes : iterable container of strings.
-            The name of the attribute to update. If the attribute does not
-            exist in either of the AxesManagers, an AttributeError will be
-            raised.
-
-        Returns
-        -------
-        A boolean indicating whether any changes were made.
-
-        """
-        any_changes = False
-        changed = {}
-        for f in attributes:
-            if getattr(self, f) != getattr(axis, f):
-                changed[f] = getattr(axis, f)
-        if len(changed) > 0:
-            self.trait_set(**changed)
-            any_changes = True
-        return any_changes
-
     def convert_to_uniform_axis(self):
         """Convert to an uniform axis."""
         scale = (self.high_value - self.low_value) / self.size
@@ -656,8 +785,6 @@ class BaseDataAxis(t.HasTraits):
         size = self.size
         d = self.get_axis_dictionary()
         axes_manager = self.axes_manager
-        if hasattr(d, "axis"):
-            del d["axis"]
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
@@ -689,135 +816,6 @@ class BaseDataAxis(t.HasTraits):
                 return None
         except:
             return None
-
-
-class DataAxis(BaseDataAxis):
-    """DataAxis class for a non-uniform axis defined through an ``axis`` array.
-
-    The most flexible type of axis, where the axis points are directly given by
-    an array named ``axis``. As this can be any array, the property
-    ``is_uniform`` is automatically set to ``False``.
-
-    Parameters
-    ----------
-    axis : numpy array or list
-        The array defining the axis points.
-
-    Examples
-    --------
-    Sample dictionary for a `DataAxis`:
-
-    >>> dict0 = {'axis': np.arange(11)**2}
-    >>> s = hs.signals.Signal1D(np.ones(12), axes=[dict0])
-    >>> s.axes_manager[0].get_axis_dictionary()
-    {'_type': 'DataAxis',
-     'name': <undefined>,
-     'units': <undefined>,
-     'navigate': False,
-     'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100])}
-    """
-
-    def __init__(self,
-                 index_in_array=None,
-                 name=None,
-                 units=None,
-                 navigate=False,
-                 is_binned=False,
-                 axis=[1],
-                 **kwargs):
-        super().__init__(
-            index_in_array=index_in_array,
-            name=name,
-            units=units,
-            navigate=navigate,
-            is_binned=is_binned,
-            **kwargs)
-        self.add_trait("_axis", t.Array)
-        self._axis = axis
-        self.add_trait("_index", t.Int)
-        self._index = 0
-
-    def _slice_me(self, slice_):
-        """Returns a slice to slice the corresponding data axis and set the
-        axis accordingly.
-
-        Parameters
-        ----------
-        slice_ : {int, slice}
-
-        Returns
-        -------
-        my_slice : slice
-
-        """
-        my_slice = self._get_array_slices(slice_)
-        self.axis = self.axis[my_slice]
-        return my_slice
-
-    def get_axis_dictionary(self):
-        d = super().get_axis_dictionary()
-        d.update({'axis': self.axis})
-        return d
-
-    @property
-    def axis(self):
-        return self._axis
-
-    @axis.setter
-    def axis(self, axis):
-        if isinstance(axis, list):
-            self._axis = np.asarray(axis)
-        else:
-            self._axis = axis
-
-    @property
-    def low_value(self):
-        if self._is_increasing_order is True:
-            return self.axis[0]
-        elif self._is_increasing_order is False:
-            return self.axis[-1]
-        else:
-            raise NotImplementedError("The axis is not ordered so there is no high/low value")
-
-    @property
-    def value(self):
-        return self.axis[self.index]
-
-    @value.setter
-    def value(self, val):
-        self.index = self.value2index(val)
-
-    @property
-    def high_value(self):
-        if self._is_increasing_order is True:
-            return self.axis[-1]
-        elif self._is_increasing_order is False:
-            return self.axis[0]
-        else:
-            raise NotImplementedError("The axis is not ordered so there is no high/low value")
-
-    @property
-    def index(self):
-        return self._index
-
-    @index.setter
-    def index(self, value):
-        if self._index != value:
-            if self.low_index <= value <= self.high_index:
-                self._index = value
-                self.events.index_changed.trigger(obj=self, index=self.index)
-
-    @property
-    def low_index(self):
-        return 0
-
-    @property
-    def high_index(self):
-        return self.size - 1
-
-    @property
-    def size(self):
-        return len(self._axis)
 
     def calibrate(self, *args, **kwargs):
         raise TypeError("This function works only for uniform axes.")
@@ -1060,7 +1058,7 @@ class FunctionalDataAxis(DataAxis):
 
     def convert_to_uniform_axis(self):
         """Convert to an uniform axis."""
-        scale = (self.high_value - self.low_value) / self.size
+        scale = (self.high_value - self.low_value) / (self.size-1)
         offset = self.low_value
         d = self.get_axis_dictionary()
         axes_manager = self.axes_manager
@@ -1069,6 +1067,9 @@ class FunctionalDataAxis(DataAxis):
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
         d["_type"] = 'UniformDataAxis'
+        del self._expression
+        del self._function
+        self.remove_trait('x')
         self.__class__ = UniformDataAxis
         self.__init__(**d, scale=scale, offset=offset)
         self.axes_manager = axes_manager
