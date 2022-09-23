@@ -265,6 +265,23 @@ class TestDataAxis:
             self.axis.calibrate(value_tuple=(11,12), index_tuple=(0,5))
 
 
+class TestUnorderedDataAxis:
+    def setup_method(self, method):
+        self._axis = ["a", "b", "c", "d", "e"]
+        self.axis = DataAxis(axis=self._axis)
+
+    def test_set_up(self):
+        np.testing.assert_array_equal(self.axis.axis, self._axis)
+
+    @pytest.mark.parametrize("value", ("high_value", "low_value"))
+    def test_failures(self, value):
+        with pytest.raises(NotImplementedError):
+            getattr(self.axis, value)
+
+    def test_increasing_order(self):
+        assert self.axis._is_increasing_order is None
+
+
 class TestFunctionalDataAxis:
 
     def setup_method(self, method):
