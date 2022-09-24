@@ -69,6 +69,11 @@ jobs:
           # required for running kikuchipy test suite
           sudo apt-get install xvfb
 
+      - name: Run RosettaSciIO Test Suite
+        if: ${{ always() }}
+        run: |
+          python -m pytest --pyargs rsciio
+
       - name: Run Kikuchipy Test Suite
         if: ${{ always() }}
         run: |
