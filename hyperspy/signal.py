@@ -2507,7 +2507,7 @@ class BaseSignal(FancySlicing,
                     # and in the future, it will raise an error
                     data = np.array(self.data.tolist())
             except:
-                _logger.error(error)
+                raise ValueError(error)
 
             if data.dtype == object:
                 raise ValueError(error)
