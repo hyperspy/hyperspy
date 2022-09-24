@@ -53,6 +53,7 @@ jobs:
 
       - name: Install HyperSpy
         run: |
+          pip install https://github.com/hyperspy/rosettasciio/archive/refs/heads/main.zip
           pip install .
 
       - name: Install Extension Dev
