@@ -91,10 +91,7 @@ jobs:
         run: |
           python -m pytest --pyargs pyxem
 
-      #  The currently released version of Atomap (0.3.1) does not work with this test
-      #  environment. Thus, only the dev version is currently tested. If a newer version
-      #  of Atomap is released, the "if" can be changed to always().
       - name: Run atomap Test Suite
-        if: contains(matrix.EXTENSION_VERSION, 'dev')
+        if: ${{ always() }}
         run: |
           python -m pytest --pyargs atomap
