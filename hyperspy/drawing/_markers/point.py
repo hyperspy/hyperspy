@@ -43,28 +43,25 @@ class Point(MarkerBase):
 
     Example
     -------
-    >>> im = hs.signals.Signal2D(np.random.random([10, 50, 50]))
-    >>> m = hs.plot.markers.point(x=range(10), y=range(10)[::-1],
-    >>>                           color='red')
-    >>> im.add_marker(m)
+    Add a marker with the same position for all navigation positions
 
-    Adding a marker permanently to a signal
+    >>> im = hs.signals.Signal2D(np.arange(1000).reshape([10, 10, 10]))
+    >>> m = hs.plot.markers.point(x=1, y=2, color='C0')
+    >>> s.add_marker(m)
+
+    Add a marker, the position of which depends on the navigation positions
+
+    >>> x_position = np.arange(10)
+    >>> y_position = np.arange(10) / 2
+
+    >>> m = hs.plot.markers.point(x=x_position, y=y_position, color='C1')
+    >>> s.add_marker(m)
+
+    Add a marker permanently; the marker is saved in the metadata
 
     >>> im = hs.signals.Signal2D(np.random.random([10, 50, 50]))
     >>> m = hs.plot.markers.point(10, 30, color='blue', size=50)
     >>> im.add_marker(m, permanent=True)
-
-    Markers on local maxima
-
-    >>> from skimage.feature import peak_local_max
-    >>> import scipy.misc
-    >>> im = hs.signals.Signal2D(scipy.misc.ascent()).as_signal2D([2,0])
-    >>> index = array([peak_local_max(i.data, min_distance=100, num_peaks=4)
-    >>>                for i in im])
-    >>> for i in range(4):
-    >>>     m = hs.plot.markers.point(x=index[:, i, 1],
-    >>>                                  y=index[:, i, 0], color='red')
-    >>>     im.add_marker(m)
     """
 
     def __init__(self, x, y, size=20, **kwargs):
