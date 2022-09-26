@@ -1522,10 +1522,10 @@ class PolygonROI(BaseROI):
     vertices = []
     _ndim = 2
 
-    def __init__(self, vertices=None):
-        super(PolygonROI, self).__init__()
-        if vertices:
-            self.set_vertices(vertices)
+    def __init__(self, points=None):
+        super().__init__()
+        if points:
+            self.set_vertices(points)
 
     @property
     def parameters(self):
