@@ -44,11 +44,10 @@ class Arrow(MarkerBase):
         Keyword arguments are passed to
         :py:class:`matplotlib.patches.FancyArrowPatch`.
 
-
     Example
     -------
-    >>> import scipy.misc
-    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> import skimage
+    >>> im = hs.signals.Signal2D(skimage.data.camera())
     >>> m = hs.plot.markers.arrow(x1=150, y1=100, x2=400, y2=400,
     >>>                           arrowprop={'arrowstyle':'<->', edgecolor='red'})
     >>> im.add_marker(m)
@@ -102,5 +101,3 @@ class Arrow(MarkerBase):
         y2 = self.get_data_position('y2')
         self.marker = self.ax.add_patch(patches.FancyArrowPatch(
             (x1,y1), (x2,y2), **self.marker_properties))
-
-
