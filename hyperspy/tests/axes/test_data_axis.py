@@ -178,22 +178,31 @@ class TestDataAxis:
         assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
 
+    @pytest.mark.parametrize("value", ("rel0", 0, 0.0))
+    def test_value2index_start(self, value):
+        assert self.axis.value2index(value) == 0
+
+    @pytest.mark.parametrize("value", ("b", 1))
+    def test_value2index_unordered(self, value):
+        axis = DataAxis(axis=["a", "b", "c", "d"])
+        assert axis.value2index(value) == 1
+
     def test_value2index(self):
         assert self.axis.value2index(10.15) == 3
-        assert self.axis.value2index(60) == 8
+        assert self.axis.value2index(60.) == 8
         assert self.axis.value2index(2.5, rounding=round) == 1
         assert self.axis.value2index(2.5, rounding=math.ceil) == 2
         assert self.axis.value2index(2.5, rounding=math.floor) == 1
         # Test that output is integer
-        assert isinstance(self.axis.value2index(60), (int, np.integer))
+        assert isinstance(self.axis.value2index(60.), (int, np.integer))
         self.axis.axis = self.axis.axis - 2
         # test rounding on negative value
         assert self.axis.value2index(-1.5, rounding=round) == 1
 
-
-    def test_value2index_error(self):
+    @pytest.mark.parametrize("value", (-2206, 226., 2026))
+    def test_value2index_error(self, value):
         with pytest.raises(ValueError):
-            self.axis.value2index(226)
+            self.axis.value2index(value)
 
     def test_parse_value_from_relative_string(self):
         ax = self.axis
@@ -404,6 +413,11 @@ class TestFunctionalDataAxis:
         with pytest.raises(TypeError, match="only for uniform axes"):
             self.axis.calibrate(value_tuple=(11,12), index_tuple=(0,5))
 
+    @pytest.mark.parametrize("value", (np.nan,-2.,111,"69",""))
+    def test_functional_value2index_error(self,value):
+        with pytest.raises(ValueError):
+            self.axis.value2index(value=value)
+
     def test_functional_value2index(self):
         #Tests for value2index
         #Works as intended
@@ -412,23 +426,9 @@ class TestFunctionalDataAxis:
         assert self.axis.value2index(2.5, rounding=math.ceil) == 2
         assert self.axis.value2index(2.5, rounding=math.floor) == 1
         # Returns integer
-        assert isinstance(self.axis.value2index(45), (int, np.integer))
+        assert isinstance(self.axis.value2index(45.), (int, np.integer))
         #Input None --> output None
         assert self.axis.value2index(None) == None
-        #NaN in --> error out
-        with pytest.raises(ValueError):
-            self.axis.value2index(np.nan)
-        #Values in out of bounds --> error out (both sides of axis)
-        with pytest.raises(ValueError):
-            self.axis.value2index(-2)
-        with pytest.raises(ValueError):
-            self.axis.value2index(111)
-        #str in --> error out
-        with pytest.raises(TypeError):
-            self.axis.value2index("69")
-        #Empty str in --> error out
-        with pytest.raises(TypeError):
-            self.axis.value2index("")
 
         #Tests with array Input
         #Array in --> array out
