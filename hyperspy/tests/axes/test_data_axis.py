@@ -542,6 +542,22 @@ class TestUniformDataAxis:
         ac.offset = 100
         assert ac.axis[0] == ac.offset
 
+    def test_uniform_value2index_neg_pos(self):
+        axis1 = copy.deepcopy(self.axis)
+        axis2 = copy.deepcopy(self.axis)
+        axis1.offset = 0
+        axis2.offset = -0.5
+        assert axis2.offset != axis1.offset
+        assert axis1.value2index(0.05) == axis2.value2index(-0.45)
+        np.testing.assert_array_almost_equal(axis1.value2index([0.05, 0.75, 0.85]),
+                                             axis2.value2index([-0.45, 0.25, 0.35]))
+
+    @pytest.mark.parametrize("value", (0, 10., "rel0", "10nm",'0.01um'))
+    def test_uniform_value2index_edge(self, value):
+        axis = copy.deepcopy(self.axis)
+        axis.units = 'nm'
+        assert axis.value2index(value) == 0
+
     def test_uniform_value2index(self):
         #Tests for value2index
         #Works as intended
