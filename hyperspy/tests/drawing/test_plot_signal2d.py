@@ -23,7 +23,7 @@ import pytest
 import scipy.ndimage
 try:
     # scipy >=1.10
-    from scipy.dataset import ascent, face
+    from scipy.datasets import ascent, face
 except ImportError:
     # scipy <1.10
     from scipy.misc import ascent, face

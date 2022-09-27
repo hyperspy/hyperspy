@@ -571,11 +571,11 @@ def test_plot_add_background_windows():
 def test_iterate_markers():
     from skimage.feature import peak_local_max
     try:
+        # scipy >=1.10
+        from scipy.datasets import face
+    except ImportError:
         # scipy <1.10
         from scipy.misc import face
-    except:
-        # scipy >=1.10
-        from scipy.dataset import face
     ims = BaseSignal(face()).as_signal2D([1, 2])
     index = np.array([peak_local_max(im.data, min_distance=100,
                                      num_peaks=4) for im in ims])
