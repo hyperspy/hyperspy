@@ -769,7 +769,6 @@ class DataAxis(BaseDataAxis):
             index = self._float2index(value, rounding)
         return np.squeeze(index)[()]
 
-
     def index2value(self, index):
         if isinstance(index, da.Array):
             index = index.compute()
@@ -1193,6 +1192,29 @@ class UniformDataAxis(DataAxis, UnitConversion):
     def size(self, value):
         self._size = value
 
+    @property
+    def high_value(self):
+        if self._is_increasing_order:
+            return (self.size-1)*self.scale+self.offset
+        else:
+            return self.offset
+
+    @property
+    def low_value(self):
+        if self._is_increasing_order:
+            return self.offset
+        else:
+            return (self.size-1)*self.scale+self.offset
+
+    @property
+    def _is_increasing_order(self):
+        if self.scale>0:
+            return True
+        else:
+            return False
+
+
+
     def _slice_me(self, _slice):
         """Returns a slice to slice the corresponding data axis and
         change the offset and scale of the UniformDataAxis accordingly.
@@ -1226,43 +1248,17 @@ class UniformDataAxis(DataAxis, UnitConversion):
                   'offset': self.offset})
         return d
 
-    def value2index(self, value, rounding=round):
-        """Return the closest index/indices to the given value(s) if between the axis limits.
+    def _float2index(self, value, rounding=round):
+        """Converts floats to index using either the closest index, ceiling or floor.
 
-        Parameters
-        ----------
-        value : number or string, or numpy array of number or string
-                if string, should either be a calibrated unit like "20nm"
-                or a relative slicing like "rel0.2".
-        rounding : function
-                Handling of values intermediate between two axis points:
-                If `rounding=round`, use python's standard round-half-to-even strategy to find closest value.
-                If `rounding=math.floor`, round to the next lower value.
-                If `round=math.ceil`, round to the next higher value.
-
-        Returns
-        -------
-        index : integer or numpy array
-
-        Raises
-        ------
-        ValueError
-            If value is out of bounds or contains out of bounds values (array).
-            If value is NaN or contains NaN values (array).
-            If value is incorrectly formatted str or contains incorrectly
-                formatted str (array).
+           Raises
+           ------
+           ValueError:
+               When any of the values give are outside the range self.low_value->self.high_value.
         """
-
-        if value is None:
-            return None
-
-        value = self._parse_value(value)
-
         multiplier = 1E12
         index = 1 / multiplier * np.trunc(
-            (value - self.offset) / self.scale * multiplier
-            )
-
+            (value - self.offset) / self.scale * multiplier)
         if rounding is round:
             # When value are negative, we need to use half away from zero
             # approach on the index, because the index is always positive
@@ -1270,28 +1266,21 @@ class UniformDataAxis(DataAxis, UnitConversion):
                 value >= 0 if np.sign(self.scale) > 0 else value < 0,
                 round_half_towards_zero(index, decimals=0),
                 round_half_away_from_zero(index, decimals=0),
-                )
+            )
+        elif rounding is math.ceil:
+            index = np.ceil(index)
+        elif rounding is math.floor:
+            index = np.floor(index)
         else:
-            if rounding is math.ceil:
-                rounding = np.ceil
-            elif rounding is math.floor:
-                rounding = np.floor
-
-            index = rounding(index)
-
-        if isinstance(value, np.ndarray):
-            index = index.astype(int)
-            if np.all(self.size > index) and np.all(index >= 0):
-                return index
-            else:
-                raise ValueError("A value is out of the axis limits")
-        else:
-            index = int(index)
-            if self.size > index >= 0:
-                return index
-            else:
-                raise ValueError("The value is out of the axis limits")
-
+            raise ValueError(
+                'Non-supported rounding function. Use '
+                '`round`, `math.ceil` or `math.floor`.'
+            )
+        index = np.asarray(index, dtype=int)
+        if not np.all((index >= 0) * (index <= self.high_index)):
+            raise ValueError(f"Index: {index} is outside of the range"
+                             f" {self.low_index} :{self.high_index}")
+        return index
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
