@@ -694,8 +694,40 @@ class DataAxis(BaseDataAxis):
         elif isinstance(value, (np.ndarray, da.Array)):
             if value.dtype.type is np.str_:
                 return np.array([self._parse_value_from_string(v) for v in value])
+        return value
+
+    def _float2index(self, value, rounding=round):
+        """Converts floats to index using either the closest index, ceiling or floor.
+
+        Rounding is done using the given approaches:
+
+        round: rounding_index = lambda x: np.abs(x).argmin()
+        math.ceiling: Argmin of self.axis-v where (self.axis-v)<0 = np.inf
+        math.floor:Argmax of self.axis-v where (self.axis-v)>0 = -np.inf
+
+        Raises
+        ------
+        ValueError:
+            When any of the values give are outside the range self.low_value->self.high_value.
+        """
+        if np.all((value >= self.low_value) * (value <= self.high_value)):
+            if rounding is round:
+                return numba_closest_index_round(self.axis, value).astype(int)
+            elif rounding is math.ceil:
+                return numba_closest_index_ceil(self.axis, value).astype(int)
+            elif rounding is math.floor:
+                return numba_closest_index_floor(self.axis, value).astype(int)
+            else:
+                raise ValueError(
+                    'Non-supported rounding function. Use '
+                    '`round`, `math.ceil` or `math.floor`.'
+                )
         else:
-            return value
+            raise ValueError(
+                f'The value {value} is out of the limits '
+                f'[{self.low_value:.3g}-{self.high_value:.3g}] of the '
+                f'"{self._get_name()}" axis.'
+            )
 
     def value2index(self, value, rounding=round):
         """Return the closest index/indices to the given value(s) if between the axis limits.
@@ -722,46 +754,21 @@ class DataAxis(BaseDataAxis):
         if value is None:
             return None
 
-        value = self._parse_value(value)  # converts to value.  # Also tuple/ list to array
+        value = self._parse_value(value)  # converts to value also tuple/ list to array
+        value = np.asarray(value)
+        dtype = value.dtype if isinstance(value, np.ndarray) else type(value)
 
-        #Should evaluate on both arrays and scalars. Raises error if there are
-        #nan values in array
-        if np.all((value >= self.low_value)*(value <= self.high_value)):
-            #Only if all values will evaluate correctly do we implement rounding
-            #function. Rounding functions will strictly operate on numpy arrays
-            #and only evaluate self.axis - v input, v a scalar within value.
-            if rounding is round:
-                #Use argmin(abs) which will return the closest value
-                # rounding_index = lambda x: np.abs(x).argmin()
-                index = numba_closest_index_round(self.axis,value).astype(int)
-            elif rounding is math.ceil:
-                #Ceiling means finding index of the closest xi with xi - v >= 0
-                #we look for argmin of strictly non-negative part of self.axis-v.
-                #The trick is to replace strictly negative values with +np.inf
-                index = numba_closest_index_ceil(self.axis,value).astype(int)
-            elif rounding is math.floor:
-                #flooring means finding index of the closest xi with xi - v <= 0
-                #we look for armgax of strictly non-positive part of self.axis-v.
-                #The trick is to replace strictly positive values with -np.inf
-                index = numba_closest_index_floor(self.axis,value).astype(int)
-            else:
-                raise ValueError(
-                    'Non-supported rounding function. Use '
-                    '`round`, `math.ceil` or `math.floor`.'
-                    )
-            #initialise the index same dimension as input, force type to int
-            # index = np.empty_like(value,dtype=int)
-            #assign on flat, iterate on flat.
-            # for i,v in enumerate(value):
-                # index.flat[i] = rounding_index(self.axis - v)
-            #Squeezing to get a scalar out if scalar in. See squeeze doc
-            return np.squeeze(index)[()]
+        if np.issubdtype(dtype, bool):
+            index = value
+        elif np.issubdtype(dtype, int):
+            index = value
+            if not np.all((index >= -self.size) * (value <= self.high_index)):
+                raise ValueError(f"Index: {index} is outside of the range"
+                                 f" {self.low_index} :{self.high_index}")
         else:
-            raise ValueError(
-                f'The value {value} is out of the limits '
-                f'[{self.low_value:.3g}-{self.high_value:.3g}] of the '
-                f'"{self._get_name()}" axis.'
-                )
+            index = self._float2index(value, rounding)
+        return np.squeeze(index)[()]
+
 
     def index2value(self, index):
         if isinstance(index, da.Array):
