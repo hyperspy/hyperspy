@@ -577,7 +577,7 @@ class TestUniformDataAxis:
             self.axis.value2index(np.nan)
         #Values in out of bounds --> error out (both sides of axis)
         with pytest.raises(ValueError):
-            self.axis.value2index(-2)
+            self.axis.value2index(-2.)
         with pytest.raises(ValueError):
             self.axis.value2index(111)
         #str without unit in --> error out
