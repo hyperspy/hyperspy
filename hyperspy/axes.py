@@ -804,18 +804,18 @@ class DataAxis(BaseDataAxis):
                                  f"must be greater than v1 ({v1}).")
 
             if v1 is not None and self.low_value < v1 <= self.high_value:
-                i1 = self.value2index(v1)
+                i1 = self.value2index(float(v1))
             if v2 is not None and self.high_value > v2 >= self.low_value:
-                i2 = self.value2index(v2)
+                i2 = self.value2index(float(v2))
         else:
             if v1 is not None and v2 is not None and v1 < v2:
                 raise ValueError(f"{error_message} decreasing order: v1 ({v1}) "
                                  f"must be greater than v2 ({v2}).")
 
             if v1 is not None and self.high_value > v1 >= self.low_value:
-                i1 = self.value2index(v1)
+                i1 = self.value2index(float(v1))
             if v2 is not None and self.low_value < v2 <= self.high_value:
-                i2 = self.value2index(v2)
+                i2 = self.value2index(float(v2))
         return i1, i2
 
     def convert_to_uniform_axis(self):

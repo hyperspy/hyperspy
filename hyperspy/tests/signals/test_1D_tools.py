@@ -40,7 +40,7 @@ class TestAlignTools:
         eaxis = s.axes_manager.signal_axes[0]
         eaxis.scale = self.scale
         eaxis.offset = self.offset
-        self.izlp = eaxis.value2index(0)
+        self.izlp = eaxis.value2index(0.)
         self.bg = 2
         self.ishifts = np.array([0, 4, 2, -2, 5, -2, -5, -9, -9, -8])
         self.new_offset = self.offset - self.ishifts.min() * self.scale
@@ -63,7 +63,7 @@ class TestAlignTools:
                   self.ishifts[:, np.newaxis] *
                   self.scale)
         assert m.data_changed.called
-        i_zlp = s.axes_manager.signal_axes[0].value2index(0)
+        i_zlp = s.axes_manager.signal_axes[0].value2index(0.)
         np.testing.assert_allclose(s.data[:, i_zlp], 12)
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
@@ -77,7 +77,7 @@ class TestAlignTools:
     def test_align(self):
         s = self.signal
         s.align1D()
-        i_zlp = s.axes_manager.signal_axes[0].value2index(0)
+        i_zlp = s.axes_manager.signal_axes[0].value2index(0.)
         np.testing.assert_allclose(s.data[:, i_zlp], 12)
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
@@ -100,7 +100,7 @@ class TestAlignTools:
         assert np.all(Nnan_data - Nnan <= 2)
 
         # Check actual alignment of zlp
-        i_zlp = s.axes_manager.signal_axes[0].value2index(0)
+        i_zlp = s.axes_manager.signal_axes[0].value2index(0.)
         np.testing.assert_allclose(s.data[:, i_zlp], 12)
 
 

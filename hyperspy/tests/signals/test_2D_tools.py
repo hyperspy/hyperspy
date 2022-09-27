@@ -111,7 +111,7 @@ class TestAlignTools:
                 s.axes_manager.signal_axes, self.offsets, self.scales):
             ax.scale = scale
             ax.offset = offset
-            izlp.append(ax.value2index(0))
+            izlp.append(ax.value2index(0.))
         self.izlp = izlp
         self.ishifts = np.array([(0, 0), (4, 2), (1, 3), (-2, 2), (5, -2),
                                  (2, 2), (5, 6), (-9, -9), (-9, -9), (-6, -9)])

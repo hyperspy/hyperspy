@@ -137,7 +137,7 @@ class TestAlignZLP:
         eaxis = s.axes_manager.signal_axes[0]
         eaxis.scale = self.scale
         eaxis.offset = self.offset
-        self.izlp = eaxis.value2index(0)
+        self.izlp = eaxis.value2index(0.)
         self.bg = 2
         self.ishifts = np.array([0, 4, 2, -2, 5, -2, -5, -9, -9, -8])
         self.new_offset = self.offset - self.ishifts.min() * self.scale

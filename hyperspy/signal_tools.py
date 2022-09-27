@@ -267,7 +267,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
         if x1 > self.axis.high_value or x1 < self.axis.low_value:
             x1 = self.axis.high_value
 
-        if np.diff(self.axis.value2index(np.array([x0, x1]))) == 0:
+        if np.diff(self.axis.value2index(np.array([x0, x1], dtype=float))) == 0:
             return
 
         self.ss_left_value, self.ss_right_value = x0, x1
