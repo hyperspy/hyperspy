@@ -653,24 +653,27 @@ class DataAxis(BaseDataAxis):
 
         return slice(start, stop, step)
 
+    def _rel2value(self, value):
+        try:
+            relative_value = float(value[3:])
+            if relative_value < 0 or relative_value > 1:
+                raise ValueError
+            value = self.low_value + relative_value * (self.high_value - self.low_value)
+        except ValueError:
+            raise ValueError("`rel` must be followed by a number in range [0, 1].")
+        return value
+
     def _parse_value_from_string(self, value):
         """Return calibrated value from a suitable string """
         if len(value) == 0:
             raise ValueError("Cannot index with an empty string")
-        # Starting with 'rel', it must be relative slicing
-        elif value.startswith('rel'):
-            try:
-                relative_value = float(value[3:])
-            except ValueError:
-                raise ValueError("`rel` must be followed by a number in range [0, 1].")
-            if relative_value < 0 or relative_value > 1:
-                raise ValueError("Relative value must be in range [0, 1]")
-            value = self.low_value + relative_value * (self.high_value - self.low_value)
-        # if first character is a digit, try unit conversion
-        # otherwise we don't support it
-        elif value[0].isdigit():
+        elif value.startswith('rel'):  # relative slicing
+            return self._rel2value(value)
+        elif value in self.axis:  # See if value is in axis. Get first instance
+            return np.argwhere(value == self.axis)[0]
+        elif value[0].isdigit():  # unit conversion
             if self.is_uniform:
-                value = self._get_value_from_value_with_units(value)
+                return self._get_value_from_value_with_units(value)
             else:
                 raise ValueError("Unit conversion is only supported for "
                                  "uniform axis.")
@@ -682,13 +685,17 @@ class DataAxis(BaseDataAxis):
     def _parse_value(self, value):
         """Convert the input to calibrated value if string, otherwise,
         return the same value."""
-        if isinstance(value, str):
-            value = self._parse_value_from_string(value)
-        elif isinstance(value, (list, tuple, np.ndarray, da.Array)):
-            value = np.asarray(value)
+        if isinstance(value, (bool, int, float)):  # valid values, no parsing
+            return value
+        elif isinstance(value, str):  # parse value from string
+            return self._parse_value_from_string(value)
+        elif isinstance(value, (list, tuple)):  # No dtype, need to test every value for str
+            return np.asarray([self._parse_value(v) for v in value])
+        elif isinstance(value, (np.ndarray, da.Array)):
             if value.dtype.type is np.str_:
-                value = np.array([self._parse_value_from_string(v) for v in value])
-        return value
+                return np.array([self._parse_value_from_string(v) for v in value])
+        else:
+            return value
 
     def value2index(self, value, rounding=round):
         """Return the closest index/indices to the given value(s) if between the axis limits.
@@ -714,8 +721,8 @@ class DataAxis(BaseDataAxis):
         """
         if value is None:
             return None
-        else:
-            value = np.asarray(value)
+
+        value = self._parse_value(value)  # converts to value.  # Also tuple/ list to array
 
         #Should evaluate on both arrays and scalars. Raises error if there are
         #nan values in array
