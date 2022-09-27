@@ -22,11 +22,11 @@ import numpy as np
 import pytest
 import scipy.ndimage
 try:
-    # scipy <1.10
-    from scipy.misc import ascent, face
-except:
     # scipy >=1.10
     from scipy.dataset import ascent, face
+except ImportError:
+    # scipy <1.10
+    from scipy.misc import ascent, face
 import traits.api as t
 
 import hyperspy.api as hs

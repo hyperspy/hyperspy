@@ -24,11 +24,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 try:
-    # scipy <1.10
-    from scipy.misc import ascent, face
-except:
     # scipy >=1.10
     from scipy.dataset import ascent, face
+except ImportError:
+    # scipy <1.10
+    from scipy.misc import ascent, face
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import update_close_figure

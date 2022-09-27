@@ -21,11 +21,11 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 try:
-    # scipy <1.10
-    from scipy.misc import ascent, face
-except:
     # scipy >=1.10
     from scipy.dataset import ascent, face
+except ImportError:
+    # scipy <1.10
+    from scipy.misc import ascent, face
 from scipy.ndimage import fourier_shift
 
 import hyperspy.api as hs
