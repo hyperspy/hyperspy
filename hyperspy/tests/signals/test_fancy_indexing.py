@@ -164,14 +164,25 @@ class TestLabeledAxis:
                                       [0, 4, 8, 12, 16, 20])
         np.testing.assert_array_equal(s.isig[value, :3],
                                       [0, 4, 8])
+        assert s.isig[value].axes_manager.shape == (6,)  # drop axis
 
     @pytest.mark.parametrize("value", (["a", "c"], [0, 2], [True, False, True, False]))
     def test_multi_slic(self, value):
         s = self.signal
         np.testing.assert_array_equal(s.isig[value], self.value[:, [0, 2]])
+        assert s.isig[value].axes_manager.shape == (2, 6)
+        np.testing.assert_array_equal(s.isig[value].axes_manager[0].axis,
+                                      ["a", "c"])
 
-
-
+    @pytest.mark.parametrize("value", ([0, 2], [True, False, True, False, False, False]))
+    def test_multi_slic_uniform(self, value):
+        s = self.signal
+        np.testing.assert_array_equal(s.isig[:, value], self.value[[0, 2]])
+        assert s.isig[:, value].data.shape == (2, 4)
+        assert s.isig[:, value].axes_manager.shape == (4, 2)
+        np.testing.assert_array_equal(s.isig[:, value].axes_manager[1].axis,
+                                      [0, 2])
+        assert not s.isig[:, value].axes_manager[1].is_uniform
 
 @lazifyTestClass
 class Test2D:
