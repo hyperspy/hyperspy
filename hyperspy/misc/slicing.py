@@ -293,7 +293,7 @@ class FancySlicing(object):
             _obj = self._deepcopy_with_new_data(new_data, copy_variance=True)
             _to_remove = []
             for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
-                if (isinstance(slice_, slice) or
+                if (isinstance(slice_, (slice, list, np.ndarray)) or
                         len(self.axes_manager._axes) < 2):
                     axis._slice_me(slice_)
                 else:

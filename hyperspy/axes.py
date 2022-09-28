@@ -523,9 +523,9 @@ class DataAxis(BaseDataAxis):
         my_slice : slice
 
         """
-        my_slice = self._get_array_slices(slice_)
-        self.axis = self.axis[my_slice]
-        return my_slice
+        #my_slice = self._get_array_slices(slice_)
+        self.axis = self.axis[slice_]
+        return slice_
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
@@ -1227,8 +1227,12 @@ class UniformDataAxis(DataAxis, UnitConversion):
         -------
         my_slice : slice
         """
-        my_slice = self._get_array_slices(_slice)
-        start, step = my_slice.start, my_slice.step
+        #my_slice = self._get_array_slices(_slice)
+        if isinstance(_slice, (np.ndarray, list)):
+            self.convert_to_non_uniform_axis()
+            return self._slice_me(_slice)
+        else:
+            start, step = _slice.start, _slice.step
 
         if start is None:
             if step is None or step > 0:
@@ -1238,8 +1242,8 @@ class UniformDataAxis(DataAxis, UnitConversion):
         self.offset = self.index2value(start)
         if step is not None:
             self.scale *= step
-        self.size = len(self.axis[my_slice])
-        return my_slice
+        self.size = len(self.axis[_slice])
+        return _slice
 
     def get_axis_dictionary(self):
         d = super(DataAxis, self).get_axis_dictionary()  # don't save the axis object
