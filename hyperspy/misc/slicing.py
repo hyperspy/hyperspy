@@ -200,6 +200,10 @@ class FancySlicing(object):
             len(slices)
         except TypeError:
             slices = (slices,)
+        # Arrays or lists treated as indexes.
+        if isinstance(slices, list) or isinstance(slices, np.ndarray) and slices.ndim == 1:
+            slices = (slices, )
+
 
         slices_ = tuple()
         for sl in slices:
@@ -267,8 +271,7 @@ class FancySlicing(object):
                     len(self.axes_manager._axes) < 2):
                 array_slices.append(axis._get_array_slices(slice_))
             else:
-                if isinstance(slice_, float):
-                    slice_ = axis.value2index(slice_)
+                slice_ = axis.value2index(slice_)
                 array_slices.append(slice_)
         return tuple(array_slices)
 

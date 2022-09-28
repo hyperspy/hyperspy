@@ -144,6 +144,35 @@ class Test1D:
         assert_array_equal(s.isig['rel0.0':'rel1.0'].data, s.data[:-1])
 
 
+class TestLabeledAxis:
+
+    def setup_method(self, method):
+        self.value = np.arange(24).reshape(6, 4)
+        s = signals.Signal2D(np.arange(24).reshape(6, 4))
+        s.axes_manager[0].convert_to_non_uniform_axis()
+        s.axes_manager[0].axis = ["a", "b", "c", "d"]
+        self.signal = s
+
+    def test_setup(self):
+        s = self.signal
+        assert s.axes_manager[0].is_uniform == False
+
+    @pytest.mark.parametrize("value", ("a", 0,))
+    def test_fancy_slic(self, value):
+        s = self.signal
+        np.testing.assert_array_equal(s.isig[value],
+                                      [0, 4, 8, 12, 16, 20])
+        np.testing.assert_array_equal(s.isig[value, :3],
+                                      [0, 4, 8])
+
+    @pytest.mark.parametrize("value", (["a", "c"], [0, 2], [True, False, True, False]))
+    def test_multi_slic(self, value):
+        s = self.signal
+        np.testing.assert_array_equal(s.isig[value], self.value[:, [0, 2]])
+
+
+
+
 @lazifyTestClass
 class Test2D:
 
