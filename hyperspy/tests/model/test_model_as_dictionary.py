@@ -102,8 +102,8 @@ class TestParameterDictionary:
 
         rn = np.random.random()
         np.testing.assert_equal(
-            p.twin_function(rn),
-            self.par.twin_function(rn))
+            p._twin_function(rn),
+            self.par._twin_function(rn))
         np.testing.assert_equal(
             p.twin_inverse_function(rn),
             self.par.twin_inverse_function(rn))

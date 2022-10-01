@@ -132,7 +132,7 @@ class Parameter(t.HasTraits):
     bmax = t.Property(NoneFloat(), label="Upper bounds")
     _twin_function_expr = ""
     _twin_inverse_function_expr = ""
-    twin_function = None
+    _twin_function = None
     _twin_inverse_function = None
     _twin_inverse_sympy = None
 
@@ -224,7 +224,7 @@ class Parameter(t.HasTraits):
     @twin_function_expr.setter
     def twin_function_expr(self, value):
         if not value:
-            self.twin_function = None
+            self._twin_function = None
             self.twin_inverse_function = None
             self._twin_function_expr = ""
             self._twin_inverse_sympy = None
@@ -236,7 +236,7 @@ class Parameter(t.HasTraits):
             raise ValueError("The expression must contain one variable, "
                              "it contains none.")
         x = tuple(expr.free_symbols)[0]
-        self.twin_function = lambdify(x, expr.evalf())
+        self._twin_function = lambdify(x, expr.evalf())
         self._twin_function_expr = value
         if not self.twin_inverse_function:
             y = sympy.Symbol(x.name + "2")
@@ -293,8 +293,8 @@ class Parameter(t.HasTraits):
         if self.twin is None:
             return self.__value
         else:
-            if self.twin_function:
-                return self.twin_function(self.twin.value)
+            if self._twin_function:
+                return self._twin_function(self.twin.value)
             else:
                 return self.twin.value
 
@@ -318,7 +318,7 @@ class Parameter(t.HasTraits):
         old_value = self.__value
 
         if self.twin is not None:
-            if self.twin_function is not None:
+            if self._twin_function is not None:
                 if self.twin_inverse_function is not None:
                     self.twin.value = self.twin_inverse_function(value)
                     return
