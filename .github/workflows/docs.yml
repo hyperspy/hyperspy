@@ -7,7 +7,7 @@ jobs:
     name: Docs (PR comments)
     runs-on: ubuntu-latest
     env:
-      BUILD_DEPS: python3-dev build-essential graphviz
+      BUILD_DEPS: python3-dev build-essential graphviz git
       LATEX_DEPS: dvipng latexmk texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
 
     steps:
@@ -15,7 +15,7 @@ jobs:
 
       - uses: ericpre/sphinx-action@latest_sphinx
         with:
-          pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }} && pip install .[all,build-doc]"
+          pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }} && pip install .[build-doc]"
           build-command: make html
           docs-folder: doc/
 
