@@ -872,7 +872,8 @@ class MVATools(object):
             If ``True``, plots each factor to the same window.  They are
             not scaled. Default is ``True``.
         title : str
-            Title of the plot.
+            Title of the matplotlib plot or label of the line in the legend
+            when the factors dimension is 1 and ``same_window`` is ``True``.
         cmap : :py:class:`~matplotlib.colors.Colormap`
             The colormap used for the factor images, or for peak
             characteristics. Default is the matplotlib gray colormap
@@ -905,9 +906,7 @@ class MVATools(object):
             else:
                 raise ValueError(
                     "Please provide the number of components to plot via the "
-                    "`comp_ids` argument")
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
+                    "`comp_ids` argument.")
         if title is None:
             title = self._get_plot_title('Decomposition factors of',
                                          same_window=same_window)
@@ -950,7 +949,8 @@ class MVATools(object):
             if ``True``, plots each factor to the same window.  They are
             not scaled. Default is ``True``.
         title : str
-            Title of the plot.
+            Title of the matplotlib plot or label of the line in the legend
+            when the factors dimension is 1 and ``same_window`` is ``True``.
         cmap : :py:class:`~matplotlib.colors.Colormap`
             The colormap used for the factor images, or for peak
             characteristics. Default is the matplotlib gray colormap
@@ -977,8 +977,6 @@ class MVATools(object):
         if same_window is None:
             same_window = True
         factors = self.learning_results.bss_factors
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('BSS factors of',
                                          same_window=same_window)
@@ -1024,7 +1022,8 @@ class MVATools(object):
             if ``True``, plots each factor to the same window. They are
             not scaled. Default is ``True``.
         title : str
-            Title of the plot.
+            Title of the matplotlib plot or label of the line in the legend
+            when the loadings dimension is 1 and ``same_window`` is ``True``.
         with_factors : bool
             If ``True``, also returns figure(s) with the factors for the
             given comp_ids.
@@ -1125,10 +1124,9 @@ class MVATools(object):
         same_window : bool
             If ``True``, plots each factor to the same window. They are
             not scaled. Default is ``True``.
-        comp_label : str
-            Will be deprecated in 2.0, please use `title` instead
         title : str
-            Title of the plot.
+            Title of the matplotlib plot or label of the line in the legend
+            when the loading dimension is 1 and ``same_window`` is ``True``.
         with_factors : bool
             If `True`, also returns figure(s) with the factors for the
             given `comp_ids`.
@@ -1166,8 +1164,6 @@ class MVATools(object):
                                "performed first.")
         if same_window is None:
             same_window = True
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title(
                 'BSS loadings of', same_window=same_window)
@@ -1861,7 +1857,7 @@ class MVATools(object):
         cluster_ids=None,
         calibrate=True,
         same_window=True,
-        comp_label="Cluster centers",
+        title=None,
         per_row=3):
         """Plot centers from a cluster analysis.
 
@@ -1880,10 +1876,9 @@ class MVATools(object):
         same_window : bool
             if True, plots each center to the same window.  They are
             not scaled.
-        comp_label : string
-            the label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting
-            in the same window)
+        title : str
+            Title of the matplotlib plot or label of the line in the legend
+            when the loadings dimension is 1 and ``same_window`` is ``True``.
         per_row : int
             the number of plots in each row, when the same_window parameter is
             True.
@@ -1900,14 +1895,19 @@ class MVATools(object):
         if same_window is None:
             same_window = True
         factors = cs.T
+
         if cluster_ids is None:
             cluster_ids = range(factors.shape[1])
+
+        if title is None:
+            title = self._get_plot_title(
+                'Cluster centers of', same_window=same_window)
 
         return self._plot_factors_or_pchars(factors,
                                             comp_ids=cluster_ids,
                                             calibrate=calibrate,
                                             same_window=same_window,
-                                            comp_label=comp_label,
+                                            comp_label=title,
                                             per_row=per_row)
     plot_cluster_signals.__doc__ %= (CLUSTER_SIGNALS_ARG)
 
@@ -1944,8 +1944,9 @@ class MVATools(object):
         same_window : bool
             if True, plots each factor to the same window.  They are
             not scaled. Default is True.
-        title : string
-            Title of the plot.
+        title : str
+            Title of the matplotlib plot or label of the line in the legend
+            when the labels dimension is 1 and ``same_window`` is ``True``.
         with_centers : bool
             If True, also returns figure(s) with the cluster centers for the
             given cluster_ids.
@@ -1986,8 +1987,6 @@ class MVATools(object):
         if cluster_ids is None:
             cluster_ids = range(labels.shape[0])
 
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title(
                 'Cluster labels of', same_window=same_window)
@@ -2018,9 +2017,8 @@ class MVATools(object):
         **kwargs):
         """Plot the euclidian distances to the centroid of each cluster.
 
-        In case of 1D navigation axis,
-        each line can be toggled on and off by clicking on the legended
-        line.
+        In case of 1D navigation axis, each line can be toggled on and
+        off by clicking on the legended line.
 
         Parameters
         ----------
@@ -2038,8 +2036,9 @@ class MVATools(object):
         same_window : bool
             if True, plots each factor to the same window.  They are
             not scaled. Default is True.
-        title : string
-            Title of the plot.
+        title : str
+            Title of the matplotlib plot or label of the line in the legend
+            when the distance dimension is 1 and ``same_window`` is ``True``.
         with_centers : bool
             If True, also returns figure(s) with the cluster centers for the
             given cluster_ids.
@@ -2165,21 +2164,6 @@ def _plot_x_results(factors, loadings, factors_navigator, loadings_navigator,
         factors_navigator = "auto"
     loadings.plot(navigator=loadings_navigator)
     factors.plot(navigator=factors_navigator)
-
-
-def _change_API_comp_label(title, comp_label):
-    if comp_label is not None:
-        if title is None:
-            title = comp_label
-            warnings.warn("The 'comp_label' argument will be deprecated "
-                          "in 2.0, please use 'title' instead",
-                          VisibleDeprecationWarning)
-        else:
-            warnings.warn("The 'comp_label' argument will be deprecated "
-                          "in 2.0, Since you are already using the 'title'",
-                          "argument, 'comp_label' is ignored.",
-                          VisibleDeprecationWarning)
-    return title
 
 
 class SpecialSlicersSignal(SpecialSlicers):
