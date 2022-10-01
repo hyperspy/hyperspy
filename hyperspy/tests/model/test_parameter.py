@@ -265,8 +265,8 @@ class TestParameterTwin:
         assert self.p2.value == self.p2.bmax
 
     def test_twin_function(self):
-        self.p2._twin_function = lambda x: x + 2
-        self.p2.twin_inverse_function = lambda x: x - 2
+        self.p2.twin_function_expr = "x + 2"
+        self.p2.twin_inverse_function_expr = "x - 2"
         self.p2.twin = self.p1
         assert self.p1.value == self.p2.value - 2
         self.p2.value = 10

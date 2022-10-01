@@ -71,7 +71,7 @@ class Parameter(t.HasTraits):
         a function of the given Parameter. The function is by default
         the identity function, but it can be defined by twin_function
     twin_function_expr: str
-        Expression of the ``twin_function`` that enables setting a functional
+        Expression of the function that enables setting a functional
         relationship between the parameter and its twin. If ``twin`` is not
         ``None``, the parameter value is calculated as the output of calling the
         twin function with the value of the twin parameter. The string is
@@ -79,20 +79,12 @@ class Parameter(t.HasTraits):
         of one variable. If the function is invertible the twin inverse function
         is set automatically.
     twin_inverse_function_expr : str
-        Expression of the ``twin_inverse_function`` that enables setting the
+        Expression of the function that enables setting the
         value of the twin parameter. If ``twin`` is not
         ``None``, its value is set to the output of calling the
         twin inverse function with the value provided. The string is
         parsed using sympy, so permitted values are any valid sympy expressions
         of one variable.
-    twin_function : function
-        **Setting this attribute manually
-        is deprecated in HyperSpy newer than 1.1.2. It will become private in
-        HyperSpy 2.0. Please use ``twin_function_expr`` instead.**
-    twin_inverse_function : function
-        **Setting this attribute manually
-        is deprecated in HyperSpy newer than 1.1.2. It will become private in
-        HyperSpy 2.0. Please use ``twin_inverse_function_expr`` instead.**
     ext_force_positive : bool
         If True, the parameter value is set to be the absolute value
         of the input value i.e. if we set Parameter.value = -3, the
@@ -133,7 +125,7 @@ class Parameter(t.HasTraits):
     _twin_function_expr = ""
     _twin_inverse_function_expr = ""
     _twin_function = None
-    _twin_inverse_function = None
+    __twin_inverse_function = None
     _twin_inverse_sympy = None
 
     def __init__(self):
@@ -225,7 +217,7 @@ class Parameter(t.HasTraits):
     def twin_function_expr(self, value):
         if not value:
             self._twin_function = None
-            self.twin_inverse_function = None
+            self.__twin_inverse_function = None
             self._twin_function_expr = ""
             self._twin_inverse_sympy = None
             return
@@ -238,15 +230,15 @@ class Parameter(t.HasTraits):
         x = tuple(expr.free_symbols)[0]
         self._twin_function = lambdify(x, expr.evalf())
         self._twin_function_expr = value
-        if not self.twin_inverse_function:
+        if not self._twin_inverse_function:
             y = sympy.Symbol(x.name + "2")
             try:
                 inv = list(sympy.solveset(sympy.Eq(y, expr), x))
                 self._twin_inverse_sympy = lambdify(y, inv)
-                self._twin_inverse_function = None
+                self.__twin_inverse_function = None
             except BaseException:
                 # Not all may have a suitable solution.
-                self._twin_inverse_function = None
+                self.__twin_inverse_function = None
                 self._twin_inverse_sympy = None
                 _logger.warning(
                     "The function {} is not invertible. Setting the value of "
@@ -264,7 +256,7 @@ class Parameter(t.HasTraits):
     @twin_inverse_function_expr.setter
     def twin_inverse_function_expr(self, value):
         if not value:
-            self.twin_inverse_function = None
+            self.__twin_inverse_function = None
             self._twin_inverse_function_expr = ""
             return
         expr = sympy.sympify(value)
@@ -274,20 +266,16 @@ class Parameter(t.HasTraits):
             raise ValueError("The expression must contain one variable, "
                              "it contains none.")
         x = tuple(expr.free_symbols)[0]
-        self._twin_inverse_function = lambdify(x, expr.evalf())
+        self.__twin_inverse_function = lambdify(x, expr.evalf())
         self._twin_inverse_function_expr = value
 
     @property
-    def twin_inverse_function(self):
+    def _twin_inverse_function(self):
         if (not self.twin_inverse_function_expr and
                 self.twin_function_expr and self._twin_inverse_sympy):
             return lambda x: self._twin_inverse_sympy(x).pop()
         else:
-            return self._twin_inverse_function
-
-    @twin_inverse_function.setter
-    def twin_inverse_function(self, value):
-        self._twin_inverse_function = value
+            return self.__twin_inverse_function
 
     def _get_value(self):
         if self.twin is None:
@@ -319,13 +307,13 @@ class Parameter(t.HasTraits):
 
         if self.twin is not None:
             if self._twin_function is not None:
-                if self.twin_inverse_function is not None:
-                    self.twin.value = self.twin_inverse_function(value)
+                if self._twin_inverse_function is not None:
+                    self.twin.value = self._twin_inverse_function(value)
                     return
                 else:
                     raise AttributeError(
-                        "This parameter has a ``twin_function`` but"
-                        "its ``twin_inverse_function`` is not defined.")
+                        "This parameter has a twin function but its "
+                        "``twin_inverse_function_expr`` is not defined.")
             else:
                 self.twin.value = value
                 return
