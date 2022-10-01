@@ -2511,16 +2511,6 @@ class BaseSignal(FancySlicing,
         """The original metadata of the signal."""
         return self._original_metadata
 
-    @original_metadata.setter
-    def original_metadata(self, d):
-        warnings.warn(
-            "Setting the `original_metadata` attribute is deprecated and will be removed "
-            "removed in HyperSpy 2.0. Use the `set_item` and `add_dictionary` "
-            "methods of the `original_metadata` attribute instead.")
-        if isinstance(d, dict):
-            d = DictionaryTreeBrowser(d)
-        self._original_metadata = d
-
     @property
     def ragged(self):
         return self.axes_manager._ragged
