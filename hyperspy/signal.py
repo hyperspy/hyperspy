@@ -1076,8 +1076,7 @@ class MVATools(object):
                 raise ValueError(
                     "Please provide the number of components to plot via the "
                     "`comp_ids` argument")
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
+
         if title is None:
             title = self._get_plot_title(
                 'Decomposition loadings of', same_window=same_window)
@@ -2079,8 +2078,6 @@ class MVATools(object):
         if cluster_ids is None:
             cluster_ids = range(distances.shape[0])
 
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title(
                 'Cluster distances of', same_window=same_window)
@@ -2219,7 +2216,7 @@ class BaseSignal(FancySlicing,
            The signal data. It can be an array of any dimensions.
         axes : [dict/axes], optional
             List of either dictionaries or axes objects to define the axes (see
-            the documentation of the :py:class:`~hyperspy.axes.AxesManager`
+            the documentation of the :py:class:`~.axes.AxesManager`
             class for more details).
         attributes : dict, optional
             A dictionary whose items are stored as attributes.
@@ -2303,8 +2300,7 @@ class BaseSignal(FancySlicing,
         return string
 
     def _binary_operator_ruler(self, other, op_name):
-        exception_message = (
-            "Invalid dimensions for this operation")
+        exception_message = ("Invalid dimensions for this operation")
         if isinstance(other, BaseSignal):
             # Both objects are signals
             oam = other.axes_manager
@@ -4851,7 +4847,10 @@ class BaseSignal(FancySlicing,
             lazy_output = self._lazy
         if ragged is None:
             ragged = self.ragged
-        # Separate ndkwargs depending on if they are BaseSignals.
+        
+        # Separate arguments to pass to the mapping function:
+        # ndkwargs dictionary contains iterating arguments which must be signals.
+        # kwargs dictionary contains non-iterating arguments
         self_nav_shape = self.axes_manager.navigation_shape
         ndkwargs = {}
         ndkeys = [key for key in kwargs if isinstance(kwargs[key], BaseSignal)]
@@ -4920,21 +4919,21 @@ class BaseSignal(FancySlicing,
                                     self.axes_manager.signal_axes])
             result = self._map_all(function, inplace=inplace, **kwargs)
         else:
-            kwargs["output_signal_size"] = output_signal_size
-            kwargs["output_dtype"] = output_dtype
             if show_progressbar is None:
                 from hyperspy.defaults_parser import preferences
                 show_progressbar = preferences.General.show_progressbar
             # Iteration over coordinates.
             result = self._map_iterate(
                 function,
-                iterating_kwargs=ndkwargs,
+                iterating_kwargs=ndkwargs, # function argument(s) (iterating)
                 show_progressbar=show_progressbar,
                 ragged=ragged,
                 inplace=inplace,
                 lazy_output=lazy_output,
                 max_workers=max_workers,
-                **kwargs,
+                output_dtype=output_dtype,
+                output_signal_size=output_signal_size,
+                **kwargs, # function argument(s) (non-iterating) 
             )
         if not inplace:
             return result
@@ -5117,13 +5116,6 @@ class BaseSignal(FancySlicing,
         nav_chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
         args, arg_keys = (), ()
         for key in iterating_kwargs:
-            if not isinstance(iterating_kwargs[key], BaseSignal):
-                iterating_kwargs[key] = BaseSignal(iterating_kwargs[key].T).T
-                _logger.warning(
-                    "Passing arrays as keyword arguments can be ambiguous. "
-                    "This is deprecated and will be removed in HyperSpy 2.0. "
-                    "Pass signal instances instead."
-                )
             if iterating_kwargs[key]._lazy:
                 axes = iterating_kwargs[key].axes_manager.navigation_axes
                 if iterating_kwargs[key].get_chunk_size(axes) != nav_chunks:
@@ -5816,11 +5808,9 @@ class BaseSignal(FancySlicing,
 
         """
         if signal_type is None:
-            warnings.warn(
-                "`s.set_signal_type(signal_type=None)` is deprecated. "
-                "Use `s.set_signal_type(signal_type='')` instead.",
-                VisibleDeprecationWarning
-            )
+            raise TypeError(
+                "The `signal_type` argument must be of string type."
+                )
 
         self.metadata.Signal.signal_type = signal_type
         # _assign_subclass takes care of matching aliases with their
