@@ -47,6 +47,7 @@ Welcome to HyperSpy's documentation!
    dev_guide/speeding_up_code.rst
    dev_guide/writing_extensions.rst
    dev_guide/useful_information.rst
+   dev_guide/maintenance.rst
 
 .. toctree::
    :maxdepth: 2

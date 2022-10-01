@@ -2556,7 +2556,7 @@ class BaseSignal(FancySlicing,
                     # and in the future, it will raise an error
                     data = np.array(self.data.tolist())
             except:
-                _logger.error(error)
+                raise ValueError(error)
 
             if data.dtype == object:
                 raise ValueError(error)
@@ -4344,7 +4344,8 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+        >>> import skimage
+        >>> im = hs.signals.Signal2D(skimage.data.camera())
         >>> im.fft()
         <ComplexSignal2D, title: FFT of , dimensions: (|512, 512)>
 
@@ -4439,8 +4440,8 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> import scipy
-        >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+        >>> import skimage
+        >>> im = hs.signals.Signal2D(skimage.data.camera())
         >>> imfft = im.fft()
         >>> imfft.ifft()
         <Signal2D, title: real(iFFT of FFT of ), dimensions: (|512, 512)>
@@ -5962,8 +5963,8 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> import scipy.misc
-        >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+        >>> import skimage
+        >>> im = hs.signals.Signal2D(skimage.data.camera())
         >>> m = hs.markers.rectangle(x1=150, y1=100, x2=400,
         >>>                                  y2=400, color='red')
         >>> im.add_marker(m)

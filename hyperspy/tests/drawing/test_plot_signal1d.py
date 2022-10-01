@@ -23,7 +23,12 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
-import scipy.misc
+try:
+    # scipy >=1.10
+    from scipy.datasets import ascent, face
+except ImportError:
+    # scipy <1.10
+    from scipy.misc import ascent, face
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import update_close_figure
@@ -87,7 +92,7 @@ def setup_teardown(request, scope="class"):
 @pytest.mark.usefixtures("setup_teardown")
 class TestPlotSpectra():
 
-    s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
+    s = hs.signals.Signal1D(ascent()[100:160:10])
 
     # Add a test signal with decreasing axis
     s_reverse = s.deepcopy()
@@ -148,7 +153,7 @@ class TestPlotSpectra():
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_spectra_sync(self, figure):
-        s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0).inav[:, :3]
+        s1 = hs.signals.Signal1D(face()).as_signal1D(0).inav[:, :3]
         s2 = s1.deepcopy() * -1
         hs.plot.plot_signals([s1, s2])
         if figure == '1nav':
