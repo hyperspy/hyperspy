@@ -53,7 +53,7 @@ Machine Learning
 ----------------
 
 - The ``polyfit`` keyword argument has been removed. uUse ``var_func`` instead.
-- The list of possible values for the ``algorithm`` argument of the :py:meth:`~.learn.mva.decomposition` method
+- The list of possible values for the ``algorithm`` argument of the :py:meth:`~.learn.mva.MVA.decomposition` method
   has been changed according to the following table:
 
   .. list-table:: Change of the ``algorithm`` argument
@@ -77,7 +77,7 @@ Machine Learning
 
 - The argument ``learning_rate`` of the ``ORPCA`` algorithm has been renamed to ``subspace_learning_rate``.
 - The argument ``momentum`` of the ``ORPCA`` algorithm has been renamed to ``subspace_momentum``.
-- The list of possible values for the ``centre`` keyword argument of the :py:meth:`~.learn.mva.decomposition` method
+- The list of possible values for the ``centre`` keyword argument of the :py:meth:`~.learn.mva.MVA.decomposition` method
   when using the ``SVD`` algorithm has been changed according to the following table:
 
   .. list-table:: Change of the ``centre`` argument
@@ -91,7 +91,7 @@ Machine Learning
      * - variables
        - signal
 - For lazy signals, a possible value of the ``algorithm`` keyword argument of the
-  :py:meth:`~._signals.lazy.decomposition` method has been changed
+  :py:meth:`~._signals.lazy.LazySignal.decomposition` method has been changed
   from ``"ONMF"`` to ``"ORNMF"``.
 - Setting the ``metadata`` and ``original_metadata`` attribute of signals is removed, use
   the :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item` and
@@ -151,6 +151,8 @@ Model fitting
   :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods of the
   ``metadata`` attribute instead.
 
+- The deprecated ``twin_function`` and ``twin_inverse_function`` have been privatized.
+
 Signal
 ------
 - ``metadata.Signal.binned`` is removed, use the ``is_binned`` axis attribute
@@ -169,10 +171,18 @@ Signal
      * - freedman
        - fd
 
-- The ``integrate_in_range`` method is removed, use :py:class:`~.roi.SpanRoi`
+- The ``integrate_in_range`` method is removed, use :py:class:`~.roi.SpanROI`
   followed by :py:meth:`~.signal.BaseSignal.integrate1D` instead.
-- The ``progressbar`` keyword argument of the :py:meth:`~._signals.lazy.compute` method
+- The ``progressbar`` keyword argument of the :py:meth:`~._signals.lazy.LazySignal.compute` method
   has been removed, use ``show_progressbar`` instead.
+- The deprecated ``comp_label`` argument of the :py:meth:`~.signal.MVATools.plot_decomposition_loadings`,
+  :py:meth:`~.signal.MVATools.plot_decomposition_factors`, :py:meth:`~.signal.MVATools.plot_bss_loadings`,
+  :py:meth:`~.signal.MVATools.plot_bss_factors`, :py:meth:`~.signal.MVATools.plot_clusters_distances`, 
+  :py:meth:`~.signal.MVATools.plot_cluster_labels` has been removed, use the ``title`` argument instead.
+- The :py:meth:`~.signal.BaseSignal.set_signal_type` now raises an error when passing
+  ``None`` to the ``signal_type`` argument. Use ``signal_type=""`` instead.
+- Passing an "iterating over navigation argument" to the :py:meth:`~.signal.BaseSignal.map`
+  method is removed, pass a HyperSpy signal with suitable navigation and signal shape instead.  
 
 Preferences
 -----------
