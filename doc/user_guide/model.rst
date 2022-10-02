@@ -1546,9 +1546,7 @@ SAMFire (Smart Adaptive Multi-dimensional Fitting) is an algorithm created to
 reduce the starting value (or local / false minima) problem, which often arises
 when fitting multi-dimensional datasets.
 
-The algorithm is described in full in "Multi-dimensional Data Analysis in Electron Microscopy" by Tomas Ostasevicius.
-This thesis is available in the following `thesis
-<https://doi.org/10.17863/CAM.15486>`_.
+The algorithm is described in `Tomas Ostasevicius' PhD thesis <https://doi.org/10.17863/CAM.15486>`_, entitled  "Multi-dimensional Data Analysis in Electron Microscopy".
 
 The idea
 ^^^^^^^^
