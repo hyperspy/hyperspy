@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-
+import logging
 from unittest import mock
 
 import numpy as np
@@ -265,12 +265,69 @@ class TestParameterTwin:
         assert self.p2.value == self.p2.bmax
 
     def test_twin_function(self):
-        self.p2.twin_function_expr = "x + 2"
-        self.p2.twin_inverse_function_expr = "x - 2"
-        self.p2.twin = self.p1
-        assert self.p1.value == self.p2.value - 2
-        self.p2.value = 10
-        assert self.p1.value == 8
+        p1, p2 = self.p1, self.p2
+        p2.twin_function_expr = "x + 2"
+        assert p2._twin_inverse_function is not None
+        assert p2._twin_inverse_sympy is not None
+        assert p2.twin_inverse_function_expr == ""
+        
+        p2.twin_inverse_function_expr = "x - 2"
+        p2.twin = p1
+        assert p1.value == p2.value - 2
+        p2.value = 10
+        assert p1.value == 8
+
+    def test_twin_reset(self):
+        p1, p2 = self.p1, self.p2
+        p2.twin = p1
+        assert p2.twin is p1
+
+        p2.twin = None
+        assert p2.twin is None
+
+    def test_twin_function_reset(self, caplog):
+        p1, p2 = self.p1, self.p2
+        p2.twin = p1
+        p2.twin_function_expr = "x + 2"
+        assert p2._twin_inverse_function is not None
+        assert p2._twin_inverse_sympy is not None
+        assert p2.twin_inverse_function_expr == ""
+
+        p2.twin_function_expr = ""
+        assert p2._twin_inverse_function is None
+        assert p2._twin_inverse_sympy is None       
+
+    def test_setting_twin_function_error(self, caplog):
+        with pytest.raises(ValueError):
+            self.p2.twin_function_expr = "+ 1"
+
+        assert self.p2.twin_function_expr == ""
+        assert self.p2.twin_inverse_function_expr == ""
+        assert self.p2._twin_inverse_sympy is None
+        assert self.p2._twin_inverse_function is None
+
+        with caplog.at_level(logging.WARNING):
+            self.p2.twin_function_expr = 'abs(x) - 1'
+
+        assert "is not invertible" in caplog.text
+        assert self.p2._twin_inverse_sympy is None
+        assert self.p2._twin_inverse_function is None
+
+        with pytest.raises(ValueError):
+            self.p2.twin_inverse_function_expr = "+ 1"
+
+    def test_twin_inverse_function_undefined(self, caplog):
+        p1, p2 = self.p1, self.p2
+        p2.twin = p1
+        with caplog.at_level(logging.WARNING):
+            p2.twin_function_expr = 'abs(x) - 1'
+        assert p2.twin_function_expr == 'abs(x) - 1'
+        assert p2._twin_inverse_sympy is None
+        assert p2._twin_inverse_function is None
+        assert p2.twin_inverse_function_expr == ""
+        with pytest.raises(AttributeError):
+            # twin_inversion_function undefined
+            p2.value = 3
 
     def test_inherit_connections(self):
         dummy = Dummy()

@@ -125,6 +125,8 @@ class Parameter(t.HasTraits):
     _twin_function_expr = ""
     _twin_inverse_function_expr = ""
     _twin_function = None
+    # The inverse function is store in one of the two following attribute
+    # depending on whether it was set manually or calculated with sympy
     __twin_inverse_function = None
     _twin_inverse_sympy = None
 
@@ -225,8 +227,7 @@ class Parameter(t.HasTraits):
         if len(expr.free_symbols) > 1:
             raise ValueError("The expression must contain only one variable.")
         elif len(expr.free_symbols) == 0:
-            raise ValueError("The expression must contain one variable, "
-                             "it contains none.")
+            raise ValueError("The expression must contain one variable.")
         x = tuple(expr.free_symbols)[0]
         self._twin_function = lambdify(x, expr.evalf())
         self._twin_function_expr = value
@@ -241,10 +242,11 @@ class Parameter(t.HasTraits):
                 self.__twin_inverse_function = None
                 self._twin_inverse_sympy = None
                 _logger.warning(
-                    "The function {} is not invertible. Setting the value of "
-                    "{} will raise an AttributeError unless you set manually "
-                    "``twin_inverse_function_expr``. Otherwise, set the "
-                    "value of its twin parameter instead.".format(value, self))
+                    f"The function {value} is not invertible. Setting the "
+                    f"value of {self} will raise an AttributeError unless "
+                    "you set manually ``twin_inverse_function_expr``. "
+                    "Otherwise, set the value of its twin parameter instead."
+                    )
 
     @property
     def twin_inverse_function_expr(self):
@@ -271,8 +273,8 @@ class Parameter(t.HasTraits):
 
     @property
     def _twin_inverse_function(self):
-        if (not self.twin_inverse_function_expr and
-                self.twin_function_expr and self._twin_inverse_sympy):
+        if (self.twin_function_expr and self._twin_inverse_sympy and
+                not self.twin_inverse_function_expr):
             return lambda x: self._twin_inverse_sympy(x).pop()
         else:
             return self.__twin_inverse_function
