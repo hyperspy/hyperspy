@@ -300,22 +300,22 @@ intersphinx_mapping = {'rsciio': ('https://hyperspy.org/rosettasciio/', None),
 graphviz_output_format = "svg"
 
 
-def run_apidoc(_):
-    # https://www.sphinx-doc.org/en/master/man/sphinx-apidoc.html
-    # https://www.sphinx-doc.org/es/1.2/ext/autodoc.html
-    import os
-    os.environ['SPHINX_APIDOC_OPTIONS'] = 'members,private-members,no-undoc-members,show-inheritance,ignore-module-all'
+# def run_apidoc(_):
+#     # https://www.sphinx-doc.org/en/master/man/sphinx-apidoc.html
+#     # https://www.sphinx-doc.org/es/1.2/ext/autodoc.html
+#     import os
+#     os.environ['SPHINX_APIDOC_OPTIONS'] = 'members,private-members,no-undoc-members,show-inheritance,ignore-module-all'
 
-    from sphinx.ext.apidoc import main
+#     from sphinx.ext.apidoc import main
 
-    cur_dir = os.path.normpath(os.path.dirname(__file__))
-    output_path = os.path.join(cur_dir, 'api')
-    modules = os.path.normpath(os.path.join(cur_dir, "../hyperspy"))
-    exclude_pattern = ["../hyperspy/tests",
-                       "../hyperspy/external",
-                       "../hyperspy/io_plugins/unbcf_fast.pyx"]
-    main(['-e', '-f', '-P', '-o', output_path, modules, *exclude_pattern])
+#     cur_dir = os.path.normpath(os.path.dirname(__file__))
+#     output_path = os.path.join(cur_dir, 'api')
+#     modules = os.path.normpath(os.path.join(cur_dir, "../hyperspy"))
+#     exclude_pattern = ["../hyperspy/tests",
+#                        "../hyperspy/external",
+#                        "../hyperspy/io_plugins/unbcf_fast.pyx"]
+#     main(['-e', '-f', '-P', '-o', output_path, modules, *exclude_pattern])
 
 
-def setup(app):
-    app.connect('builder-inited', run_apidoc)
+# def setup(app):
+#     app.connect('builder-inited', run_apidoc)

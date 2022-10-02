@@ -1,0 +1,46 @@
+.. _user_guide:
+
+##########
+User guide
+##########
+
+.. toctree::
+    :caption: Getting started
+    :maxdepth: 2
+
+    install.rst
+    getting_started.rst
+    io.rst
+
+.. toctree::
+    :caption: Fundamentals and usage
+    :maxdepth: 2
+    
+    signal.rst
+    axes.rst
+    signal1d.rst
+    signal2d.rst
+    visualisation.rst
+    mva.rst
+    model.rst
+    big_data.rst
+
+.. toctree::
+    :caption: Domain-Specific Signals
+    :maxdepth: 2
+
+    eds.rst
+    eels.rst
+    dielectric_function.rst
+    electron_holography.rst
+
+.. toctree::
+    :caption: Advanced Usage
+    :maxdepth: 2
+    
+    events.rst
+    interactive_operations_ROIs.rst
+
+.. toctree::
+    :caption: Advanced Usage
+    :maxdepth: 2

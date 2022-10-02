@@ -1,6 +1,6 @@
 ﻿﻿
 
-.. _dev_guide-label:
+.. _dev_guide:
 
 Introduction
 =============
@@ -26,13 +26,13 @@ not already a user, but, just in case: the best way to start understanding how
 HyperSpy works and to build a broad overview of the code as it stands is to
 use it -- so what are you waiting for? :ref:`Install HyperSpy <install-label>`!
 
-The HyperSpy :ref:`User Guide <user_guide-label>` also provides a good overview
+The HyperSpy :ref:`User Guide <user_guide>` also provides a good overview
 of all the parts of the code that are currently implemented as well as much 
 information about how everything
 works -- so read it well.
 
 
-2. Got a problem? -- ask!
+1. Got a problem? -- ask!
 -------------------------
 
 Open source projects are all about community -- we put in much effort to make

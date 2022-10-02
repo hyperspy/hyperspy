@@ -759,7 +759,7 @@ Enhancements
 ------------
 
 * The contrast adjustment tool has been hugely improved. Test it by pressing the ``h`` key on any image.
-* The :ref:`Developer Guide <dev_guide-label>` has been extended, enhanced and divided into
+* The :ref:`Developer Guide <dev_guide>` has been extended, enhanced and divided into
   chapters.
 * Signals with signal dimension equal to 0 and navigation dimension 1 or 2 are
   automatically transposed when using
@@ -1191,7 +1191,7 @@ Documentation
   * :ref:`install-label`.
   * :ref:`ml-label`.
   * :ref:`eds-label`.
-* New :ref:`dev_guide-label`.
+* New :ref:`dev_guide`.
 
 
 API changes
