@@ -19,7 +19,7 @@
 """SAMFire modules
 
 
-The :mod:`~hyperspy.api.samfire` module contains the following submodules:
+The :mod:`~.api.samfire` module contains the following submodules:
 
 fit_tests
     Tests to check fit convergence when running SAMFire

@@ -37,3 +37,13 @@ class ReducedChiSquaredStrategy(LocalStrategy):
         self.weight = ReducedChiSquaredWeight()
         self.radii = 3.
         self.decay_function = exp_decay
+
+
+__all__ = [
+    'LocalStrategy',
+    'ReducedChiSquaredStrategy',
+    ]
+
+
+def __dir__():
+    return sorted(__all__)
