@@ -29,9 +29,11 @@ from hyperspy._signals.signal1d import Signal1D, LazySignal1D
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
-from hyperspy.utils.plot import markers
-from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING_PARAMETERS,
-                                      PLOT1D_DOCSTRING)
+from hyperspy.utils import markers
+from hyperspy.docstrings.plot import (
+    BASE_PLOT_DOCSTRING_PARAMETERS,
+    PLOT1D_DOCSTRING
+    )
 
 
 _logger = logging.getLogger(__name__)
