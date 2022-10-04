@@ -180,16 +180,16 @@ def test_dir_utils_markers():
     import hyperspy.utils.markers
     d = dir(hyperspy.utils.markers)
     assert d == [
-        'arrow',
-        'ellipse',
-        'horizontal_line',
-        'horizontal_line_segment',
-        'line_segment',
-        'point',
-        'rectangle',
-        'text',
-        'vertical_line',
-        'vertical_line_segment',
+        'Arrow',
+        'Ellipse',
+        'HorizontalLine',
+        'HorizontalLineSegment',
+        'LineSegment',
+        'Point',
+        'Rectangle',
+        'Text',
+        'VerticalLine',
+        'VerticalLineSegment',
         ]
 
 

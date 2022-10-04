@@ -27,34 +27,31 @@ Example
 >>> im.add_marker(m)
 
 """
-
-from hyperspy.drawing._markers.horizontal_line import \
-    HorizontalLine as horizontal_line
-from hyperspy.drawing._markers.horizontal_line_segment import \
-    HorizontalLineSegment as horizontal_line_segment
-from hyperspy.drawing._markers.line_segment import LineSegment as line_segment
-from hyperspy.drawing._markers.point import Point as point
-from hyperspy.drawing._markers.rectangle import Rectangle as rectangle
-from hyperspy.drawing._markers.text import Text as text
-from hyperspy.drawing._markers.vertical_line import \
-    VerticalLine as vertical_line
-from hyperspy.drawing._markers.vertical_line_segment import \
-    VerticalLineSegment as vertical_line_segment
-from hyperspy.drawing._markers.arrow import Arrow as arrow
-from hyperspy.drawing._markers.ellipse import Ellipse as ellipse
+from hyperspy.drawing._markers.arrow import Arrow
+from hyperspy.drawing._markers.ellipse import Ellipse
+from hyperspy.drawing._markers.horizontal_line import HorizontalLine
+from hyperspy.drawing._markers.horizontal_line_segment import (
+    HorizontalLineSegment,
+    )
+from hyperspy.drawing._markers.line_segment import LineSegment
+from hyperspy.drawing._markers.point import Point
+from hyperspy.drawing._markers.rectangle import Rectangle
+from hyperspy.drawing._markers.text import Text
+from hyperspy.drawing._markers.vertical_line import VerticalLine
+from hyperspy.drawing._markers.vertical_line_segment import VerticalLineSegment
 
 
 __all__ = [
-    'arrow',
-    'ellipse',
-    'horizontal_line',
-    'horizontal_line_segment',
-    'line_segment',
-    'point',
-    'rectangle',
-    'text',
-    'vertical_line',
-    'vertical_line_segment',
+    'Arrow',
+    'Ellipse',
+    'HorizontalLine',
+    'HorizontalLineSegment',
+    'LineSegment',
+    'Point',
+    'Rectangle',
+    'Text',
+    'VerticalLine',
+    'VerticalLineSegment',
     ]
 
 

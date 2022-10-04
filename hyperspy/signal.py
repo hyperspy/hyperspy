@@ -5965,21 +5965,20 @@ class BaseSignal(FancySlicing,
         --------
         >>> import skimage
         >>> im = hs.signals.Signal2D(skimage.data.camera())
-        >>> m = hs.markers.rectangle(x1=150, y1=100, x2=400,
-        >>>                                  y2=400, color='red')
+        >>> m = hs.plot.markers.Rectangle(x1=150, y1=100, x2=400, y2=400, color='red')
         >>> im.add_marker(m)
 
         Adding to a 1D signal, where the point will change
         when the navigation index is changed:
 
         >>> s = hs.signals.Signal1D(np.random.random((3, 100)))
-        >>> marker = hs.markers.point((19, 10, 60), (0.2, 0.5, 0.9))
+        >>> marker = hs.plot.markers.Point((19, 10, 60), (0.2, 0.5, 0.9))
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
 
         Add permanent marker:
 
         >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
-        >>> marker = hs.markers.point(50, 60, color='red')
+        >>> marker = hs.plot.markers.Point(50, 60, color='red')
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
 
         Add permanent marker to signal with 2 navigation dimensions.
@@ -5990,21 +5989,21 @@ class BaseSignal(FancySlicing,
         2 lists with 3 elements each (2 x 3):
 
         >>> s = hs.signals.Signal1D(np.random.random((2, 3, 10)))
-        >>> marker = hs.markers.vertical_line([[1, 3, 5], [2, 4, 6]])
+        >>> marker = hs.plot.markers.VerticalLine([[1, 3, 5], [2, 4, 6]])
         >>> s.add_marker(marker, permanent=True)
 
         Add permanent marker which changes with navigation position, and
         do not add it to a current plot:
 
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(3, 100, 100)))
-        >>> marker = hs.markers.point((10, 30, 50), (30, 50, 60), color='red')
+        >>> marker = hs.plot.markers.Point((10, 30, 50), (30, 50, 60), color='red')
         >>> s.add_marker(marker, permanent=True, plot_marker=False)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Removing a permanent marker:
 
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
-        >>> marker = hs.markers.point(10, 60, color='red')
+        >>> marker = hs.plot.markers.Point(10, 60, color='red')
         >>> marker.name = "point_marker"
         >>> s.add_marker(marker, permanent=True)
         >>> del s.metadata.Markers.point_marker
@@ -6015,7 +6014,7 @@ class BaseSignal(FancySlicing,
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
         >>> marker_list = []
         >>> for i in range(100):
-        >>>     marker = hs.markers.point(random()*100, random()*100, color='red')
+        >>>     marker = hs.plot.markers.Point(random()*100, random()*100, color='red')
         >>>     marker_list.append(marker)
         >>> s.add_marker(marker_list, permanent=True)
 
