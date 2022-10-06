@@ -27,6 +27,8 @@ import pint
 from sympy.utilities.lambdify import lambdify
 import traits.api as t
 from traits.trait_errors import TraitError
+from traits.api import observe
+from traits.observation.api import trait
 
 from hyperspy.api_nogui import _ureg
 from hyperspy.events import Events, Event
@@ -304,8 +306,8 @@ class BaseDataAxis(t.HasTraits):
             index : The new index
             """.format(_name, _name, _name), arguments=["obj", 'index'])
 
-        self.name=name
-        self.units=units
+        self.name = name
+        self.units = units
         self.navigate = navigate
         self.is_binned = is_binned
         self.axes_manager = None
@@ -370,9 +372,12 @@ class BaseDataAxis(t.HasTraits):
         return name
 
     def __repr__(self):
-        text = '<%s axis, size: %i' % (self._get_name(),
-                                       self.size,)
-        if self.navigate is True:
+        if hasattr(self, "size"):
+            text = '<%s axis, size: %i' % (self._get_name(),
+                                           self.size,)
+        else:
+            text = '<%s axis, size: None' % (self._get_name(),)
+        if self.navigate is True and hasattr(self, "index"):
             text += ", index: %i" % self.index
         text += ">"
         return text
@@ -1475,6 +1480,7 @@ class AxesManager(t.HasTraits):
     _step = t.Int(1)
 
     def __init__(self, axes_list):
+        self._ragged = False
         super().__init__()
         self.events = Events()
         self.events.indices_changed = Event("""
@@ -1503,11 +1509,8 @@ class AxesManager(t.HasTraits):
         if self._axes:
             self.remove(self._axes)
         self.create_axes(axes_list)
-
-        self._update_attributes()
         self._update_trait_handlers()
         self.iterpath = 'flyback'
-        self._ragged = False
 
     @property
     def ragged(self):
@@ -1550,6 +1553,14 @@ class AxesManager(t.HasTraits):
             [_id for _id in map(id, axes)], return_index=True)
         ans = tuple(axes[i] for i in sorted(indices))
         return ans
+
+    @property
+    def axes(self):
+        return self._axes
+
+    @axes.setter
+    def axes(self, value):
+        self._axes = value
 
     def _axes_getter(self, y):
         if isinstance(y, BaseDataAxis):
@@ -1863,7 +1874,6 @@ class AxesManager(t.HasTraits):
 
     def _append_axis(self, **kwargs):
         axis = create_axis(**kwargs)
-        axis.axes_manager = self
         self._axes.append(axis)
 
     def convert_units(self, axes=None, units=None, same_units=True,
@@ -2001,18 +2011,16 @@ class AxesManager(t.HasTraits):
         if changes:
             self.events.any_axis_changed.trigger(obj=self)
 
-    def _update_attributes(self):
+    @observe("_axes")
+    @observe(trait("_axes", notify=False).list_items())
+    def add_axis_manger(self, event):
         for axis in self._axes:
-            # Until we find a better place, take property of the axes
-            # here to avoid difficult to debug bugs.
             axis.axes_manager = self
 
     def _on_index_changed(self):
-        self._update_attributes()
         self.events.indices_changed.trigger(obj=self)
 
     def _on_size_changed(self):
-        self._update_attributes()
         self.events.any_axis_changed.trigger(obj=self)
 
     def _on_scale_changed(self):

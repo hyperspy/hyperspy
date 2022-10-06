@@ -2580,7 +2580,6 @@ class BaseSignal(FancySlicing,
             for index in axes:
                 axis = {'index_in_array':index, 'size':self.data.shape[index]}
                 self.axes_manager._append_axis(**axis)
-            self.axes_manager._update_attributes()
 
         self.axes_manager._ragged = value
 
@@ -2870,7 +2869,6 @@ class BaseSignal(FancySlicing,
         def get_dynamic_explorer_wrapper(*args, **kwargs):
             navigator.axes_manager.indices = self.axes_manager.indices[
                 navigator.axes_manager.signal_dimension:]
-            navigator.axes_manager._update_attributes()
             if np.issubdtype(navigator().dtype, np.complexfloating):
                 return abs(navigator(as_numpy=True))
             else:
@@ -3172,7 +3170,6 @@ class BaseSignal(FancySlicing,
         c1.is_binned, c2.is_binned = c2.is_binned, c1.is_binned
         am._axes[axis1] = c2
         am._axes[axis2] = c1
-        am._update_attributes()
         am._update_trait_handlers(remove=False)
         if optimize:
             s._make_sure_data_is_contiguous()

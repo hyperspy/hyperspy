@@ -15,12 +15,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
-
+import copy
 from unittest import mock
 
 import numpy as np
 
-from hyperspy.axes import AxesManager, _serpentine_iter, _flyback_iter, GeneratorLen, BaseDataAxis
+from hyperspy.axes import AxesManager, _serpentine_iter, _flyback_iter, GeneratorLen, BaseDataAxis, create_axis
 from hyperspy.defaults_parser import preferences
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 
@@ -68,6 +68,26 @@ class TestAxesManager:
         ]
 
         self.am = AxesManager(axes_list)
+
+    def test_inclusion(self):
+        am = self.am
+        assert all([a.axes_manager == am for a in am._axes])
+
+    def test_changing_axes(self):
+        am = self.am
+
+        new_axis = BaseDataAxis("test1")
+        am._axes.append(new_axis)
+        assert len(am._axes) == 5
+        assert all([a.axes_manager == am for a in am._axes])
+
+    def test_changing_axes_insertion(self):
+        am = self.am
+
+        new_axis = BaseDataAxis("test1")
+        am._axes[2] = new_axis
+        assert len(am._axes) == 4
+        assert all([a.axes_manager == am for a in am._axes])
 
     def test_reprs(self):
         repr(self.am)
