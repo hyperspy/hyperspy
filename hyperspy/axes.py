@@ -819,7 +819,7 @@ class DataAxis(BaseDataAxis):
             else:
                 # the axis is not ordered
                 return None
-        except:
+        except np.core._exceptions._UFuncNoLoopError:
             return None
 
     def calibrate(self, *args, **kwargs):
