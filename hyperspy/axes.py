@@ -1517,13 +1517,10 @@ class AxesManager(t.HasTraits):
         return self._ragged
 
     def _update_trait_handlers(self, remove=False):
-        things = {self._on_index_changed: '_axes._index',
-                  self._on_size_changed: '_axes.size',
-                  self._on_scale_changed: '_axes.scale',
-                  self._on_offset_changed: '_axes.offset'}
-
-        for k, v in things.items():
-            self.on_trait_change(k, name=v, remove=remove)
+        self.on_trait_change(self._on_index_changed, name='_axes._index', remove=remove)
+        self.on_trait_change(self._on_axes_changed, name='_axes._size', remove=remove)
+        self.on_trait_change(self._on_axes_changed, name='_axes._scale', remove=remove)
+        self.on_trait_change(self._on_axes_changed, name='_axes._offset', remove=remove)
 
     def _get_positive_index(self, axis):
         if axis < 0:
@@ -2020,13 +2017,7 @@ class AxesManager(t.HasTraits):
     def _on_index_changed(self):
         self.events.indices_changed.trigger(obj=self)
 
-    def _on_size_changed(self):
-        self.events.any_axis_changed.trigger(obj=self)
-
-    def _on_scale_changed(self):
-        self.events.any_axis_changed.trigger(obj=self)
-
-    def _on_offset_changed(self):
+    def _on_axes_changed(self):
         self.events.any_axis_changed.trigger(obj=self)
 
     @property
