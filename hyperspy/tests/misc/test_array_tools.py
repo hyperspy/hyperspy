@@ -49,12 +49,12 @@ def test_get_memory_size(dtype, size):
 
 @pytest.mark.parametrize(
     'sig_chunks, index, expected',
-    [((5, 5), (1, 1), [slice(0, 5, None), slice(0, 5, None)]),
-     ((5, 5), (7, 7), [slice(5, 10, None), slice(5, 10, None)]),
-     ((5, 5), (1, 12), [slice(0, 5, None), slice(10, 15, None)]),
-     ((5, ), (1, ), [slice(0, 5, None), ]),
-     ((20, ), (1, ), [slice(0, 20, None), ]),
-     ((5, ), [1], [slice(0, 5, None), ]),
+    [((5, 5), (1, 1), (slice(0, 5, None), slice(0, 5, None))),
+     ((5, 5), (7, 7), (slice(5, 10, None), slice(5, 10, None))),
+     ((5, 5), (1, 12), (slice(0, 5, None), slice(10, 15, None))),
+     ((5, ), (1, ), (slice(0, 5, None), )),
+     ((20, ), (1, ), (slice(0, 20, None), )),
+     ((5, ), [1], (slice(0, 5, None), )),
      ((5, ), (25, ), 'error'),
      ((20, 20), (25, 21), 'error'),
       ]
@@ -72,7 +72,7 @@ def test_get_signal_chunk_slice(sig_chunks, index, expected):
 
 @pytest.mark.parametrize(
     'sig_chunks, index, expected',
-    [((5, 5), (12, 7), [slice(10, 15, None), slice(5, 10, None)]),
+    [((5, 5), (12, 7), (slice(10, 15, None), slice(5, 10, None))),
      ((5, 5), (7, 12), 'error'),
      ]
 )
