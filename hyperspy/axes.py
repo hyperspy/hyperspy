@@ -258,6 +258,15 @@ class UnitConversion:
 class BaseDataAxis(t.HasTraits):
     """Parent class defining common attributes for all DataAxis classes.
 
+    The Base Data class has name and units attributes. Both of these can be freely set/ mutated
+    as long as the values are strings.
+
+    This axis cannot be plotted as it has no `.axis` attribute or size.
+
+    The axes_manager property should only be set by an `AxesManager` class to avoid
+    confusion. This value is automatically set when any Axis is appended or added to
+    an `AxesManager.axes` list attribute.
+
     Parameters
     ----------
     name : str, optional
@@ -432,10 +441,19 @@ class BaseDataAxis(t.HasTraits):
 
 
 class DataAxis(BaseDataAxis):
-    """DataAxis class for a non-uniform axis defined through an ``axis`` array.
+    """DataAxis class for any non-uniform axis defined through an ``axis`` array.
 
     The most flexible type of axis, where the axis points are directly given by
-    an array named ``axis``. As this can be any array, the property
+    an array named ``axis``. These points can be an abitrary array of integers/floats,
+    an array of strings or even an array of objects.
+
+    All other properties are defined from the ``axis`` array. Notable setting the ``size``
+    of a DataAxis object will result in an error.
+
+    The array can be indexed using direct references to objects in the axis array,
+    integer indexes or if `_is_increasing_order` is not None, float values.
+
+    As this can be any array, the property
     ``is_uniform`` is automatically set to ``False``.
 
     Parameters
@@ -819,7 +837,7 @@ class DataAxis(BaseDataAxis):
             else:
                 # the axis is not ordered
                 return None
-        except np.core._exceptions._UFuncNoLoopError:
+        except np.core._exceptions._UFuncNoLoopError:  # subtracting array of objects/strings will fail
             return None
 
     def calibrate(self, *args, **kwargs):
@@ -881,6 +899,9 @@ class FunctionalDataAxis(DataAxis):
     `UniformDataAxis` with ``offset = 0`` and ``scale = 1`` of the given
     ``size``. However, it can also be initialized with custom ``offset`` and
     ``scale`` values. Alternatively, it can be a non-uniform `DataAxis`.
+
+    A `FunctionalDataAxis` has its size set by the underlying  `BaseDataAxis` ``x``.
+    Other values are calculated from the ``axis`` attribute.
 
     Parameters
     ----------
