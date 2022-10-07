@@ -241,17 +241,18 @@ class FancySlicing(object):
             idx = nav_idx + signal_idx
 
         # Add support for Ellipsis
-        if Ellipsis in _orig_slices:
+        if any([s is Ellipsis for s in _orig_slices]):
             _orig_slices = list(_orig_slices)
-            # Expand the first Ellipsis
-            ellipsis_index = _orig_slices.index(Ellipsis)
-            _orig_slices.remove(Ellipsis)
-            _orig_slices = (_orig_slices[:ellipsis_index] + [slice(None), ] *
-                            max(0, len(idx) - len(_orig_slices)) +
-                            _orig_slices[ellipsis_index:])
+            indexes = np.where([s is Ellipsis for s in _orig_slices])[0]
+            first_ellipse = indexes[0]
+            _orig_slices.pop(first_ellipse)
+            extra_slices = [slice(None), ] * max(0, len(idx) - len(_orig_slices))
+            _orig_slices = _orig_slices[:first_ellipse] + extra_slices + _orig_slices[first_ellipse:]
             # Replace all the following Ellipses by :
-            while Ellipsis in _orig_slices:
-                _orig_slices[_orig_slices.index(Ellipsis)] = slice(None)
+            if any([s is Ellipsis for s in _orig_slices]):
+                indexes = np.where([s is Ellipsis for s in _orig_slices])
+                for i in indexes:
+                    _orig_slices[i] = slice(None)
             _orig_slices = tuple(_orig_slices)
 
         if len(_orig_slices) > len(idx):

@@ -174,7 +174,9 @@ class TestLabeledAxis:
         np.testing.assert_array_equal(s.isig[value].axes_manager[0].axis,
                                       ["a", "c"])
 
-    @pytest.mark.parametrize("value", ([0, 2], [True, False, True, False, False, False]))
+    @pytest.mark.parametrize("value", ([0, 2],
+                                       [True, False, True, False, False, False],
+                                       np.array([True, False, True, False, False, False])))
     def test_multi_slic_uniform(self, value):
         s = self.signal
         np.testing.assert_array_equal(s.isig[:, value], self.value[[0, 2]])
