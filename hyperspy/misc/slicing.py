@@ -203,8 +203,6 @@ class FancySlicing(object):
         # Arrays or lists treated as indexes.
         if isinstance(slices, list) or isinstance(slices, np.ndarray) and slices.ndim == 1:
             slices = (slices, )
-
-
         slices_ = tuple()
         for sl in slices:
             if isinstance(sl, roi.BaseROI):

@@ -399,9 +399,9 @@ def get_signal_chunk_slice(index, chunks):
         _slice = chunk_slice
         if _slice[0].start <= index[0] < _slice[0].stop:
             if len(_slice) == 1:
-                return chunk_slice
+                return tuple(chunk_slice)
             elif _slice[1].start <= index[1] < _slice[1].stop:
-                return chunk_slice
+                return tuple(chunk_slice)
     raise ValueError("Index out of signal range.")
 
 

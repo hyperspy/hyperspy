@@ -641,7 +641,7 @@ class TestUniformDataAxis:
 
     def test_slice_me(self):
         assert (
-            self.axis._slice_me(slice(np.float32(10.2), 10.4, 2)) ==
+            self.axis._slice_me(slice(2, 4, 2)) ==
             slice(2, 4, 2)
             )
 
