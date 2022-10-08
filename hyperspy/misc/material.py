@@ -327,10 +327,12 @@ def mass_absorption_coefficient(element, energies):
             if isinstance(energy, str):
                 energies[i] = utils_eds._get_energy_xray_line(energy)
     index = np.searchsorted(energies_db, energies)
+    np.seterr(divide = 'ignore',invalid='ignore')
     mac_res = np.exp(np.log(macs[index - 1]) +
                      np.log(macs[index] / macs[index - 1]) *
                      (np.log(energies / energies_db[index - 1]) /
                       np.log(energies_db[index] / energies_db[index - 1])))
+    np.seterr(divide = 'warn',invalid='warn')
     return np.nan_to_num(mac_res)
 
 

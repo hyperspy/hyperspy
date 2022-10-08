@@ -22,6 +22,10 @@ from scipy import constants
 from hyperspy.misc.utils import stack
 from hyperspy.misc.elements import elements as elements_db
 from functools import reduce
+from hyperspy.misc.eds.detector_efficiency import detector_efficiency
+from hyperspy.misc.material import _mass_absorption_mixture as mass_absorption_mixture
+from hyperspy.misc.material import mass_absorption_coefficient as mass_absorption_coefficient
+from hyperspy.misc.material import atomic_to_weight
 
 
 eV2keV = 1000.
@@ -726,3 +730,194 @@ def zeta_to_edx_cross_section(zfactors, elements):
         xsec = atomic_weight / (zfactors[i] * constants.Avogadro * 1E-25)
         cross_sections.append(xsec)
     return cross_sections
+
+def Wpercent(model,quantification):
+    """
+    Return an array for a quick estimation of weight percent for each elements based on the X-ray line intensities
+    Parameters
+    ----------
+    model: EDS model
+    quantification: None or a list or an array
+            if quantification is None, this function calculate an  approximation of a quantification based on peaks ratio thanks to the function s.get_lines_intensity(). Works for the 3 dimension.
+            if quantification is the result of the hyperspy quantification function. This function only convert the result in an array with the same navigation shape than the model and a length equal to the number of elements 
+            if quantification is already an array of weight percent, directly keep the array
+            if the "std" argument is indicated in the add_physical_background function, only an array that match the number of elements in metadata is needed for the quantification argument. Because it is a standard, the same composition is applied to every pixels.
+    """
+ 	                   
+    if quantification is None :                 
+        model.signal.set_lines([])
+        intensity=model.signal.get_lines_intensity(only_one=True)
+        if len(np.shape(intensity[0]))>1 and np.shape(intensity[0])[1]>1 : #for 3D Data
+            u=np.ones([np.shape(intensity[0])[0],np.shape(intensity[0])[1], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(intensity)):
+                if "Ka" in intensity [i].metadata.General.title :
+                    u[:,:,i] =intensity[i].data
+                elif "La" in intensity [i].metadata.General.title:
+                    u[:,:,i] =intensity[i].data*2.5
+                else:
+                    raise ValueError('This function can only take Ka and La Xray intensities')
+                weight=np.ones([np.shape(intensity[0])[0],np.shape(intensity[0])[1], len(model._signal.metadata.Sample.elements)] )
+                for i in range (0,len(model._signal.metadata.Sample.elements)):
+                    weight[:,:,i] =(u[:,:,i]/(np.sum(u,axis=-1))) *100          	    
+
+        elif len(np.shape(intensity[0]))==1 and np.shape(intensity[0])[0]>1 : #for 2D Data
+            u=np.ones([np.shape(intensity[0])[0], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(intensity)):
+                if "Ka" in intensity [i].metadata.General.title :
+                    u[:,i] =intensity[i].data
+                elif "La" in intensity [i].metadata.General.title:
+                    u[:,i] =intensity[i].data*2.5
+                else:
+                    raise ValueError('This function can only take Ka and La Xray intensities')
+            weight=np.ones([np.shape(intensity[0])[0], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(model._signal.metadata.Sample.elements)):
+                weight[:,i] =(u[:,i]/(np.sum(u,axis=-1))) *100
+
+        elif len(np.shape(intensity[0]))>1 and np.shape(intensity[0])[1]==1 : #for 2D Data
+            u=np.ones([np.shape(intensity[0])[0],np.shape(intensity[0])[1], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(intensity)):
+                if "Ka" in intensity [i].metadata.General.title :
+                    u[:,:,i] =intensity[i].data
+                elif "La" in intensity [i].metadata.General.title:
+                    u[:,:,i] =intensity[i].data*2.5
+                else:
+                    raise ValueError('This function can only take Ka and La Xray intensities')
+                weight=np.ones([np.shape(intensity[0])[0],np.shape(intensity[0])[1], len(model._signal.metadata.Sample.elements)] )
+                for i in range (0,len(model._signal.metadata.Sample.elements)):
+                    weight[:,:,i] =(u[:,:,i]/(np.sum(u,axis=-1))) *100     
+        
+        else:
+            u=np.ones([len(model._signal.metadata.Sample.elements)] ) #for 1D 
+            for i in range (0,len(intensity)):
+                if "Ka" in intensity [i].metadata.General.title :
+                    u[i] =intensity[i].data
+                elif "La" in intensity [i].metadata.General.title:
+                    u[i] =intensity[i].data*2.5
+                else:
+                    raise ValueError('This function can only take Ka and La Xray intensities')        
+            weight=np.ones([len(model._signal.metadata.Sample.elements)] )
+            t=u.sum() 
+            for i in range (0,len(u)):
+                weight[i] =u[i] /t*100
+
+    elif quantification == 'Mean':
+        model.signal.set_lines([])
+        intensity=model.signal.sum().get_lines_intensity(only_one=True)
+        u=np.ones([len(model._signal.metadata.Sample.elements)])
+        for i in range (0,len(intensity)):
+            if "Ka" in intensity [i].metadata.General.title :
+                u[i] =intensity[i].data
+            elif "La" in intensity [i].metadata.General.title:
+                u[i] =intensity[i].data*2.5
+            else:
+                raise ValueError('This function can only take Ka and La Xray intensities')        
+        weight=np.ones([len(model._signal.metadata.Sample.elements)] )
+        t=u.sum() 
+        for i in range (0,len(u)):
+            weight[i] =u[i] /t*100
+                
+    elif type(quantification) is np.ndarray: 
+        weight=quantification
+
+    else: 
+        result=quantification
+        if 'atomic percent' in result[0].metadata.General.title:
+            result=atomic_to_weight(result)
+        else:
+            result=result
+            
+        if len(np.shape(result[0]))>1 and np.shape(result[0])[1]>1 : # for 3D
+            weight=np.ones([np.shape(result[0])[0],np.shape(result[0])[1], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(result)):
+                weight[:,:,i] =result[i].data        
+		    
+        elif len(np.shape(result[0]))==1 and np.shape(result[0])[0]>1 : #for 2D
+            weight=np.ones([np.shape(result[0])[0], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(result)):
+               weight[:,i] =result[i].data       
+		    
+        else: #for 1D
+            weight=np.ones([len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(result)):            
+                weight[i] =result[i].data
+		    
+    return weight
+
+def MeanZ (model,quanti):     
+
+    w=quanti
+    z=0
+    for i in range (0,len(model._signal.metadata.Sample.elements)):
+        z+=(elements_db[model._signal.metadata.Sample.elements[i]]['General_properties']['Z'])*(w[i]/100)
+    return z
+
+def Mucoef(model,quanti): # this function calculate the absorption coefficient for all energy. This, correspond to the Mu parameter in the absorption equation
+    """
+    Calculate the mass absorption coefficient for all energy of the model axis for each pixel. Need the weigth percent array defined by the Wpercent function
+    Return the Mu parameter as a signal (all energy) with same number of elements than the model
+    This parameter is calculated at each iteration during the fit except if 'mean' or 'standard' or 'phase map' argument are used
+    Parameters
+    ----------
+    model: EDS model
+    quanti: Array
+            Must contain an array of weight percent for each elements
+            This array is automaticaly created through the Wpercent function
+    """	
+    weight=quanti
+    
+    if np.sum(quanti)==0:
+        Ac=np.zeros(model._signal.axes_manager[-1].size)
+        Ac=Ac[model.channel_switches]
+        #raise ValueError("The quantification cannot be nul, but an an array with all weight percents set to 0 have been provided" )
+    else: 
+        t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size))
+        t=t[model.channel_switches]
+        Ac=mass_absorption_mixture(elements=model._signal.metadata.Sample.elements ,weight_percent=weight, energies=t)
+    
+    return Ac
+
+def Cabsorption(model): 
+    """
+    Calculate the mass absorption coefficient due to the coating layer for the entire energy range.
+    Parameters
+    ----------
+    model: EDS model
+    """	
+
+    t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size))
+    Acc=mass_absorption_coefficient(element='C' , energies=t)    
+    
+    return Acc
+
+def Windowabsorption(model,detector): 
+    """
+    Return the detector efficiency curve as a signal based on a dictionnary (create from personnal data) and the signal length. This correspond to the Window parameter of the physical background class  
+    To obtain the same signal length, this function compare it to the model, data are interpolated
+    Parameters
+    ----------
+    model: EDS model
+    detector: str or array
+            The detector efficiency curve that was used for the acquisition
+            String can be 'Polymer_C' / 'Super_X' / 'Polymer_C2' / 'Polymer_C3' 
+            Data are contain in a dictionnary in hyperspy repository but will be soon calculated from layer as found in the metadata
+            
+            An array with values of detector efficiency and the corresponding energy from personnal data value can be used 
+    """	
+    if type(detector) is str:
+        a=np.array(detector_efficiency[detector])
+        b=(model._signal.axes_manager.signal_axes[-1].axis)
+        x = a[:,0]
+        y = a[:,1]
+        Accc=np.interp(b, x, y)
+        
+    else :
+        a=detector
+        b=(model._signal.axes_manager.signal_axes[-1].axis)
+        x = a[:,0]
+        y = a[:,1]
+        Accc=np.interp(b, x, y)
+        
+        ### Here we can add the detector efficiency function. If detector="from_metadata" ... use detector_efficiency_from_layers() see #2535
+        
+    return Accc
+

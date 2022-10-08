@@ -20,6 +20,14 @@ Bibliography
    "Robust principal component analysis?" *J. ACM* 58(3) (2011): 1–37
    [`<https://arxiv.org/pdf/0912.3599.pdf>`_].
 
+.. _Castellano2004:
+
+:ref:`[Castellano2004] <Castellano2004>`
+   Gustavo Castellano, János Osán, Jorge Trincavelli, "Analytical model for the bremsstrahlung 
+   spectrum in the 0.25–20 keV photon energy range" 
+   *Spectrochimica Acta Part B: Atomic Spectroscopy* 59(3) (2004): 313-319,
+   [`<https://doi.org/10.1016/j.sab.2003.11.008.>`_].
+
 .. _Chantler2005:
 
 :ref:`[Chantler2005] <Chantler2005>`
@@ -80,6 +88,16 @@ Bibliography
    the multivariate analysis of ToF-SIMS spectrum images," *Surf.
    Interface Anal* 36(3) (2004): 203–212
    [`<https://doi.org/10.1002/sia.1657>`_].
+
+.. _Kramer1923:
+
+:ref:`[Kramer1923] <Kramer1923>`
+   Kramers, Hendrik A, "On the theory of X-ray absorption and of 
+   the continuous X-ray spectrum," 
+   *The London, Edinburgh, and Dublin Philosophical 
+   Magazine and Journal of Science* 46, no. 275 (1923): 836-871
+   [`<https://doi.org/10.1080/14786442308565244>`_].
+
 
 .. _MacArthur2016:
 
@@ -179,6 +197,22 @@ Bibliography
    Image Series.” Ultramicroscopy 102, no. 1 (December 2004): 27–36
    [`<https://doi.org/10.1016/j.ultramic.2004.08.003>`_].
 
+.. _Sewell1985:
+
+:ref:`[Sewell1985] <Sewell1985>`
+   D. A. Sewell and G. Love and V. D. Scott. “Universal correction procedure 
+   for electron-probe microanalysis. I. Measurement of X-ray depth distributions
+   in solids.” *Journal of Physics D: Applied Physics* 18, no. 7 (1985): 1233
+   [`<https://doi.org/10.1088/0022-3727/18/7/010>`_].
+
+.. _Small1987:
+
+:ref:`[Small1987] <Small1987>`
+   John A. Small, Stefan D. Leigh, Dale E. Newbury, and Robert L. Myklebust. 
+   “Modeling of the bremsstrahlung radiation produced in pure‐element targets by 10–40 keV electrons.”
+   *Journal of Applied Physics* 1 61, 459-469 (1987)
+   [`<https://doi.org/10.1063/1.338245>`_].
+
 .. _Guizar2008:
 
 :ref:`[Guizar2008] <Guizar2008>`
@@ -226,6 +260,14 @@ Bibliography
       vol. 33, no. v, pp. 10–25, 2000.
       [`<https://doi.org/10.1107/S0021889899010894>`_].
 
+.. _Zanetta2019:
+
+:ref:`[Zanetta2109] <Zanetta2019>`
+    - Zanetta, P. M., Le Guillou, C., Leroux, H., Zanda, B., Hewins, R. H., Lewin, E., & Pont, S.,
+      “Modal abundance, density and chemistry of micrometer-sized assemblages 
+      by advanced electron microscopy: Application to chondrites”
+      "Chemical Geology*, 514, (2019): 27-41.
+      [`<https://doi.org/10.1016/j.chemgeo.2019.03.025>`_].
 
 Peer-review articles with results obtained using HyperSpy
 ---------------------------------------------------------
