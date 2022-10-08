@@ -1242,7 +1242,6 @@ class UniformDataAxis(DataAxis, UnitConversion):
         -------
         my_slice : slice
         """
-        #my_slice = self._get_array_slices(_slice)
         if isinstance(_slice, (np.ndarray, list)):
             self.convert_to_non_uniform_axis()
             return self._slice_me(_slice)
@@ -2068,7 +2067,7 @@ class AxesManager(t.HasTraits):
 
     @observe("_axes")
     @observe(trait("_axes", notify=False).list_items())
-    def add_axis_manger(self, event):
+    def _add_axis_manager(self, event):
         for axis in self._axes:
             axis.axes_manager = self
 
