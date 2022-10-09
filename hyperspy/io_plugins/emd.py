@@ -1098,11 +1098,11 @@ class FeiEMDReader(object):
         # a traditional view the negative half must be created and the data
         # must be re-centered
         # Similar story for DPC signal
-        fft_dtype = [('realFloatHalfEven', '<f4'),
-                     ('imagFloatHalfEven', '<f4')]
+        fft_dtype = [[('realFloatHalfEven', '<f4'),('imagFloatHalfEven', '<f4')],
+                     [('realFloatHalfOdd', '<f4'), ('imagFloatHalfOdd', '<f4')]]
         dpc_dtype = [('realFloat', '<f4'),
                      ('imagFloat', '<f4')]
-        if h5data.dtype == fft_dtype or h5data.dtype == dpc_dtype:
+        if h5data.dtype in fft_dtype or h5data.dtype == dpc_dtype:
             _logger.debug("Found an FFT or DPC, loading as Complex2DSignal")
             real = h5data.dtype.descr[0][0]
             imag = h5data.dtype.descr[1][0]
