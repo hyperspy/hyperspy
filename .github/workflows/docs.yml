@@ -11,7 +11,7 @@ jobs:
       LATEX_DEPS: dvipng latexmk texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.1.0
 
       - uses: ericpre/sphinx-action@latest_sphinx
         with:
@@ -31,7 +31,7 @@ jobs:
     env:
       DOCS_PATH: ./doc/_build/html/
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.1.0
         with:
           fetch-depth: 0
 
