@@ -47,7 +47,7 @@ def test_function():
     m.add_physical_background()
     m.components.Bremsstrahlung.initialize()
     m.fit_background(bounded=True)
-    np.testing.assert_allclose(m.components.Bremsstrahlung.a.value,72.5,atol=0.1)
+    np.testing.assert_allclose(m.components.Bremsstrahlung.a.value,133281.3,atol=0.1)
     assert(m.components.Bremsstrahlung.b.value==0.0)
     assert(len(m.components.Bremsstrahlung._whitelist['Mu'])==m.axis.size)
     assert(len(m.components.Bremsstrahlung._whitelist['Window_absorption'])==m.axis.size)

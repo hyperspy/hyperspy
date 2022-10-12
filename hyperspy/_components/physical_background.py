@@ -47,7 +47,7 @@ class Physical_background(Component):
 	This dictionnary is call in the function Wpercent() to calculate an array of weight percent with the same dimension than the model and a length which correspond to the number of elements filled in the metadata
     """
 
-    def __init__(self, E0, detector, quantification, emission_model, absorption_model,TOA,coating_thickness,phase_map,correct_for_backscatterring,standard):
+    def __init__(self, E0, detector, quantification, emission_model, absorption_model,TOA,coating_thickness,phase_map,correct_for_backscatterring,standard, **kwargs):
         Component.__init__(self,['mt','a','b','E0','quanti','teta','coating_thickness'])
 
         self.mt.value=100
@@ -69,7 +69,7 @@ class Physical_background(Component):
         self._whitelist['detector'] = detector
         self._whitelist['emission_model'] = emission_model
         self._whitelist['absorption_model'] = absorption_model
-        self._whitelist['carto'] = phase_map
+        self._whitelist['phase_map'] = phase_map
         self.quanti.value=1
 
         
@@ -91,7 +91,7 @@ class Physical_background(Component):
         self.b.bmin=0
         self.b.bmax=1e9
         
-    def initialize(self): # this function is necessary to initialize the quant map
+    def initialize(self): # this function is necessary to initialize the quant map and optimize the memory.
 
         E0=self.E0.value
         teta=self.teta.value
@@ -128,13 +128,13 @@ class Physical_background(Component):
             self._whitelist['Mu']=Mu
             self._whitelist['Z']=Z
 
-        carto=self._whitelist['carto']
-        if carto is not None:
+        phasem=self._whitelist['phase_map']
+        if phasem is not None:
             Mu=[]
             Z=[]
-            for i in range (1,int(np.max(carto)+1)):
-                Mu.append(Mucoef(self.model,np.mean(self.quanti.map['values'][carto==i],axis=0)))
-                Z.append(MeanZ(self.model,np.mean(self.quanti.map['values'][carto==i],axis=0)))     
+            for i in range (1,int(np.max(phasem)+1)):
+                Mu.append(Mucoef(self.model,np.mean(self.quanti.map['values'][phasem==i],axis=0)))
+                Z.append(MeanZ(self.model,np.mean(self.quanti.map['values'][phasem==i],axis=0)))     
             self._whitelist['Mu']=np.array(Mu,dtype=np.float16)
             self._whitelist['Z']=np.array(Z,dtype=np.float16)
 
@@ -149,28 +149,28 @@ class Physical_background(Component):
         E0=self._whitelist['E0']# allow to keep the parameter fixed even with the free_background function
         cosec=self._whitelist['teta']# allow to keep the parameter fixed even with the free_background function
 
-        carto=self._whitelist['carto']
-        if carto is not None:
+        phasem=self._whitelist['phase_map']
+        if phasem is not None:
             index=self.model._signal.axes_manager.indices
-            phaseN=carto[int(index[1]),int(index[0])]
+            phaseN=phasem[int(index[1]),int(index[0])]
             Mu=self._whitelist['Mu'][int(phaseN-1)]
             Z=self._whitelist['Z'][int(phaseN-1)]
-            Mu=np.array(Mu,dtype=float)
+            Mu=np.array(Mu,dtype=np.float16)
             Mu=Mu[self.model.channel_switches]
         elif self._whitelist['quanti']=='Mean' or self._whitelist['std']is True:
             Mu=self._whitelist['Mu']
-            Mu=np.array(Mu,dtype=float)
+            Mu=np.array(Mu,dtype=np.float16)
             Mu=Mu[self.model.channel_switches]
             Z=self._whitelist['Z']
         else:
             Mu=Mucoef(self.model,self.quanti.value)
-            Mu=np.array(Mu,dtype=float)
+            Mu=np.array(Mu,dtype=np.float16)
             Z=MeanZ(self.model,self.quanti.value)
         
         Window=self._whitelist['Window_absorption']
         Window=Window[self.model.channel_switches]
 
-        coating=np.array(self._whitelist['Coating_absorption'],dtype=float)
+        coating=np.array(self._whitelist['Coating_absorption'],dtype=np.float16)
         coating=coating[self.model.channel_switches]
 
         if self._whitelist['emission_model'] == 'Kramer':
@@ -220,8 +220,8 @@ class Physical_background(Component):
             np.seterr(divide = 'warn',invalid='warn')
 
         np.seterr(divide = 'ignore',invalid='ignore')
-        absorption=((1-np.exp(-2*Mu*(mt*1e-7)*cosec))/(2*Mu*(mt*1e-7)*cosec))#love and scott model.
-        #absorption=((1-np.exp(-Mu*(mt*10**-7)*cosec))/Mu)#love and scott model. 
+        #absorption=((1-np.exp(-2*Mu*(mt*1e-7)*cosec))/(2*Mu*(mt*1e-7)*cosec))#love and scott model.
+        absorption=((1-np.exp(-Mu*(mt*10**-7)*cosec))/Mu)#love and scott model. 
         METabsorption=np.exp(-Mu*(mt*10**-7)*cosec)#Cliff lorimer
         np.seterr(divide = 'ignore',invalid='ignore')
         
@@ -235,7 +235,7 @@ class Physical_background(Component):
 
             
         if self._whitelist['absorption_model'] == 'quadrilateral':
-            f=np.where((x>0.2) & (x<(E0)),(emission*METabsorption*Window*coating*Backscatter),0)# keep the warnings for values x>0.17
+            f=np.where((x>0.17) & (x<(E0)),(emission*absorption*Window*coating*Backscatter),0)# keep the warnings for values x>0.17
             if not np.all(np.isfinite(f)): #avoid "residuals are not finite in the initial point"
                 self.mt.store_current_value_in_array()
                 return 1
@@ -244,7 +244,7 @@ class Physical_background(Component):
 
         
         if self._whitelist['absorption_model'] == 'CL':# cliff lorimer
-            f=np.where((x>0.2) & (x<(E0)),(emission*METabsorption*Window*coating*Backscatter),0)
+            f=np.where((x>0.17) & (x<(E0)),(emission*METabsorption*Window*coating*Backscatter),0)
             if not np.all(np.isfinite(f)): #avoid "residuals are not finite in the initial point"
                 self.mt.store_current_value_in_array()
                 return 1

@@ -689,7 +689,7 @@ A quadrilateral profile is assumed for the distribution of X-ray generation:
 
 .. math::
 
-   A_c = \frac{1-exp^{2 x \mu (\rho z) \csc{\theta}}}{2 x \mu (\rho z) \csc{\theta} }
+   A_c = \frac{1-exp^{2 x \mu (\rho z) \csc{\theta}}}{\mu}
 
 where :math:`\rho z` is the mass depth, :math:`\csc{\theta}` the x-ray takeoff angle and :math:`\mu` the mass absorption coefficient.
 The mass absorption coefficient is tabulated on an elemental basis see `Mass absorption coefficient database <https://hyperspy--2836.org.readthedocs.build/en/2836/user_guide/eds.html#mass-absorption-coefficient-database>`_.
@@ -718,7 +718,7 @@ The final expresssion combine the emission, the absorption in the sample and the
 
 .. math::
 
-   B\left(E\right)=K\times Z\frac{E-E_0}{E}\times \frac{1-exp^{2 x \mu (\rho z) \csc{\theta}}}{2 x \mu (\rho z) \csc{\theta} }\times Detector_{eff}
+   B\left(E\right)=K\times Z\frac{E-E_0}{E}\times \frac{1-exp^{2 x \mu (\rho z) \csc{\theta}}}{\mu}\times Detector_{eff}
 
 where :math:`K` and :math:`\rho z` are the fitted coefficients and can be fixed with the function :py:meth:`~.models.edsmodel.EDSModel.fix_background`. 
 
