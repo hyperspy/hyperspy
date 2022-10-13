@@ -630,6 +630,22 @@ class HyperHeader(object):
         self.sem_metadata = dictionarize(semData)
         # parse values for use in hspy metadata:
         self.hv = self.sem_metadata.get('HV', 0.0)  # in kV
+        if abs(self.hv) < 1.0e-3:
+            # XRF data?
+            # calculate maximum energy in keV from the number of channels and the energy calibration
+            spectrum_header = root.find(".//ClassInstance[@Type='TRTSpectrumHeader']")
+            if spectrum_header:
+                spectrum_header_data = dictionarize(spectrum_header)
+                calculate = True
+                for key in ["ChannelCount", "CalibAbs", "CalibLin"]:
+                    if key not in spectrum_header_data:
+                        calculate = False
+                        break
+                if calculate:
+                    _logger.info("hv taken as maximum spectrum energy")
+                    self.hv = spectrum_header_data["CalibAbs"] + \
+                              spectrum_header_data["CalibLin"] * spectrum_header_data["ChannelCount"]
+
         # image/hypermap resolution in um/pixel:
         if 'DX' in self.sem_metadata:
             self.units = 'µm'
