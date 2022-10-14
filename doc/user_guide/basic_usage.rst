@@ -1,5 +1,5 @@
-Getting started
-***************
+Basic Usage
+===========
 
 
 .. _importing_hyperspy-label:

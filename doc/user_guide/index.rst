@@ -9,11 +9,11 @@ User guide
     :maxdepth: 2
 
     install.rst
-    getting_started.rst
+    basic_usage.rst
     io.rst
 
 .. toctree::
-    :caption: Fundamentals and usage
+    :caption: Fundamentals and Usage
     :maxdepth: 2
     
     signal.rst
@@ -42,6 +42,3 @@ User guide
     events.rst
     interactive_operations.rst
 
-.. toctree::
-    :caption: Advanced Usage
-    :maxdepth: 2
