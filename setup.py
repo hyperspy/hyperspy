@@ -43,7 +43,7 @@ setup_path = os.path.dirname(__file__)
 install_req = ['scipy>=1.1',
                'matplotlib>=3.1.3',
                'numpy>=1.17.1',
-               'traits>=4.5.0',
+               'traits>=6.1.0',
                'natsort',
                'requests',
                'tqdm>=4.9.0',
