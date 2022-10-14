@@ -19,6 +19,8 @@ Reference
 
     api
     api.datasets
+    api.datasets.artificial_data
+    api.datasets.example_signals
     api.eds
     api.material
     api.plot
