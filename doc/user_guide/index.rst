@@ -38,8 +38,9 @@ User guide
     :caption: Advanced Usage
     :maxdepth: 2
     
+    region_of_interest.rst
     events.rst
-    interactive_operations_ROIs.rst
+    interactive_operations.rst
 
 .. toctree::
     :caption: Advanced Usage
