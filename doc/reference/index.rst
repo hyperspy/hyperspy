@@ -27,6 +27,7 @@ Reference
     api.model.components1D
     api.model.components2D
     api.plot
+    api.plot.markers
     api.roi
     api.samfire
     api.signals

@@ -2,6 +2,7 @@
 ------------------------
 
 .. autosummary::
+   hyperspy.api.plot.markers
    hyperspy.api.plot.plot_histograms
    hyperspy.api.plot.plot_images
    hyperspy.api.plot.plot_signals
