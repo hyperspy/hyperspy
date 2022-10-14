@@ -23,6 +23,9 @@ Reference
     api.datasets.example_signals
     api.eds
     api.material
+    api.model
+    api.model.components1D
+    api.model.components2D
     api.plot
     api.roi
     api.samfire
