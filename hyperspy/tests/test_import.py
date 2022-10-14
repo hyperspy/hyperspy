@@ -269,6 +269,7 @@ def test_dir_utils_samfire():
     import hyperspy.utils.samfire
     d = dir(hyperspy.utils.samfire)
     assert d == [
+        'SamfirePool',
         'fit_tests',
         'global_strategies',
         'local_strategies',

@@ -91,7 +91,7 @@ class SamfirePool(ParallelPool):
     def __init__(self, **kwargs):
         """Creates a ParallelPool with additional methods for SAMFire. All
         arguments are passed to ParallelPool"""
-        super(SamfirePool, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.samf = None
         self.ping = {}
         self.pid = {}

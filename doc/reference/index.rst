@@ -30,4 +30,7 @@ Reference
     api.plot.markers
     api.roi
     api.samfire
+    api.samfire.fit_tests
+    api.samfire.global_strategies
+    api.samfire.local_strategies
     api.signals
