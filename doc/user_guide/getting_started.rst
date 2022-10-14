@@ -141,66 +141,8 @@ of commands and filenames using the tab and arrow keys. It is highly recommended
 to read the `Ipython introduction <https://ipython.readthedocs.io/en/stable/interactive/tutorial.html>`_ for many more useful features that will
 boost your efficiency when working with HyperSpy/Python interactively.
 
-
-Loading data
-------------
-
-Once HyperSpy is running, to load from a :external+rsciio:ref:`file format
-supported by RosettaSciIO <supported-formats>`, simply type:
-
-.. code-block:: python
-
-    >>> s = hs.load("filename.ext")
-
-The used IO-plugin will be inferred from the file extension. If you want to force
-the use of a specific IO-plugin, you can provide the ``reader`` attribute:
-
-.. code-block:: python
-
-    >>> s = hs.load("spam.ham", reader="hspy")
-
-.. note::
-
-   When the file contains several datasets, the :py:func:`~.io.load` function
-   will return a list of HyperSpy signals, instead of a single HyperSpy signal.
-   Each signal can then be accessed using list indexation.
-
-   .. code-block:: python
-
-      >>> s = hs.load("spameggsandham.hspy")
-      >>> s
-      [<Signal1D, title: spam, dimensions: (32,32|1024)>,
-       <Signal1D, title: eggs, dimensions: (32,32|1024)>,
-       <Signal1D, title: ham, dimensions: (32,32|1024)>]
-
-   Using indexation to access the first signal (index 0):
-
-   .. code-block:: python
-
-      >>> s[0]
-      <Signal1D, title: spam, dimensions: (32,32|1024)>
-
-
-.. HINT::
-
-   The load function returns an object that contains data read from the file.
-   We assign this object to the variable ``s`` but you can choose any (valid)
-   variable name you like. for the filename, don\'t forget to include the
-   quotation marks and the file extension.
-
-If no argument is passed to the load function, a window will be raised that
-allows to select a single file through your OS file manager, e.g.:
-
-.. code-block:: python
-
-    >>> # This raises the load user interface
-    >>> s = hs.load()
-
-It is also possible to load multiple files at once or even stack multiple
-files. For more details read :ref:`loading_files`.
-
-"Loading" data from a numpy array
----------------------------------
+Creating signal from a numpy array
+----------------------------------
 
 HyperSpy can operate on any numpy array by assigning it to a BaseSignal class.
 This is useful e.g. for loading data stored in a format that is not yet
@@ -212,50 +154,23 @@ to the constructor e.g.
 
 .. code-block:: python
 
-    >>> my_np_array = np.random.random((10,20,100))
+    >>> my_np_array = np.random.random((10, 20, 100))
     >>> s = hs.signals.Signal1D(my_np_array)
     >>> s
     <Signal1D, title: , dimensions: (20, 10|100)>
 
 The numpy array is stored in the :py:attr:`~.signal.BaseSignal.data` attribute
-of the signal class.
-
-.. _example-data-label:
-
-Loading example data and data from online databases
----------------------------------------------------
-
-HyperSpy is distributed with some example data that can be found in
-`hs.datasets.example_signals`. The following example plots one of the example
-signals:
+of the signal class:
 
 .. code-block:: python
 
-    >>> hs.datasets.example_signals.EDS_TEM_Spectrum().plot()
+    >>> s.data
+    >>> s
+    array([[[8.97451846e-01, 2.48915508e-01, 7.65209780e-01, ...,
+             8.27039604e-01, 6.66097711e-01, 3.88540755e-01],
 
-.. versionadded:: 1.4
-    :py:mod:`~.datasets.artificial_data`
-
-There are also artificial datasets, which are made to resemble real
-experimental data.
-
-.. code-block:: python
-
-    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
-    >>> s.plot()
-
-.. _eelsdb-label:
-
-The :py:func:`~.misc.eels.eelsdb.eelsdb` function in `hs.datasets` can
-directly load spectra from `The EELS Database <https://eelsdb.eu>`_. For
-example, the following loads all the boron trioxide spectra currently
-available in the database:
-
-.. code-block:: python
-
-    >>> hs.datasets.eelsdb(formula="B2O3")
-    [<EELSSpectrum, title: Boron oxide, dimensions: (|520)>,
-     <EELSSpectrum, title: Boron oxide, dimensions: (|520)>]
+            [8.27614860e-01, 1.51251334e-01, 7.36475054e-01, ...,
+            8.43871814e-01, 9.41799821e-01, 6.11718569e-01]]])
 
 
 The navigation and signal dimensions

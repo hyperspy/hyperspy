@@ -1,6 +1,5 @@
 .. _io:
 
-***********************
 Loading and saving data
 ***********************
 
@@ -16,8 +15,11 @@ Loading and saving data
 
 .. _loading_files:
 
-Loading files: the load function
-================================
+Loading
+=======
+
+Basic usage
+-----------
 
 HyperSpy can read and write to multiple formats (see :external+rsciio:ref:`supported-formats`).
 To load data use the :py:func:`~.load` command. For example, to load the
@@ -28,18 +30,76 @@ image ``spam.jpg``, you can type:
     >>> s = hs.load("spam.jpg")
 
 If loading was successful, the variable ``s`` contains a HyperSpy signal or any
-type of signal defined in one of the :ref:`HyperSpy extensions <hyperspy_extensions-label>`
-- see available :ref:`signal subclasses <transforming_signal-label>` for more
-information. To list the signal types available on your local installation use:
+type of signal defined in one of the :ref:`HyperSpy extensions <hyperspy_extensions-label>`, see 
+:ref:`load_specify_signal_type-label` for more details.
+
+.. note::
+
+   When the file contains several datasets, the :py:func:`~.io.load` function
+   will return a list of HyperSpy signals, instead of a single HyperSpy signal.
+   Each signal can then be accessed using list indexation.
+
+   .. code-block:: python
+
+      >>> s = hs.load("spameggsandham.hspy")
+      >>> s
+      [<Signal1D, title: spam, dimensions: (32,32|1024)>,
+       <Signal1D, title: eggs, dimensions: (32,32|1024)>,
+       <Signal1D, title: ham, dimensions: (32,32|1024)>]
+
+   Using indexation to access the first signal (index 0):
+
+   .. code-block:: python
+
+      >>> s[0]
+      <Signal1D, title: spam, dimensions: (32,32|1024)>
+
+
+.. HINT::
+
+   The load function returns an object that contains data read from the file.
+   We assign this object to the variable ``s`` but you can choose any (valid)
+   variable name you like. for the filename, don\'t forget to include the
+   quotation marks and the file extension.
+
+If no argument is passed to the load function, a window will be raised that
+allows to select a single file through your OS file manager, e.g.:
+
+.. code-block:: python
+
+    >>> # This raises the load user interface
+    >>> s = hs.load()
+
+It is also possible to load multiple files at once or even stack multiple
+files. For more details read :ref:`load-multiple-label`.
+
+Specifying reader
+-----------------
+
+HyperSpy will attempt to infer the appropriate file reader to use based on
+the file extension (for example. ``.hspy``, ``.emd`` and so on). You can
+override this using the ``reader`` keyword:
+
+.. code-block:: python
+
+    # Load a .hspy file with an unknown extension
+    >>> s = hs.load("filename.some_extension", reader="hspy")
+
+.. _load_specify_signal_type-label:
+
+Specifying signal type
+----------------------
+
+HyperSpy will attempt to infer the most suitable signal type for the data being loaded.
+Domain specific signal types are provided by other libraries and to list the signal types
+available on your local installation use:
 
 .. code-block:: python
 
     >>> hs.print_known_signal_types()
 
-HyperSpy will try to guess the most likely data type for the corresponding
-file. However, you can force it to read the data as a particular data type by
-providing the ``signal_type`` keyword, which has to correspond to one of the
-available subclasses of signal, e.g.:
+When loading data, the signal type can be specified by providing the ``signal_type`` keyword,
+which has to correspond to one of the available subclasses of signal:
 
 .. code-block:: python
 
@@ -62,14 +122,8 @@ function will return a list of the corresponding signals:
     in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
     normally need to access it there.
 
-HyperSpy will attempt to infer the appropriate file reader to use based on
-the file extension (for example. ``.hspy``, ``.emd`` and so on). You can
-override this using the ``reader`` keyword:
-
-.. code-block:: python
-
-    # Load a .hspy file with an unknown extension
-    >>> s = hs.load("filename.some_extension", reader="hspy")
+Metadata
+--------
 
 Most scientific file formats store some extra information about the data and the
 conditions under which it was acquired (metadata). HyperSpy reads most of them and
@@ -206,11 +260,47 @@ per file must also match, or an error will be raised.
     >>> s
     <EELSSpectrum, title: mva, dimensions: (5, 64, 64, 1024)>
 
+.. _example-data-label:
+
+Loading example data and data from online databases
+---------------------------------------------------
+
+HyperSpy is distributed with some example data that can be found in
+`hs.datasets.example_signals`. The following example plots one of the example
+signals:
+
+.. code-block:: python
+
+    >>> hs.datasets.example_signals.EDS_TEM_Spectrum().plot()
+
+.. versionadded:: 1.4
+    :py:mod:`~.datasets.artificial_data`
+
+There are also artificial datasets, which are made to resemble real
+experimental data.
+
+.. code-block:: python
+
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> s.plot()
+
+.. _eelsdb-label:
+
+The :py:func:`~.misc.eels.eelsdb.eelsdb` function in `hs.datasets` can
+directly load spectra from `The EELS Database <https://eelsdb.eu>`_. For
+example, the following loads all the boron trioxide spectra currently
+available in the database:
+
+.. code-block:: python
+
+    >>> hs.datasets.eelsdb(formula="B2O3")
+    [<EELSSpectrum, title: Boron oxide, dimensions: (|520)>,
+     <EELSSpectrum, title: Boron oxide, dimensions: (|520)>]
 
 .. _saving_files:
 
-Saving data to files
-====================
+Saving
+======
 
 To save data to a file use the :py:meth:`~.signal.BaseSignal.save` method. The
 first argument is the filename and the format is defined by the filename
