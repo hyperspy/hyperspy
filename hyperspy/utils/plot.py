@@ -27,10 +27,10 @@ plot_signals
 plot_histograms
     Compute and plot the histograms of multiple signals in the same figure.
 
-The :mod:`~hyperspy.api.plot` module contains the following submodules:
+The :mod:`~.api.plot` module contains the following submodules:
 
-:mod:`~hyperspy.api.markers`
-        Markers that can be added to `Signal` plots.
+:mod:`~.api.markers`
+    Markers that can be added to :py:class:`~.signal.BaseSignal` figure.
 
 """
 
@@ -40,7 +40,6 @@ from hyperspy.drawing.utils import (
     plot_signals,
     plot_spectra
     )
-# This import is redundant with `hyperspy.utils.markers`
 from hyperspy.utils import markers
 
 

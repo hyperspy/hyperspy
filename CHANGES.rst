@@ -31,6 +31,10 @@ Data Visualization
 - The keyword argument ``line_style`` of :py:func:`~.drawing.utils.plot_spectra` have been renamed to ``linestyle``.
 - Changing navigation coordinates using keyboard ``Arrow`` have been removed, use
   ``Crtl`` + ``Arrow`` instead.
+- The ``markers`` submodules can not be imported from the :py:mod:`~.api` anymore, use :py:mod:`~.api.plot.markers`
+  directly, i.e. ``hs.plot.markers.Arrow``, instead.
+- The creation of markers has changed to use their class name instead of aliases, for example,
+  use ``m = hs.plot.markers.LineSegment`` instead of ``m = hs.plot.markers.line_segment``.
 
 Loading and Saving data
 -----------------------
@@ -731,8 +735,8 @@ Enhancements
   chapters.
 * Signals with signal dimension equal to 0 and navigation dimension 1 or 2 are
   automatically transposed when using
-  :py:func:`hyperspy.drawing.utils.plot_images`
-  or :py:func:`hyperspy.drawing.utils.plot_spectra` respectively. This is
+  :py:func:`hyperspy.api.plot.plot_images`
+  or :py:func:`hyperspy.api.plot.plot_spectra` respectively. This is
   specially relevant when plotting the result of EDS quantification. See
   :ref:`eds-label` for examples.
 * The following components have been rewritten using

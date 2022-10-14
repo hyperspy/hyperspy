@@ -29,9 +29,11 @@ from hyperspy._signals.signal1d import Signal1D, LazySignal1D
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
-from hyperspy.utils.plot import markers
-from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING_PARAMETERS,
-                                      PLOT1D_DOCSTRING)
+from hyperspy.utils import markers
+from hyperspy.docstrings.plot import (
+    BASE_PLOT_DOCSTRING_PARAMETERS,
+    PLOT1D_DOCSTRING
+    )
 
 
 _logger = logging.getLogger(__name__)
@@ -999,14 +1001,14 @@ class EDSSpectrum(Signal1D):
             The position on the signal axis. Each row corresponds to a
             group.
         kwargs
-            keywords argument for markers.vertical_line
+            keywords argument for :py:class:`~.api.markers.VerticalLine`
         """
         per_xray = len(position[0])
         colors = itertools.cycle(np.sort(
                 plt.rcParams['axes.prop_cycle'].by_key()["color"] * per_xray))
 
         for x, color in zip(np.ravel(position), colors):
-            line = markers.vertical_line(x=x, color=color, **kwargs)
+            line = markers.VerticalLine(x=x, color=color, **kwargs)
             self.add_marker(line, render_figure=False)
         if render_figure:
             self._render_figure(plot=['signal_plot'])
@@ -1047,12 +1049,12 @@ class EDSSpectrum(Signal1D):
                     )
             else:
                 intensity_ = intensity[i]
-            line = markers.vertical_line_segment(
+            line = markers.VerticalLineSegment(
                 x=line_energy[i], y1=None, y2=intensity_ * 0.8)
             self.add_marker(line, render_figure=False)
             string = (r'$\mathrm{%s}_{\mathrm{%s}}$' %
                       utils_eds._get_element_and_line(xray_lines[i]))
-            text = markers.text(
+            text = markers.Text(
                 x=line_energy[i],
                 y=intensity_ * 1.1,
                 text=string,
@@ -1124,7 +1126,7 @@ class EDSSpectrum(Signal1D):
                 y2 = self.isig[bw[2]].data
             else:
                 y2 = self.isig[bw[2]:bw[3]].mean(-1).data
-            line = markers.line_segment(
+            line = markers.LineSegment(
                 x1=(bw[0] + bw[1]) / 2., x2=(bw[2] + bw[3]) / 2.,
                 y1=y1, y2=y2, color='black')
             self.add_marker(line, render_figure=False)

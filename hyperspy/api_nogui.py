@@ -111,7 +111,6 @@ __all__ = [
     'get_configuration_directory_path',
     'interactive',
     'load',
-    'markers',
     'material',
     'model',
     'plot',

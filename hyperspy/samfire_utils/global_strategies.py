@@ -25,3 +25,12 @@ class HistogramStrategy(GlobalStrategy):
     def __init__(self, bins='fd'):
         super().__init__('Histogram global strategy')
         self.segmenter = HistogramSegmenter(bins)
+
+__all__ = [
+    'GlobalStrategy',
+    'HistogramStrategy',
+    ]
+
+
+def __dir__():
+    return sorted(__all__)
