@@ -293,7 +293,7 @@ class TestFunctionalDataAxis:
 
     def test_initialisation_parameters(self):
         axis = self.axis
-        assert axis.power == 2
+        assert axis.parameters["power"] == 2
         np.testing.assert_allclose(
             axis.axis,
             np.arange(10)**2)
@@ -311,6 +311,20 @@ class TestFunctionalDataAxis:
             self.axis = FunctionalDataAxis(
                 size=10,
                 expression=expression,)
+
+    def test_change_parameters(self):
+        axis = self.axis
+        axis.parameters["power"] = 1
+        np.testing.assert_allclose(axis.axis, np.arange(10))
+        axis.parameters["power"] = 3
+        np.testing.assert_allclose(axis.axis, np.arange(10)**3)
+
+    def test_change_x(self):
+        axis = self.axis
+        axis.x.scale = 2
+        np.testing.assert_allclose(axis.axis, (np.arange(10)*2)**2)
+        axis.x.scale = 4
+        np.testing.assert_allclose(axis.axis, (np.arange(10) * 4) ** 2)
 
     @pytest.mark.parametrize("use_indices", (True, False))
     def test_crop(self, use_indices):
@@ -377,9 +391,9 @@ class TestFunctionalDataAxis:
 
     def test_update_from(self):
         ax2 = FunctionalDataAxis(size=2, units="nm", expression="x ** power", power=3)
-        self.axis.update_from(ax2, attributes=("units", "power"))
-        assert ((ax2.units, ax2.power) ==
-                (self.axis.units, self.axis.power))
+        self.axis.update_from(ax2, attributes=("units", "parameters"))
+        assert ((ax2.units, ax2.parameters["power"]) ==
+                (self.axis.units, self.axis.parameters["power"]))
 
     def test_slice_me(self):
         assert self.axis._slice_me(slice(1, 5)) == slice(1, 5)
@@ -444,8 +458,8 @@ class TestReciprocalDataAxis:
                                        a=0.1, b=10)
 
     def _test_initialisation_parameters(self, axis):
-        assert axis.a == 0.1
-        assert axis.b == 10
+        assert axis.parameters["a"] == 0.1
+        assert axis.parameters["b"] == 10
         def func(x): return 0.1 / (x + 1) + 10
         np.testing.assert_allclose(axis.axis, func(np.arange(10)))
 
@@ -484,6 +498,13 @@ class TestUniformDataAxis:
 
     def test_initialisation_parameters(self):
         self._test_initialisation_parameters(self.axis)
+
+    def test_change_parameters(self):
+        axis = self.axis
+        axis.offset = 0
+        axis.scale = .1
+        def func(x): return axis.scale * x + axis.offset
+        np.testing.assert_allclose(axis.axis, func(np.arange(10)))
 
     def test_create_axis(self):
         axis = create_axis(**self.axis.get_axis_dictionary())

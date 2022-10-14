@@ -315,6 +315,8 @@ class BaseDataAxis(t.HasTraits):
             index : The new index
             """.format(_name, _name, _name), arguments=["obj", 'index'])
 
+
+
         self.name = name
         self.units = units
         self.navigate = navigate
@@ -474,6 +476,8 @@ class DataAxis(BaseDataAxis):
      'navigate': False,
      'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100])}
     """
+    axis = t.Array()  # Axis added as trait to track changes to axis
+    _index = t.Int(0)
 
     def __init__(self,
                  index_in_array=None,
@@ -490,10 +494,14 @@ class DataAxis(BaseDataAxis):
             navigate=navigate,
             is_binned=is_binned,
             **kwargs)
-        self.add_trait("_axis", t.Array)
-        self._axis = axis
-        self.add_trait("_index", t.Int)
-        self._index = 0
+
+        self.axis = axis
+        #self.add_trait("_axis", t.Array)
+        #self._axis = axis
+        # Index added as trait for use with UI. Interactive plotting, model fitting etc.
+        # Needs to be limited to high/ low index.
+        #self.add_trait("_index", t.Int)
+        #self._index = 0
 
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and set the
@@ -516,17 +524,6 @@ class DataAxis(BaseDataAxis):
         d = super().get_axis_dictionary()
         d.update({'axis': self.axis})
         return d
-
-    @property
-    def axis(self):
-        return self._axis
-
-    @axis.setter
-    def axis(self, axis):
-        if isinstance(axis, list):
-            self._axis = np.asarray(axis)
-        else:
-            self._axis = axis
 
     @property
     def low_value(self):
@@ -575,7 +572,7 @@ class DataAxis(BaseDataAxis):
 
     @property
     def size(self):
-        return len(self._axis)
+        return len(self.axis)
 
     def _get_array_slices(self, slice_):
         """Returns a slice to slice the corresponding data axis.
@@ -933,6 +930,11 @@ class FunctionalDataAxis(DataAxis):
      'a': 100,
      'b': 10}
     """
+    x = t.Instance(DataAxis)
+    parameters = t.Dict()
+    axis = t.Property(t.Array,
+                      depends_on="x.axis, parameters",)
+
     def __init__(self,
                  expression,
                  x=None,
@@ -943,16 +945,13 @@ class FunctionalDataAxis(DataAxis):
                  size=1,
                  is_binned=False,
                  **parameters):
-        super().__init__(
+        super(DataAxis, self).__init__(
             index_in_array=index_in_array,
             name=name,
             units=units,
             navigate=navigate,
             is_binned=is_binned,
             **parameters)
-        # These trait needs to added dynamically to be removed when necessary
-        self.add_trait("x", t.Instance(BaseDataAxis))
-        self.remove_trait("_axis")
         if x is None:
             if size is t.Undefined:
                 raise ValueError("Please provide either `x` or `size`.")
@@ -970,22 +969,19 @@ class FunctionalDataAxis(DataAxis):
         variables = ["x"]
         expr_parameters = [symbol for symbol in expr.free_symbols
                            if symbol.name not in variables]
+
         if set(parameters) != set([parameter.name for parameter in expr_parameters]):
             raise ValueError(
                 "The values of the following expression parameters "
                 f"must be given as keywords: {set(expr_parameters) - set(parameters)}")
         self._function = lambdify(
             variables + expr_parameters, expr.evalf(), dummify=False)
-        for parameter in parameters.keys():
-            self.add_trait(parameter, t.CFloat(parameters[parameter]))
-        self.parameters_list = list(parameters.keys())
+        self.parameters = parameters
 
-    @property
-    def axis(self):
-        kwargs = {}
-        for kwarg in self.parameters_list:
-            kwargs[kwarg] = getattr(self, kwarg)
-        new_axis = self._function(x=self.x.axis, **kwargs)
+
+    @t.cached_property
+    def _get_axis(self):
+        new_axis = self._function(x=self.x.axis, **self.parameters)
         # Set not valid values to np.nan
         new_axis[np.logical_not(np.isfinite(new_axis))] = np.nan
         return new_axis
@@ -1022,8 +1018,7 @@ class FunctionalDataAxis(DataAxis):
         d['expression'] = self._expression
         d.update({'size': _parse_axis_attribute(self.size), })
         d.update({'x': self.x.get_axis_dictionary(), })
-        for kwarg in self.parameters_list:
-            d[kwarg] = getattr(self, kwarg)
+        d.update(self.parameters)
         return d
 
     def convert_to_non_uniform_axis(self):
@@ -1136,6 +1131,10 @@ class UniformDataAxis(DataAxis, UnitConversion):
      'scale': 1.0,
      'offset': 300.0}
     """
+    scale = t.Float(1)
+    offset = t.Float(0)
+    _size = t.Int(1)
+    axis = t.Property(observe=["scale", "offset", "_size"])  # overwrites axis in DataAxis
     def __init__(self,
                  index_in_array=None,
                  name=None,
@@ -1146,7 +1145,8 @@ class UniformDataAxis(DataAxis, UnitConversion):
                  offset=0.,
                  is_binned=False,
                  **kwargs):
-        super().__init__(
+
+        super(DataAxis, self).__init__(
             index_in_array=index_in_array,
             name=name,
             units=units,
@@ -1155,18 +1155,18 @@ class UniformDataAxis(DataAxis, UnitConversion):
             **kwargs
             )
         # These traits need to added dynamically to be removed when necessary
-        self.add_trait("scale", t.CFloat)
-        self.add_trait("offset", t.CFloat)
-        self.add_trait("_size", t.CInt)
+        #self.add_trait("scale", t.CFloat)
+        #self.add_trait("offset", t.CFloat)
+        #self.add_trait("_size", t.CInt)
 
-        self.remove_trait("_axis")
+        #self.remove_trait("_axis")
         self.scale = scale
         self.offset = offset
         self._size = size
         self._is_uniform = True
 
-    @property
-    def axis(self):
+    @t.cached_property
+    def _get_axis(self):
         return np.arange(self.size)*self.scale+self.offset
 
     @property
