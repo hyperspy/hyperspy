@@ -281,7 +281,7 @@ class TestOutArg:
         np.testing.assert_array_equal(s.data.sum(), s.sum(axis=0))
 
     def test_sum_non_uniform_unbinned(self):
-        self.s.axes_manager["E"].convert_to_non_uniform_axis()
+        self.s.axes_manager["E"] = self.s.axes_manager["E"].convert_to_non_uniform_axis()
         with pytest.warns(UserWarning, match="You are summing over"):
             self._run_single(self.s.sum, self.s, dict(axis=("E")))
 
