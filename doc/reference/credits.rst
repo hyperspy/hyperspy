@@ -4,7 +4,4 @@
 Credits
 *******
 
-.. include:: ../AUTHORS.txt
-
-
-
+.. include:: ../../AUTHORS.txt

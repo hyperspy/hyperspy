@@ -1,7 +1,7 @@
 
 ######################
 HyperSpy Documentation
-#####################
+######################
 
 .. toctree::
    :maxdepth: 1
@@ -9,8 +9,8 @@ HyperSpy Documentation
 
    User Guide <user_guide/index>
    Reference <reference/index>
-   .. Example <example/index>
-   .. Tutorial <tutorials/index>
+   ..Example <example/index>
+   ..Tutorial <tutorials/index>
    Development <dev_guide/index>
    Release Notes <changes>
 

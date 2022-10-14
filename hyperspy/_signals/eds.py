@@ -1001,7 +1001,7 @@ class EDSSpectrum(Signal1D):
             The position on the signal axis. Each row corresponds to a
             group.
         kwargs
-            keywords argument for :py:class:`~.api.markers.VerticalLine`
+            keywords argument for :py:class:`~.api.plot.markers.VerticalLine`
         """
         per_xray = len(position[0])
         colors = itertools.cycle(np.sort(
