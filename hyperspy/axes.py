@@ -804,14 +804,12 @@ class DataAxis(BaseDataAxis):
         offset = self.low_value
         size = self.size
         d = self.get_axis_dictionary()
-        axes_manager = self.axes_manager
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
         d["_type"] = 'UniformDataAxis'
-        self.__class__ = UniformDataAxis
-        self.__init__(**d, size=size, scale=scale, offset=offset)
-        self.axes_manager = axes_manager
+        new_axis = UniformDataAxis(**d, size=size, scale=scale, offset=offset)
+        return new_axis
 
     @property
     def _is_increasing_order(self):
@@ -1024,14 +1022,8 @@ class FunctionalDataAxis(DataAxis):
     def convert_to_non_uniform_axis(self):
         """Convert to a non-uniform axis."""
         d = super().get_axis_dictionary()
-        axes_manager = self.axes_manager
         d["_type"] = 'DataAxis'
-        self.__class__ = DataAxis
-        self.__init__(**d)
-        del self._expression
-        del self._function
-        self.remove_trait('x')
-        self.axes_manager = axes_manager
+        return DataAxis(**d)
 
     def crop(self, start=None, end=None):
         """Crop the axis in place.
@@ -1082,18 +1074,11 @@ class FunctionalDataAxis(DataAxis):
         scale = (self.high_value - self.low_value) / (self.size-1)
         offset = self.low_value
         d = self.get_axis_dictionary()
-        axes_manager = self.axes_manager
-
         if len(self.axis) > 1:
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
-        d["_type"] = 'UniformDataAxis'
-        del self._expression
-        del self._function
-        self.remove_trait('x')
-        self.__class__ = UniformDataAxis
-        self.__init__(**d, scale=scale, offset=offset)
-        self.axes_manager = axes_manager
+        d["_type"] = "UniformDataAxis"
+        return UniformDataAxis(**d, scale=scale, offset=offset)
 
 
 class UniformDataAxis(DataAxis, UnitConversion):
@@ -1353,30 +1338,19 @@ class UniformDataAxis(DataAxis, UnitConversion):
 
     def convert_to_functional_data_axis(self, expression, units=None, name=None, **kwargs):
         d = super(DataAxis, self).get_axis_dictionary()
-        axes_manager = self.axes_manager
         if units:
             d["units"] = units
         if name:
             d["name"] = name
         d.update(kwargs)
         this_kwargs = self.get_axis_dictionary()
-        self.remove_trait('scale')
-        self.remove_trait('offset')
-        self.__class__ = FunctionalDataAxis
-        d["_type"] = 'FunctionalDataAxis'
-        self.__init__(expression=expression, x=UniformDataAxis(**this_kwargs), **d)
-        self.axes_manager = axes_manager
+        d["_type"] = "FunctionalDataAxis"
+        return FunctionalDataAxis(expression=expression, x=UniformDataAxis(**this_kwargs), **d)
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
-        axes_manager = self.axes_manager
-        self.__class__ = DataAxis
         d["_type"] = 'DataAxis'
-        self.remove_trait('scale')
-        self.remove_trait('offset')
-        self.remove_trait('size')
-        self.__init__(**d)
-        self.axes_manager = axes_manager
+        return DataAxis(**d)
 
 
 def _serpentine_iter(shape):
@@ -1571,6 +1545,20 @@ class AxesManager(t.HasTraits):
             [_id for _id in map(id, axes)], return_index=True)
         ans = tuple(axes[i] for i in sorted(indices))
         return ans
+
+    def __setitem__(self, y, value):
+        """x.__getitem__(y) <==> x[y]
+
+        """
+        if isinstance(y, str) or not np.iterable(y):
+            ax = self._axes_getter(y)
+            self.axes[self.axes.index(ax)]=value
+            return
+        else:
+            axes = [self._axes_getter(ax) for ax in y]
+            indices = [self.axes.index(ax) for ax in axes]
+            for ind, v in zip(axes, indices):
+                self.axes[ind]=v
 
     @property
     def axes(self):
