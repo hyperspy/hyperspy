@@ -463,6 +463,18 @@ class DataAxis(BaseDataAxis):
     axis : numpy array or list
         The array defining the axis points.
 
+    Attributes
+    ----------
+    size
+    high_index
+    low_index
+    high_value
+    low_value
+    _is_increasing_order
+    index : int
+        The current index for the axis. This is used for interactive plotting and
+        model fitting
+
     Examples
     --------
     Sample dictionary for a `DataAxis`:
@@ -496,12 +508,7 @@ class DataAxis(BaseDataAxis):
             **kwargs)
 
         self.axis = axis
-        #self.add_trait("_axis", t.Array)
-        #self._axis = axis
-        # Index added as trait for use with UI. Interactive plotting, model fitting etc.
-        # Needs to be limited to high/ low index.
-        #self.add_trait("_index", t.Int)
-        #self._index = 0
+
 
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and set the
@@ -905,6 +912,16 @@ class FunctionalDataAxis(DataAxis):
     x : BaseDataAxis
         Defines x-values at which `expression` is evaluated.
 
+    Attributes
+    ----------
+    parameters: dict
+        A dictionary representing the additional varibles and their values. This
+        is changed using a.parameters["b"]=10.  This will automatically update the
+        axis value
+    axis: ndarray
+        The caculated axis as determined by the expression evaulated at every point in `x`
+
+
     Examples
     --------
     Sample dictionary for a FunctionalDataAxis:
@@ -1101,6 +1118,12 @@ class UniformDataAxis(DataAxis, UnitConversion):
     size : int
         The number of points in the axis.
 
+    Attributes
+    ----------
+    axis: ndarray
+        The caculated axis as determined by the expression np.arrange(self.size)*self.scale+self.offset
+
+
     Examples
     --------
     Sample dictionary for a `UniformDataAxis`:
@@ -1139,12 +1162,6 @@ class UniformDataAxis(DataAxis, UnitConversion):
             is_binned=is_binned,
             **kwargs
             )
-        # These traits need to added dynamically to be removed when necessary
-        #self.add_trait("scale", t.CFloat)
-        #self.add_trait("offset", t.CFloat)
-        #self.add_trait("_size", t.CInt)
-
-        #self.remove_trait("_axis")
         self.scale = scale
         self.offset = offset
         self._size = size
