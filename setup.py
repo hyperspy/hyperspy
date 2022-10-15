@@ -95,8 +95,8 @@ extras_require = {
     "coverage":["pytest-cov"],
     # required to build the docs
     "build-doc": [
+        "pydata_sphinx_theme",
         "sphinx>=1.7",
-        "sphinx_rtd_theme",
         "sphinx-toggleprompt",
         "sphinxcontrib-mermaid",
         "sphinxcontrib-towncrier",
