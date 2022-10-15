@@ -101,6 +101,7 @@ extras_require = {
         "sphinx-toggleprompt",
         "sphinxcontrib-mermaid",
         "sphinxcontrib-towncrier",
+        "sphinx-design",
         # pin towncrier until https://github.com/sphinx-contrib/sphinxcontrib-towncrier/issues/60 is fixed
         "towncrier<22.8",
         ],

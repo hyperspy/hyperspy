@@ -31,6 +31,7 @@ sys.path.append('../')
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     'sphinxcontrib.towncrier',
+    'sphinx_design',
     'sphinx.ext.autodoc',
     "sphinx.ext.autosummary",
     "sphinx.ext.githubpages",
@@ -38,8 +39,8 @@ extensions = [
     'sphinx.ext.imgmath',
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
-    'sphinx_toggleprompt',
     'sphinx_gallery.gen_gallery',
+    'sphinx_toggleprompt',
 ]
 
 linkcheck_ignore = [
@@ -180,6 +181,13 @@ html_theme_options = {
     "logo": {
         "text": "HyperSpy",
     },
+    "external_links": [
+        {
+            "url": "https://github.com/hyperspy/hyperspy-demos",
+            "name": "Tutorial",
+        },
+    ],
+    "header_links_before_dropdown": 6,
 }
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.

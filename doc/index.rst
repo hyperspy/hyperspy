@@ -1,3 +1,4 @@
+:html_theme.sidebar_secondary.remove: true
 
 ######################
 HyperSpy Documentation
@@ -10,14 +11,11 @@ HyperSpy Documentation
    User Guide <user_guide/index>
    Example <auto_examples/index>
    Reference <reference/index>
-   Development <dev_guide/index>
+   Contributing <dev_guide/index>
    Release Notes <changes>
 
-Introduction
-============
-
 What is HyperSpy
-----------------
+================
 
 HyperSpy is an open source Python library which provides tools to facilitate
 the interactive data analysis of multidimensional datasets that can be
@@ -47,7 +45,7 @@ follow `this link <https://github.com/hyperspy/hyperspy-extensions-list>`_.
     extensions specialized in the analysis of different types of data.
 
 HyperSpy's character
---------------------
+====================
 
 HyperSpy has been written by a subset of the people who use it, a particularity
 that sets its character:
@@ -78,3 +76,62 @@ that sets its character:
   packages for details. Not enough? If you
   need a full, standalone GUI, `HyperSpyUI <https://hyperspy.org/hyperspyUI/>`_
   is for you.
+
+Learning resources
+==================
+
+.. grid:: 2 3 3 3
+  :gutter: 2
+
+  .. grid-item-card::
+    :link: user_guide/index
+
+    :octicon:`rocket;2em;sd-text-info` Getting Started
+    ^^^
+
+    New to HyperSpy or Python? The getting started guide provides an
+    introduction on basic usage of HyperSpy and how to install it
+
+  .. grid-item-card::
+    :link: user_guide/index
+
+    :octicon:`book;2em;sd-text-info` User Guide
+    ^^^
+
+    The user guide provides in-depth information on key concepts of HyperSpy
+    and how to use it along with background information and explanation
+
+  .. grid-item-card::
+    :link: reference/index
+
+    :octicon:`code-square;2em;sd-text-info` Reference
+    ^^^
+
+    Documentation of the metadata specification and of the Application Progamming Interface (API),
+    which describe how HyperSpy functions work and which parameters can be used.
+
+  .. grid-item-card::
+    :link: auto_examples/index
+
+    :octicon:`zap;2em;sd-text-info` Example
+    ^^^
+
+    Short examples illustrating simple tasks
+
+  .. grid-item-card::
+    :link: https://github.com/hyperspy/hyperspy-demos
+
+    :octicon:`workflow;2em;sd-text-info` Tutorials
+    ^^^
+
+    Tutorials in form of Jupyter Notebook to learn how to
+    process multi-dimensional data using HyperSpy
+
+  .. grid-item-card::
+    :link: dev_guide/index
+
+    :octicon:`people;2em;sd-text-info` Contributing
+    ^^^
+
+    HyperSpy is a community project maintained for and by its users.
+    There are many ways you can help!
