@@ -304,8 +304,10 @@ intersphinx_mapping = {'rsciio': ('https://hyperspy.org/rosettasciio/', None),
 
 # https://sphinx-gallery.github.io
 sphinx_gallery_conf = {
-     'examples_dirs': '../examples',   # path to your example scripts
-     'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
+    'examples_dirs': '../examples',   # path to your example scripts
+    'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
+    'filename_pattern': '.py',        # pattern to define which will be executed
+    'ignore_pattern': '_sgskip.py',   # pattern to define which will not be executed
 }
 
 graphviz_output_format = "svg"

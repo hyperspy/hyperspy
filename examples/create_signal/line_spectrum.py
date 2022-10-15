@@ -1,9 +1,12 @@
-"""Creates a line spectrum and plots it
+"""
+Creates a line spectrum
+=======================
+
+This example creates a line spectrum and plots it
 """
 
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 # Create a line spectrum with random data
 s = hs.signals.Signal1D(np.random.random((100, 1024)))
@@ -24,5 +27,3 @@ s.metadata.General.title = 'Random line spectrum'
 
 # Plot it
 s.plot()
-
-plt.show()  # No necessary when running in the HyperSpy's IPython profile

@@ -1,9 +1,13 @@
-"""Creates a 4D image and plots it
+"""
+Creates a 4D image and plots it
+===============================
+
+This example creates a 4D dataset, i.e. 2 navigation dimension and
+2 signal dimension and plots it
 """
 
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 # Create a 2D image stack with random data
 im = hs.signals.Signal2D(np.random.random((16, 16, 32, 32)))
@@ -33,4 +37,3 @@ im.axes_manager.navigation_axes[1].offset = 100
 im.metadata.General.title = 'Random 2D image stack'
 
 im.plot()
-plt.show()  # No necessary when running in the HyperSpy's IPython profile

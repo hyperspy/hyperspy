@@ -29,7 +29,8 @@ doc/user_guide/_build/*
 doc/user_guide/.build/*
 setup/windows/requires/*
 setup/windows/reccomends/*
-doc/examples
+doc/auto_examples
+examples/io/*.msa
 doc/gh-pages
 doc/log.txt
 *Thumbs.db
