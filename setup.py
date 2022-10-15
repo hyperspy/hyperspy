@@ -97,6 +97,7 @@ extras_require = {
     "build-doc": [
         "pydata_sphinx_theme",
         "sphinx>=1.7",
+        "sphinx-gallery",
         "sphinx-toggleprompt",
         "sphinxcontrib-mermaid",
         "sphinxcontrib-towncrier",

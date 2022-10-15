@@ -9,7 +9,7 @@ HyperSpy Documentation
 
    User Guide <user_guide/index>
    Reference <reference/index>
-   ..Example <example/index>
+   Example <auto_examples/index>
    ..Tutorial <tutorials/index>
    Development <dev_guide/index>
    Release Notes <changes>

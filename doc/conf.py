@@ -39,6 +39,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
     'sphinx_toggleprompt',
+    'sphinx_gallery.gen_gallery',
 ]
 
 linkcheck_ignore = [
@@ -283,7 +284,6 @@ towncrier_draft_autoversion_mode = 'draft'
 towncrier_draft_include_empty = False
 towncrier_draft_working_directory = ".."
 
-
 # Add the hyperspy website to the intersphinx domains
 intersphinx_mapping = {'rsciio': ('https://hyperspy.org/rosettasciio/', None),
                        'cupy': ('https://docs.cupy.dev/en/stable', None),
@@ -299,6 +299,14 @@ intersphinx_mapping = {'rsciio': ('https://hyperspy.org/rosettasciio/', None),
                        'skimage': ('https://scikit-image.org/docs/stable', None),
                        'zarr': ('https://zarr.readthedocs.io/en/stable', None),
                        }
+
+# -- Sphinx-Gallery---------------
+
+# https://sphinx-gallery.github.io
+sphinx_gallery_conf = {
+     'examples_dirs': '../examples',   # path to your example scripts
+     'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
+}
 
 graphviz_output_format = "svg"
 
