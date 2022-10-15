@@ -467,12 +467,12 @@ class Signal2D(BaseSignal, CommonSignal2D):
         Notes
         -----
         The statistical analysis approach to the translation estimation
-        when using ``reference='stat'`` roughly follows [Schaffer2004]_.
+        when using ``reference='stat'`` roughly follows [*]_.
         If you use it please cite their article.
 
         References
         ----------
-        .. [Schaffer2004] Schaffer, Bernhard, Werner Grogger, and Gerald Kothleitner.
+        .. [*] Schaffer, Bernhard, Werner Grogger, and Gerald Kothleitner.
            “Automated Spatial Drift Correction for EFTEM Image Series.”
            Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 

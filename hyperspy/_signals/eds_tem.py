@@ -648,7 +648,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         ----------
         normalize_poissonian_noise : bool, default True
             If True, scale the signal to normalize Poissonian noise using
-            the approach described in [Keenan2004]_.
+            the approach described in [*]_.
         navigation_mask : None or float or boolean numpy array, default 1.0
             The navigation locations marked as True are not used in the
             decomposition. If float is given the vacuum_mask method is used to
@@ -736,6 +736,12 @@ class EDSTEMSpectrum(EDSSpectrum):
         See also
         --------
         vacuum_mask
+
+        References
+        ----------
+        .. [*] M. Keenan and P. Kotula, "Accounting for Poisson noise
+           in the multivariate analysis of ToF-SIMS spectrum images", Surf.
+           Interface Anal 36(3) (2004): 203-212.
         """
         if isinstance(navigation_mask, float):
             navigation_mask = self.vacuum_mask(navigation_mask, closing)
