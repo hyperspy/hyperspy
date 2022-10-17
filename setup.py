@@ -70,6 +70,8 @@ install_req = ['scipy>=1.1',
                 # included in stdlib since v3.8, but this required version requires Python 3.10
                 # We can remove this requirement when the minimum supported version becomes Python 3.10
                'importlib-metadata>=3.6',
+                # UPDATE BEFORE RELEASE
+               'rosettasciio @ git+https://github.com/hyperspy/rosettasciio#egg=rosettasciio',
                ]
 
 extras_require = {
@@ -78,7 +80,9 @@ extras_require = {
     "learning": ['scikit-learn!=1.0.0;sys_platform=="darwin"',
                  'scikit-learn;sys_platform!="darwin"'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
-    "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
+    # UPDATE BEFORE RELEASE
+    "gui-traitsui": ["hyperspy_gui_traitsui @ git+https://github.com/hyperspy/hyperspy_gui_traitsui#egg=hyperspy_gui_traitsui"],
+    #"gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "tests": ["pytest>=3.6", "pytest-mpl", "pytest-xdist", "pytest-rerunfailures", "pytest-instafail", "matplotlib>=3.1"],
     "coverage":["pytest-cov"],
     # required to build the docs

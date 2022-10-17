@@ -57,7 +57,7 @@ pool:
 
 steps:
 - checkout: self
-  fetchDepth: 1 # Fetch only one commit
+  fetchDepth: '1' # Fetch only one commit
 - template: azure_pipelines/clone_ci-scripts_repo.yml@templates
 - template: azure_pipelines/install_mambaforge.yml@templates
 - template: azure_pipelines/activate_conda.yml@templates
@@ -71,17 +71,16 @@ steps:
 
 - bash: |
     source activate $ENV_NAME
-    # don't install pyusid, because pip install pyusid fails
-    #pip install https://github.com/hyperspy/rosettasciio/archive/refs/heads/main.zip#egg=rosettasciio[all]
-    pip install https://github.com/hyperspy/rosettasciio/archive/refs/heads/main.zip#egg=rosettasciio[blockfile,mrcz,blockfile,zspy]
-
-    conda list
-  displayName: Install package (rosettasciio)
+    conda clean --all -y
+  displayName: Clean conda cache
 
 - bash: |
     source activate $ENV_NAME
-    conda clean --all -y
-  displayName: Clean conda cache
+    # don't install pyusid, because pip install pyusid fails
+    pip install https://github.com/hyperspy/rosettasciio/archive/refs/heads/main.zip
+
+    conda list
+  displayName: Install package (rosettasciio)
 
 # Note we must use `-n 2` argument for pytest-xdist due to
 # https://github.com/pytest-dev/pytest-xdist/issues/9.
