@@ -454,12 +454,11 @@ def get_luminescence_signal(navigation_dimension=0,
     if not uniform:
         hc = 1239.84198 #nm/eV
         #converting to non-uniform axis
-        sig.axes_manager[sig.axes_manager.signal_axes[0]] = \
-            sig.axes_manager[sig.axes_manager.signal_axes[0]].convert_to_functional_data_axis(
-                expression="a/x",
-                name='Energy',
-                units='eV',
-                a=hc,
+        sig.axes_manager.signal_axes[0].convert_to_functional_data_axis(\
+                                                              expression="a/x",
+                                                              name='Energy',
+                                                              units='eV',
+                                                              a=hc,
                                                           )
         #Reverting the orientation of signal axis to have increasing Energy
         sig = sig.isig[::-1]

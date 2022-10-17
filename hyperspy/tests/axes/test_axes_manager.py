@@ -131,7 +131,7 @@ class TestAxesManager:
 
     def test_all_uniform(self):
         assert self.am.all_uniform == True
-        self.am[-1] =self.am[-1].convert_to_non_uniform_axis()
+        self.am[-1].convert_to_non_uniform_axis()
         assert self.am.all_uniform == False
 
     def test_get_axis(self):

@@ -31,7 +31,7 @@ from hyperspy.components1d import EELSCLEdge
 
 def test_signal():
     s = Signal1D([10, 10])
-    s.axes_manager[0] = s.axes_manager[0].convert_to_non_uniform_axis()
+    s.axes_manager[0].convert_to_non_uniform_axis()
     with pytest.raises(NotImplementedError):
         s.fft()
     with pytest.raises(NotImplementedError):
@@ -45,7 +45,7 @@ def test_signal():
 
 def test_signal1d():
     s = Signal1D(([0, 1]))
-    s.axes_manager[0] = s.axes_manager[0].convert_to_non_uniform_axis()
+    s.axes_manager[0].convert_to_non_uniform_axis()
     with pytest.raises(NotImplementedError):
         s.calibrate()
     with pytest.raises(NotImplementedError):
@@ -64,7 +64,7 @@ def test_signal1d():
 
 def test_signal2d():
     s = Signal2D([[10, 10], [10, 10]])
-    s.axes_manager[0] =s.axes_manager[0].convert_to_non_uniform_axis()
+    s.axes_manager[0].convert_to_non_uniform_axis()
     with pytest.raises(NotImplementedError):
         s.align2D()
 
@@ -72,7 +72,7 @@ def test_signal2d():
 def test_eels():
     s = EELSSpectrum(([0, 1]))
     s0 = s.deepcopy()
-    s.axes_manager[0] = s.axes_manager[0].convert_to_non_uniform_axis()
+    s.axes_manager[0].convert_to_non_uniform_axis()
     with pytest.raises(NotImplementedError):
         s.align_zero_loss_peak()
     with pytest.raises(NotImplementedError):
@@ -98,8 +98,8 @@ def test_eels():
 def test_eds():
     s = EDSTEMSpectrum(([0, 1]))
     s2 = EDSSEMSpectrum(([0, 1]))
-    s.axes_manager[0] = s.axes_manager[0].convert_to_non_uniform_axis()
-    s2.axes_manager[0] =s2.axes_manager[0].convert_to_non_uniform_axis()
+    s.axes_manager[0].convert_to_non_uniform_axis()
+    s2.axes_manager[0].convert_to_non_uniform_axis()
     s.set_microscope_parameters(20)
     with pytest.raises(NotImplementedError):
         s.get_calibration_from(s)
@@ -116,8 +116,8 @@ def test_eds():
 
 def test_hologram_image():
     s = HologramImage([[10, 10], [10, 10]])
-    s.axes_manager[0] = s.axes_manager[0].convert_to_non_uniform_axis()
-    s.axes_manager[1] =s.axes_manager[1].convert_to_non_uniform_axis()
+    s.axes_manager[0].convert_to_non_uniform_axis()
+    s.axes_manager[1].convert_to_non_uniform_axis()
     with pytest.raises(NotImplementedError):
         s.estimate_sideband_position()
     with pytest.raises(NotImplementedError):
@@ -130,7 +130,7 @@ def test_hologram_image():
 
 def test_lazy():
     s = Signal1D([10, 10]).as_lazy()
-    s.axes_manager[0] =s.axes_manager[0].convert_to_non_uniform_axis()
+    s.axes_manager[0].convert_to_non_uniform_axis()
     print(s)
     with pytest.raises(NotImplementedError):
         s.diff(0)
