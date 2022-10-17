@@ -165,7 +165,7 @@ class TestDataAxis:
         self.axis.units = "plumage"
         s = Signal1D(np.arange(10), axes=[self.axis])
         index_in_array = s.axes_manager[0].index_in_array
-        s.axes_manager[0] = s.axes_manager[0].convert_to_uniform_axis()
+        s.axes_manager[0].convert_to_uniform_axis()
         assert isinstance(s.axes_manager[0], UniformDataAxis)
         assert s.axes_manager[0].name == "parrot"
         assert s.axes_manager[0].units == "plumage"
@@ -346,7 +346,7 @@ class TestFunctionalDataAxis:
         self.axis.units = "plumage"
         s = Signal1D(np.arange(10), axes=[self.axis])
         index_in_array = s.axes_manager[0].index_in_array
-        s.axes_manager[0] = s.axes_manager[0].convert_to_non_uniform_axis()
+        s.axes_manager[0].convert_to_non_uniform_axis()
         assert isinstance(s.axes_manager[0], DataAxis)
         assert s.axes_manager[0].name == "parrot"
         assert s.axes_manager[0].units == "plumage"
@@ -372,7 +372,7 @@ class TestFunctionalDataAxis:
         self.axis.units = "plumage"
         s = Signal1D(np.arange(10), axes=[self.axis])
         index_in_array = s.axes_manager[0].index_in_array
-        s.axes_manager[0]= s.axes_manager[0].convert_to_uniform_axis()
+        s.axes_manager[0].convert_to_uniform_axis()
         assert isinstance(s.axes_manager[0], DataAxis)
         assert s.axes_manager[0].name == "parrot"
         assert s.axes_manager[0].units == "plumage"
@@ -652,7 +652,7 @@ class TestUniformDataAxis:
         self.axis.units = "plumage"
         s = Signal1D(np.arange(10), axes=[self.axis])
         index_in_array = s.axes_manager[0].index_in_array
-        s.axes_manager[0]= s.axes_manager[0].convert_to_non_uniform_axis()
+        s.axes_manager[0].convert_to_non_uniform_axis()
         assert isinstance(s.axes_manager[0], DataAxis)
         assert s.axes_manager[0].name == "parrot"
         assert s.axes_manager[0].units == "plumage"
@@ -676,7 +676,7 @@ class TestUniformDataAxis:
         self.axis.units = "plumage"
         s = Signal1D(np.arange(10), axes=[self.axis])
         index_in_array = s.axes_manager[0].index_in_array
-        s.axes_manager[0] = s.axes_manager[0].convert_to_functional_data_axis(expression = 'x**2')
+        s.axes_manager[0].convert_to_functional_data_axis(expression = 'x**2')
         assert isinstance(s.axes_manager[0], FunctionalDataAxis)
         assert s.axes_manager[0].name == "parrot"
         assert s.axes_manager[0].units == "plumage"

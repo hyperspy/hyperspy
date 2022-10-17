@@ -815,8 +815,16 @@ class DataAxis(BaseDataAxis):
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
         d["_type"] = 'UniformDataAxis'
-        new_axis = UniformDataAxis(**d, size=size, scale=scale, offset=offset)
-        return new_axis
+        if self.axes_manager is not None:
+            self.axes_manager[self] = UniformDataAxis(**d,
+                                                      size=size,
+                                                      scale=scale,
+                                                      offset=offset)
+        else:
+            return UniformDataAxis(**d,
+                                   size=size,
+                                   scale=scale,
+                                   offset=offset)
 
     @property
     def _is_increasing_order(self):
@@ -1040,7 +1048,10 @@ class FunctionalDataAxis(DataAxis):
         """Convert to a non-uniform axis."""
         d = super().get_axis_dictionary()
         d["_type"] = 'DataAxis'
-        return DataAxis(**d)
+        if self.axes_manager is not None:
+            self.axes_manager[self] = DataAxis(**d)
+        else:
+            return DataAxis(**d)
 
     def crop(self, start=None, end=None):
         """Crop the axis in place.
@@ -1095,7 +1106,11 @@ class FunctionalDataAxis(DataAxis):
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
         d["_type"] = "UniformDataAxis"
-        return UniformDataAxis(**d, scale=scale, offset=offset)
+
+        if self.axes_manager is not None:
+            self.axes_manager[self] = UniformDataAxis(**d, scale=scale, offset=offset)
+        else:
+            return UniformDataAxis(**d, scale=scale, offset=offset)
 
 
 class UniformDataAxis(DataAxis, UnitConversion):
@@ -1362,12 +1377,22 @@ class UniformDataAxis(DataAxis, UnitConversion):
         d.update(kwargs)
         this_kwargs = self.get_axis_dictionary()
         d["_type"] = "FunctionalDataAxis"
-        return FunctionalDataAxis(expression=expression, x=UniformDataAxis(**this_kwargs), **d)
+        if self.axes_manager is not None:
+            self.axes_manager[self] = FunctionalDataAxis(expression=expression,
+                                                         x=UniformDataAxis(**this_kwargs),
+                                                         **d)
+        else:
+            return FunctionalDataAxis(expression=expression,
+                                      x=UniformDataAxis(**this_kwargs),
+                                      **d)
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
         d["_type"] = 'DataAxis'
-        return DataAxis(**d)
+        if self.axes_manager is not None:
+            self.axes_manager[self] = DataAxis(**d)
+        else:
+            return DataAxis(**d)
 
 
 def _serpentine_iter(shape):
