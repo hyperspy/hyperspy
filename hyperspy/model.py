@@ -2433,8 +2433,10 @@ class BaseModel(list):
         dic = {'components': [c.as_dictionary(fullcopy) for c in self]}
 
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
-        if self.__class__.__name__ is 'EDSTEMModel' or self.__class__.__name__ == 'EDSSEMModel' and self.background_components[0].name == 'Physical_background':
-            dic['export_background']=self.components.Physical_background._dic
+        if self.__class__.__name__ is 'EDSTEMModel' or self.__class__.__name__ == 'EDSSEMModel': 
+            if len(self.background_components)>0:
+                if self.background_components[0].name == 'Physical_background':
+                    dic['export_background']=self.components.Physical_background._dic
 
         def remove_empty_numpy_strings(dic):
             for k, v in dic.items():

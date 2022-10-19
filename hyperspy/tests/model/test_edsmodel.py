@@ -125,7 +125,7 @@ class TestlineFit:
         s = self.s
         m = s.create_model(auto_background=False)
         m.add_physical_background()
-        assert 'Bremsstrahlung' in m[-1]._name
+        assert 'Physical_background' in m[-1]._name
         assert(m[-1].isbackground)
         assert (m[-1].E0.value==200)
         np.testing.assert_allclose(m[-1].teta.value,1.74,atol=1e-2)
