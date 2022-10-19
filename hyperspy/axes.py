@@ -1061,10 +1061,10 @@ class FunctionalDataAxis(DataAxis):
         """Convert to a non-uniform axis."""
         d = super().get_axis_dictionary()
         d["_type"] = 'DataAxis'
+        new_axis = DataAxis(**d)
         if self.axes_manager is not None:
-            self.axes_manager[self] = DataAxis(**d)
-        else:
-            return DataAxis(**d)
+            self.axes_manager[self] = new_axis
+        return new_axis
 
     def crop(self, start=None, end=None):
         """Crop the axis in place.
@@ -1119,11 +1119,10 @@ class FunctionalDataAxis(DataAxis):
             scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
             _logger.warning('The maximum scale error is {}.'.format(scale_err))
         d["_type"] = "UniformDataAxis"
-
+        new_axis = UniformDataAxis(**d, scale=scale, offset=offset)
         if self.axes_manager is not None:
-            self.axes_manager[self] = UniformDataAxis(**d, scale=scale, offset=offset)
-        else:
-            return UniformDataAxis(**d, scale=scale, offset=offset)
+            self.axes_manager[self] = new_axis
+        return new_axis
 
 
 class UniformDataAxis(DataAxis, UnitConversion):
@@ -1243,8 +1242,8 @@ class UniformDataAxis(DataAxis, UnitConversion):
         my_slice : slice
         """
         if isinstance(_slice, (np.ndarray, list)):
-            self.convert_to_non_uniform_axis()
-            return self._slice_me(_slice)
+            new_axis = self.convert_to_non_uniform_axis()
+            return new_axis._slice_me(_slice)
         else:
             start, step = _slice.start, _slice.step
 
@@ -1383,22 +1382,20 @@ class UniformDataAxis(DataAxis, UnitConversion):
         d.update(kwargs)
         this_kwargs = self.get_axis_dictionary()
         d["_type"] = "FunctionalDataAxis"
-        if self.axes_manager is not None:
-            self.axes_manager[self] = FunctionalDataAxis(expression=expression,
-                                                         x=UniformDataAxis(**this_kwargs),
-                                                         **d)
-        else:
-            return FunctionalDataAxis(expression=expression,
+        new_axis = FunctionalDataAxis(expression=expression,
                                       x=UniformDataAxis(**this_kwargs),
                                       **d)
+        if self.axes_manager is not None:
+            self.axes_manager[self] = new_axis
+        return new_axis
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
         d["_type"] = 'DataAxis'
+        new_axis = DataAxis(**d)
         if self.axes_manager is not None:
-            self.axes_manager[self] = DataAxis(**d)
-        else:
-            return DataAxis(**d)
+            self.axes_manager[self] = new_axis
+        return new_axis
 
 
 def _serpentine_iter(shape):
