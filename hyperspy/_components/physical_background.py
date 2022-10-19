@@ -48,28 +48,31 @@ class Physical_background(Component):
     """
 
     def __init__(self, E0, detector, quantification, emission_model, absorption_model,TOA,coating_thickness,phase_map,correct_for_backscatterring,standard, **kwargs):
-        Component.__init__(self,['mt','a','b','E0','quanti','teta','coating_thickness'])
+        Component.__init__(self,['mt','a','b','E0','quanti','teta'])
+        
 
+        self._dic={}
         self.mt.value=100
         self.a.value=0.001
-        self.b.value=0
+        self.b.value=0.0
+        
         
         self.E0.value=E0
         self.teta.value=TOA
         self.teta.value=np.deg2rad(self.teta.value)
         self.teta.value=(1/sin(self.teta.value))
         
-        self.coating_thickness.value=coating_thickness
         
-        self._whitelist['E0']=E0
-        self._whitelist['teta']=self.teta.value
-        self._whitelist['Backscattering_correction'] = correct_for_backscatterring
-        self._whitelist['std'] = standard
-        self._whitelist['quanti'] = quantification
-        self._whitelist['detector'] = detector
-        self._whitelist['emission_model'] = emission_model
-        self._whitelist['absorption_model'] = absorption_model
-        self._whitelist['phase_map'] = phase_map
+        self._dic['Coating']=coating_thickness
+        self._dic['E0']=E0
+        self._dic['teta']=self.teta.value
+        self._dic['Backscattering_correction'] = correct_for_backscatterring
+        self._dic['std'] = standard
+        self._dic['quanti'] = quantification
+        self._dic['detector'] = detector
+        self._dic['emission_model'] = emission_model
+        self._dic['absorption_model'] = absorption_model
+        self._dic['phase_map'] = phase_map
         self.quanti.value=1
 
         
@@ -78,7 +81,6 @@ class Physical_background(Component):
         self.b.free=True
         self.E0.free=False
         self.teta.free=False
-        self.coating_thickness.free=False
         self.quanti.free=False
         
         self.isbackground=True
@@ -91,11 +93,8 @@ class Physical_background(Component):
         self.b.bmin=0
         self.b.bmax=1e9
         
+        
     def initialize(self): # this function is necessary to initialize the quant map and optimize the memory.
-
-        E0=self.E0.value
-        teta=self.teta.value
-        coating_thickness=self.coating_thickness.value
         
         self.mt._create_array()
         self.a._create_array()
@@ -105,97 +104,116 @@ class Physical_background(Component):
         self.quanti._create_array()
         
         if len(self.model.axes_manager.shape)==1:
-            self.quanti.value=Wpercent(self.model,self._whitelist['quanti'])
+            self.quanti.value=Wpercent(self.model,self._dic['quanti'])
         elif len(self.model.axes_manager.shape)==2:
-            self.quanti.map['values'][:] = Wpercent(self.model,self._whitelist['quanti'])
+            self.quanti.map['values'][:] = Wpercent(self.model,self._dic['quanti'])
             self.quanti.map['is_set'][:] = True
             self.quanti.value=self.quanti.map['values'][0,:]
         else: 
-            self.quanti.map['values'][:] = Wpercent(self.model,self._whitelist['quanti'])
+            self.quanti.map['values'][:] = Wpercent(self.model,self._dic['quanti'])
             self.quanti.map['is_set'][:] = True
             self.quanti.value=self.quanti.map['values'][0,0,:]    
 
-        self._whitelist['Window_absorption']=np.array(Windowabsorption(self.model,self._whitelist['detector']),dtype=np.float16)
+        self._dic['Window_absorption']=np.array(Windowabsorption(self.model,self._dic['detector']),dtype=np.float16)
         
-        if self.coating_thickness.value>0:
-            self._whitelist['Coating_absorption']=1
-        else: 
-            self._whitelist['Coating_absorption']=(np.exp(-Cabsorption(self.model)*1.3*self.coating_thickness.value*10**-7*teta))# absorption by the coating layer (1.3 is the density)
-
-        if self._whitelist['quanti']=='Mean'or self._whitelist['std']is True:
-            Mu=Mucoef(self.model,self.quanti.value)
+        self._dic['Coating_absorption']=(np.exp(-Cabsorption(self.model)*1.3*self._dic['Coating']*10**-7*self.teta.value))# absorption by the coating layer (1.3 is the density)
+        
+        if self._dic['quanti']=='Mean'or self._dic['std']is True:
+            self._dic['Mu']=Mucoef(self.model,self.quanti.value)
+            #self.Mu.assign_current_value_to_all()
             Z=MeanZ(self.model,self.quanti.value)            
-            self._whitelist['Mu']=Mu
-            self._whitelist['Z']=Z
+            self._dic['Z']=Z
 
-        phasem=self._whitelist['phase_map']
+        phasem=self._dic['phase_map']
         if phasem is not None:
             Mu=[]
             Z=[]
             for i in range (1,int(np.max(phasem)+1)):
                 Mu.append(Mucoef(self.model,np.mean(self.quanti.map['values'][phasem==i],axis=0)))
                 Z.append(MeanZ(self.model,np.mean(self.quanti.map['values'][phasem==i],axis=0)))     
-            self._whitelist['Mu']=np.array(Mu,dtype=np.float16)
-            self._whitelist['Z']=np.array(Z,dtype=np.float16)
+            self._dic['Mu']=np.array(Mu,dtype=np.float16)
+            self._dic['Z']=np.array(Z,dtype=np.float16)
 
         return {'Quant map and absorption correction parameters have been created'}
+    
+    
+    def reinitialize(self,dic): # this function is necessary to reinitialize the quant map for loading the data.
         
+        self._dic=dic
+        self.mt._create_array()
+        self.a._create_array()
+        self.b._create_array()
+        
+        self.quanti._number_of_elements=len(self.model._signal.metadata.Sample.elements)
+        self.quanti._create_array()
+        
+        self._dic['Window_absorption']=self._dic['Window_absorption']=np.array(Windowabsorption(self.model,self._dic['detector']),dtype=np.float16)
+        
+        self._dic['Coating_absorption']=(np.exp(-Cabsorption(self.model)*1.3*self._dic['Coating']*10**-7*self.teta.value))# absorption by the coating layer (1.3 is the density)
+        
+        ### the Mu parameter could be saved as a basesignal maybe and reloaded in the model if it change at each pixel. Try to think about it for the next version.
+        
+        return {'Quant map and absorption correction parameters have been recreated'}
+           
     def function(self,x):
  
         mt=self.mt.value
         a=self.a.value
         b=self.b.value
+        
 
-        E0=self._whitelist['E0']# allow to keep the parameter fixed even with the free_background function
-        cosec=self._whitelist['teta']# allow to keep the parameter fixed even with the free_background function
+        E0=self._dic['E0']# allow to keep the parameter fixed even with the free_background function
+        cosec=self._dic['teta']# allow to keep the parameter fixed even with the free_background function
 
-        phasem=self._whitelist['phase_map']
+        phasem=self._dic['phase_map']
         if phasem is not None:
             index=self.model._signal.axes_manager.indices
             phaseN=phasem[int(index[1]),int(index[0])]
-            Mu=self._whitelist['Mu'][int(phaseN-1)]
-            Z=self._whitelist['Z'][int(phaseN-1)]
+            Mu=self._dic['Mu'][int(phaseN-1)]
+            Z=self._dic['Z'][int(phaseN-1)]
             Mu=np.array(Mu,dtype=np.float16)
             Mu=Mu[self.model.channel_switches]
-        elif self._whitelist['quanti']=='Mean' or self._whitelist['std']is True:
-            Mu=self._whitelist['Mu']
+        elif self._dic['quanti']=='Mean' or self._dic['std']is True:
+            Mu=self._dic['Mu']
             Mu=np.array(Mu,dtype=np.float16)
             Mu=Mu[self.model.channel_switches]
-            Z=self._whitelist['Z']
+            Z=self._dic['Z']
         else:
             Mu=Mucoef(self.model,self.quanti.value)
             Mu=np.array(Mu,dtype=np.float16)
             Z=MeanZ(self.model,self.quanti.value)
         
-        Window=self._whitelist['Window_absorption']
-        Window=Window[self.model.channel_switches]
+        Window_absorption=self._dic['Window_absorption']
+        Window_absorption=Window_absorption[self.model.channel_switches]
 
-        coating=np.array(self._whitelist['Coating_absorption'],dtype=np.float16)
-        coating=coating[self.model.channel_switches]
+        if self._dic['Coating']>0:
+            coating=np.array(self._dic['Coating_absorption'],dtype=np.float16)
+        else:
+            coating=1
 
-        if self._whitelist['emission_model'] == 'Kramer':
+        if self._dic['emission_model'] == 'Kramer':
             np.seterr(divide = 'ignore',invalid='ignore')# deactivate the warnings for x value that are not calculated (<0.17)
             emission=(a*mt*((E0-x)/x))
             np.seterr(divide = 'warn',invalid='warn')
         
-        if self._whitelist['emission_model'] == 'Small':
+        if self._dic['emission_model'] == 'Small':
             M=0.00599*E0+1.05
             P=-0.0322*E0+5.80
             np.seterr(divide = 'ignore',invalid='ignore')
             emission=a*((np.exp(P)*((Z*((E0-x)/x))**M)))
             np.seterr(divide = 'warn',invalid='warn')
 
-        if self._whitelist['emission_model'] == 'Lifshin_SEM':
+        if self._dic['emission_model'] == 'Lifshin_SEM':
             np.seterr(divide = 'ignore',invalid='ignore')
             emission=a*(((E0-x)/x))+(b*((E0-x)/x)**2)
             np.seterr(divide = 'warn',invalid='warn')
 
-        if self._whitelist['emission_model'] == 'Lifshin':
+        if self._dic['emission_model'] == 'Lifshin':
             np.seterr(divide = 'ignore',invalid='ignore')
             emission=a*(mt*(((E0-x)/x))+(a/25*mt*4e-3*(Z**1.75*((E0-x)/x)**2)))
             np.seterr(divide = 'warn',invalid='warn')    
 
-        if self._whitelist['emission_model'] == 'Castellano_SEM': 
+        if self._dic['emission_model'] == 'Castellano_SEM': 
             a1 = 68.52809192351341
             a2 = 254.15693461075367
             a3 = 29.789319335480027
@@ -207,7 +225,7 @@ class Physical_background(Component):
             emission=a*((Z**(1/2)*((E0-x)/x))*(-a1-a2*x+a3*np.log(Z)+(a4*E0**a5)/Z)*(1+(-a6+a7*E0)*(Z/x)))
             np.seterr(divide = 'warn',invalid='warn')
 
-        if self._whitelist['emission_model'] == 'Castellano_TEM':          
+        if self._dic['emission_model'] == 'Castellano_TEM':          
             a1 = -555.40679202773
             a2 = 0.00010152130164852309
             a3 = 134.4405336236044
@@ -218,24 +236,26 @@ class Physical_background(Component):
             np.seterr(divide = 'ignore',invalid='ignore')
             emission=(a*((Z**(1/2))*((E0-x)/x)))*(a1+a2*x+a3*np.log(Z)+(a4*E0**a5)/Z)*(1+(a6+a7*E0)*(Z/x))
             np.seterr(divide = 'warn',invalid='warn')
-
-        np.seterr(divide = 'ignore',invalid='ignore')
-        #absorption=((1-np.exp(-2*Mu*(mt*1e-7)*cosec))/(2*Mu*(mt*1e-7)*cosec))#love and scott model.
-        absorption=((1-np.exp(-Mu*(mt*10**-7)*cosec))/Mu)#love and scott model. 
-        METabsorption=np.exp(-Mu*(mt*10**-7)*cosec)#Cliff lorimer
-        np.seterr(divide = 'ignore',invalid='ignore')
+            
         
-        if self._whitelist['Backscattering_correction'] is True :
+        if self._dic['Backscattering_correction'] is True :
             h=(1-np.exp(0.361*(x/E0)**2+0.288*(x/E0)-0.619))*10**-4
             j=(1-np.exp(0.153*(x/E0)**2+2.04*(x/E0)-2.17))*10**-2
             k=1.003+0.0407*(x/E0)
             Backscatter=h*Z**2-j*Z+k
         else:
-            Backscatter=1
-
+            Backscatter=1.0
             
-        if self._whitelist['absorption_model'] == 'quadrilateral':
-            f=np.where((x>0.17) & (x<(E0)),(emission*absorption*Window*coating*Backscatter),0)# keep the warnings for values x>0.17
+                    
+        np.seterr(divide = 'ignore',invalid='ignore')
+        
+        absorption=((1-np.exp(-Mu*(mt*10**-7)*cosec))/Mu)#love and scott model. 
+        METabsorption=np.exp(-Mu*(mt*10**-7)*cosec)#Cliff lorimer
+        
+        np.seterr(divide = 'ignore',invalid='ignore')
+                     
+        if self._dic['absorption_model'] == 'quadrilateral':
+            f=np.where((x>0.17) & (x<(E0)),(emission*absorption*Window_absorption*coating*Backscatter),0)# keep the warnings for values x>0.17
             if not np.all(np.isfinite(f)): #avoid "residuals are not finite in the initial point"
                 self.mt.store_current_value_in_array()
                 return 1
@@ -243,10 +263,12 @@ class Physical_background(Component):
                 return f
 
         
-        if self._whitelist['absorption_model'] == 'CL':# cliff lorimer
-            f=np.where((x>0.17) & (x<(E0)),(emission*METabsorption*Window*coating*Backscatter),0)
+        if self._dic['absorption_model'] == 'CL':# cliff lorimer
+            f=np.where((x>0.17) & (x<(E0)),(emission*METabsorption*Window_absorption*coating*Backscatter),0)
             if not np.all(np.isfinite(f)): #avoid "residuals are not finite in the initial point"
                 self.mt.store_current_value_in_array()
                 return 1
             else:
                 return f
+
+        

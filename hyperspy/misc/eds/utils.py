@@ -873,6 +873,8 @@ def Mucoef(model,quanti): # this function calculate the absorption coefficient f
         t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size))
         t=t[model.channel_switches]
         Ac=mass_absorption_mixture(elements=model._signal.metadata.Sample.elements ,weight_percent=weight, energies=t)
+        ## If you have only one element I would advise to add a fake one to the model the Wt% should be O
+        ## Allow to trick the _mass_absorption_function that does not work for only one element
     
     return Ac
 
@@ -885,8 +887,7 @@ def Cabsorption(model):
     """	
 
     t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size))
-    Acc=mass_absorption_coefficient(element='C' , energies=t)    
-    
+    Acc=mass_absorption_coefficient(element='C' , energies=t)
     return Acc
 
 def Windowabsorption(model,detector): 
@@ -899,7 +900,7 @@ def Windowabsorption(model,detector):
     detector: str or array
             The detector efficiency curve that was used for the acquisition
             String can be 'Polymer_C' / 'Super_X' / 'Polymer_C2' / 'Polymer_C3' 
-            Data are contain in a dictionnary in hyperspy repository but will be soon calculated from layer as found in the metadata
+            Data are contained in a dictionnary in hyperspy repository but will be soon calculated from layer as found in the metadata
             
             An array with values of detector efficiency and the corresponding energy from personnal data value can be used 
     """	

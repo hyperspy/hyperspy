@@ -798,7 +798,7 @@ Now we add the Bremsstrahlung component to the model.
           21 |              Zr_Lg3 |              Zr_Lg3 |            Gaussian
           22 |               Zr_Ll |               Zr_Ll |            Gaussian
           23 |              Zr_Lg1 |              Zr_Lg1 |            Gaussian
-          24 |      Bremsstrahlung |      Bremsstrahlung | Physical_background
+          24 | Physical_background | Physical_background | Physical_background
 
 .. note:: 
 
@@ -806,7 +806,7 @@ Now we add the Bremsstrahlung component to the model.
 
 .. code-block:: python
 
-    >>> m.components.Bremsstrahlung.initialize()
+    >>> m.components.Physical_background.initialize()
 
 The background can now be fitted with the option ``bounded=True`` to avoid unphysical negative values.
 

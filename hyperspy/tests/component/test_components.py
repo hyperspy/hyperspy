@@ -39,8 +39,9 @@ def get_components1d_name_list():
         if inspect.isclass(obj) and issubclass(obj, Component):
             components1d_name_list.append(c_name)
 
-    # Remove EELSCLEdge, since it is tested elsewhere more appropriate
+    # Remove EELSCLEdge and Physical_background, since it is tested elsewhere more appropriate
     components1d_name_list.remove('EELSCLEdge')
+    components1d_name_list.remove('Physical_background')
     return components1d_name_list
 
 
@@ -53,29 +54,18 @@ def test_creation_components1d(component_name):
     s = hs.signals.Signal1D(np.zeros(1024))
     s.axes_manager[0].offset = 100
     s.axes_manager[0].scale = 0.01
-    m = s.create_model()    
 
     kwargs = {}
     if component_name == 'ScalableFixedPattern':
         kwargs['signal1D'] = s
     elif component_name == 'Expression':
         kwargs.update({'expression': "a*x+b", "name": "linear"})
-    elif component_name == 'Physical_background':
-        kwargs.update({'E0': 10, "detector": "Polymer_C", "quantification":"Mean", "emission_model":"Kramer", "absorption_model":"quadrilateral","TOA":"1","coating_thickness":"0","phase_map":None,"correct_for_backscatterring":"False","standard":"False"})
 
     component = getattr(components1d, component_name)(**kwargs)
-    if component_name == 'Physical_background':
-        component._whitelist['Mu']=np.linspace(0,1,1024)
-        component._whitelist['Window_absorption']=np.linspace(0,1,1024)
-        component._whitelist['Coating_absorption']=np.linspace(0,1,1024)
-        component._whitelist['Co']=np.linspace(0,1,1024)
-        component._whitelist['Z']=1
-        component.model=m
-
-    component.function(np.arange(0, 1024))
+    component.function(np.arange(0, 100))
 
     # Do a export/import cycle to check all the components can be re-created.
-    
+    m = s.create_model() 
     m.append(component)
     model_dict = m.as_dictionary()
 

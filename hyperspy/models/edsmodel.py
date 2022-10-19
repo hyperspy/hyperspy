@@ -367,7 +367,7 @@ class EDSModel(Model1D):
             TOA = self.signal.get_take_off_angle()
             
         background = create_component.Physical_background(E0=E0,detector=detector, quantification=quantification, emission_model=emission_model, absorption_model=absorption_model, coating_thickness=coating_thickness,TOA=TOA, phase_map=phase_map,correct_for_backscatterring=correct_for_backscatterring, standard=standard)
-        background.name = "Bremsstrahlung"
+        background.name = "Physical_background"
         background.isbackground = True
         self.append(background)
         self.background_components.append(background)
