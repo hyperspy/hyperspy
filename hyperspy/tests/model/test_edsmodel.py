@@ -127,8 +127,8 @@ class TestlineFit:
         m.add_physical_background()
         assert 'Physical_background' in m[-1]._name
         assert(m[-1].isbackground)
-        assert (m[-1].E0.value==200)
-        np.testing.assert_allclose(m[-1].teta.value,1.74,atol=1e-2)
+        assert (m[-1]._dic['E0']==200)
+        np.testing.assert_allclose(m[-1]._dic['teta'],1.74,atol=1e-2)
 
     def test_calibrate_energy_scale(self):
         s = self.s

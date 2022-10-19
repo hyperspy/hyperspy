@@ -29,9 +29,9 @@ def test_initialize():
     m.components.Physical_background.initialize()
     assert(m.components.Physical_background.a.value==0.001)
     assert(m.components.Physical_background.b.value==0.0)
-    assert(m.components.Physical_background.E0.value==10.0)
+    assert(m.components.Physical_background._dic['E0']==10.0)
     assert(m.components.Physical_background.mt.value==100.0)
-    np.testing.assert_allclose(m.components.Physical_background.teta.value,1.66,atol=0.01)
+    np.testing.assert_allclose(m.components.Physical_background._dic['teta'],1.66,atol=0.01)
     nav = Signal2D([[1.,0.8], [0.6, 0.4]]).T # define navigation space
     s = s * nav
     m = s.create_model(auto_background=False)

@@ -33,22 +33,27 @@ from hyperspy.misc.eds.utils import MeanZ
 class Physical_background(Component):
 
     """
-    Background component based on kramer's law and absorption coefficients
+    Background component. An analytical model of the Bremsstrahlung signal generated in EDS spectra.
+    This component is based on kramer's emission law (or other empirical emission model), 
+    the mass absorption coefficients and the absorption in the sample (which depend of the composition of the pixel) and of the detector efficiency curve.
+    
     Attributes
     ----------
-    coefficients : float (length = 2) 
-    	The only two free parameters of this component. If the function fix_background is used those two coefficients are fixed
-    E0 : int
-    	The beam energy of the acquisition
-    Window : int 
-    	Contain the signal of the detector efficiency (calculated thanks to the function Windowabsorption())
+    a: float
+        Kramer's constant of the emission. A free parameters of the physical_background component that is fitted to the data.
+    b: float
+        A second coefficient ot the emission function. A free parameters of the physical_background component that is fitted to the data.
+    mt : float
+    	Mass depth. A free parameters of the physical_background component that is fitted to the data. 
     quanti: dictionnary
-    	Contain the referenced variable quantification (none, result of CL quantification or an array) 
-	This dictionnary is call in the function Wpercent() to calculate an array of weight percent with the same dimension than the model and a length which correspond to the number of elements filled in the metadata
+    	Contain the referenced variable quantification (none, result of CL quantification or an array).
+        The function Wpercent() is called to estblish an array of weight percent with the same dimension
+        than the model and a length which correspond to the number of elements in the metadata.
+        
     """
 
     def __init__(self, E0, detector, quantification, emission_model, absorption_model,TOA,coating_thickness,phase_map,correct_for_backscatterring,standard, **kwargs):
-        Component.__init__(self,['mt','a','b','E0','quanti','teta'])
+        Component.__init__(self,['a','b','mt','quanti'])
         
 
         self._dic={}
@@ -56,16 +61,13 @@ class Physical_background(Component):
         self.a.value=0.001
         self.b.value=0.0
         
-        
-        self.E0.value=E0
-        self.teta.value=TOA
-        self.teta.value=np.deg2rad(self.teta.value)
-        self.teta.value=(1/sin(self.teta.value))
-        
+        teta=TOA
+        teta=np.deg2rad(teta)
+        teta=(1/sin(teta))
         
         self._dic['Coating']=coating_thickness
         self._dic['E0']=E0
-        self._dic['teta']=self.teta.value
+        self._dic['teta']=teta
         self._dic['Backscattering_correction'] = correct_for_backscatterring
         self._dic['std'] = standard
         self._dic['quanti'] = quantification
@@ -79,8 +81,6 @@ class Physical_background(Component):
         self.mt.free=True
         self.a.free=True
         self.b.free=True
-        self.E0.free=False
-        self.teta.free=False
         self.quanti.free=False
         
         self.isbackground=True
@@ -94,7 +94,11 @@ class Physical_background(Component):
         self.b.bmax=1e9
         
         
-    def initialize(self): # this function is necessary to initialize the quant map and optimize the memory.
+    def initialize(self):
+        """
+        Initialize the Physical_background component by creating a quant map and saving some information of the component in a dictionnary.
+                    
+        """
         
         self.mt._create_array()
         self.a._create_array()
@@ -116,11 +120,10 @@ class Physical_background(Component):
 
         self._dic['Window_absorption']=np.array(Windowabsorption(self.model,self._dic['detector']),dtype=np.float16)
         
-        self._dic['Coating_absorption']=(np.exp(-Cabsorption(self.model)*1.3*self._dic['Coating']*10**-7*self.teta.value))# absorption by the coating layer (1.3 is the density)
+        self._dic['Coating_absorption']=(np.exp(-Cabsorption(self.model)*1.3*self._dic['Coating']*10**-7*self._dic['teta']))# absorption by the coating layer (1.3 is the density)
         
         if self._dic['quanti']=='Mean'or self._dic['std']is True:
             self._dic['Mu']=Mucoef(self.model,self.quanti.value)
-            #self.Mu.assign_current_value_to_all()
             Z=MeanZ(self.model,self.quanti.value)            
             self._dic['Z']=Z
 
@@ -138,6 +141,15 @@ class Physical_background(Component):
     
     
     def reinitialize(self,dic): # this function is necessary to reinitialize the quant map for loading the data.
+        """
+        Re-initialize the Physical_background component by re-creating a quant map and loading some information of the component from a dictionnary that was saved with the model (._dic).
+        
+        Parameters
+        ----------
+            dic: dictionary
+                A dictionary that contain information about the energy, the dector and other argument passed in m.add_physical_background.
+            
+        """
         
         self._dic=dic
         self.mt._create_array()
@@ -162,8 +174,8 @@ class Physical_background(Component):
         b=self.b.value
         
 
-        E0=self._dic['E0']# allow to keep the parameter fixed even with the free_background function
-        cosec=self._dic['teta']# allow to keep the parameter fixed even with the free_background function
+        E0=self._dic['E0']
+        cosec=self._dic['teta']
 
         phasem=self._dic['phase_map']
         if phasem is not None:

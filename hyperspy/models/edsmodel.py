@@ -307,50 +307,49 @@ class EDSModel(Model1D):
         
     def add_physical_background(self, E0='from_metadata', detector='Polymer_C', quantification='Mean',emission_model='Kramer', absorption_model='quadrilateral', coating_thickness=0.0, TOA='from_metadata', phase_map=None, correct_for_backscatterring=False, standard=False):
         """
-        Add a physical model of the background taking into account the interraction e-/mater (see :ref:`[Zanetta2019] <Zanetta2019>`)
-    
-        the background is added to self.background_components
+        Add a physical model of the background taking into account the interraction e-/mater (see :ref:`[Zanetta2019] <Zanetta2019>`).
+        the background is added to self.background_components.
+        
+        Caution ! : The number of elements has to be equal to the number of Xray_lines. Remove secondary lines from the metadata and keep only higher energy lines.
+        
         Parameters
         ----------
-        E0: int
-            The Beam energy
-                If `from_metadata` contains `beam_energy` referenced in the metadata
-                If an integer is write, this value will be used during the fit
+        E0: 'from_metadata' or int
+            The Beam energy.
+            If `from_metadata` contains `beam_energy` referenced in the metadata.
+            If an integer is write, this value will be used during the fit.
         detector: str or array
-            The string is the type of detector used during the acquisition
-                String can be 'Polymer_C' / 'Super_X' / 'Polymer_C2' / 'Polymer_C3' 
-                It will be used to calculate the detector efficiency
-            An array of value representing the detector efficiency can also be passed
-                
-        quantification: None, Mean, Muti_Base_Signal (result of quantification function) or an array
-            If quantification is None, an approximation based on peaks ratio is used
-            If Mean is passed, a mean spectrum of the entire signal is used for obtaining an approximation of the composition based on peak ratio
-            If the acquisition instrument is a TEM it is more consistent to perform a quantification before the use of "add_physical_background"
-                In this case variable which contain the result of the quantification can be directly filled
-                The function automatically detect if data are in weight_percent or in atomic_percent
-            Otherwise, an array which contain the quantification (with map dimension and number of elements set in metadata) can be directly passed
-                This quantmap have to be an array not a list !
+            The string is the type of detector used during the acquisition.
+            String can be 'Polymer_C' / 'Super_X' / 'Polymer_C2' / 'Polymer_C3'.
+            It will be used to calculate the detector efficiency.
+            An two column array contaning personnal data of the detector efficiency can also be passed.
+        quantification: None, Mean, Muti_Base_Signal (result of the quantification function) or an array
+            If quantification is None, an approximation based on peaks ratio is estimated for each pixel of the model.
+            If "Mean" is passed, a bulk composition is estimated from the peak ratio of the summed spectrum of the entire signal.
+            If the acquisition instrument is a TEM the result of a s.quantification can be used (i.e., quantificication=Quant).
+            The function automatically detect if data are in weight_percent or in atomic_percent.
+            Otherwise, an array which contain the quantification (with map dimension and number of elements set in metadata) can be used (i.e., quantificication=array).
+            This quantmap have to be an array not a list !
         emission_model: str
-            Different model have been inserted in the function, str can be Kramer, Small, Lifshin, Lifshin_SEM, Castellano_SEM or Castellano_TEM
-                In the castellano model the coefficients has been estimated based on the microscopes of the Lille university facilities
+            Various empirical model are implemented in the function. str can be "Kramer", "Small", "Lifshin", "Lifshin_SEM", "Castellano_SEM" or "Castellano_TEM".
         absorption_model:  str
-            The type of distribution for x-ray generation
+            The distribution profil for x-ray generation.
             String can be 'quadrilateral' or 'CL'
             The quadrilateral method refers to the quadrilateral model of Love&Scott (see documentation).
             While 'CL' refers to the cliff lorimer method where the depth distribution of X-ray production is a constant and equal to unity.
         coating_thickness: float
-            The thickness of the carbon deposit on the sample in nanometers. The Deafault is coating_thickness=0nm.
-        TOA
-             TOA(take off angle) is the angle with which the X-rays leave the surface towards the detector. Parameters are read in metadata but an integer can be passed
+            The thickness of the carbon coating on the sample in nanometers. The Deafault is coating_thickness=0nm.
+        TOA:'from_metadata' or int
+             TOA(take off angle) is the angle with which the X-rays leave the surface towards the detector. This parameter is found in metadata but an integer can be passed
         phase_map: None or array of integer
-            This argument allow to speed up the fit on large map. If a phase map is known, the mass absorption coefficient function is considered to be the same for each pixel of the same phase
-            and is only calculated one time for the entire phase
+            This argument allow to speed up the fitting process on large map. If a phase map is known, the mass absorption coefficient function is considered to be the same 
+            for pixels assigned to the same mineral phase and is only calculated once.
         correct_for_backscattering: True or False
-            apply a correction for the backscattered electron to the emitted intensities
+            apply a correction for the backscattered electron to the emitted intensities.
         standard: if True, only an array that match the number of elements in metadata is needed for the quantification argument. Because it is a standard, the same composition is applied to every pixels.    
-             
-        Caution ! : The number of elements have to be equal to the number of Xray_lines. Remove secondary lines and keep only higher energy lines
-        Example:
+        
+        Example
+        -------
             s = hs.datasets.example_signals.EDS_SEM_Spectrum()
             s.add_lines()
             m = s.create_model(auto_background=False)

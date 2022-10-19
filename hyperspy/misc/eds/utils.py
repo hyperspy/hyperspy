@@ -733,15 +733,17 @@ def zeta_to_edx_cross_section(zfactors, elements):
 
 def Wpercent(model,quantification):
     """
-    Return an array for a quick estimation of weight percent for each elements based on the X-ray line intensities
+    Return an array for a quick estimation of weight percent for each elements based on the X-ray line intensities.
+    
     Parameters
     ----------
     model: EDS model
     quantification: None or a list or an array
             if quantification is None, this function calculate an  approximation of a quantification based on peaks ratio thanks to the function s.get_lines_intensity(). Works for the 3 dimension.
-            if quantification is the result of the hyperspy quantification function. This function only convert the result in an array with the same navigation shape than the model and a length equal to the number of elements 
-            if quantification is already an array of weight percent, directly keep the array
+            if quantification is the result of the hyperspy quantification function. This function only convert the result in an array with the same navigation shape than the model and a length equal to the number of elements.
+            if quantification is already an array of weight percent, directly keep the array.
             if the "std" argument is indicated in the add_physical_background function, only an array that match the number of elements in metadata is needed for the quantification argument. Because it is a standard, the same composition is applied to every pixels.
+            
     """
  	                   
     if quantification is None :                 
@@ -843,7 +845,19 @@ def Wpercent(model,quantification):
 		    
     return weight
 
-def MeanZ (model,quanti):     
+def MeanZ (model,quanti):    
+    """
+    
+    Calculate the mean atomic number from the quantification array of each pixel of the model as defined by the Wpercent() function.
+    
+    Parameters
+    ----------
+    model: EDS model
+    quanti: Array
+            Must contain an array in weight percent for each elements.
+            This array is automaticaly created through the Wpercent function.
+            
+    """	
 
     w=quanti
     z=0
@@ -856,12 +870,14 @@ def Mucoef(model,quanti): # this function calculate the absorption coefficient f
     Calculate the mass absorption coefficient for all energy of the model axis for each pixel. Need the weigth percent array defined by the Wpercent function
     Return the Mu parameter as a signal (all energy) with same number of elements than the model
     This parameter is calculated at each iteration during the fit except if 'mean' or 'standard' or 'phase map' argument are used
+    
     Parameters
     ----------
     model: EDS model
     quanti: Array
-            Must contain an array of weight percent for each elements
-            This array is automaticaly created through the Wpercent function
+            Must contain an array of weight percent for each elements.
+            This array is automaticaly created through the Wpercent function.
+            
     """	
     weight=quanti
     
@@ -880,10 +896,12 @@ def Mucoef(model,quanti): # this function calculate the absorption coefficient f
 
 def Cabsorption(model): 
     """
-    Calculate the mass absorption coefficient due to the coating layer for the entire energy range.
+    Calculate the mass absorption coefficient due to the carbon coating layer of the sample for the entire energy range.
+    
     Parameters
     ----------
     model: EDS model
+    
     """	
 
     t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size))
@@ -892,17 +910,19 @@ def Cabsorption(model):
 
 def Windowabsorption(model,detector): 
     """
-    Return the detector efficiency curve as a signal based on a dictionnary (create from personnal data) and the signal length. This correspond to the Window parameter of the physical background class  
-    To obtain the same signal length, this function compare it to the model, data are interpolated
+    Return the detector efficiency curve as a signal based on a dictionnary (either from personnal data or from detector_efficiency in eds utils) and the signal length. 
+    It corresponds to the Window_absorption variable in the physical background component. 
+    To obtain the same signal length, this function compare the efficiency curve from the provided dictionary to the signal contained in the model, data are then interpolated.
+    
     Parameters
     ----------
     model: EDS model
     detector: str or array
-            The detector efficiency curve that was used for the acquisition
-            String can be 'Polymer_C' / 'Super_X' / 'Polymer_C2' / 'Polymer_C3' 
-            Data are contained in a dictionnary in hyperspy repository but will be soon calculated from layer as found in the metadata
+            The detector efficiency curve that was used for the acquisition.
+            String can be 'Polymer_C' / 'Super_X' / 'Polymer_C2' / 'Polymer_C3'.
+            Data are contained in a dictionnary in hyperspy repository but will be soon calculated from layer as found in the metadata.
+            An array with values of detector efficiency and the corresponding energy from personnal data can be used. 
             
-            An array with values of detector efficiency and the corresponding energy from personnal data value can be used 
     """	
     if type(detector) is str:
         a=np.array(detector_efficiency[detector])

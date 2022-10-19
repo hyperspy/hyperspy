@@ -62,10 +62,10 @@ def test_creation_components1d(component_name):
         kwargs.update({'expression': "a*x+b", "name": "linear"})
 
     component = getattr(components1d, component_name)(**kwargs)
-    component.function(np.arange(0, 100))
+    component.function(np.arange(1, 100))
 
     # Do a export/import cycle to check all the components can be re-created.
-    m = s.create_model() 
+    m = s.create_model()
     m.append(component)
     model_dict = m.as_dictionary()
 
