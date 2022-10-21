@@ -377,10 +377,6 @@ class BaseModel(list):
         title = self.signal.metadata.General.title
         class_name = str(self.__class__).split("'")[1].split('.')[-1]
 
-    def __repr__(self):
-        title = self.signal.metadata.General.title
-        class_name = str(self.__class__).split("'")[1].split('.')[-1]
-
         if len(title):
             return "<%s, title: %s>" % (
                 class_name, self.signal.metadata.General.title)
