@@ -17,7 +17,7 @@
 
 
 import numpy as np
-from pint.unit import Unit
+from pint import Unit
 
 
 def check_axes_calibration(ax1, ax2, rtol=1e-7):
