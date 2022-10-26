@@ -445,9 +445,9 @@ class TestFunctionalDataAxis:
         arval[1,1] = np.nan
         with pytest.raises(ValueError):
             self.axis.value2index(arval)
-        #Single-value-array-in --> scalar out
+        #Single-value-array-in --> single-value-array-out
         arval = np.array([1.0])
-        assert np.isscalar(self.axis.value2index(arval))
+        assert isinstance(self.axis.value2index(arval), np.ndarray)
 
 
 class TestReciprocalDataAxis:

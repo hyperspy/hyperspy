@@ -186,6 +186,12 @@ class TestLabeledAxis:
                                       [0, 2])
         assert not s.isig[:, value].axes_manager[1].is_uniform
 
+class TestBoolSlice:
+    def setup_method(self, method):
+        self.signal = signals.Signal2D(np.arange(24).reshape(6, 4))
+        self.data = self.signal.data.copy()
+
+
 @lazifyTestClass
 class Test2D:
 
@@ -319,17 +325,17 @@ class Test3D_Navigate_1:
     def setup_method(self, method):
         self.signal = signals.BaseSignal(np.arange(24).reshape((2, 3, 4)))
         self.data = self.signal.data.copy()
-        self.signal.axes_manager._axes[0].navigate = False
-        self.signal.axes_manager._axes[1].navigate = True
+        self.signal.axes_manager._axes[0].navigate = True
+        self.signal.axes_manager._axes[1].navigate = False
         self.signal.axes_manager._axes[2].navigate = False
 
     def test_1px_navigation_indexer_slice(self):
         s = self.signal.inav[1:2]
-        d = self.data[:, 1:2]
+        d = self.data[1:2]
         np.testing.assert_array_equal(s.data, d)
-        assert s.axes_manager._axes[1].offset == 1
-        assert s.axes_manager._axes[1].size == 1
-        assert (s.axes_manager._axes[1].scale ==
+        assert s.axes_manager._axes[0].offset == 1
+        assert s.axes_manager._axes[0].size == 1
+        assert (s.axes_manager._axes[0].scale ==
                 self.signal.axes_manager._axes[1].scale)
 
     def test_1px_signal_indexer_slice(self):
@@ -445,5 +451,6 @@ class TestROISlicing:
 
     def test_point2D_roi(self):
         s = self.s
+        s.inav[1.5, 10.].data
         sr = roi.Point2DROI(x=1.5, y=10)
         assert_array_equal(s.inav[sr].data, s.inav[1.5, 10.].data)

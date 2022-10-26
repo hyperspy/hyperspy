@@ -669,8 +669,9 @@ class DataAxis(BaseDataAxis):
             raise ValueError("Cannot index with an empty string")
         elif value.startswith('rel'):  # relative slicing
             return self._rel2value(value)
-        elif value in self.axis:  # See if value is in axis. Get first instance
-            return np.argwhere(value == self.axis)[0]
+        elif value in self.axis:# See if value is in axis. Get first instance
+            np.argwhere(value == self.axis)[0]
+            return np.argwhere(value == self.axis)[0][0]
         elif value[0].isdigit():  # unit conversion
             if self.is_uniform:
                 return self._get_value_from_value_with_units(value)
@@ -753,6 +754,10 @@ class DataAxis(BaseDataAxis):
         """
         if value is None:
             return None
+        if isinstance(value, (list, np.ndarray)):
+            squeeze = False
+        else:
+            squeeze = True
 
         value = self._parse_value(value)  # converts to value also tuple/ list to array
         value = np.asarray(value)
@@ -767,7 +772,10 @@ class DataAxis(BaseDataAxis):
                                  f" {self.low_index} :{self.high_index}")
         else:
             index = self._float2index(value, rounding)
-        return np.squeeze(index)[()]
+        if squeeze:
+            return np.squeeze(index)[()]
+        else:
+            return index
 
     def index2value(self, index):
         if isinstance(index, da.Array):
@@ -2419,6 +2427,13 @@ class AxesManager(t.HasTraits):
                              "of items are axes are in this AxesManager")
         for axis, value in zip(self._axes, values):
             setattr(axis, attr, value)
+
+    def nd_sliceme(self, axes, slice):
+        all_axes = [a.axis for a in self[axes]]
+        indexes = np.ogrid(all_axes)[slice]
+        [self._remove_one_axis(axis=a) for a in axes[1:]]
+        self.set_axis(BaseDataAxis(axis=indexes), axes[0].index_in_axes_manager)
+        return
 
     @property
     def navigation_indices_in_array(self):

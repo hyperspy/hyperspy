@@ -161,6 +161,43 @@ def copy_slice_from_whitelist(
             attrsetter(_to, key, target)
             continue
 
+def to_tuple(slices):
+    """Handles conversion into a tuple for further slicing etc.
+    """
+    if isinstance(slices, tuple):
+        return slices
+    elif isinstance(slices, list) or isinstance(slices, np.ndarray):
+        slices = (slices,)
+        return slices
+    else:
+        slices = (slices, )
+        return slices
+
+
+def get_dim(slic):
+    if isinstance(slic, np.ndarray) and slic.ndim > 1 and slic.dtype == bool:
+        return slic.ndim
+    elif isinstance(slic, (roi.CircleROI, roi.Point2DROI, roi.RectangularROI)):
+        return 2
+    elif slic is Ellipsis:
+        return 0
+    else:
+        return 1
+
+
+def to_axes_order(axes, slices, dimensions):
+    grouped_axes = []
+    array_index = []
+    i = 0
+    for d, sl in zip(dimensions, slices):
+        grouped_axes.append(axes[i:i + d])
+        array_index.append(axes[i].index_in_array)
+        i += d
+    array_index = np.argsort(array_index)
+    new_slices = tuple([slices[a] for a in array_index])
+    new_axes = tuple([grouped_axes[a] for a in array_index])
+    return new_slices, new_axes
+
 
 class SpecialSlicers(object):
 
@@ -192,86 +229,78 @@ class SpecialSlicers(object):
     def __getitem__(self, slices, out=None):
         return self.obj._slicer(slices, self.isNavigation, out=out)
 
-
 class FancySlicing(object):
 
-    def _get_array_slices(self, slices, isNavigation=None):
-        try:
-            len(slices)
-        except TypeError:
-            slices = (slices,)
-        # Arrays or lists treated as indexes.
-        if isinstance(slices, list) or isinstance(slices, np.ndarray) and slices.ndim == 1:
-            slices = (slices, )
-        slices_ = tuple()
-        for sl in slices:
-            if isinstance(sl, roi.BaseROI):
-                if isinstance(sl, roi.SpanROI):
-                    slices_ += (slice(float(sl.left), float(sl.right), None),)
-                elif isinstance(sl, roi.Point1DROI):
-                    slices_ += (float(sl.value),)
-                elif isinstance(sl, roi.Point2DROI):
-                    slices_ += (float(sl.x), float(sl.y))
-                elif isinstance(sl, roi.RectangularROI):
-                    slices_ += (
-                        slice(float(sl.left), float(sl.right), None),
-                        slice(float(sl.top), float(sl.bottom), None),
+    def roi2slice(self, sl, starting_index=None):
+        if isinstance(sl, roi.SpanROI):
+                return (slice(float(sl.left), float(sl.right), None),)
+        elif isinstance(sl, roi.Point1DROI):
+            return (float(sl.value),)
+        elif isinstance(sl, roi.Point2DROI):
+            return (float(sl.x), float(sl.y),)
+        elif isinstance(sl, roi.RectangularROI):
+            return (slice(float(sl.left), float(sl.right), None),
+                    slice(float(sl.top), float(sl.bottom), None),
                     )
-            else:
-                slices_ += (sl,)
-        slices = slices_
-        del slices_
-        _orig_slices = slices
-
-        has_nav = True if isNavigation is None else isNavigation
-        has_signal = True if isNavigation is None else not isNavigation
-
-        # Create a deepcopy of self that contains a view of self.data
-
-        nav_idx = [el.index_in_array for el in
-                   self.axes_manager.navigation_axes]
-        signal_idx = [el.index_in_array for el in
-                      self.axes_manager.signal_axes]
-
-        if not has_signal:
-            idx = nav_idx
-        elif not has_nav:
-            idx = signal_idx
+        elif isinstance(sl, roi.CircleROI):
+            ax1 = self.axes_manager[starting_index]
+            ax2 = self.axes_manager[starting_index+1]
+            gx,gy = np.meshgrid(ax1.axis-sl.cx, ax2.axis-sl.cy)
+            gr = gx**2+gy**2
+            mask = gr > sl.r**2
+            mask |= gr < self.r_inner ** 2
+            return (mask,)
         else:
-            idx = nav_idx + signal_idx
+            raise ValueError(f"The roi of type {sl.__class__} is not supported." )
 
-        # Add support for Ellipsis
-        if any([s is Ellipsis for s in _orig_slices]):
-            _orig_slices = list(_orig_slices)
-            indexes = np.where([s is Ellipsis for s in _orig_slices])[0]
-            first_ellipse = indexes[0]
-            _orig_slices.pop(first_ellipse)
-            extra_slices = [slice(None), ] * max(0, len(idx) - len(_orig_slices))
-            _orig_slices = _orig_slices[:first_ellipse] + extra_slices + _orig_slices[first_ellipse:]
-            # Replace all the following Ellipses by :
-            if any([s is Ellipsis for s in _orig_slices]):
-                indexes = np.where([s is Ellipsis for s in _orig_slices])
-                for i in indexes:
-                    _orig_slices[i] = slice(None)
-            _orig_slices = tuple(_orig_slices)
 
-        if len(_orig_slices) > len(idx):
-            raise IndexError("too many indices")
+    def _get_array_slices(self,slices,isNavigation=None):
+        slices = to_tuple(slices)
+        if isNavigation is None:
+            axes = self.axes_manager.navigation_axes+self.axes_manager.signal_axes
+        elif isNavigation:
+            axes = self.axes_manager.navigation_axes
+        else:
+            axes = self.axes_manager.signal_axes
 
-        slices = np.array([slice(None,)] *
-                          len(self.axes_manager._axes))
+        # Need to handle Ellipsis before ROI because of Circle ROI needs a specific axis
+        if any([sl is Ellipsis for sl in slices]):
+            total_dim = np.sum([get_dim(sl) for sl in slices])
+            ellipse_dim = len(axes)-total_dim
+            slices = (slices[:slices.index(Ellipsis)] +
+                      (slice(None),) * ellipse_dim +
+                      slices[slices.index(Ellipsis)+1:]
+                      )
+        # Convert ROI's to slices or boolean indexes
+        _slices = ()
+        for sl in slices:
+            _slices += self.roi2slice(sl) if isinstance(sl, roi.BaseROI) else (sl,)
+        slices = _slices
 
-        slices[idx] = _orig_slices + (slice(None),) * max(
-            0, len(idx) - len(_orig_slices))
+        dimensions = [get_dim(sl) for sl in slices]
+        # Add missing dimensions. Needed for reverse array indexing
+        if np.sum(dimensions) < len(axes):
+            slices = slices + (slice(None),) *(len(axes)-np.sum(dimensions))
+            dimensions = [get_dim(sl) for sl in slices]
+        if isNavigation == False: # Slicing signal Dimensions need to add in empty slices
+            slices = (slice(None),) *self.axes_manager.navigation_dimension + slices
+            axes = self.axes_manager.navigation_axes + axes
+            dimensions = [get_dim(sl) for sl in slices]
+
+        # reordering slices to array order
+        slices, grouped_axes = to_axes_order(axes, slices, dimensions)
 
         array_slices = []
-        for slice_, axis in zip(slices, self.axes_manager._axes):
-            if (isinstance(slice_, slice) or
-                    len(self.axes_manager._axes) < 2):
-                array_slices.append(axis._get_array_slices(slice_))
+        if len(self.axes_manager._axes) == 1 and len(slices)==1 and isinstance(slices[0], (float, int)):
+            slices = ([slices[0], ], )
+        for sl, ax in zip(slices, grouped_axes):
+            if len(ax)==1:
+                if isinstance(sl, slice):
+                    array_slices.append(ax[0]._get_array_slices(sl))
+                else:
+                    array_slices.append(ax[0].value2index(sl))
             else:
-                slice_ = axis.value2index(slice_)
-                array_slices.append(slice_)
+                array_slices.append(sl)
         return tuple(array_slices)
 
     def _slicer(self, slices, isNavigation=None, out=None):
