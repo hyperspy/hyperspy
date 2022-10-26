@@ -1613,6 +1613,20 @@ class AxesManager(t.HasTraits):
             for ind, v in zip(axes, indices):
                 self.axes[ind]=v
 
+    def nd_slice_me(self, slice, axes):
+        """Slices an axes using an n dimensional slice.
+        """
+        indexes = np.nonzero(slice)
+        combined_index = np.array([self._axes[ax].axis[i] for i, ax in zip(indexes, axes)])
+        ind = [str(i[::-1]) for i in combined_index.transpose()]
+        name = sum([self._axes[ax].name + " " for ax in axes if self._axes[ax].name is not t.Undefined])
+        if name == 0:
+            name = t.Undefined
+
+        self._axes[axes[0]] = DataAxis(name=name,
+                                       axis=ind)
+        return [self._axes[ax].index_in_axes_manager for ax in axes[1:]]
+
     @property
     def axes(self):
         return self._axes

@@ -186,10 +186,20 @@ class TestLabeledAxis:
                                       [0, 2])
         assert not s.isig[:, value].axes_manager[1].is_uniform
 
+
 class TestBoolSlice:
     def setup_method(self, method):
-        self.signal = signals.Signal2D(np.arange(24).reshape(6, 4))
+        self.signal = signals.Signal2D(np.arange(36).reshape(6, 6))
         self.data = self.signal.data.copy()
+
+    def test_signal_bool(self):
+        mask = np.zeros(shape=(6,6), dtype=bool)
+        mask[0, 2] = True
+        mask[4, 3] = True
+        new_sig = self.signal.isig[mask]
+        np.testing.assert_array_equal(new_sig.data, self.data[mask])
+        assert len(new_sig.axes_manager._axes) == 1
+        np.testing.assert_array_equal(new_sig.axes_manager[0].axis, ['[2. 0.]', '[3. 4.]'])
 
 
 @lazifyTestClass

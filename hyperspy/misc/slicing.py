@@ -301,13 +301,13 @@ class FancySlicing(object):
                     array_slices.append(ax[0].value2index(sl))
             else:
                 array_slices.append(sl)
-        return tuple(array_slices)
+        return tuple(array_slices), grouped_axes
 
     def _slicer(self, slices, isNavigation=None, out=None):
         if self.axes_manager._ragged and not isNavigation:
             raise RuntimeError("`isig` is not supported for ragged signal.")
 
-        array_slices = self._get_array_slices(slices, isNavigation)
+        array_slices, grouped_axes = self._get_array_slices(slices, isNavigation)
         new_data = self.data[array_slices]
         if (self.ragged and new_data.dtype != np.dtype(object) and
                 isinstance(new_data, np.ndarray)):
@@ -316,16 +316,25 @@ class FancySlicing(object):
             data = new_data.copy()
             new_data = np.empty((1, ), dtype=object)
             new_data[0] = data
+        # note this could be done more efficiently if deepcopy_with_new_data set axes.
 
         if out is None:
             _obj = self._deepcopy_with_new_data(new_data, copy_variance=True)
             _to_remove = []
-            for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
-                if (isinstance(slice_, (slice, list, np.ndarray)) or
+            index = 0
+            for slice_ in array_slices:
+                if isinstance(slice_, np.ndarray) and slice_.dtype == bool and slice_.ndim>1:
+                    axes_indexes = range(index, index+slice_.ndim)
+                    to_remove = _obj.axes_manager.nd_slice_me(slice_, axes_indexes)
+                    _to_remove += to_remove
+                    index += slice_.ndim
+                elif (isinstance(slice_, (slice, list, np.ndarray)) or
                         len(self.axes_manager._axes) < 2):
-                    axis._slice_me(slice_)
+                    _obj.axes_manager._axes[index]._slice_me(slice_)
+                    index += 1
                 else:
-                    _to_remove.append(axis.index_in_axes_manager)
+                    _to_remove.append(_obj.axes_manager._axes[index].index_in_axes_manager)
+                    index += 1
             _obj._remove_axis(_to_remove)
         else:
             out.data = new_data
