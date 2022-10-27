@@ -245,7 +245,7 @@ class FancySlicing(object):
         elif isinstance(sl, roi.CircleROI):
             ax1 = self.axes_manager[starting_index]
             ax2 = self.axes_manager[starting_index+1]
-            gx,gy = np.meshgrid(ax1.axis-sl.cx, ax2.axis-sl.cy)
+            gx, gy = np.meshgrid(ax1.axis-sl.cx, ax2.axis-sl.cy)
             gr = gx**2+gy**2
             mask = gr > sl.r**2
             mask |= gr < self.r_inner ** 2
@@ -253,8 +253,7 @@ class FancySlicing(object):
         else:
             raise ValueError(f"The roi of type {sl.__class__} is not supported." )
 
-
-    def _get_array_slices(self,slices,isNavigation=None):
+    def _get_array_slices(self, slices, isNavigation=None):
         slices = to_tuple(slices)
         if isNavigation is None:
             axes = self.axes_manager.navigation_axes+self.axes_manager.signal_axes
@@ -273,8 +272,14 @@ class FancySlicing(object):
                       )
         # Convert ROI's to slices or boolean indexes
         _slices = ()
+        from hyperspy.signal import BaseSignal
         for sl in slices:
-            _slices += self.roi2slice(sl) if isinstance(sl, roi.BaseROI) else (sl,)
+            if isinstance(sl, roi.BaseROI):
+                _slices += self.roi2slice(sl)
+            elif isinstance(sl, BaseSignal):
+                _slices += (sl.data,)
+            else:
+                _slices += (sl,)
         slices = _slices
 
         dimensions = [get_dim(sl) for sl in slices]

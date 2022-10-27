@@ -192,7 +192,7 @@ class TestBoolSlice:
         self.signal = signals.Signal2D(np.arange(36).reshape(6, 6))
         self.data = self.signal.data.copy()
 
-    def test_signal_bool(self):
+    def test_isig_bool(self):
         mask = np.zeros(shape=(6,6), dtype=bool)
         mask[0, 2] = True
         mask[4, 3] = True
@@ -200,6 +200,14 @@ class TestBoolSlice:
         np.testing.assert_array_equal(new_sig.data, self.data[mask])
         assert len(new_sig.axes_manager._axes) == 1
         np.testing.assert_array_equal(new_sig.axes_manager[0].axis, ['[2. 0.]', '[3. 4.]'])
+
+    def test_i_bool(self):
+        self.signal = signals.Signal2D(np.arange(6**3).reshape(6, 6, 6))
+        new_sig = self.signal.i[self.signal < 5]
+        np.testing.assert_array_equal(new_sig.data, self.data[self.data < 5])
+        assert len(new_sig.axes_manager._axes) == 1
+        np.testing.assert_array_equal(new_sig.axes_manager[0].axis,
+                                      ['[0. 0. 0.]', '[1. 0. 0.]', '[2. 0. 0.]', '[3. 0. 0.]', '[4. 0. 0.]'])
 
 
 @lazifyTestClass

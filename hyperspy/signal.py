@@ -2266,6 +2266,7 @@ class BaseSignal(FancySlicing,
             self._plot = None
             self.inav = SpecialSlicersSignal(self, True)
             self.isig = SpecialSlicersSignal(self, False)
+            self.i = SpecialSlicersSignal(self, None)
             self.events = Events()
             self.events.data_changed = Event("""
                 Event that triggers when the data has changed
