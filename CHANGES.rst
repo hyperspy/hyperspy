@@ -186,6 +186,24 @@ Preferences
 
 .. towncrier release notes start
 
+Hyperspy 1.7.3 (2022-10-29)
+===========================
+
+Bug Fixes
+---------
+
+- Fix error when reading Velox containing FFT with odd number of pixels (`#3040 <https://github.com/hyperspy/hyperspy/issues/3040>`_)
+- Fix pint Unit for pint>=0.20 (`#3052 <https://github.com/hyperspy/hyperspy/issues/3052>`_)
+
+
+Maintenance
+-----------
+
+- Fix deprecated import of scipy ``ascent`` in docstrings and the test suite (`#3032 <https://github.com/hyperspy/hyperspy/issues/3032>`_)
+- Fix error handling when trying to convert a ragged signal to non-ragged for numpy >=1.24 (`#3033 <https://github.com/hyperspy/hyperspy/issues/3033>`_)
+- Fix getting random state dask for dask>=2022.10.0 (`#3049 <https://github.com/hyperspy/hyperspy/issues/3049>`_)
+
+
 Hyperspy 1.7.2 (2022-09-17)
 ===========================
 

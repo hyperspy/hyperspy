@@ -1,1 +1,0 @@
-Fix deprecated import of scipy ``ascent`` in docstrings and the test suite
