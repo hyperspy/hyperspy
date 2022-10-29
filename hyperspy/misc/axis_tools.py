@@ -17,8 +17,8 @@
 
 
 import numpy as np
-#from pint import Unit
-from hyperspy.api_nogui import _ureg  
+from hyperspy.api_nogui import _ureg
+
 
 def check_axes_calibration(ax1, ax2, rtol=1e-7):
     """Check if the calibration of two Axis objects matches.
