@@ -42,11 +42,15 @@ to the Anaconda distribution, and it includes:
   * context `menu shortcut (right-click) <https://github.com/hyperspy/start_jupyter_cm>`_
     to Jupyter Notebook, Qtconsole or JupyterLab
 
-.. image:: images/download_hyperspy_button.png
-   :width: 350
-   :align: center
-   :target: https://github.com/hyperspy/hyperspy-bundle/releases
+.. raw:: html
 
+    <div class="text-center">
+        <a  class="downloadbutton"
+            href="https://github.com/hyperspy/hyperspy-bundle/releases/latest">
+                Download HyperSpy-bundle installer
+        </a>
+    </div>
+    <br>
 
 For instructions, see the `HyperSpy bundle <https://github.com/hyperspy/hyperspy-bundle>`__ repository.
 
