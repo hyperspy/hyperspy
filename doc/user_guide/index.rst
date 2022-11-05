@@ -16,7 +16,7 @@ User guide
     :caption: Fundamentals and Usage
     :maxdepth: 2
     
-    signal.rst
+    signal/index.rst
     axes.rst
     signal1d.rst
     signal2d.rst
