@@ -1,28 +1,3 @@
-
-.. _ml-label:
-
-Machine learning
-****************
-
-Introduction
-============
-
-HyperSpy provides easy access to several "machine learning" algorithms that
-can be useful when analysing multi-dimensional data. In particular,
-decomposition algorithms, such as principal component analysis (PCA), or
-blind source separation (BSS) algorithms, such as independent component
-analysis (ICA), are available through the methods described in this section.
-
-.. hint::
-
-   HyperSpy will decompose a dataset, :math:`X`, into two new datasets:
-   one with the dimension of the signal space known as **factors** (:math:`A`),
-   and the other with the dimension of the navigation space known as **loadings**
-   (:math:`B`), such that :math:`X = A B^T`.
-
-   For some of the algorithms listed below, the decomposition results in
-   an `approximation` of the dataset, i.e. :math:`X \approx A B^T`.
-
 .. _mva.decomposition:
 
 Decomposition
@@ -30,7 +5,7 @@ Decomposition
 
 Decomposition techniques are most commonly used as a means of noise
 reduction (or `denoising`) and dimensionality reduction. To apply a
-decomposition to your dataset, run the :py:meth:`~.learn.mva.MVA.decomposition`
+decomposition to your dataset, run the :py:meth:`~.api.signals.BaseSignal.decomposition`
 method, for example:
 
 .. code-block:: python
@@ -49,13 +24,13 @@ method, for example:
    The signal ``s`` must be multi-dimensional, *i.e.*
    ``s.axes_manager.navigation_size > 1``
 
-One of the most popular uses of :py:meth:`~.learn.mva.MVA.decomposition`
+One of the most popular uses of :py:meth:`~.api.signals.BaseSignal.decomposition`
 is data denoising. This is achieved by using a limited set of components
 to make a model of the original dataset, omitting the less significant components that
 ideally contain only noise.
 
 To reconstruct your denoised or reduced model, run the
-:py:meth:`~.learn.mva.MVA.get_decomposition_model` method. For example:
+:py:meth:`~.api.signals.BaseSignal.get_decomposition_model` method. For example:
 
 .. code-block:: python
 
@@ -70,7 +45,7 @@ To reconstruct your denoised or reduced model, run the
 
 Sometimes, it is useful to examine the residuals between your original data and
 the decomposition model. You can easily calculate and display the residuals,
-since :py:meth:`~.learn.mva.MVA.get_decomposition_model` returns a new
+since :py:meth:`~.api.signals.BaseSignal.get_decomposition_model` returns a new
 object, which in the example above we have called ``sc``:
 
 .. code-block:: python
@@ -174,7 +149,7 @@ Principal component analysis (PCA)
 
 One of the most popular decomposition methods is `principal component analysis
 <https://en.wikipedia.org/wiki/Principal_component_analysis>`_ (PCA).
-To perform PCA on your dataset, run the :py:meth:`~.learn.mva.MVA.decomposition`
+To perform PCA on your dataset, run the :py:meth:`~.api.signals.BaseSignal.decomposition`
 method with any of following arguments.
 
 If you have `scikit-learn <https://scikit-learn.org/>`_ installed:
@@ -259,7 +234,7 @@ component :math:`L` corrupted by a sparse error component :math:`S`, such that
 :math:`X=L+S`, then Robust PCA (RPCA) can be used to recover the low-rank
 component for subsequent processing :ref:`[Candes2011] <Candes2011>`.
 
-.. figure::  images/rpca_schematic.png
+.. figure::  ../images/rpca_schematic.png
    :align:   center
    :width:   425
 
@@ -427,348 +402,3 @@ You can access the fitted estimator by passing ``return_info=True``.
                                random_state=None, svd_solver='auto', tol=0.0,
                                whiten=False))],
             verbose=False)
-
-.. _mva.blind_source_separation:
-
-Blind Source Separation
-=======================
-
-In some cases it is possible to obtain more physically interpretable set of
-components using a process called Blind Source Separation (BSS). This largely
-depends on the particular application. For more information about blind source
-separation please see :ref:`[Hyvarinen2000] <Hyvarinen2000>`, and for an
-example application to EELS analysis, see :ref:`[Pena2010] <Pena2010>`.
-
-.. warning::
-
-   The BSS algorithms operate on the result of a previous
-   decomposition analysis. It is therefore necessary to perform a
-   :ref:`decomposition <mva.decomposition>` first before calling
-   :py:meth:`~.learn.mva.MVA.blind_source_separation`, otherwise it
-   will raise an error.
-
-   You must provide an integer ``number_of_components`` argument,
-   or a list of components as the ``comp_list`` argument. This performs
-   BSS on the chosen number/list of components from the previous
-   decomposition.
-
-To perform blind source separation on the result of a previous decomposition,
-run the :py:meth:`~.learn.mva.MVA.blind_source_separation` method, for example:
-
-.. code-block:: python
-
-   >>> import numpy as np
-   >>> from hyperspy.signals import Signal1D
-
-   >>> s = Signal1D(np.random.randn(10, 10, 200))
-   >>> s.decomposition(output_dimension=3)
-
-   >>> s.blind_source_separation(number_of_components=3)
-
-   # Perform only on the first and third components
-   >>> s.blind_source_separation(comp_list=[0, 2])
-
-Available algorithms
---------------------
-
-HyperSpy implements a number of BSS algorithms via the ``algorithm`` argument.
-The table below lists the algorithms that are currently available, and includes
-links to the appropriate documentation for more information on each one.
-
-.. _bss-table:
-
-.. table:: Available blind source separation algorithms in HyperSpy
-
-   +-----------------------------+----------------------------------------------------------------+
-   | Algorithm                   | Method                                                         |
-   +=============================+================================================================+
-   | "sklearn_fastica" (default) | :py:class:`sklearn.decomposition.FastICA`                      |
-   +-----------------------------+----------------------------------------------------------------+
-   | "orthomax"                  | :py:func:`~.learn.orthomax.orthomax`                           |
-   +-----------------------------+----------------------------------------------------------------+
-   | "FastICA"                   | :py:class:`mdp.nodes.FastICANode`                              |
-   +-----------------------------+----------------------------------------------------------------+
-   | "JADE"                      | :py:class:`mdp.nodes.JADENode`                                 |
-   +-----------------------------+----------------------------------------------------------------+
-   | "CuBICA"                    | :py:class:`mdp.nodes.CuBICANode`                               |
-   +-----------------------------+----------------------------------------------------------------+
-   | "TDSEP"                     | :py:class:`mdp.nodes.TDSEPNode`                                |
-   +-----------------------------+----------------------------------------------------------------+
-   | custom object               | An object implementing  ``fit()`` and  ``transform()`` methods |
-   +-----------------------------+----------------------------------------------------------------+
-
-.. note::
-
-   Except :py:func:`~.learn.orthomax.orthomax`, all of the implemented BSS algorithms listed above
-   rely on external packages being available on your system. ``sklearn_fastica``, requires
-   `scikit-learn <https://scikit-learn.org/>`_ while ``FastICA, JADE, CuBICA, TDSEP``
-   require the `Modular toolkit for Data Processing (MDP) <https://mdp-toolkit.github.io/>`_.
-
-.. _mva.orthomax:
-
-Orthomax
---------
-
-Orthomax rotations are a statistical technique used to clarify and highlight the relationship among factors,
-by adjusting the coordinates of PCA results. The most common approach is known as
-`"varimax" <https://en.wikipedia.org/wiki/Varimax_rotation>`_, which intended to maximize the variance shared
-among the components while preserving orthogonality. The results of an orthomax rotation following PCA are
-often "simpler" to interpret than just PCA, since each componenthas a more discrete contribution to the data.
-
-.. code-block:: python
-
-   >>> import numpy as np
-   >>> from hyperspy.signals import Signal1D
-
-   >>> s = Signal1D(np.random.randn(10, 10, 200))
-   >>> s.decomposition(output_dimension=3)
-
-   >>> s.blind_source_separation(number_of_components=3, algorithm="orthomax")
-
-.. _mva.ica:
-
-Independent component analysis (ICA)
-------------------------------------
-
-One of the most common approaches for blind source separation is
-`Independent Component Analysis (ICA) <https://en.wikipedia.org/wiki/Independent_component_analysis>`_.
-This separates a signal into subcomponents by assuming that the subcomponents are (a) non-Gaussian,
-and (b) that they are statistically independent from each other.
-
-.. _mva.custom_bss:
-
-Custom BSS algorithms
----------------------
-
-As with :ref:`decomposition <mva.decomposition>`, HyperSpy supports passing a custom BSS algorithm,
-provided it follows the form of a `scikit-learn estimator <https://scikit-learn.org/stable/developers/develop.html>`_.
-Any object that implements ``fit()`` and ``transform()`` methods is acceptable, including
-:py:class:`sklearn.pipeline.Pipeline` and :py:class:`sklearn.model_selection.GridSearchCV`.
-You can access the fitted estimator by passing ``return_info=True``.
-
-.. code-block:: python
-
-   >>> # Passing a custom BSS algorithm
-   >>> from sklearn.preprocessing import MinMaxScaler
-   >>> from sklearn.pipeline import Pipeline
-   >>> from sklearn.decomposition import FastICA
-
-   >>> pipe = Pipeline([("scaler", MinMaxScaler()), ("ica", FastICA())])
-   >>> out = s.blind_source_separation(number_of_components=3, algorithm=pipe, return_info=True)
-
-   >>> out
-   Pipeline(memory=None,
-            steps=[('scaler', MinMaxScaler(copy=True, feature_range=(0, 1))),
-                   ('ica', FastICA(algorithm='parallel', fun='logcosh', fun_args=None,
-                                   max_iter=200, n_components=3, random_state=None,
-                                   tol=0.0001, w_init=None, whiten=True))],
-            verbose=False)
-
-.. _cluster_analysis-label:
-
-.. include:: cluster.rst
-
-.. _mva.visualization:
-
-
-Visualizing results
-===================
-
-HyperSpy includes a number of plotting methods for visualizing the results
-of decomposition and blind source separation analyses. All the methods
-begin with ``plot_``.
-
-.. _mva.scree_plot:
-
-Scree plots
------------
-
-.. note::
-   Scree plots are only available for the ``"SVD"`` and ``"PCA"`` algorithms.
-
-PCA will sort the components in the dataset in order of decreasing
-variance. It is often useful to estimate the dimensionality of the data by
-plotting the explained variance against the component index. This plot is
-sometimes called a scree plot. For most datasets, the values in a scree plot
-will decay rapidly, eventually becoming a slowly descending line.
-
-To obtain a scree plot for your dataset, run the
-:py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` method:
-
-.. code-block:: python
-
-   >>> s.plot_explained_variance_ratio(n=20)
-
-.. figure::  images/screeplot.png
-   :align:   center
-   :width:   500
-
-   PCA scree plot
-
-The point at which the scree plot becomes linear (often referred to as
-the "elbow") is generally judged to be a good estimation of the dimensionality
-of the data (or equivalently, the number of components that should be retained
-- see below). Components to the left of the elbow are considered part of the "signal",
-while components to the right are considered to be "noise", and thus do not explain
-any significant features of the data.
-
-By specifying a ``threshold`` value, a cutoff line will be drawn at the total variance
-specified, and the components above this value will be styled distinctly from the
-remaining components to show which are considered signal, as opposed to noise.
-Alternatively, by providing an integer value for ``threshold``, the line will
-be drawn at the specified component (see below).
-
-Note that in the above scree plot, the first component has index 0. This is because
-Python uses zero-based indexing. To switch to a "number-based" (rather than
-"index-based") notation, specify the ``xaxis_type`` parameter:
-
-.. code-block:: python
-
-   >>> s.plot_explained_variance_ratio(n=20, threshold=4, xaxis_type='number')
-
-.. figure::  images/screeplot2.png
-   :align:   center
-   :width:   500
-
-   PCA scree plot with number-based axis labeling and a threshold value
-   specified
-
-The number of significant components can be estimated and a vertical line
-drawn to represent this by specifying ``vline=True``. In this case, the "elbow"
-is found in the variance plot by estimating the distance from each point in the
-variance plot to a line joining the first and last points of the plot, and then
-selecting the point where this distance is largest.
-
-If multiple maxima are found, the index corresponding to the first occurrence
-is returned. As the index of the first component is zero, the number of
-significant PCA components is the elbow index position + 1. More details
-about the elbow-finding technique can be found in
-:ref:`[Satopää2011] <Satopää2011>`, and in the documentation for
-:py:meth:`~.learn.mva.MVA.estimate_elbow_position`.
-
-.. figure::  images/screeplot_elbow_method.png
-   :align:   center
-   :width:   500
-
-.. figure::  images/screeplot3.png
-   :align:   center
-   :width:   500
-
-   PCA scree plot with number-based axis labeling and an estimate of the no of significant
-   positions based on the "elbow" position
-
-These options (together with many others), can be customized to
-develop a figure of your liking. See the documentation of
-:py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` for more details.
-
-Sometimes it can be useful to get the explained variance ratio as a spectrum.
-For example, to plot several scree plots obtained with
-different data pre-treatments in the same figure, you can combine
-:py:func:`~.drawing.utils.plot_spectra` with
-:py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`.
-
-.. _mva.plot_decomposition:
-
-Decomposition plots
--------------------
-
-HyperSpy provides a number of methods for visualizing the factors and loadings
-found by a decomposition analysis. To plot everything in a compact form,
-use :py:meth:`~.signal.MVATools.plot_decomposition_results`.
-
-You can also plot the factors and loadings separately using the following
-methods. It is recommended that you provide the number of factors or loadings
-you wish to visualise, since the default is to plot all of them.
-
-* :py:meth:`~.signal.MVATools.plot_decomposition_factors`
-* :py:meth:`~.signal.MVATools.plot_decomposition_loadings`
-
-.. _mva.plot_bss:
-
-Blind source separation plots
------------------------------
-
-Visualizing blind source separation results is much the same as decomposition.
-You can use :py:meth:`~.signal.MVATools.plot_bss_results` for a compact display,
-or instead:
-
-* :py:meth:`~.signal.MVATools.plot_bss_factors`
-* :py:meth:`~.signal.MVATools.plot_bss_loadings`
-
-.. _mva.get_results:
-
-Clustering plots
-----------------
-
-Visualizing cluster results is much the same as decomposition.
-You can use :py:meth:`~.signal.MVATools.plot_bss_results` for a compact display,
-or instead:
-
-* :py:meth:`~.signal.MVATools.plot_cluster_results`.
-* :py:meth:`~.signal.MVATools.plot_cluster_signals`.
-* :py:meth:`~.signal.MVATools.plot_cluster_labels`.
-
-
-Obtaining the results as BaseSignal instances
-=============================================
-
-The decomposition and BSS results are internally stored as numpy arrays in the
-:py:class:`~.signal.BaseSignal` class. Frequently it is useful to obtain the
-decomposition/BSS factors and loadings as HyperSpy signals, and HyperSpy
-provides the following methods for that purpose:
-
-* :py:meth:`~.signal.MVATools.get_decomposition_loadings`
-* :py:meth:`~.signal.MVATools.get_decomposition_factors`
-* :py:meth:`~.signal.MVATools.get_bss_loadings`
-* :py:meth:`~.signal.MVATools.get_bss_factors`
-
-.. _mva.saving-label:
-
-Saving and loading results
-==========================
-
-Saving in the main file
------------------------
-
-If you save the dataset on which you've performed machine learning analysis in
-the :external+rsciio:ref:`HSpy-HDF5 <hspy-format>` format (the default in HyperSpy, see
-:ref:`saving_files`), the result of the analysis is also saved in the same
-file automatically, and it is loaded along with the rest of the data when you
-next open the file.
-
-.. note::
-   This approach currently supports storing one decomposition and one BSS
-   result, which may not be enough for your purposes.
-
-Saving to an external file
---------------------------
-
-Alternatively, you can save the results of the current machine learning
-analysis to a separate file with the
-:py:meth:`~.learn.mva.LearningResults.save` method:
-
-.. code-block:: python
-
-   >>> # Save the result of the analysis
-   >>> s.learning_results.save('my_results.npz')
-
-   >>> # Load back the results
-   >>> s.learning_results.load('my_results.npz')
-
-Exporting in different formats
-------------------------------
-
-You can also export the results of a machine learning analysis to any format
-supported by HyperSpy with the following methods:
-
-* :py:meth:`~.signal.MVATools.export_decomposition_results`
-* :py:meth:`~.signal.MVATools.export_bss_results`
-
-These methods accept many arguments to customise the way in which the
-data is exported, so please consult the method documentation. The options
-include the choice of file format, the prefixes for loadings and factors,
-saving figures instead of data and more.
-
-.. warning::
-   Data exported in this way cannot be easily loaded into HyperSpy's
-   machine learning structure.

@@ -231,11 +231,8 @@ class MVA:
 
         See Also
         --------
-        * :py:meth:`~.signal.MVATools.plot_decomposition_factors`
-        * :py:meth:`~.signal.MVATools.plot_decomposition_loadings`
-        * :py:meth:`~.signal.MVATools.plot_decomposition_results`
-        * :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`
-        * :py:meth:`~._signals.lazy.LazySignal.decomposition` for lazy signals
+        plot_decomposition_factors, plot_decomposition_loadings,
+        plot_decomposition_results, plot_explained_variance_ratio
 
         """
         if is_cupy_array(self.data):  # pragma: no cover
@@ -1292,7 +1289,7 @@ class MVA:
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.decomposition`
+        * decomposition
         * :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`
         * :py:meth:`~.learn.mva.MVA.get_decomposition_loadings`
         * :py:meth:`~.learn.mva.MVA.get_decomposition_factors`

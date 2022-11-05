@@ -1,3 +1,4 @@
+.. _cluster_analysis-label:
 
 Cluster analysis
 ================
@@ -62,20 +63,19 @@ Clustering functions HyperSpy
 
 All HyperSpy signals have the following methods for clustering analysis:
 
-* :py:meth:`~.learn.mva.MVA.cluster_analysis`
-* :py:meth:`~.signal.MVATools.plot_cluster_results`
-* :py:meth:`~.signal.MVATools.plot_cluster_labels`
-* :py:meth:`~.signal.MVATools.plot_cluster_signals`
-* :py:meth:`~.signal.MVATools.plot_cluster_distances`
-* :py:meth:`~.signal.MVATools.get_cluster_signals`
-* :py:meth:`~.signal.MVATools.get_cluster_labels`
-* :py:meth:`~.signal.MVATools.get_cluster_distances`
-* :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`
-* :py:meth:`~.learn.mva.MVA.plot_cluster_metric`
+* :py:meth:`~.api.signals.BaseSignal.cluster_analysis`
+* :py:meth:`~.api.signals.BaseSignal.plot_cluster_results`
+* :py:meth:`~.api.signals.BaseSignal.plot_cluster_labels`
+* :py:meth:`~.api.signals.BaseSignal.plot_cluster_signals`
+* :py:meth:`~.api.signals.BaseSignal.plot_cluster_distances`
+* :py:meth:`~.api.signals.BaseSignal.get_cluster_signals`
+* :py:meth:`~.api.signals.BaseSignal.get_cluster_labels`
+* :py:meth:`~.api.signals.BaseSignal.get_cluster_distances`
+* :py:meth:`~.api.signals.BaseSignal.estimate_number_of_clusters`
+* :py:meth:`~.api.signals.BaseSignal.plot_cluster_metric`
 
-The :py:meth:`~.learn.mva.MVA.cluster_analysis` method can perform cluster
-analysis using any `sklearn.clustering
-<https://scikit-learn.org/stable/modules/clustering.html>`_ clustering
+The :py:meth:`~.api.signals.BaseSignal.cluster_analysis` method can perform cluster
+analysis using any :external+sklearn:ref:`scikit-learn clustering <clustering>`
 algorithms or any other object with a compatible API. This involves importing
 the relevant algorithm class from scikit-learn.
 
@@ -85,7 +85,7 @@ the relevant algorithm class from scikit-learn.
     >>> s.cluster_analysis(cluster_source="signal", algorithm=KMeans(n_clusters=3, n_init=8))
 
 
-For convenience, the default algorithm is ``kmeans`` algorithm and is imported
+For convenience, the default algorithm is the ``kmeans`` algorithm and is imported
 internally. All extra keyword arguments are passed to the algorithm when
 present. Therefore the following code is equivalent to the previous one:
 
@@ -97,10 +97,11 @@ For example:
 
 is equivalent to:
 
-:py:meth:`~.learn.mva.MVA.cluster_analysis` computes the cluster labels. The
+:py:meth:`~.api.signals.BaseSignal.cluster_analysis` computes the cluster labels. The
 clusters areas with identical label are averaged to create a set of cluster
 centres. This averaging can be performed on the ``signal`` itself, the
-``bss`` or ``decomposition`` results or a user supplied signal.
+:ref:`BSS <mva.blind_source_separation>` or :ref:`decomposition <mva.decomposition>` results
+or a user supplied signal.
 
 Pre-processing
 --------------
@@ -122,9 +123,9 @@ Therefore, the pre-processing step
 will highly influence the results and should be evaluated for the problem
 under investigation.
 
-All pre-processing methods from (or compatible with) `sklearn.preprocessing
-<https://scikit-learn.org/stable/modules/preprocessing.html>`_ can be passed
-to the ``scaling`` keyword of the :py:meth:`~.learn.mva.MVA.cluster_analysis`
+All pre-processing methods from (or compatible with) the
+:external+sklearn:ref:`scikit-learn pre-processing <preprocessing>` module can be passed
+to the ``scaling`` keyword of the :py:meth:`~.api.signals.BaseSignal.cluster_analysis`
 method. For convenience, the following methods from scikit-learn are
 available as standard: ``standard`` , ``minmax`` and ``norm`` as
 standard. Briefly, ``norm`` treats the features as a vector and normalizes the
@@ -137,7 +138,7 @@ Cluster signals
 
 In HyperSpy *cluster signals* are signals that somehow represent their clusters.
 The concept is ill-defined, since cluster algorithms only assign data points to
-clusters. HyperSpy computers 2 cluster signals,
+clusters. HyperSpy computes 2 cluster signals,
 
 1. ``cluster_sum_signals``, which are the sum of all the cluster signals
    that belong to each cluster.
@@ -213,8 +214,7 @@ Examples
 Clustering using decomposition results
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Let's use the `make_blobs
-<https://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_blobs.html>`_
+Let's use the :py:func:`sklearn.datasets.make_blobs`
 function supplied by `scikit-learn` to make dummy data to see how clustering
 might work in practice.
 
@@ -235,7 +235,7 @@ might work in practice.
     >>> hs.plot.plot_images(data.T)
 
 
-.. image:: images/clustering_data.png
+.. image:: ../images/clustering_data.png
 
 
 To see how cluster analysis works it's best to first examine the signal.
@@ -256,7 +256,7 @@ redundancies:
     >>> s.decomposition()
     >>> s.plot_explained_variance_ratio()
 
-.. image:: images/clustering_scree_plot.png
+.. image:: ../images/clustering_scree_plot.png
 
 From the scree plot we deduce that, as expected, that the dataset can be reduce
 to 3 components. Let's plot their loadings:
@@ -265,7 +265,7 @@ to 3 components. Let's plot their loadings:
 
     >>> s.plot_decomposition_loadings(comp_ids=3, axes_decor="off")
 
-.. image:: images/clustering_decomposition_loadings.png
+.. image:: ../images/clustering_decomposition_loadings.png
 
 In the SVD loading we can identify 3 regions, but they are mixed in the components.
 Let's perform cluster analysis of decomposition results, to find similar regions
@@ -277,7 +277,7 @@ not require any pre-processing for cluster analysis.
     >>> s.cluster_analysis(cluster_source="decomposition", number_of_components=3, preprocessing=None)
     >>> s.plot_cluster_labels(axes_decor="off")
 
-.. image:: images/clustering_labels.png
+.. image:: ../images/clustering_labels.png
 
 To see what the labels the cluster algorithm has assigned you can inspect
 the ``cluster_labels``:
@@ -353,7 +353,7 @@ well-defined the clustering is.
     >>> s.estimate_number_of_clusters(cluster_source="decomposition", metric="gap")
     >>> s.plot_cluster_metric()
 
-.. image:: images/clustering_Gap.png
+.. image:: ../images/clustering_Gap.png
 
 The optimal number of clusters can be set or accessed from the learning
 results
@@ -400,7 +400,7 @@ Let's start by creating a suitable synthetic dataset.
     >>> hs.plot.plot_images(stack, axes_decor="off", colorbar="single",
     suptitle="")
 
-.. image:: images/clustering_gaussian_centres.png
+.. image:: ../images/clustering_gaussian_centres.png
 
 Let's now perform cluster analysis on the stack and calculate the centres using
 the spectrum image. Notice that we don't need to fit the model to the data
@@ -418,13 +418,13 @@ proportionality relationship between the position of the peaks.
     >>> s.cluster_analysis(cluster_source=stack.T, source_for_centers=s, n_clusters=2, preprocessing="norm")
     >>> s.plot_cluster_labels()
 
-.. image:: images/clustering_gaussian_centres_labels.png
+.. image:: ../images/clustering_gaussian_centres_labels.png
 
 .. code-block:: python
 
     >>> s.plot_cluster_signals(signal="mean")
 
-.. image:: images/clustering_gaussian_centres_mean.png
+.. image:: ../images/clustering_gaussian_centres_mean.png
 
 
 Notice that in this case averaging or summing the signals of
@@ -434,6 +434,6 @@ is to plot the signals closest to the centroids:
 
     >>> s.plot_cluster_signals(signal="centroid")
 
-.. image:: images/clustering_gaussian_centres_centroid.png
+.. image:: ../images/clustering_gaussian_centres_centroid.png
 
 

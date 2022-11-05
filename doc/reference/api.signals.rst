@@ -16,4 +16,5 @@
 
 .. automodule:: hyperspy.api.signals
    :members:
+   :inherited-members:
    
