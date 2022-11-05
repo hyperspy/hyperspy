@@ -1,0 +1,4 @@
+Restructure documentation:
+- Improve structure of the API reference
+- Improve introduction and overall structure of documentation
+- Add gallery of examples
