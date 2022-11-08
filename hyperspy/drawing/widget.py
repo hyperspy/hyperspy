@@ -1015,3 +1015,175 @@ class ResizersMixin:
             self._set_resizers(True, ax)
         if hasattr(super(ResizersMixin, self), "_add_patch_to"):
             super(ResizersMixin, self)._add_patch_to(ax)
+
+class MPLWidgetBase(object):
+
+    """Base class for interactive widgets/patches. A widget creates and
+    maintains one or more matplotlib patches, and manages the interaction code
+    so that the user can maniuplate it on the fly.
+
+    This base class implements functionality which is common to all such
+    widgets, mainly the code that manages the patch, axes management, and
+    sets up common events ('changed' and 'closed').
+
+    Any inherting subclasses must implement the following methods:
+        _set_patch(self)
+        _on_navigate(obj, name, old, new)  # Only for widgets that can navigate
+
+    It should also make sure to fill the 'axes' attribute as early as
+    possible (but after the base class init), so that it is available when
+    needed.
+    """
+
+    def __init__(self, axes_manager=None, mpl_ax = None, **kwargs):
+        self.axes_manager = axes_manager
+        self._axes = list()
+        
+        if self.axes_manager is not None:
+            if self.axes_manager.navigation_dimension > 1:
+                self.axes = self.axes_manager.navigation_axes[0:2]
+            elif self.axes_manager.signal_dimension > 1:
+                self.axes = self.axes_manager.signal_axes[0:2]
+            elif len(self.axes_manager.shape) > 1:
+                self.axes = (self.axes_manager.signal_axes +
+                             self.axes_manager.navigation_axes)
+            else:
+                raise ValueError("MPL widget needs at least two axes!")
+        
+        self.ax = None
+        if mpl_ax is not None:
+            self.set_mpl_ax(mpl_ax)
+            
+        self._widget = None
+        self._pos = np.array([0.])
+        self._is_on = True
+        self.events = Events()
+        self.events.changed = Event(doc="""
+            Event that triggers when the widget has a significant change.
+
+            The event triggers after the internal state of the widget has been
+            updated.
+
+            Arguments:
+            ----------
+                widget:
+                    The widget that changed
+            """, arguments=['obj'])
+        self.events.closed = Event(doc="""
+            Event that triggers when the widget closed.
+
+            The event triggers after the widget has already been closed.
+
+            Arguments:
+            ----------
+                widget:
+                    The widget that closed
+            """, arguments=['obj'])
+        self._navigating = False
+        super(MPLWidgetBase, self).__init__(**kwargs)
+
+    def _get_axes(self):
+        return self._axes
+
+    def _set_axes(self, axes):
+        if axes is None:
+            self._axes = list()
+        else:
+            self._axes = axes
+
+    axes = property(lambda s: s._get_axes(),
+                    lambda s, v: s._set_axes(v))
+
+    @property
+    def is_on(self):
+        """Determines if the widget is set to draw if valid (turned on).
+        """
+        return self._is_on
+
+    def set_on(self, value, render_figure=True):
+        """Change the on state of the widget. If turning off, all patches will
+        be removed from the matplotlib axes and the widget will disconnect from
+        all events. If turning on, the patch(es) will be added to the
+        matplotlib axes, and the widget will connect to its default events.
+        """
+        if value is not self.is_on and self.ax is not None:
+            if value is True:
+                self.connect(self.ax)
+            elif value is False:
+                self.disconnect()
+                self.ax = None
+        self._is_on = value
+
+    def set_mpl_ax(self, ax):
+        """Set the matplotlib Axes that the widget will draw to. If the widget
+        on state is True, it will also add the patch to the Axes, and connect
+        to its default events.
+        """
+        if ax is self.ax:
+            return  # Do nothing
+        # Disconnect from previous axes if set
+        if self.ax is not None and self.is_on:
+            self.disconnect()
+        self.ax = ax
+        if self.is_on is True:
+            self.connect(ax)
+
+    def connect(self, ax):
+        """Connect to the matplotlib Axes' events.
+        """
+        on_figure_window_close(ax.figure, self.close)
+
+
+    def disconnect(self):
+        """Disconnect from all events (both matplotlib and navigation).
+        """
+        for cid in self.cids:
+            try:
+                self.ax.figure.canvas.mpl_disconnect(cid)
+            except BaseException:
+                pass
+        if self._navigating:
+            self.disconnect_navigate()
+
+    def close(self, window=None, render_figure=False):
+        """Set the on state to off (removes patch and disconnects), and trigger
+        events.closed.
+        """
+        self.set_on(False, render_figure=render_figure)
+        self.events.closed.trigger(obj=self)
+
+    def _v2i(self, axis, v):
+        """Wrapped version of DataAxis.value2index, which bounds the index
+        between axis.low_index and axis.high_index+1, and does not raise a
+        ValueError.
+        """
+        try:
+            return axis.value2index(v)
+        except ValueError:
+            if v > axis.high_value:
+                return axis.high_index + 1
+            elif v < axis.low_value:
+                return axis.low_index
+            else:
+                raise
+
+    def _i2v(self, axis, i):
+        """Wrapped version of DataAxis.index2value, which bounds the value
+        inbetween axis.low_value and axis.high_value + axis.scale when the axis
+        is uniform and does not raise a ValueError.
+        """
+        try:
+            return axis.index2value(i)
+        except ValueError:
+            if i > axis.high_index:
+                if axis.is_uniform:
+                    return axis.high_value + axis.scale
+                else:
+                    return axis.high_value
+            elif i < axis.low_index:
+                return axis.low_value
+            else:
+                raise
+
+    def __str__(self):
+        return "{} with id {}".format(self.__class__.__name__, id(self))
