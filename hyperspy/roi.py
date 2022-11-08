@@ -1513,28 +1513,26 @@ class Line2DROI(BaseInteractiveROI):
 
 class PolygonROI(BaseROI):
     """Selects a polygonal region in a 2D space. The coordinates of the
-    polygon vertices are given as a list of tuples (x, y) in the `points`
+    polygon vertices are given as a list of tuples (x, y) in the `vertices`
     attribute. An edge runs from the final to the first point in the list.
     If the polygon self overlaps, the overlapping areas may be considered
     outside of the polygon and masked away.
     """
 
-    points = []
+    vertices = []
     _ndim = 2
 
-    def __init__(self, points=None):
+    def __init__(self, vertices=None):
         super(PolygonROI, self).__init__()
-        if points:
-            self.set_vertices(points)
-        else:
-            points = []
+        if vertices:
+            self.set_vertices(vertices)
 
     @property
     def parameters(self):
-        return {"points": self.points}
+        return {"vertices": self.vertices}
 
     def __getitem__(self, *args, **kwargs):
-        _tuple = tuple(self.points)
+        _tuple = tuple(self.vertices)
         return _tuple.__getitem__(*args, **kwargs)
 
     def __repr__(self):
@@ -1548,25 +1546,27 @@ class PolygonROI(BaseROI):
 
     def is_valid(self):
         """
-        The polygon is defined as valid if more than two points are fully defined.
+        The polygon is defined as valid if more than two vertices are fully defined.
         """
-        return len(self.points) > 2 and all(
-            (None not in point and len(point) == 2) for point in self.points
+        return len(self.vertices) > 2 and all(
+            (None not in vertex and len(vertex) == 2) for vertex in self.vertices
             )
 
     def set_vertices(self, vertices):
-        """Sets the vertices of the polygon to the `points` argument,
-        where each vertex is to be given by (x, y). The list is set to
+        """Sets the vertices of the polygon to the `vertices` argument,
+        where each vertex is to be given as (x, y). The list is set to
         loop around, such that an edge runs from the first to the final
         vertex in the list.
 
         Parameters
         ----------
-        points : list of tuples
+        vertices : list of tuples
             List of (x, y) values of the vertices of the polygon.
         """
-        self.points = vertices
+        old_vertices = self.vertices
+        self.vertices = vertices
         if not self.is_valid():
+            self.vertices = old_vertices
             raise ValueError(
                 f"`points` is not a list of fully defined two-dimensional points with at least \
                     three entries:\n{vertices}"
@@ -1588,10 +1588,10 @@ class PolygonROI(BaseROI):
                 )
         natax = signal.axes_manager._get_axes_in_natural_order()
         # Slice original data with a circumscribed rectangle
-        left = min(x for x, y in self.points)
-        right = max(x for x, y in self.points) + axes[1].scale
-        top = min(y for x, y in self.points) 
-        bottom = max(y for x, y in self.points) + axes[0].scale 
+        left = min(x for x, y in self.vertices)
+        right = max(x for x, y in self.vertices) + axes[1].scale
+        top = min(y for x, y in self.vertices) 
+        bottom = max(y for x, y in self.vertices) + axes[0].scale 
 
         ranges = [[left, right], [top, bottom]]
         slices = self._make_slices(natax, axes, ranges)
@@ -1659,18 +1659,19 @@ class PolygonROI(BaseROI):
 
         Parameters
         ----------
-        xy_max : tuple
-            The maximum x and y values that the mask covers, given in the same space
-            as the polygon vertices.
-        xy_min : tuple
-            The minimum x and y values that the mask covers, given in the same space
-            as the polygon vertices.
-        x_scale : float
+        xy_max : tuple, optional
+            The maximum x and y values that the rasterized mask covers, given in 
+            the same coordinate space as the polygon vertices. The defaults are 
+            the max values in the `vertices` member attribute.
+        xy_min : tuple, optional
+            The minimum x and y values that the mask covers, given in the same coordinate
+            space as the polygon vertices.
+        x_scale : float, optional
             This gives the scale of the second axis of the signal. In other words,
             how many units in coordinate space that corresponds to one step between
             columns.
         y_scale : float
-            This gives the scale of the second first of the signal. In other words,
+            This gives the scale of the second axis of the signal. In other words,
             how many units in coordinate space that corresponds to one step between
             rows.
         inverted : bool, optional
@@ -1685,8 +1686,8 @@ class PolygonROI(BaseROI):
         """
 
         if not xy_max:
-            x_max = max(x for x, y in self.points)
-            y_max = max(y for x, y in self.points)
+            x_max = max(x for x, y in self.vertices)
+            y_max = max(y for x, y in self.vertices)
             xy_max = (x_max, y_max)
 
         min_index_x = round(xy_min[0] / x_scale)
@@ -1700,12 +1701,11 @@ class PolygonROI(BaseROI):
 
         for row in range(mask.shape[0]):
             row_y = (min_index_y + row) * y_scale
-            # row_y = xy_min[1] + (xy_max[1]-xy_min[1])*row/(mask.shape[0] - 1)
 
             intersections = []
-            for pointind in range(len(self.points)):
-                x1, y1 = self.points[pointind]
-                x2, y2 = self.points[(pointind + 1) % len(self.points)]
+            for vertexind in range(len(self.vertices)):
+                x1, y1 = self.vertices[vertexind]
+                x2, y2 = self.vertices[(vertexind + 1) % len(self.vertices)]
 
                 # Only find intersection if line segment passes through row
                 if (y1 > row_y) != (y2 > row_y):
@@ -1730,7 +1730,7 @@ class PolygonROI(BaseROI):
 
         if inverted:
             mask = np.logical_not(mask)
-        
+
         return mask
 
     def boolean_mask(
@@ -1742,18 +1742,19 @@ class PolygonROI(BaseROI):
 
         Parameters
         ----------
-        xy_max : tuple
-            The maximum x and y values that the mask covers, given in the same space
-            as the polygon vertices.
-        xy_min : tuple
-            The minimum x and y values that the mask covers, given in the same space
-            as the polygon vertices.
-        x_scale : float
+        xy_max : tuple, optional
+            The maximum x and y values that the rasterized mask covers, given in 
+            the same coordinate space as the polygon vertices. The defaults are 
+            the max values in the `vertices` member attribute.
+        xy_min : tuple, optional
+            The minimum x and y values that the mask covers, given in the same coordinate
+            space as the polygon vertices.
+        x_scale : float, optional
             This gives the scale of the second axis of the signal. In other words,
             how many units in coordinate space that corresponds to one step between
             columns.
         y_scale : float
-            This gives the scale of the second first of the signal. In other words,
+            This gives the scale of the second axis of the signal. In other words,
             how many units in coordinate space that corresponds to one step between
             rows.
         inverted : bool, optional
