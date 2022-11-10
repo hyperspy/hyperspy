@@ -49,8 +49,8 @@ class Rectangle(MarkerBase):
 
     Example
     -------
-    >>> import scipy.misc
-    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> import skimage
+    >>> im = hs.signals.Signal2D(skimage.data.camera())
     >>> m = hs.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400,
     >>>                               color='red')
     >>> im.add_marker(m)
@@ -108,5 +108,3 @@ class Rectangle(MarkerBase):
         self.marker = self.ax.add_patch(patches.Rectangle(
             (self.get_data_position('x1'), self.get_data_position('y1')),
             width, height, **self.marker_properties))
-
-

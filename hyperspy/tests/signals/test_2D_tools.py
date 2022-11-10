@@ -20,7 +20,12 @@ from unittest import mock
 import numpy as np
 import numpy.testing as npt
 import pytest
-from scipy.misc import ascent, face
+try:
+    # scipy >=1.10
+    from scipy.dataset import ascent, face
+except ImportError:
+    # scipy <1.10
+    from scipy.misc import ascent, face
 from scipy.ndimage import fourier_shift
 
 import hyperspy.api as hs

@@ -21,6 +21,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 import scipy.ndimage
+try:
+    # scipy >=1.10
+    from scipy.datasets import ascent, face
+except ImportError:
+    # scipy <1.10
+    from scipy.misc import ascent, face
 import traits.api as t
 
 import hyperspy.api as hs
@@ -37,7 +43,7 @@ def _generate_image_stack_signal():
     image = hs.signals.Signal2D(np.random.random((2, 3, 512, 512)))
     for i in range(2):
         for j in range(3):
-            image.data[i, j, :] = scipy.misc.ascent() * (i + 0.5 + j)
+            image.data[i, j, :] = ascent() * (i + 0.5 + j)
     axes = image.axes_manager
     axes[2].name = "x"
     axes[3].name = "y"
@@ -140,7 +146,7 @@ def test_plot_FFT(fft_shift):
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_multiple_images_list(vmin, vmax):
     # load red channel of raccoon as an image
-    image0 = hs.signals.Signal2D(scipy.misc.face()[:, :, 0])
+    image0 = hs.signals.Signal2D(face()[:, :, 0])
     image0.metadata.General.title = 'Rocky Raccoon - R'
     axes0 = image0.axes_manager
     axes0[0].name = "x"
@@ -152,7 +158,7 @@ def test_plot_multiple_images_list(vmin, vmax):
     image1 = _generate_image_stack_signal()
 
     # load green channel of raccoon as an image
-    image2 = hs.signals.Signal2D(scipy.misc.face()[:, :, 1])
+    image2 = hs.signals.Signal2D(face()[:, :, 1])
     image2.metadata.General.title = 'Rocky Raccoon - G'
     axes2 = image2.axes_manager
     axes2[0].name = "x"
@@ -161,7 +167,7 @@ def test_plot_multiple_images_list(vmin, vmax):
     axes2[1].units = "mm"
 
     # load rgb imimagesage
-    rgb = hs.signals.Signal1D(scipy.misc.face())
+    rgb = hs.signals.Signal1D(face())
     rgb.change_dtype("rgb8")
     rgb.metadata.General.title = 'RGB'
     axesRGB = rgb.axes_manager
@@ -178,7 +184,7 @@ def test_plot_multiple_images_list(vmin, vmax):
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_rgb_image():
     # load rgb imimagesage
-    rgb = hs.signals.Signal1D(scipy.misc.face())
+    rgb = hs.signals.Signal1D(face())
     rgb.change_dtype("rgb8")
     rgb.metadata.General.title = 'RGB'
     axesRGB = rgb.axes_manager
@@ -192,7 +198,7 @@ def test_plot_rgb_image():
 class _TestIteratedSignal:
 
     def __init__(self):
-        s = hs.signals.Signal2D([scipy.misc.ascent()] * 6)
+        s = hs.signals.Signal2D([ascent()] * 6)
         angles = hs.signals.BaseSignal(range(00, 60, 10))
         s.map(scipy.ndimage.rotate, angle=angles.T, reshape=False)
         # prevent values outside of integer range
@@ -229,8 +235,8 @@ class _TestIteratedSignal:
         return axes_manager
 
 
-class TestPlotNonLinearAxis:   
-    
+class TestPlotNonLinearAxis:
+
     def setup_method(self):
         dict0 = {'axis': np.arange(10)**0.5, 'name':'Non uniform 0', 'units':'A',
                  'navigate':True}
@@ -388,7 +394,7 @@ def test_plot_images_cmap_multi_w_rgb():
     test_plot2.signal *= 2  # change scale of second signal
     test_plot2.signal.metadata.General.title = 'Ascent-2'
 
-    rgb_sig = hs.signals.Signal1D(scipy.misc.face())
+    rgb_sig = hs.signals.Signal1D(face())
     rgb_sig.change_dtype('rgb8')
     rgb_sig.metadata.General.title = 'Racoon!'
 
@@ -661,7 +667,7 @@ def test_plot_images_overlay_figsize():
     hs.plot.plot_images([s, s], overlay=True, scalebar='all', axes_decor='off')
     f = plt.gcf()
     np.testing.assert_allclose((f.get_figwidth(), f.get_figheight()), (6.4, 3.2))
-    
+
     # aspect_ratio is 0.5
     s = hs.signals.Signal2D(np.random.random((20, 10)))
     hs.plot.plot_images([s, s], overlay=True, scalebar='all', axes_decor='off')
@@ -672,7 +678,7 @@ def test_plot_images_overlay_figsize():
 def test_plot_images_overlay_vmin_warning(caplog):
     s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     with caplog.at_level(logging.WARNING):
-        hs.plot.plot_images([s, s], overlay=True, vmin=0)  
+        hs.plot.plot_images([s, s], overlay=True, vmin=0)
 
     assert "`vmin` is ignored when overlaying images." in caplog.text
 

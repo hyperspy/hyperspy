@@ -46,8 +46,8 @@ class Ellipse(MarkerBase):
 
     Example
     -------
-    >>> import scipy.misc
-    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> import skimage
+    >>> im = hs.signals.Signal2D(skimage.data.camera())
     >>> m = hs.plot.markers.ellipse(x=150, y=100, width=400, height=400,
     >>>                             edgecolor='red', facecolor='white', fill=True)
     >>> im.add_marker(m)
@@ -105,4 +105,3 @@ class Ellipse(MarkerBase):
         height = self.get_data_position('y2')
         self.marker = self.ax.add_patch(patches.Ellipse(
             [x1,y1], width, height, **self.marker_properties))
-

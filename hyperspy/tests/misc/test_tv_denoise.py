@@ -16,10 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from packaging.version import Version
+
 import numpy as np
 import pytest
+import skimage
+
 from hyperspy.misc.tv_denoise import tv_denoise
-from scipy.misc import ascent
 
 
 def test_tv_denoise_error():
@@ -27,17 +30,19 @@ def test_tv_denoise_error():
         _ = tv_denoise(np.array([1, 2, 3]))
 
 
+@pytest.mark.skipif(Version(skimage.__version__) < Version("0.18"),
+                   reason="This test requires scikit-image >= 0.18")
 def test_2d_tv_denoise():
     rng = np.random.RandomState(123)
-    data = ascent().astype(float)
+    data = skimage.data.camera().astype(float)
     data_noisy = data + data.std() * rng.randn(*data.shape)
     data_clean = tv_denoise(data, weight=60)
 
     norm_noisy = np.linalg.norm(data - data_noisy) / np.linalg.norm(data)
     norm_clean = np.linalg.norm(data - data_clean) / np.linalg.norm(data)
 
-    np.testing.assert_allclose(norm_noisy, 0.48604971)
-    np.testing.assert_allclose(norm_clean, 0.10888393)
+    np.testing.assert_allclose(norm_noisy, 0.49466990)
+    np.testing.assert_allclose(norm_clean, 0.06453270)
 
 
 def test_3d_tv_denoise():

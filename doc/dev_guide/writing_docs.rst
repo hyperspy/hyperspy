@@ -15,7 +15,7 @@ about how it should be used, such as which arguments can be passed to it and
 what the syntax should be. The docstrings need to follow the `numpy
 specification <https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard>`_, 
 as shown in `this example
-<https://github.com/numpy/numpy/blob/main/doc/example.py>`_.
+<https://numpydoc.readthedocs.io/en/latest/example.html>`_.
 
 As a general rule, any code that is part of the public API (i.e. any function
 or class that an end-user might access) should have a clear and comprehensive

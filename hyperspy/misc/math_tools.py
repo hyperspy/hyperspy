@@ -198,7 +198,18 @@ def check_random_state(seed, lazy=False):
     # All rights reserved.
 
     if seed is None or seed is np.random:
-        return da.random._state if lazy else np.random.mtrand._rand
+        if lazy:
+            try:
+                # For dask<2022.10.0
+                return da.random._state
+            except AttributeError:
+                backend = da.backends.array_creation_dispatch.backend
+                if backend not in da.random._cached_random_states.keys():
+                    # Need to initialise the backend
+                    da.random.seed()
+                return da.random._cached_random_states[backend]
+        else:
+            return np.random.mtrand._rand
 
     if isinstance(seed, numbers.Integral):
         return da.random.RandomState(seed) if lazy else np.random.RandomState(seed)
