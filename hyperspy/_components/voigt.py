@@ -149,7 +149,7 @@ class Voigt(Expression):
         Examples
         --------
 
-        >>> g = hs.model.components1D.Voigt(legacy=False)
+        >>> g = hs.model.components1D.Voigt()
         >>> x = np.arange(-10, 10, 0.01)
         >>> data = np.zeros((32, 32, 2000))
         >>> data[:] = g.function(x).reshape((1, 1, 2000))
