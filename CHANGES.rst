@@ -22,6 +22,13 @@ Axes
 - :py:meth:`AxesManager.set_signal_dimension` is removed, use :py:meth:`~.signal.BaseSignal.as_signal1D`,
   :py:meth:`~.signal.BaseSignal.as_signal2D` or :py:meth:`~.signal.BaseSignal.transpose` of the signal instance instead.
 
+Components
+----------
+
+- The :py:class:`hyperspy._components.polynomial_deprecated.Polynomial` component is removed.
+- The `legacy` option for :py:class:`hyperspy._components.arctan.Arctan` is removed, :py:class:`hyperspy._components.eels_arctan.EELSArctan` is now an independent component.
+- The `legacy` option for :py:class:`hyperspy._components.voigt.Voigt` is removed, :py:class:`hyperspy._components.pes_voigt.PESVoigt` is now an independent component.
+
 Data Visualization
 ------------------
 
