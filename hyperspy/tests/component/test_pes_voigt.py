@@ -22,8 +22,7 @@ import itertools
 import numpy as np
 import pytest
 
-#Legacy test, to be removed in v2.0
-from hyperspy.components1d import PESVoigt, Voigt
+from hyperspy.components1d import PESVoigt
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.signals import Signal1D
 
@@ -74,17 +73,3 @@ def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
     np.testing.assert_allclose(g1.area.value, g2.area.value * factor, 0.04)
     np.testing.assert_allclose(g2.centre.value, 1, 1e-3)
 
-
-def test_legacy():
-    """Legacy test, to be removed in v2.0."""
-    with pytest.warns(
-        VisibleDeprecationWarning,
-        match="API of the `Voigt` component will change",
-    ):
-        g = Voigt(legacy=True)
-        g.area.value = 5
-        g.FWHM.value = 0.5
-        g.gamma.value = 0.2
-        g.centre.value = 1
-        np.testing.assert_allclose(g.function(0), 0.35380168)
-        np.testing.assert_allclose(g.function(1), 5.06863535)

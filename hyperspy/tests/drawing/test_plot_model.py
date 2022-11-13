@@ -151,7 +151,7 @@ def test_plot_component():
     m.append(hs.model.components1D.Gaussian(A=250, sigma=5, centre=20))
     m.plot(plot_components=True)
     ax = m.signal._plot.signal_plot.ax
-    p = hs.model.components1D.Polynomial(order=1, legacy=False, a0=-10, a1=0)
+    p = hs.model.components1D.Polynomial(order=1, a0=-10, a1=0)
     m.append(p)
     assert ax.get_ylim() == (-10.1, 49.0)
     m.remove(0)

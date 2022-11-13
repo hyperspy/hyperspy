@@ -142,7 +142,7 @@ class TestCupy:
     def test_fit(self):
         s = self.s
         m = s.create_model()
-        m.append(hs.model.components1D.Polynomial(legacy=False, order=1))
+        m.append(hs.model.components1D.Polynomial(order=1))
         m.fit()
 
 
