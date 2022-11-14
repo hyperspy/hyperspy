@@ -164,7 +164,7 @@ class PESVoigt(Component):
         k = self.shirley_background.value
         f = voigt(x,
                   FWHM=FWHM, gamma=gamma, center=centre - ab, scale=area)
-        if self.spin_orbit_splitting is True:
+        if self.spin_orbit_splitting:
             ratio = self.spin_orbit_branching_ratio
             shift = self.spin_orbit_splitting_energy
             f2 = voigt(x, FWHM=FWHM, gamma=gamma,

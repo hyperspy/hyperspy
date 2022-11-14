@@ -250,14 +250,17 @@ class TestPolynomial:
 
     @pytest.mark.parametrize(("order"), (2, 12))
     @pytest.mark.parametrize(("uniform"), (True, False))
+    @pytest.mark.parametrize(("mapnone"), (True, False))
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-    def test_estimate_parameters(self,  only_current, binned, uniform, order):
+    def test_estimate_parameters(self, only_current, binned, uniform, order, mapnone):
         self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
         s.axes_manager[-1].is_binned = binned
         if not uniform:
             s.axes_manager[-1].convert_to_non_uniform_axis()
         p = hs.model.components1D.Polynomial(order=order)
+        if mapnone:
+            p.parameters[0].map = None
         p.estimate_parameters(s, None, None, only_current=only_current)
         assert p._axes_manager[-1].is_binned == binned
         assert p._axes_manager[-1].is_uniform == uniform
@@ -299,6 +302,9 @@ class TestPolynomial:
         p.estimate_parameters(s, None, None, only_current=False)
         axis = s.axes_manager.signal_axes[0]
         np.testing.assert_allclose(p.function_nd(axis.axis), s.data)
+
+    def test_function_legacy(self):
+        p = hs.model.components1D.Polynomial(order=2,legacy=True)
 
 
 class TestGaussian:

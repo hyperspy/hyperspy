@@ -39,10 +39,20 @@ def test_function():
     np.testing.assert_allclose(g.function(1), 2.97832092)
 
 
+def test_function_legacy():
+    g = Voigt(legacy=True)
+    g.area.value = 5
+    g.sigma.value = 0.5
+    g.gamma.value = 0.2
+    g.centre.value = 1
+    np.testing.assert_allclose(g.function(0), 0.78853024)
+    np.testing.assert_allclose(g.function(1), 2.97832092)
+
 @pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("uniform"), (True, False))
+@pytest.mark.parametrize(("mapnone"), (True, False))
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
+def test_estimate_parameters_binned(only_current, binned, lazy, uniform, mapnone):
     s = Signal1D(np.empty((200,)))
     s.axes_manager.signal_axes[0].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
@@ -61,6 +71,8 @@ def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
         factor = np.gradient(axis.axis)
     else:
         factor = 1
+    if mapnone:
+        g2.area.map = None
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2._axes_manager[-1].is_binned == binned

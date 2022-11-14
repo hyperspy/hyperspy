@@ -91,7 +91,7 @@ class Voigt(Expression):
         # Not to break scripts once we remove the legacy Voigt
         if "legacy" in kwargs:
             del kwargs["legacy"]
-        if Version(sympy.__version__) < Version("1.3"):
+        if Version(sympy.__version__) < Version("1.3"): # pragma: no cover
             raise ImportError("The `Voigt` component requires "
                               "SymPy >= 1.3")
         # We use `gamma_` internally to workaround the use of the `gamma`
