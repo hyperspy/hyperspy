@@ -1589,15 +1589,15 @@ class PolygonROI(BaseROI):
         natax = signal.axes_manager._get_axes_in_natural_order()
         # Slice original data with a circumscribed rectangle
         left = min(x for x, y in self.vertices)
-        right = max(x for x, y in self.vertices) + axes[1].scale
+        right = max(x for x, y in self.vertices) + axes[0].scale
         top = min(y for x, y in self.vertices) 
-        bottom = max(y for x, y in self.vertices) + axes[0].scale 
+        bottom = max(y for x, y in self.vertices) + axes[1].scale 
 
         ranges = [[left, right], [top, bottom]]
         slices = self._make_slices(natax, axes, ranges)
         ir = [slices[natax.index(axes[0])], slices[natax.index(axes[1])]]
 
-        mask = self._rasterized_mask(x_scale=axes[1].scale, y_scale=axes[0].scale)
+        mask = self._rasterized_mask(x_scale=axes[0].scale, y_scale=axes[1].scale)
 
         mask = mask[ir[1], ir[0]]
         mask = np.logical_not(mask)  # Masked out areas should be True
