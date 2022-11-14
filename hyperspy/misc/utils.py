@@ -34,7 +34,7 @@ import dask.array as da
 import numpy as np
 
 from hyperspy.misc.signal_tools import broadcast_signals
-from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
+from hyperspy.exceptions import LazyCupyConversion
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
 
@@ -1454,10 +1454,6 @@ def multiply(iterable):
 
 def iterable_not_string(thing):
     return isinstance(thing, Iterable) and not isinstance(thing, str)
-
-
-def deprecation_warning(msg):
-    warnings.warn(msg, VisibleDeprecationWarning)
 
 
 def add_scalar_axis(signal, lazy=None):
