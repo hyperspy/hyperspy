@@ -122,8 +122,10 @@ class TestPlotSpectra():
         if fig:
             fig = plt.figure()
         if ax:
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
+            if fig:
+                ax = fig.add_subplot(111)
+            else:
+                ax = plt.figure().add_subplot(111)
 
         ax = hs.plot.plot_spectra(self.s, style=style, legend='auto',
                                   fig=fig, ax=ax)
