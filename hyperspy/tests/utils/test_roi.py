@@ -484,7 +484,7 @@ class TestROIs:
 
     def test_polygon_getitem(self):
         r = PolygonROI([(2, 5), (5, 6), (5, 3)])
-        assert tuple(r) == ((2, 5), (5, 6), (5, 3))
+        assert tuple(r) == ([(2, 5), (5, 6), (5, 3)], )
 
     def test_2d_line_getitem(self):
         r = Line2DROI(10, 10, 150, 50, 5)

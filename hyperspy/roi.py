@@ -50,6 +50,7 @@ from functools import partial
 
 import numpy as np
 import traits.api as t
+import collections.abc
 
 import hyperspy.api as hs
 from hyperspy.axes import UniformDataAxis
@@ -1512,47 +1513,64 @@ class Line2DROI(BaseInteractiveROI):
 
 
 class PolygonROI(BaseROI):
-    """Selects a polygonal region in a 2D space. The coordinates of the
-    polygon vertices are given as a list of tuples (x, y) in the `vertices`
-    attribute. An edge runs from the final to the first point in the list.
-    If the polygon self overlaps, the overlapping areas may be considered
+    """Selects polygonal regions in a 2D space. The coordinates of the
+    polygon vertices are given in the `polygons` attribute, which is a list
+    of lists, where each list defines an individual polygon with each entry
+    being a tuple (x, y) of a vertex's coordinates.
+    An edge runs from the final to the first point in each polygon list.
+    If a polygon self overlaps, the overlapping areas may be considered
     outside of the polygon and masked away.
     """
 
-    vertices = []
+    polygons = []
     _ndim = 2
 
-    def __init__(self, points=None):
+    def __init__(self, polygons=None):
+
+        """
+        Parameters
+        ----------
+        polygons : list of lists of tuples
+            List of lists, where each inner list contains (x, y) values
+            of the vertices of a polygon. If a single polygon is desired,
+            a list of the (x, y) values can be given directly."""
         super().__init__()
-        if points:
-            self.set_vertices(points)
+        if polygons:
+            self.set_vertices(polygons)
 
     @property
     def parameters(self):
-        return {"vertices": self.vertices}
+        return {"polygons": self.polygons}
 
     def __getitem__(self, *args, **kwargs):
-        _tuple = tuple(self.vertices)
+        _tuple = tuple(self.polygons)
         return _tuple.__getitem__(*args, **kwargs)
 
     def __repr__(self):
         para = []
         for name, value in self.parameters.items():
             parastr = f"{name}=["
-            parastr += ", ".join(f"({x:G}, {y:G})" for x, y in value)
-            parastr += "]"
+            for polygon in value:
+                parastr += "("
+                parastr += ", ".join(f"({x:G}, {y:G})" for x, y in polygon)
+                parastr += "), "
+            parastr = parastr[:-2] + "]"
             para.append(parastr)
         return f"{self.__class__.__name__}({', '.join(para)})"
 
     def is_valid(self):
         """
-        The polygon is defined as valid if more than two vertices are fully defined.
+        The polygons are defined as valid if there is at least one and all
+        of them have at least three fully defined vertices.
         """
-        return len(self.vertices) > 2 and all(
-            (None not in vertex and len(vertex) == 2) for vertex in self.vertices
-            )
+        return len(self.polygons) > 0 and \
+            all( len(vertices) > 2 and all(
+                    (None not in vertex and len(vertex) == 2) for vertex in vertices
+                    )
+                for vertices in self.polygons
+                )
 
-    def set_vertices(self, vertices):
+    def set_vertices(self, polygons):
         """Sets the vertices of the polygon to the `vertices` argument,
         where each vertex is to be given as (x, y). The list is set to
         loop around, such that an edge runs from the first to the final
@@ -1560,19 +1578,23 @@ class PolygonROI(BaseROI):
 
         Parameters
         ----------
-        vertices : list of tuples
-            List of (x, y) values of the vertices of the polygon.
+        polygons : list of lists of tuples
+            List of lists, where each inner list contains (x, y) values
+            of the vertices of a polygon. If a single polygon is desired,
+            a list of the (x, y) values can be given directly.
         """
-        old_vertices = self.vertices
-        self.vertices = vertices
+        if len(polygons) and len(polygons[0]) and not isinstance(polygons[0][0], collections.abc.Container):
+            polygons = [polygons]
+        old_vertices = self.polygons
+        self.polygons = polygons
         if not self.is_valid():
-            self.vertices = old_vertices
+            self.polygons = old_vertices
             raise ValueError(
-                f"`points` is not a list of fully defined two-dimensional points with at least \
-                    three entries:\n{vertices}"
+                f"`polygons` is not a list of lists of fully defined two-dimensional points with\
+                    at least three entries:\n{polygons}"
             )
 
-    def __call__(self, signal, out=None, axes=None):
+    def __call__(self, signal, inverted=False, out=None, axes=None):
         if not self.is_valid():
             raise ValueError(not_set_error_msg)
 
@@ -1587,20 +1609,28 @@ class PolygonROI(BaseROI):
                         "This ROI cannot operate on a non-uniform axis."
                 )
         natax = signal.axes_manager._get_axes_in_natural_order()
-        # Slice original data with a circumscribed rectangle
-        left = min(x for x, y in self.vertices)
-        right = max(x for x, y in self.vertices) + axes[0].scale
-        top = min(y for x, y in self.vertices) 
-        bottom = max(y for x, y in self.vertices) + axes[1].scale 
+        if not inverted:
+            # Slice original data with a circumscribed rectangle
+            left = min(x for polygon in self.polygons for x, y in polygon)
+            right = max(x for polygon in self.polygons for x, y in polygon) + axes[0].scale
+            top = min(y for polygon in self.polygons for x, y in polygon) 
+            bottom = max(y for polygon in self.polygons for x, y in polygon) + axes[1].scale 
+        else:
+            # Do not slice if selection is to be inverted
+            left, right = 0, axes[0].size*axes[0].scale
+            top, bottom = 0, axes[1].size*axes[1].scale
+            
+
 
         ranges = [[left, right], [top, bottom]]
         slices = self._make_slices(natax, axes, ranges)
         ir = [slices[natax.index(axes[0])], slices[natax.index(axes[1])]]
 
-        mask = self._rasterized_mask(x_scale=axes[0].scale, y_scale=axes[1].scale)
+        mask = self.boolean_mask(scalex=axes[0].scale, scaley=axes[1].scale, xy_max=(right, bottom))
 
         mask = mask[ir[1], ir[0]]
-        mask = np.logical_not(mask)  # Masked out areas should be True
+        if not inverted:
+            mask = np.logical_not(mask)  # Masked out areas should be True
 
         tiles = []
         shape = []
@@ -1651,9 +1681,9 @@ class PolygonROI(BaseROI):
             out.events.data_changed.trigger(out)
 
     def _rasterized_mask(
-        self, xy_max=None, xy_min=(0, 0), x_scale=1, y_scale=1, inverted=False
+        self, polygon_vertices, xy_max=None, xy_min=(0, 0), scalex=1, scaley=1, inverted=False
     ):
-        """Utility function to rasterize the polygon into a boolean numpy
+        """Utility function to rasterize a polygon into a boolean numpy
             array. The interior of the polygon is `True`, but may be inverted
             by the `inverted` parameter.
 
@@ -1686,26 +1716,26 @@ class PolygonROI(BaseROI):
         """
 
         if not xy_max:
-            x_max = max(x for x, y in self.vertices)
-            y_max = max(y for x, y in self.vertices)
+            x_max = max(x for x, y in polygon_vertices)
+            y_max = max(y for x, y in polygon_vertices)
             xy_max = (x_max, y_max)
 
-        min_index_x = round(xy_min[0] / x_scale)
-        min_index_y = round(xy_min[1] / y_scale)
-        max_index_x = round(xy_max[0] / x_scale)
-        max_index_y = round(xy_max[1] / y_scale)
+        min_index_x = round(xy_min[0] / scalex)
+        min_index_y = round(xy_min[1] / scaley)
+        max_index_x = round(xy_max[0] / scalex)
+        max_index_y = round(xy_max[1] / scaley)
         
         mask = np.zeros(
             (max_index_y - min_index_y + 1, max_index_x - min_index_x + 1), dtype=bool
         )
 
         for row in range(mask.shape[0]):
-            row_y = (min_index_y + row) * y_scale
+            row_y = (min_index_y + row) * scaley
 
             intersections = []
-            for vertexind in range(len(self.vertices)):
-                x1, y1 = self.vertices[vertexind]
-                x2, y2 = self.vertices[(vertexind + 1) % len(self.vertices)]
+            for vertexind in range(len(polygon_vertices)):
+                x1, y1 = polygon_vertices[vertexind]
+                x2, y2 = polygon_vertices[(vertexind + 1) % len(polygon_vertices)]
 
                 # Only find intersection if line segment passes through row
                 if (y1 > row_y) != (y2 > row_y):
@@ -1714,18 +1744,18 @@ class PolygonROI(BaseROI):
                 elif y1 == row_y:
                     if y1 == y2:
                         # Ensures edges parallel with row_y are included
-                        raster_start = round(x1 / x_scale) - min_index_x
-                        raster_end = round(x2 / x_scale) - min_index_x
+                        raster_start = round(x1 / scalex) - min_index_x
+                        raster_end = round(x2 / scalex) - min_index_x
                         mask[row, raster_start : raster_end + 1] = True
                     else:
                         # Ensures vertices landing exactly on row_y are included
-                        mask[row, round(x1 / x_scale) - min_index_x] = True
+                        mask[row, round(x1 / scalex) - min_index_x] = True
 
             intersections.sort()
 
             for i in range(1, len(intersections), 2):
-                raster_start = round(intersections[i - 1] / x_scale) - min_index_x
-                raster_end = round(intersections[i] / x_scale) - min_index_x
+                raster_start = round(intersections[i - 1] / scalex) - min_index_x
+                raster_end = round(intersections[i] / scalex) - min_index_x
                 mask[row, raster_start : raster_end + 1] = True
 
         if inverted:
@@ -1734,7 +1764,7 @@ class PolygonROI(BaseROI):
         return mask
 
     def boolean_mask(
-        self, xy_max=None, xy_min=(0, 0), x_scale=1, y_scale=1, inverted=False
+        self, xy_max=None, xy_min=(0, 0), scalex=1, scaley=1, inverted=False
     ):
         """Function to rasterize the polygon into a boolean numpy array. The
             interior of the polygon is by default `True`, but may be inverted
@@ -1767,13 +1797,35 @@ class PolygonROI(BaseROI):
             boolean numpy array of the rasterized polygon. The entire or parts of
             the polygon ROI can be within this shape.
         """
-        return self._rasterized_mask(
+        if not self.polygons:
+            return None
+
+        if xy_max == None and len(self.polygons) > 1:
+            x_max = max(x for polygon in self.polygons for x, y in polygon) + scalex
+            y_max = max(y for polygon in self.polygons for x, y in polygon) + scaley
+            xy_max = (x_max, y_max)
+
+
+        complete_mask = self._rasterized_mask(
+            polygon_vertices=self.polygons[0],
             xy_max=xy_max,
             xy_min=xy_min,
-            x_scale=x_scale,
-            y_scale=y_scale,
+            scalex=scalex,
+            scaley=scaley,
             inverted=inverted,
             )
+        for i in range(1,len(self.polygons)):
+            polygon_mask = self._rasterized_mask(
+                polygon_vertices=self.polygons[i],
+                xy_max=xy_max,
+                xy_min=xy_min,
+                scalex=scalex,
+                scaley=scaley,
+                inverted=inverted,
+                )
+            complete_mask = np.logical_or(complete_mask, polygon_mask)
+
+        return complete_mask
 
 
 def _get_central_half_limits_of_axis(ax):
