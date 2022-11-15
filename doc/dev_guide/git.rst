@@ -102,3 +102,34 @@ For example, to rebase the ``bug_fix_branch`` branch from ``RELEASE_next_minor``
 
    $ git rebase --onto RELEASE_next_patch RELEASE_next_minor bug_fix_branch
 
+
+Cleaning the commit history
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For review, and for revisiting changes at a later point, it is advisable to clean the git history when a pull request is split up in too many commits. Commits that only fix formatting issues or failing tests usually can be *squashed* (merged) into the previous commits. When using a GUI for interaction with *git*, check out its features for joining and reordering commits.
+
+When using git in the command line, use ``git rebase`` with the *interactive* option. For example to rearrange the last five commits:
+
+.. code:: bash
+
+  $ git rebase -i HEAD~5
+
+In a text editor, you can then edit the commit history. If you have commits ``a...e`` and want to merge ``b`` and ``e`` into ``a`` and ``d``, respectively, while moving ``c`` to the end of the hisotry, your file would look the following:
+
+.. code::  text
+
+  pick a ...
+  squash b ...
+  pick d ...
+  squash e ...
+  pick c ...
+
+Afterwards you get a chance to edit the commit messages.
+
+Finally, to push the changes use a ``+`` in front of the branch name, to override commits you have already pushed to github previously:
+
+.. code:: bash
+
+  git push origin +lumberjack-branch
+
+See for example `Git good - The magic of keeping a clean git history <https://mainmatter.com/blog/2021/05/26/keeping-a-clean-git-history/>`_ for a more detailed blog post on this subject.
