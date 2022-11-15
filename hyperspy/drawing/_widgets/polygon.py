@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-
-import numpy as np
-import matplotlib.pyplot as plt
 from matplotlib.widgets import PolygonSelector
 from matplotlib.path import Path
 
@@ -32,19 +29,16 @@ class PolygonWidget(MPLWidgetBase):
     """
     """
 
-    def __init__(self, axes_manager, mpl_ax = None,  continuous = False, **kwargs):
-        super(PolygonWidget, self).__init__(axes_manager, **kwargs)
+    def __init__(self, axes_manager, mpl_ax = None,  multiple = False, **kwargs):
+        super().__init__(axes_manager, **kwargs)
+
+        self._widget = None
 
         self._vertices_list = []
+        self._vertices_plots = []
 
-        self._continuous = continuous
-
+        self._multiple = multiple
         self._finished = True
-
-        self._shift_pressed = False
-        self._otherfocus = False
-        self._lines = []
-        self._linesplot = []
 
     def set_mpl_ax(self, ax):
         if ax is self.ax or ax is None:
@@ -55,72 +49,75 @@ class PolygonWidget(MPLWidgetBase):
         self.ax = ax
 
         
-        if self._continuous:
+        if self._multiple:
             self.ax.figure.canvas.mpl_connect("button_press_event", self._pressevent)
             self.ax.figure.canvas.mpl_connect("button_release_event", self._releaseevent)
             self.ax.figure.canvas.mpl_connect("button_release_event", self._releaseevent)
+
         if self.is_on is True:
-            self.widgets = [PolygonSelector(ax, onselect=lambda v: self._onselect(v,0), useblit=True)]
+            handle_props = dict(color="blue")
+            props = dict(color="blue")
+
+            self._widget = PolygonSelector(ax, onselect=self._onselect, useblit=True,
+                handle_props=handle_props, props=props)
             self._finished = False
 
 
-    def _onselect(self, verts, currid):
-        # self._vertices_list.append(verts.copy())
-        # print(verts)
+    def _onselect(self, verts):
         bounding_box = (min(verts[0]), max(verts[0]), min(verts[1]), max(verts[1]))
         self.position = ( ( bounding_box[0] + bounding_box[1] ) / 2,
             ( bounding_box[2] + bounding_box[3] ) / 2 )
 
-        prevlen = len(self.widgets)
-        if self._continuous and currid == prevlen - 1:
-            self._finished = True
+        self._finished = True
 
     def _pressevent(self, event):
 
-        # if  hasattr(event, "key") and event.key and "shift" in event.key:
-        #     self._shift_pressed = True
-
-
-        if not self._continuous:
+        if hasattr(event, "key") and event.key and "shift" in event.key:
             return
         
         if not event.inaxes.axes or event.inaxes.axes!=self.ax.axes: 
             return
 
+        x,y = event.xdata, event.ydata
+        if self._finished or len(self._widget.verts) == 0:
+            # If clicked within another polygon, set that polygon to active
+            for i, vertices in enumerate(self._vertices_list):
+                if Path(vertices).contains_point((x,y)):
+                    if self._finished:
+                        self._vertices_list.append(self._widget.verts)
+                        closed_polygon = zip(*(self._widget.verts + [self._widget.verts[0]]))
+                        self._vertices_plots.append(self.ax.plot(*closed_polygon, animated = True))
+                    
+                    closed_polygon = (list(c) for c in zip(*(vertices + [vertices[0]])))
+                    self._widget._xs, self._widget._ys = closed_polygon
+                    self._widget.set_visible(True)
+                    self._widget._selection_completed = True
 
-        # x,y = event.xdata, event.ydata
-        # if self._shift_pressed:
-        #     tocheck = self.widgets
-        #     if not self._finished:
-        #         tocheck = self.widgets[:-1]
+                    del self._vertices_list[i]
+                    self._vertices_plots[i][0].remove()
+                    del self._vertices_plots[i]
 
-            
-        #     for widg in tocheck:
-        #         if Path(widg.verts).contains_point((x,y)):
-        #             self.widgets[-1].active = False
-        #             widg.active = True
-        #             self._otherfocus = True
-        #             return
-        #     return
-
-            
-
-        # for widg in self.widgets:
-        #     grab_range_sq = widg.vertex_select_radius**2
-        #     if any((vx-x)**2 + (vy-y)**2 < grab_range_sq for vx,vy in widg.verts):
-        #         return
-
-        if self._is_on and self._finished and self.widgets[0]._selection_completed:
-
-            self._lines.append(self.widgets[0].verts)
-            
-            event = self.widgets[0]._clean_event(event)
-            self.widgets[0]._xs, self.widgets[0]._ys = [event.xdata], [event.ydata]
-            self.widgets[0]._selection_completed = False
-            self.widgets[0].set_visible(True)
+                    self.ax.figure.canvas.draw_idle()
+                    self._widget._draw_polygon()
+                    return
 
             
-            self._linesplot.append(self.ax.plot(*zip(*(self._lines[-1] + [self._lines[-1][0]])), animated = True))
+        # Do not make new polygon if within grab range of widget vertices
+        grab_range_sq = self._widget.vertex_select_radius**2
+        if any((vx-x)**2 + (vy-y)**2 < grab_range_sq for vx,vy in self._widget.verts):
+            return
+
+        if self._is_on and self._finished:
+
+            self._vertices_list.append(self._widget.verts)
+            
+            event = self._widget._clean_event(event)
+            self._widget._xs, self._widget._ys = [event.xdata], [event.ydata]
+            self._widget._selection_completed = False
+            self._widget.set_visible(True)
+
+            
+            self._vertices_plots.append(self.ax.plot(*zip(*(self._vertices_list[-1] + [self._vertices_list[-1][0]])), animated = True))
 
             self._finished = False
             self.ax.figure.canvas.draw_idle() # This function has to be here, 
@@ -154,25 +151,15 @@ class PolygonWidget(MPLWidgetBase):
         return self.position
 
     def get_roi(self):
-        if self.widgets[-1]._selection_completed:
-            return PolygonROI(self.widgets[-1].verts)
-        elif self._lines:
-            return PolygonROI(self.widgets[-1].verts)
-        return PolygonROI()
+        if self._finished:
+            return PolygonROI(self._vertices_list + [self._widget.verts])
+        else:
+            return PolygonROI(self._vertices_list)
 
     def get_mask(self, scale = None):
         if scale is None:
             scale = self.axes[0].scale, self.axes[1].scale
             print(scale)
-
-        mask_base_vertices = []
-        if self.widgets[-1]._selection_completed:
-            mask_base_vertices = self.widgets[0].verts
         
-        mask = PolygonROI(mask_base_vertices).boolean_mask(x_scale=scale[0], y_scale=scale[1], xy_max=(self.axes[0].scale*self.axes[0].size, 
-            self.axes[1].scale*self.axes[1].size))
-
-        for verts in self._lines:
-            mask = np.logical_or(mask, PolygonROI(verts).boolean_mask(x_scale=scale[0], y_scale=scale[1], xy_max=(self.axes[0].scale*self.axes[0].size, 
-                self.axes[1].scale*self.axes[1].size)))
-        return mask
+        return self.get_roi().boolean_mask(scalex=scale[0], scaley=scale[1], xy_max=(self.axes[0].scale*self.axes[0].size, 
+                self.axes[1].scale*self.axes[1].size))
