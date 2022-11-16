@@ -1481,7 +1481,7 @@ def plot_spectra(
         _make_cascade_subplot(spectra, ax, color, linestyle, padding=padding,
                               drawstyle=drawstyle)
         if legend is not None:
-            plt.legend(legend, loc=legend_loc)
+            ax.legend(legend, loc=legend_loc)
             _reverse_legend(ax, legend_loc)
             if legend_picking is True:
                 animate_legend(fig=fig, ax=ax)
