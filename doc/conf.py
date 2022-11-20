@@ -158,25 +158,17 @@ html_static_path = ["_static"]
 
 html_theme_options = {
     "show_toc_level": 2,
+    "github_url": "https://github.com/hyperspy/hyperspy",
     "icon_links": [
         {
-            # Label for this link
-            "name": "GitHub",
-            # URL where the link will redirect
-            "url": "https://github.com/hyperspy/hyperspy",  # required
-            # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
-            "icon": "fab fa-github-square",
-            # The type of image to be used (see below for details)
-            "type": "fontawesome",
+            "name": "Gitter",
+            "url": "https://gitter.im/hyperspy/hyperspy",
+            "icon": "fab fa-gitter",
         },
         {
-            # Label for this link
             "name": "HyperSpy",
-            # URL where the link will redirect
-            "url": "https://hyperspy.org",  # required
-            # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
+            "url": "https://hyperspy.org",
             "icon": "_static/hyperspy.ico",
-            # The type of image to be used (see below for details)
             "type": "local",
         },
     ],
@@ -189,7 +181,7 @@ html_theme_options = {
             "name": "Tutorial",
         },
     ],
-    "header_links_before_dropdown": 7,
+    "header_links_before_dropdown": 8,
 }
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.

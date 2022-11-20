@@ -2,7 +2,7 @@
 Creates a 3D image and plots it
 ===============================
 
-This example creates a image stack and plots it
+This example creates an image stack and plots it
 """
 
 import numpy as np

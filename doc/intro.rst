@@ -35,7 +35,7 @@ HyperSpy's character
 HyperSpy has been written by a subset of the people who use it, a particularity
 that sets its character:
 
-* To us this program is a research tool, much like a screwdriver or a Green's
+* To us, this program is a research tool, much like a screwdriver or a Green's
   function. We believe that the better our tools are, the better our research
   will be. We also think that it is beneficial for the advancement of knowledge
   to share our research tools and to forge them in a collaborative way. This is
