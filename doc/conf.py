@@ -182,6 +182,13 @@ html_theme_options = {
         },
     ],
     "header_links_before_dropdown": 8,
+    "switcher": {
+        # Update when merged and released
+        "json_url": "https://hyperspy.org/hyperspy-doc/dev/_static/switcher.json",
+        "version_match": version,
+    },
+    "navbar_start": ["navbar-logo", "version-switcher"],
+    "check_switcher": False,
 }
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
