@@ -45,7 +45,7 @@ migration of the IO plugins to `RosettaSciIO
 
 - The arguments ``mmap_dir`` and ``load_to_memory`` of the :py:func:`~.io.load`
   function have been removed, use the ``lazy`` argument instead.
-- :ref:`Bruker composite file (BCF) <bcf-format>`: The ``'spectrum'`` option for the
+- :ref:`Bruker composite file (BCF) <bruker-format>`: The ``'spectrum'`` option for the
   ``select_type`` parameter was removed. Use ``'spectrum_image'`` instead.
 - :ref:`Electron Microscopy Dataset (EMD) NCEM <emd_ncem-format>`: Using the
   keyword ``dataset_name`` was removed, use ``dataset_path`` instead.
@@ -842,7 +842,7 @@ NEW
 * Support for three new file formats:
 
     * Reading FEI's Velox EMD file format based on the HDF5 open standard. See :external+rsciio:ref:`emd_fei-format`.
-    * Reading Bruker's SPX format. See :external+rsciio:ref:`spx-format`.
+    * Reading Bruker's SPX format. See :external+rsciio:ref:`bruker-format`.
     * Reading and writing the mrcz open format. See :external+rsciio:ref:`mrcz-format`.
 * New :mod:`~.datasets.artificial_data` module which contains functions for generating
   artificial data, for use in things like docstrings or for people to test
@@ -932,7 +932,7 @@ Enhancements
 ------------
 * Creating many markers is now much faster.
 * New "Stage" metadata node. See :ref:`metadata_structure` for details.
-* The Brucker file reader now supports the new version of the format. See :external+rsciio:ref:`bcf-format`.
+* The Brucker file reader now supports the new version of the format. See :external+rsciio:ref:`bruker-format`.
 * HyperSpy is now compatible with all matplotlib backends, including the nbagg which is
   particularly convenient for interactive data analysis in the
   `Jupyter Notebook <http://jupyter.org>`__ in combination with the new
@@ -1170,7 +1170,7 @@ EDS
 IO
 ^^
 * Support for reading certain files without :ref:`loading them to memory <load_to_memory-label>`.
-* :external+rsciio:ref:`Bruker's composite file (bcf) <bcf-format>` reading support.
+* :external+rsciio:ref:`Bruker's composite file (bcf) <bruker-format>` reading support.
 * :external+rsciio:ref:`Electron Microscopy Datasets (EMD) <emd-format>` read and write support.
 * :external+rsciio:ref:`SEMPER unf <unf-format>` read and write support.
 * :external+rsciio:ref:`DENS heat log <dens-format>` read support.
