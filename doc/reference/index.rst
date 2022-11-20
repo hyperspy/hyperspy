@@ -16,19 +16,13 @@ Reference
     :maxdepth: 2
 
     api
-    api.datasets
-    api.datasets.artificial_data
-    api.datasets.example_signals
+    api.datasets/index.rst
     api.eds
     api.material
-    api.model
-    api.model.components1D
-    api.model.components2D
-    api.plot
-    api.plot.markers
+    api.model/index.rst
+    api.plot/index.rst
     api.roi
-    api.samfire
-    api.samfire.fit_tests
-    api.samfire.global_strategies
-    api.samfire.local_strategies
-    api.signals
+    api.samfire/index.rst
+    api.signals/index.rst
+    base_classes/index.rst
+    axes

@@ -120,6 +120,19 @@ def create_axis(**kwargs):
 
 
 class UnitConversion:
+    """
+    Parent class containing unit conversion functionalities of
+    Uniform Axis.
+
+    Parameters
+    ----------
+    offset : float
+        The first value of the axis vector.
+    scale : float
+        The spacing between axis points.
+    size : int
+        The number of points in the axis.
+    """
 
     def __init__(self, units=None, scale=1.0, offset=0.0):
         if units is None:
@@ -141,12 +154,13 @@ class UnitConversion:
         return False
 
     def _convert_compact_units(self, factor=0.25, inplace=True):
-        """ Convert units to "human-readable" units, which means with a
-            convenient prefix.
+        """
+        Convert units to "human-readable" units, which means with a
+        convenient prefix.
 
-            Parameters
-            ----------
-            %s
+        Parameters
+        ----------
+        %s
         """
         if self._ignore_conversion(self.units):
             return
@@ -185,7 +199,8 @@ class UnitConversion:
             return scale, offset, units
 
     def convert_to_units(self, units=None, inplace=True, factor=0.25):
-        """ Convert the scale and the units of the current axis. If the unit
+        """
+        Convert the scale and the units of the current axis. If the unit
         of measure is not supported by the pint library, the scale and units
         are not modified.
 

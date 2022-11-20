@@ -37,6 +37,7 @@ extensions = [
     "sphinx.ext.githubpages",
     'sphinx.ext.graphviz',
     'sphinx.ext.imgmath',
+    'sphinx.ext.inheritance_diagram',
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
     'sphinx_gallery.gen_gallery',
@@ -156,6 +157,7 @@ html_favicon = '_static/hyperspy.ico'
 html_static_path = ["_static"]
 
 html_theme_options = {
+    "show_toc_level": 2,
     "icon_links": [
         {
             # Label for this link
@@ -316,6 +318,10 @@ sphinx_gallery_conf = {
     'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
     'filename_pattern': '.py',        # pattern to define which will be executed
     'ignore_pattern': '_sgskip.py',   # pattern to define which will not be executed
+}
+
+autodoc_default_options = {
+    'show-inheritance': True,
 }
 
 graphviz_output_format = "svg"
