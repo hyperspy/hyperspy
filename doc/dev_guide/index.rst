@@ -1,8 +1,8 @@
 .. _development:
 
-############
-Contributing
-############
+##########
+Contribute
+##########
 
 HyperSpy is a community project maintained for and by its users. There are many ways you can help!
 

@@ -7,11 +7,9 @@ Reference
 
 .. toctree::
     :maxdepth: 2
+    :caption: Metadata
 
     metadata
-    bibliography
-    credits
-    citing
 
 .. toctree::
     :caption: API Reference

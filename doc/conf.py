@@ -187,7 +187,7 @@ html_theme_options = {
             "name": "Tutorial",
         },
     ],
-    "header_links_before_dropdown": 6,
+    "header_links_before_dropdown": 7,
 }
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.

@@ -42,3 +42,8 @@ User guide
     events.rst
     interactive_operations.rst
 
+.. toctree::
+    :caption: Bibliography
+    
+    bibliography.rst
+
