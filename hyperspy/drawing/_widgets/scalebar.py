@@ -18,7 +18,7 @@
 
 
 from hyperspy.misc.math_tools import closest_nice_number
-
+import numpy as np
 
 class ScaleBar(object):
 
