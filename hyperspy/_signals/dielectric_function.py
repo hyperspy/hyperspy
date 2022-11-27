@@ -20,14 +20,17 @@ import numpy as np
 from scipy import constants
 from scipy.integrate import simps, cumtrapz
 
-from hyperspy._signals.complex_signal1d import (ComplexSignal1D,
-                                                LazyComplexSignal1D)
+from hyperspy._signals.complex_signal1d import (
+    ComplexSignal1D,
+    LazyComplexSignal1D,
+    )
+from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
 from hyperspy.misc.eels.tools import eels_constant
 
 
 class DielectricFunction(ComplexSignal1D):
 
-    """Complex signal class for dielectric functions."""
+    """Signal class for dielectric functions."""
 
     _signal_type = "DielectricFunction"
     _alias_signal_types = ["dielectric function"]
@@ -129,4 +132,7 @@ class DielectricFunction(ComplexSignal1D):
 
 
 class LazyDielectricFunction(DielectricFunction, LazyComplexSignal1D):
-    pass
+
+    """Lazy signal class for dielectric functions."""
+
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "DielectricFunction")

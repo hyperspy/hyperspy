@@ -41,7 +41,12 @@ from hyperspy.signal_tools import PeaksFinder2D, Signal2DCalibration
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT2D_DOCSTRING,
     PLOT2D_KWARGS_DOCSTRING)
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
+from hyperspy.docstrings.signal import (
+    SHOW_PROGRESSBAR_ARG,
+    PARALLEL_ARG,
+    MAX_WORKERS_ARG,
+    LAZYSIGNAL_DOC,
+)
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.utils.peakfinders2D import (
         find_local_max, find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
@@ -1038,4 +1043,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
 class LazySignal2D(LazySignal, Signal2D):
 
-    _lazy = True
+    """Lazy general 2D signal class."""
+
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal2D")

@@ -2195,6 +2195,13 @@ class BaseSignal(FancySlicing,
                  MVA,
                  MVATools,):
 
+    """
+    General signal created from a numpy or cupy array.
+
+    >>> data = np.ones((10, 10))
+    >>> s = hs.signals.BaseSignal(data)
+    """
+
     _dtype = "real"
     # When _signal_dimension=-1, the signal dimension of BaseSignal is defined
     # by the dimension of the array, and this is implemented by the default
@@ -2208,7 +2215,8 @@ class BaseSignal(FancySlicing,
     ]
 
     def __init__(self, data, **kwds):
-        """Create a Signal from a numpy array.
+        """
+        Create a signal instance.
 
         Parameters
         ----------
@@ -2233,7 +2241,6 @@ class BaseSignal(FancySlicing,
             Define whether the signal is ragged or not. Overwrite the
             ``ragged`` value in the ``attributes`` dictionary. If None, it does
             nothing. Default is None.
-
         """
         # the 'full_initialisation' keyword is private API to be used by the
         # _assign_subclass method. Purposely not exposed as public API.

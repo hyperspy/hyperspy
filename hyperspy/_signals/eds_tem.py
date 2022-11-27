@@ -27,8 +27,9 @@ import pint
 
 from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy import utils
-from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
+from hyperspy._signals.eds import EDSSpectrum, LazyEDSSpectrum
 from hyperspy.defaults_parser import preferences
+from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
@@ -79,7 +80,7 @@ class EDSTEMParametersUI(BaseSetMetadataItems):
 
 class EDSTEMSpectrum(EDSSpectrum):
 
-    """1D signal class for EDS spectra measured in a TEM."""
+    """Signal class for EDS spectra measured in an TEM."""
 
     _signal_type = "EDS_TEM"
 
@@ -952,4 +953,7 @@ class EDSTEMSpectrum(EDSSpectrum):
 
 
 class LazyEDSTEMSpectrum(EDSTEMSpectrum, LazyEDSSpectrum):
-    pass
+
+    """Lazy signal class for EDS spectra measured in an TEM."""
+
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "EDSTEMSpectrum")

@@ -24,9 +24,17 @@ from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, COMPLEX_DOCSTRING,
-    PLOT2D_KWARGS_DOCSTRING)
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
+    BASE_PLOT_DOCSTRING,
+    BASE_PLOT_DOCSTRING_PARAMETERS,
+    COMPLEX_DOCSTRING,
+    PLOT2D_KWARGS_DOCSTRING
+)
+from hyperspy.docstrings.signal import (
+    SHOW_PROGRESSBAR_ARG,
+    PARALLEL_ARG,
+    MAX_WORKERS_ARG,
+    LAZYSIGNAL_DOC,
+)
 from hyperspy.misc.utils import parse_quantity
 
 
@@ -54,7 +62,7 @@ def format_title(thing):
 
 class ComplexSignal(BaseSignal):
 
-    """BaseSignal subclass for complex data."""
+    """General signal class for complex data."""
 
     _dtype = "complex"
 
@@ -365,4 +373,6 @@ class ComplexSignal(BaseSignal):
 
 class LazyComplexSignal(ComplexSignal, LazySignal):
 
-    pass
+    """Lazy general signal class for complex data."""
+
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "ComplexSignal")

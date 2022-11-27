@@ -34,6 +34,7 @@ from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING_PARAMETERS,
     PLOT1D_DOCSTRING
     )
+from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
 
 
 _logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ _logger = logging.getLogger(__name__)
 
 class EDSSpectrum(Signal1D):
 
-    """General 1D signal class for EDS spectra."""
+    """General signal class for EDS spectra."""
 
     _signal_type = "EDS"
 
@@ -1135,4 +1136,7 @@ class EDSSpectrum(Signal1D):
 
 
 class LazyEDSSpectrum(EDSSpectrum, LazySignal1D):
-    pass
+
+    """Lazy general signal class for EDS spectra."""
+
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "EDSSpectrum")

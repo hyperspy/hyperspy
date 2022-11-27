@@ -48,8 +48,14 @@ from hyperspy.decorators import interactive_range_selector
 from hyperspy.signal_tools import _get_background_estimator
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC, SPIKES_REMOVAL_TOOL_DOCSTRING
-from hyperspy.docstrings.signal import (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
-                                        SIGNAL_MASK_ARG, NAVIGATION_MASK_ARG)
+from hyperspy.docstrings.signal import (
+    SHOW_PROGRESSBAR_ARG,
+    PARALLEL_ARG,
+    MAX_WORKERS_ARG,
+    SIGNAL_MASK_ARG,
+    NAVIGATION_MASK_ARG,
+    LAZYSIGNAL_DOC,
+    )
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT1D_DOCSTRING)
 
@@ -1595,4 +1601,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
 class LazySignal1D(LazySignal, Signal1D):
 
-    _lazy = True
+    """Lazy general 1D signal class."""
+
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal1D")

@@ -9,6 +9,7 @@ Common Signals
 """"""""""""""
 
 .. autosummary::
+   :nosignatures:
 
    hyperspy._signals.common_signal1d.CommonSignal1D
    hyperspy._signals.common_signal2d.CommonSignal2D   
@@ -18,6 +19,7 @@ Lazy Signals
 """"""""""""
 
 .. autosummary::
+   :nosignatures:
 
    hyperspy._lazy_signals.LazyComplexSignal
    hyperspy._lazy_signals.LazyComplexSignal1D
