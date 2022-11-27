@@ -4,6 +4,8 @@
 .. currentmodule:: hyperspy.api.signals
 
 .. autosummary::
+   :nosignatures:
+
    BaseSignal
    ComplexSignal
    ComplexSignal1D

@@ -7,32 +7,58 @@ which are used by other classes, are documented here.
 
 Common Signals
 """"""""""""""
+.. currentmodule:: hyperspy._signals.common_signal1d
 
 .. autosummary::
    :nosignatures:
 
-   hyperspy._signals.common_signal1d.CommonSignal1D
-   hyperspy._signals.common_signal2d.CommonSignal2D   
-   hyperspy._signals.eds.EDSSpectrum
+   CommonSignal1D
+
+.. currentmodule:: hyperspy._signals.common_signal2d
+
+.. autosummary::
+   :nosignatures:
+
+   CommonSignal2D
+
+.. currentmodule:: hyperspy._signals.eds
+
+.. autosummary::
+   :nosignatures:
+
+   EDSSpectrum
 
 Lazy Signals
 """"""""""""
+.. currentmodule:: hyperspy._signals.lazy
 
 .. autosummary::
    :nosignatures:
 
-   hyperspy._lazy_signals.LazyComplexSignal
-   hyperspy._lazy_signals.LazyComplexSignal1D
-   hyperspy._lazy_signals.LazyComplexSignal2D
-   hyperspy._lazy_signals.LazyDielectricFunction
-   hyperspy._signals.eds.LazyEDSSpectrum
-   hyperspy._lazy_signals.LazyEDSSEMSpectrum
-   hyperspy._lazy_signals.LazyEDSTEMSpectrum
-   hyperspy._lazy_signals.LazyEELSSpectrum
-   hyperspy._lazy_signals.LazyHologramImage
-   hyperspy._signals.lazy.LazySignal
-   hyperspy._lazy_signals.LazySignal1D
-   hyperspy._lazy_signals.LazySignal2D
+   LazySignal
+
+.. currentmodule:: hyperspy._lazy_signals
+
+.. autosummary::
+   :nosignatures:
+
+   LazyComplexSignal
+   LazyComplexSignal1D
+   LazyComplexSignal2D
+   LazyDielectricFunction
+   LazyEDSSEMSpectrum
+   LazyEDSTEMSpectrum
+   LazyEELSSpectrum
+   LazyHologramImage
+   LazySignal1D
+   LazySignal2D
+
+.. currentmodule:: hyperspy._signals.eds
+
+.. autosummary::
+   :nosignatures:
+
+   LazyEDSSpectrum
 
 .. toctree::
    :maxdepth: 2
