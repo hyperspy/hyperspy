@@ -109,7 +109,7 @@ jobs:
           python -m build --sdist
 
       - name: Build manylinux Python wheels
-        uses: RalfG/python-wheels-manylinux-build@c244013d850d8df62e9c7dd3ddab0cc581308de6
+        uses: RalfG/python-wheels-manylinux-build@ae10a67945b323e502c46eee6df55b7658e01670
         with:
           python-versions: 'cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310'
           build-requirements: 'cython'
