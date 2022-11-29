@@ -125,7 +125,7 @@ class Parameter(t.HasTraits):
     _twin_function_expr = ""
     _twin_inverse_function_expr = ""
     _twin_function = None
-    # The inverse function is store in one of the two following attribute
+    # The inverse function is stored in one of the two following attributes
     # depending on whether it was set manually or calculated with sympy
     __twin_inverse_function = None
     _twin_inverse_sympy = None
@@ -244,7 +244,7 @@ class Parameter(t.HasTraits):
                 _logger.warning(
                     f"The function {value} is not invertible. Setting the "
                     f"value of {self} will raise an AttributeError unless "
-                    "you set manually ``twin_inverse_function_expr``. "
+                    "you manually set ``twin_inverse_function_expr``. "
                     "Otherwise, set the value of its twin parameter instead."
                     )
 

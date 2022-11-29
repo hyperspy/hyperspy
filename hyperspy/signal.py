@@ -873,7 +873,7 @@ class MVATools(object):
             not scaled. Default is ``True``.
         title : str
             Title of the matplotlib plot or label of the line in the legend
-            when the factors dimension is 1 and ``same_window`` is ``True``.
+            when the dimension of factors is 1 and ``same_window`` is ``True``.
         cmap : :py:class:`~matplotlib.colors.Colormap`
             The colormap used for the factor images, or for peak
             characteristics. Default is the matplotlib gray colormap
@@ -950,7 +950,7 @@ class MVATools(object):
             not scaled. Default is ``True``.
         title : str
             Title of the matplotlib plot or label of the line in the legend
-            when the factors dimension is 1 and ``same_window`` is ``True``.
+            when the dimension of factors is 1 and ``same_window`` is ``True``.
         cmap : :py:class:`~matplotlib.colors.Colormap`
             The colormap used for the factor images, or for peak
             characteristics. Default is the matplotlib gray colormap
@@ -1023,7 +1023,7 @@ class MVATools(object):
             not scaled. Default is ``True``.
         title : str
             Title of the matplotlib plot or label of the line in the legend
-            when the loadings dimension is 1 and ``same_window`` is ``True``.
+            when the dimension of loadings is 1 and ``same_window`` is ``True``.
         with_factors : bool
             If ``True``, also returns figure(s) with the factors for the
             given comp_ids.
@@ -1125,7 +1125,7 @@ class MVATools(object):
             not scaled. Default is ``True``.
         title : str
             Title of the matplotlib plot or label of the line in the legend
-            when the loading dimension is 1 and ``same_window`` is ``True``.
+            when the dimension of loadings is 1 and ``same_window`` is ``True``.
         with_factors : bool
             If `True`, also returns figure(s) with the factors for the
             given `comp_ids`.
@@ -1877,7 +1877,7 @@ class MVATools(object):
             not scaled.
         title : str
             Title of the matplotlib plot or label of the line in the legend
-            when the loadings dimension is 1 and ``same_window`` is ``True``.
+            when the dimension of loadings is 1 and ``same_window`` is ``True``.
         per_row : int
             the number of plots in each row, when the same_window parameter is
             True.
@@ -1945,7 +1945,7 @@ class MVATools(object):
             not scaled. Default is True.
         title : str
             Title of the matplotlib plot or label of the line in the legend
-            when the labels dimension is 1 and ``same_window`` is ``True``.
+            when the dimension of labels is 1 and ``same_window`` is ``True``.
         with_centers : bool
             If True, also returns figure(s) with the cluster centers for the
             given cluster_ids.
@@ -2017,7 +2017,7 @@ class MVATools(object):
         """Plot the euclidian distances to the centroid of each cluster.
 
         In case of 1D navigation axis, each line can be toggled on and
-        off by clicking on the legended line.
+        off by clicking on the corresponding line in the legend.
 
         Parameters
         ----------
@@ -2037,7 +2037,7 @@ class MVATools(object):
             not scaled. Default is True.
         title : str
             Title of the matplotlib plot or label of the line in the legend
-            when the distance dimension is 1 and ``same_window`` is ``True``.
+            when the dimension of distance is 1 and ``same_window`` is ``True``.
         with_centers : bool
             If True, also returns figure(s) with the cluster centers for the
             given cluster_ids.
@@ -2300,7 +2300,7 @@ class BaseSignal(FancySlicing,
         return string
 
     def _binary_operator_ruler(self, other, op_name):
-        exception_message = ("Invalid dimensions for this operation")
+        exception_message = ("Invalid dimensions for this operation.")
         if isinstance(other, BaseSignal):
             # Both objects are signals
             oam = other.axes_manager

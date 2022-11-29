@@ -52,7 +52,7 @@ migration of the IO plugins to `RosettaSciIO
 Machine Learning
 ----------------
 
-- The ``polyfit`` keyword argument has been removed. uUse ``var_func`` instead.
+- The ``polyfit`` keyword argument has been removed. Use ``var_func`` instead.
 - The list of possible values for the ``algorithm`` argument of the :py:meth:`~.learn.mva.MVA.decomposition` method
   has been changed according to the following table:
 
@@ -175,7 +175,7 @@ Signal
   followed by :py:meth:`~.signal.BaseSignal.integrate1D` instead.
 - The ``progressbar`` keyword argument of the :py:meth:`~._signals.lazy.LazySignal.compute` method
   has been removed, use ``show_progressbar`` instead.
-- The deprecated ``comp_label`` argument of the :py:meth:`~.signal.MVATools.plot_decomposition_loadings`,
+- The deprecated ``comp_label`` argument of the methods :py:meth:`~.signal.MVATools.plot_decomposition_loadings`,
   :py:meth:`~.signal.MVATools.plot_decomposition_factors`, :py:meth:`~.signal.MVATools.plot_bss_loadings`,
   :py:meth:`~.signal.MVATools.plot_bss_factors`, :py:meth:`~.signal.MVATools.plot_clusters_distances`, 
   :py:meth:`~.signal.MVATools.plot_cluster_labels` has been removed, use the ``title`` argument instead.
