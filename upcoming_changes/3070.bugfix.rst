@@ -1,0 +1,1 @@
+Bugfix deleting uninitialized marker_dict when loading files with markers
