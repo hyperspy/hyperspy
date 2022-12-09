@@ -15,6 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+import numpy as np
 
 from hyperspy.drawing.marker import MarkerBase
 
@@ -87,16 +88,24 @@ class LineSegment(MarkerBase):
         self._update_segment()
 
     def _plot_marker(self):
+        from matplotlib.collections import LineCollection
         x1 = self.get_data_position('x1')
         x2 = self.get_data_position('x2')
         y1 = self.get_data_position('y1')
         y2 = self.get_data_position('y2')
-        self.marker = self.ax.plot((x1, x2), (y1, y2),
-                                   **self.marker_properties)[0]
+
+        line_seg = np.stack([np.stack([x1, x2], axis=-1),
+                             np.stack([y1, y2], axis=-1)],
+                            axis=-1)
+        self.marker = LineCollection(line_seg, **self.marker_properties)
+        self.ax.add_collection(self.marker)
 
     def _update_segment(self):
         x1 = self.get_data_position('x1')
         x2 = self.get_data_position('x2')
         y1 = self.get_data_position('y1')
         y2 = self.get_data_position('y2')
-        self.marker.set_data((x1, x2), (y1, y2))
+        line_seg = np.stack([np.stack([x1, x2], axis=-1),
+                             np.stack([y1, y2], axis=-1)],
+                            axis=-1)
+        self.marker.set_segments(line_seg)
