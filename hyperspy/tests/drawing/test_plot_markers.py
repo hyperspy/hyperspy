@@ -439,10 +439,34 @@ def _test_plot_point_markers():
     return s
 
 
+def _test_plot_point_markers_fast():
+    width = 100
+    data = np.arange(width * width).reshape((width, width))
+    s = Signal2D(data)
+
+    x = np.empty(1, dtype=object)
+    y = np.empty(1, dtype=object)
+
+    x[0] = 10 * np.arange(4)
+    y[0] = 15 * np.arange(4)
+    color = ['yellow', 'green', 'red', 'blue']
+
+    m = markers.Point(x=x, y=y, color=color)
+    s.add_marker(m)
+    return s
+
+
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_point_markers():
     s = _test_plot_point_markers()
+    return s._plot.signal_plot.figure
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_point_markers_fast():
+    s = _test_plot_point_markers_fast()
     return s._plot.signal_plot.figure
 
 

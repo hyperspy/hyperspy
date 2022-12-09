@@ -103,6 +103,8 @@ class MarkerBase(object):
             ar = self.data[key][()]
             if next(ar.flat) is not None:
                 data_shape = ar.shape
+                if data_shape == (1,) and ar.dtype == object:
+                    data_shape = ()
                 break
         if data_shape is None:
             raise ValueError("None of the coordinates have value")
@@ -164,6 +166,8 @@ class MarkerBase(object):
             if self.axes_manager is None:
                 return self.data['x1'].item().flatten()[0]
             indices = self.axes_manager.indices[::-1]
+            if indices == ():  # catch ragged
+                indices = 0
             return data[ind].item()[indices]
         else:
             return data[ind].item()[()]
