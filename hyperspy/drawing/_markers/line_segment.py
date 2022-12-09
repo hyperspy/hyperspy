@@ -18,6 +18,7 @@
 import numpy as np
 
 from hyperspy.drawing.marker import MarkerBase
+from hyperspy.misc.utils import isiterable
 
 
 class LineSegment(MarkerBase):
@@ -94,6 +95,15 @@ class LineSegment(MarkerBase):
         y1 = self.get_data_position('y1')
         y2 = self.get_data_position('y2')
 
+        if not isiterable(x1):
+            x1 = [x1]
+        if not isiterable(x2):
+            x2 = [x2]
+        if not isiterable(y1):
+            y1 = [y1]
+        if not isiterable(y2):
+            y2 = [y2]
+
         line_seg = np.stack([np.stack([x1, x2], axis=-1),
                              np.stack([y1, y2], axis=-1)],
                             axis=-1)
@@ -105,6 +115,16 @@ class LineSegment(MarkerBase):
         x2 = self.get_data_position('x2')
         y1 = self.get_data_position('y1')
         y2 = self.get_data_position('y2')
+
+        if not isiterable(x1):
+            x1 = [x1]
+        if not isiterable(x2):
+            x2 = [x2]
+        if not isiterable(y1):
+            y1 = [y1]
+        if not isiterable(y2):
+            y2 = [y2]
+
         line_seg = np.stack([np.stack([x1, x2], axis=-1),
                              np.stack([y1, y2], axis=-1)],
                             axis=-1)
