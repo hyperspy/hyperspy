@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.drawing.marker import MarkerBase
+import numpy as np
 
 
 class Point(MarkerBase):
@@ -86,8 +87,9 @@ class Point(MarkerBase):
     def update(self):
         if self.auto_update is False:
             return
-        self.marker.set_offsets([self.get_data_position('x1'),
-                                 self.get_data_position('y1')])
+        self.marker.set_offsets(np.squeeze(np.transpose([self.get_data_position('x1'),
+                                                         self.get_data_position('y1')])))
+
         self.marker._sizes = [self.get_data_position('size')]
 
     def _plot_marker(self):
