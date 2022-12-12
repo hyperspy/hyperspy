@@ -452,7 +452,7 @@ def _test_plot_point_markers_fast():
     color = ['yellow', 'green', 'red', 'blue']
 
     m = markers.Point(x=x, y=y, color=color)
-    s.add_marker(m)
+    s.add_marker(m, permanent=True)
     return s
 
 
