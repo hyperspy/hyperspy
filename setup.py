@@ -97,7 +97,16 @@ extras_require = {
     "scalebar": ["matplotlib-scalebar"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
-    "tests": ["pytest>=3.6", "pytest-mpl", "pytest-xdist", "pytest-rerunfailures", "pytest-instafail", "matplotlib>=3.1"],
+    "tests": [
+        "pytest>=3.6",
+        "pytest-mpl",
+        "pytest-xdist",
+        "pytest-rerunfailures",
+        "pytest-instafail",
+        "matplotlib>=3.1",
+        # optional dependency of scipy to use scipy.datasets
+        "pooch",
+        ],
     "coverage":["pytest-cov"],
     # required to build the docs
     "build-doc": [
