@@ -235,7 +235,7 @@ class _TestIteratedSignal:
         return axes_manager
 
 
-class TestPlotNonLinearAxis:
+class TestPlotNonUniformAxis:
 
     def setup_method(self):
         dict0 = {'axis': np.arange(10)**0.5, 'name':'Non uniform 0', 'units':'A',
@@ -445,7 +445,6 @@ def test_plot_images_multi_signal_w_axes_replot():
         tests.append(np.allclose(imi, plt.gca().images[0].get_array().data))
         plt.close(fn)
     assert np.alltrue(tests)
-    return f
 
 
 @pytest.mark.parametrize("percentile", [("2.5th", "97.5th"),
