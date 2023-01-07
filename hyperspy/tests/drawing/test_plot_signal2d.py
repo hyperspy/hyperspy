@@ -374,6 +374,7 @@ def test_plot_images_cmap_multi_signal():
     test_plot1 = _TestIteratedSignal()
 
     test_plot2 = _TestIteratedSignal()
+    test_plot2.signal.change_dtype(float)
     test_plot2.signal *= 2  # change scale of second signal
     test_plot2.signal = test_plot2.signal.inav[::-1]
     test_plot2.signal.metadata.General.title = 'Descent'
@@ -391,6 +392,7 @@ def test_plot_images_cmap_multi_w_rgb():
     test_plot1 = _TestIteratedSignal()
 
     test_plot2 = _TestIteratedSignal()
+    test_plot2.signal.change_dtype(float)
     test_plot2.signal *= 2  # change scale of second signal
     test_plot2.signal.metadata.General.title = 'Ascent-2'
 
