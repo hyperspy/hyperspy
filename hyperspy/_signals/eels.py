@@ -1557,7 +1557,7 @@ class EELSSpectrum(Signal1D):
             Signal1D instance. Adding a new element to the spectrum using
             the components.EELSSpectrum.add_elements method automatically
             add the corresponding ionisation edges to the model.
-        GOS : {'hydrogenic' | 'Hartree-Slater'}, optional
+        GOS : {'hydrogenic' | 'GOS5' | 'Hartree-Slater'}, optional
             The generalized oscillation strength calculations to use for the
             core-loss EELS edges. If None the Hartree-Slater GOS are used if
             available, otherwise it uses the hydrogenic GOS.

@@ -117,10 +117,13 @@ class GeneralConfig(t.HasTraits):
 
 
 class EELSConfig(t.HasTraits):
+    eels_gos5_file_path = t.File(
+        label='GOS5 database file',
+        desc='The GOS tables are used to create the EELS edge components')
     eels_gos_files_path = t.Directory(
         guess_gos_path(),
-        label='GOS directory',
-        desc='The GOS files are required to create the EELS edge components')
+        label='Hartree-Slater GOS directory',
+        desc='The GOS files are used to create the EELS edge components')
 
 
 class GUIs(t.HasTraits):

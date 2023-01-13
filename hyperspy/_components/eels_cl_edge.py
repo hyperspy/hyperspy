@@ -24,6 +24,7 @@ import numpy as np
 from scipy.interpolate import splev
 
 from hyperspy.component import Component
+from hyperspy.misc.eels.hdf5_gos import Hdf5GOS
 from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
 from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
 from hyperspy.misc.eels.effective_angle import effective_angle
@@ -37,11 +38,18 @@ _logger = logging.getLogger(__name__)
 class EELSCLEdge(Component):
 
     """EELS core loss ionisation edge from hydrogenic or tabulated
-    Hartree-Slater GOS with splines for fine structure fitting.
+    GOS with splines for fine structure fitting.
 
     Hydrogenic GOS are limited to K and L shells.
+    
+    Several possibilities are available for tabulated GOS.
+    
+    The preferred option is to use a database of cross sections in GOS5
+    format. One such database can be downloaded from Zenodo at:
+    https://zenodo.org/record/6599071 while information on the GOS5 format
+    are available at: https://gitlab.com/gguzzina/gos5 .
 
-    Currently it only supports Peter Rez's Hartree Slater cross sections
+    HyperSpy also supports Peter Rez's Hartree Slater cross sections
     parametrised as distributed by Gatan in their Digital Micrograph (DM)
     software. If Digital Micrograph is installed in the system HyperSpy in the
     standard location HyperSpy should find the path to the HS GOS folder.
@@ -55,8 +63,9 @@ class EELSCLEdge(Component):
         Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
         subshell. If a dictionary is passed, it is assumed that Hartree Slater
         GOS was exported using `GOS.as_dictionary`, and will be reconstructed.
-    GOS : {'hydrogenic', 'Hartree-Slater', None}
-        The GOS to use. If None it will use the Hartree-Slater GOS if
+    GOS : {'hydrogenic', 'GOS5', 'Hartree-Slater', None}
+        The GOS to use. If None it will load the GOS5 database, if it is
+        set up, otherwise it will fall back to the Hartree-Slater GOS if
         they are available, otherwise it will use the hydrogenic GOS.
 
     Attributes
@@ -108,22 +117,31 @@ class EELSCLEdge(Component):
         # Set initial actions
         if GOS is None:
             try:
-                self.GOS = HartreeSlaterGOS(element_subshell)
-                GOS = 'Hartree-Slater'
+                self.GOS = Hdf5GOS(element_subshell)
+                GOS = 'GOS5'
             except IOError:
-                GOS = 'hydrogenic'
                 _logger.info(
-                    'Hartree-Slater GOS not available. '
-                    'Using hydrogenic GOS')
+                    'GOS5 database not available. '
+                    'Trying Hartree-Slater GOS')
+                try:
+                    self.GOS = HartreeSlaterGOS(element_subshell)
+                    GOS = 'Hartree-Slater'
+                except IOError:
+                    GOS = 'hydrogenic'
+                    _logger.info(
+                        'Hartree-Slater GOS not available. '
+                        'Using hydrogenic GOS')
         if self.GOS is None:
-            if GOS == 'Hartree-Slater':
+            if GOS == 'GOS5':
+                self.GOS = Hdf5GOS(element_subshell)
+            elif GOS == 'Hartree-Slater':
                 self.GOS = HartreeSlaterGOS(element_subshell)
             elif GOS == 'hydrogenic':
                 self.GOS = HydrogenicGOS(element_subshell)
             else:
                 raise ValueError(
-                    'gos must be one of: None, \'hydrogenic\''
-                    ' or \'Hartree-Slater\'')
+                    'gos must be one of: None, \'hydrogenic\','
+                    '\'GOS5\' or \'Hartree-Slater\'')
         self.onset_energy.value = self.GOS.onset_energy
         self.onset_energy.free = False
         self._position = self.onset_energy
