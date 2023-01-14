@@ -1,0 +1,1 @@
+Add pooch as test dependency, as it is required to use scipy.dataset in latest scipy (1.10) and update plotting test. Fix warning when plotting non-uniform axis

@@ -2806,6 +2806,13 @@ class BaseSignal(FancySlicing,
         elif self.tmp_parameters.has_item('filename'):
             self._plot.signal_title = self.tmp_parameters.filename
 
+        def sum_wrapper(s, axis):
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore", category=UserWarning, module='hyperspy'
+                    )
+                return s.sum(axis)
+
         def get_static_explorer_wrapper(*args, **kwargs):
             if np.issubdtype(navigator.data.dtype, np.complexfloating):
                 return abs(navigator(as_numpy=True))
@@ -2813,16 +2820,11 @@ class BaseSignal(FancySlicing,
                 return navigator(as_numpy=True)
 
         def get_1D_sum_explorer_wrapper(*args, **kwargs):
-            navigator = self
             # Sum over all but the first navigation axis.
-            am = navigator.axes_manager
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=UserWarning,
-                                        module='hyperspy'
-                                        )
-                navigator = navigator.sum(
-                    am.signal_axes + am.navigation_axes[1:]
-                    )
+            am = self.axes_manager
+            navigator = sum_wrapper(
+                self, am.signal_axes + am.navigation_axes[1:]
+                )
             return np.nan_to_num(to_numpy(navigator.data)).squeeze()
 
         def get_dynamic_explorer_wrapper(*args, **kwargs):
@@ -2853,21 +2855,26 @@ class BaseSignal(FancySlicing,
                     navigator = self.deepcopy()
                 else:
                     navigator = interactive(
-                        self.sum,
-                        self.events.data_changed,
-                        self.axes_manager.events.any_axis_changed,
-                        self.axes_manager.signal_axes)
+                        f=sum_wrapper,
+                        event=self.events.data_changed,
+                        recompute_out_event=self.axes_manager.events.any_axis_changed,
+                        s=self,
+                        axis=self.axes_manager.signal_axes,
+                        )
                 if navigator.axes_manager.navigation_dimension == 1:
                     navigator = interactive(
-                        navigator.as_signal1D,
-                        navigator.events.data_changed,
-                        navigator.axes_manager.events.any_axis_changed, 0)
+                        f=navigator.as_signal1D,
+                        event=navigator.events.data_changed,
+                        recompute_out_event=navigator.axes_manager.events.any_axis_changed,
+                        spectral_axis=0,
+                        )
                 else:
                     navigator = interactive(
-                        navigator.as_signal2D,
-                        navigator.events.data_changed,
-                        navigator.axes_manager.events.any_axis_changed,
-                        (0, 1))
+                        f=navigator.as_signal2D,
+                        event=navigator.events.data_changed,
+                        recompute_out_event=navigator.axes_manager.events.any_axis_changed,
+                        image_axes=(0, 1),
+                        )
             else:
                 navigator = None
         # Navigator properties

@@ -10,3 +10,4 @@ dependencies:
 - pytest-xdist
 - pytest-rerunfailures
 - pytest-instafail
+- pooch

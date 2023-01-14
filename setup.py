@@ -83,7 +83,15 @@ extras_require = {
     # UPDATE BEFORE RELEASE
     "gui-traitsui": ["hyperspy_gui_traitsui @ git+https://github.com/hyperspy/hyperspy_gui_traitsui#egg=hyperspy_gui_traitsui"],
     #"gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
-    "tests": ["pytest>=3.6", "pytest-mpl", "pytest-xdist", "pytest-rerunfailures", "pytest-instafail", "matplotlib>=3.1"],
+    "tests": [
+        "pytest>=3.6",
+        "pytest-mpl",
+        "pytest-xdist",
+        "pytest-rerunfailures",
+        "pytest-instafail",
+        # optional dependency of scipy to use scipy.datasets
+        "pooch",
+        ],
     "coverage":["pytest-cov"],
     # required to build the docs
     "build-doc": [
