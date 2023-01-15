@@ -22,7 +22,7 @@ User guide
     signal2d.rst
     visualisation.rst
     mva/index.rst
-    model.rst
+    model/index.rst
     big_data.rst
 
 .. toctree::
