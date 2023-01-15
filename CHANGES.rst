@@ -1754,7 +1754,7 @@ v0.4.1 (2012-04-16)
 New features
 ------------
 
- * Added TIFF 16, 32 and 64 bits support by using (and distributing) Christoph Gohlke's `tifffile library <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`__.
+ * Added TIFF 16, 32 and 64 bits support by using (and distributing) Christoph Gohlke's `tifffile library <https://pypi.org/project/tifffile/>`_.
  * Improved UTF8 support.
  * Reduce the number of required libraries by making mdp and hdf5 not mandatory.
  * Improve the information returned by __repr__ of several objects.
