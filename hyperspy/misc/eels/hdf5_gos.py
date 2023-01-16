@@ -29,27 +29,25 @@ from hyperspy.misc.eels.base_gos import GOSBase
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary, load_from_dictionary)
 
-
 _logger = logging.getLogger(__name__)
 
 R = constants.value("Rydberg constant times hc in eV")
 a0 = constants.value("Bohr radius")
 
-class Hdf5GOS(GOSBase):
 
-    """Read Hartree-Slater Generalized Oscillator Strenght parametrized
-    from files.
+class Hdf5GOS(GOSBase):
+    """Read Generalized Oscillator Strength from a GOS5 database.
 
     Parameters
     ----------
     element_subshell : {str, dict}
         Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
-        subshell. If a dictionary is passed, it is assumed that Hartree Slater
-        GOS was exported using `GOS.as_dictionary`, and will be reconstructed.
+        subshell. If a dictionary is passed, it is assumed that a GOS5 GOS was
+        exported using `GOS.as_dictionary`, and will be reconstructed.
 
     Methods
     -------
-    readgosfile()
+    readgosarray()
         Read the GOS files of the element subshell from the location
         defined in Preferences.
     get_qaxis_and_gos(ienergy, qmin, qmax)
@@ -68,9 +66,9 @@ class Hdf5GOS(GOSBase):
         from iternal tables.
 
     """
-
-    _name = 'Hartree-Slater'
-
+    
+    _name = 'GOS5'
+    
     def __init__(self, element_subshell):
         """
         Parameters
@@ -84,7 +82,8 @@ class Hdf5GOS(GOSBase):
                            'rel_energy_axis': None,
                            'qaxis': None,
                            'element': None,
-                           'subshell': None
+                           'subshell': None,
+                           'doi': None
                            }
         if isinstance(element_subshell, dict):
             self.element = element_subshell['element']
@@ -95,18 +94,18 @@ class Hdf5GOS(GOSBase):
             self.element, self.subshell = element_subshell.split('_')
             self.read_elements()
             self.readgosarray()
-
+    
     def _load_dictionary(self, dictionary):
         load_from_dictionary(self, dictionary)
         self.energy_axis = self.rel_energy_axis + self.onset_energy
-
+    
     def as_dictionary(self, fullcopy=True):
         """Export the GOS as a dictionary.
         """
         dic = {}
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
         return dic
-
+    
     def readgosarray(self):
         _logger.info(
             "GOS5 precomputed GOS\n"
@@ -116,11 +115,11 @@ class Hdf5GOS(GOSBase):
         )
         element = self.element
         subshell = self.subshell
-
-        # Check if the Peter Rez's Hartree Slater GOS distributed by
-        # Gatan are available. Otherwise exit
+        
+        # Check if the specified data file exists, otherwise
+        # exit.
         gos_file = Path(preferences.EELS.eels_gos5_file_path)
-
+        
         if not gos_file.is_file():
             raise FileNotFoundError(
                 "The GOS5 Parametrized GOS database file not "
@@ -135,8 +134,7 @@ class Hdf5GOS(GOSBase):
                 f"contain a valid entry the {subshell} subshell"
                 f"of {element}. Please select a different database"
             )
-
-            
+        
         with h5py.File(gos_file, 'r') as h:
             conventions = h['metadata/edges_info']
             if subshell not in conventions:
@@ -150,13 +148,15 @@ class Hdf5GOS(GOSBase):
             gos = gos_group['data'][:]
             q = gos_group['q'][:]
             free_energies = gos_group['free_energies'][:]
-
+            doi = h['/metadata/data_ref'].attrs['data_doi']
+        
         gos = np.squeeze(gos.T)
+        self.doi = doi
         self.gos_array = gos * self.subshell_factor
         self.qaxis = q
-        self.rel_energy_axis = free_energies-min(free_energies)
+        self.rel_energy_axis = free_energies - min(free_energies)
         self.energy_axis = self.rel_energy_axis + self.onset_energy
-
+    
     def integrateq(self, onset_energy, angle, E0):
         energy_shift = onset_energy - self.onset_energy
         self.energy_shift = energy_shift
@@ -169,11 +169,11 @@ class Hdf5GOS(GOSBase):
             E = self.energy_axis[i] + energy_shift
             # Calculate the limits of the q integral
             qa0sqmin = (E ** 2) / (4 * R * T) + (E ** 3) / (
-                8 * gamma ** 3 * R * T ** 2)
+                    8 * gamma ** 3 * R * T ** 2)
             p02 = T / (R * (1 - 2 * T / 511060))
             pp2 = p02 - E / R * (gamma - E / 1022120)
             qa0sqmax = qa0sqmin + 4 * np.sqrt(p02 * pp2) * \
-                (math.sin(angle / 2)) ** 2
+                       (math.sin(angle / 2)) ** 2
             qmin = math.sqrt(qa0sqmin) / a0
             qmax = math.sqrt(qa0sqmax) / a0
             # Perform the integration in a log grid

@@ -54,7 +54,7 @@ conventions = { 'K' : {'table': 'K1', 'factor': 1},
 
 class HartreeSlaterGOS(GOSBase):
 
-    """Read Hartree-Slater Generalized Oscillator Strenght parametrized
+    """Read Hartree-Slater Generalized Oscillator Strength parametrized
     from files.
 
     Parameters

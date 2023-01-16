@@ -152,7 +152,11 @@ class EELSCLEdge(Component):
         self.intensity.bmax = None
 
         self._whitelist['GOS'] = ('init', GOS)
-        if GOS == 'Hartree-Slater':
+        if GOS == 'GOS5':
+            self._whitelist['element_subshell'] = (
+                'init',
+                self.GOS.as_dictionary(True))
+        elif GOS == 'Hartree-Slater':
             self._whitelist['element_subshell'] = (
                 'init',
                 self.GOS.as_dictionary(True))
