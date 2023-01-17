@@ -1,5 +1,5 @@
-:mod:`hyperspy.axes`
---------------------
+Axes
+----
 
 .. autosummary::
    hyperspy.axes.BaseDataAxis
@@ -8,7 +8,6 @@
    hyperspy.axes.UniformDataAxis
    hyperspy.axes.AxesManager
    hyperspy.axes.UnitConversion
-
 
 .. automodule:: hyperspy.axes
    :members: BaseDataAxis, DataAxis, FunctionalDataAxis, UniformDataAxis, AxesManager, UnitConversion

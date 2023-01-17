@@ -1,7 +1,7 @@
-.. current
+.. currentmodule:: hyperspy.api.model
 
-:mod:`hyperspy.api.model.components2D`
---------------------------------------
+:mod:`components2D`
+-------------------
 
 .. autoclass:: hyperspy.api.model.components2D.Expression
    :noindex:
