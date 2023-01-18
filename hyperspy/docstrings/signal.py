@@ -168,3 +168,13 @@ NAVIGATION_MASK_ARG = \
     """navigation_mask: bool array
             Restricts the operation to the navigation locations not marked
             as True (masked)."""
+
+LAZYSIGNAL_DOC = \
+    """
+    The computation is delayed until explicitly requested.
+
+    This class is not expected to be instantiated directly, instead use:
+
+    >>> data = da.ones((10, 10))
+    >>> s = hs.signals.__BASECLASS__(data).as_lazy()
+    """

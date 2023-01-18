@@ -95,11 +95,13 @@ extras_require = {
     "coverage":["pytest-cov"],
     # required to build the docs
     "build-doc": [
+        "pydata_sphinx_theme",
         "sphinx>=1.7",
-        "sphinx_rtd_theme",
+        "sphinx-gallery",
         "sphinx-toggleprompt",
         "sphinxcontrib-mermaid",
         "sphinxcontrib-towncrier",
+        "sphinx-design",
         # pin towncrier until https://github.com/sphinx-contrib/sphinxcontrib-towncrier/issues/60 is fixed
         "towncrier<22.8",
         ],

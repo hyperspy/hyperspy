@@ -27,8 +27,9 @@ import pint
 
 from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy import utils
-from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
+from hyperspy._signals.eds import EDSSpectrum, LazyEDSSpectrum
 from hyperspy.defaults_parser import preferences
+from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
@@ -79,7 +80,7 @@ class EDSTEMParametersUI(BaseSetMetadataItems):
 
 class EDSTEMSpectrum(EDSSpectrum):
 
-    """1D signal class for EDS spectra measured in a TEM."""
+    """Signal class for EDS spectra measured in an TEM."""
 
     _signal_type = "EDS_TEM"
 
@@ -648,7 +649,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         ----------
         normalize_poissonian_noise : bool, default True
             If True, scale the signal to normalize Poissonian noise using
-            the approach described in [Keenan2004]_.
+            the approach described in [*]_.
         navigation_mask : None or float or boolean numpy array, default 1.0
             The navigation locations marked as True are not used in the
             decomposition. If float is given the vacuum_mask method is used to
@@ -736,6 +737,12 @@ class EDSTEMSpectrum(EDSSpectrum):
         See also
         --------
         vacuum_mask
+
+        References
+        ----------
+        .. [*] M. Keenan and P. Kotula, "Accounting for Poisson noise
+           in the multivariate analysis of ToF-SIMS spectrum images", Surf.
+           Interface Anal 36(3) (2004): 203-212.
         """
         if isinstance(navigation_mask, float):
             navigation_mask = self.vacuum_mask(navigation_mask, closing)
@@ -946,4 +953,7 @@ class EDSTEMSpectrum(EDSSpectrum):
 
 
 class LazyEDSTEMSpectrum(EDSTEMSpectrum, LazyEDSSpectrum):
-    pass
+
+    """Lazy signal class for EDS spectra measured in an TEM."""
+
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "EDSTEMSpectrum")

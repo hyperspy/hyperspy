@@ -18,12 +18,13 @@
 
 
 from hyperspy._signals.common_signal1d import CommonSignal1D
-from hyperspy._signals.complex_signal import (ComplexSignal, LazyComplexSignal)
+from hyperspy._signals.complex_signal import ComplexSignal, LazyComplexSignal
+from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
 
 
 class ComplexSignal1D(ComplexSignal, CommonSignal1D):
 
-    """BaseSignal subclass for complex 1-dimensional data."""
+    """Signal class for complex 1-dimensional data."""
 
     _signal_dimension = 1
 
@@ -32,6 +33,6 @@ class ComplexSignal1D(ComplexSignal, CommonSignal1D):
 
 class LazyComplexSignal1D(ComplexSignal1D, LazyComplexSignal):
 
-    """BaseSignal subclass for lazy complex 1-dimensional data."""
+    """Lazy signal class for complex 1-dimensional data."""
 
-    pass
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "ComplexSignal1D")

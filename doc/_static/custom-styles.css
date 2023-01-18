@@ -1,0 +1,31 @@
+/* Styling for the download buttons */
+
+.downloadbutton {
+    min-width: 200px;
+    margin-top: 25px;
+    background-color:rgb(80, 157, 185);
+    -moz-border-radius:28px;
+    -webkit-border-radius:28px;
+    border-radius:28px;
+    border:1px solid rgb(80, 157, 185);
+    display:inline-block;
+    cursor:pointer;
+    color:#ffffff;
+    font-size:17px;
+    padding:16px 31px;
+    text-decoration:none;
+    text-align: center;
+    text-shadow:0px 1px 0px rgb(32, 157, 185);
+}
+.downloadbutton:hover {
+    background-color:rgb(32, 157, 185);
+}
+.downloadbutton:active {
+    position:relative;
+    top:1px;
+}
+
+a.downloadbutton:hover, a.downloadbutton:focus {
+    color: white;
+    text-decoration: none;
+}

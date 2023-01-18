@@ -45,7 +45,7 @@ migration of the IO plugins to `RosettaSciIO
 
 - The arguments ``mmap_dir`` and ``load_to_memory`` of the :py:func:`~.io.load`
   function have been removed, use the ``lazy`` argument instead.
-- :ref:`Bruker composite file (BCF) <bcf-format>`: The ``'spectrum'`` option for the
+- :ref:`Bruker composite file (BCF) <bruker-format>`: The ``'spectrum'`` option for the
   ``select_type`` parameter was removed. Use ``'spectrum_image'`` instead.
 - :ref:`Electron Microscopy Dataset (EMD) NCEM <emd_ncem-format>`: Using the
   keyword ``dataset_name`` was removed, use ``dataset_path`` instead.
@@ -196,7 +196,7 @@ Preferences
 
 .. towncrier release notes start
 
-Hyperspy 1.7.3 (2022-10-29)
+v1.7.3 (2022-10-29)
 ===========================
 
 Bug Fixes
@@ -214,7 +214,7 @@ Maintenance
 - Fix getting random state dask for dask>=2022.10.0 (`#3049 <https://github.com/hyperspy/hyperspy/issues/3049>`_)
 
 
-Hyperspy 1.7.2 (2022-09-17)
+v1.7.2 (2022-09-17)
 ===========================
 
 Bug Fixes
@@ -244,8 +244,8 @@ Maintenance
 - Fix matplotlib ``SpanSelector`` import for matplotlib 3.6 (`#3016 <https://github.com/hyperspy/hyperspy/issues/3016>`_)
 
 
-Hyperspy 1.7.1 (2022-06-18)
-===========================
+v1.7.1 (2022-06-18)
+===================
 
 Bug Fixes
 ---------
@@ -276,8 +276,8 @@ Maintenance
 - Fix packaging of test suite and tweak tests to pass on different platform of blas implementation (`#2933 <https://github.com/hyperspy/hyperspy/issues/2933>`_)
 
 
-Hyperspy 1.7.0 (2022-04-26)
-===========================
+v1.7.0 (2022-04-26)
+===================
 
 New features
 ------------
@@ -432,8 +432,8 @@ Maintenance
 - Fix image comparison failure with numpy 1.21.0 (`#2774 <https://github.com/hyperspy/hyperspy/issues/2774>`_)
 
 
-Hyperspy 1.6.3 (2021-06-10)
-===========================
+v1.6.3 (2021-06-10)
+===================
 
 Bug Fixes
 ---------
@@ -471,8 +471,8 @@ Maintenance
 
 .. _changes_1.6.2:
 
-v1.6.2
-======
+v1.6.2 (2021-04-13)
+===================
 
 This is a maintenance release that adds support for python 3.9 and includes
 numerous bug fixes and enhancements.
@@ -540,8 +540,8 @@ Maintenance
 
 .. _changes_1.6.1:
 
-v1.6.1
-======
+v1.6.1 (2020-11-28)
+===================
 
 This is a maintenance release that adds compatibility with h5py 3.0 and includes
 numerous bug fixes and enhancements.
@@ -552,8 +552,8 @@ for details.
 
 .. _changes_1.6:
 
-v1.6
-====
+v1.6.0 (2020-08-05)
+===================
 
 NEW
 ---
@@ -719,8 +719,8 @@ API changes
 .. _changes_1.5.2:
 
 
-v1.5.2
-======
+v1.5.2 (2019-09-06)
+===================
 
 This is a maintenance release that adds compatibility with Numpy 1.17 and Dask
 2.3.0 and fixes a bug in the Bruker reader. See `the issue tracker
@@ -730,8 +730,8 @@ for details.
 
 .. _changes_1.5.1:
 
-v1.5.1
-======
+v1.5.1 (2019-07-28)
+===================
 
 This is a maintenance release that fixes some regressions introduced in v1.5.
 Follow the following links for details on all the `bugs fixed
@@ -740,8 +740,8 @@ Follow the following links for details on all the `bugs fixed
 
 .. _changes_1.5:
 
-v1.5
-====
+v1.5.0 (2019-07-27)
+===================
 
 NEW
 ---
@@ -759,7 +759,7 @@ Enhancements
 ------------
 
 * The contrast adjustment tool has been hugely improved. Test it by pressing the ``h`` key on any image.
-* The :ref:`Developer Guide <dev_guide-label>` has been extended, enhanced and divided into
+* The :ref:`Developer Guide <dev_guide>` has been extended, enhanced and divided into
   chapters.
 * Signals with signal dimension equal to 0 and navigation dimension 1 or 2 are
   automatically transposed when using
@@ -798,8 +798,8 @@ For developers
 
 .. _changes_1.4.2:
 
-v1.4.2
-======
+v1.4.2 (2019-06-19)
+===================
 
 This is a maintenance release. Among many other fixes and enhancements, this
 release fixes compatibility issues with Matplotlib v 3.1. Follow the
@@ -811,8 +811,8 @@ and `enhancements
 
 .. _changes_1.4.1:
 
-v1.4.1
-======
+v1.4.1 (2018-10-23)
+===================
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -825,8 +825,8 @@ This release fixes compatibility issues with Python 3.7.
 
 .. _changes_1.4:
 
-v1.4
-====
+v1.4.0 (2018-09-02)
+===================
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
@@ -842,7 +842,7 @@ NEW
 * Support for three new file formats:
 
     * Reading FEI's Velox EMD file format based on the HDF5 open standard. See :external+rsciio:ref:`emd_fei-format`.
-    * Reading Bruker's SPX format. See :external+rsciio:ref:`spx-format`.
+    * Reading Bruker's SPX format. See :external+rsciio:ref:`bruker-format`.
     * Reading and writing the mrcz open format. See :external+rsciio:ref:`mrcz-format`.
 * New :mod:`~.datasets.artificial_data` module which contains functions for generating
   artificial data, for use in things like docstrings or for people to test
@@ -878,8 +878,8 @@ Enhancements
 
 .. _changes_1.3.2:
 
-v1.3.2
-======
+v1.3.2 (2018-07-03)
+===================
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -889,8 +889,8 @@ and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+mil
 
 .. _changes_1.3.1:
 
-v1.3.1
-======
+v1.3.1 (2018-04-19)
+===================
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -904,8 +904,8 @@ releases see https://github.com/hyperspy/hyperspy-bundle
 
 .. _changes_1.3:
 
-v1.3
-====
+v1.3.0 (2017-05-27)
+===================
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
@@ -932,7 +932,7 @@ Enhancements
 ------------
 * Creating many markers is now much faster.
 * New "Stage" metadata node. See :ref:`metadata_structure` for details.
-* The Brucker file reader now supports the new version of the format. See :external+rsciio:ref:`bcf-format`.
+* The Brucker file reader now supports the new version of the format. See :external+rsciio:ref:`bruker-format`.
 * HyperSpy is now compatible with all matplotlib backends, including the nbagg which is
   particularly convenient for interactive data analysis in the
   `Jupyter Notebook <http://jupyter.org>`__ in combination with the new
@@ -1013,8 +1013,8 @@ For developers
 
 .. _changes_1.2:
 
-v1.2
-====
+v1.2.0 (2017-02-02)
+===================
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
@@ -1065,8 +1065,8 @@ For developers
 
 .. _changes_1.1.2:
 
-v1.1.2
-======
+v1.1.2 (2079-01-12)
+===================
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -1076,8 +1076,8 @@ and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+mil
 
 .. _changes_1.1.1:
 
-v1.1.1
-======
+v1.1.1 (2016-08-24)
+===================
 
 This is a maintenance release. Follow the following link for details on all
 the `bugs fixed
@@ -1098,8 +1098,8 @@ Enhancements
 
 .. _changes_1.1:
 
-v1.1
-====
+v1.1.0 (2016-08-03)
+===================
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
@@ -1124,16 +1124,16 @@ Enhancements
 
 
 
-v1.0.1
-======
+v1.0.1 (2016-07-27)
+===================
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
 <https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.0.1>`__.
 
 
-v1.0
-====
+v1.0.0 (2016-07-14)
+===================
 
 This is a major release. Here we only list the highlist. A detailed list of
 changes `is available in github
@@ -1170,7 +1170,7 @@ EDS
 IO
 ^^
 * Support for reading certain files without :ref:`loading them to memory <load_to_memory-label>`.
-* :external+rsciio:ref:`Bruker's composite file (bcf) <bcf-format>` reading support.
+* :external+rsciio:ref:`Bruker's composite file (bcf) <bruker-format>` reading support.
 * :external+rsciio:ref:`Electron Microscopy Datasets (EMD) <emd-format>` read and write support.
 * :external+rsciio:ref:`SEMPER unf <unf-format>` read and write support.
 * :external+rsciio:ref:`DENS heat log <dens-format>` read support.
@@ -1191,7 +1191,7 @@ Documentation
   * :ref:`install-label`.
   * :ref:`ml-label`.
   * :ref:`eds-label`.
-* New :ref:`dev_guide-label`.
+* New :ref:`dev_guide`.
 
 
 API changes
@@ -1206,8 +1206,8 @@ API changes
 
 
 
-v0.8.5
-======
+v0.8.5 (2016-07-02)
+===================
 
 
 This is a maintenance release. Follow the following links for details on all
@@ -1241,14 +1241,14 @@ deprecate `as_signal1D`, `as_signal2D`, `to_spectrum` and `to_image`. See `#963
 <https://github.com/hyperspy/hyperspy/issues/943>`__ for details.
 
 
-v0.8.4
-======
+v0.8.4 (2016-03-04)
+===================
 
 This release adds support for Python 3 and drops support for Python 2. In all
 other respects it is identical to v0.8.3.
 
-v0.8.3
-======
+v0.8.3 (2016-03-04)
+===================
 
 This is a maintenance release that includes fixes for multiple bugs, some
 enhancements, new features and API changes. This is set to be the last HyperSpy
@@ -1274,15 +1274,15 @@ Follow the following links for details on all the `bugs fixed
 
 .. _changes_0.8.2:
 
-v0.8.2
-======
+v0.8.2 (2015-08-13)
+===================
 
 This is a maintenance release that fixes an issue with the Python installers. Those who have successfully installed v0.8.1 do not need to upgrade.
 
 .. _changes_0.8.1:
 
-v0.8.1
-======
+v0.8.1 (2015-08-12)
+===================
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -1336,8 +1336,8 @@ API changes
 
 .. _changes_0.8:
 
-v0.8
-====
+v0.8.0 (2015-04-07)
+===================
 
 New features
 ------------
@@ -1392,8 +1392,8 @@ API changes
     + ``update_patch_size`` -> ``_update_patch_size``
     + ``add_axes`` -> ``set_mpl_ax``
 
-v0.7.3
-======
+v0.7.3 (2015-08-22)
+===================
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.3 milestone
@@ -1402,8 +1402,8 @@ in the github repository.
 
 .. _changes_0.7.2:
 
-v0.7.2
-======
+v0.7.2 (2015-08-22)
+===================
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.2 milestone
@@ -1412,8 +1412,8 @@ in the github repository.
 
 .. _changes_0.7.1:
 
-v0.7.1
-======
+v0.7.1 (2015-06-17)
+===================
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.1 milestone
@@ -1426,8 +1426,8 @@ New features
 
 * Add suspend/resume model plot updating. See :ref:`model.visualization`.
 
-v0.7
-====
+v0.7.0 (2014-04-03)
+===================
 
 New features
 ------------
@@ -1569,8 +1569,8 @@ API changes
 
 .. _changes_0.6:
 
-v0.6
-====
+v0.6.0 (2013-05-25)
+===================
 
 New features
 ------------
@@ -1653,8 +1653,8 @@ API changes
 
 .. _changes_0.5.1:
 
-v0.5.1
-======
+v0.5.1 (2012-09-28)
+===================
 
 New features
 ------------
@@ -1686,8 +1686,8 @@ API changes
 
 .. _changes_0.5:
 
-v0.5
-====
+v0.5.0 (2012-09-07)
+===================
 
 New features
 ------------
@@ -1748,13 +1748,13 @@ API changes
 
 .. _changes_0.4.1:
 
-v0.4.1
-======
+v0.4.1 (2012-04-16)
+===================
 
 New features
 ------------
 
- * Added TIFF 16, 32 and 64 bits support by using (and distributing) Christoph Gohlke's `tifffile library <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`__.
+ * Added TIFF 16, 32 and 64 bits support by using (and distributing) Christoph Gohlke's `tifffile library <https://pypi.org/project/tifffile/>`_.
  * Improved UTF8 support.
  * Reduce the number of required libraries by making mdp and hdf5 not mandatory.
  * Improve the information returned by __repr__ of several objects.
@@ -1779,8 +1779,8 @@ Syntax changes
 
 .. _changes_0.4:
 
-v0.4
-====
+v0.4.0 (2012-02-29)
+===================
 
 New features
 ------------

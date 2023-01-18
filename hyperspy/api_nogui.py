@@ -101,6 +101,7 @@ del docstrings
 
 
 def get_configuration_directory_path():
+    """Return configuration path"""
     import hyperspy.misc.config_dir
     return hyperspy.misc.config_dir.config_path
 

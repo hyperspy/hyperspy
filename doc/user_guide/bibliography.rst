@@ -1,8 +1,7 @@
-Bibliography
-============
+:html_theme.sidebar_secondary.remove: true
 
 Bibliography
-------------
+============
 
 .. _[Burdet2013]:
 
@@ -207,36 +206,21 @@ Bibliography
 .. _Iakoubovskii2008:
 
 :ref:`[Iakoubovskii2008] <Iakoubovskii2008>`
-    - Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
-      ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
-      Microscopy Research and Technique 71, no. 8 (2008): 626–31.
-      [`<https://doi.org/10.1002/jemt.20597>`_].
+   Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
+   ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
+   Microscopy Research and Technique 71, no. 8 (2008): 626–31.
+   [`<https://doi.org/10.1002/jemt.20597>`_].
 
 .. _White2009:
 
 :ref:`[White2009] <White2009>`
-    - T.A. White, “Structure solution using precession electron diffraction and
-      diffraction tomography” PhD Thesis, University of Cambridge, 2009.
+   T.A. White, “Structure solution using precession electron diffraction and
+   diffraction tomography” PhD Thesis, University of Cambridge, 2009.
 
 .. _Zaefferer2000:
 
 :ref:`[Zaefferer2000] <Zaefferer2000>`
-    - S. Zaefferer, “New developments of computer-aided crystallographic
-      analysis in transmission electron microscopy” J. Appl. Crystallogr.,
-      vol. 33, no. v, pp. 10–25, 2000.
-      [`<https://doi.org/10.1107/S0021889899010894>`_].
-
-
-Peer-review articles with results obtained using HyperSpy
----------------------------------------------------------
-
-.. note::
-
-   Given the incresing number of articles that cite HyperSpy we no longer
-   maintain a list of articles here. For an up to date list search for
-   HyperSpy in a scientific database e.g. `Google Scholar
-   <https://scholar.google.co.uk/scholar?hl=en&q=hyperspy&btnG=&as_sdt=1%2C5>`_.
-
-.. Warning::
-    The articles published before 2012 may mention the HyperSpy project under
-    its old name, EELSLab
+   S. Zaefferer, “New developments of computer-aided crystallographic
+   analysis in transmission electron microscopy” J. Appl. Crystallogr.,
+   vol. 33, no. v, pp. 10–25, 2000.
+   [`<https://doi.org/10.1107/S0021889899010894>`_].
