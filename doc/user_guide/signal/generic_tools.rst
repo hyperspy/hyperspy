@@ -6,8 +6,9 @@ more details about a particular method click on its name. For a detailed list
 of all the methods available see the :py:class:`~.api.signals.BaseSignal` documentation.
 
 The methods of this section are available to all the signals. In other chapters
-methods that are only available in specialized
-subclasses.
+methods that are only available in specialized subclasses are listed.
+
+.. _math.operations:
 
 Mathematical operations
 ^^^^^^^^^^^^^^^^^^^^^^^

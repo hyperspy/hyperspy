@@ -1,3 +1,5 @@
+.. _adding-components:
+
 Adding components to the model
 ------------------------------
 
