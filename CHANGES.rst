@@ -198,6 +198,9 @@ Preferences
 
 .. towncrier release notes start
 
+
+.. _changes_1.7.3:
+
 v1.7.3 (2022-10-29)
 ===========================
 
@@ -215,6 +218,8 @@ Maintenance
 - Fix error handling when trying to convert a ragged signal to non-ragged for numpy >=1.24 (`#3033 <https://github.com/hyperspy/hyperspy/issues/3033>`_)
 - Fix getting random state dask for dask>=2022.10.0 (`#3049 <https://github.com/hyperspy/hyperspy/issues/3049>`_)
 
+
+.. _changes_1.7.2:
 
 v1.7.2 (2022-09-17)
 ===========================
@@ -245,6 +250,8 @@ Maintenance
 - Fix hyperlink in bibliography (`#3015 <https://github.com/hyperspy/hyperspy/issues/3015>`_)
 - Fix matplotlib ``SpanSelector`` import for matplotlib 3.6 (`#3016 <https://github.com/hyperspy/hyperspy/issues/3016>`_)
 
+
+.. _changes_1.7.1:
 
 v1.7.1 (2022-06-18)
 ===================
@@ -277,6 +284,8 @@ Maintenance
 - Minor refactor of the EELS subshells in the ``elements`` dictionary. (`#2868 <https://github.com/hyperspy/hyperspy/issues/2868>`_)
 - Fix packaging of test suite and tweak tests to pass on different platform of blas implementation (`#2933 <https://github.com/hyperspy/hyperspy/issues/2933>`_)
 
+
+.. _changes_1.7.0:
 
 v1.7.0 (2022-04-26)
 ===================
@@ -378,6 +387,8 @@ Maintenance
 - Compress some tiff tests files to reduce package size (`#2926 <https://github.com/hyperspy/hyperspy/issues/2926>`_)
 
 
+.. _changes_1.6.5:
+
 v1.6.5 (2021-10-28)
 ===================
 
@@ -403,6 +414,8 @@ Enhancements
 
 - :py:meth:`~.roi.BaseInteractiveROI.add_widget` can now take a string or integer instead of tuple of string or integer (`#2809 <https://github.com/hyperspy/hyperspy/issues/2809>`_)
 
+
+.. _changes_1.6.4:
 
 v1.6.4 (2021-07-08)
 ===================
@@ -433,6 +446,8 @@ Maintenance
 
 - Fix image comparison failure with numpy 1.21.0 (`#2774 <https://github.com/hyperspy/hyperspy/issues/2774>`_)
 
+
+.. _changes_1.6.3:
 
 v1.6.3 (2021-06-10)
 ===================
