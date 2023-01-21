@@ -1,3 +1,5 @@
+.. _signal-label:
+
 The Signal class
 ****************
 

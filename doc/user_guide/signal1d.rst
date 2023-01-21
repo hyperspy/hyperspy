@@ -1,9 +1,11 @@
+.. _signal1D-label:
 
 Signal1D Tools
 **************
 
 The methods described in this section are only available for one-dimensional
 signals in the Signal1D class.
+
 
 .. _signal1D.crop:
 
@@ -44,6 +46,7 @@ It is possible to crop interactively using :ref:`roi-label`. For example:
 
    Interactive spectrum cropping using a ROI.
 
+
 .. _signal1D.remove_background:
 
 Background removal
@@ -80,11 +83,13 @@ Example of usage:
    figure) click inside the axes of the figure and drag to the right
    without releasing the button.
 
+
 Calibration
 -----------
 
 The :py:meth:`~._signals.signal1d.Signal1D.calibrate` method provides a user
 interface to calibrate the spectral axis.
+
 
 Alignment
 ---------
@@ -96,16 +101,20 @@ files.
 * :py:meth:`~._signals.signal1d.Signal1D.align1D`
 * :py:meth:`~._signals.signal1d.Signal1D.shift1D`
 
+
 .. _integrate_1D-label:
 
 Integration
 -----------
 
-.. deprecated:: 1.3
-    :py:meth:`~._signals.signal1d.Signal1D.integrate_in_range`.
-    It will be removed in 2.0. Use :py:meth:`~.signal.BaseSignal.integrate1D`
-    instead, possibly in combination with a :ref:`ROI-label` if interactivity
-    is required.
+To integrate signals use the :py:meth:`~.signal.BaseSignal.integrate1D` method.
+Possibly in combination with a :ref:`ROI-label` if interactivity is required.
+Otherwise, a signal subrange for integration can also be chosen with the
+:py:attr:`~.api.signals.BaseSignal.isig` method.
+
+.. code-block:: python
+
+    >>> s.isig[0.2:0.5].integrate1D(axis=0)
 
 
 Data smoothing
@@ -118,6 +127,7 @@ passed) can perform data smoothing with different algorithms:
   (requires ``statsmodels`` to be installed)
 * :py:meth:`~._signals.signal1d.Signal1D.smooth_tv`
 * :py:meth:`~._signals.signal1d.Signal1D.smooth_savitzky_golay`
+
 
 Spike removal
 --------------
@@ -159,6 +169,15 @@ A peak finding routine based on the work of T. O'Haver is available in HyperSpy
 through the :py:meth:`~._signals.signal1d.Signal1D.find_peaks1D_ohaver`
 method.
 
+
+Estimate peak width
+-------------------
+
+For asymmetric peaks, `fitted functions <model.fitting>` may not provide
+an accurate description of the peak, in particular the peak width. The function
+:py:meth:`~._signals.signal1d.Signal1D.estimate_peak_width`
+determines the width of a peak at a certain fraction of its maximum value.
+ 
 
 Other methods
 -------------

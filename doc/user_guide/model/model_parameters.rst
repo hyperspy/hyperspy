@@ -1,3 +1,5 @@
+.. _model-intro:
+
 Getting and setting parameter values and attributes
 ---------------------------------------------------
 

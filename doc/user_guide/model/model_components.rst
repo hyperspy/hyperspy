@@ -1,3 +1,5 @@
+.. _model-components:
+
 Model components
 ----------------
 

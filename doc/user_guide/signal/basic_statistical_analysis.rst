@@ -1,3 +1,5 @@
+.. _signal.statistics:
+
 Basic statistical analysis
 --------------------------
 
