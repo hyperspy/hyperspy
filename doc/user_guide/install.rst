@@ -243,7 +243,7 @@ To install a specific version of hyperspy (for example ``1.6.1``) using pip:
     $ pip install hyperspy==1.6.1
 
 
-.. _install-dev:
+.. _install-rolling:
 
 Rolling release Linux distributions
 -----------------------------------
@@ -267,6 +267,8 @@ the stable release) is also available in the AUR as |python-hyperspy-git|_.
 
 .. |python-hyperspy-git| replace:: ``python-hyperspy-git``
 .. _python-hyperspy-git: https://aur.archlinux.org/packages/python-hyperspy-git
+
+.. _install-dev:
 
 Install development version
 ---------------------------
@@ -336,8 +338,6 @@ use the corresponding selector as explained in the :ref:`install-with-pip` secti
     can be installed through the AUR by installing the `hyperspy-git package
     <https://aur.archlinux.org/packages/hyperspy-git/>`_
 
-.. _create-debian-binary:
-
 Installation in a system Python distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -350,6 +350,8 @@ From the root folder of your hyperspy repository (folder containing the
 .. code-block:: bash
 
     $ pip install -e --user .[dev]
+
+.. _create-debian-binary:
 
 Creating Debian/Ubuntu binaries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

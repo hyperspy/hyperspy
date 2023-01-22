@@ -118,6 +118,9 @@ in the following sections of this chapter.
         ├── signal_type
         └── signal_origin
 
+
+.. _general-metadata:
+
 General
 =======
 
@@ -207,6 +210,8 @@ timestamp
     The timestamp of the computer running the data loading/saving process (in a
     timezone-aware format). The timestamp will be in ISO 8601 format, as
     produced by the ``isoformat()`` method of the ``datetime`` class.
+
+.. _source-metadata:
 
 Acquisition_instrument
 ======================
@@ -306,6 +311,9 @@ working_distance
 
     The working distance in mm.
 
+
+.. _stage-metadata:
+
 Stage
 -----
 tilt_alpha
@@ -337,6 +345,8 @@ z
     type: Float
 
     The position of the stage in mm along the z axis.
+
+.. _detector-metadata:
 
 Detector
 --------
@@ -444,6 +454,9 @@ voltage
 
     Voltage of electrostatic biprism in volts
 
+
+.. _sample-metadata:
+
 Sample
 ======
 
@@ -475,6 +488,8 @@ thickness
 
     The thickness of the sample in m.
 
+
+.. _signal-metadata:
 
 Signal
 ======
@@ -578,6 +593,8 @@ Folding
 
 Constains parameters that related to the folding/unfolding of signals.
 
+
+.. _metadata_handling:
 
 Functions to handle the metadata
 ================================
