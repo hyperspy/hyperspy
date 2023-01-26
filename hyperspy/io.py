@@ -765,9 +765,9 @@ def dict2signal(signal_dict, lazy=False):
                 'original signal class.')
     signal_dimension = -1  # undefined
     signal_type = ""
-    if "metadata" in signal_dict:
+    mp = signal_dict.get("metadata")
 
-        mp = signal_dict["metadata"]
+    if mp is not None:
         if "Signal" in mp and "record_by" in mp["Signal"]:
             record_by = mp["Signal"]['record_by']
             if record_by == "spectrum":
@@ -812,12 +812,13 @@ def dict2signal(signal_dict, lazy=False):
                     value = function(value)
                 if value is not None:
                     signal.metadata.set_item(mpattr, value)
-    if "metadata" in signal_dict and "Markers" in mp:
-        markers_dict = markers_metadata_dict_to_markers(
+    if mp is not None and "Markers" in mp:
+        if "Markers" in signal.metadata:
+            del signal.metadata.Markers
+        signal.metadata.Markers = markers_metadata_dict_to_markers(
             mp['Markers'],
             axes_manager=signal.axes_manager)
-        del signal.metadata.Markers
-        signal.metadata.Markers = markers_dict
+
     return signal
 
 
