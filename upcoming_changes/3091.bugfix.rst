@@ -1,3 +1,2 @@
-Clean up codes around signal.metadata
-Do not raise AttributeError when signal.metadata.Markers is not defined in file reader.
+Improve syntax in the `io` module.
 
