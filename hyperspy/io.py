@@ -813,8 +813,6 @@ def dict2signal(signal_dict, lazy=False):
                 if value is not None:
                     signal.metadata.set_item(mpattr, value)
     if mp is not None and "Markers" in mp:
-        if "Markers" in signal.metadata:
-            del signal.metadata.Markers
         signal.metadata.Markers = markers_metadata_dict_to_markers(
             mp['Markers'],
             axes_manager=signal.axes_manager)
