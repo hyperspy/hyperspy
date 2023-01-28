@@ -20,63 +20,46 @@ in the following sections of this chapter.
 ::
 
     ├── Acquisition_instrument
-    │   ├── SEM
-    │   │   ├── Detector
-    │   │   │   ├── detector_type
-    │   │   │   └── EDS
-    │   │   │       ├── azimuth_angle (º)
-    │   │   │       ├── elevation_angle (º)
-    │   │   │       ├── energy_resolution_MnKa (eV)
-    │   │   │       ├── live_time (s)
-    │   │   │       └── real_time (s)
+    │   ├── Source
+    |   |   ├── source_type
+    |   |   (SEM/TEM)
     │   │   ├── beam_current (nA)
     │   │   ├── beam_energy (keV)
     │   │   ├── probe_area (nm²)
-    │   │   ├── convergence_angle (mrad)
     │   │   ├── magnification
     │   │   ├── microscope
-    │   │   ├── Stage
-    │   │   │   ├── rotation (º)
-    │   │   │   ├── tilt_alpha (º)
-    │   │   │   ├── tilt_beta (º)
-    │   │   │   ├── x (mm)
-    │   │   │   ├── y (mm)
-    │   │   │   └── z (mm)
     │   │   └── working_distance (mm)
-    │   └── TEM
-    │       ├── Detector
-    │       │   ├── EDS
-    │       │   │   ├── azimuth_angle (º)
-    │       │   │   ├── elevation_angle (º)
-    │       │   │   ├── energy_resolution_MnKa (eV)
-    │       │   │   ├── live_time (s)
-    │       │   │   └── real_time (s)
-    │       │   └── EELS
-    │       │       ├── aperture (mm)
-    │       │       ├── collection_angle (mrad)
-    │       │       ├── dwell_time (s)
-    │       │       ├── exposure (s)
-    │       │       ├── frame_number
-    │       │       └── spectrometer
-    │       ├── Biprism
-    │       │   ├── azimuth_angle (º)
-    │       │   ├── position
-    │       │   └── voltage (V)
-    │       ├── acquisition_mode
-    │       ├── beam_current (nA)
-    │       ├── beam_energy (keV)
-    │       ├── probe_area (nm²)
-    │       ├── camera_length (mm)
-    │       ├── convergence_angle (mrad)
-    │       ├── magnification
-    │       ├── microscope
-    │       └── Stage
-    │           ├── rotation (º)
-    │           ├── tilt_alpha (º)
-    │           ├── tilt_beta (º)
-    │           ├── x (mm)
-    │           ├── y (mm)
-    │           └── z (mm)
+    |   |   (TEM)
+    │   │   ├── acquisition_mode
+    │   │   ├── camera_length (mm)
+    │   │   └── convergence_angle (mrad)
+    │   ├── Stage
+    │   │   ├── rotation (º)
+    │   │   ├── tilt_alpha (º)
+    │   │   ├── tilt_beta (º)
+    │   │   ├── x (mm)
+    │   │   ├── y (mm)
+    │   │   └── z (mm)
+    │   └── Detector
+    │       ├── detector_type
+    |       (EDS)
+    │       ├── azimuth_angle (º)
+    │       ├── elevation_angle (º)
+    │       ├── energy_resolution_MnKa (eV)
+    │       ├── live_time (s)
+    │       └── real_time (s)
+    │       (EELS)
+    │       ├── aperture (mm)
+    │       ├── collection_angle (mrad)
+    │       ├── dwell_time (s)
+    │       ├── exposure (s)
+    │       ├── frame_number
+    │       └── spectrometer
+    │       (Holography)   
+    │       └── Biprism
+    │           ├── azimuth_angle (º)
+    │           ├── position
+    │           └── voltage (V)
     ├── General
     |   |── FileIO
     |   |   ├── 0
@@ -153,7 +136,6 @@ date
     The acquisition or creation date in ISO 8601 date format, e.g.
     '2018-01-28'.
 
-
 authors
     type: Str
 
@@ -211,90 +193,39 @@ timestamp
     timezone-aware format). The timestamp will be in ISO 8601 format, as
     produced by the ``isoformat()`` method of the ``datetime`` class.
 
-.. _source-metadata:
 
 Acquisition_instrument
 ======================
 
-TEM
----
+.. _source-metadata:
 
-Contain information relevant to transmission electron microscope signals.
+Source
+------
+
+Contains information on the source used to excite the measured signal.
+
+source_type
+    type: Str
+
+    One of e.g. TEM, SEM, Laser, X-rays, ...
+
+** Entries relevant for both scanning and transmission electron microscopes
+(SEM/TEM) **
 
 microscope
     type: Str
 
     The microscope model, e.g. VG 501
 
-acquisition_mode
-    type: Str
-
-    Either 'TEM' or 'STEM'
-
-camera_length
-    type: Float
-
-    The camera length in mm.
-
-convergence_angle
-    type: Float
-
-    The beam convergence semi-angle in mrad.
-
-beam_energy
-    type: Float
-
-    The energy of the electron beam in keV
-
 beam_current
     type: Float
 
     The beam current in nA.
 
-probe_area
-    type: Float
-
-    The illumination area of the electron beam in nm\ :sup:`2`.
-
-dwell_time
-    type: Float
-
-    The dwell time in seconds. This is relevant for STEM acquisition
-
-exposure
-    type: Float
-
-    The exposure time in seconds. This is relevant for TEM acquisition.
-
-magnification
-    type: Float
-
-    The magnification.
-
-SEM
----
-
-Contain information relevant to scanning electron microscope signals.
-
-microscope
-    type: Str
-
-    The microscope model, e.g. VG 501
-
-convergence_angle
-    type: Float
-
-    The beam convergence semi-angle in mrad.
-
 beam_energy
     type: Float
 
     The energy of the electron beam in keV
-
-beam_current
-    type: Float
-
-    The beam current in nA.
 
 probe_area
     type: Float
@@ -311,11 +242,40 @@ working_distance
 
     The working distance in mm.
 
+dwell_time
+    type: Float
+
+    The dwell time in seconds. This is relevant for STEM acquisition
+
+exposure
+    type: Float
+
+    The exposure time in seconds. This is relevant for TEM acquisition.
+
+
+** Additional entries for transmission electron microscopes (TEM) **
+
+acquisition_mode
+    type: Str
+
+    Either 'TEM' or 'STEM'
+
+camera_length
+    type: Float
+
+    The camera length in mm.
+
+convergence_angle
+    type: Float
+
+    The beam convergence semi-angle in mrad.
+
 
 .. _stage-metadata:
 
 Stage
 -----
+
 tilt_alpha
     type: Float
 
@@ -346,6 +306,7 @@ z
 
     The position of the stage in mm along the z axis.
 
+
 .. _detector-metadata:
 
 Detector
@@ -358,13 +319,10 @@ following structure:
 detector_type
     type: Str
 
-    The type of the detector, e.g. SE for SEM
+    The type of the detector, e.g. SE for SEM, EELS, EDS, ...
 
-EELS
-^^^^
 
-This node stores parameters relevant to electron energy loss spectroscopy
-signals.
+** Parameters relevant to electron energy loss spectroscopy signals: **
 
 aperture_size
     type: Float
@@ -396,11 +354,8 @@ spectrometer
 
     The spectrometer model, e.g. Gatan Enfinium ER (Model 977).
 
-EDS
-^^^
 
-This node stores parameters relevant to electron X-ray energy dispersive
-spectroscopy data.
+** Parameters relevant to electron X-ray energy dispersive spectroscopy data (EDS): **
 
 
 azimuth_angle
@@ -433,8 +388,9 @@ live_time
     The time spent to record the spectrum in second, compensated for the
     dead time of the detector.
 
+
 Biprism
--------
+^^^^^^^
 
 This node stores parameters of biprism used in off-axis electron holography
 
