@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -872,7 +872,8 @@ class MVATools(object):
             If ``True``, plots each factor to the same window.  They are
             not scaled. Default is ``True``.
         title : str
-            Title of the plot.
+            Title of the matplotlib plot or label of the line in the legend
+            when the dimension of factors is 1 and ``same_window`` is ``True``.
         cmap : :py:class:`~matplotlib.colors.Colormap`
             The colormap used for the factor images, or for peak
             characteristics. Default is the matplotlib gray colormap
@@ -905,9 +906,7 @@ class MVATools(object):
             else:
                 raise ValueError(
                     "Please provide the number of components to plot via the "
-                    "`comp_ids` argument")
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
+                    "`comp_ids` argument.")
         if title is None:
             title = self._get_plot_title('Decomposition factors of',
                                          same_window=same_window)
@@ -950,7 +949,8 @@ class MVATools(object):
             if ``True``, plots each factor to the same window.  They are
             not scaled. Default is ``True``.
         title : str
-            Title of the plot.
+            Title of the matplotlib plot or label of the line in the legend
+            when the dimension of factors is 1 and ``same_window`` is ``True``.
         cmap : :py:class:`~matplotlib.colors.Colormap`
             The colormap used for the factor images, or for peak
             characteristics. Default is the matplotlib gray colormap
@@ -977,8 +977,6 @@ class MVATools(object):
         if same_window is None:
             same_window = True
         factors = self.learning_results.bss_factors
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('BSS factors of',
                                          same_window=same_window)
@@ -1024,7 +1022,8 @@ class MVATools(object):
             if ``True``, plots each factor to the same window. They are
             not scaled. Default is ``True``.
         title : str
-            Title of the plot.
+            Title of the matplotlib plot or label of the line in the legend
+            when the dimension of loadings is 1 and ``same_window`` is ``True``.
         with_factors : bool
             If ``True``, also returns figure(s) with the factors for the
             given comp_ids.
@@ -1077,8 +1076,7 @@ class MVATools(object):
                 raise ValueError(
                     "Please provide the number of components to plot via the "
                     "`comp_ids` argument")
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
+
         if title is None:
             title = self._get_plot_title(
                 'Decomposition loadings of', same_window=same_window)
@@ -1125,10 +1123,9 @@ class MVATools(object):
         same_window : bool
             If ``True``, plots each factor to the same window. They are
             not scaled. Default is ``True``.
-        comp_label : str
-            Will be deprecated in 2.0, please use `title` instead
         title : str
-            Title of the plot.
+            Title of the matplotlib plot or label of the line in the legend
+            when the dimension of loadings is 1 and ``same_window`` is ``True``.
         with_factors : bool
             If `True`, also returns figure(s) with the factors for the
             given `comp_ids`.
@@ -1166,8 +1163,6 @@ class MVATools(object):
                                "performed first.")
         if same_window is None:
             same_window = True
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title(
                 'BSS loadings of', same_window=same_window)
@@ -1861,7 +1856,7 @@ class MVATools(object):
         cluster_ids=None,
         calibrate=True,
         same_window=True,
-        comp_label="Cluster centers",
+        title=None,
         per_row=3):
         """Plot centers from a cluster analysis.
 
@@ -1880,10 +1875,9 @@ class MVATools(object):
         same_window : bool
             if True, plots each center to the same window.  They are
             not scaled.
-        comp_label : string
-            the label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting
-            in the same window)
+        title : str
+            Title of the matplotlib plot or label of the line in the legend
+            when the dimension of loadings is 1 and ``same_window`` is ``True``.
         per_row : int
             the number of plots in each row, when the same_window parameter is
             True.
@@ -1900,14 +1894,19 @@ class MVATools(object):
         if same_window is None:
             same_window = True
         factors = cs.T
+
         if cluster_ids is None:
             cluster_ids = range(factors.shape[1])
+
+        if title is None:
+            title = self._get_plot_title(
+                'Cluster centers of', same_window=same_window)
 
         return self._plot_factors_or_pchars(factors,
                                             comp_ids=cluster_ids,
                                             calibrate=calibrate,
                                             same_window=same_window,
-                                            comp_label=comp_label,
+                                            comp_label=title,
                                             per_row=per_row)
     plot_cluster_signals.__doc__ %= (CLUSTER_SIGNALS_ARG)
 
@@ -1944,8 +1943,9 @@ class MVATools(object):
         same_window : bool
             if True, plots each factor to the same window.  They are
             not scaled. Default is True.
-        title : string
-            Title of the plot.
+        title : str
+            Title of the matplotlib plot or label of the line in the legend
+            when the dimension of labels is 1 and ``same_window`` is ``True``.
         with_centers : bool
             If True, also returns figure(s) with the cluster centers for the
             given cluster_ids.
@@ -1986,8 +1986,6 @@ class MVATools(object):
         if cluster_ids is None:
             cluster_ids = range(labels.shape[0])
 
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title(
                 'Cluster labels of', same_window=same_window)
@@ -2018,9 +2016,8 @@ class MVATools(object):
         **kwargs):
         """Plot the euclidian distances to the centroid of each cluster.
 
-        In case of 1D navigation axis,
-        each line can be toggled on and off by clicking on the legended
-        line.
+        In case of 1D navigation axis, each line can be toggled on and
+        off by clicking on the corresponding line in the legend.
 
         Parameters
         ----------
@@ -2038,8 +2035,9 @@ class MVATools(object):
         same_window : bool
             if True, plots each factor to the same window.  They are
             not scaled. Default is True.
-        title : string
-            Title of the plot.
+        title : str
+            Title of the matplotlib plot or label of the line in the legend
+            when the dimension of distance is 1 and ``same_window`` is ``True``.
         with_centers : bool
             If True, also returns figure(s) with the cluster centers for the
             given cluster_ids.
@@ -2080,8 +2078,6 @@ class MVATools(object):
         if cluster_ids is None:
             cluster_ids = range(distances.shape[0])
 
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title(
                 'Cluster distances of', same_window=same_window)
@@ -2167,21 +2163,6 @@ def _plot_x_results(factors, loadings, factors_navigator, loadings_navigator,
     factors.plot(navigator=factors_navigator)
 
 
-def _change_API_comp_label(title, comp_label):
-    if comp_label is not None:
-        if title is None:
-            title = comp_label
-            warnings.warn("The 'comp_label' argument will be deprecated "
-                          "in 2.0, please use 'title' instead",
-                          VisibleDeprecationWarning)
-        else:
-            warnings.warn("The 'comp_label' argument will be deprecated "
-                          "in 2.0, Since you are already using the 'title'",
-                          "argument, 'comp_label' is ignored.",
-                          VisibleDeprecationWarning)
-    return title
-
-
 class SpecialSlicersSignal(SpecialSlicers):
 
     def __setitem__(self, i, j):
@@ -2214,6 +2195,13 @@ class BaseSignal(FancySlicing,
                  MVA,
                  MVATools,):
 
+    """
+    General signal created from a numpy or cupy array.
+
+    >>> data = np.ones((10, 10))
+    >>> s = hs.signals.BaseSignal(data)
+    """
+
     _dtype = "real"
     # When _signal_dimension=-1, the signal dimension of BaseSignal is defined
     # by the dimension of the array, and this is implemented by the default
@@ -2227,7 +2215,8 @@ class BaseSignal(FancySlicing,
     ]
 
     def __init__(self, data, **kwds):
-        """Create a Signal from a numpy array.
+        """
+        Create a signal instance.
 
         Parameters
         ----------
@@ -2235,7 +2224,7 @@ class BaseSignal(FancySlicing,
            The signal data. It can be an array of any dimensions.
         axes : [dict/axes], optional
             List of either dictionaries or axes objects to define the axes (see
-            the documentation of the :py:class:`~hyperspy.axes.AxesManager`
+            the documentation of the :py:class:`~.axes.AxesManager`
             class for more details).
         attributes : dict, optional
             A dictionary whose items are stored as attributes.
@@ -2252,7 +2241,6 @@ class BaseSignal(FancySlicing,
             Define whether the signal is ragged or not. Overwrite the
             ``ragged`` value in the ``attributes`` dictionary. If None, it does
             nothing. Default is None.
-
         """
         # the 'full_initialisation' keyword is private API to be used by the
         # _assign_subclass method. Purposely not exposed as public API.
@@ -2319,8 +2307,7 @@ class BaseSignal(FancySlicing,
         return string
 
     def _binary_operator_ruler(self, other, op_name):
-        exception_message = (
-            "Invalid dimensions for this operation")
+        exception_message = ("Invalid dimensions for this operation.")
         if isinstance(other, BaseSignal):
             # Both objects are signals
             oam = other.axes_manager
@@ -2510,16 +2497,6 @@ class BaseSignal(FancySlicing,
     def original_metadata(self):
         """The original metadata of the signal."""
         return self._original_metadata
-
-    @original_metadata.setter
-    def original_metadata(self, d):
-        warnings.warn(
-            "Setting the `original_metadata` attribute is deprecated and will be removed "
-            "removed in HyperSpy 2.0. Use the `set_item` and `add_dictionary` "
-            "methods of the `original_metadata` attribute instead.")
-        if isinstance(d, dict):
-            d = DictionaryTreeBrowser(d)
-        self._original_metadata = d
 
     @property
     def ragged(self):
@@ -2836,6 +2813,13 @@ class BaseSignal(FancySlicing,
         elif self.tmp_parameters.has_item('filename'):
             self._plot.signal_title = self.tmp_parameters.filename
 
+        def sum_wrapper(s, axis):
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore", category=UserWarning, module='hyperspy'
+                    )
+                return s.sum(axis)
+
         def get_static_explorer_wrapper(*args, **kwargs):
             if np.issubdtype(navigator.data.dtype, np.complexfloating):
                 return abs(navigator(as_numpy=True))
@@ -2843,16 +2827,11 @@ class BaseSignal(FancySlicing,
                 return navigator(as_numpy=True)
 
         def get_1D_sum_explorer_wrapper(*args, **kwargs):
-            navigator = self
             # Sum over all but the first navigation axis.
-            am = navigator.axes_manager
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=UserWarning,
-                                        module='hyperspy'
-                                        )
-                navigator = navigator.sum(
-                    am.signal_axes + am.navigation_axes[1:]
-                    )
+            am = self.axes_manager
+            navigator = sum_wrapper(
+                self, am.signal_axes + am.navigation_axes[1:]
+                )
             return np.nan_to_num(to_numpy(navigator.data)).squeeze()
 
         def get_dynamic_explorer_wrapper(*args, **kwargs):
@@ -2883,21 +2862,26 @@ class BaseSignal(FancySlicing,
                     navigator = self.deepcopy()
                 else:
                     navigator = interactive(
-                        self.sum,
-                        self.events.data_changed,
-                        self.axes_manager.events.any_axis_changed,
-                        self.axes_manager.signal_axes)
+                        f=sum_wrapper,
+                        event=self.events.data_changed,
+                        recompute_out_event=self.axes_manager.events.any_axis_changed,
+                        s=self,
+                        axis=self.axes_manager.signal_axes,
+                        )
                 if navigator.axes_manager.navigation_dimension == 1:
                     navigator = interactive(
-                        navigator.as_signal1D,
-                        navigator.events.data_changed,
-                        navigator.axes_manager.events.any_axis_changed, 0)
+                        f=navigator.as_signal1D,
+                        event=navigator.events.data_changed,
+                        recompute_out_event=navigator.axes_manager.events.any_axis_changed,
+                        spectral_axis=0,
+                        )
                 else:
                     navigator = interactive(
-                        navigator.as_signal2D,
-                        navigator.events.data_changed,
-                        navigator.axes_manager.events.any_axis_changed,
-                        (0, 1))
+                        f=navigator.as_signal2D,
+                        event=navigator.events.data_changed,
+                        recompute_out_event=navigator.axes_manager.events.any_axis_changed,
+                        image_axes=(0, 1),
+                        )
             else:
                 navigator = None
         # Navigator properties
@@ -4877,7 +4861,10 @@ class BaseSignal(FancySlicing,
             lazy_output = self._lazy
         if ragged is None:
             ragged = self.ragged
-        # Separate ndkwargs depending on if they are BaseSignals.
+        
+        # Separate arguments to pass to the mapping function:
+        # ndkwargs dictionary contains iterating arguments which must be signals.
+        # kwargs dictionary contains non-iterating arguments
         self_nav_shape = self.axes_manager.navigation_shape
         ndkwargs = {}
         ndkeys = [key for key in kwargs if isinstance(kwargs[key], BaseSignal)]
@@ -4946,21 +4933,21 @@ class BaseSignal(FancySlicing,
                                     self.axes_manager.signal_axes])
             result = self._map_all(function, inplace=inplace, **kwargs)
         else:
-            kwargs["output_signal_size"] = output_signal_size
-            kwargs["output_dtype"] = output_dtype
             if show_progressbar is None:
                 from hyperspy.defaults_parser import preferences
                 show_progressbar = preferences.General.show_progressbar
             # Iteration over coordinates.
             result = self._map_iterate(
                 function,
-                iterating_kwargs=ndkwargs,
+                iterating_kwargs=ndkwargs, # function argument(s) (iterating)
                 show_progressbar=show_progressbar,
                 ragged=ragged,
                 inplace=inplace,
                 lazy_output=lazy_output,
                 max_workers=max_workers,
-                **kwargs,
+                output_dtype=output_dtype,
+                output_signal_size=output_signal_size,
+                **kwargs, # function argument(s) (non-iterating) 
             )
         if not inplace:
             return result
@@ -5143,13 +5130,6 @@ class BaseSignal(FancySlicing,
         nav_chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
         args, arg_keys = (), ()
         for key in iterating_kwargs:
-            if not isinstance(iterating_kwargs[key], BaseSignal):
-                iterating_kwargs[key] = BaseSignal(iterating_kwargs[key].T).T
-                _logger.warning(
-                    "Passing arrays as keyword arguments can be ambiguous. "
-                    "This is deprecated and will be removed in HyperSpy 2.0. "
-                    "Pass signal instances instead."
-                )
             if iterating_kwargs[key]._lazy:
                 axes = iterating_kwargs[key].axes_manager.navigation_axes
                 if iterating_kwargs[key].get_chunk_size(axes) != nav_chunks:
@@ -5842,11 +5822,9 @@ class BaseSignal(FancySlicing,
 
         """
         if signal_type is None:
-            warnings.warn(
-                "`s.set_signal_type(signal_type=None)` is deprecated. "
-                "Use `s.set_signal_type(signal_type='')` instead.",
-                VisibleDeprecationWarning
-            )
+            raise TypeError(
+                "The `signal_type` argument must be of string type."
+                )
 
         self.metadata.Signal.signal_type = signal_type
         # _assign_subclass takes care of matching aliases with their

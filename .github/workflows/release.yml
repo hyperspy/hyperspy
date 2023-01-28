@@ -18,10 +18,10 @@ jobs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.3.0
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions
         with:
@@ -39,7 +39,7 @@ jobs:
         python-version: ['3.7', '3.8', '3.9', '3.10']
 
     steps:
-      - uses: actions/checkout@v3.1.0
+      - uses: actions/checkout@v3.3.0
 
       - uses: actions/setup-python@v4
         name: Install Python
@@ -92,7 +92,7 @@ jobs:
     needs: create_release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.1.0
+      - uses: actions/checkout@v3.3.0
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -109,7 +109,7 @@ jobs:
           python -m build --sdist
 
       - name: Build manylinux Python wheels
-        uses: RalfG/python-wheels-manylinux-build@c244013d850d8df62e9c7dd3ddab0cc581308de6
+        uses: RalfG/python-wheels-manylinux-build@ae10a67945b323e502c46eee6df55b7658e01670
         with:
           python-versions: 'cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310'
           build-requirements: 'cython'

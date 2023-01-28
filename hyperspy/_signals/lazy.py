@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -33,6 +33,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
     MANY_AXIS_PARAMETER,
+    LAZYSIGNAL_DOC,
     )
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.array_tools import (
@@ -157,10 +158,11 @@ def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
 
 
 class LazySignal(BaseSignal):
-    """A Lazy Signal instance that delays computation until explicitly saved
-    (assuming storing the full result of computation in memory is not feasible)
-    """
-    _lazy = True
+
+    """Lazy general signal class."""
+
+    _lazy = True    
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "BaseSignal")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -174,6 +176,10 @@ class LazySignal(BaseSignal):
         self._cache_dask_chunk_slice = None
         if not self._clear_cache_dask_data in self.events.data_changed.connected:
             self.events.data_changed.connect(self._clear_cache_dask_data)
+        
+    __init__.__doc__ = BaseSignal.__init__.__doc__.replace(
+        ":py:class:`numpy.ndarray`", ":py:class:`dask.array.Array`"
+        )
 
     def _repr_html_(self):
         try:
@@ -231,7 +237,8 @@ class LazySignal(BaseSignal):
         return string
 
     def compute(self, close_file=False, show_progressbar=None, **kwargs):
-        """Attempt to store the full signal in memory.
+        """
+        Attempt to store the full signal in memory.
 
         Parameters
         ----------

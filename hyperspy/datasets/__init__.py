@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -27,11 +27,13 @@ Functions:
 
 Submodules:
 
-The :mod:`~hyperspy.api.datasets` module contains the following submodules:
+The :mod:`hyperspy.datasets` module contains the following submodules:
 
-    :mod:`~hyperspy.api.datasets.example_signals`
+    :mod:`hyperspy.datasets.artificial_data`
+        Artificial datasets generated with HyperSpy.
+
+    :mod:`hyperspy.datasets.example_signals`
         Example datasets distributed with HyperSpy.
-
 
 """
 

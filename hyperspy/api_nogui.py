@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -101,6 +101,7 @@ del docstrings
 
 
 def get_configuration_directory_path():
+    """Return configuration path"""
     import hyperspy.misc.config_dir
     return hyperspy.misc.config_dir.config_path
 

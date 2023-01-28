@@ -1,4 +1,6 @@
 
+.. _signal2d-label:
+
 Signal2D Tools
 **************
 

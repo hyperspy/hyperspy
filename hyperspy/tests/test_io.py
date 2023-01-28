@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -250,7 +250,7 @@ def test_file_reader_options(tmp_path):
     # Test object reader
     from rsciio import hspy
 
-    t = hs.load(tmp_path / "temp.hspy", reader=hspy.api)
+    t = hs.load(tmp_path / "temp.hspy", reader=hspy)
     assert len(t) == 1
     np.testing.assert_allclose(t.data, np.arange(10))
 
@@ -284,7 +284,7 @@ def test_load_save_filereader_metadata(tmp_path):
 
     s = hs.datasets.example_signals.EDS_TEM_Spectrum()
     assert s.metadata.General.FileIO.Number_0.io_plugin == \
-           'rsciio.hspy.api'
+           'rsciio.hspy'
     assert s.metadata.General.FileIO.Number_0.operation == 'load'
     assert s.metadata.General.FileIO.Number_0.hyperspy_version == hs_version
 
@@ -292,17 +292,17 @@ def test_load_save_filereader_metadata(tmp_path):
     s.save(f)
     expected = {
         '0': {
-            'io_plugin': 'rsciio.hspy.api',
+            'io_plugin': 'rsciio.hspy',
             'operation': 'load',
             'hyperspy_version': hs_version
         },
         '1': {
-            'io_plugin': 'rsciio.hspy.api',
+            'io_plugin': 'rsciio.hspy',
             'operation': 'save',
             'hyperspy_version': hs_version
         },
         '2': {
-            'io_plugin': 'rsciio.hspy.api',
+            'io_plugin': 'rsciio.hspy',
             'operation': 'load',
             'hyperspy_version': hs_version
         },

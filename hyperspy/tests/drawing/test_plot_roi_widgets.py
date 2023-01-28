@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -68,7 +68,6 @@ class TestPlotROI():
         self.im.plot()
         p = roi.Point1DROI(0.5)
         p.add_widget(signal=self.im, axes=0, color="cyan")
-        return self.im._plot.navigator_plot.figure
 
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)

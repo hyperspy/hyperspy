@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -34,6 +34,7 @@ from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING_PARAMETERS,
     PLOT1D_DOCSTRING
     )
+from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
 
 
 _logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ _logger = logging.getLogger(__name__)
 
 class EDSSpectrum(Signal1D):
 
-    """General 1D signal class for EDS spectra."""
+    """General signal class for EDS spectra."""
 
     _signal_type = "EDS"
 
@@ -1001,7 +1002,7 @@ class EDSSpectrum(Signal1D):
             The position on the signal axis. Each row corresponds to a
             group.
         kwargs
-            keywords argument for :py:class:`~.api.markers.VerticalLine`
+            keywords argument for :py:class:`~.api.plot.markers.VerticalLine`
         """
         per_xray = len(position[0])
         colors = itertools.cycle(np.sort(
@@ -1135,4 +1136,7 @@ class EDSSpectrum(Signal1D):
 
 
 class LazyEDSSpectrum(EDSSpectrum, LazySignal1D):
-    pass
+
+    """Lazy general signal class for EDS spectra."""
+
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "EDSSpectrum")

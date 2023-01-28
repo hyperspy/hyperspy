@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -165,11 +165,8 @@ class TestConvertSignal1D:
         self.s.set_signal_type("")
         assert isinstance(self.s, hs.signals.Signal1D)
 
-    def test_deprecated(self):
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match=r"is deprecated. Use ",
-        ):
+    def test_error_None(self):
+        with pytest.raises(TypeError):
             self.s.set_signal_type(None)
 
 

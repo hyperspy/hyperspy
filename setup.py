@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -83,15 +83,25 @@ extras_require = {
     # UPDATE BEFORE RELEASE
     "gui-traitsui": ["hyperspy_gui_traitsui @ git+https://github.com/hyperspy/hyperspy_gui_traitsui#egg=hyperspy_gui_traitsui"],
     #"gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
-    "tests": ["pytest>=3.6", "pytest-mpl", "pytest-xdist", "pytest-rerunfailures", "pytest-instafail", "matplotlib>=3.1"],
+    "tests": [
+        "pytest>=3.6",
+        "pytest-mpl",
+        "pytest-xdist",
+        "pytest-rerunfailures",
+        "pytest-instafail",
+        # optional dependency of scipy to use scipy.datasets
+        "pooch",
+        ],
     "coverage":["pytest-cov"],
     # required to build the docs
     "build-doc": [
+        "pydata_sphinx_theme",
         "sphinx>=1.7",
-        "sphinx_rtd_theme",
+        "sphinx-gallery",
         "sphinx-toggleprompt",
         "sphinxcontrib-mermaid",
         "sphinxcontrib-towncrier",
+        "sphinx-design",
         # pin towncrier until https://github.com/sphinx-contrib/sphinxcontrib-towncrier/issues/60 is fixed
         "towncrier<22.8",
         ],

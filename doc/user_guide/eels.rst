@@ -1,3 +1,4 @@
+.. _eels-label:
 
 Electron Energy Loss Spectroscopy
 *********************************

@@ -1,6 +1,6 @@
 ﻿﻿
 
-.. _dev_guide-label:
+.. _dev_guide:
 
 Introduction
 =============
@@ -21,13 +21,13 @@ Getting started
 1. Start using HyperSpy and understand it
 -----------------------------------------
 
-Probably you would not be interested in contributing to HyperSpy, if you were 
+Probably you would not be interested in contributing to HyperSpy, if you were
 not already a user, but, just in case: the best way to start understanding how
 HyperSpy works and to build a broad overview of the code as it stands is to
 use it -- so what are you waiting for? :ref:`Install HyperSpy <install-label>`!
 
-The HyperSpy :ref:`User Guide <user_guide-label>` also provides a good overview
-of all the parts of the code that are currently implemented as well as much 
+The HyperSpy :ref:`User Guide <user_guide>` also provides a good overview
+of all the parts of the code that are currently implemented as well as much
 information about how everything
 works -- so read it well.
 
@@ -62,7 +62,7 @@ Indeed, there are many ways to contribute:
 1. Just by asking a question in our
    `Gitter chat room <https://gitter.im/hyperspy/hyperspy>`_
    instead of sending a private email to the developers you are contributing to
-   HyperSpy. Once you get more familiar with HyperSpy,  it will be awesome if 
+   HyperSpy. Once you get more familiar with HyperSpy,  it will be awesome if
    you could help others with their questions.
 2. Issues reported in the
    `issues tracker <https://github.com/hyperspy/hyperspy/issues>`_
@@ -85,7 +85,7 @@ You may have a very clear idea of what you want to contribute, but if you're
 not sure where to start, you can always look through the issues and pull
 requests on the `GitHub Page <https://github.com/hyperspy/hyperspy/>`_.
 You'll find that there are many known areas for development in the issues
-and a number of pull-requests are partially finished projects just sitting 
+and a number of pull-requests are partially finished projects just sitting
 there waiting for a keen new contributor to come and learn by finishing.
 
 The documentation (let it be the docstrings,
@@ -105,7 +105,7 @@ There are 3 key points to get right when starting out as a contributor:
    chunks. Use :ref:`Git branches <using_github-label>` to keep work separated
    in manageable sections.
 2. Make sure that your :ref:`code style <coding_style-label>` is good.
-3. Bear in mind that every new function you write will need 
+3. Bear in mind that every new function you write will need
    :ref:`tests <testing-label>` and
    :ref:`user documentation <writing_documentation-label>`!
 

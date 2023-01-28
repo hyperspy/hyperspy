@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,8 +20,10 @@
 
 Functions:
 
-plot_spectra, plot_images
-    Plot multiple spectra/images in the same figure.
+plot_images
+    Plot multiple images in the same figure.
+plot_spectra
+    Plot multiple spectra in the same figure.
 plot_signals
     Plot multiple signals at the same time.
 plot_histograms

@@ -11,7 +11,7 @@ a lot of this guide boils down to properly using that platform. So, visit the
 following link and poke around the code, issues, and pull requests: `HyperSpy
 on GitHub <https://github.com/hyperspy/hyperspy>`_.
 
-It is probably also worth visiting `github.com <https://github.com/>`_
+It is probably also worth to visit `github.com <https://github.com/>`_
 and to go through the `"boot camp" <https://help.github
 .com/categories/bootcamp/>`_ to get a feel for the terminology.
 
@@ -37,7 +37,7 @@ PS: If you choose to develop in Windows/Mac you may find `Github Desktop
 Use Git and work in manageable branches
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By now you will have had a look around GitHub -- but why is it so important?
+By now, you will have had a look around GitHub -- but why is it so important?
 
 Well, GitHub is the public forum in which we manage and discuss development of
 the code. More importantly, it enables every developer to use `Git`, which is
@@ -47,14 +47,14 @@ branches) and switch between them easily. Later, you can choose which version
 you want to have integrated into HyperSpy. You can learn all about Git at
 `git-scm <http://www.git-scm.com/about>`_!
 
-It is very important to separate your contributions so
+It is very important to separate your contributions, so
 that each branch is a small advancement on the "master" code or on another
 branch. In the end, each branch will have to be checked and reviewed by
 someone else before it can be included -- so if it is too big, you will be
 asked to split it up!
 
 For personal use, before integrating things into the main HyperSpy code, you
-can merge some together for your personal use. However, make sure each new
+can merge some branches for your personal use. However, make sure each new
 feature has its own branch that is contributed through a separate pull
 request!
 
@@ -102,3 +102,39 @@ For example, to rebase the ``bug_fix_branch`` branch from ``RELEASE_next_minor``
 
    $ git rebase --onto RELEASE_next_patch RELEASE_next_minor bug_fix_branch
 
+
+Keeping the git history clean
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For review, and for revisiting changes at a later point, it is advisable to keep a "clean" git history, i.e. a meaningful succession of commits. In some cases, it is useful to rewrite the git history to keep it more readable:
+
+* it is not always possible to keep a clean history and quite often the code development follows an exploratory process with code changes going back and forth, etc. 
+* Commits that only fix typographic mistakes, formatting or failing tests usually can be *squashed* (merged) into the previous commits.
+
+When using a GUI for interaction with *git*, check out its features for joining and reordering commits.
+
+When using git in the command line, use ``git rebase`` with the *interactive* option. For example, to rearrange the last five commits:
+
+.. code:: bash
+
+  $ git rebase -i HEAD~5
+
+In a text editor, you can then edit the commit history. If you have commits ``a...e`` and want to merge ``b`` and ``e`` into ``a`` and ``d``, respectively, while moving ``c`` to the end of the hisotry, your file would look the following:
+
+.. code::  text
+
+  pick a ...
+  squash b ...
+  pick d ...
+  squash e ...
+  pick c ...
+
+Afterwards, you get a chance to edit the commit messages.
+
+Finally, to push the changes, use a ``+`` in front of the branch name, to override commits you have already pushed to github previously:
+
+.. code:: bash
+
+  git push origin +lumberjack-branch
+
+See, for example, `How (and why!) to keep your Git commit history clean <https://about.gitlab.com/blog/2018/06/07/keeping-git-commit-history-clean/>`_ for a more detailed blog post on this subject.

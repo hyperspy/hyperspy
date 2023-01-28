@@ -1,6 +1,9 @@
+.. _axes-handling:
+
 Axes handling
 *************
 
+.. _dimensions-label:
 
 The navigation and signal dimensions
 ------------------------------------
@@ -164,6 +167,7 @@ navigation dimensions:
 
     >>> s.axes_manager.indices = (5, 4)
 
+.. _Axes_properties:
 
 Summary of axis properties
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -237,6 +241,8 @@ following table.
     will be added in future releases.
 
 
+.. _uniform-data-axis:
+
 Uniform data axis
 ^^^^^^^^^^^^^^^^^
 
@@ -273,6 +279,8 @@ Corresponding output of :py:class:`~.axes.AxesManager`:
     ---------------- | ------ | ------- | ------- | ------
                      |    500 |     300 |       1 |
 
+
+.. _functional-data-axis:
 
 Functional data axis
 ^^^^^^^^^^^^^^^^^^^^
@@ -362,6 +370,8 @@ Initializing ``x`` as non-uniform :py:class:`~.axes.DataAxis`:
 Initializing ``x`` with ``offset`` and ``scale``:
 
 
+.. _data-axis:
+
 (non-uniform) Data axis
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -394,6 +404,8 @@ Corresponding output of :py:class:`~.axes.AxesManager`:
     ---------------- | ------ | ---------------- | ---------------- | ------
                      |     12 | non-uniform axis | non-uniform axis |
 
+
+.. _defining-axes:
 
 Defining a new axis
 -------------------

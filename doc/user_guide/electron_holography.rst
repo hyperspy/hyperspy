@@ -12,13 +12,6 @@ It inherits from :py:class:`~._signals.signal2d.Signal2D` class and thus can
 use all of its functionality. The usage of the class is explained in the
 following sections.
 
-
-The HologramImage class
-=======================
-
-The :py:class:`~._signals.hologram_image.HologramImage` class is designed to
-contain images acquired via electron holography.
-
 To transform a :py:class:`~._signals.signal2d.Signal2D` (or subclass) into a
 :py:class:`~._signals.hologram_image.HologramImage` use:
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -269,6 +269,7 @@ def test_dir_utils_samfire():
     import hyperspy.utils.samfire
     d = dir(hyperspy.utils.samfire)
     assert d == [
+        'SamfirePool',
         'fit_tests',
         'global_strategies',
         'local_strategies',
