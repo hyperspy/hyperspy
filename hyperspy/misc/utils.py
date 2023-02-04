@@ -272,7 +272,7 @@ class DictionaryTreeBrowser:
         for key, value in dictionary.items():
             if key == "_double_lines":
                 value = double_lines
-            self.__setattr__(key, value)
+            self._setattr(key, value, keep_existing=True)
 
     def process_lazy_attributes(self):
         """Run the DictionaryTreeBrowser machinery for the lazy attributes."""
@@ -300,7 +300,8 @@ class DictionaryTreeBrowser:
         filename : str
             The name of the file without the extension that is
             txt by default
-        encoding : valid encoding str
+        encoding : str
+            The encoding to be used.
 
         """
         self.process_lazy_attributes()
@@ -464,6 +465,27 @@ class DictionaryTreeBrowser:
             return item
 
     def __setattr__(self, key, value):
+        self._setattr(key, value, keep_existing=False)
+
+    def _setattr(self, key, value, keep_existing=False):
+        """
+        Set the value of the given attribute `key`.
+
+        Parameters
+        ----------
+        key : str
+            The key attribute to be set.
+        value : object
+            The value to assign to the given `key` attribute.
+        keep_existing : bool, optional
+            If value is of dictionary type and the node already exists, keep
+            existing leaf of the node being set. The default is False.
+
+        Returns
+        -------
+        None.
+
+        """
         if key in ["_double_lines", "_lazy_attributes"]:
             super().__setattr__(key, value)
             return
@@ -475,7 +497,7 @@ class DictionaryTreeBrowser:
             value = BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
-            if slugified_key in self.__dict__.keys():
+            if slugified_key in self.__dict__.keys() and keep_existing:
                 self.__dict__[slugified_key]["_dtb_value_"].add_dictionary(
                     value, double_lines=self._double_lines
                 )
@@ -740,13 +762,15 @@ class DictionaryTreeBrowser:
 
     def set_item(self, item_path, value):
         """Given the path and value, create the missing nodes in
-        the path and assign to the last one the value
+        the path and assign the given value.
 
         Parameters
         ----------
-        item_path : Str
+        item_path : str
             A string describing the path with each item separated by a
-            full stops (periods)
+            full stop (periods)
+        value : object
+            The value to assign to the given path.
 
         Examples
         --------
