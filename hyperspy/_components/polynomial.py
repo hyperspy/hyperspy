@@ -64,7 +64,6 @@ class Polynomial(Expression):
         name = "{} order Polynomial".format(ordinal(order))
         super().__init__(expression=expr, name=name, module=module,
              autodoc=False, **kwargs)
-        self._id_name = "eab91275-88db-4855-917a-cdcbe7209592"
 
     def get_polynomial_order(self):
         return len(self.parameters) - 1
@@ -146,13 +145,11 @@ def convert_to_polynomial(poly_dict):
     Convert the dictionary from the old to the new polynomial definition
     """
     _logger.info("Converting the polynomial to the new definition")
-    poly_order = poly_dict['order']
     coeff_list = ['{}'.format(o).zfill(len(list(str(poly_dict['order']))))
                   for o in range(poly_dict['order'], -1, -1)]
     poly2_dict = dict(poly_dict)
     coefficient_dict = poly_dict['parameters'][0]
     poly2_dict['parameters'] = []
-    poly2_dict['_id_name'] = "eab91275-88db-4855-917a-cdcbe7209592"
     for i, coeff in enumerate(coeff_list):
         param_dict = dict(coefficient_dict)
         param_dict['_id_name'] = 'a{}'.format(coeff)
