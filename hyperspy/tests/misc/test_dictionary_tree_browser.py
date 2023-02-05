@@ -83,6 +83,24 @@ class TestDictionaryBrowser:
         tree.add_dictionary({"_double_lines": ""}, double_lines=False)
         assert tree._double_lines == False
 
+    def test_setattr_dictionary(self, tree):
+        d = {"leaf13": 13}
+        tree.Node1 = d
+        assert tree.Node1.as_dictionary() == d
+
+    def test_set_item_dictionary(self, tree):
+        d = {"leaf111": 222}
+        tree.set_item("Node1.Node11", d)
+        assert tree.Node1.Node11.as_dictionary() == d
+
+        d1 = {"Node111": {"leaf1111": 1111}}
+        tree.Node1.Node11.add_dictionary(d1)
+        assert tree.Node1.Node11.as_dictionary() == {**d, **d1}
+
+        d2 = {"leaf111": 333}
+        tree.set_item("Node1.Node11", d2)
+        assert tree.Node1.Node11.as_dictionary() == d2
+
     def test_deepcopy(self, tree):
         a = tree.deepcopy()
         assert a.as_dictionary() == tree.as_dictionary()

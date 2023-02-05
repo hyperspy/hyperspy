@@ -4861,7 +4861,7 @@ class BaseSignal(FancySlicing,
             lazy_output = self._lazy
         if ragged is None:
             ragged = self.ragged
-        
+
         # Separate arguments to pass to the mapping function:
         # ndkwargs dictionary contains iterating arguments which must be signals.
         # kwargs dictionary contains non-iterating arguments
@@ -4947,7 +4947,7 @@ class BaseSignal(FancySlicing,
                 max_workers=max_workers,
                 output_dtype=output_dtype,
                 output_signal_size=output_signal_size,
-                **kwargs, # function argument(s) (non-iterating) 
+                **kwargs, # function argument(s) (non-iterating)
             )
         if not inplace:
             return result
@@ -6050,7 +6050,7 @@ class BaseSignal(FancySlicing,
                 _logger.warning(
                     "plot_marker=False and permanent=False does nothing")
         if permanent:
-            self.metadata.Markers = markers_dict
+            self.metadata.Markers.add_dictionary(markers_dict)
         if plot_marker and render_figure:
             self._render_figure()
 
