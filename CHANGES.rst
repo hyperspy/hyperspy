@@ -183,12 +183,12 @@ Signal
   has been removed, use ``show_progressbar`` instead.
 - The deprecated ``comp_label`` argument of the methods :py:meth:`~.signal.MVATools.plot_decomposition_loadings`,
   :py:meth:`~.signal.MVATools.plot_decomposition_factors`, :py:meth:`~.signal.MVATools.plot_bss_loadings`,
-  :py:meth:`~.signal.MVATools.plot_bss_factors`, :py:meth:`~.signal.MVATools.plot_clusters_distances`, 
+  :py:meth:`~.signal.MVATools.plot_bss_factors`, :py:meth:`~.signal.MVATools.plot_clusters_distances`,
   :py:meth:`~.signal.MVATools.plot_cluster_labels` has been removed, use the ``title`` argument instead.
 - The :py:meth:`~.signal.BaseSignal.set_signal_type` now raises an error when passing
   ``None`` to the ``signal_type`` argument. Use ``signal_type=""`` instead.
 - Passing an "iterating over navigation argument" to the :py:meth:`~.signal.BaseSignal.map`
-  method is removed, pass a HyperSpy signal with suitable navigation and signal shape instead.  
+  method is removed, pass a HyperSpy signal with suitable navigation and signal shape instead.
 
 Preferences
 -----------
@@ -577,7 +577,7 @@ NEW
 
 * Support for the following file formats:
 
-  * :external+rsciio:ref:`sur-format`
+  * :external+rsciio:ref:`digitalsurf-format`
   * :external+rsciio:ref:`elid-format`
   * :external+rsciio:ref:`nexus-format`
   * :external+rsciio:ref:`usid-format`
@@ -1189,7 +1189,7 @@ IO
 * Support for reading certain files without :ref:`loading them to memory <load_to_memory-label>`.
 * :external+rsciio:ref:`Bruker's composite file (bcf) <bruker-format>` reading support.
 * :external+rsciio:ref:`Electron Microscopy Datasets (EMD) <emd-format>` read and write support.
-* :external+rsciio:ref:`SEMPER unf <unf-format>` read and write support.
+* :external+rsciio:ref:`SEMPER unf <semper-format>` read and write support.
 * :external+rsciio:ref:`DENS heat log <dens-format>` read support.
 * :external+rsciio:ref:`NanoMegas blockfile <blockfile-format>` read and write support.
 
