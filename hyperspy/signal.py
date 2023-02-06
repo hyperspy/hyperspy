@@ -2668,7 +2668,8 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> s = hs.signals.Signal2D(np.random.random((2,1,1,6,8,8)))
+        >>> s = hs.signals.Signal2D(np.random.random((2, 1, 1, 6, 8, 8)))
+        >>> s
         <Signal2D, title: , dimensions: (6, 1, 1, 2|8, 8)>
         >>> s = s.squeeze()
         >>> s
@@ -3170,13 +3171,13 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> s = hs.signals.Signal1D(np.ones((5,4,3,6)))
+        >>> s = hs.signals.Signal1D(np.ones((5, 4, 3, 6)))
         >>> s
-        <Signal1D, title: , dimensions: (3, 4, 5, 6)>
+        <Signal1D, title: , dimensions: (3, 4, 5|6)>
         >>> s.rollaxis(3, 1)
-        <Signal1D, title: , dimensions: (3, 4, 5, 6)>
-        >>> s.rollaxis(2,0)
-        <Signal1D, title: , dimensions: (5, 3, 4, 6)>
+        <Signal1D, title: , dimensions: (3, 4, 5|6)>
+        >>> s.rollaxis(2, 0)
+        <Signal1D, title: , dimensions: (5, 3, 4|6)>
 
         """
         axis = self.axes_manager[axis].index_in_array
@@ -3272,18 +3273,18 @@ class BaseSignal(FancySlicing,
         >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
         >>> spectrum.data[1, 2, 9] = 5
         >>> print(spectrum)
-        <EDXTEMSpectrum, title: dimensions: (4, 4|10)>
-        >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
+        <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
+        >>> print ('Sum =', sum(sum(sum(spectrum.data))))
         Sum = 164.0
 
         >>> scale = [2, 2, 5]
         >>> test = spectrum.rebin(scale)
         >>> print(test)
-        <EDSTEMSpectrum, title: dimensions (2, 2|2)>
-        >>> print('Sum = ', sum(sum(sum(test.data))))
-        Sum =  164.0
+        <EDSTEMSpectrum, title: , dimensions: (2, 2|5)>
+        >>> print('Sum =', sum(sum(sum(test.data))))
+        Sum = 164.0
 
-        >>> s = hs.signals.Signal1D(np.ones((2, 5, 10), dtype=np.uint8)
+        >>> s = hs.signals.Signal1D(np.ones((2, 5, 10), dtype=np.uint8))
         >>> print(s)
         <Signal1D, title: , dimensions: (5, 2|10)>
         >>> print(s.data.dtype)
@@ -3380,20 +3381,15 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> s = hs.signals.Signal1D(random.random([4,3,2]))
+        >>> s = hs.signals.Signal1D(np.random.random([4, 3, 2]))
         >>> s
-            <Signal1D, title: , dimensions: (3, 4|2)>
+        <Signal1D, title: , dimensions: (3, 4|2)>
         >>> s.split()
-            [<Signal1D, title: , dimensions: (3 |2)>,
-            <Signal1D, title: , dimensions: (3 |2)>,
-            <Signal1D, title: , dimensions: (3 |2)>,
-            <Signal1D, title: , dimensions: (3 |2)>]
+        [<Signal1D, title: , dimensions: (3|2)>, <Signal1D, title: , dimensions: (3|2)>, <Signal1D, title: , dimensions: (3|2)>, <Signal1D, title: , dimensions: (3|2)>]
         >>> s.split(step_sizes=2)
-            [<Signal1D, title: , dimensions: (3, 2|2)>,
-            <Signal1D, title: , dimensions: (3, 2|2)>]
-        >>> s.split(step_sizes=[1,2])
-            [<Signal1D, title: , dimensions: (3, 1|2)>,
-            <Signal1D, title: , dimensions: (3, 2|2)>]
+        [<Signal1D, title: , dimensions: (3, 2|2)>, <Signal1D, title: , dimensions: (3, 2|2)>]
+        >>> s.split(step_sizes=[1, 2])
+        [<Signal1D, title: , dimensions: (3, 1|2)>, <Signal1D, title: , dimensions: (3, 2|2)>]
 
         Raises
         ------
@@ -3590,10 +3586,10 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
         >>> with s.unfolded():
-                # Do whatever needs doing while unfolded here
-                pass
+        ...     # Do whatever needs doing while unfolded here
+        ...     pass
 
         """
         unfolded = self.unfold(unfold_navigation, unfold_signal)
@@ -3869,11 +3865,11 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.sum(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.sum(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
 
@@ -3916,11 +3912,11 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.max(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.max(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         if axis is None:
@@ -3952,11 +3948,11 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.min(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.min(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         if axis is None:
@@ -3988,11 +3984,11 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.mean(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.mean(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         if axis is None:
@@ -4024,11 +4020,11 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.std(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.std(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         if axis is None:
@@ -4060,11 +4056,11 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.var(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.var(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         if axis is None:
@@ -4166,11 +4162,12 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.diff(-1).data.shape
-        (64,64,1023)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.diff(0)
+        <BaseSignal, title: , dimensions: (|1023, 64, 64)>
+
         """
         if not self.axes_manager[axis].is_uniform:
             raise NotImplementedError(
@@ -4269,12 +4266,11 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.integrate_simpson(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.integrate_simpson(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         axis = self.axes_manager[axis]
@@ -4497,12 +4493,11 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.integrate1D(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.integrate1D(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         if self.axes_manager[axis].is_binned:
@@ -4533,12 +4528,11 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.indexmin(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.indexmin(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         return self._apply_function_on_data_and_remove_axis(
@@ -4566,12 +4560,11 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> import numpy as np
         >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.indexmax(-1).data.shape
-        (64,64)
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.indexmax(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         return self._apply_function_on_data_and_remove_axis(
@@ -4601,11 +4594,11 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.valuemax(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.valuemax(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         idx = self.indexmax(axis)
@@ -4825,14 +4818,14 @@ class BaseSignal(FancySlicing,
 
         >>> import scipy.ndimage
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
-        >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)
+        >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)  # doctest: +SKIP
 
         Apply a Gaussian filter to all the images in the dataset. The signal
         parameter is variable:
 
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
         >>> sigmas = hs.signals.BaseSignal(np.linspace(2, 5, 10)).T
-        >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
+        >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)  # doctest: +SKIP
 
         Rotate the two signal dimensions, with different amount as a function
         of navigation index. Delay the calculation by getting the output
@@ -4842,7 +4835,7 @@ class BaseSignal(FancySlicing,
         >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
         >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
         >>> s.map(rotate, angle=s_angle, reshape=False, lazy_output=True)
-        >>> s.compute()
+        >>> s.compute()  # doctest: +SKIP
 
         Rotate the two signal dimensions, with different amount as a function
         of navigation index. In addition, the output is returned as a new
@@ -4850,7 +4843,7 @@ class BaseSignal(FancySlicing,
 
         >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
         >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
-        >>> s_rot = s.map(rotate, angle=s_angle, reshape=False, inplace=False)
+        >>> s_rot = s.map(rotate, angle=s_angle, reshape=False, inplace=False)  # doctest: +SKIP
 
         Note
         ----
@@ -5228,13 +5221,12 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> s = hs.signals.Signal1D([1,2,3,4,5])
+        >>> s = hs.signals.Signal1D([1, 2, 3, 4, 5])
         >>> s.data
         array([1, 2, 3, 4, 5])
         >>> s.change_dtype('float')
         >>> s.data
-        array([ 1.,  2.,  3.,  4.,  5.])
-
+        array([1., 2., 3., 4., 5.])
         """
         if not isinstance(dtype, np.dtype):
             if dtype in rgb_tools.rgb_dtypes:
@@ -5468,12 +5460,12 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> im = hs.signals.Signal2D(np.zeros((2,3, 32,32)))
+        >>> im = hs.signals.Signal2D(np.zeros((2, 3, 32, 32)))
         >>> im
-        <Signal2D, title: , dimensions: (3, 2, 32, 32)>
-        >>> im.axes_manager.indices = 2,1
+        <Signal2D, title: , dimensions: (3, 2|32, 32)>
+        >>> im.axes_manager.indices = (2, 1)
         >>> im.get_current_signal()
-        <Signal2D, title:  (2, 1), dimensions: (32, 32)>
+        <Signal2D, title:  (2, 1), dimensions: (|32, 32)>
 
         """
         metadata = self.metadata.deepcopy()
@@ -5701,15 +5693,14 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> s = hs.signals.Signal1D(np.ones((2,3,4,5)))
+        >>> s = hs.signals.Signal1D(np.ones((2, 3, 4, 5)))
         >>> s
-        <Signal1D, title: , dimensions: (4, 3, 2, 5)>
-        >>> s.as_signal2D((0,1))
-        <Signal2D, title: , dimensions: (5, 2, 4, 3)>
+        <Signal1D, title: , dimensions: (4, 3, 2|5)>
+        >>> s.as_signal2D((0, 1))
+        <Signal2D, title: , dimensions: (5, 2|4, 3)>
 
-        >>> s.to_signal2D((1,2))
-        <Signal2D, title: , dimensions: (4, 5, 3, 2)>
-
+        >>> s.to_signal2D((1, 2))
+        <Signal2D, title: , dimensions: (2, 5|4, 3)>
 
         """
         if self.data.ndim < 2:
@@ -5796,7 +5787,6 @@ class BaseSignal(FancySlicing,
         |      EDS_TEM       |                     |   EDSTEMSpectrum   | hyperspy |
         |        EELS        |       TEM EELS      |    EELSSpectrum    | hyperspy |
         |      hologram      |                     |   HologramImage    | hyperspy |
-        |      MySignal      |                     |      MySignal      | hspy_ext |
         +--------------------+---------------------+--------------------+----------+
 
         We can set the `signal_type` using the `signal_type`:
@@ -5992,8 +5982,8 @@ class BaseSignal(FancySlicing,
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
         >>> marker_list = []
         >>> for i in range(100):
-        >>>     marker = hs.plot.markers.Point(random()*100, random()*100, color='red')
-        >>>     marker_list.append(marker)
+        ...     marker = hs.plot.markers.Point(random()*100, random()*100, color='red')
+        ...     marker_list.append(marker)
         >>> s.add_marker(marker_list, permanent=True)
 
         """
