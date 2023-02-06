@@ -44,10 +44,11 @@ class EELSCLEdge(Component):
     
     Several possibilities are available for tabulated GOS.
     
-    The preferred option is to use a database of cross sections in GOS5
-    format. One such database can be downloaded from Zenodo at:
-    https://zenodo.org/record/6599071 while information on the GOS5 format
-    are available at: https://gitlab.com/gguzzina/gos5 .
+    FIXME: Update docstring
+    The preferred option is to use a database of cross sections in GOSH
+    format. One such database can be freely downloaded from Zenodo at:
+    https://zenodo.org/record/6599071 while information on the GOSH format
+    are available at: https://gitlab.com/gguzzina/gosh .
 
     HyperSpy also supports Peter Rez's Hartree Slater cross sections
     parametrised as distributed by Gatan in their Digital Micrograph (DM)
@@ -63,8 +64,8 @@ class EELSCLEdge(Component):
         Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
         subshell. If a dictionary is passed, it is assumed that Hartree Slater
         GOS was exported using `GOS.as_dictionary`, and will be reconstructed.
-    GOS : {'hydrogenic', 'GOS5', 'Hartree-Slater', None}
-        The GOS to use. If None it will load the GOS5 database, if it is
+    GOS : {'hydrogenic', 'dft', 'Hartree-Slater', None}
+        The GOS to use. If None it will load the DFT database if it is
         set up, otherwise it will fall back to the Hartree-Slater GOS if
         they are available, otherwise it will use the hydrogenic GOS.
 
@@ -117,11 +118,11 @@ class EELSCLEdge(Component):
         # Set initial actions
         if GOS is None:
             try:
-                self.GOS = Hdf5GOS(element_subshell)
-                GOS = 'GOS5'
+                self.GOS = GoshGOS(element_subshell)
+                GOS = 'gosh'
             except IOError:
                 _logger.info(
-                    'GOS5 database not available. '
+                    'GOSH database not available. '
                     'Trying Hartree-Slater GOS')
                 try:
                     self.GOS = HartreeSlaterGOS(element_subshell)
@@ -132,7 +133,7 @@ class EELSCLEdge(Component):
                         'Hartree-Slater GOS not available. '
                         'Using hydrogenic GOS')
         if self.GOS is None:
-            if GOS == 'GOS5':
+            if GOS == 'gosh':
                 self.GOS = Hdf5GOS(element_subshell)
             elif GOS == 'Hartree-Slater':
                 self.GOS = HartreeSlaterGOS(element_subshell)
@@ -141,7 +142,7 @@ class EELSCLEdge(Component):
             else:
                 raise ValueError(
                     'gos must be one of: None, \'hydrogenic\','
-                    '\'GOS5\' or \'Hartree-Slater\'')
+                    '\'gosh\' or \'Hartree-Slater\'')
         self.onset_energy.value = self.GOS.onset_energy
         self.onset_energy.free = False
         self._position = self.onset_energy
@@ -152,7 +153,7 @@ class EELSCLEdge(Component):
         self.intensity.bmax = None
 
         self._whitelist['GOS'] = ('init', GOS)
-        if GOS == 'GOS5':
+        if GOS == 'gosh':
             self._whitelist['element_subshell'] = (
                 'init',
                 self.GOS.as_dictionary(True))

@@ -35,14 +35,14 @@ R = constants.value("Rydberg constant times hc in eV")
 a0 = constants.value("Bohr radius")
 
 
-class Hdf5GOS(GOSBase):
-    """Read Generalized Oscillator Strength from a GOS5 database.
+class GoshGOS(GOSBase):
+    """Read Generalized Oscillator Strength from a GOSH database.
 
     Parameters
     ----------
     element_subshell : {str, dict}
         Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
-        subshell. If a dictionary is passed, it is assumed that a GOS5 GOS was
+        subshell. If a dictionary is passed, it is assumed that a GOSH GOS was
         exported using `GOS.as_dictionary`, and will be reconstructed.
 
     Methods
@@ -67,7 +67,7 @@ class Hdf5GOS(GOSBase):
 
     """
     
-    _name = 'GOS5'
+    _name = 'gosh'
     
     def __init__(self, element_subshell):
         """
@@ -108,7 +108,7 @@ class Hdf5GOS(GOSBase):
     
     def readgosarray(self):
         _logger.info(
-            "GOS5 precomputed GOS\n"
+            "GOSH precomputed GOS\n"
             f"\tElement: {self.element} "
             f"\tSubshell: {self.subshell}"
             f"\tOnset Energy = {self.onset_energy}"
@@ -118,19 +118,19 @@ class Hdf5GOS(GOSBase):
         
         # Check if the specified data file exists, otherwise
         # exit.
-        gos_file = Path(preferences.EELS.eels_gos5_file_path)
+        gos_file = Path(preferences.EELS.eels_gosh_database_path)
         
         if not gos_file.is_file():
             raise FileNotFoundError(
-                "The GOS5 Parametrized GOS database file not "
+                "The GOSH Parametrized GOS database file not "
                 f"found in {gos_file}. Please define a valid "
                 "location for the files in the preferences as "
-                "`preferences.EELS.eels_gos5_file_path`."
+                "`preferences.EELS.eels_gosh_database_path`."
             )
         
         def edge_not_in_database():
             raise KeyError(
-                "The GOS5 Parametrized GOS database does not "
+                "The GOSH Parametrized GOS database does not "
                 f"contain a valid entry the {subshell} subshell"
                 f"of {element}. Please select a different database"
             )
