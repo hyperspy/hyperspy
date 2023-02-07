@@ -24,7 +24,8 @@ from hyperspy.drawing.widget import ResizersMixin, Widget2DBase
 
 
 class CircleWidget(Widget2DBase, ResizersMixin):
-    """CircleWidget is a symmetric, Cicle-patch based widget, which can
+
+    """CircleWidget is a symmetric, Circle-patch based widget, which can
     be dragged, and resized by keystrokes/code.
     """
 
