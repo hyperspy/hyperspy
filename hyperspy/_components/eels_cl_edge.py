@@ -24,7 +24,7 @@ import numpy as np
 from scipy.interpolate import splev
 
 from hyperspy.component import Component
-from hyperspy.misc.eels.hdf5_gos import Hdf5GOS
+from hyperspy.misc.eels.gosh_gos import GoshGOS
 from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
 from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
 from hyperspy.misc.eels.effective_angle import effective_angle
@@ -134,7 +134,7 @@ class EELSCLEdge(Component):
                         'Using hydrogenic GOS')
         if self.GOS is None:
             if GOS == 'gosh':
-                self.GOS = Hdf5GOS(element_subshell)
+                self.GOS = GoshGOS(element_subshell)
             elif GOS == 'Hartree-Slater':
                 self.GOS = HartreeSlaterGOS(element_subshell)
             elif GOS == 'hydrogenic':
