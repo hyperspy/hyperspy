@@ -83,7 +83,8 @@ class GoshGOS(GOSBase):
                            'qaxis': None,
                            'element': None,
                            'subshell': None,
-                           'doi': None
+                           'doi': None,
+                           'subshell_factor': None
                            }
         if isinstance(element_subshell, dict):
             self.element = element_subshell['element']

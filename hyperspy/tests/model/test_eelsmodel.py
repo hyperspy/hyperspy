@@ -23,7 +23,6 @@ import pytest
 
 import os
 import tempfile
-import zipfile
 import hashlib
 import requests
 
@@ -96,9 +95,10 @@ class TestCreateEELSModel:
     def test_gos(self):
         m = self.s.create_model(auto_add_edges=True, GOS="hydrogenic")
         assert m["B_K"].GOS._name == "hydrogenic"
-        preferences.EELS.eels_gosh_database_path = GOSHF
-        m = self.s.create_model(auto_add_edges=True, GOS="gosh")
-        assert m["B_K"].GOS._name == "gosh"
+        if TEST_FILES_OK:
+            preferences.EELS.eels_gosh_database_path = GOSHF
+            m = self.s.create_model(auto_add_edges=True, GOS="gosh")
+            assert m["B_K"].GOS._name == "gosh"
 
     def test_auto_add_background_true(self):
         m = self.s.create_model(auto_background=True)
