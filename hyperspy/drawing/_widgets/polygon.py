@@ -20,7 +20,6 @@ from matplotlib.path import Path
 from matplotlib.widgets import PolygonSelector
 
 from hyperspy.drawing.widgets import MPLWidgetBase
-from hyperspy.roi import PolygonROI
 
 
 class PolygonWidget(MPLWidgetBase):
@@ -303,17 +302,3 @@ class PolygonWidget(MPLWidgetBase):
         of all polygons.
         """
         return self.position
-
-    def get_roi(self):
-        """Returns the selected polygons as a `hyperspy.widgets.PolygonROI`, which
-        can be used to extract or mask out the selected areas from a dataset.
-        """
-        return PolygonROI(self.get_polygons())
-
-    def get_mask(self):
-        """Returns the selected polygons as a boolean numpy array, where
-        the insides of the polygons are `True`. Self-overlapping polygons
-        might have overlapping areas registered as False.
-        """
-
-        return self.get_roi().boolean_mask(axes=self.axes)
