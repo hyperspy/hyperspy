@@ -1767,9 +1767,9 @@ class PolygonROI(BaseInteractiveROI):
         axes_manager=None,
         axes=None,
         xy_max=None,
-        xy_min=(0, 0),
-        x_scale=1,
-        y_scale=1,
+        xy_min=None,
+        x_scale=None,
+        y_scale=None,
     ):
         """Function to rasterize the polygon into a boolean numpy array. The
             interior of the polygon is by default `True`.

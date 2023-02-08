@@ -458,21 +458,48 @@ class TestROIs:
                 assert np.all(np.isnan(sr.data[j, i, :])) or np.all(
                     ~np.isnan(sr.data[j, i, :])
                 )
-        
+
         # Check that the correct elements have been masked out:
         desired_mask = """
-            XXXXXXXXO
-            XOXXXXXOO
-            XOOOXOOOO
-            XOOOOOOOO
-            XOOOOOOOO
-            XOOOOOOOX
-            XOOOOOOOX
-            XOOOOOOOX
-            OOOOOOOOX
-            XXXXXXOOX
-            XXXXXXXOX
-        """.strip()
+            X X X X X X X X O
+            X O X X X X X O O
+            X O O O X O O O O
+            X O O O O O O O O
+            X O O O O O O O O
+            X O O O O O O O X
+            X O O O O O O O X
+            X O O O O O O O X
+            O O O O O O O O X
+            X X X X X X O O X
+            X X X X X X X O X
+        """.strip().replace(" ", "")
+        desired_mask = [
+            [c == "O" for c in l.strip()] for l in desired_mask.splitlines()
+        ]
+        desired_mask = np.array(desired_mask)
+
+        mask = sr.data[:, :, 0]
+        print(mask)  # To help debugging, this shows the shape of the mask
+        np.testing.assert_array_equal(~np.isnan(mask), desired_mask)
+
+        # Test for multiple polygons
+        r = PolygonROI([[(20, 5), (35, 20), (55, 0)], [(55, 20), (15, 35), (45, 55)]])
+        sr = r(s)
+
+        desired_mask = """
+            X X X X X X X X O
+            X O O O O O O O X
+            X X O O O O O X X
+            X X X O O O X X X
+            X X X X O X X X O
+            X X X X X O O O O
+            X X X O O O O O X
+            O O O O O O O O X
+            X O O O O O O O X
+            X X X O O O O O X
+            X X X X X O O X X
+            X X X X X X O X X
+        """.strip().replace(" ", "")
         desired_mask = [
             [c == "O" for c in l.strip()] for l in desired_mask.splitlines()
         ]
@@ -484,7 +511,7 @@ class TestROIs:
 
     def test_polygon_getitem(self):
         r = PolygonROI([(2, 5), (5, 6), (5, 3)])
-        assert tuple(r) == ([(2, 5), (5, 6), (5, 3)], )
+        assert tuple(r) == ([(2, 5), (5, 6), (5, 3)],)
 
     def test_2d_line_getitem(self):
         r = Line2DROI(10, 10, 150, 50, 5)
@@ -777,7 +804,6 @@ class TestROIs:
             SpanROI,
             Line2DROI,
             CircleROI,
-            PolygonROI,
         ]:
             r = roi()
             with pytest.raises(ValueError, match="not yet been set"):
