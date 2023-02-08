@@ -247,13 +247,14 @@ Conveniently, all the EELS core-loss components of the added elements are added
 automatically, named after its element symbol:
 
 .. NOTE::
-    Fitting EELS edges requires a model for the so-called Generalised Oscillator
-    Strengths. In this example, both edges shown are K Edges, which can be fitted
+    Fitting EELS edges requires a model for the so-called `Generalised Oscillator
+    Strengths`. In this example, both edges shown are K Edges, which can be fitted
     using an analytical model for the GOS. Fitting L edge gives more accurate
-    results using tabulated GOS data, and for M, N and O edges these are strictly
-    necessary. Therefore, tabulated data will be used by preference when available.
+    results using tabulated GOS data, while for M, N and O edges the tabulated sets
+    are strictly necessary. Therefore, tabulated data will be used by preference when
+    available.
 
-    The model for the GOS can be specified with the `GOS` argument
+    The model for the GOS can be specified with the :meth:`GOS` argument
     (see :py:meth:`~._signals.eels.EELSSpectrum.create_model` for options).
 
     A freely usable tabulated dataset, in GOSH format, can be downloaded from Zenodo:
