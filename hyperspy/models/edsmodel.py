@@ -594,19 +594,25 @@ class EDSModel(Model1D):
                               **kwargs):
         """
         Calibrate the resolution, the scale or the offset of the energy axis
-        by fitting.
+        by fitting. The first Xray line in `xray_lines` is used as reference
+        peak, and should be well defined.
 
         Parameters
         ----------
         calibrate: 'resolution' or 'scale' or 'offset'
-            If 'resolution', fits the width of Gaussians place at all x-ray
+            If 'resolution', fits the width of Gaussians at provided Xray
             lines. The width is given by a model of the detector resolution,
             obtained by extrapolating the `energy_resolution_MnKa` in `metadata`.
-            This method will update the value of `energy_resolution_MnKa`.
+            Then, estimates and updates the energy resolution of the spectrum 
+            with the Fiori and Newbury (1978) formula, using the first Xray
+            line in `xray_lines` as reference peak. See `_get_sigma()` for
+            formula and literature reference.
             If 'scale', calibrate the scale of the energy axis.
             If 'offset', calibrate the offset of the energy axis.
         xray_lines: list of str or 'all_alpha'
-            The Xray lines. If 'all_alpha', fit all using all alpha lines
+            The Xray lines. If 'all_alpha', fit all using all alpha lines. 
+            The first Xray line in the list is used as reference peak, 
+            which is the alphabetically first line when 'all_alpha' is used.
         **kwargs : extra key word arguments
             All extra key word arguments are passed to fit or
             multifit, depending on the value of kind.
