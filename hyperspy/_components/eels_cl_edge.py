@@ -44,7 +44,6 @@ class EELSCLEdge(Component):
     
     Several possibilities are available for tabulated GOS.
     
-    FIXME: Update docstring
     The preferred option is to use a database of cross sections in GOSH
     format. One such database can be freely downloaded from Zenodo at:
     https://zenodo.org/record/6599071 while information on the GOSH format
@@ -64,8 +63,8 @@ class EELSCLEdge(Component):
         Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
         subshell. If a dictionary is passed, it is assumed that Hartree Slater
         GOS was exported using `GOS.as_dictionary`, and will be reconstructed.
-    GOS : {'hydrogenic', 'dft', 'Hartree-Slater', None}
-        The GOS to use. If None it will load the DFT database if it is
+    GOS : {'hydrogenic', 'gosh', 'Hartree-Slater', None}
+        The GOS to use. If None it will load the gosh database if it is
         set up, otherwise it will fall back to the Hartree-Slater GOS if
         they are available, otherwise it will use the hydrogenic GOS.
 
