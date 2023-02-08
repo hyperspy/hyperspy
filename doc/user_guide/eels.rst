@@ -226,6 +226,7 @@ In order to include the effect of plural scattering, the model is convolved with
 low-loss spectrum in which case the low-loss spectrum needs to be provided to
 :py:meth:`~._signals.eels.EELSSpectrum.create_model`:
 
+
 .. code-block:: python
 
     >>> m = s.create_model(ll=ll)
@@ -244,6 +245,22 @@ HyperSpy has created the model and configured it automatically:
 
 Conveniently, all the EELS core-loss components of the added elements are added
 automatically, named after its element symbol:
+
+.. NOTE::
+    Fitting EELS edges requires a model for the so-called Generalised Oscillator
+    Strengths. In this example, both edges shown are K Edges, which can be fitted
+    using an analytical model for the GOS. Fitting L edge gives more accurate
+    results using tabulated GOS data, and for M, N and O edges these are strictly
+    necessary. Therefore, tabulated data will be used by preference when available.
+
+    The model for the GOS can be specified with the `GOS` argument
+    (see :py:meth:`~._signals.eels.EELSSpectrum.create_model` for options).
+
+    A freely usable tabulated dataset, in GOSH format, can be downloaded from Zenodo:
+    `https://zenodo.org/record/6599071 <https://zenodo.org/record/6599071>`__
+
+    The path of tabulated datasets can be set in the preferences
+    (see :ref:`configuring-hyperspy-label`) in the EELS tab.
 
 .. code-block:: python
 

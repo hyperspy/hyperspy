@@ -1,0 +1,10 @@
+Add support for using tabulated generalised oscillator strengths using the GOSH
+open file format to model EELS spectra.
+
+The new GOS can be loaded by specifying `GOS='gosh'` when calling `create_model()`.
+
+A freely usable dataset can be downloaded at https://zenodo.org/record/6599071 .
+The path to the downloaded file can be specified by setting `preferences.EELS.eels_gosh_database_path`,
+or by calling `preferences.gui()`
+
+More information at :ref:`eels.fitting` and :py:meth:`~._signals.eels.EELSSpectrum.create_model`
