@@ -2716,7 +2716,7 @@ class BaseSignal(FancySlicing,
             value = self._get_cache_dask_chunk(indices)
         else:
             value = self.data.__getitem__(indices)
-        if as_numpy:
+        if as_numpy and not isinstance(value,np.ndarray):
             value = to_numpy(value)
         value = np.atleast_1d(value)
         if fft_shift:
