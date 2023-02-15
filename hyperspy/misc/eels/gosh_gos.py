@@ -153,7 +153,7 @@ class GoshGOS(GOSBase):
         
         gos = np.squeeze(gos.T)
         self.doi = doi
-        self.gos_array = gos * self.subshell_factor
+        self.gos_array = gos
         self.qaxis = q
         self.rel_energy_axis = free_energies - min(free_energies)
         self.energy_axis = self.rel_energy_axis + self.onset_energy
