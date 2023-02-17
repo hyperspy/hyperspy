@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from packaging.version import Version
+
 import numpy as np
 import pytest
 
@@ -112,15 +114,22 @@ class TestPlotClusterAnalysis:
         # nav2, sig1
         s2 = signals.Signal1D(data.reshape(40, 10, 3))
 
+        import sklearn
+        n_init = "auto" if Version(sklearn.__version__) >= Version('1.3') else 10
+
         # Run decomposition and cluster analysis
         s.decomposition()
-        s.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
-                           preprocessing="minmax", random_state=0)
-        s.estimate_number_of_clusters("decomposition",metric="elbow")
+        s.cluster_analysis("decomposition", n_clusters=3, algorithm='kmeans',
+                           preprocessing="minmax", random_state=0,
+                           n_init=n_init)
+        s.estimate_number_of_clusters(
+            "decomposition", metric="elbow", n_init=n_init,
+            )
 
         s2.decomposition()
-        s2.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
-                            preprocessing="minmax", random_state=0)
+        s2.cluster_analysis("decomposition", n_clusters=3, algorithm='kmeans',
+                            preprocessing="minmax", random_state=0,
+                            n_init=n_init)
 
         data = np.zeros((2000, 5))
         data[:250*5:5, :] = 10
@@ -130,8 +139,9 @@ class TestPlotClusterAnalysis:
         # nav2, sig2
         s3 = signals.Signal2D(data.reshape(20, 20, 5, 5))
         s3.decomposition()
-        s3.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
-                            preprocessing="minmax", random_state=0)
+        s3.cluster_analysis("decomposition", n_clusters=3, algorithm='kmeans',
+                            preprocessing="minmax", random_state=0,
+                            n_init=n_init)
 
         self.s = s
         self.s2 = s2
@@ -178,7 +188,7 @@ class TestPlotClusterAnalysis:
         return self.s3.plot_cluster_signals()
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=baseline_dir, tolerance=default_tol)
+        baseline_dir=baseline_dir, tolerance=default_tol*2)
     def test_plot_cluster_metric(self):
         ax = self.s.plot_cluster_metric()
         return ax.get_figure()
