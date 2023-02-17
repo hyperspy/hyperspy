@@ -167,9 +167,13 @@ class TestPlotClusterAnalysis:
     def test_plot_cluster_labels_nav2_sig2(self):
         return self.s3.plot_cluster_labels()
 
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol*5)
     def test_plot_cluster_distances_nav2_sig2(self):
         return self.s3.plot_cluster_distances()
 
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_signals_nav2_sig2(self):
         return self.s3.plot_cluster_signals()
 
