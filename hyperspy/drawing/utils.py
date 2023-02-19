@@ -1433,8 +1433,13 @@ def plot_spectra(
         """
         l = ax_.get_legend()
         labels = [lb.get_text() for lb in list(l.get_texts())]
-        handles = l.legendHandles
-        ax_.legend(handles[::-1], labels[::-1], loc=legend_loc_)
+        # "legendHandles" is deprecated in matplotlib 3.7.0 in favour of
+        # "legend_handles".
+        if Version(mpl.__version__) >= Version("3.7"):
+            handles = l.legend_handles
+        else:
+            handles = l.legendHandles
+        ax_.legend(reversed(handles), reversed(labels), loc=legend_loc_)
 
     # Before v1.3 default would read the value from prefereces.
     if style == "default":
