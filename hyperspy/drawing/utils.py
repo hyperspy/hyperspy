@@ -1307,7 +1307,12 @@ def make_cmap(colors, name='my_colormap', position=None,
     cmap = mpl.colors.LinearSegmentedColormap(name, cdict, 256)
 
     if register:
-        mpl.cm.register_cmap(name, cmap)
+        try:
+            # Introduced in matplotlib 3.5
+            mpl.colormaps.register(cmap, name=name)
+        except AttributeError:
+            # Deprecated in matplotlib 3.5
+            mpl.cm.register_cmap(name, cmap)
     return cmap
 
 

@@ -583,7 +583,11 @@ def test_plot_autoscale(autoscale):
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
     # Because we are hacking the vmin, vmax with matplotlib, we need to update
     # colorbar too
-    imf._colorbar.draw_all()
+    if Version(matplotlib.__version__) <= Version("3.6.0"):
+        # `draw_all` is deprecated in matplotlib 3.6.0
+        imf._colorbar.draw_all()
+    else:
+        imf.figure.draw_without_rendering()
 
     return s._plot.signal_plot.figure
 
