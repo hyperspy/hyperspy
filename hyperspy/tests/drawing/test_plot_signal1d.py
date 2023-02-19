@@ -25,7 +25,7 @@ import numpy as np
 import pytest
 try:
     # scipy >=1.10
-    from scipy.dataset import ascent, face
+    from scipy.datasets import ascent, face
 except ImportError:
     # scipy <1.10
     from scipy.misc import ascent, face
@@ -92,12 +92,15 @@ def setup_teardown(request, scope="class"):
 @pytest.mark.usefixtures("setup_teardown")
 class TestPlotSpectra():
 
-    s = hs.signals.Signal1D(ascent()[100:160:10])
+    def setup_method(self, method):
+        s = hs.signals.Signal1D(ascent()[100:160:10])
 
-    # Add a test signal with decreasing axis
-    s_reverse = s.deepcopy()
-    s_reverse.axes_manager[1].offset = 512
-    s_reverse.axes_manager[1].scale = -1
+        # Add a test signal with decreasing axis
+        s_reverse = s.deepcopy()
+        s_reverse.axes_manager[1].offset = 512
+        s_reverse.axes_manager[1].scale = -1
+        self.s = s
+        self.s_reverse = s_reverse
 
     def _generate_parameters(style):
         parameters = []
@@ -202,7 +205,7 @@ class TestPlotSpectra():
 
 class TestPlotNonLinearAxis:
 
-    def setup_method(self):
+    def setup_method(self, method):
         dict0 = {'size': 10, 'name': 'Axis0', 'units': 'A', 'scale': 0.2,
                  'offset': 1, 'navigate': True}
         dict1 = {'axis': np.arange(100)**3, 'name': 'Axis1', 'units': 'O',

@@ -23,7 +23,7 @@ import pytest
 import scipy.ndimage
 try:
     # scipy >=1.10
-    from scipy.dataset import ascent, face
+    from scipy.datasets import ascent, face
 except ImportError:
     # scipy <1.10
     from scipy.misc import ascent, face
@@ -235,7 +235,7 @@ class _TestIteratedSignal:
         return axes_manager
 
 
-class TestPlotNonLinearAxis:
+class TestPlotNonUniformAxis:
 
     def setup_method(self):
         dict0 = {'axis': np.arange(10)**0.5, 'name':'Non uniform 0', 'units':'A',
@@ -374,6 +374,7 @@ def test_plot_images_cmap_multi_signal():
     test_plot1 = _TestIteratedSignal()
 
     test_plot2 = _TestIteratedSignal()
+    test_plot2.signal.change_dtype(float)
     test_plot2.signal *= 2  # change scale of second signal
     test_plot2.signal = test_plot2.signal.inav[::-1]
     test_plot2.signal.metadata.General.title = 'Descent'
@@ -391,6 +392,7 @@ def test_plot_images_cmap_multi_w_rgb():
     test_plot1 = _TestIteratedSignal()
 
     test_plot2 = _TestIteratedSignal()
+    test_plot2.signal.change_dtype(float)
     test_plot2.signal *= 2  # change scale of second signal
     test_plot2.signal.metadata.General.title = 'Ascent-2'
 
@@ -445,7 +447,6 @@ def test_plot_images_multi_signal_w_axes_replot():
         tests.append(np.allclose(imi, plt.gca().images[0].get_array().data))
         plt.close(fn)
     assert np.alltrue(tests)
-    return f
 
 
 @pytest.mark.parametrize("percentile", [("2.5th", "97.5th"),
