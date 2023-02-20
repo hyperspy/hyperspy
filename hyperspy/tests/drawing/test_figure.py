@@ -18,11 +18,22 @@
 import numpy as np
 import pytest
 
+from matplotlib.backend_bases import CloseEvent
+
 from hyperspy._components.polynomial import Polynomial
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.misc.test_utils import check_closing_plot
 from hyperspy.signals import Signal1D, Signal2D
+
+
+def _close_figure_matplotlib_event(figure):
+    try:
+        # Introduced in matplotlib 3.6 and `clost_event` deprecated
+        event = CloseEvent('close_event', figure)
+        figure.canvas.callbacks.process('close_event', event)
+    except: # Deprecated in matplotlib 3.6
+        figure.canvas.close_event()
 
 
 def test_figure_title_length():
@@ -53,7 +64,7 @@ def test_close_figure_using_matplotlib():
     fig.create_figure()
     assert fig.figure is not None
     # Close using matplotlib, similar to using gui
-    fig.figure.canvas.close_event()
+    _close_figure_matplotlib_event(fig.figure)
     _assert_figure_state_after_close(fig)
 
 
@@ -82,6 +93,6 @@ def test_close_figure(navigator, nav_dim, sig_dim):
     if sig_dim == 1:
         m = s.create_model()
         m.plot()
-        # Close with matplotlib event
-        m._plot.signal_plot.figure.canvas.close_event()
+        # Close using matplotlib, similar to using gui
+        _close_figure_matplotlib_event(m._plot.signal_plot.figure)
         m.extend([Polynomial(1)])

@@ -21,6 +21,7 @@ from shutil import copyfile
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from matplotlib.backend_bases import MouseEvent, PickEvent
 import numpy as np
 import pytest
 try:
@@ -59,6 +60,15 @@ def _generate_filename_list(style):
             )
 
     return filename_list2
+
+
+def _matplotlib_pick_event(figure, click, artist):
+    try:
+        # Introduced in matplotlib 3.6 and `pick_event` deprecated
+        event = PickEvent('pick_event', figure, click, artist)
+        figure.canvas.callbacks.process('pick_event', event)
+    except: # Deprecated in matplotlib 3.6
+        figure.canvas.pick_event(figure.canvas, click, artist)
 
 
 @pytest.fixture
@@ -180,14 +190,12 @@ class TestPlotSpectra():
         ax = hs.plot.plot_spectra(s, legend=my_legend, fig=f)
         leg = ax.get_legend()
         leg_artists = leg.get_lines()
-        click = plt.matplotlib.backend_bases.MouseEvent(
-            'button_press_event', f.canvas, 0, 0, 'left')
+        click = MouseEvent('button_press_event', f.canvas, 0, 0, 'left')
         for artist, li in zip(leg_artists, ax.lines[::-1]):
-            plt.matplotlib.backends.backend_agg.FigureCanvasBase.pick_event(
-                f.canvas, click, artist)
+            _matplotlib_pick_event(f, click, artist)
             assert not li.get_visible()
-            plt.matplotlib.backends.backend_agg.FigureCanvasBase.pick_event(
-                f.canvas, click, artist)
+            _matplotlib_pick_event(f, click, artist)
+            assert li.get_visible()
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
