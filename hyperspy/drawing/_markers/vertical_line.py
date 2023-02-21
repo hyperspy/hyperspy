@@ -66,7 +66,7 @@ class VerticalLine(MarkerBase):
     def update(self):
         if self.auto_update is False:
             return
-        self.marker.set_xdata(self.get_data_position('x1'))
+        self.marker.set_xdata([self.get_data_position('x1')])
 
     def _plot_marker(self):
         self.marker = self.ax.axvline(self.get_data_position('x1'),

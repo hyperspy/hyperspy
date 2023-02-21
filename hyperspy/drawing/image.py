@@ -551,7 +551,11 @@ class ImagePlot(BlittedFigure):
                 ims[0].set_norm(norm)
                 ims[0].norm.vmax, ims[0].norm.vmin = vmax, vmin
             if redraw_colorbar:
-                self._colorbar.draw_all()
+                # `draw_all` is deprecated in matplotlib 3.6.0
+                if Version(matplotlib.__version__) <= Version("3.6.0"):
+                    self._colorbar.draw_all()
+                else:
+                    self.figure.draw_without_rendering()
                 self._colorbar.solids.set_animated(
                     self.figure.canvas.supports_blit
                 )

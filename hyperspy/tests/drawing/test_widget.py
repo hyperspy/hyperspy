@@ -67,3 +67,10 @@ def test_remove_widget_line():
     im._plot.pointer.close(render_figure=True)
     assert len(ax.lines) == 1
     assert len(im._plot.pointer.patch) == 1
+
+def test_calculate_size():
+    s = signals.Signal2D(np.arange(10000).reshape(10,10,10,10))
+
+    #Test that scalebar.calculate_size passes only positive value to closest_nice_number
+    s.axes_manager[0].scale = -1
+    s.plot()

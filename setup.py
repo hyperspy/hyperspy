@@ -75,10 +75,7 @@ install_req = ['scipy>=1.1',
                ]
 
 extras_require = {
-    # exclude scikit-learn==1.0 on macOS (wheels issue)
-    # See https://github.com/scikit-learn/scikit-learn/pull/21227
-    "learning": ['scikit-learn!=1.0.0;sys_platform=="darwin"',
-                 'scikit-learn;sys_platform!="darwin"'],
+    "learning": ["scikit-learn>=1.0.1"],
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     # UPDATE BEFORE RELEASE
     "gui-traitsui": ["hyperspy_gui_traitsui @ git+https://github.com/hyperspy/hyperspy_gui_traitsui#egg=hyperspy_gui_traitsui"],
