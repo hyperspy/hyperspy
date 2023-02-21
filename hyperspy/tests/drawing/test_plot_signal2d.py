@@ -16,8 +16,11 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
+from packaging.version import Version
 
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.backend_bases import MouseEvent, MouseButton
 import numpy as np
 import pytest
 import scipy.ndimage
@@ -427,11 +430,12 @@ def test_plot_images_single_image_stack():
     return plt.gcf()
 
 
+@pytest.mark.skipif(Version(matplotlib.__version__) < Version("3.6.0"),
+                    reason="This test requires matplotlib >= 3.6.0")
 def test_plot_images_multi_signal_w_axes_replot():
-    imdata = np.random.rand(3, 5, 5)
+    imdata = np.random.rand(6, 5, 5)
     imgs = hs.signals.Signal2D(imdata)
-    img_list = [imgs, imgs.inav[:2], imgs.inav[0]]
-    subplots = hs.plot.plot_images(img_list, axes_decor=None)
+    subplots = hs.plot.plot_images(imgs, axes_decor=None)
     f = plt.gcf()
     f.canvas.draw()
     f.canvas.flush_events()
@@ -440,9 +444,13 @@ def test_plot_images_multi_signal_w_axes_replot():
     for axi in subplots:
         imi = axi.images[0].get_array()
         x, y = axi.transData.transform((2, 2))
-        # Calling base class method because of backends
-        plt.matplotlib.backends.backend_agg.FigureCanvasBase.button_press_event(
-            f.canvas, x, y, 'left', True)
+        MouseEvent(
+            "button_press_event",
+            f.canvas,
+            x, y,
+            MouseButton.LEFT,
+            dblclick=True
+            )._process()
         fn = plt.gcf()
         tests.append(np.allclose(imi, plt.gca().images[0].get_array().data))
         plt.close(fn)
@@ -575,7 +583,11 @@ def test_plot_autoscale(autoscale):
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
     # Because we are hacking the vmin, vmax with matplotlib, we need to update
     # colorbar too
-    imf._colorbar.draw_all()
+    if Version(matplotlib.__version__) <= Version("3.6.0"):
+        # `draw_all` is deprecated in matplotlib 3.6.0
+        imf._colorbar.draw_all()
+    else:
+        imf.figure.draw_without_rendering()
 
     return s._plot.signal_plot.figure
 

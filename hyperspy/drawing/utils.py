@@ -876,7 +876,7 @@ def plot_images(images,
     # Set overall figure size and define figure (if not pre-existing)
     if fig is None:
         w, h = plt.rcParams['figure.figsize']
-        dpi = plt.rcParams['figure.dpi']  
+        dpi = plt.rcParams['figure.dpi']
         if overlay and axes_decor == 'off':
             shape = images[0].axes_manager.signal_shape
             if pixel_size_factor is None:
@@ -971,7 +971,7 @@ def plot_images(images,
                 images[0].axes_manager[0].scale):
                 raise ValueError("Images are not the same scale and so should"
                                  "not be overlayed.")
-        
+
         if vmin is not None:
             _logger.warning('`vmin` is ignored when overlaying images.')
 
@@ -1003,7 +1003,7 @@ def plot_images(images,
             #Set vmin and vmax
             centre = next(centre_colormaps)   # get next value for centreing
             data = _parse_array(im)
-            
+
             _vmin = data.min()
             _vmax = vmax[idx] if isinstance(vmax, (tuple, list)) else vmax
             _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
@@ -1203,30 +1203,31 @@ def plot_images(images,
     # Replot: connect function
     def on_dblclick(event):
         # On the event of a double click, replot the selected subplot
-        if not event.inaxes:
+        if not event.inaxes or not event.dblclick:
             return
-        if not event.dblclick:
-            return
-        subplots = [axi for axi in f.axes if isinstance(axi, mpl.axes.Subplot)]
-        inx = list(subplots).index(event.inaxes)
-        im = replot_ims[inx]
+
+        idx_ = axes_list.index(event.inaxes)
+        ax_ = axes_list[idx_]
+        im_ = replot_ims[idx_]
 
         # Use some of the info in the subplot
-        cm = subplots[inx].images[0].get_cmap()
-        clim = subplots[inx].images[0].get_clim()
+        cm = ax_.images[0].get_cmap()
+        clim = ax_.images[0].get_clim()
 
         sbar = False
-        if (scalelist and inx in scalebar) or scalebar == 'all':
+        if (scalelist and idx_ in scalebar) or scalebar == 'all':
             sbar = True
 
-        im.plot(colorbar=bool(colorbar),
-                vmin=clim[0],
-                vmax=clim[1],
-                no_nans=no_nans,
-                aspect=asp,
-                scalebar=sbar,
-                scalebar_color=scalebar_color,
-                cmap=cm)
+        im_.plot(
+            colorbar=bool(colorbar),
+            vmin=clim[0],
+            vmax=clim[1],
+            no_nans=no_nans,
+            aspect=asp,
+            scalebar=sbar,
+            scalebar_color=scalebar_color,
+            cmap=cm,
+            )
 
     f.canvas.mpl_connect('button_press_event', on_dblclick)
 
@@ -1306,7 +1307,12 @@ def make_cmap(colors, name='my_colormap', position=None,
     cmap = mpl.colors.LinearSegmentedColormap(name, cdict, 256)
 
     if register:
-        mpl.cm.register_cmap(name, cmap)
+        try:
+            # Introduced in matplotlib 3.5
+            mpl.colormaps.register(cmap, name=name)
+        except AttributeError:
+            # Deprecated in matplotlib 3.5
+            mpl.cm.register_cmap(name, cmap)
     return cmap
 
 
@@ -1427,8 +1433,13 @@ def plot_spectra(
         """
         l = ax_.get_legend()
         labels = [lb.get_text() for lb in list(l.get_texts())]
-        handles = l.legendHandles
-        ax_.legend(handles[::-1], labels[::-1], loc=legend_loc_)
+        # "legendHandles" is deprecated in matplotlib 3.7.0 in favour of
+        # "legend_handles".
+        if Version(mpl.__version__) >= Version("3.7"):
+            handles = l.legend_handles
+        else:
+            handles = l.legendHandles
+        ax_.legend(reversed(handles), reversed(labels), loc=legend_loc_)
 
     # Before v1.3 default would read the value from prefereces.
     if style == "default":
@@ -1481,7 +1492,7 @@ def plot_spectra(
         _make_cascade_subplot(spectra, ax, color, linestyle, padding=padding,
                               drawstyle=drawstyle)
         if legend is not None:
-            plt.legend(legend, loc=legend_loc)
+            ax.legend(legend, loc=legend_loc)
             _reverse_legend(ax, legend_loc)
             if legend_picking is True:
                 animate_legend(fig=fig, ax=ax)

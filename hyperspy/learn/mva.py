@@ -2510,7 +2510,7 @@ class MVA:
                 for o_indx,k in enumerate(k_range):
                     # calculate the data metric
                     if(algorithm=="kmeans"):
-                        kwargs['n_init']=1
+                        kwargs['n_init'] = 1
                     cluster_algorithm = \
                         self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
                     alg = self._cluster_analysis(scaled_data,
