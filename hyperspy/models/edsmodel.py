@@ -190,7 +190,7 @@ class EDSModel(Model1D):
                 in self.xray_lines if xray_line.active]
 
     def add_family_lines(self, xray_lines='from_elements'):
-        """Create the Xray-lines instances and configure them appropiately
+        """Create the X-ray lines instances and configure them appropiately
 
         If a X-ray line is given, all the the lines of the familiy is added.
         For instance if Zn Ka is given, Zn Kb is added too. The main lines
@@ -333,7 +333,7 @@ class EDSModel(Model1D):
             component.active = False
 
     def _make_position_adjuster(self, component, fix_it, show_label):
-        # Override to ensure formatting of labels of xray lines
+        # Override to ensure formatting of labels of X-ray lines
         super(EDSModel, self)._make_position_adjuster(
             component, fix_it, show_label)
         if show_label and component in (self.xray_lines + self.family_lines):
@@ -407,7 +407,7 @@ class EDSModel(Model1D):
         Parameters
         ----------
         xray_lines: list of str or 'all_alpha'
-            The Xray lines. If 'all_alpha', fit all using all alpha lines
+            The X-ray lines. If 'all_alpha', fit all using all alpha lines
         """
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
@@ -434,7 +434,7 @@ class EDSModel(Model1D):
         Parameters
         ----------
         xray_lines: list of str or 'all_alpha'
-            The Xray lines. If 'all_alpha', fit all using all alpha lines
+            The X-ray lines. If 'all_alpha', fit all using all alpha lines
         """
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
@@ -468,7 +468,7 @@ class EDSModel(Model1D):
         Parameters
         ----------
         xray_lines: list of str or 'all_alpha'
-            The Xray lines. If 'all_alpha', fit all using all alpha lines
+            The X-ray lines. If 'all_alpha', fit all using all alpha lines
         """
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
@@ -534,7 +534,7 @@ class EDSModel(Model1D):
         Parameters
         ----------
         xray_lines: list of str or 'all_alpha'
-            The Xray lines. If 'all_alpha', fit all using all alpha lines
+            The X-ray lines. If 'all_alpha', fit all using all alpha lines
         """
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
@@ -563,7 +563,7 @@ class EDSModel(Model1D):
         Parameters
         ----------
         xray_lines: list of str or 'all_alpha'
-            The Xray lines. If 'all_alpha', fit all using all alpha lines
+            The X-ray lines. If 'all_alpha', fit all using all alpha lines
         ref: list of float
             The centres, before fitting, of the X-ray lines included
 
@@ -594,28 +594,47 @@ class EDSModel(Model1D):
                               **kwargs):
         """
         Calibrate the resolution, the scale or the offset of the energy axis
-        by fitting. The first Xray line in `xray_lines` is used as reference
-        peak, and should be well defined.
+        by fitting. For 'resolution', it matters which X-ray line is first in
+        `xray_lines`, as this is used as reference peak.
 
         Parameters
         ----------
         calibrate: 'resolution' or 'scale' or 'offset'
-            If 'resolution', fits the width of Gaussians at provided Xray
+            If 'resolution', fits the width of Gaussians at provided X-ray
             lines. The width is given by a model of the detector resolution,
             obtained by extrapolating the `energy_resolution_MnKa` in `metadata`.
             Then, estimates and updates the energy resolution of the spectrum 
-            with the Fiori and Newbury (1978) formula, using the first Xray
-            line in `xray_lines` as reference peak. See `_get_sigma()` for
-            formula and literature reference.
+            with the Fiori and Newbury (1978) formula, using the first X-ray
+            line in `xray_lines` as reference peak. See the Notes for more.
             If 'scale', calibrate the scale of the energy axis.
             If 'offset', calibrate the offset of the energy axis.
         xray_lines: list of str or 'all_alpha'
-            The Xray lines. If 'all_alpha', fit all using all alpha lines. 
-            The first Xray line in the list is used as reference peak, 
+            The X-ray lines. If 'all_alpha', fit all using all alpha lines. 
+            The first X-ray line in the list is used as reference peak, 
             which is the alphabetically first line when 'all_alpha' is used.
         **kwargs : extra key word arguments
             All extra key word arguments are passed to fit or
             multifit, depending on the value of kind.
+
+        Notes
+        -----
+        Estimating the energy resolution use the following formula:
+
+        .. math::
+
+                FWHM(E) = \sqrt{2.5 * (E - E_{ref}) + FWHM^2_{ref}}
+
+        where :math:`E` is the energy of the X-ray line of interest (Mn Ka),
+        and :math:`E_{ref}` and :math:`FWHM_{ref}` is the energy and FWHM of 
+        the reference peak (the first line in `xray_lines`).
+
+
+        References
+            Fiori, C. E., and Newbury, D. E. (1978). In SEM/1978/I, SEM, Inc.,
+            AFM O'Hare, Illinois, p. 401.
+
+            Goldstein et al. (2003). "Scanning Electron Microscopy & X-ray
+            Microanalysis", Plenum, third edition, p 315.
 
         """
 
@@ -641,12 +660,12 @@ class EDSModel(Model1D):
         """
         Free the weight of a sub X-ray lines
 
-        Remove the twin on the height of sub-Xray lines (non alpha)
+        Remove the twin on the height of sub-X-ray lines (non alpha)
 
         Parameters
         ----------
         xray_lines : list of str or 'all'
-            The Xray lines. If 'all', fit all lines
+            The X-ray lines. If 'all', fit all lines
         bound : float
             Bound the height of the peak to a fraction of
             its height
@@ -677,7 +696,7 @@ class EDSModel(Model1D):
         """
         Fix the weight of a sub X-ray lines to the main X-ray lines
 
-        Establish the twin on the height of sub-Xray lines (non alpha)
+        Establish the twin on the height of sub-X-ray lines (non alpha)
         """
 
         def fix_twin(component):
@@ -710,7 +729,7 @@ class EDSModel(Model1D):
         Parameters
         ----------
         xray_lines: list of str or 'all'
-            The Xray lines. If 'all', fit all lines
+            The X-ray lines. If 'all', fit all lines
         bound: float
             the bound around the actual energy, in keV or eV
         """
@@ -729,7 +748,7 @@ class EDSModel(Model1D):
         Parameters
         ----------
         xray_lines: list of str, 'all', or 'all_alpha'
-            The Xray lines. If 'all', fit all lines. If 'all_alpha' fit all
+            The X-ray lines. If 'all', fit all lines. If 'all_alpha' fit all
             using all alpha lines.
         bound: float
             the bound around the actual energy, in keV or eV
@@ -751,7 +770,7 @@ class EDSModel(Model1D):
         Parameters
         ----------
         xray_lines: list of str or 'all'
-            The Xray lines. If 'all', fit all lines
+            The X-ray lines. If 'all', fit all lines
         bound: float
             the bound around the actual energy, in keV or eV
         """
@@ -770,7 +789,7 @@ class EDSModel(Model1D):
         Parameters
         ----------
         xray_lines: list of str, 'all', or 'all_alpha'
-            The Xray lines. If 'all', fit all lines. If 'all_alpha' fit all
+            The X-ray lines. If 'all', fit all lines. If 'all_alpha' fit all
             using all alpha lines.
         bound: float
             the bound around the actual energy, in keV or eV
@@ -805,7 +824,7 @@ class EDSModel(Model1D):
             alpha and the other sub-lines of the family
             If 'width', calibrate the X-ray line width.
         xray_lines: list of str or 'all'
-            The Xray lines. If 'all', fit all lines
+            The X-ray lines. If 'all', fit all lines
         bounds: float
             for 'energy' and 'width' the bound in energy, in eV
             for 'sub_weight' Bound the height of the peak to fraction of
