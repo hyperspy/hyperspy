@@ -494,7 +494,8 @@ class EDSModel(Model1D):
     def _set_energy_scale(self, xray_lines, ref):
         """
         Adjust the width of all lines and set the fitted energy resolution
-        to the spectrum
+        to the spectrum. Uses the X-ray line with highest energy to calculate
+        the scale.
 
         Parameters
         ----------
@@ -518,7 +519,7 @@ class EDSModel(Model1D):
         ax = self.signal.axes_manager[-1]
         scale_old = self.signal.axes_manager[-1].scale
         ind = np.argsort(np.array(
-            [compo.centre.value for compo in self.xray_lines]))[-1]
+            [self[compo].centre.value for compo in xray_lines]))[-1]
         E = self[xray_lines[ind]].centre.value
         scale = (ref[ind] - ax.offset) / ax.value2index(E)
         ax.scale = scale
