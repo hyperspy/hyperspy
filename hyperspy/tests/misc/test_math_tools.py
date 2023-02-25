@@ -16,8 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from packaging.version import Version
+
 import pytest
 import numpy as np
+import dask
 import dask.array as da
 
 from hyperspy.misc import math_tools
@@ -39,14 +42,39 @@ def test_isfloat_npint():
     assert not math_tools.isfloat(np.int16(3))
 
 
-@pytest.mark.parametrize("seed", [None, 123, np.random.RandomState(123)])
+@pytest.mark.parametrize("seed", [None, 123, np.random.default_rng(123)])
 def test_random_state(seed):
-    assert isinstance(math_tools.check_random_state(seed), np.random.RandomState)
+    assert isinstance(math_tools.check_random_state(seed), np.random.Generator)
 
 
-@pytest.mark.parametrize("seed", [None, 123, da.random.RandomState(123)])
+def test_random_state_deprecated():
+    with pytest.warns(DeprecationWarning):
+        assert isinstance(
+            math_tools.check_random_state(np.random.RandomState(123)),
+            np.random.RandomState
+            )
+
+
+@pytest.mark.parametrize("seed", [None, 123, 'dask_supported'])
 def test_random_state_lazy(seed):
-    assert isinstance(math_tools.check_random_state(seed, lazy=True), da.random.RandomState)
+    if Version(dask.__version__) < Version('2023.2.1'):
+        if seed == 'dask_supported':
+            seed = da.random.RandomState(123)
+        out = math_tools.check_random_state(seed, lazy=True)
+        assert isinstance(out, da.random.RandomState)
+    else:
+        if seed == 'dask_supported':
+            seed = da.random.default_rng(123)
+        out = math_tools.check_random_state(seed, lazy=True)
+        assert isinstance(out, da.random.Generator)
+
+
+def test_random_state_lazy_deprecated():
+    with pytest.warns(DeprecationWarning):
+        assert isinstance(
+            math_tools.check_random_state(da.random.RandomState(123)),
+            da.random.RandomState
+            )
 
 
 def test_random_state_error():
