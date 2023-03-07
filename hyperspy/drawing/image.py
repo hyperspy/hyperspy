@@ -335,7 +335,11 @@ class ImagePlot(BlittedFigure):
         if self.axes_off:
             self.ax.axis('off')
 
-    def plot(self, data_function_kwargs={}, **kwargs):
+    def plot(self, data_function_kwargs=None, display_range=None, **kwargs):
+        if data_function_kwargs is None:
+            data_function_kwargs = {}
+        if display_range is None:
+            display_range = (None, ) * 4
         self.data_function_kwargs = data_function_kwargs
         self.configure()
         if self.figure is None:
@@ -360,6 +364,10 @@ class ImagePlot(BlittedFigure):
             if attribute in kwargs.keys():
                 setattr(self, attribute, kwargs.pop(attribute))
         self.update(data_changed=True, auto_contrast=True, **kwargs)
+        
+        self.ax.set_xlim(*display_range[:2])
+        self.ax.set_ylim(*display_range[2:])
+            
         if self.scalebar is True:
             if self.pixel_units is not None:
                 self.ax.scalebar = widgets.ScaleBar(
