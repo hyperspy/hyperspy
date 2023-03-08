@@ -189,8 +189,8 @@ def check_random_state(seed, lazy=False):
         If int:
             Return a new random state instance seeded with ``seed``.
         If np.random.RandomState, np.random.Generator,
-        dask.array.random.RandomState or
-            Return it.
+        dask.array.random.RandomState:
+            Return seed.
     lazy : bool, default False
         If True, and seed is ``None`` or ``int``, return
         a dask.array.random.RandomState instance instead for dask < 2023.2.1,
@@ -231,7 +231,7 @@ def check_random_state(seed, lazy=False):
 
     if isinstance(seed, (np.random.RandomState, da.random.RandomState)):
         warnings.warn(
-            "Support for RandomState have been deprecated and will be removed "
+            "Support for RandomState generators have been deprecated and will be removed "
             " in HyperSpy 2.0, use `default_rng` instead.",
             DeprecationWarning
             )
