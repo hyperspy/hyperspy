@@ -23,7 +23,7 @@ jobs:
             PYTHON_VERSION: '3.7'
             PIP_SELECTOR: '[all, tests, coverage]'
             OLDEST_SUPPORTED_VERSION: true
-            DEPENDENCIES: matplotlib==3.1.3 numpy==1.17.1 scipy==1.1 imagecodecs==2020.1.31 tifffile==2020.2.16 dask==2.11.0 distributed==2.11.0 scikit-image==0.15 numba==0.52 scikit-learn==1.0.1
+            DEPENDENCIES: matplotlib==3.1.3 numpy==1.17.1 scipy==1.4 imagecodecs==2020.1.31 tifffile==2020.2.16 dask==2.11.0 distributed==2.11.0 scikit-image==0.15 numba==0.52 scikit-learn==1.0.1
             LABEL: -oldest
           # test minimum requirement
           - os: ubuntu
