@@ -41,14 +41,18 @@ extensions = [
 ]
 
 linkcheck_ignore = [
-    'https://www.jstor.org/stable/24307705',  # 403 Client Error: Forbidden for url
-    'https://anaconda.org',  # 403 Client Error: Forbidden for url
+    "https://anaconda.org",  # 403 Client Error: Forbidden for url
+    "https://doi.org/10.1021/acs.nanolett.5b00449",  # 403 Client Error: Forbidden for url
+    "https://onlinelibrary.wiley.com",  # 403 Client Error: Forbidden for url
 ]
 
 linkcheck_exclude_documents = [
     'user_guide/io/*',
     'api/hyperspy.io_plugins*',
     ]
+
+# Specify a standard user agent, as Sphinx default is blocked on some sites
+user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.54"
 
 try:
     import sphinxcontrib.spelling
