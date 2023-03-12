@@ -1,0 +1,1 @@
+Fix checking links in documentation for domain, which aren't compatible with sphinx linkcheck 
