@@ -1,0 +1,1 @@
+Speed up :py:func:`~.misc.utils.to_numpy` function to avoid slow down when used repeatedly, typically during fitting
