@@ -108,8 +108,8 @@ class ElidReader:
         (id, version) = struct.unpack('<4si', self._read(8))
         if id != b'EID2':
             raise Exception('not an ELID file')
-        if version > 2:
-            raise Exception('unsupported ELID format')
+        if version > 4:
+            raise Exception(f'unsupported ELID format {version}')
         self._version = version
         self.dictionaries = self._read_Project()
         self._file.close()
@@ -263,6 +263,31 @@ class ElidReader:
         else:
             return 'unknown'
 
+    def _read_detector_type(self):
+        dt = self._read_uint8()
+        if dt == 0:
+            return 'Empty'
+        elif dt == 1:
+            return 'FastSDD_C2'
+        elif dt == 2:
+            return 'FastSDD_C5'
+        elif dt == 3:
+            return 'FastSDD_WLS'
+        else:
+            return 'Unknown'
+
+    def _read_spectrum_correction(self):
+        sc = self._read_uint8()
+        if sc == 1:
+            return 'linearized'
+        elif sc == 2:
+            return 'raw'
+        else:
+            return 'unknown'
+
+    def _read_element_collection(self):
+        return [element_symbol(z) for z in self._read_uint8s()]
+
     def _read_eds_metadata(self, om):
         metadata = {}
         metadata['high_tension'] = self._read_float64()
@@ -280,14 +305,22 @@ class ElidReader:
         if self._version == 0 and 'workingDistance' in om:
             metadata['working_distance'] = self._get_value_with_unit(om['workingDistance'])
             metadata['slow_peaking_time'] = 11.2e-6 if float(om['acquisition']['scan']['spotSize']) < 4.5 else 2e-6
-            metadata['fast_peaking_time'] = 100e-9;
-            metadata['detector_surface_area'] = 25e-6;
+            metadata['fast_peaking_time'] = 100e-9
+            metadata['detector_surface_area'] = 25e-6
         elif self._version > 0:
             metadata['optical_working_distance'] = self._read_float64()
             metadata['working_distance'] = self._read_float64()
             metadata['detector_surface_area'] = self._read_float64()
             metadata['detector_distance'] = self._read_float64()
             metadata['sample_tilt_angle'] = self._read_float64()
+        if self._version >= 3:
+            metadata['ccorrection'] = self._read_float64()
+            metadata['detector_type'] = self._read_detector_type()
+            metadata['spectrum_correction'] = self._read_spectrum_correction()
+        else:
+            metadata['ccorrection'] = 0
+            metadata['detector_type'] = 'FastSDD_C2'
+            metadata['spectrum_correction'] = 'unknown'
         return metadata
 
     def _read_CommonAnalysis(self, am):
@@ -297,8 +330,8 @@ class ElidReader:
         eds_metadata['offset'] = sum_spectrum[0]
         eds_metadata['dispersion'] = sum_spectrum[1]
         data = sum_spectrum[2]
-        eds_metadata['included_elements'] = [element_symbol(z) for z in self._read_uint8s()]
-        eds_metadata['excluded_elements'] = [element_symbol(z) for z in self._read_uint8s()]
+        eds_metadata['included_elements'] = self._read_element_collection()
+        eds_metadata['excluded_elements'] = self._read_element_collection()
         eds_metadata['background_fit_bins'] = self._read_int32s()
         eds_metadata['selected_oxides'] = self._read_oxides()
         eds_metadata['auto_id'] = self._read_bool()
@@ -308,6 +341,11 @@ class ElidReader:
             eds_metadata['drift_correction'] = self._read_drift_correction()
         else:
             eds_metadata['drift_correction'] = 'unknown'
+        if self._version >= 4:
+            eds_metadata['ignored_elements'] = self._read_element_collection()
+        else:
+            eds_metadata['ignored_elements'] = []
+
         if metadata:
             metadata['acquisition']['scan']['detectors']['EDS'] = eds_metadata
         else:
@@ -622,14 +660,13 @@ class ElidReader:
         n = self._read_uint32()
         return [self._read_ConstructiveAnalysisSource() for _ in range(n)]
 
-    def _read_ConstructiveAnalysis(self, label, metadata):
-        self._read_CommonAnalysis()
+    def _read_ConstructiveAnalysis(self, label, am):
+        self._read_CommonAnalysis(am)
         description = self._read_string()
         sources = self._read_ConstructiveAnalysisSources()
 
     def _read_ConstructiveAnalyses(self):
-        n = self._read_uint32()
-        return [self._read_ConstructiveAnalysis('', {}) for _ in range(n)]
+        return self._read_Analyses('', {})
 
     def _read_Analysis(self, label, am):
         type = self._read_uint8()
