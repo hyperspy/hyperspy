@@ -79,7 +79,7 @@ Bibliography
    M. Keenan and P. Kotula, "Accounting for Poisson noise in
    the multivariate analysis of ToF-SIMS spectrum images," *Surf.
    Interface Anal* 36(3) (2004): 203–212
-   [`<https://doi.org/10.1002/sia.1657>`_].
+   [`<https://onlinelibrary.wiley.com/doi/10.1002/sia.1657>`_].
 
 .. _MacArthur2016:
 
@@ -96,7 +96,7 @@ Bibliography
    M. McCartney and D. Smith, "Electron
    holography: phase imaging with nanometer resolution," *Annu. Rev. Mater.
    Res.* 37 (2007): 729-767
-   [`<https://doi.org/10.1146/annurev.matsci.37.052506.084219>`_].
+   [`<https://onlinelibrary.wiley.com/doi/10.1146/annurev.matsci.37.052506.084219>`_].
 
 .. _[Nicoletti2013]:
 
@@ -145,7 +145,7 @@ Bibliography
    M. Watanabe and D. Williams, "The
    quantitative analysis of thin specimens: a review of progress from the
    Cliff-Lorimer to the new zeta-factor methods," *J. Microsc.* 221 (2006):
-   89–109 [`<https://doi.org/10.1111/j.1365-2818.2006.01549.x>`_].
+   89–109 [`<https://onlinelibrary.wiley.com/doi/10.1111/j.1365-2818.2006.01549.x>`_].
 
 .. _Williams2009:
 
@@ -210,7 +210,7 @@ Bibliography
     - Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
       ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
       Microscopy Research and Technique 71, no. 8 (2008): 626–31.
-      [`<https://doi.org/10.1002/jemt.20597>`_].
+      [`<https://onlinelibrary.wiley.com/doi/10.1002/jemt.20597>`_].
 
 .. _White2009:
 
