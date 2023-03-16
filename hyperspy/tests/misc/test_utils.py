@@ -167,13 +167,20 @@ def test_to_numpy():
 
 def test_to_numpy_error():
     da_array = da.array([0, 1, 2])
-    with pytest.raises(LazyCupyConversion):
+    with pytest.raises(TypeError):
         to_numpy(da_array)
+
+    list_array = [[0, 1, 2]]
+    with pytest.raises(TypeError):
+        to_numpy(list_array)
+
+
+def test_get_array_module():
+    np_array = np.array([0, 1, 2])
+    assert get_array_module(np_array) == np
 
 
 @skip_cupy
-def test_get_array_module():
+def test_get_array_module_cupy():
     cp_array = cp.array([0, 1, 2])
-    np_array = np.array([0, 1, 2])
     assert get_array_module(cp_array) == cp
-    assert get_array_module(np_array) == np
