@@ -1,1 +1,0 @@
-Add support for new pattern to generate random numbers introduced in dask 2023.2.1. Deprecate usage of :py:class:`numpy.random.RandomState` in favour of :py:func:`numpy.random.default_rng`. Bump scipy minimum requirement to 1.4.0.
