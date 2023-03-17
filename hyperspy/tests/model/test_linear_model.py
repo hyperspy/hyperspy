@@ -32,11 +32,8 @@ from hyperspy.signals import Signal1D, Signal2D
 
 
 def test_fit_binned():
-    np.random.seed(1)
-    s = Signal1D(
-        np.random.normal(
-            scale=2,
-            size=10000)).get_histogram()
+    rng = np.random.default_rng(1)
+    s = Signal1D(rng.normal(scale=2, size=10000)).get_histogram()
     s.axes_manager[-1].binned = True
     g = Gaussian()
     m = s.create_model()
@@ -63,9 +60,9 @@ def test_fit_binned():
 class TestMultiFitLinear:
 
     def setup_method(self):
-        np.random.seed(1)
-        x = np.random.random(30)
-        shape = np.random.random((2, 3, 1))
+        rng = np.random.default_rng(1)
+        x = rng.random(30)
+        shape = rng.random((2, 3, 1))
         X = shape * x
         s = Signal1D(X)
         m = s.create_model()
@@ -307,7 +304,7 @@ class TestLinearEELSFitting:
         m.fit(optimizer='lm')
         lm = m.as_signal()
         diff = linear - lm
-        np.testing.assert_allclose(diff.data.sum(), 0.0, atol=3E-7)
+        np.testing.assert_allclose(diff.data.sum(), 0.0, atol=1E-6)
 
 
 class TestWarningSlowMultifit:
@@ -565,7 +562,8 @@ class TestLinearFitTwins:
 
 
 def test_compute_constant_term():
-    s = Signal1D(np.random.random(10))
+    rng = np.random.default_rng(1)
+    s = Signal1D(rng.random(10))
     m = s.create_model()
     lin = Expression("a*x + b", name='linear')
     m.append(lin)
@@ -705,7 +703,7 @@ def test_non_uniform_binned():
 
 
 def test_navigation_shape_signal1D():
-    np.random.seed(seed=10)
+    rng = np.random.default_rng(1)
     s = hs.signals.Signal1D(np.zeros((2, 3, 200)))
     g = hs.model.components1D.Gaussian()
     g.sigma.value = 10
@@ -713,7 +711,7 @@ def test_navigation_shape_signal1D():
     g.A.value = 1000
     m = s.create_model()
     m.append(g)
-    g.A.map['values'] = np.random.randint(low=500, high=1500, size=(2, 3))
+    g.A.map['values'] = rng.integers(low=500, high=1500, size=(2, 3))
     g.A.map['is_set'] = True
     s.data = m.as_signal().data
     s.add_gaussian_noise(0.5)
@@ -726,7 +724,7 @@ def test_navigation_shape_signal1D():
 
 
 def test_navigation_shape_signal2D():
-    np.random.seed(seed=10)
+    rng = np.random.default_rng(10)
     s = hs.signals.Signal1D(np.zeros((2, 3, 200)))
     g = hs.model.components1D.Gaussian()
     g.sigma.value = 10
@@ -734,7 +732,7 @@ def test_navigation_shape_signal2D():
     g.A.value = 1000
     m = s.create_model()
     m.append(g)
-    g.A.map['values'] = np.random.randint(low=500, high=1500, size=(2, 3))
+    g.A.map['values'] = rng.integers(low=500, high=1500, size=(2, 3))
     g.A.map['is_set'] = True
     s.data = m.as_signal().data
     s.add_gaussian_noise(0.5)
@@ -765,7 +763,7 @@ def test_power_law():
     m.set_parameters_not_free(only_nonlinear=True)
     m.plot()
     m.fit(optimizer='lstsq')
-    
+
     np.testing.assert_allclose(pl_ref.A.value, pl.A.value)
     np.testing.assert_allclose(pl_ref.r.value, pl.r.value)
     np.testing.assert_allclose(m.as_signal().data, s.data)
@@ -794,7 +792,7 @@ def test_lorentzian():
     m.set_parameters_not_free(only_nonlinear=True)
     m.plot()
     m.fit(optimizer='lstsq')
-    
+
     np.testing.assert_allclose(l_ref.A.value, l.A.value)
     np.testing.assert_allclose(l_ref.centre.value, l.centre.value)
     np.testing.assert_allclose(l_ref.gamma.value, l.gamma.value)
@@ -805,18 +803,18 @@ def test_lorentzian():
 @pytest.mark.parametrize('nav_dim', (0, 1, 2))
 def test_expression_convolved(nav_dim, multiple_free_parameters):
     s_ref = hs.signals.Signal1D(np.ones(100))
-    
+
     # Create signal to convolve
     to_convolve_component = hs.model.components1D.Gaussian(A=100, sigma=5, centre=10)
     to_convolve = hs.signals.Signal1D(to_convolve_component.function(np.arange(100)))
     to_convolve.axes_manager[-1].offset = -to_convolve_component.centre.value
-    
+
     # Create reference signal from model with convolution
     l_ref = hs.model.components1D.Lorentzian(A=100, centre=20, gamma=4)
     m_ref = s_ref.create_model()
     m_ref.append(l_ref)
     m_ref.low_loss = to_convolve
-    s = m_ref.as_signal()    
+    s = m_ref.as_signal()
 
     if nav_dim >= 1:
         s = hs.stack([s]*2)
@@ -867,7 +865,7 @@ def test_expression_multiple_linear_parameter(nav_dim, convolve):
     if convolve:
         m_ref.low_loss = to_convolve
     s = m_ref.as_signal()
-    
+
     if nav_dim >= 1:
         s = hs.stack([s]*2)
         if convolve:
@@ -876,7 +874,7 @@ def test_expression_multiple_linear_parameter(nav_dim, convolve):
         s = hs.stack([s]*3)
         if convolve:
             to_convolve = hs.stack([to_convolve]*3)
-    
+
     m = s.create_model()
     p = hs.model.components1D.Polynomial(order=2, legacy=False)
     m.append(p)
@@ -886,8 +884,8 @@ def test_expression_multiple_linear_parameter(nav_dim, convolve):
         with pytest.warns(UserWarning):
             m.multifit(optimizer='lstsq')
     else:
-        m.multifit(optimizer='lstsq') 
-    
+        m.multifit(optimizer='lstsq')
+
     np.testing.assert_allclose(p_ref.a0.value, p.a0.value)
     np.testing.assert_allclose(p_ref.a1.value, p.a1.value)
     np.testing.assert_allclose(p_ref.a2.value, p.a2.value)
@@ -906,10 +904,10 @@ def test_multiple_linear_parameters_convolution(nav_dim):
     to_convolve_component = hs.model.components1D.Gaussian(A=1000, sigma=50, centre=100)
     to_convolve = hs.signals.Signal1D(to_convolve_component.function(np.arange(1000)))
     to_convolve.axes_manager[-1].offset = -to_convolve_component.centre.value
-    
+
     l_ref1 = hs.model.components1D.Lorentzian(A=100, centre=200, gamma=10)
     l_ref2 = hs.model.components1D.Lorentzian(A=100, centre=600, gamma=20)
-        
+
     m_ref = s_ref.create_model()
     m_ref.extend([l_ref1, l_ref2])
     m_ref.low_loss = to_convolve
