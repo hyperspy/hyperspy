@@ -31,13 +31,11 @@ default_tol = 2.0
 class TestPlotDecomposition:
 
     def setup_method(self, method):
-        np.random.seed(1)
-        sources = np.random.random(size=(5, 100))
-        np.random.seed(1)
-        mixmat = np.random.random((100, 5))
+        rng = np.random.default_rng(1)
+        sources = rng.random(size=(5, 100))
+        mixmat = rng.random((100, 5))
         self.s = signals.Signal1D(np.dot(mixmat, sources))
-        np.random.seed(1)
-        self.s.add_gaussian_noise(.1)
+        self.s.add_gaussian_noise(.1, random_state=rng)
         self.s.decomposition()
         self.s2 = signals.Signal1D(self.s.data.reshape(10, 10, 100))
         self.s2.decomposition()
@@ -96,7 +94,7 @@ class TestPlotDecomposition:
 class TestPlotClusterAnalysis:
 
     def setup_method(self, method):
-        np.random.seed(1)
+        rng = np.random.default_rng(1)
         # Use prime numbers to avoid fluke equivalences
         # create 3 random clusters
         n_samples=[250,100,50]
@@ -105,7 +103,7 @@ class TestPlotClusterAnalysis:
         centers = np.array([[-15.0, -15.0,-15.0], [1.0, 1.0,1.0],
                             [15.0, 15.0, 15.0]])
         for i, (n, std) in enumerate(zip(n_samples, std)):
-            X.append(centers[i] + np.random.normal(scale=std, size=(n, 3)))
+            X.append(centers[i] + rng.normal(scale=std, size=(n, 3)))
 
         data = np.concatenate(X)
 
@@ -199,13 +197,11 @@ class TestPlotClusterAnalysis:
 
 
 def test_plot_signal_dimension3():
-    np.random.seed(1)
-    sources = np.random.random(size=(5, 100))
-    np.random.seed(1)
-    mixmat = np.random.random((100, 5))
+    rng = np.random.default_rng(1)
+    sources = rng.random(size=(5, 100))
+    mixmat = rng.random((100, 5))
     s = signals.Signal1D(np.dot(mixmat, sources))
-    np.random.seed(1)
-    s.add_gaussian_noise(.1)
+    s.add_gaussian_noise(.1, random_state=rng)
     s2 = signals.Signal1D(s.data.reshape(2, 5, 10, 100))
 
     s3 = s2.transpose(signal_axes=3)
@@ -218,8 +214,9 @@ def test_plot_signal_dimension3():
 
 
 def test_plot_without_decomposition():
-    sources = np.random.random(size=(5, 100))
-    mixmat = np.random.random((100, 5))
+    rng = np.random.default_rng(1)
+    sources = rng.random(size=(5, 100))
+    mixmat = rng.random((100, 5))
     s = signals.Signal1D(np.dot(mixmat, sources))
     with pytest.raises(RuntimeError):
         s.plot_decomposition_factors()

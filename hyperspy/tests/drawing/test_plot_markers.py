@@ -632,14 +632,14 @@ def test_plot_eds_markers_no_energy():
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_eels_labels():
-    s = get_core_loss_eels_line_scan_signal(True, random_state=10)
+    s = get_core_loss_eels_line_scan_signal(True, add_noise=False)
     s.add_elements(['Cr'])
     s.plot(plot_edges=True)
     return s._plot.signal_plot.figure
 
 
 def test_plot_eels_labels_nav():
-    s = get_core_loss_eels_line_scan_signal(True)
+    s = get_core_loss_eels_line_scan_signal(True, add_noise=False)
     s.add_elements(['Cr', 'Fe'])
     s.plot(plot_edges=True)
     s.axes_manager.indices = (10, )

@@ -30,8 +30,7 @@ STYLE_PYTEST_MPL = 'default'
 class TestModelPlot:
     def setup_method(self, method):
         s = Signal1D(np.arange(1000).reshape((10, 100)))
-        np.random.seed(0)
-        s.add_poissonian_noise()
+        s.add_poissonian_noise(random_state=0)
         m = s.create_model()
         line = Expression("a * x", name="line", a=1)
         m.append(line)

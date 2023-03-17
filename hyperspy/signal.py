@@ -5939,13 +5939,15 @@ class BaseSignal(FancySlicing,
         Adding to a 1D signal, where the point will change
         when the navigation index is changed:
 
-        >>> s = hs.signals.Signal1D(np.random.random((3, 100)))
+        >>> rng = np.random.default_rng(1)
+        >>> s = hs.signals.Signal1D(rng.random((3, 100)))
         >>> marker = hs.plot.markers.Point((19, 10, 60), (0.2, 0.5, 0.9))
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
 
         Add permanent marker:
 
-        >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
+        >>> rng = np.random.default_rng(1)
+        >>> s = hs.signals.Signal2D(rng.random((100, 100)))
         >>> marker = hs.plot.markers.Point(50, 60, color='red')
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
 
@@ -5956,21 +5958,24 @@ class BaseSignal(FancySlicing,
         indices, the list used to make the marker must be a nested list:
         2 lists with 3 elements each (2 x 3):
 
-        >>> s = hs.signals.Signal1D(np.random.random((2, 3, 10)))
+        >>> rng = np.random.default_rng(1)
+        >>> s = hs.signals.Signal1D(rng.random((2, 3, 10)))
         >>> marker = hs.plot.markers.VerticalLine([[1, 3, 5], [2, 4, 6]])
         >>> s.add_marker(marker, permanent=True)
 
         Add permanent marker which changes with navigation position, and
         do not add it to a current plot:
 
-        >>> s = hs.signals.Signal2D(np.random.randint(10, size=(3, 100, 100)))
+        >>> rng = np.random.default_rng(1)
+        >>> s = hs.signals.Signal2D(rng.integers(10, size=(3, 100, 100)))
         >>> marker = hs.plot.markers.Point((10, 30, 50), (30, 50, 60), color='red')
         >>> s.add_marker(marker, permanent=True, plot_marker=False)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Removing a permanent marker:
 
-        >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
+        >>> rng = np.random.default_rng(1)
+        >>> s = hs.signals.Signal2D(rng.integers(10, size=(100, 100)))
         >>> marker = hs.plot.markers.Point(10, 60, color='red')
         >>> marker.name = "point_marker"
         >>> s.add_marker(marker, permanent=True)
@@ -5978,8 +5983,8 @@ class BaseSignal(FancySlicing,
 
         Adding many markers as a list:
 
-        >>> from numpy.random import random
-        >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
+        >>> rng = np.random.default_rng(1)
+        >>> s = hs.signals.Signal2D(rng.integers(10, size=(100, 100)))
         >>> marker_list = []
         >>> for i in range(100):
         ...     marker = hs.plot.markers.Point(random()*100, random()*100, color='red')
@@ -6077,7 +6082,7 @@ class BaseSignal(FancySlicing,
             example, if the data type was initially ``'float64'``, the result of
             the operation (usually ``'int64'``) will be converted to
             ``'float64'``.
-        random_state : None or int or RandomState instance, default None
+        random_state : None or int or Generator instance, default None
             Seed for the random generator.
 
         Note
@@ -6124,7 +6129,7 @@ class BaseSignal(FancySlicing,
         ----------
         std : float
             The standard deviation of the Gaussian noise.
-        random_state : None or int or RandomState instance, default None
+        random_state : None or int or Generator instance, default None
             Seed for the random generator.
 
         Note

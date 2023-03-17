@@ -1607,17 +1607,21 @@ def to_numpy(array):
 
     Raises
     ------
-    ValueError
-        If the provided array is a dask array
-
+    TypeError
+        When the input array type is not supported.
     """
-    if isinstance(array, da.Array):
-        raise LazyCupyConversion
-    if is_cupy_array(array):
+    if isinstance(array, np.ndarray):
+        return array
+    elif isinstance(array, da.Array):
+        raise TypeError(
+            "Implicit conversion of dask array to numpy array is not "
+            "supported, conversion needs to be done explicitely."
+            )
+    elif is_cupy_array(array):  # pragma: no cover
         import cupy as cp
-        array = cp.asnumpy(array)
-
-    return array
+        return cp.asnumpy(array)
+    else:
+        raise TypeError("Unsupported array type.")
 
 
 def get_array_module(array):

@@ -199,10 +199,43 @@ Preferences
 .. towncrier release notes start
 
 
+.. _changes_1.7.4:
+
+v1.7.4 (2023-03-16)
+===================
+
+Bug Fixes
+---------
+
+- Fixes an array indexing bug when loading a .sur file format spectra series. (`#3060 <https://github.com/hyperspy/hyperspy/issues/3060>`_)
+- Speed up :py:func:`~.misc.utils.to_numpy` function to avoid slow down when used repeatedly, typically during fitting (`#3109 <https://github.com/hyperspy/hyperspy/issues/3109>`_)
+
+
+Improved Documentation
+----------------------
+
+- Replace ``sphinx.ext.imgmath`` by ``sphinx.ext.mathjax`` to fix the math rendering in the *ReadTheDocs* build (`#3084 <https://github.com/hyperspy/hyperspy/issues/3084>`_)
+
+
+Enhancements
+------------
+
+- Add support for Phenom .elid revision 3 and 4 formats (`#3073 <https://github.com/hyperspy/hyperspy/issues/3073>`_)
+
+
+Maintenance
+-----------
+
+- Add pooch as test dependency, as it is required to use scipy.dataset in latest scipy (1.10) and update plotting test. Fix warning when plotting non-uniform axis (`#3079 <https://github.com/hyperspy/hyperspy/issues/3079>`_)
+- Fix matplotlib 3.7 and scikit-learn 1.4 deprecations (`#3102 <https://github.com/hyperspy/hyperspy/issues/3102>`_)
+- Add support for new pattern to generate random numbers introduced in dask 2023.2.1. Deprecate usage of :py:class:`numpy.random.RandomState` in favour of :py:func:`numpy.random.default_rng`. Bump scipy minimum requirement to 1.4.0. (`#3103 <https://github.com/hyperspy/hyperspy/issues/3103>`_)
+- Fix checking links in documentation for domain, which aren't compatible with sphinx linkcheck (`#3108 <https://github.com/hyperspy/hyperspy/issues/3108>`_)
+
+
 .. _changes_1.7.3:
 
 v1.7.3 (2022-10-29)
-===========================
+===================
 
 Bug Fixes
 ---------
@@ -222,7 +255,7 @@ Maintenance
 .. _changes_1.7.2:
 
 v1.7.2 (2022-09-17)
-===========================
+===================
 
 Bug Fixes
 ---------
