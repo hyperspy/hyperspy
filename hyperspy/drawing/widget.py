@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,7 +19,7 @@
 from __future__ import division
 
 import matplotlib.pyplot as plt
-from matplotlib.backend_bases import MouseEvent
+from matplotlib.backend_bases import MouseEvent, PickEvent
 import numpy as np
 
 from hyperspy.drawing.utils import on_figure_window_close
@@ -198,13 +198,17 @@ class WidgetBase(object):
         if not self.patch or not self.is_on or not self.ax:
             return
 
-        canvas = self.ax.figure.canvas
+        figure = self.ax.figure
         # Simulate a pick event
         x, y = self.patch[0].get_transform().transform_point((0, 0))
-        mouseevent = MouseEvent('pick_event', canvas, x, y)
-        # when the widget is added programatically, mouseevent can be "empty"
+        mouseevent = MouseEvent('pick_event', figure.canvas, x, y)
         if mouseevent.button:
-            canvas.pick_event(mouseevent, self.patch[0])
+            try:
+                # Introduced in matplotlib 3.6 and `pick_event` deprecated
+                event = PickEvent('pick_event', figure, mouseevent, self.patch[0])
+                figure.canvas.callbacks.process('pick_event', event)
+            except: # Deprecated in matplotlib 3.6
+                figure.canvas.pick_event(mouseevent, self.patch[0])
         self.picked = False
 
     def connect(self, ax):

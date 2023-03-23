@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -102,11 +102,11 @@ class TestParameterDictionary:
 
         rn = np.random.random()
         np.testing.assert_equal(
-            p.twin_function(rn),
-            self.par.twin_function(rn))
+            p._twin_function(rn),
+            self.par._twin_function(rn))
         np.testing.assert_equal(
-            p.twin_inverse_function(rn),
-            self.par.twin_inverse_function(rn))
+            p._twin_inverse_function(rn),
+            self.par._twin_inverse_function(rn))
 
     def test_invalid_name(self):
         d = self.par.as_dictionary()
@@ -166,10 +166,10 @@ class TestComponentDictionary:
 
         for pn, pc in zip(n.parameters, c.parameters):
             rn = np.random.random()
-            assert pn.twin_function(rn) == pc.twin_function(rn)
+            assert pn._twin_function(rn) == pc._twin_function(rn)
             assert (
-                pn.twin_inverse_function(rn) ==
-                pc.twin_inverse_function(rn))
+                pn._twin_inverse_function(rn) ==
+                pc._twin_inverse_function(rn))
             dn = pn.as_dictionary()
             del dn['self']
             dc = pc.as_dictionary()

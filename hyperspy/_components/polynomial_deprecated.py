@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -23,7 +23,7 @@ import logging
 from hyperspy.component import Component
 from hyperspy.misc.utils import ordinal
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
-from hyperspy.misc.utils import is_binned # remove in v2.0
+
 
 _logger = logging.getLogger(__name__)
 
@@ -125,9 +125,7 @@ class Polynomial(Component):
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
 
-        if is_binned(signal):
-        # in v2 replace by
-        #if axis.is_binned:
+        if axis.is_binned:
             # using the mean of the gradient for non-uniform axes is a best
             # guess to the scaling of binned signals for the estimation
             scaling_factor = axis.scale if axis.is_uniform \
@@ -137,9 +135,7 @@ class Polynomial(Component):
             estimation = np.polyfit(axis.axis[i1:i2],
                                     signal()[i1:i2],
                                     self.get_polynomial_order())
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.coefficients.value = estimation / scaling_factor
             else:
                 self.coefficients.value = estimation
@@ -160,9 +156,7 @@ class Polynomial(Component):
                 # Shape needed to fit coefficients.map:
                 cmap_shape = nav_shape + (self.get_polynomial_order() + 1, )
                 self.coefficients.map['values'][:] = cmaps.reshape(cmap_shape)
-                if is_binned(signal):
-                # in v2 replace by
-                #if axis.is_binned:
+                if axis.is_binned:
                     self.coefficients.map["values"] /= scaling_factor
                 self.coefficients.map['is_set'][:] = True
             self.fetch_stored_values()

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -34,17 +34,24 @@ import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, underline, print_html
-from hyperspy.misc.utils import is_binned # remove in v2.0
 from hyperspy.misc.math_tools import optimal_fft_size
 from hyperspy.misc.eels.tools import get_edges_near_energy
 from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import (
-    CROP_PARAMETER_DOC, SPIKES_DIAGNOSIS_DOCSTRING, MASK_ZERO_LOSS_PEAK_WIDTH,
-    SPIKES_REMOVAL_TOOL_DOCSTRING)
+    CROP_PARAMETER_DOC,
+    SPIKES_DIAGNOSIS_DOCSTRING,
+    MASK_ZERO_LOSS_PEAK_WIDTH,
+    SPIKES_REMOVAL_TOOL_DOCSTRING,
+    )
 from hyperspy.docstrings.signal import (
-    SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG, SIGNAL_MASK_ARG,
-    NAVIGATION_MASK_ARG)
+    SHOW_PROGRESSBAR_ARG,
+    PARALLEL_ARG,
+    MAX_WORKERS_ARG,
+    SIGNAL_MASK_ARG,
+    NAVIGATION_MASK_ARG,
+    LAZYSIGNAL_DOC,
+)
 
 
 
@@ -71,7 +78,7 @@ class EELSTEMParametersUI(BaseSetMetadataItems):
 
 class EELSSpectrum(Signal1D):
 
-    """1D signal class for EELS spectra."""
+    """Signal class for EELS spectra."""
 
     _signal_type = "EELS"
     _alias_signal_types = ["TEM EELS"]
@@ -768,9 +775,9 @@ class EELSSpectrum(Signal1D):
         else:
             I0 = self.estimate_elastic_scattering_intensity(
                 threshold=threshold,).data
-        
+
         t_over_lambda = np.log(total_intensity / I0)
-        
+
         if density is not None:
             if self._are_microscope_parameters_missing():
                 raise RuntimeError(
@@ -1222,9 +1229,7 @@ class EELSSpectrum(Signal1D):
         # If the signal is binned we need to bin the extrapolated power law
         # what, in a first approximation, can be done by multiplying by the
         # axis step size.
-        if is_binned(self):
-        # in v2 replace by
-        # if self.axes_manager[-1].is_binned:
+        if self.axes_manager[-1].is_binned:
             factor = s.axes_manager[-1].scale
         else:
             factor = 1
@@ -1870,4 +1875,6 @@ class EELSSpectrum(Signal1D):
 
 class LazyEELSSpectrum(EELSSpectrum, LazySignal1D):
 
-    pass
+    """Lazy signal class for EELS spectra."""
+
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "EELSSpectrum")

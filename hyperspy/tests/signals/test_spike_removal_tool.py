@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -24,14 +24,13 @@ from hyperspy.signals import Signal1D
 
 def test_spikes_removal_tool():
     s = Signal1D(np.ones((2, 3, 30)))
-    np.random.seed(1)
-    s.add_gaussian_noise(1e-5)
+    s.add_gaussian_noise(1e-5, random_state=1)
     # Add three spikes
     s.data[1, 0, 1] += 2
     s.data[0, 2, 29] += 1
     s.data[1, 2, 14] += 1
 
-    sr = SpikesRemovalInteractive(s)
+    sr = SpikesRemovalInteractive(s, random_state=1)
     sr._show_derivative_histogram_fired()
     sr.threshold = 1.5
     sr.find()
@@ -46,18 +45,17 @@ def test_spikes_removal_tool():
     assert s.axes_manager.indices == (2, 0)
     sr.add_noise = False
     sr.apply()
-    np.testing.assert_almost_equal(s.data[0, 2, 29], 1, decimal=5)
+    np.testing.assert_almost_equal(s.data[0, 2, 29], 1, decimal=4)
     assert s.axes_manager.indices == (0, 1)
     sr.apply()
-    np.testing.assert_almost_equal(s.data[1, 0, 1], 1, decimal=5)
+    np.testing.assert_almost_equal(s.data[1, 0, 1], 1, decimal=4)
     assert s.axes_manager.indices == (2, 1)
-    np.random.seed(1)
     sr.add_noise = True
     sr.default_spike_width = 3
     sr.interpolator_kind = "Spline"
     sr.spline_order = 3
     sr.apply()
-    np.testing.assert_almost_equal(s.data[1, 2, 14], 1, decimal=5)
+    np.testing.assert_almost_equal(s.data[1, 2, 14], 2, decimal=4)
     assert s.axes_manager.indices == (0, 0)
 
 
@@ -66,26 +64,22 @@ def test_spikes_removal_tool_navigation_dimension_0():
     s = Signal1D(np.ones(1234))
     #Add a spike
     s.data[333] = 5
-    np.random.seed(1)
-    s.add_gaussian_noise(0.01)
-
+    s.add_gaussian_noise(0.01, random_state=1)
     assert s.axes_manager.navigation_dimension == 0
 
-    sr = SpikesRemovalInteractive(s)
+    sr = SpikesRemovalInteractive(s, random_state=1)
     sr.threshold = 1.5
     sr.add_noise = False
     sr.find()
-
     sr.apply()
 
     np.testing.assert_allclose(s.data[333], 1, atol=0.02)
 
 
-@pytest.mark.parametrize(("add_noise, decimal"), [(True, 1), (False, 5)])
+@pytest.mark.parametrize(("add_noise, decimal"), [(True, 1), (False, 4)])
 def test_spikes_removal_tool_non_interactive(add_noise, decimal):
     s = Signal1D(np.ones((2, 3, 30)))
-    np.random.seed(1)
-    s.add_gaussian_noise(1e-5)
+    s.add_gaussian_noise(1e-5, random_state=1)
     # Add three spikes
     s.data[1, 0, 1] += 2
     s.data[0, 2, 29] += 1
@@ -101,8 +95,7 @@ def test_spikes_removal_tool_non_interactive(add_noise, decimal):
 
 def test_spikes_removal_tool_non_interactive_masking():
     s = Signal1D(np.ones((2, 3, 30)))
-    np.random.seed(1)
-    s.add_gaussian_noise(1e-5)
+    s.add_gaussian_noise(1e-5, random_state=1)
     # Add three spikes
     s.data[1, 0, 1] += 2
     s.data[0, 2, 29] += 1

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -29,9 +29,20 @@ from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.misc.holography.reconstruct import (
-    reconstruct, estimate_sideband_position, estimate_sideband_size)
-from hyperspy.misc.holography.tools import calculate_carrier_frequency, estimate_fringe_contrast_fourier
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
+    reconstruct,
+    estimate_sideband_position,
+    estimate_sideband_size,
+    )
+from hyperspy.misc.holography.tools import (
+    calculate_carrier_frequency,
+    estimate_fringe_contrast_fourier,
+)
+from hyperspy.docstrings.signal import (
+    SHOW_PROGRESSBAR_ARG,
+    PARALLEL_ARG,
+    MAX_WORKERS_ARG,
+    LAZYSIGNAL_DOC,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -131,7 +142,8 @@ def _estimate_fringe_contrast_statistical(holo):
 
 
 class HologramImage(Signal2D):
-    """Image subclass for holograms acquired via off-axis electron holography."""
+
+    """Signal class for holograms acquired via off-axis electron holography."""
 
     _signal_type = 'hologram'
 
@@ -819,4 +831,9 @@ class HologramImage(Signal2D):
 
 class LazyHologramImage(LazySignal, HologramImage):
 
-    _lazy = True
+    """
+    Lazy signal class for holograms acquired via off-axis electron
+    holography.
+    """
+
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "HologramImage")

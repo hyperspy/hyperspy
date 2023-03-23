@@ -1,8 +1,9 @@
-Bibliography
-============
+:html_theme.sidebar_secondary.remove: true
+
+.. _bibliography:
 
 Bibliography
-------------
+============
 
 .. _[Burdet2013]:
 
@@ -79,7 +80,7 @@ Bibliography
    M. Keenan and P. Kotula, "Accounting for Poisson noise in
    the multivariate analysis of ToF-SIMS spectrum images," *Surf.
    Interface Anal* 36(3) (2004): 203–212
-   [`<https://doi.org/10.1002/sia.1657>`_].
+   [`<https://onlinelibrary.wiley.com/doi/10.1002/sia.1657>`_].
 
 .. _MacArthur2016:
 
@@ -96,7 +97,7 @@ Bibliography
    M. McCartney and D. Smith, "Electron
    holography: phase imaging with nanometer resolution," *Annu. Rev. Mater.
    Res.* 37 (2007): 729-767
-   [`<https://doi.org/10.1146/annurev.matsci.37.052506.084219>`_].
+   [`<https://onlinelibrary.wiley.com/doi/10.1146/annurev.matsci.37.052506.084219>`_].
 
 .. _[Nicoletti2013]:
 
@@ -145,7 +146,7 @@ Bibliography
    M. Watanabe and D. Williams, "The
    quantitative analysis of thin specimens: a review of progress from the
    Cliff-Lorimer to the new zeta-factor methods," *J. Microsc.* 221 (2006):
-   89–109 [`<https://doi.org/10.1111/j.1365-2818.2006.01549.x>`_].
+   89–109 [`<https://onlinelibrary.wiley.com/doi/10.1111/j.1365-2818.2006.01549.x>`_].
 
 .. _Williams2009:
 
@@ -207,36 +208,21 @@ Bibliography
 .. _Iakoubovskii2008:
 
 :ref:`[Iakoubovskii2008] <Iakoubovskii2008>`
-    - Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
-      ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
-      Microscopy Research and Technique 71, no. 8 (2008): 626–31.
-      [`<https://doi.org/10.1002/jemt.20597>`_].
+   Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
+   ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
+   Microscopy Research and Technique 71, no. 8 (2008): 626–31.
+   [`<https://onlinelibrary.wiley.com/doi/10.1002/jemt.20597>`_].
 
 .. _White2009:
 
 :ref:`[White2009] <White2009>`
-    - T.A. White, “Structure solution using precession electron diffraction and
-      diffraction tomography” PhD Thesis, University of Cambridge, 2009.
+   T.A. White, “Structure solution using precession electron diffraction and
+   diffraction tomography” PhD Thesis, University of Cambridge, 2009.
 
 .. _Zaefferer2000:
 
 :ref:`[Zaefferer2000] <Zaefferer2000>`
-    - S. Zaefferer, “New developments of computer-aided crystallographic
-      analysis in transmission electron microscopy” J. Appl. Crystallogr.,
-      vol. 33, no. v, pp. 10–25, 2000.
-      [`<https://doi.org/10.1107/S0021889899010894>`_].
-
-
-Peer-review articles with results obtained using HyperSpy
----------------------------------------------------------
-
-.. note::
-
-   Given the incresing number of articles that cite HyperSpy we no longer
-   maintain a list of articles here. For an up to date list search for
-   HyperSpy in a scientific database e.g. `Google Scholar
-   <https://scholar.google.co.uk/scholar?hl=en&q=hyperspy&btnG=&as_sdt=1%2C5>`_.
-
-.. Warning::
-    The articles published before 2012 may mention the HyperSpy project under
-    its old name, EELSLab
+   S. Zaefferer, “New developments of computer-aided crystallographic
+   analysis in transmission electron microscopy” J. Appl. Crystallogr.,
+   vol. 33, no. v, pp. 10–25, 2000.
+   [`<https://doi.org/10.1107/S0021889899010894>`_].

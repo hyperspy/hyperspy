@@ -1,4 +1,4 @@
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -225,8 +225,7 @@ class TestSpikesRemovalToolZLP:
         gauss.A.value = 5000
         gauss.sigma.value = 0.5
         s.data = s.data + gauss.function(energy_axis.axis)
-        np.random.seed(1)
-        s.add_gaussian_noise(1)
+        s.add_gaussian_noise(1, random_state=1)
         self.signal = s
 
     def _add_spikes(self):
@@ -268,7 +267,7 @@ class TestSpikesRemovalToolZLP:
         np.testing.assert_allclose(hist_data.data, expected_data)
 
         hist_data2 = self.signal._spikes_diagnosis(bins=25)
-        expected_data2 = np.array([285, 11, 13, 0, 0, 1, 12,  0])
+        expected_data2 = np.array([286, 10, 13, 0, 0, 1, 12,  0])
         np.testing.assert_allclose(hist_data2.data[:8], expected_data2)
 
         # mask all to check that it raises an error when there is no data
@@ -611,7 +610,7 @@ class TestVacuumMask:
         s = self.signal
         mask = s.vacuum_mask(threshold=20)
         assert mask.data[0]
-        assert mask.data[1]
+        assert not mask.data[1]
         assert not mask.data[2]
         assert not mask.data[9]
         assert mask.data[10]

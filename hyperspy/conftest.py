@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -38,7 +38,6 @@ import hyperspy.api as hs
 
 matplotlib.rcParams['figure.max_open_warning'] = 25
 matplotlib.rcParams['interactive'] = False
-hs.preferences.Plot.saturated_pixels = 0.0
 hs.preferences.Plot.cmap_navigator = 'viridis'
 hs.preferences.Plot.cmap_signal = 'viridis'
 hs.preferences.Plot.pick_tolerance = 5.0
@@ -78,4 +77,3 @@ except ImportError:
             "mpl_image_compare: dummy marker registration to allow running "
             "without the pytest-mpl plugin."
         )
-

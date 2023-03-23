@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -28,7 +27,6 @@ from functools import partial
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
 from hyperspy.events import Event, Events
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.test_utils import ignore_warning
 
 
@@ -305,13 +303,6 @@ class Signal1DLine(object):
         self.text_position = (-0.1, 1.05,)
         self._line_properties = {}
         self.type = "line"
-
-    @property
-    def get_complex(self):
-        warnings.warn("The `get_complex` attribute is deprecated and will be"
-                      "removed in 2.0, please use `_plot_imag` instead.",
-                      VisibleDeprecationWarning)
-        return self._plot_imag
 
     @property
     def line_properties(self):

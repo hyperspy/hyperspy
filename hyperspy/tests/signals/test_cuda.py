@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -26,10 +26,6 @@ import hyperspy.api as hs
 
 try:
     import cupy as cp
-    if Version(np.__version__) < Version('1.20'):
-        raise ImportError('numpy 1.20 or newer is required.')
-    if Version(dask.__version__) < Version('2021.3.0'):
-        raise ImportError('dask 2021.3.0 or newer is required.')
 except ImportError:
     pytest.skip("cupy is required", allow_module_level=True)
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -149,17 +149,6 @@ def test_ma_lazify():
 def test_rechunk(signal, nav_chunks, sig_chunks):
     signal.rechunk(nav_chunks=nav_chunks,
                    sig_chunks=sig_chunks)
-
-
-def test_warning():
-    sig = _signal()
-
-    with pytest.warns(VisibleDeprecationWarning, match="progressbar"):
-        sig.compute(progressbar=False)
-
-    assert sig._lazy == False
-    thing = to_array(sig, chunks=None)
-    assert isinstance(thing, np.ndarray)
 
 
 class TestGetNavigationDimensionHostChunkSlice:

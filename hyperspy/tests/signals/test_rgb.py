@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 import hyperspy.api as hs
-from hyperspy.misc import rgb_tools
+from rsciio.utils import rgb_tools
 
 
 class TestRGBA8:

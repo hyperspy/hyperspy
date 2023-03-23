@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -272,7 +272,7 @@ class DictionaryTreeBrowser:
         for key, value in dictionary.items():
             if key == "_double_lines":
                 value = double_lines
-            self.__setattr__(key, value)
+            self._setattr(key, value, keep_existing=True)
 
     def process_lazy_attributes(self):
         """Run the DictionaryTreeBrowser machinery for the lazy attributes."""
@@ -300,7 +300,8 @@ class DictionaryTreeBrowser:
         filename : str
             The name of the file without the extension that is
             txt by default
-        encoding : valid encoding str
+        encoding : str
+            The encoding to be used.
 
         """
         self.process_lazy_attributes()
@@ -464,16 +465,30 @@ class DictionaryTreeBrowser:
             return item
 
     def __setattr__(self, key, value):
+        self._setattr(key, value, keep_existing=False)
+
+    def _setattr(self, key, value, keep_existing=False):
+        """
+        Set the value of the given attribute `key`.
+
+        Parameters
+        ----------
+        key : str
+            The key attribute to be set.
+        value : object
+            The value to assign to the given `key` attribute.
+        keep_existing : bool, optional
+            If value is of dictionary type and the node already exists, keep
+            existing leaf of the node being set. The default is False.
+
+        Returns
+        -------
+        None.
+
+        """
         if key in ["_double_lines", "_lazy_attributes"]:
             super().__setattr__(key, value)
             return
-        if key == "binned":
-            warnings.warn(
-                "Use of the `binned` attribute in metadata is "
-                "going to be deprecated in v2.0. Set the "
-                "`axis.is_binned` attribute instead. ",
-                VisibleDeprecationWarning,
-            )
 
         if key.startswith("_sig_"):
             key = key[5:]
@@ -482,7 +497,7 @@ class DictionaryTreeBrowser:
             value = BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
-            if slugified_key in self.__dict__.keys():
+            if slugified_key in self.__dict__.keys() and keep_existing:
                 self.__dict__[slugified_key]["_dtb_value_"].add_dictionary(
                     value, double_lines=self._double_lines
                 )
@@ -513,6 +528,7 @@ class DictionaryTreeBrowser:
         par_dict = {}
 
         from hyperspy.signal import BaseSignal
+        from hyperspy.axes import AxesManager
 
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
@@ -526,6 +542,26 @@ class DictionaryTreeBrowser:
                     key = "_sig_" + key
                 elif hasattr(item_["_dtb_value_"], "_to_dictionary"):
                     item = item_["_dtb_value_"]._to_dictionary()
+                elif isinstance(item_["_dtb_value_"], AxesManager):
+                    item = item_["_dtb_value_"]._get_axes_dicts()
+                    key = "_hspy_AxesManager_" + key
+                elif type(item_["_dtb_value_"]) in (list, tuple):
+                    signals = []
+                    container =  item_["_dtb_value_"]
+                    # Support storing signals in containers
+                    for i, item in enumerate(container):
+                        if isinstance(item, BaseSignal):
+                            signals.append(i)
+                    if signals:
+                        to_tuple = False
+                        if type(container) is tuple:
+                            container = list(container)
+                            to_tuple = True
+                        for i in signals:
+                            container[i] = {"_sig_" :container[i]._to_dictionary()}
+                        if to_tuple:
+                            container = tuple(container)
+                    item = container
                 else:
                     item = item_["_dtb_value_"]
                 par_dict.update({key: item})
@@ -726,13 +762,15 @@ class DictionaryTreeBrowser:
 
     def set_item(self, item_path, value):
         """Given the path and value, create the missing nodes in
-        the path and assign to the last one the value
+        the path and assign the given value.
 
         Parameters
         ----------
-        item_path : Str
+        item_path : str
             A string describing the path with each item separated by a
-            full stops (periods)
+            full stop (periods)
+        value : object
+            The value to assign to the given path.
 
         Examples
         --------
@@ -821,6 +859,7 @@ def strlist2enumeration(lst):
         return "%s, " * (len(lst) - 2) % lst[:-2] + "%s and %s" % lst[-2:]
 
 
+
 def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
     if not isinstance(stuff, (bytes, np.string_)):
         return stuff
@@ -831,6 +870,7 @@ def ensure_unicode(stuff, encoding="utf8", encoding2="latin-1"):
     except BaseException:
         string = string.decode(encoding2, errors="ignore")
     return string
+
 
 
 def check_long_string(value, max_len):
@@ -1083,14 +1123,6 @@ def stack(
     from hyperspy.axes import FunctionalDataAxis, UniformDataAxis, DataAxis
     from numbers import Number
 
-    for k in [k for k in ["mmap", "mmap_dir"] if k in kwargs]:
-        lazy = True
-        warnings.warn(
-            f"'{k}' argument is deprecated and will be removed in "
-            "HyperSpy v2.0. Please use 'lazy=True' instead.",
-            VisibleDeprecationWarning,
-        )
-
     axis_input = copy.deepcopy(axis)
     signal_list = list(signal_list)
 
@@ -1330,8 +1362,7 @@ def process_function_blockwise(data,
     chunk_nav_shape = tuple([data.shape[i] for i in sorted(nav_indexes)])
     output_shape = chunk_nav_shape + tuple(output_signal_size)
     # Pre-allocating the output array
-    kw = get_numpy_kwargs(data)
-    output_array = np.empty(output_shape, dtype=dtype, **kw)
+    output_array = np.empty(output_shape, dtype=dtype, like=data)
     if len(args) == 0:
         # There aren't any BaseSignals for iterating
         for nav_index in np.ndindex(chunk_nav_shape):
@@ -1537,17 +1568,6 @@ def nested_dictionary_merge(dict1, dict2):
             dict1[key] = dict2[key]
 
 
-def is_binned(signal, axis=-1):
-    """Backwards compatibility check utility for is_binned attribute.
-
-    Can be removed in v2.0.
-    """
-    if signal.metadata.has_item("Signal.binned"):
-        return signal.metadata.Signal.binned
-    else:
-        return signal.axes_manager[axis].is_binned
-
-
 def is_cupy_array(array):
     """
     Convenience function to determine if an array is a cupy array
@@ -1586,17 +1606,21 @@ def to_numpy(array):
 
     Raises
     ------
-    ValueError
-        If the provided array is a dask array
-
+    TypeError
+        When the input array type is not supported.
     """
-    if isinstance(array, da.Array):
-        raise LazyCupyConversion
-    if is_cupy_array(array):
+    if isinstance(array, np.ndarray):
+        return array
+    elif isinstance(array, da.Array):
+        raise TypeError(
+            "Implicit conversion of dask array to numpy array is not "
+            "supported, conversion needs to be done explicitely."
+            )
+    elif is_cupy_array(array):  # pragma: no cover
         import cupy as cp
-        array = cp.asnumpy(array)
-
-    return array
+        return cp.asnumpy(array)
+    else:
+        raise TypeError("Unsupported array type.")
 
 
 def get_array_module(array):
@@ -1622,21 +1646,3 @@ def get_array_module(array):
         pass
 
     return module
-
-
-def get_numpy_kwargs(array):
-    """
-    Convenience funtion to return a dictionary containing the `like` keyword
-    if numpy>=1.20.
-
-    Note
-    ----
-    `like` keyword is an experimental feature introduced in numpy 1.20 and is
-    pending on acceptance of NEP 35
-
-    """
-    kw = {}
-    if Version(np.__version__) >= Version("1.20"):
-         kw['like'] = array
-
-    return kw

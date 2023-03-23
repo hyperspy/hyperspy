@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -42,7 +42,7 @@ def iMFP_Iakoubovskii(density, electron_energy):
     .. [*] Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
        ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
        Microscopy Research and Technique 71, no. 8 (2008): 626–31.
-       https://doi.org/10.1002/jemt.20597
+       https://onlinelibrary.wiley.com/doi/10.1002/jemt.20597
 
     Returns
     -------
@@ -84,7 +84,7 @@ def iMFP_TPP2M(electron_energy, density, M, N_v, E_g):
        the 50 EV to 200 KeV Range with the Relativistic Full Penn Algorithm:
        Calculations of Electron Inelastic Mean Free Paths. X’. Surface and
        Interface Analysis 47, no. 9 (September 2015): 871–88.
-       https://doi.org/10.1002/sia.5789
+       https://onlinelibrary.wiley.com/doi/10.1002/sia.5789
     """
     E = electron_energy * 1e3
     rho = density
@@ -117,7 +117,7 @@ def iMFP_angular_correction(density, beam_energy, alpha, beta):
     .. [*] Iakoubovskii, K., K. Mitsuishi, Y. Nakayama, and K. Furuya.
        ‘Thickness Measurements with Electron Energy Loss Spectroscopy’.
        Microscopy Research and Technique 71, no. 8 (2008): 626–31.
-       https://doi.org/10.1002/jemt.20597
+       https://onlinelibrary.wiley.com/doi/10.1002/jemt.20597
     """
     theta_C = 20 # mrad
     A = alpha ** 2 + beta ** 2 + 2 * _theta_E(density, beam_energy) ** 2 + abs(alpha ** 2 - beta ** 2)

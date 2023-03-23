@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -110,7 +110,8 @@ def test_align1D():
     x = np.stack([np.linspace(-5, 5, 100)]*5)
     s = hs.signals.Signal1D(g.function(x) + 1E5)
     s.axes_manager[-1].scale = scale
-    shifts = np.random.random(len(s.axes_manager[0].axis)) * 2
+    rng = np.random.default_rng(1)
+    shifts = rng.random(size=len(s.axes_manager[0].axis)) * 2
     shifts[0] = 0
     s.shift1D(-shifts, show_progressbar=False)
     s.axes_manager.indices = (0, )
@@ -342,8 +343,7 @@ class TestSmoothing:
                 dtype='float').reshape(
                 n,
                 m))
-        np.random.seed(1)
-        self.s.add_gaussian_noise(0.1)
+        self.s.add_gaussian_noise(0.1, random_state=1)
         self.rtol = 1e-7
         self.atol = 0
 
@@ -402,7 +402,8 @@ class TestSmoothing:
 @pytest.mark.parametrize('lazy', [True, False])
 @pytest.mark.parametrize('offset', [3, 0])
 def test_hanning(lazy, offset):
-    sig = hs.signals.Signal1D(np.random.rand(5, 20))
+    rng = np.random.default_rng(1)
+    sig = hs.signals.Signal1D(rng.random(size=(5, 20)))
     if lazy:
         sig = sig.as_lazy()
     data = np.array(sig.data)

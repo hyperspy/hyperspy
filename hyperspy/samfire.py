@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -171,17 +171,6 @@ class Samfire:
     @property
     def metadata(self):
         return self._metadata
-
-    @metadata.setter
-    def metadata(self, d):
-        warnings.warn(
-            "Setting the `metadata` attribute is deprecated and will be removed "
-            "in HyperSpy 2.0. Use the `set_item` and `add_dictionary` methods "
-            "of the `metadata` attribute instead."
-            )
-        if isinstance(d, dict):
-            d = DictionaryTreeBrowser(d)
-        self._metadata = d
 
     @property
     def active_strategy(self):
@@ -485,7 +474,7 @@ class Samfire:
         if best > 0.0:
             ind_list = np.where(self.metadata.marker == best)
             while number and ind_list[0].size > 0:
-                i = self.random_state.randint(len(ind_list[0]))
+                i = self.random_state.integers(len(ind_list[0]))
                 ind = tuple([lst[i] for lst in ind_list])
                 if ind not in self.running_pixels:
                     inds.append(ind)

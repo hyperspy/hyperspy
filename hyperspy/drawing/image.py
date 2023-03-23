@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -27,12 +27,12 @@ from traits.api import Undefined
 import logging
 import inspect
 import copy
+from rsciio.utils import rgb_tools
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
 from hyperspy.signal_tools import ImageContrastEditor
 from hyperspy.misc import math_tools
-from hyperspy.misc import rgb_tools
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.plot import PLOT2D_DOCSTRING
@@ -70,7 +70,6 @@ class ImagePlot(BlittedFigure):
         # Attribute matching the arguments of
         # `hyperspy._signal.signal2d.signal2D.plot`
         self.autoscale = "v"
-        self.saturated_pixels = None
         self.norm = "auto"
         self.vmin = None
         self.vmax = None
@@ -102,9 +101,6 @@ class ImagePlot(BlittedFigure):
         # user provided percentile values
         self._vmin_percentile = None
         self._vmax_percentile = None
-        # default values used when the numeric and percentile are None
-        self._vmin_default = f"{preferences.Plot.saturated_pixels / 2}th"
-        self._vmax_default = f"{100 - preferences.Plot.saturated_pixels / 2}th"
         # use to store internally the numeric value of contrast
         self._vmin = None
         self._vmax = None
@@ -132,7 +128,7 @@ class ImagePlot(BlittedFigure):
         elif self._vmax_percentile is not None:
             return self._vmax_percentile
         else:
-            return self._vmax_default
+            return "100th"
 
     @vmax.setter
     def vmax(self, vmax):
@@ -145,7 +141,7 @@ class ImagePlot(BlittedFigure):
         elif vmax is None:
             self._vmax_percentile = self._vmax_numeric = None
         else:
-            raise TypeError("`vmax` must be a number or a string.")
+            raise TypeError("`vmax` must be a number, a string or `None`.")
 
     @property
     def vmin(self):
@@ -154,7 +150,7 @@ class ImagePlot(BlittedFigure):
         elif self._vmin_percentile is not None:
             return self._vmin_percentile
         else:
-            return self._vmin_default
+            return "0th"
 
     @vmin.setter
     def vmin(self, vmin):
@@ -167,7 +163,7 @@ class ImagePlot(BlittedFigure):
         elif vmin is None:
             self._vmin_percentile = self._vmin_numeric = None
         else:
-            raise TypeError("`vmax` must be a number or a string.")
+            raise TypeError("`vmin` must be a number, a string or `None`.")
 
     @property
     def axes_ticks(self):
@@ -233,14 +229,6 @@ class ImagePlot(BlittedFigure):
                         yaxis.axis[-1] + yaxis_half_px,
                         yaxis.axis[0] - yaxis_half_px]
         self._calculate_aspect()
-        if self.saturated_pixels is not None:
-            from hyperspy.exceptions import VisibleDeprecationWarning
-            VisibleDeprecationWarning("`saturated_pixels` is deprecated and will be "
-                            "removed in 2.0. Please use `vmin` and `vmax` "
-                            "instead.")
-            self._vmin_percentile = self.saturated_pixels / 2
-            self._vmax_percentile = self.saturated_pixels / 2
-
 
     def _calculate_aspect(self):
         xaxis = self.xaxis
@@ -563,7 +551,11 @@ class ImagePlot(BlittedFigure):
                 ims[0].set_norm(norm)
                 ims[0].norm.vmax, ims[0].norm.vmin = vmax, vmin
             if redraw_colorbar:
-                self._colorbar.draw_all()
+                # `draw_all` is deprecated in matplotlib 3.6.0
+                if Version(matplotlib.__version__) <= Version("3.6.0"):
+                    self._colorbar.draw_all()
+                else:
+                    self.figure.draw_without_rendering()
                 self._colorbar.solids.set_animated(
                     self.figure.canvas.supports_blit
                 )

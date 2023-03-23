@@ -15,34 +15,35 @@ Different events may be triggered by other keyword arguments too.
 Connecting to events
 --------------------
 
-The following example shows how to connect to the `index_changed` event of
-:py:class:`~.axes.DataAxis` that is triggered with `obj` and `index` keywords:
+The following example shows how to connect to the ``index_changed`` event of
+:py:class:`~.axes.DataAxis` that is triggered with ``obj`` and ``index`` keywords:
 
- .. code-block:: python
+.. code-block:: python
 
-   >>> s = hs.signals.Signal1D(np.random.random((10,100)))
-   >>> nav_axis = s.axes_manager.navigation_axes[0]
-   >>> nav_axis.name = "x"
-   >>> def on_index_changed(obj, index):
-   >>>    print("on_index_changed_called")
-   >>>    print("Axis name: ", obj.name)
-   >>>    print("Index: ", index)
-   ...
-   >>> nav_axis.events.index_changed.connect(on_index_changed)
-   >>> s.axes_manager.indices = (3,)
-   on_index_changed_called
-   ('Axis name: ', 'x')
-   ('Index: ', 3)
-   >>> s.axes_manager.indices = (9,)
-   on_index_changed_called
-   ('Axis name: ', 'x')
-   ('Index: ', 9)
+    >>> s = hs.signals.Signal1D(np.random.random((10,100)))
+    >>> nav_axis = s.axes_manager.navigation_axes[0]
+    >>> nav_axis.name = "x"
+    >>> def on_index_changed(obj, index):
+    >>>    print("on_index_changed_called")
+    >>>    print("Axis name: ", obj.name)
+    >>>    print("Index: ", index)
+    ...
+    >>> nav_axis.events.index_changed.connect(on_index_changed)
+    >>> s.axes_manager.indices = (3,)
+    on_index_changed_called
+    ('Axis name: ', 'x')
+    ('Index: ', 3)
+    >>> s.axes_manager.indices = (9,)
+    on_index_changed_called
+    ('Axis name: ', 'x')
+    ('Index: ', 9)
+
 
 It is possible to select the keyword arguments that are passed to the
-connected. For example, in the following only the `index` keyword argument is
-passed to `on_index_changed2` and none to `on_index_changed3`:
+connected. For example, in the following only the ``index`` keyword argument is
+passed to ``on_index_changed2`` and none to ``on_index_changed3``:
 
- .. code-block:: python
+.. code-block:: python
 
     >>> def on_index_changed2(index):
     >>>    print("on_index_changed2_called")
@@ -67,9 +68,9 @@ passed to `on_index_changed2` and none to `on_index_changed3`:
     ('Index: ', 1)
     on_index_changed3_called
 
+
 It is also possible to map trigger keyword arguments to connected function
 keyword arguments as follows:
-
 
 .. code-block:: python
 

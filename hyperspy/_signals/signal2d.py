@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -41,7 +41,12 @@ from hyperspy.signal_tools import PeaksFinder2D, Signal2DCalibration
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT2D_DOCSTRING,
     PLOT2D_KWARGS_DOCSTRING)
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
+from hyperspy.docstrings.signal import (
+    SHOW_PROGRESSBAR_ARG,
+    PARALLEL_ARG,
+    MAX_WORKERS_ARG,
+    LAZYSIGNAL_DOC,
+)
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.utils.peakfinders2D import (
         find_local_max, find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
@@ -323,7 +328,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
              navigator="auto",
              plot_markers=True,
              autoscale='v',
-             saturated_pixels=None,
              norm="auto",
              vmin=None,
              vmax=None,
@@ -356,7 +360,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
             navigator=navigator,
             plot_markers=plot_markers,
             autoscale=autoscale,
-            saturated_pixels=saturated_pixels,
             norm=norm,
             vmin=vmin,
             vmax=vmax,
@@ -464,17 +467,17 @@ class Signal2D(BaseSignal, CommonSignal2D):
         Returns
         -------
         shifts : array
-            Estimated shifts in pixels. 
+            Estimated shifts in pixels.
 
         Notes
         -----
         The statistical analysis approach to the translation estimation
-        when using ``reference='stat'`` roughly follows [Schaffer2004]_.
+        when using ``reference='stat'`` roughly follows [*]_.
         If you use it please cite their article.
 
         References
         ----------
-        .. [Schaffer2004] Schaffer, Bernhard, Werner Grogger, and Gerald Kothleitner.
+        .. [*] Schaffer, Bernhard, Werner Grogger, and Gerald Kothleitner.
            “Automated Spatial Drift Correction for EFTEM Image Series.”
            Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
@@ -628,7 +631,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         shifts : None or array.
             The array of shifts must be in pixel units. The shape must be
             the navigation shape using numpy order convention. If `None`
-            the shifts are estimated using 
+            the shifts are estimated using
             :py:meth:`~._signals.signal2D.estimate_shift2D`.
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
@@ -1040,4 +1043,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
 class LazySignal2D(LazySignal, Signal2D):
 
-    _lazy = True
+    """Lazy general 2D signal class."""
+
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal2D")

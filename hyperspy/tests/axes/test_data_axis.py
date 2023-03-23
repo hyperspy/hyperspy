@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -288,10 +288,6 @@ class TestFunctionalDataAxis:
 
     def test_initialisation_errors(self):
         expression = "x ** power"
-        with pytest.raises(ValueError, match="Please provide"):
-            self.axis = FunctionalDataAxis(
-                expression=expression,
-                power=2,)
         with pytest.raises(ValueError, match="The values of"):
             self.axis = FunctionalDataAxis(
                 size=10,

@@ -30,25 +30,30 @@ sys.path.append('../')
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.imgmath',
-    'sphinx.ext.graphviz',
-    'sphinx.ext.autosummary',
-    'sphinx_toggleprompt',
     'sphinxcontrib.towncrier',
+    'sphinx_design',
+    'sphinx.ext.autodoc',
+    "sphinx.ext.autosummary",
+    "sphinx.ext.githubpages",
+    'sphinx.ext.graphviz',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.inheritance_diagram',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.napoleon',
+    'sphinx_gallery.gen_gallery',
+    'sphinx_toggleprompt',
 ]
 
 linkcheck_ignore = [
-    'https://www.jstor.org/stable/24307705',  # 403 Client Error: Forbidden for url
-    'https://anaconda.org',  # 403 Client Error: Forbidden for url
+    "https://anaconda.org",  # 403 Client Error: Forbidden for url
+    "https://doi.org/10.1021/acs.nanolett.5b00449",  # 403 Client Error: Forbidden for url
+    "https://onlinelibrary.wiley.com",  # 403 Client Error: Forbidden for url
 ]
 
-linkcheck_exclude_documents = [
-    'user_guide/io/*',
-    'api/hyperspy.io_plugins*',
-    ]
+linkcheck_exclude_documents = []
+
+# Specify a standard user agent, as Sphinx default is blocked on some sites
+user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.54"
 
 try:
     import sphinxcontrib.spelling
@@ -57,6 +62,8 @@ except BaseException:
     pass
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
+
+autosummary_generate = True
 
 # The suffix of source filenames.
 source_suffix = '.rst'
@@ -119,7 +126,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages. See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'pydata_sphinx_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -148,8 +155,42 @@ html_favicon = '_static/hyperspy.ico'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
+html_theme_options = {
+    "show_toc_level": 2,
+    "github_url": "https://github.com/hyperspy/hyperspy",
+    "icon_links": [
+        {
+            "name": "Gitter",
+            "url": "https://gitter.im/hyperspy/hyperspy",
+            "icon": "fab fa-gitter",
+        },
+        {
+            "name": "HyperSpy",
+            "url": "https://hyperspy.org",
+            "icon": "_static/hyperspy.ico",
+            "type": "local",
+        },
+    ],
+    "logo": {
+        "text": "HyperSpy",
+    },
+    "external_links": [
+        {
+            "url": "https://github.com/hyperspy/hyperspy-demos",
+            "name": "Tutorial",
+        },
+    ],
+    "header_links_before_dropdown": 8,
+    "switcher": {
+        # Update when merged and released
+        "json_url": "https://hyperspy.org/hyperspy-doc/dev/_static/switcher.json",
+        "version_match": version,
+    },
+    "navbar_start": ["navbar-logo", "version-switcher"],
+    "announcement": "HyperSpy API is changing in version 2.0, see <a href='https://hyperspy.org/hyperspy-doc/dev/changes.html'>upcoming changes!</a>",
+}
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
 #html_last_updated_fmt = '%b %d, %Y'
@@ -253,9 +294,9 @@ towncrier_draft_autoversion_mode = 'draft'
 towncrier_draft_include_empty = False
 towncrier_draft_working_directory = ".."
 
-
 # Add the hyperspy website to the intersphinx domains
-intersphinx_mapping = {'cupy': ('https://docs.cupy.dev/en/stable', None),
+intersphinx_mapping = {'rsciio': ('https://hyperspy.org/rosettasciio/', None),
+                       'cupy': ('https://docs.cupy.dev/en/stable', None),
                        'python': ('https://docs.python.org/3', None),
                        'h5py': ('https://docs.h5py.org/en/stable', None),
                        'hyperspyweb': ('https://hyperspy.org/', None),
@@ -269,25 +310,21 @@ intersphinx_mapping = {'cupy': ('https://docs.cupy.dev/en/stable', None),
                        'zarr': ('https://zarr.readthedocs.io/en/stable', None),
                        }
 
+# -- Sphinx-Gallery---------------
+
+# https://sphinx-gallery.github.io
+sphinx_gallery_conf = {
+    'examples_dirs': '../examples',   # path to your example scripts
+    'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
+    'filename_pattern': '.py',        # pattern to define which will be executed
+    'ignore_pattern': '_sgskip.py',   # pattern to define which will not be executed
+}
+
+autodoc_default_options = {
+    'show-inheritance': True,
+}
+
 graphviz_output_format = "svg"
 
-
-def run_apidoc(_):
-    # https://www.sphinx-doc.org/en/master/man/sphinx-apidoc.html
-    # https://www.sphinx-doc.org/es/1.2/ext/autodoc.html
-    import os
-    os.environ['SPHINX_APIDOC_OPTIONS'] = 'members,private-members,no-undoc-members,show-inheritance,ignore-module-all'
-
-    from sphinx.ext.apidoc import main
-
-    cur_dir = os.path.normpath(os.path.dirname(__file__))
-    output_path = os.path.join(cur_dir, 'api')
-    modules = os.path.normpath(os.path.join(cur_dir, "../hyperspy"))
-    exclude_pattern = ["../hyperspy/tests",
-                       "../hyperspy/external",
-                       "../hyperspy/io_plugins/unbcf_fast.pyx"]
-    main(['-e', '-f', '-P', '-o', output_path, modules, *exclude_pattern])
-
-
 def setup(app):
-    app.connect('builder-inited', run_apidoc)
+    app.add_css_file("custom-styles.css")

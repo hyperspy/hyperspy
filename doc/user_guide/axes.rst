@@ -1,6 +1,9 @@
+.. _axes-handling:
+
 Axes handling
 *************
 
+.. _dimensions-label:
 
 The navigation and signal dimensions
 ------------------------------------
@@ -164,6 +167,7 @@ navigation dimensions:
 
     >>> s.axes_manager.indices = (5, 4)
 
+.. _Axes_properties:
 
 Summary of axis properties
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -237,6 +241,8 @@ following table.
     will be added in future releases.
 
 
+.. _uniform-data-axis:
+
 Uniform data axis
 ^^^^^^^^^^^^^^^^^
 
@@ -273,6 +279,8 @@ Corresponding output of :py:class:`~.axes.AxesManager`:
     ---------------- | ------ | ------- | ------- | ------
                      |    500 |     300 |       1 |
 
+
+.. _functional-data-axis:
 
 Functional data axis
 ^^^^^^^^^^^^^^^^^^^^
@@ -362,6 +370,8 @@ Initializing ``x`` as non-uniform :py:class:`~.axes.DataAxis`:
 Initializing ``x`` with ``offset`` and ``scale``:
 
 
+.. _data-axis:
+
 (non-uniform) Data axis
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -394,6 +404,8 @@ Corresponding output of :py:class:`~.axes.AxesManager`:
     ---------------- | ------ | ---------------- | ---------------- | ------
                      |     12 | non-uniform axis | non-uniform axis |
 
+
+.. _defining-axes:
 
 Defining a new axis
 -------------------
@@ -604,7 +616,7 @@ navigation index will now use that index, like ``s.plot()``.
 
     >>> s = hs.signals.Signal1D(np.zeros((2,3,10)))
     >>> s.axes_manager.iterpath # check current iteration path
-    'flyback' # default until Hyperspy 2.0, then 'serpentine'
+    'serpentine'
     >>> for index in s.axes_manager:
     ...     s.axes_manager.indices = i # s.plot() will change with this
     ...     print(index)
@@ -620,17 +632,18 @@ The :py:attr:`~.axes.AxesManager.iterpath` attribute specifies the strategy that
 the :py:class:`~.axes.AxesManager` should use to iterate over the navigation axes.
 Two built-in strategies exist:
 
-- ``'flyback'``: starts at (0, 0), continues down the row until the final
-  column, "flies back" to the first column, and continues from (1, 0)
-- ``'serpentine'``: starts at (0, 0), but when it reaches the final column
+- ``'serpentine'`` (default): starts at (0, 0), but when it reaches the final column
   (of index N), it continues from (1, N) along the next row, in the same way
   that a snake might slither, left and right.
+- ``'flyback'``: starts at (0, 0), continues down the row until the final
+  column, "flies back" to the first column, and continues from (1, 0).
+
 
 
 .. code-block:: python
 
     >>> s = hs.signals.Signal1D(np.zeros((2,3,10)))
-    >>> s.axes_manager.iterpath = 'serpentine'
+    >>> s.axes_manager.iterpath = 'flyback'
     >>> for index in s.axes_manager:
     ...     print(index)
 
@@ -640,7 +653,7 @@ The :py:attr:`~.axes.AxesManager.iterpath` can also be set using the
 .. code-block:: python
 
     >>> s = hs.signals.Signal1D(np.zeros((2,3,10)))
-    >>> with s.axes_manager.switch_iterpath('serpentine'):
+    >>> with s.axes_manager.switch_iterpath('flyback'):
     >>>     for index in s.axes_manager:
     ...         print(index)
 

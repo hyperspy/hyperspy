@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,13 +17,10 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import math
-from packaging.version import Version
-import sympy
 
 from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
-from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 sqrt2pi = math.sqrt(2 * math.pi)
@@ -92,9 +89,6 @@ class Voigt(Expression):
         # Not to break scripts once we remove the legacy Voigt
         if "legacy" in kwargs:
             del kwargs["legacy"]
-        if Version(sympy.__version__) < Version("1.3"):
-            raise ImportError("The `Voigt` component requires "
-                              "SymPy >= 1.3")
         # We use `gamma_` internally to workaround the use of the `gamma`
         # function in sympy
         super().__init__(
@@ -170,18 +164,14 @@ class Voigt(Expression):
             self.centre.value = centre
             self.sigma.value = sigma
             self.area.value = height * sigma * sqrt2pi
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.area.value /= scaling_factor
             return True
         else:
             if self.area.map is None:
                 self._create_arrays()
             self.area.map['values'][:] = height * sigma * sqrt2pi
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.area.map['values'][:] /= scaling_factor
             self.area.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma

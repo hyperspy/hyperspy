@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -227,8 +227,7 @@ class TestExpression2D:
         s2 = hs.stack([s]*2)
         m = s2.create_model()
         m.append(g)
-        # HyperSpy 2.0: remove setting iterpath='serpentine'
-        m.multifit(iterpath='serpentine')
+        m.multifit()
         res = g.function_nd(x, y)
         assert res.shape == (2, 3, 3)
         np.testing.assert_allclose(res, s2.data)

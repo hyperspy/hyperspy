@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -101,7 +101,6 @@ def test_dir_api():
         'get_configuration_directory_path',
         'interactive',
         'load',
-        'markers',
         'material',
         'model',
         'plot',
@@ -126,7 +125,6 @@ def test_dir_api_nogui():
         'get_configuration_directory_path',
         'interactive',
         'load',
-        'markers',
         'material',
         'model',
         'plot',
@@ -145,6 +143,31 @@ def test_dir_datasets():
     import hyperspy.datasets
     d = dir(hyperspy.datasets)
     assert d == ['artificial_data', 'eelsdb', 'example_signals']
+
+
+def test_dir_datasets2():
+    import hyperspy.datasets.artificial_data
+    d = dir(hyperspy.datasets.artificial_data)
+    assert d == [
+        'get_atomic_resolution_tem_signal2d',
+        'get_core_loss_eels_line_scan_signal',
+        'get_core_loss_eels_model',
+        'get_core_loss_eels_signal',
+        'get_low_loss_eels_line_scan_signal',
+        'get_low_loss_eels_signal',
+        'get_luminescence_signal',
+        ]
+
+
+def test_dir_datasets3():
+    import hyperspy.datasets.example_signals
+    d = dir(hyperspy.datasets.example_signals)
+    assert d == [
+    'EDS_SEM_Spectrum',
+    'EDS_TEM_Spectrum',
+    'object_hologram',
+    'reference_hologram',
+    ]
 
 
 def test_dir_utils():
@@ -182,16 +205,16 @@ def test_dir_utils_markers():
     import hyperspy.utils.markers
     d = dir(hyperspy.utils.markers)
     assert d == [
-        'arrow',
-        'ellipse',
-        'horizontal_line',
-        'horizontal_line_segment',
-        'line_segment',
-        'point',
-        'rectangle',
-        'text',
-        'vertical_line',
-        'vertical_line_segment',
+        'Arrow',
+        'Ellipse',
+        'HorizontalLine',
+        'HorizontalLineSegment',
+        'LineSegment',
+        'Point',
+        'Rectangle',
+        'Text',
+        'VerticalLine',
+        'VerticalLineSegment',
         ]
 
 
@@ -246,7 +269,37 @@ def test_dir_utils_samfire():
     import hyperspy.utils.samfire
     d = dir(hyperspy.utils.samfire)
     assert d == [
+        'SamfirePool',
         'fit_tests',
         'global_strategies',
         'local_strategies',
+        ]
+
+
+def test_dir_utils_samfire2():
+    import hyperspy.utils.samfire
+    d = dir(hyperspy.utils.samfire.fit_tests)
+    assert d == [
+        'AIC_test',
+        'AICc_test',
+        'BIC_test',
+        'red_chisq_test',
+        ]
+
+
+def test_dir_utils_samfire3():
+    import hyperspy.utils.samfire
+    d = dir(hyperspy.utils.samfire.global_strategies)
+    assert d == [
+        'GlobalStrategy',
+        'HistogramStrategy',
+        ]
+
+
+def test_dir_utils_samfire4():
+    import hyperspy.utils.samfire
+    d = dir(hyperspy.utils.samfire.local_strategies)
+    assert d == [
+        'LocalStrategy',
+        'ReducedChiSquaredStrategy',
         ]

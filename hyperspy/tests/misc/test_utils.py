@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -31,12 +31,11 @@ from hyperspy.misc.utils import (
     fsdict,
     closest_power_of_two,
     shorten_name,
-    is_binned,
     is_cupy_array,
     to_numpy,
     get_array_module
 )
-from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
+
 
 try:
     import cupy as cp
@@ -140,15 +139,6 @@ def test_shorten_name():
     )
 
 
-# Can be removed in v2.0:
-def test_is_binned():
-    s = signals.Signal1D(np.zeros((5, 5)))
-    assert is_binned(s) == s.axes_manager[-1].is_binned
-    with pytest.warns(VisibleDeprecationWarning, match="Use of the `binned`"):
-        s.metadata.set_item("Signal.binned", True)
-    assert is_binned(s) == s.metadata.Signal.binned
-
-
 @skip_cupy
 def test_is_cupy_array():
     cp_array = cp.array([0, 1, 2])
@@ -167,13 +157,20 @@ def test_to_numpy():
 
 def test_to_numpy_error():
     da_array = da.array([0, 1, 2])
-    with pytest.raises(LazyCupyConversion):
+    with pytest.raises(TypeError):
         to_numpy(da_array)
+
+    list_array = [[0, 1, 2]]
+    with pytest.raises(TypeError):
+        to_numpy(list_array)
+
+
+def test_get_array_module():
+    np_array = np.array([0, 1, 2])
+    assert get_array_module(np_array) == np
 
 
 @skip_cupy
-def test_get_array_module():
+def test_get_array_module_cupy():
     cp_array = cp.array([0, 1, 2])
-    np_array = np.array([0, 1, 2])
     assert get_array_module(cp_array) == cp
-    assert get_array_module(np_array) == np

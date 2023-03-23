@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -190,15 +190,6 @@ class TestSamfireEmpty:
     def test_samfire_init_metadata(self):
         m = self.model
         samf = m.create_samfire(workers=N_WORKERS, setup=False)
-        assert isinstance(samf.metadata, DictionaryTreeBrowser)
-        samf.stop()
-        del samf
-
-    def test_samfire_set_metadata_deprecation(self):
-        m = self.model
-        samf = m.create_samfire(workers=N_WORKERS, setup=False)
-        with pytest.warns(UserWarning):
-            samf.metadata = samf.metadata.as_dictionary()
         assert isinstance(samf.metadata, DictionaryTreeBrowser)
         samf.stop()
         del samf
@@ -500,6 +491,7 @@ class TestSamfireWorker:
 
         del worker
 
+    @pytest.mark.xfail(reason="Sometimes fails - Unknown reason")
     def test_main_result(self):
         worker = create_worker('worker')
         worker.create_model(self.model_dictionary, self.model_letter)

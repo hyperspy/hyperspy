@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -42,18 +42,19 @@ from hyperspy.misc.label_position import SpectrumLabelPosition
 from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
 from hyperspy.drawing.signal1d import Signal1DFigure
 from hyperspy.misc.array_tools import numba_histogram
-from hyperspy.misc.utils import is_binned # remove in v2.0
+from hyperspy.misc.math_tools import check_random_state
 
 
 _logger = logging.getLogger(__name__)
 
 
 class LineInSignal2D(t.HasTraits):
-    """Adds a vertical draggable line to a spectrum that reports its
+    """
+    Adds a vertical draggable line to a spectrum that reports its
     position to the position attribute of the class.
 
-    Attributes:
-    -----------
+    Attributes
+    ----------
     x0, y0, x1, y1 : floats
         Position of the line in scaled units.
     length : float
@@ -1389,28 +1390,6 @@ IMAGE_CONTRAST_EDITOR_HELP_IPYWIDGETS = _IMAGE_CONTRAST_EDITOR_HELP.replace(
     "PERCENTILE", _PERCENTILE_IPYWIDGETS)
 
 
-@add_gui_method(toolkey="hyperspy.Signal1D.integrate_in_range")
-class IntegrateArea(SpanSelectorInSignal1D):
-    integrate = t.Button()
-
-    def apply(self):
-        integrated_spectrum = self.signal._integrate_in_range_commandline(
-            signal_range=(
-                self.ss_left_value,
-                self.ss_right_value)
-        )
-        # Replaces the original signal inplace with the new integrated spectrum
-        plot = False
-        if self.signal._plot and integrated_spectrum.axes_manager.shape != ():
-            self.signal._plot.close()
-            plot = True
-        self.signal.__init__(**integrated_spectrum._to_dictionary())
-        self.signal.transpose(signal_axes=[])
-
-        if plot is True:
-            self.signal.plot()
-
-
 @add_gui_method(toolkey="hyperspy.Signal1D.remove_background")
 class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(
@@ -1556,9 +1535,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                 self.axis.axis[from_index:to_index])
             to_return = bg_array
 
-        if is_binned(self.signal) is True:
-        # in v2 replace by
-        #if self.axis.is_binned is True:
+        if self.axis.is_binned:
             if self.axis.is_uniform:
                 to_return *= self.axis.scale
             else:
@@ -1739,7 +1716,7 @@ class SpikesRemoval:
 
     def __init__(self, signal, navigation_mask=None, signal_mask=None,
                  threshold='auto', default_spike_width=5, add_noise=True,
-                 max_num_bins=1000):
+                 max_num_bins=1000, random_state=None):
         self.ss_left_value = np.nan
         self.ss_right_value = np.nan
         self.default_spike_width = default_spike_width
@@ -1779,6 +1756,7 @@ class SpikesRemoval:
         self.threshold = threshold
         md = self.signal.metadata
         from hyperspy.signal import BaseSignal
+        self._rng = check_random_state(random_state)
 
         if "Signal.Noise_properties" in md:
             if "Signal.Noise_properties.variance" in md:
@@ -1883,17 +1861,17 @@ class SpikesRemoval:
         # Add noise
         if self.add_noise is True:
             if self.noise_type == "white":
-                data[left:right] += np.random.normal(
+                data[left:right] += self._rng.normal(
                     scale=np.sqrt(self.noise_variance),
                     size=right - left)
             elif self.noise_type == "heteroscedastic":
                 noise_variance = self.noise_variance(
                     axes_manager=self.signal.axes_manager)[left:right]
-                noise = [np.random.normal(scale=np.sqrt(item))
+                noise = [self._rng.normal(scale=np.sqrt(item))
                          for item in noise_variance]
                 data[left:right] += noise
             else:
-                data[left:right] = np.random.poisson(
+                data[left:right] = self._rng.poisson(
                     np.clip(data[left:right], 0, np.inf))
 
         return data
@@ -2310,7 +2288,7 @@ class PeaksFinder2D(t.HasTraits):
             am.events.indices_changed.disconnect(self._update_peak_finding)
 
     def set_random_navigation_position(self):
-        index = np.random.randint(0, self.signal.axes_manager._max_index)
+        index = self._rng.integers(0, self.signal.axes_manager._max_index)
         self.signal.axes_manager.indices = np.unravel_index(index,
             tuple(self.signal.axes_manager._navigation_shape_in_array))[::-1]
 

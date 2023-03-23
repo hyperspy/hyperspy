@@ -5,10 +5,6 @@ dependencies:
 # We pin freetype and matplotlib for the image comparison
 - freetype=2.10
 - matplotlib-base=3.5.1
-# temporary pinning until the conda-forge pinning is fixed
-# tifffile 2022.2.2 does support for python 3.7
-- tifffile <2022.4.22
-- cython
 - pytest
 - pytest-mpl
 - pytest-xdist

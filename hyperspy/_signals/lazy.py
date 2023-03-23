@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,21 +19,22 @@
 from functools import partial
 import logging
 import os
-import warnings
 
 import numpy as np
 import dask
 import dask.array as da
 from itertools import product
 from packaging.version import Version
+from rsciio.utils.tools import get_file_handle
+from rsciio.utils import rgb_tools
 
 from hyperspy.signal import BaseSignal
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
     MANY_AXIS_PARAMETER,
+    LAZYSIGNAL_DOC,
     )
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.array_tools import (
     _requires_linear_rebin,
@@ -157,10 +158,11 @@ def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
 
 
 class LazySignal(BaseSignal):
-    """A Lazy Signal instance that delays computation until explicitly saved
-    (assuming storing the full result of computation in memory is not feasible)
-    """
+
+    """Lazy general signal class."""
+
     _lazy = True
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "BaseSignal")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -174,6 +176,10 @@ class LazySignal(BaseSignal):
         self._cache_dask_chunk_slice = None
         if not self._clear_cache_dask_data in self.events.data_changed.connected:
             self.events.data_changed.connect(self._clear_cache_dask_data)
+
+    __init__.__doc__ = BaseSignal.__init__.__doc__.replace(
+        ":py:class:`numpy.ndarray`", ":py:class:`dask.array.Array`"
+        )
 
     def _repr_html_(self):
         try:
@@ -231,7 +237,8 @@ class LazySignal(BaseSignal):
         return string
 
     def compute(self, close_file=False, show_progressbar=None, **kwargs):
-        """Attempt to store the full signal in memory.
+        """
+        Attempt to store the full signal in memory.
 
         Parameters
         ----------
@@ -246,14 +253,6 @@ class LazySignal(BaseSignal):
         None
 
         """
-        if "progressbar" in kwargs:
-            warnings.warn(
-                "The `progressbar` keyword is deprecated and will be removed "
-                "in HyperSpy 2.0. Use `show_progressbar` instead.",
-                VisibleDeprecationWarning,
-            )
-            show_progressbar = kwargs["progressbar"]
-
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
@@ -315,30 +314,10 @@ class LazySignal(BaseSignal):
 
         """
         try:
-            self._get_file_handle().close()
+            get_file_handle(self.data).close()
         except AttributeError:
             _logger.warning("Failed to close lazy signal file")
 
-    def _get_file_handle(self, warn=True):
-        """Return file handle when possible; currently only hdf5 file are
-        supported.
-        """
-        arrkey = None
-        for key in self.data.dask.keys():
-            # The if statement with both "array-original" and "original-array"
-            # is due to dask changing the name of this key. After dask-2022.1.1
-            # the key is "original-array", before it is "array-original"
-            if ("array-original" in key) or ("original-array" in key):
-                arrkey = key
-                break
-        if arrkey:
-            try:
-                return self.data.dask[arrkey].file
-            except (AttributeError, ValueError):
-                if warn:
-                    _logger.warning("Failed to retrieve file handle, either "
-                                    "the file is already closed or it is not "
-                                    "an hdf5 file.")
 
     def _clear_cache_dask_data(self, obj=None):
         self._cache_dask_chunk = None
@@ -464,7 +443,7 @@ class LazySignal(BaseSignal):
         # 'dask_auto' in favour of a chunking which doesn't split signal space.
         if rechunk:
             rechunk = 'dask_auto'
-        from hyperspy.misc import rgb_tools
+
         if not isinstance(dtype, np.dtype) and (dtype not in
                                                 rgb_tools.rgb_dtypes):
             dtype = np.dtype(dtype)
@@ -958,24 +937,6 @@ class LazySignal(BaseSignal):
         * :py:class:`~.learn.ornmf.ORNMF`
 
         """
-        if kwargs.get("bounds", False):
-            warnings.warn(
-                "The `bounds` keyword is deprecated and will be removed "
-                "in v2.0. Since version > 1.3 this has no effect.",
-                VisibleDeprecationWarning,
-            )
-            kwargs.pop("bounds", None)
-
-        # Deprecate 'ONMF' for 'ORNMF'
-        if algorithm == "ONMF":
-            warnings.warn(
-                "The argument `algorithm='ONMF'` has been deprecated and will "
-                "be removed in future. Please use `algorithm='ORNMF'` instead.",
-                VisibleDeprecationWarning,
-            )
-            algorithm = "ORNMF"
-
-
         # Check algorithms requiring output_dimension
         algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF"]
         if algorithm in algorithms_require_dimension and output_dimension is None:
@@ -1292,12 +1253,9 @@ class LazySignal(BaseSignal):
             # Needs to reverse the chunks list to match dask chunking order
             signal_chunks = list(signal_chunks)[::-1]
             navigation_chunks = ['auto'] * len(self.axes_manager.navigation_shape)
-            if Version(dask.__version__ ) >= Version("2.30.0"):
-                kwargs = {'balance':True}
-            else:
-                kwargs = {}
-            chunks = self.data.rechunk([*navigation_chunks, *signal_chunks],
-                                       **kwargs).chunks
+            chunks = self.data.rechunk(
+                [*navigation_chunks, *signal_chunks], balance=True,
+                ).chunks
 
         # Get the slice of the corresponding chunk
         signal_size = len(signal_shape)

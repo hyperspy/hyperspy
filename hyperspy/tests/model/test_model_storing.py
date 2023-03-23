@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -165,8 +165,8 @@ class TestModelSaving:
 
     def test_save_and_load_model(self):
         m = self.m
-        m.save('tmp.hdf5', overwrite=True)
-        s = load('tmp.hdf5')
+        m.save('tmp.hspy', overwrite=True)
+        s = load('tmp.hspy')
         assert hasattr(s.models, 'a')
         mr = s.models.restore('a')
         assert mr.components.something.A.value == 13
@@ -177,7 +177,7 @@ class TestModelSaving:
 
     def teardown_method(self, method):
         gc.collect()        # Make sure any memmaps are closed first!
-        remove('tmp.hdf5')
+        remove('tmp.hspy')
 
 
 class TestEELSModelSaving:
@@ -196,12 +196,12 @@ class TestEELSModelSaving:
 
     def test_save_and_load_model(self):
         m = self.m
-        m.save('tmp.hdf5', overwrite=True)
-        l = load('tmp.hdf5')
+        m.save('tmp.hspy', overwrite=True)
+        l = load('tmp.hspy')
         assert hasattr(l.models, 'a')
         n = l.models.restore('a')
         assert n[0].fine_structure_width == 50
 
     def teardown_method(self, method):
         gc.collect()        # Make sure any memmaps are closed first!
-        remove('tmp.hdf5')
+        remove('tmp.hspy')

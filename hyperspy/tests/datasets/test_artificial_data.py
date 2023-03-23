@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import numpy as np
 import pytest
 
 import hyperspy.datasets.artificial_data as ad
@@ -35,10 +34,8 @@ def test_get_core_loss_eels_signal():
     assert s1.metadata.Signal.signal_type == 'EELS'
     assert s1.data.sum() > s.data.sum()
 
-    np.random.seed(seed=10)
-    s2 = ad.get_core_loss_eels_signal(add_noise=True)
-    np.random.seed(seed=10)
-    s3 = ad.get_core_loss_eels_signal(add_noise=True)
+    s2 = ad.get_core_loss_eels_signal(add_noise=True, random_state=10)
+    s3 = ad.get_core_loss_eels_signal(add_noise=True, random_state=10)
     assert (s2.data == s3.data).all()
 
 @pytest.mark.parametrize("add_noise", (True, False))

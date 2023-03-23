@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -32,7 +32,6 @@ from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT, add_gui_method
 from hyperspy.misc.utils import dummy_context_manager
-from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 @add_gui_method(toolkey="hyperspy.Model1D.fit_component")
@@ -43,7 +42,7 @@ class ComponentFit(SpanSelectorInSignal1D):
 
     def __init__(self, model, component, signal_range=None,
                  estimate_parameters=True, fit_independent=False,
-                 only_current=True, iterpath='flyback', **kwargs):
+                 only_current=True, iterpath='serpentine', **kwargs):
         if model.signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 model.signal.axes_manager.signal_dimension, 1)
@@ -434,9 +433,7 @@ class Model1D(BaseModel):
             to_return = to_return[self.channel_switches]
 
         if binned is None:
-            # in v2 replace by
-            # if self.signal.axes_manager[-1].is_binned:
-            binned = is_binned(self.signal)
+            binned = self.signal.axes_manager[-1].is_binned
 
         if binned:
             if self.signal.axes_manager[-1].is_uniform:
@@ -646,13 +643,11 @@ class Model1D(BaseModel):
 
             to_return = grad[1:, :] * weights
 
-        if is_binned(self.signal):
-        # in v2 replace by
-        #if self.signal.axes_manager[-1].is_binned:
-            if self.signal.axes_manager[-1].is_uniform:
-                to_return *= self.signal.axes_manager[-1].scale
+        if self.axis.is_binned:
+            if self.axis.is_uniform:
+                to_return *= self.axis.scale
             else:
-                to_return *= np.gradient(self.signal.axes_manager[-1].axis)
+                to_return *= np.gradient(self.axis.axis)
 
         return to_return
 

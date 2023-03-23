@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -23,15 +23,12 @@ import os
 import tempfile
 import warnings
 from contextlib import contextmanager
-from packaging.version import Version
 from functools import partial
 
 import dill
 import numpy as np
-import dask
 import dask.array as da
 from dask.diagnostics import ProgressBar
-import scipy
 import scipy.odr as odr
 from IPython.display import display, display_pretty
 from scipy.linalg import svd
@@ -48,7 +45,6 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.events import Event, Events, EventSuppressor
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.external.progressbar import progressbar
@@ -65,7 +61,6 @@ from hyperspy.misc.model_tools import (
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.misc.utils import (
     dummy_context_manager,
-    is_binned,
     shorten_name,
     slugify,
     stash_active_state
@@ -81,39 +76,13 @@ _COMPONENTS = ALL_EXTENSIONS["components1D"]
 _COMPONENTS.update(ALL_EXTENSIONS["components1D"])
 
 
-def _check_deprecated_optimizer(optimizer):
-    """Can be removed in HyperSpy 2.0"""
-    deprecated_optimizer_dict = {
-        "fmin": "Nelder-Mead",
-        "fmin_cg": "CG",
-        "fmin_ncg": "Newton-CG",
-        "fmin_bfgs": "BFGS",
-        "fmin_l_bfgs_b": "L-BFGS-B",
-        "fmin_tnc": "TNC",
-        "fmin_powell": "Powell",
-        "mpfit": "lm",
-        "leastsq": "lm",
-    }
-    check_optimizer = deprecated_optimizer_dict.get(optimizer, None)
-
-    if check_optimizer:
-        warnings.warn(
-            f"`{optimizer}` has been deprecated and will be removed "
-            f"in HyperSpy 2.0. Please use `{check_optimizer}` instead.",
-            VisibleDeprecationWarning,
-        )
-        optimizer = check_optimizer
-
-    return optimizer
-
-
 def _twinned_parameter(parameter):
     """
     Used in linear fitting. Since twinned parameters are not free, we need to
     construct a mapping between the twinned parameter and the parameter
     component to which the (non-free) twinned parameter component value needs
     to be added.
-    
+
     Returns
     -------
     parameter when there is a twin and this twin is free
@@ -281,10 +250,21 @@ class BaseModel(list):
                 The Model that the event belongs to
             """, arguments=['obj'])
 
+        # The private _binned attribute is created to store temporarily
+        # axes.is_binned or not. This avoids evaluating it during call of
+        # the model function, which is detrimental to the performances of
+        # multifit(). Setting it to None ensures that the existing behaviour
+        # is preserved.
+        self._binned = None
+
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
         # raise an exception when using windows.connect
         return id(self)
+
+    def __call__(self, non_convolved=False, onlyactive=False, component_list=None, binned=None):
+        """Evaluate the model numerically. Implementation requested in all sub-classes"""
+        raise NotImplementedError
 
     def store(self, name=None):
         """Stores current model in the original signal
@@ -516,12 +496,6 @@ class BaseModel(list):
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
-        for k in [k for k in ["parallel", "max_workers"] if k in kwargs]:
-            warnings.warn(
-                f"`{k}` argument has been deprecated and will be removed in HyperSpy 2.0",
-                VisibleDeprecationWarning,
-            )
-
         if out is None:
             data = np.empty(self.signal.data.shape, dtype='float')
             data.fill(np.nan)
@@ -718,14 +692,6 @@ class BaseModel(list):
                            if parameter._number_of_elements == 1
                            else self.p0 + parameter.value)
 
-    def set_boundaries(self, bounded=True):
-        warnings.warn(
-            "`set_boundaries()` has been deprecated and "
-            "will be made private in HyperSpy 2.0.",
-            VisibleDeprecationWarning,
-        )
-        self._set_boundaries(bounded=bounded)
-
     def _set_boundaries(self, bounded=True):
         """Generate the boundary list.
 
@@ -762,14 +728,6 @@ class BaseModel(list):
             (a if a is not None else -np.inf, b if b is not None else np.inf)
             for a, b in self.free_parameters_boundaries
         )
-
-    def set_mpfit_parameters_info(self, bounded=True):
-        warnings.warn(
-            "`set_mpfit_parameters_info()` has been deprecated and "
-            "will be made private in HyperSpy 2.0.",
-            VisibleDeprecationWarning,
-        )
-        self._set_mpfit_parameters_info(bounded=bounded)
 
     def _set_mpfit_parameters_info(self, bounded=True):
         """Generate the boundary list for mpfit.
@@ -942,7 +900,7 @@ class BaseModel(list):
     def _model_function(self, param):
         self.p0 = param
         self._fetch_values_from_p0()
-        to_return = self.__call__(non_convolved=False, onlyactive=True)
+        to_return = self.__call__(non_convolved=False, onlyactive=True, binned=self._binned)
         return to_return
 
     @property
@@ -985,7 +943,7 @@ class BaseModel(list):
         """
 
         signal_axes = self.signal.axes_manager.signal_axes
-        if True in [not ax.is_uniform and ax.is_binned for ax in signal_axes]:
+        if any([not ax.is_uniform and ax.is_binned for ax in signal_axes]):
             raise ValueError("Linear fitting doesn't support signal axes, "
                              "which are binned and non-uniform.")
 
@@ -1097,9 +1055,9 @@ class BaseModel(list):
                 (np.prod(sig_shape, dtype=int), )
                 )[:, channel_switches]
 
-        if is_binned(self.signal):
+        if any([ax.is_binned for ax in signal_axes]):
             target_signal = target_signal / np.prod(
-                tuple((ax.scale for ax in self.signal.axes_manager.signal_axes))
+                tuple((ax.scale for ax in signal_axes if ax.is_binned))
             )
 
         target_signal = target_signal - constant_term
@@ -1117,12 +1075,6 @@ class BaseModel(list):
                 target_signal.T,
                 **kw)
             coefficient_array = result.T
-
-            if self.signal._lazy and not only_current and (
-                    Version(dask.__version__) < Version("2020.12.0")):
-                # Dask pre 2020.12 didn't support residuals on 2D input,
-                # we calculate them later.
-                residual = None  # pragma: no cover
 
         elif optimizer == "ridge_regression":
             if self.signal._lazy:
@@ -1221,7 +1173,7 @@ class BaseModel(list):
 
     def _calculate_chisq(self):
         variance = self._get_variance()
-        d = self(onlyactive=True).ravel() - self.signal(as_numpy=True)[
+        d = self(onlyactive=True, binned=self._binned).ravel() - self.signal(as_numpy=True)[
             np.where(self.channel_switches)]
         d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
@@ -1338,84 +1290,12 @@ class BaseModel(list):
             else dummy_context_manager
         )
 
-        # ---------------------------------------------
-        # Deprecated arguments (remove in HyperSpy 2.0)
-        # ---------------------------------------------
-
-        # Deprecate "fitter" argument
-        check_fitter = kwargs.pop("fitter", None)
-        if check_fitter:
-            warnings.warn(
-                f"`fitter='{check_fitter}'` has been deprecated and will be removed "
-                f"in HyperSpy 2.0. Please use `optimizer='{check_fitter}'` instead.",
-                VisibleDeprecationWarning,
-            )
-            optimizer = check_fitter
-
-        # Deprecated optimization algorithms
-        optimizer = _check_deprecated_optimizer(optimizer)
-
-        # Deprecate loss_function
-        if loss_function == "ml":
-            warnings.warn(
-                "`loss_function='ml'` has been deprecated and will be removed in "
-                "HyperSpy 2.0. Please use `loss_function='ML-poisson'` instead.",
-                VisibleDeprecationWarning,
-            )
-            loss_function = "ML-poisson"
-
-        # Deprecate grad=True/False
-        if isinstance(grad, bool):
-            alt_grad = "analytical" if grad else None
-            warnings.warn(
-                f"`grad={grad}` has been deprecated and will be removed in "
-                f"HyperSpy 2.0. Please use `grad={alt_grad}` instead.",
-                VisibleDeprecationWarning,
-            )
-            grad = alt_grad
-
-        # Deprecate ext_bounding
-        ext_bounding = kwargs.pop("ext_bounding", False)
-        if ext_bounding:
-            warnings.warn(
-                "`ext_bounding=True` has been deprecated and will be removed "
-                "in HyperSpy 2.0. Please use `bounded=True` instead.",
-                VisibleDeprecationWarning,
-            )
-
-        # Deprecate custom min_function
-        min_function = kwargs.pop("min_function", None)
-        if min_function:
-            warnings.warn(
-                "`min_function` has been deprecated and will be removed "
-                "in HyperSpy 2.0. Please use `loss_function` instead.",
-                VisibleDeprecationWarning,
-            )
-            loss_function = min_function
-
-        # Deprecate custom min_function
-        min_function_grad = kwargs.pop("min_function_grad", None)
-        if min_function_grad:
-            warnings.warn(
-                "`min_function_grad` has been deprecated and will be removed "
-                "in HyperSpy 2.0. Please use `grad` instead.",
-                VisibleDeprecationWarning,
-            )
-            grad = min_function_grad
-
-        # ---------------------------
-        # End of deprecated arguments
-        # ---------------------------
-
         # Supported losses and optimizers
         _supported_global = {
             "Differential Evolution": differential_evolution,
         }
 
         if optimizer in ["Dual Annealing", "SHGO"]:
-            if Version(scipy.__version__) < Version("1.2.0"):
-                raise ValueError(f"`optimizer='{optimizer}'` requires scipy >= 1.2.0")
-
             from scipy.optimize import dual_annealing, shgo
 
             _supported_global.update({"Dual Annealing": dual_annealing, "SHGO": shgo})
@@ -1532,7 +1412,7 @@ class BaseModel(list):
             self._set_p0()
             old_p0 = self.p0
 
-            if ext_bounding:
+            if bounded:
                 self._enable_ext_bounding()
 
             # Get weights if metadata.Signal.Noise_properties.variance
@@ -1770,7 +1650,7 @@ class BaseModel(list):
             self._calculate_chisq()
             self._set_current_degrees_of_freedom()
 
-            if ext_bounding:
+            if bounded:
                 self._disable_ext_bounding()
 
         if np.any(old_p0 != self.p0):
@@ -1842,9 +1722,7 @@ class BaseModel(list):
                 manner instead of beginning each new row at the first index.
                 Works for n-dimensional navigation space, not just 2D.
             If None:
-                Currently ``None -> "flyback"``. The default argument will use
-                the ``"flyback"`` iterpath, but shows a warning that this will
-                change to ``"serpentine"`` in version 2.0.
+                Use the value of :py:attr:`~axes.AxesManager.iterpath`.
         **kwargs : keyword arguments
             Any extra keyword argument will be passed to the fit method.
             See the documentation for :py:meth:`~hyperspy.model.BaseModel.fit`
@@ -1883,24 +1761,18 @@ class BaseModel(list):
         linear_fitting = kwargs.get("optimizer", "") in [
             "lstsq", "ridge_regression"
             ]
-        if iterpath is None:
-            if self.axes_manager.iterpath == "flyback" and not linear_fitting:
-                # flyback is set by default in axes_manager.iterpath
-                # on signal creation
-                warnings.warn(
-                    "The `iterpath` default will change from 'flyback' to "
-                    "'serpentine' in HyperSpy version 2.0. Change the "
-                    "'iterpath' argument to other than None to suppress "
-                    "this warning.",
-                    VisibleDeprecationWarning,
-                )
-            # otherwise use whatever is set at m.axes_manager.iterpath
-        else:
-            self.axes_manager.iterpath = iterpath
 
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager._get_iterpath_size(masked_elements)
         show_progressbar = show_progressbar and (maxval != 0)
+
+        # The _binned attribute is evaluated only once in the multifit procedure
+        # and stored in an instance variable
+        if self.axes_manager.signal_dimension == 1:
+            self._binned = self.axes_manager[-1].is_binned
+        else:
+            # binning Not Implemented for Model2D
+            self._binned = False
 
         if linear_fitting:
             # Check that all non-free parameters don't change accross
@@ -1993,43 +1865,53 @@ class BaseModel(list):
                     para.map['std'] = para.std
                     para.map['is_set'] = True
 
+                # _binned attribute is re-set to None before early return so the
+                # behaviour of future fit() calls is not altered. In future
+                # implementation, a more elegant implementation could be found
+                self._binned = None
                 return
 
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(
             self.fetch_stored_values
         ):
-            if interactive_plot:
-                outer = dummy_context_manager
-                inner = self.suspend_update
-            else:
-                outer = self.suspend_update
-                inner = dummy_context_manager
+            with self.axes_manager.switch_iterpath(iterpath):
+                if interactive_plot:
+                    outer = dummy_context_manager
+                    inner = self.suspend_update
+                else:
+                    outer = self.suspend_update
+                    inner = dummy_context_manager
 
-            with outer(update_on_resume=True):
-                with progressbar(
-                    total=maxval, disable=not show_progressbar, leave=True
-                ) as pbar:
-                    for index in self.axes_manager:
-                        with inner(update_on_resume=True):
-                            if mask is None or not mask[index[::-1]]:
-                                # first check if model has set initial values in
-                                # parameters.map['values'][indices],
-                                # otherwise use values from previous fit
-                                self.fetch_stored_values(only_fixed=fetch_only_fixed)
-                                self.fit(**kwargs)
-                                i += 1
-                                pbar.update(1)
+                with outer(update_on_resume=True):
+                    with progressbar(
+                        total=maxval, disable=not show_progressbar, leave=True
+                    ) as pbar:
+                        for index in self.axes_manager:
+                            with inner(update_on_resume=True):
+                                if mask is None or not mask[index[::-1]]:
+                                    # first check if model has set initial values in
+                                    # parameters.map['values'][indices],
+                                    # otherwise use values from previous fit
+                                    self.fetch_stored_values(only_fixed=fetch_only_fixed)
+                                    self.fit(**kwargs)
+                                    i += 1
+                                    pbar.update(1)
 
-                            if autosave and i % autosave_every == 0:
-                                self.save_parameters2file(autosave_fn)
-            # Trigger the indices_changed event to update to current indices,
-            # since the callback was suppressed
-            self.axes_manager.events.indices_changed.trigger(self.axes_manager)
+                                if autosave and i % autosave_every == 0:
+                                    self.save_parameters2file(autosave_fn)
+                # Trigger the indices_changed event to update to current indices,
+                # since the callback was suppressed
+                self.axes_manager.events.indices_changed.trigger(self.axes_manager)
 
         if autosave is True:
             _logger.info(f"Deleting temporary file: {autosave_fn}.npz")
             os.remove(autosave_fn + ".npz")
+
+        #_binned attribute is re-set to None so the behaviour of future fit() calls
+        #is not altered. In future implementation, a more elegant implementation
+        # could be found
+        self._binned = None
 
     multifit.__doc__ %= (SHOW_PROGRESSBAR_ARG)
 

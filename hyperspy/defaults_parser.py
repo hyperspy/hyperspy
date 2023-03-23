@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -135,16 +135,9 @@ class GUIs(t.HasTraits):
         True,
         desc="Display traitsui user interface elements. "
         "Requires installing hyperspy_gui_traitsui.")
-    warn_if_guis_are_missing = t.CBool(
-        True,
-        desc="Not necessary anymore and deprecated.")
 
 
 class PlotConfig(t.HasTraits):
-    saturated_pixels = t.CFloat(0.,
-                                label='Saturated pixels (deprecated)',
-                                desc='Warning: this is deprecated and will be removed in HyperSpy v2.0'
-                                )
     # Don't use t.Enum to list all possible matplotlib colormap to
     # avoid importing matplotlib and building the list of colormap
     # when importing hyperpsy

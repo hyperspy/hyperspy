@@ -25,31 +25,29 @@ resources:
 
 strategy:
   matrix:
-    # Needs to update matplotlib reference image to add python3.9 build
-    # matplotlib 3.1 doesn't have a python 3.9 build
-    Linux_Python38:
+    Linux_Python39:
       vmImage: 'ubuntu-latest'
-      PYTHON_VERSION: '3.8'
+      PYTHON_VERSION: '3.9'
       MAMBAFORGE_PATH: $(Agent.BuildDirectory)/mambaforge
-    Linux_Python37:
+    Linux_Python310:
       vmImage: 'ubuntu-latest'
-      PYTHON_VERSION: '3.7'
+      PYTHON_VERSION: '3.10'
       MAMBAFORGE_PATH: $(Agent.BuildDirectory)/mambaforge
-    MacOS_Python38:
+    MacOS_Python39:
       vmImage: 'macOS-latest'
-      PYTHON_VERSION: '3.8'
+      PYTHON_VERSION: '3.9'
       MAMBAFORGE_PATH: $(Agent.BuildDirectory)/mambaforge
-    MacOS_Python37:
+    MacOS_Python310:
       vmImage: 'macOS-latest'
-      PYTHON_VERSION: '3.7'
+      PYTHON_VERSION: '3.10'
       MAMBAFORGE_PATH: $(Agent.BuildDirectory)/mambaforge
-    Windows_Python38:
+    Windows_Python39:
       vmImage: 'windows-latest'
-      PYTHON_VERSION: '3.8'
+      PYTHON_VERSION: '3.9'
       MAMBAFORGE_PATH: $(Agent.BuildDirectory)\mambaforge
-    Windows_Python37:
+    Windows_Python310:
       vmImage: 'windows-latest'
-      PYTHON_VERSION: '3.7'
+      PYTHON_VERSION: '3.10'
       MAMBAFORGE_PATH: $(Agent.BuildDirectory)\mambaforge
 
 pool:
@@ -57,7 +55,7 @@ pool:
 
 steps:
 - checkout: self
-  fetchDepth: 1 # Fetch only one commit
+  fetchDepth: '1' # Fetch only one commit
 - template: azure_pipelines/clone_ci-scripts_repo.yml@templates
 - template: azure_pipelines/install_mambaforge.yml@templates
 - template: azure_pipelines/activate_conda.yml@templates
@@ -73,6 +71,14 @@ steps:
     source activate $ENV_NAME
     conda clean --all -y
   displayName: Clean conda cache
+
+- bash: |
+    source activate $ENV_NAME
+    # don't install pyusid, because pip install pyusid fails
+    pip install https://github.com/hyperspy/rosettasciio/archive/refs/heads/main.zip
+
+    conda list
+  displayName: Install package (rosettasciio)
 
 # Note we must use `-n 2` argument for pytest-xdist due to
 # https://github.com/pytest-dev/pytest-xdist/issues/9.
