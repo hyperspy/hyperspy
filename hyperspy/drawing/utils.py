@@ -69,6 +69,10 @@ def contrast_stretching(data, vmin=None, vmax=None):
         calculation (in case of string values).
 
     """
+    if np.issubdtype(data.dtype, bool):
+        # in case of boolean, simply return 0, 1
+        return 0, 1
+
     def _parse_value(value, value_name):
         if value is None:
             if value_name == "vmin":
