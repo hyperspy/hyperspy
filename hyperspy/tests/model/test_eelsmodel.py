@@ -31,11 +31,11 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.decorators import lazifyTestClass
 
 MY_PATH = os.path.dirname(__file__)
-GOSHF = os.path.join(MY_PATH, "Segger_Guzzinati_Kohl_1.0.0.gos")
+GOSHF = os.path.join(MY_PATH, "Segger_Guzzinati_Kohl_1.5.0.gosh")
 TMP_DIR = tempfile.TemporaryDirectory()
 TEST_FILES_OK = os.path.isfile(GOSHF)
 REASON = ""
-MD5SUM = "d65d5c23142532fde0a80e160ab51574"
+MD5SUM = "7fee8891c147a4f769668403b54c529b"
 
 # The GOS archive is not included in hyperspy due
 # to the large size. Therefore they are downloaded
@@ -45,7 +45,7 @@ MD5SUM = "d65d5c23142532fde0a80e160ab51574"
 if not TEST_FILES_OK:
     try:
         r = requests.get(
-            "https://zenodo.org/record/6599071/files/Segger_Guzzinati_Kohl_1.0.0.gos?download=1")
+            "https://zenodo.org/record/7645765/files/Segger_Guzzinati_Kohl_1.5.0.gos?download=1")
 
         MD5SUM_GOT = hashlib.md5(r.content).hexdigest()
         if MD5SUM_GOT == MD5SUM:
