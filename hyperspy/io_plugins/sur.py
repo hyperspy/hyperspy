@@ -72,7 +72,7 @@ class DigitalSurfHandler(object):
     Attributes
     ----------
     filename, signal_dict, _work_dict, _list_sur_file_content, _Object_type,
-    _N_data_object, _N_data_channels, _initialized
+    _N_data_object, _N_data_channels,
 
     Methods
     -------
@@ -459,7 +459,7 @@ class DigitalSurfHandler(object):
                         'b_unpack_fn': self._get_float,
                         'b_pack_fn': self._set_float,
                     },
-                "_56_T_Spacing": \
+                "_56_T_Spacing":
                     {
                         'value': 0.0,
                         'b_unpack_fn': self._get_float,
@@ -519,7 +519,7 @@ class DigitalSurfHandler(object):
         self._N_data_object = 1
         self._N_data_channels = 1
 
-    ### Read methods
+    # Read methods
     def _read_sur_file(self):
         """Read the binary, possibly compressed, content of the surface
         file. Surface files can be encoded as single or a succession
@@ -572,7 +572,7 @@ class DigitalSurfHandler(object):
     def _get_work_dict_key_value(self, key):
         return self._work_dict[key]['value']
 
-    ### Signal dictionary methods
+    # Signal dictionary methods
     def _build_sur_dict(self):
         """Create a signal dict with an unpacked object"""
 
@@ -690,9 +690,7 @@ class DigitalSurfHandler(object):
             hypdic['_14_W_Size'],
         )
 
-        self.signal_dict['metadata'] = self._build_metadata(hypdic)
-
-        self.signal_dict['original_metadata'] = self._build_original_metadata()
+        self._set_metadata_and_original_metadata(hypdic)
 
     def _build_general_1D_data(self, ):
         """Build general 1D Data objects. Currently work with spectra"""
@@ -733,7 +731,7 @@ class DigitalSurfHandler(object):
 
         # We reshape the data in the correct format.
         # Edit: the data is now squeezed for unneeded dimensions
-        data_shape = (hypdic['_19_Number_of_Lines'],hypdic['_18_Number_of_Points'])
+        data_shape = (hypdic['_19_Number_of_Lines'], hypdic['_18_Number_of_Points'])
         data_array = np.squeeze(hypdic['_62_points'].reshape(data_shape, order='C'))
 
         self.signal_dict['data'] = data_array
@@ -880,7 +878,15 @@ class DigitalSurfHandler(object):
         self.signal_dict.update({'post_process': [self.post_process_RGB]})
 
     ### Metadata utility methods
-    def _build_metadata(self, unpacked_dict):
+
+    def _choose_signal_type(self, unpacked_dict: dict) -> str:
+        """Choose the correct signal type based on the header content"""
+        if unpacked_dict.get("_26_Name_of_Z_Axis") in ["CL Intensity"]:
+            return "CL"
+        else:
+            return ""
+
+    def _build_generic_metadata(self, unpacked_dict):
         """Return a minimalistic metadata dictionary according to hyperspy
         format. Accept a dictionary as an input because dictionary with the
         headers of a mountians object.
@@ -925,6 +931,8 @@ class DigitalSurfHandler(object):
         else:
             time_str = ""
 
+        signal_type = self._choose_signal_type(unpacked_dict)
+
         # Metadata dictionary initialization
         metadict = {
             "General": {
@@ -935,17 +943,15 @@ class DigitalSurfHandler(object):
             },
             "Signal": {
                 "quantity": quantity_str,
-                "signal_type": "",
+                "signal_type": signal_type,
             },
         }
 
         return metadict
 
     def _build_original_metadata(self, ):
-        """Builds a metadata dictionnary from the header"""
+        """Builds a metadata dictionary from the header"""
         original_metadata_dict = {}
-
-        Ntot = (self._N_data_object + 1) * (self._N_data_channels + 1)
 
         # Iteration over Number of data objects
         for i in range(self._N_data_object):
@@ -965,11 +971,7 @@ class DigitalSurfHandler(object):
                 original_metadata_dict[key].update({"Header": headerdict})
 
                 # The second dictionary might contain custom mountainsmap params
-                parsedict = {}
-
-                # Check if it is the case and append it to
-                # original metadata if yes
-
+                # Check if it is the case and append it to original metadata if yes
                 valid_comment = self._check_comments(a["_60_Comment"], '$', '=')
                 if valid_comment:
                     parsedict = self._MS_parse(a["_60_Comment"], '$', '=')
@@ -978,14 +980,136 @@ class DigitalSurfHandler(object):
 
         return original_metadata_dict
 
+    def _build_signal_specific_metadata(self, ) -> dict:
+        """Build additional metadata specific to signal type.
+        return a dictionary for update in the metadata."""
+        if self.signal_dict['metadata']['Signal']['signal_type'] == "CL":
+            return self._map_CL_metadata()
+        else:
+            return {}
+
+    def _map_SEM_metadata(self) -> dict:
+        """Return SEM metadata according to hyperspy specifications"""
+        atto_omd = self.signal_dict['original_metadata']
+        # get nested dictionaries in an error-handling way
+        atto_omd = atto_omd.get('Object_0_Channel_0', {})
+        atto_omd = atto_omd.get('Parsed', {})
+        if atto_omd is None:
+            return {}
+        else:
+            SEM = atto_omd.get('SEM', {})
+            STAGE_IMAGE = atto_omd.get('SITE IMAGE', {})
+
+        SEM_metadata = {
+            # "beam_current": None,
+            "beam_energy": SEM.get('Beam Energy'),
+            'beam_energy_units': SEM.get('Beam Energy_units'),
+            # "probe_area" : None,
+            # "convergence_angle": None,
+            "magnification": SEM.get("Real Magnification"),
+            "microscope": "Attolight Allalin",
+            "Stage": {
+                "rotation": STAGE_IMAGE.get("stage_rotation_z"),
+                "rotation_units": "deg",
+                "tilt_alpha": STAGE_IMAGE.get("stage_rotation_x"),
+                "tilt_alpha_units": "deg",
+                "tilt_beta": STAGE_IMAGE.get("stage_rotation_y"),
+                "tilt_beta_units": "deg",
+                "x": STAGE_IMAGE.get("stage_position_x"),
+                "x_units": "mm",
+                "y": STAGE_IMAGE.get("stage_position_y"),
+                "y_units": "mm",
+                "z": STAGE_IMAGE.get("stage_position_z"),
+                "z_units": "mm",
+            }
+        }
+
+        return SEM_metadata
+
+    def _map_Spectrometer_metadata(self) -> dict:
+        """return Spectrometer metadata according to lumispy specifications"""
+        atto_omd = self.signal_dict['original_metadata']
+        # get nested dictionaries in an error-handling way
+        atto_omd = atto_omd.get('Object_0_Channel_0', {})
+        atto_omd = atto_omd.get('Parsed', {})
+        if atto_omd is None:
+            return {}
+        else:
+            spectrometer = atto_omd.get('SPECTROMETER', {})
+
+        Spectrometer_metadata = {
+            # "model":
+            # "acquisition_mode": ,
+            "entrance_slit_width": spectrometer.get('Entrance slit width'),
+            "entrance_slit_width_units": spectrometer.get('Entrance slit width_units'),
+            "exit_slit_width": spectrometer.get('Exit slit width'),
+            "exit_slit_width_units": spectrometer.get('Exit slit width_units'),
+            "central_wavelength": spectrometer.get('Central wavelength'),
+            "central_wavelength_units": spectrometer.get('Central wavelength_units'),
+            # "start_wavelength(nm)":
+            # "step_size(nm)"
+            "Grating": spectrometer.get('Grating'),
+            "groove_density": spectrometer.get('Grating - Groove Density'),
+            "groove_density_units": spectrometer.get('Grating - Groove Density_units'),
+            "blazing_wavelength": spectrometer.get('Grating - Blaze Angle'),
+            "blazing_wavelength_units": spectrometer.get('Central wavelength_units'),
+            "Filter": {
+                "filter_type": spectrometer.get('Filter')
+            }
+        }
+
+        return Spectrometer_metadata
+
+    def _map_spectral_detector_metadata(self) -> dict:
+        """return Spectrometer metadata according to lumispy specifications"""
+
+        atto_omd = self.signal_dict['original_metadata']
+        # get nested dictionaries in an error-handling way
+        atto_omd = atto_omd.get('Object_0_Channel_0', {})
+        atto_omd = atto_omd.get('Parsed', {})
+        if atto_omd is None:
+            return {}
+        else:
+            CCD = atto_omd.get('CCD', {})
+
+        spectral_detector_metadata = {
+            "detector_type": "CCD",
+            "model": CCD.get("Camera Model"),
+            # "frames": ,
+            "integration_time": CCD.get("Exposure Time"),
+            "integration_time_units": CCD.get("Exposure Time"),
+            # "saturation_fraction": CCD.get(''),
+            "binning": (CCD.get("ReadMode"), CCD.get('Horizontal Binning')),
+            # "processing": ,
+            # "sensor_roi": ,
+            "pixel_size": CCD.get("Pixel Width"),
+            "pixel_size_units": CCD.get("Pixel Width_units"),
+        }
+
+        return spectral_detector_metadata
+
+    def _map_CL_metadata(self) -> dict:
+        """Build CL-signal-specific metadata. Currently maps from the hyperspy metadata format"""
+
+        CL_metadata_dict = { "Acquisition_instrument": {
+            "SEM": self._map_SEM_metadata(),
+            "Spectrometer": self._map_Spectrometer_metadata(),
+            "Detector": self._map_spectral_detector_metadata(),
+            }
+        }
+
+        return CL_metadata_dict
+
     def _set_metadata_and_original_metadata(self, unpacked_dict):
         """Run successively _build_metadata and _build_original_metadata
         and set signal dictionary with results"""
 
-        self.signal_dict['metadata'] = self._build_metadata(unpacked_dict)
+        self.signal_dict['metadata'] = self._build_generic_metadata(unpacked_dict)
         self.signal_dict['original_metadata'] = self._build_original_metadata()
+        self.signal_dict['metadata'].update(self._build_signal_specific_metadata())
 
-    def _check_comments(self, commentsstr, prefix, delimiter):
+    @staticmethod
+    def _check_comments(commentsstr, prefix, delimiter):
         """Check if comment string is parsable into metadata dictionary.
         Some specific lines (empty or starting with @@) will be ignored,
         but any non-ignored line must conform to being a title line (beginning
@@ -996,7 +1120,7 @@ class DigitalSurfHandler(object):
 
         Parameters
         ----------
-        commentstr: string containing comments
+        commentsstr: string containing comments
         prefix: string (or char) character assumed to start each line.
         '$' if a .sur file.
         delimiter: string that delimits the keyword from value. always '='
@@ -1042,7 +1166,8 @@ class DigitalSurfHandler(object):
         # return falsiness of the string.
         return valid
 
-    def _MS_parse(self, strMS, prefix, delimiter):
+    @staticmethod
+    def _MS_parse(strMS, prefix, delimiter):
         """ Parses a string containing metadata information. The string can be
         read from the comment section of a .sur file, or, alternatively, a file
         containing them with a similar formatting.
@@ -1095,7 +1220,8 @@ class DigitalSurfHandler(object):
         return dictMS
 
     ### Post processing
-    def post_process_RGB(self, signal):
+    @staticmethod
+    def post_process_RGB(signal):
         signal = signal.transpose()
         max_data = np.nanmax(signal.data)
         if max_data <= 256:
@@ -1112,7 +1238,8 @@ class DigitalSurfHandler(object):
         return signal
 
     ### pack/unpack binary quantities
-    def _get_int16(self, file, default=None, signed=True):
+    @staticmethod
+    def _get_int16(file, default=None, signed=True):
         """Read a 16-bits int with a user-definable default value if
         no file is given"""
         if file is None:
@@ -1123,10 +1250,12 @@ class DigitalSurfHandler(object):
         else:
             return struct.unpack('<h', b)[0]
 
-    def _set_int16(self, file, val):
+    @staticmethod
+    def _set_int16(file, val):
         file.write(struct.pack('<h', val))
 
-    def _get_str(self, file, size, default=None, encoding='latin-1'):
+    @staticmethod
+    def _get_str(file, size, default=None, encoding='latin-1'):
         """Read a str of defined size in bytes with a user-definable default
         value if no file is given"""
         if file is None:
@@ -1134,13 +1263,15 @@ class DigitalSurfHandler(object):
         read_str = file.read(size).decode(encoding)
         return read_str.strip(' \t\n')
 
-    def _set_str(self, file, val, size, encoding='latin-1'):
+    @staticmethod
+    def _set_str(file, val, size, encoding='latin-1'):
         """Write a str of defined size in bytes to a file. struct.pack
         will automatically trim the string if it is too long"""
         file.write(struct.pack('<{:d}s'.format(size),
                                '{{:<{:d}s}}'.format(size).format(val).encode(encoding)))
 
-    def _get_int32(self, file, default=None):
+    @staticmethod
+    def _get_int32(file, default=None):
         """Read a 32-bits int with a user-definable default value if no
         file is given"""
         if file is None:
@@ -1151,22 +1282,26 @@ class DigitalSurfHandler(object):
         else:
             return struct.unpack('<i', b)[0]
 
-    def _set_int32(self, file, val):
+    @staticmethod
+    def _set_int32(file, val):
         """Write a 32-bits int in a file f """
         file.write(struct.pack('<i', val))
 
-    def _get_float(self, file, default=None):
+    @staticmethod
+    def _get_float(file, default=None):
         """Read a 4-bytes (single precision) float from a binary file f with a
         default value if no file is given"""
         if file is None:
             return default
         return struct.unpack('<f', file.read(4))[0]
 
+    @staticmethod
     def _set_float(file, val):
         """write a 4-bytes (single precision) float in a file"""
         file.write(struct.pack('<f', val))
 
-    def _get_uint32(self, file, default=None):
+    @staticmethod
+    def _get_uint32(file, default=None):
         if file is None:
             return default
         b = file.read(4)
@@ -1175,16 +1310,19 @@ class DigitalSurfHandler(object):
         else:
             return struct.unpack('<I', b)[0]
 
-    def _set_uint32(self, file, val):
+    @staticmethod
+    def _set_uint32(file, val):
         file.write(struct.pack('<I', val))
 
-    def _get_bytes(self, file, size, default=None):
+    @staticmethod
+    def _get_bytes(file, size, default=None):
         if file is None:
             return default
         else:
             return file.read(size)
 
-    def _set_bytes(self, file, val, size):
+    @staticmethod
+    def _set_bytes(file, val, size):
         file.write(struct.pack('<{:d}s'.format(size), val))
 
     def _unpack_comment(self, file, encoding='latin-1'):
@@ -1267,9 +1405,9 @@ class DigitalSurfHandler(object):
 
         # We set the point in the numeric scale
         _points = _points.astype(float) \
-                  * self._get_work_dict_key_value("_23_Z_Spacing") \
-                  * self._get_work_dict_key_value("_35_Z_Unit_Ratio") \
-                  + self._get_work_dict_key_value("_55_Z_Offset")
+            * self._get_work_dict_key_value("_23_Z_Spacing") \
+            * self._get_work_dict_key_value("_35_Z_Unit_Ratio") \
+            + self._get_work_dict_key_value("_55_Z_Offset")
 
         _points[nm] = np.nan
         # Return the points, rescaled
