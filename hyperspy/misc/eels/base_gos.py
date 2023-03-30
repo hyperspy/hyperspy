@@ -21,6 +21,11 @@ import numpy as np
 from hyperspy.misc.math_tools import get_linear_interpolation
 from hyperspy.misc.elements import elements
 
+import math
+from scipy import constants, integrate, interpolate
+
+R = constants.value("Rydberg constant times hc in eV")
+a0 = constants.value("Bohr radius")
 
 class GOSBase:
 
@@ -79,3 +84,33 @@ class GOSBase:
             qaxis = np.hstack((qmin, qaxis[index:]))
             qgosi = np.hstack((gosqmin, qgosi[index:],))
         return qaxis, qgosi.clip(0)
+
+    def integrateq(self, onset_energy, angle, E0):
+        energy_shift = onset_energy - self.onset_energy
+        self.energy_shift = energy_shift
+        qint = np.zeros((self.energy_axis.shape[0]))
+        # Calculate the cross section at each energy position of the
+        # tabulated GOS
+        gamma = 1 + E0 / 511.06
+        T = 511060 * (1 - 1 / gamma ** 2) / 2
+        for i in range(0, self.gos_array.shape[0]):
+            E = self.energy_axis[i] + energy_shift
+            # Calculate the limits of the q integral
+            qa0sqmin = (E ** 2) / (4 * R * T) + (E ** 3) / (
+                    8 * gamma ** 3 * R * T ** 2)
+            p02 = T / (R * (1 - 2 * T / 511060))
+            pp2 = p02 - E / R * (gamma - E / 1022120)
+            qa0sqmax = qa0sqmin + 4 * np.sqrt(p02 * pp2) * \
+                       (math.sin(angle / 2)) ** 2
+            qmin = math.sqrt(qa0sqmin) / a0
+            qmax = math.sqrt(qa0sqmax) / a0
+            # Perform the integration in a log grid
+            qaxis, gos = self.get_qaxis_and_gos(i, qmin, qmax)
+            logsqa0qaxis = np.log((a0 * qaxis) ** 2)
+            qint[i] = integrate.simps(gos, logsqa0qaxis)
+        E = self.energy_axis + energy_shift
+        # Energy differential cross section in (barn/eV/atom)
+        qint *= (4.0 * np.pi * a0 ** 2.0 * R ** 2 / E / T *
+                 self.subshell_factor) * 1e28
+        self.qint = qint
+        return interpolate.interp1d(E, qint, kind=3)
