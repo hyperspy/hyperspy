@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+
 class AttributeDescriptor:
     def __init__(self, metadata_path=None):
         self.metadata_path = metadata_path
