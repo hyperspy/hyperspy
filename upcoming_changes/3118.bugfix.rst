@@ -1,0 +1,1 @@
+Fix plotting boolean array with :py:func:`~.drawing.utils.plot_images`
