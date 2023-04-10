@@ -4890,14 +4890,14 @@ class BaseSignal(FancySlicing,
             # inspect.
             _logger.warning(error)
 
+        # If the function has an `axes` or `axis` argument
+        # we suppose that it can operate on the full array and we don't
+        # iterate over the coordinates.
         if not ndkwargs and not lazy_output and (self.axes_manager.signal_dimension == 1 and
                              "axis" in fargs):
             kwargs['axis'] = self.axes_manager.signal_axes[-1].index_in_array
 
             result = self._map_all(function, inplace=inplace, **kwargs)
-        # If the function has an axes argument
-        # we suppose that it can operate on the full array and we don't
-        # iterate over the coordinates.
         elif not ndkwargs and not lazy_output and "axes" in fargs and not parallel:
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
