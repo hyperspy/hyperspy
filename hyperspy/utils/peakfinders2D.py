@@ -109,9 +109,8 @@ def find_local_max(z, **kwargs):
     z : :py:class:`numpy.ndarray`
         Array of image intensities.
     **kwargs : dict
-        Keyword arguments to be passed to the ``peak_local_max`` method of
-        the ``scikit-image`` library. See its documentation for details
-        https://scikit-image.org/docs/dev/api/skimage.feature.html#peak-local-max
+        Keyword arguments to be passed to the
+        :py:func:`skimage.feature.peak_local_max` function.
 
     Returns
     -------
@@ -457,9 +456,8 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
     z : :py:class:`numpy.ndarray`
         2-d array of intensities
     min_sigma, max_sigma, sigma_ratio, threshold, overlap, exclude_border :
-        Additional parameters to be passed to the algorithm. See `blob_dog`
-        documentation for details:
-        https://scikit-image.org/docs/dev/api/skimage.feature.html#blob-dog
+        Additional parameters to be passed to the
+        :py:func:`skimage.feature.blob_dog` function
 
     Returns
     -------
@@ -502,9 +500,8 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
     z : :py:class:`numpy.ndarray`
         Array of image intensities.
     min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale, exclude_border :
-        Additional parameters to be passed to the ``blob_log`` method of the
-        ``scikit-image`` library. See its documentation for details:
-        https://scikit-image.org/docs/dev/api/skimage.feature.html#blob-log
+        Additional parameters to be passed to the
+        :py:func:`skimage.feature.blob_log` function.
 
     Returns
     -------
