@@ -21,7 +21,7 @@ import gc
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
-from scipy.interpolate import interp2d
+from scipy.interpolate import RectBivariateSpline
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
@@ -192,16 +192,16 @@ def test_reconstruct_phase_nonstandard(lazy):
     # interpolate reconstructed phase to compare with the input (reference
     # phase):
     interp_x = np.arange(output_shape[0])
-    phase_interp0 = interp2d(
-        interp_x, interp_x, wave_image2.inav[0].unwrapped_phase().data, kind="cubic",
+    phase_interp0 = RectBivariateSpline(
+        interp_x, interp_x, wave_image2.inav[0].unwrapped_phase().data,
     )
     phase_new0 = phase_interp0(
         np.linspace(0, output_shape[0], img_size),
         np.linspace(0, output_shape[0], img_size),
     )
 
-    phase_interp1 = interp2d(
-        interp_x, interp_x, wave_image2.inav[1].unwrapped_phase().data, kind="cubic",
+    phase_interp1 = RectBivariateSpline(
+        interp_x, interp_x, wave_image2.inav[1].unwrapped_phase().data,
     )
     phase_new1 = phase_interp1(
         np.linspace(0, output_shape[0], img_size),

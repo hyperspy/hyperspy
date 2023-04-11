@@ -36,7 +36,7 @@ from hyperspy.misc.utils import (
     to_numpy,
     get_array_module
 )
-from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 try:
     import cupy as cp
