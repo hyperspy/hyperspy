@@ -1,0 +1,1 @@
+Recognise both byte and string object for NXdata tag in NeXus reader
