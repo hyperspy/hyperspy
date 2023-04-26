@@ -750,8 +750,8 @@ def _find_data(group, search_keys=None, hardlinks_only=False,
             if isinstance(value, h5py.Group):
                 target = _getlink(group, rootkey, key)
                 if "NX_class" in value.attrs:
-                    if value.attrs["NX_class"] == b"NXdata" \
-                            and "signal" in value.attrs.keys():
+                    if (value.attrs["NX_class"] == b"NXdata" or value.attrs["NX_class"] == "NXdata")\
+                        and "signal" in value.attrs.keys():
                         all_nx_datasets.append(rootkey)
                         if target is None:
                             unique_nx_datasets.append(rootkey)
@@ -880,7 +880,7 @@ def _load_metadata(group, lazy=False, skip_array_metadata=False):
 
             elif type(item) is h5py.Group:
                 if "NX_class" in item.attrs:
-                    if item.attrs["NX_class"] != b"NXdata":
+                    if item.attrs["NX_class"] != b"NXdata" or item.attrs["NX_class"] != 'NXdata':
                         tree[new_key] = find_meta_in_tree(item, rootkey,
                                                           lazy=lazy,
                                       skip_array_metadata=skip_array_metadata)
