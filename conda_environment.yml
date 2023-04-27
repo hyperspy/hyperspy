@@ -7,7 +7,7 @@ dependencies:
 # dask-core < 2021.3.1 doesn't have fsspec as dependency
 - fsspec
 - h5py
-- imageio
+- imageio <2.28
 - ipyparallel
 - ipython !=8.0.*
 - jinja2

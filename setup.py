@@ -68,7 +68,7 @@ install_req = ['scipy>=1.4.0',
                'pint>=0.10',
                'numexpr',
                'sparse',
-               'imageio',
+               'imageio<2.28',
                'pyyaml',
                # prettytable and ptable are API compatible
                # prettytable is maintained and ptable is an unmaintained fork
@@ -421,6 +421,7 @@ with update_version_when_dev() as version:
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.11",
             "Development Status :: 4 - Beta",
             "Environment :: Console",
             "Intended Audience :: Science/Research",

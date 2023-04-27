@@ -40,6 +40,9 @@ jobs:
           - os: ubuntu
             PYTHON_VERSION: '3.10'
             PIP_SELECTOR: '[all, tests, coverage]'
+          - os: ubuntu
+            PYTHON_VERSION: '3.11'
+            PIP_SELECTOR: '[all, tests, coverage]'
 
     steps:
       - uses: actions/checkout@v3.3.0
@@ -53,6 +56,13 @@ jobs:
         run: |
           python --version
           pip --version
+
+      - name: Install numba rc
+        if: contains(matrix.PYTHON_VERSION, '3.11')
+        # Require for python 3.11 support, remove when numba 0.57 is release
+        shell: bash
+        run: |
+          pip install numba --pre
 
       - name: Install oldest supported version
         if: ${{ matrix.OLDEST_SUPPORTED_VERSION }}
