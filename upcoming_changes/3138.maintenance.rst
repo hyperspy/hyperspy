@@ -1,0 +1,1 @@
+Pin ``imageio`` to <2.28
