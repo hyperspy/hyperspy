@@ -21,14 +21,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
 
   build_wheels:
     name: Wheels on ${{ matrix.os }}/py${{ matrix.python-version }}
@@ -99,11 +92,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
-
-      - name: install twine
-        run: |
-          python -m pip install twine
+          python-version: '3.10'
 
       - name: Build source distribution
         run: |
@@ -136,13 +125,10 @@ jobs:
 
       - name: Publish wheels to PyPI
         if: github.repository_owner == 'hyperspy'
-        env:
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
           # Github secret set in the hyperspy/hyperspy repository
           # Not available from fork or pull request
           # Secrets are not passed to workflows that are triggered by a pull request from a fork
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: |
-          twine upload dist/*-manylinux*.whl --verbose 
-          twine upload dist/*.tar.gz --verbose 
+          password: ${{ secrets.PYPI_API_TOKEN }}
 
