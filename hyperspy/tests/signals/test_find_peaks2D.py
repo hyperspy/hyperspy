@@ -115,7 +115,8 @@ class TestFindPeaks2D:
     @pytest.mark.parametrize('method', PEAK_METHODS)
     @pytest.mark.parametrize('dataset_name', DATASETS_NAME)
     @pytest.mark.parametrize('parallel', [True, False])
-    def test_find_peaks(self, method, dataset_name, parallel):
+    @pytest.mark.parametrize('get_intensity', [True, False])
+    def test_find_peaks(self, method, dataset_name, parallel, get_intensity):
         if method == 'stat':
             pytest.importorskip("sklearn")
         dataset = getattr(self, dataset_name)
@@ -125,10 +126,12 @@ class TestFindPeaks2D:
 
         if method == 'template_matching':
             peaks = dataset.find_peaks(method=method, parallel=parallel,
-                                       interactive=False, template=DISC)
+                                       interactive=False, template=DISC,
+                                       get_intensity=get_intensity)
         else:
             peaks = dataset.find_peaks(method=method, parallel=parallel,
-                                       interactive=False)
+                                       interactive=False,
+                                       get_intensity=get_intensity)
         assert isinstance(peaks, BaseSignal)
         assert not isinstance(peaks, LazySignal)
 
@@ -140,7 +143,11 @@ class TestFindPeaks2D:
         else:
             shape = dataset.axes_manager.navigation_shape[::-1]
         assert peaks.data.shape == shape
-        assert peaks.data[0].shape[-1] == 2
+        first_ind = (0,)*len(shape)
+        if get_intensity:
+            assert peaks.data[first_ind].shape[-1] == 3
+        else:
+            assert peaks.data[first_ind].shape[-1] == 2
 
     @pytest.mark.parametrize('parallel', [True, False])
     def test_ordering_results(self, parallel):

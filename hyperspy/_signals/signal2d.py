@@ -23,6 +23,8 @@ import dask.array as da
 import logging
 import warnings
 
+from functools import partial
+
 from scipy import ndimage
 try:
     # For scikit-image >= 0.17.0
@@ -50,7 +52,8 @@ from hyperspy.docstrings.signal import (
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.utils.peakfinders2D import (
         find_local_max, find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
-        find_peaks_stat, find_peaks_log, find_peaks_dog, find_peaks_xc)
+        find_peaks_stat, find_peaks_log, find_peaks_dog, find_peaks_xc,
+        _get_intensity)
 
 
 _logger = logging.getLogger(__name__)
@@ -916,6 +919,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
     def find_peaks(self, method='local_max', interactive=True,
                    current_index=False, show_progressbar=None,
                    parallel=None, max_workers=None, display=True, toolkit=None,
+                   get_intensity=False,
                    **kwargs):
         """Find peaks in a 2D signal.
 
@@ -966,6 +970,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
             If False, the results will be returned.
         current_index : bool
             if True, the computation will be performed for the current index.
+        get_intensity : bool
+            if True, the value of the peak will be returned as a separate column.
         %s
         %s
         %s
@@ -1015,6 +1021,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
             raise NotImplementedError(f"The method `{method}` is not "
                                       "implemented. See documentation for "
                                       "available implementations.")
+        if get_intensity:
+            method_func = partial(_get_intensity, f=method_func, )
         if interactive:
             # Create a peaks signal with the same navigation shape as a
             # placeholder for the output

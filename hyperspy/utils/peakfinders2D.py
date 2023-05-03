@@ -27,6 +27,16 @@ from hyperspy.misc.machine_learning import import_sklearn
 
 NO_PEAKS = np.array([[np.nan, np.nan]])
 
+def _get_intensity(X, f, **kwargs):
+    peaks = f(X, **kwargs)
+
+    if np.any(np.isnan(peaks)): #handle no peaks
+        return np.array([[np.nan, np.nan,np.nan]])
+    else:
+        maxima = tuple([tuple(np.round(peaks[:, d]).astype(int)) for d in range(2)])
+        intensity = X[maxima]
+        return np.concatenate([peaks, intensity[:, np.newaxis]], axis=1)
+
 
 @njit(cache=True)
 def _fast_mean(X):  # pragma: no cover
