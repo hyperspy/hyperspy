@@ -1038,7 +1038,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
             peaks = self.map(method_func, show_progressbar=show_progressbar,
                              parallel=parallel, inplace=False, ragged=True,
                              max_workers=max_workers, **kwargs)
-
+        peaks.metadata.add_node("Peaks")
+        peaks.metadata.Peaks.signal_axes = self.axes_manager.signal_axes
         return peaks
 
     find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
