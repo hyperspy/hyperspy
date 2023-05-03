@@ -729,3 +729,10 @@ def test_plot_scalebar_list():
     ax0, ax1 = hs.plot.plot_images([s, s], scalebar=[0])
     assert hasattr(ax0, 'scalebar')
     assert not hasattr(ax1, 'scalebar')
+
+
+def test_plot_images_bool():
+    data = np.arange(100).reshape((10, 10)) > 50
+    s = hs.signals.Signal2D(data)
+
+    hs.plot.plot_images(s)

@@ -42,7 +42,7 @@ setup_path = os.path.dirname(__file__)
 
 install_req = ['scipy>=1.4.0',
                'matplotlib>=3.1.3',
-               'numpy>=1.17.1',
+               'numpy>=1.19.0',
                'traits>=4.5.0',
                'natsort',
                'requests',
@@ -244,6 +244,7 @@ with update_version_when_dev() as version:
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.11",
             "Development Status :: 4 - Beta",
             "Environment :: Console",
             "Intended Audience :: Science/Research",

@@ -1,0 +1,1 @@
+Fix test with scipy1.11 and update deprecated ``scipy.interpolate.interp2d`` in the test suite

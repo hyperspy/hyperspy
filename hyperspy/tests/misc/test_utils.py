@@ -35,7 +35,7 @@ from hyperspy.misc.utils import (
     to_numpy,
     get_array_module
 )
-from hyperspy.exceptions import LazyCupyConversion
+
 
 try:
     import cupy as cp

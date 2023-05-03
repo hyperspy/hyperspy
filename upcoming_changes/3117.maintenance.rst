@@ -1,0 +1,1 @@
+Simplify release workflow and replace deprecated ``actions/create-release`` action with ``softprops/action-gh-release``.
