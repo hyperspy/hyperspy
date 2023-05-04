@@ -56,6 +56,7 @@ from hyperspy.misc.export_dictionary import (
 from hyperspy.misc.model_tools import CurrentModelValues, _calculate_covariance
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.misc.utils import (
+    display,
     dummy_context_manager,
     shorten_name,
     slugify,
@@ -2098,9 +2099,11 @@ class BaseModel(list):
         component_list : None or list of components.
             If None, print all components.
         """
-        return CurrentModelValues(
-            model=self, only_free=only_free, only_active=only_active,
-            component_list=component_list)
+        display(
+            CurrentModelValues(
+                model=self, only_free=only_free, only_active=only_active,
+                component_list=component_list)
+            )
 
     def set_parameters_not_free(self, component_list=None,
                                 parameter_name_list=None,

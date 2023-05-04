@@ -33,7 +33,7 @@ from hyperspy.misc.export_dictionary import (
 from hyperspy.events import Events, Event
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.misc.model_tools import CurrentComponentValues
-from hyperspy.misc.utils import get_object_package_info
+from hyperspy.misc.utils import display, get_object_package_info
 
 import logging
 
@@ -1284,7 +1284,7 @@ class Component(t.HasTraits):
         only_free : bool
             If True, only free parameters will be printed.
         """
-        return CurrentComponentValues(self, only_free=only_free)
+        display(CurrentComponentValues(self, only_free=only_free))
 
     @property
     def _constant_term(self):

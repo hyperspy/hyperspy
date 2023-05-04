@@ -59,7 +59,7 @@ def print_known_signal_types():
     """
     from hyperspy.ui_registry import ALL_EXTENSIONS
     from prettytable import PrettyTable
-    from hyperspy.misc.utils import print_html
+    from hyperspy.misc.utils import display, print_html
     table = PrettyTable()
     table.field_names = [
         "signal_type",
@@ -76,8 +76,9 @@ def print_known_signal_types():
         package = sdict["module"].split(".")[0]
         table.add_row([sdict["signal_type"], aliases, sclass, package])
         table.sortby = "class name"
-    return print_html(f_text=table.get_string,
-                      f_html=table.get_html_string)
+    display(
+        print_html(f_text=table.get_string, f_html=table.get_html_string)
+        )
 
 
 __all__ = [

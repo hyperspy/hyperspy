@@ -1642,3 +1642,20 @@ def get_array_module(array):
         pass
 
     return module
+
+
+def display(obj):
+    """
+    Convenience funtion to display an obj using IPython rendering if
+    installed, otherwise, fall back to python ``print``
+
+    Parameters
+    ----------
+    obj : python object
+        Python object to be displayed
+    """
+    try:
+        from IPython import display
+        display.display(obj)
+    except ImportError:
+        print(obj)
