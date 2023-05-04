@@ -133,7 +133,11 @@ class TestFindPeaks2D:
                                        interactive=False,
                                        get_intensity=get_intensity)
         assert isinstance(peaks, BaseSignal)
-        assert not isinstance(peaks, LazySignal)
+        if isinstance(dataset,LazySignal):
+            assert isinstance(peaks, LazySignal)
+            peaks.compute()
+        else:
+            assert not isinstance(peaks, LazySignal)
 
         # Check navigation shape
         np.testing.assert_equal(dataset.axes_manager.navigation_shape,
@@ -145,8 +149,10 @@ class TestFindPeaks2D:
         assert peaks.data.shape == shape
         first_ind = (0,)*len(shape)
         if get_intensity:
+            peaks.data[first_ind]
             assert peaks.data[first_ind].shape[-1] == 3
         else:
+            peaks.data[first_ind]
             assert peaks.data[first_ind].shape[-1] == 2
 
     @pytest.mark.parametrize('parallel', [True, False])
