@@ -25,14 +25,14 @@ from sympy.utilities.lambdify import lambdify
 from pathlib import Path
 
 from hyperspy.misc.utils import slugify
-from rsciio.utils.tools import (incremental_filename,
-                                    append2pathname,)
-from hyperspy.misc.export_dictionary import export_to_dictionary, \
-    load_from_dictionary
+from rsciio.utils.tools import incremental_filename, append2pathname
+from hyperspy.misc.export_dictionary import (
+    export_to_dictionary,
+    load_from_dictionary,
+    )
 from hyperspy.events import Events, Event
 from hyperspy.ui_registry import add_gui_method
-from IPython.display import display_pretty, display
-from hyperspy.misc.model_tools import current_component_values
+from hyperspy.misc.model_tools import CurrentComponentValues
 from hyperspy.misc.utils import get_object_package_info
 
 import logging
@@ -1275,7 +1275,7 @@ class Component(t.HasTraits):
             raise ValueError("_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
 
-    def print_current_values(self, only_free=False, fancy=True):
+    def print_current_values(self, only_free=False):
         """
         Prints the current values of the component's parameters.
 
@@ -1283,13 +1283,8 @@ class Component(t.HasTraits):
         ----------
         only_free : bool
             If True, only free parameters will be printed.
-        fancy : bool
-            If True, attempts to print using html rather than text in the notebook.
         """
-        if fancy:
-            display(current_component_values(self, only_free=only_free))
-        else:
-            display_pretty(current_component_values(self, only_free=only_free))
+        return CurrentComponentValues(self, only_free=only_free)
 
     @property
     def _constant_term(self):

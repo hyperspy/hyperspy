@@ -34,7 +34,7 @@ import dask.array as da
 import numpy as np
 
 from hyperspy.misc.signal_tools import broadcast_signals
-from hyperspy.exceptions import LazyCupyConversion
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
 
@@ -363,7 +363,7 @@ class DictionaryTreeBrowser:
         return string
 
     def _get_html_print_items(self, padding="", max_len=78, recursive_level=0):
-        """Recursive method that creates a html string for fancy display
+        """Recursive method that creates a html string for html display
         of metadata.
         """
         recursive_level += 1

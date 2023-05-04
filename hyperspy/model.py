@@ -30,7 +30,6 @@ import numpy as np
 import dask.array as da
 from dask.diagnostics import ProgressBar
 import scipy.odr as odr
-from IPython.display import display, display_pretty
 from scipy.linalg import svd
 from scipy.optimize import (
     differential_evolution,
@@ -54,16 +53,13 @@ from hyperspy.misc.export_dictionary import (
     parse_flag_string,
     reconstruct_object
     )
-from hyperspy.misc.model_tools import (
-    current_model_values,
-    _calculate_covariance,
-    )
+from hyperspy.misc.model_tools import CurrentModelValues, _calculate_covariance
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.misc.utils import (
     dummy_context_manager,
     shorten_name,
     slugify,
-    stash_active_state
+    stash_active_state,
     )
 from hyperspy.signal import BaseSignal
 from hyperspy.ui_registry import add_gui_method
@@ -2089,7 +2085,7 @@ class BaseModel(list):
             component.plot(only_free=only_free)
 
     def print_current_values(self, only_free=False, only_active=False,
-                             component_list=None, fancy=True):
+                             component_list=None):
         """Prints the current values of the parameters of all components.
 
         Parameters
@@ -2101,17 +2097,10 @@ class BaseModel(list):
             If True, only values of active components will be printed
         component_list : None or list of components.
             If None, print all components.
-        fancy : bool
-            If True, attempts to print using html rather than text in the notebook.
         """
-        if fancy:
-            display(current_model_values(
-                model=self, only_free=only_free, only_active=only_active,
-                component_list=component_list))
-        else:
-            display_pretty(current_model_values(
-                model=self, only_free=only_free, only_active=only_active,
-                component_list=component_list))
+        return CurrentModelValues(
+            model=self, only_free=only_free, only_active=only_active,
+            component_list=component_list)
 
     def set_parameters_not_free(self, component_list=None,
                                 parameter_name_list=None,
