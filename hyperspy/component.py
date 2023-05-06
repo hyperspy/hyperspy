@@ -1252,9 +1252,11 @@ class Component(t.HasTraits):
         """
 
         if dic['_id_name'] == self._id_name:
+            # Restoring of polynomials saved with Hyperspy <v1.5
             if (self._id_name == "Polynomial" and
                     dic['parameters'][0]['_id_name'] == "coefficients"):
-                # in HyperSpy 2.0 the polynomial definition changed
+                # in HyperSpy v1.5 the polynomial definition changed
+                # and the legacy option was removed in v2.0
                 from hyperspy._components.polynomial import convert_to_polynomial
                 dic = convert_to_polynomial(dic)
             load_from_dictionary(self, dic)

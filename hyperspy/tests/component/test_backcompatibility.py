@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import pathlib
+import pytest
 
 import hyperspy.api as hs
 
@@ -54,9 +55,9 @@ The reference files from hyperspy v1.4 have been created using:
     s.save(f'hs{version}_model.hspy', overwrite=True)
 """
 
-
-def test_model_backcompatibility():
-    s = hs.load(DIRPATH / "hs16_model.hspy")
+@pytest.mark.parametrize(("versionfile"), ("hs14_model.hspy", "hs15_model.hspy", "hs16_model.hspy"))
+def test_model_backcompatibility(versionfile):
+    s = hs.load(DIRPATH / versionfile)
     m = s.models.restore('a')
 
     assert len(m) == 5
@@ -87,3 +88,10 @@ def test_model_backcompatibility():
     assert p.a0.value == 25.0
     assert p.a1.value == -0.5
     assert p.a2.value == 0.01
+
+    p = m[4]
+    assert len(p.parameters) == 8
+    assert p.area.value == 100.0
+    assert p.centre.value == 50.0
+    assert p.FWHM.value == 1.5
+    assert p.resolution.value == 0.0

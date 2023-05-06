@@ -107,6 +107,16 @@ def _twinned_parameter(parameter):
 
 
 def reconstruct_component(comp_dictionary, **init_args):
+    # Restoring of Voigt and Arctan components saved with Hyperspy <v1.6
+    if (comp_dictionary['_id_name'] == "Voigt" and 
+            len(comp_dictionary['parameters']) > 4):
+        # in HyperSpy 1.6 the old Voigt component was moved to PESVoigt
+        if comp_dictionary['parameters'][4]['_id_name'] == "resolution":
+            comp_dictionary['_id_name'] = "PESVoigt"
+    if (comp_dictionary['_id_name'] == "Arctan" and 'minimum_at_zero' in comp_dictionary):
+        # in HyperSpy 1.6 the old Arctan component was moved to EELSArctan
+        if comp_dictionary['minimum_at_zero'] == True:
+            comp_dictionary['_id_name'] = "EELSArctan"
     _id = comp_dictionary['_id_name']
     if _id in _COMPONENTS:
         _class = getattr(
