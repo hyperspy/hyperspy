@@ -23,12 +23,10 @@ import os
 import tempfile
 import warnings
 from contextlib import contextmanager
-from packaging.version import Version
 from functools import partial
 
 import dill
 import numpy as np
-import dask
 import dask.array as da
 from dask.diagnostics import ProgressBar
 import scipy.odr as odr
@@ -1077,12 +1075,6 @@ class BaseModel(list):
                 target_signal.T,
                 **kw)
             coefficient_array = result.T
-
-            if self.signal._lazy and not only_current and (
-                    Version(dask.__version__) < Version("2020.12.0")):
-                # Dask pre 2020.12 didn't support residuals on 2D input,
-                # we calculate them later.
-                residual = None  # pragma: no cover
 
         elif optimizer == "ridge_regression":
             if self.signal._lazy:

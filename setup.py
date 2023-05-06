@@ -55,7 +55,7 @@ install_req = ['scipy>=1.5.0',
                'ipyparallel',
                # https://github.com/ipython/ipython/pull/13466
                'ipython!=8.0.*',
-               'dask[array]>=2.11.0',
+               'dask[array]>=2021.3.1',
                # fsspec is missing from dask dependencies for dask < 2021.3.1
                'fsspec',
                'scikit-image>=0.18',
