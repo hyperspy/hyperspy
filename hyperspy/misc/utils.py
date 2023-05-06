@@ -1518,19 +1518,6 @@ def get_object_package_info(obj):
     return dic
 
 
-def print_html(f_text, f_html):
-    """Print html version when in Jupyter Notebook"""
-
-    class PrettyText:
-        def __repr__(self):
-            return f_text()
-
-        def _repr_html_(self):
-            return f_html()
-
-    return PrettyText()
-
-
 def is_hyperspy_signal(input_object):
     """
     Check if an object is a Hyperspy Signal

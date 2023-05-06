@@ -49,9 +49,7 @@ install_req = [
     'packaging',
     'pint>=0.10',
     'pooch',
-    # prettytable and ptable are API compatible
-    # prettytable is maintained and ptable is an unmaintained fork
-    'prettytable',
+    'prettytable>=2.3',
     'python-dateutil>=2.5.0',
     'pyyaml',
     'requests',

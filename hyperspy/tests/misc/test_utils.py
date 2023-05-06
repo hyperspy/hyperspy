@@ -18,7 +18,9 @@
 
 import dask.array as da
 import numpy as np
+from prettytable import PrettyTable
 import pytest
+
 
 from hyperspy import signals
 from hyperspy.misc.utils import (
@@ -33,7 +35,7 @@ from hyperspy.misc.utils import (
     shorten_name,
     is_cupy_array,
     to_numpy,
-    get_array_module
+    get_array_module,
 )
 
 
