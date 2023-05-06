@@ -161,7 +161,7 @@ class LazySignal(BaseSignal):
 
     """Lazy general signal class."""
 
-    _lazy = True    
+    _lazy = True
     __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "BaseSignal")
 
     def __init__(self, *args, **kwargs):
@@ -176,7 +176,7 @@ class LazySignal(BaseSignal):
         self._cache_dask_chunk_slice = None
         if not self._clear_cache_dask_data in self.events.data_changed.connected:
             self.events.data_changed.connect(self._clear_cache_dask_data)
-        
+
     __init__.__doc__ = BaseSignal.__init__.__doc__.replace(
         ":py:class:`numpy.ndarray`", ":py:class:`dask.array.Array`"
         )
@@ -1253,12 +1253,9 @@ class LazySignal(BaseSignal):
             # Needs to reverse the chunks list to match dask chunking order
             signal_chunks = list(signal_chunks)[::-1]
             navigation_chunks = ['auto'] * len(self.axes_manager.navigation_shape)
-            if Version(dask.__version__ ) >= Version("2.30.0"):
-                kwargs = {'balance':True}
-            else:
-                kwargs = {}
-            chunks = self.data.rechunk([*navigation_chunks, *signal_chunks],
-                                       **kwargs).chunks
+            chunks = self.data.rechunk(
+                [*navigation_chunks, *signal_chunks], balance=True,
+                ).chunks
 
         # Get the slice of the corresponding chunk
         signal_size = len(signal_shape)

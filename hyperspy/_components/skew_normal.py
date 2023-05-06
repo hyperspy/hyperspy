@@ -18,8 +18,6 @@
 
 import dask.array as da
 import numpy as np
-from packaging.version import Version
-import sympy
 
 from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
@@ -142,9 +140,6 @@ class SkewNormal(Expression):
 
     def __init__(self, x0=0., A=1., scale=1., shape=0.,
                  module=['numpy', 'scipy'], **kwargs):
-        if Version(sympy.__version__) < Version("1.3"):
-            raise ImportError("The `SkewNormal` component requires "
-                              "SymPy >= 1.3")
         # We use `_shape` internally because `shape` is already taken in sympy
         # https://github.com/sympy/sympy/pull/20791
         super().__init__(

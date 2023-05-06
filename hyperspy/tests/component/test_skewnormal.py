@@ -16,22 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-
 import itertools
-from packaging.version import Version
 
 import numpy as np
 import pytest
-import sympy
 
 from hyperspy.components1d import SkewNormal
 from hyperspy.signals import Signal1D
 from hyperspy.utils import stack
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
-
-pytestmark = pytest.mark.skipif(Version(sympy.__version__) < Version("1.3"),
-                                reason="This test requires SymPy >= 1.3")
 
 
 def test_function():

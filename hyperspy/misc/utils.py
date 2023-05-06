@@ -1362,8 +1362,7 @@ def process_function_blockwise(data,
     chunk_nav_shape = tuple([data.shape[i] for i in sorted(nav_indexes)])
     output_shape = chunk_nav_shape + tuple(output_signal_size)
     # Pre-allocating the output array
-    kw = get_numpy_kwargs(data)
-    output_array = np.empty(output_shape, dtype=dtype, **kw)
+    output_array = np.empty(output_shape, dtype=dtype, like=data)
     if len(args) == 0:
         # There aren't any BaseSignals for iterating
         for nav_index in np.ndindex(chunk_nav_shape):
@@ -1647,21 +1646,3 @@ def get_array_module(array):
         pass
 
     return module
-
-
-def get_numpy_kwargs(array):
-    """
-    Convenience funtion to return a dictionary containing the `like` keyword
-    if numpy>=1.20.
-
-    Note
-    ----
-    `like` keyword is an experimental feature introduced in numpy 1.20 and is
-    pending on acceptance of NEP 35
-
-    """
-    kw = {}
-    if Version(np.__version__) >= Version("1.20"):
-         kw['like'] = array
-
-    return kw

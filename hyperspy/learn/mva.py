@@ -39,7 +39,6 @@ from hyperspy.misc.utils import (
     stack,
     is_hyperspy_signal,
     is_cupy_array,
-    get_numpy_kwargs,
     )
 from hyperspy.external.progressbar import progressbar
 
@@ -2595,8 +2594,7 @@ class MVA:
             y1 = curve_values_adj[0]
             y2 = curve_values_adj[max_points]
 
-        kw = get_numpy_kwargs(self.data)
-        xs = np.arange(max_points, **kw)
+        xs = np.arange(max_points, like=self.data)
         if log:
             ys = np.log(curve_values_adj[:max_points])
         else:

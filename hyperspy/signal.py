@@ -3675,11 +3675,7 @@ class BaseSignal(FancySlicing,
             _logger.info("{0!r} data is replaced by its optimized copy, see "
                          "optimize parameter of ``Basesignal.transpose`` "
                          "for more information.".format(self))
-            # `like` keyword is necessary to support cupy array (NEP-35)
-            kw = {}
-            if Version(np.__version__) >= Version("1.20"):
-                 kw['like'] = self.data
-            self.data = np.ascontiguousarray(self.data, **kw)
+            self.data = np.ascontiguousarray(self.data, like=self.data)
 
     def _iterate_signal(self, iterpath=None):
         """Iterates over the signal data. It is faster than using the signal
