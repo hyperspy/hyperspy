@@ -199,6 +199,33 @@ Preferences
 .. towncrier release notes start
 
 
+.. _changes_1.7.5:
+
+Hyperspy 1.7.5 (2023-05-04)
+===========================
+
+Bug Fixes
+---------
+
+- Fix plotting boolean array with :py:func:`~.drawing.utils.plot_images` (`#3118 <https://github.com/hyperspy/hyperspy/issues/3118>`_)
+- Fix test with scipy1.11 and update deprecated ``scipy.interpolate.interp2d`` in the test suite (`#3124 <https://github.com/hyperspy/hyperspy/issues/3124>`_)
+- Use intersphinx links to fix links to scikit-image documentation (`#3125 <https://github.com/hyperspy/hyperspy/issues/3125>`_)
+
+
+Enhancements
+------------
+
+- Improve performance of `model.multifit` by avoiding `axes.is_binned` repeated evaluation (`#3126 <https://github.com/hyperspy/hyperspy/issues/3126>`_)
+
+
+Maintenance
+-----------
+
+- Simplify release workflow and replace deprecated ``actions/create-release`` action with ``softprops/action-gh-release``. (`#3117 <https://github.com/hyperspy/hyperspy/issues/3117>`_)
+- Add support for python 3.11 (`#3134 <https://github.com/hyperspy/hyperspy/issues/3134>`_)
+- Pin ``imageio`` to <2.28 (`#3138 <https://github.com/hyperspy/hyperspy/issues/3138>`_)
+
+
 .. _changes_1.7.4:
 
 v1.7.4 (2023-03-16)

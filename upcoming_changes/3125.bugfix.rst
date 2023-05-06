@@ -1,1 +1,0 @@
-Use intersphinx links to fix links to scikit-image documentation
