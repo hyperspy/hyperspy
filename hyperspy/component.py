@@ -22,10 +22,8 @@ import traits.api as t
 from traits.trait_numeric import Array
 import sympy
 from sympy.utilities.lambdify import lambdify
-from packaging.version import Version
 from pathlib import Path
 
-import hyperspy
 from hyperspy.misc.utils import slugify
 from rsciio.utils.tools import (incremental_filename,
                                     append2pathname,)
@@ -1255,7 +1253,7 @@ class Component(t.HasTraits):
 
         if dic['_id_name'] == self._id_name:
             if (self._id_name == "Polynomial" and
-                    Version(hyperspy.__version__) >= Version("2.0")):
+                    dic['parameters'][0]['_id_name'] == "coefficients"):
                 # in HyperSpy 2.0 the polynomial definition changed
                 from hyperspy._components.polynomial import convert_to_polynomial
                 dic = convert_to_polynomial(dic)

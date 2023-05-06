@@ -57,7 +57,7 @@ class EELSArctan(Expression):
             del kwargs["minimum_at_zero"]
         super().__init__(
             expression="A * (pi /2 + arctan(k * (x - x0)))",
-            name="Arctan",
+            name="EELSArctan",
             A=A,
             k=k,
             x0=x0,
