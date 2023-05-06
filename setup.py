@@ -34,12 +34,6 @@ if v[0] != 3:
     sys.exit(1)
 
 
-# stuff to check presence of compiler:
-
-
-setup_path = os.path.dirname(__file__)
-
-
 install_req = [
     'dask[array]>=2021.3.1',
     'dill',
@@ -72,6 +66,7 @@ install_req = [
     'traits>=4.5.0',
     ]
 
+
 extras_require = {
     "learning": ["scikit-learn>=1.0.1"],
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
@@ -101,6 +96,7 @@ extras_require = {
         ],
 }
 
+
 # Don't include "tests" and "docs" requirements since "all" is designed to be
 # used for user installation.
 runtime_extras_require = {x: extras_require[x] for x in extras_require.keys()
@@ -121,7 +117,6 @@ def update_version(version):
             lines.append(line)
     with open(release_path, "w") as f:
         f.writelines(lines)
-
 
 
 class update_version_when_dev:
