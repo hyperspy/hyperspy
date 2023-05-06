@@ -22,8 +22,6 @@ import numpy as np
 
 from hyperspy._components.expression import Expression
 
-from hyperspy.misc.utils import get_numpy_kwargs
-
 _logger = logging.getLogger(__name__)
 
 
@@ -138,9 +136,8 @@ class PowerLaw(Expression):
         else:
             from hyperspy.signal import BaseSignal
             shape = s.data.shape[:-1]
-            kw = get_numpy_kwargs(s.data)
-            I1_s = BaseSignal(np.empty(shape, dtype='float', **kw))
-            I2_s = BaseSignal(np.empty(shape, dtype='float', **kw))
+            I1_s = BaseSignal(np.empty(shape, dtype='float', like=s.data))
+            I2_s = BaseSignal(np.empty(shape, dtype='float', like=s.data))
             # Use the `out` parameters to avoid doing the deepcopy
             s.isig[i1:i3].integrate1D(2j, out=I1_s)
             s.isig[i3:i2].integrate1D(2j, out=I2_s)
