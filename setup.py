@@ -40,39 +40,37 @@ if v[0] != 3:
 setup_path = os.path.dirname(__file__)
 
 
-install_req = ['scipy>=1.5.0',
-               'matplotlib>=3.1.3',
-               'numpy>=1.20.0',
-               'traits>=4.5.0',
-               'natsort',
-               'requests',
-               'tqdm>=4.9.0',
-               'sympy',
-               'dill',
-               'jinja2',
-               'packaging',
-               'python-dateutil>=2.5.0',
-               'ipyparallel',
-               # https://github.com/ipython/ipython/pull/13466
-               'ipython!=8.0.*',
-               'dask[array]>=2021.3.1',
-               # fsspec is missing from dask dependencies for dask < 2021.3.1
-               'fsspec',
-               'scikit-image>=0.18',
-               'pint>=0.10',
-               'numexpr',
-               'pyyaml',
-               # prettytable and ptable are API compatible
-               # prettytable is maintained and ptable is an unmaintained fork
-               'prettytable',
-               # non-uniform axis requirement
-               'numba>=0.52',
-                # included in stdlib since v3.8, but this required version requires Python 3.10
-                # We can remove this requirement when the minimum supported version becomes Python 3.10
-               'importlib-metadata>=3.6',
-                # UPDATE BEFORE RELEASE
-               'rosettasciio @ git+https://github.com/hyperspy/rosettasciio#egg=rosettasciio',
-               ]
+install_req = [
+    'dask[array]>=2021.3.1',
+    'dill',
+    # included in stdlib since v3.8, but this required version requires Python 3.10
+    # We can remove this requirement when the minimum supported version becomes Python 3.10
+    'importlib-metadata>=3.6',
+    # https://github.com/ipython/ipython/pull/13466
+    'ipython!=8.0.*',
+    'jinja2',
+    'matplotlib>=3.1.3',
+    'natsort',
+    # non-uniform axis requirement
+    'numba>=0.52',
+    'numexpr',
+    'numpy>=1.20.0',
+    'packaging',
+    'pint>=0.10',
+    # prettytable and ptable are API compatible
+    # prettytable is maintained and ptable is an unmaintained fork
+    'prettytable',
+    'python-dateutil>=2.5.0',
+    'pyyaml',
+    'requests',
+    'scikit-image>=0.18',
+    'scipy>=1.5.0',
+    'sympy',
+    # UPDATE BEFORE RELEASE
+    'rosettasciio @ git+https://github.com/hyperspy/rosettasciio#egg=rosettasciio',
+    'tqdm>=4.9.0',
+    'traits>=4.5.0',
+    ]
 
 extras_require = {
     "learning": ["scikit-learn>=1.0.1"],
