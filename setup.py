@@ -40,7 +40,7 @@ if v[0] != 3:
 setup_path = os.path.dirname(__file__)
 
 
-install_req = ['scipy>=1.4.0',
+install_req = ['scipy>=1.5.0',
                'matplotlib>=3.1.3',
                'numpy>=1.20.0',
                'traits>=4.5.0',

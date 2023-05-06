@@ -31,7 +31,6 @@ import numpy as np
 import dask
 import dask.array as da
 from dask.diagnostics import ProgressBar
-import scipy
 import scipy.odr as odr
 from IPython.display import display, display_pretty
 from scipy.linalg import svd
@@ -1305,9 +1304,6 @@ class BaseModel(list):
         }
 
         if optimizer in ["Dual Annealing", "SHGO"]:
-            if Version(scipy.__version__) < Version("1.2.0"):
-                raise ValueError(f"`optimizer='{optimizer}'` requires scipy >= 1.2.0")
-
             from scipy.optimize import dual_annealing, shgo
 
             _supported_global.update({"Dual Annealing": dual_annealing, "SHGO": shgo})

@@ -285,8 +285,8 @@ class TestModelFitBinnedGlobal:
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     # See https://github.com/scipy/scipy/issues/14589
-    @pytest.mark.xfail(Version(scipy.__version__) >= Version("1.8.0"),
-                       reason="Regression introduced in scipy 1.8.0.")
+    @pytest.mark.xfail(Version(scipy.__version__) < Version("1.9.3"),
+                        reason="Regression fixed in scipy 1.9.3.")
     def test_fit_shgo(self):
         pytest.importorskip("scipy", minversion="1.2.0")
         self.m.fit(optimizer="SHGO", loss_function="ls", bounded=True)
