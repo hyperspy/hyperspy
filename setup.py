@@ -203,7 +203,7 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.weights',
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
-        python_requires='~=3.6',
+        python_requires='~=3.8',
         install_requires=install_req,
         tests_require=["pytest>=3.0.2"],
         extras_require=extras_require,
@@ -240,7 +240,6 @@ with update_version_when_dev() as version:
         keywords=Release.keywords,
         classifiers=[
             "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",

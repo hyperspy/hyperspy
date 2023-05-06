@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from packaging.version import Version
-
 import numpy as np
 import pytest
 import skimage
@@ -30,8 +28,6 @@ def test_tv_denoise_error():
         _ = tv_denoise(np.array([1, 2, 3]))
 
 
-@pytest.mark.skipif(Version(skimage.__version__) < Version("0.18"),
-                   reason="This test requires scikit-image >= 0.18")
 def test_2d_tv_denoise():
     rng = np.random.RandomState(123)
     data = skimage.data.camera().astype(float)
