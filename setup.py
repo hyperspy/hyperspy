@@ -21,7 +21,6 @@ from __future__ import print_function
 import hyperspy.Release as Release
 import itertools
 import subprocess
-import os
 from setuptools import setup
 import sys
 
@@ -59,7 +58,7 @@ install_req = [
     'requests',
     'scikit-image>=0.18',
     'scipy>=1.5.0',
-    'sympy',
+    'sympy>=1.6',
     # UPDATE BEFORE RELEASE
     'rosettasciio @ git+https://github.com/hyperspy/rosettasciio#egg=rosettasciio',
     'tqdm>=4.9.0',
