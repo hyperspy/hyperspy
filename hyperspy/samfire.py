@@ -474,7 +474,7 @@ class Samfire:
         if best > 0.0:
             ind_list = np.where(self.metadata.marker == best)
             while number and ind_list[0].size > 0:
-                i = self.random_state.randint(len(ind_list[0]))
+                i = self.random_state.integers(len(ind_list[0]))
                 ind = tuple([lst[i] for lst in ind_list])
                 if ind not in self.running_pixels:
                     inds.append(ind)

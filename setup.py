@@ -21,7 +21,6 @@ from __future__ import print_function
 import hyperspy.Release as Release
 import itertools
 import subprocess
-import os
 from setuptools import setup
 import sys
 
@@ -34,51 +33,41 @@ if v[0] != 3:
     sys.exit(1)
 
 
-# stuff to check presence of compiler:
+install_req = [
+    'dask[array]>=2021.3.1',
+    'dill',
+    # included in stdlib since v3.8, but this required version requires Python 3.10
+    # We can remove this requirement when the minimum supported version becomes Python 3.10
+    'importlib-metadata>=3.6',
+    # https://github.com/ipython/ipython/pull/13466
+    'ipython!=8.0.*',
+    'jinja2',
+    'matplotlib>=3.1.3',
+    'natsort',
+    # non-uniform axis requirement
+    'numba>=0.52',
+    'numexpr',
+    'numpy>=1.20.0',
+    'packaging',
+    'pint>=0.10',
+    # prettytable and ptable are API compatible
+    # prettytable is maintained and ptable is an unmaintained fork
+    'prettytable',
+    'python-dateutil>=2.5.0',
+    'pyyaml',
+    'requests',
+    'scikit-image>=0.18',
+    'scipy>=1.5.0',
+    'sympy>=1.6',
+    # UPDATE BEFORE RELEASE
+    'rosettasciio @ git+https://github.com/hyperspy/rosettasciio#egg=rosettasciio',
+    'tqdm>=4.9.0',
+    'traits>=4.5.0',
+    ]
 
-
-setup_path = os.path.dirname(__file__)
-
-
-install_req = ['scipy>=1.1',
-               'matplotlib>=3.1.3',
-               'numpy>=1.17.1',
-               'traits>=4.5.0',
-               'natsort',
-               'requests',
-               'tqdm>=4.9.0',
-               'sympy',
-               'dill',
-               'jinja2',
-               'packaging',
-               'python-dateutil>=2.5.0',
-               'ipyparallel',
-               # https://github.com/ipython/ipython/pull/13466
-               'ipython!=8.0.*',
-               'dask[array]>=2.11.0',
-               # fsspec is missing from dask dependencies for dask < 2021.3.1
-               'fsspec',
-               'scikit-image>=0.18',
-               'pint>=0.10',
-               'numexpr',
-               'pyyaml',
-               # prettytable and ptable are API compatible
-               # prettytable is maintained and ptable is an unmaintained fork
-               'prettytable',
-               # non-uniform axis requirement
-               'numba>=0.52',
-                # included in stdlib since v3.8, but this required version requires Python 3.10
-                # We can remove this requirement when the minimum supported version becomes Python 3.10
-               'importlib-metadata>=3.6',
-                # UPDATE BEFORE RELEASE
-               'rosettasciio @ git+https://github.com/hyperspy/rosettasciio#egg=rosettasciio',
-               ]
 
 extras_require = {
-    # exclude scikit-learn==1.0 on macOS (wheels issue)
-    # See https://github.com/scikit-learn/scikit-learn/pull/21227
-    "learning": ['scikit-learn!=1.0.0;sys_platform=="darwin"',
-                 'scikit-learn;sys_platform!="darwin"'],
+    "learning": ["scikit-learn>=1.0.1"],
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     # UPDATE BEFORE RELEASE
     "gui-traitsui": ["hyperspy_gui_traitsui @ git+https://github.com/hyperspy/hyperspy_gui_traitsui#egg=hyperspy_gui_traitsui"],
@@ -100,12 +89,12 @@ extras_require = {
         "sphinx-gallery",
         "sphinx-toggleprompt",
         "sphinxcontrib-mermaid",
-        "sphinxcontrib-towncrier",
+        "sphinxcontrib-towncrier>=0.3.0a0",
         "sphinx-design",
-        # pin towncrier until https://github.com/sphinx-contrib/sphinxcontrib-towncrier/issues/60 is fixed
-        "towncrier<22.8",
+        "towncrier",
         ],
 }
+
 
 # Don't include "tests" and "docs" requirements since "all" is designed to be
 # used for user installation.
@@ -127,7 +116,6 @@ def update_version(version):
             lines.append(line)
     with open(release_path, "w") as f:
         f.writelines(lines)
-
 
 
 class update_version_when_dev:
@@ -206,7 +194,7 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.weights',
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
-        python_requires='~=3.6',
+        python_requires='~=3.8',
         install_requires=install_req,
         tests_require=["pytest>=3.0.2"],
         extras_require=extras_require,
@@ -243,10 +231,10 @@ with update_version_when_dev() as version:
         keywords=Release.keywords,
         classifiers=[
             "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.11",
             "Development Status :: 4 - Beta",
             "Environment :: Console",
             "Intended Audience :: Science/Research",

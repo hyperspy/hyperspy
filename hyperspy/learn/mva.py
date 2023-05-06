@@ -39,7 +39,6 @@ from hyperspy.misc.utils import (
     stack,
     is_hyperspy_signal,
     is_cupy_array,
-    get_numpy_kwargs,
     )
 from hyperspy.external.progressbar import progressbar
 
@@ -2464,7 +2463,7 @@ class MVA:
                 for o_indx,k in enumerate(k_range):
                     # calculate the data metric
                     if(algorithm=="kmeans"):
-                        kwargs['n_init']=1
+                        kwargs['n_init'] = 1
                     cluster_algorithm = \
                         self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
                     alg = self._cluster_analysis(scaled_data,
@@ -2595,8 +2594,7 @@ class MVA:
             y1 = curve_values_adj[0]
             y2 = curve_values_adj[max_points]
 
-        kw = get_numpy_kwargs(self.data)
-        xs = np.arange(max_points, **kw)
+        xs = np.arange(max_points, like=self.data)
         if log:
             ys = np.log(curve_values_adj[:max_points])
         else:

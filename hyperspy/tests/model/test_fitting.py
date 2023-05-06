@@ -50,7 +50,6 @@ def _create_toy_1d_gaussian_model(binned=True, weights=False, noise=False):
         Model1D for fitting
 
     """
-    np.random.seed(1)
     v = 2.0 * np.exp(-((np.arange(10, 100, 0.1) - 50) ** 2) / (2 * 5.0 ** 2))
     s = hs.signals.Signal1D(v)
     s.axes_manager[0].scale = 0.1
@@ -62,7 +61,7 @@ def _create_toy_1d_gaussian_model(binned=True, weights=False, noise=False):
         s.set_noise_variance(s_var)
 
     if noise:
-        s.add_poissonian_noise()
+        s.add_poissonian_noise(random_state=1)
 
     g = hs.model.components1D.Gaussian()
     g.centre.value = 56.0
@@ -286,8 +285,8 @@ class TestModelFitBinnedGlobal:
         assert isinstance(self.m.fit_output, OptimizeResult)
 
     # See https://github.com/scipy/scipy/issues/14589
-    @pytest.mark.xfail(Version(scipy.__version__) >= Version("1.8.0"),
-                       reason="Regression introduced in scipy 1.8.0.")
+    @pytest.mark.xfail(Version(scipy.__version__) < Version("1.9.3"),
+                        reason="Regression fixed in scipy 1.9.3.")
     def test_fit_shgo(self):
         pytest.importorskip("scipy", minversion="1.2.0")
         self.m.fit(optimizer="SHGO", loss_function="ls", bounded=True)
@@ -310,21 +309,21 @@ class TestModelWeighted:
     def test_chisq(self, grad):
         self.m.signal.axes_manager[-1].is_binned = True
         self.m.fit(grad=grad)
-        np.testing.assert_allclose(self.m.chisq.data, 18.81652763)
+        np.testing.assert_allclose(self.m.chisq.data, 18.998027)
 
     @pytest.mark.parametrize("grad", ["fd", "analytical"])
     def test_red_chisq(self, grad):
         self.m.fit(grad=grad)
-        np.testing.assert_allclose(self.m.red_chisq.data, 0.02100059)
+        np.testing.assert_allclose(self.m.red_chisq.data, 0.021203, rtol=TOL)
 
     @pytest.mark.parametrize(
         "optimizer, binned, non_uniform_axis, expected",
         [
-            ("lm", True, True, (256.7752411, 49.9770694, 5.3008397)),
-            ("lm", True, False, (256.7752411, 49.9770694, 5.3008397)),
-            ("odr", True, False, (256.7752604, 49.9770693, 5.3008397)),
-            ("lm", False, False, (25.6775426, 49.9770509, 5.3008481)),
-            ("odr", False, False, (25.6775411, 49.9770507, 5.3008476)),
+            ("lm", True, True, (267.851451, 50.284446, 5.220067)),
+            ("lm", True, False, (267.851451, 50.284446, 5.220067)),
+            ("odr", True, False, (267.851451, 50.284446, 5.220067)),
+            ("lm", False, False, (26.785102, 50.284446, 5.220067)),
+            ("odr", False, False, (26.785102, 50.284446, 5.220067)),
         ],
     )
     def test_fit(self, non_uniform_axis, optimizer, binned, expected):
@@ -344,27 +343,24 @@ class TestModelScalarVariance:
         self.m = self.s.create_model()
         self.m.append(hs.model.components1D.Offset())
 
-    @pytest.mark.parametrize("std, expected", [(1, 78.35015229), (10, 78.35015229)])
+    @pytest.mark.parametrize("std, expected", [(1, 72.514887), (10, 72.514887)])
     def test_std1_chisq(self, std, expected):
-        np.random.seed(1)
-        self.s.add_gaussian_noise(std)
+        self.s.add_gaussian_noise(std, random_state=1)
         self.s.set_noise_variance(std ** 2)
         self.m.fit()
         np.testing.assert_allclose(self.m.chisq.data, expected)
 
-    @pytest.mark.parametrize("std, expected", [(1, 0.79949135), (10, 0.79949135)])
+    @pytest.mark.parametrize("std, expected", [(1, 0.7399478), (10, 0.7399478)])
     def test_std1_red_chisq(self, std, expected):
-        np.random.seed(1)
-        self.s.add_gaussian_noise(std)
+        self.s.add_gaussian_noise(std, random_state=1)
         self.s.set_noise_variance(std ** 2)
         self.m.fit()
         np.testing.assert_allclose(self.m.red_chisq.data, expected)
 
-    @pytest.mark.parametrize("std, expected", [(1, 0.84233497), (10, 0.84233497)])
+    @pytest.mark.parametrize("std, expected", [(1, 0.876451), (10, 0.876451)])
     def test_std1_red_chisq_in_range(self, std, expected):
         self.m.set_signal_range(10, 50)
-        np.random.seed(1)
-        self.s.add_gaussian_noise(std)
+        self.s.add_gaussian_noise(std, random_state=1)
         self.s.set_noise_variance(std ** 2)
         self.m.fit()
         np.testing.assert_allclose(self.m.red_chisq.data, expected)
@@ -372,8 +368,8 @@ class TestModelScalarVariance:
 
 class TestFitPrintReturnInfo:
     def setup_method(self, method):
-        np.random.seed(1)
-        s = hs.signals.Signal1D(np.random.normal(scale=2, size=10000)).get_histogram()
+        rng = np.random.default_rng(1)
+        s = hs.signals.Signal1D(rng.normal(scale=2, size=10000)).get_histogram()
         s.axes_manager[-1].is_binned = True
         g = hs.model.components1D.Gaussian()
         self.m = s.create_model()
@@ -417,8 +413,8 @@ class TestFitPrintReturnInfo:
 
 class TestFitErrorsAndWarnings:
     def setup_method(self, method):
-        np.random.seed(1)
-        s = hs.signals.Signal1D(np.random.normal(scale=2, size=10000)).get_histogram()
+        rng = np.random.default_rng(1)
+        s = hs.signals.Signal1D(rng.normal(scale=2, size=10000)).get_histogram()
         s.axes_manager[-1].is_binned = True
         g = hs.model.components1D.Gaussian()
         m = s.create_model()
@@ -589,12 +585,9 @@ class TestMultiFitSignalVariance:
             np.arange(100, 300, dtype="float64").reshape((2, 100))
         )
         s = variance.deepcopy()
-        np.random.seed(1)
         std = 10
-        np.random.seed(1)
-        s.add_gaussian_noise(std)
-        np.random.seed(1)
-        s.add_poissonian_noise()
+        s.add_gaussian_noise(std, random_state=1)
+        s.add_poissonian_noise(random_state=1)
         s.set_noise_variance(variance + std ** 2)
         m = s.create_model()
         m.append(hs.model.components1D.Polynomial(order=1))
@@ -604,8 +597,8 @@ class TestMultiFitSignalVariance:
 
     def test_std1_red_chisq(self):
         self.m.multifit()
-        np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109, rtol=TOL)
-        np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727, rtol=TOL)
+        np.testing.assert_allclose(self.m.red_chisq.data[0], 0.788126, rtol=TOL)
+        np.testing.assert_allclose(self.m.red_chisq.data[1], 0.738929, rtol=TOL)
 
 
 def test_missing_analytical_gradient():
@@ -634,10 +627,9 @@ def test_missing_analytical_gradient():
         }
     }
 
-    np.random.seed(1)
     s = hs.signals.Signal1D(np.arange(1000).astype(float), metadata=metadata_dict)
     s.set_signal_type("EELS")
-    s.add_gaussian_noise(10)
+    s.add_gaussian_noise(10, random_state=1)
     m = s.create_model(auto_add_edges=False)
 
     e1 = hs.model.components1D.EELSCLEdge("Zr_L3")

@@ -190,12 +190,12 @@ Signal
   has been removed, use ``show_progressbar`` instead.
 - The deprecated ``comp_label`` argument of the methods :py:meth:`~.signal.MVATools.plot_decomposition_loadings`,
   :py:meth:`~.signal.MVATools.plot_decomposition_factors`, :py:meth:`~.signal.MVATools.plot_bss_loadings`,
-  :py:meth:`~.signal.MVATools.plot_bss_factors`, :py:meth:`~.signal.MVATools.plot_clusters_distances`, 
+  :py:meth:`~.signal.MVATools.plot_bss_factors`, :py:meth:`~.signal.MVATools.plot_clusters_distances`,
   :py:meth:`~.signal.MVATools.plot_cluster_labels` has been removed, use the ``title`` argument instead.
 - The :py:meth:`~.signal.BaseSignal.set_signal_type` now raises an error when passing
   ``None`` to the ``signal_type`` argument. Use ``signal_type=""`` instead.
 - Passing an "iterating over navigation argument" to the :py:meth:`~.signal.BaseSignal.map`
-  method is removed, pass a HyperSpy signal with suitable navigation and signal shape instead.  
+  method is removed, pass a HyperSpy signal with suitable navigation and signal shape instead.
 
 Preferences
 -----------
@@ -206,10 +206,70 @@ Preferences
 .. towncrier release notes start
 
 
+.. _changes_1.7.5:
+
+Hyperspy 1.7.5 (2023-05-04)
+===========================
+
+Bug Fixes
+---------
+
+- Fix plotting boolean array with :py:func:`~.drawing.utils.plot_images` (`#3118 <https://github.com/hyperspy/hyperspy/issues/3118>`_)
+- Fix test with scipy1.11 and update deprecated ``scipy.interpolate.interp2d`` in the test suite (`#3124 <https://github.com/hyperspy/hyperspy/issues/3124>`_)
+- Use intersphinx links to fix links to scikit-image documentation (`#3125 <https://github.com/hyperspy/hyperspy/issues/3125>`_)
+
+
+Enhancements
+------------
+
+- Improve performance of `model.multifit` by avoiding `axes.is_binned` repeated evaluation (`#3126 <https://github.com/hyperspy/hyperspy/issues/3126>`_)
+
+
+Maintenance
+-----------
+
+- Simplify release workflow and replace deprecated ``actions/create-release`` action with ``softprops/action-gh-release``. (`#3117 <https://github.com/hyperspy/hyperspy/issues/3117>`_)
+- Add support for python 3.11 (`#3134 <https://github.com/hyperspy/hyperspy/issues/3134>`_)
+- Pin ``imageio`` to <2.28 (`#3138 <https://github.com/hyperspy/hyperspy/issues/3138>`_)
+
+
+.. _changes_1.7.4:
+
+v1.7.4 (2023-03-16)
+===================
+
+Bug Fixes
+---------
+
+- Fixes an array indexing bug when loading a .sur file format spectra series. (`#3060 <https://github.com/hyperspy/hyperspy/issues/3060>`_)
+- Speed up :py:func:`~.misc.utils.to_numpy` function to avoid slow down when used repeatedly, typically during fitting (`#3109 <https://github.com/hyperspy/hyperspy/issues/3109>`_)
+
+
+Improved Documentation
+----------------------
+
+- Replace ``sphinx.ext.imgmath`` by ``sphinx.ext.mathjax`` to fix the math rendering in the *ReadTheDocs* build (`#3084 <https://github.com/hyperspy/hyperspy/issues/3084>`_)
+
+
+Enhancements
+------------
+
+- Add support for Phenom .elid revision 3 and 4 formats (`#3073 <https://github.com/hyperspy/hyperspy/issues/3073>`_)
+
+
+Maintenance
+-----------
+
+- Add pooch as test dependency, as it is required to use scipy.dataset in latest scipy (1.10) and update plotting test. Fix warning when plotting non-uniform axis (`#3079 <https://github.com/hyperspy/hyperspy/issues/3079>`_)
+- Fix matplotlib 3.7 and scikit-learn 1.4 deprecations (`#3102 <https://github.com/hyperspy/hyperspy/issues/3102>`_)
+- Add support for new pattern to generate random numbers introduced in dask 2023.2.1. Deprecate usage of :py:class:`numpy.random.RandomState` in favour of :py:func:`numpy.random.default_rng`. Bump scipy minimum requirement to 1.4.0. (`#3103 <https://github.com/hyperspy/hyperspy/issues/3103>`_)
+- Fix checking links in documentation for domain, which aren't compatible with sphinx linkcheck (`#3108 <https://github.com/hyperspy/hyperspy/issues/3108>`_)
+
+
 .. _changes_1.7.3:
 
 v1.7.3 (2022-10-29)
-===========================
+===================
 
 Bug Fixes
 ---------
@@ -229,7 +289,7 @@ Maintenance
 .. _changes_1.7.2:
 
 v1.7.2 (2022-09-17)
-===========================
+===================
 
 Bug Fixes
 ---------
@@ -584,7 +644,7 @@ NEW
 
 * Support for the following file formats:
 
-  * :external+rsciio:ref:`sur-format`
+  * :external+rsciio:ref:`digitalsurf-format`
   * :external+rsciio:ref:`elid-format`
   * :external+rsciio:ref:`nexus-format`
   * :external+rsciio:ref:`usid-format`
@@ -1196,7 +1256,7 @@ IO
 * Support for reading certain files without :ref:`loading them to memory <load_to_memory-label>`.
 * :external+rsciio:ref:`Bruker's composite file (bcf) <bruker-format>` reading support.
 * :external+rsciio:ref:`Electron Microscopy Datasets (EMD) <emd-format>` read and write support.
-* :external+rsciio:ref:`SEMPER unf <unf-format>` read and write support.
+* :external+rsciio:ref:`SEMPER unf <semper-format>` read and write support.
 * :external+rsciio:ref:`DENS heat log <dens-format>` read support.
 * :external+rsciio:ref:`NanoMegas blockfile <blockfile-format>` read and write support.
 

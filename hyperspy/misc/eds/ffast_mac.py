@@ -1,5 +1,5 @@
 # Mass absoption coefficient Chantler2005
-# See https://physics.nist.gov/ffast
+# See https://dx.doi.org/10.18434/T4HS32
 # Chantler, C.T., Olsen, K., Dragoset, R.A., Kishore, A.R., Kotochigova,
 # S.A., and Zucker, D.S. (2005), X-Ray Form Factor, Attenuation and
 # Scattering Tables (version 2.1).

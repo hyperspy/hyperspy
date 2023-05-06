@@ -17,8 +17,6 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import math
-from packaging.version import Version
-import sympy
 
 from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
@@ -30,7 +28,6 @@ sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
 class Voigt(Expression):
-
     r"""Voigt component.
 
     Symmetric peak shape based on the convolution of a Lorentzian and Normal
@@ -86,14 +83,18 @@ class Voigt(Expression):
     doi:10.1107/S0021889886089999
     """
 
-    def __init__(self, centre=10., area=1., gamma=0.2, sigma=0.1,
-                 module=["numpy", "scipy"], **kwargs):
+    def __init__(
+        self,
+        centre=10.0,
+        area=1.0,
+        gamma=0.2,
+        sigma=0.1,
+        module=["numpy", "scipy"],
+        **kwargs
+    ):
         # Not to break scripts once we remove the legacy Voigt
         if "legacy" in kwargs:
             del kwargs["legacy"]
-        if Version(sympy.__version__) < Version("1.3"): # pragma: no cover
-            raise ImportError("The `Voigt` component requires "
-                              "SymPy >= 1.3")
         # We use `gamma_` internally to workaround the use of the `gamma`
         # function in sympy
         super().__init__(
@@ -113,9 +114,9 @@ class Voigt(Expression):
         )
 
         # Boundaries
-        self.area.bmin = 0.
-        self.gamma.bmin = 0.
-        self.sigma.bmin = 0.
+        self.area.bmin = 0.0
+        self.gamma.bmin = 0.0
+        self.sigma.bmin = 0.0
 
         self.isbackground = False
         self.convolved = True
@@ -161,8 +162,9 @@ class Voigt(Expression):
         """
         super()._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
-                                                              only_current)
+        centre, height, sigma = _estimate_gaussian_parameters(
+            signal, x1, x2, only_current
+        )
         scaling_factor = _get_scaling_factor(signal, axis, centre)
 
         if only_current is True:
@@ -175,14 +177,14 @@ class Voigt(Expression):
         else:
             if self.area.map is None:
                 self._create_arrays()
-            self.area.map['values'][:] = height * sigma * sqrt2pi
+            self.area.map["values"][:] = height * sigma * sqrt2pi
             if axis.is_binned:
-                self.area.map['values'][:] /= scaling_factor
-            self.area.map['is_set'][:] = True
-            self.sigma.map['values'][:] = sigma
-            self.sigma.map['is_set'][:] = True
-            self.centre.map['values'][:] = centre
-            self.centre.map['is_set'][:] = True
+                self.area.map["values"][:] /= scaling_factor
+            self.area.map["is_set"][:] = True
+            self.sigma.map["values"][:] = sigma
+            self.sigma.map["is_set"][:] = True
+            self.centre.map["values"][:] = centre
+            self.centre.map["is_set"][:] = True
             self.fetch_stored_values()
             return True
 

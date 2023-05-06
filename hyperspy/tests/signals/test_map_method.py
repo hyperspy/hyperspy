@@ -50,7 +50,9 @@ class TestSignal2D:
               [14.15585247, 14.7337787, 15.31170493]]]))
 
     @pytest.mark.parametrize('parallel', [True, False])
-    def test_constant_sigma_navdim0(self, parallel):
+    def test_constant_sigma_signal_navdim0(self, parallel):
+        # navigation dimension of signal is 0
+        # sigma is constant
         s = self.im.inav[0]
         s.map(gaussian_filter, sigma=1, parallel=parallel, ragged=self.ragged, inplace= not self.ragged)
         np.testing.assert_allclose(s.data, np.array(
@@ -62,25 +64,32 @@ class TestSignal2D:
     def test_variable_sigma(self, parallel):
         s = self.im
 
-        sigmas = np.array([0, 1])
+        sigmas = hs.signals.BaseSignal(np.array([0, 1])).T
+        s.map(gaussian_filter, sigma=sigmas, parallel=parallel, ragged=self.ragged)
 
-        s.map(gaussian_filter,
-              sigma=sigmas, parallel=parallel, ragged=self.ragged)
-        np.testing.assert_allclose(s.data, np.array(
-            [[[0.42207377, 1., 1.57792623],
-              [3.42207377, 4., 4.57792623],
-              [6.42207377, 7., 7.57792623]],
-
-             [[9.42207377, 10., 10.57792623],
-              [12.42207377, 13., 13.57792623],
-              [15.42207377, 16., 16.57792623]]]))
+        # For inav[0], sigma is 0, data unchanged
+        np.testing.assert_allclose(s.inav[0].data, np.arange(9).reshape((3, 3)))
+        # For inav[1], sigma is 1
+        np.testing.assert_allclose(s.inav[1].data, np.array(
+            [[10.68829507, 11.2662213 , 11.84414753],
+             [12.42207377, 13.        , 13.57792623],
+             [14.15585247, 14.7337787 , 15.31170493]]))
 
     @pytest.mark.parametrize('parallel', [True, False])
     def test_variable_sigma_navdim0(self, parallel):
+        # navigation dimension of signal is 1, length 2
+        # navigation dimension of sigmas is 1, length 1
+        # raise ValueError because of navigation dimension mismatch
         s = self.im
 
-        sigma = 1
-        s.map(gaussian_filter, sigma=sigma, parallel=parallel,
+        sigmas = hs.signals.BaseSignal(np.array([[0], ])).T
+        with pytest.raises(ValueError):
+            s.map(gaussian_filter, sigma=sigmas, parallel=parallel,
+                  ragged=self.ragged)
+
+        # sigmas is a number
+        sigmas = 1
+        s.map(gaussian_filter, sigma=sigmas, parallel=parallel,
               ragged=self.ragged)
         np.testing.assert_allclose(s.data, np.array(
             [[[1.68829507, 2.2662213, 2.84414753],

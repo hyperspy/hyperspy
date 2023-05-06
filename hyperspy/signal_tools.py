@@ -42,6 +42,7 @@ from hyperspy.misc.label_position import SpectrumLabelPosition
 from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
 from hyperspy.drawing.signal1d import Signal1DFigure
 from hyperspy.misc.array_tools import numba_histogram
+from hyperspy.misc.math_tools import check_random_state
 
 
 _logger = logging.getLogger(__name__)
@@ -1712,7 +1713,7 @@ class SpikesRemoval:
 
     def __init__(self, signal, navigation_mask=None, signal_mask=None,
                  threshold='auto', default_spike_width=5, add_noise=True,
-                 max_num_bins=1000):
+                 max_num_bins=1000, random_state=None):
         self.ss_left_value = np.nan
         self.ss_right_value = np.nan
         self.default_spike_width = default_spike_width
@@ -1752,6 +1753,7 @@ class SpikesRemoval:
         self.threshold = threshold
         md = self.signal.metadata
         from hyperspy.signal import BaseSignal
+        self._rng = check_random_state(random_state)
 
         if "Signal.Noise_properties" in md:
             if "Signal.Noise_properties.variance" in md:
@@ -1856,17 +1858,17 @@ class SpikesRemoval:
         # Add noise
         if self.add_noise is True:
             if self.noise_type == "white":
-                data[left:right] += np.random.normal(
+                data[left:right] += self._rng.normal(
                     scale=np.sqrt(self.noise_variance),
                     size=right - left)
             elif self.noise_type == "heteroscedastic":
                 noise_variance = self.noise_variance(
                     axes_manager=self.signal.axes_manager)[left:right]
-                noise = [np.random.normal(scale=np.sqrt(item))
+                noise = [self._rng.normal(scale=np.sqrt(item))
                          for item in noise_variance]
                 data[left:right] += noise
             else:
-                data[left:right] = np.random.poisson(
+                data[left:right] = self._rng.poisson(
                     np.clip(data[left:right], 0, np.inf))
 
         return data
@@ -2283,7 +2285,7 @@ class PeaksFinder2D(t.HasTraits):
             am.events.indices_changed.disconnect(self._update_peak_finding)
 
     def set_random_navigation_position(self):
-        index = np.random.randint(0, self.signal.axes_manager._max_index)
+        index = self._rng.integers(0, self.signal.axes_manager._max_index)
         self.signal.axes_manager.indices = np.unravel_index(index,
             tuple(self.signal.axes_manager._navigation_shape_in_array))[::-1]
 

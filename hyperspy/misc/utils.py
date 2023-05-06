@@ -272,7 +272,7 @@ class DictionaryTreeBrowser:
         for key, value in dictionary.items():
             if key == "_double_lines":
                 value = double_lines
-            self.__setattr__(key, value)
+            self._setattr(key, value, keep_existing=True)
 
     def process_lazy_attributes(self):
         """Run the DictionaryTreeBrowser machinery for the lazy attributes."""
@@ -300,7 +300,8 @@ class DictionaryTreeBrowser:
         filename : str
             The name of the file without the extension that is
             txt by default
-        encoding : valid encoding str
+        encoding : str
+            The encoding to be used.
 
         """
         self.process_lazy_attributes()
@@ -464,6 +465,27 @@ class DictionaryTreeBrowser:
             return item
 
     def __setattr__(self, key, value):
+        self._setattr(key, value, keep_existing=False)
+
+    def _setattr(self, key, value, keep_existing=False):
+        """
+        Set the value of the given attribute `key`.
+
+        Parameters
+        ----------
+        key : str
+            The key attribute to be set.
+        value : object
+            The value to assign to the given `key` attribute.
+        keep_existing : bool, optional
+            If value is of dictionary type and the node already exists, keep
+            existing leaf of the node being set. The default is False.
+
+        Returns
+        -------
+        None.
+
+        """
         if key in ["_double_lines", "_lazy_attributes"]:
             super().__setattr__(key, value)
             return
@@ -475,7 +497,7 @@ class DictionaryTreeBrowser:
             value = BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
-            if slugified_key in self.__dict__.keys():
+            if slugified_key in self.__dict__.keys() and keep_existing:
                 self.__dict__[slugified_key]["_dtb_value_"].add_dictionary(
                     value, double_lines=self._double_lines
                 )
@@ -740,13 +762,15 @@ class DictionaryTreeBrowser:
 
     def set_item(self, item_path, value):
         """Given the path and value, create the missing nodes in
-        the path and assign to the last one the value
+        the path and assign the given value.
 
         Parameters
         ----------
-        item_path : Str
+        item_path : str
             A string describing the path with each item separated by a
-            full stops (periods)
+            full stop (periods)
+        value : object
+            The value to assign to the given path.
 
         Examples
         --------
@@ -1338,8 +1362,7 @@ def process_function_blockwise(data,
     chunk_nav_shape = tuple([data.shape[i] for i in sorted(nav_indexes)])
     output_shape = chunk_nav_shape + tuple(output_signal_size)
     # Pre-allocating the output array
-    kw = get_numpy_kwargs(data)
-    output_array = np.empty(output_shape, dtype=dtype, **kw)
+    output_array = np.empty(output_shape, dtype=dtype, like=data)
     if len(args) == 0:
         # There aren't any BaseSignals for iterating
         for nav_index in np.ndindex(chunk_nav_shape):
@@ -1579,17 +1602,21 @@ def to_numpy(array):
 
     Raises
     ------
-    ValueError
-        If the provided array is a dask array
-
+    TypeError
+        When the input array type is not supported.
     """
-    if isinstance(array, da.Array):
-        raise LazyCupyConversion
-    if is_cupy_array(array):
+    if isinstance(array, np.ndarray):
+        return array
+    elif isinstance(array, da.Array):
+        raise TypeError(
+            "Implicit conversion of dask array to numpy array is not "
+            "supported, conversion needs to be done explicitely."
+            )
+    elif is_cupy_array(array):  # pragma: no cover
         import cupy as cp
-        array = cp.asnumpy(array)
-
-    return array
+        return cp.asnumpy(array)
+    else:
+        raise TypeError("Unsupported array type.")
 
 
 def get_array_module(array):
@@ -1615,21 +1642,3 @@ def get_array_module(array):
         pass
 
     return module
-
-
-def get_numpy_kwargs(array):
-    """
-    Convenience funtion to return a dictionary containing the `like` keyword
-    if numpy>=1.20.
-
-    Note
-    ----
-    `like` keyword is an experimental feature introduced in numpy 1.20 and is
-    pending on acceptance of NEP 35
-
-    """
-    kw = {}
-    if Version(np.__version__) >= Version("1.20"):
-         kw['like'] = array
-
-    return kw

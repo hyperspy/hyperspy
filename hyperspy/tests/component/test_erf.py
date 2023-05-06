@@ -16,17 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-
-from packaging.version import Version
-
-import pytest
-import sympy
 import numpy as np
 
 from hyperspy.components1d import Erf
 
-pytestmark = pytest.mark.skipif(Version(sympy.__version__) < Version("1.3"),
-                                reason="This test requires SymPy >= 1.3")
 
 def test_function():
     g = Erf()

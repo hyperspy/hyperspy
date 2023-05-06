@@ -23,15 +23,12 @@ import os
 import tempfile
 import warnings
 from contextlib import contextmanager
-from packaging.version import Version
 from functools import partial
 
 import dill
 import numpy as np
-import dask
 import dask.array as da
 from dask.diagnostics import ProgressBar
-import scipy
 import scipy.odr as odr
 from IPython.display import display, display_pretty
 from scipy.linalg import svd
@@ -253,10 +250,21 @@ class BaseModel(list):
                 The Model that the event belongs to
             """, arguments=['obj'])
 
+        # The private _binned attribute is created to store temporarily
+        # axes.is_binned or not. This avoids evaluating it during call of
+        # the model function, which is detrimental to the performances of
+        # multifit(). Setting it to None ensures that the existing behaviour
+        # is preserved.
+        self._binned = None
+
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
         # raise an exception when using windows.connect
         return id(self)
+
+    def __call__(self, non_convolved=False, onlyactive=False, component_list=None, binned=None):
+        """Evaluate the model numerically. Implementation requested in all sub-classes"""
+        raise NotImplementedError
 
     def store(self, name=None):
         """Stores current model in the original signal
@@ -892,7 +900,7 @@ class BaseModel(list):
     def _model_function(self, param):
         self.p0 = param
         self._fetch_values_from_p0()
-        to_return = self.__call__(non_convolved=False, onlyactive=True)
+        to_return = self.__call__(non_convolved=False, onlyactive=True, binned=self._binned)
         return to_return
 
     @property
@@ -1068,12 +1076,6 @@ class BaseModel(list):
                 **kw)
             coefficient_array = result.T
 
-            if self.signal._lazy and not only_current and (
-                    Version(dask.__version__) < Version("2020.12.0")):
-                # Dask pre 2020.12 didn't support residuals on 2D input,
-                # we calculate them later.
-                residual = None  # pragma: no cover
-
         elif optimizer == "ridge_regression":
             if self.signal._lazy:
                 raise ValueError(
@@ -1171,7 +1173,7 @@ class BaseModel(list):
 
     def _calculate_chisq(self):
         variance = self._get_variance()
-        d = self(onlyactive=True).ravel() - self.signal(as_numpy=True)[
+        d = self(onlyactive=True, binned=self._binned).ravel() - self.signal(as_numpy=True)[
             np.where(self.channel_switches)]
         d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
@@ -1294,9 +1296,6 @@ class BaseModel(list):
         }
 
         if optimizer in ["Dual Annealing", "SHGO"]:
-            if Version(scipy.__version__) < Version("1.2.0"):
-                raise ValueError(f"`optimizer='{optimizer}'` requires scipy >= 1.2.0")
-
             from scipy.optimize import dual_annealing, shgo
 
             _supported_global.update({"Dual Annealing": dual_annealing, "SHGO": shgo})
@@ -1767,6 +1766,14 @@ class BaseModel(list):
         maxval = self.axes_manager._get_iterpath_size(masked_elements)
         show_progressbar = show_progressbar and (maxval != 0)
 
+        # The _binned attribute is evaluated only once in the multifit procedure
+        # and stored in an instance variable
+        if self.axes_manager.signal_dimension == 1:
+            self._binned = self.axes_manager[-1].is_binned
+        else:
+            # binning Not Implemented for Model2D
+            self._binned = False
+
         if linear_fitting:
             # Check that all non-free parameters don't change accross
             # the navigation dimension. If this is the case, we can fit the
@@ -1858,6 +1865,10 @@ class BaseModel(list):
                     para.map['std'] = para.std
                     para.map['is_set'] = True
 
+                # _binned attribute is re-set to None before early return so the
+                # behaviour of future fit() calls is not altered. In future
+                # implementation, a more elegant implementation could be found
+                self._binned = None
                 return
 
         i = 0
@@ -1896,6 +1907,11 @@ class BaseModel(list):
         if autosave is True:
             _logger.info(f"Deleting temporary file: {autosave_fn}.npz")
             os.remove(autosave_fn + ".npz")
+
+        #_binned attribute is re-set to None so the behaviour of future fit() calls
+        #is not altered. In future implementation, a more elegant implementation
+        # could be found
+        self._binned = None
 
     multifit.__doc__ %= (SHOW_PROGRESSBAR_ARG)
 

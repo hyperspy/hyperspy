@@ -32,11 +32,8 @@ from hyperspy.signals import Signal1D, Signal2D
 
 
 def test_fit_binned():
-    np.random.seed(1)
-    s = Signal1D(
-        np.random.normal(
-            scale=2,
-            size=10000)).get_histogram()
+    rng = np.random.default_rng(1)
+    s = Signal1D(rng.normal(scale=2, size=10000)).get_histogram()
     s.axes_manager[-1].is_binned = True
     g = Gaussian()
     m = s.create_model()
@@ -63,9 +60,9 @@ def test_fit_binned():
 class TestMultiFitLinear:
 
     def setup_method(self):
-        np.random.seed(1)
-        x = np.random.random(30)
-        shape = np.random.random((2, 3, 1))
+        rng = np.random.default_rng(1)
+        x = rng.random(30)
+        shape = rng.random((2, 3, 1))
         X = shape * x
         s = Signal1D(X)
         m = s.create_model()
@@ -307,7 +304,7 @@ class TestLinearEELSFitting:
         m.fit(optimizer='lm')
         lm = m.as_signal()
         diff = linear - lm
-        np.testing.assert_allclose(diff.data.sum(), 0.0, atol=3E-7)
+        np.testing.assert_allclose(diff.data.sum(), 0.0, atol=1E-6)
 
 
 class TestWarningSlowMultifit:
@@ -565,7 +562,8 @@ class TestLinearFitTwins:
 
 
 def test_compute_constant_term():
-    s = Signal1D(np.random.random(10))
+    rng = np.random.default_rng(1)
+    s = Signal1D(rng.random(10))
     m = s.create_model()
     lin = Expression("a*x + b", name='linear')
     m.append(lin)
@@ -705,7 +703,7 @@ def test_non_uniform_binned():
 
 
 def test_navigation_shape_signal1D():
-    np.random.seed(seed=10)
+    rng = np.random.default_rng(1)
     s = hs.signals.Signal1D(np.zeros((2, 3, 200)))
     g = hs.model.components1D.Gaussian()
     g.sigma.value = 10
@@ -713,7 +711,7 @@ def test_navigation_shape_signal1D():
     g.A.value = 1000
     m = s.create_model()
     m.append(g)
-    g.A.map['values'] = np.random.randint(low=500, high=1500, size=(2, 3))
+    g.A.map['values'] = rng.integers(low=500, high=1500, size=(2, 3))
     g.A.map['is_set'] = True
     s.data = m.as_signal().data
     s.add_gaussian_noise(0.5)
@@ -726,7 +724,7 @@ def test_navigation_shape_signal1D():
 
 
 def test_navigation_shape_signal2D():
-    np.random.seed(seed=10)
+    rng = np.random.default_rng(10)
     s = hs.signals.Signal1D(np.zeros((2, 3, 200)))
     g = hs.model.components1D.Gaussian()
     g.sigma.value = 10
@@ -734,7 +732,7 @@ def test_navigation_shape_signal2D():
     g.A.value = 1000
     m = s.create_model()
     m.append(g)
-    g.A.map['values'] = np.random.randint(low=500, high=1500, size=(2, 3))
+    g.A.map['values'] = rng.integers(low=500, high=1500, size=(2, 3))
     g.A.map['is_set'] = True
     s.data = m.as_signal().data
     s.add_gaussian_noise(0.5)
