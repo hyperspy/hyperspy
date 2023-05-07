@@ -1,0 +1,1 @@
+IPython and IParallel are now optional dependencies
