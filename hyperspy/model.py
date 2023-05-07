@@ -1732,10 +1732,10 @@ class BaseModel(list):
                 manner instead of beginning each new row at the first index.
                 Works for n-dimensional navigation space, not just 2D.
             If None:
-                Use the value of :py:attr:`~axes.AxesManager.iterpath`.
+                Use the value of :py:attr:`~.axes.AxesManager.iterpath`.
         **kwargs : keyword arguments
             Any extra keyword argument will be passed to the fit method.
-            See the documentation for :py:meth:`~hyperspy.model.BaseModel.fit`
+            See the documentation for :py:meth:`~.model.BaseModel.fit`
             for a list of valid arguments.
 
         Returns
@@ -1744,7 +1744,7 @@ class BaseModel(list):
 
         See Also
         --------
-        * :py:meth:`~hyperspy.model.BaseModel.fit`
+        * :py:meth:`~.model.BaseModel.fit`
 
         """
         if show_progressbar is None:

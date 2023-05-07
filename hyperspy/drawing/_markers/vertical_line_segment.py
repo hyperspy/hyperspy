@@ -45,14 +45,14 @@ class VerticalLineSegment(MarkerBase):
     Example
     -------
     >>> im = hs.signals.Signal2D(np.zeros((100, 100)))
-    >>> m = hs.plot.markers.vertical_line_segment(
+    >>> m = hs.plot.markers.VerticalLineSegment(
     >>>     x=20, y1=30, y2=70, linewidth=4, color='red', linestyle='dotted')
     >>> im.add_marker(m)
 
     Add a marker permanently to a marker
 
     >>> im = hs.signals.Signal2D(np.zeros((60, 60)))
-    >>> m = hs.plot.markers.vertical_line_segment(x=10, y1=20, y2=50)
+    >>> m = hs.plot.markers.VerticalLineSegment(x=10, y1=20, y2=50)
     >>> im.add_marker(m, permanent=True)
     """
 

@@ -46,7 +46,7 @@ class Point(MarkerBase):
     Add a marker with the same position for all navigation positions
 
     >>> im = hs.signals.Signal2D(np.arange(1000).reshape([10, 10, 10]))
-    >>> m = hs.plot.markers.point(x=1, y=2, color='C0')
+    >>> m = hs.plot.markers.Point(x=1, y=2, color='C0')
     >>> s.add_marker(m)
 
     Add a marker, the position of which depends on the navigation positions
@@ -54,13 +54,13 @@ class Point(MarkerBase):
     >>> x_position = np.arange(10)
     >>> y_position = np.arange(10) / 2
 
-    >>> m = hs.plot.markers.point(x=x_position, y=y_position, color='C1')
+    >>> m = hs.plot.markers.Point(x=x_position, y=y_position, color='C1')
     >>> s.add_marker(m)
 
     Add a marker permanently; the marker is saved in the metadata
 
     >>> im = hs.signals.Signal2D(np.random.random([10, 50, 50]))
-    >>> m = hs.plot.markers.point(10, 30, color='blue', size=50)
+    >>> m = hs.plot.markers.Point(10, 30, color='blue', size=50)
     >>> im.add_marker(m, permanent=True)
     """
 

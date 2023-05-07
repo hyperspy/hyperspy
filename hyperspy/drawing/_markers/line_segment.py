@@ -46,7 +46,7 @@ class LineSegment(MarkerBase):
     Example
     -------
     >>> im = hs.signals.Signal2D(np.zeros((100, 100)))
-    >>> m = hs.plot.markers.line_segment(
+    >>> m = hs.plot.markers.LineSegment(
     >>>     x1=20, x2=70, y1=20, y2=70,
     >>>     linewidth=4, color='red', linestyle='dotted')
     >>> im.add_marker(m)
@@ -54,7 +54,7 @@ class LineSegment(MarkerBase):
     Permanently adding a marker to a signal
 
     >>> im = hs.signals.Signal2D(np.zeros((100, 100)))
-    >>> m = hs.plot.markers.line_segment(
+    >>> m = hs.plot.markers.LineSegment(
     >>>     x1=10, x2=30, y1=50, y2=70,
     >>>     linewidth=4, color='red', linestyle='dotted')
     >>> im.add_marker(m, permanent=True)
