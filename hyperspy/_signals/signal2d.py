@@ -53,7 +53,7 @@ from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.utils.peakfinders2D import (
         find_local_max, find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
         find_peaks_stat, find_peaks_log, find_peaks_dog, find_peaks_xc,
-        _get_intensity)
+        _get_peak_position_and_intensity)
 
 
 _logger = logging.getLogger(__name__)
@@ -1022,7 +1022,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                                       "implemented. See documentation for "
                                       "available implementations.")
         if get_intensity:
-            method_func = partial(_get_intensity, f=method_func, )
+            method_func = partial(_get_peak_position_and_intensity, f=method_func, )
         if interactive:
             # Create a peaks signal with the same navigation shape as a
             # placeholder for the output
