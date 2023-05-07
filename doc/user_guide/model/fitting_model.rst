@@ -93,7 +93,7 @@ noise to it:
 
 .. code-block:: python
 
-    >>> s = hs.signals.Signal1D(np.arange(100, 300))
+    >>> s = hs.signals.Signal1D(np.arange(100, 300, dtype='float32')))
     >>> s.add_gaussian_noise(std=100)
 
 To fit it, we create a model consisting of a
@@ -112,13 +112,13 @@ estimated standard deviation are stored in the following line attributes:
 
 .. code-block:: python
 
-    >>> line.a.value
+    >>> line.a0.value
     0.9924615648843765
-    >>> line.b.value
+    >>> line.a1.value
     103.67507406125888
-    >>> line.a.std
+    >>> line.a0.std
     0.11771053738516088
-    >>> line.b.std
+    >>> line.a1.std
     13.541061301257537
 
 .. warning::
@@ -149,10 +149,14 @@ Gaussian noise, and proceed to fit as in the previous example.
     >>> line  = hs.model.components1D.Polynomial(order=1)
     >>> m.append(line)
     >>> m.fit()
-    >>> line.coefficients.value
-    (1.0052331707848698, -1.0723588390873573)
-    >>> line.coefficients.std
-    (0.0081710549764721901, 1.4117294994070277)
+    >>> line.a0.value
+    -0.7262000522775925
+    >>> line.a1.value
+    1.0086925334859176
+    >>> line.a0.std
+    1.4141418570079
+    >>> line.a1.std
+    0.008185019194679451
 
 Because the noise is heteroscedastic, the least squares optimizer estimation is
 biased. A more accurate result can be obtained with weighted least squares,
@@ -162,13 +166,19 @@ in most cases where there are a sufficient number of counts per pixel.
 
 .. code-block:: python
 
-   >>> exp_val = hs.signals.Signal1D(np.arange(300))
-   >>> s.estimate_poissonian_noise_variance(expected_value=exp_val)
-   >>> m.fit()
-   >>> line.coefficients.value
-   (1.0004224896604759, -0.46982916592391377)
-   >>> line.coefficients.std
-   (0.0055752036447948173, 0.46950832982673557)
+    >>> exp_val = hs.signals.Signal1D(np.arange(300)+1)
+    >>> s.estimate_poissonian_noise_variance(expected_value=exp_val)
+    >>> line.estimate_parameters(s,10,250)
+    >>> m.fit()
+    >>> line.a0.value
+    -0.6666008600519397
+    >>> line.a1.value
+    1.017145603577098
+    >>> line.a0.std
+    0.8681360488613021
+    >>> line.a1.std
+    0.010308732161043038
+
 
 .. warning::
 
@@ -183,8 +193,10 @@ in most cases where there are a sufficient number of counts per pixel.
 
         >>> m.signal.set_noise_variance(None)
         >>> m.fit()  # This will now be an unweighted fit
-        >>> line.coefficients.value
-        (1.0052331707848698, -1.0723588390873573)
+        >>> line.a0.value
+        -1.9711403542163477
+        >>> line.a1.value
+        1.0258716193502546
 
 Poisson maximum likelihood estimation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -198,8 +210,10 @@ such as Nelder-Mead or L-BFGS-B:
 .. code-block:: python
 
    >>> m.fit(optimizer="Nelder-Mead", loss_function="ML-poisson")
-   >>> line.coefficients.value
-   (1.0030718094185611, -0.63590210946134107)
+   >>> line.a0.value
+   0.00025567973144090695
+   >>> line.a1.value
+   1.0036866523183754
 
 Estimation of the parameter errors is not currently supported for Poisson
 maximum likelihood estimation.
