@@ -154,6 +154,21 @@ class TestFindPeaks2D:
         else:
             peaks.data[first_ind]
             assert peaks.data[first_ind].shape[-1] == 2
+        assert peaks.metadata.Peaks.signal_axes[0].scale == dataset.axes_manager.signal_axes[0].scale
+        assert peaks.metadata.Peaks.signal_axes[1].scale == dataset.axes_manager.signal_axes[1].scale
+
+        assert peaks.metadata.Peaks.signal_axes[0].name == dataset.axes_manager.signal_axes[0].name
+        assert peaks.metadata.Peaks.signal_axes[1].name == dataset.axes_manager.signal_axes[1].name
+
+        assert peaks.metadata.Peaks.signal_axes[0].offset == dataset.axes_manager.signal_axes[0].offset
+        assert peaks.metadata.Peaks.signal_axes[1].offset == dataset.axes_manager.signal_axes[1].offset
+
+        dataset.axes_manager.signal_axes[0].scale =25
+        assert peaks.metadata.Peaks.signal_axes[0].scale != dataset.axes_manager.signal_axes[0].scale
+        dataset.axes_manager.signal_axes[0].scale =1
+
+
+
 
     @pytest.mark.parametrize('parallel', [True, False])
     def test_ordering_results(self, parallel):
