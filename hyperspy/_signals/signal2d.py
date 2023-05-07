@@ -22,6 +22,7 @@ import numpy.ma as ma
 import dask.array as da
 import logging
 import warnings
+from copy import deepcopy
 
 from functools import partial
 
@@ -1040,8 +1041,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                              parallel=parallel, inplace=False, ragged=True,
                              max_workers=max_workers, **kwargs)
             peaks.metadata.add_node("Peaks") # add information about the signal Axes
-        from copy import deepcopy
-        peaks.metadata.Peaks.signal_axes = tuple([deepcopy(s) for s in self.axes_manager.signal_axes])
+            peaks.metadata.Peaks.signal_axes = tuple([deepcopy(s) for s in self.axes_manager.signal_axes])
         return peaks
 
     find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
