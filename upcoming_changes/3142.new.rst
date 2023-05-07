@@ -1,0 +1,1 @@
+Changes to `Signal2D.find_peaks`  1.Lazy signals return lazy peaks 2. `get_intensity` kwarg added to get the intensity for some peaks 3.Signal axes preserved in metadata.
