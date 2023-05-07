@@ -969,9 +969,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
             If True, the method parameter can be adjusted interactively.
             If False, the results will be returned.
         current_index : bool
-            if True, the computation will be performed for the current index.
+            If True, the computation will be performed for the current index.
         get_intensity : bool
-            if True, the value of the peak will be returned as a separate column.
+            If True, the intensity of the peak will be returned as an additional column,
+            the last one.
         %s
         %s
         %s
