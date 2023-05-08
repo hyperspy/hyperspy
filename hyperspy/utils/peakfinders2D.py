@@ -53,9 +53,9 @@ def _get_peak_position_and_intensity(X, f, **kwargs):
     if np.any(np.isnan(peaks)): #handle no peaks
         return np.array([[np.nan, np.nan,np.nan]])
     else:
-        rounded_peaks = np.round(peaks).astype(int)
-        maxima = tuple([tuple(rounded_peaks[:,d]) for d in range(2)])
-        intensity = X[maxima]
+        peaks_indices = np.round(peaks).astype(int)
+        intensity = X[peaks_indices[:, 0], peaks_indices[:, 1]]
+
         return np.concatenate([peaks, intensity[:, np.newaxis]], axis=1)
 
 
