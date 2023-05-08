@@ -18,10 +18,10 @@
 
 import numpy as np
 import dask.array as da
-import matplotlib.pyplot as plt
+import matplotlib
 from hyperspy.events import Event, Events
 import logging
-
+from packaging.version import Version
 _logger = logging.getLogger(__name__)
 
 
@@ -117,11 +117,14 @@ class MarkerCollection(object):
 
     def initialize_collection(self):
         if self.collection_class is None:
-            self.collection = self.ax.scatter([1],[1],)
-            self.collection.set(**self.get_data_position())
+            self.collection = self.ax.scatter([],[],
+                                              **self.get_data_position(),)
         else:
             self.collection = self.collection_class(**self.get_data_position(),)
-        self.collection.set_offset_transform(self.ax.transData)
+        if Version(matplotlib.__version__) < Version("3.5.0"):
+            self.collection._transOffset= self.ax.transData
+        else:
+            self.collection.set_offset_transform(self.ax.transData)
 
     def plot(self, render_figure=True):
         """
