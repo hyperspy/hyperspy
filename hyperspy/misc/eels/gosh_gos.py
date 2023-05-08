@@ -17,11 +17,11 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
-from pathlib import Path
 
-import numpy as np
-from scipy import constants
 import h5py
+import numpy as np
+import pooch
+from scipy import constants
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.eels.base_gos import TabulatedGOS
@@ -84,17 +84,11 @@ class GoshGOS(TabulatedGOS):
         element = self.element
         subshell = self.subshell
 
-        # Check if the specified data file exists, otherwise
-        # exit.
-        gos_file = Path(preferences.EELS.eels_gosh_database_path)
-
-        if not gos_file.is_file():
-            raise FileNotFoundError(
-                "The GOSH Parametrized GOS database file not "
-                f"found in {gos_file}. Please define a valid "
-                "location for the files in the preferences as "
-                "`preferences.EELS.eels_gosh_database_path`."
-            )
+        gos_file = pooch.retrieve(
+            url="doi:10.5281/zenodo.7645765/Segger_Guzzinati_Kohl_1.5.0.gosh",
+            known_hash="md5:7fee8891c147a4f769668403b54c529b",
+            progressbar=preferences.General.show_progressbar,
+        )
 
         def edge_not_in_database():
             raise KeyError(

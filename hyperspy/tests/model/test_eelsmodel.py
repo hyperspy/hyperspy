@@ -21,42 +21,9 @@ import contextlib
 import numpy as np
 import pytest
 
-import os
-import tempfile
-import hashlib
-import requests
 
 import hyperspy.api as hs
-from hyperspy.defaults_parser import preferences
 from hyperspy.decorators import lazifyTestClass
-
-MY_PATH = os.path.dirname(__file__)
-GOSHF = os.path.join(MY_PATH, "Segger_Guzzinati_Kohl_1.5.0.gosh")
-TMP_DIR = tempfile.TemporaryDirectory()
-TEST_FILES_OK = os.path.isfile(GOSHF)
-REASON = ""
-MD5SUM = "7fee8891c147a4f769668403b54c529b"
-
-# The GOS archive is not included in hyperspy due
-# to the large size. Therefore they are downloaded
-# on the fly from Zenodo, until the download can be
-# included in hyperspy in a more systematic way.
-
-if not TEST_FILES_OK:
-    try:
-        r = requests.get(
-            "https://zenodo.org/record/7645765/files/Segger_Guzzinati_Kohl_1.5.0.gos?download=1")
-
-        MD5SUM_GOT = hashlib.md5(r.content).hexdigest()
-        if MD5SUM_GOT == MD5SUM:
-            with open(GOSHF, 'wb') as f:
-                f.write(r.content)
-            TEST_FILES_OK = True
-        else:
-            REASON = "wrong md5sum of downloaded file. Expected: %s, got: %s" % MD5SUM, MD5SUM_GOT
-    except BaseException as e:
-        REASON = "download of gosh archive failed: %s" % e
-
 
 
 # Dask does not always work nicely with np.errstate,
@@ -95,10 +62,8 @@ class TestCreateEELSModel:
     def test_gos(self):
         m = self.s.create_model(auto_add_edges=True, GOS="hydrogenic")
         assert m["B_K"].GOS._name == "hydrogenic"
-        if TEST_FILES_OK:
-            preferences.EELS.eels_gosh_database_path = GOSHF
-            m = self.s.create_model(auto_add_edges=True, GOS="gosh")
-            assert m["B_K"].GOS._name == "gosh"
+        m = self.s.create_model(auto_add_edges=True, GOS="gosh")
+        assert m["B_K"].GOS._name == "gosh"
 
     def test_auto_add_background_true(self):
         m = self.s.create_model(auto_background=True)
