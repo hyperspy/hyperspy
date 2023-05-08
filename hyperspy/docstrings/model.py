@@ -100,3 +100,34 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
             Any extra keyword argument will be passed to the chosen
             optimizer. For more information, read the docstring of the
             optimizer of your choice in :py:mod:`scipy.optimize`."""
+
+GOS_PARAMETER = \
+    """GOS : 'hydrogenic', 'gosh', 'Hartree-Slater' or None
+            The GOS to use. If None, select a GOS depending availability and
+            following the order
+
+            #. 'gosh' (if available)
+            #. Hartree-Slater' (if available)
+            #. 'hydrogenic' (always available)"""
+
+
+EELSMODEL_PARAMETERS = \
+    """ll : None or EELSSpectrum
+            If an EELSSpectrum is provided, it will be assumed that it is
+            a low-loss EELS spectrum, and it will be used to simulate the
+            effect of multiple scattering by convolving it with the EELS
+            spectrum.
+        auto_background : bool
+            If True, and if spectrum is an EELS instance adds automatically
+            a powerlaw to the model and estimate the parameters by the
+            two-area method.
+        auto_add_edges : bool
+            If True, and if spectrum is an EELS instance, it will automatically
+            add the ionization edges as defined in the
+            :class:`~.api.signals.EELSSpectrum` instance. Adding a new element to
+            the spectrum using the :meth:`~.api.signals.EELSSpectrum.add_elements`
+            method automatically add the corresponding ionisation edges to the model.
+        {}
+        dictionary : None or dict
+            A dictionary to be used to recreate a model. Usually generated using
+            :meth:`~.model.BaseModel.as_dictionary`""".format(GOS_PARAMETER)

@@ -52,7 +52,7 @@ from hyperspy.docstrings.signal import (
     NAVIGATION_MASK_ARG,
     LAZYSIGNAL_DOC,
 )
-
+from hyperspy.docstrings.model import EELSMODEL_PARAMETERS
 
 
 _logger = logging.getLogger(__name__)
@@ -1166,8 +1166,8 @@ class EELSSpectrum(Signal1D):
                                 extrapolation_size=1024,
                                 add_noise=False,
                                 fix_neg_r=False):
-        """Extrapolate the spectrum to the right using a powerlaw.
-
+        """
+        Extrapolate the spectrum to the right using a powerlaw.
 
         Parameters
         ----------
@@ -1264,7 +1264,8 @@ class EELSSpectrum(Signal1D):
                                 t=None,
                                 delta=0.5,
                                 full_output=False):
-        r"""Calculate the complex dielectric function from a single scattering
+        r"""
+        Calculate the complex dielectric function from a single scattering
         distribution (SSD) using the Kramers-Kronig relations.
 
         It uses the FFT method as in [1]_.  The SSD is an
@@ -1547,32 +1548,11 @@ class EELSSpectrum(Signal1D):
 
         Parameters
         ----------
-        ll : EELSSpectrum, optional
-            If an EELSSpectrum is provided, it will be assumed that it is
-            a low-loss EELS spectrum, and it will be used to simulate the
-            effect of multiple scattering by convolving it with the EELS
-            spectrum.
-        auto_background : bool, default True
-            If True, and if spectrum is an EELS instance adds automatically
-            a powerlaw to the model and estimate the parameters by the
-            two-area method.
-        auto_add_edges : bool, default True
-            If True, and if spectrum is an EELS instance, it will
-            automatically add the ionization edges as defined in the
-            Signal1D instance. Adding a new element to the spectrum using
-            the components.EELSSpectrum.add_elements method automatically
-            add the corresponding ionisation edges to the model.
-        GOS : {'hydrogenic' | 'gosh' | 'Hartree-Slater'}, optional
-            The generalized oscillation strength calculations to use for the
-            core-loss EELS edges. If None the Hartree-Slater GOS are used if
-            available, otherwise it uses the hydrogenic GOS.
-        dictionary : {None | dict}, optional
-            A dictionary to be used to recreate a model. Usually generated
-            using :meth:`hyperspy.model.as_dictionary`
+        %s
 
         Returns
         -------
-        model : `EELSModel` instance.
+        model : :class:`~.models.eelsmodel.EELSModel` instance.
 
         Raises
         ------
@@ -1593,9 +1573,12 @@ class EELSSpectrum(Signal1D):
                           dictionary=dictionary)
         return model
 
+    create_model.__doc__ %= EELSMODEL_PARAMETERS
+
     def plot(self, plot_edges=False, only_edges=('Major', 'Minor'),
              **kwargs):
-        """Plot the EELS spectrum. Markers indicating the position of the
+        """
+        Plot the EELS spectrum. Markers indicating the position of the
         EELS edges can be added.
 
         Parameters

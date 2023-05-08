@@ -1,11 +1,1 @@
-Add support for using tabulated datasets of *generalised oscillator strengths* using the GOSH
-open file format. GOS are a key component in modelling EELS core loss spectra.
-
-A freely usable dataset can be downloaded at https://zenodo.org/record/6599071 .
-The path to the downloaded file can be specified by setting :meth:`preferences.EELS.eels_gosh_database_path`,
-or by calling :meth:`preferences.gui()`
-
-The new GOS can then be loaded by specifying :meth:`GOS='gosh'` when calling :meth:`create_model()`.
-
-More information at :ref:`eels.fitting` and the documentation to
-:py:meth:`~._signals.eels.EELSSpectrum.create_model`
+Add support for using tabulated datasets of *generalised oscillator strengths* in :class:`~.models.eelsmodel.EELSModel` using the GOSH open file format. A freely usable dataset can be downloaded at https://zenodo.org/record/6599071.
