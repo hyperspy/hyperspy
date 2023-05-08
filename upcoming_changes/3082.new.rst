@@ -1,1 +1,1 @@
-Add support for using tabulated datasets of *generalised oscillator strengths* in :class:`~.models.eelsmodel.EELSModel` using the GOSH open file format. A freely usable dataset can be downloaded at https://zenodo.org/record/6599071.
+Add support for using tabulated datasets of *generalised oscillator strengths* in :class:`~.models.eelsmodel.EELSModel` using the GOSH open file format. By default, a freely usable dataset is downloaded from `doi:10.5281/zenodo.7645765 <https://zenodo.org/record/6599071>`_.

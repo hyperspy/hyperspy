@@ -19,6 +19,7 @@
 """Common docstring snippets for model.
 
 """
+from hyperspy.misc.eels.gosh_gos import _GOSH_DOI
 
 FIT_PARAMETERS_ARG = """optimizer : str or None, default None
             The optimization algorithm used to perform the fitting.
@@ -102,13 +103,12 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
             optimizer of your choice in :py:mod:`scipy.optimize`."""
 
 GOS_PARAMETER = \
-    """GOS : 'hydrogenic', 'gosh', 'Hartree-Slater' or None
-            The GOS to use. If None, select a GOS depending availability and
-            following the order
-
-            #. 'gosh' (if available)
-            #. Hartree-Slater' (if available)
-            #. 'hydrogenic' (always available)"""
+    """GOS : 'hydrogenic', 'gosh', 'Hartree-Slater'.
+            The GOS to use. Default is ``'gosh'``.
+        
+        gos_file_path : str, None
+            Only with GOS='gosh'. Specify the file path of the gosh file
+            to use. If None, use the file from doi:{}""".format(_GOSH_DOI)
 
 
 EELSMODEL_PARAMETERS = \

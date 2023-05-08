@@ -35,7 +35,7 @@ class EELSModel(Model1D):
 
     def __init__(self, signal1D, auto_background=True,
                  auto_add_edges=True, ll=None,
-                 GOS=None, dictionary=None):
+                 GOS="gosh", dictionary=None):
         """
         Build an EELS model.
 

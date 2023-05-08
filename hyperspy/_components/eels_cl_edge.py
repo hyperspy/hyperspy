@@ -17,14 +17,14 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
-import math
 import logging
+import math
 
 import numpy as np
 from scipy.interpolate import splev
 
 from hyperspy.component import Component
-from hyperspy.misc.eels.gosh_gos import GoshGOS
+from hyperspy.misc.eels.gosh_gos import GoshGOS, _GOSH_DOI
 from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
 from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
 from hyperspy.misc.eels.effective_angle import effective_angle
@@ -54,19 +54,21 @@ class EELSCLEdge(Component):
     software. If Digital Micrograph is installed in the system HyperSpy in the
     standard location HyperSpy should find the path to the HS GOS folder.
     Otherwise, the location of the folder can be defined in HyperSpy
-    preferences, which can be done through ``hs.preferences.gui()`` or the
-    ``hs.preferences.EELS.eels_gos_files_path`` variable.
+    preferences, which can be done through ~:func:`~.api.preferences.gui` or
+    the :attr:`~api.preferences.EELS.eels_gos_files_path` variable.
 
     Parameters
     ----------
-    element_subshell : {str, dict}
+    element_subshell : str or dict
         Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
         subshell. If a dictionary is passed, it is assumed that Hartree Slater
         GOS was exported using `GOS.as_dictionary`, and will be reconstructed.
-    GOS : {'hydrogenic', 'gosh', 'Hartree-Slater', None}
-        The GOS to use. If None, load the gosh database if they are available,
-        otherwise it will fall back to the Hartree-Slater GOS if
-        they are available, otherwise it will use the hydrogenic GOS.
+    GOS : 'gosh', 'hydrogenic', 'Hartree-Slater' or str
+        The GOS to use. Default is 'gosh'. If str, it must the path to gosh
+        GOS file.
+    gos_file_path : str, None
+        Only with GOS='gosh'. Specify the file path of the gosh file
+        to use. If None, use the file from doi:{}
 
     Attributes
     ----------
@@ -91,11 +93,11 @@ class EELSCLEdge(Component):
     fine_structure_active : bool
         Activates/deactivates the fine structure feature.
 
-    """
+    """.format(_GOSH_DOI)
 
     _fine_structure_smoothing = 0.3
 
-    def __init__(self, element_subshell, GOS=None):
+    def __init__(self, element_subshell, GOS="gosh", gos_file_path=None):
         # Declare the parameters
         Component.__init__(
             self,
@@ -114,33 +116,17 @@ class EELSCLEdge(Component):
         self.fine_structure_width = 30.0
         self.fine_structure_coeff.ext_force_positive = False
         self.GOS = None
-        # Set initial actions
-        if GOS is None:
-            try:
-                self.GOS = GoshGOS(element_subshell)
-                GOS = "gosh"
-            except IOError:
-                _logger.info("GOSH database not available. Trying Hartree-Slater GOS")
-                try:
-                    self.GOS = HartreeSlaterGOS(element_subshell)
-                    GOS = "Hartree-Slater"
-                except IOError:
-                    GOS = "hydrogenic"
-                    _logger.info(
-                        "Neither gosh GOS, nor Hartree-Slater GOS are "
-                        "available. Using hydrogenic GOS."
-                    )
-        if self.GOS is None:
-            if GOS == "gosh":
-                self.GOS = GoshGOS(element_subshell)
-            elif GOS == "Hartree-Slater":
-                self.GOS = HartreeSlaterGOS(element_subshell)
-            elif GOS == "hydrogenic":
-                self.GOS = HydrogenicGOS(element_subshell)
-            else:
-                raise ValueError(
-                    "gos must be one of: None, 'hydrogenic', 'gosh' or 'Hartree-Slater'"
-                )
+
+        if GOS == "gosh":
+            self.GOS = GoshGOS(element_subshell, gos_file_path=gos_file_path)
+        elif GOS == "Hartree-Slater":
+            self.GOS = HartreeSlaterGOS(element_subshell)
+        elif GOS == "hydrogenic":
+            self.GOS = HydrogenicGOS(element_subshell)
+        else:
+            raise ValueError(
+                "GOS must be one of 'gosh', 'hydrogenic' or 'Hartree-Slater'."
+            )
         self.onset_energy.value = self.GOS.onset_energy
         self.onset_energy.free = False
         self._position = self.onset_energy
@@ -153,7 +139,7 @@ class EELSCLEdge(Component):
         self._whitelist["GOS"] = ("init", GOS)
         if GOS == "gosh":
             self._whitelist["element_subshell"] = ("init", self.GOS.as_dictionary(True))
-        elif GOS == "Hartree-Slater":
+        elif GOS == "Hartree-Slater":  # pragma: no cover
             self._whitelist["element_subshell"] = ("init", self.GOS.as_dictionary(True))
         elif GOS == "hydrogenic":
             self._whitelist["element_subshell"] = ("init", element_subshell)

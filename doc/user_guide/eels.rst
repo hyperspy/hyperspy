@@ -258,11 +258,8 @@ automatically, named after its element symbol:
     The model for the GOS can be specified with the ``GOS`` argument
     - see :py:meth:`~.api.signals.EELSSpectrum.create_model` for more details.
 
-    A freely usable tabulated dataset, in GOSH format, can be downloaded from Zenodo:
-    `https://zenodo.org/record/6599071 <https://zenodo.org/record/6599071>`__
-
-    The path of tabulated datasets can be set in the preferences
-    (see :ref:`configuring-hyperspy-label`) in the EELS tab.
+    By default, a freely usable tabulated dataset, in GOSH format, is
+    downloaded from Zenodo: `doi:10.5281/zenodo.7645765 <https://zenodo.org/record/7645765>`_
 
 .. code-block:: python
 
