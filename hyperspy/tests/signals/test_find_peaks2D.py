@@ -191,20 +191,25 @@ class TestFindPeaks2D:
 
     @pytest.mark.parametrize('method', PEAK_METHODS)
     @pytest.mark.parametrize('parallel', [True, False])
-    def test_gets_right_answer(self, method, parallel):
+    @pytest.mark.parametrize("get_intensity", [True, False])
+    def test_gets_right_answer(self, method, parallel, get_intensity):
         if method == 'stat':
             pytest.importorskip("sklearn")
         ans = np.empty((1,), dtype=object)
-        ans[0] = np.array([[self.xref, self.yref]])
+        if get_intensity:
+            ans[0] = np.array([[self.xref, self.yref, np.max(self.ref.data)]])
+        else:
+            ans[0] = np.array([[self.xref, self.yref]])
         if method == 'template_matching':
             disc = np.zeros((5, 5))
             disc[1:4, 1:4] = 0.5
             disc[2,2] = 1
             peaks = self.ref.find_peaks(method=method, parallel=parallel,
-                                        interactive=False, template=disc)
+                                        interactive=False, template=disc,
+                                        get_intensity=get_intensity)
         else:
             peaks = self.ref.find_peaks(method=method, parallel=parallel,
-                                        interactive=False)
+                                        interactive=False, get_intensity=get_intensity)
         np.testing.assert_allclose(peaks.data[0], ans[0])
 
     def test_return_peaks(self):
