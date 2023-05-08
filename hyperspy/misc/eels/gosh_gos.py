@@ -17,17 +17,15 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
-import math
 from pathlib import Path
 
 import numpy as np
-from scipy import constants, integrate, interpolate
+from scipy import constants
 import h5py
 
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.eels.base_gos import GOSBase
-from hyperspy.misc.export_dictionary import (
-    export_to_dictionary, load_from_dictionary)
+from hyperspy.misc.eels.base_gos import TabulatedGOS
+
 
 _logger = logging.getLogger(__name__)
 
@@ -35,7 +33,7 @@ R = constants.value("Rydberg constant times hc in eV")
 a0 = constants.value("Bohr radius")
 
 
-class GoshGOS(GOSBase):
+class GoshGOS(TabulatedGOS):
     """Read Generalized Oscillator Strength from a GOSH database.
 
     Parameters
@@ -66,48 +64,17 @@ class GoshGOS(GOSBase):
         from iternal tables.
 
     """
-    
+
     _name = 'gosh'
-    
-    def __init__(self, element_subshell):
-        """
-        Parameters
-        ----------
+    _whitelist = {
+        'gos_array': None,
+        'rel_energy_axis': None,
+        'qaxis': None,
+        'element': None,
+        'subshell': None,
+        }
 
-        element_subshell : str
-            For example, 'Ti_L3' for the GOS of the titanium L3 subshell
-
-        """
-        self._whitelist = {'gos_array': None,
-                           'rel_energy_axis': None,
-                           'qaxis': None,
-                           'element': None,
-                           'subshell': None,
-                           'doi': None,
-                           'subshell_factor': None
-                           }
-        if isinstance(element_subshell, dict):
-            self.element = element_subshell['element']
-            self.subshell = element_subshell['subshell']
-            self.read_elements()
-            self._load_dictionary(element_subshell)
-        else:
-            self.element, self.subshell = element_subshell.split('_')
-            self.read_elements()
-            self.readgosarray()
-    
-    def _load_dictionary(self, dictionary):
-        load_from_dictionary(self, dictionary)
-        self.energy_axis = self.rel_energy_axis + self.onset_energy
-    
-    def as_dictionary(self, fullcopy=True):
-        """Export the GOS as a dictionary.
-        """
-        dic = {}
-        export_to_dictionary(self, self._whitelist, dic, fullcopy)
-        return dic
-    
-    def readgosarray(self):
+    def read_gos_data(self):
         _logger.info(
             "GOSH precomputed GOS\n"
             f"\tElement: {self.element} "
@@ -116,11 +83,11 @@ class GoshGOS(GOSBase):
         )
         element = self.element
         subshell = self.subshell
-        
+
         # Check if the specified data file exists, otherwise
         # exit.
         gos_file = Path(preferences.EELS.eels_gosh_database_path)
-        
+
         if not gos_file.is_file():
             raise FileNotFoundError(
                 "The GOSH Parametrized GOS database file not "
@@ -128,14 +95,14 @@ class GoshGOS(GOSBase):
                 "location for the files in the preferences as "
                 "`preferences.EELS.eels_gosh_database_path`."
             )
-        
+
         def edge_not_in_database():
             raise KeyError(
                 "The GOSH Parametrized GOS database does not "
                 f"contain a valid entry the {subshell} subshell"
                 f"of {element}. Please select a different database"
             )
-        
+
         with h5py.File(gos_file, 'r') as h:
             conventions = h['metadata/edges_info']
             if subshell not in conventions:
@@ -150,11 +117,10 @@ class GoshGOS(GOSBase):
             q = gos_group['q'][:]
             free_energies = gos_group['free_energies'][:]
             doi = h['/metadata/data_ref'].attrs['data_doi']
-        
+
         gos = np.squeeze(gos.T)
         self.doi = doi
         self.gos_array = gos
         self.qaxis = q
         self.rel_energy_axis = free_energies - min(free_energies)
         self.energy_axis = self.rel_energy_axis + self.onset_energy
-    

@@ -16,16 +16,22 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import numpy as np
-
-from hyperspy.misc.math_tools import get_linear_interpolation
-from hyperspy.misc.elements import elements
-
 import math
+
+import numpy as np
 from scipy import constants, integrate, interpolate
+
+from hyperspy.misc.elements import elements
+from hyperspy.misc.export_dictionary import (
+    export_to_dictionary,
+    load_from_dictionary,
+    )
+from hyperspy.misc.math_tools import get_linear_interpolation
+
 
 R = constants.value("Rydberg constant times hc in eV")
 a0 = constants.value("Bohr radius")
+
 
 class GOSBase:
 
@@ -84,6 +90,39 @@ class GOSBase:
             qaxis = np.hstack((qmin, qaxis[index:]))
             qgosi = np.hstack((gosqmin, qgosi[index:],))
         return qaxis, qgosi.clip(0)
+
+
+class TabulatedGOS(GOSBase):
+
+    def __init__(self, element_subshell):
+        """
+        Parameters
+        ----------
+        element_subshell : str
+            For example, 'Ti_L3' for the GOS of the titanium L3 subshell
+
+        """
+        self.subshell_factor = 1.
+        if isinstance(element_subshell, dict):
+            self.element = element_subshell['element']
+            self.subshell = element_subshell['subshell']
+            self.read_elements()
+            self._load_dictionary(element_subshell)
+        else:
+            self.element, self.subshell = element_subshell.split('_')
+            self.read_elements()
+            self.read_gos_data()
+
+    def _load_dictionary(self, dictionary):
+        load_from_dictionary(self, dictionary)
+        self.energy_axis = self.rel_energy_axis + self.onset_energy
+
+    def as_dictionary(self, fullcopy=True):
+        """Export the GOS as a dictionary.
+        """
+        dic = {}
+        export_to_dictionary(self, self._whitelist, dic, fullcopy)
+        return dic
 
     def integrateq(self, onset_energy, angle, E0):
         energy_shift = onset_energy - self.onset_energy

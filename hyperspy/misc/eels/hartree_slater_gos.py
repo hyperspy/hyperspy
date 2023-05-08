@@ -17,16 +17,13 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
-import math
 from pathlib import Path
 
 import numpy as np
-from scipy import constants, integrate, interpolate
+from scipy import constants
 
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.eels.base_gos import GOSBase
-from hyperspy.misc.export_dictionary import (
-    export_to_dictionary, load_from_dictionary)
+from hyperspy.misc.eels.base_gos import TabulatedGOS
 
 
 _logger = logging.getLogger(__name__)
@@ -52,7 +49,7 @@ conventions = { 'K' : {'table': 'K1', 'factor': 1},
                         'O4,5': {'table':'O5', 'factor': 5/3}, 'O4': {'table':'O5', 'factor': 2/3}, 'O5': {'table':'O5', 'factor': 1}}
 
 
-class HartreeSlaterGOS(GOSBase):
+class HartreeSlaterGOS(TabulatedGOS):
 
     """Read Hartree-Slater Generalized Oscillator Strength parametrized
     from files.
@@ -87,48 +84,19 @@ class HartreeSlaterGOS(GOSBase):
     """
 
     _name = 'Hartree-Slater'
-
-    def __init__(self, element_subshell):
-        """
-        Parameters
-        ----------
-
-        element_subshell : str
-            For example, 'Ti_L3' for the GOS of the titanium L3 subshell
-
-        """
-        self._whitelist = {'gos_array': None,
-                           'rel_energy_axis': None,
-                           'qaxis': None,
-                           'element': None,
-                           'subshell': None
-                           }
-        if isinstance(element_subshell, dict):
-            self.element = element_subshell['element']
-            self.subshell = element_subshell['subshell']
-            self.read_elements()
-            self._load_dictionary(element_subshell)
-        else:
-            self.element, self.subshell = element_subshell.split('_')
-            self.read_elements()
-            self.readgosfile()
-
-    def _load_dictionary(self, dictionary):
-        load_from_dictionary(self, dictionary)
-        self.energy_axis = self.rel_energy_axis + self.onset_energy
-
-    def as_dictionary(self, fullcopy=True):
-        """Export the GOS as a dictionary.
-        """
-        dic = {}
-        export_to_dictionary(self, self._whitelist, dic, fullcopy)
-        return dic
+    _whitelist = {
+        'gos_array': None,
+        'rel_energy_axis': None,
+        'qaxis': None,
+        'element': None,
+        'subshell': None,
+        }
 
     def read_elements(self):
         super().read_elements()
         self.subshell_factor = conventions[self.subshell]['factor']
 
-    def readgosfile(self):
+    def read_gos_data(self):
         _logger.info(
             "Hartree-Slater GOS\n"
             f"\tElement: {self.element} "
@@ -178,4 +146,3 @@ class HartreeSlaterGOS(GOSBase):
         self.qaxis = self.get_parametrized_qaxis(
             info1_1, info1_2, ncol)
         self.energy_axis = self.rel_energy_axis + self.onset_energy
-

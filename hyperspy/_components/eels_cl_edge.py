@@ -36,14 +36,14 @@ _logger = logging.getLogger(__name__)
 
 @add_gui_method(toolkey="hyperspy.EELSCLEdge_Component")
 class EELSCLEdge(Component):
-
-    """EELS core loss ionisation edge from hydrogenic or tabulated
+    """
+    EELS core loss ionisation edge from hydrogenic or tabulated
     GOS with splines for fine structure fitting.
 
     Hydrogenic GOS are limited to K and L shells.
-    
+
     Several possibilities are available for tabulated GOS.
-    
+
     The preferred option is to use a database of cross sections in GOSH
     format. One such database can be freely downloaded from Zenodo at:
     https://zenodo.org/record/6599071 while information on the GOSH format
