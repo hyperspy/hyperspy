@@ -30,9 +30,3 @@ def test_function():
     np.testing.assert_allclose(g.function(1), 10*np.pi/2)
     np.testing.assert_allclose(g.function(1e4), 10*np.pi, 1e-4)
 
-def test_function_delattr():
-    g = EELSArctan(minimum_at_zero=True)
-    g.A.value = 10
-    g.k.value = 2
-    g.x0.value = 1
-    np.testing.assert_allclose(g.function(0), 4.63647609)

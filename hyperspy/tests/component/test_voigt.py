@@ -39,15 +39,6 @@ def test_function():
     np.testing.assert_allclose(g.function(1), 2.97832092)
 
 
-def test_function_legacy():
-    g = Voigt(legacy=True)
-    g.area.value = 5
-    g.sigma.value = 0.5
-    g.gamma.value = 0.2
-    g.centre.value = 1
-    np.testing.assert_allclose(g.function(0), 0.78853024)
-    np.testing.assert_allclose(g.function(1), 2.97832092)
-
 @pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("uniform"), (True, False))
 @pytest.mark.parametrize(("mapnone"), (True, False))

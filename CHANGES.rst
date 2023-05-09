@@ -27,9 +27,9 @@ Axes
 Components
 ----------
 
-- The :py:class:`hyperspy._components.polynomial_deprecated.Polynomial` component is removed.
-- The `legacy` option for :py:class:`hyperspy._components.arctan.Arctan` is removed, :py:class:`hyperspy._components.eels_arctan.EELSArctan` is now an independent component.
-- The `legacy` option for :py:class:`hyperspy._components.voigt.Voigt` is removed, :py:class:`hyperspy._components.pes_voigt.PESVoigt` is now an independent component.
+- The API of the :py:class:`~.api.model.components1D.Polynomial` has changed after it has been deprecated since hyperspy 1.5. The old API had a single parameters ``coefficients``, which has been replaced by ``a0``, ``a1``, etc.
+- The ``legacy`` option (introduced in HyperSpy 1.6) for :class:`~.api.model.components1D.Arctan` is removed, use :class:`hyperspy._components.eels_arctan.EELSArctan` to use the old API.
+- The ``legacy`` option (introduced in HyperSpy 1.6) for :class:`~.api.model.components1D.Voigt` is removed, use :class:`~.api.model.components1D.PESVoigt` to use the old API.
 
 Data Visualization
 ------------------

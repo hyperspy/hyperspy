@@ -52,9 +52,6 @@ class Polynomial(Expression):
     """
 
     def __init__(self, order=2, module="numexpr", **kwargs):
-        # Not to break scripts once we remove the legacy Polynomial
-        if "legacy" in kwargs:
-            del kwargs["legacy"]
         if order == 0:
             raise ValueError("Polynomial of order 0 is not supported.")
         coeff_list = ['{}'.format(o).zfill(len(list(str(order)))) for o in
@@ -144,7 +141,7 @@ def convert_to_polynomial(poly_dict):
     """
     Convert the dictionary from the old to the new polynomial definition
     """
-    _logger.info("Converting the polynomial to the new definition")
+    _logger.info("Converting the polynomial to the new definition.")
     coeff_list = ['{}'.format(o).zfill(len(list(str(poly_dict['order']))))
                   for o in range(poly_dict['order'], -1, -1)]
     poly2_dict = dict(poly_dict)

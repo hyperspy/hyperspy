@@ -92,9 +92,6 @@ class Voigt(Expression):
         module=["numpy", "scipy"],
         **kwargs
     ):
-        # Not to break scripts once we remove the legacy Voigt
-        if "legacy" in kwargs:
-            del kwargs["legacy"]
         # We use `gamma_` internally to workaround the use of the `gamma`
         # function in sympy
         super().__init__(

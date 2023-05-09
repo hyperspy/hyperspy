@@ -303,9 +303,6 @@ class TestPolynomial:
         axis = s.axes_manager.signal_axes[0]
         np.testing.assert_allclose(p.function_nd(axis.axis), s.data)
 
-    def test_function_legacy(self):
-        p = hs.model.components1D.Polynomial(order=2,legacy=True)
-
 
 class TestGaussian:
 
