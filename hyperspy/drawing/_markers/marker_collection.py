@@ -83,6 +83,15 @@ class MarkerCollection(object):
             """, arguments=['obj'])
         self._closing = False
 
+    @classmethod
+    def from_signal(cls,
+                    signal,
+                    key="offsets",
+                    collection_class=None):
+        kwds = {key: signal.data}
+        return cls(collection_class=collection_class,
+                   **kwds)
+
     def _get_data_shape(self):
         for key,item in self.kwargs.items():
             if is_iterating(item):
@@ -95,7 +104,6 @@ class MarkerCollection(object):
             'plot_on_signal': self._plot_on_signal,
             'kwargs': self.kwargs}
         return marker_dict
-
 
     def get_data_position(self):
         """
