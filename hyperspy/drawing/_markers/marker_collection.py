@@ -27,10 +27,8 @@ _logger = logging.getLogger(__name__)
 
 
 class MarkerCollection(object):
-
-    """This represents a collection of Markers defined a list of
-    offsets and a size.
-
+    """
+    A Collection of Markers for faster plotting.
     """
 
     def __init__(self,
@@ -38,9 +36,10 @@ class MarkerCollection(object):
                  **kwargs):
         """
         Initialize a Marker Collection.
+
         Parameters
         ----------
-        Collection:
+        Collection: None or matplotlib.collections
             A Matplotlib collection to be initialized.
         offsets: [2,n]
             Positions of the markers
@@ -87,13 +86,27 @@ class MarkerCollection(object):
     def from_signal(cls,
                     signal,
                     key="offsets",
-                    collection_class=None):
+                    collection_class=None,
+                    ):
+        """
+        Initialize a marker collection from a hyperspy Signal.
+
+        Parameters
+        ----------
+        signal: BaseSignal
+            A value passed to the Collection as {key:signal.data}
+        key: str
+            The key used to create a key value pair to
+            create the Collection. Passed as {key: signal.data}.
+        collection_class: None or matplotlib.collections
+            The collection which is initialized
+        """
         kwds = {key: signal.data}
         return cls(collection_class=collection_class,
                    **kwds)
 
     def _get_data_shape(self):
-        for key,item in self.kwargs.items():
+        for key, item in self.kwargs.items():
             if is_iterating(item):
                 return item.shape
         return ()
@@ -113,9 +126,9 @@ class MarkerCollection(object):
         current_keys = {}
         for key, value in self.kwargs.items():
             if is_iterating(value):
-                current_keys[key]=value[indices]
+                current_keys[key] = value[indices]
             else:
-                current_keys[key]=value
+                current_keys[key] = value
         return current_keys
 
     def update(self):
@@ -185,11 +198,8 @@ class MarkerCollection(object):
         if render_figure:
             self._render_figure()
 
-
-
 def is_iterating(arg):
     return isinstance(arg,(np.ndarray, da.Array)) and arg.dtype==object
-
 
 
 
