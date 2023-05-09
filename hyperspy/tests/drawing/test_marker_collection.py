@@ -138,8 +138,9 @@ class TestCircleMarkerCollection:
 
     def test_add_marker(self):
         s = Signal2D(np.random.random((3, 4, 5, 6)))
-        markers = MarkerCollection(offsets=np.random.rand(10, 2)*5,
-                                   sizes=(5,),
+        markers = MarkerCollection(CircleCollection,
+                                   offsets=np.random.rand(10, 2)*5,
+                                   sizes=(50,),
                                    linewidths=(2,),
                                    facecolors="black",)
         s.axes_manager.signal_axes[0].scale=1

@@ -20,6 +20,7 @@ import numpy as np
 import dask.array as da
 import matplotlib
 from hyperspy.events import Event, Events
+from matplotlib.collections import LineCollection
 import logging
 from packaging.version import Version
 _logger = logging.getLogger(__name__)
@@ -121,10 +122,11 @@ class MarkerCollection(object):
                                               **self.get_data_position(),)
         else:
             self.collection = self.collection_class(**self.get_data_position(),)
-        if Version(matplotlib.__version__) < Version("3.5.0"):
-            self.collection._transOffset= self.ax.transData
-        else:
-            self.collection.set_offset_transform(self.ax.transData)
+        if not isinstance(self.collection, LineCollection, ):
+            if Version(matplotlib.__version__) < Version("3.5.0"):
+                self.collection._transOffset= self.ax.transData
+            else:
+                self.collection.set_offset_transform(self.ax.transData)
 
     def plot(self, render_figure=True):
         """
