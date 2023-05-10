@@ -28,7 +28,22 @@ _logger = logging.getLogger(__name__)
 
 class MarkerCollection(object):
     """
-    A Collection of Markers for faster plotting.
+    A Collection of Markers for faster plotting. A collection is a set of
+    markers which have the same properties.
+
+    In most cases each marker is defined by some keyword argument and
+    a (n,2) array of offsets which define the position for each marker
+    in the plot.
+
+    For example if we wanted to define a set of ellipses with constant
+    height, width, and size we can do the following.
+
+    >>>from matplotlib.collections import EllipseCollection
+    >>>from hyperspy.drawing.marker import MarkerCollection
+    >>>MarkerCollection(collection_class=EllipseCollection, widths=(2,),
+    >>>                 heights=(1,), angles=(1,), units="xy", offsets=np.random.rand(10,2))
+    >>>
+
     """
 
     def __init__(self,
@@ -139,15 +154,11 @@ class MarkerCollection(object):
 
     def initialize_collection(self):
         if self.collection_class is None:
-            self.collection = self.ax.scatter([],[],
-                                              **self.get_data_position(),)
+            self.collection = self.ax.scatter([], [],
+                                              **self.get_data_position())
         else:
-            self.collection = self.collection_class(**self.get_data_position(),)
-        if not isinstance(self.collection, LineCollection, ):
-            if Version(matplotlib.__version__) < Version("3.5.0"):
-                self.collection._transOffset= self.ax.transData
-            else:
-                self.collection.set_offset_transform(self.ax.transData)
+            self.collection = self.collection_class(**self.get_data_position(),
+                                                    transOffset=self.ax.transData)
 
     def plot(self, render_figure=True):
         """
