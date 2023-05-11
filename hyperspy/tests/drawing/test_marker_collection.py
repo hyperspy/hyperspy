@@ -17,14 +17,111 @@
 import pytest
 
 from hyperspy.drawing._markers.marker_collection import MarkerCollection
-from matplotlib.collections import LineCollection, CircleCollection
-from hyperspy._signals.signal2d import Signal2D
+from hyperspy._signals.signal2d import Signal2D, BaseSignal
 import numpy as np
+from matplotlib.collections import (LineCollection,
+                                    CircleCollection,
+                                    EllipseCollection,
+                                    StarPolygonCollection,
+                                    PolyCollection, PatchCollection)
+from matplotlib.patches import RegularPolygon
 
-default_tol = 2.0
-baseline_dir = 'plot_markers'
-style_pytest_mpl = 'default'
-import matplotlib
+BASELINE_DIR = 'marker_collection'
+DEFAULT_TOL = 2.0
+STYLE_PYTEST_MPL = 'default'
+
+
+class TestCollections:
+    @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
+                                   tolerance=DEFAULT_TOL,
+                                   style=STYLE_PYTEST_MPL)
+    def test_multi_collections_signal(self):
+        collections = [LineCollection, CircleCollection,
+                       EllipseCollection,StarPolygonCollection,
+                       PolyCollection,PatchCollection, None]
+        num_col = len(collections)
+        offsets = [np.stack([np.ones(num_col)*i, np.arange(num_col)], axis=1)
+                   for i in range(len(collections))]
+        kwargs = [{"segments":np.array([[[0, 0],
+                                        [0,-.5]]]),
+                   "lw":4},
+                  {"sizes":(.4,)},
+                  {"widths":(.2,), "heights":(.7,), "angles":(60,), "units":"xy"},
+                  {"numsides": 7, "sizes":(.4,)},
+                  {"verts": np.array([[[0, 0], [.3, .3], [.3, .6], [.6, .3]]])},
+                  {"patches":[RegularPolygon(xy=(0,0), numVertices=7, radius=.5,),],},
+                  {"sizes":(14,)},
+                  ]
+        for k, o, c in zip(kwargs, offsets, collections):
+            k["offsets"] = o
+            k["collection_class"]= c
+
+        collections = [MarkerCollection(**k) for k in kwargs]
+        s = Signal2D(np.zeros((2, num_col, num_col)))
+        s.axes_manager.signal_axes[0].offset= 0
+        s.axes_manager.signal_axes[1].offset = 0
+        s.plot(interpolation=None)
+        [s.add_marker(c) for c in collections]
+        s._plot.signal_plot.figure.savefig("marker_collection/test_multi_collections_signal.png")
+        return s._plot.signal_plot.figure
+
+
+    @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
+                                   tolerance=DEFAULT_TOL,
+                                   style=STYLE_PYTEST_MPL)
+    def test_multi_collections_navigator(self):
+        collections = [LineCollection, CircleCollection,
+                       EllipseCollection,StarPolygonCollection,
+                       PolyCollection,PatchCollection, None]
+        num_col = len(collections)
+        offsets = [np.stack([np.ones(num_col)*i, np.arange(num_col)], axis=1)
+                   for i in range(len(collections))]
+        kwargs = [{"segments":np.array([[[0, 0],
+                                        [0,-.5]]]),
+                   "lw":4},
+                  {"sizes":(.4,)},
+                  {"widths":(.2,), "heights":(.7,), "angles":(60,), "units":"xy"},
+                  {"numsides": 7, "sizes":(.4,)},
+                  {"verts": np.array([[[0, 0], [.3, .3], [.3, .6], [.6, .3]]])},
+                  {"patches":[RegularPolygon(xy=(0,0), numVertices=7, radius=.5,),],},
+                  {"sizes":(14,)},
+                  ]
+        for k, o, c in zip(kwargs, offsets, collections):
+            k["offsets"] = o
+            k["collection_class"]= c
+
+        collections = [MarkerCollection(**k) for k in kwargs]
+        s = Signal2D(np.zeros((num_col, num_col, 1, 1)))
+        s.axes_manager.signal_axes[0].offset= 0
+        s.axes_manager.signal_axes[1].offset = 0
+        s.plot(interpolation=None)
+        [s.add_marker(c, plot_on_signal=False) for c in collections]
+        s._plot.navigator_plot.figure.savefig("marker_collection/test_multi_collections_navigator.png")
+        return s._plot.navigator_plot.figure
+
+    def test_iterating_marker(self):
+        data = np.empty((3,), dtype=object)
+        for i in np.ndindex(data.shape):
+            data[i] = np.stack([np.arange(3), np.ones(3)*i], axis=1)
+        s = Signal2D(np.ones((3, 5, 6)))
+        markers = MarkerCollection(None,
+                                   offsets=data,
+                                   sizes=(.2,))
+        s.add_marker(markers)
+        s.axes_manager.navigation_axes[0].index=2
+        s._plot.signal_plot.figure.savefig("marker_collection/test_iterating_marker.png")
+
+    def test_from_signal(self):
+        data = np.empty((3,), dtype=object)
+        for i in np.ndindex(data.shape):
+            data[i] = np.stack([np.arange(3), np.ones(3) * i], axis=1)
+
+        col = MarkerCollection.from_signal(BaseSignal(data,
+                                                      ragged=True), sizes=(.3,))
+        s = Signal2D(np.ones((3, 5, 6)))
+        s.add_marker(col)
+        s.axes_manager.navigation_axes[0].index = 2
+        s._plot.signal_plot.figure.savefig("marker_collection/test_iterating_marker.png")
 
 
 class TestLineMarkerCollection:
@@ -33,7 +130,7 @@ class TestLineMarkerCollection:
     def static_line_collection(self):
         s = Signal2D(np.random.random((3, 4, 5, 6)))
         markers = MarkerCollection(LineCollection,
-                                   segments=np.random.random((10,10, 2)))
+                                   segments=np.random.random((10,2, 2)))
         markers.axes_manager = s.axes_manager
         return markers
 
@@ -41,131 +138,23 @@ class TestLineMarkerCollection:
     def iterating_line_collection(self):
         data = np.empty((3,4), dtype=object)
         for i in np.ndindex(data.shape):
-            data[i] = np.random.random((10, 10, 2))
+            data[i] = np.random.random((10, 2, 2))
         s = Signal2D(np.random.random((3, 4, 5, 6)))
         markers = MarkerCollection(LineCollection,
                                    segments=data)
         markers.axes_manager = s.axes_manager
         return markers
 
-    def test_init(self,static_line_collection):
-        assert isinstance(static_line_collection, MarkerCollection)
+    @pytest.mark.parametrize("collection", ("iterating_line_collection",
+                                            "static_line_collection"))
+    def test_init(self,collection,request):
+        col = request.getfixturevalue(collection)
+        assert isinstance(col, MarkerCollection)
 
-    def test_get_data(self,static_line_collection):
-        kwds = static_line_collection.get_data_position()
+    @pytest.mark.parametrize("collection", ("iterating_line_collection",
+                                            "static_line_collection"))
+    def test_get_data(self,collection,request):
+        col = request.getfixturevalue(collection)
+        kwds = col.get_data_position()
         assert isinstance(kwds, dict)
-        assert kwds["segments"].shape == (10,10,2)
-
-    def test_get_data2(self, iterating_line_collection):
-        kwds = iterating_line_collection.get_data_position()
-        assert isinstance(kwds, dict)
-        assert kwds["segments"].shape == (10,10,2)
-
-    def test_initialize_collection(self, iterating_line_collection):
-        iterating_line_collection.initialize_collection()
-        assert isinstance(iterating_line_collection.collection, LineCollection)
-
-    def test_update_collection(self, iterating_line_collection):
-        iterating_line_collection.initialize_collection()
-        iterating_line_collection.axes_manager.navigation_axes[0].index=1
-
-    def test_add_marker(self):
-        s = Signal2D(np.random.random((3, 4, 5, 6)))
-        markers = MarkerCollection(LineCollection,
-                                   segments=np.random.random((10, 2, 2))*3, lw=2)
-
-        s.plot()
-        s.add_marker(markers,plot_on_signal=True)
-        s._plot.signal_plot.figure.savefig("test.png")
-        s.axes_manager.navigation_axes[0].index=1
-        s._plot.signal_plot.figure.savefig("test1.png")
-
-    def test_add_marker(self):
-        data = np.empty((3, 4), dtype=object)
-        for i in np.ndindex(data.shape):
-            data[i] = np.random.random((10, 2, 2))*3
-        s = Signal2D(np.random.random((3, 4, 5, 6)))
-        markers = MarkerCollection(LineCollection,
-                                   segments=data, lw=2)
-
-        s.plot()
-        s.add_marker(markers,plot_on_signal=True)
-        s._plot.signal_plot.figure.savefig("test.png")
-        s.axes_manager.navigation_axes[0].index=1
-        s._plot.signal_plot.figure.savefig("test1.png")
-
-class TestCircleMarkerCollection:
-
-    @pytest.fixture
-    def static_collection(self):
-        s = Signal2D(np.random.random((3, 4, 5, 6)))
-        markers = MarkerCollection(offsets=np.random.random((10,2)),
-                                   sizes=2)
-        markers.axes_manager = s.axes_manager
-        return markers
-
-    @pytest.fixture
-    def iterating_collection(self):
-        data = np.empty((3,4), dtype=object)
-        for i in np.ndindex(data.shape):
-            data[i] = np.random.random((10, 2,))
-        s = Signal2D(np.random.random((3, 4, 5, 6)))
-        markers = MarkerCollection(offsets=data,
-                                   sizes=np.random.random(10))
-        markers.axes_manager = s.axes_manager
-        return markers
-
-    def test_init(self,static_collection):
-        assert isinstance(static_collection, MarkerCollection)
-
-    def test_get_data(self,static_collection):
-        kwds = static_collection.get_data_position()
-        assert isinstance(kwds, dict)
-        assert kwds["offsets"].shape == (10,2)
-
-    def test_get_data2(self, iterating_collection):
-        kwds = iterating_collection.get_data_position()
-        assert isinstance(kwds, dict)
-        assert kwds["offsets"].shape == (10,2)
-
-    def test_initialize_collection(self, iterating_collection):
-        iterating_collection.initialize_collection()
-        assert isinstance(iterating_collection.collection, CircleCollection)
-
-    def test_update_collection(self, iterating_collection):
-        iterating_collection.initialize_collection()
-        iterating_collection.axes_manager.navigation_axes[0].index=1
-
-    def test_add_marker(self):
-        s = Signal2D(np.random.random((3, 4, 5, 6)))
-        markers = MarkerCollection(CircleCollection,
-                                   offsets=np.random.rand(10, 2)*5,
-                                   sizes=(50,),
-                                   linewidths=(2,),
-                                   facecolors="black",)
-        s.axes_manager.signal_axes[0].scale=1
-        s.axes_manager.signal_axes[1].scale=1
-        s.plot()
-        s.add_marker(markers, plot_on_signal=True)
-        s._plot.signal_plot.figure.savefig("test.png")
-        s.axes_manager.navigation_axes[0].index=1
-        s._plot.signal_plot.figure.savefig("test1.png")
-
-    def test_add_marker2(self):
-        data = np.empty((3, 4), dtype=object)
-        for i in np.ndindex(data.shape):
-            data[i] = np.random.random((10, 2, 2))*3
-        s = Signal2D(np.random.random((3, 4, 5, 6)))
-        s.axes_manager.signal_axes[0].scale=1/6
-        s.axes_manager.signal_axes[1].scale=1/5
-
-        markers = MarkerCollection(LineCollection,
-                                   segments=data, lw=2)
-
-        s.plot()
-        s.add_marker(markers,plot_on_signal=True)
-        s._plot.signal_plot.figure.savefig("test.png")
-        s.axes_manager.navigation_axes[0].index=1
-        s._plot.signal_plot.figure.savefig("test1.png")
-
-
+        assert kwds["segments"].shape == (10,2,2)
