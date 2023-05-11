@@ -123,7 +123,6 @@ class TestCollections:
         s = Signal2D(np.ones((3, 5, 6)))
         s.add_marker(col)
         s.axes_manager.navigation_axes[0].index = 2
-        s._plot.signal_plot.figure.savefig("marker_collection/test_iterating_marker.png")
 
 
 class TestLineMarkerCollection:
