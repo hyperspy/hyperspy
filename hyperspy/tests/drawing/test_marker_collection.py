@@ -62,7 +62,6 @@ class TestCollections:
         s.axes_manager.signal_axes[1].offset = 0
         s.plot(interpolation=None)
         [s.add_marker(c) for c in collections]
-        s._plot.signal_plot.figure.savefig("marker_collection/test_multi_collections_signal.png")
         return s._plot.signal_plot.figure
 
 
@@ -96,7 +95,6 @@ class TestCollections:
         s.axes_manager.signal_axes[1].offset = 0
         s.plot(interpolation=None)
         [s.add_marker(c, plot_on_signal=False) for c in collections]
-        s._plot.navigator_plot.figure.savefig("marker_collection/test_multi_collections_navigator.png")
         return s._plot.navigator_plot.figure
 
     def test_iterating_marker(self):
@@ -109,7 +107,6 @@ class TestCollections:
                                    sizes=(.2,))
         s.add_marker(markers)
         s.axes_manager.navigation_axes[0].index=2
-        s._plot.signal_plot.figure.savefig("marker_collection/test_iterating_marker.png")
 
     def test_from_signal(self):
         data = np.empty((3,), dtype=object)
@@ -121,7 +118,6 @@ class TestCollections:
         s = Signal2D(np.ones((3, 5, 6)))
         s.add_marker(col)
         s.axes_manager.navigation_axes[0].index = 2
-        s._plot.signal_plot.figure.savefig("marker_collection/test_iterating_marker.png")
 
 
 class TestLineMarkerCollection:
