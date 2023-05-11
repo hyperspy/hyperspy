@@ -1380,3 +1380,61 @@ Marker properties
 
 The optional parameters (``**kwargs``, keyword arguments) can be used for extra parameters used in matplotlib.
 (The ``color`` property in rectangle marker is an alias of ``edgecolor`` for backward compatibility)
+
+
+Marker Collections
+------------------
+.. versionadded:: 2.0
+   Marker Collections for faster plotting of many markers
+
+In situations where you have a lot of markers that you want to plot it is often faster to plot a collection of
+markers.  While these marker collections plot much faster you give up some of the flexibility that comes with
+plotting each marker individually.
+
+Hyperspy's `MarkerCollection` class extends the capabilities of the matplotlib `Collections` class and subclasses.
+Primarily it allows dynamic markers to be initialized by passing key word arguments with `dtype=object`. Those
+attributes are then updated with the plot as you navigate through the plot.
+
+In most cases the `offset` kwarg is used to map some marker to multiple positions in the plot. For example we can
+define a plot of Ellipses using:
+
+.. code-block:: python
+    >>> from matplotlib.collections import EllipseCollection
+    >>> import numpy as np
+    >>> import hyperspy.api as hs
+    >>> hs.drawing.markers.MarkerCollection(EllipseCollection, heights=(.4,), widths=(1,),
+    >>>                                     angles=(10,), offsets = np.array([[0,0],[1,1]]))
+Alternatively if we want to make ellipses with different heights and widths we can pass multiple values to
+heights, widths and angles.  In general these properties will be applied such that prop[i % len(prop)] so
+passing `heights=(.1,.2,.3)` will result in the ellipse at offsets[0] with a height of 0.1 the ellipse at
+offsets[1] with a height of 0.1, ellipse at offsets[2] has a height of 0.3 and the ellipse at offsets[3] has
+a height of 0.1 and so on.
+
+For attributes which we want to by dynamic and change with the navigation `index` we can pass those values as
+an array with `dtype=object`.  Each of those values will be set as the index changes.
+
+.. NOTE::
+    Only kwargs which can be passed to the :py:func:`matplotlib.collections.Collection.set` function or the
+    corresponding `set` function for the appropriate subclass can be dynamic.
+
+If we want to plot a series of points using the scatter function we can use the following code, in this case
+both the `sizes` and `offset` kwargs are dynamic and change with each index.
+
+.. code-block:: python
+    >>> import numpy as np
+    >>> import hyperspy.api as hs
+    >>> data = np.empty((2,2), dtype=object)
+    >>> sizes = np.empty((2,2), dtype=object)
+    >>> for i, ind in enumerate(np.ndindex((2,2))):
+    >>>     data[ind] = np.random.rand(i+1,2)*3 # dynamic positions
+    >>>     sizes[ind] = [(i+1)/10,]  # dynamic sizes
+    >>> m = MarkerCollection(sizes=sizes, offsets=data, c="r")
+    >>> s = hs.signals.Signal2D(np.zeros((2,2,4,4)))
+    >>> s.plot()
+    >>> s.add_marker(m)
+
+The MarkerCollection also has a class method :py:func:~plot.markers.MarkerCollection.from_signal which can
+be used to create a set of markers from the output of some map function.  In this case `signal.data` is mapped
+to some `key` and used to initialize a MarkerCollection. If the signal has the attribute
+`signal.metadata.Peaks.signal_axes` and convert_units = True then the values will be converted to the proper units
+before creating the `MarkerCollection`.
