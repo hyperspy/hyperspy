@@ -20,10 +20,16 @@ import numpy as np
 import dask.array as da
 import matplotlib
 from hyperspy.events import Event, Events
-from matplotlib.collections import LineCollection
+from matplotlib.transforms import Affine2D
 import logging
 from packaging.version import Version
 _logger = logging.getLogger(__name__)
+
+def convert_positions(peaks, signal_axes):
+    new_data = np.empty(peaks.shape[:-1] + (len(signal_axes),) )
+    for i, ax in enumerate(signal_axes):
+        new_data[..., i] = ax.scale * peaks[:,i] - ax.offset
+    return new_data
 
 
 class MarkerCollection(object):
@@ -40,10 +46,17 @@ class MarkerCollection(object):
 
     >>>from matplotlib.collections import EllipseCollection
     >>>from hyperspy.drawing.marker import MarkerCollection
-    >>>MarkerCollection(collection_class=EllipseCollection, widths=(2,),
-    >>>                 heights=(1,), angles=(1,), units="xy", offsets=np.random.rand(10,2))
-    >>>
+    >>>import hyperspy.api as hs
+    >>>import numpy as np
+    >>>m = MarkerCollection(collection_class=EllipseCollection, widths=(2,),
+    >>>                 heights=(1,), angles=(1,), units="xy", offsets=np.random.rand(10,2)*10)
+    >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
+    >>>s.plot()
+    >>>s.add_marker(m)
 
+    To define a non-static marker any kwarg that can be set with the `matplotlib.collections.set`
+    method can be passed as an array with `dtype=object` and the same size as the navigation axes
+    for a signal.
     """
 
     def __init__(self,
@@ -102,6 +115,7 @@ class MarkerCollection(object):
                     signal,
                     key="offsets",
                     collection_class=None,
+                    convert_units=True,**kwargs
                     ):
         """
         Initialize a marker collection from a hyperspy Signal.
@@ -115,10 +129,17 @@ class MarkerCollection(object):
             create the Collection. Passed as {key: signal.data}.
         collection_class: None or matplotlib.collections
             The collection which is initialized
+        convert_units: bool
+            If True look for signal_axes saved in metadata and convert from
+            pixel positions to real units before creating the collection.
         """
-        kwds = {key: signal.data}
-        return cls(collection_class=collection_class,
-                   **kwds)
+        if convert_units and signal.metadata.has_item("Peaks.signal_axes"):
+            new_signal = signal.map(convert_positions,
+                                    inplace=False, ragged=True)
+        else:
+            new_signal = signal
+        kwargs[key] = new_signal.data
+        return cls(collection_class=collection_class,**kwargs)
 
     def _get_data_shape(self):
         for key, item in self.kwargs.items():
@@ -133,32 +154,42 @@ class MarkerCollection(object):
             'kwargs': self.kwargs}
         return marker_dict
 
-    def get_data_position(self):
+    def get_data_position(self, get_static_kwargs=True):
         """
         Return the current keyword arguments for updating the collection.
         """
-        indices = self.axes_manager.indices[::-1]
         current_keys = {}
-        for key, value in self.kwargs.items():
-            if is_iterating(value):
-                current_keys[key] = value[indices]
-            else:
-                current_keys[key] = value
+        if self.is_iterating:
+            indices = self.axes_manager.indices[::-1]
+
+            for key, value in self.kwargs.items():
+                if is_iterating(value):
+                    current_keys[key] = value[indices]
+                elif get_static_kwargs:
+                    current_keys[key] = value
+                else: # key already set in init
+                    pass
+        else:
+            current_keys = self.kwargs
         return current_keys
 
     def update(self):
         if self.auto_update is False:
             return
-        kwds = self.get_data_position()
+        kwds = self.get_data_position(get_static_kwargs=False)
         self.collection.set(**kwds)
 
-    def initialize_collection(self):
+    def _initialize_collection(self):
         if self.collection_class is None:
             self.collection = self.ax.scatter([], [],
                                               **self.get_data_position())
         else:
             self.collection = self.collection_class(**self.get_data_position(),
-                                                    transOffset=self.ax.transData)
+                                                    transOffset=self.ax.transData,
+                                                    )
+        sc = self.ax.bbox.width / self.ax.viewLim.width
+        trans = Affine2D().scale(sc)
+        self.collection.set_transform(trans)
 
     def plot(self, render_figure=True):
         """
@@ -178,7 +209,7 @@ class MarkerCollection(object):
                 "To use this method the marker needs to be first add to a " +
                 "figure using `s._plot.signal_plot.add_marker(m)` or " +
                 "`s._plot.navigator_plot.add_marker(m)`")
-        self.initialize_collection()
+        self._initialize_collection()
         self.collection.set_animated(self.ax.figure.canvas.supports_blit)
         self.ax.add_collection(self.collection)
         if render_figure:
