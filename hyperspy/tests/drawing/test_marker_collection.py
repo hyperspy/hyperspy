@@ -29,7 +29,8 @@ from matplotlib.patches import RegularPolygon
 BASELINE_DIR = 'marker_collection'
 DEFAULT_TOL = 2.0
 STYLE_PYTEST_MPL = 'default'
-
+import matplotlib.pyplot as plt
+plt.style.use(STYLE_PYTEST_MPL)
 
 class TestCollections:
     @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
@@ -50,7 +51,7 @@ class TestCollections:
                   {"numsides": 7, "sizes":(.4,)},
                   {"verts": np.array([[[0, 0], [.3, .3], [.3, .6], [.6, .3]]])},
                   {"patches":[RegularPolygon(xy=(0,0), numVertices=7, radius=.5,),],},
-                  {"sizes":(14,)},
+                  {"sizes":(0.5,)},
                   ]
         for k, o, c in zip(kwargs, offsets, collections):
             k["offsets"] = o
@@ -83,7 +84,7 @@ class TestCollections:
                   {"numsides": 7, "sizes":(.4,)},
                   {"verts": np.array([[[0, 0], [.3, .3], [.3, .6], [.6, .3]]])},
                   {"patches":[RegularPolygon(xy=(0,0), numVertices=7, radius=.5,),],},
-                  {"sizes":(14,)},
+                  {"sizes":(0.5,)},
                   ]
         for k, o, c in zip(kwargs, offsets, collections):
             k["offsets"] = o
@@ -97,6 +98,9 @@ class TestCollections:
         [s.add_marker(c, plot_on_signal=False) for c in collections]
         return s._plot.navigator_plot.figure
 
+    @pytest.mark.mpl_image_compare(baseline_dir=BASELINE_DIR,
+                                   tolerance=DEFAULT_TOL,
+                                   style=STYLE_PYTEST_MPL)
     def test_iterating_marker(self):
         data = np.empty((3,), dtype=object)
         for i in np.ndindex(data.shape):
@@ -107,6 +111,7 @@ class TestCollections:
                                    sizes=(.2,))
         s.add_marker(markers)
         s.axes_manager.navigation_axes[0].index=2
+        return s._plot.signal_plot.figure
 
     def test_from_signal(self):
         data = np.empty((3,), dtype=object)
@@ -118,6 +123,7 @@ class TestCollections:
         s = Signal2D(np.ones((3, 5, 6)))
         s.add_marker(col)
         s.axes_manager.navigation_axes[0].index = 2
+        s._plot.signal_plot.figure.savefig("marker_collection/test_iterating_marker.png")
 
 
 class TestLineMarkerCollection:
