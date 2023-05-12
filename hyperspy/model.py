@@ -57,11 +57,11 @@ from hyperspy.misc.export_dictionary import (
     load_from_dictionary,
     parse_flag_string,
     reconstruct_object
-    )
+)
 from hyperspy.misc.model_tools import (
     current_model_values,
     _calculate_covariance,
-    )
+)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.misc.utils import (
     dummy_context_manager,
@@ -69,7 +69,7 @@ from hyperspy.misc.utils import (
     shorten_name,
     slugify,
     stash_active_state
-    )
+)
 from hyperspy.signal import BaseSignal
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.misc.machine_learning import import_sklearn
@@ -113,7 +113,7 @@ def _twinned_parameter(parameter):
     construct a mapping between the twinned parameter and the parameter
     component to which the (non-free) twinned parameter component value needs
     to be added.
-    
+
     Returns
     -------
     parameter when there is a twin and this twin is free
@@ -568,7 +568,7 @@ class BaseModel(list):
 
     def _as_signal_iter(self, data, component_list=None,
                         show_progressbar=None):
-        #BUG: with lazy signal returns lazy signal with numpy array
+        # BUG: with lazy signal returns lazy signal with numpy array
         # Note that show_progressbar can be an int to determine the progressbar
         # position for a thread-friendly bars. Otherwise race conditions are
         # ugly...
@@ -953,7 +953,8 @@ class BaseModel(list):
     def _model_function(self, param):
         self.p0 = param
         self._fetch_values_from_p0()
-        to_return = self.__call__(non_convolved=False, onlyactive=True, binned=self._binned)
+        to_return = self.__call__(
+            non_convolved=False, onlyactive=True, binned=self._binned)
         return to_return
 
     @property
@@ -1003,7 +1004,7 @@ class BaseModel(list):
         free_nonlinear_parameters = [
             p for c in self.active_components for p in c.parameters
             if p.free and not p._linear
-            ]
+        ]
         if free_nonlinear_parameters:
             raise RuntimeError(
                 "Not all free parameters are linear. Fit with a different "
@@ -1021,7 +1022,7 @@ class BaseModel(list):
         parameters = [
             p for c in self.active_components for p in c.parameters
             if p.free
-            ]
+        ]
 
         n_parameters = len(parameters)
         if not n_parameters:
@@ -1030,9 +1031,9 @@ class BaseModel(list):
         # 'parameter':'twin' taking into account the fact that the twin is not
         # necessary free or the twin can be twinned itself!
         twin_parameters_mapping = {
-            p:_twinned_parameter(p) for c in self.active_components
+            p: _twinned_parameter(p) for c in self.active_components
             for p in c.parameters if _twinned_parameter(p) is not None
-            }
+        }
 
         # Linear parameters must be set to a nonzero value before fitting to
         # avoid the entire component being zero. The value of 1 is chosen for
@@ -1064,7 +1065,7 @@ class BaseModel(list):
                         f"Component {component} has more than one free "
                         "parameter,  which is only supported for "
                         "`Expression` component."
-                        )
+                    )
                 free, fixed = component._separate_pseudocomponents()
                 for p in free_parameters:
                     # Use the index in the `parameters` list as reference
@@ -1072,7 +1073,7 @@ class BaseModel(list):
                     index = parameters.index(p)
                     comp_values[index] = component._compute_expression_part(
                         free[p.name]
-                        )
+                    )
                     constant_term += component._compute_expression_part(fixed)
 
             elif len(free_parameters) == 1:
@@ -1084,7 +1085,7 @@ class BaseModel(list):
                 index = parameters.index(p)
                 comp_value = self.__call__(
                     component_list=[component], binned=False
-                    )
+                )
                 comp_constant_values = component._compute_constant_term()
                 comp_values[index] += comp_value - comp_constant_values
                 constant_term += comp_constant_values
@@ -1093,7 +1094,7 @@ class BaseModel(list):
                 # No free parameters, so component is fixed.
                 constant_term += self.__call__(
                     component_list=[component], binned=False
-                    )
+                )
 
         # Reshape what may potentially be Signal2D data into a long Signal1D
         # shape and an nD navigation shape to a 1D nav shape
@@ -1106,7 +1107,7 @@ class BaseModel(list):
             target_signal = self.signal.data.reshape(
                 (np.prod(nav_shape, dtype=int), ) +
                 (np.prod(sig_shape, dtype=int), )
-                )[:, channel_switches]
+            )[:, channel_switches]
 
         if is_binned(self.signal):
             target_signal = target_signal / np.prod(
@@ -1140,7 +1141,7 @@ class BaseModel(list):
                 raise ValueError(
                     "The `ridge_regression` solver can't operate lazily, the "
                     "`lstsq` solver can be used instead."
-                    )
+                )
 
             kwargs.setdefault('alpha', 0.0)
             coefficient_array = \
@@ -1148,7 +1149,7 @@ class BaseModel(list):
                     X=comp_values.T,
                     y=target_signal.T,
                     **kwargs
-                    )
+                )
             residual = None
         else:
             raise ValueError(f"Optimizer {optimizer} not supported. Use "
@@ -1180,11 +1181,14 @@ class BaseModel(list):
 
         if not only_current:
             # The nav shape will have been flattened. We reshape it here.
-            fit_output['x'] = fit_output['x'].reshape(nav_shape + (n_parameters,))
+            fit_output['x'] = fit_output['x'].reshape(
+                nav_shape + (n_parameters,))
 
             if calculate_errors:
-                fit_output['covar'] = fit_output['covar'].reshape(nav_shape + (n_parameters, n_parameters))
-                fit_output["perror"] = fit_output["perror"].reshape(nav_shape + (n_parameters,))
+                fit_output['covar'] = fit_output['covar'].reshape(
+                    nav_shape + (n_parameters, n_parameters))
+                fit_output["perror"] = fit_output["perror"].reshape(
+                    nav_shape + (n_parameters,))
 
         if self.signal._lazy and calculate_errors:
             with cm():
@@ -1222,7 +1226,7 @@ class BaseModel(list):
                 if only_current:
                     variance = variance.data.__getitem__(
                         self.axes_manager._getitem_tuple
-                        )[np.where(self.channel_switches)]
+                    )[np.where(self.channel_switches)]
                 else:
                     variance = variance.data[..., np.where(
                         self.channel_switches)[0]]
@@ -1258,7 +1262,8 @@ class BaseModel(list):
             p_var.fill(np.nan)
             warn_cov = True
         elif isinstance(pcov, np.ndarray):
-            p_var = np.diag(pcov).astype(float) if pcov.ndim > 1 else pcov.astype(float)
+            p_var = np.diag(pcov).astype(
+                float) if pcov.ndim > 1 else pcov.astype(float)
 
             if p_var.min() < 0 or np.any(np.isnan(p_var)) or np.any(np.isinf(p_var)):
                 # Numerical overflow on diagonal
@@ -1271,7 +1276,8 @@ class BaseModel(list):
                 p_var.fill(np.nan)
                 warn_cov = True
         else:
-            raise ValueError(f"pcov should be None or np.ndarray, got {type(pcov)}")
+            raise ValueError(
+                f"pcov should be None or np.ndarray, got {type(pcov)}")
 
         if warn_cov:
             _logger.warning(
@@ -1425,11 +1431,13 @@ class BaseModel(list):
 
         if optimizer in ["Dual Annealing", "SHGO"]:
             if Version(scipy.__version__) < Version("1.2.0"):
-                raise ValueError(f"`optimizer='{optimizer}'` requires scipy >= 1.2.0")
+                raise ValueError(
+                    f"`optimizer='{optimizer}'` requires scipy >= 1.2.0")
 
             from scipy.optimize import dual_annealing, shgo
 
-            _supported_global.update({"Dual Annealing": dual_annealing, "SHGO": shgo})
+            _supported_global.update(
+                {"Dual Annealing": dual_annealing, "SHGO": shgo})
 
         _supported_fd_schemes = ["2-point", "3-point", "cs"]
         _supported_losses = ["ls", "ML-poisson", "huber"]
@@ -1505,7 +1513,8 @@ class BaseModel(list):
             if not _has_gradient:
                 # Alert the user that analytical gradients
                 # are not supported (and the reason why)
-                raise ValueError(f"`grad='analytical' is not supported: {_jac_err_msg}")
+                raise ValueError(
+                    f"`grad='analytical' is not supported: {_jac_err_msg}")
         elif callable(grad):
             grad = partial(grad, self)
         elif grad == "fd":
@@ -1559,7 +1568,7 @@ class BaseModel(list):
             args = (
                 self.signal(as_numpy=True)[np.where(self.channel_switches)],
                 weights
-                )
+            )
 
             if optimizer == "lm":
                 if bounded:
@@ -1591,10 +1600,13 @@ class BaseModel(list):
                     self.p0 = self.fit_output.x
                     ysize = len(self.fit_output.x) + self.fit_output.dof
                     cost = self.fit_output.fnorm
-                    pcov = self.fit_output.perror ** 2
+                    pcov = None
+                    if self.fit_output.perror is not None:
+                        pcov = self.fit_output.perror ** 2
 
                     # Calculate estimated parameter standard deviation
-                    self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
+                    self.p_std = self._calculate_parameter_std(
+                        pcov, cost, ysize)
 
                 else:
                     # Unbounded Levenberg-Marquardt algorithm is supported
@@ -1628,7 +1640,8 @@ class BaseModel(list):
                     pcov = self.fit_output.covar
 
                     # Calculate estimated parameter standard deviation
-                    self.p_std = self._calculate_parameter_std(pcov, cost, ysize)
+                    self.p_std = self._calculate_parameter_std(
+                        pcov, cost, ysize)
 
             elif optimizer in ["trf", "dogbox"]:
                 self._set_boundaries(bounded=bounded)
@@ -1710,7 +1723,7 @@ class BaseModel(list):
                     optimizer=optimizer,
                     weights=weights,
                     **kwargs
-                    )
+                )
                 self.fit_output = OptimizeResult(**fit_output)
 
                 if only_current:
@@ -1802,7 +1815,7 @@ class BaseModel(list):
             message = self.fit_output.get("message", "Unknown reason")
             _logger.warning(
                 f"`m.fit()` did not exit successfully. Reason: {message}"
-                )
+            )
 
         # Return info
         if return_info:
@@ -1893,7 +1906,7 @@ class BaseModel(list):
             )
         linear_fitting = kwargs.get("optimizer", "") in [
             "lstsq", "ridge_regression"
-            ]
+        ]
         if iterpath is None:
             if self.axes_manager.iterpath == "flyback" and not linear_fitting:
                 # flyback is set by default in axes_manager.iterpath
@@ -1913,8 +1926,8 @@ class BaseModel(list):
         maxval = self.axes_manager._get_iterpath_size(masked_elements)
         show_progressbar = show_progressbar and (maxval != 0)
 
-        #The _binned attribute is evaluated only once in the multifit procedure
-        #and stored in an instance variable
+        # The _binned attribute is evaluated only once in the multifit procedure
+        # and stored in an instance variable
         self._binned = is_binned(self.signal)
 
         if linear_fitting:
@@ -1925,18 +1938,18 @@ class BaseModel(list):
             nonfree_parameters = [
                 p for c in self.active_components
                 for p in c.parameters if not p._free
-                ]
+            ]
             navigation_variable_nonfree_parameters = [
                 p for p in nonfree_parameters
                 if (np.any(p.map['is_set']) and
                     np.any(p.map['values'] != p.map['values'][0]))
-                ]
+            ]
             # Check that all active components are active for the whole
             # navigation dimension
             active_is_multidimensional = [
                 c for c in self
                 if c.active_is_multidimensional and np.any(~c._active_array)
-                ]
+            ]
 
             if len(navigation_variable_nonfree_parameters) > 0:
                 warnings.warn(
@@ -1987,7 +2000,7 @@ class BaseModel(list):
                 # passing it down to 'ridge_regression'
                 if self.signal._lazy:
                     kwargs['show_progressbar'] = show_progressbar
-                self.fit( **kwargs)
+                self.fit(**kwargs)
 
                 # TODO: check what happen to linear twinned parameter
                 for i, para in enumerate(self._free_parameters):
@@ -2035,7 +2048,8 @@ class BaseModel(list):
                                 # first check if model has set initial values in
                                 # parameters.map['values'][indices],
                                 # otherwise use values from previous fit
-                                self.fetch_stored_values(only_fixed=fetch_only_fixed)
+                                self.fetch_stored_values(
+                                    only_fixed=fetch_only_fixed)
                                 self.fit(**kwargs)
                                 i += 1
                                 pbar.update(1)
@@ -2050,8 +2064,8 @@ class BaseModel(list):
             _logger.info(f"Deleting temporary file: {autosave_fn}.npz")
             os.remove(autosave_fn + ".npz")
 
-        #_binned attribute is re-set to None so the behaviour of future fit() calls
-        #is not altered. In future implementation, a more elegant implementation
+        # _binned attribute is re-set to None so the behaviour of future fit() calls
+        # is not altered. In future implementation, a more elegant implementation
         # could be found
         self._binned = None
 
@@ -2295,7 +2309,7 @@ class BaseModel(list):
                 parameter_name_list,
                 only_linear=only_linear,
                 only_nonlinear=only_nonlinear
-                )
+            )
 
     def set_parameters_free(self, component_list=None,
                             parameter_name_list=None,
@@ -2347,7 +2361,7 @@ class BaseModel(list):
                 parameter_name_list,
                 only_linear=only_linear,
                 only_nonlinear=only_nonlinear
-                )
+            )
 
     def set_parameters_value(
             self,
