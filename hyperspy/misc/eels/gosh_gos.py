@@ -109,7 +109,7 @@ class GoshGOS(TabulatedGOS):
 
         error_message = (
             "The GOSH Parametrized GOS database does not "
-            f"contain a valid entry the {subshell} subshell"
+            f"contain a valid entry the {subshell} subshell "
             f"of {element}. Please select a different database."
         )
 
@@ -119,7 +119,7 @@ class GoshGOS(TabulatedGOS):
                 raise ValueError(error_message)
             table = conventions[subshell].attrs['table']
             self.subshell_factor = conventions[subshell].attrs['occupancy_ratio']
-            stem = '/{}/{}'.format(element, table)
+            stem = f'/{element}/{table}'
             if stem not in h:
                 raise ValueError(error_message)
             gos_group = h[stem]
