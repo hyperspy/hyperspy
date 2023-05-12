@@ -33,7 +33,7 @@ R = constants.value("Rydberg constant times hc in eV")
 a0 = constants.value("Bohr radius")
 
 
-class GOSBase:
+class BaseGOS:
 
     def read_elements(self):
         element = self.element
@@ -93,7 +93,7 @@ class GOSBase:
         return qaxis, qgosi.clip(0)
 
 
-class TabulatedGOS(GOSBase):
+class TabulatedGOS(BaseGOS):
 
     def __init__(self, element_subshell):
         """
