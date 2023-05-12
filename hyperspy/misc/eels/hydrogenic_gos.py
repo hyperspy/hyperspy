@@ -112,7 +112,7 @@ class HydrogenicGOS(GOSBase):
         else:
             raise ValueError(
                 'The Hydrogenic GOS currently can only'
-                'compute K or L shells. Try using Hartree-Slater GOS')
+                'compute K or L shells. Try using other GOS.')
 
         self.energy_axis = self.rel_energy_axis + self.onset_energy
 

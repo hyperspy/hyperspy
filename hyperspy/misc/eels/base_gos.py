@@ -40,14 +40,15 @@ class GOSBase:
         subshell = self.subshell
         # Convert to the "GATAN" nomenclature
         if (element in elements) is not True:
-            raise ValueError("The given element " + element +
-                             " is not in the database.")
-        elif subshell not in elements[element]['Atomic_properties']['Binding_energies']:
             raise ValueError(
-                "The given subshell " + subshell +
-                " is not in the database.\n" +
-                "The available subshells are:\n" +
-                str(list(elements[element]['Atomic_properties']['subshells'].keys())))
+                f"The given element {element} is not in the database."
+                )
+        elif subshell not in elements[element]['Atomic_properties']['Binding_energies']:
+            subshells = ", ".join(list(elements[element]['Atomic_properties']['Binding_energies'].keys()))
+            raise ValueError(
+                f"The given subshell {subshell} is not in the database. The "
+                f"available subshells are:\n{subshells}"
+                )
 
         self.onset_energy = \
             elements[

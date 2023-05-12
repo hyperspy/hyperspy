@@ -96,7 +96,7 @@ class HartreeSlaterGOS(TabulatedGOS):
         super().read_elements()
         self.subshell_factor = conventions[self.subshell]['factor']
 
-    def read_gos_data(self):
+    def read_gos_data(self):  # pragma: no cover
         _logger.info(
             "Hartree-Slater GOS\n"
             f"\tElement: {self.element} "
@@ -110,11 +110,7 @@ class HartreeSlaterGOS(TabulatedGOS):
         # Check if the Peter Rez's Hartree Slater GOS distributed by
         # Gatan are available. Otherwise exit
         gos_root = Path(preferences.EELS.eels_gos_files_path)
-        gos_file = gos_root.joinpath(
-            (
-                "{}.{}".format(element,table)
-            )
-        )
+        gos_file = gos_root / f"{element}.{table}"
 
         if not gos_root.is_dir():
             raise FileNotFoundError(

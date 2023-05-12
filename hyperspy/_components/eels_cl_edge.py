@@ -119,7 +119,7 @@ class EELSCLEdge(Component):
 
         if GOS == "gosh":
             self.GOS = GoshGOS(element_subshell, gos_file_path=gos_file_path)
-        elif GOS == "Hartree-Slater":
+        elif GOS == "Hartree-Slater":  # pragma: no cover
             self.GOS = HartreeSlaterGOS(element_subshell)
         elif GOS == "hydrogenic":
             self.GOS = HydrogenicGOS(element_subshell)
