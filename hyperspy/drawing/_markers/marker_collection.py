@@ -22,13 +22,15 @@ import matplotlib
 from hyperspy.events import Event, Events
 from matplotlib.transforms import Affine2D
 import logging
-from packaging.version import Version
 _logger = logging.getLogger(__name__)
 
 def convert_positions(peaks, signal_axes):
+    if peaks.dtype ==object and peaks.shape ==(1,):
+        peaks = peaks[0]
     new_data = np.empty(peaks.shape[:-1] + (len(signal_axes),) )
-    for i, ax in enumerate(signal_axes):
-        new_data[..., i] = ax.scale * peaks[:,i] - ax.offset
+    for i, ax in enumerate(signal_axes[::-1]):
+        # indexes need to be reversed
+        new_data[..., (-i-1)] = ax.scale * peaks[:,i] + ax.offset
     return new_data
 
 
@@ -115,7 +117,8 @@ class MarkerCollection(object):
                     signal,
                     key="offsets",
                     collection_class=None,
-                    convert_units=True,**kwargs
+                    signal_axes="metadata",
+                    **kwargs
                     ):
         """
         Initialize a marker collection from a hyperspy Signal.
@@ -129,15 +132,26 @@ class MarkerCollection(object):
             create the Collection. Passed as {key: signal.data}.
         collection_class: None or matplotlib.collections
             The collection which is initialized
-        convert_units: bool
-            If True look for signal_axes saved in metadata and convert from
-            pixel positions to real units before creating the collection.
+        signal_axes: str, tuple of UniformAxes or None
+            If "metadata" look for signal_axes saved in metadata under .metadata.Peaks.signal_axes
+            and convert from pixel positions to real units before creating the collection. If a tuple
+            of signal axes those Axes will be used otherwise no transformation will
+            happen.
         """
-        if convert_units and signal.metadata.has_item("Peaks.signal_axes"):
-            new_signal = signal.map(convert_positions,
-                                    inplace=False, ragged=True)
-        else:
+        if signal_axes is None or (signal_axes =="metadata" and
+                                   not signal.metadata.has_item("Peaks.signal_axes")):
             new_signal = signal
+        elif signal_axes =="metadata" and signal.metadata.has_item("Peaks.signal_axes"):
+            new_signal = signal.map(convert_positions,
+                                    inplace=False, ragged=True,
+                                    signal_axes=signal.metadata.Peaks.signal_axes)
+        elif isinstance(signal_axes, (tuple, list)):
+            new_signal = signal.map(convert_positions,
+                                    inplace=False, ragged=True,
+                                    signal_axes=signal_axes)
+        else:
+            raise ValueError("The keyword argument `signal_axes` must be one of 'metadata' a"
+                             "tuple of `DataAxes` or None")
         kwargs[key] = new_signal.data
         return cls(collection_class=collection_class,**kwargs)
 
