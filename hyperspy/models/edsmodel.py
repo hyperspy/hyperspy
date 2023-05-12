@@ -691,8 +691,8 @@ class EDSModel(Model1D):
                             element, li, weight_line)
                         component_sub.A.twin = component.A
                     else:
-                        warnings.warn("The X-ray line expected to be in the "
-                                      "model was not found")
+                        warning_text = f"The X-ray line {xray_sub} expected to be in the model was not found"
+                        warnings.warn(warning_text)
         for component in self.xray_lines:
             if xray_lines == 'all' or component.name in xray_lines:
                 fix_twin(component)
