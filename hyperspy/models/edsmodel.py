@@ -676,13 +676,14 @@ class EDSModel(Model1D):
         """
 
         def fix_twin(component):
+
             component.A.bmin = 0.0
             component.A.bmax = None
             element, line = utils_eds._get_element_and_line(component.name)
             for li in elements_db[element]['Atomic_properties']['Xray_lines']:
                 if line[0] in li and line != li:
                     xray_sub = element + '_' + li
-                    if xray_sub in self:
+                    if xray_sub in [_comp.name for _comp in self]:
                         component_sub = self[xray_sub]
                         component_sub.A.bmin = 1e-10
                         component_sub.A.bmax = None
