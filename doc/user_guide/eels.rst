@@ -199,7 +199,11 @@ Load the core-loss and low-loss spectra
     ...                         spectrum_type="lowloss")[0]
 
 
-Set some important experimental information, the beam energy and experimental angles :
+Creating model
+^^^^^^^^^^^^^^
+
+Before creating a model, it is necessary to set some important experimental information,
+such as the beam energy and experimental angles:
 
 .. code-block:: python
 
@@ -213,7 +217,7 @@ Set some important experimental information, the beam energy and experimental an
     given in mrad. `beam_energy` is in keV.
 
 
-Define the chemical composition of the sample
+Define the chemical composition of the sample, that will be used in the model:
 
 .. code-block:: python
 
@@ -247,26 +251,43 @@ HyperSpy has created the model and configured it automatically:
 Conveniently, all the EELS core-loss components of the added elements are added
 automatically, named after its element symbol:
 
-.. NOTE::
-    Fitting EELS edges requires a model for the so-called *Generalised Oscillator
-    Strengths* (GOS). In this example, both edges shown are K Edges, which can be fitted
-    using an analytical model for the GOS. Fitting L edge gives more accurate
-    results using tabulated GOS data, while for M, N and O edges the tabulated sets
-    are strictly necessary. Therefore, tabulated data will be used by preference when
-    available.
-
-    The model for the GOS can be specified with the ``GOS`` argument
-    - see :py:meth:`~.api.signals.EELSSpectrum.create_model` for more details.
-
-    By default, a freely usable tabulated dataset, in GOSH format, is
-    downloaded from Zenodo: `doi:10.5281/zenodo.7645765 <https://zenodo.org/record/7645765>`_
-
 .. code-block:: python
 
     >>> m.components.N_K
     <N_K (EELSCLEdge component)>
     >>> m.components.B_K
     <B_K (EELSCLEdge component)>
+
+Generalised Oscillator Strengths
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Fitting EELS edges requires a model for the so-called *Generalised Oscillator
+Strengths* (GOS). In this example, both edges shown are K Edges, which can be fitted
+using an analytical model for the GOS. Fitting L edge gives more accurate
+results using tabulated GOS data, while for M, N and O edges the tabulated sets
+are strictly necessary. Therefore, tabulated data will be used by default.
+
+The model for the GOS can be specified with the ``GOS`` argument
+- see :py:meth:`~.api.signals.EELSSpectrum.create_model` for more details.
+
+By default, a freely usable tabulated dataset, in `gosh <https://gitlab.com/gguzzina/gosh>`__
+format, is downloaded from Zenodo:
+`doi:10.5281/zenodo.7645765 <https://zenodo.org/record/7645765>`_.
+
+Custom GOS saved in the `gosh <https://gitlab.com/gguzzina/gosh>`__ format can be used,
+the following example download a previous version (1.0) of the GOS file from Zenodo
+(`doi:10.5281/zenodo.6599071 <https://zenodo.org/record/6599071>`_) using
+`pooch <https://www.fatiando.org/pooch>`_:
+
+    >>> import pooch
+    >>> GOSH10 = pooch.retrieve(
+    ...     url="doi:10.5281/zenodo.6599071/Segger_Guzzinati_Kohl_1.0.0.gos",
+    ...     known_hash="md5:d65d5c23142532fde0a80e160ab51574",
+    ... )
+    >>> m = s.create_model(gos_file_path=GOSH10)
+
+
+Fitting model
+^^^^^^^^^^^^^
 
 By default the fine structure features are disabled (although
 the default value can be configured (see :ref:`configuring-hyperspy-label`).
@@ -295,9 +316,9 @@ image
 
 .. NOTE::
 
-    `m.smart_fit()` and `m.multifit(kind='smart')` are methods specific to the
-    EELS model. The fitting procedure acts in an iterative manner along the
-    energy-loss-axis. First it fits only the background up to the first edge.
+    :py:meth:`~.models.eelsmodel.EELSModel.smart_fit` and ``m.multifit(kind='smart')``
+    are methods specific to the EELS model. The fitting procedure acts in an iterative
+    manner along the energy-loss-axis. First it fits only the background up to the first edge.
     It continues by deactivating all edges except the first one, then performs
     the fit. Then it only activates the the first two, fits, and repeats this
     until all edges are fitted simultaneously.
