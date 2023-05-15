@@ -1399,6 +1399,7 @@ In most cases the `offset` kwarg is used to map some marker to multiple position
 define a plot of Ellipses using:
 
 .. code-block:: python
+
     >>> from matplotlib.collections import EllipseCollection
     >>> import numpy as np
     >>> import hyperspy.api as hs
@@ -1421,6 +1422,7 @@ If we want to plot a series of points using the scatter function we can use the 
 both the `sizes` and `offset` kwargs are dynamic and change with each index.
 
 .. code-block:: python
+
     >>> import numpy as np
     >>> import hyperspy.api as hs
     >>> data = np.empty((2,2), dtype=object)
@@ -1432,9 +1434,43 @@ both the `sizes` and `offset` kwargs are dynamic and change with each index.
     >>> s = hs.signals.Signal2D(np.zeros((2,2,4,4)))
     >>> s.plot()
     >>> s.add_marker(m)
+    >>>
 
 The MarkerCollection also has a class method :py:func:~plot.markers.MarkerCollection.from_signal which can
 be used to create a set of markers from the output of some map function.  In this case `signal.data` is mapped
 to some `key` and used to initialize a MarkerCollection. If the signal has the attribute
 `signal.metadata.Peaks.signal_axes` and convert_units = True then the values will be converted to the proper units
 before creating the `MarkerCollection`.
+
+Let's consider how plotting a bunch of different collections might look:
+
+.. code-block:: python
+
+    >>> from matplotlib.collections import (LineCollection, CircleCollection, EllipseCollection,
+    >>>                                                       StarPolygonCollection, PolyCollection, PatchCollection)
+    >>> from matplotlib.patches import RegularPolygon
+    >>>
+    >>> collections = [LineCollection, CircleCollection,
+    >>>                EllipseCollection,StarPolygonCollection,
+    >>>                PolyCollection,PatchCollection, None]
+    >>> num_col = len(collections)
+    >>> offsets = [np.stack([np.ones(num_col)*i, np.arange(num_col)], axis=1) for i in range(len(collections))]
+    >>> kwargs = [{"segments":np.array([[[0, 0], [0,-.5]]]), "lw":4},
+    >>>           {"sizes":(.4,)},
+    >>>           {"widths":(.2,), "heights":(.7,), "angles":(60,), "units":"xy"},
+    >>>           {"numsides": 7, "sizes":(.4,)},
+    >>>           {"verts": np.array([[[0, 0], [.3, .3], [.3, .6], [.6, .3]]])},
+    >>>           {"patches":[RegularPolygon(xy=(0,0), numVertices=7, radius=.5,),],},
+    >>>           {"sizes":(.5,)},
+    >>>          ]
+    >>> for k, o, c in zip(kwargs, offsets, collections):
+    >>>     k["offsets"] = o
+    >>>     k["collection_class"]= c
+    >>> collections = [MarkerCollection(**k) for k in kwargs]
+    >>> s = Signal2D(np.zeros((2, num_col, num_col)))
+    >>> s.plot()
+    >>> [s.add_marker(c) for c in collections]
+
+.. figure::  images/plot_marker_collection.png
+  :align:   center
+  :width:   100%
