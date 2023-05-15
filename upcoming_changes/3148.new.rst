@@ -1,0 +1,2 @@
+Adds in the `MarkerCollection` class which can be used with subclasses of `matplotlib.Collections` to
+create faster rendering figures.
