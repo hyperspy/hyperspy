@@ -1442,6 +1442,9 @@ to some `key` and used to initialize a MarkerCollection. If the signal has the a
 `signal.metadata.Peaks.signal_axes` and convert_units = True then the values will be converted to the proper units
 before creating the `MarkerCollection`.
 
+.. NOTE::
+    For kwargs like size, height, etc. the scale and the units of the x axis are used to plot.
+
 Let's consider how plotting a bunch of different collections might look:
 
 .. code-block:: python
