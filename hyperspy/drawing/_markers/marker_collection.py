@@ -22,15 +22,17 @@ import matplotlib
 from hyperspy.events import Event, Events
 from matplotlib.transforms import Affine2D
 import logging
+
 _logger = logging.getLogger(__name__)
 
+
 def convert_positions(peaks, signal_axes):
-    if peaks.dtype ==object and peaks.shape ==(1,):
+    if peaks.dtype == object and peaks.shape == (1,):
         peaks = peaks[0]
-    new_data = np.empty(peaks.shape[:-1] + (len(signal_axes),) )
+    new_data = np.empty(peaks.shape[:-1] + (len(signal_axes),))
     for i, ax in enumerate(signal_axes[::-1]):
         # indexes need to be reversed
-        new_data[..., (-i-1)] = ax.scale * peaks[:,i] + ax.offset
+        new_data[..., (-i - 1)] = ax.scale * peaks[:, i] + ax.offset
     return new_data
 
 
@@ -61,9 +63,7 @@ class MarkerCollection(object):
     for a signal.
     """
 
-    def __init__(self,
-                 collection_class=None,
-                 **kwargs):
+    def __init__(self, collection_class=None, **kwargs):
         """
         Initialize a Marker Collection.
 
@@ -94,32 +94,37 @@ class MarkerCollection(object):
         self.collection = None
         self.collection_class = collection_class
         self.signal = None
-        self.is_iterating = np.any([is_iterating(value) for key, value
-                                 in self.kwargs.items()])
+        self.is_iterating = np.any(
+            [is_iterating(value) for key, value in self.kwargs.items()]
+        )
         self._plot_on_signal = True
-        self.name = ''
+        self.name = ""
         self.plot_marker = True
 
         # Events
         self.events = Events()
-        self.events.closed = Event("""
+        self.events.closed = Event(
+            """
             Event triggered when a marker is closed.
 
             Arguments
             ---------
             marker : Marker
                 The marker that was closed.
-            """, arguments=['obj'])
+            """,
+            arguments=["obj"],
+        )
         self._closing = False
 
     @classmethod
-    def from_signal(cls,
-                    signal,
-                    key="offsets",
-                    collection_class=None,
-                    signal_axes="metadata",
-                    **kwargs
-                    ):
+    def from_signal(
+        cls,
+        signal,
+        key="offsets",
+        collection_class=None,
+        signal_axes="metadata",
+        **kwargs
+    ):
         """
         Initialize a marker collection from a hyperspy Signal.
 
@@ -138,22 +143,31 @@ class MarkerCollection(object):
             of signal axes those Axes will be used otherwise no transformation will
             happen.
         """
-        if signal_axes is None or (signal_axes =="metadata" and
-                                   not signal.metadata.has_item("Peaks.signal_axes")):
+        if signal_axes is None or (
+            signal_axes == "metadata"
+            and not signal.metadata.has_item("Peaks.signal_axes")
+        ):
             new_signal = signal
-        elif signal_axes =="metadata" and signal.metadata.has_item("Peaks.signal_axes"):
-            new_signal = signal.map(convert_positions,
-                                    inplace=False, ragged=True,
-                                    signal_axes=signal.metadata.Peaks.signal_axes)
+        elif signal_axes == "metadata" and signal.metadata.has_item(
+            "Peaks.signal_axes"
+        ):
+            new_signal = signal.map(
+                convert_positions,
+                inplace=False,
+                ragged=True,
+                signal_axes=signal.metadata.Peaks.signal_axes,
+            )
         elif isinstance(signal_axes, (tuple, list)):
-            new_signal = signal.map(convert_positions,
-                                    inplace=False, ragged=True,
-                                    signal_axes=signal_axes)
+            new_signal = signal.map(
+                convert_positions, inplace=False, ragged=True, signal_axes=signal_axes
+            )
         else:
-            raise ValueError("The keyword argument `signal_axes` must be one of 'metadata' a"
-                             "tuple of `DataAxes` or None")
+            raise ValueError(
+                "The keyword argument `signal_axes` must be one of 'metadata' a"
+                "tuple of `DataAxes` or None"
+            )
         kwargs[key] = new_signal.data
-        return cls(collection_class=collection_class,**kwargs)
+        return cls(collection_class=collection_class, **kwargs)
 
     def _get_data_shape(self):
         for key, item in self.kwargs.items():
@@ -163,9 +177,10 @@ class MarkerCollection(object):
 
     def _to_dictionary(self):
         marker_dict = {
-            'marker_type': self.collection_class,
-            'plot_on_signal': self._plot_on_signal,
-            'kwargs': self.kwargs}
+            "marker_type": self.collection_class,
+            "plot_on_signal": self._plot_on_signal,
+            "kwargs": self.kwargs,
+        }
         return marker_dict
 
     def get_data_position(self, get_static_kwargs=True):
@@ -181,7 +196,7 @@ class MarkerCollection(object):
                     current_keys[key] = value[indices]
                 elif get_static_kwargs:
                     current_keys[key] = value
-                else: # key already set in init
+                else:  # key already set in init
                     pass
         else:
             current_keys = self.kwargs
@@ -195,12 +210,12 @@ class MarkerCollection(object):
 
     def _initialize_collection(self):
         if self.collection_class is None:
-            self.collection = self.ax.scatter([], [],
-                                              **self.get_data_position())
+            self.collection = self.ax.scatter([], [], **self.get_data_position())
         else:
-            self.collection = self.collection_class(**self.get_data_position(),
-                                                    transOffset=self.ax.transData,
-                                                    )
+            self.collection = self.collection_class(
+                **self.get_data_position(),
+                transOffset=self.ax.transData,
+            )
         sc = self.ax.bbox.width / self.ax.viewLim.width
         trans = Affine2D().scale(sc)
         self.collection.set_transform(trans)
@@ -220,9 +235,10 @@ class MarkerCollection(object):
         """
         if self.ax is None:
             raise AttributeError(
-                "To use this method the marker needs to be first add to a " +
-                "figure using `s._plot.signal_plot.add_marker(m)` or " +
-                "`s._plot.navigator_plot.add_marker(m)`")
+                "To use this method the marker needs to be first add to a "
+                + "figure using `s._plot.signal_plot.add_marker(m)` or "
+                + "`s._plot.navigator_plot.add_marker(m)`"
+            )
         self._initialize_collection()
         self.collection.set_animated(self.ax.figure.canvas.supports_blit)
         self.ax.add_collection(self.collection)
@@ -254,8 +270,6 @@ class MarkerCollection(object):
         if render_figure:
             self._render_figure()
 
+
 def is_iterating(arg):
-    return isinstance(arg,(np.ndarray, da.Array)) and arg.dtype==object
-
-
-
+    return isinstance(arg, (np.ndarray, da.Array)) and arg.dtype == object
