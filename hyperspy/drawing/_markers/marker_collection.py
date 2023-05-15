@@ -203,7 +203,7 @@ class MarkerCollection(object):
         return current_keys
 
     def update(self):
-        if self.auto_update is False:
+        if self.is_iterating is False:
             return
         kwds = self.get_data_position(get_static_kwargs=False)
         self.collection.set(**kwds)

@@ -283,6 +283,14 @@ class TestInitMarkerCollection:
                 col.get_data_position()["segments"], np.ones((10, 2, 2))
             )
 
+    @pytest.mark.parametrize(
+        "collection", ("iterating_line_collection", "static_line_collection")
+    )
+    def test_fail_plot(self, collection, request):
+        col = request.getfixturevalue(collection)
+        with pytest.raises(AttributeError):
+            col.plot()
+
 def _test_marker_collection_close():
     signal = Signal2D(np.ones((10,10)))
     segments = np.ones((10, 2, 2))
