@@ -16,9 +16,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 import pytest
 
-from hyperspy.drawing._markers.marker_collection import MarkerCollection
-from hyperspy._signals.signal2d import Signal2D, BaseSignal
-from hyperspy.axes import UniformDataAxis
+
 import numpy as np
 from matplotlib.collections import (
     LineCollection,
@@ -29,12 +27,16 @@ from matplotlib.collections import (
     PatchCollection,
 )
 from matplotlib.patches import RegularPolygon
+import matplotlib.pyplot as plt
+
+from hyperspy.drawing._markers.marker_collection import MarkerCollection
+from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
+from hyperspy.axes import UniformDataAxis
+from hyperspy.misc.test_utils import sanitize_dict, update_close_figure
 
 BASELINE_DIR = "marker_collection"
 DEFAULT_TOL = 2.0
 STYLE_PYTEST_MPL = "default"
-import matplotlib.pyplot as plt
-
 plt.style.use(STYLE_PYTEST_MPL)
 
 
@@ -280,3 +282,14 @@ class TestInitMarkerCollection:
             np.testing.assert_array_equal(
                 col.get_data_position()["segments"], np.ones((10, 2, 2))
             )
+
+def _test_marker_collection_close():
+    signal = Signal2D(np.ones((10,10)))
+    segments = np.ones((10, 2, 2))
+    markers = MarkerCollection(LineCollection, segments=segments)
+    signal.add_marker(markers)
+    return signal
+
+@update_close_figure()
+def test_marker_collection_close():
+    return _test_marker_collection_close()
