@@ -6,8 +6,7 @@
   User Guide <user_guide/index>
   Example <auto_examples/index>
   Reference <reference/index>
-  Get Help <help>
-  Contribute <dev_guide/index>
+  Community <community>
   Release Notes <changes>
 
 .. include:: intro.rst

@@ -117,10 +117,10 @@ Learning resources
     process multi-dimensional data using HyperSpy.
 
   .. grid-item-card::
-    :link: dev_guide/index
+    :link: community
     :link-type: doc
 
-    :octicon:`people;2em;sd-text-info` Contributing
+    :octicon:`people;2em;sd-text-info` Community
     ^^^
 
     HyperSpy is a community project maintained for and by its users.

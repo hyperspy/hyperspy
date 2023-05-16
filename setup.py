@@ -84,6 +84,7 @@ extras_require = {
     "coverage":["pytest-cov"],
     # required to build the docs
     "build-doc": [
+        "myst-parser",
         "pydata_sphinx_theme",
         "sphinx>=1.7",
         "sphinx-gallery",
