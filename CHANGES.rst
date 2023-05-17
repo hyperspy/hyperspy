@@ -190,6 +190,10 @@ Signal
 - Passing an "iterating over navigation argument" to the :py:meth:`~.signal.BaseSignal.map`
   method is removed, pass a HyperSpy signal with suitable navigation and signal shape instead.
 
+Signal2D
+--------
+- :meth:`~.api.signals.Signal2D.find_peaks` now return lazy signals in case of lazy input signal.
+
 Preferences
 -----------
 - The ``warn_if_guis_are_missing`` HyperSpy preferences setting has been removed,

@@ -27,6 +27,37 @@ from hyperspy.misc.machine_learning import import_sklearn
 
 NO_PEAKS = np.array([[np.nan, np.nan]])
 
+def _get_peak_position_and_intensity(X, f, **kwargs):
+    """
+    Take some function, f, and apply it to the 2d array X returning a list
+    of peak positions.  The intensity at each peak position is then appended
+    to the returned list of peaks
+
+    Parameters
+    ----------
+    X: 2-D array-like
+        The input image used to find peaks
+    f: func
+        The passed function to find peaks
+    kwargs:
+        Any additional keyword arguments passed to f
+
+    Returns
+    -------
+        peaks:array-like
+            A 2d array with columns [x, y, intensity]
+
+    """
+    peaks = f(X, **kwargs)
+
+    if np.any(np.isnan(peaks)): #handle no peaks
+        return np.array([[np.nan, np.nan,np.nan]])
+    else:
+        peaks_indices = np.round(peaks).astype(int)
+        intensity = X[peaks_indices[:, 0], peaks_indices[:, 1]]
+
+        return np.concatenate([peaks, intensity[:, np.newaxis]], axis=1)
+
 
 @njit(cache=True)
 def _fast_mean(X):  # pragma: no cover

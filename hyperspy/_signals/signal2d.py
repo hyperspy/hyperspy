@@ -22,6 +22,9 @@ import numpy.ma as ma
 import dask.array as da
 import logging
 import warnings
+from copy import deepcopy
+
+from functools import partial
 
 from scipy import ndimage
 try:
@@ -50,7 +53,8 @@ from hyperspy.docstrings.signal import (
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.utils.peakfinders2D import (
         find_local_max, find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
-        find_peaks_stat, find_peaks_log, find_peaks_dog, find_peaks_xc)
+        find_peaks_stat, find_peaks_log, find_peaks_dog, find_peaks_xc,
+        _get_peak_position_and_intensity)
 
 
 _logger = logging.getLogger(__name__)
@@ -916,6 +920,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
     def find_peaks(self, method='local_max', interactive=True,
                    current_index=False, show_progressbar=None,
                    parallel=None, max_workers=None, display=True, toolkit=None,
+                   get_intensity=False,
                    **kwargs):
         """Find peaks in a 2D signal.
 
@@ -965,7 +970,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
             If True, the method parameter can be adjusted interactively.
             If False, the results will be returned.
         current_index : bool
-            if True, the computation will be performed for the current index.
+            If True, the computation will be performed for the current index.
+        get_intensity : bool
+            If True, the intensity of the peak will be returned as an additional column,
+            the last one.
         %s
         %s
         %s
@@ -1015,6 +1023,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
             raise NotImplementedError(f"The method `{method}` is not "
                                       "implemented. See documentation for "
                                       "available implementations.")
+        if get_intensity:
+            method_func = partial(_get_peak_position_and_intensity, f=method_func, )
         if interactive:
             # Create a peaks signal with the same navigation shape as a
             # placeholder for the output
@@ -1030,11 +1040,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
             peaks = self.map(method_func, show_progressbar=show_progressbar,
                              parallel=parallel, inplace=False, ragged=True,
                              max_workers=max_workers, **kwargs)
-            if peaks._lazy:
-                peaks.compute()
-
-
-
+            peaks.metadata.add_node("Peaks") # add information about the signal Axes
+            peaks.metadata.Peaks.signal_axes = deepcopy(self.axes_manager.signal_axes)
         return peaks
 
     find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,

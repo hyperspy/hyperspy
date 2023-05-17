@@ -115,7 +115,8 @@ class TestFindPeaks2D:
     @pytest.mark.parametrize('method', PEAK_METHODS)
     @pytest.mark.parametrize('dataset_name', DATASETS_NAME)
     @pytest.mark.parametrize('parallel', [True, False])
-    def test_find_peaks(self, method, dataset_name, parallel):
+    @pytest.mark.parametrize('get_intensity', [True, False])
+    def test_find_peaks(self, method, dataset_name, parallel, get_intensity):
         if method == 'stat':
             pytest.importorskip("sklearn")
         dataset = getattr(self, dataset_name)
@@ -125,12 +126,18 @@ class TestFindPeaks2D:
 
         if method == 'template_matching':
             peaks = dataset.find_peaks(method=method, parallel=parallel,
-                                       interactive=False, template=DISC)
+                                       interactive=False, template=DISC,
+                                       get_intensity=get_intensity)
         else:
             peaks = dataset.find_peaks(method=method, parallel=parallel,
-                                       interactive=False)
+                                       interactive=False,
+                                       get_intensity=get_intensity)
         assert isinstance(peaks, BaseSignal)
-        assert not isinstance(peaks, LazySignal)
+        if isinstance(dataset,LazySignal):
+            assert isinstance(peaks, LazySignal)
+            peaks.compute()
+        else:
+            assert not isinstance(peaks, LazySignal)
 
         # Check navigation shape
         np.testing.assert_equal(dataset.axes_manager.navigation_shape,
@@ -140,7 +147,28 @@ class TestFindPeaks2D:
         else:
             shape = dataset.axes_manager.navigation_shape[::-1]
         assert peaks.data.shape == shape
-        assert peaks.data[0].shape[-1] == 2
+        first_ind = (0,)*len(shape)
+        if get_intensity:
+            peaks.data[first_ind]
+            assert peaks.data[first_ind].shape[-1] == 3
+        else:
+            peaks.data[first_ind]
+            assert peaks.data[first_ind].shape[-1] == 2
+        assert peaks.metadata.Peaks.signal_axes[0].scale == dataset.axes_manager.signal_axes[0].scale
+        assert peaks.metadata.Peaks.signal_axes[1].scale == dataset.axes_manager.signal_axes[1].scale
+
+        assert peaks.metadata.Peaks.signal_axes[0].name == dataset.axes_manager.signal_axes[0].name
+        assert peaks.metadata.Peaks.signal_axes[1].name == dataset.axes_manager.signal_axes[1].name
+
+        assert peaks.metadata.Peaks.signal_axes[0].offset == dataset.axes_manager.signal_axes[0].offset
+        assert peaks.metadata.Peaks.signal_axes[1].offset == dataset.axes_manager.signal_axes[1].offset
+
+        dataset.axes_manager.signal_axes[0].scale =25
+        assert peaks.metadata.Peaks.signal_axes[0].scale != dataset.axes_manager.signal_axes[0].scale
+        dataset.axes_manager.signal_axes[0].scale =1
+
+
+
 
     @pytest.mark.parametrize('parallel', [True, False])
     def test_ordering_results(self, parallel):
@@ -163,20 +191,25 @@ class TestFindPeaks2D:
 
     @pytest.mark.parametrize('method', PEAK_METHODS)
     @pytest.mark.parametrize('parallel', [True, False])
-    def test_gets_right_answer(self, method, parallel):
+    @pytest.mark.parametrize("get_intensity", [True, False])
+    def test_gets_right_answer(self, method, parallel, get_intensity):
         if method == 'stat':
             pytest.importorskip("sklearn")
         ans = np.empty((1,), dtype=object)
-        ans[0] = np.array([[self.xref, self.yref]])
+        if get_intensity:
+            ans[0] = np.array([[self.xref, self.yref, np.max(self.ref.data)]])
+        else:
+            ans[0] = np.array([[self.xref, self.yref]])
         if method == 'template_matching':
             disc = np.zeros((5, 5))
             disc[1:4, 1:4] = 0.5
             disc[2,2] = 1
             peaks = self.ref.find_peaks(method=method, parallel=parallel,
-                                        interactive=False, template=disc)
+                                        interactive=False, template=disc,
+                                        get_intensity=get_intensity)
         else:
             peaks = self.ref.find_peaks(method=method, parallel=parallel,
-                                        interactive=False)
+                                        interactive=False, get_intensity=get_intensity)
         np.testing.assert_allclose(peaks.data[0], ans[0])
 
     def test_return_peaks(self):
