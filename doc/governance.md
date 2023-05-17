@@ -26,7 +26,7 @@ core developers, whose significant or consistent contributions have been recogni
 by their receiving “commit rights” to the Project repositories. While this approach
 has served us well, as the Project grows, we see a need for a more formal
 governance model. Moving forward, the Project leadership will consist of a
-Steering Council and a Project Leader. We view this governance model as the
+core developers team, Steering Council and a BDFL. We view this governance model as the
 formalization of what we are already doing, rather than a change in direction.
 
 # Roles And Responsibilities
@@ -75,12 +75,12 @@ developer guide.
 
 Core developers that have not contributed to the project (commits or GitHub comments)
 in the past 12 months will be asked if they want to become emeritus core developers
-and recant their commit until they become active again.
-The list of core developers, active and emeritus is public.
+and recant their commit rights until they become active again.
+The list of core developers, active and emeritus, is public.
 
 ## BDFL
 
-The Project’s Benevolent dictator for life (BDFL) is Francisco De La Peña.
+The Project’s Benevolent dictator for life (BDFL) is Francisco de La Peña.
 The BDFL has the authority to make all final decisions for The Project. In practice
 the BDFL chooses to defer that authority to the consensus of the Steering Council
 (see below). It is expected that the BDFL will only rarely assert his final authority.
@@ -133,7 +133,7 @@ and talents in our team, which is why we explicitly do not define code as the
 sole metric on which council membership will be evaluated.
 
 If a Council member becomes inactive in the project for a period of one year,
-they will be considered for removal from the Council. Before removal, inactive
+they will be considered for removal from the Council. Before removal, the inactive
 Member will be approached by the BDFL to see if they plan
 on returning to active participation. If not, they will be removed immediately
 upon a Council vote. If they plan on returning to active participation soon,
@@ -165,11 +165,11 @@ but are not limited to:
 - An issue where the person privately gains an advantage from The Project resources,
   but The Project has no gain or suffers a disadvantage.
   
-All members of the Steering Council, shall disclose to the rest of the Council
+All members of the Steering Council shall disclose to the rest of the Council
 any conflict of interest they may have. Members with a conflict of interest in
 a particular issue may participate in Council discussions on that issue,
-but must recuse themselves from voting on the issue. If the Project Lead has recused
-themself for a particular decision, they will appoint a substitute BDFL for that decision.
+but must recuse themselves from voting on the issue. If the BDFL has recused
+themselves for a particular decision, they will appoint a substitute BDFL for that decision.
 
 # Decision Making Process
 
@@ -181,7 +181,7 @@ sensitive discussion may occur on a private communication channel.
 Decisions should be made in accordance with the [mission and values](MISSION_AND_VALUES.md)
 of the HyperSpy project.
 
-The HyperSpy uses a “consensus seeking” process for making decisions. The group
+The HyperSpy project uses a “consensus seeking” process for making decisions. The group
 tries to find a resolution that has no open objections among core developers.
 Core developers are expected to distinguish between fundamental objections to a
 proposal and minor perceived flaws that they can live with, and not hold up the
