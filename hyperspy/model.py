@@ -107,6 +107,18 @@ def _twinned_parameter(parameter):
 
 
 def reconstruct_component(comp_dictionary, **init_args):
+    # Restoring of Voigt and Arctan components saved with Hyperspy <v1.6
+    if (comp_dictionary['_id_name'] == "Voigt" and 
+            len(comp_dictionary['parameters']) > 4):
+        # in HyperSpy 1.6 the old Voigt component was moved to PESVoigt
+        if comp_dictionary['parameters'][4]['_id_name'] == "resolution":
+            comp_dictionary['_id_name'] = "PESVoigt"
+            _logger.info("Legacy Voigt component converted to PESVoigt during file reading.")
+    if (comp_dictionary['_id_name'] == "Arctan" and 'minimum_at_zero' in comp_dictionary):
+        # in HyperSpy 1.6 the old Arctan component was moved to EELSArctan
+        if comp_dictionary['minimum_at_zero'] == True:
+            comp_dictionary['_id_name'] = "EELSArctan"
+            _logger.info("Legacy Arctan component converted to EELSArctan during file reading.")
     _id = comp_dictionary['_id_name']
     if _id in _COMPONENTS:
         _class = getattr(
@@ -1722,10 +1734,10 @@ class BaseModel(list):
                 manner instead of beginning each new row at the first index.
                 Works for n-dimensional navigation space, not just 2D.
             If None:
-                Use the value of :py:attr:`~axes.AxesManager.iterpath`.
+                Use the value of :py:attr:`~.axes.AxesManager.iterpath`.
         **kwargs : keyword arguments
             Any extra keyword argument will be passed to the fit method.
-            See the documentation for :py:meth:`~hyperspy.model.BaseModel.fit`
+            See the documentation for :py:meth:`~.model.BaseModel.fit`
             for a list of valid arguments.
 
         Returns
@@ -1734,7 +1746,7 @@ class BaseModel(list):
 
         See Also
         --------
-        * :py:meth:`~hyperspy.model.BaseModel.fit`
+        * :py:meth:`~.model.BaseModel.fit`
 
         """
         if show_progressbar is None:

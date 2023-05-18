@@ -22,8 +22,8 @@ Example
 -------
 
 >>> import skimage
->>> im = hs.signals.Signal2D(skimage.data.camera()
->>> m = hs.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400, color='red')
+>>> im = hs.signals.Signal2D(skimage.data.camera())
+>>> m = hs.plot.markers.Rectangle(x1=150, y1=100, x2=400, y2=400, color='red')
 >>> im.add_marker(m)
 
 """

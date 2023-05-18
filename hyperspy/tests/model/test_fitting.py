@@ -590,7 +590,7 @@ class TestMultiFitSignalVariance:
         s.add_poissonian_noise(random_state=1)
         s.set_noise_variance(variance + std ** 2)
         m = s.create_model()
-        m.append(hs.model.components1D.Polynomial(order=1, legacy=False))
+        m.append(hs.model.components1D.Polynomial(order=1))
         self.s = s
         self.m = m
         self.var = (variance + std ** 2).data

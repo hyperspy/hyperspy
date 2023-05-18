@@ -24,6 +24,13 @@ Axes
 - :py:meth:`AxesManager.set_signal_dimension` is removed, use :py:meth:`~.signal.BaseSignal.as_signal1D`,
   :py:meth:`~.signal.BaseSignal.as_signal2D` or :py:meth:`~.signal.BaseSignal.transpose` of the signal instance instead.
 
+Components
+----------
+
+- The API of the :py:class:`~.api.model.components1D.Polynomial` has changed after it has been deprecated since hyperspy 1.5. The old API had a single parameters ``coefficients``, which has been replaced by ``a0``, ``a1``, etc.
+- The ``legacy`` option (introduced in HyperSpy 1.6) for :class:`~.api.model.components1D.Arctan` is removed, use :class:`hyperspy._components.eels_arctan.EELSArctan` to use the old API.
+- The ``legacy`` option (introduced in HyperSpy 1.6) for :class:`~.api.model.components1D.Voigt` is removed, use :class:`~.api.model.components1D.PESVoigt` to use the old API.
+
 Data Visualization
 ------------------
 

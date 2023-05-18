@@ -82,7 +82,7 @@ def test_plot_BackgroundRemoval_change_background():
     br.background_type = 'Polynomial'
     assert isinstance(
         br.background_estimator,
-        type(components1d.Polynomial(legacy=False))
+        type(components1d.Polynomial())
         )
 
 

@@ -142,7 +142,7 @@ signals:
 
 components1D:
   Arctan:
-    module: hyperspy._components.eels_arctan
+    module: hyperspy._components.arctan
     class: Arctan
   Bleasdale:
     module: hyperspy._components.bleasdale
@@ -193,9 +193,6 @@ components1D:
     module: hyperspy._components.pes_voigt
     class: PESVoigt
   Polynomial:
-    module: hyperspy._components.polynomial_deprecated
-    class: Polynomial
-  eab91275-88db-4855-917a-cdcbe7209592:
     module: hyperspy._components.polynomial
     class: Polynomial
   PowerLaw:
@@ -220,7 +217,7 @@ components1D:
     module: hyperspy._components.eels_vignetting
     class: Vignetting
   Voigt:
-    module: hyperspy._components.pes_voigt
+    module: hyperspy._components.voigt
     class: Voigt
   VolumePlasmonDrude:
     module: hyperspy._components.volume_plasmon_drude

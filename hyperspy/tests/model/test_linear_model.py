@@ -852,8 +852,7 @@ def test_expression_multiple_linear_parameter(nav_dim, convolve):
      - multiple free parameters for the same component (different code path)
     """
     s_ref = hs.signals.Signal1D(np.ones(20))
-    p_ref = hs.model.components1D.Polynomial(order=2, a0=25, a1=-50, a2=2.5,
-                                             legacy=False)
+    p_ref = hs.model.components1D.Polynomial(order=2, a0=25, a1=-50, a2=2.5)
 
     # Create signal to convolve
     to_convolve_component = hs.model.components1D.Gaussian(A=100, sigma=5, centre=10)
@@ -876,7 +875,7 @@ def test_expression_multiple_linear_parameter(nav_dim, convolve):
             to_convolve = hs.stack([to_convolve]*3)
 
     m = s.create_model()
-    p = hs.model.components1D.Polynomial(order=2, legacy=False)
+    p = hs.model.components1D.Polynomial(order=2)
     m.append(p)
     assert not m.convolved
     if convolve:

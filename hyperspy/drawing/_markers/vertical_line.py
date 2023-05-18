@@ -36,13 +36,13 @@ class VerticalLine(MarkerBase):
     Example
     -------
     >>> s = hs.signals.Signal1D(np.random.random([10, 100]))
-    >>> m = hs.plot.markers.vertical_line(x=range(10), color='green')
+    >>> m = hs.plot.markers.VerticalLine(x=range(10), color='green')
     >>> s.add_marker(m)
 
     Adding a marker permanently to a signal
 
     >>> s = hs.signals.Signal1D(np.random.random((100, 100)))
-    >>> m = hs.plot.markers.vertical_line(x=30)
+    >>> m = hs.plot.markers.VerticalLine(x=30)
     >>> s.add_marker(m, permanent=True)
     """
 

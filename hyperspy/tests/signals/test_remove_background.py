@@ -191,7 +191,7 @@ class TestRemoveBackground1DSkewNormal:
 class TestRemoveBackground1DVoigt:
 
     def setup_method(self, method):
-        voigt = components1d.Voigt(legacy=False)
+        voigt = components1d.Voigt()
         voigt.area.value = 5
         voigt.centre.value = 10
         voigt.gamma.value = 0.2

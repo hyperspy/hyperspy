@@ -75,7 +75,6 @@ def test_close_figure_with_plotted_marker():
     check_closing_plot(s)
 
 
-@pytest.mark.filterwarnings("ignore:The API of the `Polynomial`")
 @pytest.mark.parametrize('navigator', ["auto", "slider", "spectrum"])
 @pytest.mark.parametrize('nav_dim', [1, 2])
 @pytest.mark.parametrize('sig_dim', [1, 2])

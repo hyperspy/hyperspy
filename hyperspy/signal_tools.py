@@ -1646,9 +1646,7 @@ def _get_background_estimator(background_type, polynomial_order=1):
         background_estimator = components1d.Offset()
         bg_line_range = 'full'
     elif background_type == 'polynomial':
-        with ignore_warning(message="The API of the `Polynomial` component"):
-            background_estimator = components1d.Polynomial(
-                 order=polynomial_order, legacy=False)
+        background_estimator = components1d.Polynomial(order=polynomial_order)
         bg_line_range = 'full'
     elif background_type == 'powerlaw':
         background_estimator = components1d.PowerLaw()
@@ -1663,8 +1661,7 @@ def _get_background_estimator(background_type, polynomial_order=1):
         background_estimator = components1d.SplitVoigt()
         bg_line_range = 'full'
     elif background_type == 'voigt':
-        with ignore_warning(message="The API of the `Voigt` component"):
-            background_estimator = components1d.Voigt(legacy=False)
+        background_estimator = components1d.Voigt()
         bg_line_range = 'full'
     else:
         raise ValueError(f"Background type '{background_type}' not recognized.")

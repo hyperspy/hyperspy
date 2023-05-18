@@ -296,7 +296,7 @@ finding the correct minima. Usually a value between 1 and 2 works well:
 
 You can also use Momentum Stochastic Gradient Descent (MomentumSGD),
 which typically improves the convergence properties of stochastic gradient
-descent. This takes the further parameter ``subspace_meomentum``, which should
+descent. This takes the further parameter ``subspace_momentum``, which should
 be a fraction between 0 and 1.
 
 .. code-block:: python

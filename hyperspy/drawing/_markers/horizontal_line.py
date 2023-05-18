@@ -36,13 +36,13 @@ class HorizontalLine(MarkerBase):
     Example
     -------
     >>> s = hs.signals.Signal1D(np.random.random([10, 100])) * 10
-    >>> m = hs.plot.markers.horizontal_line(y=range(10), color='green')
+    >>> m = hs.plot.markers.HorizontalLine(y=range(10), color='green')
     >>> s.add_marker(m)
 
     Adding a marker permanently to a signal
 
     >>> s = hs.signals.Signal1D(np.random.random([10, 100]))
-    >>> m = hs.plot.markers.horizontal_line(y=5, color='green')
+    >>> m = hs.plot.markers.HorizontalLine(y=5, color='green')
     >>> s.add_marker(m, permanent=True)
 
     """

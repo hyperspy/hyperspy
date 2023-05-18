@@ -30,7 +30,7 @@ TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
 
 def test_function():
-    g = Voigt(legacy=False)
+    g = Voigt()
     g.area.value = 5
     g.sigma.value = 0.5
     g.gamma.value = 0.2
@@ -41,18 +41,19 @@ def test_function():
 
 @pytest.mark.parametrize(("lazy"), (True, False))
 @pytest.mark.parametrize(("uniform"), (True, False))
+@pytest.mark.parametrize(("mapnone"), (True, False))
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
-def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
+def test_estimate_parameters_binned(only_current, binned, lazy, uniform, mapnone):
     s = Signal1D(np.empty((200,)))
     s.axes_manager.signal_axes[0].is_binned = binned
     axis = s.axes_manager.signal_axes[0]
     axis.scale = .05
     axis.offset = -5
-    g1 = Voigt(centre=1, area=5, gamma=0.001, sigma=0.5, legacy=False)
+    g1 = Voigt(centre=1, area=5, gamma=0.001, sigma=0.5)
     s.data = g1.function(axis.axis)
     if lazy:
         s = s.as_lazy()
-    g2 = Voigt(legacy=False)
+    g2 = Voigt()
     if not uniform:
         axis.convert_to_non_uniform_axis()
     if binned and uniform:
@@ -61,6 +62,8 @@ def test_estimate_parameters_binned(only_current, binned, lazy, uniform):
         factor = np.gradient(axis.axis)
     else:
         factor = 1
+    if mapnone:
+        g2.area.map = None
     assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
                                   only_current=only_current)
     assert g2._axes_manager[-1].is_binned == binned
@@ -77,12 +80,12 @@ def test_function_nd(binned, lazy):
     axis = s.axes_manager.signal_axes[0]
     axis.scale = .05
     axis.offset = -5
-    g1 = Voigt(centre=1, area=5, gamma=0, sigma=0.5, legacy=False)
+    g1 = Voigt(centre=1, area=5, gamma=0, sigma=0.5)
     s.data = g1.function(axis.axis)
     s2 = stack([s] * 2)
     if lazy:
         s2 = s2.as_lazy()
-    g2 = Voigt(legacy=False)
+    g2 = Voigt()
     factor = axis.scale if binned else 1
     g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
     assert g2._axes_manager[-1].is_binned == binned
@@ -90,46 +93,46 @@ def test_function_nd(binned, lazy):
 
 
 def test_util_lwidth_set():
-    g1 = Voigt(legacy=False)
+    g1 = Voigt()
     g1.lwidth = 3.0
     np.testing.assert_allclose(g1.lwidth / 2, g1.gamma.value)
 
 def test_util_lwidth_get():
-    g1 = Voigt(legacy=False)
+    g1 = Voigt()
     g1.gamma.value = 3.0
     np.testing.assert_allclose(g1.lwidth / 2, g1.gamma.value)
 
 def test_util_lwidth_getset():
-    g1 = Voigt(legacy=False)
+    g1 = Voigt()
     g1.lwidth = 3.0
     np.testing.assert_allclose(g1.lwidth, 3.0)
 
 def test_util_gwidth_set():
-    g1 = Voigt(legacy=False)
+    g1 = Voigt()
     g1.gwidth = 1.0
     np.testing.assert_allclose(g1.sigma.value, 1.0 / (2 * np.sqrt(2 * np.log(2))))
 
 def test_util_gwidth_get():
-    g1 = Voigt(legacy=False)
+    g1 = Voigt()
     g1.sigma.value = 1.0
     np.testing.assert_allclose(g1.gwidth, 1.0 * (2 * np.sqrt(2 * np.log(2))))
 
 def test_util_gwidth_getset():
-    g1 = Voigt(legacy=False)
+    g1 = Voigt()
     g1.gwidth = 1.0
     np.testing.assert_allclose(g1.gwidth, 1.0)
 
 def test_util_FWHM_set():
-    g1 = Voigt(legacy=False)
+    g1 = Voigt()
     g1.FWHM = 1.0
     np.testing.assert_allclose(g1.sigma.value, 1.0 / (2 * np.sqrt(2 * np.log(2))))
 
 def test_util_FWHM_get():
-    g1 = Voigt(legacy=False)
+    g1 = Voigt()
     g1.sigma.value = 1.0
     np.testing.assert_allclose(g1.FWHM, 1.0 * (2 * np.sqrt(2 * np.log(2))))
 
 def test_util_FWHM_getset():
-    g1 = Voigt(legacy=False)
+    g1 = Voigt()
     g1.FWHM = 1.0
     np.testing.assert_allclose(g1.FWHM, 1.0)

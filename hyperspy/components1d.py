@@ -22,10 +22,6 @@ import importlib
 
 __all__ = [
     component for component, specs_ in _EXTENSIONS["components1D"].items()
-    # Don't add the new Polynomial to the API.
-    # To use it the old `Polynomial` has a `legacy` keyword.
-    # Remove in HyperSpy v2.0
-    if component != "eab91275-88db-4855-917a-cdcbe7209592"
     ]
 
 

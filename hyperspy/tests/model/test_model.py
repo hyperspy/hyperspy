@@ -516,7 +516,7 @@ class TestModel1D:
         m.append(g3)
         g4 = hs.model.components1D.Gaussian()
         m.append(g4)
-        p = hs.model.components1D.Polynomial(3, legacy=False)
+        p = hs.model.components1D.Polynomial(3)
         m.append(p)
 
         g1.A.value = 3.0
@@ -596,8 +596,7 @@ class TestModelPrintCurrentValues:
         s.axes_manager[0].scale = 0.1
         s.axes_manager[0].offset = 10
         m = s.create_model()
-        with ignore_warning(message="The API of the `Polynomial` component"):
-            m.append(hs.model.components1D.Polynomial(1))
+        m.append(hs.model.components1D.Polynomial(1))
         m.append(hs.model.components1D.Offset())
         self.s = s
         self.m = m

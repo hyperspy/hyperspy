@@ -81,81 +81,6 @@ def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
     return scale * V.real
 
 
-class Voigt(Component):
-    # Legacy class to be removed in v2.0
-
-    r"""Legacy Voigt profile component dedicated to photoemission spectroscopy
-    data analysis that will renamed to `PESVoigt` in v2.0. To use
-    the new Voigt lineshape component set ``legacy=False``. See the
-    documentation of :py:class:`~._components.voigt.Voigt` for details on
-    the usage of the new Voigt component and
-    :py:class:`~._components.pes_voigt.PESVoigt` for the legacy component.
-
-    .. math::
-        f(x) = G(x) \cdot L(x)
-
-    where :math:`G(x)` is the Gaussian function and :math:`L(x)` is the
-    Lorentzian function. This component uses an approximate formula by David
-    (see Notes).
-
-
-    Notes
-    -----
-    Uses an approximate formula according to
-    W.I.F. David, J. Appl. Cryst. (1986). 19, 63-64.
-    doi:10.1107/S0021889886089999
-    """
-
-    def __init__(self, legacy=True, **kwargs):
-        self.legacy = legacy
-        if legacy:
-            from hyperspy.misc.utils import deprecation_warning
-            msg = (
-                "The API of the `Voigt` component will change in v2.0. "
-                "This component will become `PESVoigt`. "
-                "To use the new API set `legacy=False`.")
-            deprecation_warning(msg)
-
-            self.__class__ = PESVoigt
-            self.__init__(**kwargs)
-        else:
-            from hyperspy._components.voigt import Voigt
-            self.__class__ = Voigt
-            self.__init__(**kwargs)
-
-    @property
-    def gwidth(self):
-        if not self.legacy:
-            return super().sigma.value * sigma2fwhm
-
-    @gwidth.setter
-    def gwidth(self, value):
-        if not self.legacy:
-            super(Voigt, self.__class__).sigma.value.fset(self, value
-                                                                / sigma2fwhm)
-
-    @property
-    def FWHM(self):
-        if not self.legacy:
-            return super().sigma.value * sigma2fwhm
-
-    @FWHM.setter
-    def FWHM(self, value):
-        if not self.legacy:
-            super(Voigt, self.__class__).sigma.value.fset(self, value
-                                                                / sigma2fwhm)
-
-    @property
-    def lwidth(self):
-        if not self.legacy:
-            return super().gamma.value * 2
-
-    @lwidth.setter
-    def lwidth(self, value):
-        if not self.legacy:
-            super(Voigt, self.__class__).gamma.value.fset(self, value / 2)
-
-
 class PESVoigt(Component):
 
     r"""Voigt component for photoemission spectroscopy data analysis.
@@ -239,7 +164,7 @@ class PESVoigt(Component):
         k = self.shirley_background.value
         f = voigt(x,
                   FWHM=FWHM, gamma=gamma, center=centre - ab, scale=area)
-        if self.spin_orbit_splitting is True:
+        if self.spin_orbit_splitting:
             ratio = self.spin_orbit_branching_ratio
             shift = self.spin_orbit_splitting_energy
             f2 = voigt(x, FWHM=FWHM, gamma=gamma,

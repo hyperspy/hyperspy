@@ -48,14 +48,14 @@ class Ellipse(MarkerBase):
     -------
     >>> import skimage
     >>> im = hs.signals.Signal2D(skimage.data.camera())
-    >>> m = hs.plot.markers.ellipse(x=150, y=100, width=400, height=400,
+    >>> m = hs.plot.markers.Ellipse(x=150, y=100, width=400, height=400,
     >>>                             edgecolor='red', facecolor='white', fill=True)
     >>> im.add_marker(m)
 
     Adding a marker permanently to a signal
 
     >>> im = hs.signals.Signal2D(np.random.random((50, 50))
-    >>> m = hs.plot.markers.ellipse(x=20, y=30, width=40, height=49)
+    >>> m = hs.plot.markers.Ellipse(x=20, y=30, width=40, height=49)
     >>> im.add_marker(m, permanent=True)
     """
 
