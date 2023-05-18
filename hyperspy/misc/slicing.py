@@ -19,10 +19,13 @@
 from operator import attrgetter
 import numpy as np
 import dask.array as da
+import logging
 
 from hyperspy.misc.utils import attrsetter
 from hyperspy.misc.export_dictionary import parse_flag_string
 from hyperspy import roi
+
+_logger = logging.getLogger(__name__)
 
 
 def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
@@ -161,7 +164,6 @@ def copy_slice_from_whitelist(
             attrsetter(_to, key, target)
             continue
 
-
 class SpecialSlicers(object):
 
     def __init__(self, obj, isNavigation):
@@ -228,9 +230,12 @@ class FancySlicing(object):
 
         nav_idx = [el.index_in_array for el in
                    self.axes_manager.navigation_axes]
-        signal_idx = [el.index_in_array for el in
-                      self.axes_manager.signal_axes]
-
+        if self.axes_manager.vector:
+            signal_idx = [el.index_in_vector_array for el in
+                          self.axes_manager.signal_axes]
+        else:
+            signal_idx = [el.index_in_array for el in
+                          self.axes_manager.signal_axes]
         if not has_signal:
             idx = nav_idx
         elif not has_nav:
@@ -255,16 +260,25 @@ class FancySlicing(object):
         if len(_orig_slices) > len(idx):
             raise IndexError("too many indices")
 
-        slices = np.array([slice(None,)] *
-                          len(self.axes_manager._axes))
+        if self.axes_manager._ragged and not self.axes_manager.vector:
+            slices = np.array([slice(None,)] *
+                              len(self.axes_manager.navigation_axes))
+            ax = self.axes_manager.navigation_axes
+        elif self.axes_manager.vector:
+            slices = np.array(slices)
+            ax = self.axes_manager.signal_axes
+        else:
+            slices = np.array([slice(None,)] *
+                            len(self.axes_manager._axes))
+            ax = self.axes_manager._axes
 
         slices[idx] = _orig_slices + (slice(None),) * max(
             0, len(idx) - len(_orig_slices))
 
         array_slices = []
-        for slice_, axis in zip(slices, self.axes_manager._axes):
+        for slice_, axis in zip(slices, ax):
             if (isinstance(slice_, slice) or
-                    len(self.axes_manager._axes) < 2):
+                    len(ax) < 2):
                 array_slices.append(axis._get_array_slices(slice_))
             else:
                 if isinstance(slice_, float):
@@ -273,6 +287,27 @@ class FancySlicing(object):
         return tuple(array_slices)
 
     def _slicer(self, slices, isNavigation=None, out=None):
+        if self.axes_manager.vector and self.axes_manager._ragged and not isNavigation:
+            slices = self._get_array_slices(slices, isNavigation)
+            slices = np.array([[s.start, s.stop] for s in slices])
+            for i, s in enumerate(slices):
+                if s[0] is None:
+                    slices[i][0] = -np.inf
+                if s[1] is None:
+                    slices[i][1] = np.inf
+            new_data = np.empty(shape=self.data.shape, dtype=object)
+            for ind in np.ndindex(self.data.shape):
+                if self._lazy:
+                    _logger.warning("Slicing a Vector axis must be non-lazy... Computing")
+                    self.compute()
+                is_returned = np.prod([np.multiply(self.data[ind][:, i] >= s[0],
+                                                   self.data[ind][:, i] <= s[1])
+                                       for i, s in enumerate(slices)], axis=0)
+                new_data[ind] = self.data[ind][np.where(is_returned)]
+
+            _obj = self._deepcopy_with_new_data(new_data, copy_variance=True)
+            return _obj
+
         if self.axes_manager._ragged and not isNavigation:
             raise RuntimeError("`isig` is not supported for ragged signal.")
 

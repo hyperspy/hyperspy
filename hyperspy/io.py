@@ -588,7 +588,7 @@ def load_with_reader(
     return signal_list
 
 
-def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
+def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False, vector=False):
     """Given dtype, signal_dimension and signal_type, return the matching
     Signal subclass.
 
@@ -625,9 +625,14 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
 
     signals = {key: value for key, value in ALL_EXTENSIONS["signals"].items()
                if value["lazy"] == lazy}
-    dtype_matches = {key: value for key, value in signals.items()
-                     if value["dtype"] == dtype}
-    dtype_dim_matches = {key: value for key, value in dtype_matches.items()
+    # Add missing vector
+    for s in signals:
+        if "vector" not in signals[s]:
+            signals[s]["vector"]=False
+
+    dtype_vector_matches = {key: value for key, value in signals.items()
+                     if value["dtype"] == dtype and value["vector"] == vector}
+    dtype_dim_matches = {key: value for key, value in dtype_vector_matches.items()
                          if signal_dimension == value["signal_dimension"]}
     dtype_dim_type_matches = {key: value for key, value in dtype_dim_matches.items()
                               if signal_type == value["signal_type"] or
@@ -663,7 +668,7 @@ def assign_signal_subclass(dtype, signal_dimension, signal_type="", lazy=False):
         if not signal_dict:
             # no signal_dimension match either, hence select the general subclass for
             # correct dtype
-            signal_dict = {key: value for key, value in dtype_matches.items()
+            signal_dict = {key: value for key, value in dtype_vector_matches.items()
                            if value["signal_dimension"] == -1
                            and value["signal_type"] == ""}
     # Sanity check

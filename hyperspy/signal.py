@@ -39,7 +39,7 @@ from scipy import signal as sp_signal
 import traits.api as t
 from tlz import concat
 
-from hyperspy.axes import AxesManager
+from hyperspy.axes import AxesManager, VectorDataAxis
 from hyperspy.api_nogui import _ureg
 from hyperspy.misc.array_tools import rebin as array_rebin
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
@@ -2473,6 +2473,36 @@ class BaseSignal(FancySlicing,
         self._original_metadata = d
 
     @property
+    def vector(self):
+        return self.axes_manager.vector
+
+    @vector.setter
+    def vector(self, value):
+        if value and self.vector != value:
+            if self.data.dtype != object:
+                raise ValueError("The array is not ragged.")
+            num_axes = 0
+
+            nav_shape = self.axes_manager.navigation_shape
+            if nav_shape == ():
+                nav_shape = 1
+            for d in np.ndindex(nav_shape):
+                object_shape = np.shape(self.data[d])
+                if len(object_shape) == 1:
+                    continue
+                else:
+                    num_axes = object_shape[-1]
+                    break
+            if len(self.axes_manager.signal_axes) == num_axes:
+                [i.convert_to_vector_axis() for i in self.axes_manager.signal_axes]
+            else:
+                for i in range(num_axes):
+                    axis = {'index_in_array': None, 'vector': True}
+                    self.axes_manager._append_axis(**axis)
+            self.axes_manager._vector = True
+            self.axes_manager._ragged = True
+
+    @property
     def ragged(self):
         return self.axes_manager._ragged
 
@@ -2482,13 +2512,15 @@ class BaseSignal(FancySlicing,
         if self.ragged == value:
             return
 
-        if value:
+        if value and not self.axes_manager.vector:
             if self.data.dtype != object:
                 raise ValueError("The array is not ragged.")
             axes = [axis for axis in self.axes_manager.signal_axes
                     if axis.index_in_array not in list(range(self.data.ndim))]
             self.axes_manager.remove(axes)
-            self.axes_manager._set_signal_dimension(0)
+            self.axes_manager.set_signal_dimension(0)
+        elif self.axes_manager.vector:
+            pass
         else:
             if self._lazy:
                 raise NotImplementedError(
@@ -4972,12 +5004,13 @@ class BaseSignal(FancySlicing,
         elif isinstance(iterating_kwargs, (tuple, list)):
             iterating_kwargs = dict((k, v) for k, v in iterating_kwargs)
 
+
         nav_indexes = s_input.axes_manager.navigation_indices_in_array
+
         chunk_span = np.equal(s_input.data.chunksize, s_input.data.shape)
         chunk_span = [
-            chunk_span[i] for i in s_input.axes_manager.signal_indices_in_array
+            chunk_span[i] for i in s_input.axes_manager.signal_indices_in_array if i != ()
         ]
-
         if not all(chunk_span):
             _logger.info(
                 "The chunk size needs to span the full signal size, rechunking..."
@@ -4997,6 +5030,7 @@ class BaseSignal(FancySlicing,
                              '`output_dtype` is not supported for cupy array.')
 
         args, arg_keys = old_sig._get_iterating_kwargs(iterating_kwargs)
+
 
         if autodetermine:  # trying to guess the output d-type and size from one signal
             testing_kwargs = {}
@@ -5076,6 +5110,7 @@ class BaseSignal(FancySlicing,
             axes_dicts = self.axes_manager._get_navigation_axes_dicts()
             sig.axes_manager.__init__(axes_dicts)
             sig.axes_manager._ragged = True
+
         elif axes_changed:
             am.remove(am.signal_axes[len(output_signal_size) :])
             for ind in range(len(output_signal_size) - am.signal_dimension, 0, -1):
@@ -5120,6 +5155,7 @@ class BaseSignal(FancySlicing,
                     iterating_kwargs[key].rechunk(nav_chunks=nav_chunks, sig_chunks=-1)
             else:
                 iterating_kwargs[key] = iterating_kwargs[key].as_lazy()
+
                 iterating_kwargs[key].rechunk(nav_chunks=nav_chunks, sig_chunks=-1)
             args += (iterating_kwargs[key].data,)
             arg_keys += (key,)
@@ -5146,6 +5182,7 @@ class BaseSignal(FancySlicing,
     def __deepcopy__(self, memo):
         dc = type(self)(**self._to_dictionary())
         if isinstance(dc.data, np.ndarray):
+
             dc.data = dc.data.copy()
 
         # uncomment if we want to deepcopy models as well:
@@ -5711,7 +5748,8 @@ class BaseSignal(FancySlicing,
             signal_type=mp.Signal.signal_type
             if "Signal.signal_type" in mp
             else self._signal_type,
-            lazy=self._lazy)
+            lazy=self._lazy,
+            vector=self.vector)
         if self._alias_signal_types:  # In case legacy types exist:
             mp.Signal.signal_type = self._signal_type  # set to default!
         self.__init__(self.data, full_initialisation=False)
@@ -5997,6 +6035,9 @@ class BaseSignal(FancySlicing,
         marker_name_suffix = 1
         for m in marker_list:
             marker_data_shape = m._get_data_shape()[::-1]
+            if marker_data_shape == (1,):
+                marker_data_shape = ()
+
             if (not (len(marker_data_shape) == 0)) and (
                     marker_data_shape != self.axes_manager.navigation_shape):
                 raise ValueError(

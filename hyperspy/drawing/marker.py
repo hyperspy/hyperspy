@@ -164,6 +164,8 @@ class MarkerBase(object):
             if self.axes_manager is None:
                 return self.data['x1'].item().flatten()[0]
             indices = self.axes_manager.indices[::-1]
+            if indices == ():
+                indices = 0
             return data[ind].item()[indices]
         else:
             return data[ind].item()[()]

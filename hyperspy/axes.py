@@ -115,6 +115,8 @@ def create_axis(**kwargs):
         axis_class = DataAxis
     elif 'expression' in kwargs.keys():  # Functional axis
         axis_class = FunctionalDataAxis
+    elif 'vector' in kwargs.keys() and kwargs["vector"]:  # Vector axis
+        axis_class = VectorDataAxis
     else:  # if not argument is provided fall back to uniform axis
         axis_class = UniformDataAxis
     return axis_class(**kwargs)
@@ -489,8 +491,11 @@ class BaseDataAxis(t.HasTraits):
         return name
 
     def __repr__(self):
-        text = '<%s axis, size: %i' % (self._get_name(),
-                                       self.size,)
+        if self.size == -1:
+            text = '<%s axis, size: vect' % self._get_name()
+        else:
+            text = '<%s axis, size: %i' % (self._get_name(),
+                                           self.size,)
         if self.navigate is True:
             text += ", index: %i" % self.index
         text += ">"
@@ -1230,7 +1235,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
                 raise ValueError("A value is out of the axis limits")
         else:
             index = int(index)
-            if self.size > index >= 0:
+            if self.size == -1 or self.size > index >= 0:
                 return index
             else:
                 raise ValueError("The value is out of the axis limits")
@@ -1338,6 +1343,94 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
         self.remove_trait('offset')
         self.__init__(**d, axis=self.axis)
         self.axes_manager = axes_manager
+
+    def convert_to_vector_axis(self):
+        d = super().get_axis_dictionary()
+        d["scale"] = self.scale
+        d["offset"] = self.offset
+        d["size"] = -1
+        axes_manager = self.axes_manager
+        self.__class__ = VectorDataAxis
+        d["_type"] = 'VectorDataAxis'
+        d["vector"] = True
+        self.navigate = False
+        self._signal_shape=None
+        self.high_value = np.inf
+        self.low_value = -np.inf
+        self.size = -1
+        self.__init__(**d)
+        self.axes_manager = axes_manager
+
+
+class VectorDataAxis(UniformDataAxis):
+    """DataAxis class for vector representations of ``ragged`` data
+    The VectorDataAxis preforms like the Uniform DataAxis but has no size.
+    """
+
+    def __init__(self,
+                 index_in_array=None,
+                 index_in_vector=None,
+                 name=t.Undefined,
+                 units=t.Undefined,
+                 navigate=False,
+                 scale=1.,
+                 offset=0.,
+                 is_binned=False,
+                 **kwargs):
+        super().__init__(
+            index_in_array=index_in_array,
+            name=name,
+            units=units,
+            navigate=False,
+            is_binned=is_binned,
+            scale=scale,
+            offset=offset,
+            **kwargs
+        )
+        # These traits need to added dynamically to be removed when necessary
+        self.update_axis()
+        self.size = -1
+        self.vector = True
+        self.low_value = -np.inf
+        self.high_value = np.inf
+        self._signal_shape = None
+
+    def update_axis(self):
+        self.axis = t.Undefined
+
+    def update_index_bounds(self):
+        return
+
+    def _update_bounds(self):
+        return
+
+    @property
+    def index_in_array(self):
+        if self.axes_manager is not None:
+            return ()
+        else:
+            raise AttributeError(
+                "This {} does not belong to an AxesManager"
+                " and therefore its index_in_array attribute "
+                " is not defined".format(self.__class__.__name__))
+
+    def get_axis_dictionary(self):
+        d = super().get_axis_dictionary()
+        d.update({'scale': self.scale,
+                  'offset': self.offset})
+        d["vector"] = self.vector
+        return d
+
+
+    @property
+    def index_in_vector_array(self):
+        if self.axes_manager is not None:
+            return self.axes_manager._axes.index(self)-len(self.axes_manager.navigation_axes)
+        else:
+            raise AttributeError(
+                "This {} does not belong to an AxesManager"
+                " and therefore its index_in_vector_array attribute "
+                " is not defined".format(self.__class__.__name__))
 
 
 def _serpentine_iter(shape):
@@ -1495,10 +1588,15 @@ class AxesManager(t.HasTraits):
         self._update_trait_handlers()
         self.iterpath = 'flyback'
         self._ragged = False
+        self._vector = False
 
     @property
     def ragged(self):
         return self._ragged
+
+    @property
+    def vector(self):
+        return any([isinstance(a, VectorDataAxis) for a in self._axes])
 
     def _update_trait_handlers(self, remove=False):
         things = {self._on_index_changed: '_axes.index',
@@ -2027,7 +2125,7 @@ class AxesManager(t.HasTraits):
         self._navigation_axes = navigation_axes[::-1]
         self._getitem_tuple = tuple(getitem_tuple)
 
-        if len(self.signal_axes) == 1 and self.signal_axes[0].size == 1:
+        if len(self.signal_axes) == 1 and self.signal_axes[0].size == 1 or self.vector:
             self._signal_dimension = 0
         else:
             self._signal_dimension = len(self.signal_axes)
@@ -2053,7 +2151,7 @@ class AxesManager(t.HasTraits):
     @property
     def signal_shape(self):
         """The shape of the signal space."""
-        return tuple([axis.size for axis in self._signal_axes])
+        return tuple([axis.size for axis in self._signal_axes if not axis.size == -1])
 
     @property
     def navigation_shape(self):
@@ -2230,9 +2328,12 @@ class AxesManager(t.HasTraits):
         string = string.rstrip(", ")
         string += "|"
         for axis in self.signal_axes:
-            string += str(axis.size) + ", "
+            if axis.size == -1:
+                string += "Vect " + ", "
+            else:
+                string += str(axis.size) + ", "
         string = string.rstrip(", ")
-        if self.ragged:
+        if self.ragged and not self.vector:
             string += 'ragged'
         string += ")"
         return string
@@ -2240,7 +2341,7 @@ class AxesManager(t.HasTraits):
     def __repr__(self):
         text = ('<Axes manager, axes: %s>\n' %
                 self._get_dimension_str())
-        ax_signature_uniform = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
+        ax_signature_uniform = "% 16s | %6s | %6s | %7.2g | %7.2g | %6s "
         ax_signature_non_uniform = "% 16s | %6g | %6s | non-uniform axis | %6s "
         signature = "% 16s | %6s | %6s | %7s | %7s | %6s "
         text += signature % ('Name', 'size', 'index', 'offset', 'scale',
@@ -2251,9 +2352,10 @@ class AxesManager(t.HasTraits):
 
         def axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform):
             if ax.is_uniform:
-                return ax_signature_uniform % (str(ax.name)[:16], ax.size,
+                return ax_signature_uniform % (str(ax.name)[:16], str(ax.size),
                                               str(ax.index), ax.offset,
                                               ax.scale, ax.units)
+
             else:
                 return ax_signature_non_uniform % (str(ax.name)[:16], ax.size,
                                                   str(ax.index), ax.units)
@@ -2267,7 +2369,7 @@ class AxesManager(t.HasTraits):
         for ax in self.signal_axes:
             text += '\n'
             text += axis_repr(ax, ax_signature_uniform, ax_signature_non_uniform)
-        if self.ragged:
+        if self.ragged and not self.vector:
             text += '\n'
             text += "     Ragged axis |               Variable length"
 

@@ -584,3 +584,52 @@ def TestAxesManagerRagged():
         "---------------- | ------ | ------ | ------- | ------- | ------ \n"
         "     Ragged axis |               Variable length"
         assert self.am.__repr__() == expected_string
+
+class TestVectorAxisManager:
+    def setup_method(self, method):
+        axes_list = [
+            {
+                "name": "a",
+                "navigate": True,
+                "offset": 0.0,
+                "scale": 1.3,
+                "size": 2,
+                "units": "aa",
+            },
+            {
+                "name": "b",
+                "navigate": False,
+                "offset": 0.0,
+                "scale": 1.0,
+                "units": "bb",
+                "vector": True
+            },
+            {
+                "name": "c",
+                "navigate": False,
+                "offset": 0.0,
+                "scale": 1.3,
+                "units": "cc",
+                "vector": True
+            },
+
+        ]
+        self.am = AxesManager(axes_list)
+        self.am._ragged = True
+
+    def test_is_initialized(self):
+        assert self.am.vector
+        assert self.am.signal_size == 0
+        assert self.am.navigation_size == (2,)
+        assert self.am._ragged
+        assert self.am.signal_extent == (-np.inf, np.inf, -np.inf, np.inf)
+        assert self.am.signal_axes[0].index_in_vector_array == 1
+        assert self.am.signal_axes[1].index_in_vector_array == 0
+        assert self.am.signal_axes[1].index_in_array == ()
+        assert self.am.signal_axes[0].index_in_array == ()
+        assert self.am.signal_dimension == 0
+        assert self.am._signal_shape_in_array == ()
+
+    def test_get_dim_str(self):
+        assert self.am._get_dimension_str() == '(2|Vect , Vect)'
+
