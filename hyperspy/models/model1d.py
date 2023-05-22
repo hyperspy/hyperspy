@@ -433,13 +433,16 @@ class Model1D(BaseModel):
             to_return = to_return[self.channel_switches]
 
         if binned is None:
-            binned = self.signal.axes_manager[-1].is_binned
+            # use self.axis instead of self.signal.axes_manager[-1]
+            # to avoid small overhead (~10 us) which isn't negligeable when
+            # __call__ is called repeatably, typically when fitting!
+            binned = self.axis.is_binned
 
         if binned:
-            if self.signal.axes_manager[-1].is_uniform:
-                to_return *= self.signal.axes_manager[-1].scale
+            if self.axis.is_uniform:
+                to_return *= self.axis.scale
             else:
-                to_return *= np.gradient(self.signal.axes_manager[-1].axis)
+                to_return *= np.gradient(self.axis.axis)
         return to_return
 
     def _errfunc(self, param, y, weights=None):
