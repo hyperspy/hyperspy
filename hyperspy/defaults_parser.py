@@ -138,6 +138,9 @@ class PlotConfig(t.HasTraits):
     # Don't use t.Enum to list all possible matplotlib colormap to
     # avoid importing matplotlib and building the list of colormap
     # when importing hyperpsy
+    widget_plot_style = t.Enum(
+        ['horizontal', 'vertical'],
+        label='Widget plot style: (only with ipympl)')
     cmap_navigator = t.Str('gray',
                            label='Color map navigator',
                            desc='Set the default color map for the navigator.',
