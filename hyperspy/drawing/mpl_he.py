@@ -20,10 +20,11 @@ from functools import partial
 import logging
 
 from traits.api import Undefined
+import matplotlib as mpl
 
 from hyperspy.drawing import widgets, signal1d, image
 from hyperspy.defaults_parser import preferences
-
+import warnings
 
 _logger = logging.getLogger(__name__)
 
@@ -180,6 +181,15 @@ class MPL_HyperExplorer(object):
         for key in ['power_spectrum', 'fft_shift']:
             if key in kwargs:
                 self.signal_data_function_kwargs[key] = kwargs.pop(key)
+        backend = mpl.get_backend()
+        if not "ipympl" in backend and "plot_style" in kwargs:
+            warnings.warn("The `plot_style` keyword is only used when the `ipympl` or `widget`"
+                          "plotting backends are used.")
+        plot_style = kwargs.pop("plot_style", None)
+        # matplotlib plotting backend
+        if "ipympl" in backend:
+            import matplotlib.pyplot as plt
+            plt.ioff()  # plot ioff to hold plotting
         if self.pointer is None:
             pointer = self.assign_pointer()
             if pointer is not None:
@@ -191,6 +201,21 @@ class MPL_HyperExplorer(object):
                 self.navigator_plot.events.closed.connect(
                     self.pointer.disconnect, [])
         self.plot_signal(**kwargs)
+        if "ipympl" in backend:
+            if plot_style not in ["vertical", "horizontal", None]:
+                raise ValueError("plot_style must be one of ['vertical', 'horizontal', None]")
+            if plot_style is None:
+                plot_style = preferences.Plot.widget_plot_style
+            # If widgets do not already exist, we will `display` them at the end
+            from ipywidgets.widgets import HBox, VBox
+            from IPython.display import display
+            if not self.navigator_plot:
+                display(self.signal_plot.figure.canvas)
+            elif plot_style == "horizontal":
+                display(HBox([self.navigator_plot.figure.canvas,self.signal_plot.figure.canvas]))
+            else: # plot_style == "vertical":
+                display(VBox([self.navigator_plot.figure.canvas, self.signal_plot.figure.canvas]))
+
 
     def assign_pointer(self):
         if self.navigator_data_function is None:
