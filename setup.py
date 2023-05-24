@@ -68,7 +68,7 @@ install_req = [
 
 extras_require = {
     "learning": ["scikit-learn>=1.0.1"],
-    "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
+    "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0", "ipympl"],
     # UPDATE BEFORE RELEASE
     "gui-traitsui": ["hyperspy_gui_traitsui @ git+https://github.com/hyperspy/hyperspy_gui_traitsui#egg=hyperspy_gui_traitsui"],
     #"gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
