@@ -417,3 +417,10 @@ def test_get_chunk_size(signal):
     sig = _signal()
     chunk_size = sig.get_chunk_size(axes=0)
     chunk_size == ((2, 1, 3), )
+
+
+def test_compute_kwargs():
+    s = hs.signals.Signal2D(da.zeros((4, 8, 8), chunks=(2, 4, 4))).as_lazy()
+    s1 = s.deepcopy()
+    s1.compute(show_progressbar=False)
+    s.compute(scheduler="processes", num_workers=2, show_progressbar=False)

@@ -243,14 +243,45 @@ class LazySignal(BaseSignal):
         Parameters
         ----------
         close_file : bool, default False
-            If True, attemp to close the file associated with the dask
+            If True, attempt to close the file associated with the dask
             array data if any. Note that closing the file will make all other
             associated lazy signals inoperative.
         %s
+        **kwargs : dict
+            Any other keyword arguments for :py:func:`dask.array.Array.compute`.
+            For example `scheduler` or `num_workers`.
 
         Returns
         -------
         None
+
+        Notes
+        -----
+        For alternative ways to set the compute settings see
+        https://docs.dask.org/en/stable/scheduling.html#configuration
+
+        Examples
+        --------
+        >>> import dask.array as da
+        >>> data = da.zeros((100, 100, 100), chunks=(10, 20, 20))
+        >>> s = hs.signals.Signal2D(data).as_lazy()
+
+        With default parameters
+
+        >>> s1 = s.deepcopy()
+        >>> s1.compute()
+
+        Using 2 workers, which can reduce the memory usage (depending on
+        the data and your computer hardware). Note that `num_workers` only
+        work for the 'threads' and 'processes' `scheduler`.
+
+        >>> s2 = s.deepcopy()
+        >>> s2.compute(num_workers=2)
+
+        Using a single threaded scheduler, which is useful for debugging
+
+        >>> s3 = s.deepcopy()
+        >>> s3.compute(scheduler='single-threaded')
 
         """
         if show_progressbar is None:
@@ -260,7 +291,7 @@ class LazySignal(BaseSignal):
 
         with cm():
             da = self.data
-            data = da.compute()
+            data = da.compute(**kwargs)
             if close_file:
                 self.close_file()
             self.data = data
