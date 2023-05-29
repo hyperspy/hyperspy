@@ -559,12 +559,50 @@ class EELSModel(Model1D):
         # Recover the channel_switches. Remove it or make it smarter.
         self.channel_switches = backup_channel_switches
 
-    def quantify(self):
-        """Prints the value of the intensity of all the independent
-        active EELS core loss edges defined in the model
+    def quantify(self, output="absolute"):
+        """Prints and returns the values of the intensity of all the independent
+        active EELS core loss edges defined in the model.
 
+        Parameters
+        ----------
+        output : 'absolute', 'normalized', or None
+            If 'absolute', prints values of the intensity parameter of all EELSCLEdge components.\n
+            If 'normalized', prints intensity parameters normalized with respect to the sum of all intensities in the model. If all relevant elements are present in the analyzed spectrum this results in the elemental concentrations in atomic %.\n
+            If None, no output is printed.
+
+        Returns
+        -------
+        dict
+            Python dictionary with element name, edge name and intensity value.
+
+        Examples
+        -------
+        Load and fit the BN EELS example from the user guide:\n
+        >>> s = hs.datasets.eelsdb(title="Hexagonal Boron Nitride", spectrum_type="coreloss")[0]
+        >>> ll = hs.datasets.eelsdb(title="Hexagonal Boron Nitride", spectrum_type="lowloss")[0]
+        >>> s.add_elements(('B', 'N'))
+        >>> m = s.create_model(ll=ll)
+        >>> m.enable_fine_structure()
+        >>> m.smart_fit()
+
+        Print the elemental concentrations:\n
+        >>> m.quantify(output='normalized')
+
+        Calculate B/N ratio with the returned dictionary:\n
+        >>> q = m.quantify(output=None)
+        >>> print('B/N ratio: ', q['B']['K']/q['N']['K'])
+
+        The intensity values can also be accessed directly from the model component:\n
+        >>> print('Intensity of B K edge: ', q['B']['K'])
+        >>> print('Intensity of B K edge: ', m.components.B_K.intensity.value)
+
+        See also
+        ---------
+        :py:class:`~._components.eels_cl_edge.EELSCLEdge`
         """
         elements = {}
+        if output == "normalized":
+            int_sum = 0
         for edge in self._active_edges:
             if edge.active and edge.intensity.twin is None:
                 element = edge.element
@@ -572,18 +610,41 @@ class EELSModel(Model1D):
                 if element not in elements:
                     elements[element] = {}
                 elements[element][subshell] = edge.intensity.value
+                if output == "normalized":
+                    int_sum += edge.intensity.value
+
+        if output == None:
+            return elements
         print()
-        print("Absolute quantification:")
-        print("Elem.\tIntensity")
+        if output == "absolute":
+            print("Absolute quantification:")
+            print("Elem.\tIntensity")
+        elif output == "normalized":
+            print("Normalized elemental concentrations:")
+            print("Elem.\tConcentration")
+        
         for element in elements:
             if len(elements[element]) == 1:
                 for subshell in elements[element]:
-                    print("%s\t%f" % (
-                        element, elements[element][subshell]))
+                    if output == "absolute":
+                        print("%s\t%f" % (element, elements[element][subshell]))
+                    elif output == "normalized":
+                        print(
+                            "%s\t%f" % (element, elements[element][subshell] / int_sum)
+                        )
             else:
                 for subshell in elements[element]:
-                    print("%s_%s\t%f" % (element, subshell,
-                                         elements[element][subshell]))
+                    if output == "absolute":
+                        print(
+                            "%s_%s\t%f"
+                            % (element, subshell, elements[element][subshell])
+                        )
+                    elif output == "normalized":
+                        print(
+                            "%s_%s\t%f"
+                            % (element, subshell, elements[element][subshell] / int_sum)
+                        )
+        return elements
 
     def remove_fine_structure_data(self, edges_list=None):
         """Remove the fine structure data from the fitting routine as

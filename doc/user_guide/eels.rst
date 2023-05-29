@@ -299,7 +299,20 @@ Print the result of the fit
     B	0.045648
     N	0.048061
 
+See :py:class:`~._components.eels_cl_edge.EELSCLEdge` for more information about the intensity parameter.
+The intensity values can be used to calculate elemental concentrations and ratios:
 
+.. code-block:: python
+
+    >>> 0.045648/(0.045648+0.048061) #B concentration
+    0.4871250360157509
+    >>> 0.048061/(0.045648+0.048061) #N concentration
+    0.5128749639842491
+    >>> 0.045648/0.048061 #B/N ratio
+    0.9497929714321384
+
+This corresponds to 48.7% B and 51.3% N in the sample and a B/N ratio of 0.95. See :py:class:`~hyperspy.models.eelsmodel.EELSModel.quantify()` for more information.
+    
 Visualize the result
 
 .. code-block:: python
