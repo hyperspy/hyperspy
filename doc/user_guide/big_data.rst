@@ -374,12 +374,12 @@ method can be used:
     >>> s.get_chunk_size(0) # The first navigation axis
     ((200,),)
 
-.. versionadded:: 1.3.2
+.. versionadded:: 2.0.0
 
-By default, HyperSpy tries to optimize the chunking for most operations. However,
-it is sometimes possible to manually set a more optimal chunking manually. Therefore,
-many operations take a ``rechunk`` or ``optimize`` keyword argument to disable
-automatic rechunking.
+Starting in version 2.0.0 HyperSpy does not automatically rechunk datasets as
+this can lead to reduced performance. The ``rechunk`` or ``optimize`` keyword argument
+can be set to ``True`` to let HyperSpy automatically change the chunking which
+could potentially speed up operations.
 
 .. versionadded:: 1.7.0
 
