@@ -20,7 +20,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from hyperspy.events import Event, Events
 import hyperspy.drawing._markers as markers
-from hyperspy.drawing._markers.marker_collection import MarkerCollection
 from hyperspy.misc.utils import isiterable
 
 import logging

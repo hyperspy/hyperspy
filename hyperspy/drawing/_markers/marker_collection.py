@@ -20,6 +20,7 @@ import numpy as np
 import dask.array as da
 import matplotlib
 from hyperspy.events import Event, Events
+from hyperspy.drawing.marker import dict2marker
 from matplotlib.transforms import Affine2D
 import logging
 
@@ -184,6 +185,10 @@ class MarkerCollection(object):
             if is_iterating(item):
                 return item.shape
         return ()
+
+    def __deepcopy__(self, memo):
+        new_marker = dict2marker(self._to_dictionary(), self.name)
+        return new_marker
 
     def _to_dictionary(self):
         marker_dict = {

@@ -35,6 +35,8 @@ from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
 from hyperspy.axes import UniformDataAxis
 from hyperspy.misc.test_utils import sanitize_dict, update_close_figure
 
+from copy import deepcopy
+
 BASELINE_DIR = "marker_collection"
 DEFAULT_TOL = 2.0
 STYLE_PYTEST_MPL = "default"
@@ -331,6 +333,10 @@ class TestInitMarkerCollection:
         col = request.getfixturevalue(collection)
         with pytest.raises(AttributeError):
             col.plot()
+    def test_deepcopy(self,iterating_line_collection):
+        it_2 = deepcopy(iterating_line_collection)
+        assert it_2 is not iterating_line_collection
+
 
 
 class TestMarkers2Collection:
