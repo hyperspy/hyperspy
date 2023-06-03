@@ -30,6 +30,7 @@ from matplotlib.patches import RegularPolygon
 import matplotlib.pyplot as plt
 
 from hyperspy.drawing._markers.marker_collection import MarkerCollection
+from hyperspy.drawing.marker import markers2collection
 from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
 from hyperspy.axes import UniformDataAxis
 from hyperspy.misc.test_utils import sanitize_dict, update_close_figure
@@ -133,6 +134,39 @@ class TestCollections:
         s.add_marker(markers)
         s.axes_manager.navigation_axes[0].index = 2
         return s._plot.signal_plot.figure
+
+    def test_parameters_2_scatter(self, data):
+        m = MarkerCollection(None,
+                             offsets=np.array([[100, 70],
+                                               [70, 100]]),
+                             color=("b", "g"),
+                             sizes=(3,),)
+        s = Signal2D(np.zeros((100, 100)))
+        s.add_marker(m)
+
+    def test_parameters_singletons(self, signal, data):
+        m = MarkerCollection(None,
+                             offsets=np.array([[100, 70],
+                                               [70, 100]]),
+                             color="b",
+                             sizes=3)
+        s = Signal2D(np.zeros((2, 100, 100)))
+        s.add_marker(m)
+
+    def test_parameters_singletons_iterating(self):
+        data = np.empty(2, dtype=object)
+        data[0] = np.array([[100, 70], [70, 100]])
+        data[1] = np.array([[100, 70], [70, 100]])
+        sizes = np.empty(2, dtype=object)
+        sizes[0] = 3
+        sizes[1] = 4
+        m = MarkerCollection(None,
+                             offsets=np.array([[100, 70],
+                                               [70, 100]]),
+                             color="b",
+                             sizes=sizes)
+        s = Signal2D(np.zeros((2, 100, 100)))
+        s.add_marker(m)
 
     @pytest.mark.parametrize(
         "signal_axes",
@@ -240,6 +274,13 @@ class TestInitMarkerCollection:
         markers.axes_manager = signal.axes_manager
         return markers
 
+    def test_multiple_collections(self, static_line_collection,
+                                  iterating_line_collection,
+                                  signal):
+        signal.add_marker(static_line_collection, permanent=True)
+        signal.add_marker(iterating_line_collection, permanent=True)
+        assert(len(signal.metadata.Markers) == 2)
+
     @pytest.mark.parametrize(
         "collection", ("iterating_line_collection", "static_line_collection")
     )
@@ -263,7 +304,7 @@ class TestInitMarkerCollection:
         col = request.getfixturevalue(collection)
         dict = col._to_dictionary()
         assert dict["marker_type"] == LineCollection
-        assert dict["plot_on_signal"] == True
+        assert dict["plot_on_signal"] is True
 
     @pytest.mark.parametrize(
         "collection", ("iterating_line_collection", "static_line_collection")
@@ -290,6 +331,87 @@ class TestInitMarkerCollection:
         col = request.getfixturevalue(collection)
         with pytest.raises(AttributeError):
             col.plot()
+
+
+class TestMarkers2Collection:
+    @pytest.fixture
+    def iter_data(self):
+        data = {"x1":np.arange(10),
+                "y1": np.arange(10),
+                "x2": np.arange(10),
+                "y2": np.arange(10),
+                "size": np.arange(10),
+                }
+        return data
+    @pytest.fixture
+    def static_data(self):
+        data = {"x1": 1,
+                "y1": 2,
+                "x2": 3,
+                "y2": 4,
+                "text": None,
+                "size": 5,
+                }
+        return data
+
+    @pytest.fixture
+    def static_and_iter_data(self):
+        data = {"x1": 1,
+                "y1": np.arange(10),
+                "x2": np.arange(10),
+                "y2": 4,
+                "text": None,
+                "size": np.arange(10),
+                }
+        return data
+
+    @pytest.fixture
+    def signal(self):
+        return Signal1D(np.ones((10, 20)))
+
+    @pytest.mark.parametrize(
+        "data", ("iter_data", "static_data", "static_and_iter_data")
+    )
+    @pytest.mark.parametrize(
+        "marker_type", ("Point",
+                        "HorizontalLineSegment",
+                        "LineSegment",
+                        "Arrow",
+                        "Rectangle",
+                        "VerticalLineSegment",
+
+    ))
+    def test_marker2collection(self, request, marker_type, data, signal):
+        d = request.getfixturevalue(data)
+        test_dict = {}
+        test_dict["data"] = d
+        test_dict["marker_type"] = marker_type
+        test_dict['marker_properties'] = {"color": "black"}
+        test_dict['plot_on_signal'] = True
+        markers = markers2collection(test_dict)
+
+        signal.add_marker(markers,)
+        signal.plot()
+
+    @pytest.mark.parametrize(
+        "data", ("iter_data", "static_data", "static_and_iter_data")
+    )
+    @pytest.mark.parametrize(
+        "marker_type", ("HorizontalLine",
+                        "Ellipse",
+                        "Text",
+                        "VerticalLine",
+                        ))
+    def test_marker2collectionfail(self, request, marker_type, data):
+        d = request.getfixturevalue(data)
+        test_dict = {}
+        test_dict["data"] = d
+        test_dict["marker_type"] = marker_type
+        test_dict['marker_properties'] = {"color": "black"}
+        test_dict['plot_on_signal'] = True
+        with pytest.raises(ValueError):
+            markers2collection(test_dict)
+
 
 def _test_marker_collection_close():
     signal = Signal2D(np.ones((10,10)))

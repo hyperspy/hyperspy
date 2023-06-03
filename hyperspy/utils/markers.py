@@ -39,7 +39,7 @@ from hyperspy.drawing._markers.rectangle import Rectangle
 from hyperspy.drawing._markers.text import Text
 from hyperspy.drawing._markers.vertical_line import VerticalLine
 from hyperspy.drawing._markers.vertical_line_segment import VerticalLineSegment
-
+from hyperspy.drawing._markers.marker_collection import MarkerCollection
 
 __all__ = [
     'Arrow',
@@ -52,6 +52,8 @@ __all__ = [
     'Text',
     'VerticalLine',
     'VerticalLineSegment',
+    'MarkerCollection',
+
     ]
 
 
