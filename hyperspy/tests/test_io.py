@@ -333,3 +333,15 @@ def test_marker_save_load(tmp_path):
     print(s.metadata.Markers, s2.metadata.Markers)
     assert str(s.metadata.Markers) == str(s2.metadata.Markers)
     s2.plot()
+
+def test_marker_collection_save_load(tmp_path):
+    s = hs.signals.Signal1D(np.arange(10))
+    m = hs.plot.markers.MarkerCollection(offsets = [[2, 2],
+                                          [3, 3]])
+    s.add_marker(m, permanent=True)
+    fname = tmp_path / "test.hspy"
+    s.save(fname)
+    s2 = hs.load(fname)
+    print(s.metadata.Markers, s2.metadata.Markers)
+    assert str(s.metadata.Markers) == str(s2.metadata.Markers)
+    s2.plot()

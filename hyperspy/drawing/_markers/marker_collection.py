@@ -63,7 +63,9 @@ class MarkerCollection(object):
     for a signal.
     """
 
-    def __init__(self, collection_class=None, **kwargs):
+    def __init__(self,
+                 collection_class=None,
+                 **kwargs):
         """
         Initialize a Marker Collection.
 
@@ -98,7 +100,7 @@ class MarkerCollection(object):
             [is_iterating(value) for key, value in self.kwargs.items()]
         )
         self._plot_on_signal = True
-        self.name = ""
+        self.name = "MarkerCollection"
         self.plot_marker = True
 
         # Events
@@ -115,6 +117,14 @@ class MarkerCollection(object):
             arguments=["obj"],
         )
         self._closing = False
+
+    def __repr__(self):
+        if self.collection_class is not None:
+            return (f"<{self.name}| Class{self.collection_class} |" 
+                    f"Iterating == {self.is_iterating}")
+        else:
+            return f"<{self.name}| Iterating == {self.is_iterating}"
+
 
     @classmethod
     def from_signal(
@@ -177,29 +187,39 @@ class MarkerCollection(object):
 
     def _to_dictionary(self):
         marker_dict = {
-            "marker_type": self.collection_class,
+            "marker_type": "MarkerCollection",
+            "collection_class": self.collection_class,
             "plot_on_signal": self._plot_on_signal,
             "kwargs": self.kwargs,
         }
         return marker_dict
 
-    def get_data_position(self, get_static_kwargs=True):
+    def get_data_position(self,
+                          get_static_kwargs=True):
         """
         Return the current keyword arguments for updating the collection.
         """
         current_keys = {}
         if self.is_iterating:
             indices = self.axes_manager.indices[::-1]
-
             for key, value in self.kwargs.items():
                 if is_iterating(value):
-                    current_keys[key] = value[indices]
+                    val = value[indices]
+                    if not hasattr(val, "__len__"):
+                        val = (val,)
+                    current_keys[key] = val
                 elif get_static_kwargs:
-                    current_keys[key] = value
+                    val = value
+                    if not hasattr(val, "__len__"):
+                        val = (val,)
+                    current_keys[key] = val
                 else:  # key already set in init
                     pass
         else:
             current_keys = self.kwargs
+            for key, value in self.kwargs.items():
+                if not hasattr(value, "__len__"):
+                    current_keys[key] = (value,)
         return current_keys
 
     def update(self):
@@ -210,7 +230,8 @@ class MarkerCollection(object):
 
     def _initialize_collection(self):
         if self.collection_class is None:
-            self.collection = self.ax.scatter([], [], **self.get_data_position())
+            self.collection = self.ax.scatter([], [],)
+            self.collection.set(**self.get_data_position())
         else:
             self.collection = self.collection_class(
                 **self.get_data_position(),
