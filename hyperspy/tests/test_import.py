@@ -209,6 +209,7 @@ def test_dir_utils_markers():
         'HorizontalLine',
         'HorizontalLineSegment',
         'LineSegment',
+        'MarkerCollection',
         'Point',
         'Rectangle',
         'Text',
