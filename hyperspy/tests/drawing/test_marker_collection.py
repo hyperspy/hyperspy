@@ -305,7 +305,7 @@ class TestInitMarkerCollection:
     def test_to_dictionary(self, collection, request):
         col = request.getfixturevalue(collection)
         dict = col._to_dictionary()
-        assert dict["marker_type"] == LineCollection
+        assert dict["collection_class"] == LineCollection
         assert dict["plot_on_signal"] is True
 
     @pytest.mark.parametrize(

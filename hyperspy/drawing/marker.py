@@ -277,7 +277,7 @@ def dict2vector(data,
     # check to see if the array should be ragged
     unique_keys = np.unique(keys)
     is_key_iter = [isiterable(data[key]) for key in unique_keys]
-    if not any(is_key_iter): # no iterable keys
+    if not any(is_key_iter):  # no iterable keys
         vector = np.empty(keys.shape)
         for i in np.ndindex(keys.shape): # iterate through keys and create resulting vector
             vector[i] = data[keys[i]]
@@ -342,13 +342,14 @@ def markers2collection(marker_dict):
         segments = dict2vector(marker_dict["data"],
                                keys=[["x1", "y1"], ["x2", "y2"]], return_size=False)
         if segments.dtype == object:
-            arrows = np.empty_like(segments)
+            arrows = np.empty_like(segments, dtype=object)
             for i in np.ndindex(segments.shape):
-                arrows[i] = FancyArrowPatch(posA=segments[i][0],posB=segments[i][1],
-                                            **marker_dict['marker_properties'])
+                arrows[i] = [FancyArrowPatch(posA=segments[i][0], posB=segments[i][1],
+                                            **marker_dict['marker_properties']),]
         else:
             arrows = [FancyArrowPatch(posA=segments[0], posB=segments[1],
-                                            **marker_dict['marker_properties']),]
+                                      **marker_dict['marker_properties']),
+                      ]
         marker = markers.marker_collection.MarkerCollection(patches=arrows,
                                                             collection_class=PatchCollection)
 

@@ -210,12 +210,13 @@ class MarkerCollection(object):
             for key, value in self.kwargs.items():
                 if is_iterating(value):
                     val = value[indices]
-                    if not hasattr(val, "__len__"):
+                    # some keys values need to iterate
+                    if key in ["sizes", "color"] and not hasattr(val, "__len__"):
                         val = (val,)
                     current_keys[key] = val
                 elif get_static_kwargs:
                     val = value
-                    if not hasattr(val, "__len__"):
+                    if key in ["sizes", "color"] and not hasattr(val, "__len__"):
                         val = (val,)
                     current_keys[key] = val
                 else:  # key already set in init
@@ -223,7 +224,7 @@ class MarkerCollection(object):
         else:
             current_keys = self.kwargs
             for key, value in self.kwargs.items():
-                if not hasattr(value, "__len__"):
+                if key in ["sizes", "color"] and not hasattr(value, "__len__"):
                     current_keys[key] = (value,)
         return current_keys
 
