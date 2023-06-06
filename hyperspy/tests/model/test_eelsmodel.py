@@ -16,13 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import io
 import contextlib
+import io
 import numpy as np
+
+import pooch
 import pytest
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.misc.eels.gosh_gos import _GOSH_URL, _GOSH_KNOWN_HASH
 
 
 # Dask does not always work nicely with np.errstate,
@@ -58,9 +61,25 @@ class TestCreateEELSModel:
         cnames = [component.name for component in m]
         assert "B_K" in cnames and "C_K" in cnames
 
-    def test_gos(self):
+    def test_gos_hydrogenic(self):
         m = self.s.create_model(auto_add_edges=True, GOS="hydrogenic")
         assert m["B_K"].GOS._name == "hydrogenic"
+        m.fit()
+
+    def test_gos_gosh(self):
+        m = self.s.create_model(auto_add_edges=True, GOS="gosh")
+        assert m["B_K"].GOS._name == "gosh"
+        m.fit()
+
+        with pytest.raises(ValueError):
+            self.s.create_model(auto_add_edges=True, GOS="not_a_GOS")
+
+    def test_gos_file(self):
+        gos_file_path = pooch.retrieve(
+            url=_GOSH_URL,
+            known_hash=_GOSH_KNOWN_HASH,
+        )
+        self.s.create_model(auto_add_edges=True, gos_file_path=gos_file_path)
 
     def test_auto_add_background_true(self):
         m = self.s.create_model(auto_background=True)

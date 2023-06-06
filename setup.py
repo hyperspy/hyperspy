@@ -50,6 +50,7 @@ install_req = [
     'numpy>=1.20.0',
     'packaging',
     'pint>=0.10',
+    'pooch',
     # prettytable and ptable are API compatible
     # prettytable is maintained and ptable is an unmaintained fork
     'prettytable',
@@ -78,8 +79,6 @@ extras_require = {
         "pytest-xdist",
         "pytest-rerunfailures",
         "pytest-instafail",
-        # optional dependency of scipy to use scipy.datasets
-        "pooch",
         ],
     "coverage":["pytest-cov"],
     # required to build the docs

@@ -22,13 +22,14 @@ import logging
 import numpy as np
 from scipy import integrate, interpolate, constants
 
-from hyperspy.misc.eels.base_gos import GOSBase
+from hyperspy.misc.eels.base_gos import BaseGOS
 
 _logger = logging.getLogger(__name__)
 
 XU = [
     .82, .52, .52, .42, .30, .29, .22, .30, .22, .16, .12, .13, .13, .14, .16,
-    .18, .19, .22, .14, .11, .12, .12, .12, .10, .10, .10]
+    .18, .19, .22, .14, .11, .12, .12, .12, .10, .10, .10
+    ]
 # IE3=[73,99,135,164,200,245,294,347,402,455,513,575,641,710,
 # 779,855,931,1021,1115,1217,1323,1436,1550,1675]
 
@@ -38,7 +39,7 @@ XU = [
 R = constants.value("Rydberg constant times hc in eV")
 
 
-class HydrogenicGOS(GOSBase):
+class HydrogenicGOS(BaseGOS):
 
     """Computes the K and L GOS using R. Egerton's  routines.
 
@@ -112,7 +113,7 @@ class HydrogenicGOS(GOSBase):
         else:
             raise ValueError(
                 'The Hydrogenic GOS currently can only'
-                'compute K or L shells. Try using Hartree-Slater GOS')
+                'compute K or L shells. Try using other GOS.')
 
         self.energy_axis = self.rel_energy_axis + self.onset_energy
 

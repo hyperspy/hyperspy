@@ -23,7 +23,7 @@ import warnings
 from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy.components1d import EELSCLEdge, PowerLaw
-from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
+from hyperspy.docstrings.model import FIT_PARAMETERS_ARG, EELSMODEL_PARAMETERS
 from hyperspy.misc.utils import dummy_context_manager
 from hyperspy.models.model1d import Model1D
 
@@ -33,39 +33,18 @@ _logger = logging.getLogger(__name__)
 
 class EELSModel(Model1D):
 
-    """Build an EELS model
-
-    Parameters
-    ----------
-    spectrum : a Signal1D (or any Signal1D subclass) instance
-    auto_background : bool
-        If True, and if spectrum is an EELS instance adds automatically
-        a powerlaw to the model and estimate the parameters by the
-        two-area method.
-    auto_add_edges : bool
-        If True, and if spectrum is an EELS instance, it will
-        automatically add the ionization edges as defined in the
-        Signal1D instance. Adding a new element to the spectrum using
-        the components.EELSSpectrum.add_elements method automatically
-        add the corresponding ionisation edges to the model.
-    ll : {None, EELSSpectrum}
-        If an EELSSPectrum is provided, it will be assumed that it is
-        a low-loss EELS spectrum, and it will be used to simulate the
-        effect of multiple scattering by convolving it with the EELS
-        spectrum.
-    GOS : {'hydrogenic', 'Hartree-Slater', None}
-        The GOS to use when auto adding core-loss EELS edges.
-        If None it will use the Hartree-Slater GOS if
-        they are available, otherwise it will use the hydrogenic GOS.
-    dictionary : {dict, None}
-        A dictionary to be used to recreate a model. Usually generated using
-        :meth:`hyperspy.model.as_dictionary`
-
-    """
-
     def __init__(self, signal1D, auto_background=True,
                  auto_add_edges=True, ll=None,
-                 GOS=None, dictionary=None):
+                 GOS="gosh", dictionary=None):
+        """
+        Build an EELS model.
+
+        Parameters
+        ----------
+        spectrum : a Signal1D (or any Signal1D subclass) instance
+        %s
+
+        """
         Model1D.__init__(self, signal1D)
 
         # When automatically setting the fine structure energy regions,
@@ -93,6 +72,8 @@ class EELSModel(Model1D):
 
         if self.signal.subshells and auto_add_edges is True:
             self._add_edges_from_subshells_names()
+
+    __init__.__doc__ %= EELSMODEL_PARAMETERS
 
     @property
     def signal1D(self):
