@@ -72,14 +72,6 @@ steps:
     conda clean --all -y
   displayName: Clean conda cache
 
-- bash: |
-    source activate $ENV_NAME
-    # don't install pyusid, because pip install pyusid fails
-    pip install https://github.com/hyperspy/rosettasciio/archive/refs/heads/main.zip
-
-    conda list
-  displayName: Install package (rosettasciio)
-
 # Note we must use `-n 2` argument for pytest-xdist due to
 # https://github.com/pytest-dev/pytest-xdist/issues/9.
 - bash: |
