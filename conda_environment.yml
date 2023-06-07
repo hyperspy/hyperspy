@@ -25,3 +25,5 @@ dependencies:
 - sympy >=1.6.0
 - tqdm >=4.9.0
 - traits >=4.5.0
+- pip:
+  - rosettasciio

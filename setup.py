@@ -60,8 +60,7 @@ install_req = [
     'scikit-image>=0.18',
     'scipy>=1.5.0',
     'sympy>=1.6',
-    # UPDATE BEFORE RELEASE
-    'rosettasciio @ git+https://github.com/hyperspy/rosettasciio#egg=rosettasciio',
+    'rosettasciio',
     'tqdm>=4.9.0',
     'traits>=4.5.0',
     ]
