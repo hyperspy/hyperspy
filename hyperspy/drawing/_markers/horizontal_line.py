@@ -67,7 +67,7 @@ class HorizontalLine(MarkerBase):
     def update(self):
         if self.auto_update is False:
             return
-        self.marker.set_ydata(self.get_data_position('y1'))
+        self.marker.set_ydata([self.get_data_position('y1')])
 
     def _plot_marker(self):
         self.marker = self.ax.axhline(self.get_data_position('y1'),

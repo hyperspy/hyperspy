@@ -45,9 +45,9 @@ if v[0] != 3:
 setup_path = os.path.dirname(__file__)
 
 
-install_req = ['scipy>=1.1',
+install_req = ['scipy>=1.4.0',
                'matplotlib>=3.1.3',
-               'numpy>=1.17.1',
+               'numpy>=1.19.0',
                'traits>=4.5.0',
                'natsort',
                'requests',
@@ -68,7 +68,7 @@ install_req = ['scipy>=1.1',
                'pint>=0.10',
                'numexpr',
                'sparse',
-               'imageio',
+               'imageio<2.28',
                'pyyaml',
                # prettytable and ptable are API compatible
                # prettytable is maintained and ptable is an unmaintained fork
@@ -85,10 +85,7 @@ install_req = ['scipy>=1.1',
                ]
 
 extras_require = {
-    # exclude scikit-learn==1.0 on macOS (wheels issue)
-    # See https://github.com/scikit-learn/scikit-learn/pull/21227
-    "learning": ['scikit-learn!=1.0.0;sys_platform=="darwin"',
-                 'scikit-learn;sys_platform!="darwin"'],
+    "learning": ["scikit-learn>=1.0.1"],
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
@@ -97,7 +94,16 @@ extras_require = {
     "scalebar": ["matplotlib-scalebar"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
-    "tests": ["pytest>=3.6", "pytest-mpl", "pytest-xdist", "pytest-rerunfailures", "pytest-instafail", "matplotlib>=3.1"],
+    "tests": [
+        "pytest>=3.6",
+        "pytest-mpl",
+        "pytest-xdist",
+        "pytest-rerunfailures",
+        "pytest-instafail",
+        "matplotlib>=3.1",
+        # optional dependency of scipy to use scipy.datasets
+        "pooch",
+        ],
     "coverage":["pytest-cov"],
     # required to build the docs
     "build-doc": [
@@ -415,6 +421,7 @@ with update_version_when_dev() as version:
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.11",
             "Development Status :: 4 - Beta",
             "Environment :: Console",
             "Intended Audience :: Science/Research",

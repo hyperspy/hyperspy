@@ -200,10 +200,10 @@ def test_load_spectra():
 
     md = s.metadata
     assert md.Signal.quantity == 'CL Intensity (a.u.)'
-    np.testing.assert_allclose(s.axes_manager[0].scale,0.00011458775406936184)
-    np.testing.assert_allclose(s.axes_manager[0].offset,0.0)
-    np.testing.assert_allclose(s.axes_manager[1].scale,1.084000246009964e-06)
-    np.testing.assert_allclose(s.axes_manager[1].offset,0.00017284281784668565)
+    np.testing.assert_allclose(s.axes_manager[0].scale, 0.00011458775406936184)
+    np.testing.assert_allclose(s.axes_manager[0].offset, 0.0)
+    np.testing.assert_allclose(s.axes_manager[1].scale, 1.084000246009964e-06)
+    np.testing.assert_allclose(s.axes_manager[1].offset, 0.00017284281784668565)
     assert s.axes_manager[0].name == 'Spectrum positi'
     assert s.axes_manager[0].units == 'mm'
     assert s.axes_manager[1].name == 'Wavelength'

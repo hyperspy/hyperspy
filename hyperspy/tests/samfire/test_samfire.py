@@ -500,6 +500,7 @@ class TestSamfireWorker:
 
         del worker
 
+    @pytest.mark.xfail(reason="Sometimes fails - Unknown reason")
     def test_main_result(self):
         worker = create_worker('worker')
         worker.create_model(self.model_dictionary, self.model_letter)

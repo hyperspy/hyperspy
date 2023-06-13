@@ -11,47 +11,41 @@ jobs:
       MPLBACKEND: agg
       PIP_ARGS: --upgrade -e
       PYTEST_ARGS: --pyargs hyperspy --reruns 3 -n 2 --instafail
-      PYTEST_ARGS_COVERAGE:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu, windows, macos]
         PYTHON_VERSION: ['3.8', '3.9']
-        PIP_SELECTOR: ['[all, tests]']
+        PIP_SELECTOR: ['[all, tests, coverage]']
         include:
-          # test oldest supported version of main dependencies on python 3.6
+          # test oldest supported version of main dependencies on python 3.7
           - os: ubuntu
             PYTHON_VERSION: '3.7'
-            OLDEST_SUPPORTED_VERSION: true
-            DEPENDENCIES: matplotlib==3.1.3 numpy==1.17.1 scipy==1.1 imagecodecs==2020.1.31 tifffile==2020.2.16 dask==2.11.0 distributed==2.11.0 scikit-image==0.15 numba==0.52
             PIP_SELECTOR: '[all, tests, coverage]'
-            # Hang at the end of the test suite run...
-            #PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
+            OLDEST_SUPPORTED_VERSION: true
+            DEPENDENCIES: matplotlib==3.1.3 numpy==1.19.0 scipy==1.4 imagecodecs==2020.1.31 tifffile==2020.2.16 dask==2.11.0 distributed==2.11.0 scikit-image==0.15 numba==0.52 scikit-learn==1.0.1
             LABEL: -oldest
           # test minimum requirement
           - os: ubuntu
             PYTHON_VERSION: '3.8'
-            PIP_SELECTOR: '[tests]'
+            PIP_SELECTOR: '[tests, coverage]'
             LABEL: -minimum
           # Run coverage
           - os: ubuntu
+            PYTHON_VERSION: '3.7'
+            PIP_SELECTOR: '[all, tests, coverage]'
+          - os: ubuntu
             PYTHON_VERSION: '3.8'
             PIP_SELECTOR: '[all, tests, coverage]'
-            PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
-            LABEL: -coverage
-          - os: ubuntu
-            PYTHON_VERSION: '3.7'
-            PIP_SELECTOR: '[all, tests]'
           - os: ubuntu
             PYTHON_VERSION: '3.10'
-            PIP_SELECTOR: '[all, tests]'
-        exclude:
-          # redundant build (same as coverage)
+            PIP_SELECTOR: '[all, tests, coverage]'
           - os: ubuntu
-            PYTHON_VERSION: '3.8'
+            PYTHON_VERSION: '3.11'
+            PIP_SELECTOR: '[all, tests, coverage]'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.3.0
 
       - uses: actions/setup-python@v4
         name: Install Python
@@ -62,6 +56,13 @@ jobs:
         run: |
           python --version
           pip --version
+
+      - name: Install numba rc
+        if: contains(matrix.PYTHON_VERSION, '3.11')
+        # Require for python 3.11 support, remove when numba 0.57 is release
+        shell: bash
+        run: |
+          pip install numba --pre
 
       - name: Install oldest supported version
         if: ${{ matrix.OLDEST_SUPPORTED_VERSION }}
@@ -79,8 +80,8 @@ jobs:
 
       - name: Run test suite
         run: |
-          pytest ${{ env.PYTEST_ARGS }} ${{ matrix.PYTEST_ARGS_COVERAGE }}
+          pytest ${{ env.PYTEST_ARGS }} --cov=. --cov-report=xml
 
       - name: Upload coverage to Codecov
-        if: ${{ always() }} && ${{ matrix.PYTEST_ARGS_COVERAGE }}
+        if: ${{ always() }}
         uses: codecov/codecov-action@v3

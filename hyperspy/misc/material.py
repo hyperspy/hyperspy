@@ -312,7 +312,7 @@ def mass_absorption_coefficient(element, energies):
 
     Note
     ----
-    See https://physics.nist.gov/ffast
+    See https://dx.doi.org/10.18434/T4HS32
     Chantler, C.T., Olsen, K., Dragoset, R.A., Kishore, A.R., Kotochigova,
     S.A., and Zucker, D.S. (2005), X-Ray Form Factor, Attenuation and
     Scattering Tables (version 2.1).
@@ -373,7 +373,7 @@ def _mass_absorption_mixture(weight_percent,
 
     Note
     ----
-    See https://physics.nist.gov/ffast
+    See https://dx.doi.org/10.18434/T4HS32
     Chantler, C.T., Olsen, K., Dragoset, R.A., Kishore, A.R., Kotochigova,
     S.A., and Zucker, D.S. (2005), X-Ray Form Factor, Attenuation and
     Scattering Tables (version 2.1).
@@ -436,7 +436,7 @@ def mass_absorption_mixture(weight_percent,
 
     Note
     ----
-    See https://physics.nist.gov/ffast
+    See https://dx.doi.org/10.18434/T4HS32
     Chantler, C.T., Olsen, K., Dragoset, R.A., Kishore, A.R., Kotochigova,
     S.A., and Zucker, D.S. (2005), X-Ray Form Factor, Attenuation and
     Scattering Tables (version 2.1).

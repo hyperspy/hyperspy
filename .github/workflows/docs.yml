@@ -11,7 +11,7 @@ jobs:
       LATEX_DEPS: dvipng latexmk texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.3.0
 
       - uses: ericpre/sphinx-action@latest_sphinx
         with:
@@ -31,14 +31,14 @@ jobs:
     env:
       DOCS_PATH: ./doc/_build/html/
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.3.0
         with:
           fetch-depth: 0
 
       - uses: actions/setup-python@v4
         name: Install Python
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Install build docs
         shell: bash -l {0}

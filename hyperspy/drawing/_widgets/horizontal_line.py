@@ -28,7 +28,7 @@ class HorizontalLineWidget(Widget1DBase):
 
     def _update_patch_position(self):
         if self.is_on and self.patch:
-            self.patch[0].set_ydata(self._pos[0])
+            self.patch[0].set_ydata([self._pos[0]])
             self.draw_patch()
 
     def _add_patch_to(self, ax):
