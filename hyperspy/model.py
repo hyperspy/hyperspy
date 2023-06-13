@@ -359,7 +359,18 @@ class BaseModel(list):
                     if 'init' in parse_flag_string(flags_str):
                         init_args[k] = reconstruct_object(flags_str, comp[k])
 
-                self.append(reconstruct_component(comp, **init_args))
+                if comp['_id_name'] == 'Physical_background':
+                    init_dic=dic['export_background']
+                    init_args.update({'E0':init_dic['E0'],'detector':init_dic['detector'],'quantification':init_dic['quanti'], 
+                                 'emission_model':init_dic['emission_model'], 'absorption_model':init_dic['absorption_model'], 
+                                 'TOA':init_dic['teta'], 'coating_thickness':init_dic['Coating'], 'phase_map':init_dic['phase_map'], 
+                                 'correct_for_backscatterring':init_dic['Backscattering_correction'], 'standard':init_dic['std']})
+                    self.append(reconstruct_component(comp, **init_args))
+                    self.components.Physical_background.reinitialize(dic['export_background'])
+                else:
+                    self.append(reconstruct_component(comp, **init_args))
+
+                
                 id_dict.update(self[-1]._load_dictionary(comp))
             # deal with twins:
             for comp in dic['components']:
@@ -368,6 +379,9 @@ class BaseModel(list):
                         id_dict[tw].twin = id_dict[par['self']]
 
         if '_whitelist' in dic:
+            load_from_dictionary(self, dic)
+            
+        if '_dic' in dic:
             load_from_dictionary(self, dic)
 
     def __repr__(self):
@@ -2439,6 +2453,10 @@ class BaseModel(list):
         dic = {'components': [c.as_dictionary(fullcopy) for c in self]}
 
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
+        if self.__class__.__name__ is 'EDSTEMModel' or self.__class__.__name__ == 'EDSSEMModel': 
+            if len(self.background_components)>0:
+                if self.background_components[0].name == 'Physical_background':
+                    dic['export_background']=self.components.Physical_background._dic
 
         def remove_empty_numpy_strings(dic):
             for k, v in dic.items():

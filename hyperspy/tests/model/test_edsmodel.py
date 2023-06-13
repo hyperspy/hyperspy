@@ -121,6 +121,15 @@ class TestlineFit:
             s.metadata.Acquisition_instrument.TEM.Detector.EDS.
             energy_resolution_MnKa, reso, atol=1)
 
+    def test_add_physical_background(self):
+        s = self.s
+        m = s.create_model(auto_background=False)
+        m.add_physical_background()
+        assert 'Physical_background' in m[-1]._name
+        assert(m[-1].isbackground)
+        assert (m[-1]._dic['E0']==200)
+        np.testing.assert_allclose(m[-1]._dic['teta'],1.74,atol=1e-2)
+
     def test_calibrate_energy_scale(self):
         s = self.s
         m = s.create_model()

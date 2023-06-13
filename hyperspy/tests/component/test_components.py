@@ -39,8 +39,9 @@ def get_components1d_name_list():
         if inspect.isclass(obj) and issubclass(obj, Component):
             components1d_name_list.append(c_name)
 
-    # Remove EELSCLEdge, since it is tested elsewhere more appropriate
+    # Remove EELSCLEdge and Physical_background, since it is tested elsewhere more appropriate
     components1d_name_list.remove('EELSCLEdge')
+    components1d_name_list.remove('Physical_background')
     return components1d_name_list
 
 
