@@ -76,7 +76,7 @@ class ColoredFormatter(logging.Formatter):
     red = "\x1b[31;20m"
     bold_red = "\x1b[31;1m"
     reset = "\x1b[0m"
-    format = "%(levelname)s | Hyperspy | %(asctime)s | %(message)s (%(filename)s:%(lineno)d)"
+    format = "%(levelname)s | Hyperspy | %(message)s (%(name)s:%(lineno)d)"
 
     FORMATS = {
         logging.DEBUG: grey + format + reset,
