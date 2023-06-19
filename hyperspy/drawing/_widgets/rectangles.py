@@ -40,6 +40,11 @@ class SquareWidget(Widget2DBase):
     def __init__(self, axes_manager, **kwargs):
         super(SquareWidget, self).__init__(axes_manager, **kwargs)
 
+    def connect(self, ax):
+        super(SquareWidget, self).connect(ax)
+        canvas = ax.figure.canvas
+        canvas.mpl_connect('button_press_event', self._onjumpclick)
+
     def _set_patch(self):
         """Sets the patch to a matplotlib Rectangle with the correct geometry.
         The geometry is defined by _get_patch_xy, and get_size_in_axes.
@@ -54,6 +59,11 @@ class SquareWidget(Widget2DBase):
             alpha=self.alpha,
             picker=True,)]
         super(SquareWidget, self)._set_patch()
+
+    def _onjumpclick(self, event):
+        # Callback for MPL pick event
+        if event.key=="shift":
+            self.position = (event.xdata, event.ydata)
 
     def _onmousemove(self, event):
         """on mouse motion move the patch if picked"""
