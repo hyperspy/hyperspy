@@ -62,7 +62,7 @@ class SquareWidget(Widget2DBase):
 
     def _onjumpclick(self, event):
         # Callback for MPL pick event
-        if event.key=="shift":
+        if event.key=="shift" and event.inaxes:
             self.position = (event.xdata, event.ydata)
 
     def _onmousemove(self, event):
