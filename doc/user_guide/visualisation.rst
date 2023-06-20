@@ -283,6 +283,12 @@ The same example with the feature disabled:
 
 .. _plot.customize_navigator:
 
+.. versionadded:: 2.0.0
+   ``plot_style`` keyword argument to allow for "horizontal" or "vertical" plotting when using the `ipympl` or
+`widget` backends. A default value can also be set using
+:ref:`HyperSpy plot preferences <configuring-hyperspy-label>`.
+
+
 Customizing the "navigator"
 ===========================
 
