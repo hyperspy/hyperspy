@@ -65,6 +65,18 @@ class SquareWidget(Widget2DBase):
         if event.key=="shift" and event.inaxes:
             self.position = (event.xdata, event.ydata)
 
+    def _pos_changed(self):
+        """Call when the position of the widget has changed. It triggers the
+        relevant events, and updates the patch position.
+        """
+        if self._navigating:
+            with self.axes_manager.events.indices_changed.suppress():
+                for i in range(len(self.axes)):
+                    self.axes[i].value = self._pos[i]
+        self.events.moved.trigger(self)
+        self.events.changed.trigger(self)
+        self._update_patch_position()
+
     def _onmousemove(self, event):
         """on mouse motion move the patch if picked"""
         if self.picked is True and event.inaxes:

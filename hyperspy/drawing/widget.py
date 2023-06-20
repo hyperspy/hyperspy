@@ -384,7 +384,8 @@ class DraggableWidgetBase(WidgetBase):
         relevant events, and updates the patch position.
         """
         if self._navigating:
-            with self.axes_manager.events.indices_changed.suppress():
+            with self.axes_manager.events.indices_changed.suppress_callback(
+                    self._on_navigate):
                 for i in range(len(self.axes)):
                     self.axes[i].value = self._pos[i]
         self.events.moved.trigger(self)
