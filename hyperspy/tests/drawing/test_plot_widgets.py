@@ -22,6 +22,7 @@ import pytest
 
 from hyperspy.drawing import widgets
 from hyperspy.signals import Signal1D, Signal2D
+from hyperspy.misc.test_utils import mock_event
 
 baseline_dir = 'plot_widgets'
 default_tol = 2.0
@@ -307,3 +308,41 @@ class TestPlotRangeWidget():
         assert range_v.size == (15.0, )
 
         return im._plot.signal_plot.figure
+
+class TestSquareWidget:
+    @pytest.mark.parametrize("button", ("right-click", "left-click"))
+    def test_jump_click(self, button):
+        im = Signal2D(np.arange(10 * 10* 10* 10).reshape((10, 10, 10, 10)))
+        im.axes_manager[0].scale = 0.1
+        im.axes_manager[1].scale = 5
+        im.plot()
+
+        jump = mock_event(im._plot.navigator_plot.figure,
+                          im._plot.navigator_plot.figure.canvas,
+                          key="shift",
+                          button=button,
+                          xdata=.5,
+                          ydata=10,
+                          )
+        im._plot.pointer._onjumpclick(event=jump)
+        current_index = [el.index for el in
+                         im.axes_manager.navigation_axes]
+        assert current_index == [5,2]
+
+    def test_jump_click_out_of_bounds(self):
+        im = Signal2D(np.arange(10 * 10* 10* 10).reshape((10, 10, 10, 10)))
+        im.axes_manager[0].scale = 0.1
+        im.axes_manager[1].scale = 5
+        im.plot()
+
+        jump = mock_event(im._plot.navigator_plot.figure,
+                          im._plot.navigator_plot.figure.canvas,
+                          key="shift",
+                          button="left-click",
+                          xdata=-5,
+                          ydata=100,
+                          )
+        im._plot.pointer._onjumpclick(event=jump)
+        current_index = [el.index for el in
+                         im.axes_manager.navigation_axes]
+        assert current_index == [0,9] # maybe this should fail and return [0,0]
