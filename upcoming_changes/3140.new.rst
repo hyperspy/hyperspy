@@ -1,0 +1,3 @@
+Changes to :meth:`~.api.signals.BaseSignal.plot`:
+- Allow Horizontal plotting using the `ipympl` or `widget` backends
+- Add in gui preferences to set a default to horizontal or vertical plotting
