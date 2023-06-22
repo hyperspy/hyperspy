@@ -4731,7 +4731,7 @@ class BaseSignal(FancySlicing,
         self,
         function,
         show_progressbar=None,
-        parallel=None,
+        parallel=True,
         max_workers=None,
         inplace=True,
         ragged=None,
@@ -4912,57 +4912,29 @@ class BaseSignal(FancySlicing,
         # If the function has an `axes` or `axis` argument
         # we suppose that it can operate on the full array and we don't
         # iterate over the coordinates.
-        if not ndkwargs and not lazy_output and (self.axes_manager.signal_dimension == 1 and
-                             "axis" in fargs):
-            kwargs['axis'] = self.axes_manager.signal_axes[-1].index_in_array
-
-            result = self._map_all(function, inplace=inplace, **kwargs)
-        elif not ndkwargs and not lazy_output and "axes" in fargs and not parallel:
-            kwargs['axes'] = tuple([axis.index_in_array for axis in
-                                    self.axes_manager.signal_axes])
-            result = self._map_all(function, inplace=inplace, **kwargs)
-        else:
-            if show_progressbar is None:
-                from hyperspy.defaults_parser import preferences
-                show_progressbar = preferences.General.show_progressbar
-            # Iteration over coordinates.
-            result = self._map_iterate(
-                function,
-                iterating_kwargs=ndkwargs, # function argument(s) (iterating)
-                show_progressbar=show_progressbar,
-                ragged=ragged,
-                inplace=inplace,
-                lazy_output=lazy_output,
-                max_workers=max_workers,
-                output_dtype=output_dtype,
-                output_signal_size=output_signal_size,
-                **kwargs, # function argument(s) (non-iterating)
-            )
+        if show_progressbar is None:
+            from hyperspy.defaults_parser import preferences
+            show_progressbar = preferences.General.show_progressbar
+        # Iteration over coordinates.
+        result = self._map_iterate(
+            function,
+            iterating_kwargs=ndkwargs, # function argument(s) (iterating)
+            show_progressbar=show_progressbar,
+            ragged=ragged,
+            inplace=inplace,
+            parallel=parallel,
+            lazy_output=lazy_output,
+            max_workers=max_workers,
+            output_dtype=output_dtype,
+            output_signal_size=output_signal_size,
+            **kwargs, # function argument(s) (non-iterating)
+        )
         if not inplace:
             return result
         else:
             self.events.data_changed.trigger(obj=self)
 
     map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, LAZY_OUTPUT_ARG, MAX_WORKERS_ARG)
-
-    def _map_all(self, function, inplace=True, **kwargs):
-        """
-        The function has to have either 'axis' or 'axes' keyword argument,
-        and hence support operating on the full dataset efficiently.
-        """
-        newdata = function(self.data, **kwargs)
-        if inplace:
-            self.data = newdata
-            self._lazy = False
-            self._assign_subclass()
-            self.get_dimensions_from_data()
-            return None
-        else:
-            sig = self._deepcopy_with_new_data(newdata)
-            sig._lazy = False
-            sig._assign_subclass()
-            sig.get_dimensions_from_data()
-            return sig
 
     def _map_iterate(
         self,
@@ -4971,6 +4943,7 @@ class BaseSignal(FancySlicing,
         show_progressbar=None,
         ragged=False,
         inplace=True,
+        parallel=True,
         output_signal_size=None,
         output_dtype=None,
         lazy_output=None,
@@ -5064,6 +5037,11 @@ class BaseSignal(FancySlicing,
             pbar = ProgressBar()
             pbar.register()
 
+        if not parallel:
+            scheduler = 'single-threaded'
+        else:
+            scheduler = None
+
         if inplace:
             if (
                 not self._lazy
@@ -5079,6 +5057,7 @@ class BaseSignal(FancySlicing,
                     self.data,
                     dtype=mapped.dtype,
                     compute=True,
+                    scheduler=scheduler,
                     num_workers=max_workers,
                 )
                 data_stored = True
@@ -5108,7 +5087,7 @@ class BaseSignal(FancySlicing,
         sig._assign_subclass()
 
         if not lazy_output and not data_stored:
-            sig.data = sig.data.compute(num_workers=max_workers)
+            sig.data = sig.data.compute(num_workers=max_workers, scheduler=scheduler)
 
         if show_progressbar:
             pbar.unregister()
