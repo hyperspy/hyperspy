@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 syntax: glob
 .spyderworkspace
 .coverage
@@ -48,11 +49,7 @@ hyperspy/misc/etc/test_compilers.obj
 hyperspy/tests/io/edax_files.zip
 .python-version
 *__pycache__
+=======
+>>>>>>> Stashed changes
 
-### Code ###
-# Visual Studio Code - https://code.visualstudio.com/
-.settings/
-.vscode/
-tsconfig.json
-jsconfig.json
-*egg-info*
+.drone.yml

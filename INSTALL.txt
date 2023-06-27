@@ -1,4 +1,0 @@
-For installation instructions read docs/user_guide/install.rst
-
-
-
