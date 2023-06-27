@@ -329,6 +329,31 @@ class TestSquareWidget:
                          im.axes_manager.navigation_axes]
         assert current_index == [5,2]
 
+    def test_jump_click_single_trigger(self):
+        im = Signal2D(np.arange(10 * 10 * 10 * 10).reshape((10, 10, 10, 10)))
+        im.axes_manager[0].scale = 0.1
+        im.axes_manager[1].scale = 5
+        im.plot()
+
+        def count_calls(obj):
+            count_calls.counter += 1
+        count_calls.counter = 0
+
+        im.axes_manager.events.indices_changed.connect(count_calls)
+
+        jump = mock_event(im._plot.navigator_plot.figure,
+                          im._plot.navigator_plot.figure.canvas,
+                          key="shift",
+                          button="left-click",
+                          xdata=.5,
+                          ydata=10,
+                          )
+        im._plot.pointer._onjumpclick(event=jump)
+        assert count_calls.counter == 1
+        current_index = [el.index for el in
+                         im.axes_manager.navigation_axes]
+        assert current_index == [5, 2]
+
     def test_jump_click_out_of_bounds(self):
         im = Signal2D(np.arange(10 * 10* 10* 10).reshape((10, 10, 10, 10)))
         im.axes_manager[0].scale = 0.1
@@ -345,4 +370,43 @@ class TestSquareWidget:
         im._plot.pointer._onjumpclick(event=jump)
         current_index = [el.index for el in
                          im.axes_manager.navigation_axes]
-        assert current_index == [0,9] # maybe this should fail and return [0,0]
+        assert current_index == [0, 9] # maybe this should fail and return [0,0]
+
+    def test_drag_continuous_update(self):
+        im = Signal2D(np.arange(10 * 10 * 10 * 10).reshape((10, 10, 10, 10)))
+        im.axes_manager[0].scale = 1
+        im.axes_manager[1].scale = 1
+        im.plot()
+
+        def count_calls(obj):
+            count_calls.counter += 1
+        count_calls.counter = 0
+        im.axes_manager.events.indices_changed.connect(count_calls)
+
+        widget = im._plot.pointer
+        pick = mock_event(im._plot.navigator_plot.figure,
+                          im._plot.navigator_plot.figure.canvas,
+                          key=None,
+                          button="left-click",
+                          xdata=0.5,
+                          ydata=.5,
+                          artist=widget.patch[0],
+                          )
+        widget.onpick(pick)
+        assert widget.picked
+        drag_events = []
+        for i in np.linspace(0.5, 5, 40):
+            drag = mock_event(im._plot.navigator_plot.figure,
+                              im._plot.navigator_plot.figure.canvas,
+                              key=None,
+                              button="left-click",
+                              xdata=i,
+                              ydata=.5,
+                              artist=widget.patch[0],
+                              )
+            drag_events.append(drag)
+        for d in drag_events:
+            widget._onmousemove(d)
+        assert count_calls.counter == 5
+        assert im.axes_manager.navigation_axes[0].index == 5
+        assert im.axes_manager.navigation_axes[1].index == 0

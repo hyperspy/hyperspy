@@ -122,7 +122,10 @@ def check_running_tests_in_CI():
     if "CI" in os.environ:
         return os.environ.get("CI")
 
-def mock_event(fig, canvas, button=None, key=None, xdata=None, ydata=None,  inaxes=True):
+def mock_event(fig, canvas,
+               button=None, key=None,
+               xdata=None, ydata=None,
+               inaxes=True, artist=None):
     event = mock.Mock()
     event.button = button
     event.key = key
@@ -132,5 +135,18 @@ def mock_event(fig, canvas, button=None, key=None, xdata=None, ydata=None,  inax
     event.canvas = canvas
     event.guiEvent = None
     event.name = 'MockEvent'
+    event.artist = artist
+    return event
 
+def mock_click_drag_event(object, start, end,):
+
+    event = mock.Mock()
+    event.button = None
+    event.key = None
+    event.xdata, event.ydata = xdata, ydata
+    event.inaxes = inaxes
+    event.fig = fig
+    event.canvas = canvas
+    event.guiEvent = None
+    event.name = 'MockEvent'
     return event
