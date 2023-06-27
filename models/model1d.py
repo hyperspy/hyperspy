@@ -710,8 +710,27 @@ class Model1D(BaseModel):
             ns[np.where(self.channel_switches)] = s
             s = ns
         return s
-
-    def plot(self, plot_components=False, **kwargs):
+    
+    def _residual2plot(self, axes_manager, out_of_range2nans=True):
+        old_axes_manager = None
+        if axes_manager is not self.axes_manager:
+            old_axes_manager = self.axes_manager
+            self.axes_manager = axes_manager
+            self.fetch_stored_values()
+        #Residual = Signal - model
+        s = (self.signal.__call__() -
+            self.__call__(non_convolved=False, onlyactive=True))
+        if old_axes_manager is not None:
+            self.axes_manager = old_axes_manager
+            self.fetch_stored_values()
+        if out_of_range2nans is True:
+            ns = np.empty(self.axis.axis.shape)
+            ns.fill(np.nan)
+            ns[np.where(self.channel_switches)] = s
+            s = ns
+        return s
+    
+    def plot(self, plot_components=False,plot_residual=False, **kwargs):
         """Plot the current spectrum to the screen and a map with a
         cursor to explore the SI.
 
@@ -742,6 +761,21 @@ class Model1D(BaseModel):
         self._model_line = l2
         self._plot = self.signal._plot
         self._connect_parameters2update_plot(self)
+        
+        #Optional to plot the residual of (Signal - Model)
+        if plot_residual is True:
+            l3 = hyperspy.drawing.signal1d.Signal1DLine()
+            #_residual2plot is a function that outputs the residual
+            l3.data_function = self._residual2plot
+            l3.set_line_properties(color='green', type='line')
+            # Add the line to the figure
+            _plot.signal_plot.add_line(l3)
+            l3.plot()
+            _plot.signal_plot.events.closed.connect(self._close_plot, [])
+
+            self._plot = self.signal._plot
+            self._connect_parameters2update_plot(self)
+
         if plot_components is True:
             self.enable_plot_components()
         else:
