@@ -62,7 +62,7 @@ class SquareWidget(Widget2DBase):
 
     def _onjumpclick(self, event):
         # Callback for MPL pick event
-        if event.key=="shift" and event.inaxes:
+        if event.key == "shift" and event.inaxes:
             self.position = (event.xdata, event.ydata)
 
     def _pos_changed(self):
@@ -70,7 +70,10 @@ class SquareWidget(Widget2DBase):
         relevant events, and updates the patch position.
         """
         if self._navigating:
-            with self.axes_manager.events.indices_changed.suppress():
+            with (self.axes_manager.events.indices_changed.suppress_callback(
+                  self._on_navigate) or
+                  self.axes_manager.events.indices_changed.suppress_callback(
+                  self._onjumpclick)):
                 for i in range(len(self.axes)):
                     self.axes[i].value = self._pos[i]
         self.events.moved.trigger(self)
