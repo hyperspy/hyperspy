@@ -30,6 +30,7 @@ from matplotlib.patches import RegularPolygon
 import matplotlib.pyplot as plt
 
 from hyperspy.drawing._markers.marker_collection import MarkerCollection
+from hyperspy.drawing._markers.line_collection import HorizontalLineCollection, VerticalLineCollection
 from hyperspy.drawing.marker import markers2collection
 from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
 from hyperspy.axes import UniformDataAxis
@@ -429,3 +430,32 @@ def _test_marker_collection_close():
 @update_close_figure()
 def test_marker_collection_close():
     return _test_marker_collection_close()
+
+
+class TestLineCollections:
+    @pytest.fixture
+    def segments(self):
+        d = np.empty((3,), dtype=object)
+        for i in np.ndindex(d.shape):
+            d[i] = np.arange(i[0]+1)
+        return d
+
+    def test_vertical_line_collection(self, segments):
+        vert = VerticalLineCollection(segments=segments)
+        s = Signal2D(np.zeros((3, 3, 3)))
+        s.axes_manager.signal_axes[0].offset = 0
+        s.axes_manager.signal_axes[1].offset = 0
+        s.plot(interpolation=None)
+        s.add_marker(vert)
+        kwargs = vert.get_data_position()
+        np.testing.assert_array_equal(kwargs["segments"], [[[0., -5], [0., 1]]])
+
+    def test_horizontal_line_collection(self, segments):
+        hor = HorizontalLineCollection(segments=segments)
+        s = Signal2D(np.zeros((3, 3, 3)))
+        s.axes_manager.signal_axes[0].offset = 0
+        s.axes_manager.signal_axes[1].offset = 0
+        s.plot(interpolation=None)
+        s.add_marker(hor)
+        kwargs = hor.get_data_position()
+        np.testing.assert_array_equal(kwargs["segments"], [[[-1, 0], [5, 0]]])

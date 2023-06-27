@@ -88,7 +88,7 @@ class MarkerCollection(object):
             argument and is treated as such.
         """
         # Data attributes
-        self.kwargs = kwargs
+        self.kwargs = kwargs  # all keyword arguments.
         self.axes_manager = None
         self.ax = None
         self.auto_update = True
@@ -103,6 +103,7 @@ class MarkerCollection(object):
         self._plot_on_signal = True
         self.name = "MarkerCollection"
         self.plot_marker = True
+        self.offsets_structure = [["o", "get_xlim[0]"],["o", "get_xlim[1]"]]
 
         # Events
         self.events = Events()
