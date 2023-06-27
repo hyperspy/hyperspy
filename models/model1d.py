@@ -738,6 +738,8 @@ class Model1D(BaseModel):
         ----------
         plot_components : bool
             If True, add a line per component to the signal figure.
+        plot_residual : bool
+            If True, add a residual line (Signal - Model) to the signal figure.
         **kwargs : dict
             All extra keyword arguements are passed to
             :py:meth:`~._signals.signal1d.Signal1D.plot`
