@@ -137,16 +137,3 @@ def mock_event(fig, canvas,
     event.name = 'MockEvent'
     event.artist = artist
     return event
-
-def mock_click_drag_event(object, start, end,):
-
-    event = mock.Mock()
-    event.button = None
-    event.key = None
-    event.xdata, event.ydata = xdata, ydata
-    event.inaxes = inaxes
-    event.fig = fig
-    event.canvas = canvas
-    event.guiEvent = None
-    event.name = 'MockEvent'
-    return event
