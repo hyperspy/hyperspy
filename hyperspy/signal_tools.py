@@ -2249,20 +2249,18 @@ class PeaksFinder2D(t.HasTraits):
     def _peaks_to_marker(self, markersize=20, add_numbers=True,
                          color='red'):
         # make marker_list for current index
-        from hyperspy.drawing._markers.point import Point
+        from hyperspy.drawing._markers.marker_collection import MarkerCollection
 
-        x_axis = self.signal.axes_manager.signal_axes[0]
-        y_axis = self.signal.axes_manager.signal_axes[1]
+        sig_axes = self.signal.axes_manager.signal_axes
 
         if np.isnan(self.peaks.data).all():
             marker_list = []
         else:
-            marker_list = [Point(x=x_axis.index2value(int(round(x))),
-                                 y=y_axis.index2value(int(round(y))),
-                                 color=color,
-                                 size=markersize)
-                for x, y in zip(self.peaks.data[:, 1], self.peaks.data[:, 0])]
-
+            marker_list = [MarkerCollection.from_signal(self.peaks,
+                                                        signal_axes=sig_axes,
+                                                        color=color,
+                                                        size=markersize),
+                           ]
         return marker_list
 
     def compute_navigation(self):
