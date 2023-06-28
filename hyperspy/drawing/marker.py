@@ -405,6 +405,46 @@ def markers2collection(marker_dict):
 
     return marker
 
+
+def marker_kwargs_to_dict(class_name, *args, **kwargs):
+    """Converts a set of kwargs to a dictionary of marker properties for use with the MarkerCollection class.
+
+
+    Parameters
+    ----------
+    class_name : str
+        The name of the (old) marker class which will be converted to a `MarkerCollection`
+    kwargs : dict
+        The kwargs to convert to a dictionary
+
+    Returns
+    -------
+    dict
+        A dictionary of marker properties
+    """
+    x1 = kwargs.pop("x1", None)
+    y1 = kwargs.pop("y1", None)
+    x2 = kwargs.pop("x2", None)
+    y2 = kwargs.pop("y2", None)
+    text = kwargs.pop("text", None)
+    size = kwargs.pop("size", None)
+
+    data = np.array((np.array(x1), np.array(y1),
+                     np.array(x2), np.array(y2),
+                     np.array(text), np.array(size)),
+                    dtype=[('x1', object), ('y1', object),
+                           ('x2', object), ('y2', object),
+                           ('text', object), ('size', object)])
+
+    marker_dict = {
+        'marker_properties': kwargs,
+        'marker_type': class_name,
+        'plot_on_signal': True,
+        'data': data
+    }
+
+    return marker_dict
+
 def markers_metadata_dict_to_markers(metadata_markers_dict, axes_manager):
     markers_dict = {}
     for marker_name, m_dict in metadata_markers_dict.items():
