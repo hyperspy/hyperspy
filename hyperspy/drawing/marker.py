@@ -309,16 +309,16 @@ def dict2vector(data,
 def markers2collection(marker_dict):
     """This function maps a maker dict to a MarkerCollection class
     """
+    from hyperspy.utils.markers import MarkerCollection, VerticalLineCollection, HorizontalLineCollection
     from matplotlib.collections import LineCollection, PolyCollection, PatchCollection
     from matplotlib.patches import FancyArrowPatch, Ellipse
-    from hyperspy.drawing._markers.line_collection import VerticalLineCollection, HorizontalLineCollection
 
     marker_type = marker_dict["marker_type"]
     if marker_type == 'Point':
         offsets, size = dict2vector(marker_dict["data"],
                                     keys=[["x1", "y1"]],
                                     return_size=True)
-        marker = markers.marker_collection.MarkerCollection(offsets=offsets,
+        marker = MarkerCollection(offsets=offsets,
                                                             sizes=size,
                                                             **marker_dict['marker_properties'])
     elif marker_type == 'HorizontalLine':
@@ -332,14 +332,14 @@ def markers2collection(marker_dict):
         segments = dict2vector(marker_dict["data"],
                                keys=[[["x1", "y1"], ["x2", "y1"]]], return_size=False)
 
-        marker = markers.marker_collection.MarkerCollection(segments=segments,
+        marker = MarkerCollection(segments=segments,
                                                             collection_class=LineCollection,
                                                             **marker_dict['marker_properties'])
     elif marker_type == 'LineSegment':
         segments = dict2vector(marker_dict["data"],
                                keys=[[["x1", "y1"], ["x2", "y2"]]], return_size=False)
 
-        marker = markers.marker_collection.MarkerCollection(segments=segments,
+        marker = MarkerCollection(segments=segments,
                                                             collection_class=LineCollection,
                                                             **marker_dict['marker_properties'])
     elif marker_type == 'Arrow':
@@ -354,7 +354,7 @@ def markers2collection(marker_dict):
             arrows = [FancyArrowPatch(posA=segments[0], posB=segments[1],
                                       **marker_dict['marker_properties']),
                       ]
-        marker = markers.marker_collection.MarkerCollection(patches=arrows,
+        marker = MarkerCollection(patches=arrows,
                                                             collection_class=PatchCollection)
 
     elif marker_type == 'Rectangle':
@@ -364,7 +364,7 @@ def markers2collection(marker_dict):
                                return_size=False,
                                )
 
-        marker = markers.marker_collection.MarkerCollection(verts=verts,
+        marker = MarkerCollection(verts=verts,
                                                             collection_class=PolyCollection,
                                                             **marker_dict['marker_properties'])
     elif marker_type == 'Ellipse':
@@ -380,7 +380,7 @@ def markers2collection(marker_dict):
             ellipses = [Ellipse(xy=segments[0], width=segments[1][0],
                                 height=segments[1][1],
                                 **marker_dict['marker_properties']), ]
-        marker = markers.marker_collection.MarkerCollection(patches=ellipses,
+        marker = MarkerCollection(patches=ellipses,
                                                             collection_class=PatchCollection)
     elif marker_type == 'Text':
         raise ValueError("Converting from Text to a Marker Collection is not supported"
@@ -396,7 +396,7 @@ def markers2collection(marker_dict):
                                keys=[[["x1", "y1"], ["x1", "y2"]]],
                                return_size=False)
 
-        marker = markers.marker_collection.MarkerCollection(segments=segments,
+        marker = MarkerCollection(segments=segments,
                                                             collection_class=LineCollection,
                                                             **marker_dict['marker_properties'])
     else:

@@ -21,6 +21,7 @@ import dask.array as da
 import matplotlib
 from hyperspy.events import Event, Events
 from hyperspy.drawing.marker import dict2marker
+from hyperspy._signals.lazy import _get_navigation_dimension_chunk_slice
 from matplotlib.transforms import Affine2D
 import logging
 
@@ -93,6 +94,17 @@ class MarkerCollection(object):
         self.ax = None
         self.auto_update = True
 
+        # Handling dask arrays
+        self.dask_kwargs = {}
+        for key, value in self.kwargs.items():
+            if isinstance(value, da.Array) and value.dtype == object:
+                self.dask_kwargs[key] = self.kwargs[key]
+            elif isinstance(value, da.Array):  # and value.dtype != object:
+                self.kwargs[key] = value.compute()
+
+        self._cache_dask_chunk_kwargs = {}
+        self._cache_dask_chunk_kwargs_slice = {}
+
         # Properties
         self.collection = None
         self.collection_class = collection_class
@@ -119,6 +131,40 @@ class MarkerCollection(object):
             arguments=["obj"],
         )
         self._closing = False
+
+    def _get_cache_dask_kwargs_chunk(self, indices):
+        """
+        Get the kwargs at some index.  If the index is cached return the cached value
+        otherwise compute the kwargs and cache them.
+        """
+        chunks = {key: value.chunks
+                  for key, value in self.dask_kwargs.items()}
+        chunk_slices = {key: _get_navigation_dimension_chunk_slice(indices, chunk)
+                        for key, chunk in chunks.items()}
+        to_compute = {}
+        for key, value in self.dask_kwargs.items():
+            index_slice = chunk_slices[key]
+            current_slice = self._cache_dask_chunk_kwargs_slice.get(key, None)
+            if current_slice is None or current_slice != index_slice:
+                to_compute[key] = value[index_slice]
+                self._cache_dask_chunk_kwargs_slice[key] = index_slice
+
+        if len(to_compute) > 0:
+            #values = da.compute([value for value in to_compute.values()])
+            #self._cache_dask_chunk_kwargs.update({key: value for
+            #                                      key, value in zip(to_compute.keys(), values)})
+            for key in to_compute:
+                self._cache_dask_chunk_kwargs[key] = to_compute[key].compute()
+
+        out_kwargs = {}
+        for key, value in self._cache_dask_chunk_kwargs.items():
+            temp_indices = list(indices)
+            for i, temp_slice in enumerate(chunk_slices[key]):
+                # add offset to the indices
+                temp_indices[i] -= temp_slice.start
+            temp_indices = tuple(temp_indices)
+            out_kwargs[key] = self._cache_dask_chunk_kwargs[key][temp_indices]
+        return out_kwargs
 
     def __repr__(self):
         if self.collection_class is not None:
@@ -210,11 +256,12 @@ class MarkerCollection(object):
             indices = self.axes_manager.indices[::-1]
             for key, value in self.kwargs.items():
                 if is_iterating(value):
-                    val = value[indices]
-                    # some keys values need to iterate
-                    if key in ["sizes", "color"] and not hasattr(val, "__len__"):
-                        val = (val,)
-                    current_keys[key] = val
+                    if key not in self.dask_kwargs:
+                        val = value[indices]
+                        # some keys values need to iterate
+                        if key in ["sizes", "color"] and not hasattr(val, "__len__"):
+                            val = (val,)
+                        current_keys[key] = val
                 elif get_static_kwargs:
                     val = value
                     if key in ["sizes", "color"] and not hasattr(val, "__len__"):
@@ -222,6 +269,8 @@ class MarkerCollection(object):
                     current_keys[key] = val
                 else:  # key already set in init
                     pass
+            if len(self.dask_kwargs) > 0:
+                current_keys.update(self._get_cache_dask_kwargs_chunk(indices))
         else:
             current_keys = self.kwargs
             for key, value in self.kwargs.items():

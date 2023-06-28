@@ -28,6 +28,7 @@ from matplotlib.collections import (
 )
 from matplotlib.patches import RegularPolygon
 import matplotlib.pyplot as plt
+import dask.array as da
 
 from hyperspy.drawing._markers.marker_collection import MarkerCollection
 from hyperspy.drawing._markers.line_collection import HorizontalLineCollection, VerticalLineCollection
@@ -50,6 +51,14 @@ class TestCollections:
         d = np.empty((3,), dtype=object)
         for i in np.ndindex(d.shape):
             d[i] = np.stack([np.arange(3), np.ones(3) * i], axis=1)
+        return d
+    @pytest.fixture
+    def lazy_data(self):
+        d = np.empty((3,), dtype=object)
+        for i in np.ndindex(d.shape):
+            d[i] = np.stack([np.arange(3), np.ones(3) * i], axis=1)
+        d = da.from_array(d, chunks=(1, 1, 1))
+
         return d
 
     @pytest.fixture
@@ -131,7 +140,9 @@ class TestCollections:
     @pytest.mark.mpl_image_compare(
         baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
     )
-    def test_iterating_marker(self, data):
+    @pytest.mark.parametrize("iter_data", ("lazy_data", "data"))
+    def test_iterating_marker(self, request, iter_data):
+        data = request.getfixturevalue(iter_data)
         s = Signal2D(np.ones((3, 5, 6)))
         markers = MarkerCollection(None, offsets=data, sizes=(0.2,))
         s.add_marker(markers)
