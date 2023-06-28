@@ -272,7 +272,7 @@ def dict2vector(data,
     In this example the keys will be unpacked to create a rectangle.
     """
     if keys is None:
-        keys = [["x1,x2"]]
+        keys = [["x1, x2"]]
     keys = np.array(keys)
     # check to see if the array should be ragged
     unique_keys = np.unique(keys)
@@ -288,7 +288,7 @@ def dict2vector(data,
             non_iterkeys = unique_keys[np.logical_not(is_key_iter)]
             for k in non_iterkeys:
                 data[k] = np.full(shape=nav_shape, fill_value=data[k])
-        vector = np.empty(nav_shape, dtype=object) # Create ragged array
+        vector = np.empty(nav_shape, dtype=object)  # Create ragged array
         for i in np.ndindex(nav_shape):
             vect = np.empty(keys.shape)
             for j in np.ndindex(keys.shape):
@@ -306,13 +306,13 @@ def dict2vector(data,
         return vector
 
 
-
-
 def markers2collection(marker_dict):
     """This function maps a maker dict to a MarkerCollection class
     """
     from matplotlib.collections import LineCollection, PolyCollection, PatchCollection
-    from matplotlib.patches import FancyArrowPatch
+    from matplotlib.patches import FancyArrowPatch, Ellipse
+    from hyperspy.drawing._markers.line_collection import VerticalLineCollection, HorizontalLineCollection
+
     marker_type = marker_dict["marker_type"]
     if marker_type == 'Point':
         offsets, size = dict2vector(marker_dict["data"],
@@ -322,8 +322,12 @@ def markers2collection(marker_dict):
                                                             sizes=size,
                                                             **marker_dict['marker_properties'])
     elif marker_type == 'HorizontalLine':
-        raise ValueError("Converting from HorizontalLine to MarkerCollection"
-                         "is not supported.")
+        segments = dict2vector(marker_dict["data"],
+                               keys=["y1"], return_size=False)
+
+        marker = HorizontalLineCollection(segments=segments,
+                                          **marker_dict['marker_properties'])
+
     elif marker_type == 'HorizontalLineSegment':
         segments = dict2vector(marker_dict["data"],
                                keys=[[["x1", "y1"], ["x2", "y1"]]], return_size=False)
@@ -364,15 +368,29 @@ def markers2collection(marker_dict):
                                                             collection_class=PolyCollection,
                                                             **marker_dict['marker_properties'])
     elif marker_type == 'Ellipse':
-        raise ValueError("Converting from Ellipse to EllipseCollection"
-                         "is not supported as EllipseCollections cannot vary"
-                         "the width and height of the ellipse")
+        segments = dict2vector(marker_dict["data"],
+                               keys=[["x1", "y1"], ["x2", "y2"]], return_size=False)
+        if segments.dtype == object:
+            ellipses = np.empty_like(segments, dtype=object)
+            for i in np.ndindex(segments.shape):
+                ellipses[i] = [Ellipse(xy=segments[i][0], width=segments[i][1][0],
+                                       height=segments[i][1][1],
+                                       **marker_dict['marker_properties']), ]
+        else:
+            ellipses = [Ellipse(xy=segments[0], width=segments[1][0],
+                                height=segments[1][1],
+                                **marker_dict['marker_properties']), ]
+        marker = markers.marker_collection.MarkerCollection(patches=ellipses,
+                                                            collection_class=PatchCollection)
     elif marker_type == 'Text':
         raise ValueError("Converting from Text to a Marker Collection is not supported"
                          "as there is no MarkerCollection which can render text")
     elif marker_type == 'VerticalLine':
-        raise ValueError("Converting from VerticalLine to a Marker Collection is "
-                         "not supported. ")
+        segments = dict2vector(marker_dict["data"],
+                               keys=["x1"], return_size=False)
+
+        marker = VerticalLineCollection(segments=segments,
+                                        **marker_dict['marker_properties'])
     elif marker_type == 'VerticalLineSegment':
         segments = dict2vector(marker_dict["data"],
                                keys=[[["x1", "y1"], ["x1", "y2"]]],

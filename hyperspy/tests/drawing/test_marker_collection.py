@@ -383,6 +383,9 @@ class TestMarkers2Collection:
         "marker_type", ("Point",
                         "HorizontalLineSegment",
                         "LineSegment",
+                        "Ellipse",
+                        "HorizontalLine",
+                        "VerticalLine",
                         "Arrow",
                         "Rectangle",
                         "VerticalLineSegment",
@@ -404,11 +407,7 @@ class TestMarkers2Collection:
         "data", ("iter_data", "static_data", "static_and_iter_data")
     )
     @pytest.mark.parametrize(
-        "marker_type", ("HorizontalLine",
-                        "Ellipse",
-                        "Text",
-                        "VerticalLine",
-                        ))
+        "marker_type", "Text")
     def test_marker2collectionfail(self, request, marker_type, data):
         d = request.getfixturevalue(data)
         test_dict = {}
