@@ -153,7 +153,7 @@ class MarkerCollection(object):
             #values = da.compute([value for value in to_compute.values()])
             #self._cache_dask_chunk_kwargs.update({key: value for
             #                                      key, value in zip(to_compute.keys(), values)})
-            for key in to_compute:
+            for key in to_compute:  # this should be one da.compute() function...
                 self._cache_dask_chunk_kwargs[key] = to_compute[key].compute()
 
         out_kwargs = {}
@@ -265,6 +265,8 @@ class MarkerCollection(object):
                 elif get_static_kwargs:
                     val = value
                     if key in ["sizes", "color"] and not hasattr(val, "__len__"):
+                        val = (val,)
+                    if key in ['s'] and isinstance(val, str):
                         val = (val,)
                     current_keys[key] = val
                 else:  # key already set in init

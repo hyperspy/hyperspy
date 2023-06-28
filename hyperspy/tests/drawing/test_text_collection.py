@@ -52,22 +52,29 @@ class TestTextCollection:
 
         return d
 
-    @pytest.mark.parametrize("text", ("test",
-                                     ("test1", "test2"),
+    @pytest.mark.parametrize("text", (("test",),
+                                      "test",
+                                      ("test", "test"),
                                       "ragged_text",))
     @pytest.mark.parametrize("iter_data", ("lazy_data", "data"))
     def test_iterating_marker(self, text, request,  iter_data):
         data = request.getfixturevalue(iter_data)
         s = Signal2D(np.ones((3, 5, 6)))
-        if text is "ragged_text":
+        ragged_text = text is "ragged_text"
+        if ragged_text:
             t = np.empty((3,), dtype=object)
             for i in np.ndindex(t.shape):
-                t[i] = "test"+str(i)
+                t[i] = ("test"+str(i),)
             text = t
         markers = TextCollection(offsets=data, s=text)
         s.add_marker(markers)
-        s.axes_manager.navigation_axes[0].index = 2
-        assert s._plot.signal_plot.ax.te
+        s.axes_manager.navigation_axes[0].index = 1
+        children = s._plot.signal_plot.ax.get_children()
+        children = [str(c) for c in children]
+        if ragged_text:
+            assert "Text(2.0, 1.0, 'test(1,)')" in children
+        else:
+            assert "Text(2.0, 1.0, 'test')" in children
 
 
 def _test_text_collection_close():
