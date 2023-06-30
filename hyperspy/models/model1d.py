@@ -259,6 +259,7 @@ class Model1D(BaseModel):
         self._plot_components = False
         self._suspend_update = False
         self._model_line = None
+        self._residual_line = None
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.events.indices_changed.connect(
             self._on_navigating, [])
@@ -774,12 +775,15 @@ class Model1D(BaseModel):
         #Optional to plot the residual of (Signal - Model)
         if plot_residual:
             l3 = hyperspy.drawing.signal1d.Signal1DLine()
-            #_residual2plot is a function that outputs the residual
+            # _residual_for_plot outputs the residual (Signal - Model)
             l3.data_function = self._residual_for_plot
             l3.set_line_properties(color='green', type='line')
             # Add the line to the figure
             _plot.signal_plot.add_line(l3)
             l3.plot()
+            # Quick access to _residual_line if needed 
+            self._residual_line = l3
+
 
         if plot_components is True:
             self.enable_plot_components()
