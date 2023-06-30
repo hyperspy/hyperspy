@@ -378,7 +378,8 @@ class Model1D(BaseModel):
     remove.__doc__ = BaseModel.remove.__doc__
 
     def __call__(self, non_convolved=False, onlyactive=False,
-                 component_list=None, binned=None):
+                 component_list=None, binned=None, 
+                 ignore_channel_switches = False):
         """Returns the corresponding model for the current coordinates
 
         Parameters
@@ -394,6 +395,9 @@ class Model1D(BaseModel):
         binned : bool or None
             Specify whether the binned attribute of the signal axes needs to be
             taken into account.
+        ignore_channel_switches: bool
+            If true, the entire signal axis are returned 
+            without checking channel_switches.
 
         cursor: 1 or 2
 
@@ -413,7 +417,10 @@ class Model1D(BaseModel):
                 component for component in component_list if component.active]
 
         if self.convolved is False or non_convolved is True:
-            axis = self.axis.axis[self.channel_switches]
+            if not ignore_channel_switches:
+                axis = self.axis.axis[self.channel_switches]
+            else:
+                axis = self.axis.axis
             sum_ = np.zeros(len(axis))
             for component in component_list:
                 sum_ += component.function(axis)
@@ -711,23 +718,23 @@ class Model1D(BaseModel):
             s = ns
         return s
     
-    def _residual2plot(self, axes_manager, out_of_range2nans=True):
+    def _residual_for_plot(self, axes_manager):
+        """From an model1D object, the original signal is subtracted 
+        by the model signal then returns the residual
+        """
+
         old_axes_manager = None
         if axes_manager is not self.axes_manager:
             old_axes_manager = self.axes_manager
             self.axes_manager = axes_manager
             self.fetch_stored_values()
+
         #Residual = Signal - model
-        s = (self.signal.__call__() -
-            self.__call__(non_convolved=False, onlyactive=True))
+        s = (self.signal.__call__() - self.__call__(ignore_channel_switches = True))
         if old_axes_manager is not None:
             self.axes_manager = old_axes_manager
             self.fetch_stored_values()
-        if out_of_range2nans is True:
-            ns = np.empty(self.axis.axis.shape)
-            ns.fill(np.nan)
-            ns[np.where(self.channel_switches)] = s
-            s = ns
+
         return s
     
     def plot(self, plot_components=False,plot_residual=False, **kwargs):
@@ -765,18 +772,14 @@ class Model1D(BaseModel):
         self._connect_parameters2update_plot(self)
         
         #Optional to plot the residual of (Signal - Model)
-        if plot_residual is True:
+        if plot_residual:
             l3 = hyperspy.drawing.signal1d.Signal1DLine()
             #_residual2plot is a function that outputs the residual
-            l3.data_function = self._residual2plot
+            l3.data_function = self._residual_for_plot
             l3.set_line_properties(color='green', type='line')
             # Add the line to the figure
             _plot.signal_plot.add_line(l3)
             l3.plot()
-            _plot.signal_plot.events.closed.connect(self._close_plot, [])
-
-            self._plot = self.signal._plot
-            self._connect_parameters2update_plot(self)
 
         if plot_components is True:
             self.enable_plot_components()
