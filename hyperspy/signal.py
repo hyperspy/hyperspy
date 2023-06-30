@@ -4932,6 +4932,7 @@ class BaseSignal(FancySlicing,
                 show_progressbar=show_progressbar,
                 ragged=ragged,
                 inplace=inplace,
+                parallel=parallel,
                 lazy_output=lazy_output,
                 max_workers=max_workers,
                 output_dtype=output_dtype,
@@ -4973,6 +4974,7 @@ class BaseSignal(FancySlicing,
         inplace=True,
         output_signal_size=None,
         output_dtype=None,
+        parallel=None,
         lazy_output=None,
         max_workers=None,
         **kwargs,
@@ -5060,6 +5062,10 @@ class BaseSignal(FancySlicing,
 
         data_stored = False
 
+        scheduler = None
+        if parallel == False:
+            scheduler = 'single-threaded'
+
         if show_progressbar:
             pbar = ProgressBar()
             pbar.register()
@@ -5079,6 +5085,7 @@ class BaseSignal(FancySlicing,
                     self.data,
                     dtype=mapped.dtype,
                     compute=True,
+                    scheduler=scheduler,
                     num_workers=max_workers,
                 )
                 data_stored = True
@@ -5108,7 +5115,7 @@ class BaseSignal(FancySlicing,
         sig._assign_subclass()
 
         if not lazy_output and not data_stored:
-            sig.data = sig.data.compute(num_workers=max_workers)
+            sig.data = sig.data.compute(num_workers=max_workers, scheduler=scheduler)
 
         if show_progressbar:
             pbar.unregister()
