@@ -697,13 +697,17 @@ class Signal2D(BaseSignal, CommonSignal2D):
             signal_shifts = shifts
         if expand:
             # Expand to fit all valid data
-            left, right = (
-                int(np.floor(signal_shifts.isig[1].min().data)) if signal_shifts.isig[1].min().data < 0 else 0,
-                int(np.ceil(signal_shifts.isig[1].max().data)) if signal_shifts.isig[1].max().data > 0 else 0,
-            )
+            _min0 = signal_shifts.isig[0].min().data[0]
+            _max0 = signal_shifts.isig[0].max().data[0]
             top, bottom = (
-                int(np.ceil(signal_shifts.isig[0].min().data)) if signal_shifts.isig[0].min().data < 0 else 0,
-                int(np.floor(signal_shifts.isig[0].max().data)) if signal_shifts.isig[0].max().data > 0 else 0,
+                int(np.ceil(_min0)) if _min0 < 0 else 0,
+                int(np.floor(_max0)) if _max0 > 0 else 0,
+            )
+            _min1 = signal_shifts.isig[1].min().data[0]
+            _max1 = signal_shifts.isig[1].max().data[0]
+            left, right = (
+                int(np.floor(_min1)) if _min1 < 0 else 0,
+                int(np.ceil(_max1)) if _max1 > 0 else 0,
             )
             xaxis = self.axes_manager.signal_axes[0]
             yaxis = self.axes_manager.signal_axes[1]
@@ -751,14 +755,18 @@ class Signal2D(BaseSignal, CommonSignal2D):
                                   "Max shift:" + str(max_shift.data) + " shape" + str(self.axes_manager.signal_shape))
 
             # Crop the image to the valid size
+            _min0 = signal_shifts.isig[0].min().data[0]
+            _max0 = signal_shifts.isig[0].max().data[0]
             shifts = -shifts
             bottom, top = (
-                int(np.floor(signal_shifts.isig[0].min().data)) if signal_shifts.isig[0].min().data < 0 else None,
-                int(np.ceil(signal_shifts.isig[0].max().data)) if signal_shifts.isig[0].max().data > 0 else 0,
+                int(np.floor(_min0)) if _min0 < 0 else None,
+                int(np.ceil(_max0)) if _max0 > 0 else 0,
             )
+            _min1 = signal_shifts.isig[1].min().data[0]
+            _max1 = signal_shifts.isig[1].max().data[0]
             right, left = (
-                int(np.floor(signal_shifts.isig[1].min().data)) if signal_shifts.isig[1].min().data < 0 else None,
-                int(np.ceil(signal_shifts.isig[1].max().data)) if signal_shifts.isig[1].max().data > 0 else 0,
+                int(np.floor(_min1)) if _min1 < 0 else None,
+                int(np.ceil(_max1)) if _max1 > 0 else 0,
             )
             self.crop_image(top, bottom, left, right)
             shifts = -shifts
