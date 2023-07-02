@@ -4241,13 +4241,14 @@ class BaseSignal(FancySlicing,
             return self._deepcopy_with_new_data(der_data)
     derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def integrate_simpson(self, axis, out=None):
+    def integrate_simpson(self, axis, out=None, rechunk=False):
         """Calculate the integral of a Signal along an axis using
         `Simpson's rule <https://en.wikipedia.org/wiki/Simpson%%27s_rule>`_.
 
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -4280,7 +4281,7 @@ class BaseSignal(FancySlicing,
             s.data = data
             s._remove_axis(axis.index_in_axes_manager)
             return s
-    integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def fft(self, shift=False, apodization=False, real_fft_only=False, **kwargs):
         """Compute the discrete Fourier Transform.
@@ -4463,7 +4464,7 @@ class BaseSignal(FancySlicing,
             axis.offset = 0.
         return im_ifft
 
-    def integrate1D(self, axis, out=None):
+    def integrate1D(self, axis, out=None, rechunk=False):
         """Integrate the signal over the given axis.
 
         The integration is performed using
@@ -4475,6 +4476,7 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -4497,11 +4499,11 @@ class BaseSignal(FancySlicing,
 
         """
         if self.axes_manager[axis].is_binned:
-            return self.sum(axis=axis, out=out)
+            return self.sum(axis=axis, out=out, rechunk=rechunk)
         else:
-            return self.integrate_simpson(axis=axis, out=out)
+            return self.integrate_simpson(axis=axis, out=out, rechunk=rechunk)
 
-    integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def indexmin(self, axis, out=None, rechunk=False):
         """Returns a signal with the index of the minimum along an axis.
