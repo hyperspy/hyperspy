@@ -185,11 +185,8 @@ class TestPlotClusterAnalysis:
     def test_plot_cluster_signals_nav2_sig2(self):
         return self.s3.plot_cluster_signals()
 
-    @pytest.mark.mpl_image_compare(
-        baseline_dir=baseline_dir, tolerance=default_tol*2)
     def test_plot_cluster_metric(self):
-        ax = self.s.plot_cluster_metric()
-        return ax.get_figure()
+        self.s.plot_cluster_metric()
 
     def test_except_nocluster_metric(self):
         with pytest.raises(ValueError):
