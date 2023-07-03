@@ -33,7 +33,7 @@ from rsciio.utils.tools import overwrite as overwrite_method
 from rsciio import IO_PLUGINS
 
 from hyperspy import __version__ as hs_version
-from hyperspy.drawing.marker import markers_metadata_dict_to_markers
+from hyperspy.drawing.marker_collection import markers2collection
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.utils import strlist2enumeration, get_object_package_info
 from hyperspy.misc.utils import stack as stack_method
@@ -813,7 +813,7 @@ def dict2signal(signal_dict, lazy=False):
                 if value is not None:
                     signal.metadata.set_item(mpattr, value)
     if mp is not None and "Markers" in mp:
-        signal.metadata.Markers = markers_metadata_dict_to_markers(
+        signal.metadata.Markers = markers2collection(
             mp['Markers'],
             axes_manager=signal.axes_manager)
 

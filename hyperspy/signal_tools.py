@@ -37,7 +37,6 @@ from hyperspy.drawing._widgets.range import SpanSelector
 from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
-from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.misc.label_position import SpectrumLabelPosition
 from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
 from hyperspy.drawing.signal1d import Signal1DFigure
@@ -2249,7 +2248,7 @@ class PeaksFinder2D(t.HasTraits):
     def _peaks_to_marker(self, markersize=20, add_numbers=True,
                          color='red'):
         # make marker_list for current index
-        from hyperspy.drawing._markers.marker_collection import MarkerCollection
+        from hyperspy.drawing.marker_collection import MarkerCollection
 
         sig_axes = self.signal.axes_manager.signal_axes
 

@@ -1024,6 +1024,7 @@ class EDSSpectrum(Signal1D):
         xray_lines: list of string
             A valid list of X-ray lines
         """
+        from matplotlib.collections import LineCollection
         if self._plot is None or not self._plot.is_active:
             raise RuntimeError("The signal needs to be plotted.")
 
@@ -1042,6 +1043,22 @@ class EDSSpectrum(Signal1D):
             a_eng = self._get_line_energy(f'{element}_{line[0]}a')
             idx = self.axes_manager.signal_axes[0].value2index(a_eng)
             intensity.append(self.data[..., idx] * relative_factor)
+        intensity = np.array(intensity)
+        ragged_segments = np.empty(shape=self.axes_manager.navigation_shape, dtype=object)
+        ragged_text_offsets = np.empty(shape=self.axes_manager.navigation_shape, dtype=object)
+        for i in np.ndindex(self.axes_manager.navigation_shape):# iter through navigation positions.
+            temp_segments = []
+            temp_offsets = []
+            for inten, line in zip(intensity[..., i], line_energy): # iter through xray lines
+                temp_segments.append([[line, 0], [line, inten * 0.8]])
+                temp_offsets.append([line, inten * 1.1])
+            ragged_segments[i] = np.array(temp_segments)
+            ragged_text_offsets[i] = np.array(temp_offsets)
+
+
+
+        for i in np.ndindex(self.axes_manager.navigation_shape):
+            ragged_segments[i] =
         for i in range(len(line_energy)):
             # When using `log` norm, clip value to minimum value > 0
             if norm == 'log':
@@ -1050,16 +1067,16 @@ class EDSSpectrum(Signal1D):
                     )
             else:
                 intensity_ = intensity[i]
-            line = markers.VerticalLineSegment(
-                x=line_energy[i], y1=None, y2=intensity_ * 0.8)
+            segment = np.array([[[line_energy[i], 0],
+                                 [line_energy[i], intensity_*0.8]],])
+            line = markers.MarkerCollection(collection_class=LineCollection,
+                                            segments=segment)
             self.add_marker(line, render_figure=False)
             string = (r'$\mathrm{%s}_{\mathrm{%s}}$' %
                       utils_eds._get_element_and_line(xray_lines[i]))
-            text = markers.Text(
-                x=line_energy[i],
-                y=intensity_ * 1.1,
-                text=string,
-                rotation=90)
+            text = markers.TextCollection(offsets=[[line_energy[i], intensity_ * 1.1]],
+                                          s=string,
+                                          rotation=90)
             self.add_marker(text, render_figure=False)
             self._xray_markers[xray_lines[i]] = [line, text]
             line.events.closed.connect(self._xray_marker_closed)

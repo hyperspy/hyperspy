@@ -20,8 +20,8 @@ import numpy as np
 import dask.array as da
 import matplotlib
 from hyperspy.events import Event, Events
-from hyperspy.drawing.marker import dict2marker
-from hyperspy._signals.lazy import _get_navigation_dimension_chunk_slice
+from hyperspy.misc.array_tools import _get_navigation_dimension_chunk_slice
+from hyperspy.misc.utils import isiterable
 from matplotlib.transforms import Affine2D
 import logging
 
@@ -79,11 +79,11 @@ class MarkerCollection(object):
             Positions of the markers
         size:
             Size of the markers
-        args: tuple
+        *args: tuple
             Arguments passed to the underlying marker collection. Any argument
             that is array-like and has `dtype=object` is assumed to be an iterating
             argument and is treated as such.
-        kwargs: dict
+        **kwargs:
             Keyword arguments passed to the underlying marker collection. Any argument
             that is array-like and has `dtype=object` is assumed to be an iterating
             argument and is treated as such.
@@ -234,7 +234,7 @@ class MarkerCollection(object):
         return ()
 
     def __deepcopy__(self, memo):
-        new_marker = dict2marker(self._to_dictionary(), self.name)
+        new_marker = markers2collection(self._to_dictionary())
         return new_marker
 
     def _to_dictionary(self):
@@ -459,8 +459,8 @@ def markers2collection(marker_dict):
                                )
 
         marker = MarkerCollection(verts=verts,
-                                                            collection_class=PolyCollection,
-                                                            **marker_dict['marker_properties'])
+                                  collection_class=PolyCollection,
+                                  **marker_dict['marker_properties'])
     elif marker_type == 'Ellipse':
         segments = dict2vector(marker_dict["data"],
                                keys=[["x1", "y1"], ["x2", "y2"]], return_size=False)
@@ -474,8 +474,7 @@ def markers2collection(marker_dict):
             ellipses = [Ellipse(xy=segments[0], width=segments[1][0],
                                 height=segments[1][1],
                                 **marker_dict['marker_properties']), ]
-        marker = MarkerCollection(patches=ellipses,
-                                                            collection_class=PatchCollection)
+            marker = MarkerCollection(patches=ellipses,ollection_class=PatchCollection)
     elif marker_type == 'Text':
         raise ValueError("Converting from Text to a Marker Collection is not supported"
                          "as there is no MarkerCollection which can render text")
@@ -491,8 +490,10 @@ def markers2collection(marker_dict):
                                return_size=False)
 
         marker = MarkerCollection(segments=segments,
-                                                            collection_class=LineCollection,
-                                                            **marker_dict['marker_properties'])
+                                  collection_class=LineCollection,
+                                  **marker_dict['marker_properties'])
+    elif marker_type == 'MarkerCollection':
+        marker = MarkerCollection(**marker_dict)
     else:
         raise ValueError(f"The marker_type: {marker_type} is not a hyperspy.marker class "
                          f"and cannot be converted to a MarkerCollection")

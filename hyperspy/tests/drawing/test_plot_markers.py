@@ -23,7 +23,7 @@ import re
 
 from hyperspy.datasets.artificial_data import get_core_loss_eels_line_scan_signal
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
-from hyperspy.drawing.marker import dict2marker
+from hyperspy.drawing.marker_collection import markers2collection
 from hyperspy.misc.test_utils import sanitize_dict, update_close_figure
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 from hyperspy.utils import markers, stack

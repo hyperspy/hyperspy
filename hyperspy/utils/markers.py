@@ -27,32 +27,14 @@ Example
 >>> im.add_marker(m)
 
 """
-from hyperspy.drawing._markers.arrow import Arrow
-from hyperspy.drawing._markers.ellipse import Ellipse
-from hyperspy.drawing._markers.horizontal_line import HorizontalLine
-from hyperspy.drawing._markers.horizontal_line_segment import (
-    HorizontalLineSegment,
-    )
-from hyperspy.drawing._markers.line_segment import LineSegment
-from hyperspy.drawing._markers.point import Point
-from hyperspy.drawing._markers.rectangle import Rectangle
-from hyperspy.drawing._markers.text import Text
-from hyperspy.drawing._markers.vertical_line import VerticalLine
-from hyperspy.drawing._markers.vertical_line_segment import VerticalLineSegment
+from hyperspy.drawing.marker_collection import MarkerCollection
+from hyperspy.drawing._markers.text_collection import TextCollection
+from hyperspy.drawing._markers.line_collection import HorizontalLineCollection, VerticalLineCollection
 
-__all__ = [
-    'Arrow',
-    'Ellipse',
-    'HorizontalLine',
-    'HorizontalLineSegment',
-    'LineSegment',
-    'Point',
-    'Rectangle',
-    'Text',
-    'VerticalLine',
-    'VerticalLineSegment',
-
-    ]
+__all__ = [MarkerCollection,
+           TextCollection,
+           HorizontalLineCollection,
+           VerticalLineCollection]
 
 
 def __dir__():

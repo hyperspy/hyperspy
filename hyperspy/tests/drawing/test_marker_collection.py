@@ -30,12 +30,12 @@ from matplotlib.patches import RegularPolygon
 import matplotlib.pyplot as plt
 import dask.array as da
 
-from hyperspy.drawing._markers.marker_collection import MarkerCollection
+from hyperspy.drawing.marker_collection import MarkerCollection
 from hyperspy.drawing._markers.line_collection import HorizontalLineCollection, VerticalLineCollection
-from hyperspy.drawing.marker import markers2collection
+from hyperspy.drawing.marker_collection import markers2collection
 from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
 from hyperspy.axes import UniformDataAxis
-from hyperspy.misc.test_utils import sanitize_dict, update_close_figure
+from hyperspy.misc.test_utils import update_close_figure
 
 from copy import deepcopy
 

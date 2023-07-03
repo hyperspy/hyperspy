@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.drawing._markers.marker_collection import MarkerCollection
+from hyperspy.drawing.marker_collection import MarkerCollection
 
 class TextCollection(MarkerCollection):
     """
