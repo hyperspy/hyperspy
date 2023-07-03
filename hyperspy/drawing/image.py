@@ -93,6 +93,7 @@ class ImagePlot(BlittedFigure):
         self.figure = None
         self.ax = None
         self.title = title
+        self.mesh = None
 
         # user provided numeric values
         self._vmin_numeric = None
@@ -377,7 +378,11 @@ class ImagePlot(BlittedFigure):
     def _add_colorbar(self):
         # Bug extend='min' or extend='both' and power law norm
         # Use it when it is fixed in matplotlib
-        self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
+        if self.mesh:
+            ims = self.ax.collections
+        else:
+            ims = self.ax.images
+        self._colorbar = plt.colorbar(ims[0], ax=self.ax)
         self.set_quantity_label()
         self._colorbar.set_label(
             self.quantity_label, rotation=-90, va='bottom')
@@ -432,7 +437,11 @@ class ImagePlot(BlittedFigure):
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
             data = self._current_data = data
             self._is_rgb = True
-        ims = self.ax.images
+
+        if self.mesh:
+            ims = self.ax.collections
+        else:
+            ims = self.ax.images
 
         # Turn on centre_colormap if a diverging colormap is used.
         if not self._is_rgb and self.centre_colormap == "auto":
@@ -533,7 +542,11 @@ class ImagePlot(BlittedFigure):
             data = np.nan_to_num(data)
 
         if ims:  # the images has already been drawn previously
-            ims[0].set_data(data)
+            if self.mesh:
+                # TODO: check if this works as intended (copy or not? ravel vs flatten)
+                self.mesh.update({'array': data.ravel()})
+            else:
+                ims[0].set_data(data)
             # update extent:
             if 'x' in self.autoscale:
                 self._extent[0] = self.xaxis.axis[0] - self.xaxis.scale / 2
@@ -563,19 +576,26 @@ class ImagePlot(BlittedFigure):
                 ims[0].changed()
             self.render_figure()
         else:  # no signal have been drawn yet
-            new_args = {'extent': self._extent,
-                        'aspect': self._aspect,
-                        'animated': self.figure.canvas.supports_blit,
-                        }
+            new_args = {"animated": self.figure.canvas.supports_blit}
             if not self._is_rgb:
                 if norm is None:
                     new_args.update({'vmin': vmin, 'vmax':vmax})
                 else:
                     new_args['norm'] = norm
             new_args.update(kwargs)
-            self.ax.imshow(data, **new_args)
-
-        if self.axes_ticks == 'off':
+            if self.xaxis.is_uniform and self.yaxis.is_uniform:
+                # TODO: have not really looked into the arguments,
+                # but these both do not work for pcolormesh
+                new_args.update({"extent": self._extent, "aspect": self._aspect})
+                self.ax.imshow(data, **new_args)
+            else:
+                # TODO: handle functional axis
+                self.mesh = self.ax.pcolormesh(
+                    self.xaxis.axis, self.yaxis.axis, data, **new_args
+                )
+                # TODO: check if inverting axis works as intended
+                self.ax.invert_yaxis()
+        if self.axes_ticks == "off":
             self.ax.set_axis_off()
 
     def _update(self):
