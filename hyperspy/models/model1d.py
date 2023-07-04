@@ -418,10 +418,8 @@ class Model1D(BaseModel):
                 component for component in component_list if component.active]
 
         if self.convolved is False or non_convolved is True:
-            if not ignore_channel_switches:
-                axis = self.axis.axis[self.channel_switches]
-            else:
-                axis = self.axis.axis
+            slice_ = slice(None) if ignore_channel_switches else self.channel_switches
+            axis = self.axis.axis[slice_]
             sum_ = np.zeros(len(axis))
             for component in component_list:
                 sum_ += component.function(axis)
