@@ -389,9 +389,9 @@ Plotting X-ray lines
 
 X-ray lines can be added as plot labels with
 :py:meth:`~._signals.eds.EDSSpectrum.plot`. The lines are either retrieved
-from `metadata.Sample.Xray_lines`, or selected with the same method as
+from ``metadata.Sample.Xray_lines``, or selected with the same method as
 :py:meth:`~._signals.eds.EDSSpectrum.add_lines` using the elements in
-`metadata.Sample.elements`.
+``metadata.Sample.elements``.
 
 .. code-block:: python
 
@@ -440,7 +440,7 @@ The sample and data used in this section are described in
     >>>     z.extractall()
 
 The width of integration is defined by extending the energy resolution of
-Mn Ka to the peak energy (`energy_resolution_MnKa` in the metadata):
+Mn Ka to the peak energy (``energy_resolution_MnKa`` in the metadata):
 
 .. code-block:: python
 
@@ -453,8 +453,9 @@ Mn Ka to the peak energy (`energy_resolution_MnKa` in the metadata):
 
    Iron map as computed and displayed by ``get_lines_intensity``
 
-The X-ray lines defined in `metadata.Sample.Xray_lines` are used by default.
-The EDS maps can be plotted using :py:func:`~.drawing.utils.plot_images`, see :ref:`plotting several images<plot.images>`
+The X-ray lines defined in ``metadata.Sample.Xray_lines`` are used by default.
+The EDS maps can be plotted using :py:func:`~.drawing.utils.plot_images`,
+see :ref:`plotting several images<plot.images>`
 for more information in setting plotting parameters.
 
 .. code-block:: python
@@ -495,8 +496,11 @@ The background can be subtracted from the X-ray intensities with
 The background value is obtained by averaging the intensity in two
 windows on each side of the X-ray line.
 The position of the windows can be estimated using
-:py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows`, and
-can be plotted using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
+:py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows`. 
+The factor ``line_width`` (left and right), multiplied by the calculated
+FWHM of the line, determines the distance of the two background windows
+from the center of the X-ray line. These windows can be visualized 
+using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
 
 .. code-block:: python
 
@@ -594,7 +598,7 @@ ranges containing no X-ray lines:
     >>> m.fit_background()
 
 The width of the X-ray lines is defined from the energy resolution (FWHM at
-Mn Ka) provided by `energy_resolution_MnKa` in `metadata`. This parameter
+Mn Ka) provided by ``energy_resolution_MnKa`` in ``metadata``. This parameter
 can be calibrated by fitting with
 :py:meth:`~.models.edsmodel.EDSModel.calibrate_energy_axis`:
 
@@ -656,7 +660,7 @@ functionalities of X-ray lines when fitting:
 EDS Quantification
 ------------------
 
-HyperSpy includes three methods for EDS quantification with or without
+HyperSpy includes three methods for TEM-EDS quantification with or without
 absorption correction:
 
 * Cliff-Lorimer
@@ -668,8 +672,8 @@ can be found using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`.
 The quantification of these intensities can then be calculated using
 :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`.
 
-The quantification method needs be specified as either 'CL', 'zeta', or
-'cross_section'. If no method is specified, the function will raise an
+The quantification method needs be specified as either ``'CL'``, ``'zeta'``, or
+``'cross_section'``. If no method is specified, the function will raise an
 exception.
 
 A list of factors or cross sections should be supplied in the same order as
@@ -682,7 +686,7 @@ although determination from standard samples for the particular instrument used
 is usually preferable. In the case of zeta-factors and cross sections, these
 must be determined experimentally using standards.
 
-Zeta-factors should be provided in units of kg/m^2. The method is described
+Zeta-factors should be provided in units of kg/m². The method is described
 further in :ref:`[Watanabe1996] <Watanabe1996>`
 and :ref:`[Watanabe2006] <Watanabe2006>`. Cross sections should be
 provided in units of barns (b). Further details on the cross section method can
@@ -706,7 +710,7 @@ out as follows:
     Fe (Fe_Ka): Composition = 15.41 atomic percent
     Pt (Pt_La): Composition = 84.59 atomic percent
 
-The obtained composition is in atomic percent, by default. However, it can be
+By default, the obtained composition is in atomic percent. However, it can be
 transformed into weight percent either with the option
 :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
 
@@ -727,8 +731,8 @@ or using :py:func:`~.misc.material.atomic_to_weight`:
 
 The reverse method is :py:func:`~.misc.material.weight_to_atomic`.
 
-The zeta-factor method needs both the 'beam_current' (in nA) and the
-acquisition or dwell time (referred to as 'real_time' in seconds) in order
+The zeta-factor method needs both the ``beam_current`` (in nA) and the
+acquisition or dwell time (referred to as ``real_time`` in seconds) in order
 to obtain an accurate quantification. Both of the these parameters can be
 assigned to the metadata using:
 
@@ -742,9 +746,9 @@ The zeta-factor method will produce two sets of results. Index [0] contains the
 composition maps for each element in atomic percent, and index [1] contains the
 mass-thickness map.
 
-The cross section method needs the 'beam_current', dwell time ('real_time') and
-probe area in order to obtain an accurate quantification. The 'beam_current'
-and 'real_time' can be set as shown above. The 'probe_area' (in nm^2) can
+The cross section method needs the ``beam_current``, dwell time (``real_time``)
+and probe area in order to obtain an accurate quantification. The ``beam_current``
+and ``real_time`` can be set as shown above. The ``probe_area`` (in nm²) can
 be defined in two different ways.
 
 If the probe diameter is narrower than the pixel width, then the probe is being
@@ -760,10 +764,10 @@ at a high spatial sampling and subsequently binned into much larger pixels)
 then the illumination area becomes the pixel area of the spectrum image.
 This is a much more accurate approach for quantitative EDS and should be
 used where possible. The pixel width could either be added to the metadata
-by putting the pixel area in as the 'probe_area' (above) or by calibrating
+by putting the pixel area in as the ``probe_area`` (above) or by calibrating
 the spectrum image (see :ref:`Setting_axis_properties`).
 
-Either approach will provide an illumination area for the cross_section
+Either approach will provide an illumination area for the cross section
 quantification. If the pixel width is not set, the code will still run with the
 default value of 1 nm with a warning message to remind the user that this is
 the case.
@@ -789,8 +793,8 @@ methods by adding the parameter ``absorption_correction=True`` to the function.
 By default, the function iterates the quantification function until a
 tolerance value of 0.5% up to a maximum number of iterations is reached. The
 maximum number of iterations is set to 30 by default, but can be increased by
-specifying ``max_iterations`` in the function call. However, typically for TEM
-experiments convergence is achieved after less then 5 iterations.
+specifying ``max_iterations`` in the function call. However, for TEM
+experiments convergence is typically achieved after less then 5 iterations.
 
 For example:
 
@@ -799,10 +803,10 @@ For example:
         >>> s.quantification(intensities, method='cross_section',
         ...                  factors=factors, absorption_correction=True)
 
-However for the kfactor method the user must additionally provide a sample
+However, for the kfactor method, the user must additionally provide a sample
 thickness (in nm) either as a single float value or as a numpy array with the
-same dimensions as the navigation axes. If this is done the calculated
-mass_thickness is additionally outputted from the function as well as the
+same dimensions as the navigation axes. If this value is given, the calculated
+``mass_thickness`` is additionally output from the function in addittion to the
 composition maps for each element.
 
 .. code-block:: python
@@ -811,12 +815,12 @@ composition maps for each element.
         ...                  factors=factors, absorption_correction=True
         ...                  thickness=100.)
 
-At this stage absorption correction is only applicable for parallel-sided,
-thin-film samples. Absorption correction is calculated on a pixel by pixel
+At this stage, the absorption correction is only applicable for parallel-sided,
+thin-film samples. The absorption correction is calculated on a pixel by pixel
 basis after having determined a sample mass-thickness map. It therefore may
 be a source of error in particularly inhomogeneous specimens.
 
-Absorption correction can also only be applied to spectra from a single EDS
+The absorption correction can also only be applied to spectra from a single EDS
 detector. For systems that consist of multiple detectors, such as the Thermo
 Fisher Super-X, it is therefore necessary to load the spectra from each
 detector separately.
