@@ -719,22 +719,13 @@ class Model1D(BaseModel):
             s = ns
         return s
     
-    def _residual_for_plot(self, axes_manager):
-        """From an model1D object, the original signal is subtracted 
+    def _residual_for_plot(self):
+        """From an model1D object, the original signal is subtracted
         by the model signal then returns the residual
         """
 
-        old_axes_manager = None
-        if axes_manager is not self.axes_manager:
-            old_axes_manager = self.axes_manager
-            self.axes_manager = axes_manager
-            self.fetch_stored_values()
+        return self.signal.__call__() - self.__call__(ignore_channel_switches=True)
 
-        #Residual = Signal - model
-        s = (self.signal.__call__() - self.__call__(ignore_channel_switches = True))
-        if old_axes_manager is not None:
-            self.axes_manager = old_axes_manager
-            self.fetch_stored_values()
 
         return s
     
