@@ -389,9 +389,9 @@ Plotting X-ray lines
 
 X-ray lines can be added as plot labels with
 :py:meth:`~._signals.eds.EDSSpectrum.plot`. The lines are either retrieved
-from `metadata.Sample.Xray_lines`, or selected with the same method as
+from ``metadata.Sample.Xray_lines``, or selected with the same method as
 :py:meth:`~._signals.eds.EDSSpectrum.add_lines` using the elements in
-`metadata.Sample.elements`.
+``metadata.Sample.elements``.
 
 .. code-block:: python
 
@@ -440,7 +440,7 @@ The sample and data used in this section are described in
     >>>     z.extractall()
 
 The width of integration is defined by extending the energy resolution of
-Mn Ka to the peak energy (`energy_resolution_MnKa` in the metadata):
+Mn Ka to the peak energy (``energy_resolution_MnKa`` in the metadata):
 
 .. code-block:: python
 
@@ -453,9 +453,10 @@ Mn Ka to the peak energy (`energy_resolution_MnKa` in the metadata):
 
    Iron map as computed and displayed by ``get_lines_intensity``
 
-The X-ray lines defined in `metadata.Sample.Xray_lines` are used by default.
-The EDS maps can be plotted using :py:func:`~.drawing.utils.plot_images`, see :ref:`plotting several images<plot.images>`
-for more information in setting plotting parameters.
+The X-ray lines defined in ``metadata.Sample.Xray_lines`` are used by default.
+The EDS maps can be plotted using :py:func:`~.drawing.utils.plot_images`,
+see :ref:`plotting several images<plot.images>`
+for more information on setting plotting parameters.
 
 .. code-block:: python
 
@@ -495,8 +496,11 @@ The background can be subtracted from the X-ray intensities with
 The background value is obtained by averaging the intensity in two
 windows on each side of the X-ray line.
 The position of the windows can be estimated using
-:py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows`, and
-can be plotted using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
+:py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows`. 
+The factor ``line_width`` (left and right), multiplied by the calculated
+FWHM of the line, determines the distance of the two background windows
+from the center of the X-ray line. These windows can be visualized 
+using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
 
 .. code-block:: python
 
@@ -594,7 +598,7 @@ ranges containing no X-ray lines:
     >>> m.fit_background()
 
 The width of the X-ray lines is defined from the energy resolution (FWHM at
-Mn Ka) provided by `energy_resolution_MnKa` in `metadata`. This parameter
+Mn Ka) provided by ``energy_resolution_MnKa`` in ``metadata``. This parameter
 can be calibrated by fitting with
 :py:meth:`~.models.edsmodel.EDSModel.calibrate_energy_axis`:
 
@@ -656,7 +660,7 @@ functionalities of X-ray lines when fitting:
 EDS Quantification
 ------------------
 
-HyperSpy includes three methods for EDS quantification with or without
+HyperSpy includes three methods for TEM-EDS quantification with or without
 absorption correction:
 
 * Cliff-Lorimer
@@ -682,7 +686,7 @@ although determination from standard samples for the particular instrument used
 is usually preferable. In the case of zeta-factors and cross sections, these
 must be determined experimentally using standards.
 
-Zeta-factors should be provided in units of kg/m^2. The method is described
+Zeta-factors should be provided in units of kg/m². The method is described
 further in :ref:`[Watanabe1996] <Watanabe1996>`
 and :ref:`[Watanabe2006] <Watanabe2006>`. Cross sections should be
 provided in units of barns (b). Further details on the cross section method can
