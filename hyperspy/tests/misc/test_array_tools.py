@@ -27,6 +27,7 @@ from hyperspy.misc.array_tools import (
     numba_histogram,
     round_half_towards_zero,
     round_half_away_from_zero,
+    get_value_at_index
 )
 
 dt = [("x", np.uint8), ("y", np.uint16), ("text", (bytes, 6))]
@@ -130,3 +131,48 @@ def test_round_half_away_from_zero():
         round_half_away_from_zero(a, decimals=1),
         np.array([-2.0, -1.6, -1.6, -1.5, -0.2, 0.0, 0.2, 1.5, 1.6, 1.6, 2.0])
         )
+
+@pytest.mark.parametrize("start", [0, None])
+@pytest.mark.parametrize("norm", [None, "log"])
+@pytest.mark.parametrize("factor", [1.0, [.1, 1.0]])
+def test_get_value_at_index(start, norm, factor):
+    x = np.arange(1, 11, 1)
+    line_index = [3, 4]
+    line_real_index = [2, 3]
+    min_intensity = 0.1
+    lines = get_value_at_index(x,
+                                   indexes=line_index,
+                                   real_index=line_real_index,
+                                   factor=factor,
+                                   start=start,
+                                   stop=1.0,
+                                   norm=norm,
+                                   minimum_intensity=min_intensity)
+    if norm == "log":
+        y_start_ans = np.array([0.1, .1])
+    else:
+        y_start_ans = np.array([0, 0])
+    y_end_ans = np.array([4, 5]) * factor
+    x_ans = np.array([2, 3])
+    if start is None:
+        np.testing.assert_array_equal(lines,
+                                      np.stack([x_ans, y_end_ans],
+                                               axis=1))
+    else:
+        ans = np.stack((np.stack([x_ans, y_start_ans], axis=1),
+                        np.stack([x_ans, y_end_ans], axis=1)),
+                       axis=1)
+
+        np.testing.assert_array_equal(lines, ans)
+
+
+def test_get_value_at_index_fail():
+    with pytest.raises(ValueError):
+        lines = get_value_at_index(np.arange(1, 11, 1),
+                                   indexes=[3, 4],
+                                   real_index=[2, 3],
+                                   factor=0.1,
+                                   start=0,
+                                   stop=1.0,
+                                   norm="log",
+                                   minimum_intensity=None)

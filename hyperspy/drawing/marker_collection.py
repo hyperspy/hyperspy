@@ -23,6 +23,7 @@ from hyperspy.events import Event, Events
 from hyperspy.misc.array_tools import _get_navigation_dimension_chunk_slice
 from hyperspy.misc.utils import isiterable
 from matplotlib.transforms import Affine2D
+from matplotlib.collections import LineCollection
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -131,6 +132,24 @@ class MarkerCollection(object):
             arguments=["obj"],
         )
         self._closing = False
+
+    def delete_index(self, keys, index):
+        """
+        Delete the index from the kwargs.
+
+        Parameters
+        ----------
+        keys: list
+            List of keys to delete from.
+        index: slice, int or array of ints
+            Indicate indices of sub-arrays to remove along the specified axis.
+        """
+        for key in keys:
+            if self.kwargs[key].dtype == object:
+                for i in np.ndindex(self.kwargs[key].shape):
+                    self.kwargs[key][i] = np.delete(self.kwargs[key][i], index)
+            else:
+                self.kwargs[key] = np.delete(self.kwargs[key], index)
 
     def _get_cache_dask_kwargs_chunk(self, indices):
         """
@@ -290,14 +309,25 @@ class MarkerCollection(object):
         if self.collection_class is None:
             self.collection = self.ax.scatter([], [],)
             self.collection.set(**self.get_data_position())
+        elif self.collection_class is LineCollection:
+            self.collection = self.collection_class(
+                **self.get_data_position(),
+            )
         else:
             self.collection = self.collection_class(
                 **self.get_data_position(),
                 transOffset=self.ax.transData,
             )
-        sc = self.ax.bbox.width / self.ax.viewLim.width
-        trans = Affine2D().scale(sc)
-        self.collection.set_transform(trans)
+
+        # Set the size of each marker based on the "x" axis scale (or the x scale for the original dpi)
+        # In order to get each Marker to scale we would need to define a list of transforms
+        # This is possible but difficult to implement cleanly. For now,
+        # we will just scale the markers based on the origional x axis and they won't scale with the
+        # figure size changing...
+        if self.collection_class is not LineCollection:
+            sc = self.ax.bbox.width / self.ax.viewLim.width
+            trans = Affine2D().scale(sc)
+            self.collection.set_transform(trans)
 
     def plot(self, render_figure=True):
         """

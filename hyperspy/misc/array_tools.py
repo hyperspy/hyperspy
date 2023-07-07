@@ -508,6 +508,56 @@ def round_half_towards_zero(array, decimals=0):  # pragma: no cover
                     )
 
 
+def get_value_at_index(array,
+                       indexes,
+                       real_index,
+                       factor=1.0,
+                       norm=None,
+                       minimum_intensity=None,
+                       start=None,
+                       stop=1.0,
+                       ):
+    """Get the value at the given index.
+
+    Parameters
+    ----------
+    array : 1D numpy array
+        Input array.
+    indexes : list of float
+        Indexes of the array to find the value at.
+    factor: float or 1D numpy array
+        Factor to multiply the value at the index with.
+    norm : str, optional
+        Normalization to apply to the intensities. Can be 'log' or None.
+    minimum_intensity : float, optional
+        Minimum intensity to use when norm is 'log'.
+    start : float, optional
+        Start value for scaling the vertical line
+    stop : float, optional
+        Stop value for scaling the vertical line or height of the point.
+    real_index : 1D numpy array
+        The real values for the indexes in calibrated units.
+    """
+    if norm == 'log' and minimum_intensity is None:
+        raise ValueError('minimum_intensity must be provided when norm is log')
+    factor = np.asarray(factor)
+    intensities = array[indexes] * factor
+    stop_intensities = intensities*stop
+    # set minimum_intensity so that zeros are not plotted causing errors
+    if norm == 'log':
+        stop_intensities[stop_intensities < minimum_intensity] = minimum_intensity
+    stop_ = np.stack((real_index, stop_intensities), axis=1)
+    if start is not None:  # make lines from start to stop
+        start_intensities = intensities*start
+        # set minimum_intensity so that zeros are not plotted causing errors
+        if norm == 'log':
+            start_intensities[start_intensities < minimum_intensity] = minimum_intensity
+        start_ = np.stack((real_index, start_intensities), axis=1)
+        return np.stack((start_, stop_), axis=1)
+    else:
+        return stop_
+
+
 @njit(cache=True)
 def round_half_away_from_zero(array, decimals=0):  # pragma: no cover
     """
