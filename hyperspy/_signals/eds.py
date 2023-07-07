@@ -30,6 +30,10 @@ from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 from hyperspy.utils import markers
+from hyperspy.drawing.marker_collection import MarkerCollection
+from hyperspy.drawing._markers.text_collection import TextCollection
+from hyperspy.drawing._markers.line_collection import VerticalLineCollection
+from matplotlib.collections import LineCollection
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING_PARAMETERS,
     PLOT1D_DOCSTRING
@@ -650,7 +654,8 @@ class EDSSpectrum(Signal1D):
                 zip(xray_lines, integration_windows)):
             element, line = utils_eds._get_element_and_line(Xray_line)
             line_energy = self._get_line_energy(Xray_line)
-            img = self.isig[window[0]:window[1]].integrate1D(-1)
+            # Replace with `map` function for lazy large datasets
+            img = self.isig[window[0]:window[1]].integrate1D(-1) # integrate over window.
             if np.issubdtype(img.data.dtype, np.integer):
                 # The operations below require a float dtype with the default
                 # numpy casting rule ('same_kind')
@@ -1024,78 +1029,58 @@ class EDSSpectrum(Signal1D):
         xray_lines: list of string
             A valid list of X-ray lines
         """
-        from matplotlib.collections import LineCollection
-        if self._plot is None or not self._plot.is_active:
-            raise RuntimeError("The signal needs to be plotted.")
-
-        # in case of log scale, if some lines have intensity zero, then
-        # the line and label will not be displayed.
         norm = self._plot.signal_plot.ax_lines[0].norm
-        minimum_intensity = self.data[self.data>0].min() if norm == 'log' else 0
+        minimum_intensity = self.data[self.data > 0].min() if norm == 'log' else 0
+        line_relative_factor = []
+        line_real_index = []
+        line_names = []
 
-        line_energy = []
-        intensity = []
         for xray_line in xray_lines:
             element, line = utils_eds._get_element_and_line(xray_line)
-            line_energy.append(self._get_line_energy(xray_line))
             relative_factor = elements_db[element][
                 'Atomic_properties']['Xray_lines'][line]['weight']
-            a_eng = self._get_line_energy(f'{element}_{line[0]}a')
-            idx = self.axes_manager.signal_axes[0].value2index(a_eng)
-            intensity.append(self.data[..., idx] * relative_factor)
-        intensity = np.array(intensity)
-        ragged_segments = np.empty(shape=self.axes_manager.navigation_shape, dtype=object)
-        ragged_text_offsets = np.empty(shape=self.axes_manager.navigation_shape, dtype=object)
-        for i in np.ndindex(self.axes_manager.navigation_shape):# iter through navigation positions.
-            temp_segments = []
-            temp_offsets = []
-            for inten, line in zip(intensity[..., i], line_energy): # iter through xray lines
-                temp_segments.append([[line, 0], [line, inten * 0.8]])
-                temp_offsets.append([line, inten * 1.1])
-            ragged_segments[i] = np.array(temp_segments)
-            ragged_text_offsets[i] = np.array(temp_offsets)
+            eng = self._get_line_energy(f'{element}_{line}')
+            line_relative_factor.append(relative_factor)
+            line_real_index.append(eng)
+            line_names.append(r'$\mathrm{%s}_{\mathrm{%s}}$' % utils_eds._get_element_and_line(xray_line))
 
+        segments = self.get_intensity(line_real_index,
+                                      factor=line_relative_factor,
+                                      start=0.0,
+                                      stop=0.8,
+                                      norm=norm,
+                                      minimum_intensity=minimum_intensity,
+                                      )
 
+        segments = MarkerCollection.from_signal(segments,
+                                                key="segments",
+                                                collection_class=LineCollection)
+        self.add_marker(segments, render_figure=False)
+        # get the offsets for plotting the text
+        text_offsets = self.get_intensity(line_real_index,
+                                          factor=line_relative_factor,
+                                          stop=1.1)
+        text = TextCollection.from_signal(text_offsets,
+                                          key="offsets",
+                                          s=line_names)
+        self.add_marker(text, render_figure=False)
 
-        for i in np.ndindex(self.axes_manager.navigation_shape):
-            ragged_segments[i] =
-        for i in range(len(line_energy)):
-            # When using `log` norm, clip value to minimum value > 0
-            if norm == 'log':
-                intensity_ = np.max(
-                    intensity[i], axis=-1, initial=minimum_intensity
-                    )
-            else:
-                intensity_ = intensity[i]
-            segment = np.array([[[line_energy[i], 0],
-                                 [line_energy[i], intensity_*0.8]],])
-            line = markers.MarkerCollection(collection_class=LineCollection,
-                                            segments=segment)
-            self.add_marker(line, render_figure=False)
-            string = (r'$\mathrm{%s}_{\mathrm{%s}}$' %
-                      utils_eds._get_element_and_line(xray_lines[i]))
-            text = markers.TextCollection(offsets=[[line_energy[i], intensity_ * 1.1]],
-                                          s=string,
-                                          rotation=90)
-            self.add_marker(text, render_figure=False)
-            self._xray_markers[xray_lines[i]] = [line, text]
-            line.events.closed.connect(self._xray_marker_closed)
-            text.events.closed.connect(self._xray_marker_closed)
+        # Connect events to remove the markers when the line is closed
+        segments.events.closed.connect(self._xray_marker_closed)
+        text.events.closed.connect(self._xray_marker_closed)
+        self._xray_markers["lines"] = segments
+        self._xray_markers["text"] = text
+        self._xray_markers["names"] = xray_lines
+
         if render_figure:
             self._render_figure(plot=['signal_plot'])
 
     def _xray_marker_closed(self, obj):
-        marker = obj
-        for xray_line, line_markers in reversed(list(
-                self._xray_markers.items())):
-            if marker in line_markers:
-                line_markers.remove(marker)
-            if not line_markers:
-                self._xray_markers.pop(xray_line)
+        self._xray_markers = {}
 
     def remove_xray_lines_markers(self, xray_lines, render_figure=True):
         """
-        Remove marker previosuly added on a spec.plot() with the name of the
+        Remove marker previously added on a spec.plot() with the name of the
         selected X-ray lines
 
         Parameters
@@ -1103,12 +1088,10 @@ class EDSSpectrum(Signal1D):
         xray_lines: list of string
             A valid list of X-ray lines to remove
         """
-        for xray_line in xray_lines:
-            if xray_line in self._xray_markers:
-                line_markers = self._xray_markers[xray_line]
-                while line_markers:
-                    m = line_markers.pop()
-                    m.close(render_figure=False)
+        ind = np.where(np.isin(self._xray_markers["names"], xray_lines))
+        self._xray_markers["segments"].delete_index("segments", ind)
+        self._xray_markers["text"].delete_index("offsets", ind)
+        self._xray_markers["names"] = np.delete(self._xray_markers["names"], ind)
         if render_figure:
             self._render_figure(plot=['signal_plot'])
 

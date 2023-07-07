@@ -53,7 +53,7 @@ class Test1D:
     @pytest.mark.parametrize("start", (0.0, None))
     def test_get_line_intensity(self, request, signal, start):
         s = request.getfixturevalue(signal)
-        intensities = s.get_line_intensity(indexes=[3, 5],
+        intensities = s.get_intensity(indexes=[3, 5],
                                            start=start)
         if start is None:
             vector_shape = (2, 2)
