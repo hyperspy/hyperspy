@@ -15,15 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-import logging
-
 import numpy as np
 import pytest
 import re
 
-from hyperspy.datasets.artificial_data import get_core_loss_eels_line_scan_signal
-from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
-from hyperspy.drawing.marker_collection import markers2collection
+
 from hyperspy.misc.test_utils import sanitize_dict, update_close_figure
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 from hyperspy.utils import markers, stack
@@ -508,66 +504,6 @@ def test_plot_line_markers():
 def test_plot_line_markers_close():
     return _test_plot_line_markers()
 
-
-@pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_eds_lines():
-    a = EDS_TEM_Spectrum()
-    s = stack([a, a * 5])
-    s.plot(True)
-    s.axes_manager.navigation_axes[0].index = 1
-    return s._plot.signal_plot.figure
-
-
-@pytest.mark.parametrize("norm", [None, "log", "auto", "linear"])
-def test_plot_eds_lines_norm(norm):
-    a = EDS_TEM_Spectrum()
-    s = stack([a, a * 5])
-    # When norm is None, don't specify (use default)
-    # otherwise use specify value
-    kwargs = {"norm":norm} if norm else {}
-    s.plot(True, **kwargs)
-
-
-@pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl,
-    filename='test_plot_eds_lines.png')
-def test_plot_xray_lines():
-    # It should be the same image as with previous test (test_plot_eds_lines)
-    a = EDS_TEM_Spectrum()
-    s = stack([a, a * 5])
-    s.plot()
-    s._plot_xray_lines(xray_lines=True)
-    s.axes_manager.navigation_axes[0].index = 1
-    return s._plot.signal_plot.figure
-
-
-def test_plot_eds_lines_not_in_range(caplog):
-    s = EDS_TEM_Spectrum().isig[5.0:8.0]
-    s.plot()
-    with caplog.at_level(logging.WARNING):
-        s._plot_xray_lines(xray_lines=['Pt_Ka'])
-
-    assert "Pt_Ka is not in the data energy range." in caplog.text
-
-
-def test_plot_eds_lines_background():
-    s = EDS_TEM_Spectrum().isig[5.0:8.0]
-    s.plot()
-    bw = s.estimate_background_windows()
-    s._plot_xray_lines(background_windows=bw)
-
-
-def test_plot_add_background_windows():
-    s = EDS_TEM_Spectrum().isig[5.0:8.0]
-    s.plot()
-    bw = s.estimate_background_windows()
-    s._add_background_windows_markers(bw)
-    # Add integration windows
-    iw = s.estimate_integration_windows(windows_width=2.0, xray_lines=['Fe_Ka'])
-    s._add_vertical_lines_groups(iw, linestyle='--')
-
-
 def test_iterate_markers():
     from skimage.feature import peak_local_max
     try:
@@ -615,36 +551,6 @@ def test_iterate_markers():
             for propkey in mo.marker_properties:
                 assert mo.marker_properties[propkey] == \
                     mi.marker_properties[propkey]
-
-@update_close_figure()
-def test_plot_eds_markers_close():
-    s = EDS_TEM_Spectrum()
-    s.plot(True)
-    return s
-
-
-def test_plot_eds_markers_no_energy():
-    s = EDS_TEM_Spectrum()
-    del s.metadata.Acquisition_instrument.TEM.beam_energy
-    s.plot(True)
-
-
-@pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_eels_labels():
-    s = get_core_loss_eels_line_scan_signal(True, add_noise=False)
-    s.add_elements(['Cr'])
-    s.plot(plot_edges=True)
-    return s._plot.signal_plot.figure
-
-
-def test_plot_eels_labels_nav():
-    s = get_core_loss_eels_line_scan_signal(True, add_noise=False)
-    s.add_elements(['Cr', 'Fe'])
-    s.plot(plot_edges=True)
-    s.axes_manager.indices = (10, )
-    s._plot.close()
-
 
 @pytest.mark.parametrize('reversed_order', [True, False])
 @pytest.mark.mpl_image_compare(
