@@ -1009,12 +1009,13 @@ class EDSSpectrum(Signal1D):
         kwargs
             keywords argument for :py:class:`~.api.plot.markers.VerticalLine`
         """
-        per_xray = len(position[0])
         colors = itertools.cycle(np.sort(
-                plt.rcParams['axes.prop_cycle'].by_key()["color"] * per_xray))
+                plt.rcParams['axes.prop_cycle'].by_key()["color"]))
 
-        for x, color in zip(np.ravel(position), colors):
-            line = markers.VerticalLine(x=x, color=color, **kwargs)
+        for x, color in zip(position, colors):
+            line = VerticalLineCollection(segments=x,
+                                          color=color,
+                                          **kwargs)
             self.add_marker(line, render_figure=False)
         if render_figure:
             self._render_figure(plot=['signal_plot'])
@@ -1117,8 +1118,9 @@ class EDSSpectrum(Signal1D):
         """
         self._add_vertical_lines_groups(windows_position)
         ax = self.axes_manager.signal_axes[0]
+        segments = []
         for bw in windows_position:
-            # TODO: test to prevent slicing bug. To be reomved when fixed
+            # TODO: test to prevent slicing bug. To be removed when fixed
             if ax.value2index(bw[0]) == ax.value2index(bw[1]):
                 y1 = self.isig[bw[0]].data
             else:
@@ -1127,10 +1129,15 @@ class EDSSpectrum(Signal1D):
                 y2 = self.isig[bw[2]].data
             else:
                 y2 = self.isig[bw[2]:bw[3]].mean(-1).data
-            line = markers.LineSegment(
-                x1=(bw[0] + bw[1]) / 2., x2=(bw[2] + bw[3]) / 2.,
-                y1=y1, y2=y2, color='black')
-            self.add_marker(line, render_figure=False)
+            x1 = (bw[0] + bw[1]) / 2.
+            x2 = (bw[2] + bw[3]) / 2.
+            segments.append([[x1, y1[0]],
+                             [x2, y2[0]]])
+        segments = np.array(segments)
+        lines = MarkerCollection(segments=segments,
+                                 collection_class=LineCollection,
+                                 color='black')
+        self.add_marker(lines, render_figure=False)
         if render_figure:
             self._render_figure(plot=['signal_plot'])
 
