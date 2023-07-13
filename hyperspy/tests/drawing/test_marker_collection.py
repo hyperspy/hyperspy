@@ -31,6 +31,7 @@ import matplotlib.pyplot as plt
 import dask.array as da
 
 from hyperspy.drawing.marker_collection import MarkerCollection
+from hyperspy.drawing._markers.relative_collection import RelativeCollection
 from hyperspy.drawing._markers.line_collection import HorizontalLineCollection, VerticalLineCollection
 from hyperspy.drawing.marker_collection import markers2collection
 from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
@@ -440,6 +441,24 @@ def _test_marker_collection_close():
 @update_close_figure()
 def test_marker_collection_close():
     return _test_marker_collection_close()
+
+
+class TestRelativeMarkerCollection:
+    def test_relative_marker_collection(self):
+        signal = Signal1D((np.arange(100)+1).reshape(10, 10))
+        segments = np.zeros((10, 2, 2))
+        segments[:, 1, 1] = 1  # set y values end
+        segments[:, 0, 0] = np.arange(10).reshape(10)  # set x values
+        segments[:, 1, 0] = np.arange(10).reshape(10)  # set x values
+
+        markers = RelativeCollection(collection_class=LineCollection,
+                                     segments=segments)
+        signal.plot()
+        signal.add_marker(markers)
+        signal.axes_manager.navigation_axes[0].index = 1
+        segs = markers.collection.get_segments()
+        assert markers.collection.get_segments()[0][0][0] == 0
+        assert markers.collection.get_segments()[0][1][1] == 11
 
 
 class TestLineCollections:

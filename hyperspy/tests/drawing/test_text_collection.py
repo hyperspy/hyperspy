@@ -24,7 +24,7 @@ from matplotlib.patches import RegularPolygon
 import matplotlib.pyplot as plt
 import dask.array as da
 
-from hyperspy.drawing._markers.text_collection import TextCollection
+from hyperspy.drawing._markers.text_collection import TextCollection, RelativeTextCollection
 from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
 from hyperspy.misc.test_utils import update_close_figure
 
@@ -77,9 +77,41 @@ class TestTextCollection:
             assert "Text(2.0, 1.0, 'test')" in children
 
 
+class TestRelativeTextCollection:
+    def test_relative_text_collection(self):
+        s = Signal1D(np.arange(10).reshape(5, 2))
+        markers = RelativeTextCollection(offsets=[[0, 1], [1, 2]],
+                                         s=("test",))
+        s.add_marker(markers)
+        s.axes_manager.navigation_axes[0].index = 1
+        children = s._plot.signal_plot.ax.get_children()
+        assert "Text(0, 2, 'test')" in str(children)
+        assert "Text(1, 6, 'test')" in str(children)
+        s.axes_manager.navigation_axes[0].index = 2
+        children = s._plot.signal_plot.ax.get_children()
+        assert "Text(0, 4, 'test')" in str(children)
+        assert "Text(1, 10, 'test')" in str(children)
+
+    def test_relative_text_collection_with_reference(self):
+        s = Signal1D(np.arange(10).reshape(5, 2))
+        markers = RelativeTextCollection(offsets=[[0, 1], [1, 2]],
+                                         s=("test",), reference="data_index",
+                                         indexes=[0, 0])
+        s.add_marker(markers)
+        s.axes_manager.navigation_axes[0].index = 1
+        children = s._plot.signal_plot.ax.get_children()
+        assert "Text(0, 2, 'test')" in str(children)
+        assert "Text(1, 4, 'test')" in str(children)
+        s.axes_manager.navigation_axes[0].index = 2
+        children = s._plot.signal_plot.ax.get_children()
+        assert "Text(0, 4, 'test')" in str(children)
+        assert "Text(1, 8, 'test')" in str(children)
+
+
 def _test_text_collection_close():
-    signal = Signal2D(np.ones((10,10)))
-    markers = TextCollection(offsets =[[1,1],[4,4]], s=("test",))
+    signal = Signal2D(np.ones((10, 10)))
+    markers = TextCollection(offsets=[[1, 1],
+                                      [4, 4]], s=("test",))
     signal.add_marker(markers)
     return signal
 @update_close_figure()

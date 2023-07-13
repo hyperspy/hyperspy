@@ -6038,6 +6038,7 @@ class BaseSignal(FancySlicing,
         marker_name_suffix = 1
         for m in marker_list:
             marker_data_shape = m._get_data_shape()[::-1]
+            m._temp_signal = self
             if (not (len(marker_data_shape) == 0)) and (
                     marker_data_shape != self.axes_manager.navigation_shape):
                 raise ValueError(
@@ -6057,6 +6058,7 @@ class BaseSignal(FancySlicing,
                     if self._plot.navigator_plot is None:
                         self.plot()
                     self._plot.navigator_plot.add_marker(m)
+                m.temp_signal = self
                 m.plot(render_figure=False)
             if permanent:
                 for marker_object in marker_object_list:

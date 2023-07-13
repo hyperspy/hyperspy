@@ -17,6 +17,8 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.drawing.marker_collection import MarkerCollection
+from hyperspy.drawing._markers.relative_collection import RelativeCollection
+from copy import deepcopy
 
 class TextCollection(MarkerCollection):
     """
@@ -104,3 +106,26 @@ class TextCollection(MarkerCollection):
             self.events.closed.disconnect(f)
         if render_figure:
             self._render_figure()
+
+
+class RelativeTextCollection(RelativeCollection, TextCollection):
+    def update(self):
+        if self.is_iterating:
+            current_kwargs = deepcopy(self.get_data_position(get_static_kwargs=True))
+        else:
+            current_kwargs = deepcopy(self.kwargs)
+        if "offsets" in current_kwargs:
+            current_kwargs = self._scale_kwarg(current_kwargs, "offsets")
+        if "segments" in current_kwargs:
+            current_kwargs = self._scale_kwarg(current_kwargs, "segments")
+        for c in self.collection:
+            c.remove()
+        self.collection = []
+        other_kwargs = {k: current_kwargs[k]
+                        for k in current_kwargs if k != "offsets"}
+        for i, o in enumerate(current_kwargs["offsets"]):
+            temp_kwargs = {k: other_kwargs[k][i % len(other_kwargs[k])]
+                           for k in other_kwargs}
+            t = self.ax.text(o[0], o[1], **temp_kwargs)
+            t.animated = self.ax.figure.canvas.supports_blit  # for blitting
+            self.collection.append(t)  # Add the text to the collection
