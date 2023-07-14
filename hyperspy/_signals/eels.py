@@ -33,7 +33,7 @@ from hyperspy.misc.label_position import SpectrumLabelPosition
 import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
-from hyperspy.misc.utils import isiterable, underline, print_html
+from hyperspy.misc.utils import display, isiterable, underline
 from hyperspy.misc.math_tools import optimal_fft_size
 from hyperspy.misc.eels.tools import get_edges_near_energy
 from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
@@ -208,8 +208,7 @@ class EELSSpectrum(Signal1D):
             er = EdgesRange(self)
             return er.gui(display=display, toolkit=toolkit)
         else:
-            return self.print_edges_near_energy(energy, width, only_major,
-                                                order)
+            self.print_edges_near_energy(energy, width, only_major, order)
 
     @staticmethod
     def print_edges_near_energy(energy=None, width=10, only_major=False,
@@ -270,8 +269,7 @@ class EELSSpectrum(Signal1D):
         # this ensures the html version try its best to mimick the ASCII one
         table.format = True
 
-        return print_html(f_text=table.get_string,
-                          f_html=table.get_html_string)
+        display(table)
 
     def estimate_zero_loss_peak_centre(self, mask=None):
         """Estimate the position of the zero-loss peak.

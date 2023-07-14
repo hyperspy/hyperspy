@@ -295,20 +295,20 @@ towncrier_draft_include_empty = False
 towncrier_draft_working_directory = ".."
 
 # Add the hyperspy website to the intersphinx domains
-intersphinx_mapping = {'rsciio': ('https://hyperspy.org/rosettasciio/', None),
-                       'cupy': ('https://docs.cupy.dev/en/stable', None),
-                       'python': ('https://docs.python.org/3', None),
-                       'h5py': ('https://docs.h5py.org/en/stable', None),
-                       'hyperspyweb': ('https://hyperspy.org/', None),
-                       'matplotlib': ('https://matplotlib.org', None),
-                       'numpy': ('https://docs.scipy.org/doc/numpy', None),
-                       'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
-                       'dask': ('https://docs.dask.org/en/latest', None),
-                       'astroML': ('https://www.astroml.org/', None),
-                       'sklearn': ('https://scikit-learn.org/stable', None),
-                       'skimage': ('https://scikit-image.org/docs/stable', None),
-                       'zarr': ('https://zarr.readthedocs.io/en/stable', None),
-                       }
+intersphinx_mapping = {
+    'cupy': ('https://docs.cupy.dev/en/stable', None),
+    'dask': ('https://docs.dask.org/en/latest', None),
+    'h5py': ('https://docs.h5py.org/en/stable', None),
+    'IPython': ('https://ipython.readthedocs.io/en/stable', None),
+    'matplotlib': ('https://matplotlib.org', None),
+    'numpy': ('https://docs.scipy.org/doc/numpy', None),
+    'python': ('https://docs.python.org/3', None),
+    'rsciio': ('https://hyperspy.org/rosettasciio/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
+    'skimage': ('https://scikit-image.org/docs/stable', None),
+    'sklearn': ('https://scikit-learn.org/stable', None),
+    'zarr': ('https://zarr.readthedocs.io/en/stable', None),
+}
 
 # -- Sphinx-Gallery---------------
 

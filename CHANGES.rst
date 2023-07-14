@@ -165,6 +165,10 @@ Model fitting
   ``metadata`` attribute instead.
 
 - The deprecated ``twin_function`` and ``twin_inverse_function`` have been privatized.
+- Remove ``fancy`` argument of :meth:`~.model.BaseModel.print_current_values` and :meth:`~.component.Component.print_current_values`,
+  which wasn't changing the output rendering.
+
+
 
 Signal
 ------

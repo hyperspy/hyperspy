@@ -390,7 +390,7 @@ on the ``centre`` parameter.
     >>> g1.centre.bmin = 7
     >>> g1.centre.bmax = 14
     >>> m.fit(optimizer="lm", bounded=True)
-    >>> m.print_current_values(fancy=False)
+    >>> m.print_current_values()
     Model1D:  histogram
     Gaussian: Gaussian
     Active: True

@@ -34,7 +34,7 @@ import dask.array as da
 import numpy as np
 
 from hyperspy.misc.signal_tools import broadcast_signals
-from hyperspy.exceptions import LazyCupyConversion
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.docstrings.utils import STACK_METADATA_ARG
 
@@ -363,7 +363,7 @@ class DictionaryTreeBrowser:
         return string
 
     def _get_html_print_items(self, padding="", max_len=78, recursive_level=0):
-        """Recursive method that creates a html string for fancy display
+        """Recursive method that creates a html string for html display
         of metadata.
         """
         recursive_level += 1
@@ -1518,19 +1518,6 @@ def get_object_package_info(obj):
     return dic
 
 
-def print_html(f_text, f_html):
-    """Print html version when in Jupyter Notebook"""
-
-    class PrettyText:
-        def __repr__(self):
-            return f_text()
-
-        def _repr_html_(self):
-            return f_html()
-
-    return PrettyText()
-
-
 def is_hyperspy_signal(input_object):
     """
     Check if an object is a Hyperspy Signal
@@ -1642,3 +1629,20 @@ def get_array_module(array):
         pass
 
     return module
+
+
+def display(obj):
+    """
+    Convenience funtion to display an obj using IPython rendering if
+    installed, otherwise, fall back to python ``print``
+
+    Parameters
+    ----------
+    obj : python object
+        Python object to be displayed
+    """
+    try:
+        from IPython import display
+        display.display(obj)
+    except ImportError:
+        print(obj)

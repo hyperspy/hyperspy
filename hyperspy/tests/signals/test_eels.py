@@ -432,17 +432,17 @@ class Test_Estimate_Thickness:
             self.s.estimate_thickness(zlp=self.zlp, density=3.6)
 
 
-class Test_Print_Edges_Near_Energy:
+class TestPrintEdgesNearEnergy:
     def setup_method(self, method):
         # Create an empty spectrum
         s = hs.signals.EELSSpectrum(np.ones((4, 2, 1024)))
         self.signal = s
 
-    def test_at_532eV(self):
+    def test_at_532eV(self, capsys):
         s = self.signal
-        table_ascii = s.print_edges_near_energy(532)
-
-        assert table_ascii.__repr__() == (
+        s.print_edges_near_energy(532)
+        captured = capsys.readouterr()
+        expected_out = (
             '+-------+-------------------+-----------+-----------------+\n'
             '|  edge | onset energy (eV) | relevance |   description   |\n'
             '+-------+-------------------+-----------+-----------------+\n'
@@ -451,23 +451,24 @@ class Test_Print_Edges_Near_Energy:
             '| At_N5 |       533.0       |   Minor   |                 |\n'
             '| Sb_M5 |       528.0       |   Major   | Delayed maximum |\n'
             '| Sb_M4 |       537.0       |   Major   | Delayed maximum |\n'
-            '+-------+-------------------+-----------+-----------------+'
-            )
+            '+-------+-------------------+-----------+-----------------+\n'
+        )
+        assert captured.out == expected_out
 
-    def test_sequence_edges(self):
+    def test_sequence_edges(self, capsys):
         s = self.signal
-        table_ascii = s.print_edges_near_energy(123,
-                                                edges=['Mn_L2', 'O_K', 'Fe_L2'])
-
-        assert table_ascii.__repr__() == (
+        s.print_edges_near_energy(123, edges=['Mn_L2', 'O_K', 'Fe_L2'])
+        captured = capsys.readouterr()
+        expected_out = (
             '+-------+-------------------+-----------+-----------------------------+\n'
             '|  edge | onset energy (eV) | relevance |         description         |\n'
             '+-------+-------------------+-----------+-----------------------------+\n'
             '| Mn_L2 |       651.0       |   Major   | Sharp peak. Delayed maximum |\n'
             '|  O_K  |       532.0       |   Major   |         Abrupt onset        |\n'
             '| Fe_L2 |       721.0       |   Major   | Sharp peak. Delayed maximum |\n'
-            '+-------+-------------------+-----------+-----------------------------+'
+            '+-------+-------------------+-----------+-----------------------------+\n'
             )
+        assert captured.out == expected_out
 
     def test_no_energy_and_edges(self):
         s = self.signal
@@ -481,20 +482,21 @@ class Test_Edges_At_Energy:
         s = hs.signals.EELSSpectrum(np.ones((4, 2, 1024)))
         self.signal = s
 
-    def test_at_532eV(self):
+    def test_at_532eV(self, capsys):
         s = self.signal
-        table_ascii = s.edges_at_energy(532, width=20, only_major=True,
-                                        order='ascending')
+        s.edges_at_energy(532, width=20, only_major=True, order='ascending')
+        captured = capsys.readouterr()
 
-        assert table_ascii.__repr__() == (
+        expected_out = (
             '+-------+-------------------+-----------+-----------------+\n'
             '|  edge | onset energy (eV) | relevance |   description   |\n'
             '+-------+-------------------+-----------+-----------------+\n'
             '| Sb_M5 |       528.0       |   Major   | Delayed maximum |\n'
             '|  O_K  |       532.0       |   Major   |   Abrupt onset  |\n'
             '| Sb_M4 |       537.0       |   Major   | Delayed maximum |\n'
-            '+-------+-------------------+-----------+-----------------+'
+            '+-------+-------------------+-----------+-----------------+\n'
             )
+        assert captured.out == expected_out
 
 
 class Test_Get_Complementary_Edges:

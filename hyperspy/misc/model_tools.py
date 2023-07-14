@@ -27,7 +27,7 @@ def _format_string(val):
     return "{:6g}".format(val) if val is not None else ""
 
 
-class current_component_values():
+class CurrentComponentValues():
     """
     Convenience class that makes use of __repr__ methods for nice printing in
     the notebook of the properties of parameters of a component.
@@ -38,7 +38,7 @@ class current_component_values():
     only_free : bool, default False
         If True: Only include the free parameters in the view
     only_active : bool, default False
-        If True: Helper for current_model_values. Only include active
+        If True: Helper for ``CurrentModelValues``. Only include active
         components in the view. Always shows values if used on an individual
         component.
      """
@@ -116,7 +116,7 @@ class current_component_values():
         return text
 
 
-class current_model_values():
+class CurrentModelValues():
     """
     Convenience class that makes use of __repr__ methods for nice printing in
     the notebook of the properties of parameters in components in a model.
@@ -143,7 +143,7 @@ class current_model_values():
         for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
                 if not self.only_free or comp.free_parameters and self.only_free:
-                    text += current_component_values(
+                    text += CurrentComponentValues(
                         component=comp,
                         only_free=self.only_free,
                         only_active=self.only_active
@@ -157,7 +157,7 @@ class current_model_values():
         for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
                 if not self.only_free or comp.free_parameters and self.only_free:
-                    html += current_component_values(
+                    html += CurrentComponentValues(
                         component=comp,
                         only_free=self.only_free,
                         only_active=self.only_active

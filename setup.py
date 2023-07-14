@@ -39,8 +39,6 @@ install_req = [
     # included in stdlib since v3.8, but this required version requires Python 3.10
     # We can remove this requirement when the minimum supported version becomes Python 3.10
     'importlib-metadata>=3.6',
-    # https://github.com/ipython/ipython/pull/13466
-    'ipython!=8.0.*',
     'jinja2',
     'matplotlib>=3.1.3',
     'natsort',
@@ -51,9 +49,7 @@ install_req = [
     'packaging',
     'pint>=0.10',
     'pooch',
-    # prettytable and ptable are API compatible
-    # prettytable is maintained and ptable is an unmaintained fork
-    'prettytable',
+    'prettytable>=2.3',
     'python-dateutil>=2.5.0',
     'pyyaml',
     'requests',
@@ -67,6 +63,7 @@ install_req = [
 
 
 extras_require = {
+	"ipython": ["IPython>7.0, !=8.0", "ipyparallel"],
     "learning": ["scikit-learn>=1.0.1"],
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0", "ipympl"],
     # UPDATE BEFORE RELEASE

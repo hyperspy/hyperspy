@@ -9,8 +9,7 @@ Getting parameter values
 :py:meth:`~.model.BaseModel.print_current_values()` prints the properties of the
 parameters of the components in the current coordinates. In the Jupyter Notebook,
 the default view is HTML-formatted, which allows for formatted copying
-into other software, such as Excel. This can be changed to a standard
-terminal view with the argument ``fancy=False``. One can also filter for only active
+into other software, such as Excel. One can also filter for only active
 components and only showing component with free parameters with the arguments
 ``only_active`` and ``only_free``, respectively.
 
@@ -24,7 +23,7 @@ The current values of a particular component can be printed using the
     >>> m = s.create_model()
     >>> m.fit()
     >>> G = m[1]
-    >>> G.print_current_values(fancy=False)
+    >>> G.print_current_values()
     Gaussian: Al_Ka
     Active: True
     Parameter Name |  Free |      Value |        Std |        Min
@@ -144,7 +143,7 @@ The value of a parameter can be coupled to the value of another by setting the
     >>> gaussian.centre.free = False # Fix the centre
     >>> gaussian.free_parameters  # Print the free parameters
     [<Parameter A of Carbon component>, <Parameter sigma of Carbon component>]
-    >>> m.print_current_values(only_free=True, fancy=False) # Print the values of all free parameters.
+    >>> m.print_current_values(only_free=True) # Print the values of all free parameters.
     Model1D:
     Gaussian: Carbon
     Active: True
@@ -172,7 +171,7 @@ The value of a parameter can be coupled to the value of another by setting the
     >>> # Couple the A parameter of gaussian2 to the A parameter of gaussian 3:
     >>> gaussian2.A.twin = gaussian3.A
     >>> gaussian2.A.value = 10 # Set the gaussian2 A value to 10
-    >>> gaussian3.print_current_values(fancy=False)
+    >>> gaussian3.print_current_values()
     Gaussian: Nitrogen
     Active: True
     Parameter Name |  Free |      Value |        Std |        Min |        Max
@@ -182,7 +181,7 @@ The value of a parameter can be coupled to the value of another by setting the
             centre |  True |        0.0 |       None |       None |       None
 
     >>> gaussian3.A.value = 5 # Set the gaussian1 centre value to 5
-    >>> gaussian2.print_current_values(fancy=False)
+    >>> gaussian2.print_current_values()
     Gaussian: Long Hydrogen name
     Active: True
     Parameter Name |  Free |      Value |        Std |        Min |        Max
@@ -213,7 +212,7 @@ example:
     >>> gaussian2.A.twin_function_expr = "x**2"
     >>> gaussian2.A.twin_inverse_function_expr = "sqrt(abs(x))"
     >>> gaussian2.A.value = 4
-    >>> gaussian3.print_current_values(fancy=False)
+    >>> gaussian3.print_current_values()
     Gaussian: Nitrogen
     Active: True
     Parameter Name |  Free |      Value |        Std |        Min |        Max
@@ -225,7 +224,7 @@ example:
 .. code-block:: python
 
     >>> gaussian3.A.value = 4
-    >>> gaussian2.print_current_values(fancy=False)
+    >>> gaussian2.print_current_values()
     Gaussian: Long Hydrogen name
     Active: True
     Parameter Name |  Free |      Value |        Std |        Min |        Max
@@ -244,4 +243,3 @@ on individual components.
 * :py:meth:`~.model.BaseModel.set_parameters_not_free`
 * :py:meth:`~.model.BaseModel.set_parameters_free`
 * :py:meth:`~.model.BaseModel.set_parameters_value`
-
