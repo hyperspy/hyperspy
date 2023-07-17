@@ -370,6 +370,29 @@ class TestInitMarkerCollection:
         it_2 = deepcopy(iterating_line_collection)
         assert it_2 is not iterating_line_collection
 
+    def test_wrong_navigation_size(self):
+        s = Signal2D(np.zeros((2, 3, 3)))
+        offsets = np.empty((3,2), dtype=object)
+        for i in np.ndindex(offsets.shape):
+            offsets[i] = np.ones((3, 2))
+        m = MarkerCollection(offsets=offsets)
+        with pytest.raises(ValueError):
+            s.add_marker(m)
+
+    def test_add_markers_to_multiple_signals(self):
+        s = Signal2D(np.zeros((2, 3, 3)))
+        s2 = Signal2D(np.zeros((2, 3, 3)))
+        m = MarkerCollection(offsets=[[1, 1],[2, 2]])
+        s.add_marker(m, permanent=True)
+        with pytest.raises(ValueError):
+            s2.add_marker(m, permanent=True)
+
+    def test_add_markers_to_navigator_without_nav(self):
+        s = Signal2D(np.zeros((3, 3)))
+        m = MarkerCollection(offsets=[[1, 1], [2, 2]])
+        with pytest.raises(ValueError):
+            s.add_marker(m, plot_on_signal=False)
+
 
 
 class TestMarkers2Collection:

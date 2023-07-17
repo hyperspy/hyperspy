@@ -6052,7 +6052,8 @@ class BaseSignal(FancySlicing,
                     self._plot.signal_plot.add_marker(m)
                 else:
                     if self._plot.navigator_plot is None:
-                        self.plot()
+                        raise ValueError("Attempted to plot marker on navigator_plot when none is"
+                                         "active.")
                     self._plot.navigator_plot.add_marker(m)
                 m.temp_signal = self
                 m.plot(render_figure=False)
