@@ -429,7 +429,7 @@ def is_iterating(arg):
     return isinstance(arg, (np.ndarray, da.Array)) and arg.dtype == object
 
 
-def dict2vector(data, keys=None, return_size=True):
+def dict2vector(data, keys=None, return_size=True, dtype=float):
     """Take some dictionary of values and create offsets based on the input keys.
     For instances like creating a horizontal or vertical line then some key is duplicated.
 
@@ -444,13 +444,17 @@ def dict2vector(data, keys=None, return_size=True):
     keys = np.array(keys)
     # check to see if the array should be ragged
     unique_keys = np.unique(keys)
-    is_key_iter = [isiterable(data[key]) for key in unique_keys]
-    if not any(is_key_iter):  # no iterable keys
-        vector = np.empty(keys.shape)
+    is_key_iter = [isiterable(data[key]) and not isinstance(data[key], str) for key in unique_keys]
+    if not any(is_key_iter):# no iterable keys
+        if dtype is str:
+            dtype = object
+        vector = np.empty(keys.shape, dtype=dtype)
         for i in np.ndindex(
             keys.shape
         ):  # iterate through keys and create resulting vector
             vector[i] = data[keys[i]]
+        if dtype is object:
+            vector = np.asarray(vector, dtype=str)
     else:
         iter_key = unique_keys[is_key_iter][0]
         nav_shape = data[iter_key].shape
@@ -460,9 +464,15 @@ def dict2vector(data, keys=None, return_size=True):
                 data[k] = np.full(shape=nav_shape, fill_value=data[k])
         vector = np.empty(nav_shape, dtype=object)  # Create ragged array
         for i in np.ndindex(nav_shape):
-            vect = np.empty(keys.shape)
-            for j in np.ndindex(keys.shape):
-                vect[j] = data[keys[j]][i]
+            if dtype is str:
+                vect = []
+                for j in np.ndindex(keys.shape):
+                    vect.append(data[keys[j]][i])
+                vect = np.array(vect)
+            else:
+                vect = np.empty(keys.shape, dtype=dtype)
+                for j in np.ndindex(keys.shape):
+                    vect[j] = data[keys[j]][i]
             vector[i] = vect
     if return_size:
         if not isiterable(data["size"]):
@@ -597,7 +607,10 @@ def markers2collection(marker_dict):
         offsets = dict2vector(
             marker_dict["data"], keys=[["x1", "y1"]], return_size=False
         )
-        text = dict2vector(marker_dict["data"], keys=[["text"]], return_size=False)
+        text = dict2vector(marker_dict["data"],
+                           keys=[["text"]],
+                           return_size=False,
+                           dtype=str)
         marker = TextCollection(
             offsets=offsets, s=text, **marker_dict["marker_properties"]
         )

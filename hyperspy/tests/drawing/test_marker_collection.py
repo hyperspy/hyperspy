@@ -380,6 +380,7 @@ class TestMarkers2Collection:
                 "x2": np.arange(10),
                 "y2": np.arange(10),
                 "size": np.arange(10),
+                "text": np.array(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]),
                 }
         return data
     @pytest.fixture
@@ -388,7 +389,7 @@ class TestMarkers2Collection:
                 "y1": 2,
                 "x2": 3,
                 "y2": 4,
-                "text": None,
+                "text": "a",
                 "size": 5,
                 }
         return data
@@ -399,7 +400,7 @@ class TestMarkers2Collection:
                 "y1": np.arange(10),
                 "x2": np.arange(10),
                 "y2": 4,
-                "text": None,
+                "text": np.array(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]),
                 "size": np.arange(10),
                 }
         return data
@@ -421,6 +422,7 @@ class TestMarkers2Collection:
                         "Arrow",
                         "Rectangle",
                         "VerticalLineSegment",
+                        "Text",
 
     ))
     def test_marker2collection(self, request, marker_type, data, signal):
