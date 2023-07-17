@@ -975,6 +975,7 @@ class EDSSpectrum(Signal1D):
                 xray_lines)
             for xray in xray_not_here:
                 _logger.warning(f"{xray} is not in the data energy range.")
+
             xray_lines = np.unique(xray_lines)
 
             self.add_xray_lines_markers(xray_lines, render_figure=False)
@@ -1034,18 +1035,16 @@ class EDSSpectrum(Signal1D):
         norm = self._plot.signal_plot.ax_lines[0].norm
         minimum_intensity = self.data[self.data > 0].min() if norm == 'log' else 0
         line_names = []
-        segments = []
-        ax = self.axes_manager.signal_axes[0]
-        offsets = []
+        segments = np.empty((len(xray_lines), 2, 2))
+        offsets = np.empty((len(xray_lines), 2))
         # might want to set the intensity based on the alpha line intensity
-        for xray_line in xray_lines:
+        for i, xray_line in enumerate(xray_lines):
             element, line = utils_eds._get_element_and_line(xray_line)
             relative_factor = elements_db[element][
                 'Atomic_properties']['Xray_lines'][line]['weight']
             eng = self._get_line_energy(f'{element}_{line}')
-            ind = ax.value2index(eng)
-            segments.append([[ind, 0], [ind, 0.8 * relative_factor]])
-            offsets.append([ind, 1.1])
+            segments[i] = [[eng, 0], [eng, 0.8 * relative_factor]]
+            offsets[i] = [eng, 1.2]
             line_names.append(r'$\mathrm{%s}_{\mathrm{%s}}$' % utils_eds._get_element_and_line(xray_line))
 
         line_markers = RelativeCollection(collection_class=LineCollection,
@@ -1053,7 +1052,11 @@ class EDSSpectrum(Signal1D):
                                           reference="data",
                                           )
         text_markers = RelativeTextCollection(offsets=offsets,
-                                              s=line_names, )
+                                              s=line_names,
+                                              rotation=[90, ],
+                                              horizontalalignment=['center', ],
+                                              verticalalignment=["bottom", ],
+                                              )
 
         self.add_marker(line_markers, render_figure=False)
         self.add_marker(text_markers, render_figure=False)

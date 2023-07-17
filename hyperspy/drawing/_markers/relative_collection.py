@@ -18,6 +18,7 @@
 
 from hyperspy.drawing.marker_collection import MarkerCollection
 from copy import deepcopy
+import numpy as np
 
 class RelativeCollection(MarkerCollection):
     """
@@ -31,6 +32,7 @@ class RelativeCollection(MarkerCollection):
     def __init__(self,
                  reference="data",
                  indexes=None,
+                 shift=None,
                  **kwargs):
         """
         Initialize the relative marker collection
@@ -41,10 +43,21 @@ class RelativeCollection(MarkerCollection):
         """
         super().__init__(**kwargs)
         self.reference = reference
+        self.shift=shift
+
         if self.reference is "data_index" and indexes is not None:
             self.indexes = indexes
         elif self.reference is "data_index" and indexes is None:
             raise ValueError("Must supply indexes if reference is data_index")
+
+    def get_data_position(self, get_static_kwargs=True):
+        kwds = super().get_data_position()
+        new_kwds = deepcopy(kwds)
+        if "offsets" in new_kwds:
+            new_kwds = self._scale_kwarg(new_kwds, "offsets")
+        if "segments" in kwds:
+            new_kwds = self._scale_kwarg(new_kwds, "segments")
+        return new_kwds
 
     def _scale_kwarg(self, kwds, key):
         """
@@ -60,27 +73,24 @@ class RelativeCollection(MarkerCollection):
         """
         if self.reference is "data":
             current_data = self.temp_signal(as_numpy=True)
-            x_positions = kwds[key][..., 0].astype(int)
+            x_positions = kwds[key][..., 0]
+            ax = self.axes_manager.signal_axes[0]
+            indexes = np.round((x_positions - ax.offset)/ax.scale).astype(int)
             y_positions = kwds[key][..., 1]
-            new_y_positions = current_data[x_positions]*y_positions
-            kwds[key][..., 1] = new_y_positions
+            new_y_positions = current_data[indexes]*y_positions
         elif self.reference is "data_index":
             current_data = self.temp_signal(as_numpy=True)
             x_positions = self.indexes
             y_positions = kwds[key][..., 1]
             new_y_positions = current_data[x_positions]*y_positions
-            kwds[key][..., 1] = new_y_positions
         else:
             raise ValueError("reference must be 'data' or 'data_index'")
+        if self.shift is not None:
+            yrange = np.max(current_data)-np.min(current_data)
+            new_y_positions = new_y_positions + self.shift*yrange
+        kwds[key][..., 1] = new_y_positions
         return kwds
 
     def update(self):
-        if self.is_iterating:
-            kwds = deepcopy(self.get_data_position(get_static_kwargs=False))
-        else:
-            kwds = deepcopy(self.kwargs)
-        if "offsets" in kwds:
-            kwds = self._scale_kwarg(kwds, "offsets")
-        if "segments" in kwds:
-            kwds = self._scale_kwarg(kwds, "segments")
+        kwds = deepcopy(self.get_data_position(get_static_kwargs=False))
         self.collection.set(**kwds)

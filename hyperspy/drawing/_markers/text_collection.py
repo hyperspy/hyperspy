@@ -110,14 +110,7 @@ class TextCollection(MarkerCollection):
 
 class RelativeTextCollection(RelativeCollection, TextCollection):
     def update(self):
-        if self.is_iterating:
-            current_kwargs = deepcopy(self.get_data_position(get_static_kwargs=True))
-        else:
-            current_kwargs = deepcopy(self.kwargs)
-        if "offsets" in current_kwargs:
-            current_kwargs = self._scale_kwarg(current_kwargs, "offsets")
-        if "segments" in current_kwargs:
-            current_kwargs = self._scale_kwarg(current_kwargs, "segments")
+        current_kwargs = self.get_data_position(get_static_kwargs=True)
         for c in self.collection:
             c.remove()
         self.collection = []

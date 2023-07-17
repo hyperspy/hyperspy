@@ -111,6 +111,11 @@ class MarkerCollection(object):
             elif isinstance(value, list) and len(value) == 0:
                 self.kwargs[key] = np.array(value)
 
+            if key in ["sizes", "color"] and (not hasattr(value, "__len__") or isinstance(value, str)):
+                self.kwargs[key] = (value,)
+            if key in ["s"] and isinstance(value, str):
+                self.kwargs[key] = (value,)
+
         self._cache_dask_chunk_kwargs = {}
         self._cache_dask_chunk_kwargs_slice = {}
 
@@ -333,9 +338,6 @@ class MarkerCollection(object):
                 current_keys.update(self._get_cache_dask_kwargs_chunk(indices))
         else:
             current_keys = self.kwargs
-            for key, value in self.kwargs.items():
-                if key in ["sizes", "color"] and not hasattr(value, "__len__"):
-                    current_keys[key] = (value,)
         return current_keys
 
     def update(self):

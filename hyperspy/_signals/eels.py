@@ -1603,21 +1603,26 @@ class EELSSpectrum(Signal1D):
             self.plot_edges_label(edges)
 
     def _get_offsets_and_segments(self, edges):
-        ax = self.axes_manager.signal_axes[0]
-        index = np.array([ax.value2index(float(v)) for v in edges.values()])  # dictionaries
+        index = np.array([float(v) for v in edges.values()]) # dictionaries
         segments = np.empty((len(index), 2, 2))
         offsets = np.empty((len(index), 2))
         for i, ind in enumerate(index):
-            segments[i] = [[ind, 1], [ind, 1.2]]
-            offsets[i] = [ind, 1.2]
+            segments[i] = [[ind, 1], [ind, 1.1]]
+            offsets[i] = [ind, 1.1]
         return offsets, segments
 
     def get_edge_markers(self, edges):
         offsets, segments = self._get_offsets_and_segments(edges)
+        line_shifts = np.zeros((len(offsets), 2))
+        line_shifts[:, -1] = .15
+        line_shifts[::2, -1] = .25
         vertical_line_marker = RelativeCollection(collection_class=LineCollection,
-                                                  segments=segments,)
+                                                  segments=segments,
+                                                  shift=line_shifts)
         text_marker = RelativeTextCollection(offsets=offsets,
-                                             s=list(edges.keys()),)
+                                             s=list(edges.keys()),
+                                             horizontalalignment=["center"],
+                                             shift=line_shifts[:, 1]+0.05)
         return vertical_line_marker, text_marker
 
     def plot_edges_label(self,
