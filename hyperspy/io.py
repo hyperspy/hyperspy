@@ -813,9 +813,8 @@ def dict2signal(signal_dict, lazy=False):
                 if value is not None:
                     signal.metadata.set_item(mpattr, value)
     if mp is not None and "Markers" in mp:
-        signal.metadata.Markers = markers2collection(
-            mp['Markers'],
-            axes_manager=signal.axes_manager)
+        for key in mp['Markers']:
+            signal.metadata.Markers[key] = markers2collection(mp['Markers'][key])
 
     return signal
 
