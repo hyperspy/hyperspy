@@ -1122,7 +1122,7 @@ MarkerCollections
 =======
 .. NOTE::
     Starting in version 2.0.0 Markers are replaced with MarkerCollections to better mirror the
-structure of the :py:class:`~.signal.BaseSignal` class.
+    structure of the :py:class:`~.signal.BaseSignal` class.
 
 
 HyperSpy provides an easy access the collections classes of matplotlib. The markers
@@ -1368,9 +1368,9 @@ The markers currently supported in HyperSpy are:
     +------------------------------------------------------------------------------+---------------------------------------+----------------------------------------------------+
     | :py:class:`~.drawing._markers.line_collection.VerticalLineCollection`        | ``segments, **kwargs``                |  :py:class:`matplotlib.collections.LineCollection` |
     +------------------------------------------------------------------------------+---------------------------------------+----------------------------------------------------+
-    | :py:class:`~.drawing._markers.text_collection.TextCollection`                | ``offsets, s, **kwargs``              |  :py:class:`matplotlib.text`                        |
+    | :py:class:`~.drawing._markers.text_collection.TextCollection`                | ``offsets, s, **kwargs``              |  :py:class:`matplotlib.text`                       |
     +------------------------------------------------------------------------------+---------------------------------------+----------------------------------------------------+
-    | :py:class:`~.drawing.maker_collection.MarkerCollection`                      | ``offsets,collection_class, **kwargs``|  :py:class:`matplotlib.collections`                 |
+    | :py:class:`~.drawing.maker_collection.MarkerCollection`                      | ``offsets,collection_class, **kwargs``|  :py:class:`matplotlib.collections`                |
     +------------------------------------------------------------------------------+---------------------------------------+----------------------------------------------------+
 
 
