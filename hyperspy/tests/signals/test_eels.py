@@ -529,16 +529,15 @@ class Test_Plot_EELS:
         s.add_elements(('Mn','Cr'))
         s.plot()
 
-        assert len(s._edge_markers) == 0
+        assert len(s._edge_markers["names"]) == 0
 
     def test_plot_edges_True(self):
         s = self.signal
         s.add_elements(('Mn','Cr'))
         s.plot(plot_edges=True)
 
-        assert len(s._edge_markers) == 6
-        assert set(s._edge_markers.keys()) == set(['Mn_L2', 'Mn_L3', 'Mn_L1',
-                                                   'Cr_L2', 'Cr_L3', 'Cr_L1'])
+        assert len(s._edge_markers["names"]) == 6
+        assert set(s._edge_markers["names"]) == {'Mn_L2', 'Mn_L3', 'Mn_L1', 'Cr_L2', 'Cr_L3', 'Cr_L1'}
 
     def test_plot_edges_True_without_elements(self):
         s = self.signal
@@ -549,9 +548,8 @@ class Test_Plot_EELS:
         s = self.signal
         s.plot(plot_edges=['Mn', 'Ti_L', 'Cr_L3'], only_edges=('Major'))
 
-        assert len(s._edge_markers) == 5
-        assert set(s._edge_markers.keys()) == set(['Cr_L3', 'Mn_L2', 'Mn_L3',
-                                                   'Ti_L2', 'Ti_L3'])
+        assert len(s._edge_markers["names"]) == 5
+        assert set(s._edge_markers["names"]) == {'Cr_L3', 'Mn_L2', 'Mn_L3', 'Ti_L2', 'Ti_L3'}
 
     def test_unsupported_edge_family(self):
         s = self.signal
@@ -573,24 +571,17 @@ class Test_Plot_EELS:
         s.plot(plot_edges=['Cr_L', 'Fe_L2'])
         s.remove_EELS_edges_markers(['Cr_L1', 'Fe_L2'])
 
-        assert len(s._edge_markers) == 2
-        assert set(s._edge_markers.keys()) == set(['Cr_L2', 'Cr_L3'])
+        assert len(s._edge_markers["names"]) == 2
+        assert set(s._edge_markers["names"]) == set(['Cr_L2', 'Cr_L3'])
 
-    def test_unequal_edges_and_markers(self):
-        s = self.signal
-        s.plot()
-        with pytest.raises(ValueError):
-            s.plot_edges_label(['Cr_L3', 'Fe_L2'],
-                               vertical_line_marker=['vl1', 'vl2'],
-                               text_marker=['tx1'])
 
     def test_plot_edges_without_markers_provided(self):
         s = self.signal
         s.plot()
         s.plot_edges_label({'Fe_L2': 721.0, 'O_K': 532.0})
 
-        assert len(s._edge_markers) == 2
-        assert set(s._edge_markers.keys()) == set(['Fe_L2', 'O_K'])
+        assert len(s._edge_markers["names"]) == 2
+        assert set(s._edge_markers["names"]) == set(['Fe_L2', 'O_K'])
 
 
 @lazifyTestClass
