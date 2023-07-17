@@ -1,4 +1,4 @@
-.. plotting-label:
+.. _plotting-label:
 
 Interactive Plotting
 ====================
