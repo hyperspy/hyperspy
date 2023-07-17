@@ -28,13 +28,17 @@ Example
 
 """
 from hyperspy.drawing.marker_collection import MarkerCollection
-from hyperspy.drawing._markers.text_collection import TextCollection
+from hyperspy.drawing._markers.relative_collection import RelativeCollection
+from hyperspy.drawing._markers.text_collection import TextCollection,RelativeTextCollection
 from hyperspy.drawing._markers.line_collection import HorizontalLineCollection, VerticalLineCollection
 
-__all__ = [MarkerCollection,
-           TextCollection,
-           HorizontalLineCollection,
-           VerticalLineCollection]
+__all__ = ['MarkerCollection',
+           'TextCollection',
+           'HorizontalLineCollection',
+           'VerticalLineCollection',
+           'RelativeCollection',
+           'RelativeTextCollection',
+           ]
 
 
 def __dir__():
