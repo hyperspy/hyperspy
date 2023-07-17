@@ -50,6 +50,9 @@ class RelativeCollection(MarkerCollection):
         elif self.reference is "data_index" and indexes is None:
             raise ValueError("Must supply indexes if reference is data_index")
 
+        if self.reference not in ["data", "data_index"]:
+            raise ValueError("reference must be one of 'data', or 'data_index'")
+
     def get_data_position(self, get_static_kwargs=True):
         kwds = super().get_data_position()
         new_kwds = deepcopy(kwds)
@@ -78,13 +81,12 @@ class RelativeCollection(MarkerCollection):
             indexes = np.round((x_positions - ax.offset)/ax.scale).astype(int)
             y_positions = kwds[key][..., 1]
             new_y_positions = current_data[indexes]*y_positions
-        elif self.reference is "data_index":
+        else:  # self.reference is "data_index"
             current_data = self.temp_signal(as_numpy=True)
             x_positions = self.indexes
             y_positions = kwds[key][..., 1]
             new_y_positions = current_data[x_positions]*y_positions
-        else:
-            raise ValueError("reference must be 'data' or 'data_index'")
+
         if self.shift is not None:
             yrange = np.max(current_data)-np.min(current_data)
             new_y_positions = new_y_positions + self.shift*yrange

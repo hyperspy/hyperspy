@@ -460,6 +460,26 @@ class TestRelativeMarkerCollection:
         assert markers.collection.get_segments()[0][0][0] == 0
         assert markers.collection.get_segments()[0][1][1] == 11
 
+    def test_relative_marker_collection_fail(self):
+        with pytest.raises(ValueError):
+            segments = np.zeros((10, 2, 2))
+            segments[:, 1, 1] = 1  # set y values end
+            segments[:, 0, 0] = np.arange(10).reshape(10)  # set x values
+            segments[:, 1, 0] = np.arange(10).reshape(10)  # set x values
+            markers = RelativeCollection(collection_class=LineCollection,
+                                         segments=segments,
+                                         reference="data_index")
+
+    def test_relative_marker_collection_fail_ref(self):
+        with pytest.raises(ValueError):
+            segments = np.zeros((10, 2, 2))
+            segments[:, 1, 1] = 1  # set y values end
+            segments[:, 0, 0] = np.arange(10).reshape(10)  # set x values
+            segments[:, 1, 0] = np.arange(10).reshape(10)  # set x values
+            markers = RelativeCollection(collection_class=LineCollection,
+                                         segments=segments,
+                                         reference="data_in")
+
 
 class TestLineCollections:
     @pytest.fixture
