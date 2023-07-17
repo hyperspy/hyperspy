@@ -580,19 +580,18 @@ class Test_eds_markers:
         s.plot(xray_lines=True)
         # Should contain 6 lines
         assert (
-            sorted(s._xray_markers.keys()) ==
-            ['Al_Ka', 'Al_Kb', 'Zn_Ka', 'Zn_Kb', 'Zn_La', 'Zn_Lb1'])
+            sorted(s._xray_markers["names"] ==
+                   ['Al_Ka', 'Al_Kb', 'Zn_Ka', 'Zn_Kb', 'Zn_La', 'Zn_Lb1']))
 
     def test_manual_add_line(self):
         s = self.signal
         s.plot()
         s.add_xray_lines_markers(['Zn_La'])
         assert (
-            list(s._xray_markers.keys()) ==
+            list(s._xray_markers["names"]) ==
             ['Zn_La'])
-        assert len(s._xray_markers) == 1
-        # Check that the line has both a vertical line marker and text marker:
-        assert len(s._xray_markers['Zn_La']) == 2
+        assert len(s._xray_markers["names"]) == 1
+
 
     def test_manual_add_line_error(self):
         s = self.signal
@@ -604,8 +603,11 @@ class Test_eds_markers:
         s.plot()
         s.add_xray_lines_markers(['Zn_Ka', 'Zn_Kb', 'Zn_La'])
         s.remove_xray_lines_markers(['Zn_Kb'])
-        assert sorted(s._xray_markers.keys()) == ['Zn_Ka', 'Zn_La']
+        assert sorted(s._xray_markers["names"]) == ['Zn_Ka', 'Zn_La']
         s.remove_xray_lines_markers(['Zn_Ka'], render_figure=False)
-        assert sorted(s._xray_markers.keys()) == ['Zn_La']
+        assert sorted(s._xray_markers["names"]) == ['Zn_La']
         s.remove_xray_lines_markers(['Zn_La'], render_figure=True)
-        assert sorted(s._xray_markers.keys()) == []
+        assert sorted(s._xray_markers["names"]) == []
+        assert len(s._xray_markers["text"].get_data_position()["offsets"]) == 0
+        assert len(s._xray_markers["text"].get_data_position()["s"]) == 0
+        assert len(s._xray_markers["lines"].get_data_position()["segments"]) == 0

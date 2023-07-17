@@ -29,23 +29,21 @@ from hyperspy._signals.signal1d import Signal1D, LazySignal1D
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
-from hyperspy.utils import markers
 from hyperspy.drawing.marker_collection import MarkerCollection
-from hyperspy.drawing._markers.text_collection import TextCollection
+from hyperspy.drawing._markers.relative_collection import RelativeCollection
+from hyperspy.drawing._markers.text_collection import RelativeTextCollection
 from hyperspy.drawing._markers.line_collection import VerticalLineCollection
 from matplotlib.collections import LineCollection
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING_PARAMETERS,
     PLOT1D_DOCSTRING
-    )
+)
 from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
-
 
 _logger = logging.getLogger(__name__)
 
 
 class EDSSpectrum(Signal1D):
-
     """General signal class for EDS spectra."""
 
     _signal_type = "EDS"
@@ -85,10 +83,10 @@ class EDSSpectrum(Signal1D):
 
         if FWHM_MnKa == 'auto':
             if self.metadata.Signal.signal_type == "EDS_SEM":
-                FWHM_MnKa = self.metadata.Acquisition_instrument.SEM.\
+                FWHM_MnKa = self.metadata.Acquisition_instrument.SEM. \
                     Detector.EDS.energy_resolution_MnKa
             elif self.metadata.Signal.signal_type == "EDS_TEM":
-                FWHM_MnKa = self.metadata.Acquisition_instrument.TEM.\
+                FWHM_MnKa = self.metadata.Acquisition_instrument.TEM. \
                     Detector.EDS.energy_resolution_MnKa
             else:
                 raise NotImplementedError(
@@ -179,9 +177,9 @@ class EDSSpectrum(Signal1D):
 
         # Update live time by the change in navigation axes dimensions
         time_factor = (
-               np.prod([ax.size for ax in self.axes_manager.navigation_axes])
-               / np.prod([ax.size for ax in s.axes_manager.navigation_axes])
-            )
+                np.prod([ax.size for ax in self.axes_manager.navigation_axes])
+                / np.prod([ax.size for ax in s.axes_manager.navigation_axes])
+        )
         aimd = s.metadata.get_item('Acquisition_instrument', None)
         if aimd is not None:
             aimd = s.metadata.Acquisition_instrument
@@ -195,13 +193,14 @@ class EDSSpectrum(Signal1D):
 
         if out is None:
             return s
+
     sum.__doc__ = Signal1D.sum.__doc__
 
     def rebin(self, new_shape=None, scale=None, crop=True, dtype=None,
               out=None):
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
-            scale=scale,)
+            scale=scale, )
         m = super().rebin(new_shape=new_shape, scale=scale, crop=crop,
                           dtype=dtype, out=out)
         m = out or m
@@ -438,7 +437,7 @@ class EDSSpectrum(Signal1D):
             if element in elements_db:
                 elements.add(element)
                 if subshell in elements_db[element]['Atomic_properties'
-                                                    ]['Xray_lines']:
+                ]['Xray_lines']:
                     lines_len = len(xray_lines)
                     xray_lines.add(line)
                     if lines_len != len(xray_lines):
@@ -510,7 +509,7 @@ class EDSSpectrum(Signal1D):
             # Possible line (existing and excited by electron)
             element_lines = []
             for subshell in list(elements_db[element]['Atomic_properties'
-                                                      ]['Xray_lines'].keys()):
+                                 ]['Xray_lines'].keys()):
                 if only_lines and subshell not in only_lines:
                     continue
                 element_lines.append(element + "_" + subshell)
@@ -635,9 +634,8 @@ class EDSSpectrum(Signal1D):
 
         """
         if xray_lines is not None and \
-            (not isinstance(xray_lines, Iterable) or \
-            isinstance(xray_lines, (str, dict))):
-
+                (not isinstance(xray_lines, Iterable) or \
+                 isinstance(xray_lines, (str, dict))):
             raise TypeError(
                 "xray_lines must be a compatible iterable, but was "
                 f"mistakenly provided as a {type(xray_lines)}.")
@@ -655,7 +653,7 @@ class EDSSpectrum(Signal1D):
             element, line = utils_eds._get_element_and_line(Xray_line)
             line_energy = self._get_line_energy(Xray_line)
             # Replace with `map` function for lazy large datasets
-            img = self.isig[window[0]:window[1]].integrate1D(-1) # integrate over window.
+            img = self.isig[window[0]:window[1]].integrate1D(-1)  # integrate over window.
             if np.issubdtype(img.data.dtype, np.integer):
                 # The operations below require a float dtype with the default
                 # numpy casting rule ('same_kind')
@@ -674,7 +672,7 @@ class EDSSpectrum(Signal1D):
                 else:
                     bck2 = self.isig[bw[2]:bw[3]].integrate1D(-1)
                 corr_factor = (indexes[5] - indexes[4]) / (
-                    (indexes[1] - indexes[0]) + (indexes[3] - indexes[2]))
+                        (indexes[1] - indexes[0]) + (indexes[3] - indexes[2]))
                 img = img - (bck1 + bck2) * corr_factor
             img.metadata.General.title = (
                 f'X-ray line intensity of {self.metadata.General.title}: '
@@ -978,6 +976,7 @@ class EDSSpectrum(Signal1D):
             for xray in xray_not_here:
                 _logger.warning(f"{xray} is not in the data energy range.")
             xray_lines = np.unique(xray_lines)
+
             self.add_xray_lines_markers(xray_lines, render_figure=False)
             if background_windows is not None:
                 self._add_background_windows_markers(background_windows,
@@ -1010,7 +1009,7 @@ class EDSSpectrum(Signal1D):
             keywords argument for :py:class:`~.api.plot.markers.VerticalLine`
         """
         colors = itertools.cycle(np.sort(
-                plt.rcParams['axes.prop_cycle'].by_key()["color"]))
+            plt.rcParams['axes.prop_cycle'].by_key()["color"]))
 
         for x, color in zip(position, colors):
             line = VerticalLineCollection(segments=x,
@@ -1030,47 +1029,40 @@ class EDSSpectrum(Signal1D):
         xray_lines: list of string
             A valid list of X-ray lines
         """
+        if self._plot is None or not self._plot.is_active:
+            raise RuntimeError("The signal needs to be plotted.")
         norm = self._plot.signal_plot.ax_lines[0].norm
         minimum_intensity = self.data[self.data > 0].min() if norm == 'log' else 0
-        line_relative_factor = []
-        line_real_index = []
         line_names = []
-
+        segments = []
+        ax = self.axes_manager.signal_axes[0]
+        offsets = []
+        # might want to set the intensity based on the alpha line intensity
         for xray_line in xray_lines:
             element, line = utils_eds._get_element_and_line(xray_line)
             relative_factor = elements_db[element][
                 'Atomic_properties']['Xray_lines'][line]['weight']
             eng = self._get_line_energy(f'{element}_{line}')
-            line_relative_factor.append(relative_factor)
-            line_real_index.append(eng)
+            ind = ax.value2index(eng)
+            segments.append([[ind, 0], [ind, 0.8 * relative_factor]])
+            offsets.append([ind, 1.1])
             line_names.append(r'$\mathrm{%s}_{\mathrm{%s}}$' % utils_eds._get_element_and_line(xray_line))
 
-        segments = self.get_intensity(line_real_index,
-                                      factor=line_relative_factor,
-                                      start=0.0,
-                                      stop=0.8,
-                                      norm=norm,
-                                      minimum_intensity=minimum_intensity,
-                                      )
+        line_markers = RelativeCollection(collection_class=LineCollection,
+                                          segments=segments,
+                                          reference="data",
+                                          )
+        text_markers = RelativeTextCollection(offsets=offsets,
+                                              s=line_names, )
 
-        segments = MarkerCollection.from_signal(segments,
-                                                key="segments",
-                                                collection_class=LineCollection)
-        self.add_marker(segments, render_figure=False)
-        # get the offsets for plotting the text
-        text_offsets = self.get_intensity(line_real_index,
-                                          factor=line_relative_factor,
-                                          stop=1.1)
-        text = TextCollection.from_signal(text_offsets,
-                                          key="offsets",
-                                          s=line_names)
-        self.add_marker(text, render_figure=False)
+        self.add_marker(line_markers, render_figure=False)
+        self.add_marker(text_markers, render_figure=False)
 
         # Connect events to remove the markers when the line is closed
-        segments.events.closed.connect(self._xray_marker_closed)
-        text.events.closed.connect(self._xray_marker_closed)
-        self._xray_markers["lines"] = segments
-        self._xray_markers["text"] = text
+        line_markers.events.closed.connect(self._xray_marker_closed)
+        text_markers.events.closed.connect(self._xray_marker_closed)
+        self._xray_markers["lines"] = line_markers
+        self._xray_markers["text"] = text_markers
         self._xray_markers["names"] = xray_lines
 
         if render_figure:
@@ -1088,15 +1080,19 @@ class EDSSpectrum(Signal1D):
         ----------
         xray_lines: list of string
             A valid list of X-ray lines to remove
+        render_figure: bool
+            If True, render the figure after removing the markers
         """
         ind = np.where(np.isin(self._xray_markers["names"], xray_lines))
-        self._xray_markers["segments"].delete_index("segments", ind)
-        self._xray_markers["text"].delete_index("offsets", ind)
+        self._xray_markers["lines"].delete_index("segments", ind)
+        self._xray_markers["text"].delete_index(["offsets", "s"],
+                                                ind)
         self._xray_markers["names"] = np.delete(self._xray_markers["names"], ind)
         if render_figure:
             self._render_figure(plot=['signal_plot'])
 
-    def _add_background_windows_markers(self, windows_position,
+    def _add_background_windows_markers(self,
+                                        windows_position,
                                         render_figure=True):
         """
         Plot the background windows associated with each X-ray lines.
@@ -1143,7 +1139,6 @@ class EDSSpectrum(Signal1D):
 
 
 class LazyEDSSpectrum(EDSSpectrum, LazySignal1D):
-
     """Lazy general signal class for EDS spectra."""
 
     __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "EDSSpectrum")

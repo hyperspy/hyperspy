@@ -17,40 +17,8 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import pytest
-import numpy as np
 
 from hyperspy.misc.eds.utils import _get_element_and_line
-from hyperspy.misc.eds.utils import _get_xray_lines
-
-
-@pytest.mark.parametrize("get_offsets", [True, False])
-def test_get_xray_lines(get_offsets):
-    x = np.arange(1, 11, 1)
-    line_index = [3, 4]
-    line_real_index = [2, 3]
-    line_relative_factor = [0.5, 0.5]
-    norm = 1.0
-    minimum_intensity = 0.0
-
-    lines = _get_xray_lines(x,
-                            line_index,
-                            line_real_index,
-                            line_relative_factor,
-                            norm,
-                            minimum_intensity,
-                            get_offsets=get_offsets,
-                            factor=1.0,
-                            )
-    if get_offsets:
-        np.testing.assert_array_equal(lines, np.array([[2, 2],
-                                                       [3, 2.5]])
-                                      )
-    else:
-        np.testing.assert_array_equal(lines, np.array([[[2, 0], [2, 2]],
-                                                       [[3, 0], [3, 2.5]]])
-                                      )
-
-
 
 
 def test_get_element_and_line():
