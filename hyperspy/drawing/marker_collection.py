@@ -24,6 +24,7 @@ from hyperspy.misc.array_tools import _get_navigation_dimension_chunk_slice
 from hyperspy.misc.utils import isiterable
 from matplotlib.transforms import Affine2D
 from matplotlib.collections import LineCollection
+from matplotlib.patches import Patch
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ def convert_positions(peaks, signal_axes):
     new_data = np.empty(peaks.shape[:-1] + (len(signal_axes),))
     for i, ax in enumerate(signal_axes[::-1]):
         # indexes need to be reversed
-        new_data[..., (-i - 1)] = ax.scale * peaks[:, i] + ax.offset
+        new_data[..., (-i - 1)] = ax.scale * peaks[..., i] + ax.offset
     return new_data
 
 
@@ -66,9 +67,7 @@ class MarkerCollection(object):
     for a signal.
     """
 
-    def __init__(self,
-                 collection_class=None,
-                 **kwargs):
+    def __init__(self, collection_class=None, **kwargs):
         """
         Initialize a Marker Collection.
 
@@ -102,6 +101,15 @@ class MarkerCollection(object):
                 self.dask_kwargs[key] = self.kwargs[key]
             elif isinstance(value, da.Array):  # and value.dtype != object:
                 self.kwargs[key] = value.compute()
+            # Patches shouldn't be cast to array
+            elif (
+                isinstance(value, list)
+                and len(value) > 0
+                and not isinstance(value[0], Patch)
+            ):
+                self.kwargs[key] = np.array(value)
+            elif isinstance(value, list) and len(value) == 0:
+                self.kwargs[key] = np.array(value)
 
         self._cache_dask_chunk_kwargs = {}
         self._cache_dask_chunk_kwargs_slice = {}
@@ -110,13 +118,14 @@ class MarkerCollection(object):
         self.collection = None
         self.collection_class = collection_class
         self.signal = None
+        self.temp_signal = None
         self.is_iterating = np.any(
             [is_iterating(value) for key, value in self.kwargs.items()]
         )
         self._plot_on_signal = True
         self.name = "MarkerCollection"
         self.plot_marker = True
-        self.offsets_structure = [["o", "get_xlim[0]"],["o", "get_xlim[1]"]]
+        self.offsets_structure = [["o", "get_xlim[0]"], ["o", "get_xlim[1]"]]
 
         # Events
         self.events = Events()
@@ -144,22 +153,52 @@ class MarkerCollection(object):
         index: slice, int or array of ints
             Indicate indices of sub-arrays to remove along the specified axis.
         """
+        if isinstance(keys, str):
+            keys = [
+                keys,
+            ]
         for key in keys:
             if self.kwargs[key].dtype == object:
                 for i in np.ndindex(self.kwargs[key].shape):
-                    self.kwargs[key][i] = np.delete(self.kwargs[key][i], index)
+                    self.kwargs[key][i] = np.delete(self.kwargs[key][i], index, axis=0)
             else:
-                self.kwargs[key] = np.delete(self.kwargs[key], index)
+                self.kwargs[key] = np.delete(self.kwargs[key], index, axis=0)
+
+    def append_kwarg(self, keys, value):
+        """
+        Add the index from the kwargs.
+
+        Parameters
+        ----------
+        keys: list
+            List of keys to append.
+        value:
+            The value to append to the kwarg.
+        """
+        if isinstance(keys, str):
+            keys = [
+                keys,
+            ]
+        # skip if value is empty
+        if len(value) == 0:
+            return
+        for key in keys:
+            if self.kwargs[key].dtype == object:
+                for i in np.ndindex(self.kwargs[key].shape):
+                    self.kwargs[key][i] = np.append(self.kwargs[key][i], value, axis=0)
+            else:
+                self.kwargs[key] = np.append(self.kwargs[key], value, axis=0)
 
     def _get_cache_dask_kwargs_chunk(self, indices):
         """
         Get the kwargs at some index.  If the index is cached return the cached value
         otherwise compute the kwargs and cache them.
         """
-        chunks = {key: value.chunks
-                  for key, value in self.dask_kwargs.items()}
-        chunk_slices = {key: _get_navigation_dimension_chunk_slice(indices, chunk)
-                        for key, chunk in chunks.items()}
+        chunks = {key: value.chunks for key, value in self.dask_kwargs.items()}
+        chunk_slices = {
+            key: _get_navigation_dimension_chunk_slice(indices, chunk)
+            for key, chunk in chunks.items()
+        }
         to_compute = {}
         for key, value in self.dask_kwargs.items():
             index_slice = chunk_slices[key]
@@ -169,8 +208,8 @@ class MarkerCollection(object):
                 self._cache_dask_chunk_kwargs_slice[key] = index_slice
 
         if len(to_compute) > 0:
-            #values = da.compute([value for value in to_compute.values()])
-            #self._cache_dask_chunk_kwargs.update({key: value for
+            # values = da.compute([value for value in to_compute.values()])
+            # self._cache_dask_chunk_kwargs.update({key: value for
             #                                      key, value in zip(to_compute.keys(), values)})
             for key in to_compute:  # this should be one da.compute() function...
                 self._cache_dask_chunk_kwargs[key] = to_compute[key].compute()
@@ -187,11 +226,12 @@ class MarkerCollection(object):
 
     def __repr__(self):
         if self.collection_class is not None:
-            return (f"<{self.name}| Class{self.collection_class} |" 
-                    f"Iterating == {self.is_iterating}")
+            return (
+                f"<{self.name}| Class{self.collection_class} |"
+                f"Iterating == {self.is_iterating}"
+            )
         else:
             return f"<{self.name}| Iterating == {self.is_iterating}"
-
 
     @classmethod
     def from_signal(
@@ -200,7 +240,7 @@ class MarkerCollection(object):
         key="offsets",
         collection_class=None,
         signal_axes="metadata",
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize a marker collection from a hyperspy Signal.
@@ -265,8 +305,7 @@ class MarkerCollection(object):
         }
         return marker_dict
 
-    def get_data_position(self,
-                          get_static_kwargs=True):
+    def get_data_position(self, get_static_kwargs=True):
         """
         Return the current keyword arguments for updating the collection.
         """
@@ -285,7 +324,7 @@ class MarkerCollection(object):
                     val = value
                     if key in ["sizes", "color"] and not hasattr(val, "__len__"):
                         val = (val,)
-                    if key in ['s'] and isinstance(val, str):
+                    if key in ["s"] and isinstance(val, str):
                         val = (val,)
                     current_keys[key] = val
                 else:  # key already set in init
@@ -307,7 +346,10 @@ class MarkerCollection(object):
 
     def _initialize_collection(self):
         if self.collection_class is None:
-            self.collection = self.ax.scatter([], [],)
+            self.collection = self.ax.scatter(
+                [],
+                [],
+            )
             self.collection.set(**self.get_data_position())
         elif self.collection_class is LineCollection:
             self.collection = self.collection_class(
@@ -355,7 +397,7 @@ class MarkerCollection(object):
             self._render_figure()
 
     def _render_figure(self):
-        self.ax.hspy_fig.render_figure()
+            self.ax.hspy_fig.render_figure()
 
     def close(self, render_figure=True):
         """Remove and disconnect the marker.
@@ -374,6 +416,7 @@ class MarkerCollection(object):
         self._closing = True
         self.collection.remove()
         self.events.closed.trigger(obj=self)
+        self.temp_signal = None
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
         if render_figure:
@@ -384,9 +427,7 @@ def is_iterating(arg):
     return isinstance(arg, (np.ndarray, da.Array)) and arg.dtype == object
 
 
-def dict2vector(data,
-                keys=None,
-                return_size=True):
+def dict2vector(data, keys=None, return_size=True):
     """Take some dictionary of values and create offsets based on the input keys.
     For instances like creating a horizontal or vertical line then some key is duplicated.
 
@@ -404,7 +445,9 @@ def dict2vector(data,
     is_key_iter = [isiterable(data[key]) for key in unique_keys]
     if not any(is_key_iter):  # no iterable keys
         vector = np.empty(keys.shape)
-        for i in np.ndindex(keys.shape): # iterate through keys and create resulting vector
+        for i in np.ndindex(
+            keys.shape
+        ):  # iterate through keys and create resulting vector
             vector[i] = data[keys[i]]
     else:
         iter_key = unique_keys[is_key_iter][0]
@@ -432,100 +475,153 @@ def dict2vector(data,
 
 
 def markers2collection(marker_dict):
-    """This function maps a maker dict to a MarkerCollection class
+    """This function maps a marker dict to a MarkerCollection class.
+
+    This provides continuity from markers saved with hyperspy 1.x.x and hyperspy 2.x.x.
+
+    Warning: This function is not complete and will transfer all of the marker properties.
     """
-    from hyperspy.utils.markers import MarkerCollection, VerticalLineCollection, HorizontalLineCollection
+    from hyperspy.utils.markers import (
+        MarkerCollection,
+        VerticalLineCollection,
+        HorizontalLineCollection,
+        TextCollection,
+    )
     from matplotlib.collections import LineCollection, PolyCollection, PatchCollection
     from matplotlib.patches import FancyArrowPatch, Ellipse
 
-    marker_type = marker_dict["marker_type"]
-    if marker_type == 'Point':
-        offsets, size = dict2vector(marker_dict["data"],
-                                    keys=[["x1", "y1"]],
-                                    return_size=True)
-        marker = MarkerCollection(offsets=offsets,
-                                                            sizes=size,
-                                                            **marker_dict['marker_properties'])
-    elif marker_type == 'HorizontalLine':
-        segments = dict2vector(marker_dict["data"],
-                               keys=["y1"], return_size=False)
+    if len(marker_dict) == 0:
+        return {}
+    marker_type = marker_dict.pop("marker_type")
+    plot_on_signal = marker_dict.pop("plot_on_signal")
 
-        marker = HorizontalLineCollection(segments=segments,
-                                          **marker_dict['marker_properties'])
+    if marker_type == "Point":
+        offsets, size = dict2vector(
+            marker_dict["data"], keys=[["x1", "y1"]], return_size=True
+        )
+        marker = MarkerCollection(
+            offsets=offsets, sizes=size, **marker_dict["marker_properties"]
+        )
+        marker
+    elif marker_type == "HorizontalLine":
+        segments = dict2vector(marker_dict["data"], keys=["y1"], return_size=False)
 
-    elif marker_type == 'HorizontalLineSegment':
-        segments = dict2vector(marker_dict["data"],
-                               keys=[[["x1", "y1"], ["x2", "y1"]]], return_size=False)
+        marker = HorizontalLineCollection(
+            segments=segments, **marker_dict["marker_properties"]
+        )
 
-        marker = MarkerCollection(segments=segments,
-                                                            collection_class=LineCollection,
-                                                            **marker_dict['marker_properties'])
-    elif marker_type == 'LineSegment':
-        segments = dict2vector(marker_dict["data"],
-                               keys=[[["x1", "y1"], ["x2", "y2"]]], return_size=False)
+    elif marker_type == "HorizontalLineSegment":
+        segments = dict2vector(
+            marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y1"]]], return_size=False
+        )
 
-        marker = MarkerCollection(segments=segments, collection_class=LineCollection,
-                                                     **marker_dict['marker_properties'])
-    elif marker_type == 'Arrow':
-        segments = dict2vector(marker_dict["data"],
-                               keys=[["x1", "y1"], ["x2", "y2"]], return_size=False)
+        marker = MarkerCollection(
+            segments=segments,
+            collection_class=LineCollection,
+            **marker_dict["marker_properties"],
+        )
+    elif marker_type == "LineSegment":
+        segments = dict2vector(
+            marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y2"]]], return_size=False
+        )
+
+        marker = MarkerCollection(
+            segments=segments,
+            collection_class=LineCollection,
+            **marker_dict["marker_properties"],
+        )
+    elif marker_type == "Arrow":
+        segments = dict2vector(
+            marker_dict["data"], keys=[["x1", "y1"], ["x2", "y2"]], return_size=False
+        )
         if segments.dtype == object:
             arrows = np.empty_like(segments, dtype=object)
             for i in np.ndindex(segments.shape):
-                arrows[i] = [FancyArrowPatch(posA=segments[i][0], posB=segments[i][1],
-                                            **marker_dict['marker_properties']),]
+                arrows[i] = [
+                    FancyArrowPatch(
+                        posA=segments[i][0],
+                        posB=segments[i][1],
+                        **marker_dict["marker_properties"],
+                    ),
+                ]
         else:
-            arrows = [FancyArrowPatch(posA=segments[0], posB=segments[1],
-                                      **marker_dict['marker_properties']),
-                      ]
-        marker = MarkerCollection(patches=arrows,
-                                                            collection_class=PatchCollection)
+            arrows = [
+                FancyArrowPatch(
+                    posA=segments[0],
+                    posB=segments[1],
+                    **marker_dict["marker_properties"],
+                ),
+            ]
+        marker = MarkerCollection(patches=arrows, collection_class=PatchCollection)
 
-    elif marker_type == 'Rectangle':
-        verts = dict2vector(marker_dict["data"],
-                               keys=[[["x1", "y1"], ["x1", "y2"],
-                                     ["x2", "y1"], ["x2", "y2"]]],
-                               return_size=False,
-                               )
+    elif marker_type == "Rectangle":
+        verts = dict2vector(
+            marker_dict["data"],
+            keys=[[["x1", "y1"], ["x1", "y2"], ["x2", "y1"], ["x2", "y2"]]],
+            return_size=False,
+        )
 
-        marker = MarkerCollection(verts=verts,
-                                  collection_class=PolyCollection,
-                                  **marker_dict['marker_properties'])
-    elif marker_type == 'Ellipse':
-        segments = dict2vector(marker_dict["data"],
-                               keys=[["x1", "y1"], ["x2", "y2"]], return_size=False)
+        marker = MarkerCollection(
+            verts=verts,
+            collection_class=PolyCollection,
+            **marker_dict["marker_properties"],
+        )
+    elif marker_type == "Ellipse":
+        segments = dict2vector(
+            marker_dict["data"], keys=[["x1", "y1"], ["x2", "y2"]], return_size=False
+        )
         if segments.dtype == object:
             ellipses = np.empty_like(segments, dtype=object)
             for i in np.ndindex(segments.shape):
-                ellipses[i] = [Ellipse(xy=segments[i][0], width=segments[i][1][0],
-                                       height=segments[i][1][1],
-                                       **marker_dict['marker_properties']), ]
+                ellipses[i] = [
+                    Ellipse(
+                        xy=segments[i][0],
+                        width=segments[i][1][0],
+                        height=segments[i][1][1],
+                        **marker_dict["marker_properties"],
+                    ),
+                ]
         else:
-            ellipses = [Ellipse(xy=segments[0], width=segments[1][0],
-                                height=segments[1][1],
-                                **marker_dict['marker_properties']), ]
-            marker = MarkerCollection(patches=ellipses,ollection_class=PatchCollection)
-    elif marker_type == 'Text':
-        raise ValueError("Converting from Text to a Marker Collection is not supported"
-                         "as there is no MarkerCollection which can render text")
-    elif marker_type == 'VerticalLine':
-        segments = dict2vector(marker_dict["data"],
-                               keys=["x1"], return_size=False)
+            ellipses = [
+                Ellipse(
+                    xy=segments[0],
+                    width=segments[1][0],
+                    height=segments[1][1],
+                    **marker_dict["marker_properties"],
+                ),
+            ]
+        marker = MarkerCollection(patches=ellipses, collection_class=PatchCollection)
+    elif marker_type == "Text":
+        offsets = dict2vector(
+            marker_dict["data"], keys=[["x1", "y1"]], return_size=False
+        )
+        text = dict2vector(marker_dict["data"], keys=[["text"]], return_size=False)
+        marker = TextCollection(
+            offsets=offsets, s=text, **marker_dict["marker_properties"]
+        )
+    elif marker_type == "VerticalLine":
+        segments = dict2vector(marker_dict["data"], keys=["x1"], return_size=False)
 
-        marker = VerticalLineCollection(segments=segments,
-                                        **marker_dict['marker_properties'])
-    elif marker_type == 'VerticalLineSegment':
-        segments = dict2vector(marker_dict["data"],
-                               keys=[[["x1", "y1"], ["x1", "y2"]]],
-                               return_size=False)
+        marker = VerticalLineCollection(
+            segments=segments, **marker_dict["marker_properties"]
+        )
+    elif marker_type == "VerticalLineSegment":
+        segments = dict2vector(
+            marker_dict["data"], keys=[[["x1", "y1"], ["x1", "y2"]]], return_size=False
+        )
 
-        marker = MarkerCollection(segments=segments,
-                                  collection_class=LineCollection,
-                                  **marker_dict['marker_properties'])
-    elif marker_type == 'MarkerCollection':
-        marker = MarkerCollection(**marker_dict)
+        marker = MarkerCollection(
+            segments=segments,
+            collection_class=LineCollection,
+            **marker_dict["marker_properties"],
+        )
+    elif marker_type == "MarkerCollection":
+        marker = MarkerCollection(collection_class=marker_dict["collection_class"],
+                                  **marker_dict["kwargs"])
     else:
-        raise ValueError(f"The marker_type: {marker_type} is not a hyperspy.marker class "
-                         f"and cannot be converted to a MarkerCollection")
-
+        raise ValueError(
+            f"The marker_type: {marker_type} is not a hyperspy.marker class "
+            f"and cannot be converted to a MarkerCollection"
+        )
+    marker.plot_on_signal = plot_on_signal
     return marker

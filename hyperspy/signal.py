@@ -5208,10 +5208,9 @@ class BaseSignal(FancySlicing,
 
         if dc.metadata.has_item('Markers'):
             temp_marker_dict = dc.metadata.Markers.as_dictionary()
-            markers_dict = markers2collection(
-                temp_marker_dict,
-                dc.axes_manager)
-
+            markers_dict = {}
+            for key in temp_marker_dict:
+                markers_dict[key] = markers2collection(temp_marker_dict[key],)
             dc.metadata.Markers = markers_dict
         return dc
 
