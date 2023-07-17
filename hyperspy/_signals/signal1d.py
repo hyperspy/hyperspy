@@ -23,7 +23,6 @@ import warnings
 
 import numpy as np
 import dask.array as da
-import pytest
 from scipy import interpolate
 from scipy.signal import savgol_filter, medfilt
 from scipy.ndimage import gaussian_filter1d
