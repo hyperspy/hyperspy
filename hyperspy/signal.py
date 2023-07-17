@@ -5502,16 +5502,12 @@ class BaseSignal(FancySlicing,
 
         # Check if marker update
         if metadata.has_item('Markers'):
+            markers_dict = metadata.Markers
             marker_name_list = metadata.Markers.keys()
-            markers_dict = metadata.Markers.__dict__
             for marker_name in marker_name_list:
-                marker = markers_dict[marker_name]['_dtb_value_']
-                if marker.auto_update:
-                    marker.axes_manager = self.axes_manager
-                    key_dict = {}
-                    for key in marker.data.dtype.names:
-                        key_dict[key] = marker.get_data_position(key)
-                    marker.set_data(**key_dict)
+                marker = markers_dict[marker_name]
+                kwargs = marker.get_data_position(get_static_kwargs=True)
+                marker.kwargs = kwargs
 
         class_ = assign_signal_subclass(
             dtype=self.data.dtype,
@@ -5526,9 +5522,10 @@ class BaseSignal(FancySlicing,
 
         if cs.metadata.has_item('Markers'):
             temp_marker_dict = cs.metadata.Markers.as_dictionary()
-            markers_dict = markers2collection(
-                temp_marker_dict,
-                cs.axes_manager)
+            markers_dict = {}
+            for key in temp_marker_dict:
+                markers_dict[key] = markers2collection(
+                    temp_marker_dict[key])
             cs.metadata.Markers = markers_dict
 
         if auto_filename is True and self.tmp_parameters.has_item('filename'):

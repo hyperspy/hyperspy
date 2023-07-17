@@ -266,6 +266,26 @@ class TestCollections:
         s.add_marker(col)
         np.testing.assert_array_equal(col.get_data_position()["offsets"], [[11, 19]])
 
+    def test_deepcopy_markers(self,collections):
+        num_col = len(collections)
+        s = Signal2D(np.zeros((2, num_col, num_col)))
+        s.axes_manager.signal_axes[0].offset = 0
+        s.axes_manager.signal_axes[1].offset = 0
+        s.plot(interpolation=None)
+        [s.add_marker(c, permanent=True) for c in collections]
+        new_s = deepcopy(s)
+        assert len(new_s.metadata["Markers"]) == num_col
+
+    def test_get_current_signal(self,collections):
+        num_col = len(collections)
+        s = Signal2D(np.zeros((2, num_col, num_col)))
+        s.axes_manager.signal_axes[0].offset = 0
+        s.axes_manager.signal_axes[1].offset = 0
+        s.plot(interpolation=None)
+        [s.add_marker(c, permanent=True) for c in collections]
+        cs = s.get_current_signal()
+        assert len(cs.metadata["Markers"]) == num_col
+
 
 class TestInitMarkerCollection:
     @pytest.fixture
