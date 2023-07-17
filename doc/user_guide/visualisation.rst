@@ -1118,10 +1118,14 @@ each plot:
 
 .. _plot.markers:
 
-Markers
+MarkerCollections
 =======
+.. NOTE::
+    Starting in version 2.0.0 Markers are replaced with MarkerCollections to better mirror the
+structure of the :py:class:`~.signal.BaseSignal` class.
 
-HyperSpy provides an easy access to the main marker of matplotlib. The markers
+
+HyperSpy provides an easy access the collections classes of matplotlib. The markers
 can be used in a static way
 
 .. code-block:: python
@@ -1146,13 +1150,10 @@ for each R, G and B channel of a colour image.
     >>> from skimage.feature import peak_local_max
     >>> import scipy
     >>> ims = hs.signals.BaseSignal(scipy.datasets.face()).as_signal2D([1,2])
-    >>> index = np.array([peak_local_max(im.data, min_distance=100,
-    ...                                  num_peaks=4)
-    ...                   for im in ims])
-    >>> for i in range(4):
-    ...     m = hs.plot.markers.Point(x=index[:, i, 1],
-                                      y=index[:, i, 0], color='red')
-    ...     ims.add_marker(m)
+    >>> index = ims.map(peak_local_max,min_distance=100,
+    >>>                 num_peaks=4, inplace=False, ragged=True)
+    >>> m = hs.plot.markers.MarkerCollection.from_signal(index, color='red')
+    >>> ims.add_marker(m)
 
 
 .. figure::  images/plot_markers_im.gif
@@ -1161,7 +1162,7 @@ for each R, G and B channel of a colour image.
 
   Point markers in image.
 
-The markers can be added to the navigator as well. In the following example,
+Marker Collections can be added to the navigator as well. In the following example,
 each slice of a 2D spectrum is tagged with a text marker on the signal plot.
 Each slice is indicated with the same text on the navigator.
 
@@ -1169,13 +1170,14 @@ Each slice is indicated with the same text on the navigator.
 
     >>> s = hs.signals.Signal1D(np.arange(100).reshape([10,10]))
     >>> s.plot(navigator='spectrum')
-    >>> for i in range(s.axes_manager.shape[0]):
-    ...     m = hs.plot.markers.Text(y=s.sum(-1).data[i]+5,
-                                     x=i, text='abcdefghij'[i])
-    ...     s.add_marker(m, plot_on_signal=False)
-    >>> x = s.axes_manager.shape[-1]/2 #middle of signal plot
-    >>> m = hs.plot.markers.Text(x=x, y=s.isig[x].data+2,
-    ...                          text=[i for i in 'abcdefghij'])
+    >>> offsets = [[i, s.sum(-1).data[i]+5] for i in range(s.axes_manager.shape[0])]
+    >>> text = 'abcdefghij'
+    >>> m = hs.plot.markers.TextCollection(offsets=offsets, s=[*text])
+    >>> s.add_marker(m, plot_on_signal=False)
+    >>> offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
+    >>> for i in np.ndindex(s.axes_manager.navigation_shape_:
+    ...     offsets[i] = [[x, s.inav[i].isig[x].data+2]]
+    >>> m_sig = hs.plot.markers.TextCollection(offsets=offsets, s=[*text] )
     >>> s.add_marker(m)
 
 
@@ -1197,7 +1199,7 @@ These markers can also be permanently added to a signal, which is saved in
 .. code-block:: python
 
     >>> s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
-    >>> marker = hs.plot.markers.Point(5, 9)
+    >>> marker = hs.plot.markers.MarkerCollection(offsets = [[5,9]])
     >>> s.add_marker(marker, permanent=True)
     >>> s.metadata.Markers
     └── point = <marker.Point, point (x=5,y=9,color=black,size=20)>
@@ -1215,7 +1217,7 @@ Markers can be removed by deleting them from the metadata
 .. code-block:: python
 
     >>> s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
-    >>> marker = hs.plot.markers.Point(5, 9)
+    >>> marker = hs.plot.markers.MarkerCollection(offsets = [[5,9]])
     >>> s.add_marker(marker, permanent=True)
     >>> s.metadata.Markers
     └── point = <marker.Point, point (x=5,y=9,color=black,size=20)>
@@ -1229,7 +1231,7 @@ calling `s.plot`:
 .. code-block:: python
 
     >>> s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
-    >>> marker = hs.plot.markers.Point(5, 9)
+    >>> marker = hs.plot.markers.MarkerCollection(offsets = [[5,9]])
     >>> s.add_marker(marker, permanent=True, plot_marker=False)
     >>> s.plot(plot_markers=False)
 
@@ -1240,7 +1242,11 @@ as a function of the navigation index. For a signal with 1 navigation axis:
 .. code-block:: python
 
     >>> s = hs.signals.Signal2D(np.arange(300).reshape(3, 10, 10))
-    >>> marker = hs.plot.markers.Point((5, 1, 2), (9, 8, 1), color='red')
+    >>> offsets = np.empty(s.axes_manager.navgiation_shape)
+    >>> marker_pos = [[5,9],[1,8],[2,1]]
+    >>> for i,m in zip(np.ndindex(3),marker_pos) :
+    ...   offsets[i] =[m,]
+    >>> marker = hs.plot.markers.MarkerCollection(offsets =offsets color="red")
     >>> s.add_marker(marker, permanent=True)
 
 .. figure::  images/plot_markers_nav_index.gif
@@ -1254,7 +1260,11 @@ Or for a signal with 2 navigation axes:
 .. code-block:: python
 
     >>> s = hs.signals.Signal2D(np.arange(400).reshape(2, 2, 10, 10))
-    >>> marker = hs.plot.markers.Point(((5, 1), (1, 2)), ((2, 6), (9, 8)))
+    >>> marker_pos = [[[5,1], [1,2]],[[2,9],[6,8]]]
+    >>> offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
+    >>> for i in np.ndindex(s.axes_manager.navigation_shape):
+    ...   offsets[i] =[m[i],]
+    >>> marker = hs.plot.markers.MarkerCollection(offsets=offsets)
     >>> s.add_marker(marker, permanent=True)
 
 .. figure::  images/plot_markers_2dnav_index.gif
@@ -1304,22 +1314,23 @@ This can also be done using different types of markers
     >>> from numpy.random import random
     >>> s = hs.signals.Signal2D(np.arange(300).reshape(3, 10, 10))
     >>> markers = []
-    >>> for i in range(200):
-    ...     markers.append(hs.plot.markers.HorizontalLine(
-    ...         tuple(random()*10 for i in range(3)),
-    ...         color=np.random.rand(3,1)))
-    ...     markers.append(hs.plot.markers.VerticalLine(
-    ...         tuple(random()*10 for i in range(3)),
-    ...         color=np.random.rand(3,1)))
-    ...     markers.append(hs.plot.markers.Point(
-    ...         tuple(random()*10 for i in range(3)),
-    ...         tuple(random()*10 for i in range(3)),
-    ...         color=np.random.rand(3,1)))
-    ...     markers.append(hs.plot.markers.Text(
-    ...         x=tuple(random()*10 for i in range(3)),
-    ...         y=tuple(random()*10 for i in range(3)),
-    ...         text=tuple("sometext" for i in range(3))))
-    >>> s.add_marker(markers, permanent=True)
+    >>> v_line_pos = np.empty(3, dtype=object)
+    >>> point_offsets = np.empty(3, dtype=object)
+    >>> text_offsets = np.empty(3, dtype=object)
+    >>> h_line_pos = np.empty(3, dtype=object)
+    >>> random_colors = np.empty(3, dtype=object)
+    >>> num=200
+    >>> for i in range(3):
+    ...     v_line_pos[i] = random(num,1)
+    ...     h_line_pos[i] = random(num,1)
+    ...     point_offsets[i] = random(num,2)
+    ...     text_offsets[i] = random(num,2)
+    ...     random_colors = np.random.rand(num,3,1)))
+    >>> v_marker = hs.plot.markers.VerticalLineCollection(segments=v_line_pos, color=random_colors)
+    >>> h_marker = hs.plot.markers.HorizontalLineCollection(segments=h_line_pos, color=random_colors)
+    >>> p_marker = hs.plot.markers.MarkerCollection(offsets=point_offsets, color=random_colors)
+    >>> t_marker = hs.plot.marker.TextCollection(offsets=text_offsets, s="sometext")
+    >>> s.add_marker([v_marker,h_marker, p_marker, t_marker], permanent=True)
 
 .. figure::  images/plot_markers_2dnav_random_iter_many_types.gif
   :align:   center
@@ -1333,7 +1344,7 @@ Permanent markers are stored in the HDF5 file if the signal is saved:
 .. code-block:: python
 
     >>> s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
-    >>> marker = hs.plot.markers.Point(2, 1, color='red')
+    >>> marker = hs.plot.markers.MarkerCollection([[2, 1]], color='red')
     >>> s.add_marker(marker, plot_marker=False, permanent=True)
     >>> s.metadata.Markers
     └── point = <marker.Point, point (x=2,y=1,color=red,size=20)>
@@ -1350,46 +1361,38 @@ The markers currently supported in HyperSpy are:
 .. table:: List of supported markers, their signature and their corresponding matplotlib objects.
     :widths: 20 40 40
 
-    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
-    | HyperSpy markers                                                             | Signature                         | Matplotlib objects                                 |
-    +==============================================================================+===================================+====================================================+
-    | :py:class:`~.drawing._markers.arrow.Arrow`                                   | ``x1, y1, x2, y2, **kwargs``      |  :py:class:`matplotlib.patches.FancyArrowPatch`    |
-    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
-    | :py:class:`~.drawing._markers.ellipse.Ellipse`                               | ``x, y, width, height, **kwargs`` |  :py:class:`matplotlib.patches.Ellipse`            |
-    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
-    | :py:class:`~.drawing._markers.horizontal_line.HorizontalLine`                | ``y, **kwargs``                   |  :py:meth:`matplotlib.axes.Axes.hlines`            |
-    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
-    | :py:class:`~.drawing._markers.horizontal_line_segment.HorizontalLineSegment` | ``x1, x2, y, **kwargs``           |  :py:meth:`matplotlib.axes.Axes.hlines`            |
-    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
-    | :py:class:`~.drawing._markers.line_segment.LineSegment`                      | ``x1, y1, x2, y2, **kwargs``      |  :py:meth:`matplotlib.axes.Axes.plot`              |
-    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
-    | :py:class:`~.drawing._markers.point.Point`                                   | ``x1, y1, **kwargs``              |  :py:meth:`matplotlib.axes.Axes.scatter`           |
-    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
-    | :py:class:`~.drawing._markers.rectangle.Rectangle`                           | ``x1, y1, x2, y2, **kwargs``      |  :py:class:`matplotlib.patches.Rectangle`          |
-    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
-    | :py:class:`~.drawing._markers.text.Text`                                     | ``x, y, text, **kwargs``          |  :py:meth:`matplotlib.axes.Axes.text`              |
-    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
-    | :py:class:`~.drawing._markers.vertical_line.VerticalLine`                    | ``x, **kwargs``                   |  :py:meth:`matplotlib.axes.Axes.axvline`           |
-    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
-    | :py:class:`~.drawing._markers.vertical_line_segment.VerticalLineSegment`     | ``x, y1, y2, **kwargs``           |  :py:meth:`matplotlib.axes.Axes.axvline`           |
-    +------------------------------------------------------------------------------+-----------------------------------+----------------------------------------------------+
+    +------------------------------------------------------------------------------+---------------------------------------+----------------------------------------------------+
+    | HyperSpy MarkerColections                                                    | Signature                             | Matplotlib objects                                 |
+    +==============================================================================+=======================================+====================================================+
+    | :py:class:`~.drawing._markers.line_collection.HorizontalLineCollection`      | ``segments, **kwargs``                |  :py:class:`matplotlib.collections.LineCollection` |
+    +------------------------------------------------------------------------------+---------------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.line_collection.VerticalLineCollection`        | ``segments, **kwargs``                |  :py:class:`matplotlib.collections.LineCollection` |
+    +------------------------------------------------------------------------------+---------------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing._markers.text_collection.TextCollection`                | ``offsets, s, **kwargs``              |  :py:class:`matplotlib.text`                        |
+    +------------------------------------------------------------------------------+---------------------------------------+----------------------------------------------------+
+    | :py:class:`~.drawing.maker_collection.MarkerCollection`                      | ``offsets,collection_class, **kwargs``|  :py:class:`matplotlib.collections`                 |
+    +------------------------------------------------------------------------------+---------------------------------------+----------------------------------------------------+
 
 
 Marker properties
 ------------------
 
-The optional parameters (``**kwargs``, keyword arguments) can be used for extra parameters used in matplotlib.
-(The ``color`` property in rectangle marker is an alias of ``edgecolor`` for backward compatibility)
+The optional parameters (``**kwargs``, keyword arguments) can be used for extra parameters used for
+each matplotlib collection.  Any parameter which can be set using the :py:meth:`matplotlib.collections.set`
+method can be used as an iterating parameter with respect to the navigation index by passing in a numpy array
+with `dtype=object`. Otherwise to set the parameter globally the kwarg can directly be passed.
+
+Additionally, if some `**kwarg` is shorter in length to some other parameter it will be cycled such that
+
+>>> prop[i % len(prop)]
+
+where i is the ith element of the collection.
 
 
-Marker Collections
+Extra information about  MarkerCollections
 ------------------
 .. versionadded:: 2.0
    Marker Collections for faster plotting of many markers
-
-In situations where you have a lot of markers that you want to plot it is often faster to plot a collection of
-markers.  While these marker collections plot much faster you give up some of the flexibility that comes with
-plotting each marker individually.
 
 Hyperspy's `MarkerCollection` class extends the capabilities of the matplotlib `Collections` class and subclasses.
 Primarily it allows dynamic markers to be initialized by passing key word arguments with `dtype=object`. Those
@@ -1406,7 +1409,7 @@ define a plot of Ellipses using:
     >>> hs.drawing.markers.MarkerCollection(EllipseCollection, heights=(.4,), widths=(1,),
     >>>                                     angles=(10,), offsets = np.array([[0,0],[1,1]]))
 Alternatively if we want to make ellipses with different heights and widths we can pass multiple values to
-heights, widths and angles.  In general these properties will be applied such that prop[i % len(prop)] so
+heights, widths and angles.  In general these properties will be applied such that `prop[i % len(prop)]` so
 passing `heights=(.1,.2,.3)` will result in the ellipse at offsets[0] with a height of 0.1 the ellipse at
 offsets[1] with a height of 0.1, ellipse at offsets[2] has a height of 0.3 and the ellipse at offsets[3] has
 a height of 0.1 and so on.
