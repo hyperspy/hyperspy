@@ -33,6 +33,7 @@ from hyperspy.docstrings.signal import HISTOGRAM_MAX_BIN_ARGS
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.axes import AxesManager, UniformDataAxis
 from hyperspy.drawing.widgets import Line2DWidget, VerticalLineWidget
+from hyperspy.drawing.marker_collection import convert_positions, MarkerCollection
 from hyperspy.drawing._widgets.range import SpanSelector
 from hyperspy import components1d
 from hyperspy.component import Component
@@ -473,7 +474,6 @@ class EdgesRange(SpanSelectorInSignal1D):
 
         self.active_complementary_edges = []
         self.units = self.axis.units
-        self.slp = SpectrumLabelPosition(self.signal)
         self.btns = []
 
         self._get_edges_info_within_energy_axis()
@@ -510,15 +510,10 @@ class EdgesRange(SpanSelectorInSignal1D):
         self.description_all = np.asarray(description_all)
 
     def _on_figure_changed(self):
-        self.slp._set_active_figure_properties()
         self._plot_labels()
         self.signal._plot.signal_plot.update()
 
     def update_table(self):
-        figure_changed = self.slp._check_signal_figure_changed()
-        if figure_changed:
-            self._on_figure_changed()
-
         if self.span_selector is not None:
             energy_mask = (self.ss_left_value <= self.energy_all) & \
                 (self.energy_all <= self.ss_right_value)
@@ -541,7 +536,7 @@ class EdgesRange(SpanSelectorInSignal1D):
         return self.edges_list, energy, relevance, description
 
     def _keep_valid_edges(self):
-        edge_all = list(self.signal._edge_markers.keys())
+        edge_all = list(self.signal._edge_markers["names"])
         for edge in edge_all:
             if (edge not in self.edges_list):
                 if edge in self.active_edges:
@@ -567,10 +562,7 @@ class EdgesRange(SpanSelectorInSignal1D):
             if edge in self.active_complementary_edges:
                 self.active_complementary_edges.remove(edge)
             self.signal.remove_EELS_edges_markers([edge])
-
-        figure_changed = self.slp._check_signal_figure_changed()
-        if figure_changed:
-            self._on_figure_changed()
+        self._on_figure_changed()
         self.on_complementary()
         self._plot_labels()
 
@@ -607,39 +599,24 @@ class EdgesRange(SpanSelectorInSignal1D):
             active = self.active_edges
         if complementary is None:
             complementary = self.active_complementary_edges
-
-        edges_on_signal = set(self.signal._edge_markers.keys())
+        try:
+            edges_on_signal = set(self.signal._edge_markers["names"])
+        except KeyError:
+            edges_on_signal = set()
         edges_to_show = set(set(active).union(complementary))
         edge_keep = edges_on_signal.intersection(edges_to_show)
-        edge_remove =  edges_on_signal.difference(edge_keep)
+        edge_remove = edges_on_signal.difference(edge_keep)
         edge_add = edges_to_show.difference(edge_keep)
 
-        self._clear_markers(edge_remove)
+        # Remove edges out
+        self.signal.remove_EELS_edges_markers(edge_remove)
 
-        # all edges to be shown on the signal
-        edge_dict = self.signal._get_edges(edges_to_show, ('Major', 'Minor'))
-        vm_new, tm_new = self.slp.get_markers(edge_dict)
-        for k, edge in enumerate(edge_dict.keys()):
-            v = vm_new[k]
-            t = tm_new[k]
+        self.signal.add_EELS_edges_markers(edge_add)
 
-            if edge in edge_keep:
-                # update position of vertical line segment
-                self.signal._edge_markers[edge][0].data = v.data
-                self.signal._edge_markers[edge][0].update()
-
-                # update position of text box
-                self.signal._edge_markers[edge][1].data = t.data
-                self.signal._edge_markers[edge][1].update()
-            elif edge in edge_add:
-                # first argument as dictionary for consistency
-                self.signal.plot_edges_label({edge: edge_dict[edge]},
-                                             vertical_line_marker=[v],
-                                             text_marker=[t])
 
     def _clear_markers(self, edges=None):
         if edges is None:
-            edges = list(self.signal._edge_markers.keys())
+            edges = list(self.signal._edge_markers["names"])
 
         self.signal.remove_EELS_edges_markers(list(edges))
 
@@ -2172,6 +2149,7 @@ class PeaksFinder2D(t.HasTraits):
 
         self.signal = signal
         self.peaks = peaks
+        self.markers = None
         if self.signal._plot is None or not self.signal._plot.is_active:
             self.signal.plot()
         if self.signal.axes_manager.navigation_size > 0:
@@ -2238,29 +2216,14 @@ class PeaksFinder2D(t.HasTraits):
         self.peaks.data = self.signal.find_peaks(method, current_index=True,
                                                  interactive=False,
                                                  **self._get_parameters(method))
-
     def _plot_markers(self):
-        if self.signal._plot is not None and self.signal._plot.is_active:
-            self.signal._plot.signal_plot.remove_markers(render_figure=True)
-        peaks_markers = self._peaks_to_marker()
-        self.signal.add_marker(peaks_markers, render_figure=True)
-
-    def _peaks_to_marker(self, markersize=20, add_numbers=True,
-                         color='red'):
-        # make marker_list for current index
-        from hyperspy.drawing.marker_collection import MarkerCollection
-
-        sig_axes = self.signal.axes_manager.signal_axes
-
-        if np.isnan(self.peaks.data).all():
-            marker_list = []
+        offsets = self.peaks.data
+        offsets = convert_positions(offsets, self.signal.axes_manager.signal_axes)
+        if self.markers is None:
+            self.markers = MarkerCollection(offsets=offsets, marker='o',
+                                            color='red', size=20)
         else:
-            marker_list = [MarkerCollection.from_signal(self.peaks,
-                                                        signal_axes=sig_axes,
-                                                        color=color,
-                                                        size=markersize),
-                           ]
-        return marker_list
+            self.markers.offsets = offsets
 
     def compute_navigation(self):
         method = self._normalise_method_name(self.method)

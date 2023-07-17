@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
-
+from copy import deepcopy
 
 import numpy as np
 
@@ -235,8 +235,10 @@ class Test_EdgesRange:
         er.ss_left_value = 500
         _ = er.update_table()
 
-        vl1 = self.signal._edge_markers["V_L1"][0]
+        segments = deepcopy(self.signal._edge_markers["lines"].get_data_position())
+        scaled = self.signal._edge_markers["lines"]._scale_kwarg(segments, "segments")
         self.signal._plot.pointer.indices = (10,)
-        vl2 = self.signal._edge_markers["V_L1"][0]
-
-        assert not np.array_equal(vl1.data, vl2.data)
+        assert self.signal.axes_manager.navigation_axes[0].index == 10
+        segments2 = deepcopy(self.signal._edge_markers["lines"].get_data_position())
+        scaled2 = self.signal._edge_markers["lines"]._scale_kwarg(segments2, "segments")
+        assert not np.array_equal(scaled["segments"], scaled2["segments"])
