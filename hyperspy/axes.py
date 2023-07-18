@@ -887,7 +887,6 @@ class DataAxis(BaseDataAxis):
 
         slice_ = self._get_array_slices(slice(start, end))
         self.axis = self.axis[slice_]
-        self.size = len(self.axis)
 
     def convert_to_uniform_axis(self):
         """Convert to an uniform axis."""
@@ -1188,7 +1187,7 @@ class UniformDataAxis(DataAxis, UnitConversion):
             )
         self.scale = scale
         self.offset = offset
-        self._size = size
+        self.size = size
         self._is_uniform = True
 
     @t.cached_property
