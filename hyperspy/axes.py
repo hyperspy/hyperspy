@@ -1179,36 +1179,45 @@ class UniformDataAxis(DataAxis, UnitConversion):
      'scale': 1.0,
      'offset': 300.0}
     """
+    scale = t.Float(1)
+    offset = t.Float(0)
+    _size = t.Int(1)
+    axis = t.Property(observe=["scale", "offset", "_size"])  # overwrites axis in DataAxis
 
-    def __init__(
-        self,
-        index_in_array=None,
-        name=None,
-        units=None,
-        navigate=False,
-        size=1,
-        scale=1.0,
-        offset=0.0,
-        is_binned=False,
-        **kwargs,
-    ):
-        super().__init__(
+    def __init__(self,
+                 index_in_array=None,
+                 name=None,
+                 units=None,
+                 navigate=False,
+                 size=1,
+                 scale=1.,
+                 offset=0.,
+                 is_binned=False,
+                 **kwargs):
+        super(DataAxis, self).__init__(
             index_in_array=index_in_array,
             name=name,
             units=units,
             navigate=navigate,
             is_binned=is_binned,
-            **kwargs,
-        )
-        # These traits need to added dynamically to be removed when necessary
-        self.add_trait("scale", t.CFloat)
-        self.add_trait("offset", t.CFloat)
+            **kwargs
+            )
         self.scale = scale
         self.offset = offset
-        self.size = size
-        self.update_axis()
+        self._size = size
         self._is_uniform = True
-        self.on_trait_change(self.update_axis, ["scale", "offset", "size"])
+
+    @t.cached_property
+    def _get_axis(self):
+        return np.arange(self.size) * self.scale + self.offset
+
+    @property
+    def size(self):
+        return self._size
+
+    @size.setter
+    def size(self, value):
+        self._size = value
 
     def _slice_me(self, _slice):
         """Returns a slice to slice the corresponding data axis and
@@ -1237,8 +1246,10 @@ class UniformDataAxis(DataAxis, UnitConversion):
         return my_slice
 
     def get_axis_dictionary(self):
-        d = super().get_axis_dictionary()
-        d.update({"size": self.size, "scale": self.scale, "offset": self.offset})
+        d = super(DataAxis).get_axis_dictionary()
+        d.update({'size': self.size,
+                  'scale': self.scale,
+                  'offset': self.offset})
         return d
 
     def value2index(self, value, rounding=round):
@@ -1309,9 +1320,6 @@ class UniformDataAxis(DataAxis, UnitConversion):
             else:
                 raise ValueError("The value is out of the axis limits")
 
-    def update_axis(self):
-        self.axis = self.offset + self.scale * np.arange(self.size)
-
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) / (index_tuple[1] - index_tuple[0])
         offset = value_tuple[0] - scale * index_tuple[0]
@@ -1366,7 +1374,6 @@ class UniformDataAxis(DataAxis, UnitConversion):
 
         self.offset = self.index2value(i1)
         self.size = i2 - i1
-        self.update_axis()
 
     crop.__doc__ = DataAxis.crop.__doc__
 
@@ -1386,33 +1393,32 @@ class UniformDataAxis(DataAxis, UnitConversion):
     def offset_as_quantity(self, value):
         self._set_quantity(value, "offset")
 
-    def convert_to_functional_data_axis(
-        self, expression, units=None, name=None, **kwargs
-    ):
-        d = super().get_axis_dictionary()
-        axes_manager = self.axes_manager
+    def convert_to_functional_data_axis(self, expression, units=None, name=None, **kwargs):
+        d = super(DataAxis, self).get_axis_dictionary()
         if units:
             d["units"] = units
         if name:
             d["name"] = name
         d.update(kwargs)
         this_kwargs = self.get_axis_dictionary()
-        self.remove_trait("scale")
-        self.remove_trait("offset")
-        self.__class__ = FunctionalDataAxis
         d["_type"] = "FunctionalDataAxis"
-        self.__init__(expression=expression, x=UniformDataAxis(**this_kwargs), **d)
-        self.axes_manager = axes_manager
+        if self.axes_manager is not None:
+            self.axes_manager[self] = FunctionalDataAxis(expression=expression,
+                                                         x=UniformDataAxis(**this_kwargs),
+                                                         **d)
+        else:
+            return FunctionalDataAxis(expression=expression,
+                                      x=UniformDataAxis(**this_kwargs),
+                                      **d)
 
     def convert_to_non_uniform_axis(self):
         d = super().get_axis_dictionary()
-        axes_manager = self.axes_manager
-        self.__class__ = DataAxis
-        d["_type"] = "DataAxis"
-        self.remove_trait("scale")
-        self.remove_trait("offset")
-        self.__init__(**d, axis=self.axis)
-        self.axes_manager = axes_manager
+        d["_type"] = 'DataAxis'
+        if self.axes_manager is not None:
+            self.axes_manager[self] = DataAxis(**d)
+        else:
+            return DataAxis(**d)
+
 
 
 def _serpentine_iter(shape):
