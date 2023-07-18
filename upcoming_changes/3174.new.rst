@@ -1,0 +1,3 @@
+Added :class:`~.dectorators.deprecated` and :class:`~.dectorators.deprecated_argument`:
+- Provide consistent and clean deprecation
+- Added a guide for deprecating code
