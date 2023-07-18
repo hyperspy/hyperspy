@@ -76,6 +76,16 @@ class TestTextCollection:
         else:
             assert "Text(2.0, 1.0, 'test')" in children
 
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
+    )
+    def test_text_marker_plot(self):
+        s = Signal2D(np.ones((3, 5, 6)))
+        s.data[:, :, ::2] = np.nan
+        markers = TextCollection(offsets=[[2., 3.]], s="test", size=(20,),zorder=(1000,))
+        s.add_marker(markers, render_figure=True)
+        return s._plot.signal_plot.figure
+
 
 class TestRelativeTextCollection:
     def test_relative_text_collection(self):
@@ -92,6 +102,9 @@ class TestRelativeTextCollection:
         assert "Text(0, 4, 'test')" in str(children)
         assert "Text(1, 10, 'test')" in str(children)
 
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
+    )
     def test_relative_text_collection_with_reference(self):
         s = Signal1D(np.arange(10).reshape(5, 2))
         markers = RelativeTextCollection(offsets=[[0, 1], [1, 2]],
@@ -106,6 +119,7 @@ class TestRelativeTextCollection:
         children = s._plot.signal_plot.ax.get_children()
         assert "Text(0, 4, 'test')" in str(children)
         assert "Text(1, 8, 'test')" in str(children)
+        return s._plot.signal_plot.figure
 
     def test_plot_fail(self):
         markers = TextCollection(offsets=[[1, 1],
@@ -135,6 +149,21 @@ def _test_text_collection_close():
                                       [4, 4]], s=("test",))
     signal.add_marker(markers)
     return signal
+
 @update_close_figure()
 def test_text_collection_close():
     return _test_text_collection_close()
+
+
+@pytest.mark.mpl_image_compare(
+        baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
+    )
+def test_text_collection_close_render():
+    signal = Signal2D(np.ones((2, 10, 10)))
+    markers = TextCollection(offsets=[[1, 1],
+                                      [4, 4]], s=("test",),
+                             size=(10,), color = ("black",))
+    signal.plot()
+    signal.add_marker(markers, render_figure=True)
+    markers.close(render_figure=True)
+    return signal._plot.signal_plot.figure

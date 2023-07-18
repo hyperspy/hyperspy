@@ -58,6 +58,7 @@ class TextCollection(MarkerCollection):
             temp_kwargs = {k: other_kwargs[k][i % len(other_kwargs[k])]
                            for k in other_kwargs}
             t = self.ax.text(o[0], o[1], **temp_kwargs)
+            t.set_animated(self.ax.figure.canvas.supports_blit)
             self.collection.append(t)  # Add the text to the collection
 
     def plot(self, render_figure=True):
