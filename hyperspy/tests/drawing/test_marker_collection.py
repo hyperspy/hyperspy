@@ -536,8 +536,6 @@ class TestMarkers2Collection:
         assert markers2collection({}) =={}
 
 
-
-
 def _test_marker_collection_close():
     signal = Signal2D(np.ones((10, 10)))
     segments = np.ones((10, 2, 2))
@@ -618,3 +616,12 @@ class TestLineCollections:
         kwargs = hor.get_data_position()
         np.testing.assert_array_equal(kwargs["segments"], [[[-1, 0], [5, 0]]])
 
+def test_marker_collection_close_render():
+    signal = Signal2D(np.ones((2, 10, 10)))
+    markers = MarkerCollection(offsets=[[1, 1],
+                                        [4, 4]],
+                               sizes=(10,),
+                               color=("black",))
+    signal.plot()
+    signal.add_marker(markers, render_figure=True)
+    markers.close(render_figure=True)
