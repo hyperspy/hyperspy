@@ -31,8 +31,6 @@ _logger = logging.getLogger(__name__)
 
 
 def convert_positions(peaks, signal_axes):
-    if peaks.dtype == object and peaks.shape == (1,):
-        peaks = peaks[0]
     new_data = np.empty(peaks.shape[:-1] + (len(signal_axes),))
     for i, ax in enumerate(signal_axes[::-1]):
         # indexes need to be reversed

@@ -287,6 +287,13 @@ class TestCollections:
         cs = s.get_current_signal()
         assert len(cs.metadata["Markers"]) == num_col
 
+    def test_plot_and_render(self):
+        markers = MarkerCollection(offsets=[[1, 1],
+                                          [4, 4]])
+        s = Signal1D(np.arange(100).reshape((10,10)))
+        s.add_marker(markers)
+        markers.plot(render_figure=True)
+
 
 class TestInitMarkerCollection:
     @pytest.fixture
@@ -437,6 +444,7 @@ class TestInitMarkerCollection:
         s.axes_manager.navigation_axes[0].index = 2
 
 
+
 class TestMarkers2Collection:
     @pytest.fixture
     def iter_data(self):
@@ -526,6 +534,8 @@ class TestMarkers2Collection:
 
     def test_marker2collection_empty(self,):
         assert markers2collection({}) =={}
+
+
 
 
 def _test_marker_collection_close():
