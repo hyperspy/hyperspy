@@ -99,20 +99,17 @@ class TestDataAxis:
     def test_update_axes(self):
         values = np.arange(20)**2
         self.axis.axis = values.tolist()
-        self.axis.update_axis()
         assert self.axis.size == 20
         assert_allclose(self.axis.axis, values)
 
     def test_update_axes2(self):
         values = np.array([3, 4, 10, 40])
         self.axis.axis = values
-        self.axis.update_axis()
         assert_allclose(self.axis.axis, values)
 
     def test_update_axis_from_list(self):
         values = np.arange(16)**2
         self.axis.axis = values.tolist()
-        self.axis.update_axis()
         assert_allclose(self.axis.axis, values)
 
     def test_unsorted_axis(self):
