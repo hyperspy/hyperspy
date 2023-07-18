@@ -167,10 +167,10 @@ class EDSSpectrum(Signal1D):
                 xray_lines_not_in_range.append(xray_line)
         return xray_lines_in_range, xray_lines_not_in_range
 
-    def sum(self, axis=None, out=None):
+    def sum(self, axis=None, out=None, rechunk=False):
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        s = super().sum(axis=axis, out=out)
+        s = super().sum(axis=axis, out=out, rechunk=rechunk)
         s = out or s
 
         # Update live time by the change in navigation axes dimensions

@@ -469,7 +469,7 @@ class LazySignal(BaseSignal):
     def _make_lazy(self, axis=None, rechunk=False, dtype=None):
         self.data = self._lazy_data(axis=axis, rechunk=rechunk, dtype=dtype)
 
-    def change_dtype(self, dtype, rechunk=True):
+    def change_dtype(self, dtype, rechunk=False):
         # To be consistent with the rechunk argument of other method, we use
         # 'dask_auto' in favour of a chunking which doesn't split signal space.
         if rechunk:
@@ -483,7 +483,7 @@ class LazySignal(BaseSignal):
 
     change_dtype.__doc__ = BaseSignal.change_dtype.__doc__
 
-    def _lazy_data(self, axis=None, rechunk=True, dtype=None):
+    def _lazy_data(self, axis=None, rechunk=False, dtype=None):
         """Return the data as a dask array, rechunked if necessary.
 
         Parameters
@@ -521,7 +521,7 @@ class LazySignal(BaseSignal):
         return res
 
     def _apply_function_on_data_and_remove_axis(self, function, axes,
-                                                out=None, rechunk=True):
+                                                out=None, rechunk=False):
         def get_dask_function(numpy_name):
             # Translate from the default numpy to dask functions
             translations = {'amax': 'max', 'amin': 'min'}
@@ -625,7 +625,7 @@ class LazySignal(BaseSignal):
         return value
 
     def rebin(self, new_shape=None, scale=None,
-              crop=False, dtype=None, out=None, rechunk=True):
+              crop=False, dtype=None, out=None, rechunk=False):
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale)
@@ -652,7 +652,7 @@ class LazySignal(BaseSignal):
     def _make_sure_data_is_contiguous(self):
         self._make_lazy(rechunk=True)
 
-    def diff(self, axis, order=1, out=None, rechunk=True):
+    def diff(self, axis, order=1, out=None, rechunk=False):
         if not self.axes_manager[axis].is_uniform:
             raise NotImplementedError(
             "Performing a numerical difference on a non-uniform axis "
@@ -703,11 +703,11 @@ class LazySignal(BaseSignal):
 
     diff.__doc__ = BaseSignal.diff.__doc__
 
-    def integrate_simpson(self, axis, out=None):
+    def integrate_simpson(self, axis, out=None, rechunk=False):
         axis = self.axes_manager[axis]
         from scipy import integrate
         axis = self.axes_manager[axis]
-        data = self._lazy_data(axis=axis, rechunk=True)
+        data = self._lazy_data(axis=axis, rechunk=rechunk)
         new_data = data.map_blocks(
             integrate.simps,
             x=axis.axis,
@@ -729,7 +729,7 @@ class LazySignal(BaseSignal):
 
     integrate_simpson.__doc__ = BaseSignal.integrate_simpson.__doc__
 
-    def valuemax(self, axis, out=None, rechunk=True):
+    def valuemax(self, axis, out=None, rechunk=False):
         idx = self.indexmax(axis, rechunk=rechunk)
         old_data = idx.data
         data = old_data.map_blocks(
@@ -743,7 +743,7 @@ class LazySignal(BaseSignal):
 
     valuemax.__doc__ = BaseSignal.valuemax.__doc__
 
-    def valuemin(self, axis, out=None, rechunk=True):
+    def valuemin(self, axis, out=None, rechunk=False):
         idx = self.indexmin(axis, rechunk=rechunk)
         old_data = idx.data
         data = old_data.map_blocks(
@@ -757,7 +757,7 @@ class LazySignal(BaseSignal):
 
     valuemin.__doc__ = BaseSignal.valuemin.__doc__
 
-    def get_histogram(self, bins='fd', out=None, rechunk=True, **kwargs):
+    def get_histogram(self, bins='fd', out=None, rechunk=False, **kwargs):
         if 'range_bins' in kwargs:
             _logger.warning("'range_bins' argument not supported for lazy "
                             "signals")
@@ -806,7 +806,7 @@ class LazySignal(BaseSignal):
 
     # _get_signal_signal.__doc__ = BaseSignal._get_signal_signal.__doc__
 
-    def _calculate_summary_statistics(self, rechunk=True):
+    def _calculate_summary_statistics(self, rechunk=False):
         if rechunk is True:
             # Use dask auto rechunk instead of HyperSpy's one, what should be
             # better for these operations
