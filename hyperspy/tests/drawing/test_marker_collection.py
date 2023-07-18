@@ -32,7 +32,10 @@ import dask.array as da
 
 from hyperspy.drawing.marker_collection import MarkerCollection
 from hyperspy.drawing._markers.relative_collection import RelativeCollection
-from hyperspy.drawing._markers.line_collection import HorizontalLineCollection, VerticalLineCollection
+from hyperspy.drawing._markers.line_collection import (
+    HorizontalLineCollection,
+    VerticalLineCollection,
+)
 from hyperspy.drawing.marker_collection import markers2collection
 from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
 from hyperspy.axes import UniformDataAxis
@@ -53,6 +56,7 @@ class TestCollections:
         for i in np.ndindex(d.shape):
             d[i] = np.stack([np.arange(3), np.ones(3) * i], axis=1)
         return d
+
     @pytest.fixture
     def lazy_data(self):
         d = np.empty((3,), dtype=object)
@@ -151,20 +155,19 @@ class TestCollections:
         return s._plot.signal_plot.figure
 
     def test_parameters_2_scatter(self, data):
-        m = MarkerCollection(None,
-                             offsets=np.array([[100, 70],
-                                               [70, 100]]),
-                             color=("b", "g"),
-                             sizes=(3,),)
+        m = MarkerCollection(
+            None,
+            offsets=np.array([[100, 70], [70, 100]]),
+            color=("b", "g"),
+            sizes=(3,),
+        )
         s = Signal2D(np.zeros((100, 100)))
         s.add_marker(m)
 
     def test_parameters_singletons(self, signal, data):
-        m = MarkerCollection(None,
-                             offsets=np.array([[100, 70],
-                                               [70, 100]]),
-                             color="b",
-                             sizes=3)
+        m = MarkerCollection(
+            None, offsets=np.array([[100, 70], [70, 100]]), color="b", sizes=3
+        )
         s = Signal2D(np.zeros((2, 100, 100)))
         s.add_marker(m)
 
@@ -175,11 +178,9 @@ class TestCollections:
         sizes = np.empty(2, dtype=object)
         sizes[0] = 3
         sizes[1] = 4
-        m = MarkerCollection(None,
-                             offsets=np.array([[100, 70],
-                                               [70, 100]]),
-                             color="b",
-                             sizes=sizes)
+        m = MarkerCollection(
+            None, offsets=np.array([[100, 70], [70, 100]]), color="b", sizes=sizes
+        )
         s = Signal2D(np.zeros((2, 100, 100)))
         s.add_marker(m)
 
@@ -266,7 +267,7 @@ class TestCollections:
         s.add_marker(col)
         np.testing.assert_array_equal(col.get_data_position()["offsets"], [[11, 19]])
 
-    def test_deepcopy_markers(self,collections):
+    def test_deepcopy_markers(self, collections):
         num_col = len(collections)
         s = Signal2D(np.zeros((2, num_col, num_col)))
         s.axes_manager.signal_axes[0].offset = 0
@@ -276,7 +277,7 @@ class TestCollections:
         new_s = deepcopy(s)
         assert len(new_s.metadata["Markers"]) == num_col
 
-    def test_get_current_signal(self,collections):
+    def test_get_current_signal(self, collections):
         num_col = len(collections)
         s = Signal2D(np.zeros((2, num_col, num_col)))
         s.axes_manager.signal_axes[0].offset = 0
@@ -309,12 +310,12 @@ class TestInitMarkerCollection:
         markers.axes_manager = signal.axes_manager
         return markers
 
-    def test_multiple_collections(self, static_line_collection,
-                                  iterating_line_collection,
-                                  signal):
+    def test_multiple_collections(
+        self, static_line_collection, iterating_line_collection, signal
+    ):
         signal.add_marker(static_line_collection, permanent=True)
         signal.add_marker(iterating_line_collection, permanent=True)
-        assert(len(signal.metadata.Markers) == 2)
+        assert len(signal.metadata.Markers) == 2
 
     @pytest.mark.parametrize(
         "collection", ("iterating_line_collection", "static_line_collection")
@@ -366,13 +367,14 @@ class TestInitMarkerCollection:
         col = request.getfixturevalue(collection)
         with pytest.raises(AttributeError):
             col.plot()
-    def test_deepcopy(self,iterating_line_collection):
+
+    def test_deepcopy(self, iterating_line_collection):
         it_2 = deepcopy(iterating_line_collection)
         assert it_2 is not iterating_line_collection
 
     def test_wrong_navigation_size(self):
         s = Signal2D(np.zeros((2, 3, 3)))
-        offsets = np.empty((3,2), dtype=object)
+        offsets = np.empty((3, 2), dtype=object)
         for i in np.ndindex(offsets.shape):
             offsets[i] = np.ones((3, 2))
         m = MarkerCollection(offsets=offsets)
@@ -382,10 +384,17 @@ class TestInitMarkerCollection:
     def test_add_markers_to_multiple_signals(self):
         s = Signal2D(np.zeros((2, 3, 3)))
         s2 = Signal2D(np.zeros((2, 3, 3)))
-        m = MarkerCollection(offsets=[[1, 1],[2, 2]])
+        m = MarkerCollection(offsets=[[1, 1], [2, 2]])
         s.add_marker(m, permanent=True)
         with pytest.raises(ValueError):
             s2.add_marker(m, permanent=True)
+
+    def test_add_markers_to_same_signal(self):
+        s = Signal2D(np.zeros((2, 3, 3)))
+        m = MarkerCollection(offsets=[[1, 1], [2, 2]])
+        s.add_marker(m, permanent=True)
+        with pytest.raises(ValueError):
+            s.add_marker(m, permanent=True)
 
     def test_add_markers_to_navigator_without_nav(self):
         s = Signal2D(np.zeros((3, 3)))
@@ -393,39 +402,76 @@ class TestInitMarkerCollection:
         with pytest.raises(ValueError):
             s.add_marker(m, plot_on_signal=False)
 
+    def test_marker_collection_lazy_nonragged(self):
+        m = MarkerCollection(offsets=da.array([[1, 1], [2, 2]]))
+        assert not isinstance(m.kwargs["offsets"], da.Array)
+
+    def test_append_kwarg(self):
+        offsets = np.empty(2, dtype=object)
+        for i in range(2):
+            offsets[i] = np.array([[1, 1], [2, 2]])
+        m = MarkerCollection(offsets=offsets)
+        m.append_kwarg(keys="offsets", value=[[0, 1]])
+        assert len(m.kwargs["offsets"][0]) == 3
+
+    def test_delete_index(self):
+        offsets = np.empty(2,dtype=object)
+        for i in range(2):
+            offsets[i] = np.array([[1, 1], [2, 2]])
+        m = MarkerCollection(offsets=offsets)
+        m.delete_index(keys="offsets", index=1)
+        assert len(m.kwargs["offsets"][0]) == 1
+
+    def test_rep(self):
+        m = MarkerCollection(offsets=[[1, 1], [2, 2]],
+                             verts=3,
+                             sizes=3,
+                             collection_class=PolyCollection)
+        assert "PolyCollection" in m.__repr__()
+
+    def test_update_static(self):
+        m = MarkerCollection(offsets=([[1, 1], [2, 2]]))
+        s = Signal1D(np.ones((10,10)))
+        s.plot()
+        s.add_marker(m)
+        s.axes_manager.navigation_axes[0].index = 2
 
 
 class TestMarkers2Collection:
     @pytest.fixture
     def iter_data(self):
-        data = {"x1":np.arange(10),
-                "y1": np.arange(10),
-                "x2": np.arange(10),
-                "y2": np.arange(10),
-                "size": np.arange(10),
-                "text": np.array(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]),
-                }
+        data = {
+            "x1": np.arange(10),
+            "y1": np.arange(10),
+            "x2": np.arange(10),
+            "y2": np.arange(10),
+            "size": np.arange(10),
+            "text": np.array(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]),
+        }
         return data
+
     @pytest.fixture
     def static_data(self):
-        data = {"x1": 1,
-                "y1": 2,
-                "x2": 3,
-                "y2": 4,
-                "text": "a",
-                "size": 5,
-                }
+        data = {
+            "x1": 1,
+            "y1": 2,
+            "x2": 3,
+            "y2": 4,
+            "text": "a",
+            "size": 5,
+        }
         return data
 
     @pytest.fixture
     def static_and_iter_data(self):
-        data = {"x1": 1,
-                "y1": np.arange(10),
-                "x2": np.arange(10),
-                "y2": 4,
-                "text": np.array(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]),
-                "size": np.arange(10),
-                }
+        data = {
+            "x1": 1,
+            "y1": np.arange(10),
+            "x2": np.arange(10),
+            "y2": 4,
+            "text": np.array(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]),
+            "size": np.arange(10),
+        }
         return data
 
     @pytest.fixture
@@ -436,52 +482,59 @@ class TestMarkers2Collection:
         "data", ("iter_data", "static_data", "static_and_iter_data")
     )
     @pytest.mark.parametrize(
-        "marker_type", ("Point",
-                        "HorizontalLineSegment",
-                        "LineSegment",
-                        "Ellipse",
-                        "HorizontalLine",
-                        "VerticalLine",
-                        "Arrow",
-                        "Rectangle",
-                        "VerticalLineSegment",
-                        "Text",
-
-    ))
+        "marker_type",
+        (
+            "Point",
+            "HorizontalLineSegment",
+            "LineSegment",
+            "Ellipse",
+            "HorizontalLine",
+            "VerticalLine",
+            "Arrow",
+            "Rectangle",
+            "VerticalLineSegment",
+            "Text",
+        ),
+    )
     def test_marker2collection(self, request, marker_type, data, signal):
         d = request.getfixturevalue(data)
         test_dict = {}
         test_dict["data"] = d
         test_dict["marker_type"] = marker_type
-        test_dict['marker_properties'] = {"color": "black"}
-        test_dict['plot_on_signal'] = True
+        test_dict["marker_properties"] = {"color": "black"}
+        test_dict["plot_on_signal"] = True
         markers = markers2collection(test_dict)
 
-        signal.add_marker(markers,)
+        signal.add_marker(
+            markers,
+        )
         signal.plot()
 
     @pytest.mark.parametrize(
         "data", ("iter_data", "static_data", "static_and_iter_data")
     )
-    @pytest.mark.parametrize(
-        "marker_type", "Text")
+    @pytest.mark.parametrize("marker_type", "Text")
     def test_marker2collectionfail(self, request, marker_type, data):
         d = request.getfixturevalue(data)
         test_dict = {}
         test_dict["data"] = d
         test_dict["marker_type"] = marker_type
-        test_dict['marker_properties'] = {"color": "black"}
-        test_dict['plot_on_signal'] = True
+        test_dict["marker_properties"] = {"color": "black"}
+        test_dict["plot_on_signal"] = True
         with pytest.raises(ValueError):
             markers2collection(test_dict)
 
+    def test_marker2collection_empty(self,):
+        assert markers2collection({}) =={}
+
 
 def _test_marker_collection_close():
-    signal = Signal2D(np.ones((10,10)))
+    signal = Signal2D(np.ones((10, 10)))
     segments = np.ones((10, 2, 2))
     markers = MarkerCollection(LineCollection, segments=segments)
     signal.add_marker(markers)
     return signal
+
 
 @update_close_figure()
 def test_marker_collection_close():
@@ -490,14 +543,13 @@ def test_marker_collection_close():
 
 class TestRelativeMarkerCollection:
     def test_relative_marker_collection(self):
-        signal = Signal1D((np.arange(100)+1).reshape(10, 10))
+        signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
         segments = np.zeros((10, 2, 2))
         segments[:, 1, 1] = 1  # set y values end
         segments[:, 0, 0] = np.arange(10).reshape(10)  # set x values
         segments[:, 1, 0] = np.arange(10).reshape(10)  # set x values
 
-        markers = RelativeCollection(collection_class=LineCollection,
-                                     segments=segments)
+        markers = RelativeCollection(collection_class=LineCollection, segments=segments)
         signal.plot()
         signal.add_marker(markers)
         signal.axes_manager.navigation_axes[0].index = 1
@@ -511,9 +563,11 @@ class TestRelativeMarkerCollection:
             segments[:, 1, 1] = 1  # set y values end
             segments[:, 0, 0] = np.arange(10).reshape(10)  # set x values
             segments[:, 1, 0] = np.arange(10).reshape(10)  # set x values
-            markers = RelativeCollection(collection_class=LineCollection,
-                                         segments=segments,
-                                         reference="data_index")
+            markers = RelativeCollection(
+                collection_class=LineCollection,
+                segments=segments,
+                reference="data_index",
+            )
 
     def test_relative_marker_collection_fail_ref(self):
         with pytest.raises(ValueError):
@@ -521,9 +575,9 @@ class TestRelativeMarkerCollection:
             segments[:, 1, 1] = 1  # set y values end
             segments[:, 0, 0] = np.arange(10).reshape(10)  # set x values
             segments[:, 1, 0] = np.arange(10).reshape(10)  # set x values
-            markers = RelativeCollection(collection_class=LineCollection,
-                                         segments=segments,
-                                         reference="data_in")
+            markers = RelativeCollection(
+                collection_class=LineCollection, segments=segments, reference="data_in"
+            )
 
 
 class TestLineCollections:
@@ -531,7 +585,7 @@ class TestLineCollections:
     def segments(self):
         d = np.empty((3,), dtype=object)
         for i in np.ndindex(d.shape):
-            d[i] = np.arange(i[0]+1)
+            d[i] = np.arange(i[0] + 1)
         return d
 
     def test_vertical_line_collection(self, segments):
@@ -542,7 +596,7 @@ class TestLineCollections:
         s.plot(interpolation=None)
         s.add_marker(vert)
         kwargs = vert.get_data_position()
-        np.testing.assert_array_equal(kwargs["segments"], [[[0., -5], [0., 1]]])
+        np.testing.assert_array_equal(kwargs["segments"], [[[0.0, -5], [0.0, 1]]])
 
     def test_horizontal_line_collection(self, segments):
         hor = HorizontalLineCollection(segments=segments)

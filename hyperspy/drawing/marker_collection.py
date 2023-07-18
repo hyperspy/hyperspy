@@ -326,12 +326,7 @@ class MarkerCollection(object):
                             val = (val,)
                         current_keys[key] = val
                 elif get_static_kwargs:
-                    val = value
-                    if key in ["sizes", "color"] and not hasattr(val, "__len__"):
-                        val = (val,)
-                    if key in ["s"] and isinstance(val, str):
-                        val = (val,)
-                    current_keys[key] = val
+                    current_keys[key] = value
                 else:  # key already set in init
                     pass
             if len(self.dask_kwargs) > 0:
@@ -341,10 +336,11 @@ class MarkerCollection(object):
         return current_keys
 
     def update(self):
-        if self.is_iterating is False:
+        if not self.is_iterating:
             return
-        kwds = self.get_data_position(get_static_kwargs=False)
-        self.collection.set(**kwds)
+        else:
+            kwds = self.get_data_position(get_static_kwargs=False)
+            self.collection.set(**kwds)
 
     def _initialize_collection(self):
         if self.collection_class is None:
@@ -440,7 +436,7 @@ def dict2vector(data, keys=None, return_size=True, dtype=float):
     In this example the keys will be unpacked to create a rectangle.
     """
     if keys is None:
-        keys = [["x1, x2"]]
+        keys = [["x1", "x2"]]
     keys = np.array(keys)
     # check to see if the array should be ragged
     unique_keys = np.unique(keys)
@@ -509,7 +505,7 @@ def markers2collection(marker_dict):
 
     if marker_type == "Point":
         offsets, size = dict2vector(
-            marker_dict["data"], keys=[["x1", "y1"]], return_size=True
+            marker_dict["data"], keys=None, return_size=True
         )
         marker = MarkerCollection(
             offsets=offsets, sizes=size, **marker_dict["marker_properties"]
