@@ -30,6 +30,8 @@ import pint
 import traits.api as t
 from sympy.utilities.lambdify import lambdify
 from traits.trait_errors import TraitError
+from traits.api import observe
+from traits.observation.api import trait
 
 from hyperspy._components.expression import _parse_substitutions
 from hyperspy.api_nogui import _ureg
@@ -239,13 +241,20 @@ class UnitConversion:
     @units.setter
     def units(self, s):
         if s == "":
-            self._units = t.Undefined
+            s = t.Undefined
         self._units = s
 
 
 @add_gui_method(toolkey="hyperspy.DataAxis")
 class BaseDataAxis(t.HasTraits):
     """Parent class defining common attributes for all DataAxis classes.
+
+    The Base Data class has name and units attributes. Both of these can be freely set/ mutated
+     as long as the values are strings.
+     This axis cannot be plotted as it has no `.axis` attribute or size.
+     The axes_manager property should only be set by an `AxesManager` class to avoid
+     confusion. This value is automatically set when any Axis is appended or added to
+     an `AxesManager.axes` list attribute.
 
     Parameters
     ----------
@@ -261,27 +270,15 @@ class BaseDataAxis(t.HasTraits):
 
     name = t.Str()
     units = t.Str()
-    size = t.CInt()
-    low_value = t.Float()
-    high_value = t.Float()
-    value = t.Range("low_value", "high_value")
-    low_index = t.Int(0)
-    high_index = t.Int()
-    slice = t.Instance(slice)
     navigate = t.Bool(False)
     is_binned = t.Bool(False)
-    index = t.Range("low_index", "high_index")
-    axis = t.Array()
 
-    def __init__(
-        self,
-        index_in_array=None,
-        name=None,
-        units=None,
-        navigate=False,
-        is_binned=False,
-        **kwargs,
-    ):
+    def __init__(self,
+                 name=None,
+                 units=None,
+                 navigate=False,
+                 is_binned=False,
+                 **kwargs):
         super().__init__()
         if name is None:
             name = t.Undefined
@@ -326,54 +323,23 @@ class BaseDataAxis(t.HasTraits):
             arguments=["obj", "value"],
         )
 
-        self._suppress_value_changed_trigger = False
-        self._suppress_update_value = False
         self.name = name
         self.units = units
-        self.low_index = 0
-        self.on_trait_change(self._update_slice, "navigate")
-        self.on_trait_change(self.update_index_bounds, "size")
-        self.on_trait_change(self._update_bounds, "axis")
-
-        self.index = 0
         self.navigate = navigate
         self.is_binned = is_binned
         self.axes_manager = None
         self._is_uniform = False
 
-        # The slice must be updated even if the default value did not
-        # change to correctly set its value.
-        self._update_slice(self.navigate)
-
     @property
     def is_uniform(self):
         return self._is_uniform
 
-    def _index_changed(self, name, old, new):
-        self.events.index_changed.trigger(obj=self, index=self.index)
-        if not self._suppress_update_value:
-            new_value = self.axis[self.index]
-            if new_value != self.value:
-                self.value = new_value
-
-    def _value_changed(self, name, old, new):
-        old_index = self.index
-        new_index = self.value2index(new)
-        if old_index != new_index:
-            self.index = new_index
-            if new == self.axis[self.index]:
-                self.events.value_changed.trigger(obj=self, value=new)
+    @property
+    def slice(self):
+        if self.navigate:
+            return None
         else:
-            new_value = self.index2value(new_index)
-            if new_value == old:
-                self._suppress_value_changed_trigger = True
-                try:
-                    self.value = new_value
-                finally:
-                    self._suppress_value_changed_trigger = False
-
-            elif new_value == new and not self._suppress_value_changed_trigger:
-                self.events.value_changed.trigger(obj=self, value=new)
+            return slice(None)
 
     @property
     def index_in_array(self):
@@ -411,78 +377,6 @@ class BaseDataAxis(t.HasTraits):
         else:
             return value
 
-    def _get_array_slices(self, slice_):
-        """Returns a slice to slice the corresponding data axis.
-
-        Parameters
-        ----------
-        slice_ : {float, int, slice}
-
-        Returns
-        -------
-        my_slice : slice
-
-        """
-        if isinstance(slice_, slice):
-            if not self.is_uniform and isfloat(slice_.step):
-                raise ValueError("Float steps are only supported for uniform axes.")
-
-        v2i = self.value2index
-
-        if isinstance(slice_, slice):
-            start = slice_.start
-            stop = slice_.stop
-            step = slice_.step
-        else:
-            if isfloat(slice_):
-                start = v2i(slice_)
-            else:
-                start = self._get_positive_index(slice_)
-            stop = start + 1
-            step = None
-
-        start = self._parse_value(start)
-        stop = self._parse_value(stop)
-        step = self._parse_value(step)
-
-        if isfloat(step):
-            step = int(round(step / self.scale))
-
-        if isfloat(start):
-            try:
-                start = v2i(start)
-            except ValueError:
-                if start > self.high_value:
-                    # The start value is above the axis limit
-                    raise IndexError(
-                        "Start value above axis high bound for  axis %s."
-                        "value: %f high_bound: %f"
-                        % (repr(self), start, self.high_value)
-                    )
-                else:
-                    # The start value is below the axis limit,
-                    # we slice from the start.
-                    start = None
-        if isfloat(stop):
-            try:
-                stop = v2i(stop)
-            except ValueError:
-                if stop < self.low_value:
-                    # The stop value is below the axis limits
-                    raise IndexError(
-                        "Stop value below axis low bound for  axis %s."
-                        "value: %f low_bound: %f" % (repr(self), stop, self.low_value)
-                    )
-                else:
-                    # The stop value is below the axis limit,
-                    # we slice until the end.
-                    stop = None
-
-        if step == 0:
-            raise ValueError("slice step cannot be zero")
-
-        return slice(start, stop, step)
-
     def _slice_me(self, slice_):
         raise NotImplementedError("This method must be implemented by subclasses")
 
@@ -497,30 +391,18 @@ class BaseDataAxis(t.HasTraits):
         return name
 
     def __repr__(self):
-        text = "<%s axis, size: %i" % (
-            self._get_name(),
-            self.size,
-        )
-        if self.navigate is True:
+        if hasattr(self, "size"):
+            text = '<%s axis, size: %i' % (self._get_name(),
+                                           self.size,)
+        else:
+            text = '<%s axis, size: None' % (self._get_name(),)
+        if self.navigate is True and hasattr(self, "index"):
             text += ", index: %i" % self.index
         text += ">"
         return text
 
     def __str__(self):
         return self._get_name() + " axis"
-
-    def update_index_bounds(self):
-        self.high_index = self.size - 1
-
-    def _update_bounds(self):
-        if len(self.axis) != 0:
-            self.low_value, self.high_value = (self.axis.min(), self.axis.max())
-
-    def _update_slice(self, value):
-        if value is False:
-            self.slice = slice(None)
-        else:
-            self.slice = None
 
     def get_axis_dictionary(self):
         return {
@@ -540,164 +422,6 @@ class BaseDataAxis(t.HasTraits):
     def __deepcopy__(self, memo):
         cp = self.copy()
         return cp
-
-    def _parse_value_from_string(self, value):
-        """Return calibrated value from a suitable string"""
-        if len(value) == 0:
-            raise ValueError("Cannot index with an empty string")
-        # Starting with 'rel', it must be relative slicing
-        elif value.startswith("rel"):
-            try:
-                relative_value = float(value[3:])
-            except ValueError:
-                raise ValueError("`rel` must be followed by a number in range [0, 1].")
-            if relative_value < 0 or relative_value > 1:
-                raise ValueError("Relative value must be in range [0, 1]")
-            value = self.low_value + relative_value * (self.high_value - self.low_value)
-        # if first character is a digit, try unit conversion
-        # otherwise we don't support it
-        elif value[0].isdigit():
-            if self.is_uniform:
-                value = self._get_value_from_value_with_units(value)
-            else:
-                raise ValueError(
-                    "Unit conversion is only supported for " "uniform axis."
-                )
-        else:
-            raise ValueError(f"`{value}` is not a suitable string for slicing.")
-
-        return value
-
-    def _parse_value(self, value):
-        """Convert the input to calibrated value if string, otherwise,
-        return the same value."""
-        if isinstance(value, str):
-            value = self._parse_value_from_string(value)
-        elif isinstance(value, (list, tuple, np.ndarray, da.Array)):
-            value = np.asarray(value)
-            if value.dtype.type is np.str_:
-                value = np.array([self._parse_value_from_string(v) for v in value])
-        return value
-
-    def value2index(self, value, rounding=round):
-        """Return the closest index/indices to the given value(s) if between the axis limits.
-
-        Parameters
-        ----------
-        value : float or numpy.ndarray
-        rounding : callable
-            Handling of values between two axis points:
-
-            - If ``rounding=round``, use round-half-away-from-zero strategy to find closest value.
-            - If ``rounding=math.floor``, round to the next lower value.
-            - If ``rounding=math.ceil``, round to the next higher value.
-
-        Returns
-        -------
-        int or numpy array
-
-        Raises
-        ------
-        ValueError
-            If value is out of bounds or contains out of bounds values (array).
-            If value is NaN or contains NaN values (array).
-        """
-        if value is None:
-            return None
-        else:
-            value = np.asarray(value)
-
-        # Should evaluate on both arrays and scalars. Raises error if there are
-        # nan values in array
-        if np.all((value >= self.low_value) * (value <= self.high_value)):
-            # Only if all values will evaluate correctly do we implement rounding
-            # function. Rounding functions will strictly operate on numpy arrays
-            # and only evaluate self.axis - v input, v a scalar within value.
-            if rounding is round:
-                # Use argmin(abs) which will return the closest value
-                # rounding_index = lambda x: np.abs(x).argmin()
-                index = numba_closest_index_round(self.axis, value).astype(int)
-            elif rounding is math.ceil:
-                # Ceiling means finding index of the closest xi with xi - v >= 0
-                # we look for argmin of strictly non-negative part of self.axis-v.
-                # The trick is to replace strictly negative values with +np.inf
-                index = numba_closest_index_ceil(self.axis, value).astype(int)
-            elif rounding is math.floor:
-                # flooring means finding index of the closest xi with xi - v <= 0
-                # we look for armgax of strictly non-positive part of self.axis-v.
-                # The trick is to replace strictly positive values with -np.inf
-                index = numba_closest_index_floor(self.axis, value).astype(int)
-            else:
-                raise ValueError(
-                    "Non-supported rounding function. Use "
-                    "`round`, `math.ceil` or `math.floor`."
-                )
-            # initialise the index same dimension as input, force type to int
-            # index = np.empty_like(value,dtype=int)
-            # assign on flat, iterate on flat.
-            # for i,v in enumerate(value):
-            # index.flat[i] = rounding_index(self.axis - v)
-            # Squeezing to get a scalar out if scalar in. See squeeze doc
-            return np.squeeze(index)[()]
-        else:
-            raise ValueError(
-                f"The value {value} is out of the limits "
-                f"[{self.low_value:.3g}-{self.high_value:.3g}] of the "
-                f'"{self._get_name()}" axis.'
-            )
-
-    def index2value(self, index):
-        if isinstance(index, da.Array):
-            index = index.compute()
-        if isinstance(index, np.ndarray):
-            return self.axis[index.ravel()].reshape(index.shape)
-        else:
-            return self.axis[index]
-
-    def value_range_to_indices(self, v1, v2):
-        """Convert the given range to index range.
-
-        When a value is out of the axis limits, the endpoint is used instead.
-        `v1` must be preceding `v2` in the axis values
-
-          - if the axis scale is positive, it means v1 < v2
-          - if the axis scale is negative, it means v1 > v2
-
-        Parameters
-        ----------
-        v1, v2 : float
-            The end points of the interval in the axis units.
-
-        Returns
-        -------
-        i2, i2 : float
-            The indices corresponding to the interval [v1, v2]
-        """
-        i1, i2 = 0, self.size - 1
-        error_message = "Wrong order of the values: for axis with"
-        if self._is_increasing_order:
-            if v1 is not None and v2 is not None and v1 > v2:
-                raise ValueError(
-                    f"{error_message} increasing order, v2 ({v2}) "
-                    f"must be greater than v1 ({v1})."
-                )
-
-            if v1 is not None and self.low_value < v1 <= self.high_value:
-                i1 = self.value2index(v1)
-            if v2 is not None and self.high_value > v2 >= self.low_value:
-                i2 = self.value2index(v2)
-        else:
-            if v1 is not None and v2 is not None and v1 < v2:
-                raise ValueError(
-                    f"{error_message} decreasing order: v1 ({v1}) "
-                    f"must be greater than v2 ({v2})."
-                )
-
-            if v1 is not None and self.high_value > v1 >= self.low_value:
-                i1 = self.value2index(v1)
-            if v2 is not None and self.low_value < v2 <= self.high_value:
-                i2 = self.value2index(v2)
-        return i1, i2
 
     def update_from(self, axis, attributes):
         """Copy values of specified axes fields from the passed AxesManager.
@@ -728,41 +452,6 @@ class BaseDataAxis(t.HasTraits):
             self.trait_set(**changed)
             any_changes = True
         return any_changes
-
-    def convert_to_uniform_axis(self):
-        """Convert to an uniform axis."""
-        scale = (self.high_value - self.low_value) / self.size
-        d = self.get_axis_dictionary()
-        axes_manager = self.axes_manager
-        del d["axis"]
-        if len(self.axis) > 1:
-            scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
-            _logger.warning("The maximum scale error is {}.".format(scale_err))
-        d["_type"] = "UniformDataAxis"
-        self.__class__ = UniformDataAxis
-        self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
-        self.axes_manager = axes_manager
-
-    @property
-    def _is_increasing_order(self):
-        """
-        Determine if the axis has an increasing, decreasing order or no order
-        at all.
-
-        Returns
-        -------
-        True if order is increasing, False if order is decreasing, None
-        otherwise.
-
-        """
-        steps = self.axis[1:] - self.axis[:-1]
-        if np.all(steps > 0):
-            return True
-        elif np.all(steps < 0):
-            return False
-        else:
-            # the axis is not ordered
-            return None
 
 
 class DataAxis(BaseDataAxis):
@@ -811,7 +500,6 @@ class DataAxis(BaseDataAxis):
             **kwargs,
         )
         self.axis = axis
-        self.update_axis()
 
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and set the
