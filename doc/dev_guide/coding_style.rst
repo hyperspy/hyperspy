@@ -38,7 +38,7 @@ adding a ``post-commit`` file to ``.git/hook/`` with the following content:
 
 Deprecations
 ============
-Hyperspy follows `semetic versioning <https://semver.org>`_ where changes follow such that:
+HyperSpy follows `semantic versioning <https://semver.org>`_ where changes follow such that:
 
 1. MAJOR version when you make incompatible API changes
 2. MINOR version when you add functionality in a backward compatible manner
