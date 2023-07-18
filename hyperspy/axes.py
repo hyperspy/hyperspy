@@ -455,16 +455,37 @@ class BaseDataAxis(t.HasTraits):
 
 
 class DataAxis(BaseDataAxis):
-    """DataAxis class for a non-uniform axis defined through an ``axis`` array.
+    """DataAxis class for any non-uniform axis defined through an ``axis`` array.
 
-    The most flexible type of axis, where the axis points are directly given by
-    an array named ``axis``. As this can be any array, the property
-    ``is_uniform`` is automatically set to ``False``.
+       The most flexible type of axis, where the axis points are directly given by
+       an array named ``axis``. These points can be an abitrary array of integers/floats,
+       an array of strings or even an array of objects.
+
+       All other properties are defined from the ``axis`` array. Notable setting the ``size``
+       of a DataAxis object will result in an error.
+
+       The array can be indexed using direct references to objects in the axis array,
+       integer indexes or if `_is_increasing_order` is not None, float values.
+
+       As this can be any array, the property
+       ``is_uniform`` is automatically set to ``False``.
 
     Parameters
     ----------
     axis : numpy array or list
         The array defining the axis points.
+
+    Attributes
+    ----------
+    size
+    high_index
+    low_index
+    high_value
+    low_value
+    _is_increasing_order
+    index : int
+        The current index for the axis. This is used for interactive plotting and
+        model fitting
 
     Examples
     --------
@@ -480,6 +501,8 @@ class DataAxis(BaseDataAxis):
     'is_binned': False,
     'axis': array([  0,   1,   4,   9,  16,  25,  36,  49,  64,  81, 100])}
     """
+    axis = t.Array()  # Axis added as trait to track changes to axis
+    _index = t.Int(0)
 
     def __init__(
         self,
@@ -540,6 +563,53 @@ class DataAxis(BaseDataAxis):
         d.update({"axis": self.axis})
         return d
 
+    @property
+    def low_value(self):
+        if self._is_increasing_order is True:
+            return self.axis[0]
+        elif self._is_increasing_order is False:
+            return self.axis[-1]
+        else:
+            raise NotImplementedError("The axis is not ordered so there is no high/low value")
+    @property
+    def value(self):
+        return self.axis[self.index]
+
+    @value.setter
+    def value(self, val):
+        self.index = self.value2index(val)
+
+    @property
+    def high_value(self):
+        if self._is_increasing_order is True:
+            return self.axis[-1]
+        elif self._is_increasing_order is False:
+            return self.axis[0]
+        else:
+            raise NotImplementedError("The axis is not ordered so there is no high/low value")
+
+    @property
+    def index(self):
+        return self._index
+
+    @index.setter
+    def index(self, value):
+        if self._index != value:
+            if self.low_index <= value <= self.high_index:
+                self._index = value
+                self.events.index_changed.trigger(obj=self, index=self.index)
+
+    @property
+    def low_index(self):
+        return 0
+
+    @property
+    def high_index(self):
+        return self.size - 1
+
+    @property
+    def size(self):
+        return len(self.axis)
     def calibrate(self, *args, **kwargs):
         raise TypeError("This function works only for uniform axes.")
 
