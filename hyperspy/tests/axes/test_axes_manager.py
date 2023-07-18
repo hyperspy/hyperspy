@@ -77,6 +77,26 @@ class TestAxesManager:
         repr(self.am)
         self.am._repr_html_
 
+    def test_inclusion(self):
+        am = self.am
+        assert all([a.axes_manager == am for a in am._axes])
+
+    def test_changing_axes(self):
+        am = self.am
+
+        new_axis = BaseDataAxis("test1")
+        am._axes.append(new_axis)
+        assert len(am._axes) == 5
+        assert all([a.axes_manager == am for a in am._axes])
+
+    def test_changing_axes_insertion(self):
+        am = self.am
+
+        new_axis = BaseDataAxis("test1")
+        am._axes[2] = new_axis
+        assert len(am._axes) == 4
+        assert all([a.axes_manager == am for a in am._axes])
+
     def test_update_from(self):
         am = self.am
         am2 = self.am.deepcopy()
