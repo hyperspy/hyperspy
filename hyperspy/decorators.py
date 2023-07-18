@@ -115,7 +115,8 @@ def interactive_range_selector(cm):
 class deprecated:
     """Decorator to mark deprecated functions with an informative
     warning.
-    Adapted from
+
+    Inspired by
     `scikit-image
     <https://github.com/scikit-image/scikit-image/blob/main/skimage/_shared/utils.py>`_
     and `matplotlib
@@ -130,6 +131,7 @@ class deprecated:
         removal: Union[str, int, float, None] = None,
     ):
         """Visible deprecation warning.
+
         Parameters
         ----------
         since
@@ -194,6 +196,7 @@ class deprecated:
 class deprecated_argument:
     """Decorator to remove an argument from a function or method's
     signature.
+
     Adapted from `scikit-image
     <https://github.com/scikit-image/scikit-image/blob/main/skimage/_shared/utils.py>`_.
     """

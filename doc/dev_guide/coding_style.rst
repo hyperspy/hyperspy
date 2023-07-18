@@ -62,4 +62,4 @@ def this_property(y):
 This will update the docstring, and print a visible deprecation warning telling the user to user the
 alternative function or argument.
 
-These deprecation wrappers are copied from work by Håkon Wiik Ånes and kikchipy.
+These deprecation wrappers inspired by those in `kikuchipy`
