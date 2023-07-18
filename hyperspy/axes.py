@@ -926,7 +926,8 @@ class DataAxis(BaseDataAxis):
                                    scale=scale,
                                    offset=offset)
 
-class FunctionalDataAxis(BaseDataAxis):
+
+class FunctionalDataAxis(DataAxis):
     """DataAxis class for a non-uniform axis defined through an ``expression``.
 
     A `FunctionalDataAxis` is defined based on an ``expression`` that is
@@ -942,12 +943,25 @@ class FunctionalDataAxis(BaseDataAxis):
     ``size``. However, it can also be initialized with custom ``offset`` and
     ``scale`` values. Alternatively, it can be a non-uniform `DataAxis`.
 
+    A `FunctionalDataAxis` has its size set by the underlying  `BaseDataAxis` ``x``.
+    Other values are calculated from the ``axis`` attribute.
+
     Parameters
     ----------
     expression: str
         SymPy mathematical expression defining the axis.
     x : BaseDataAxis
         Defines x-values at which `expression` is evaluated.
+
+     Attributes
+    ----------
+    parameters: dict
+        A dictionary representing the additional varibles and their values. This
+        is changed using a.parameters["b"]=10.  This will automatically update the
+        axis value
+    axis: ndarray
+        The caculated axis as determined by the expression evaulated at every point in `x`
+
 
     Examples
     --------
@@ -974,61 +988,62 @@ class FunctionalDataAxis(BaseDataAxis):
     'a': 100,
     'b': 10}
     """
-
-    def __init__(
-        self,
-        expression,
-        x=None,
-        index_in_array=None,
-        name=None,
-        units=None,
-        navigate=False,
-        size=1,
-        is_binned=False,
-        **parameters,
-    ):
-        super().__init__(
+    x = t.Instance(DataAxis)
+    parameters = t.Dict()
+    axis = t.Property(t.Array,
+                      depends_on="x.axis, parameters",)
+    def __init__(self,
+                 expression,
+                 x=None,
+                 index_in_array=None,
+                 name=None,
+                 units=None,
+                 navigate=False,
+                 size=1,
+                 is_binned=False,
+                 **parameters):
+        super(DataAxis, self).__init__(
             index_in_array=index_in_array,
             name=name,
             units=units,
             navigate=navigate,
             is_binned=is_binned,
-            **parameters,
-        )
-        # These trait needs to added dynamically to be removed when necessary
-        self.add_trait("x", t.Instance(BaseDataAxis))
+            **parameters)
         if x is None:
-            if size is t.Undefined:
-                raise ValueError("Please provide either `x` or `size`.")
             self.x = UniformDataAxis(scale=1, offset=0, size=size)
         else:
             if isinstance(x, dict):
                 self.x = create_axis(**x)
             else:
                 self.x = x
-                self.size = self.x.size
         self._expression = expression
         if "_type" in parameters:
             del parameters["_type"]
         # Compile function
         expr = _parse_substitutions(self._expression)
         variables = ["x"]
-        expr_parameters = [
-            symbol for symbol in expr.free_symbols if symbol.name not in variables
-        ]
+        expr_parameters = [symbol for symbol in expr.free_symbols
+                           if symbol.name not in variables]
+
         if set(parameters) != set([parameter.name for parameter in expr_parameters]):
             raise ValueError(
                 "The values of the following expression parameters "
                 f"must be given as keywords: {set(expr_parameters) - set(parameters)}"
             )
         self._function = lambdify(
-            variables + expr_parameters, expr.evalf(), dummify=False
-        )
-        for parameter in parameters.keys():
-            self.add_trait(parameter, t.CFloat(parameters[parameter]))
-        self.parameters_list = list(parameters.keys())
-        self.update_axis()
-        self.on_trait_change(self.update_axis, self.parameters_list)
+            variables + expr_parameters, expr.evalf(), dummify=False)
+        self.parameters = parameters
+
+    @t.cached_property
+    def _get_axis(self):
+        new_axis = self._function(x=self.x.axis, **self.parameters)
+        # Set not valid values to np.nan
+        new_axis[np.logical_not(np.isfinite(new_axis))] = np.nan
+        return new_axis
+
+    @property
+    def size(self):
+        return self.x.size
 
     def update_axis(self):
         kwargs = {}
