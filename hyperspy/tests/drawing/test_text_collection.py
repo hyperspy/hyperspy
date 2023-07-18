@@ -107,6 +107,27 @@ class TestRelativeTextCollection:
         assert "Text(0, 4, 'test')" in str(children)
         assert "Text(1, 8, 'test')" in str(children)
 
+    def test_plot_fail(self):
+        markers = TextCollection(offsets=[[1, 1],
+                                          [4, 4]], s=("test",))
+        with pytest.raises(AttributeError):
+            markers.plot()
+    def test_plot_and_render(self):
+        markers = TextCollection(offsets=[[1, 1],
+                                          [4, 4]], s=("test",))
+        s = Signal1D(np.arange(100).reshape((10,10)))
+        s.add_marker(markers)
+        markers.plot(render_figure=True)
+
+    def test_static_update(self):
+        markers = TextCollection(offsets=[[1, 1],
+                                          [4, 4]], s=("test",))
+        s = Signal1D(np.arange(100).reshape((10, 10)))
+        s.plot()
+        s.add_marker(markers)
+        s.axes_manager.navigation_axes[0].index=2
+
+
 
 def _test_text_collection_close():
     signal = Signal2D(np.ones((10, 10)))
