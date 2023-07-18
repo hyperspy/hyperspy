@@ -1543,6 +1543,7 @@ class AxesManager(t.HasTraits):
     _step = t.Int(1)
 
     def __init__(self, axes_list):
+        self._ragged =False
         super().__init__()
         self.events = Events()
         self.events.indices_changed = Event(
@@ -1578,7 +1579,6 @@ class AxesManager(t.HasTraits):
             self.remove(self._axes)
         self.create_axes(axes_list)
 
-        self._update_attributes()
         self._update_trait_handlers()
         self.iterpath = "serpentine"
         self._ragged = False
@@ -1588,16 +1588,35 @@ class AxesManager(t.HasTraits):
         return self._ragged
 
     def _update_trait_handlers(self, remove=False):
-        things = {
-            self._on_index_changed: "_axes.index",
-            self._on_slice_changed: "_axes.slice",
-            self._on_size_changed: "_axes.size",
-            self._on_scale_changed: "_axes.scale",
-            self._on_offset_changed: "_axes.offset",
-        }
+        self.on_trait_change(self._on_index_changed,
+                             name='_axes._index', remove=remove)
+        self.on_trait_change(self._on_axes_changed,
+                             name='_axes._size', remove=remove)
+        self.on_trait_change(self._on_axes_changed,
+                             name='_axes._scale', remove=remove)
+        self.on_trait_change(self._on_axes_changed,
+                             name='_axes._offset', remove=remove)
 
-        for k, v in things.items():
-            self.on_trait_change(k, name=v, remove=remove)
+    def __setitem__(self, y, value):
+        """x.__getitem__(y) <==> x[y]
+        """
+        if isinstance(y, str) or not np.iterable(y):
+            ax = self._axes_getter(y)
+            self.axes[self.axes.index(ax)] = value
+            return
+        else:
+            axes = [self._axes_getter(ax) for ax in y]
+            indices = [self.axes.index(ax) for ax in axes]
+            for ind, v in zip(axes, indices):
+                self.axes[ind] = v
+
+    @property
+    def axes(self):
+        return self._axes
+
+    @axes.setter
+    def axes(self, value):
+        self._axes = value
 
     def _get_positive_index(self, axis):
         if axis < 0:
@@ -1811,12 +1830,14 @@ class AxesManager(t.HasTraits):
         """
         self._axes[index_in_axes_manager] = axis
 
-    def _update_max_index(self):
-        self._max_index = 1
+    @property
+    def _max_index(self):
+        _max_index = 1
         for i in self.navigation_shape:
-            self._max_index *= i
-        if self._max_index != 0:
-            self._max_index -= 1
+            _max_index *= i
+        if _max_index != 0:
+            _max_index -= 1
+        return _max_index
 
     @property
     def iterpath(self):
@@ -1963,28 +1984,11 @@ class AxesManager(t.HasTraits):
 
     def _append_axis(self, **kwargs):
         axis = create_axis(**kwargs)
-        axis.axes_manager = self
         self._axes.append(axis)
 
-    def _on_index_changed(self):
-        self._update_attributes()
-        self.events.indices_changed.trigger(obj=self)
-
-    def _on_slice_changed(self):
-        self._update_attributes()
-
-    def _on_size_changed(self):
-        self._update_attributes()
-        self.events.any_axis_changed.trigger(obj=self)
-
-    def _on_scale_changed(self):
-        self.events.any_axis_changed.trigger(obj=self)
-
-    def _on_offset_changed(self):
-        self.events.any_axis_changed.trigger(obj=self)
-
-    def convert_units(self, axes=None, units=None, same_units=True, factor=0.25):
-        """Convert the scale and the units of the selected axes. If the unit
+    def convert_units(self, axes=None, units=None, same_units=True,
+                      factor=0.25):
+        """ Convert the scale and the units of the selected axes. If the unit
         of measure is not supported by the pint library, the scale and units
         are not changed.
 
@@ -2119,87 +2123,83 @@ class AxesManager(t.HasTraits):
         if changes:
             self.events.any_axis_changed.trigger(obj=self)
 
-    def _update_attributes(self):
-        getitem_tuple = []
-        values = []
-        signal_axes = ()
-        navigation_axes = ()
+    @observe("_axes")
+    @observe(trait("_axes", notify=False).list_items())
+    def add_axis_manger(self, event):
+        """
+        The first case is triggered by someone setting the axes value.
+        Something like `am.axes=[axis1, axis2]`
+
+        The second observation is triggers when something inplace occurs.
+        I.e. `am.axes[1]= axis1`
+        """
         for axis in self._axes:
-            # Until we find a better place, take property of the axes
-            # here to avoid difficult to debug bugs.
             axis.axes_manager = self
-            if axis.slice is None:
-                getitem_tuple += (axis.index,)
-                values.append(axis.value)
-                navigation_axes += (axis,)
-            else:
-                getitem_tuple += (axis.slice,)
-                signal_axes += (axis,)
-        if not signal_axes and navigation_axes:
-            getitem_tuple[-1] = slice(axis.index, axis.index + 1)
 
-        self._signal_axes = signal_axes[::-1]
-        self._navigation_axes = navigation_axes[::-1]
-        self._getitem_tuple = tuple(getitem_tuple)
+    def _on_index_changed(self):
+        self.events.indices_changed.trigger(obj=self)
 
-        if len(self.signal_axes) == 1 and self.signal_axes[0].size == 1:
-            self._signal_dimension = 0
-        else:
-            self._signal_dimension = len(self.signal_axes)
-        self._navigation_dimension = len(self.navigation_axes)
+    def _on_index_changed(self):
+        self.events.indices_changed.trigger(obj=self)
 
-        self._signal_size = np.prod(self.signal_shape) if self.signal_shape else 0
-        self._navigation_size = (
-            np.prod(self.navigation_shape) if self.navigation_shape else 0
-        )
-
-        self._update_max_index()
+    def _on_index_changed(self):
+        self.events.indices_changed.trigger(obj=self)
 
     @property
     def signal_axes(self):
         """The signal axes as a tuple."""
-        return self._signal_axes
+        return tuple([a for a in self._axes if not a.navigate][::-1])
 
     @property
     def navigation_axes(self):
         """The navigation axes as a tuple."""
-        return self._navigation_axes
+        return tuple([a for a in self._axes if a.navigate][::-1])
 
     @property
     def signal_shape(self):
         """The shape of the signal space."""
-        return tuple([axis.size for axis in self._signal_axes])
+        return tuple([axis.size if hasattr(axis, "size")
+                       else None for axis in self.signal_axes])
 
     @property
     def navigation_shape(self):
         """The shape of the navigation space."""
         if self.navigation_dimension != 0:
-            return tuple([axis.size for axis in self._navigation_axes])
+            return tuple([axis.size for axis in self.navigation_axes])
         else:
             return ()
 
     @property
     def signal_size(self):
         """The size of the signal space."""
-        return self._signal_size
+        if self.signal_shape == ():
+            return 0
+        else:
+            return np.prod(self.signal_shape)
 
     @property
     def navigation_size(self):
         """The size of the navigation space."""
-        return self._navigation_size
+        if self.signal_shape == ():
+            return 0
+        else:
+            return np.prod(self.signal_shape)
 
     @property
     def navigation_dimension(self):
         """The dimension of the navigation space."""
-        return self._navigation_dimension
+        return len(self.navigation_axes)
 
     @property
     def signal_dimension(self):
         """The dimension of the signal space."""
-        return self._signal_dimension
+        if len(self.signal_axes) == 1 and self.signal_axes[0].size == 1:
+            return 0
+        else:
+            return len(self.signal_axes)
 
     def _set_signal_dimension(self, value):
-        if len(self._axes) == 0 or self._signal_dimension == value:
+        if len(self._axes) == 0 or self.signal_dimension == value:
             # Nothing to be done
             return
         elif self.ragged and value > 0:
