@@ -34,7 +34,7 @@ class TextCollection(MarkerCollection):
         Update the collection of text markers.  This will add new text artists if needed,
         and update the properties of existing text artists.
         """
-        if self.is_iterating is False:
+        if not self.is_iterating:
             return
         for c in self.collection:
             c.remove()
