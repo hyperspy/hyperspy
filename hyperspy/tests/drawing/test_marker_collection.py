@@ -608,6 +608,3 @@ class TestLineCollections:
         kwargs = hor.get_data_position()
         np.testing.assert_array_equal(kwargs["segments"], [[[-1, 0], [5, 0]]])
 
-    def test_fail_no_segments(self):
-        hor = HorizontalLineCollection()
-
