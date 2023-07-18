@@ -2119,6 +2119,11 @@ class AxesManager(t.HasTraits):
         for axis in self._axes:
             axis.axes_manager = self
 
+    @property
+    def _getitem_tuple(self):
+        getitem_tuple = tuple([a.slice if a.slice is not None else a.index for a in self._axes])
+        return getitem_tuple
+
     def _on_index_changed(self):
         self.events.indices_changed.trigger(obj=self)
 
@@ -2160,10 +2165,10 @@ class AxesManager(t.HasTraits):
     @property
     def navigation_size(self):
         """The size of the navigation space."""
-        if self.signal_shape == ():
+        if self.navigation_shape == ():
             return 0
         else:
-            return np.prod(self.signal_shape)
+            return np.prod(self.navigation_shape)
 
     @property
     def navigation_dimension(self):
