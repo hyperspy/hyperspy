@@ -4796,7 +4796,6 @@ class BaseSignal(FancySlicing,
                 hist_spec.data = hist
 
         if isinstance(bins, str) and bins == 'blocks':
-            hist_spec.axes_manager.signal_axes[0].axis = bin_edges[:-1]
             warnings.warn(
                 "The option `bins='blocks'` is not fully supported in this "
                 "version of HyperSpy. It should be used for plotting purposes "
