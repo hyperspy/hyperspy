@@ -3325,7 +3325,7 @@ class BaseSignal(
                 if not axis.is_uniform:  # Axis must be uniform to set the size
                     axis.convert_to_uniform_axis()
                     _logger.warning(f"converting axis: {axis} to a UniformDataAxis")
-                    axis.size = int(dc.shape[axis.index_in_array])
+                axis.size = int(dc.shape[axis.index_in_array])
 
     def crop(self, axis, start=None, end=None, convert_units=False):
         """Crops the data in a given axis. The range is given in pixels.
