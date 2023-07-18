@@ -49,7 +49,7 @@ Deprecation warnings are raised whenever possible and feasible for functions/met
 so that users get a heads-up one (minor) release before something is removed or changes, with a possible
 alternative to be used.
 
-The decorator should be placed right above the object signature to be deprecated:
+A deprecation decorator should be placed right above the object signature to be deprecated:
 
 @deprecated(since=1.7.0, removal=2.0.0, alternative="bar")
 def foo(self, n):
