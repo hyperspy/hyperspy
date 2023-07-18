@@ -1045,15 +1045,6 @@ class FunctionalDataAxis(DataAxis):
     def size(self):
         return self.x.size
 
-    def update_axis(self):
-        kwargs = {}
-        for kwarg in self.parameters_list:
-            kwargs[kwarg] = getattr(self, kwarg)
-        self.axis = self._function(x=self.x.axis, **kwargs)
-        # Set not valid values to np.nan
-        self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
-        self.size = len(self.axis)
-
     def update_from(self, axis, attributes=None):
         """Copy values of specified axes fields from the passed AxesManager.
 
@@ -1078,33 +1069,12 @@ class FunctionalDataAxis(DataAxis):
         raise TypeError("This function works only for uniform axes.")
 
     def get_axis_dictionary(self):
-        d = super().get_axis_dictionary()
-        d["expression"] = self._expression
-        d.update(
-            {
-                "size": _parse_axis_attribute(self.size),
-            }
-        )
-        d.update(
-            {
-                "x": self.x.get_axis_dictionary(),
-            }
-        )
-        for kwarg in self.parameters_list:
-            d[kwarg] = getattr(self, kwarg)
+        d = super(DataAxis, self).get_axis_dictionary()
+        d['expression'] = self._expression
+        d.update({'size': _parse_axis_attribute(self.size), })
+        d.update({'x': self.x.get_axis_dictionary(), })
+        d.update(self.parameters)
         return d
-
-    def convert_to_non_uniform_axis(self):
-        """Convert to a non-uniform axis."""
-        d = super().get_axis_dictionary()
-        axes_manager = self.axes_manager
-        d["_type"] = "DataAxis"
-        self.__class__ = DataAxis
-        self.__init__(**d, axis=self.axis)
-        del self._expression
-        del self._function
-        self.remove_trait("x")
-        self.axes_manager = axes_manager
 
     def crop(self, start=None, end=None):
         """Crop the axis in place.
@@ -1128,12 +1098,8 @@ class FunctionalDataAxis(DataAxis):
         calibration, the `start`/`end` tuple also has to be in descending
         order.
         """
-
         slice_ = self._get_array_slices(slice(start, end))
         self.x.crop(start=slice_.start, end=slice_.stop)
-        self.size = self.x.size
-        self.update_axis()
-
     crop.__doc__ = DataAxis.crop.__doc__
 
     def _slice_me(self, slice_):
@@ -1151,11 +1117,34 @@ class FunctionalDataAxis(DataAxis):
         """
         my_slice = self._get_array_slices(slice_)
         self.x._slice_me(my_slice)
-        self.update_axis()
         return my_slice
 
+    def convert_to_uniform_axis(self):
+        """Convert to an uniform axis."""
+        scale = (self.high_value - self.low_value) / (self.size-1)
+        offset = self.low_value
+        d = self.get_axis_dictionary()
+        if len(self.axis) > 1:
+            scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
+            _logger.warning('The maximum scale error is {}.'.format(scale_err))
+        d["_type"] = "UniformDataAxis"
 
-class UniformDataAxis(BaseDataAxis, UnitConversion):
+        if self.axes_manager is not None:
+            self.axes_manager[self] = UniformDataAxis(**d, scale=scale, offset=offset)
+        else:
+            return UniformDataAxis(**d, scale=scale, offset=offset)
+
+    def convert_to_non_uniform_axis(self):
+        """Convert to a non-uniform axis."""
+        d = super().get_axis_dictionary()
+        d["_type"] = 'DataAxis'
+        if self.axes_manager is not None:
+            self.axes_manager[self] = DataAxis(**d)
+        else:
+            return DataAxis(**d)
+
+
+class UniformDataAxis(DataAxis, UnitConversion):
     """DataAxis class for a uniform axis defined through a ``scale``, an
     ``offset`` and a ``size``.
 
