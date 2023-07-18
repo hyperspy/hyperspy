@@ -1766,8 +1766,8 @@ class EELSSpectrum(Signal1D):
     def add_EELS_edges_markers(self,
                                EELS_edges,
                                render_figure=True):
-        """
-        Add EELS edges markers to the signal
+        """Add EELS edges markers to the signal
+
         Parameters
         ----------
         EELS_edges : dictionary

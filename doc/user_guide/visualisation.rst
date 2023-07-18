@@ -1119,7 +1119,8 @@ each plot:
 .. _plot.markers:
 
 MarkerCollections
-=======
+=================
+
 .. NOTE::
     Starting in version 2.0.0 Markers are replaced with MarkerCollections to better mirror the
     structure of the :py:class:`~.signal.BaseSignal` class.
