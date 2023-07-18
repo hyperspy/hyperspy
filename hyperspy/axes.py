@@ -539,24 +539,8 @@ class DataAxis(BaseDataAxis):
         """
         my_slice = self._get_array_slices(slice_)
         self.axis = self.axis[my_slice]
-        self.update_axis()
         return my_slice
 
-    def update_axis(self):
-        """Set the value of an axis. The axis values need to be ordered.
-
-        Raises
-        ------
-        ValueError
-            If the axis values are not ordered.
-
-        """
-        if len(self.axis) > 1:
-            if isinstance(self.axis, list):
-                self.axis = np.asarray(self.axis)
-            if self._is_increasing_order is None:
-                raise ValueError("The non-uniform axis needs to be ordered.")
-        self.size = len(self.axis)
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
@@ -1246,7 +1230,7 @@ class UniformDataAxis(DataAxis, UnitConversion):
         return my_slice
 
     def get_axis_dictionary(self):
-        d = super(DataAxis).get_axis_dictionary()
+        d = super(DataAxis, self).get_axis_dictionary()
         d.update({'size': self.size,
                   'scale': self.scale,
                   'offset': self.offset})
@@ -2139,11 +2123,8 @@ class AxesManager(t.HasTraits):
     def _on_index_changed(self):
         self.events.indices_changed.trigger(obj=self)
 
-    def _on_index_changed(self):
-        self.events.indices_changed.trigger(obj=self)
-
-    def _on_index_changed(self):
-        self.events.indices_changed.trigger(obj=self)
+    def _on_axes_changed(self):
+        self.events.any_axis_changed.trigger(obj=self)
 
     @property
     def signal_axes(self):
