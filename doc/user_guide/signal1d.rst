@@ -166,7 +166,7 @@ Peak finding
 ------------
 
 A peak finding routine based on the work of T. O'Haver is available in HyperSpy
-through the :py:meth:`~._signals.signal1d.Signal1D.find_peaks1D_ohaver`
+through the :py:meth:`~._signals.signal1d.Signal1D.find_peaks`
 method.
 
 

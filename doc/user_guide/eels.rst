@@ -121,7 +121,7 @@ The
 :py:meth:`~._signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre`
 can be used to estimate the position of the zero-loss peak (ZLP). The method assumes
 that the ZLP is the most intense feature in the spectra. For a more general
-approach see :py:meth:`~.signal.Signal1DTools.find_peaks1D_ohaver`.
+approach see :py:meth:`~.signal.Signal1DTools.find_peaks`.
 
 The :py:meth:`~._signals.eels.EELSSpectrum.align_zero_loss_peak` can
 align the ZLP with subpixel accuracy. It is more robust and easy to use for the task

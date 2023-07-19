@@ -25,7 +25,7 @@ from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 @lazifyTestClass
-class TestFindPeaks1DOhaver:
+class TestFindPeaks1D:
     def setup_method(self, method):
         with pytest.warns(VisibleDeprecationWarning):
             filepath = (
@@ -37,10 +37,10 @@ class TestFindPeaks1DOhaver:
 
     def test_find_peaks1D_ohaver_high_amp_thres(self):
         signal1D = self.signal
-        peak_list = signal1D.find_peaks1D_ohaver(amp_thresh=10.0)[0]
+        peak_list = signal1D.find_peaks(amp_thresh=10.0)[0]
         assert len(peak_list) == 0
 
     def test_find_peaks1D_ohaver_zero_value_bug(self):
         signal1D = self.signal
-        peak_list = signal1D.find_peaks1D_ohaver()[0]
+        peak_list = signal1D.find_peaks()[0]
         assert len(peak_list) == 48

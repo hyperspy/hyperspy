@@ -657,7 +657,7 @@ class EELSSpectrum(Signal1D):
         --------
 
         estimate_elastic_scattering_intensity,align_zero_loss_peak,
-        find_peaks1D_ohaver, fourier_ratio_deconvolution.
+        find_peaks, fourier_ratio_deconvolution.
 
         Notes
         -----
