@@ -1,0 +1,6 @@
+The `Signal1D.find_peaks1D_ohaver` method is renamed to `Signal1D.find_peaks` inline with `Signal2D.find_peaks`
+
+Additionally:
+- `Signal1D.find_peaks` now returns RaggedSignal
+- `Signal1D.find_peaks` now returns a lazy signal if s is lazy
+- The returned peaks no longer have a custom dtype (they are now just a numpy array with dtype float)
