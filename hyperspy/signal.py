@@ -4733,7 +4733,6 @@ class BaseSignal(FancySlicing,
         self,
         function,
         show_progressbar=None,
-        parallel=None,
         max_workers=None,
         inplace=True,
         ragged=None,
@@ -4919,7 +4918,7 @@ class BaseSignal(FancySlicing,
             kwargs['axis'] = self.axes_manager.signal_axes[-1].index_in_array
 
             result = self._map_all(function, inplace=inplace, **kwargs)
-        elif not ndkwargs and not lazy_output and "axes" in fargs and not parallel:
+        elif not ndkwargs and not lazy_output and "axes" in fargs:
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
             result = self._map_all(function, inplace=inplace, **kwargs)
