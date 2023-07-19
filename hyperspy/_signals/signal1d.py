@@ -1208,8 +1208,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                    medfilt_radius=5,
                    maxpeakn=30000,
                    peakgroup=10,
-                   parallel=None,
-                   max_workers=None):
+                   **kwargs):
         """Find positive peaks along a 1D Signal. It detects peaks by looking
         for downward zero-crossings in the first derivative that exceed
         'slope_thresh'.
@@ -1273,11 +1272,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
                          peakgroup=peakgroup,
                          subchannel=subchannel,
                          ragged=True,
-                         parallel=parallel,
-                         max_workers=max_workers,
                          inplace=False,
-                         lazy_output=False)
-        return peaks.data
+                         **kwargs)
+        return peaks
 
     find_peaks.__doc__ %= (PARALLEL_ARG, MAX_WORKERS_ARG)
 

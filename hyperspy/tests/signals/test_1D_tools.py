@@ -163,41 +163,41 @@ class TestFindPeaks1D:
         self.signal = s
 
     def test_single_spectrum(self):
-        peaks = self.signal.inav[0].find_peaks()[0]
+        peaks = self.signal.inav[0].find_peaks().data[0]
         if isinstance(peaks,da.Array):
             peaks = peaks.compute()
         np.testing.assert_allclose(
-            peaks['position'], self.peak_positions0, rtol=1e-5, atol=1e-4)
+            peaks[:, 0], self.peak_positions0, rtol=1e-5, atol=1e-4)
 
     def test_two_spectra(self):
-        peaks = self.signal.find_peaks()[1]
+        peaks = self.signal.find_peaks().data[1]
         if isinstance(peaks, da.Array):
             peaks = peaks.compute()
         np.testing.assert_allclose(
-            peaks['position'], self.peak_positions1, rtol=1e-5, atol=1e-4)
+            peaks[:, 0], self.peak_positions1, rtol=1e-5, atol=1e-4)
 
     def test_height(self):
-        peaks = self.signal.find_peaks()[1]
+        peaks = self.signal.find_peaks().data[1]
         if isinstance(peaks,da.Array):
             peaks = peaks.compute()
         np.testing.assert_allclose(
-            peaks['height'], 1.0, rtol=1e-5, atol=1e-4)
+            peaks[:, 1], 1.0, rtol=1e-5, atol=1e-4)
 
     def test_width(self):
-        peaks = self.signal.find_peaks()[1]
+        peaks = self.signal.find_peaks().data[1]
         if isinstance(peaks,da.Array):
             peaks = peaks.compute()
-        np.testing.assert_allclose(peaks['width'], 3.5758, rtol=1e-4, atol=1e-4)
+        np.testing.assert_allclose(peaks[:, 2], 3.5758, rtol=1e-4, atol=1e-4)
 
     def test_n_peaks(self):
-        peaks = self.signal.find_peaks()[1]
+        peaks = self.signal.find_peaks().data[1]
         if isinstance(peaks, da.Array):
             peaks = peaks.compute()
         assert len(peaks) == 8
 
     def test_maxpeaksn(self):
         for n in range(1, 10):
-            peaks = self.signal.find_peaks(maxpeakn=n)[1]
+            peaks = self.signal.find_peaks(maxpeakn=n).data[1]
             if isinstance(peaks, da.Array):
                 peaks=peaks.compute()
             assert len(peaks) == min((8, n))

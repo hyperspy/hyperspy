@@ -23,6 +23,8 @@ from hyperspy.api import load
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.exceptions import VisibleDeprecationWarning
 
+import dask.array as da
+
 
 @lazifyTestClass
 class TestFindPeaks1D:
@@ -37,10 +39,14 @@ class TestFindPeaks1D:
 
     def test_find_peaks1D_ohaver_high_amp_thres(self):
         signal1D = self.signal
-        peak_list = signal1D.find_peaks(amp_thresh=10.0)[0]
+        peak_list = signal1D.find_peaks(amp_thresh=10.0).data[0]
+        if isinstance(peak_list, da.Array):
+            peak_list = peak_list.compute()
         assert len(peak_list) == 0
 
     def test_find_peaks1D_ohaver_zero_value_bug(self):
         signal1D = self.signal
-        peak_list = signal1D.find_peaks()[0]
+        peak_list = signal1D.find_peaks().data[0]
+        if isinstance(peak_list, da.Array):
+            peak_list = peak_list.compute()
         assert len(peak_list) == 48

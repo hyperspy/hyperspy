@@ -96,10 +96,7 @@ def find_peaks_1d(y, x=None, slope_thresh=0., amp_thresh=None,
     else:
         d = np.gradient(y)
     n = np.round(peakgroup / 2 + 1)
-    peak_dt = np.dtype([('position', float),
-                        ('height', float),
-                        ('width', float)])
-    P = np.array([], dtype=peak_dt)
+    peaks = np.empty((0, 3))
     peak = 0
     for j in range(len(y) - 4):
         if np.sign(d[j]) > np.sign(d[j + 1]):  # Detects zero-crossing
@@ -164,17 +161,13 @@ def find_peaks_1d(y, x=None, slope_thresh=0., amp_thresh=None,
                         # the above measurements.
                         width = 0
                     if (not np.isnan(position) and 0 < position < x[-1]):
-                        P = np.hstack((P,
-                                       np.array([(position, height, width)],
-                                                dtype=peak_dt)))
+                        peaks = np.vstack((peaks, np.array([position, height, width],)))
                         peak += 1
     # return only the part of the array that contains peaks
     # (not the whole maxpeakn x 3 array)
-    if len(P) > maxpeakn:
-        minh = np.sort(P['height'])[-maxpeakn]
-        P = P[P['height'] >= minh]
+    if len(peaks) > maxpeakn:
+        minh = np.sort(peaks[:, 1])[-maxpeakn]
+        peaks = peaks[peaks[:, 1] >= minh]
 
-    # Sorts the values as a function of position
-    P.sort(0)
-
-    return P
+    # Sorts the values as a function of position along the x-axis
+    return peaks[np.argsort(peaks[:, 0])]
