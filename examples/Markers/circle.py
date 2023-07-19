@@ -22,3 +22,22 @@ m = hs.plot.markers.MarkerCollection(
 
 s.plot()
 s.add_marker(m)
+
+
+"""
+Dynamic Circle Markers
+======================
+"""
+
+offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
+for ind in np.ndindex(offsets.shape):
+    offsets[ind] = rng.random((10, 2)) * 100
+
+m = hs.plot.markers.MarkerCollection(
+    collection_class=mpl.collections.PatchCollection,
+    patches=[mpl.patches.Circle((0, 0), 2)],
+    offsets=offsets
+    )
+
+s.plot()
+s.add_marker(m)

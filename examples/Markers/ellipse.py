@@ -24,3 +24,24 @@ m = hs.plot.markers.MarkerCollection(
 
 s.plot()
 s.add_marker(m)
+
+
+"""
+Dynamic Ellipse Markers
+=======================
+"""
+
+offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
+for ind in np.ndindex(offsets.shape):
+    offsets[ind] = rng.random((10, 2)) * 100
+
+m = hs.plot.markers.MarkerCollection(
+    collection_class=mpl.collections.EllipseCollection,
+    widths=(4,),
+    heights=(2,),
+    angles=(45,),
+    offsets=offsets,
+    )
+
+s.plot()
+s.add_marker(m)

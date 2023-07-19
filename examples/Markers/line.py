@@ -22,3 +22,21 @@ m = hs.plot.markers.MarkerCollection(
 
 s.plot()
 s.add_marker(m)
+
+"""
+Dynamic Line Markers
+====================
+"""
+
+segments = np.empty(s.axes_manager.navigation_shape, dtype=object)
+for ind in np.ndindex(segments.shape):
+    segments[ind] = rng.random((10, 2, 2)) * 100
+
+m = hs.plot.markers.MarkerCollection(
+    collection_class=mpl.collections.LineCollection,
+    segments=segments,
+    colors='r',
+    )
+
+s.plot()
+s.add_marker(m)
