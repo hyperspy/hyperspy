@@ -20,6 +20,7 @@ import logging
 import math
 import os
 import warnings
+from copy import deepcopy
 
 import numpy as np
 import dask.array as da
@@ -1274,6 +1275,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                          ragged=True,
                          inplace=False,
                          **kwargs)
+        peaks.metadata.add_node("Peaks")  # add information about the signal Axes
+        peaks.metadata.Peaks.signal_axes = deepcopy(self.axes_manager.signal_axes)
         return peaks
 
     find_peaks.__doc__ %= (PARALLEL_ARG, MAX_WORKERS_ARG)
