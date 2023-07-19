@@ -4736,6 +4736,7 @@ class BaseSignal(FancySlicing,
         max_workers=None,
         inplace=True,
         ragged=None,
+        navigation_chunks=None,
         output_signal_size=None,
         output_dtype=None,
         lazy_output=None,
@@ -4937,6 +4938,7 @@ class BaseSignal(FancySlicing,
                 max_workers=max_workers,
                 output_dtype=output_dtype,
                 output_signal_size=output_signal_size,
+                navigation_chunks=navigation_chunks,
                 **kwargs, # function argument(s) (non-iterating)
             )
         if not inplace:
@@ -4976,6 +4978,7 @@ class BaseSignal(FancySlicing,
         output_dtype=None,
         lazy_output=None,
         max_workers=None,
+        navigation_chunks="auto",
         **kwargs,
     ):
         if lazy_output is None:
@@ -4983,6 +4986,7 @@ class BaseSignal(FancySlicing,
 
         if not self._lazy:
             s_input = self.as_lazy()
+            s_input.rechunk(nav_chunks=navigation_chunks)
         else:
             s_input = self
 
