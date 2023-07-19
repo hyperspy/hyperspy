@@ -69,7 +69,7 @@ the scheduler of the :ref:`dask backend <dask_backends>`.
 Cropping an image
 -----------------
 
-The :py:meth:`~._signals.signal2d.Signal2D.crop_image` method crops the
+The :py:meth:`~._signals.signal2d.Signal2D.crop_signal2D` method crops the
 image *in-place* e.g.:
 
 .. code-block:: python
