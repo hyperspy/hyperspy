@@ -85,6 +85,66 @@ class MarkerCollection(object):
             Keyword arguments passed to the underlying marker collection. Any argument
             that is array-like and has `dtype=object` is assumed to be an iterating
             argument and is treated as such.
+
+        Examples
+        --------
+
+        Adding a marker using an EllipseCollection
+
+        >>>from matplotlib.collections import EllipseCollection
+        >>>from hyperspy.drawing.marker import MarkerCollection
+        >>>import hyperspy.api as hs
+        >>>import numpy as np
+        >>>m = MarkerCollection(collection_class=EllipseCollection, widths=(2,),
+        >>>                 heights=(1,), angles=(1,), units="xy", offsets=np.random.rand(10,2)*10)
+        >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
+        >>>s.plot()
+        >>>s.add_marker(m)
+
+        Adding a marker using a PatchCollection (Making a circle)
+
+        >>>from matplotlib.collections import PatchCollection
+        >>>from matplotlib.patches import Circle
+        >>>from hyperspy.drawing.marker import MarkerCollection
+        >>>import hyperspy.api as hs
+        >>>import numpy as np
+        >>>m = MarkerCollection(collection_class=PatchCollection,patches=[Circle((0,0), 1)], offsets=np.random.rand(10,2)*10)
+        >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
+        >>>s.plot()
+        >>>s.add_marker(m)
+
+        Adding a series of lines using a MarkerCollection
+
+        >>>from matplotlib.collections import LineCollection
+        >>>from hyperspy.drawing.marker import MarkerCollection
+        >>>import hyperspy.api as hs
+        >>>import numpy as np
+        >>>m = MarkerCollection(collection_class=LineCollection, segments=np.random.rand(10,2,2)*10,)
+        >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
+        >>>s.plot()
+        >>>s.add_marker(m)
+
+        Adding a marker using PolyCollection (Making a square)
+
+        >>>from matplotlib.collections import PolyCollection
+        >>>from hyperspy.drawing.marker import MarkerCollection
+        >>>import hyperspy.api as hs
+        >>>import numpy as np
+        >>>m = MarkerCollection(collection_class=PolyCollection, offsets=np.random.rand(10,2,2)*10,
+        ...                     verts=[[[0,1],[0,1],[1,1],[1,0]]],])
+        >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
+        >>>s.plot()
+        >>>s.add_marker(m)
+
+        Adding a marker using scatter
+
+        >>>from hyperspy.drawing.marker import MarkerCollection
+        >>>import hyperspy.api as hs
+        >>>import numpy as np
+        >>>m = MarkerCollection(offsets=np.random.rand(10,2)*10, size=1, marker="o")
+        >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
+        >>>s.plot()
+
         """
         # Data attributes
         self.kwargs = kwargs  # all keyword arguments.
