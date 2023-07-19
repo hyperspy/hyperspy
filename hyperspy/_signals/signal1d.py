@@ -41,6 +41,7 @@ from hyperspy.signal_tools import (
     SmoothingLowess,
     SmoothingTV,
     ButterworthFilter)
+from hyperspy.utils.peakfinders1D import find_peaks_1d
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.signal_tools import BackgroundRemoval
@@ -60,166 +61,6 @@ from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT1D_DOCSTRING)
 
 _logger = logging.getLogger(__name__)
-
-
-def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
-                      medfilt_radius=5, maxpeakn=30000, peakgroup=10,
-                      subchannel=True,):
-    """Find peaks along a 1D line.
-
-    Function to locate the positive peaks in a noisy x-y data set.
-    Detects peaks by looking for downward zero-crossings in the first
-    derivative that exceed 'slope_thresh'.
-    Returns an array containing position, height, and width of each peak.
-    Sorted by position.
-    'slope_thresh' and 'amp_thresh', control sensitivity: higher values
-    will neglect wider peaks (slope) and smaller features (amp),
-    respectively.
-
-    Parameters
-    ----------
-
-    y : array
-        1D input array, e.g. a spectrum
-    x : array (optional)
-        1D array describing the calibration of y (must have same shape as y)
-    slope_thresh : float (optional)
-                   1st derivative threshold to count the peak;
-                   higher values will neglect broader features;
-                   default is set to 0.
-    amp_thresh : float (optional)
-                 intensity threshold below which peaks are ignored;
-                 higher values will neglect smaller features;
-                 default is set to 10% of max(y).
-    medfilt_radius : int (optional)
-                     median filter window to apply to smooth the data
-                     (see scipy.signal.medfilt);
-                     if 0, no filter will be applied;
-                     default is set to 5.
-    peakgroup : int (optional)
-                number of points around the "top part" of the peak that
-                are taken to estimate the peak height; for spikes or
-                very narrow peaks, keep PeakGroup=1 or 2; for broad or
-                noisy peaks, make PeakGroup larger to reduce the effect
-                of noise;
-                default is set to 10.
-    maxpeakn : int (optional)
-              number of maximum detectable peaks;
-              default is set to 30000.
-    subchannel : bool (optional)
-             default is set to True.
-
-    Returns
-    -------
-    P : structured array of shape (npeaks)
-        contains fields: 'position', 'width', and 'height' for each peak.
-
-    Examples
-    --------
-    >>> x = np.arange(0,50,0.01)
-    >>> y = np.cos(x)
-    >>> peaks = find_peaks_ohaver(y, x, 0, 0)
-
-    Notes
-    -----
-    Original code from T. C. O'Haver, 1995.
-    Version 2  Last revised Oct 27, 2006 Converted to Python by
-    Michael Sarahan, Feb 2011.
-    Revised to handle edges better.  MCS, Mar 2011
-    """
-
-    if x is None:
-        x = np.arange(len(y), dtype=np.int64)
-    if not amp_thresh:
-        amp_thresh = 0.1 * y.max()
-    peakgroup = np.round(peakgroup)
-    if medfilt_radius:
-        d = np.gradient(medfilt(y, medfilt_radius))
-    else:
-        d = np.gradient(y)
-    n = np.round(peakgroup / 2 + 1)
-    peak_dt = np.dtype([('position', float),
-                        ('height', float),
-                        ('width', float)])
-    P = np.array([], dtype=peak_dt)
-    peak = 0
-    for j in range(len(y) - 4):
-        if np.sign(d[j]) > np.sign(d[j + 1]):  # Detects zero-crossing
-            if np.sign(d[j + 1]) == 0:
-                continue
-            # if slope of derivative is larger than slope_thresh
-            if d[j] - d[j + 1] > slope_thresh:
-                # if height of peak is larger than amp_thresh
-                if y[j] > amp_thresh:
-                    # the next section is very slow, and actually messes
-                    # things up for images (discrete pixels),
-                    # so by default, don't do subchannel precision in the
-                    # 1D peakfind step.
-                    if subchannel:
-                        xx = np.zeros(peakgroup)
-                        yy = np.zeros(peakgroup)
-                        s = 0
-                        for k in range(peakgroup):
-                            groupindex = int(j + k - n + 1)
-                            if groupindex < 1:
-                                xx = xx[1:]
-                                yy = yy[1:]
-                                s += 1
-                                continue
-                            elif groupindex > y.shape[0] - 1:
-                                xx = xx[:groupindex - 1]
-                                yy = yy[:groupindex - 1]
-                                break
-                            xx[k - s] = x[groupindex]
-                            yy[k - s] = y[groupindex]
-                        avg = np.average(xx)
-                        stdev = np.std(xx)
-                        xxf = (xx - avg) / stdev
-                        # Fit parabola to log10 of sub-group with
-                        # centering and scaling
-                        yynz = yy != 0
-                        coef = np.polyfit(
-                            xxf[yynz], np.log10(abs(yy[yynz])), 2)
-                        c1 = coef[2]
-                        c2 = coef[1]
-                        c3 = coef[0]
-                        with np.errstate(invalid='ignore'):
-                            width = np.linalg.norm(stdev * 2.35703 /
-                                                   (np.sqrt(2) * np.sqrt(-1 *
-                                                                         c3)))
-                        # if the peak is too narrow for least-squares
-                        # technique to work  well, just use the max value
-                        # of y in the sub-group of points near peak.
-                        if peakgroup < 7:
-                            height = np.max(yy)
-                            position = xx[np.argmin(abs(yy - height))]
-                        else:
-                            position = - ((stdev * c2 / (2 * c3)) - avg)
-                            height = np.exp(c1 - c3 * (c2 / (2 * c3)) ** 2)
-                    # Fill results array P. One row for each peak
-                    # detected, containing the
-                    # peak position (x-value) and peak height (y-value).
-                    else:
-                        position = x[j]
-                        height = y[j]
-                        # no way to know peak width without
-                        # the above measurements.
-                        width = 0
-                    if (not np.isnan(position) and 0 < position < x[-1]):
-                        P = np.hstack((P,
-                                       np.array([(position, height, width)],
-                                                dtype=peak_dt)))
-                        peak += 1
-    # return only the part of the array that contains peaks
-    # (not the whole maxpeakn x 3 array)
-    if len(P) > maxpeakn:
-        minh = np.sort(P['height'])[-maxpeakn]
-        P = P[P['height'] >= minh]
-
-    # Sorts the values as a function of position
-    P.sort(0)
-
-    return P
 
 
 def interpolate1D(number_of_interpolation_points, data):
@@ -1360,15 +1201,15 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self.events.data_changed.trigger(obj=self)
         return channels
 
-    def find_peaks1D_ohaver(self, xdim=None,
-                            slope_thresh=0,
-                            amp_thresh=None,
-                            subchannel=True,
-                            medfilt_radius=5,
-                            maxpeakn=30000,
-                            peakgroup=10,
-                            parallel=None,
-                            max_workers=None):
+    def find_peaks(self, xdim=None,
+                   slope_thresh=0,
+                   amp_thresh=None,
+                   subchannel=True,
+                   medfilt_radius=5,
+                   maxpeakn=30000,
+                   peakgroup=10,
+                   parallel=None,
+                   max_workers=None):
         """Find positive peaks along a 1D Signal. It detects peaks by looking
         for downward zero-crossings in the first derivative that exceed
         'slope_thresh'.
@@ -1423,7 +1264,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         # TODO: add scipy.signal.find_peaks_cwt
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0].axis
-        peaks = self.map(find_peaks_ohaver,
+        peaks = self.map(find_peaks_1d,
                          x=axis,
                          slope_thresh=slope_thresh,
                          amp_thresh=amp_thresh,
@@ -1438,7 +1279,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                          lazy_output=False)
         return peaks.data
 
-    find_peaks1D_ohaver.__doc__ %= (PARALLEL_ARG, MAX_WORKERS_ARG)
+    find_peaks.__doc__ %= (PARALLEL_ARG, MAX_WORKERS_ARG)
 
     def estimate_peak_width(
         self,
