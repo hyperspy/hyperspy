@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,27 +19,15 @@
 import numpy as np
 import dask.array as da
 
-def _is_iter(val):
-    """Checks if value is a list or tuple."""
-    return isinstance(val, tuple) or isinstance(val, list)
 
-
-def _iter_join(val):
-    """
-    Joins values of iterable parameters for the fancy view, unless it equals
-    None, then blank
-    """
-    return "(" + ", ".join(["{:6g}".format(v) for v in val]) + ")" if val is not None else ""
-
-
-def _non_iter(val):
+def _format_string(val):
     """
     Returns formatted string for a value unless it equals None, then blank
     """
     return "{:6g}".format(val) if val is not None else ""
 
 
-class current_component_values():
+class CurrentComponentValues():
     """
     Convenience class that makes use of __repr__ methods for nice printing in
     the notebook of the properties of parameters of a component.
@@ -50,7 +38,7 @@ class current_component_values():
     only_free : bool, default False
         If True: Only include the free parameters in the view
     only_active : bool, default False
-        If True: Helper for current_model_values. Only include active
+        If True: Helper for ``CurrentModelValues``. Only include active
         components in the view. Always shows values if used on an individual
         component.
      """
@@ -94,34 +82,12 @@ class current_component_values():
             if not self.only_free or self.only_free and para.free:
                 free = para.free if para.twin is None else 'Twinned'
                 ln = para._linear
-                if _is_iter(para.value):
-                    # iterables (polynomial.value) must be handled separately
-                    # `blank` results in a column of spaces
-                    blank = len(para.value) * ['']
-                    std = para.std if _is_iter(para.std) else blank
-                    bmin = para.bmin if _is_iter(para.bmin) else blank
-                    bmax = para.bmax if _is_iter(para.bmax) else blank
-                    for i, (v, s, bn, bx) in enumerate(
-                            zip(para.value, std, bmin, bmax)):
-                        if i == 0:
-                            text += signature.format(
-                                para.name[:size['name']], str(free)[:size['free']],
-                                str(v)[:size['value']], str(s)[:size['std']],
-                                str(bn)[:size['bmin']], str(bx)[:size['bmax']],
-                                str(ln)[:size['linear']])
-                        else:
-                            text += signature.format(
-                                "", "", str(v)[:size['value']], str(s)[:size['std']],
-                                str(bn)[:size['bmin']], str(bx)[:size['bmax']],
-                                str(ln)[:size['linear']])
-                        text += "\n"
-                else:
-                    text += signature.format(
-                        para.name[:size['name']], str(free)[:size['free']],
-                        str(para.value)[:size['value']], str(para.std)[:size['std']],
-                        str(para.bmin)[:size['bmin']], str(para.bmax)[:size['bmax']],
-                        str(ln)[:size['linear']])
-                    text += "\n"
+                text += signature.format(
+                    para.name[:size['name']], str(free)[:size['free']],
+                    str(para.value)[:size['value']], str(para.std)[:size['std']],
+                    str(para.bmin)[:size['bmin']], str(para.bmax)[:size['bmax']],
+                    str(ln)[:size['linear']])
+                text += "\n"
         return text
 
     def _repr_html_(self):
@@ -138,19 +104,10 @@ class current_component_values():
             if not self.only_free or self.only_free and para.free:
                 free = para.free if para.twin is None else 'Twinned'
                 linear = para._linear
-                if _is_iter(para.value):
-                    # iterables (polynomial.value) must be handled separately
-                    # This should be removed with hyperspy 2.0 as Polynomial
-                    # has been replaced.
-                    value = _iter_join(para.value)
-                    std = _iter_join(para.std)
-                    bmin = _iter_join(para.bmin)
-                    bmax = _iter_join(para.bmax)
-                else:
-                    value = _non_iter(para.value)
-                    std = _non_iter(para.std)
-                    bmin = _non_iter(para.bmin)
-                    bmax = _non_iter(para.bmax)
+                value = _format_string(para.value)
+                std = _format_string(para.std)
+                bmin = _format_string(para.bmin)
+                bmax = _format_string(para.bmax)
 
                 text += """<tr><td>{0}</td><td>{1}</td><td>{2}</td>
                     <td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td></tr>""".format(
@@ -159,7 +116,7 @@ class current_component_values():
         return text
 
 
-class current_model_values():
+class CurrentModelValues():
     """
     Convenience class that makes use of __repr__ methods for nice printing in
     the notebook of the properties of parameters in components in a model.
@@ -186,7 +143,7 @@ class current_model_values():
         for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
                 if not self.only_free or comp.free_parameters and self.only_free:
-                    text += current_component_values(
+                    text += CurrentComponentValues(
                         component=comp,
                         only_free=self.only_free,
                         only_active=self.only_active
@@ -200,7 +157,7 @@ class current_model_values():
         for comp in self.component_list:
             if not self.only_active or self.only_active and comp.active:
                 if not self.only_free or comp.free_parameters and self.only_free:
-                    html += current_component_values(
+                    html += CurrentComponentValues(
                         component=comp,
                         only_free=self.only_free,
                         only_active=self.only_active

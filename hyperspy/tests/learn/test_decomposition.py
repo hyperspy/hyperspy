@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -24,7 +24,6 @@ import pytest
 
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 
@@ -364,7 +363,7 @@ class TestDecompositionAlgorithm:
     def setup_method(self, method):
         self.s = signals.Signal1D(generate_low_rank_matrix())
 
-    @pytest.mark.parametrize("algorithm", ["SVD", "MLPCA"])
+    @pytest.mark.parametrize("algorithm", ["SVD", "MLPCA", "RPCA"])
     def test_decomposition(self, algorithm):
         self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
@@ -376,24 +375,6 @@ class TestDecompositionAlgorithm:
     def test_decomposition_output_dimension_not_given(self, algorithm):
         with pytest.raises(ValueError, match="`output_dimension` must be specified"):
             self.s.decomposition(algorithm=algorithm, return_info=False)
-
-    @skip_sklearn
-    @pytest.mark.parametrize("algorithm", ["fast_svd", "fast_mlpca"])
-    def test_fast_deprecation_warning(self, algorithm):
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match="argument `svd_solver='randomized'` instead.",
-        ):
-            self.s.decomposition(algorithm=algorithm, output_dimension=2)
-
-    @skip_sklearn
-    @pytest.mark.parametrize("algorithm", ["RPCA_GoDec", "svd", "mlpca", "nmf",])
-    def test_name_deprecation_warning(self, algorithm):
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match="has been deprecated and will be removed in HyperSpy 2.0.",
-        ):
-            self.s.decomposition(algorithm=algorithm, output_dimension=2)
 
     def test_algorithm_error(self):
         with pytest.raises(ValueError, match="not recognised. Expected"):
@@ -592,11 +573,6 @@ def test_decomposition_mlpca_var_func():
 def test_decomposition_mlpca_warnings_errors():
     s = signals.Signal1D(generate_low_rank_matrix())
 
-    with pytest.warns(
-        VisibleDeprecationWarning, match="`polyfit` argument has been deprecated"
-    ):
-        s.decomposition(output_dimension=2, algorithm="MLPCA", polyfit=[1, 2, 3])
-
     with pytest.raises(
         ValueError, match="`var_func` and `var_array` cannot both be defined"
     ):
@@ -663,13 +639,6 @@ def test_centering_error():
 
     with pytest.raises(ValueError, match="'centre' must be one of"):
         s.decomposition(centre="random")
-
-    for centre in ["variables", "trials"]:
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match="centre='{}' has been deprecated".format(centre),
-        ):
-            s.decomposition(centre=centre)
 
 
 @pytest.mark.parametrize('mask_as_array', [True, False])

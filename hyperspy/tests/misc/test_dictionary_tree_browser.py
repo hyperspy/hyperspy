@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -27,7 +27,6 @@ from hyperspy.misc.utils import (
     replace_html_symbols,
     nested_dictionary_merge,
 )
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.signal import BaseSignal
 
 
@@ -83,6 +82,24 @@ class TestDictionaryBrowser:
         assert tree._double_lines == True
         tree.add_dictionary({"_double_lines": ""}, double_lines=False)
         assert tree._double_lines == False
+
+    def test_setattr_dictionary(self, tree):
+        d = {"leaf13": 13}
+        tree.Node1 = d
+        assert tree.Node1.as_dictionary() == d
+
+    def test_set_item_dictionary(self, tree):
+        d = {"leaf111": 222}
+        tree.set_item("Node1.Node11", d)
+        assert tree.Node1.Node11.as_dictionary() == d
+
+        d1 = {"Node111": {"leaf1111": 1111}}
+        tree.Node1.Node11.add_dictionary(d1)
+        assert tree.Node1.Node11.as_dictionary() == {**d, **d1}
+
+        d2 = {"leaf111": 333}
+        tree.set_item("Node1.Node11", d2)
+        assert tree.Node1.Node11.as_dictionary() == d2
 
     def test_deepcopy(self, tree):
         a = tree.deepcopy()
@@ -394,11 +411,6 @@ class TestDictionaryBrowser:
             [211, 31],
             ["Node2.Node21.leaf211", "Node3.leaf211"],
         )
-
-    # Can be removed once metadata.Signal.binned is deprecated in v2.0
-    def test_set_item_binned(self, tree):
-        with pytest.warns(VisibleDeprecationWarning, match="Use of the `binned`"):
-            tree.set_item("Signal.binned", True)
 
     def test_html(self, tree):
         "Test that the method actually runs"

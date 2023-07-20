@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -33,19 +33,25 @@ from hyperspy.misc.label_position import SpectrumLabelPosition
 import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
-from hyperspy.misc.utils import isiterable, underline, print_html
-from hyperspy.misc.utils import is_binned # remove in v2.0
+from hyperspy.misc.utils import display, isiterable, underline
 from hyperspy.misc.math_tools import optimal_fft_size
 from hyperspy.misc.eels.tools import get_edges_near_energy
 from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import (
-    CROP_PARAMETER_DOC, SPIKES_DIAGNOSIS_DOCSTRING, MASK_ZERO_LOSS_PEAK_WIDTH,
-    SPIKES_REMOVAL_TOOL_DOCSTRING)
+    CROP_PARAMETER_DOC,
+    SPIKES_DIAGNOSIS_DOCSTRING,
+    MASK_ZERO_LOSS_PEAK_WIDTH,
+    SPIKES_REMOVAL_TOOL_DOCSTRING,
+    )
 from hyperspy.docstrings.signal import (
-    SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG, SIGNAL_MASK_ARG,
-    NAVIGATION_MASK_ARG)
-
+    SHOW_PROGRESSBAR_ARG,
+    NUM_WORKERS_ARG,
+    SIGNAL_MASK_ARG,
+    NAVIGATION_MASK_ARG,
+    LAZYSIGNAL_DOC,
+)
+from hyperspy.docstrings.model import EELSMODEL_PARAMETERS
 
 
 _logger = logging.getLogger(__name__)
@@ -71,7 +77,7 @@ class EELSTEMParametersUI(BaseSetMetadataItems):
 
 class EELSSpectrum(Signal1D):
 
-    """1D signal class for EELS spectra."""
+    """Signal class for EELS spectra."""
 
     _signal_type = "EELS"
     _alias_signal_types = ["TEM EELS"]
@@ -201,8 +207,7 @@ class EELSSpectrum(Signal1D):
             er = EdgesRange(self)
             return er.gui(display=display, toolkit=toolkit)
         else:
-            return self.print_edges_near_energy(energy, width, only_major,
-                                                order)
+            self.print_edges_near_energy(energy, width, only_major, order)
 
     @staticmethod
     def print_edges_near_energy(energy=None, width=10, only_major=False,
@@ -263,8 +268,7 @@ class EELSSpectrum(Signal1D):
         # this ensures the html version try its best to mimick the ASCII one
         table.format = True
 
-        return print_html(f_text=table.get_string,
-                          f_html=table.get_html_string)
+        display(table)
 
     def estimate_zero_loss_peak_centre(self, mask=None):
         """Estimate the position of the zero-loss peak.
@@ -768,9 +772,9 @@ class EELSSpectrum(Signal1D):
         else:
             I0 = self.estimate_elastic_scattering_intensity(
                 threshold=threshold,).data
-        
+
         t_over_lambda = np.log(total_intensity / I0)
-        
+
         if density is not None:
             if self._are_microscope_parameters_missing():
                 raise RuntimeError(
@@ -1027,7 +1031,7 @@ class EELSSpectrum(Signal1D):
 
     def richardson_lucy_deconvolution(self, psf, iterations=15,
                                       show_progressbar=None,
-                                      parallel=None, max_workers=None):
+                                      num_workers=None):
         """1D Richardson-Lucy Poissonian deconvolution of
         the spectrum by the given kernel.
 
@@ -1040,7 +1044,6 @@ class EELSSpectrum(Signal1D):
         iterations : int
             Number of iterations of the deconvolution. Note that
             increasing the value will increase the noise amplification.
-        %s
         %s
         %s
 
@@ -1080,8 +1083,7 @@ class EELSSpectrum(Signal1D):
 
         ds = self.map(deconv_function, kernel=psf, iterations=iterations,
                       psf_size=psf_size, show_progressbar=show_progressbar,
-                      parallel=parallel, max_workers=max_workers,
-                      ragged=False, inplace=False)
+                      num_workers=num_workers, ragged=False, inplace=False)
 
         ds.metadata.General.title += (
             ' after Richardson-Lucy deconvolution %i iterations' %
@@ -1091,7 +1093,7 @@ class EELSSpectrum(Signal1D):
                 '_after_R-L_deconvolution_%iiter' % iterations)
         return ds
 
-    richardson_lucy_deconvolution.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
+    richardson_lucy_deconvolution.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG)
 
     def _are_microscope_parameters_missing(self, ignore_parameters=[]):
         """
@@ -1159,8 +1161,8 @@ class EELSSpectrum(Signal1D):
                                 extrapolation_size=1024,
                                 add_noise=False,
                                 fix_neg_r=False):
-        """Extrapolate the spectrum to the right using a powerlaw.
-
+        """
+        Extrapolate the spectrum to the right using a powerlaw.
 
         Parameters
         ----------
@@ -1222,9 +1224,7 @@ class EELSSpectrum(Signal1D):
         # If the signal is binned we need to bin the extrapolated power law
         # what, in a first approximation, can be done by multiplying by the
         # axis step size.
-        if is_binned(self):
-        # in v2 replace by
-        # if self.axes_manager[-1].is_binned:
+        if self.axes_manager[-1].is_binned:
             factor = s.axes_manager[-1].scale
         else:
             factor = 1
@@ -1259,7 +1259,8 @@ class EELSSpectrum(Signal1D):
                                 t=None,
                                 delta=0.5,
                                 full_output=False):
-        r"""Calculate the complex dielectric function from a single scattering
+        r"""
+        Calculate the complex dielectric function from a single scattering
         distribution (SSD) using the Kramers-Kronig relations.
 
         It uses the FFT method as in [1]_.  The SSD is an
@@ -1537,37 +1538,16 @@ class EELSSpectrum(Signal1D):
             return eps, output
 
     def create_model(self, ll=None, auto_background=True, auto_add_edges=True,
-                     GOS=None, dictionary=None):
+                     GOS="gosh", gos_file_path=None, dictionary=None):
         """Create a model for the current EELS data.
 
         Parameters
         ----------
-        ll : EELSSpectrum, optional
-            If an EELSSpectrum is provided, it will be assumed that it is
-            a low-loss EELS spectrum, and it will be used to simulate the
-            effect of multiple scattering by convolving it with the EELS
-            spectrum.
-        auto_background : bool, default True
-            If True, and if spectrum is an EELS instance adds automatically
-            a powerlaw to the model and estimate the parameters by the
-            two-area method.
-        auto_add_edges : bool, default True
-            If True, and if spectrum is an EELS instance, it will
-            automatically add the ionization edges as defined in the
-            Signal1D instance. Adding a new element to the spectrum using
-            the components.EELSSpectrum.add_elements method automatically
-            add the corresponding ionisation edges to the model.
-        GOS : {'hydrogenic' | 'Hartree-Slater'}, optional
-            The generalized oscillation strength calculations to use for the
-            core-loss EELS edges. If None the Hartree-Slater GOS are used if
-            available, otherwise it uses the hydrogenic GOS.
-        dictionary : {None | dict}, optional
-            A dictionary to be used to recreate a model. Usually generated
-            using :meth:`hyperspy.model.as_dictionary`
+        %s
 
         Returns
         -------
-        model : `EELSModel` instance.
+        model : :class:`~.models.eelsmodel.EELSModel` instance.
 
         Raises
         ------
@@ -1577,9 +1557,10 @@ class EELSSpectrum(Signal1D):
         from hyperspy.models.eelsmodel import EELSModel
         if ll is not None and not self.axes_manager.signal_axes[0].is_uniform:
             raise NotImplementedError(
-                "Multiple scattering is not implemented for spectra with a non-uniform energy axis. "
-                "To create a model that does not account for multiple-scattering do not set "
-                "the `ll` keyword.")
+                "Multiple scattering is not implemented for spectra with a "
+                "non-uniform energy axis. To create a model that does not "
+                "account for multiple-scattering do not set the `ll` keyword."
+                )
         model = EELSModel(self,
                           ll=ll,
                           auto_background=auto_background,
@@ -1588,9 +1569,12 @@ class EELSSpectrum(Signal1D):
                           dictionary=dictionary)
         return model
 
+    create_model.__doc__ %= EELSMODEL_PARAMETERS
+
     def plot(self, plot_edges=False, only_edges=('Major', 'Minor'),
              **kwargs):
-        """Plot the EELS spectrum. Markers indicating the position of the
+        """
+        Plot the EELS spectrum. Markers indicating the position of the
         EELS edges can be added.
 
         Parameters
@@ -1870,4 +1854,6 @@ class EELSSpectrum(Signal1D):
 
 class LazyEELSSpectrum(EELSSpectrum, LazySignal1D):
 
-    pass
+    """Lazy signal class for EELS spectra."""
+
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "EELSSpectrum")

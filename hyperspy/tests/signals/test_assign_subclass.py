@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -115,10 +115,6 @@ class TestConvertBaseSignal:
         assert isinstance(self.s, _lazy_signals.LazySignal)
         assert self.s._lazy
 
-    def test_set_signal_dimension_deprecation_warning(self):
-        with pytest.warns(VisibleDeprecationWarning):
-            self.s.axes_manager.set_signal_dimension(1)
-
     def test_base_to_1d(self):
         self.s.axes_manager._set_signal_dimension(1)
         self.s._assign_subclass()
@@ -169,11 +165,8 @@ class TestConvertSignal1D:
         self.s.set_signal_type("")
         assert isinstance(self.s, hs.signals.Signal1D)
 
-    def test_deprecated(self):
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match=r"is deprecated. Use ",
-        ):
+    def test_error_None(self):
+        with pytest.raises(TypeError):
             self.s.set_signal_type(None)
 
 

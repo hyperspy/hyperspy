@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -22,6 +22,9 @@ import numpy.ma as ma
 import dask.array as da
 import logging
 import warnings
+from copy import deepcopy
+
+from functools import partial
 
 from scipy import ndimage
 try:
@@ -41,11 +44,16 @@ from hyperspy.signal_tools import PeaksFinder2D, Signal2DCalibration
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, PLOT2D_DOCSTRING,
     PLOT2D_KWARGS_DOCSTRING)
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
+from hyperspy.docstrings.signal import (
+    SHOW_PROGRESSBAR_ARG,
+    NUM_WORKERS_ARG,
+    LAZYSIGNAL_DOC,
+)
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.utils.peakfinders2D import (
         find_local_max, find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
-        find_peaks_stat, find_peaks_log, find_peaks_dog, find_peaks_xc)
+        find_peaks_stat, find_peaks_log, find_peaks_dog, find_peaks_xc,
+        _get_peak_position_and_intensity)
 
 
 _logger = logging.getLogger(__name__)
@@ -323,7 +331,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
              navigator="auto",
              plot_markers=True,
              autoscale='v',
-             saturated_pixels=None,
              norm="auto",
              vmin=None,
              vmax=None,
@@ -356,7 +363,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
             navigator=navigator,
             plot_markers=plot_markers,
             autoscale=autoscale,
-            saturated_pixels=saturated_pixels,
             norm=norm,
             vmin=vmin,
             vmax=vmax,
@@ -464,17 +470,17 @@ class Signal2D(BaseSignal, CommonSignal2D):
         Returns
         -------
         shifts : array
-            Estimated shifts in pixels. 
+            Estimated shifts in pixels.
 
         Notes
         -----
         The statistical analysis approach to the translation estimation
-        when using ``reference='stat'`` roughly follows [Schaffer2004]_.
+        when using ``reference='stat'`` roughly follows [*]_.
         If you use it please cite their article.
 
         References
         ----------
-        .. [Schaffer2004] Schaffer, Bernhard, Werner Grogger, and Gerald Kothleitner.
+        .. [*] Schaffer, Bernhard, Werner Grogger, and Gerald Kothleitner.
            “Automated Spatial Drift Correction for EFTEM Image Series.”
            Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
@@ -605,8 +611,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         expand=False,
         interpolation_order=1,
         show_progressbar=None,
-        parallel=None,
-        max_workers=None,
+        num_workers=None,
         **kwargs,
     ):
         """Align the images in-place using :py:func:`scipy.ndimage.shift`.
@@ -628,7 +633,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         shifts : None or array.
             The array of shifts must be in pixel units. The shape must be
             the navigation shape using numpy order convention. If `None`
-            the shifts are estimated using 
+            the shifts are estimated using
             :py:meth:`~._signals.signal2D.estimate_shift2D`.
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
@@ -636,7 +641,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
         interpolation_order: int, default 1.
             The order of the spline interpolation. Default is 1, linear
             interpolation.
-        %s
         %s
         %s
         **kwargs :
@@ -690,13 +694,17 @@ class Signal2D(BaseSignal, CommonSignal2D):
             signal_shifts = shifts
         if expand:
             # Expand to fit all valid data
-            left, right = (
-                int(np.floor(signal_shifts.isig[1].min().data)) if signal_shifts.isig[1].min().data < 0 else 0,
-                int(np.ceil(signal_shifts.isig[1].max().data)) if signal_shifts.isig[1].max().data > 0 else 0,
-            )
+            _min0 = signal_shifts.isig[0].min().data[0]
+            _max0 = signal_shifts.isig[0].max().data[0]
             top, bottom = (
-                int(np.ceil(signal_shifts.isig[0].min().data)) if signal_shifts.isig[0].min().data < 0 else 0,
-                int(np.floor(signal_shifts.isig[0].max().data)) if signal_shifts.isig[0].max().data > 0 else 0,
+                int(np.ceil(_min0)) if _min0 < 0 else 0,
+                int(np.floor(_max0)) if _max0 > 0 else 0,
+            )
+            _min1 = signal_shifts.isig[1].min().data[0]
+            _max1 = signal_shifts.isig[1].max().data[0]
+            left, right = (
+                int(np.floor(_min1)) if _min1 < 0 else 0,
+                int(np.ceil(_max1)) if _max1 > 0 else 0,
             )
             xaxis = self.axes_manager.signal_axes[0]
             yaxis = self.axes_manager.signal_axes[1]
@@ -730,8 +738,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             shift_image,
             shift=signal_shifts,
             show_progressbar=show_progressbar,
-            parallel=parallel,
-            max_workers=max_workers,
+            num_workers=num_workers,
             ragged=False,
             inplace=True,
             fill_value=fill_value,
@@ -744,14 +751,18 @@ class Signal2D(BaseSignal, CommonSignal2D):
                                   "Max shift:" + str(max_shift.data) + " shape" + str(self.axes_manager.signal_shape))
 
             # Crop the image to the valid size
+            _min0 = signal_shifts.isig[0].min().data[0]
+            _max0 = signal_shifts.isig[0].max().data[0]
             shifts = -shifts
             bottom, top = (
-                int(np.floor(signal_shifts.isig[0].min().data)) if signal_shifts.isig[0].min().data < 0 else None,
-                int(np.ceil(signal_shifts.isig[0].max().data)) if signal_shifts.isig[0].max().data > 0 else 0,
+                int(np.floor(_min0)) if _min0 < 0 else None,
+                int(np.ceil(_max0)) if _max0 > 0 else 0,
             )
+            _min1 = signal_shifts.isig[1].min().data[0]
+            _max1 = signal_shifts.isig[1].max().data[0]
             right, left = (
-                int(np.floor(signal_shifts.isig[1].min().data)) if signal_shifts.isig[1].min().data < 0 else None,
-                int(np.ceil(signal_shifts.isig[1].max().data)) if signal_shifts.isig[1].max().data > 0 else 0,
+                int(np.floor(_min1)) if _min1 < 0 else None,
+                int(np.ceil(_max1)) if _max1 > 0 else 0,
             )
             self.crop_image(top, bottom, left, right)
             shifts = -shifts
@@ -761,7 +772,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         if return_shifts:
             return shifts
 
-    align2D.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
+    align2D.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG)
 
     def calibrate(
         self,
@@ -912,7 +923,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
     def find_peaks(self, method='local_max', interactive=True,
                    current_index=False, show_progressbar=None,
-                   parallel=None, max_workers=None, display=True, toolkit=None,
+                   num_workers=None, display=True, toolkit=None,
+                   get_intensity=False,
                    **kwargs):
         """Find peaks in a 2D signal.
 
@@ -948,7 +960,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                function.
              * 'difference_of_gaussian' - a blob finder using the difference
                of Gaussian matrices approach. See the
-               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_log`
+               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_dog`
                function.
              * 'template_matching' - A cross correlation peakfinder. This
                method requires providing a template with the ``template``
@@ -962,8 +974,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
             If True, the method parameter can be adjusted interactively.
             If False, the results will be returned.
         current_index : bool
-            if True, the computation will be performed for the current index.
-        %s
+            If True, the computation will be performed for the current index.
+        get_intensity : bool
+            If True, the intensity of the peak will be returned as an additional column,
+            the last one.
         %s
         %s
         %s
@@ -1012,6 +1026,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
             raise NotImplementedError(f"The method `{method}` is not "
                                       "implemented. See documentation for "
                                       "available implementations.")
+        if get_intensity:
+            method_func = partial(_get_peak_position_and_intensity, f=method_func, )
         if interactive:
             # Create a peaks signal with the same navigation shape as a
             # placeholder for the output
@@ -1025,19 +1041,18 @@ class Signal2D(BaseSignal, CommonSignal2D):
             peaks = method_func(self.__call__(), **kwargs)
         else:
             peaks = self.map(method_func, show_progressbar=show_progressbar,
-                             parallel=parallel, inplace=False, ragged=True,
-                             max_workers=max_workers, **kwargs)
-            if peaks._lazy:
-                peaks.compute()
-
-
-
+                             inplace=False, ragged=True,
+                             num_workers=num_workers, **kwargs)
+            peaks.metadata.add_node("Peaks") # add information about the signal Axes
+            peaks.metadata.Peaks.signal_axes = deepcopy(self.axes_manager.signal_axes)
         return peaks
 
-    find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
+    find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG,
                            DISPLAY_DT, TOOLKIT_DT)
 
 
 class LazySignal2D(LazySignal, Signal2D):
 
-    _lazy = True
+    """Lazy general 2D signal class."""
+
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "Signal2D")

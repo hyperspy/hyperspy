@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -48,7 +48,7 @@ class Arrow(MarkerBase):
     -------
     >>> import skimage
     >>> im = hs.signals.Signal2D(skimage.data.camera())
-    >>> m = hs.plot.markers.arrow(x1=150, y1=100, x2=400, y2=400,
+    >>> m = hs.plot.markers.Arrow(x1=150, y1=100, x2=400, y2=400,
     >>>                           arrowprop={'arrowstyle':'<->', edgecolor='red'})
     >>> im.add_marker(m)
 

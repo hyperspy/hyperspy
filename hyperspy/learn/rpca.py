@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -23,7 +23,6 @@ from itertools import chain
 import numpy as np
 import scipy.linalg
 
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
 from hyperspy.learn.svd_pca import svd_solve
 from hyperspy.misc.math_tools import check_random_state
@@ -545,20 +544,6 @@ def orpca(
           the low-rank matrix.
 
     """
-    if kwargs.get("learning_rate", False):
-        warnings.warn(
-            "The argument `learning_rate` has been deprecated and may "
-            "be removed in future. Please use `subspace_learning_rate` instead.",
-            VisibleDeprecationWarning,
-        )
-        subspace_learning_rate = kwargs["learning_rate"]
-    if kwargs.get("momentum", False):
-        warnings.warn(
-            "The argument `momentum` has been deprecated and may "
-            "be removed in future. Please use `subspace_momentum` instead.",
-            VisibleDeprecationWarning,
-        )
-        subspace_momentum = kwargs["momentum"]
 
     X = X.T
 

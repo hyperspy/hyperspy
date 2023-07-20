@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,7 +20,6 @@ import numpy as np
 import pytest
 import scipy.linalg
 
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.learn.rpca import orpca, rpca_godec
 from hyperspy.signals import Signal1D
 
@@ -163,7 +162,7 @@ class TestORPCA:
         )
         compare_norms(X, self.A)
 
-        with pytest.raises(ValueError, match=f"must be a float between 0 and 1"):
+        with pytest.raises(ValueError, match="must be a float between 0 and 1"):
             _ = orpca(
                 self.X, rank=self.rank, method="MomentumSGD", subspace_momentum=1.9
             )
@@ -176,11 +175,11 @@ class TestORPCA:
         X, E, U, S, V = orpca(self.X, rank=self.rank, store_error=True, init=self.U)
         compare_norms(X, self.A)
 
-        with pytest.raises(ValueError, match=f"has to be a two-dimensional matrix"):
+        with pytest.raises(ValueError, match="has to be a two-dimensional matrix"):
             mat = np.zeros(self.m)
             _ = orpca(self.X, rank=self.rank, init=mat)
 
-        with pytest.raises(ValueError, match=f"has to be of shape"):
+        with pytest.raises(ValueError, match="has to be of shape"):
             mat = np.zeros((self.m, self.rank - 1))
             _ = orpca(self.X, rank=self.rank, init=mat)
 
@@ -196,7 +195,7 @@ class TestORPCA:
         )
         compare_norms(X, self.A)
 
-        with pytest.raises(ValueError, match=f"must be >="):
+        with pytest.raises(ValueError, match="must be >="):
             _ = orpca(self.X, rank=self.rank, init="qr", training_samples=self.rank - 1)
 
     def test_regularization(self):
@@ -206,25 +205,12 @@ class TestORPCA:
         compare_norms(X, self.A)
 
     def test_exception_method(self):
-        with pytest.raises(ValueError, match=f"'method' not recognised"):
+        with pytest.raises(ValueError, match="'method' not recognised"):
             _ = orpca(self.X, rank=self.rank, method="uniform")
 
     def test_exception_init(self):
-        with pytest.raises(ValueError, match=f"'init' not recognised"):
+        with pytest.raises(ValueError, match="'init' not recognised"):
             _ = orpca(self.X, rank=self.rank, init="uniform")
-
-    def test_warnings(self):
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match=f"The argument `learning_rate` has been deprecated",
-        ):
-            _ = orpca(self.X, rank=self.rank, learning_rate=0.1)
-
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match=f"The argument `momentum` has been deprecated",
-        ):
-            _ = orpca(self.X, rank=self.rank, momentum=0.1)
 
     @pytest.mark.parametrize("poisson", [True, False])
     def test_signal(self, poisson):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,21 +19,22 @@
 from functools import partial
 import logging
 import os
-import warnings
 
 import numpy as np
 import dask
 import dask.array as da
 from itertools import product
 from packaging.version import Version
+from rsciio.utils.tools import get_file_handle
+from rsciio.utils import rgb_tools
 
 from hyperspy.signal import BaseSignal
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
     MANY_AXIS_PARAMETER,
+    LAZYSIGNAL_DOC,
     )
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.array_tools import (
     _requires_linear_rebin,
@@ -157,10 +158,11 @@ def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
 
 
 class LazySignal(BaseSignal):
-    """A Lazy Signal instance that delays computation until explicitly saved
-    (assuming storing the full result of computation in memory is not feasible)
-    """
+
+    """Lazy general signal class."""
+
     _lazy = True
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "BaseSignal")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -174,6 +176,10 @@ class LazySignal(BaseSignal):
         self._cache_dask_chunk_slice = None
         if not self._clear_cache_dask_data in self.events.data_changed.connected:
             self.events.data_changed.connect(self._clear_cache_dask_data)
+
+    __init__.__doc__ = BaseSignal.__init__.__doc__.replace(
+        ":py:class:`numpy.ndarray`", ":py:class:`dask.array.Array`"
+        )
 
     def _repr_html_(self):
         try:
@@ -231,29 +237,53 @@ class LazySignal(BaseSignal):
         return string
 
     def compute(self, close_file=False, show_progressbar=None, **kwargs):
-        """Attempt to store the full signal in memory.
+        """
+        Attempt to store the full signal in memory.
 
         Parameters
         ----------
         close_file : bool, default False
-            If True, attemp to close the file associated with the dask
+            If True, attempt to close the file associated with the dask
             array data if any. Note that closing the file will make all other
             associated lazy signals inoperative.
         %s
+        **kwargs : dict
+            Any other keyword arguments for :py:func:`dask.array.Array.compute`.
+            For example `scheduler` or `num_workers`.
 
         Returns
         -------
         None
 
-        """
-        if "progressbar" in kwargs:
-            warnings.warn(
-                "The `progressbar` keyword is deprecated and will be removed "
-                "in HyperSpy 2.0. Use `show_progressbar` instead.",
-                VisibleDeprecationWarning,
-            )
-            show_progressbar = kwargs["progressbar"]
+        Notes
+        -----
+        For alternative ways to set the compute settings see
+        https://docs.dask.org/en/stable/scheduling.html#configuration
 
+        Examples
+        --------
+        >>> import dask.array as da
+        >>> data = da.zeros((100, 100, 100), chunks=(10, 20, 20))
+        >>> s = hs.signals.Signal2D(data).as_lazy()
+
+        With default parameters
+
+        >>> s1 = s.deepcopy()
+        >>> s1.compute()
+
+        Using 2 workers, which can reduce the memory usage (depending on
+        the data and your computer hardware). Note that `num_workers` only
+        work for the 'threads' and 'processes' `scheduler`.
+
+        >>> s2 = s.deepcopy()
+        >>> s2.compute(num_workers=2)
+
+        Using a single threaded scheduler, which is useful for debugging
+
+        >>> s3 = s.deepcopy()
+        >>> s3.compute(scheduler='single-threaded')
+
+        """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
@@ -261,7 +291,7 @@ class LazySignal(BaseSignal):
 
         with cm():
             da = self.data
-            data = da.compute()
+            data = da.compute(**kwargs)
             if close_file:
                 self.close_file()
             self.data = data
@@ -315,30 +345,10 @@ class LazySignal(BaseSignal):
 
         """
         try:
-            self._get_file_handle().close()
+            get_file_handle(self.data).close()
         except AttributeError:
             _logger.warning("Failed to close lazy signal file")
 
-    def _get_file_handle(self, warn=True):
-        """Return file handle when possible; currently only hdf5 file are
-        supported.
-        """
-        arrkey = None
-        for key in self.data.dask.keys():
-            # The if statement with both "array-original" and "original-array"
-            # is due to dask changing the name of this key. After dask-2022.1.1
-            # the key is "original-array", before it is "array-original"
-            if ("array-original" in key) or ("original-array" in key):
-                arrkey = key
-                break
-        if arrkey:
-            try:
-                return self.data.dask[arrkey].file
-            except (AttributeError, ValueError):
-                if warn:
-                    _logger.warning("Failed to retrieve file handle, either "
-                                    "the file is already closed or it is not "
-                                    "an hdf5 file.")
 
     def _clear_cache_dask_data(self, obj=None):
         self._cache_dask_chunk = None
@@ -459,12 +469,12 @@ class LazySignal(BaseSignal):
     def _make_lazy(self, axis=None, rechunk=False, dtype=None):
         self.data = self._lazy_data(axis=axis, rechunk=rechunk, dtype=dtype)
 
-    def change_dtype(self, dtype, rechunk=True):
+    def change_dtype(self, dtype, rechunk=False):
         # To be consistent with the rechunk argument of other method, we use
         # 'dask_auto' in favour of a chunking which doesn't split signal space.
         if rechunk:
             rechunk = 'dask_auto'
-        from hyperspy.misc import rgb_tools
+
         if not isinstance(dtype, np.dtype) and (dtype not in
                                                 rgb_tools.rgb_dtypes):
             dtype = np.dtype(dtype)
@@ -473,7 +483,7 @@ class LazySignal(BaseSignal):
 
     change_dtype.__doc__ = BaseSignal.change_dtype.__doc__
 
-    def _lazy_data(self, axis=None, rechunk=True, dtype=None):
+    def _lazy_data(self, axis=None, rechunk=False, dtype=None):
         """Return the data as a dask array, rechunked if necessary.
 
         Parameters
@@ -511,7 +521,7 @@ class LazySignal(BaseSignal):
         return res
 
     def _apply_function_on_data_and_remove_axis(self, function, axes,
-                                                out=None, rechunk=True):
+                                                out=None, rechunk=False):
         def get_dask_function(numpy_name):
             # Translate from the default numpy to dask functions
             translations = {'amax': 'max', 'amin': 'min'}
@@ -615,7 +625,7 @@ class LazySignal(BaseSignal):
         return value
 
     def rebin(self, new_shape=None, scale=None,
-              crop=False, dtype=None, out=None, rechunk=True):
+              crop=False, dtype=None, out=None, rechunk=False):
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale)
@@ -642,7 +652,7 @@ class LazySignal(BaseSignal):
     def _make_sure_data_is_contiguous(self):
         self._make_lazy(rechunk=True)
 
-    def diff(self, axis, order=1, out=None, rechunk=True):
+    def diff(self, axis, order=1, out=None, rechunk=False):
         if not self.axes_manager[axis].is_uniform:
             raise NotImplementedError(
             "Performing a numerical difference on a non-uniform axis "
@@ -693,11 +703,11 @@ class LazySignal(BaseSignal):
 
     diff.__doc__ = BaseSignal.diff.__doc__
 
-    def integrate_simpson(self, axis, out=None):
+    def integrate_simpson(self, axis, out=None, rechunk=False):
         axis = self.axes_manager[axis]
         from scipy import integrate
         axis = self.axes_manager[axis]
-        data = self._lazy_data(axis=axis, rechunk=True)
+        data = self._lazy_data(axis=axis, rechunk=rechunk)
         new_data = data.map_blocks(
             integrate.simps,
             x=axis.axis,
@@ -719,7 +729,7 @@ class LazySignal(BaseSignal):
 
     integrate_simpson.__doc__ = BaseSignal.integrate_simpson.__doc__
 
-    def valuemax(self, axis, out=None, rechunk=True):
+    def valuemax(self, axis, out=None, rechunk=False):
         idx = self.indexmax(axis, rechunk=rechunk)
         old_data = idx.data
         data = old_data.map_blocks(
@@ -733,7 +743,7 @@ class LazySignal(BaseSignal):
 
     valuemax.__doc__ = BaseSignal.valuemax.__doc__
 
-    def valuemin(self, axis, out=None, rechunk=True):
+    def valuemin(self, axis, out=None, rechunk=False):
         idx = self.indexmin(axis, rechunk=rechunk)
         old_data = idx.data
         data = old_data.map_blocks(
@@ -747,7 +757,7 @@ class LazySignal(BaseSignal):
 
     valuemin.__doc__ = BaseSignal.valuemin.__doc__
 
-    def get_histogram(self, bins='fd', out=None, rechunk=True, **kwargs):
+    def get_histogram(self, bins='fd', out=None, rechunk=False, **kwargs):
         if 'range_bins' in kwargs:
             _logger.warning("'range_bins' argument not supported for lazy "
                             "signals")
@@ -796,7 +806,7 @@ class LazySignal(BaseSignal):
 
     # _get_signal_signal.__doc__ = BaseSignal._get_signal_signal.__doc__
 
-    def _calculate_summary_statistics(self, rechunk=True):
+    def _calculate_summary_statistics(self, rechunk=False):
         if rechunk is True:
             # Use dask auto rechunk instead of HyperSpy's one, what should be
             # better for these operations
@@ -958,24 +968,6 @@ class LazySignal(BaseSignal):
         * :py:class:`~.learn.ornmf.ORNMF`
 
         """
-        if kwargs.get("bounds", False):
-            warnings.warn(
-                "The `bounds` keyword is deprecated and will be removed "
-                "in v2.0. Since version > 1.3 this has no effect.",
-                VisibleDeprecationWarning,
-            )
-            kwargs.pop("bounds", None)
-
-        # Deprecate 'ONMF' for 'ORNMF'
-        if algorithm == "ONMF":
-            warnings.warn(
-                "The argument `algorithm='ONMF'` has been deprecated and will "
-                "be removed in future. Please use `algorithm='ORNMF'` instead.",
-                VisibleDeprecationWarning,
-            )
-            algorithm = "ORNMF"
-
-
         # Check algorithms requiring output_dimension
         algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF"]
         if algorithm in algorithms_require_dimension and output_dimension is None:
@@ -1292,12 +1284,9 @@ class LazySignal(BaseSignal):
             # Needs to reverse the chunks list to match dask chunking order
             signal_chunks = list(signal_chunks)[::-1]
             navigation_chunks = ['auto'] * len(self.axes_manager.navigation_shape)
-            if Version(dask.__version__ ) >= Version("2.30.0"):
-                kwargs = {'balance':True}
-            else:
-                kwargs = {}
-            chunks = self.data.rechunk([*navigation_chunks, *signal_chunks],
-                                       **kwargs).chunks
+            chunks = self.data.rechunk(
+                [*navigation_chunks, *signal_chunks], balance=True,
+                ).chunks
 
         # Get the slice of the corresponding chunk
         signal_size = len(signal_shape)

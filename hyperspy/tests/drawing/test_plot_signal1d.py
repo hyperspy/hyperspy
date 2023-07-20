@@ -1,4 +1,4 @@
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,6 +21,7 @@ from shutil import copyfile
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from matplotlib.backend_bases import MouseEvent, PickEvent
 import numpy as np
 import pytest
 try:
@@ -61,6 +62,15 @@ def _generate_filename_list(style):
     return filename_list2
 
 
+def _matplotlib_pick_event(figure, click, artist):
+    try:
+        # Introduced in matplotlib 3.6 and `pick_event` deprecated
+        event = PickEvent('pick_event', figure, click, artist)
+        figure.canvas.callbacks.process('pick_event', event)
+    except: # Deprecated in matplotlib 3.6
+        figure.canvas.pick_event(figure.canvas, click, artist)
+
+
 @pytest.fixture
 def setup_teardown(request, scope="class"):
     try:
@@ -92,12 +102,15 @@ def setup_teardown(request, scope="class"):
 @pytest.mark.usefixtures("setup_teardown")
 class TestPlotSpectra():
 
-    s = hs.signals.Signal1D(ascent()[100:160:10])
+    def setup_method(self, method):
+        s = hs.signals.Signal1D(ascent()[100:160:10])
 
-    # Add a test signal with decreasing axis
-    s_reverse = s.deepcopy()
-    s_reverse.axes_manager[1].offset = 512
-    s_reverse.axes_manager[1].scale = -1
+        # Add a test signal with decreasing axis
+        s_reverse = s.deepcopy()
+        s_reverse.axes_manager[1].offset = 512
+        s_reverse.axes_manager[1].scale = -1
+        self.s = s
+        self.s_reverse = s_reverse
 
     def _generate_parameters(style):
         parameters = []
@@ -122,8 +135,10 @@ class TestPlotSpectra():
         if fig:
             fig = plt.figure()
         if ax:
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
+            if fig:
+                ax = fig.add_subplot(111)
+            else:
+                ax = plt.figure().add_subplot(111)
 
         ax = hs.plot.plot_spectra(self.s, style=style, legend='auto',
                                   fig=fig, ax=ax)
@@ -175,14 +190,12 @@ class TestPlotSpectra():
         ax = hs.plot.plot_spectra(s, legend=my_legend, fig=f)
         leg = ax.get_legend()
         leg_artists = leg.get_lines()
-        click = plt.matplotlib.backend_bases.MouseEvent(
-            'button_press_event', f.canvas, 0, 0, 'left')
+        click = MouseEvent('button_press_event', f.canvas, 0, 0, 'left')
         for artist, li in zip(leg_artists, ax.lines[::-1]):
-            plt.matplotlib.backends.backend_agg.FigureCanvasBase.pick_event(
-                f.canvas, click, artist)
+            _matplotlib_pick_event(f, click, artist)
             assert not li.get_visible()
-            plt.matplotlib.backends.backend_agg.FigureCanvasBase.pick_event(
-                f.canvas, click, artist)
+            _matplotlib_pick_event(f, click, artist)
+            assert li.get_visible()
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
@@ -198,9 +211,9 @@ class TestPlotSpectra():
         return ax.get_figure()
 
 
-class TestPlotNonLinearAxis:
+class TestPlotNonUniformAxis:
 
-    def setup_method(self):
+    def setup_method(self, method):
         dict0 = {'size': 10, 'name': 'Axis0', 'units': 'A', 'scale': 0.2,
                  'offset': 1, 'navigate': True}
         dict1 = {'axis': np.arange(100)**3, 'name': 'Axis1', 'units': 'O',
@@ -213,6 +226,34 @@ class TestPlotNonLinearAxis:
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_non_uniform_sig(self):
+        self.s.plot()
+        return self.s._plot.signal_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_uniform_sig_update(self):
+        s2 = self.s
+        s2.plot()
+        s2.axes_manager[0].index += 1
+        return s2._plot.signal_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_uniform_nav(self):
+        self.s.plot()
+        return self.s._plot.navigator_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_uniform_nav_update(self):
+        s2 = self.s
+        s2.plot()
+        s2.axes_manager[0].index += 1
+        return self.s._plot.navigator_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_uniform_sig(self):
         self.s.plot()
         return self.s._plot.signal_plot.figure
 
@@ -396,14 +437,7 @@ def test_plot_spectra_linestyle(linestyle):
 
 
 def test_plot_spectra_linestyle_error():
-    from hyperspy.exceptions import VisibleDeprecationWarning
     s = hs.signals.Signal1D(np.arange(100).reshape(2, 50))
-    with pytest.warns(VisibleDeprecationWarning):
-        hs.plot.plot_spectra(s, line_style='--')
-
-    with pytest.raises(ValueError):
-        with pytest.warns(VisibleDeprecationWarning):
-            hs.plot.plot_spectra(s, linestyle='-', line_style='--')
 
     with pytest.raises(ValueError):
         hs.plot.plot_spectra(s, linestyle='invalid')

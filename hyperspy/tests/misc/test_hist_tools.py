@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -23,7 +23,6 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 def generate_bad_toy_data():
@@ -96,10 +95,3 @@ class TestHistogramBinMethodsBadDataset:
     def test_working_bins(self, bins, size):
         out = self.s1.get_histogram(bins=bins)
         assert out.data.shape == size
-
-    @pytest.mark.parametrize("bins", ["scotts", "freedman"])
-    def test_deprecation_warnings(self, bins):
-        with pytest.warns(
-            VisibleDeprecationWarning, match="has been deprecated and will be removed"
-        ):
-            _ = self.s1.get_histogram(bins=bins)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,7 +19,7 @@
 from __future__ import division
 
 import matplotlib.pyplot as plt
-from matplotlib.backend_bases import MouseEvent
+from matplotlib.backend_bases import MouseEvent, PickEvent
 import numpy as np
 
 from hyperspy.drawing.utils import on_figure_window_close
@@ -198,13 +198,17 @@ class WidgetBase(object):
         if not self.patch or not self.is_on or not self.ax:
             return
 
-        canvas = self.ax.figure.canvas
+        figure = self.ax.figure
         # Simulate a pick event
         x, y = self.patch[0].get_transform().transform_point((0, 0))
-        mouseevent = MouseEvent('pick_event', canvas, x, y)
-        # when the widget is added programatically, mouseevent can be "empty"
+        mouseevent = MouseEvent('pick_event', figure.canvas, x, y)
         if mouseevent.button:
-            canvas.pick_event(mouseevent, self.patch[0])
+            try:
+                # Introduced in matplotlib 3.6 and `pick_event` deprecated
+                event = PickEvent('pick_event', figure, mouseevent, self.patch[0])
+                figure.canvas.callbacks.process('pick_event', event)
+            except: # Deprecated in matplotlib 3.6
+                figure.canvas.pick_event(mouseevent, self.patch[0])
         self.picked = False
 
     def connect(self, ax):
@@ -319,6 +323,7 @@ class DraggableWidgetBase(WidgetBase):
 
     def __init__(self, axes_manager, **kwargs):
         super(DraggableWidgetBase, self).__init__(axes_manager, **kwargs)
+        self.is_pointer = False
         self.events.moved = Event(doc="""
             Event that triggers when the widget was moved.
 
@@ -380,10 +385,10 @@ class DraggableWidgetBase(WidgetBase):
         relevant events, and updates the patch position.
         """
         if self._navigating:
-            with self.axes_manager.events.indices_changed.suppress_callback(
-                    self._on_navigate):
+            with self.axes_manager.events.indices_changed.suppress():
                 for i in range(len(self.axes)):
                     self.axes[i].value = self._pos[i]
+            self.axes_manager.events.indices_changed.trigger(obj=self.axes_manager)
         self.events.moved.trigger(self)
         self.events.changed.trigger(self)
         self._update_patch_position()
@@ -453,6 +458,11 @@ class DraggableWidgetBase(WidgetBase):
         self.cids.append(canvas.mpl_connect('pick_event', self.onpick))
         self.cids.append(canvas.mpl_connect(
             'button_release_event', self.button_release))
+        canvas.mpl_connect('button_press_event', self._onjumpclick)
+
+    def _onjumpclick(self, event):
+        """This method must be provided by subclasses"""
+        pass
 
     def _on_navigate(self, axes_manager):
         if axes_manager is self.axes_manager:
@@ -821,7 +831,7 @@ class Widget2DBase(ResizableDraggableWidgetBase):
             self.draw_patch()
 
 
-class ResizersMixin(object):
+class ResizersMixin:
     """
     Widget mix-in for adding resizing manipulation handles.
 
@@ -891,7 +901,9 @@ class ResizersMixin(object):
                     r.set_animated(self.blit)
             else:
                 for r in self._resizer_handles:
-                    r.remove()
+                    # check that the matplotlib patch is present before removing it
+                    if r in ax.get_children():
+                        r.remove()
             self._resizers_on = value
 
     def _get_resizer_size(self):
@@ -967,7 +979,8 @@ class ResizersMixin(object):
             super(ResizersMixin, self).set_on(value)
 
     def onpick(self, event):
-        """Picking of main patch is same as for widget base, but this also
+        """
+        Picking of main patch is same as for widget base, but this also
         handles picking of the resize handles. If a resize handle is picked,
         `picked` is set to `True`, and `resizer_picked` is set to an integer
         indicating which handle was picked (0-3 for top left, top right, bottom
@@ -999,7 +1012,7 @@ class ResizersMixin(object):
         """Same as widget base, but also adds resizers if 'resizers' property
         is True.
         """
-        if self.resizers:
+        if self.resizers and self._resizers_on:
             self._set_resizers(True, ax)
         if hasattr(super(ResizersMixin, self), '_add_patch_to'):
             super(ResizersMixin, self)._add_patch_to(ax)

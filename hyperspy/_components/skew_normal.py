@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -18,12 +18,9 @@
 
 import dask.array as da
 import numpy as np
-from packaging.version import Version
-import sympy
 
 from hyperspy.component import _get_scaling_factor
 from hyperspy._components.expression import Expression
-from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 sqrt2pi = np.sqrt(2 * np.pi)
@@ -143,9 +140,6 @@ class SkewNormal(Expression):
 
     def __init__(self, x0=0., A=1., scale=1., shape=0.,
                  module=['numpy', 'scipy'], **kwargs):
-        if Version(sympy.__version__) < Version("1.3"):
-            raise ImportError("The `SkewNormal` component requires "
-                              "SymPy >= 1.3")
         # We use `_shape` internally because `shape` is already taken in sympy
         # https://github.com/sympy/sympy/pull/20791
         super().__init__(
@@ -222,9 +216,7 @@ class SkewNormal(Expression):
             self.A.value = height * sqrt2pi
             self.scale.value = scale
             self.shape.value = shape
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.A.value /= scaling_factor
             return True
         else:
@@ -232,9 +224,7 @@ class SkewNormal(Expression):
                 self._create_arrays()
             self.A.map['values'][:] = height * sqrt2pi
 
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 self.A.map['values'] /= scaling_factor
             self.A.map['is_set'][:] = True
             self.x0.map['values'][:] = x0

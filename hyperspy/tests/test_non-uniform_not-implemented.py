@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -24,7 +24,6 @@ from hyperspy.signals import (
     EELSSpectrum,
     EDSTEMSpectrum,
     EDSSEMSpectrum,
-    HologramImage
     )
 from hyperspy.components1d import EELSCLEdge
 
@@ -112,20 +111,6 @@ def test_eds():
         m._set_energy_scale('Al_Ka', [1.0])
     with pytest.raises(NotImplementedError):
         m._set_energy_offset('Al_Ka', [1.0])
-
-
-def test_hologram_image():
-    s = HologramImage([[10, 10], [10, 10]])
-    s.axes_manager[0].convert_to_non_uniform_axis()
-    s.axes_manager[1].convert_to_non_uniform_axis()
-    with pytest.raises(NotImplementedError):
-        s.estimate_sideband_position()
-    with pytest.raises(NotImplementedError):
-        s.estimate_sideband_size(s)
-    with pytest.raises(NotImplementedError):
-        s.reconstruct_phase()
-    with pytest.raises(NotImplementedError):
-        s.statistics()
 
 
 def test_lazy():

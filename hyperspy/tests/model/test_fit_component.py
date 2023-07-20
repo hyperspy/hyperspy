@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -185,9 +185,7 @@ class TestFitSI:
     def test_fit_spectrum_image(self):
         m = self.model
         G = self.G
-        # HyperSpy 2.0: remove setting iterpath='serpentine'
-        m.fit_component(G, signal_range=(2, 7), only_current=False,
-                        iterpath='serpentine')
+        m.fit_component(G, signal_range=(2, 7), only_current=False)
         m.axes_manager.indices = (0, 0)
         A = G.A.value
         m.axes_manager.indices = (1, 1)

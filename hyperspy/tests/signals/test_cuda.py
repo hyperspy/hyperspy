@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2021 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -26,10 +26,6 @@ import hyperspy.api as hs
 
 try:
     import cupy as cp
-    if Version(np.__version__) < Version('1.20'):
-        raise ImportError('numpy 1.20 or newer is required.')
-    if Version(dask.__version__) < Version('2021.3.0'):
-        raise ImportError('dask 2021.3.0 or newer is required.')
 except ImportError:
     pytest.skip("cupy is required", allow_module_level=True)
 
@@ -65,15 +61,15 @@ class TestCupy:
         s = self.s
         _ = s.as_signal2D([0, 1])
 
-    @pytest.mark.parametrize('parallel', [True, False, None])
-    def test_map(self, parallel):
+    @pytest.mark.parametrize('num_workers', [1, 2, None])
+    def test_map(self, num_workers):
         s = self.s
         data_ref = s.data.copy()
 
         def dummy_function(data):
             return data * 10
 
-        s.map(dummy_function, parallel, inplace=True,
+        s.map(dummy_function, inplace=True, num_workers=num_workers,
               output_signal_size=s.axes_manager.signal_shape,
               output_dtype=s.data.dtype)
 
@@ -142,7 +138,7 @@ class TestCupy:
     def test_fit(self):
         s = self.s
         m = s.create_model()
-        m.append(hs.model.components1D.Polynomial(legacy=False, order=1))
+        m.append(hs.model.components1D.Polynomial(order=1))
         m.fit()
 
 

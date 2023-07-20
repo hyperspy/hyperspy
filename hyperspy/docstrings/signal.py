@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -57,7 +57,8 @@ OPTIMIZE_ARG = \
 
 RECHUNK_ARG = \
     """rechunk: bool
-           Only has effect when operating on lazy signal. If ``True`` (default),
+           Only has effect when operating on lazy signal. Default ``False``,
+           which means the chunking structure will be retained. If ``True``,
            the data may be automatically rechunked before performing this
            operation."""
 
@@ -65,12 +66,6 @@ SHOW_PROGRESSBAR_ARG = \
     """show_progressbar : None or bool
            If ``True``, display a progress bar. If ``None``, the default from
            the preferences settings is used."""
-
-PARALLEL_ARG = \
-    """parallel : None or bool
-           If ``True``, perform computation in parallel using multithreading. If
-           ``None``, the default from the preferences settings is used. The number
-           of threads is controlled by the ``max_workers`` argument."""
 
 LAZY_OUTPUT_ARG = \
     """lazy_output : None or bool
@@ -82,10 +77,10 @@ LAZY_OUTPUT_ARG = \
            If ``None`` the output will be lazy if the input signal is lazy, and
            non-lazy if the input signal is non-lazy."""
 
-MAX_WORKERS_ARG = \
-    """max_workers : None or int
-           Maximum number of threads used when ``parallel=True``. If None, defaults
-           to ``min(32, os.cpu_count())``."""
+NUM_WORKERS_ARG = \
+    """num_workers : None or int
+           Number of worker used by dask. If None, default
+           to dask default value."""
 
 CLUSTER_SIGNALS_ARG = \
     """signal : {"mean", "sum", "centroid"}, optional
@@ -168,3 +163,13 @@ NAVIGATION_MASK_ARG = \
     """navigation_mask: bool array
             Restricts the operation to the navigation locations not marked
             as True (masked)."""
+
+LAZYSIGNAL_DOC = \
+    """
+    The computation is delayed until explicitly requested.
+
+    This class is not expected to be instantiated directly, instead use:
+
+    >>> data = da.ones((10, 10))
+    >>> s = hs.signals.__BASECLASS__(data).as_lazy()
+    """

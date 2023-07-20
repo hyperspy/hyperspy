@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -52,7 +52,7 @@ class Arctan(Expression):
     """
 
     def __init__(self, A=1., k=1., x0=1., module=["numpy", "scipy"], **kwargs):
-        # Not to break scripts once we remove the legacy Arctan
+        # To be able to still read old file versions that contain this argument
         if "minimum_at_zero" in kwargs:
             del kwargs["minimum_at_zero"]
         super().__init__(

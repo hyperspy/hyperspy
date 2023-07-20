@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -36,13 +36,13 @@ class HorizontalLine(MarkerBase):
     Example
     -------
     >>> s = hs.signals.Signal1D(np.random.random([10, 100])) * 10
-    >>> m = hs.plot.markers.horizontal_line(y=range(10), color='green')
+    >>> m = hs.plot.markers.HorizontalLine(y=range(10), color='green')
     >>> s.add_marker(m)
 
     Adding a marker permanently to a signal
 
     >>> s = hs.signals.Signal1D(np.random.random([10, 100]))
-    >>> m = hs.plot.markers.horizontal_line(y=5, color='green')
+    >>> m = hs.plot.markers.HorizontalLine(y=5, color='green')
     >>> s.add_marker(m, permanent=True)
 
     """
@@ -67,7 +67,7 @@ class HorizontalLine(MarkerBase):
     def update(self):
         if self.auto_update is False:
             return
-        self.marker.set_ydata(self.get_data_position('y1'))
+        self.marker.set_ydata([self.get_data_position('y1')])
 
     def _plot_marker(self):
         self.marker = self.ax.axhline(self.get_data_position('y1'),

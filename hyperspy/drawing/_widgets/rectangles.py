@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -54,6 +54,10 @@ class SquareWidget(Widget2DBase):
             alpha=self.alpha,
             picker=True,)]
         super(SquareWidget, self)._set_patch()
+
+    def _onjumpclick(self, event):
+        if event.key == "shift" and event.inaxes and self.is_pointer:
+            self.position = (event.xdata, event.ydata)
 
     def _onmousemove(self, event):
         """on mouse motion move the patch if picked"""

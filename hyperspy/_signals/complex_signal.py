@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -24,9 +24,16 @@ from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS, COMPLEX_DOCSTRING,
-    PLOT2D_KWARGS_DOCSTRING)
-from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG
+    BASE_PLOT_DOCSTRING,
+    BASE_PLOT_DOCSTRING_PARAMETERS,
+    COMPLEX_DOCSTRING,
+    PLOT2D_KWARGS_DOCSTRING
+)
+from hyperspy.docstrings.signal import (
+    SHOW_PROGRESSBAR_ARG,
+    NUM_WORKERS_ARG,
+    LAZYSIGNAL_DOC,
+)
 from hyperspy.misc.utils import parse_quantity
 
 
@@ -54,7 +61,7 @@ def format_title(thing):
 
 class ComplexSignal(BaseSignal):
 
-    """BaseSignal subclass for complex data."""
+    """General signal class for complex data."""
 
     _dtype = "complex"
 
@@ -160,7 +167,7 @@ class ComplexSignal(BaseSignal):
                 'Complex data can only be converted into other complex dtypes!')
 
     def unwrapped_phase(self, wrap_around=False, seed=None,
-                        show_progressbar=None, parallel=None, max_workers=None):
+                        show_progressbar=None, num_workers=None):
         """Return the unwrapped phase as an appropriate HyperSpy signal.
 
         Parameters
@@ -174,7 +181,6 @@ class ComplexSignal(BaseSignal):
         seed : int, optional
             Unwrapping 2D or 3D images uses random initialization. This sets the
             seed of the PRNG to achieve deterministic behavior.
-        %s
         %s
         %s
 
@@ -196,11 +202,11 @@ class ComplexSignal(BaseSignal):
         phase = self.phase
         phase.map(unwrap_phase, wrap_around=wrap_around, seed=seed,
                   show_progressbar=show_progressbar, ragged=False,
-                  parallel=parallel, max_workers=max_workers)
+                  num_workers=num_workers)
         phase.metadata.General.title = f'unwrapped {phase.metadata.General.title}'
         return phase  # Now unwrapped!
 
-    unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
+    unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG)
 
     def __call__(self, axes_manager=None, power_spectrum=False,
                  fft_shift=False, as_numpy=None):
@@ -305,10 +311,10 @@ class ComplexSignal(BaseSignal):
 
         Examples
         --------
-        >>> import hyperspy.api as hs
-        >>> holo = hs.datasets.example_signals.object_hologram()
-        >>> ref = hs.datasets.example_signals.reference_hologram()
-        >>> w = holo.reconstruct_phase(ref)
+        >>> import holospy as holo
+        >>> hologram = data.datasets.Fe_needle_hologram()
+        >>> ref = hs.datasets.Fe_needle_reference_hologram()
+        >>> w = hologram.reconstruct_phase(ref)
         >>> w.argand_diagram(range=[-3, 3]).plot()
 
         """
@@ -365,4 +371,6 @@ class ComplexSignal(BaseSignal):
 
 class LazyComplexSignal(ComplexSignal, LazySignal):
 
-    pass
+    """Lazy general signal class for complex data."""
+
+    __doc__ += LAZYSIGNAL_DOC.replace("__BASECLASS__", "ComplexSignal")

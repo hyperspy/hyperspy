@@ -1,11 +1,9 @@
 from hyperspy.utils import print_known_signal_types
 
 
-class TestPrintKnownSignalTypes:
-    def test_text_output(self):
-        obj = print_known_signal_types()
-        assert obj.__repr__()
-
-    def test_html_output(self):
-        obj = print_known_signal_types()
-        assert obj._repr_html_()
+def test_text_output(capsys):
+    print_known_signal_types()
+    captured = capsys.readouterr()
+    assert 'signal_type' in captured.out
+    # the output will be str, not html
+    assert '<p>' not in captured.out

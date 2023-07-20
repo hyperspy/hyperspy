@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -409,7 +409,7 @@ class BaseInteractiveROI(BaseROI):
         Returns
         -------
         :py:class:`~hyperspy.signal.BaseSignal` or one of its subclass
-            Signal updated with the current ROI selection 
+            Signal updated with the current ROI selection
             when the ROI is changed.
 
         """
@@ -497,6 +497,11 @@ class BaseInteractiveROI(BaseROI):
         if t.Undefined in tuple(self):
             self._set_default_values(signal, axes=axes)
 
+        if signal._plot is None or signal._plot.signal_plot is None:
+            raise RuntimeError(
+                f"{repr(signal)} does not have an active plot. Plot the "
+                "signal before calling this method.")
+
         if widget is None:
             widget = self._get_widget_type(
                 axes, signal)(
@@ -509,10 +514,6 @@ class BaseInteractiveROI(BaseROI):
             self.remove_widget(signal)
 
         if widget.ax is None:
-            if signal._plot is None or signal._plot.signal_plot is None:
-                raise Exception(
-                    f"{repr(signal)} does not have an active plot. Plot the "
-                    "signal before calling this method.")
 
             ax = _get_mpl_ax(signal._plot, axes)
             widget.set_mpl_ax(ax)

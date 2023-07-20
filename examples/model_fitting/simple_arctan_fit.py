@@ -1,11 +1,17 @@
-"""Creates a spectrum, and fits an arctan to it."""
+"""
+Simple arctan fit
+=================
+
+Fit an arctan function.
+
+"""
 
 import numpy as np
 import hyperspy.api as hs
 
 # Generate the data and make the spectrum
-s = hs.signals.Spectrum(
-    np.arctan(np.arange(-500, 500)))
+data = np.arctan(np.arange(-500, 500))
+s = hs.signals.Signal1D(data)
 s.axes_manager[0].offset = -500
 s.axes_manager[0].units = ""
 s.axes_manager[0].name = "x"

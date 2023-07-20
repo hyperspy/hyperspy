@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -23,10 +23,8 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.misc.utils import slugify
-from hyperspy.axes import GeneratorLen
+
 
 class TestModelJacobians:
     def setup_method(self, method):
@@ -218,11 +216,7 @@ class TestModelSettingPZero:
         m.append(hs.model.components1D.Gaussian())
         m[-1].active = False
 
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match=r".* has been deprecated and will be made private",
-        ):
-            m.set_boundaries()
+        m._set_boundaries()
 
         assert m.free_parameters_boundaries == [(0.1, 0.11), (0.2, 0.21), (0.3, 0.31)]
 
@@ -234,11 +228,7 @@ class TestModelSettingPZero:
         m.append(hs.model.components1D.Gaussian())
         m[-1].active = False
 
-        with pytest.warns(
-            VisibleDeprecationWarning,
-            match=r".* has been deprecated and will be made private",
-        ):
-            m.set_mpfit_parameters_info()
+        m._set_mpfit_parameters_info()
 
         assert m.mpfit_parinfo == [
             {"limited": [True, False], "limits": [0.1, 0]},
@@ -525,7 +515,7 @@ class TestModel1D:
         m.append(g3)
         g4 = hs.model.components1D.Gaussian()
         m.append(g4)
-        p = hs.model.components1D.Polynomial(3, legacy=False)
+        p = hs.model.components1D.Polynomial(3)
         m.append(p)
 
         g1.A.value = 3.0
@@ -605,8 +595,7 @@ class TestModelPrintCurrentValues:
         s.axes_manager[0].scale = 0.1
         s.axes_manager[0].offset = 10
         m = s.create_model()
-        with ignore_warning(message="The API of the `Polynomial` component"):
-            m.append(hs.model.components1D.Polynomial(1))
+        m.append(hs.model.components1D.Polynomial(1))
         m.append(hs.model.components1D.Offset())
         self.s = s
         self.m = m
@@ -745,13 +734,6 @@ class TestAsSignal:
             s.data, np.array([np.zeros((2, 5)), np.ones((2, 5)) * 2])
         )
 
-    @pytest.mark.parametrize("kw", [{"parallel": True}, {"max_workers": 1}])
-    def test_warnings(self, kw):
-        with pytest.warns(
-            VisibleDeprecationWarning, match=r".* has been deprecated",
-        ):
-            _ = self.m.as_signal(**kw)
-
     def test_out_of_range_to_nan(self):
         index = 2
         self.m.channel_switches[:index] = False
@@ -836,50 +818,6 @@ class TestAdjustPosition:
         assert len(self.m._position_widgets) == 0
 
 
-def test_deprecated_private_functions():
-    s = hs.signals.Signal1D(np.zeros(1))
-    m = s.create_model()
-
-    with pytest.warns(VisibleDeprecationWarning, match=r".* has been deprecated"):
-        m.set_boundaries()
-
-    with pytest.warns(VisibleDeprecationWarning, match=r".* has been deprecated"):
-        m.set_mpfit_parameters_info()
-
-
-def generate():
-    for i in range(3):
-        yield (i,i)
-
-
-class Test_multifit_iterpath():
-    def setup_method(self, method):
-        data = np.ones((3, 3, 10))
-        s = hs.signals.Signal1D(data)
-        ax = s.axes_manager
-        m = s.create_model()
-        G = hs.model.components1D.Gaussian()
-        m.append(G)
-        self.m = m
-        self.ax = ax
-
-    def test_custom_iterpath(self):
-        indices = np.array([(0,0), (1,1), (2,2)])
-        self.ax.iterpath = indices
-        self.m.multifit(iterpath=indices)
-        set_indices = np.array(np.where(self.m[0].A.map['is_set'])).T
-        np.testing.assert_array_equal(set_indices, indices[:,::-1])
-
-    def test_model_generator(self):
-        gen = generate()
-        self.m.axes_manager.iterpath = gen
-        self.m.multifit()
-
-    def test_model_GeneratorLen(self):
-        gen = GeneratorLen(generate(), 3)
-        self.m.axes_manager.iterpath = gen
-
-
 class TestSignalRange:
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.random.rand(10, 10, 20))
@@ -907,4 +845,3 @@ class TestSignalRange:
         m = self.m
         roi = hs.roi.SpanROI(105, 110)
         assert m._parse_signal_range_values(roi) == (5, 10)
-

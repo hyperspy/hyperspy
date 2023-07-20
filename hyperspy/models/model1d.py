@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -32,7 +32,6 @@ from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT, add_gui_method
 from hyperspy.misc.utils import dummy_context_manager
-from hyperspy.misc.utils import is_binned # remove in v2.0
 
 
 @add_gui_method(toolkey="hyperspy.Model1D.fit_component")
@@ -43,7 +42,7 @@ class ComponentFit(SpanSelectorInSignal1D):
 
     def __init__(self, model, component, signal_range=None,
                  estimate_parameters=True, fit_independent=False,
-                 only_current=True, iterpath='flyback', **kwargs):
+                 only_current=True, iterpath='serpentine', **kwargs):
         if model.signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 model.signal.axes_manager.signal_dimension, 1)
@@ -259,6 +258,7 @@ class Model1D(BaseModel):
         self._plot_components = False
         self._suspend_update = False
         self._model_line = None
+        self._residual_line = None
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.events.indices_changed.connect(
             self._on_navigating, [])
@@ -378,7 +378,8 @@ class Model1D(BaseModel):
     remove.__doc__ = BaseModel.remove.__doc__
 
     def __call__(self, non_convolved=False, onlyactive=False,
-                 component_list=None, binned=None):
+                 component_list=None, binned=None, 
+                 ignore_channel_switches = False):
         """Returns the corresponding model for the current coordinates
 
         Parameters
@@ -394,6 +395,9 @@ class Model1D(BaseModel):
         binned : bool or None
             Specify whether the binned attribute of the signal axes needs to be
             taken into account.
+        ignore_channel_switches: bool
+            If true, the entire signal axis are returned 
+            without checking channel_switches.
 
         cursor: 1 or 2
 
@@ -413,7 +417,8 @@ class Model1D(BaseModel):
                 component for component in component_list if component.active]
 
         if self.convolved is False or non_convolved is True:
-            axis = self.axis.axis[self.channel_switches]
+            slice_ = slice(None) if ignore_channel_switches else self.channel_switches
+            axis = self.axis.axis[slice_]
             sum_ = np.zeros(len(axis))
             for component in component_list:
                 sum_ += component.function(axis)
@@ -434,15 +439,16 @@ class Model1D(BaseModel):
             to_return = to_return[self.channel_switches]
 
         if binned is None:
-            # in v2 replace by
-            # if self.signal.axes_manager[-1].is_binned:
-            binned = is_binned(self.signal)
+            # use self.axis instead of self.signal.axes_manager[-1]
+            # to avoid small overhead (~10 us) which isn't negligeable when
+            # __call__ is called repeatably, typically when fitting!
+            binned = self.axis.is_binned
 
         if binned:
-            if self.signal.axes_manager[-1].is_uniform:
-                to_return *= self.signal.axes_manager[-1].scale
+            if self.axis.is_uniform:
+                to_return *= self.axis.scale
             else:
-                to_return *= np.gradient(self.signal.axes_manager[-1].axis)
+                to_return *= np.gradient(self.axis.axis)
         return to_return
 
     def _errfunc(self, param, y, weights=None):
@@ -646,13 +652,11 @@ class Model1D(BaseModel):
 
             to_return = grad[1:, :] * weights
 
-        if is_binned(self.signal):
-        # in v2 replace by
-        #if self.signal.axes_manager[-1].is_binned:
-            if self.signal.axes_manager[-1].is_uniform:
-                to_return *= self.signal.axes_manager[-1].scale
+        if self.axis.is_binned:
+            if self.axis.is_uniform:
+                to_return *= self.axis.scale
             else:
-                to_return *= np.gradient(self.signal.axes_manager[-1].axis)
+                to_return *= np.gradient(self.axis.axis)
 
         return to_return
 
@@ -710,8 +714,15 @@ class Model1D(BaseModel):
             ns[np.where(self.channel_switches)] = s
             s = ns
         return s
+    
+    def _residual_for_plot(self,**kwargs):
+        """From an model1D object, the original signal is subtracted
+        by the model signal then returns the residual
+        """
 
-    def plot(self, plot_components=False, **kwargs):
+        return self.signal.__call__() - self.__call__(ignore_channel_switches=True)
+    
+    def plot(self, plot_components=False,plot_residual=False, **kwargs):
         """Plot the current spectrum to the screen and a map with a
         cursor to explore the SI.
 
@@ -719,6 +730,8 @@ class Model1D(BaseModel):
         ----------
         plot_components : bool
             If True, add a line per component to the signal figure.
+        plot_residual : bool
+            If True, add a residual line (Signal - Model) to the signal figure.
         **kwargs : dict
             All extra keyword arguements are passed to
             :py:meth:`~._signals.signal1d.Signal1D.plot`
@@ -742,6 +755,20 @@ class Model1D(BaseModel):
         self._model_line = l2
         self._plot = self.signal._plot
         self._connect_parameters2update_plot(self)
+        
+        #Optional to plot the residual of (Signal - Model)
+        if plot_residual:
+            l3 = hyperspy.drawing.signal1d.Signal1DLine()
+            # _residual_for_plot outputs the residual (Signal - Model)
+            l3.data_function = self._residual_for_plot
+            l3.set_line_properties(color='green', type='line')
+            # Add the line to the figure
+            _plot.signal_plot.add_line(l3)
+            l3.plot()
+            # Quick access to _residual_line if needed 
+            self._residual_line = l3
+
+
         if plot_components is True:
             self.enable_plot_components()
         else:

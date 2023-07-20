@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -99,10 +99,6 @@ class GeneralConfig(t.HasTraits):
              'DictionaryTreeBrowser, but with double lines')
     logging_level = t.Enum(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', ],
                            desc='the log level of all hyperspy modules.')
-    parallel = t.CBool(
-        True,
-        desc='Use parallel threads for computations by default.'
-    )
 
     nb_progressbar = t.CBool(
         True,
@@ -119,8 +115,8 @@ class GeneralConfig(t.HasTraits):
 class EELSConfig(t.HasTraits):
     eels_gos_files_path = t.Directory(
         guess_gos_path(),
-        label='GOS directory',
-        desc='The GOS files are required to create the EELS edge components')
+        label='Hartree-Slater GOS directory',
+        desc='The GOS files are used to create the EELS edge components')
 
 
 class GUIs(t.HasTraits):
@@ -132,19 +128,15 @@ class GUIs(t.HasTraits):
         True,
         desc="Display traitsui user interface elements. "
         "Requires installing hyperspy_gui_traitsui.")
-    warn_if_guis_are_missing = t.CBool(
-        True,
-        desc="Not necessary anymore and deprecated.")
 
 
 class PlotConfig(t.HasTraits):
-    saturated_pixels = t.CFloat(0.,
-                                label='Saturated pixels (deprecated)',
-                                desc='Warning: this is deprecated and will be removed in HyperSpy v2.0'
-                                )
     # Don't use t.Enum to list all possible matplotlib colormap to
     # avoid importing matplotlib and building the list of colormap
     # when importing hyperpsy
+    widget_plot_style = t.Enum(
+        ['horizontal', 'vertical'],
+        label='Widget plot style: (only with ipympl)')
     cmap_navigator = t.Str('gray',
                            label='Color map navigator',
                            desc='Set the default color map for the navigator.',

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -36,13 +36,13 @@ class VerticalLine(MarkerBase):
     Example
     -------
     >>> s = hs.signals.Signal1D(np.random.random([10, 100]))
-    >>> m = hs.plot.markers.vertical_line(x=range(10), color='green')
+    >>> m = hs.plot.markers.VerticalLine(x=range(10), color='green')
     >>> s.add_marker(m)
 
     Adding a marker permanently to a signal
 
     >>> s = hs.signals.Signal1D(np.random.random((100, 100)))
-    >>> m = hs.plot.markers.vertical_line(x=30)
+    >>> m = hs.plot.markers.VerticalLine(x=30)
     >>> s.add_marker(m, permanent=True)
     """
 
@@ -66,7 +66,7 @@ class VerticalLine(MarkerBase):
     def update(self):
         if self.auto_update is False:
             return
-        self.marker.set_xdata(self.get_data_position('x1'))
+        self.marker.set_xdata([self.get_data_position('x1')])
 
     def _plot_marker(self):
         self.marker = self.ax.axvline(self.get_data_position('x1'),

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from packaging.version import Version
+
 import numpy as np
 import pytest
 
@@ -29,13 +31,11 @@ default_tol = 2.0
 class TestPlotDecomposition:
 
     def setup_method(self, method):
-        np.random.seed(1)
-        sources = np.random.random(size=(5, 100))
-        np.random.seed(1)
-        mixmat = np.random.random((100, 5))
+        rng = np.random.default_rng(1)
+        sources = rng.random(size=(5, 100))
+        mixmat = rng.random((100, 5))
         self.s = signals.Signal1D(np.dot(mixmat, sources))
-        np.random.seed(1)
-        self.s.add_gaussian_noise(.1)
+        self.s.add_gaussian_noise(.1, random_state=rng)
         self.s.decomposition()
         self.s2 = signals.Signal1D(self.s.data.reshape(10, 10, 100))
         self.s2.decomposition()
@@ -94,7 +94,7 @@ class TestPlotDecomposition:
 class TestPlotClusterAnalysis:
 
     def setup_method(self, method):
-        np.random.seed(1)
+        rng = np.random.default_rng(1)
         # Use prime numbers to avoid fluke equivalences
         # create 3 random clusters
         n_samples=[250,100,50]
@@ -103,7 +103,7 @@ class TestPlotClusterAnalysis:
         centers = np.array([[-15.0, -15.0,-15.0], [1.0, 1.0,1.0],
                             [15.0, 15.0, 15.0]])
         for i, (n, std) in enumerate(zip(n_samples, std)):
-            X.append(centers[i] + np.random.normal(scale=std, size=(n, 3)))
+            X.append(centers[i] + rng.normal(scale=std, size=(n, 3)))
 
         data = np.concatenate(X)
 
@@ -112,15 +112,22 @@ class TestPlotClusterAnalysis:
         # nav2, sig1
         s2 = signals.Signal1D(data.reshape(40, 10, 3))
 
+        import sklearn
+        n_init = "auto" if Version(sklearn.__version__) >= Version('1.3') else 10
+
         # Run decomposition and cluster analysis
         s.decomposition()
-        s.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
-                           preprocessing="minmax", random_state=0)
-        s.estimate_number_of_clusters("decomposition",metric="elbow")
+        s.cluster_analysis("decomposition", n_clusters=3, algorithm='kmeans',
+                           preprocessing="minmax", random_state=0,
+                           n_init=n_init)
+        s.estimate_number_of_clusters(
+            "decomposition", metric="elbow", n_init=n_init,
+            )
 
         s2.decomposition()
-        s2.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
-                            preprocessing="minmax", random_state=0)
+        s2.cluster_analysis("decomposition", n_clusters=3, algorithm='kmeans',
+                            preprocessing="minmax", random_state=0,
+                            n_init=n_init)
 
         data = np.zeros((2000, 5))
         data[:250*5:5, :] = 10
@@ -130,8 +137,9 @@ class TestPlotClusterAnalysis:
         # nav2, sig2
         s3 = signals.Signal2D(data.reshape(20, 20, 5, 5))
         s3.decomposition()
-        s3.cluster_analysis("decomposition",n_clusters=3, algorithm='kmeans',
-                            preprocessing="minmax", random_state=0)
+        s3.cluster_analysis("decomposition", n_clusters=3, algorithm='kmeans',
+                            preprocessing="minmax", random_state=0,
+                            n_init=n_init)
 
         self.s = s
         self.s2 = s2
@@ -167,17 +175,18 @@ class TestPlotClusterAnalysis:
     def test_plot_cluster_labels_nav2_sig2(self):
         return self.s3.plot_cluster_labels()
 
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol*5)
     def test_plot_cluster_distances_nav2_sig2(self):
         return self.s3.plot_cluster_distances()
 
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_signals_nav2_sig2(self):
         return self.s3.plot_cluster_signals()
 
-    @pytest.mark.mpl_image_compare(
-        baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_cluster_metric(self):
-        ax = self.s.plot_cluster_metric()
-        return ax.get_figure()
+        self.s.plot_cluster_metric()
 
     def test_except_nocluster_metric(self):
         with pytest.raises(ValueError):
@@ -185,13 +194,11 @@ class TestPlotClusterAnalysis:
 
 
 def test_plot_signal_dimension3():
-    np.random.seed(1)
-    sources = np.random.random(size=(5, 100))
-    np.random.seed(1)
-    mixmat = np.random.random((100, 5))
+    rng = np.random.default_rng(1)
+    sources = rng.random(size=(5, 100))
+    mixmat = rng.random((100, 5))
     s = signals.Signal1D(np.dot(mixmat, sources))
-    np.random.seed(1)
-    s.add_gaussian_noise(.1)
+    s.add_gaussian_noise(.1, random_state=rng)
     s2 = signals.Signal1D(s.data.reshape(2, 5, 10, 100))
 
     s3 = s2.transpose(signal_axes=3)
@@ -204,8 +211,9 @@ def test_plot_signal_dimension3():
 
 
 def test_plot_without_decomposition():
-    sources = np.random.random(size=(5, 100))
-    mixmat = np.random.random((100, 5))
+    rng = np.random.default_rng(1)
+    sources = rng.random(size=(5, 100))
+    mixmat = rng.random((100, 5))
     s = signals.Signal1D(np.dot(mixmat, sources))
     with pytest.raises(RuntimeError):
         s.plot_decomposition_factors()

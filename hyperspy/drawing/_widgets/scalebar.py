@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -18,7 +18,7 @@
 
 
 from hyperspy.misc.math_tools import closest_nice_number
-
+import numpy as np
 
 class ScaleBar(object):
 
@@ -95,8 +95,8 @@ class ScaleBar(object):
 
     def calculate_size(self, max_size_ratio=0.25):
         ps = self.pixel_size if self.pixel_size is not None else 1
-        size = closest_nice_number(ps * (self.xmax - self.xmin) *
-                                   max_size_ratio)
+        size = closest_nice_number(np.abs(ps * (self.xmax - self.xmin) *
+                                   max_size_ratio))
         self.length = size
 
     def remove(self):
