@@ -46,7 +46,6 @@ from hyperspy.docstrings.plot import (
     PLOT2D_KWARGS_DOCSTRING)
 from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
-    PARALLEL_ARG,
     MAX_WORKERS_ARG,
     LAZYSIGNAL_DOC,
 )
@@ -612,7 +611,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
         expand=False,
         interpolation_order=1,
         show_progressbar=None,
-        parallel=None,
         max_workers=None,
         **kwargs,
     ):
@@ -643,7 +641,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
         interpolation_order: int, default 1.
             The order of the spline interpolation. Default is 1, linear
             interpolation.
-        %s
         %s
         %s
         **kwargs :
@@ -741,7 +738,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
             shift_image,
             shift=signal_shifts,
             show_progressbar=show_progressbar,
-            parallel=parallel,
             max_workers=max_workers,
             ragged=False,
             inplace=True,
@@ -776,7 +772,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         if return_shifts:
             return shifts
 
-    align2D.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG)
+    align2D.__doc__ %= (SHOW_PROGRESSBAR_ARG, MAX_WORKERS_ARG)
 
     def calibrate(
         self,
@@ -927,7 +923,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
     def find_peaks(self, method='local_max', interactive=True,
                    current_index=False, show_progressbar=None,
-                   parallel=None, max_workers=None, display=True, toolkit=None,
+                   max_workers=None, display=True, toolkit=None,
                    get_intensity=False,
                    **kwargs):
         """Find peaks in a 2D signal.
@@ -982,7 +978,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
         get_intensity : bool
             If True, the intensity of the peak will be returned as an additional column,
             the last one.
-        %s
         %s
         %s
         %s
@@ -1046,13 +1041,13 @@ class Signal2D(BaseSignal, CommonSignal2D):
             peaks = method_func(self.__call__(), **kwargs)
         else:
             peaks = self.map(method_func, show_progressbar=show_progressbar,
-                             parallel=parallel, inplace=False, ragged=True,
+                             inplace=False, ragged=True,
                              max_workers=max_workers, **kwargs)
             peaks.metadata.add_node("Peaks") # add information about the signal Axes
             peaks.metadata.Peaks.signal_axes = deepcopy(self.axes_manager.signal_axes)
         return peaks
 
-    find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
+    find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, MAX_WORKERS_ARG,
                            DISPLAY_DT, TOOLKIT_DT)
 
 
