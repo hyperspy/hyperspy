@@ -70,7 +70,7 @@ from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import _get_block_pattern
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
-    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
+    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, MAX_WORKERS_ARG,
     CLUSTER_SIGNALS_ARG, HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS, LAZY_OUTPUT_ARG)
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
                                       BASE_PLOT_DOCSTRING_PARAMETERS,
@@ -4791,7 +4791,6 @@ class BaseSignal(FancySlicing,
             See docstring for output_signal_size for more information.
             Default None.
         %s
-        %s
         **kwargs : dict
             All extra keyword arguments are passed to the provided function
 
@@ -4842,6 +4841,20 @@ class BaseSignal(FancySlicing,
         >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
         >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
         >>> s_rot = s.map(rotate, angle=s_angle, reshape=False, inplace=False)  # doctest: +SKIP
+
+        If you want some more control over computing a signal that isn't lazy
+        you can always set lazy_output to True and then compute the signal setting
+        the scheduler to 'threading', 'processes', 'single-threaded' or 'distributed'.
+
+        Additionally, you can set the navigation_chunks argument to a tuple of
+        integers to split the navigation axes into chunks. This can be useful if your
+        signal is less that 100 mb but you still want to use multiple cores.
+
+        >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
+        >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
+        >>> rotated = s.map(rotate, angle=s_angle, reshape=False, lazy_output=True, inplace=True
+        ...                 navigation_chunks=(2,2))
+        >>> rotated.compute(scheduler="single-threaded")
 
         Note
         ----
@@ -4946,7 +4959,7 @@ class BaseSignal(FancySlicing,
         else:
             self.events.data_changed.trigger(obj=self)
 
-    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, LAZY_OUTPUT_ARG, MAX_WORKERS_ARG)
+    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, LAZY_OUTPUT_ARG, MAX_WORKERS_ARG)
 
     def _map_all(self, function, inplace=True, **kwargs):
         """
