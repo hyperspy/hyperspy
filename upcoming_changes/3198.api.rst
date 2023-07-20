@@ -1,0 +1,5 @@
+This removes the parallel argument for the map function:
+
+- Removes the parallel argument
+- Adds more documentation on setting the dask backend
+- Adds navigation_chunk argument for setting the chunks with a non-lazy signal
