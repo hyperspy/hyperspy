@@ -83,6 +83,10 @@ Hotkeys and modifier keys for navigating the plot can be set in the
 Note that some combinations will not work for all platforms, as some systems reserve them for
 other purposes.
 
+If you want to jump to some point in the dataset.  In that case you can hold the ``Shift`` key
+and click the point you are interested in.  That will automatically take you to that point in the
+data.  This also helps with lazy data as you don't have to load every chunk in between.
+
 .. figure::  images/second_pointer.png
    :align:   center
    :width:   500
