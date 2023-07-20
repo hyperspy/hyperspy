@@ -1,0 +1,2 @@
+Added in the `_onjumpclick` method to pointer widgets which allows the user to quickly go to some position
+in the data.
