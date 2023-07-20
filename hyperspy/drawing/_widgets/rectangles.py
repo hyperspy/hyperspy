@@ -43,7 +43,6 @@ class SquareWidget(Widget2DBase):
     def connect(self, ax):
         super(SquareWidget, self).connect(ax)
         canvas = ax.figure.canvas
-        canvas.mpl_connect('button_press_event', self._onjumpclick)
 
     def _set_patch(self):
         """Sets the patch to a matplotlib Rectangle with the correct geometry.
@@ -61,22 +60,8 @@ class SquareWidget(Widget2DBase):
         super(SquareWidget, self)._set_patch()
 
     def _onjumpclick(self, event):
-        # Callback for MPL pick event
-        if event.key == "shift" and event.inaxes:
+        if event.key == "shift" and event.inaxes and self.is_pointer:
             self.position = (event.xdata, event.ydata)
-
-    def _pos_changed(self):
-        """Call when the position of the widget has changed. It triggers the
-        relevant events, and updates the patch position.
-        """
-        if self._navigating:
-            with self.axes_manager.events.indices_changed.suppress():
-                for i in range(len(self.axes)):
-                    self.axes[i].value = self._pos[i]
-            self.axes_manager.events.indices_changed.trigger(obj=self.axes_manager)
-        self.events.moved.trigger(self)
-        self.events.changed.trigger(self)
-        self._update_patch_position()
 
     def _onmousemove(self, event):
         """on mouse motion move the patch if picked"""

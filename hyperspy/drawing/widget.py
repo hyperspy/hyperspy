@@ -323,6 +323,7 @@ class DraggableWidgetBase(WidgetBase):
 
     def __init__(self, axes_manager, **kwargs):
         super(DraggableWidgetBase, self).__init__(axes_manager, **kwargs)
+        self.is_pointer=False
         self.events.moved = Event(doc="""
             Event that triggers when the widget was moved.
 
@@ -384,10 +385,10 @@ class DraggableWidgetBase(WidgetBase):
         relevant events, and updates the patch position.
         """
         if self._navigating:
-            with self.axes_manager.events.indices_changed.suppress_callback(
-                    self._on_navigate):
+            with self.axes_manager.events.indices_changed.suppress():
                 for i in range(len(self.axes)):
                     self.axes[i].value = self._pos[i]
+            self.axes_manager.events.indices_changed.trigger(obj=self.axes_manager)
         self.events.moved.trigger(self)
         self.events.changed.trigger(self)
         self._update_patch_position()
@@ -457,6 +458,14 @@ class DraggableWidgetBase(WidgetBase):
         self.cids.append(canvas.mpl_connect('pick_event', self.onpick))
         self.cids.append(canvas.mpl_connect(
             'button_release_event', self.button_release))
+        canvas.mpl_connect('button_press_event', self._onjumpclick)
+
+    def _onjumpclick(self, event):
+        """This method must be provided by subclasses"""
+        pass
+        if event.key == "shift" and event.inaxes:
+            self.position = (event.xdata, event.ydata)
+
 
     def _on_navigate(self, axes_manager):
         if axes_manager is self.axes_manager:
