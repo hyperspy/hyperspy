@@ -831,3 +831,60 @@ def test_plot_images_bool():
     s = hs.signals.Signal2D(data)
 
     hs.plot.plot_images(s)
+
+class TestDynamicNavigatorPlot():
+    def test_plot_5d(self):
+        import hyperspy.api as hs
+        import numpy as np
+        s = hs.signals.Signal2D(np.arange((10 * 10 * 10 * 10 * 10)).reshape((10, 10, 10, 10, 10,)))
+        nav = hs.signals.BaseSignal(np.arange((10 * 10 * 10)).reshape(10, 10, 10))
+        s.plot(navigator=nav)
+        data1 = s._plot.navigator_plot._current_data
+        s.axes_manager.indices = (0, 0, 1)
+        data2 = s._plot.navigator_plot._current_data
+        assert not np.array_equal(data1, data2)
+        s.axes_manager.indices = (0, 2, 1)
+        data3 = s._plot.navigator_plot._current_data
+        assert np.array_equal(data2, data3)
+
+    def test_plot_6d(self):
+        import hyperspy.api as hs
+        import numpy as np
+        s = hs.signals.Signal2D(np.arange((10 * 10 * 10 * 10 * 10*10)).reshape((10, 10, 10, 10, 10,10)))
+        nav = hs.signals.BaseSignal(np.arange((10 * 10 * 10 * 10)).reshape(10, 10, 10,10))
+        s.plot(navigator=nav)
+        data1 = s._plot.navigator_plot._current_data
+        s.axes_manager.indices = (0, 0, 0, 1)
+        data2 = s._plot.navigator_plot._current_data
+        assert not np.array_equal(data1, data2)
+        s.axes_manager.indices = (0, 2, 0, 1)
+        data3 = s._plot.navigator_plot._current_data
+        assert np.array_equal(data2, data3)
+
+    def test_plot_5d_1dSignal(self):
+        import hyperspy.api as hs
+        import numpy as np
+        s = hs.signals.Signal1D(np.arange((10 * 10 * 10 * 10)).reshape((10, 10, 10, 10,)))
+        nav = hs.signals.BaseSignal(np.arange((10 * 10 * 10)).reshape(10, 10, 10))
+        s.plot(navigator=nav)
+        data1 = s._plot.navigator_plot._current_data
+        s.axes_manager.indices = (0, 0, 1)
+        data2 = s._plot.navigator_plot._current_data
+        assert not np.array_equal(data1, data2)
+        s.axes_manager.indices = (0, 2, 1)
+        data3 = s._plot.navigator_plot._current_data
+        assert np.array_equal(data2, data3)
+
+    def test_plot_6d_1dsignal(self):
+        import hyperspy.api as hs
+        import numpy as np
+        s = hs.signals.Signal1D(np.arange((10 * 10 * 10 * 10 * 10)).reshape((10, 10, 10, 10, 10)))
+        nav = hs.signals.BaseSignal(np.arange((10 * 10 * 10 *10 )).reshape(10, 10, 10, 10))
+        s.plot(navigator=nav)
+        data1 = s._plot.navigator_plot._current_data
+        s.axes_manager.indices = (0, 0, 0, 1)
+        data2 = s._plot.navigator_plot._current_data
+        assert not np.array_equal(data1, data2)
+        s.axes_manager.indices = (0, 2, 0, 1)
+        data3 = s._plot.navigator_plot._current_data
+        assert np.array_equal(data2, data3)
