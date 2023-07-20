@@ -3061,7 +3061,11 @@ class BaseSignal(
             nav_ind = am.indices[2:]  # image at first 2 nav indices
             slices = [slice(None)] * len(am.navigation_axes)
             slices[2:] = nav_ind
-            ind = navigator.isig.__getitem__(slices=slices)  # Get the value from the nav reverse because hyperspy
+            if len(navigator.axes_manager.signal_axes) > 0:
+                new_nav = navigator.transpose(signal_axes=len(am.navigation_axes)) # roll axes to signal axes
+            else:
+                new_nav=navigator
+            ind = new_nav.isig.__getitem__(slices=slices)  # Get the value from the nav reverse because hyperspy
             return np.nan_to_num(to_numpy(ind.data)).squeeze()
 
         def get_dynamic_explorer_wrapper(*args, **kwargs):
