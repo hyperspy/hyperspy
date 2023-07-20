@@ -99,10 +99,6 @@ class GeneralConfig(t.HasTraits):
              'DictionaryTreeBrowser, but with double lines')
     logging_level = t.Enum(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', ],
                            desc='the log level of all hyperspy modules.')
-    parallel = t.CBool(
-        True,
-        desc='Use parallel threads for computations by default.'
-    )
 
     nb_progressbar = t.CBool(
         True,

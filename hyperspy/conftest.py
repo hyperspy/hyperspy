@@ -42,10 +42,6 @@ hs.preferences.Plot.cmap_navigator = 'viridis'
 hs.preferences.Plot.cmap_signal = 'viridis'
 hs.preferences.Plot.pick_tolerance = 5.0
 
-# Set parallel to False by default, so only
-# those tests with parallel=True are run in parallel
-hs.preferences.General.parallel = False
-
 
 @pytest.fixture(autouse=True)
 def add_np(doctest_namespace):
