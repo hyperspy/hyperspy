@@ -58,6 +58,19 @@ class TestSignal2D:
              [3.42207377, 4., 4.57792623],
              [5.15585247, 5.7337787, 6.31170493]]))
 
+    def test_non_lazy_chunks(self):
+        s = self.im
+        s.map(gaussian_filter,
+              sigma=1,
+              ragged=self.ragged,
+              inplace=not self.ragged,
+              navigation_chunks=(1,))
+        np.testing.assert_allclose(s.data[0], np.array(
+            [[1.68829507, 2.2662213, 2.84414753],
+             [3.42207377, 4., 4.57792623],
+             [5.15585247, 5.7337787, 6.31170493]]))
+
+
     def test_variable_sigma(self):
         s = self.im
 
@@ -297,6 +310,7 @@ class TestChangingAxes:
                               s.axes_manager.navigation_axes]
         assert 2 == len(s.axes_manager.navigation_axes)
         assert s.data.shape == (2, 3, 2, 4, 5, 6, 7)
+
 
 
 def test_new_axes():
