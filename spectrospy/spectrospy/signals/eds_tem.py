@@ -40,7 +40,7 @@ from hyperspy.axes import DataAxis
 _logger = logging.getLogger(__name__)
 
 
-@add_gui_method(toolkey="hyperspy.microscope_parameters_EDS_TEM")
+@add_gui_method(toolkey="spectrospy.microscope_parameters_EDS_TEM")
 class EDSTEMParametersUI(BaseSetMetadataItems):
     beam_energy = t.Float(t.Undefined,
                           label='Beam energy (keV)')

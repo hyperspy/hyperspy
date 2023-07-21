@@ -69,3 +69,9 @@ components1D:
   Vignetting:
     module: spectrospy.components.eels_vignetting
     class: Vignetting
+
+GUI:
+  toolkeys:
+    - spectrospy.microscope_parameters_EELS
+    - spectrospy.microscope_parameters_EDS_TEM
+    - spectrospy.microscope_parameters_EDS_SEM
