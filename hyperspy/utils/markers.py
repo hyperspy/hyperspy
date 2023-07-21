@@ -31,6 +31,8 @@ from hyperspy.drawing.marker_collection import MarkerCollection
 from hyperspy.drawing._markers.relative_collection import RelativeCollection
 from hyperspy.drawing._markers.text_collection import TextCollection,RelativeTextCollection
 from hyperspy.drawing._markers.line_collection import HorizontalLineCollection, VerticalLineCollection
+from hyperspy.drawing._markers.iter_patch_collection import IterPatchCollection
+
 
 __all__ = ['MarkerCollection',
            'TextCollection',
@@ -38,6 +40,7 @@ __all__ = ['MarkerCollection',
            'VerticalLineCollection',
            'RelativeCollection',
            'RelativeTextCollection',
+           'IterPatchCollection',
            ]
 
 

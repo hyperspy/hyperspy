@@ -535,6 +535,26 @@ class TestMarkers2Collection:
     def test_marker2collection_empty(self,):
         assert markers2collection({}) =={}
 
+    def test_marker_collection_iter_unsupported(self):
+        # Create a Signal2D with 2 navigation dimensions
+        s = Signal2D(np.ones((10, 10, 10, 10)))
+        offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
+        angles = np.empty(s.axes_manager.navigation_shape, dtype=object)
+        widths = np.empty(s.axes_manager.navigation_shape, dtype=object)
+
+        for ind in np.ndindex(offsets.shape):
+            offsets[ind] = np.ones((10, 2)) * 100
+            angles[ind] = np.ones((10,)) * 180
+            widths[ind] = np.ones((10,)) * 4
+        with pytest.raises(ValueError):
+            m = MarkerCollection(
+                    collection_class=EllipseCollection,
+                    widths=widths,
+                    heights=(2,),
+                    angles=angles,
+                    offsets=offsets,
+                    )
+
 
 def _test_marker_collection_close():
     signal = Signal2D(np.ones((10, 10)))
@@ -615,6 +635,8 @@ class TestLineCollections:
         s.add_marker(hor)
         kwargs = hor.get_data_position()
         np.testing.assert_array_equal(kwargs["segments"], [[[-1, 0], [5, 0]]])
+
+
 
 def test_marker_collection_close_render():
     signal = Signal2D(np.ones((2, 10, 10)))

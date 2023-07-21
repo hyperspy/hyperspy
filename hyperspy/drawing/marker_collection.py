@@ -18,14 +18,17 @@
 
 import numpy as np
 import dask.array as da
+import logging
+import inspect
 import matplotlib
-from hyperspy.events import Event, Events
-from hyperspy.misc.array_tools import _get_navigation_dimension_chunk_slice
-from hyperspy.misc.utils import isiterable
+
 from matplotlib.transforms import Affine2D
 from matplotlib.collections import LineCollection
 from matplotlib.patches import Patch
-import logging
+
+from hyperspy.events import Event, Events
+from hyperspy.misc.array_tools import _get_navigation_dimension_chunk_slice
+from hyperspy.misc.utils import isiterable
 
 _logger = logging.getLogger(__name__)
 
@@ -51,10 +54,10 @@ class MarkerCollection(object):
     height, width, and size we can do the following.
 
     >>>from matplotlib.collections import EllipseCollection
-    >>>from hyperspy.drawing.marker import MarkerCollection
+    >>>import hyperspy.api as hs
     >>>import hyperspy.api as hs
     >>>import numpy as np
-    >>>m = MarkerCollection(collection_class=EllipseCollection, widths=(2,),
+    >>>m = hs.plot.marker.MarkerCollection(collection_class=EllipseCollection, widths=(2,),
     >>>                 heights=(1,), angles=(1,), units="xy", offsets=np.random.rand(10,2)*10)
     >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
     >>>s.plot()
@@ -115,7 +118,6 @@ class MarkerCollection(object):
         Adding a series of lines using a MarkerCollection
 
         >>>from matplotlib.collections import LineCollection
-        >>>from hyperspy.drawing.marker import MarkerCollection
         >>>import hyperspy.api as hs
         >>>import numpy as np
         >>>m = hs.plot.markers.MarkerCollection(collection_class=LineCollection,
@@ -181,6 +183,7 @@ class MarkerCollection(object):
         self.collection_class = collection_class
         self.signal = None
         self.temp_signal = None
+        self._check_iterating_kwargs()
         self.is_iterating = np.any(
             [is_iterating(value) for key, value in self.kwargs.items()]
         )
@@ -203,6 +206,18 @@ class MarkerCollection(object):
             arguments=["obj"],
         )
         self._closing = False
+
+    def _check_iterating_kwargs(self):
+        if self.collection_class is None:
+            cc = matplotlib.collections.PathCollection
+        else:
+            cc = self.collection_class
+        for key, value in self.kwargs.items():
+            if is_iterating(value) and key not in str(inspect.signature(cc.set)):
+                raise ValueError(f"The keyword {key} is an dynamic argument and cannot be set using the"
+                                 f" {self.collection_class.__name__}.set function.  Another option is to"
+                                 f" use the IterPatchCollection which provides additional control at the"
+                                 f" cost of speed.")
 
     def delete_index(self, keys, index):
         """
@@ -551,6 +566,7 @@ def markers2collection(marker_dict):
         VerticalLineCollection,
         HorizontalLineCollection,
         TextCollection,
+    IterPatchCollection,
     )
     from matplotlib.collections import LineCollection, PolyCollection, PatchCollection
     from matplotlib.patches import FancyArrowPatch, Ellipse
@@ -596,28 +612,15 @@ def markers2collection(marker_dict):
             **marker_dict["marker_properties"],
         )
     elif marker_type == "Arrow":
-        segments = dict2vector(
-            marker_dict["data"], keys=[["x1", "y1"], ["x2", "y2"]], return_size=False
+
+        posa = dict2vector(
+            marker_dict["data"], keys=[["x1", "y1"],], return_size=False
         )
-        if segments.dtype == object:
-            arrows = np.empty_like(segments, dtype=object)
-            for i in np.ndindex(segments.shape):
-                arrows[i] = [
-                    FancyArrowPatch(
-                        posA=segments[i][0],
-                        posB=segments[i][1],
-                        **marker_dict["marker_properties"],
-                    ),
-                ]
-        else:
-            arrows = [
-                FancyArrowPatch(
-                    posA=segments[0],
-                    posB=segments[1],
-                    **marker_dict["marker_properties"],
-                ),
-            ]
-        marker = MarkerCollection(patches=arrows, collection_class=PatchCollection)
+        posb = dict2vector(
+            marker_dict["data"], keys=[["x2", "y2"],], return_size=False
+        )
+
+        marker = IterPatchCollection(patch=FancyArrowPatch, posA=posa, posB=posb)
 
     elif marker_type == "Rectangle":
         verts = dict2vector(
@@ -632,30 +635,15 @@ def markers2collection(marker_dict):
             **marker_dict["marker_properties"],
         )
     elif marker_type == "Ellipse":
-        segments = dict2vector(
-            marker_dict["data"], keys=[["x1", "y1"], ["x2", "y2"]], return_size=False
-        )
-        if segments.dtype == object:
-            ellipses = np.empty_like(segments, dtype=object)
-            for i in np.ndindex(segments.shape):
-                ellipses[i] = [
-                    Ellipse(
-                        xy=segments[i][0],
-                        width=segments[i][1][0],
-                        height=segments[i][1][1],
-                        **marker_dict["marker_properties"],
-                    ),
-                ]
-        else:
-            ellipses = [
-                Ellipse(
-                    xy=segments[0],
-                    width=segments[1][0],
-                    height=segments[1][1],
-                    **marker_dict["marker_properties"],
-                ),
-            ]
-        marker = MarkerCollection(patches=ellipses, collection_class=PatchCollection)
+        xy = dict2vector(marker_dict["data"], keys=[["x1", "y1"], ],
+                         return_size=False)
+        width = dict2vector(marker_dict["data"], keys=["x2"], return_size=False)
+        height = dict2vector(marker_dict["data"], keys=["y2"], return_size=False)
+        marker = IterPatchCollection(patch=Ellipse,
+                                     xy=xy,
+                                     width=width,
+                                     height=height,
+                                     **marker_dict["marker_properties"])
     elif marker_type == "Text":
         offsets = dict2vector(
             marker_dict["data"], keys=[["x1", "y1"]], return_size=False
