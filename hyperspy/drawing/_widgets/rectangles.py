@@ -40,10 +40,6 @@ class SquareWidget(Widget2DBase):
     def __init__(self, axes_manager, **kwargs):
         super(SquareWidget, self).__init__(axes_manager, **kwargs)
 
-    def connect(self, ax):
-        super(SquareWidget, self).connect(ax)
-        canvas = ax.figure.canvas
-
     def _set_patch(self):
         """Sets the patch to a matplotlib Rectangle with the correct geometry.
         The geometry is defined by _get_patch_xy, and get_size_in_axes.

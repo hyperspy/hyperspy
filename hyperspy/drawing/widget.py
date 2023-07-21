@@ -463,9 +463,6 @@ class DraggableWidgetBase(WidgetBase):
     def _onjumpclick(self, event):
         """This method must be provided by subclasses"""
         pass
-        if event.key == "shift" and event.inaxes:
-            self.position = (event.xdata, event.ydata)
-
 
     def _on_navigate(self, axes_manager):
         if axes_manager is self.axes_manager:
