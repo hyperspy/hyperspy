@@ -18,7 +18,7 @@
 
 import pytest
 
-from signals import HologramImage
+from holospy.signals import HologramImage
 
 def test_hologram_image():
     s = HologramImage([[10, 10], [10, 10]])

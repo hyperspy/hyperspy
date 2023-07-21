@@ -24,6 +24,7 @@ import pytest
 from scipy.interpolate import RectBivariateSpline
 
 import hyperspy.api as hs
+from holospy.signals.hologram_image import HologramImage
 from hyperspy.decorators import lazifyTestClass
 
 # Set parameters outside the tests
@@ -44,7 +45,7 @@ Y_STOP = IMG_SIZE3Y - 1 - int(IMG_SIZE3Y / 9)
 
 @pytest.mark.parametrize("lazy", [True, False])
 def test_set_microscope_parameters(lazy):
-    h = hs.signals.HologramImage(np.ones((3, 3)))
+    h = HologramImage(np.ones((3, 3)))
     if lazy:
         h = h.as_lazy()
 
@@ -149,8 +150,8 @@ def test_reconstruct_phase_nonstandard(lazy):
     phase_ref2 = calc_phaseref(x2, y2, z2, img_size / 2.2, img_size / 2.2)
     holo2 = calc_holo(x2, y2, phase_ref2, FRINGE_SPACING, FRINGE_DIRECTION)
     ref2 = calc_holo(x2, y2, 0, FRINGE_SPACING, FRINGE_DIRECTION)
-    holo_image2 = hs.signals.HologramImage(holo2)
-    ref_image2 = hs.signals.HologramImage(ref2)
+    holo_image2 = HologramImage(holo2)
+    ref_image2 = HologramImage(ref2)
     del x2, z2, y2
     gc.collect()
     if lazy:
@@ -235,8 +236,8 @@ def test_reconstruct_phase_multi(lazy):
     ref3 = calc_holo(x3, y3, 0, FRINGE_SPACING3, FRINGE_DIRECTION3).reshape(newshape)
     del x3, z3, y3
     gc.collect()
-    holo_image3 = hs.signals.HologramImage(holo3)
-    ref_image3 = hs.signals.HologramImage(ref3)
+    holo_image3 = HologramImage(holo3)
+    ref_image3 = HologramImage(ref3)
 
     if lazy:
         ref_image3 = ref_image3.as_lazy()
