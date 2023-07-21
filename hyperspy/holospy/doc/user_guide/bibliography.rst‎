@@ -1,0 +1,29 @@
+:html_theme.sidebar_secondary.remove: true
+
+.. _bibliography:
+
+Bibliography
+============
+
+.. _Joy1993:
+
+:ref:`[Joy1993] <Joy1993>`
+   D.Joy, Y.-S. Zhang, X. Zhang, T.Hashimoto, R. Bunn,
+   L.Allard, and T. Nolan, "Practical aspects of electron holography,"
+   *Ultramicroscopy* 51.1-4 (1993): 1-14
+   [`<https://doi.org/10.1016/0304-3991(93)90130-P>`_].
+
+.. _McCartney2007:
+
+:ref:`[McCartney2007] <McCartney2007>`
+   M. McCartney and D. Smith, "Electron
+   holography: phase imaging with nanometer resolution," *Annu. Rev. Mater.
+   Res.* 37 (2007): 729-767
+   [`<https://onlinelibrary.wiley.com/doi/10.1146/annurev.matsci.37.052506.084219>`_].
+
+.. _Tonomura1999:
+
+:ref:`[Tonomura1999] <Tonomura1999>`
+   A. Tonomura, "Electron Holography,"
+   Springer Berlin Heidelberg, 1999. 78-132
+   [`<https://doi.org/10.1007/978-3-540-37204-2>`_].

@@ -66,14 +66,6 @@ Bibliography
    component analysis: algorithms and applications," *Neural Networks* 13
    (2000): 411–430 [`<https://doi.org/10.1016/S0893-6080(00)00026-5>`_].
 
-.. _Joy1993:
-
-:ref:`[Joy1993] <Joy1993>`
-   D.Joy, Y.-S. Zhang, X. Zhang, T.Hashimoto, R. Bunn,
-   L.Allard, and T. Nolan, "Practical aspects of electron holography,"
-   *Ultramicroscopy* 51.1-4 (1993): 1-14
-   [`<https://doi.org/10.1016/0304-3991(93)90130-P>`_].
-
 .. _Keenan2004:
 
 :ref:`[Keenan2004] <Keenan2004>`
@@ -90,14 +82,6 @@ Bibliography
    X-Ray Analysis of Catalyst Nanoparticles Using a Partial Cross Section
    Approach," *Microsc. Microanal.* 22 (2016): 71–81
    [`<https://doi.org/10.1017/S1431927615015494>`_].
-
-.. _McCartney2007:
-
-:ref:`[McCartney2007] <McCartney2007>`
-   M. McCartney and D. Smith, "Electron
-   holography: phase imaging with nanometer resolution," *Annu. Rev. Mater.
-   Res.* 37 (2007): 729-767
-   [`<https://onlinelibrary.wiley.com/doi/10.1146/annurev.matsci.37.052506.084219>`_].
 
 .. _[Nicoletti2013]:
 
@@ -124,13 +108,6 @@ Bibliography
    Unmixing from Nanoheterostructures: Overcoming the Traditional Challenges of
    Nanoscale X-ray Analysis via Machine Learning," *Nano Lett.* 15(4) (2015):
    2716–2720 [`<https://doi.org/10.1021/acs.nanolett.5b00449>`_].
-
-.. _Tonomura1999:
-
-:ref:`[Tonomura1999] <Tonomura1999>`
-   A. Tonomura, "Electron Holography,"
-   Springer Berlin Heidelberg, 1999. 78-132
-   [`<https://doi.org/10.1007/978-3-540-37204-2>`_].
 
 .. _Watanabe1996:
 

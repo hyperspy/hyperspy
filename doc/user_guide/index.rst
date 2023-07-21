@@ -32,7 +32,6 @@ User guide
     eds.rst
     eels.rst
     dielectric_function.rst
-    electron_holography.rst
 
 .. toctree::
     :caption: Advanced Usage
