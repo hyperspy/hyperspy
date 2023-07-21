@@ -1,2 +1,2 @@
-Added in the `_onjumpclick` method to pointer widgets which allows the user to quickly go to some position
+Add functionality to select navigation position using ``shift`` + click in the navigator.
 in the data.
