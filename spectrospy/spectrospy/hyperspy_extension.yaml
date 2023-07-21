@@ -6,7 +6,7 @@ signals:
     signal_dimension: 1
     dtype: real
     lazy: False
-    module: hyperspy._signals.eels
+    module: spectrospy.signals.eels
   LazyEELSSpectrum:
     signal_type: EELS
     signal_type_aliases:
@@ -14,31 +14,31 @@ signals:
     signal_dimension: 1
     dtype: real
     lazy: True
-    module: hyperspy._signals.eels
+    module: spectrospy.signals.eels
   EDSTEMSpectrum:
     signal_type: EDS_TEM
     signal_dimension: 1
     dtype: real
     lazy: False
-    module: hyperspy._signals.eds_tem
+    module: spectrospy.signals.eds_tem
   LazyEDSTEMSpectrum:
     signal_type: EDS_TEM
     signal_dimension: 1
     dtype: real
     lazy: True
-    module: hyperspy._signals.eds_tem
+    module: spectrospy.signals.eds_tem
   EDSSEMSpectrum:
     signal_type: EDS_SEM
     signal_dimension: 1
     dtype: real
     lazy: False
-    module: hyperspy._signals.eds_sem
+    module: spectrospy.signals.eds_sem
   LazyEDSSEMSpectrum:
     signal_type: EDS_SEM
     signal_dimension: 1
     dtype: real
     lazy: True
-    module: hyperspy._signals.eds_sem
+    module: spectrospy.signals.eds_sem
   DielectricFunction:
     signal_type: DielectricFunction
     signal_type_aliases:
@@ -46,7 +46,7 @@ signals:
     signal_dimension: 1
     dtype: complex
     lazy: False
-    module: hyperspy._signals.dielectric_function
+    module: spectrospy.signals.dielectric_function
   LazyDielectricFunction:
     signal_type: DielectricFunction
     signal_type_aliases:
@@ -54,20 +54,20 @@ signals:
     signal_dimension: 1
     dtype: complex
     lazy: True
-    module: hyperspy._signals.dielectric_function
+    module: spectrospy.signals.dielectric_function
 
 components1D:
   DoublePowerLaw:
-    module: hyperspy._components.eels_double_power_law
+    module: spectrospy.components.eels_double_power_law
     class: DoublePowerLaw
   EELSArctan:
-    module: hyperspy._components.eels_arctan
+    module: spectrospy.components.eels_arctan
     class: EELSArctan
   EELSCLEdge:
-    module: hyperspy._components.eels_cl_edge
+    module: spectrospy.components.eels_cl_edge
     class: EELSCLEdge
   Vignetting:
-    module: hyperspy._components.eels_vignetting
+    module: spectrospy.components.eels_vignetting
     class: Vignetting
 
 GUI:
