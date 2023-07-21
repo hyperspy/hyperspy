@@ -60,7 +60,7 @@ def test_set_microscope_parameters(lazy):
 @lazifyTestClass
 class TestErrors:
     def setup_method(self, method):
-        self.h = hs.signals.HologramImage(np.ones((5, 4)))
+        self.h = HologramImage(np.ones((5, 4)))
 
     def test_absent_units(self):
         with pytest.raises(ValueError, match="Signal axes units should be defined"):
@@ -99,8 +99,8 @@ def test_reconstruct_phase_single(lazy):
     phase_ref = calc_phaseref(x, 0, 0, img_size / 2.2, 1)
     holo = calc_holo(x, y, phase_ref, FRINGE_SPACING, FRINGE_DIRECTION)
     ref = calc_holo(x, y, 0, FRINGE_SPACING, FRINGE_DIRECTION)
-    holo_image = hs.signals.HologramImage(holo)
-    ref_image = hs.signals.HologramImage(ref)
+    holo_image = HologramImage(holo)
+    ref_image = HologramImage(ref)
     if lazy:
         ref_image = ref_image.as_lazy()
         holo_image = holo_image.as_lazy()

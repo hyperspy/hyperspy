@@ -18,6 +18,7 @@
 
 import pytest
 
+from holospy import __version__
 from holospy.signals import HologramImage
 
 def test_hologram_image():

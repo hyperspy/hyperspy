@@ -33,7 +33,7 @@ from holospy.misc.reconstruct import (
     estimate_sideband_position,
     estimate_sideband_size,
     )
-from holospy.misc.holography import (
+from holospy.misc.tools import (
     calculate_carrier_frequency,
     estimate_fringe_contrast_fourier,
 )
