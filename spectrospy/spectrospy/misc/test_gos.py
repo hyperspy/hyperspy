@@ -23,9 +23,9 @@ import pooch
 import pytest
 
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.eels.gosh_gos import GoshGOS
-from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
-from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
+from spectrospy.misc.eels.gosh_gos import GoshGOS
+from spectrospy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
+from spectrospy.misc.eels import HydrogenicGOS
 from hyperspy.misc.elements import elements
 
 

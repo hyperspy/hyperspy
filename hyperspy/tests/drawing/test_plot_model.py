@@ -23,7 +23,8 @@ from pathlib import Path
 import hyperspy.api as hs
 from hyperspy.components1d import Gaussian
 from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.signals import EELSSpectrum, Signal1D
+from spectrospy.signals import EELSSpectrum
+from hyperspy.signals import Signal1D
 
 my_path = Path(__file__).resolve().parent
 baseline_dir = 'plot_model'
