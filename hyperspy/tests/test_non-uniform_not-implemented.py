@@ -21,12 +21,9 @@ import pytest
 from hyperspy.signals import (
     Signal1D,
     Signal2D,
-    EELSSpectrum,
-    EDSTEMSpectrum,
-    EDSSEMSpectrum,
     )
-from hyperspy.components1d import EELSCLEdge
-
+from spectrospy.components import EELSCLEdge
+from spectrospy.signals import EELSSpectrum, EDSSpectrum
 
 def test_signal():
     s = Signal1D([10, 10])
@@ -95,6 +92,7 @@ def test_eels():
 
 
 def test_eds():
+    from spectrospy.signals import EDSSEMSpectrum, EDSTEMSpectrum
     s = EDSTEMSpectrum(([0, 1]))
     s2 = EDSSEMSpectrum(([0, 1]))
     s.axes_manager[0].convert_to_non_uniform_axis()

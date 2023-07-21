@@ -38,9 +38,6 @@ def get_components1d_name_list():
         obj = getattr(components1d, c_name)
         if inspect.isclass(obj) and issubclass(obj, Component):
             components1d_name_list.append(c_name)
-
-    # Remove EELSCLEdge, since it is tested elsewhere more appropriate
-    components1d_name_list.remove('EELSCLEdge')
     return components1d_name_list
 
 

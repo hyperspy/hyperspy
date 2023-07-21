@@ -34,11 +34,6 @@ subclass_cases = (
     testcase("float", 1000, "", "BaseSignal"),
     testcase("float", 1, "", "Signal1D"),
     testcase("float", 2, "", "Signal2D"),
-    testcase("float", 1, "EELS", "EELSSpectrum"),
-    testcase("float", 1, "EDS_SEM", "EDSSEMSpectrum"),
-    testcase("float", 1, "EDS_TEM", "EDSTEMSpectrum"),
-    testcase("complex", 1, "DielectricFunction", "DielectricFunction"),
-    testcase("complex", 1, "dielectric function", "DielectricFunction"),
     testcase("complex", 1000, "", "ComplexSignal"),
     testcase("complex", 1, "", "ComplexSignal1D"),
     testcase("complex", 2, "", "ComplexSignal2D"),
@@ -141,27 +136,31 @@ class TestConvertSignal1D:
         self.s = hs.signals.Signal1D([0, 1])
 
     def test_lazy_to_eels_and_back(self):
+        spectrospy = pytest.importorskip("spectrospy")
         self.s = self.s.as_lazy()
         self.s.set_signal_type("EELS")
-        assert isinstance(self.s, _lazy_signals.LazyEELSSpectrum)
+        assert isinstance(self.s, spectrospy.signals.LazyEELSSpectrum)
         self.s.set_signal_type("")
         assert isinstance(self.s, _lazy_signals.LazySignal1D)
 
     def test_signal1d_to_eels(self):
+        spectrospy = pytest.importorskip("spectrospy")
         self.s.set_signal_type("EELS")
-        assert isinstance(self.s, hs.signals.EELSSpectrum)
+        assert isinstance(self.s, spectrospy.signals.EELSSpectrum)
         self.s.set_signal_type("")
         assert isinstance(self.s, hs.signals.Signal1D)
 
     def test_signal1d_to_eds_tem(self):
+        spectrospy = pytest.importorskip("spectrospy")
         self.s.set_signal_type("EDS_TEM")
-        assert isinstance(self.s, hs.signals.EDSTEMSpectrum)
+        assert isinstance(self.s, spectrospy.signals.EDSTEMSpectrum)
         self.s.set_signal_type("")
         assert isinstance(self.s, hs.signals.Signal1D)
 
     def test_signal1d_to_eds_sem(self):
+        spectrospy = pytest.importorskip("spectrospy")
         self.s.set_signal_type("EDS_SEM")
-        assert isinstance(self.s, hs.signals.EDSSEMSpectrum)
+        assert isinstance(self.s, spectrospy.signals.EDSSEMSpectrum)
         self.s.set_signal_type("")
         assert isinstance(self.s, hs.signals.Signal1D)
 
@@ -192,8 +191,9 @@ class TestConvertComplexSignal1D:
         self.s = hs.signals.ComplexSignal1D([0, 1])
 
     def test_complex_to_dielectric_function(self):
+        spectrospy = pytest.importorskip("spectrospy")
         self.s.set_signal_type("DielectricFunction")
-        assert isinstance(self.s, hs.signals.DielectricFunction)
+        assert isinstance(self.s, spectrospy.signals.DielectricFunction)
         self.s.set_signal_type("")
         assert isinstance(self.s, hs.signals.ComplexSignal1D)
 

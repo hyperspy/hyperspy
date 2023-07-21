@@ -186,20 +186,6 @@ def test_dir_utils():
         'transpose',
         ]
 
-
-def test_dir_utils_eds():
-    import hyperspy.utils.eds
-    d = dir(hyperspy.utils.eds)
-    assert d == [
-        'edx_cross_section_to_zeta',
-        'electron_range',
-        'get_xray_lines_near_energy',
-        'take_off_angle',
-        'xray_range',
-        'zeta_to_edx_cross_section',
-        ]
-
-
 def test_dir_utils_markers():
     import hyperspy.utils.markers
     d = dir(hyperspy.utils.markers)

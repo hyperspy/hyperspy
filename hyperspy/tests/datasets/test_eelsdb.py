@@ -22,7 +22,7 @@ import pytest
 import requests
 from requests.exceptions import SSLError
 
-from hyperspy.misc.eels.eelsdb import eelsdb
+from spectrospy.misc.eels.eelsdb import eelsdb
 
 
 def _eelsdb(**kwargs):

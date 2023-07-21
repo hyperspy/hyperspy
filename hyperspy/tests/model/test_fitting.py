@@ -631,8 +631,8 @@ def test_missing_analytical_gradient():
     s.set_signal_type("EELS")
     s.add_gaussian_noise(10, random_state=1)
     m = s.create_model(auto_add_edges=False)
-
-    e1 = hs.model.components1D.EELSCLEdge("Zr_L3")
+    from spectrospy.components import EELSCLEdge
+    e1 = EELSCLEdge("Zr_L3")
     e1.intensity.bmin = 0
     e1.intensity.bmax = 0.1
 
