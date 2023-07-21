@@ -1,0 +1,6 @@
+name = "holospy"
+version = "0.0.1"
+author = "Holospy Developers"
+copyright = "Copyright 2016-2023, The holospy developers"
+license = "GPLv3+"
+status = "development"
