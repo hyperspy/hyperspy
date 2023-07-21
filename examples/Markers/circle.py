@@ -1,5 +1,5 @@
 """
-Circle markers
+Circle Markers
 ==============
 
 """
@@ -15,9 +15,12 @@ s = hs.signals.Signal2D(rng.random((25, 25, 100, 100)))
 offsets = rng.random((10, 2)) * 100
 
 m = hs.plot.markers.MarkerCollection(
-    collection_class=mpl.collections.PatchCollection,
-    patches=[mpl.patches.Circle((0, 0), 2)],
-    offsets=offsets
+    collection_class=mpl.collections.CircleCollection,
+    sizes=10,
+    offsets=offsets,
+    facecolor='none',
+    edgecolor='r',
+    linewidth=5,
     )
 
 s.plot()
@@ -30,13 +33,18 @@ Dynamic Circle Markers
 """
 
 offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
+sizes = np.empty(s.axes_manager.navigation_shape, dtype=object)
+
 for ind in np.ndindex(offsets.shape):
-    offsets[ind] = rng.random((10, 2)) * 100
+    offsets[ind] = rng.random((5, 2)) * 100
+    sizes[ind] = rng.random((5, )) * 20
 
 m = hs.plot.markers.MarkerCollection(
-    collection_class=mpl.collections.PatchCollection,
-    patches=[mpl.patches.Circle((0, 0), 2)],
-    offsets=offsets
+    collection_class=mpl.collections.CircleCollection,
+    sizes=sizes,
+    offsets=offsets,
+    facecolor='none',
+    linewidth=10,
     )
 
 s.plot()

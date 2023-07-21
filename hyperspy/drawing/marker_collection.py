@@ -212,12 +212,12 @@ class MarkerCollection(object):
             cc = matplotlib.collections.PathCollection
         else:
             cc = self.collection_class
-        for key, value in self.kwargs.items():
-            if is_iterating(value) and key not in str(inspect.signature(cc.set)):
-                raise ValueError(f"The keyword {key} is an dynamic argument and cannot be set using the"
-                                 f" {self.collection_class.__name__}.set function.  Another option is to"
-                                 f" use the IterPatchCollection which provides additional control at the"
-                                 f" cost of speed.")
+        # for key, value in self.kwargs.items():
+        #     if is_iterating(value) and key not in str(inspect.signature(cc.set)):
+        #         raise ValueError(f"The keyword {key} is an dynamic argument and cannot be set using the"
+        #                          f" {self.collection_class.__name__}.set function.  Another option is to"
+        #                          f" use the IterPatchCollection which provides additional control at the"
+        #                          f" cost of speed.")
 
     def delete_index(self, keys, index):
         """

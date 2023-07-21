@@ -1,6 +1,6 @@
 """
-Rectangle Markers
-=================
+Filled Circle Markers
+=====================
 
 """
 import hyperspy.api as hs
@@ -11,35 +11,39 @@ import numpy as np
 rng = np.random.default_rng()
 s = hs.signals.Signal2D(rng.random((25, 25, 100, 100)))
 
-# Define the position of the boxes
+# Define the position of the circles
 offsets = rng.random((10, 2)) * 100
 
 m = hs.plot.markers.MarkerCollection(
-    collection_class=mpl.collections.PolyCollection,
+    collection_class=mpl.collections.CircleCollection,
+    sizes=10,
     offsets=offsets,
-    verts=np.array([[[-5, -5], [-5, 5], [5, 5], [5, -5]]]),
-    color="red"
-)
+    )
 
 s.plot()
 s.add_marker(m)
 
+
 """
-Dynamic Rectangle Markers
-=========================
+Dynamic Filled Circle Markers
+=============================
 """
 
-# Create a ragged array of offsets
+
 offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
+sizes = np.empty(s.axes_manager.navigation_shape, dtype=object)
+colors = list(mpl.colors.TABLEAU_COLORS.values())[:10]
+
 for ind in np.ndindex(offsets.shape):
     offsets[ind] = rng.random((10, 2)) * 100
+    sizes[ind] = rng.random((10, )) * 50
 
 m = hs.plot.markers.MarkerCollection(
-    collection_class=mpl.collections.PolyCollection,
+    collection_class=mpl.collections.CircleCollection,
+    sizes=sizes,
     offsets=offsets,
-    verts=np.array([[[-5, -5], [-5, 5], [5, 5], [5, -5]]]),
-    color="red"
-)
+    facecolors=colors,
+    )
 
 s.plot()
 s.add_marker(m)
