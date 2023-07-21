@@ -1,0 +1,2 @@
+Add functionality to select navigation position using ``shift`` + click in the navigator.
+in the data.

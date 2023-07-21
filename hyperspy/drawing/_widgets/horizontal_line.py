@@ -49,3 +49,7 @@ class HorizontalLineWidget(Widget1DBase):
         """on mouse motion draw the cursor if picked"""
         if self.picked is True and event.inaxes:
             self.position = (event.ydata,)
+
+    def _onjumpclick(self, event):
+        if event.key == "shift" and event.inaxes and self.is_pointer:
+            self.position = (event.ydata,)

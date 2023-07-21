@@ -192,6 +192,7 @@ class MPL_HyperExplorer(object):
                 pointer = self.assign_pointer()
                 if pointer is not None:
                     self.pointer = pointer(self.axes_manager)
+                    self.pointer.is_pointer = True
                     self.pointer.color = 'red'
                     self.pointer.connect_navigate()
                 self.plot_navigator(**kwargs.pop('navigator_kwds', {}))
