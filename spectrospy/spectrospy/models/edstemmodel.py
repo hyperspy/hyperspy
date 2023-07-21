@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.models.edsmodel import EDSModel
+from spectrospy.spectrospy.models.edsmodel import EDSModel
 
 
 class EDSTEMModel(EDSModel):

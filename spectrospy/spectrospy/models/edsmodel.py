@@ -27,12 +27,10 @@ from hyperspy.misc.utils import stash_active_state
 from hyperspy.misc.eds.utils import _get_element_and_line
 
 from hyperspy.models.model1d import Model1D
-from hyperspy._signals.eds import EDSSpectrum
+from spectrospy.spectrospy.signals.eds import EDSSpectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 import hyperspy.components1d as create_component
-from hyperspy.misc.test_utils import ignore_warning
-
 
 _logger = logging.getLogger(__name__)
 

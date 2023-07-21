@@ -21,7 +21,7 @@ import logging
 import warnings
 
 from hyperspy import components1d
-from hyperspy._signals.eels import EELSSpectrum
+from spectrospy.signals.eels import EELSSpectrum
 from hyperspy.components1d import EELSCLEdge, PowerLaw
 from hyperspy.docstrings.model import FIT_PARAMETERS_ARG, EELSMODEL_PARAMETERS
 from hyperspy.misc.utils import dummy_context_manager
