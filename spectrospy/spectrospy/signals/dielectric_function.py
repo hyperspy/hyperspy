@@ -25,7 +25,7 @@ from hyperspy._signals.complex_signal1d import (
     LazyComplexSignal1D,
     )
 from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
-from spectrospy.spectrospy.misc.eels import eels_constant
+from spectrospy.misc.eels.tools import eels_constant
 
 
 class DielectricFunction(ComplexSignal1D):

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.misc.eds.utils import (
+from spectrospy.spectrospy.misc.eds.utils import (
     edx_cross_section_to_zeta,
     electron_range,
     get_xray_lines_near_energy,

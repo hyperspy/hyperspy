@@ -80,7 +80,6 @@ def print_known_signal_types():
 
 
 __all__ = [
-    'eds',
     'interactive',
     'markers',
     'material',
