@@ -21,7 +21,7 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.components1d import Lorentzian, VolumePlasmonDrude
-from hyperspy.misc.eels.tools import eels_constant
+from spectrospy.spectrospy.misc.eels import eels_constant
 
 
 class Test2D:
