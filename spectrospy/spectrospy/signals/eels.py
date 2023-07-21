@@ -35,8 +35,8 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import display, isiterable, underline
 from hyperspy.misc.math_tools import optimal_fft_size
-from hyperspy.misc.eels.tools import get_edges_near_energy
-from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
+from spectrospy.misc.eels.tools import get_edges_near_energy
+from spectrospy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.utils.markers import Texts, Lines
 from hyperspy.docstrings.signal1d import (
@@ -1557,7 +1557,7 @@ class EELSSpectrum(Signal1D):
         NotImplementedError
             If the signal axis is a non-uniform axis.
         """
-        from hyperspy.models.eelsmodel import EELSModel
+        from spectrospy.models.eelsmodel import EELSModel
         if ll is not None and not self.axes_manager.signal_axes[0].is_uniform:
             raise NotImplementedError(
                 "Multiple scattering is not implemented for spectra with a "

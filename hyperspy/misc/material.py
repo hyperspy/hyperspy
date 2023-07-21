@@ -22,8 +22,8 @@ import numbers
 import copy
 
 from hyperspy.misc.elements import elements as elements_db
-from hyperspy.misc.eds.ffast_mac import ffast_mac_db as ffast_mac
-from hyperspy.misc.eds import utils as utils_eds
+from spectrospy.misc.eds.ffast_mac import ffast_mac_db as ffast_mac
+from spectrospy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import stack
 
 

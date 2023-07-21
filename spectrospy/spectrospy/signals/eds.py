@@ -27,7 +27,7 @@ from hyperspy import utils
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D, LazySignal1D
 from hyperspy.misc.elements import elements as elements_db
-from hyperspy.misc.eds import utils as utils_eds
+from spectrospy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 from hyperspy.utils.markers import Texts, VerticalLines, Lines
 from hyperspy.docstrings.plot import (

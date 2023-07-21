@@ -19,7 +19,7 @@
 """Common docstring snippets for model.
 
 """
-from hyperspy.misc.eels.gosh_gos import _GOSH_DOI
+from spectrospy.misc.eels.gosh_gos import _GOSH_DOI
 
 FIT_PARAMETERS_ARG = """optimizer : str or None, default None
             The optimization algorithm used to perform the fitting.

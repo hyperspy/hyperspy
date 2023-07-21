@@ -27,11 +27,11 @@ import pint
 
 from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy import utils
-from spectrospy.spectrospy.signals.eds import EDSSpectrum, LazyEDSSpectrum
+from spectrospy.signals.eds import EDSSpectrum, LazyEDSSpectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
-from hyperspy.misc.eds import utils as utils_eds
+from spectrospy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.utils import isiterable
 from hyperspy.external.progressbar import progressbar
@@ -774,7 +774,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         model : `EDSTEMModel` instance.
 
         """
-        from hyperspy.models.edstemmodel import EDSTEMModel
+        from spectrospy.models.edstemmodel import EDSTEMModel
         model = EDSTEMModel(self,
                             auto_background=auto_background,
                             auto_add_lines=auto_add_lines,

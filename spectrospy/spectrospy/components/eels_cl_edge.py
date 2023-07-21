@@ -25,10 +25,10 @@ import numpy as np
 from scipy.interpolate import splev
 
 from hyperspy.component import Component
-from hyperspy.misc.eels.gosh_gos import GoshGOS, _GOSH_DOI
-from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
-from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
-from hyperspy.misc.eels.effective_angle import effective_angle
+from spectrospy.misc.eels.gosh_gos import GoshGOS, _GOSH_DOI
+from spectrospy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
+from spectrospy.misc.eels.hydrogenic_gos import HydrogenicGOS
+from spectrospy.misc.eels.effective_angle import effective_angle
 from hyperspy.ui_registry import add_gui_method
 
 
@@ -506,7 +506,7 @@ class EELSCLEdge(Component):
         the model was convolved with a low-loss spectrum
 
         """
-        from hyperspy._signals.eels import EELSSpectrum
+        from spectrospy.signals.eels import EELSSpectrum
 
         channels = int(np.floor(self.fine_structure_width / self.energy_scale))
         data = np.zeros(self.fine_structure_coeff.map.shape + (channels,))

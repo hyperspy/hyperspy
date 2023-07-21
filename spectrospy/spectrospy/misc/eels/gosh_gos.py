@@ -24,7 +24,7 @@ import pooch
 from scipy import constants
 
 from hyperspy.defaults_parser import preferences
-from spectrospy.spectrospy.misc.eels.base_gos import TabulatedGOS
+from spectrospy.misc.eels.base_gos import TabulatedGOS
 
 
 _logger = logging.getLogger(__name__)
