@@ -1,0 +1,87 @@
+signals:
+  EELSSpectrum:
+    signal_type: EELS
+    signal_type_aliases:
+      - TEM EELS
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    module: hyperspy._signals.eels
+  LazyEELSSpectrum:
+    signal_type: EELS
+    signal_type_aliases:
+      - TEM EELS
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    module: hyperspy._signals.eels
+  EDSTEMSpectrum:
+    signal_type: EDS_TEM
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    module: hyperspy._signals.eds_tem
+  LazyEDSTEMSpectrum:
+    signal_type: EDS_TEM
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    module: hyperspy._signals.eds_tem
+  EDSSEMSpectrum:
+    signal_type: EDS_SEM
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    module: hyperspy._signals.eds_sem
+  LazyEDSSEMSpectrum:
+    signal_type: EDS_SEM
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    module: hyperspy._signals.eds_sem
+  DielectricFunction:
+    signal_type: DielectricFunction
+    signal_type_aliases:
+      - dielectric function
+    signal_dimension: 1
+    dtype: complex
+    lazy: False
+    module: hyperspy._signals.dielectric_function
+  LazyDielectricFunction:
+    signal_type: DielectricFunction
+    signal_type_aliases:
+      - dielectric function
+    signal_dimension: 1
+    dtype: complex
+    lazy: True
+    module: hyperspy._signals.dielectric_function
+
+components1D:
+  DoublePowerLaw:
+    module: hyperspy._components.eels_double_power_law
+    class: DoublePowerLaw
+  EELSArctan:
+    module: hyperspy._components.eels_arctan
+    class: EELSArctan
+  EELSCLEdge:
+    module: hyperspy._components.eels_cl_edge
+    class: EELSCLEdge
+  Vignetting:
+    module: hyperspy._components.eels_vignetting
+    class: Vignetting
+
+components2D:
+  Expression:
+    module: hyperspy._components.expression
+    class: Expression
+  Gaussian2D:
+    module: hyperspy._components.gaussian2d
+    class: Gaussian2D
+
+GUI:
+  toolkeys:
+    - hyperspy.EELSCLEdge_Component
+    - hyperspy.EELSSpectrum.print_edges_table
+    - hyperspy.microscope_parameters_EELS
+    - hyperspy.microscope_parameters_EDS_TEM
+    - hyperspy.microscope_parameters_EDS_SEM

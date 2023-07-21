@@ -1,0 +1,6 @@
+name = "spectrospy"
+version = "0.0.1"
+author = "spectrospy Developers"
+copyright = "Copyright 2016-2023, The spectrospy developers"
+license = "GPLv3+"
+status = "development"
