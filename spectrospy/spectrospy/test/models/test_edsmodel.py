@@ -22,7 +22,7 @@ import pytest
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc import utils
-from spectrospy.spectrospy.misc.eds import utils as utils_eds
+from spectrospy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
 
 

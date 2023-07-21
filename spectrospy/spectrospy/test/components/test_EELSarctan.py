@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from hyperspy.components1d import EELSArctan
+from spectrospy.components import EELSArctan
 
 
 def test_function():

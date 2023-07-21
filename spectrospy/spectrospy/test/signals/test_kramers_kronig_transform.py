@@ -21,8 +21,8 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.components1d import Lorentzian, VolumePlasmonDrude
-from spectrospy.spectrospy.misc.eels import eels_constant
-
+from spectrospy.misc.eels.tools import eels_constant
+from spectrospy.signals import EELSSpectrum
 
 class Test2D:
 
@@ -43,7 +43,7 @@ class Test2D:
         scale = 0.02
 
         # Create an 3x2x2048 spectrum with Drude plasmon
-        s = hs.signals.EELSSpectrum(np.zeros((2, 3, 2 * 2048)))
+        s = EELSSpectrum(np.zeros((2, 3, 2 * 2048)))
         s.set_microscope_parameters(
             beam_energy=300.0,
             convergence_angle=5,

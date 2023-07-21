@@ -25,7 +25,8 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
-from spectrospy.spectrospy.misc.eels.gosh_gos import _GOSH_URL, _GOSH_KNOWN_HASH
+from spectrospy.misc.eels.gosh_gos import _GOSH_URL, _GOSH_KNOWN_HASH
+from spectrospy.signals import EELSSpectrum
 
 
 # Dask does not always work nicely with np.errstate,
@@ -40,14 +41,14 @@ from spectrospy.spectrospy.misc.eels.gosh_gos import _GOSH_URL, _GOSH_KNOWN_HASH
 class TestCreateEELSModel:
 
     def setup_method(self, method):
-        s = hs.signals.EELSSpectrum(np.zeros(200))
+        s = EELSSpectrum(np.zeros(200))
         s.set_microscope_parameters(100, 10, 10)
         s.axes_manager[-1].offset = 150
         s.add_elements(("B", "C"))
         self.s = s
 
     def test_create_eelsmodel(self):
-        from spectrospy.spectrospy.models.eelsmodel import EELSModel
+        from spectrospy.models.eelsmodel import EELSModel
         assert isinstance(self.s.create_model(), EELSModel)
 
     def test_create_eelsmodel_no_md(self):
@@ -115,7 +116,7 @@ class TestCreateEELSModel:
 class TestEELSModel:
 
     def setup_method(self, method):
-        s = hs.signals.EELSSpectrum(np.ones(200))
+        s = EELSSpectrum(np.ones(200))
         s.set_microscope_parameters(100, 10, 10)
         s.axes_manager[-1].offset = 150
         s.add_elements(("B", "C"))
@@ -233,7 +234,7 @@ class TestEELSModel:
 
     def test_signal1d_property(self):
         assert self.s == self.m.signal1D
-        s_new = hs.signals.EELSSpectrum(np.ones(200))
+        s_new = EELSSpectrum(np.ones(200))
         s_new.set_microscope_parameters(100, 10, 10)
         self.m.signal1D = s_new
         assert self.m.signal1D == s_new
@@ -379,7 +380,7 @@ class TestEELSModelFitting:
     def setup_method(self, method):
         data = np.zeros(200)
         data[25:] = 100
-        s = hs.signals.EELSSpectrum(data)
+        s = EELSSpectrum(data)
         s.set_microscope_parameters(100, 10, 10)
         s.axes_manager[-1].offset = 150
         s.add_elements(("B", ))
@@ -417,7 +418,7 @@ class TestEELSModelFitting:
 class TestFitBackground:
 
     def setup_method(self, method):
-        s = hs.signals.EELSSpectrum(np.ones(200))
+        s = EELSSpectrum(np.ones(200))
         s.set_microscope_parameters(100, 10, 10)
         s.axes_manager[-1].offset = 150
         CE = hs.material.elements.C.Atomic_properties.Binding_energies.K.onset_energy_eV
@@ -462,7 +463,7 @@ class TestFitBackground2D:
         data[0] = pl.function(np.arange(150, 400))
         pl.r.value = 1.5
         data[1] = pl.function(np.arange(150, 400))
-        s = hs.signals.EELSSpectrum(data)
+        s = EELSSpectrum(data)
         s.set_microscope_parameters(100, 10, 10)
         s.axes_manager[-1].offset = 150
         self.s = s

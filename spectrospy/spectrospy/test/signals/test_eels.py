@@ -21,6 +21,7 @@ import pytest
 from pathlib import Path
 
 import hyperspy.api as hs
+from spectrospy.signals import EELSSpectrum
 from hyperspy._components.gaussian import Gaussian
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.io import load
@@ -33,7 +34,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
 
     def setup_method(self, method):
         # Create an empty spectrum
-        s = hs.signals.EELSSpectrum(np.zeros((3, 2, 1024)))
+        s = EELSSpectrum(np.zeros((3, 2, 1024)))
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 0.02
         energy_axis.offset = -5
@@ -111,7 +112,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
 class TestEstimateZLPCentre:
 
     def setup_method(self, method):
-        s = hs.signals.EELSSpectrum(np.diag(np.arange(1, 11)))
+        s = EELSSpectrum(np.diag(np.arange(1, 11)))
         s.axes_manager[-1].scale = 0.1
         s.axes_manager[-1].offset = 100
         self.signal = s
@@ -131,7 +132,7 @@ class TestEstimateZLPCentre:
 class TestAlignZLP:
 
     def setup_method(self, method):
-        s = hs.signals.EELSSpectrum(np.zeros((10, 100)))
+        s = EELSSpectrum(np.zeros((10, 100)))
         self.scale = 0.1
         self.offset = -2
         eaxis = s.axes_manager.signal_axes[0]
@@ -215,7 +216,7 @@ class TestSpikesRemovalToolZLP:
 
     def setup_method(self, method):
         # Create an empty spectrum
-        s = hs.signals.EELSSpectrum(np.zeros((2, 3, 64)))
+        s = EELSSpectrum(np.zeros((2, 3, 64)))
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 0.2
         energy_axis.offset = -5
@@ -304,7 +305,7 @@ def test_spikes_diagnosis_constant_derivative():
 class TestPowerLawExtrapolation:
 
     def setup_method(self, method):
-        s = hs.signals.EELSSpectrum(0.1 * np.arange(50, 250, 0.5) ** -3.)
+        s = EELSSpectrum(0.1 * np.arange(50, 250, 0.5) ** -3.)
         s.axes_manager[-1].is_binned = False
         s.axes_manager[-1].offset = 50
         s.axes_manager[-1].scale = 0.5
@@ -328,12 +329,12 @@ class TestFourierRatioDeconvolution:
 
     @pytest.mark.parametrize(('extrapolate_lowloss'), [True, False])
     def test_running(self, extrapolate_lowloss):
-        s = hs.signals.EELSSpectrum(np.arange(200))
+        s = EELSSpectrum(np.arange(200))
         gaussian = Gaussian()
         gaussian.A.value = 50
         gaussian.sigma.value = 10
         gaussian.centre.value = 20
-        s_ll = hs.signals.EELSSpectrum(gaussian.function(np.arange(0, 200, 1)))
+        s_ll = EELSSpectrum(gaussian.function(np.arange(0, 200, 1)))
         s_ll.axes_manager[0].offset = -50
         s.fourier_ratio_deconvolution(s_ll,
                                       extrapolate_lowloss=extrapolate_lowloss)
@@ -343,7 +344,7 @@ class TestFourierRatioDeconvolution:
 class TestRebin:
     def setup_method(self, method):
         # Create an empty spectrum
-        s = hs.signals.EELSSpectrum(np.ones((4, 2, 1024)))
+        s = EELSSpectrum(np.ones((4, 2, 1024)))
         self.signal = s
 
     def test_rebin_without_dwell_time(self):
@@ -435,7 +436,7 @@ class Test_Estimate_Thickness:
 class TestPrintEdgesNearEnergy:
     def setup_method(self, method):
         # Create an empty spectrum
-        s = hs.signals.EELSSpectrum(np.ones((4, 2, 1024)))
+        s = EELSSpectrum(np.ones((4, 2, 1024)))
         self.signal = s
 
     def test_at_532eV(self, capsys):
@@ -479,7 +480,7 @@ class TestPrintEdgesNearEnergy:
 class Test_Edges_At_Energy:
     def setup_method(self, method):
         # Create an empty spectrum
-        s = hs.signals.EELSSpectrum(np.ones((4, 2, 1024)))
+        s = EELSSpectrum(np.ones((4, 2, 1024)))
         self.signal = s
 
     def test_at_532eV(self, capsys):
@@ -502,7 +503,7 @@ class Test_Edges_At_Energy:
 class Test_Get_Complementary_Edges:
     def setup_method(self, method):
         # Create an empty spectrum
-        s = hs.signals.EELSSpectrum(np.ones((4, 2, 1024)))
+        s = EELSSpectrum(np.ones((4, 2, 1024)))
         self.signal = s
 
     def test_Fe_O(self):
@@ -588,7 +589,7 @@ class Test_Plot_EELS:
 class TestVacuumMask:
 
     def setup_method(self, method):
-        s = hs.signals.EELSSpectrum(np.array([np.linspace(0.001, 0.5, 20)] * 100).T)
+        s = EELSSpectrum(np.array([np.linspace(0.001, 0.5, 20)] * 100).T)
         s.add_poissonian_noise(random_state=1)
         s.axes_manager[-1].scale = 0.25
         s.axes_manager[-1].units = 'eV'

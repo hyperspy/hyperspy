@@ -104,9 +104,10 @@ class TestPowerLaw:
         np.testing.assert_allclose(g.r.map["values"][1], r_value)
 
     def test_EDS_missing_data(self):
+        spectrospy = pytest.importorskip("spectrospy")
         g = hs.model.components1D.PowerLaw()
         s = self.m.as_signal()
-        s2 = hs.signals.EDSTEMSpectrum(s.data)
+        s2 = spectrospy.signals.EDSTEMSpectrum(s.data)
         g.estimate_parameters(s2, None, None)
 
     def test_function_grad_cutoff(self):
@@ -133,7 +134,8 @@ class TestDoublePowerLaw:
         s.axes_manager[0].offset = 100
         s.axes_manager[0].scale = 0.1
         m = s.create_model()
-        m.append(hs.model.components1D.DoublePowerLaw())
+        spectrospy = pytest.importorskip("spectrospy")
+        m.append(spectrospy.components.DoublePowerLaw())
         m[0].A.value = 1000
         m[0].r.value = 4
         m[0].ratio.value = 200
@@ -144,7 +146,8 @@ class TestDoublePowerLaw:
         self.m.signal.axes_manager[-1].is_binned = binned
         s = self.m.as_signal()
         assert s.axes_manager[-1].is_binned == binned
-        g = hs.model.components1D.DoublePowerLaw()
+        spectrospy = pytest.importorskip("spectrospy")
+        g = spectrospy.components.DoublePowerLaw()
         # Fix the ratio parameter to test the fit
         g.ratio.free = False
         g.shift.free = False

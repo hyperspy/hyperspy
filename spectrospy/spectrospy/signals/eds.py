@@ -724,7 +724,7 @@ class EDSSpectrum(Signal1D):
         elevation_angle = mp.get_item('Detector.EDS.elevation_angle', None)
         beta_tilt = mp.get_item('Stage.tilt_beta', 0.0)
 
-        return utils.eds.take_off_angle(
+        return utils_eds.take_off_angle(
             tilt_stage,
             azimuth_angle,
             elevation_angle,

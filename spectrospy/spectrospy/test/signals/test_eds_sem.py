@@ -23,8 +23,8 @@ from hyperspy import utils
 from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.defaults_parser import preferences
-from hyperspy.signals import EDSSEMSpectrum
-
+from spectrospy.signals import EDSSEMSpectrum
+import spectrospy.misc.eds.utils as eds_utils
 
 @lazifyTestClass
 class Test_metadata:
@@ -348,7 +348,7 @@ class Test_tools_bulk:
     def test_electron_range(self):
         s = self.signal
         mp = s.metadata
-        elec_range = utils.eds.electron_range(
+        elec_range = eds_utils.electron_range(
             mp.Sample.elements[0],
             mp.Acquisition_instrument.SEM.beam_energy,
             density='auto',
@@ -358,7 +358,7 @@ class Test_tools_bulk:
     def test_xray_range(self):
         s = self.signal
         mp = s.metadata
-        xr_range = utils.eds.xray_range(
+        xr_range = eds_utils.xray_range(
             mp.Sample.xray_lines[0],
             mp.Acquisition_instrument.SEM.beam_energy,
             density=4.37499648818)

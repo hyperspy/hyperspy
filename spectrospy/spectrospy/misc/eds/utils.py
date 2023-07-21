@@ -356,7 +356,7 @@ def xray_lines_model(elements,
     >>> s = xray_lines_model(['Cu', 'Fe'], beam_energy=30)
     >>> s.plot()
     """
-    from spectrospy.spectrospy.signals.eds_tem import EDSTEMSpectrum
+    from spectrospy.signals.eds_tem import EDSTEMSpectrum
     from hyperspy import components1d
     if energy_axis is None:
         energy_axis = {'name': 'E', 'scale': 0.01, 'units': 'keV',

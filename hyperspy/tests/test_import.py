@@ -97,7 +97,6 @@ def test_dir_api():
     assert d == [
         '__version__',
         'datasets',
-        'eds',
         'get_configuration_directory_path',
         'interactive',
         'load',
@@ -121,7 +120,6 @@ def test_dir_api_nogui():
     assert d == [
         '__version__',
         'datasets',
-        'eds',
         'get_configuration_directory_path',
         'interactive',
         'load',
@@ -173,7 +171,6 @@ def test_dir_utils():
     import hyperspy.utils
     d = dir(hyperspy.utils)
     assert d == [
-        'eds',
         'interactive',
         'markers',
         'material',

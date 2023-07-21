@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from hyperspy.components1d import DoublePowerLaw
+from spectrospy.components import DoublePowerLaw
 
 
 def test_function():

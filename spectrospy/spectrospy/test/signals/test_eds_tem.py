@@ -22,9 +22,9 @@ import pytest
 from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.defaults_parser import preferences
-from spectrospy.spectrospy.misc.eds import utils as utils_eds
+from spectrospy.misc.eds import utils as utils_eds
 from hyperspy.misc.test_utils import ignore_warning
-from hyperspy.signals import EDSTEMSpectrum
+from spectrospy.signals import EDSTEMSpectrum
 
 
 @lazifyTestClass
