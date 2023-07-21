@@ -70,14 +70,6 @@ components1D:
     module: hyperspy._components.eels_vignetting
     class: Vignetting
 
-components2D:
-  Expression:
-    module: hyperspy._components.expression
-    class: Expression
-  Gaussian2D:
-    module: hyperspy._components.gaussian2d
-    class: Gaussian2D
-
 GUI:
   toolkeys:
     - hyperspy.EELSCLEdge_Component

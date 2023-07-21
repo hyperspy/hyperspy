@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy._components.eels_cl_edge import EELSCLEdge
-
 
 def test_eels_cl_edge():
     pass
