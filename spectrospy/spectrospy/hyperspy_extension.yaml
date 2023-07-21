@@ -69,11 +69,3 @@ components1D:
   Vignetting:
     module: spectrospy.components.eels_vignetting
     class: Vignetting
-
-GUI:
-  toolkeys:
-    - hyperspy.EELSCLEdge_Component
-    - hyperspy.EELSSpectrum.print_edges_table
-    - hyperspy.microscope_parameters_EELS
-    - hyperspy.microscope_parameters_EDS_TEM
-    - hyperspy.microscope_parameters_EDS_SEM
