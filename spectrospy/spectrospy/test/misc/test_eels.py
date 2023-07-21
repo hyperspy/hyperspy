@@ -17,7 +17,7 @@
 
 import pytest
 
-from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
+from spectrospy.spectrospy.misc.eels import get_edges_near_energy, get_info_from_edges
 
 
 def test_single_edge():

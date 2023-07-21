@@ -25,7 +25,7 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.misc.eels.gosh_gos import _GOSH_URL, _GOSH_KNOWN_HASH
+from spectrospy.spectrospy.misc.eels.gosh_gos import _GOSH_URL, _GOSH_KNOWN_HASH
 
 
 # Dask does not always work nicely with np.errstate,
@@ -47,7 +47,7 @@ class TestCreateEELSModel:
         self.s = s
 
     def test_create_eelsmodel(self):
-        from hyperspy.models.eelsmodel import EELSModel
+        from spectrospy.spectrospy.models.eelsmodel import EELSModel
         assert isinstance(self.s.create_model(), EELSModel)
 
     def test_create_eelsmodel_no_md(self):
