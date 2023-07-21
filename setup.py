@@ -177,8 +177,6 @@ with update_version_when_dev() as version:
                   'hyperspy.tests.misc',
                   'hyperspy.models',
                   'hyperspy.misc',
-                  'hyperspy.misc.eels',
-                  'hyperspy.misc.eds',
                   'hyperspy.misc.holography',
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
