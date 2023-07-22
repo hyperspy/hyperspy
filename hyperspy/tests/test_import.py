@@ -203,12 +203,19 @@ def test_dir_utils_eds():
 def test_dir_utils_markers():
     import hyperspy.utils.markers
     d = dir(hyperspy.utils.markers)
-    assert d == ['HorizontalLineCollection',
-                 'MarkerCollection',
-                 'RelativeCollection',
-                 'RelativeTextCollection',
-                 'TextCollection',
-                 'VerticalLineCollection',
+    assert d == ['Markers',
+                   'Texts',
+                   'HorizontalLines',
+                   'VerticalLines',
+                   'RelativeMarkers',
+                   'RelativeTextCollection',
+                   'IterPatchCollection',
+                   'Circles',
+                   'Ellipses',
+                   'LineSegments',
+                   'Rectangles',
+                   'Arrows',
+                   'Points'
                  ]
 
 
