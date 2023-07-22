@@ -39,7 +39,7 @@ from hyperspy.misc.math_tools import optimal_fft_size
 from hyperspy.misc.eels.tools import get_edges_near_energy
 from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
-from hyperspy.utils.markers import RelativeCollection
+from hyperspy.utils.markers import RelativeMarkers
 from hyperspy.utils.markers import RelativeTextCollection
 from hyperspy.docstrings.signal1d import (
     CROP_PARAMETER_DOC,
@@ -1616,9 +1616,9 @@ class EELSSpectrum(Signal1D):
         line_shifts = np.zeros((len(offsets), 2))
         line_shifts[:, -1] = .15
         line_shifts[::2, -1] = .25
-        vertical_line_marker = RelativeCollection(collection_class=LineCollection,
-                                                  segments=segments,
-                                                  shift=line_shifts)
+        vertical_line_marker = RelativeMarkers(collection_class=LineCollection,
+                                               segments=segments,
+                                               shift=line_shifts)
         text_marker = RelativeTextCollection(offsets=offsets,
                                              s=list(edges.keys()),
                                              horizontalalignment=["center"],
@@ -1780,8 +1780,8 @@ class EELSSpectrum(Signal1D):
         offsets, segments = self._get_offsets_and_segments(edges)
         names = list(edges.keys())
         if self._edge_markers["lines"] is None:
-            self._edge_markers["lines"] = RelativeCollection(collection_class=LineCollection,
-                                                             segments=np.empty((0, 2, 2)),)
+            self._edge_markers["lines"] = RelativeMarkers(collection_class=LineCollection,
+                                                          segments=np.empty((0, 2, 2)), )
         self._edge_markers["lines"].append_kwarg("segments", segments)
         if self._edge_markers["text"] is None:
             self._edge_markers["text"] = RelativeTextCollection(offsets=np.empty((0, 2)),

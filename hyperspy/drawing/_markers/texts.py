@@ -16,11 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.drawing.marker_collection import MarkerCollection
-from hyperspy.drawing._markers.relative_collection import RelativeCollection
+from hyperspy.drawing.markers import Markers
+from hyperspy.drawing._markers.relative_collection import RelativeMarkers
 from copy import deepcopy
 
-class TextCollection(MarkerCollection):
+class Texts(Markers):
     """
     A Collection of Text for faster plotting. A collection is a set of
     markers which have the same properties.
@@ -109,7 +109,7 @@ class TextCollection(MarkerCollection):
             self._render_figure()
 
 
-class RelativeTextCollection(RelativeCollection, TextCollection):
+class RelativeTextCollection(RelativeMarkers, Texts):
     def update(self):
         current_kwargs = self.get_data_position(get_static_kwargs=True)
         for c in self.collection:

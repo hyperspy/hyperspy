@@ -41,7 +41,7 @@ def convert_positions(peaks, signal_axes):
     return new_data
 
 
-class MarkerCollection(object):
+class Markers(object):
     """
     A Collection of Markers for faster plotting. A collection is a set of
     markers which have the same properties.
@@ -57,7 +57,7 @@ class MarkerCollection(object):
     >>>import hyperspy.api as hs
     >>>import hyperspy.api as hs
     >>>import numpy as np
-    >>>m = hs.plot.marker.MarkerCollection(collection_class=EllipseCollection, widths=(2,),
+    >>>m = hs.plot.marker.Markers(collection_class=EllipseCollection, widths=(2,),
     >>>                 heights=(1,), angles=(1,), units="xy", offsets=np.random.rand(10,2)*10)
     >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
     >>>s.plot()
@@ -97,7 +97,7 @@ class MarkerCollection(object):
         >>>from matplotlib.collections import EllipseCollection
         >>>import hyperspy.api as hs
         >>>import numpy as np
-        >>>m = hs.plot.markers.MarkerCollection(collection_class=EllipseCollection, widths=(2,),
+        >>>m = hs.plot.markers.Markers(collection_class=EllipseCollection, widths=(2,),
         ...                 heights=(1,), angles=(1,), units="xy", offsets=np.random.rand(10,2)*10)
         >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
         >>>s.plot()
@@ -109,7 +109,7 @@ class MarkerCollection(object):
         >>>from matplotlib.patches import Circle
         >>>import hyperspy.api as hs
         >>>import numpy as np
-        >>>m = hs.plot.markers.MarkerCollection(collection_class=PatchCollection,
+        >>>m = hs.plot.markers.Markers(collection_class=PatchCollection,
         ...                                     patches=[Circle((0,0), 1)], offsets=np.random.rand(10,2)*10)
         >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
         >>>s.plot()
@@ -120,7 +120,7 @@ class MarkerCollection(object):
         >>>from matplotlib.collections import LineCollection
         >>>import hyperspy.api as hs
         >>>import numpy as np
-        >>>m = hs.plot.markers.MarkerCollection(collection_class=LineCollection,
+        >>>m = hs.plot.markers.Markers(collection_class=LineCollection,
         ...                                     segments=np.random.rand(10,2,2)*10,)
         >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
         >>>s.plot()
@@ -131,7 +131,7 @@ class MarkerCollection(object):
         >>>from matplotlib.collections import PolyCollection
         >>>import hyperspy.api as hs
         >>>import numpy as np
-        >>>m = hs.plot.markers.MarkerCollection(collection_class=PolyCollection,
+        >>>m = hs.plot.markers.Markers(collection_class=PolyCollection,
         ...                                     offsets=np.random.rand(10,2)*10,
         ...                                     verts=np.array([[[0,0],[0,1],[1,1],[1,0]]]),color="red")
         >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
@@ -142,7 +142,7 @@ class MarkerCollection(object):
 
         >>>import hyperspy.api as hs
         >>>import numpy as np
-        >>>m = hs.plot.markers.MarkerCollection(offsets=np.random.rand(10,2)*10, sizes=1,)
+        >>>m = hs.plot.markers.Markers(offsets=np.random.rand(10,2)*10, sizes=1,)
         >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
         >>>s.plot()
 
@@ -188,7 +188,7 @@ class MarkerCollection(object):
             [is_iterating(value) for key, value in self.kwargs.items()]
         )
         self._plot_on_signal = True
-        self.name = "MarkerCollection"
+        self.name = "Markers"
         self.plot_marker = True
         self.offsets_structure = [["o", "get_xlim[0]"], ["o", "get_xlim[1]"]]
 
@@ -562,14 +562,18 @@ def markers2collection(marker_dict):
     Warning: This function is not complete and will transfer all of the marker properties.
     """
     from hyperspy.utils.markers import (
-        MarkerCollection,
-        VerticalLineCollection,
-        HorizontalLineCollection,
-        TextCollection,
-    IterPatchCollection,
+        Markers,
+        VerticalLines,
+        HorizontalLines,
+        Texts,
+        IterPatchCollection,
+        LineSegments,
+        Circles,
+        Ellipses,
+        Rectangles,
+        Arrows,
     )
-    from matplotlib.collections import LineCollection, PolyCollection, PatchCollection
-    from matplotlib.patches import FancyArrowPatch, Ellipse
+    from matplotlib.collections import LineCollection
 
     if len(marker_dict) == 0:
         return {}
@@ -580,70 +584,61 @@ def markers2collection(marker_dict):
         offsets, size = dict2vector(
             marker_dict["data"], keys=None, return_size=True
         )
-        marker = MarkerCollection(
+        marker = Markers(
             offsets=offsets, sizes=size, **marker_dict["marker_properties"]
         )
         marker
     elif marker_type == "HorizontalLine":
-        segments = dict2vector(marker_dict["data"], keys=["y1"], return_size=False)
-
-        marker = HorizontalLineCollection(
-            segments=segments, **marker_dict["marker_properties"]
-        )
+        y = dict2vector(marker_dict["data"], keys=["y1"], return_size=False)
+        marker = HorizontalLines(y=y, **marker_dict["marker_properties"])
 
     elif marker_type == "HorizontalLineSegment":
         segments = dict2vector(
             marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y1"]]], return_size=False
         )
 
-        marker = MarkerCollection(
-            segments=segments,
-            collection_class=LineCollection,
-            **marker_dict["marker_properties"],
-        )
+        marker = LineSegments(segments=segments, **marker_dict["marker_properties"])
     elif marker_type == "LineSegment":
         segments = dict2vector(
             marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y2"]]], return_size=False
         )
-
-        marker = MarkerCollection(
-            segments=segments,
-            collection_class=LineCollection,
-            **marker_dict["marker_properties"],
-        )
+        marker = LineSegments(segments=segments, **marker_dict["marker_properties"])
     elif marker_type == "Arrow":
-
-        posa = dict2vector(
+        offsets = dict2vector(
             marker_dict["data"], keys=[["x1", "y1"],], return_size=False
         )
-        posb = dict2vector(
-            marker_dict["data"], keys=[["x2", "y2"],], return_size=False
+
+        dx = dict2vector(
+            marker_dict["data"], keys=[["x2"],], return_size=False
+        )
+        dy = dict2vector(
+            marker_dict["data"], keys=[["y2"],], return_size=False
         )
 
-        marker = IterPatchCollection(patch=FancyArrowPatch, posA=posa, posB=posb)
+        marker = Arrows(offsets, dx,
+                        dy,
+                        **marker_dict["marker_properties"])
 
     elif marker_type == "Rectangle":
-        verts = dict2vector(
+        rectangles = dict2vector(
             marker_dict["data"],
-            keys=[[["x1", "y1"], ["x1", "y2"], ["x2", "y1"], ["x2", "y2"]]],
+            keys=[["x1", "y1", "x2", "y2"], ],
             return_size=False,
         )
-
-        marker = MarkerCollection(
-            verts=verts,
-            collection_class=PolyCollection,
+        marker = Rectangles(
+            rectangles=rectangles,
             **marker_dict["marker_properties"],
         )
     elif marker_type == "Ellipse":
-        xy = dict2vector(marker_dict["data"], keys=[["x1", "y1"], ],
+        offsets = dict2vector(marker_dict["data"], keys=[["x1", "y1"], ],
                          return_size=False)
+
         width = dict2vector(marker_dict["data"], keys=["x2"], return_size=False)
         height = dict2vector(marker_dict["data"], keys=["y2"], return_size=False)
-        marker = IterPatchCollection(patch=Ellipse,
-                                     xy=xy,
-                                     width=width,
-                                     height=height,
-                                     **marker_dict["marker_properties"])
+        marker = Ellipses(offsets=offsets,
+                          widths=width,
+                          heights=height,
+                          **marker_dict["marker_properties"])
     elif marker_type == "Text":
         offsets = dict2vector(
             marker_dict["data"], keys=[["x1", "y1"]], return_size=False
@@ -652,28 +647,26 @@ def markers2collection(marker_dict):
                            keys=[["text"]],
                            return_size=False,
                            dtype=str)
-        marker = TextCollection(
+        marker = Texts(
             offsets=offsets, s=text, **marker_dict["marker_properties"]
         )
     elif marker_type == "VerticalLine":
-        segments = dict2vector(marker_dict["data"], keys=["x1"], return_size=False)
+        x = dict2vector(marker_dict["data"], keys=["x1"], return_size=False)
 
-        marker = VerticalLineCollection(
-            segments=segments, **marker_dict["marker_properties"]
+        marker = VerticalLines(
+            x=x, **marker_dict["marker_properties"]
         )
     elif marker_type == "VerticalLineSegment":
         segments = dict2vector(
             marker_dict["data"], keys=[[["x1", "y1"], ["x1", "y2"]]], return_size=False
         )
 
-        marker = MarkerCollection(
-            segments=segments,
-            collection_class=LineCollection,
-            **marker_dict["marker_properties"],
-        )
+        marker = LineSegments(segments=segments,
+                              **marker_dict["marker_properties"],
+                              )
     elif marker_type == "MarkerCollection":
-        marker = MarkerCollection(collection_class=marker_dict["collection_class"],
-                                  **marker_dict["kwargs"])
+        marker = Markers(collection_class=marker_dict["collection_class"],
+                         **marker_dict["kwargs"])
     else:
         raise ValueError(
             f"The marker_type: {marker_type} is not a hyperspy.marker class "

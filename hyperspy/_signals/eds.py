@@ -29,10 +29,10 @@ from hyperspy._signals.signal1d import Signal1D, LazySignal1D
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
-from hyperspy.drawing.marker_collection import MarkerCollection
-from hyperspy.drawing._markers.relative_collection import RelativeCollection
-from hyperspy.drawing._markers.text_collection import RelativeTextCollection
-from hyperspy.drawing._markers.line_collection import VerticalLineCollection
+from hyperspy.drawing.markers import Markers
+from hyperspy.drawing._markers.relative_collection import RelativeMarkers
+from hyperspy.drawing._markers.texts import RelativeTextCollection
+from hyperspy.drawing._markers.vertical_lines import VerticalLines
 from matplotlib.collections import LineCollection
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING_PARAMETERS,
@@ -1013,9 +1013,9 @@ class EDSSpectrum(Signal1D):
             plt.rcParams['axes.prop_cycle'].by_key()["color"]))
 
         for x, color in zip(position, colors):
-            line = VerticalLineCollection(segments=x,
-                                          color=color,
-                                          **kwargs)
+            line = VerticalLines(x=x,
+                                 color=color,
+                                 **kwargs)
             self.add_marker(line, render_figure=False)
         if render_figure:
             self._render_figure(plot=['signal_plot'])
@@ -1047,10 +1047,10 @@ class EDSSpectrum(Signal1D):
             offsets[i] = [eng, 1.2]
             line_names.append(r'$\mathrm{%s}_{\mathrm{%s}}$' % utils_eds._get_element_and_line(xray_line))
 
-        line_markers = RelativeCollection(collection_class=LineCollection,
-                                          segments=segments,
-                                          reference="data",
-                                          )
+        line_markers = RelativeMarkers(collection_class=LineCollection,
+                                       segments=segments,
+                                       reference="data",
+                                       )
         text_markers = RelativeTextCollection(offsets=offsets,
                                               s=line_names,
                                               rotation=[90, ],
@@ -1133,9 +1133,9 @@ class EDSSpectrum(Signal1D):
             segments.append([[x1, y1[0]],
                              [x2, y2[0]]])
         segments = np.array(segments)
-        lines = MarkerCollection(segments=segments,
-                                 collection_class=LineCollection,
-                                 color='black')
+        lines = Markers(segments=segments,
+                        collection_class=LineCollection,
+                        color='black')
         self.add_marker(lines, render_figure=False)
         if render_figure:
             self._render_figure(plot=['signal_plot'])

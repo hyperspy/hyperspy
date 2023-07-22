@@ -33,7 +33,7 @@ from rsciio.utils.tools import overwrite as overwrite_method
 from rsciio import IO_PLUGINS
 
 from hyperspy import __version__ as hs_version
-from hyperspy.drawing.marker_collection import markers2collection
+from hyperspy.drawing.markers import markers2collection
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.utils import strlist2enumeration, get_object_package_info
 from hyperspy.misc.utils import stack as stack_method

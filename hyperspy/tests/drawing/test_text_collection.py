@@ -24,7 +24,7 @@ from matplotlib.patches import RegularPolygon
 import matplotlib.pyplot as plt
 import dask.array as da
 
-from hyperspy.drawing._markers.text_collection import TextCollection, RelativeTextCollection
+from hyperspy.drawing._markers.texts import Texts, RelativeTextCollection
 from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
 from hyperspy.misc.test_utils import update_close_figure
 
@@ -66,7 +66,7 @@ class TestTextCollection:
             for i in np.ndindex(t.shape):
                 t[i] = ("test"+str(i),)
             text = t
-        markers = TextCollection(offsets=data, s=text)
+        markers = Texts(offsets=data, s=text)
         s.add_marker(markers)
         s.axes_manager.navigation_axes[0].index = 1
         children = s._plot.signal_plot.ax.get_children()
@@ -82,7 +82,7 @@ class TestTextCollection:
     def test_text_marker_plot(self):
         s = Signal2D(np.ones((3, 5, 6)))
         s.data[:, :, ::2] = np.nan
-        markers = TextCollection(offsets=[[2., 3.]], s="test", size=(20,),zorder=(1000,))
+        markers = Texts(offsets=[[2., 3.]], s="test", size=(20,), zorder=(1000,))
         s.add_marker(markers, render_figure=True)
         return s._plot.signal_plot.figure
 
@@ -122,20 +122,20 @@ class TestRelativeTextCollection:
         return s._plot.signal_plot.figure
 
     def test_plot_fail(self):
-        markers = TextCollection(offsets=[[1, 1],
-                                          [4, 4]], s=("test",))
+        markers = Texts(offsets=[[1, 1],
+                                 [4, 4]], s=("test",))
         with pytest.raises(AttributeError):
             markers.plot()
     def test_plot_and_render(self):
-        markers = TextCollection(offsets=[[1, 1],
-                                          [4, 4]], s=("test",))
+        markers = Texts(offsets=[[1, 1],
+                                 [4, 4]], s=("test",))
         s = Signal1D(np.arange(100).reshape((10,10)))
         s.add_marker(markers)
         markers.plot(render_figure=True)
 
     def test_static_update(self):
-        markers = TextCollection(offsets=[[1, 1],
-                                          [4, 4]], s=("test",))
+        markers = Texts(offsets=[[1, 1],
+                                 [4, 4]], s=("test",))
         s = Signal1D(np.arange(100).reshape((10, 10)))
         s.plot()
         s.add_marker(markers)
@@ -145,8 +145,8 @@ class TestRelativeTextCollection:
 
 def _test_text_collection_close():
     signal = Signal2D(np.ones((10, 10)))
-    markers = TextCollection(offsets=[[1, 1],
-                                      [4, 4]], s=("test",))
+    markers = Texts(offsets=[[1, 1],
+                             [4, 4]], s=("test",))
     signal.add_marker(markers)
     return signal
 
@@ -160,9 +160,9 @@ def test_text_collection_close():
     )
 def test_text_collection_close_render():
     signal = Signal2D(np.ones((2, 10, 10)))
-    markers = TextCollection(offsets=[[1, 1],
-                                      [4, 4]], s=("test",),
-                             size=(10,), color = ("black",))
+    markers = Texts(offsets=[[1, 1],
+                             [4, 4]], s=("test",),
+                    size=(10,), color = ("black",))
     signal.plot()
     signal.add_marker(markers, render_figure=True)
     markers.close(render_figure=True)

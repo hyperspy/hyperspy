@@ -326,8 +326,8 @@ def test_load_save_filereader_metadata(tmp_path):
 
 def test_marker_collection_save_load(tmp_path):
     s = hs.signals.Signal1D(np.arange(10))
-    m = hs.plot.markers.MarkerCollection(offsets = [[2, 2],
-                                          [3, 3]])
+    m = hs.plot.markers.Markers(offsets = [[2, 2],
+                                           [3, 3]])
     s.add_marker(m, permanent=True)
     fname = tmp_path / "test.hspy"
     s.save(fname)

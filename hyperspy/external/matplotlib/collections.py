@@ -94,3 +94,4 @@ class EllipseCollection(Collection):
     def draw(self, renderer):
         self._set_transforms()
         super().draw(renderer)
+

@@ -17,10 +17,10 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 import matplotlib.patches
 
-from hyperspy.drawing.marker_collection import MarkerCollection
+from hyperspy.drawing.markers import Markers
 
 
-class IterPatchCollection(MarkerCollection):
+class IterPatchCollection(Markers):
     """
     A Collection of Text for faster plotting. A collection is a set of
     markers which have the same properties.

@@ -27,6 +27,34 @@ This is used to add markers relative to the data in a 1-D Plot.  For example if 
 
 >>> s = hs.signals.Signal1D(np.random.rand(3, 15))
 >>> from matplotlib.collections import LineCollection
+>>> m = hs.plot.markers.RelativeMarkers(segments = [[[2,0],[2,1.0]]], collection_class=LineCollection)
+>>> s.plot()
+>>> s.add_marker(m)
+
+This marker will create a line at index 2 which extends from 0 --> 1 and updates as the index changes.
+
+Unlike the case above with uses ragged or precomputed lazy markers RelativeMarkers are computed when the
+index is changed saving some extra computation as well as speeding up plotting.
+
+This is used to add markers relative to the data in a 1-D Plot.  For example if you want to add lines which go from
+[0,y] where y is the value at x then you can
+
+>>> s = hs.signals.Signal1D(np.random.rand(3, 15))
+>>> from matplotlib.collections import LineCollection
+>>> m = hs.plot.markers.RelativeMarkers(segments = [[[2,0],[2,1.0]]], collection_class=LineCollection)
+>>> s.plot()
+>>> s.add_marker(m)
+
+This marker will create a line at index 2 which extends from 0 --> 1 and updates as the index changes.
+
+Unlike the case above with uses ragged or precomputed lazy markers RelativeMarkers are computed when the
+index is changed saving some extra computation as well as speeding up plotting.
+
+This is used to add markers relative to the data in a 1-D Plot.  For example if you want to add lines which go from
+[0,y] where y is the value at x then you can
+
+>>> s = hs.signals.Signal1D(np.random.rand(3, 15))
+>>> from matplotlib.collections import LineCollection
 >>> m = hs.plot.markers.RelativeCollection(segments = [[[2,0],[2,1.0]]], collection_class=LineCollection)
 >>> s.plot()
 >>> s.add_marker(m)

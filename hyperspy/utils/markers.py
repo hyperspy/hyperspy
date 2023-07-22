@@ -27,20 +27,33 @@ Example
 >>> im.add_marker(m)
 
 """
-from hyperspy.drawing.marker_collection import MarkerCollection
-from hyperspy.drawing._markers.relative_collection import RelativeCollection
-from hyperspy.drawing._markers.text_collection import TextCollection,RelativeTextCollection
-from hyperspy.drawing._markers.line_collection import HorizontalLineCollection, VerticalLineCollection
+from hyperspy.drawing.markers import Markers
+from hyperspy.drawing._markers.relative_collection import RelativeMarkers
+from hyperspy.drawing._markers.texts import Texts, RelativeTextCollection
+from hyperspy.drawing._markers.horizontal_lines import HorizontalLines
+from hyperspy.drawing._markers.vertical_lines import VerticalLines
+from hyperspy.drawing._markers.circles import Circles
+from hyperspy.drawing._markers.ellipses import Ellipses
+from hyperspy.drawing._markers.arrows import Arrows
+from hyperspy.drawing._markers.points import Points
+from hyperspy.drawing._markers.line_segments import LineSegments
+from hyperspy.drawing._markers.rectangles import Rectangles
 from hyperspy.drawing._markers.iter_patch_collection import IterPatchCollection
 
 
-__all__ = ['MarkerCollection',
-           'TextCollection',
-           'HorizontalLineCollection',
-           'VerticalLineCollection',
-           'RelativeCollection',
+__all__ = ['Markers',
+           'Texts',
+           'HorizontalLines',
+           'VerticalLines',
+           'RelativeMarkers',
            'RelativeTextCollection',
            'IterPatchCollection',
+           'Circles',
+           'Ellipses',
+           'LineSegments',
+           'Rectangles',
+           'Arrows',
+           'Points'
            ]
 
 

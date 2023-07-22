@@ -17,7 +17,7 @@ s = hs.signals.Signal2D(rng.random((25, 25, 100, 100)))
 # ...
 segments = rng.random((10, 2, 2)) * 100
 
-m = hs.plot.markers.MarkerCollection(
+m = hs.plot.markers.Markers(
     collection_class=mpl.collections.LineCollection,
     segments=segments,
     colors='r',
@@ -35,7 +35,7 @@ segments = np.empty(s.axes_manager.navigation_shape, dtype=object)
 for ind in np.ndindex(segments.shape):
     segments[ind] = rng.random((10, 2, 2)) * 100
 
-m = hs.plot.markers.MarkerCollection(
+m = hs.plot.markers.Markers(
     collection_class=mpl.collections.LineCollection,
     segments=segments,
     colors='r',

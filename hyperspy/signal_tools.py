@@ -33,7 +33,7 @@ from hyperspy.docstrings.signal import HISTOGRAM_MAX_BIN_ARGS
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.axes import AxesManager, UniformDataAxis
 from hyperspy.drawing.widgets import Line2DWidget, VerticalLineWidget
-from hyperspy.drawing.marker_collection import convert_positions, MarkerCollection
+from hyperspy.drawing.markers import convert_positions, Markers
 from hyperspy.drawing._widgets.range import SpanSelector
 from hyperspy import components1d
 from hyperspy.component import Component
@@ -2220,8 +2220,8 @@ class PeaksFinder2D(t.HasTraits):
         offsets = self.peaks.data
         offsets = convert_positions(offsets, self.signal.axes_manager.signal_axes)
         if self.markers is None:
-            self.markers = MarkerCollection(offsets=offsets, marker='o',
-                                            color='red', size=20)
+            self.markers = Markers(offsets=offsets, marker='o',
+                                   color='red', size=20)
         else:
             self.markers.offsets = offsets
 

@@ -14,7 +14,7 @@ s = hs.signals.Signal2D(rng.random((25, 25, 100, 100)))
 # Define the position of the boxes
 offsets = rng.random((10, 2)) * 100
 
-m = hs.plot.markers.MarkerCollection(
+m = hs.plot.markers.Markers(
     collection_class=mpl.collections.PolyCollection,
     offsets=offsets,
     verts=np.array([[[-5, -5], [-5, 5], [5, 5], [5, -5]]]),
@@ -34,7 +34,7 @@ offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
 for ind in np.ndindex(offsets.shape):
     offsets[ind] = rng.random((10, 2)) * 100
 
-m = hs.plot.markers.MarkerCollection(
+m = hs.plot.markers.Markers(
     collection_class=mpl.collections.PolyCollection,
     offsets=offsets,
     verts=np.array([[[-5, -5], [-5, 5], [5, 5], [5, -5]]]),

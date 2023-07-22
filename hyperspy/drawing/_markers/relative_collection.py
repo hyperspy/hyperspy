@@ -16,11 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.drawing.marker_collection import MarkerCollection
+from hyperspy.drawing.markers import Markers
 from copy import deepcopy
 import numpy as np
 
-class RelativeCollection(MarkerCollection):
+
+class RelativeMarkers(Markers):
     """
     A Collection of Lines for faster plotting. This marker collection operates in a
     Just in Time fashion.  The marker positions are defined relative to the signal or
