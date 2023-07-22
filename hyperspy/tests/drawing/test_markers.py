@@ -666,7 +666,7 @@ class TestMarkers:
     def signal(self):
         return Signal2D(np.ones((3, 10, 10)))
 
-    @pytest.mark.parametrize("MarkerClass", [Points, Circles,  Ellipses]) #Arrows
+    @pytest.mark.parametrize("MarkerClass", [Points, Circles,  Ellipses, Arrows]) #Arrows
     def test_offset_markers(self,
                             extra_kwargs,
                             MarkerClass,

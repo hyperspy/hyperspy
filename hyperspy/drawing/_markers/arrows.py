@@ -17,7 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.drawing.markers import Markers
-from matplotlib.quiver import Quiver
+from hyperspy.external.matplotlib.quiver import Quiver
 from matplotlib.transforms import Affine2D
 
 class Arrows(Markers):
@@ -49,7 +49,6 @@ class Arrows(Markers):
                          offsets=offsets,
                          U=dx,
                          V=dy,
-                         angles='xy',
                          **kwargs)
         self.name = "Arrows"
 
@@ -59,13 +58,17 @@ class Arrows(Markers):
         return kwargs
 
     def _initialize_collection(self):
-        self.collection = self.ax.quiver([], [], [])
-        self.collection.set(**self.get_data_position())
-        # Set the size of each marker based on the "x" axis scale (or the x scale for the original dpi)
-        # In order to get each Marker to scale we would need to define a list of transforms
-        # This is possible but difficult to implement cleanly. For now,
-        # we will just scale the markers based on the origional x axis and they won't scale with the
-        # figure size changing...
-        sc = self.ax.bbox.width / self.ax.viewLim.width
-        trans = Affine2D().scale(sc)
-        self.collection.set_transform(trans)
+        current_kwds = self.get_data_position()
+        U = current_kwds.pop("U")
+        V = current_kwds.pop("V")
+        C = current_kwds.pop("C", None)
+        offsets = current_kwds.pop("offsets")
+        X = offsets[:, 0]
+        Y = offsets[:, 1]
+
+        if C is None:
+            args = (X, Y, U, V)
+        else:
+            args = (X, Y, U, V, C)
+
+        self.collection = Quiver(self.ax, *args, scale=1, angles="xy", scale_units="xy", **current_kwds)
