@@ -641,15 +641,26 @@ class TestMarkers:
     def rectangles(self):
         d = np.empty((3,), dtype=object)
         for i in np.ndindex(d.shape):
-            d[i] = np.ones((2, 4))
+            d[i] = np.ones((33))
         return d
 
     @pytest.fixture
     def extra_kwargs(self):
+        widths = np.empty((3,), dtype=object)
+        for i in np.ndindex(widths.shape):
+            widths[i] = np.ones(3)
+
+        heights = np.empty((3,), dtype=object)
+        for i in np.ndindex(heights.shape):
+            heights[i] = np.ones(3)
+        angles = np.empty((3,), dtype=object)
+        for i in np.ndindex(angles.shape):
+            angles[i] = np.ones(3)
+
         kwds = {Points:{},
                    Circles:{"sizes": (1,)},
-                   Arrows: {"dx":1, "dy":1},
-                   Ellipses: {"widths": (1,), "heights": (1,)},}
+                   Arrows: {"dx": 1, "dy": 1},
+                   Ellipses: {"widths": widths, "heights": heights, "angles":angles}, }
         return kwds
     @pytest.fixture
     def signal(self):

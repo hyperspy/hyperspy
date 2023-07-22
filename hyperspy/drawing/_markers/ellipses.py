@@ -17,7 +17,8 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.drawing.markers import Markers
-from matplotlib.collections import EllipseCollection
+from hyperspy.external.matplotlib.collections import EllipseCollection  # Update
+
 
 class Ellipses(Markers):
     """A Collection of Ellipses for faster plotting. A collection is a set of
