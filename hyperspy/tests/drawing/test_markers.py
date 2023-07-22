@@ -641,7 +641,7 @@ class TestMarkers:
     def rectangles(self):
         d = np.empty((3,), dtype=object)
         for i in np.ndindex(d.shape):
-            d[i] = np.ones((33))
+            d[i] = [[0, 0, 1, 1], [2, 2, 3, 3]]
         return d
 
     @pytest.fixture
