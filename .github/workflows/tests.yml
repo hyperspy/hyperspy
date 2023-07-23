@@ -69,7 +69,7 @@ jobs:
       - name: Install spectrospy
         shell: bash
         run: |
-          pip install -e ./spectrospy
+          pip install ./spectrospy
 
       - name: Pip list
         run: |
