@@ -28,7 +28,7 @@ Example
 
 """
 from hyperspy.drawing.markers import Markers
-from hyperspy.drawing._markers.relative_collection import RelativeMarkers
+from hyperspy.drawing._markers.relative_markers import RelativeMarkers
 from hyperspy.drawing._markers.texts import Texts, RelativeTextCollection
 from hyperspy.drawing._markers.horizontal_lines import HorizontalLines
 from hyperspy.drawing._markers.vertical_lines import VerticalLines
@@ -40,19 +40,17 @@ from hyperspy.drawing._markers.line_segments import Lines
 from hyperspy.drawing._markers.rectangles import Rectangles
 
 
-__all__ = ['Markers',
-           'Texts',
-           'HorizontalLines',
-           'VerticalLines',
-           'RelativeMarkers',
-           'RelativeTextCollection',
-           'IterPatchCollection',
+__all__ = ['Arrows',
            'Circles',
            'Ellipses',
+           'HorizontalLines',
            'Lines',
-           'Rectangles',
-           'Arrows',
-           'Points'
+           'Markers',
+           'Points','Rectangles',
+           'RelativeMarkers',
+           'RelativeTextCollection',
+           'Texts',
+           'VerticalLines',
            ]
 
 

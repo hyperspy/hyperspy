@@ -17,7 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.drawing.markers import Markers
-from hyperspy.drawing._markers.relative_collection import RelativeMarkers
+from hyperspy.drawing._markers.relative_markers import RelativeMarkers
 from copy import deepcopy
 
 class Texts(Markers):

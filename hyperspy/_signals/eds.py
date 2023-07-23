@@ -30,7 +30,7 @@ from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 from hyperspy.drawing.markers import Markers
-from hyperspy.drawing._markers.relative_collection import RelativeMarkers
+from hyperspy.drawing._markers.relative_markers import RelativeMarkers
 from hyperspy.drawing._markers.texts import RelativeTextCollection
 from hyperspy.drawing._markers.vertical_lines import VerticalLines
 from matplotlib.collections import LineCollection

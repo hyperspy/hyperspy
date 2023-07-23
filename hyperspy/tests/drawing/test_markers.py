@@ -31,7 +31,7 @@ import matplotlib.pyplot as plt
 import dask.array as da
 
 from hyperspy.drawing.markers import Markers
-from hyperspy.drawing._markers.relative_collection import RelativeMarkers
+from hyperspy.drawing._markers.relative_markers import RelativeMarkers
 from hyperspy.drawing._markers.vertical_lines import VerticalLines
 from hyperspy.drawing._markers.horizontal_lines import HorizontalLines
 from hyperspy.drawing.markers import markers2collection

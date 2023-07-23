@@ -1341,18 +1341,33 @@ The markers currently supported in HyperSpy are:
 .. table:: List of supported markers, their signature and their corresponding matplotlib objects.
     :widths: 20 40 40
 
-    +------------------------------------------------------------------------------+---------------------------------------+----------------------------------------------------+
-    | HyperSpy MarkerColections                                                    | Signature                             | Matplotlib objects                                 |
-    +==============================================================================+=======================================+====================================================+
-    | :py:class:`~.drawing._markers.line_collection.HorizontalLineCollection`      | ``segments, **kwargs``                |  :py:class:`matplotlib.collections.LineCollection` |
-    +------------------------------------------------------------------------------+---------------------------------------+----------------------------------------------------+
-    | :py:class:`~.drawing._markers.line_collection.VerticalLineCollection`        | ``segments, **kwargs``                |  :py:class:`matplotlib.collections.LineCollection` |
-    +------------------------------------------------------------------------------+---------------------------------------+----------------------------------------------------+
-    | :py:class:`~.drawing._markers.text_collection.TextCollection`                | ``offsets, s, **kwargs``              |  :py:class:`matplotlib.text`                       |
-    +------------------------------------------------------------------------------+---------------------------------------+----------------------------------------------------+
-    | :py:class:`~.drawing.maker_collection.MarkerCollection`                      | ``offsets,collection_class, **kwargs``|  :py:class:`matplotlib.collections`                |
-    +------------------------------------------------------------------------------+---------------------------------------+----------------------------------------------------+
-
+    +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
+    | HyperSpy Markers                                                             | Signature                                  | Matplotlib Collection                                |
+    +==============================================================================+============================================+======================================================+
+    | :py:class:`~.drawing._markers.arrows.Arrows`                                 | ``offsets,dx,dy, **kwargs``                |  :py:class:`matplotlib.quiver.Quiver`                |
+    +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
+    | :py:class:`~.drawing._markers.circles.Circles`                               | ``offsets, sizes, **kwargs``               |  :py:class:`matplotlib.collections.CircleCollection` |
+    +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
+    | :py:class:`~.drawing._markers.ellipses.Ellipses`                             | ``offsets,widths, heights, **kwargs``      |  :py:class:`matplotlib.collections.EllipseCollection`|
+    +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
+    | :py:class:`~.drawing._markers.horizontal_lines.HorizontalLines`              | ``y, **kwargs``                            |  :py:class:`matplotlib.collections.LineCollection`   |
+    +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
+    | :py:class:`~.drawing._markers.line_segments.Lines`                           | ``segments, **kwargs``                     |  :py:class:`matplotlib.collections.LineCollection`   |
+    +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
+    | :py:class:`~.drawing.markers.Markers`                                        | ``**kwargs``                               |  :py:class:`matplotlib.collections.Collection`       |
+    +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
+    | :py:class:`~.drawing._markers.points.Points`                                 | ``offsets, **kwargs``                      |  :py:class:`matplotlib.pyplot.scatter`               |
+    +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
+    | :py:class:`~.drawing._markers.rectangles.Rectangles`                         | ``offsets,widths,heights, **kwargs``       |  :py:class:`matplotlib.collections.PolyCollection`   |
+    +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
+    | :py:class:`~.drawing._markers.relative_markers.RelativeMarkers`              | ``reference, indexes, shifts, **kwargs``   |  :py:class:`matplotlib.collections.Collection`       |
+    +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
+    | :py:class:`~.drawing._markers.texts.RelativeTextCollection`                  | ``reference, indexes, shifts,s, **kwargs`` |  :py:class:`matplotlib.collections.LineCollection`   |
+    +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
+    | :py:class:`~.drawing._markers.texts.Texts`                                   | ``offsets, s, **kwargs``                   |  :py:class:`matplotlib.text.Text`                    |
+    +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
+    | :py:class:`~.drawing._markers.vertical_lines.VerticalLines`                  | ``x, **kwargs``                            |  :py:class:`matplotlib.collections.LineCollection`   |
+    +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
 
 Marker properties
 ------------------
@@ -1383,11 +1398,10 @@ define a plot of Ellipses using:
 
 .. code-block:: python
 
-    >>> from matplotlib.collections import EllipseCollection
     >>> import numpy as np
     >>> import hyperspy.api as hs
-    >>> hs.drawing.markers.MarkerCollection(EllipseCollection, heights=(.4,), widths=(1,),
-    >>>                                     angles=(10,), offsets = np.array([[0,0],[1,1]]))
+    >>> hs.plot.markers.Ellipse(heights=(.4,), widths=(1,),
+    ...                         angles=(10,), offsets = np.array([[0,0],[1,1]]))
 Alternatively if we want to make ellipses with different heights and widths we can pass multiple values to
 heights, widths and angles.  In general these properties will be applied such that `prop[i % len(prop)]` so
 passing `heights=(.1,.2,.3)` will result in the ellipse at offsets[0] with a height of 0.1 the ellipse at
@@ -1413,7 +1427,7 @@ both the `sizes` and `offset` kwargs are dynamic and change with each index.
     >>> for i, ind in enumerate(np.ndindex((2,2))):
     >>>     data[ind] = np.random.rand(i+1,2)*3 # dynamic positions
     >>>     sizes[ind] = [(i+1)/10,]  # dynamic sizes
-    >>> m = MarkerCollection(sizes=sizes, offsets=data, c="r")
+    >>> m = hs.plot.markers.Points(sizes=sizes, offsets=data, c="r")
     >>> s = hs.signals.Signal2D(np.zeros((2,2,4,4)))
     >>> s.plot()
     >>> s.add_marker(m)
@@ -1432,30 +1446,28 @@ Let's consider how plotting a bunch of different collections might look:
 
 .. code-block:: python
 
-    >>> from matplotlib.collections import (LineCollection, CircleCollection, EllipseCollection,
-    >>>                                                       StarPolygonCollection, PolyCollection, PatchCollection)
-    >>> from matplotlib.patches import RegularPolygon
-    >>>
-    >>> collections = [LineCollection, CircleCollection,
-    >>>                EllipseCollection,StarPolygonCollection,
-    >>>                PolyCollection,PatchCollection, None]
+    >>> import hyperspy.api as hs
+    >>> import numpy as np
+
+    >>> collections = [hs.plot.markers.Points,
+    ...                hs.plot.markers.Ellipses,
+    ...                hs.plot.markers.Rectangles,
+    ...                hs.plot.markers.Arrows,
+    ...                hs.plot.markers.Circles,
+    ...               ]
     >>> num_col = len(collections)
     >>> offsets = [np.stack([np.ones(num_col)*i, np.arange(num_col)], axis=1) for i in range(len(collections))]
-    >>> kwargs = [{"segments":np.array([[[0, 0], [0,-.5]]]), "lw":4},
-    >>>           {"sizes":(.4,)},
-    >>>           {"widths":(.2,), "heights":(.7,), "angles":(60,), "units":"xy"},
-    >>>           {"numsides": 7, "sizes":(.4,)},
-    >>>           {"verts": np.array([[[0, 0], [.3, .3], [.3, .6], [.6, .3]]])},
-    >>>           {"patches":[RegularPolygon(xy=(0,0), numVertices=7, radius=.5,),],},
-    >>>           {"sizes":(.5,)},
-    >>>          ]
+    >>> kwargs = [{"sizes":(.4,),"facecolor":"black"},
+    ...           {"widths":(.2,), "heights":(.7,), "angles":(60,), "facecolor":"black"},
+    ...           {"widths":(.4,), "heights":(.5,), "facecolor":"none", "edgecolor":"black"},
+    ...           {"dx":(.5,), "dy":(.2), "facecolor":"black"},
+    ...           {"sizes":(.4,), "facecolor":"black"},]
     >>> for k, o, c in zip(kwargs, offsets, collections):
-    >>>     k["offsets"] = o
-    >>>     k["collection_class"]= c
-    >>> collections = [MarkerCollection(**k) for k in kwargs]
-    >>> s = Signal2D(np.zeros((2, num_col, num_col)))
+    ...     k["offsets"] = o
+    >>> collections = [C(**k) for k,C in zip(kwargs, collections)]
+    >>> s = hs.signals.Signal2D(np.zeros((2, num_col, num_col)))
     >>> s.plot()
-    >>> [s.add_marker(c) for c in collections]
+    >>> s.add_marker(collections)
 
 .. figure::  images/plot_marker_collection.png
   :align:   center
