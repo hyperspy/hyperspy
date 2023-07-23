@@ -208,7 +208,7 @@ def test_dir_utils_markers():
                  'Ellipses',
                  'HorizontalLines',
                  'IterPatchCollection',
-                 'LineSegments',
+                 'Lines',
                  'Markers',
                  'Points',
                  'Rectangles',

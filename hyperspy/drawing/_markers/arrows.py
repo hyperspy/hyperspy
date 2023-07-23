@@ -18,14 +18,10 @@
 
 from hyperspy.drawing.markers import Markers
 from hyperspy.external.matplotlib.quiver import Quiver
-from matplotlib.transforms import Affine2D
+from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 
 class Arrows(Markers):
-    """A Collection of Arrows for faster plotting. A collection is a set of
-    markers which have the same properties.
-
-    This uses the same syntax and the MarkerCollection, where offsets are
-    used to define the position of text on some plot.
+    """A set of Arrow markers based on the matplotlib.quiver.Quiver class.
     """
     def __init__(self,
                  offsets,
@@ -36,14 +32,15 @@ class Arrows(Markers):
 
         Parameters
         ----------
-        offsets: [n, 2] array-like or ragged array with shape (n, 2) at every navigation position
-            The positions [x, y] of the start of the arrow.
-        widths: array-like
-            The lengths of the first axes (e.g., major axis lengths).
-        heights: array-like
-            The lengths of second axes.
+        %s
+        dx: array-like
+            The change in x for the arrows.
+        dy: array-like
+            The change in y for the arrows.
         angles:array-like
             The angles of the first axes, degrees CCW from the x-axis.
+        kwargs:
+            Additional keyword arguments are passed to matplotlib.quiver.Quiver.
         """
         super().__init__(collection_class=Quiver,
                          offsets=offsets,
@@ -51,6 +48,8 @@ class Arrows(Markers):
                          V=dy,
                          **kwargs)
         self.name = "Arrows"
+
+    __init__.__doc__ %= OFFSET_DOCSTRING
 
     def get_data_position(self,
                           get_static_kwargs=True):

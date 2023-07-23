@@ -18,6 +18,8 @@
 
 
 from hyperspy.drawing.markers import Markers
+from matplotlib.collections import CircleCollection
+from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 
 
 class Circles(Markers):
@@ -35,14 +37,18 @@ class Circles(Markers):
 
         Parameters
         ----------
-        offsets: [n, 2] array-like or ragged array with shape (n, 2) at every navigation position
-            The positions [x, y] of the center of the ellipse.
+        %s
         sizes: array-like
             The size of the circles in points.
+        kwargs:
+            Additional keyword arguments are passed to matplotlib.collections.CircleCollection.
         """
-        super().__init__(collection_class=None,
+
+        super().__init__(collection_class=CircleCollection,
                          offsets=offsets,
                          sizes=sizes,
                          facecolors='none',
                          **kwargs)
         self.name = "Circles"
+
+    __init__.__doc__ %= OFFSET_DOCSTRING

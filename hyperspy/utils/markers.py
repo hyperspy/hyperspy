@@ -36,9 +36,8 @@ from hyperspy.drawing._markers.circles import Circles
 from hyperspy.drawing._markers.ellipses import Ellipses
 from hyperspy.drawing._markers.arrows import Arrows
 from hyperspy.drawing._markers.points import Points
-from hyperspy.drawing._markers.line_segments import LineSegments
+from hyperspy.drawing._markers.line_segments import Lines
 from hyperspy.drawing._markers.rectangles import Rectangles
-from hyperspy.drawing._markers.iter_patch_collection import IterPatchCollection
 
 
 __all__ = ['Markers',
@@ -50,7 +49,7 @@ __all__ = ['Markers',
            'IterPatchCollection',
            'Circles',
            'Ellipses',
-           'LineSegments',
+           'Lines',
            'Rectangles',
            'Arrows',
            'Points'

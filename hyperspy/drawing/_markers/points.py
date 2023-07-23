@@ -17,26 +17,23 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.drawing.markers import Markers
-
+from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 
 class Points(Markers):
-    """A Collection of points for faster plotting. A collection is a set of
-    markers which have the same properties.
-
-    This uses the same syntax and the MarkerCollection, where offsets are
-    used to define the position of text on some plot.
+    """A set of Points for faster plotting.
     """
     def __init__(self,
                  offsets,
                  **kwargs):
-        """ Initialize the set of Ellipse Markers.
+        """ Initialize the set of points Markers.
 
         Parameters
         ----------
-        offsets: [n, 2] array-like or ragged array with shape (n, 2) at every navigation position
-            The positions [x, y] of the center of the ellipse.
+        %s
         """
         super().__init__(collection_class=None,
                          offsets=offsets,
                          **kwargs)
         self.name = "Points"
+
+    __init__.__doc__ %= OFFSET_DOCSTRING

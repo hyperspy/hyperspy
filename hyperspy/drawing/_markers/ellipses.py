@@ -18,7 +18,7 @@
 
 from hyperspy.drawing.markers import Markers
 from hyperspy.external.matplotlib.collections import EllipseCollection  # Update
-
+from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 
 class Ellipses(Markers):
     """A Collection of Ellipses for faster plotting. A collection is a set of
@@ -37,14 +37,15 @@ class Ellipses(Markers):
 
         Parameters
         ----------
-        offsets: [n, 2] array-like or ragged array with shape (n, 2) at every navigation position
-            The positions [x, y] of the center of the ellipse.
+        %s
         widths: array-like
             The lengths of the first axes (e.g., major axis lengths).
         heights: array-like
             The lengths of second axes.
         angles:array-like
             The angles of the first axes, degrees CCW from the x-axis.
+        kwargs:
+            Additional keyword arguments are passed to matplotlib.collections.EllipseCollection.
         """
         super().__init__(collection_class=EllipseCollection,
                          offsets=offsets,
@@ -53,3 +54,5 @@ class Ellipses(Markers):
                          angles=angles,
                          **kwargs)
         self.name = "Ellipses"
+
+    __init__.__doc__ %= OFFSET_DOCSTRING

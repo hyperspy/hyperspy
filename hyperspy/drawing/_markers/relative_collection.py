@@ -40,7 +40,15 @@ class RelativeMarkers(Markers):
 
         Parameters
         ----------
-        reference_framex : str
+        reference: str
+            "data" or "data_index".  If "data" the marker positions are scaled by the current
+        indexes: array-like
+            The indexes to use if reference is "data_index".  Useful for when you want to
+            scale off of a point that isn't the value of the x index.
+        shift: float
+            The amount to shift the markers by.  This is useful for adjusting the markers
+        kwargs:
+            Additional keyword arguments are passed to the matplotlib collection
         """
         super().__init__(**kwargs)
         self.reference = reference

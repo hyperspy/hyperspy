@@ -20,12 +20,8 @@ from hyperspy.drawing.markers import Markers
 from matplotlib.collections import LineCollection
 
 
-class LineSegments(Markers):
-    """A Collection of Ellipses for faster plotting. A collection is a set of
-    markers which have the same properties.
-
-    This uses the same syntax and the MarkerCollection, where offsets are
-    used to define the position of text on some plot.
+class Lines(Markers):
+    """A set of Line Segments for faster plotting
     """
     def __init__(self,
                  segments,
@@ -36,6 +32,8 @@ class LineSegments(Markers):
         ----------
         segments: [n, 2, 2] array-like or ragged array with shape (n, 2,3) at every navigation position
             Defines the lines[[[x1,y1],[x2,y2]], ...] of the center of the ellipse.
+        kwargs:
+            Additional keyword arguments are passed to matplotlib.collections.LineCollection.
         """
         super().__init__(collection_class=LineCollection,
                          segments=segments,

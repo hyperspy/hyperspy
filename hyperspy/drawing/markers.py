@@ -567,7 +567,7 @@ def markers2collection(marker_dict):
         HorizontalLines,
         Texts,
         IterPatchCollection,
-        LineSegments,
+        Lines,
         Circles,
         Ellipses,
         Rectangles,
@@ -597,12 +597,12 @@ def markers2collection(marker_dict):
             marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y1"]]], return_size=False
         )
 
-        marker = LineSegments(segments=segments, **marker_dict["marker_properties"])
+        marker = Lines(segments=segments, **marker_dict["marker_properties"])
     elif marker_type == "LineSegment":
         segments = dict2vector(
             marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y2"]]], return_size=False
         )
-        marker = LineSegments(segments=segments, **marker_dict["marker_properties"])
+        marker = Lines(segments=segments, **marker_dict["marker_properties"])
     elif marker_type == "Arrow":
         offsets = dict2vector(
             marker_dict["data"], keys=[["x1", "y1"],], return_size=False
@@ -661,9 +661,9 @@ def markers2collection(marker_dict):
             marker_dict["data"], keys=[[["x1", "y1"], ["x1", "y2"]]], return_size=False
         )
 
-        marker = LineSegments(segments=segments,
-                              **marker_dict["marker_properties"],
-                              )
+        marker = Lines(segments=segments,
+                       **marker_dict["marker_properties"],
+                       )
     elif marker_type == "MarkerCollection":
         marker = Markers(collection_class=marker_dict["collection_class"],
                          **marker_dict["kwargs"])

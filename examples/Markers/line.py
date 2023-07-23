@@ -1,6 +1,6 @@
 """
-Line Segment Markers
-====================
+Line  Markers
+=============
 
 """
 import hyperspy.api as hs
@@ -17,8 +17,7 @@ s = hs.signals.Signal2D(rng.random((25, 25, 100, 100)))
 # ...
 segments = rng.random((10, 2, 2)) * 100
 
-m = hs.plot.markers.Markers(
-    collection_class=mpl.collections.LineCollection,
+m = hs.plot.markers.Lines(
     segments=segments,
     colors='r',
     )
@@ -27,16 +26,15 @@ s.plot()
 s.add_marker(m)
 
 """
-Dynamic Line Segment Markers
-============================
+Dynamic Line Markers
+====================
 """
 
 segments = np.empty(s.axes_manager.navigation_shape, dtype=object)
 for ind in np.ndindex(segments.shape):
     segments[ind] = rng.random((10, 2, 2)) * 100
 
-m = hs.plot.markers.Markers(
-    collection_class=mpl.collections.LineCollection,
+m = hs.plot.markers.Lines(
     segments=segments,
     colors='r',
     )

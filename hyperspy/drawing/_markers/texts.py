@@ -22,11 +22,7 @@ from copy import deepcopy
 
 class Texts(Markers):
     """
-    A Collection of Text for faster plotting. A collection is a set of
-    markers which have the same properties.
-
-    This uses the same syntax and the MarkerCollection, where offsets are
-    used to define the position of text on some plot.
+    A set of text markers
     """
 
     def update(self):

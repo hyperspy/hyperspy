@@ -39,8 +39,8 @@ from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
 from hyperspy.axes import UniformDataAxis
 from hyperspy.misc.test_utils import update_close_figure
 
-from hyperspy.utils.markers import (Ellipses, Circles, LineSegments,
-                                    Arrows, Rectangles, Points,)
+from hyperspy.utils.markers import (Ellipses, Circles, Lines,
+                                    Arrows, Rectangles, Points, )
 from copy import deepcopy
 
 BASELINE_DIR = "marker_collection"

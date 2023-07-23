@@ -14,8 +14,7 @@ s = hs.signals.Signal2D(rng.random((25, 25, 100, 100)))
 # Define the position of the circles
 offsets = rng.random((10, 2)) * 100
 
-m = hs.plot.markers.Markers(
-    collection_class=mpl.collections.CircleCollection,
+m = hs.plot.markers.Points(
     sizes=10,
     offsets=offsets,
     )
@@ -38,8 +37,7 @@ for ind in np.ndindex(offsets.shape):
     offsets[ind] = rng.random((10, 2)) * 100
     sizes[ind] = rng.random((10, )) * 50
 
-m = hs.plot.markers.Markers(
-    collection_class=mpl.collections.CircleCollection,
+m = hs.plot.markers.Points(
     sizes=sizes,
     offsets=offsets,
     facecolors=colors,
