@@ -22,11 +22,12 @@ import numpy as np
 
 
 class VerticalLines(Markers):
+    """A set of Vertical Line Markers"""
     def __init__(self,
                  x,
                  **kwargs):
         """
-        Initialize a Marker Collection.
+        Initialize the set of Vertical Line Markers.
 
         Parameters
         ----------

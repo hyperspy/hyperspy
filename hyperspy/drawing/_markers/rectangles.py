@@ -21,8 +21,7 @@ from matplotlib.collections import PolyCollection
 
 
 class Rectangles(Markers):
-    """A Collection of Rectangles for faster plotting. A collection is a set of
-    markers which have the same properties.
+    """A Collection of Rectangles Markers
     """
     def __init__(self,
                  offsets,

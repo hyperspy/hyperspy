@@ -22,11 +22,12 @@ import numpy as np
 
 
 class HorizontalLines(Markers):
+    """A set of HorizontalLines markers
+    """
     def __init__(self,
                  y,
                  **kwargs):
-        """
-        Initialize a Marker Collection.
+        """Initialize a set of HorizontalLines markers.
 
         Parameters
         ----------

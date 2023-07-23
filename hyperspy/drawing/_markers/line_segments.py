@@ -21,7 +21,7 @@ from matplotlib.collections import LineCollection
 
 
 class Lines(Markers):
-    """A set of Line Segments for faster plotting
+    """A set of Line Segments Markers
     """
     def __init__(self,
                  segments,

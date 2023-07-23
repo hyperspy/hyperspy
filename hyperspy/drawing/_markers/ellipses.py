@@ -21,11 +21,7 @@ from hyperspy.external.matplotlib.collections import EllipseCollection  # Update
 from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 
 class Ellipses(Markers):
-    """A Collection of Ellipses for faster plotting. A collection is a set of
-    markers which have the same properties.
-
-    This uses the same syntax and the MarkerCollection, where offsets are
-    used to define the position of text on some plot.
+    """A set of Ellipse Markers
     """
     def __init__(self,
                  offsets,

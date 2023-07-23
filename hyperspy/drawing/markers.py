@@ -582,14 +582,12 @@ def markers2collection(marker_dict):
         VerticalLines,
         HorizontalLines,
         Texts,
-        IterPatchCollection,
         Lines,
-        Circles,
         Ellipses,
         Rectangles,
         Arrows,
     )
-    from matplotlib.collections import LineCollection
+    from matplotlib.collections import PolyCollection
 
     if len(marker_dict) == 0:
         return {}
@@ -636,14 +634,13 @@ def markers2collection(marker_dict):
                         **marker_dict["marker_properties"])
 
     elif marker_type == "Rectangle":
-        rectangles = dict2vector(
+        verts = dict2vector(
             marker_dict["data"],
-            keys=[["x1", "y1", "x2", "y2"], ],
+            keys=[[["x1", "y1"], ["x2", "y1"], ["x2", "y2"], ["x1", "y2"]],],
             return_size=False,
         )
-        marker = Rectangles(
-            rectangles=rectangles,
-            **marker_dict["marker_properties"],
+        marker = Markers(collection_class=PolyCollection,
+                         verts=verts, **marker_dict["marker_properties"],
         )
     elif marker_type == "Ellipse":
         offsets = dict2vector(marker_dict["data"], keys=[["x1", "y1"], ],

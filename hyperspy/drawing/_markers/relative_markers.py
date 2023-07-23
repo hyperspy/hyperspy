@@ -22,12 +22,7 @@ import numpy as np
 
 
 class RelativeMarkers(Markers):
-    """
-    A Collection of Lines for faster plotting. This marker collection operates in a
-    Just in Time fashion.  The marker positions are defined relative to the signal or
-    as a function of the Figure size.
-
-    This is good for adjusting markers
+    """A Set of Relative Markers which are plotted relative to the current data value or index.
     """
 
     def __init__(self,

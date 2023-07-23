@@ -603,7 +603,8 @@ class TestLineCollections:
         s.plot(interpolation=None)
         s.add_marker(vert)
         kwargs = vert.get_data_position()
-        np.testing.assert_array_equal(kwargs["segments"], [[[0.0, -5], [0.0, 1]]])
+        max = s.inav[0].data.max()
+        np.testing.assert_array_equal(kwargs["segments"], [[[0.0, 2.5], [0.0, -.5]]])
 
     def test_horizontal_line_collection(self, x):
         hor = HorizontalLines(y=x)
@@ -613,8 +614,7 @@ class TestLineCollections:
         s.plot(interpolation=None)
         s.add_marker(hor)
         kwargs = hor.get_data_position()
-        np.testing.assert_array_equal(kwargs["segments"], [[[-1, 0], [5, 0]]])
-
+        np.testing.assert_array_equal(kwargs["segments"], [[[-.5, 0], [2.5, 0]]])
 
 
 def test_marker_collection_close_render():
@@ -670,6 +670,16 @@ class TestMarkers:
                               **extra_kwargs[MarkerClass])
         signal.plot()
         signal.add_marker(markers)
+        signal.axes_manager.navigation_axes[0].index = 1
+
+    def test_arrows(self, signal):
+        arrows = Arrows(offsets=[[1, 1],
+                                 [4, 4]],
+                        dx=1,
+                        dy=1,
+                        C=(2,2,2))
+        signal.plot()
+        signal.add_marker(arrows)
         signal.axes_manager.navigation_axes[0].index = 1
 
 

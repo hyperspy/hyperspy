@@ -20,7 +20,7 @@ from hyperspy.drawing.markers import Markers
 from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 
 class Points(Markers):
-    """A set of Points for faster plotting.
+    """A set of Points Markers
     """
     def __init__(self,
                  offsets,

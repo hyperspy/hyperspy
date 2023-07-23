@@ -106,6 +106,8 @@ class Texts(Markers):
 
 
 class RelativeTextCollection(RelativeMarkers, Texts):
+    """A set of text markers which are plotted relative to the current data value or index.
+    """
     def update(self):
         current_kwargs = self.get_data_position(get_static_kwargs=True)
         for c in self.collection:
