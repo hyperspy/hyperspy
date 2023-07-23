@@ -181,6 +181,4 @@ GUI:
     - hyperspy.Line2DROI
     - hyperspy.Model
     - hyperspy.Model1D.fit_component
-    - hyperspy.EELSCLEdge_Component
-    - hyperspy.EELSSpectrum.print_edges_table
 

@@ -72,6 +72,36 @@ components1D:
 
 GUI:
   toolkeys:
+    - spectrospy.EELSCLEdge_Component
     - spectrospy.microscope_parameters_EELS
     - spectrospy.microscope_parameters_EDS_TEM
     - spectrospy.microscope_parameters_EDS_SEM
+    - spectrospy.EELSSpectrum.print_edges_table
+
+  widgets:
+    traitsui:
+      spectrospy.microscope_parameters_EELS:
+        module: spectrospy.gui.traits_ui.microscope_parameters
+        function: microscope_parameters_EELS
+      spectrospy.microscope_parameters_EDS_SEM:
+        module: spectrospy.gui.traits_ui.microscope_parameters
+        function: microscope_parameters_EDS_SEM
+      spectrospy.microscope_parameters_EDS_TEM:
+        module: spectrospy.gui.traits_ui.microscope_parameters
+        function: microscope_parameters_EDS_TEM
+    ipywidgets:
+      spectrospy.EELSCLEdge_Component:
+        module: spectrospy.gui.ipywidgets.model
+        function: get_eelscl_widget
+      spectrospy.EELSSpectrum.print_edges_table:
+        module: spectrospy.gui.ipywidgets.tools
+        function: print_edges_table_ipy
+      spectrospy.microscope_parameters_EELS:
+        module: spectrospy.gui.ipywidgets.microscope_parameters
+        function: eels_microscope_parameter_ipy
+      spectrospy.microscope_parameters_EDS_TEM:
+        module: spectroscpy.gui.ipywidgets.microscope_parameters
+        function: eds_tem_microscope_parameter_ipy
+      spectrospy.microscope_parameters_EDS_SEM:
+        module: spectrospy.gui.ipywidgets.microscope_parameters
+        function: eds_sem_microscope_parameter_ipy

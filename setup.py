@@ -65,9 +65,11 @@ install_req = [
 extras_require = {
 	"ipython": ["IPython>7.0, !=8.0", "ipyparallel"],
     "learning": ["scikit-learn>=1.0.1"],
-    "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0", "ipympl"],
     # UPDATE BEFORE RELEASE
-    "gui-traitsui": ["hyperspy_gui_traitsui @ git+https://github.com/hyperspy/hyperspy_gui_traitsui#egg=hyperspy_gui_traitsui"],
+    "gui-jupyter": ["hyperspy_gui_ipywidgets @ git+https://github.com/CSSFrancis/hyperspy_gui_ipywidgets.git@spectrospy_split",
+                    "ipympl"],
+    # UPDATE BEFORE RELEASE
+    "gui-traitsui": ["hyperspy_gui_traitsui @ git+https://github.com/CSSFrancis/hyperspy_gui_traitsui.git@spectrospy_split"],
     #"gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "tests": [
         "pytest>=3.6",
