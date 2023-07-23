@@ -49,6 +49,6 @@ class VerticalLines(Markers):
         kwargs = super().get_data_position(get_static_kwargs=get_static_kwargs)
         y_extent = self.ax.get_ylim()
         x_pos = kwargs.pop("x")
-        new_segments = np.array([[[x*2, -y_extent[0]*2], [x*2, -y_extent[1]*2]] for x in x_pos])
+        new_segments = np.array([[[x, y_extent[0]], [x, y_extent[1]]] for x in x_pos])
         kwargs["segments"] = new_segments
         return kwargs

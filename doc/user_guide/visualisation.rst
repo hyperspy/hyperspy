@@ -1118,22 +1118,17 @@ each plot:
 
 .. _plot.markers:
 
-MarkerCollections
-=================
+Markers
+=======
 
-.. NOTE::
-    Starting in version 2.0.0 Markers are replaced with MarkerCollections to better mirror the
-    structure of the :py:class:`~.signal.BaseSignal` class.
-
-
-HyperSpy provides an easy access the collections classes of matplotlib. The markers
-can be used in a static way
+HyperSpy provides an easy access the collections classes of matplotlib. These markers provide
+power ways to annotate high dimensional datasets easily.
 
 .. code-block:: python
 
     >>> import scipy
     >>> im = hs.signals.Signal2D(scipy.datasets.ascent())
-    >>> m = hs.plot.markers.Rectangle(x1=150, y1=100, x2=400, y2=400, color='red')
+    >>> m = hs.plot.markers.Rectangles(offsets=[[275, 250],], widths= [250,], heights=[300],color="red", facecolor="none")
     >>> im.add_marker(m)
 
 .. figure::  images/plot_markers_std.png
@@ -1152,8 +1147,8 @@ for each R, G and B channel of a colour image.
     >>> import scipy
     >>> ims = hs.signals.BaseSignal(scipy.datasets.face()).as_signal2D([1,2])
     >>> index = ims.map(peak_local_max,min_distance=100,
-    >>>                 num_peaks=4, inplace=False, ragged=True)
-    >>> m = hs.plot.markers.MarkerCollection.from_signal(index, color='red')
+                        num_peaks=4, inplace=False, ragged=True)
+    >>> m = hs.plot.markers.Points.from_signal(index, color='red')
     >>> ims.add_marker(m)
 
 
@@ -1163,23 +1158,25 @@ for each R, G and B channel of a colour image.
 
   Point markers in image.
 
-Marker Collections can be added to the navigator as well. In the following example,
+Markers can be added to the navigator as well. In the following example,
 each slice of a 2D spectrum is tagged with a text marker on the signal plot.
 Each slice is indicated with the same text on the navigator.
 
 .. code-block:: python
 
+    >>> import numpy as np
     >>> s = hs.signals.Signal1D(np.arange(100).reshape([10,10]))
     >>> s.plot(navigator='spectrum')
     >>> offsets = [[i, s.sum(-1).data[i]+5] for i in range(s.axes_manager.shape[0])]
     >>> text = 'abcdefghij'
-    >>> m = hs.plot.markers.TextCollection(offsets=offsets, s=[*text])
+    >>> m = hs.plot.markers.Texts(offsets=offsets, s=[*text])
     >>> s.add_marker(m, plot_on_signal=False)
     >>> offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
-    >>> for i in np.ndindex(s.axes_manager.navigation_shape_:
-    ...     offsets[i] = [[x, s.inav[i].isig[x].data+2]]
-    >>> m_sig = hs.plot.markers.TextCollection(offsets=offsets, s=[*text] )
-    >>> s.add_marker(m)
+    >>> x = 4
+    >>> for i in np.ndindex(s.axes_manager.navigation_shape):
+    ...     offsets[i] = [[x, s.inav[i].isig[x].data+1]]
+    >>> m_sig = hs.plot.markers.Texts(offsets=offsets, s=[*text])
+    >>> s.add_marker(m_sig)
 
 
 .. figure::  images/plot_markers_nav.gif
@@ -1200,10 +1197,10 @@ These markers can also be permanently added to a signal, which is saved in
 .. code-block:: python
 
     >>> s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
-    >>> marker = hs.plot.markers.MarkerCollection(offsets = [[5,9]])
+    >>> marker = hs.plot.markers.Points(offsets = [[5,9]], sizes=1)
     >>> s.add_marker(marker, permanent=True)
     >>> s.metadata.Markers
-    └── point = <marker.Point, point (x=5,y=9,color=black,size=20)>
+    └── Points = <Points| Iterating == False>
     >>> s.plot()
 
 
@@ -1218,11 +1215,11 @@ Markers can be removed by deleting them from the metadata
 .. code-block:: python
 
     >>> s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
-    >>> marker = hs.plot.markers.MarkerCollection(offsets = [[5,9]])
+    >>> marker = hs.plot.markers.Points(offsets = [[5,9]], sizes=1)
     >>> s.add_marker(marker, permanent=True)
     >>> s.metadata.Markers
-    └── point = <marker.Point, point (x=5,y=9,color=black,size=20)>
-    >>> del s.metadata.Markers.point
+    └── Points = <Points| Iterating == False>
+    >>> del s.metadata.Markers.Points
     >>> s.metadata.Markers # Returns nothing
 
 
@@ -1232,40 +1229,41 @@ calling `s.plot`:
 .. code-block:: python
 
     >>> s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
-    >>> marker = hs.plot.markers.MarkerCollection(offsets = [[5,9]])
+    >>> marker = hs.plot.markers.Points(offsets = [[5,9]], sizes=1)
     >>> s.add_marker(marker, permanent=True, plot_marker=False)
     >>> s.plot(plot_markers=False)
 
 
 If the signal has a navigation dimension, the markers can be made to change
-as a function of the navigation index. For a signal with 1 navigation axis:
+as a function of the navigation index by passing in kwargs with dtype=object.
+For a signal with 1 navigation axis:
 
 .. code-block:: python
 
     >>> s = hs.signals.Signal2D(np.arange(300).reshape(3, 10, 10))
-    >>> offsets = np.empty(s.axes_manager.navgiation_shape)
+    >>> offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
     >>> marker_pos = [[5,9],[1,8],[2,1]]
     >>> for i,m in zip(np.ndindex(3),marker_pos) :
-    ...   offsets[i] =[m,]
-    >>> marker = hs.plot.markers.MarkerCollection(offsets =offsets color="red")
+    ...     offsets[i] =m
+    >>> marker = hs.plot.markers.Points(offsets=offsets, color="red", sizes=(.5))
     >>> s.add_marker(marker, permanent=True)
 
 .. figure::  images/plot_markers_nav_index.gif
   :align:   center
   :width:   100%
 
-  Plotting with markers that change with the navigation index.
+Plotting with markers that change with the navigation index.
 
 Or for a signal with 2 navigation axes:
 
 .. code-block:: python
 
     >>> s = hs.signals.Signal2D(np.arange(400).reshape(2, 2, 10, 10))
-    >>> marker_pos = [[[5,1], [1,2]],[[2,9],[6,8]]]
+    >>> marker_pos = np.array([[[5,1], [1,2]],[[2,9],[6,8]]])
     >>> offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
     >>> for i in np.ndindex(s.axes_manager.navigation_shape):
-    ...   offsets[i] =[m[i],]
-    >>> marker = hs.plot.markers.MarkerCollection(offsets=offsets)
+    >>>     offsets[i] = [marker_pos[i],]
+    >>> marker = hs.plot.markers.Points(offsets=offsets, sizes=(0.2))
     >>> s.add_marker(marker, permanent=True)
 
 .. figure::  images/plot_markers_2dnav_index.gif
@@ -1281,38 +1279,19 @@ This can be extended to 4 (or more) navigation dimensions:
     >>> s = hs.signals.Signal2D(np.arange(1600).reshape(2, 2, 2, 2, 10, 10))
     >>> x = np.arange(16).reshape(2, 2, 2, 2)
     >>> y = np.arange(16).reshape(2, 2, 2, 2)
-    >>> marker = hs.plot.markers.Point(x=x, y=y, color='red')
+    >>> offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
+    >>> for i in np.ndindex(offsets.shape):
+    ...     offsets[i] = [[x[i],y[i]],]
+    >>> marker = hs.plot.markers.Points(offsets=offsets, color='red', sizes=(.2))
     >>> s.add_marker(marker, permanent=True)
 
-.. versionadded:: 1.2
-   ``markers`` keyword arguments can take an iterable in addition to single
-   marker.
 
-If you want to add a large amount of markers at the same time we advise
-to add them as an iterable (list, tuple, ...), which will be much faster:
+You can add a couple of different types of markers at the same time.
 
 .. code-block:: python
 
-    >>> from numpy.random import random
-    >>> s = hs.signals.Signal2D(np.arange(300).reshape(3, 10, 10))
-    >>> markers = (hs.plot.markers.Point(tuple(random()*10 for i in range(3)),
-    ...                                  tuple(random()*10 for i in range(3)),
-    ...                                  size=30, color=np.random.rand(3,1))
-    ...            for i in range(500))
-    >>> s.add_marker(markers, permanent=True)
-
-.. figure::  images/plot_markers_2dnav_random_iter.gif
-  :align:   center
-  :width:   100%
-
-  Plotting many markers with an iterable so they change with the navigation
-  index.
-
-This can also be done using different types of markers
-
-.. code-block:: python
-
-    >>> from numpy.random import random
+    >>> import hyperspy.api as hs
+    >>> import numpy as np
     >>> s = hs.signals.Signal2D(np.arange(300).reshape(3, 10, 10))
     >>> markers = []
     >>> v_line_pos = np.empty(3, dtype=object)
@@ -1322,15 +1301,15 @@ This can also be done using different types of markers
     >>> random_colors = np.empty(3, dtype=object)
     >>> num=200
     >>> for i in range(3):
-    ...     v_line_pos[i] = random(num,1)
-    ...     h_line_pos[i] = random(num,1)
-    ...     point_offsets[i] = random(num,2)
-    ...     text_offsets[i] = random(num,2)
-    ...     random_colors = np.random.rand(num,3,1)))
-    >>> v_marker = hs.plot.markers.VerticalLineCollection(segments=v_line_pos, color=random_colors)
-    >>> h_marker = hs.plot.markers.HorizontalLineCollection(segments=h_line_pos, color=random_colors)
-    >>> p_marker = hs.plot.markers.MarkerCollection(offsets=point_offsets, color=random_colors)
-    >>> t_marker = hs.plot.marker.TextCollection(offsets=text_offsets, s="sometext")
+    ...     v_line_pos[i] = np.random.rand(num)*10
+    ...     h_line_pos[i] = np.random.rand(num)*10
+    ...     point_offsets[i] = np.random.rand(num,2)*10
+    ...     text_offsets[i] = np.random.rand(num,2)*10
+    ...     random_colors = np.random.rand(num,3)
+    >>> v_marker = hs.plot.markers.VerticalLines(x=v_line_pos, color=random_colors)
+    >>> h_marker = hs.plot.markers.HorizontalLines(y=h_line_pos, color=random_colors)
+    >>> p_marker = hs.plot.markers.Points(offsets=point_offsets, color=random_colors, sizes=(.1,))
+    >>> t_marker = hs.plot.markers.Texts(offsets=text_offsets, s="sometext")
     >>> s.add_marker([v_marker,h_marker, p_marker, t_marker], permanent=True)
 
 .. figure::  images/plot_markers_2dnav_random_iter_many_types.gif
@@ -1345,7 +1324,7 @@ Permanent markers are stored in the HDF5 file if the signal is saved:
 .. code-block:: python
 
     >>> s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
-    >>> marker = hs.plot.markers.MarkerCollection([[2, 1]], color='red')
+    >>> marker = hs.plot.markers.Points([[2, 1]], color='red')
     >>> s.add_marker(marker, plot_marker=False, permanent=True)
     >>> s.metadata.Markers
     └── point = <marker.Point, point (x=2,y=1,color=red,size=20)>

@@ -25,7 +25,9 @@ class Rectangles(Markers):
     markers which have the same properties.
     """
     def __init__(self,
-                 rectangles,
+                 offsets,
+                 widths,
+                 heights,
                  **kwargs):
         """ Initialize the set of Segments Markers.
 
@@ -37,14 +39,17 @@ class Rectangles(Markers):
             Additional keyword arguments are passed to matplotlib.collections.PolyCollection.
         """
         super().__init__(collection_class=PolyCollection,
-                         rectangles=rectangles,
+                         offsets=offsets,
+                         widths=widths,
+                         heights=heights,
                          **kwargs)
         self.name = "Rectangles"
 
     def get_data_position(self, **kwargs):
         current_kwds = super().get_data_position(**kwargs)
-        rect = current_kwds.pop("rectangles")
-        verts = [[[x1, y1], [x1, y2], [x2, y2], [x2, y1]] for x1, y1, x2, y2 in rect]
+        widths = current_kwds.pop("widths")
+        heights = current_kwds.pop("heights")
+        verts = [[[-w/2, -h/2], [-w/2, h/2], [w/2, h/2], [w/2, -h/2]] for w, h in zip(widths, heights)]
         current_kwds["verts"] = verts
         return current_kwds
 

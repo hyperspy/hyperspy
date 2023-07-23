@@ -51,7 +51,8 @@ class HorizontalLines(Markers):
                           get_static_kwargs=True):
         kwargs = super().get_data_position(get_static_kwargs=get_static_kwargs)
         x_extent = self.ax.get_xlim()
+        print(x_extent)
         y_pos = kwargs.pop("y")
-        new_segments = np.array([[[x_extent[0]*2, -y*2], [x_extent[1]*2, -y*2]] for y in y_pos])
+        new_segments = np.array([[[x_extent[0], y], [x_extent[1], y]] for y in y_pos])
         kwargs["segments"] = new_segments
         return kwargs

@@ -19,7 +19,6 @@
 import numpy as np
 import dask.array as da
 import logging
-import inspect
 import matplotlib
 
 from matplotlib.transforms import Affine2D
@@ -43,8 +42,10 @@ def convert_positions(peaks, signal_axes):
 
 class Markers(object):
     """
-    A Collection of Markers for faster plotting. A collection is a set of
-    markers which have the same properties.
+    A set of markers for faster plotting.
+
+    This is a generic class which is subclassed by other marker classes. Mostly
+    by defining the collection_class.
 
     In most cases each marker is defined by some keyword argument and
     a (n,2) array of offsets which define the position for each marker
@@ -74,7 +75,7 @@ class Markers(object):
 
         Parameters
         ----------
-        Collection: None or matplotlib.collections
+        collection_class: None or matplotlib.collections
             A Matplotlib collection to be initialized.
         offsets: [2,n]
             Positions of the markers
@@ -266,6 +267,22 @@ class Markers(object):
             else:
                 self.kwargs[key] = np.append(self.kwargs[key], value, axis=0)
 
+    def _get_chunk_slice(self, key, index_slice):
+        """
+        Get the slice for a chunk of data.
+
+        Parameters
+        ----------
+        key: str
+            The key to get the slice for.
+        index_slice: slice, int or array of ints
+            Indicate indices of sub-arrays to remove along the specified axis.
+        """
+        if self.kwargs[key].dtype == object:
+            return index_slice
+        else:
+            return index_slice
+
     def _get_cache_dask_kwargs_chunk(self, indices):
         """
         Get the kwargs at some index.  If the index is cached return the cached value
@@ -315,7 +332,6 @@ class Markers(object):
         cls,
         signal,
         key="offsets",
-        collection_class=None,
         signal_axes="metadata",
         **kwargs,
     ):
@@ -361,7 +377,7 @@ class Markers(object):
                 "tuple of `DataAxes` or None"
             )
         kwargs[key] = new_signal.data
-        return cls(collection_class=collection_class, **kwargs)
+        return cls(**kwargs)
 
     def _get_data_shape(self):
         for key, item in self.kwargs.items():

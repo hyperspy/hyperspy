@@ -638,13 +638,6 @@ class TestMarkers:
         return d
 
     @pytest.fixture
-    def rectangles(self):
-        d = np.empty((3,), dtype=object)
-        for i in np.ndindex(d.shape):
-            d[i] = [[0, 0, 1, 1], [2, 2, 3, 3]]
-        return d
-
-    @pytest.fixture
     def extra_kwargs(self):
         widths = np.empty((3,), dtype=object)
         for i in np.ndindex(widths.shape):
@@ -660,13 +653,14 @@ class TestMarkers:
         kwds = {Points:{},
                    Circles:{"sizes": (1,)},
                    Arrows: {"dx": 1, "dy": 1},
-                   Ellipses: {"widths": widths, "heights": heights, "angles":angles}, }
+                   Ellipses: {"widths": widths, "heights": heights, "angles":angles},
+                   Rectangles: {"widths": widths, "heights": heights}}
         return kwds
     @pytest.fixture
     def signal(self):
         return Signal2D(np.ones((3, 10, 10)))
 
-    @pytest.mark.parametrize("MarkerClass", [Points, Circles,  Ellipses, Arrows]) #Arrows
+    @pytest.mark.parametrize("MarkerClass", [Points, Circles,  Ellipses, Arrows,Rectangles]) #Arrows
     def test_offset_markers(self,
                             extra_kwargs,
                             MarkerClass,
@@ -678,10 +672,5 @@ class TestMarkers:
         signal.add_marker(markers)
         signal.axes_manager.navigation_axes[0].index = 1
 
-    def test_rectangle_marker(self, rectangles, signal):
-        markers = Rectangles(rectangles=rectangles)
-        signal.plot()
-        signal.add_marker(markers)
-        signal.axes_manager.navigation_axes[0].index = 1
 
 
