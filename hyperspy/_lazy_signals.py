@@ -26,7 +26,6 @@ from hyperspy._signals.complex_signal import LazyComplexSignal
 from hyperspy._signals.complex_signal1d import LazyComplexSignal1D
 from hyperspy._signals.complex_signal2d import LazyComplexSignal2D
 from hyperspy._signals.dielectric_function import LazyDielectricFunction
-from hyperspy._signals.hologram_image import LazyHologramImage
 
 
 __all__ = [
@@ -37,7 +36,6 @@ __all__ = [
     "LazyEDSSEMSpectrum",
     "LazyEDSTEMSpectrum",
     "LazyEELSSpectrum",
-    "LazyHologramImage",
     "LazySignal",
     "LazySignal1D",
     "LazySignal2D",

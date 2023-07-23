@@ -28,12 +28,12 @@ from hyperspy._signals.signal2d import Signal2D
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.lazy import LazySignal
-from hyperspy.misc.holography.reconstruct import (
+from holospy.misc.reconstruct import (
     reconstruct,
     estimate_sideband_position,
     estimate_sideband_size,
     )
-from hyperspy.misc.holography.tools import (
+from holospy.misc.tools import (
     calculate_carrier_frequency,
     estimate_fringe_contrast_fourier,
 )
