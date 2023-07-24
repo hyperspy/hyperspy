@@ -64,6 +64,8 @@ steps:
 - bash: |
     source activate $ENV_NAME
     pip install --no-deps -e .
+    pip install --no-deps -e ./holospy
+    pip install --no-deps -e ./spectrospy
     conda list
   displayName: Install package
 
