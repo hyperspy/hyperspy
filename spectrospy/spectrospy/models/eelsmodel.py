@@ -24,7 +24,8 @@ from hyperspy import components1d
 from spectrospy.signals.eels import EELSSpectrum
 from spectrospy.components import EELSCLEdge
 from hyperspy.components1d import PowerLaw
-from hyperspy.docstrings.model import FIT_PARAMETERS_ARG, EELSMODEL_PARAMETERS
+from hyperspy.docstrings.model import FIT_PARAMETERS_ARG
+from spectrospy.docstrings.model import EELSMODEL_PARAMETERS
 from hyperspy.misc.utils import dummy_context_manager
 from hyperspy.models.model1d import Model1D
 
