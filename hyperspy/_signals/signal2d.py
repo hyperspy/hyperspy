@@ -964,7 +964,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                function.
              * 'difference_of_gaussian' - a blob finder using the difference
                of Gaussian matrices approach. See the
-               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_log`
+               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_dog`
                function.
              * 'template_matching' - A cross correlation peakfinder. This
                method requires providing a template with the ``template``
