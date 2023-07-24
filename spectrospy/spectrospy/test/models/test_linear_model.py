@@ -17,6 +17,8 @@
 # along with SpectroSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.decorators import lazifyTestClass
+import hyperspy.api as hs
+import numpy as np
 
 
 @lazifyTestClass
