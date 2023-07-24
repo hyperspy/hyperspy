@@ -52,7 +52,7 @@ from hyperspy.docstrings.signal import (
     NAVIGATION_MASK_ARG,
     LAZYSIGNAL_DOC,
 )
-from hyperspy.docstrings.model import EELSMODEL_PARAMETERS
+from spectrospy.docstrings.model import EELSMODEL_PARAMETERS
 
 
 _logger = logging.getLogger(__name__)
