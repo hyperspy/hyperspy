@@ -39,8 +39,12 @@ from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
 from hyperspy.axes import UniformDataAxis
 from hyperspy.misc.test_utils import update_close_figure
 
-from hyperspy.utils.markers import (Ellipses, Circles, Lines,
-                                    Arrows, Rectangles, Points, )
+from hyperspy.utils.markers import (
+    Ellipses,
+    Circles,
+    Arrows,
+    Points,
+    )
 from copy import deepcopy
 
 BASELINE_DIR = "marker_collection"
@@ -681,6 +685,3 @@ class TestMarkers:
         signal.plot()
         signal.add_marker(arrows)
         signal.axes_manager.navigation_axes[0].index = 1
-
-
-

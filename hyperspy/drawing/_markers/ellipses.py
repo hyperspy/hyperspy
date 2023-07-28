@@ -16,9 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from hyperspy.drawing.markers import Markers
-from hyperspy.external.matplotlib.collections import EllipseCollection  # Update
 from hyperspy.docstrings.markers import OFFSET_DOCSTRING
+from hyperspy.drawing.markers import Markers
+from hyperspy.external.matplotlib.collections import EllipseCollection
+
 
 class Ellipses(Markers):
     """A set of Ellipse Markers
@@ -38,10 +39,10 @@ class Ellipses(Markers):
             The lengths of the first axes (e.g., major axis lengths).
         heights: array-like
             The lengths of second axes.
-        angles:array-like
+        angles : array-like
             The angles of the first axes, degrees CCW from the x-axis.
         kwargs:
-            Additional keyword arguments are passed to matplotlib.collections.EllipseCollection.
+            Additional keyword arguments are passed to :py:class:`matplotlib.collections.EllipseCollection`.
         """
         super().__init__(collection_class=EllipseCollection,
                          offsets=offsets,
@@ -49,6 +50,6 @@ class Ellipses(Markers):
                          widths=widths,
                          angles=angles,
                          **kwargs)
-        self.name = "Ellipses"
+        self.name = self.__class__.__name__
 
     __init__.__doc__ %= OFFSET_DOCSTRING

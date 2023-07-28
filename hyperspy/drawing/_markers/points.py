@@ -16,24 +16,26 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from matplotlib.collections import CircleCollection
+
 from hyperspy.drawing.markers import Markers
 from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 
 class Points(Markers):
     """A set of Points Markers
     """
-    def __init__(self,
-                 offsets,
-                 **kwargs):
+    def __init__(self, offsets, **kwargs):
         """ Initialize the set of points Markers.
 
         Parameters
         ----------
         %s
+        kwargs : dict
+        	Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`
         """
-        super().__init__(collection_class=None,
+        super().__init__(collection_class=CircleCollection,
                          offsets=offsets,
                          **kwargs)
-        self.name = "Points"
+        self.name = self.__class__.__name__
 
     __init__.__doc__ %= OFFSET_DOCSTRING

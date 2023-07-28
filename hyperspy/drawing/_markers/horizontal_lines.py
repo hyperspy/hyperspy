@@ -46,7 +46,7 @@ class HorizontalLines(Markers):
                          collection_class=LineCollection,
                          y=y,
                          **kwargs)
-        self.name = "HorizontalLines"
+        self.name = self.__class__.__name__
 
     def get_data_position(self,
                           get_static_kwargs=True):

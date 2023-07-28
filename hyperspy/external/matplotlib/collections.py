@@ -1,4 +1,4 @@
-from matplotlib.collections import Collection, _CollectionWithSizes
+from matplotlib.collections import Collection
 from matplotlib import artist, path as mpath, transforms
 import numpy as np
 
@@ -94,4 +94,3 @@ class EllipseCollection(Collection):
     def draw(self, renderer):
         self._set_transforms()
         super().draw(renderer)
-

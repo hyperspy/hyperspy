@@ -18,7 +18,7 @@ offsets = rng.random((10, 2)) * 100
 m = hs.plot.markers.Markers(collection_class=mpl.collections.StarPolygonCollection,
                             offsets=offsets,
                             numsides=5,
-                            color=("red", "blue",),
+                            color="tab:orange",
                             sizes=(20,30))
 s.plot()
 s.add_marker(m)
@@ -36,9 +36,8 @@ for ind in np.ndindex(offsets.shape):
 m = hs.plot.markers.Markers(collection_class=mpl.collections.StarPolygonCollection,
                             offsets=offsets,
                             numsides=5,
-                            color=("red", "blue",),
+                            color="tab:orange",
                             sizes=(20, 30))
 
 s.plot()
 s.add_marker(m)
-

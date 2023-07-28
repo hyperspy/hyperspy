@@ -4,7 +4,6 @@ Line  Markers
 
 """
 import hyperspy.api as hs
-import matplotlib as mpl
 import numpy as np
 
 # Create a Signal2D with 2 navigation dimensions

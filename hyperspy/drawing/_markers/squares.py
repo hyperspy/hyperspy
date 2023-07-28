@@ -16,31 +16,33 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from matplotlib.collections import CircleCollection
+from matplotlib.collections import RegularPolyCollection
 
-from hyperspy.drawing.markers import Markers
 from hyperspy.docstrings.markers import OFFSET_DOCSTRING
+from hyperspy.drawing.markers import Markers
 
 
-class Circles(Markers):
-    """A set of Circle Markers
+class Squares(Markers):
     """
-
+    A Collection of square markers using
+    :py:class`matplotlib.collections.RegularPolyCollection`.
+    """
     def __init__(self, offsets, sizes, **kwargs):
-        """ Initialize the set of Circle Markers.
+        """
+        Initialize the set of square Markers.
 
         Parameters
         ----------
         %s
-        sizes: array-like
-            The size of the circles in points.
-        kwargs:
-            Additional keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`.
+        sizes : Array-like
+            The size of the squares.
         """
-
-        super().__init__(collection_class=CircleCollection,
+        # TODO: check the units of sizes
+        super().__init__(collection_class=RegularPolyCollection,
                          offsets=offsets,
                          sizes=sizes,
-                         facecolors='none',
+                         numsides=4,
                          **kwargs)
         self.name = self.__class__.__name__
+
+    __init__.__doc__ %= OFFSET_DOCSTRING

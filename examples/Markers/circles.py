@@ -1,24 +1,23 @@
 """
-Ellipse markers
-===============
+Circle Markers
+==============
 
 """
 import hyperspy.api as hs
-import matplotlib as mpl
 import numpy as np
 
 # Create a Signal2D with 2 navigation dimensions
 rng = np.random.default_rng()
 s = hs.signals.Signal2D(rng.random((25, 25, 100, 100)))
 
-# Define the position of the ellipses
+# Define the position of the circles
 offsets = rng.random((10, 2)) * 100
 
-m = hs.plot.markers.Ellipses(
-    widths=(4,),
-    heights=(2,),
-    angles=(45,),
+m = hs.plot.markers.Circles(
+    sizes=10,
     offsets=offsets,
+    edgecolor='r',
+    linewidth=5,
     )
 
 s.plot()
@@ -26,19 +25,22 @@ s.add_marker(m)
 
 
 """
-Dynamic Ellipse Markers
-=======================
+Dynamic Circle Markers
+======================
 """
 
 offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
-for ind in np.ndindex(offsets.shape):
-    offsets[ind] = rng.random((10, 2)) * 100
+sizes = np.empty(s.axes_manager.navigation_shape, dtype=object)
 
-m = hs.plot.markers.Ellipses(
-    widths=(4,),
-    heights=(2,),
-    angles=(45,),
+for ind in np.ndindex(offsets.shape):
+    offsets[ind] = rng.random((5, 2)) * 100
+    sizes[ind] = rng.random((5, )) * 20
+
+m = hs.plot.markers.Circles(
+    sizes=sizes,
     offsets=offsets,
+    edgecolor='r',
+    linewidth=10,
     )
 
 s.plot()
