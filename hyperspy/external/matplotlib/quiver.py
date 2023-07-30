@@ -31,7 +31,7 @@ class Quiver(mcollections.PolyCollection):
     _PIVOT_VALS = ('tail', 'middle', 'tip')
 
     @_docstring.Substitution(_quiver_doc)
-    def __init__(self, ax, *args,
+    def __init__(self, *args,
                  scale=None, headwidth=3, headlength=5, headaxislength=4.5,
                  minshaft=1, minlength=1, units='width', scale_units=None,
                  angles='uv', width=None, color='k', pivot='tail', **kwargs):
@@ -41,7 +41,6 @@ class Quiver(mcollections.PolyCollection):
         by the following pyplot interface documentation:
         %s
         """
-        self._axes = ax  # The attr actually set by the Artist.axes property.
         X, Y, U, V, C = _parse_args(*args, caller_name='quiver')
         self.X = X
         self.Y = Y
@@ -63,11 +62,10 @@ class Quiver(mcollections.PolyCollection):
         self.pivot = pivot.lower()
         _api.check_in_list(self._PIVOT_VALS, pivot=self.pivot)
 
-        self.transform = kwargs.pop('transform', ax.transData)
         kwargs.setdefault('facecolors', color)
         kwargs.setdefault('linewidths', (0,))
-        super().__init__([], offsets=self.XY, offset_transform=self.transform,
-                         closed=False, **kwargs)
+        kwargs.setdefault('offset_transform', kwargs.pop('transform', None))
+        super().__init__([], offsets=self.XY, closed=False, **kwargs)
         self.polykw = kwargs
         self.set_UVC(U, V, C)
         self._dpi_at_last_init = None
@@ -293,5 +291,3 @@ class Quiver(mcollections.PolyCollection):
         return X, Y
 
     quiver_doc = _api.deprecated("3.7")(property(lambda self: _quiver_doc))
-
-

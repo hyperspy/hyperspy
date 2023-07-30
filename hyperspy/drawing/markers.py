@@ -40,7 +40,7 @@ def convert_positions(peaks, signal_axes):
     return new_data
 
 
-class Markers(object):
+class Markers:
     """
     A set of markers for faster plotting.
 
@@ -69,7 +69,7 @@ class Markers(object):
     for a signal.
     """
 
-    def __init__(self, collection_class=None, **kwargs):
+    def __init__(self, collection_class, **kwargs):
         """
         Initialize a Marker Collection.
 
@@ -185,14 +185,13 @@ class Markers(object):
         self.collection_class = collection_class
         self.signal = None
         self.temp_signal = None
-        self._check_iterating_kwargs()
         self.is_iterating = np.any(
             [is_iterating(value) for key, value in self.kwargs.items()]
         )
         self._plot_on_signal = True
-        self.name = "Markers"
+        # Default to collection name but overwritten by subclass
+        self.name = collection_class.__name__
         self.plot_marker = True
-        self.offsets_structure = [["o", "get_xlim[0]"], ["o", "get_xlim[1]"]]
 
         # Events
         self.events = Events()
@@ -208,18 +207,6 @@ class Markers(object):
             arguments=["obj"],
         )
         self._closing = False
-
-    def _check_iterating_kwargs(self):
-        if self.collection_class is None:
-            cc = matplotlib.collections.PathCollection
-        else:
-            cc = self.collection_class
-        # for key, value in self.kwargs.items():
-        #     if is_iterating(value) and key not in str(inspect.signature(cc.set)):
-        #         raise ValueError(f"The keyword {key} is an dynamic argument and cannot be set using the"
-        #                          f" {self.collection_class.__name__}.set function.  Another option is to"
-        #                          f" use the IterPatchCollection which provides additional control at the"
-        #                          f" cost of speed.")
 
     def delete_index(self, keys, index):
         """
@@ -320,13 +307,7 @@ class Markers(object):
         return out_kwargs
 
     def __repr__(self):
-        if self.collection_class is not None:
-            return (
-                f"<{self.name}| Class{self.collection_class} |"
-                f"Iterating == {self.is_iterating}"
-            )
-        else:
-            return f"<{self.name}| Iterating == {self.is_iterating}"
+        return f"<{self.name}| Iterating == {self.is_iterating}"
 
     @classmethod
     def from_signal(
@@ -437,31 +418,10 @@ class Markers(object):
             self.collection.set(**kwds)
 
     def _initialize_collection(self):
-        if self.collection_class is None:
-            self.collection = self.ax.scatter(
-                [],
-                [],
-            )
-            self.collection.set(**self.get_data_position())
-        elif self.collection_class is LineCollection:
-            self.collection = self.collection_class(
-                **self.get_data_position(),
-            )
-        else:
-            self.collection = self.collection_class(
-                **self.get_data_position(),
-                transOffset=self.ax.transData,
-            )
-
-        # Set the size of each marker based on the "x" axis scale (or the x scale for the original dpi)
-        # In order to get each Marker to scale we would need to define a list of transforms
-        # This is possible but difficult to implement cleanly. For now,
-        # we will just scale the markers based on the origional x axis and they won't scale with the
-        # figure size changing...
-        if self.collection_class is not LineCollection:
-            sc = self.ax.bbox.width / self.ax.viewLim.width
-            trans = Affine2D().scale(sc)
-            self.collection.set_transform(trans)
+        self.collection = self.collection_class(
+            **self.get_data_position(),
+            offset_transform=self.ax.transData,
+        )
 
     def plot(self, render_figure=True):
         """
@@ -489,7 +449,7 @@ class Markers(object):
             self._render_figure()
 
     def _render_figure(self):
-            self.ax.hspy_fig.render_figure()
+        self.ax.hspy_fig.render_figure()
 
     def close(self, render_figure=True):
         """Remove and disconnect the marker.

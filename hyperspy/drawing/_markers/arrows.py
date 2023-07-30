@@ -23,51 +23,55 @@ from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 class Arrows(Markers):
     """A set of Arrow markers based on the matplotlib.quiver.Quiver class.
     """
-    def __init__(self,
-                 offsets,
-                 dx,
-                 dy,
-                 **kwargs):
+    def __init__(
+            self,
+            offsets,
+            U,
+            V,
+            C=None,
+            scale=1,
+            angles="xy",
+            scale_units="xy",
+            **kwargs
+        ):
         """ Initialize the set of Arrows Markers.
 
         Parameters
         ----------
         %s
-        dx: array-like
-            The change in x for the arrows.
-        dy: array-like
-            The change in y for the arrows.
-        angles:array-like
-            The angles of the first axes, degrees CCW from the x-axis.
-        kwargs:
-            Additional keyword arguments are passed to matplotlib.quiver.Quiver.
+        U : array-like
+            The change in x (horizontal) diraction for the arrows.
+        V : array-like
+            The change in y (vertical) diraction for the arrows.
+        C : array-like or None
+        kwargs : dict
+            Keyword arguments are passed to :py:class:`matplotlib.quiver.Quiver`.
         """
-        super().__init__(collection_class=Quiver,
-                         offsets=offsets,
-                         U=dx,
-                         V=dy,
-                         **kwargs)
+        super().__init__(
+            collection_class=Quiver,
+            # iterating arguments
+            offsets=offsets,
+            U=U,
+            V=V,
+            C=C,
+            **kwargs
+        )
         self.name = self.__class__.__name__
+        self._init_kwargs = dict(scale=scale, angles=angles, scale_units=scale_units)
 
     __init__.__doc__ %= OFFSET_DOCSTRING
 
-    def get_data_position(self,
-                          get_static_kwargs=True):
-        kwargs = super().get_data_position(get_static_kwargs=get_static_kwargs)
-        return kwargs
-
     def _initialize_collection(self):
-        current_kwds = self.get_data_position()
-        U = current_kwds.pop("U")
-        V = current_kwds.pop("V")
-        C = current_kwds.pop("C", None)
-        offsets = current_kwds.pop("offsets")
+        kwds = self.get_data_position()
+        offsets = kwds["offsets"]
         X = offsets[:, 0]
         Y = offsets[:, 1]
+        U, V, C = kwds['U'], kwds['V'], kwds['C']
 
         if C is None:
             args = (X, Y, U, V)
         else:
             args = (X, Y, U, V, C)
 
-        self.collection = Quiver(self.ax, *args, scale=1, angles="xy", scale_units="xy", **current_kwds)
+        self.collection = self.collection_class(
+            *args, offset_transform=self.ax.transData, **self._init_kwargs)
