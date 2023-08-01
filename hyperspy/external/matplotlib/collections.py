@@ -1,5 +1,6 @@
-from matplotlib.collections import Collection, _CollectionWithSizes
 from matplotlib import artist, path as mpath, transforms
+from matplotlib.collections import Collection, _CollectionWithSizes
+from matplotlib.textpath import TextPath
 import numpy as np
 
 
@@ -233,3 +234,38 @@ class RectangleCollection(_CollectionWithWidthHeightAngle):
 
     """
     _path_generator = mpath.Path.unit_rectangle
+
+
+class TextCollection(_CollectionWithSizes):
+
+    def __init__(self, texts, sizes=None, **kwargs):
+        """
+        Parameters
+        ----------
+        texts : array-like
+            The texts of the collection.
+        angles : array-like
+            The angles of the first axes, degrees CCW from the x-axis.
+        **kwargs
+            Forwarded to `Collection`.
+        """
+        super().__init__(**kwargs)
+        self.set_sizes(sizes)
+        self._set_texts(texts)
+        self.set_transform(transforms.IdentityTransform())
+
+    def _set_texts(self, texts):
+        self._texts = texts
+        self._generate_path_from_text()
+
+    def set_texts(self, texts):
+        self._set_texts(texts)
+        self.stale = True
+
+    def get_texts(self, texts):
+        return self._texts
+
+    def _generate_path_from_text(self):
+        # For each TextPath, the position is at (0, 0) because the position
+        # will be given by the offsets values
+        self._paths = [TextPath((0, 0), text) for text in self._texts]

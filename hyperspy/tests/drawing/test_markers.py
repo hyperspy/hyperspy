@@ -31,7 +31,6 @@ from matplotlib.patches import RegularPolygon
 import matplotlib.pyplot as plt
 import dask.array as da
 
-from hyperspy.drawing.markers import Markers
 from hyperspy.drawing._markers.relative_markers import RelativeMarkers
 from hyperspy.drawing._markers.vertical_lines import VerticalLines
 from hyperspy.drawing._markers.horizontal_lines import HorizontalLines
@@ -41,10 +40,11 @@ from hyperspy.axes import UniformDataAxis
 from hyperspy.misc.test_utils import update_close_figure
 
 from hyperspy.utils.markers import (
-    Ellipses,
-    Circles,
     Arrows,
+    Circles,
+    Ellipses,
     Points,
+    Markers,
     )
 
 BASELINE_DIR = "marker_collection"
@@ -153,14 +153,13 @@ class TestCollections:
     def test_iterating_marker(self, request, iter_data):
         data = request.getfixturevalue(iter_data)
         s = Signal2D(np.ones((3, 5, 6)))
-        markers = Markers(None, offsets=data, sizes=(0.2,))
+        markers = Points(offsets=data, sizes=(0.2,))
         s.add_marker(markers)
         s.axes_manager.navigation_axes[0].index = 2
         return s._plot.signal_plot.figure
 
     def test_parameters_2_scatter(self, data):
-        m = Markers(
-            None,
+        m = Points(
             offsets=np.array([[100, 70], [70, 100]]),
             color="g",
             sizes=(3,),
@@ -169,8 +168,8 @@ class TestCollections:
         s.add_marker(m)
 
     def test_parameters_singletons(self, signal, data):
-        m = Markers(
-            None, offsets=np.array([[100, 70], [70, 100]]), color="b", sizes=3
+        m = Points(
+            offsets=np.array([[100, 70], [70, 100]]), color="b", sizes=3
         )
         s = Signal2D(np.zeros((2, 100, 100)))
         s.add_marker(m)
@@ -182,8 +181,8 @@ class TestCollections:
         sizes = np.empty(2, dtype=object)
         sizes[0] = 3
         sizes[1] = 4
-        m = Markers(
-            None, offsets=np.array([[100, 70], [70, 100]]), color="b", sizes=sizes
+        m = Points(
+            offsets=np.array([[100, 70], [70, 100]]), color="b", sizes=sizes
         )
         s = Signal2D(np.zeros((2, 100, 100)))
         s.add_marker(m)
@@ -200,7 +199,7 @@ class TestCollections:
         ),
     )
     def test_from_signal(self, signal, data, signal_axes):
-        col = Markers.from_signal(
+        col = Points.from_signal(
             signal, sizes=(0.3,), signal_axes=signal_axes
         )
 
@@ -217,7 +216,7 @@ class TestCollections:
 
     def test_from_signal_fail(self, signal):
         with pytest.raises(ValueError):
-            _ = Markers.from_signal(signal, sizes=(0.3,), signal_axes="test")
+            _ = Points.from_signal(signal, sizes=(0.3,), signal_axes="test")
 
     def test_find_peaks(self):
         from skimage.draw import disk
@@ -239,7 +238,7 @@ class TestCollections:
             method="template_matching",
             template=disk2(4),
         )
-        col = Markers.from_signal(
+        col = Points.from_signal(
             pks, sizes=(0.3,), signal_axes=s.axes_manager.signal_axes
         )
         s.add_marker(col)
@@ -265,7 +264,7 @@ class TestCollections:
             method="template_matching",
             template=disk2(4),
         )
-        col = Markers.from_signal(
+        col = Points.from_signal(
             pks, sizes=(0.3,), signal_axes=s.axes_manager.signal_axes
         )
         s.add_marker(col)
@@ -292,8 +291,7 @@ class TestCollections:
         assert len(cs.metadata["Markers"]) == num_col
 
     def test_plot_and_render(self):
-        markers = Markers(offsets=[[1, 1],
-                                   [4, 4]])
+        markers = Points(offsets=[[1, 1], [4, 4]])
         s = Signal1D(np.arange(100).reshape((10,10)))
         s.add_marker(markers)
         markers.plot(render_figure=True)
@@ -388,40 +386,40 @@ class TestInitMarkerCollection:
         offsets = np.empty((3, 2), dtype=object)
         for i in np.ndindex(offsets.shape):
             offsets[i] = np.ones((3, 2))
-        m = Markers(offsets=offsets)
+        m = Points(offsets=offsets)
         with pytest.raises(ValueError):
             s.add_marker(m)
 
     def test_add_markers_to_multiple_signals(self):
         s = Signal2D(np.zeros((2, 3, 3)))
         s2 = Signal2D(np.zeros((2, 3, 3)))
-        m = Markers(offsets=[[1, 1], [2, 2]])
+        m = Points(offsets=[[1, 1], [2, 2]])
         s.add_marker(m, permanent=True)
         with pytest.raises(ValueError):
             s2.add_marker(m, permanent=True)
 
     def test_add_markers_to_same_signal(self):
         s = Signal2D(np.zeros((2, 3, 3)))
-        m = Markers(offsets=[[1, 1], [2, 2]])
+        m = Points(offsets=[[1, 1], [2, 2]])
         s.add_marker(m, permanent=True)
         with pytest.raises(ValueError):
             s.add_marker(m, permanent=True)
 
     def test_add_markers_to_navigator_without_nav(self):
         s = Signal2D(np.zeros((3, 3)))
-        m = Markers(offsets=[[1, 1], [2, 2]])
+        m = Points(offsets=[[1, 1], [2, 2]])
         with pytest.raises(ValueError):
             s.add_marker(m, plot_on_signal=False)
 
     def test_marker_collection_lazy_nonragged(self):
-        m = Markers(offsets=da.array([[1, 1], [2, 2]]))
+        m = Points(offsets=da.array([[1, 1], [2, 2]]))
         assert not isinstance(m.kwargs["offsets"], da.Array)
 
     def test_append_kwarg(self):
         offsets = np.empty(2, dtype=object)
         for i in range(2):
             offsets[i] = np.array([[1, 1], [2, 2]])
-        m = Markers(offsets=offsets)
+        m = Points(offsets=offsets)
         m.append_kwarg(keys="offsets", value=[[0, 1]])
         assert len(m.kwargs["offsets"][0]) == 3
 
@@ -429,7 +427,7 @@ class TestInitMarkerCollection:
         offsets = np.empty(2,dtype=object)
         for i in range(2):
             offsets[i] = np.array([[1, 1], [2, 2]])
-        m = Markers(offsets=offsets)
+        m = Points(offsets=offsets)
         m.delete_index(keys="offsets", index=1)
         assert len(m.kwargs["offsets"][0]) == 1
 
@@ -441,7 +439,7 @@ class TestInitMarkerCollection:
         assert "PolyCollection" in m.__repr__()
 
     def test_update_static(self):
-        m = Markers(offsets=([[1, 1], [2, 2]]))
+        m = Points(offsets=([[1, 1], [2, 2]]))
         s = Signal1D(np.ones((10,10)))
         s.plot()
         s.add_marker(m)
@@ -622,10 +620,9 @@ class TestLineCollections:
 
 def test_marker_collection_close_render():
     signal = Signal2D(np.ones((2, 10, 10)))
-    markers = Markers(offsets=[[1, 1],
-                               [4, 4]],
-                      sizes=(10,),
-                      color=("black",))
+    markers = Points(offsets=[[1, 1], [4, 4]],
+                     sizes=(10,),
+                     color=("black",))
     signal.plot()
     signal.add_marker(markers, render_figure=True)
     markers.close(render_figure=True)
@@ -655,20 +652,21 @@ class TestMarkers:
 
         kwds = {Points:{},
                    Circles:{"sizes": (1,)},
-                   Arrows: {"dx": 1, "dy": 1},
+                   Arrows: {"U": 1, "V": 1},
                    Ellipses: {"widths": widths, "heights": heights, "angles":angles},
                   }
         return kwds
+
     @pytest.fixture
     def signal(self):
         return Signal2D(np.ones((3, 10, 10)))
 
-    @pytest.mark.parametrize("MarkerClass", [Points, Circles,  Ellipses, Arrows])
-    def test_offset_markers(self,
-                            extra_kwargs,
-                            MarkerClass,
-                            offsets,
-                            signal):
+    @pytest.mark.parametrize("MarkerClass", [Points, Circles, Ellipses, Arrows])
+    def test_offsest_markers(self,
+                             extra_kwargs,
+                             MarkerClass,
+                             offsets,
+                             signal):
         markers = MarkerClass(offsets=offsets,
                               **extra_kwargs[MarkerClass])
         signal.plot()
@@ -678,9 +676,28 @@ class TestMarkers:
     def test_arrows(self, signal):
         arrows = Arrows(offsets=[[1, 1],
                                  [4, 4]],
-                        dx=1,
-                        dy=1,
+                        U=1,
+                        V=1,
                         C=(2,2,2))
         signal.plot()
         signal.add_marker(arrows)
         signal.axes_manager.navigation_axes[0].index = 1
+
+
+def test_markers_zorder():
+    signal = Signal2D(np.ones((2, 10, 10)))
+    markers = Points(offsets=[[1, 1], [4, 4]],
+                     sizes=(10,),
+                     color=("black",),
+                     zorder=1000)
+    signal.plot()
+    signal.add_marker(markers)
+
+    markers = Points(offsets=[[1, 1], [4, 4]],
+                     sizes=(10,),
+                     color=("black",),
+                     zorder=(500, 1000))
+    signal.plot()
+    with pytest.raises(BaseException):
+        # zorder must be set globally
+        signal.add_marker(markers)

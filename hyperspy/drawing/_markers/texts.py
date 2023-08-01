@@ -16,108 +16,45 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 from hyperspy.drawing.markers import Markers
 from hyperspy.drawing._markers.relative_markers import RelativeMarkers
-from copy import deepcopy
+from hyperspy.external.matplotlib.collections import TextCollection
+
 
 class Texts(Markers):
     """
     A set of text markers
     """
 
-    def update(self):
+    def __init__(self, offsets, **kwargs):
         """
-        Update the collection of text markers.  This will add new text artists if needed,
-        and update the properties of existing text artists.
-        """
-        if not self.is_iterating:
-            return
-        for c in self.collection:
-            c.remove()
-        self.collection = []
-        current_kwargs = self.get_data_position(get_static_kwargs=True)  # need all parameters
-        other_kwargs = {k: current_kwargs[k]
-                        for k in current_kwargs if k != "offsets"}
-        for i, o in enumerate(current_kwargs["offsets"]):
-            temp_kwargs = {k: other_kwargs[k][i % len(other_kwargs[k])]
-                           for k in other_kwargs}
-            t = self.ax.text(o[0], o[1], **temp_kwargs)
-            t.animated = self.ax.figure.canvas.supports_blit  # for blitting
-            self.collection.append(t)  # Add the text to the collection
-
-    def _initialize_collection(self):
-        current_kwargs = self.get_data_position(get_static_kwargs=True)
-        other_kwargs = {k: current_kwargs[k]
-                        for k in current_kwargs if k != "offsets"}
-        self.collection = []
-        for i, o in enumerate(current_kwargs["offsets"]):
-            temp_kwargs = {k: other_kwargs[k][i % len(other_kwargs[k])]
-                           for k in other_kwargs}
-            t = self.ax.text(o[0], o[1], **temp_kwargs)
-            t.set_animated(self.ax.figure.canvas.supports_blit)
-            self.collection.append(t)  # Add the text to the collection
-
-    def plot(self, render_figure=True):
-        """
-        Plot a marker which has been added to a signal.
+        Initialize the set of Circle Markers.
 
         Parameters
         ----------
-        render_figure : bool, optional, default True
-            If True, will render the figure after adding the marker.
-            If False, the marker will be added to the plot, but will the figure
-            will not be rendered. This is useful when plotting many markers,
-            since rendering the figure after adding each marker will slow
-            things down.
+        %s
+        sizes : array-like
+            The size of the text in points.
+        facecolors : matplotlib color or list of colors
+            Set the facecolor(s) of the markers. It can be a color
+            (all patches have same color), or a sequence of colors;
+            if it is a sequence the patches will cycle through the sequence.
+            If c is 'none', the patch will not be filled.
+        kwargs : dict
+            Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`.
         """
-        if self.ax is None:
-            raise AttributeError(
-                "To use this method the marker needs to be first add to a "
-                + "figure using `s._plot.signal_plot.add_marker(m)` or "
-                + "`s._plot.navigator_plot.add_marker(m)`"
-            )
-        self._initialize_collection()
-        if render_figure:
-            self._render_figure()
+        super().__init__(
+            collection_class=TextCollection,
+            offsets=offsets,
+            **kwargs
+        )
+        self.name = self.__class__.__name__
 
-    def close(self, render_figure=True):
-        """Remove and disconnect the marker.
-
-        Parameters
-        ----------
-        render_figure : bool, optional, default True
-            If True, the figure is rendered after removing the marker.
-            If False, the figure is not rendered after removing the marker.
-            This is useful when many markers are removed from a figure,
-            since rendering the figure after removing each marker will slow
-            things down.
-        """
-        if self._closing:
-            return
-        self._closing = True
-        for c in self.collection:
-            c.remove()
-        self.collection = []
-        self.events.closed.trigger(obj=self)
-        for f in self.events.closed.connected:
-            self.events.closed.disconnect(f)
-        if render_figure:
-            self._render_figure()
+    __init__.__doc__ %= OFFSET_DOCSTRING
 
 
 class RelativeTextCollection(RelativeMarkers, Texts):
     """A set of text markers which are plotted relative to the current data value or index.
     """
-    def update(self):
-        current_kwargs = self.get_data_position(get_static_kwargs=True)
-        for c in self.collection:
-            c.remove()
-        self.collection = []
-        other_kwargs = {k: current_kwargs[k]
-                        for k in current_kwargs if k != "offsets"}
-        for i, o in enumerate(current_kwargs["offsets"]):
-            temp_kwargs = {k: other_kwargs[k][i % len(other_kwargs[k])]
-                           for k in other_kwargs}
-            t = self.ax.text(o[0], o[1], **temp_kwargs)
-            t.animated = self.ax.figure.canvas.supports_blit  # for blitting
-            self.collection.append(t)  # Add the text to the collection
+    pass

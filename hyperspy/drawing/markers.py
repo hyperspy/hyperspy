@@ -19,10 +19,8 @@
 import numpy as np
 import dask.array as da
 import logging
-import matplotlib
 
-from matplotlib.transforms import Affine2D
-from matplotlib.collections import LineCollection
+from matplotlib.collections import Collection
 from matplotlib.patches import Patch
 
 from hyperspy.events import Event, Events
@@ -75,7 +73,7 @@ class Markers:
 
         Parameters
         ----------
-        collection_class: None or matplotlib.collections
+        collection_class: matplotlib.collections
             A Matplotlib collection to be initialized.
         offsets: [2,n]
             Positions of the markers
@@ -148,6 +146,11 @@ class Markers:
         >>>s.plot()
 
         """
+        if not issubclass(collection_class, Collection):
+            raise ValueError(
+                "The argument `collection_class` must be a subclass of "
+                "`matplotlib.collection.Collection."
+                )
         # Data attributes
         self.kwargs = kwargs  # all keyword arguments.
         self.axes_manager = None
@@ -189,8 +192,11 @@ class Markers:
             [is_iterating(value) for key, value in self.kwargs.items()]
         )
         self._plot_on_signal = True
-        # Default to collection name but overwritten by subclass
-        self.name = collection_class.__name__
+        try:
+            # Default to collection name but overwritten by subclass
+            self.name = collection_class().__class__.__name__
+        except:
+            self.name = "Custom"
         self.plot_marker = True
 
         # Events
@@ -544,14 +550,14 @@ def markers2collection(marker_dict):
     Warning: This function is not complete and will transfer all of the marker properties.
     """
     from hyperspy.utils.markers import (
-        Markers,
-        VerticalLines,
-        HorizontalLines,
-        Texts,
-        Lines,
-        Ellipses,
-        Rectangles,
         Arrows,
+        Ellipses,
+        HorizontalLines,
+        Lines,
+        Points,
+        Rectangles,
+        Texts,
+        VerticalLines,
     )
     from matplotlib.collections import PolyCollection
 
@@ -564,7 +570,7 @@ def markers2collection(marker_dict):
         offsets, size = dict2vector(
             marker_dict["data"], keys=None, return_size=True
         )
-        marker = Markers(
+        marker = Points(
             offsets=offsets, sizes=size, **marker_dict["marker_properties"]
         )
         marker
