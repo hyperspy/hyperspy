@@ -166,6 +166,7 @@ class Markers(object):
                 isinstance(value, list)
                 and len(value) > 0
                 and not isinstance(value[0], Patch)
+                and not key == "verts"
             ):
                 self.kwargs[key] = np.array(value)
             elif isinstance(value, list) and len(value) == 0:
@@ -365,11 +366,16 @@ class Markers(object):
                 convert_positions,
                 inplace=False,
                 ragged=True,
+                output_dtype=object,
                 signal_axes=signal.metadata.Peaks.signal_axes,
             )
         elif isinstance(signal_axes, (tuple, list)):
             new_signal = signal.map(
-                convert_positions, inplace=False, ragged=True, signal_axes=signal_axes
+                convert_positions,
+                inplace=False,
+                ragged=True,
+                output_dtype=object,
+                signal_axes=signal_axes
             )
         else:
             raise ValueError(
