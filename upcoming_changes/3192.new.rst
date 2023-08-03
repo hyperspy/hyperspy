@@ -1,0 +1,3 @@
+Switch to pcolormesh for image plots involving non-uniform axes.
+The following cases are covered: 2D-signal with arbitrary navigation-dimension, 1D-navigation and 1D-signal (linescan).
+Not covered are 2D-navigation images (still uses sliders).
