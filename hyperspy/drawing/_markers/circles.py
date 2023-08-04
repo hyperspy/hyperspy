@@ -23,24 +23,30 @@ from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 
 
 class Circles(Markers):
-    """A set of Circle Markers
-    """
+    """A set of Circle Markers."""
 
-    def __init__(self, offsets, sizes, **kwargs):
-        """ Initialize the set of Circle Markers.
+    def __init__(self, offsets, sizes=2, facecolors='none', **kwargs):
+        """
+        Initialize the set of Circle Markers.
 
         Parameters
         ----------
         %s
-        sizes: array-like
+        sizes : array-like
             The size of the circles in points.
-        kwargs:
-            Additional keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`.
+        facecolors : matplotlib color or list of colors
+            Set the facecolor(s) of the markers. It can be a color
+            (all patches have same color), or a sequence of colors;
+            if it is a sequence the patches will cycle through the sequence.
+            If c is 'none', the patch will not be filled.
+        kwargs : dict
+            Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`.
         """
-
         super().__init__(collection_class=CircleCollection,
                          offsets=offsets,
                          sizes=sizes,
-                         facecolors='none',
+                         facecolors=facecolors,
                          **kwargs)
         self.name = self.__class__.__name__
+
+    __init__.__doc__ %= OFFSET_DOCSTRING

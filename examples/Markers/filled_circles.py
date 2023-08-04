@@ -3,31 +3,41 @@ Filled Circle Markers
 =====================
 
 """
+#%%
+# Create a signal
+
 import hyperspy.api as hs
 import matplotlib as mpl
 import numpy as np
 
 # Create a Signal2D with 2 navigation dimensions
-rng = np.random.default_rng()
-s = hs.signals.Signal2D(rng.random((25, 25, 100, 100)))
+rng = np.random.default_rng(0)
+data = np.ones((25, 25, 100, 100))
+s = hs.signals.Signal2D(data)
+
+#%%
+# This first example shows how to draw static filled circles
 
 # Define the position of the circles
 offsets = rng.random((10, 2)) * 100
 
 m = hs.plot.markers.Points(
-    sizes=10,
+    sizes=50,
     offsets=offsets,
     )
 
 s.plot()
 s.add_marker(m)
 
+#%%
+#
+# Dynamic Filled Circle Markers
+# #############################
+#
+# This second example shows how to draw dynamic filled circles, whose size,
+# color and position change depending on the navigation position
 
-"""
-Dynamic Filled Circle Markers
-=============================
-"""
-
+s2 = hs.signals.Signal2D(data)
 
 offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
 sizes = np.empty(s.axes_manager.navigation_shape, dtype=object)
@@ -43,5 +53,8 @@ m = hs.plot.markers.Points(
     facecolors=colors,
     )
 
-s.plot()
-s.add_marker(m)
+s2.plot()
+s2.add_marker(m)
+
+#%%
+# sphinx_gallery_thumbnail_number = 2

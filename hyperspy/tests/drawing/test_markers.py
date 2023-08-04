@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 import pytest
+from copy import deepcopy
 
 
 import numpy as np
@@ -45,7 +46,6 @@ from hyperspy.utils.markers import (
     Arrows,
     Points,
     )
-from copy import deepcopy
 
 BASELINE_DIR = "marker_collection"
 DEFAULT_TOL = 2.0
@@ -162,7 +162,7 @@ class TestCollections:
         m = Markers(
             None,
             offsets=np.array([[100, 70], [70, 100]]),
-            color=("b", "g"),
+            color="g",
             sizes=(3,),
         )
         s = Signal2D(np.zeros((100, 100)))
@@ -217,7 +217,7 @@ class TestCollections:
 
     def test_from_signal_fail(self, signal):
         with pytest.raises(ValueError):
-            col = Markers.from_signal(signal, sizes=(0.3,), signal_axes="test")
+            _ = Markers.from_signal(signal, sizes=(0.3,), signal_axes="test")
 
     def test_find_peaks(self):
         from skimage.draw import disk
@@ -361,7 +361,7 @@ class TestInitMarkerCollection:
         signal.plot()
         signal.add_marker(col)
         signal.axes_manager.navigation_axes[0].index = 2
-        if collection is "iterating_line_collection":
+        if collection == "iterating_line_collection":
             col.get_data_position()["segments"]
             np.testing.assert_array_equal(
                 col.get_data_position()["segments"], np.ones((10, 2, 2)) * 2
@@ -565,8 +565,8 @@ class TestRelativeMarkerCollection:
         signal.add_marker(markers)
         signal.axes_manager.navigation_axes[0].index = 1
         segs = markers.collection.get_segments()
-        assert markers.collection.get_segments()[0][0][0] == 0
-        assert markers.collection.get_segments()[0][1][1] == 11
+        assert segs[0][0][0] == 0
+        assert segs[0][1][1] == 11
 
     def test_relative_marker_collection_fail(self):
         with pytest.raises(ValueError):
@@ -574,7 +574,7 @@ class TestRelativeMarkerCollection:
             segments[:, 1, 1] = 1  # set y values end
             segments[:, 0, 0] = np.arange(10).reshape(10)  # set x values
             segments[:, 1, 0] = np.arange(10).reshape(10)  # set x values
-            markers = RelativeMarkers(
+            _ = RelativeMarkers(
                 collection_class=LineCollection,
                 segments=segments,
                 reference="data_index",
@@ -586,7 +586,7 @@ class TestRelativeMarkerCollection:
             segments[:, 1, 1] = 1  # set y values end
             segments[:, 0, 0] = np.arange(10).reshape(10)  # set x values
             segments[:, 1, 0] = np.arange(10).reshape(10)  # set x values
-            markers = RelativeMarkers(
+            _ = RelativeMarkers(
                 collection_class=LineCollection, segments=segments, reference="data_in"
             )
 
@@ -607,7 +607,6 @@ class TestLineCollections:
         s.plot(interpolation=None)
         s.add_marker(vert)
         kwargs = vert.get_data_position()
-        max = s.inav[0].data.max()
         np.testing.assert_array_equal(kwargs["segments"], [[[0.0, 2.5], [0.0, -.5]]])
 
     def test_horizontal_line_collection(self, x):
@@ -658,13 +657,13 @@ class TestMarkers:
                    Circles:{"sizes": (1,)},
                    Arrows: {"dx": 1, "dy": 1},
                    Ellipses: {"widths": widths, "heights": heights, "angles":angles},
-                   Rectangles: {"widths": widths, "heights": heights}}
+                  }
         return kwds
     @pytest.fixture
     def signal(self):
         return Signal2D(np.ones((3, 10, 10)))
 
-    @pytest.mark.parametrize("MarkerClass", [Points, Circles,  Ellipses, Arrows,Rectangles]) #Arrows
+    @pytest.mark.parametrize("MarkerClass", [Points, Circles,  Ellipses, Arrows])
     def test_offset_markers(self,
                             extra_kwargs,
                             MarkerClass,

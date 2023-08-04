@@ -16,28 +16,30 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from matplotlib.collections import CircleCollection
-
 from hyperspy.drawing.markers import Markers
-from hyperspy.docstrings.markers import OFFSET_DOCSTRING
+from hyperspy.external.matplotlib.collections import RectangleCollection
 
 
-class Points(Markers):
-    """A set of Points Markers."""
-
-    def __init__(self, offsets, sizes=2, **kwargs):
-        """ Initialize the set of points Markers.
+class Rectangles(Markers):
+    """A Collection of Rectangles Markers
+    """
+    def __init__(self,
+                 offsets,
+                 widths,
+                 heights,
+                 **kwargs):
+        """ Initialize the set of Segments Markers.
 
         Parameters
         ----------
-        %s
-        kwargs : dict
-        	Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`
+        rectangles: [n, 4] array-like or ragged array with shape (n, 4) at every navigation position
+            Defines the rectangle[[x1,y1,x2,y2], ...].
+        kwargs:
+            Additional keyword arguments are passed to matplotlib.collections.PolyCollection.
         """
-        super().__init__(collection_class=CircleCollection,
+        super().__init__(collection_class=RectangleCollection,
                          offsets=offsets,
-                         sizes=sizes,
+                         widths=widths,
+                         heights=heights,
                          **kwargs)
-        self.name = self.__class__.__name__
-
-    __init__.__doc__ %= OFFSET_DOCSTRING
+        self.name = "Rectangles"

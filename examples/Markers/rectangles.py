@@ -1,6 +1,6 @@
 """
-Ellipse markers
-===============
+Rectangle Markers
+=================
 
 """
 #%%
@@ -15,28 +15,28 @@ data = np.ones((25, 25, 100, 100))
 s = hs.signals.Signal2D(data)
 
 #%%
-# This first example shows how to draw static ellipses
+# This first example shows how to draw static rectangle markers
 
-# Define the position of the ellipses
+# Define the position of the rectangles
 offsets = rng.random((10, 2)) * 100
+angles = rng.random((10, )) * 180
 
-m = hs.plot.markers.Ellipses(
-    widths=(4,),
-    heights=(2,),
-    angles=(45,),
+m = hs.plot.markers.Rectangles(
     offsets=offsets,
+    widths=(10,),
+    heights=(5,),
+    angles=(45,),
     )
-
 s.plot()
 s.add_marker(m)
 
 #%%
 #
-# Dynamic Ellipse Markers
-# #######################
+# Dynamic Rectangle Markers
+# #########################
 #
-# This first example shows how to draw dynamic ellipses, whose position, widths
-# heights and angles depends on the navigation coordinates
+# This first example shows how to draw dynamic rectangle markers, whose
+# position, widths, heights and angles depends on the navigation coordinates
 
 s2 = hs.signals.Signal2D(data)
 
@@ -46,18 +46,21 @@ angles = np.empty(s.axes_manager.navigation_shape, dtype=object)
 offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
 
 for index in np.ndindex(offsets.shape):
-    widths[index] = rng.random((10, )) * 4
-    heights[index] = rng.random((10, )) * 2
+    widths[index] = rng.random((10, )) * 50
+    heights[index] = rng.random((10, )) * 25
     angles[index] = rng.random((10, )) * 180
     offsets[index] = rng.random((10, 2)) * 100
 
-
-m = hs.plot.markers.Ellipses(
+m = hs.plot.markers.Rectangles(
+    offsets=offsets,
     widths=widths,
     heights=heights,
     angles=angles,
-    offsets=offsets,
+    color="red",
+    facecolor="none",
+    linewidth=3
     )
+
 
 s2.plot()
 s2.add_marker(m)

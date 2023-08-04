@@ -37,6 +37,7 @@ from hyperspy.drawing._markers.ellipses import Ellipses
 from hyperspy.drawing._markers.arrows import Arrows
 from hyperspy.drawing._markers.points import Points
 from hyperspy.drawing._markers.line_segments import Lines
+from hyperspy.drawing._markers.rectangles import Rectangles
 
 
 __all__ = ['Arrows',
@@ -46,6 +47,7 @@ __all__ = ['Arrows',
            'Lines',
            'Markers',
            'Points',
+           'Rectangles',
            'RelativeMarkers',
            'RelativeTextCollection',
            'Texts',

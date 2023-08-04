@@ -3,15 +3,22 @@ Arrow markers
 =============
 
 """
+#%%
+# Create a signal
+
 import hyperspy.api as hs
 import numpy as np
 
 # Create a Signal2D with 2 navigation dimensions
-rng = np.random.default_rng()
-s = hs.signals.Signal2D(np.ones((50, 100, 100)))
+rng = np.random.default_rng(0)
+data = np.ones((50, 100, 100))
+s = hs.signals.Signal2D(data)
 
 for axis in s.axes_manager.signal_axes:
     axis.scale = 2*np.pi / 100
+
+#%%
+# This first example shows how to draw arrows
 
 # Define the position of the arrows
 X, Y = np.meshgrid(np.arange(0, 2 * np.pi, .2), np.arange(0, 2 * np.pi, .2))
@@ -24,11 +31,13 @@ m = hs.plot.markers.Arrows(offsets, U, V, C=C)
 s.plot()
 s.add_marker(m)
 
-
-"""
-Dynamic Arrow Markers: change in magnitude
-==========================================
-"""
+#%%
+#
+# Dynamic Arrow Markers: Changing Length
+# ######################################
+#
+# The second example shows how to change the length of the arrows when changing
+# the navigation coordinates
 
 X, Y = np.meshgrid(np.arange(0, 2 * np.pi, .2), np.arange(0, 2 * np.pi, .2))
 offsets = np.column_stack((X.ravel(), Y.ravel()))
@@ -53,10 +62,13 @@ m = hs.plot.markers.Arrows(
 s.plot()
 s.add_marker(m)
 
-"""
-Dynamic Arrow Markers: change in position
-=========================================
-"""
+#%%
+#
+# Dynamic Arrow Markers: Changing Position
+# ########################################
+#
+# The second example shows how to change the position of the arrows when changing
+# the navigation coordinates
 
 X, Y = np.meshgrid(np.arange(0, 2 * np.pi, .2), np.arange(0, 2 * np.pi, .2))
 U = np.cos(X).ravel() / 7.5
@@ -79,3 +91,7 @@ m = hs.plot.markers.Arrows(
 
 s.plot()
 s.add_marker(m)
+
+
+#%%
+# sphinx_gallery_thumbnail_number = 2
