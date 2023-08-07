@@ -73,17 +73,11 @@ class Markers:
 
         Parameters
         ----------
-        collection_class: matplotlib.collections
+        collection_class : matplotlib.collections
             A Matplotlib collection to be initialized.
-        offsets: [2,n]
+        offsets : [n, 2]
             Positions of the markers
-        size:
-            Size of the markers
-        *args: tuple
-            Arguments passed to the underlying marker collection. Any argument
-            that is array-like and has `dtype=object` is assumed to be an iterating
-            argument and is treated as such.
-        **kwargs:
+        **kwargs :
             Keyword arguments passed to the underlying marker collection. Any argument
             that is array-like and has `dtype=object` is assumed to be an iterating
             argument and is treated as such.
@@ -188,9 +182,6 @@ class Markers:
         self.collection_class = collection_class
         self.signal = None
         self.temp_signal = None
-        self.is_iterating = np.any(
-            [is_iterating(value) for key, value in self.kwargs.items()]
-        )
         self._plot_on_signal = True
         try:
             # Default to collection name but overwritten by subclass
@@ -213,6 +204,18 @@ class Markers:
             arguments=["obj"],
         )
         self._closing = False
+
+    def _is_iterating(self):
+        return np.any(
+            [is_iterating(value) for key, value in self.kwargs.items()]
+        )
+
+    def __len__(self):
+        """Return the number of markers in the collection."""
+
+        # LineSegments doesn't have "offsets" but "segments"
+        key = "offsets" if "offsets" in self.kwargs.keys() else "segments"
+        return self.kwargs[key].shape[0]
 
     def delete_index(self, keys, index):
         """
@@ -313,7 +316,7 @@ class Markers:
         return out_kwargs
 
     def __repr__(self):
-        return f"<{self.name}| Iterating == {self.is_iterating}"
+        return f"<{self.name}| Iterating == {self._is_iterating}"
 
     @classmethod
     def from_signal(
@@ -396,7 +399,7 @@ class Markers:
         Return the current keyword arguments for updating the collection.
         """
         current_keys = {}
-        if self.is_iterating:
+        if self._is_iterating:
             indices = self.axes_manager.indices[::-1]
             for key, value in self.kwargs.items():
                 if is_iterating(value):
@@ -417,7 +420,7 @@ class Markers:
         return current_keys
 
     def update(self):
-        if not self.is_iterating:
+        if not self._is_iterating:
             return
         else:
             kwds = self.get_data_position(get_static_kwargs=False)
@@ -575,8 +578,8 @@ def markers2collection(marker_dict):
         )
         marker
     elif marker_type == "HorizontalLine":
-        y = dict2vector(marker_dict["data"], keys=["y1"], return_size=False)
-        marker = HorizontalLines(y=y, **marker_dict["marker_properties"])
+        offsets = dict2vector(marker_dict["data"], keys=["y1"], return_size=False)
+        marker = HorizontalLines(offsets=offsets, **marker_dict["marker_properties"])
 
     elif marker_type == "HorizontalLineSegment":
         segments = dict2vector(
@@ -628,12 +631,12 @@ def markers2collection(marker_dict):
         offsets = dict2vector(
             marker_dict["data"], keys=[["x1", "y1"]], return_size=False
         )
-        text = dict2vector(marker_dict["data"],
-                           keys=[["text"]],
-                           return_size=False,
-                           dtype=str)
+        texts = dict2vector(marker_dict["data"],
+                            keys=[["text"]],
+                            return_size=False,
+                            dtype=str)
         marker = Texts(
-            offsets=offsets, s=text, **marker_dict["marker_properties"]
+            offsets=offsets, texts=texts, **marker_dict["marker_properties"]
         )
     elif marker_type == "VerticalLine":
         x = dict2vector(marker_dict["data"], keys=["x1"], return_size=False)

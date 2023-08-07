@@ -32,8 +32,6 @@ import matplotlib.pyplot as plt
 import dask.array as da
 
 from hyperspy.drawing._markers.relative_markers import RelativeMarkers
-from hyperspy.drawing._markers.vertical_lines import VerticalLines
-from hyperspy.drawing._markers.horizontal_lines import HorizontalLines
 from hyperspy.drawing.markers import markers2collection
 from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
 from hyperspy.axes import UniformDataAxis
@@ -43,8 +41,10 @@ from hyperspy.utils.markers import (
     Arrows,
     Circles,
     Ellipses,
-    Points,
+    HorizontalLines,
     Markers,
+    Points,
+    VerticalLines,
     )
 
 BASELINE_DIR = "marker_collection"
@@ -591,24 +591,24 @@ class TestRelativeMarkerCollection:
 
 class TestLineCollections:
     @pytest.fixture
-    def x(self):
+    def offsets(self):
         d = np.empty((3,), dtype=object)
         for i in np.ndindex(d.shape):
             d[i] = np.arange(i[0] + 1)
         return d
 
-    def test_vertical_line_collection(self, x):
-        vert = VerticalLines(x=x)
+    def test_vertical_line_collection(self, offsets):
+        vert = VerticalLines(offsets=offsets)
         s = Signal2D(np.zeros((3, 3, 3)))
         s.axes_manager.signal_axes[0].offset = 0
         s.axes_manager.signal_axes[1].offset = 0
         s.plot(interpolation=None)
         s.add_marker(vert)
         kwargs = vert.get_data_position()
-        np.testing.assert_array_equal(kwargs["segments"], [[[0.0, 2.5], [0.0, -.5]]])
+        np.testing.assert_array_equal(kwargs["offsets"], [[[0.0, 2.5], [0.0, -.5]]])
 
-    def test_horizontal_line_collection(self, x):
-        hor = HorizontalLines(y=x)
+    def test_horizontal_line_collection(self, offsets):
+        hor = HorizontalLines(offsets=offsets)
         s = Signal2D(np.zeros((3, 3, 3)))
         s.axes_manager.signal_axes[0].offset = 0
         s.axes_manager.signal_axes[1].offset = 0
@@ -682,6 +682,21 @@ class TestMarkers:
         signal.plot()
         signal.add_marker(arrows)
         signal.axes_manager.navigation_axes[0].index = 1
+
+    @pytest.mark.parametrize("MarkerClass", [Points, Circles, Ellipses, Arrows])
+    def test_markers_length_offsets(self,
+                                    extra_kwargs,
+                                    MarkerClass,
+                                    offsets,
+                                    signal):
+        markers = MarkerClass(offsets=offsets,
+                              **extra_kwargs[MarkerClass])
+        assert len(markers) == 3
+
+        signal.plot()
+        signal.add_marker(markers)
+
+        assert len(markers) == 3
 
 
 def test_markers_zorder():

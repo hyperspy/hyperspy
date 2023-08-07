@@ -24,36 +24,28 @@ import numpy as np
 class HorizontalLines(Markers):
     """A set of HorizontalLines markers
     """
-    def __init__(self,
-                 y,
-                 **kwargs):
+    def __init__(self, offsets, **kwargs):
         """Initialize a set of HorizontalLines markers.
 
         Parameters
         ----------
-        y: [n]
+        offsets : [n]
             Positions of the markers
-        args: tuple
-            Arguments passed to the underlying marker collection. Any argument
-            that is array-like and has `dtype=object` is assumed to be an iterating
-            argument and is treated as such.
-        kwargs: dict
+        kwargs : dict
             Keyword arguments passed to the underlying marker collection. Any argument
             that is array-like and has `dtype=object` is assumed to be an iterating
             argument and is treated as such.
         """
         Markers.__init__(self,
                          collection_class=LineCollection,
-                         y=y,
+                         offsets=offsets,
                          **kwargs)
         self.name = self.__class__.__name__
 
-    def get_data_position(self,
-                          get_static_kwargs=True):
+    def get_data_position(self, get_static_kwargs=True):
         kwargs = super().get_data_position(get_static_kwargs=get_static_kwargs)
         x_extent = self.ax.get_xlim()
-        print(x_extent)
-        y_pos = kwargs.pop("y")
+        y_pos = kwargs.pop("offsets")
         new_segments = np.array([[[x_extent[0], y], [x_extent[1], y]] for y in y_pos])
         kwargs["segments"] = new_segments
         return kwargs

@@ -24,7 +24,7 @@ import numpy as np
 class VerticalLines(Markers):
     """A set of Vertical Line Markers"""
     def __init__(self,
-                 x,
+                 offsets,
                  **kwargs):
         """
         Initialize the set of Vertical Line Markers.
@@ -40,7 +40,7 @@ class VerticalLines(Markers):
         """
         # Data attributes
         Markers.__init__(self,
-                         x=x,
+                         offsets=offsets,
                          collection_class=LineCollection,
                          **kwargs)
         self.name = self.__class__.__name__
@@ -49,7 +49,7 @@ class VerticalLines(Markers):
                           get_static_kwargs=True):
         kwargs = super().get_data_position(get_static_kwargs=get_static_kwargs)
         y_extent = self.ax.get_ylim()
-        x_pos = kwargs.pop("x")
+        x_pos = kwargs.pop("offsets")
         new_segments = np.array([[[x, y_extent[0]], [x, y_extent[1]]] for x in x_pos])
         kwargs["segments"] = new_segments
         return kwargs
