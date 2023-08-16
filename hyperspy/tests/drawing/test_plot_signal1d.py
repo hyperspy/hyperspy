@@ -231,6 +231,12 @@ class TestPlotNonLinearAxis:
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_uniform_nav(self):
+        self.s.plot()
+        return self.s._plot.navigator_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_non_uniform_nav(self):
         s2 = self.s.T
         s2.plot()

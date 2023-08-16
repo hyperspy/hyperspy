@@ -541,9 +541,8 @@ class ImagePlot(BlittedFigure):
         if self.no_nans:
             data = np.nan_to_num(data)
 
-        if ims:  # the images has already been drawn previously
+        if ims:  # the images have already been drawn previously
             if self.mesh:
-                # TODO: check if this works as intended (copy or not? ravel vs flatten)
                 self.mesh.update({'array': data.ravel()})
             else:
                 ims[0].set_data(data)
@@ -584,16 +583,16 @@ class ImagePlot(BlittedFigure):
                     new_args['norm'] = norm
             new_args.update(kwargs)
             if self.xaxis.is_uniform and self.yaxis.is_uniform:
-                # TODO: have not really looked into the arguments,
-                # but these both do not work for pcolormesh
+                # pcolormesh doesn't have extent and aspect as arguments
+                # aspect is set earlier via self.ax.set_aspect() anyways
+                # TODO: is there a way to use extent for pcolormesh?
+                # FIXME: axes ticks show in 1d-sig/nav plot, contrary to imshow, fix this?
                 new_args.update({"extent": self._extent, "aspect": self._aspect})
                 self.ax.imshow(data, **new_args)
             else:
-                # TODO: handle functional axis
                 self.mesh = self.ax.pcolormesh(
                     self.xaxis.axis, self.yaxis.axis, data, **new_args
                 )
-                # TODO: check if inverting axis works as intended
                 self.ax.invert_yaxis()
         if self.axes_ticks == "off":
             self.ax.set_axis_off()
