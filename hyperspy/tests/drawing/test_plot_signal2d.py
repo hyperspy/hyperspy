@@ -266,6 +266,22 @@ class TestPlotNonUniformAxis:
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_uniform_2s1n_update_sig(self):
+        s2 = self.s
+        s2.axes_manager[0].index += 1
+        s2.plot()
+        return s2._plot.signal_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_uniform_2s1n_update_nav(self):
+        s2 = self.s
+        s2.axes_manager[0].index += 1
+        s2.plot()
+        return s2._plot.navigator_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_non_uniform_sig(self):
         s2 = self.s.T
         s2.plot(navigator=None)

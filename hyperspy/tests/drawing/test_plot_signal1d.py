@@ -211,7 +211,7 @@ class TestPlotSpectra():
         return ax.get_figure()
 
 
-class TestPlotNonLinearAxis:
+class TestPlotNonUniformAxis:
 
     def setup_method(self, method):
         dict0 = {'size': 10, 'name': 'Axis0', 'units': 'A', 'scale': 0.2,
@@ -231,9 +231,31 @@ class TestPlotNonLinearAxis:
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_uniform_sig_update(self):
+        s2 = self.s
+        s2.plot()
+        s2.axes_manager[0].index += 1
+        return s2._plot.signal_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_uniform_nav(self):
         self.s.plot()
         return self.s._plot.navigator_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_uniform_nav_update(self):
+        s2 = self.s
+        s2.plot()
+        s2.axes_manager[0].index += 1
+        return self.s._plot.navigator_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_uniform_sig(self):
+        self.s.plot()
+        return self.s._plot.signal_plot.figure
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
