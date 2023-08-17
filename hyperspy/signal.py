@@ -40,6 +40,7 @@ import traits.api as t
 from tlz import concat
 from rsciio.utils import rgb_tools
 from rsciio.utils.tools import ensure_directory
+from scipy.interpolate import interp1d
 
 from hyperspy.axes import AxesManager
 from hyperspy.api_nogui import _ureg
@@ -3110,6 +3111,61 @@ class BaseSignal(FancySlicing,
         self.events.data_changed.trigger(obj=self)
         if convert_units:
             self.axes_manager.convert_units(axis)
+
+    def interpolate_on_axis(self, axis, replace_index, inplace=False, **kwargs):
+        """Replaces the axis specified with replace_idx with the provided axis argument
+        and interpolates data accordingly.
+
+        Parameters
+        ----------
+        axis: UniformAxis, DataAxis or FunctionalAxis
+            axis which replaces the axis specified with replace_index
+
+        replace_index: int
+            index of the to be replaced axis
+
+        inplace: bool, default=False
+
+        **kwargs: dict
+            extra keywords passed to :py:func:`scipy.interpolate.interp1d`
+
+        Returns
+        -------
+        When inplace is set to False, a new signal with the replaced axis is returned.
+        """
+        kind = kwargs.get("kind", "linear")
+        bounds_error = kwargs.get("bounds_error", False)
+        fill_value = kwargs.get("fill_value", np.nan)
+        # TODO: how to handle bounds_error (custom error msg, or leave it from scipy?)
+        # I think atleast a warning would be good in any case
+
+        nav_dim = self.axes_manager.navigation_dimension
+        sig_dim = self.axes_manager.signal_dimension
+
+        # TODO: better way to get index for axes_manager or do it the other way around?
+        # TODO: describe better which index should be used in docstring
+        if axis.navigate:
+            axes_manager_idx = (nav_dim - 1) - replace_index
+        else:
+            axes_manager_idx = (2 * nav_dim + sig_dim - 1) - replace_index
+
+        # TODO: test if multidimensional data interpolation works as intended
+        interpolator = interp1d(
+            self.axes_manager[axes_manager_idx].axis,
+            self.data,
+            axis=replace_index,
+            bounds_error=bounds_error,
+            fill_value=fill_value,
+            kind=kind,
+        )
+        if inplace:
+            self.data = interpolator(axis.axis)
+            self.axes_manager.set_axis(axis, replace_index)
+        else:
+            s = self.deepcopy()
+            s.data = interpolator(axis.axis)
+            s.axes_manager.set_axis(axis, replace_index)
+            return s
 
     def swap_axes(self, axis1, axis2, optimize=False):
         """Swap two axes in the signal.
