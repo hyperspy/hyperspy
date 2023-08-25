@@ -1,0 +1,2 @@
+Adds the method `interpolate_on_axis`, which can be used to switch one axis of a signal.
+The data is interpolated in the process.
