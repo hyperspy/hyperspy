@@ -29,7 +29,7 @@ STYLE_PYTEST_MPL = 'default'
 
 class TestModelPlot:
     def setup_method(self, method):
-        s = Signal1D(np.arange(1000).reshape((10, 100)))
+        s = Signal1D(np.arange(1000, dtype=np.int64).reshape((10, 100)))
         s.add_poissonian_noise(random_state=0)
         m = s.create_model()
         line = Expression("a * x", name="line", a=1)
@@ -64,3 +64,6 @@ class TestModelPlot:
     def test_no_navigator(self):
         self.m.plot(navigator=None)
         assert self.m.signal._plot.navigator_plot is None
+
+    def test_plot_residual(self):
+        self.m.plot(plot_residual=True)

@@ -23,7 +23,6 @@ import pytest
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.misc.utils import slugify
 
 
