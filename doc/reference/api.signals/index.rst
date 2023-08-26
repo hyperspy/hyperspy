@@ -14,7 +14,6 @@
    EDSSEMSpectrum
    EDSTEMSpectrum
    EELSSpectrum
-   HologramImage
    Signal1D
    Signal2D
 
@@ -31,6 +30,5 @@
    EDSSEMSpectrum
    EDSTEMSpectrum
    EELSSpectrum
-   HologramImage
    Signal1D
    Signal2D

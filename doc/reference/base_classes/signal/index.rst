@@ -49,7 +49,6 @@ Lazy Signals
    LazyEDSSEMSpectrum
    LazyEDSTEMSpectrum
    LazyEELSSpectrum
-   LazyHologramImage
    LazySignal1D
    LazySignal2D
 
@@ -75,7 +74,6 @@ Lazy Signals
    LazyEDSSEMSpectrum
    LazyEDSTEMSpectrum
    LazyEELSSpectrum
-   LazyHologramImage
    LazySignal
    LazySignal1D
    LazySignal2D
