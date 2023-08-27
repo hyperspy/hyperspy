@@ -17,17 +17,21 @@ multidimensionality.
   components and widgets.
 
 
-.. _hyperspy_extensions-label:
+The functionality of HyperSpy can be extended by external packages, e.g. to
+implement features for analyzing a particular sort of data (usually related to a
+specific set of methods). A `list of packages that extend HyperSpy
+<https://github.com/hyperspy/hyperspy-extensions-list>`_ is curated in a
+dedicated repository. For details on how to register extensions see
+:ref:`writing_extensions-label`.
 
-External packages can extend HyperSpy to e.g. implement features to analyse a
-particular sort of data. For details on how to register extensions see
-:ref:`writing_extensions-label`. For a list of packages that extend HyperSpy
-follow `this link <https://github.com/hyperspy/hyperspy-extensions-list>`_.
 
-.. note::
-    From version 2.0, HyperSpy will be split into a core package (HyperSpy)
-    that will provide the common infrastructure and a number of HyperSpy
-    extensions specialized in the analysis of different types of data.
+.. versionchanged:: 2.0
+    HyperSpy was split into a core package (HyperSpy) that provides the common
+    infrastructure for multidimensional datasets and a number of `HyperSpy
+    extensions <https://github.com/hyperspy/hyperspy-extensions-list>`_ 
+    specialized in the analysis of different types of data, as well as the
+    dedicated IO package :external+rsciio:doc:`RosettaSciIO <index>`.
+
 
 HyperSpy's character
 ====================
