@@ -299,6 +299,7 @@ intersphinx_mapping = {
     'cupy': ('https://docs.cupy.dev/en/stable', None),
     'dask': ('https://docs.dask.org/en/latest', None),
     'h5py': ('https://docs.h5py.org/en/stable', None),
+    'holospy': ('https://holospy.readthedocs.io/en/latest', None),
     'IPython': ('https://ipython.readthedocs.io/en/stable', None),
     'matplotlib': ('https://matplotlib.org', None),
     'numpy': ('https://docs.scipy.org/doc/numpy', None),
