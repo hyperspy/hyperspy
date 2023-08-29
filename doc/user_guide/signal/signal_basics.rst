@@ -221,14 +221,23 @@ example:
     |      hologram      |                     |   HologramImage    | holospy  |
     +--------------------+---------------------+--------------------+----------+
 
-Object oriented functions provided by the extensions will be available after
-loading the ``hyperspy.api``. However, the packages might also provide some
-additional utilities, which require them to be separately loaded into the python
-namespace.
+When :ref:`loading data <loading_files>`, the ``signal_type`` will be
+set automatically by the file reader, as defined in ``rosettasciio``. If the
+extension providing the corresponding signal subclass is installed,
+:py:func:`~.api.load` will return the subclass from the hyperspy extension,
+otherwise a warning will be raised to explain that
+no registered signal class can be assigned to the given ``signal_type``.
 
-When :ref:`loading data <loading_files>`, a specific ``signal_type`` will be
-set automatically if it is recognized by the file reader and the corresponding
-extension is installed on your system.
+Since the :py:func:`~.api.load` can return domain specific signal objects (e.g.
+``EDSSEMSpectrum`` from ``EleXSpy``) provided by extensions, the corresponding
+functionalities (so-called `method` of `object` in object-oriented programming,
+e.g. ``EDSSEMSpectrum.get_lines_intensity()``) implemented in signal classes of
+the extension can be accessed directly. To use additional functionalities
+implemented in extensions, but not as method of the signal class, the extensions
+need to be imported explicitly (e.g. ``import elexspy``). Check the user guides
+of the respective `HyperSpy extensions
+<https://github.com/hyperspy/hyperspy-extensions-list>`_ for details on the
+provided methods and functions.
 
 For details on how to write and register extensions see
 :ref:`writing_extensions-label`.
