@@ -3149,7 +3149,6 @@ class BaseSignal(FancySlicing,
         else:
             axes_manager_idx = (2 * nav_dim + sig_dim - 1) - replace_index
 
-        # TODO: test if multidimensional data interpolation works as intended
         interpolator = interp1d(
             self.axes_manager[axes_manager_idx].axis,
             self.data,
