@@ -3123,20 +3123,34 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        axis: UniformAxis, DataAxis or FunctionalAxis
-            axis which replaces the axis specified with replace_index
+        new_axis : UniformDataAxis, DataAxis or FunctionalDataAxis
+            Axis which replaces the axis specified with replace_index.
+            If this new axis exceeds the range of the old axis,
+            a warning is raised that the data will be extrapolated.
 
-        replace_index: int
-            index of the to be replaced axis
+        replace_axis_index : int
+            Specifies the axis which will be replaced using the index of the
+            axis in `axes_manager`.
 
-        inplace: bool, default=False
+        inplace : bool, default=False
+            If ``True`` the data of `self` is replaced by the result and
+            the axis is changed inplace. Otherwise `self` is not changed
+            and a new signal with the changes incorporated is returned.
+
+        set_navigate : bool, default=True
+            If ``True``, sets the `navigate` attribute of `new_axis` to the value given
+            by the old axis.
 
         **kwargs: dict
-            extra keywords passed to :py:func:`scipy.interpolate.interp1d`
+            Extra keywords passed to :py:func:`scipy.interpolate.interp1d`.
+            Extracted are: `kind` (default: linear), `bounds_error` (default: False)
+            and `fill_value` (default: extrapolate).
 
         Returns
         -------
-        When inplace is set to False, a new signal with the replaced axis is returned.
+        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+            A copy of the object with the axis exchanged and the data interpolated.
+            This only occurs when inplace is set to ``False``, otherwise nothing is returned.
         """
         kind = kwargs.get("kind", "linear")
         bounds_error = kwargs.get("bounds_error", False)
