@@ -41,7 +41,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
     'sphinx_gallery.gen_gallery',
-    'sphinx_toggleprompt',
+    'sphinx_copybutton',
 ]
 
 linkcheck_ignore = [
@@ -326,6 +326,11 @@ autodoc_default_options = {
 }
 
 graphviz_output_format = "svg"
+
+# -- Sphinx-copybutton -----------
+
+
+copybutton_prompt_text = ">>> "
 
 def setup(app):
     app.add_css_file("custom-styles.css")
