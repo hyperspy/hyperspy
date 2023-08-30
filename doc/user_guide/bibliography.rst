@@ -45,12 +45,6 @@ Bibliography
    via Stochastic Optimization," *NIPS 2013*, 2013
    [`<https://papers.nips.cc/paper/5131-online-robust-pca-via-stochastic-optimization>`_].
 
-.. _Gabor1948:
-
-:ref:`[Gabor1948] <Gabor1948>`
-   D. Gabor, "A new microscopic principle,"
-   *Nature* 161 (1948): 777-778 [`<https://doi.org/10.1038/161777a0>`_].
-
 .. _Herraez:
 
 :ref:`[Herraez] <Herraez>`
