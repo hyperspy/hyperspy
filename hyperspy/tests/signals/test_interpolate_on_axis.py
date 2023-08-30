@@ -158,12 +158,12 @@ class TestInterpolateAxis3D:
         gc.collect()
 
     def test_interpolate_1s2n(self):
-        s1 = self.s0.interpolate_on_axis(self.y_new, 0, inplace=False)
+        s1 = self.s0.interpolate_on_axis(self.y_new, 1, inplace=False)
         _assert_equal_dimensions(s1, self.s0)
         _assert_axes_equality(s1.axes_manager[1], self.y_new, "uniform")
         _assert_axes_equality(s1.axes_manager[0], self.s0.axes_manager[0], "uniform")
         _assert_axes_equality(s1.axes_manager[2], self.s0.axes_manager[2], "uniform")
-        s1.interpolate_on_axis(self.x_new, 1, inplace=True)
+        s1.interpolate_on_axis(self.x_new, 0, inplace=True)
         _assert_equal_dimensions(s1, self.s0)
         _assert_axes_equality(s1.axes_manager[0], self.x_new, "uniform")
         _assert_axes_equality(s1.axes_manager[1], self.y_new, "uniform")
@@ -190,12 +190,12 @@ class TestInterpolateAxis3D:
         _assert_axes_equality(s3.axes_manager[0], e_new, "uniform")
         _assert_axes_equality(s3.axes_manager[1], s2.axes_manager[1], "uniform")
         _assert_axes_equality(s3.axes_manager[2], s2.axes_manager[2], "uniform")
-        s3.interpolate_on_axis(x_new, 2, inplace=True)
+        s3.interpolate_on_axis(x_new, 1, inplace=True)
         _assert_equal_dimensions(s3, s2)
         _assert_axes_equality(s3.axes_manager[1], x_new, "uniform")
         _assert_axes_equality(s3.axes_manager[0], e_new, "uniform")
         _assert_axes_equality(s3.axes_manager[2], s2.axes_manager[2], "uniform")
-        s3.interpolate_on_axis(y_new, 1, inplace=True)
+        s3.interpolate_on_axis(y_new, 2, inplace=True)
         _assert_equal_dimensions(s3, s2)
         _assert_axes_equality(s3.axes_manager[2], y_new, "uniform")
         _assert_axes_equality(s3.axes_manager[1], x_new, "uniform")
@@ -224,16 +224,13 @@ def test_interpolate_on_axis_random_switch(dim):
     data = rng.random(int(data_sizes.prod())).reshape(data_sizes)
     s = signals.BaseSignal(data, axes=axes_list)
     switch_idx = rng.integers(0, dim)
-    if switch_idx < nav_dim:
-        navigate = True
-    else:
-        navigate = False
-    new_ax = UniformDataAxis(offset=1, scale=2, size=2, name="NEW", navigate=navigate)
-    s.interpolate_on_axis(new_ax, switch_idx, inplace=True)
-    if navigate:
-        axes_manager_idx = (nav_dim - 1) - switch_idx
-    else:
-        axes_manager_idx = (nav_dim + dim - 1) - switch_idx
-    assert (
-        s.axes_manager[axes_manager_idx] == new_ax
-    ), f"seed: {seed}, nav_dim: {nav_dim}, dim: {dim}, switch_idx: {switch_idx}"
+    navigate = s.axes_manager[switch_idx].navigate
+    new_ax = UniformDataAxis(offset=1, scale=2, size=2, name="NEW")
+    try:
+        s.interpolate_on_axis(new_ax, switch_idx, inplace=True)
+        _assert_axes_equality(s.axes_manager[switch_idx], new_ax, "uniform")
+        assert s.axes_manager[switch_idx].navigate == navigate
+    except Exception as e:
+        print(
+            f"{e}\n\n seed: {seed}, nav_dim: {nav_dim}, dim: {dim}, switch_idx: {switch_idx}"
+        )

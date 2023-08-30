@@ -3112,8 +3112,13 @@ class BaseSignal(FancySlicing,
         if convert_units:
             self.axes_manager.convert_units(axis)
 
-    def interpolate_on_axis(self, axis, replace_index, inplace=False, **kwargs):
-        """Replaces the axis specified with replace_idx with the provided axis argument
+    def interpolate_on_axis(self,
+                            new_axis,
+                            replace_axis_index,
+                            inplace=False,
+                            set_navigate=True,
+                            **kwargs):
+        """Replaces the axis specified by replace_axis_idx with the provided new_axis
         and interpolates data accordingly.
 
         Parameters
@@ -3141,29 +3146,29 @@ class BaseSignal(FancySlicing,
 
         nav_dim = self.axes_manager.navigation_dimension
         sig_dim = self.axes_manager.signal_dimension
-
-        # TODO: better way to get index for axes_manager or do it the other way around?
-        # TODO: describe better which index should be used in docstring
-        if axis.navigate:
-            axes_manager_idx = (nav_dim - 1) - replace_index
+        old_axis = self.axes_manager[replace_axis_index]
+        if old_axis.navigate:
+            set_axis_idx = (nav_dim - 1) - replace_axis_index
         else:
-            axes_manager_idx = (2 * nav_dim + sig_dim - 1) - replace_index
+            set_axis_idx = (2*nav_dim + sig_dim - 1) - replace_axis_index
+
+        if set_navigate:
+            new_axis.navigate = old_axis.navigate
 
         interpolator = interp1d(
-            self.axes_manager[axes_manager_idx].axis,
+            old_axis.axis,
             self.data,
-            axis=replace_index,
+            axis=set_axis_idx,
             bounds_error=bounds_error,
             fill_value=fill_value,
             kind=kind,
         )
         if inplace:
-            self.data = interpolator(axis.axis)
-            self.axes_manager.set_axis(axis, replace_index)
+            self.data = interpolator(new_axis.axis)
+            self.axes_manager.set_axis(new_axis, set_axis_idx)
         else:
-            s = self.deepcopy()
-            s.data = interpolator(axis.axis)
-            s.axes_manager.set_axis(axis, replace_index)
+            s = self._deepcopy_with_new_data(interpolator(new_axis.axis))
+            s.axes_manager.set_axis(new_axis, set_axis_idx)
             return s
 
     def swap_axes(self, axis1, axis2, optimize=False):
