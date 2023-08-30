@@ -234,3 +234,15 @@ def test_interpolate_on_axis_random_switch(dim):
         print(
             f"{e}\n\n seed: {seed}, nav_dim: {nav_dim}, dim: {dim}, switch_idx: {switch_idx}"
         )
+
+
+def test_extrapolation():
+    x_initial = {"offset": 0, "scale": 1, "size": 10, "name": "X", "units": "µm"}
+    x_new = UniformDataAxis(offset=3, scale=3, size=30, name="X1", units="µm")
+    d = np.arange(0, 10)
+    s = signals.Signal1D(d, axes=[x_initial])
+    s2 = s.interpolate_on_axis(x_new, 0, inplace=False)
+    _assert_equal_dimensions(s, s2)
+    _assert_axes_equality(s2.axes_manager[0], x_new, "uniform")
+    assert s2.axes_manager[0].navigate == False
+    np.testing.assert_almost_equal(s2.data, np.arange(3, 93, 3))

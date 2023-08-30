@@ -3140,13 +3140,17 @@ class BaseSignal(FancySlicing,
         """
         kind = kwargs.get("kind", "linear")
         bounds_error = kwargs.get("bounds_error", False)
-        fill_value = kwargs.get("fill_value", np.nan)
-        # TODO: how to handle bounds_error (custom error msg, or leave it from scipy?)
-        # I think atleast a warning would be good in any case
+        fill_value = kwargs.get("fill_value", "extrapolate")
+
+        old_axis = self.axes_manager[replace_axis_index]
+        if old_axis.low_value > new_axis.low_value or old_axis.high_value < new_axis.high_value:
+            _logger.warning(
+                "The specified new axis exceeds the range of the to be replaced old axis. "
+                "The data will be extrapolated if not specified otherwise via fill_value/bounds_error"
+            )
 
         nav_dim = self.axes_manager.navigation_dimension
         sig_dim = self.axes_manager.signal_dimension
-        old_axis = self.axes_manager[replace_axis_index]
         if old_axis.navigate:
             set_axis_idx = (nav_dim - 1) - replace_axis_index
         else:
