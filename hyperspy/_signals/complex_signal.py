@@ -313,10 +313,10 @@ class ComplexSignal(BaseSignal):
 
         Examples
         --------
-        >>> import hyperspy.api as hs
-        >>> holo = hs.datasets.example_signals.object_hologram()
-        >>> ref = hs.datasets.example_signals.reference_hologram()
-        >>> w = holo.reconstruct_phase(ref)
+        >>> import holospy as holo
+        >>> hologram = data.datasets.Fe_needle_hologram()
+        >>> ref = hs.datasets.Fe_needle_reference_hologram()
+        >>> w = hologram.reconstruct_phase(ref)
         >>> w.argand_diagram(range=[-3, 3]).plot()
 
         """

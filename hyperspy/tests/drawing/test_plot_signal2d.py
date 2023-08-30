@@ -137,10 +137,11 @@ def test_plot_log_scale(percentile):
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_FFT(fft_shift):
-    s = hs.datasets.example_signals.object_hologram()
-    s2 = s.isig[:128, :128].fft()
-    s2.plot(fft_shift=fft_shift, axes_ticks=True, power_spectrum=True)
-    return s2._plot.signal_plot.figure
+    s = hs.datasets.artificial_data.get_wave_image(random_state=0)
+
+    s_fft = s.fft()
+    s_fft.plot(fft_shift=fft_shift, axes_ticks=True, power_spectrum=True)
+    return s_fft._plot.signal_plot.figure
 
 
 @pytest.mark.parametrize(("vmin", "vmax"), (_generate_parameter_plot_images(),

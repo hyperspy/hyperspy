@@ -6379,8 +6379,8 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import hyperspy.api as hs
-        >>> holo = hs.datasets.example_signals.object_hologram()
-        >>> holo.apply_apodization('tukey', tukey_alpha=0.1).plot()
+        >>> wave = hs.datasets.artificial_data.get_wave_image()
+        >>> wave.apply_apodization('tukey', tukey_alpha=0.1).plot()
         """
 
         if window == 'hanning' or window == 'hann':
