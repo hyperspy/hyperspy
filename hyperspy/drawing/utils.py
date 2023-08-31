@@ -1519,7 +1519,7 @@ def plot_spectra(
                        spectra]
             spectra = hyperspy.utils.stack(spectra)
         with spectra.unfolded():
-            ax = _make_heatmap_subplot(spectra)
+            ax = _make_heatmap_subplot(spectra, **kwargs)
             ax.set_ylabel('Spectra')
     ax = ax if style != "mosaic" else subplots
 
