@@ -66,7 +66,7 @@ class TestInterpolateAxis1D:
         del cls.s0
         gc.collect()
 
-    def test_interpolate_uniform(self):
+    def test_interpolate_uniform_axis(self):
         x_uniform = UniformDataAxis(
             offset=10, scale=5, size=10, navigate=False, name="XU"
         )
@@ -75,14 +75,14 @@ class TestInterpolateAxis1D:
         _assert_axes_equality(s1.axes_manager[0], x_uniform, "uniform")
         np.testing.assert_almost_equal(s1.data, np.arange(10, 60, 5))
 
-        # test inplace=True
+        # test inplace=True and default axes_manager_index
         s2 = self.s0.deepcopy()
-        s2.interpolate_on_axis(x_uniform, 0, inplace=True)
+        s2.interpolate_on_axis(x_uniform, inplace=True)
         _assert_equal_dimensions(s2, self.s0)
         _assert_axes_equality(s2.axes_manager[0], x_uniform, "uniform")
         np.testing.assert_almost_equal(s2.data, s1.data)
 
-    def test_interpolate_functional(self):
+    def test_interpolate_functional_axis(self):
         x_functional = FunctionalDataAxis(
             expression="x^2", size=10, navigate=False, name="XF"
         )
@@ -91,12 +91,20 @@ class TestInterpolateAxis1D:
         _assert_axes_equality(s3.axes_manager[0], x_functional, "functional")
         np.testing.assert_almost_equal(s3.data, np.arange(0, 10) ** 2)
 
-    def test_interpolate_data(self):
+    def test_interpolate_data_axis(self):
         x_data = DataAxis(axis=(np.arange(0, 10) ** 2), navigate=False, name="XD")
         s2 = self.s0.interpolate_on_axis(x_data, 0, inplace=False)
         _assert_equal_dimensions(s2, self.s0)
         _assert_axes_equality(s2.axes_manager[0], x_data, "data")
         np.testing.assert_almost_equal(s2.data, np.arange(0, 10) ** 2)
+
+    def test_extrapolation(self):
+        x_new = UniformDataAxis(offset=30, scale=30, size=10, name="X1", units="µm")
+        s2 = self.s0.interpolate_on_axis(x_new, inplace=False)
+        _assert_equal_dimensions(s2, self.s0)
+        _assert_axes_equality(s2.axes_manager[0], x_new, "uniform")
+        assert s2.axes_manager[0].navigate == False  # test if set_navigate works
+        np.testing.assert_almost_equal(s2.data, np.arange(30, 330, 30))
 
 
 def test_interpolate_on_axis_2D():
@@ -234,15 +242,3 @@ def test_interpolate_on_axis_random_switch(dim):
         print(
             f"{e}\n\n seed: {seed}, nav_dim: {nav_dim}, dim: {dim}, switch_idx: {switch_idx}"
         )
-
-
-def test_extrapolation():
-    x_initial = {"offset": 0, "scale": 1, "size": 10, "name": "X", "units": "µm"}
-    x_new = UniformDataAxis(offset=3, scale=3, size=30, name="X1", units="µm")
-    d = np.arange(0, 10)
-    s = signals.Signal1D(d, axes=[x_initial])
-    s2 = s.interpolate_on_axis(x_new, 0, inplace=False)
-    _assert_equal_dimensions(s, s2)
-    _assert_axes_equality(s2.axes_manager[0], x_new, "uniform")
-    assert s2.axes_manager[0].navigate == False
-    np.testing.assert_almost_equal(s2.data, np.arange(3, 93, 3))

@@ -40,7 +40,7 @@ import traits.api as t
 from tlz import concat
 from rsciio.utils import rgb_tools
 from rsciio.utils.tools import ensure_directory
-from scipy.interpolate import interp1d
+from scipy.interpolate import make_interp_spline
 
 from hyperspy.axes import AxesManager
 from hyperspy.api_nogui import _ureg
@@ -3117,8 +3117,8 @@ class BaseSignal(FancySlicing,
                             index_in_axes_manager=0,
                             inplace=False,
                             set_navigate=True,
-                            **kwargs):
-        """Replaces the axis specified by replace_axis_idx with the provided new_axis
+                            degree=1):
+        """Replaces the axis specified by index_in_axes_manager with the provided new_axis
         and interpolates data accordingly.
 
         Parameters
@@ -3141,10 +3141,8 @@ class BaseSignal(FancySlicing,
             If ``True``, sets the `navigate` attribute of `new_axis` to the value given
             by the old axis.
 
-        **kwargs: dict
-            Extra keywords passed to :py:func:`scipy.interpolate.interp1d`.
-            Extracted are: `kind` (default: linear), `bounds_error` (default: False)
-            and `fill_value` (default: extrapolate).
+        degree: int, default=1
+            Specifies the B-Spline degree of the used interpolator.
 
         Returns
         -------
@@ -3152,10 +3150,6 @@ class BaseSignal(FancySlicing,
             A copy of the object with the axis exchanged and the data interpolated.
             This only occurs when inplace is set to ``False``, otherwise nothing is returned.
         """
-        kind = kwargs.get("kind", "linear")
-        bounds_error = kwargs.get("bounds_error", False)
-        fill_value = kwargs.get("fill_value", "extrapolate")
-
         old_axis = self.axes_manager[index_in_axes_manager]
         if old_axis.low_value > new_axis.low_value or old_axis.high_value < new_axis.high_value:
             _logger.warning(
@@ -3173,13 +3167,11 @@ class BaseSignal(FancySlicing,
         if set_navigate:
             new_axis.navigate = old_axis.navigate
 
-        interpolator = interp1d(
+        interpolator = make_interp_spline(
             old_axis.axis,
             self.data,
             axis=set_axis_idx,
-            bounds_error=bounds_error,
-            fill_value=fill_value,
-            kind=kind,
+            k=degree,
         )
         if inplace:
             self.data = interpolator(new_axis.axis)

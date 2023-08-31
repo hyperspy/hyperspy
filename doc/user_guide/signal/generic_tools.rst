@@ -541,7 +541,7 @@ Interpolate to a different axis
 The :py:meth:`~.api.signals.BaseSignal.interpolate_on_axis` method makes it possible to
 exchange any existing axis of a signal with a new axis,
 regardless of the signals dimension or the axes types.
-This is achieved by interpolating the data using :py:meth:`scipy.interpolate.interp1d`
+This is achieved by interpolating the data using :py:meth:`scipy.interpolate.make_interp_spline`
 from the old axis to the new axis. Replacing multiple axes can be done iteratively.
 
 .. code-block:: python
