@@ -41,7 +41,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
     'sphinx_gallery.gen_gallery',
-    'sphinx_toggleprompt',
+    'sphinx_copybutton',
 ]
 
 linkcheck_ignore = [
@@ -299,6 +299,7 @@ intersphinx_mapping = {
     'cupy': ('https://docs.cupy.dev/en/stable', None),
     'dask': ('https://docs.dask.org/en/latest', None),
     'h5py': ('https://docs.h5py.org/en/stable', None),
+    'holospy': ('https://holospy.readthedocs.io/en/latest', None),
     'IPython': ('https://ipython.readthedocs.io/en/stable', None),
     'matplotlib': ('https://matplotlib.org/stable', None),
     'numpy': ('https://numpy.org/doc/stable', None),
@@ -325,6 +326,11 @@ autodoc_default_options = {
 }
 
 graphviz_output_format = "svg"
+
+# -- Sphinx-copybutton -----------
+
+
+copybutton_prompt_text = ">>> "
 
 def setup(app):
     app.add_css_file("custom-styles.css")

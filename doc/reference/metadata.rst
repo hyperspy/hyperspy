@@ -58,10 +58,6 @@ in the following sections of this chapter.
     │       │       ├── exposure (s)
     │       │       ├── frame_number
     │       │       └── spectrometer
-    │       ├── Biprism
-    │       │   ├── azimuth_angle (º)
-    │       │   ├── position
-    │       │   └── voltage (V)
     │       ├── acquisition_mode
     │       ├── beam_current (nA)
     │       ├── beam_energy (keV)
@@ -179,7 +175,7 @@ Contains information about the software packages and versions used any time the
 Signal was created by reading the original data format (added in HyperSpy
 v1.7) or saved by one of HyperSpy's IO tools. If the signal is saved to one
 of the ``hspy``, ``zspy`` or ``nxs`` formats, the metadata within the ``FileIO``
-node will represent a history of the software configurations used when the 
+node will represent a history of the software configurations used when the
 conversion was made from the proprietary/original format to HyperSpy's
 format, as well as any time the signal was subsequently loaded from and saved
 to disk. Under the ``FileIO`` node will be one or more nodes named ``0``,
@@ -433,27 +429,6 @@ live_time
     The time spent to record the spectrum in second, compensated for the
     dead time of the detector.
 
-Biprism
--------
-
-This node stores parameters of biprism used in off-axis electron holography
-
-azimuth_angle (º)
-    type: Float
-
-    Rotation angle of the biprism in degree
-
-position
-    type: Str
-
-    Position of the biprism in microscope column, e.g. Selected area aperture
-    plane
-
-voltage
-    type: Float
-
-    Voltage of electrostatic biprism in volts
-
 
 .. _sample-metadata:
 
@@ -531,7 +506,7 @@ FFT
 shifted
     type: bool.
 
-    Specify if the FFT has the zero-frequency component shifted to the center of 
+    Specify if the FFT has the zero-frequency component shifted to the center of
     the signal.
 
 
@@ -636,7 +611,7 @@ Output metadata
 
 :py:meth:`~.misc.utils.DictionaryTreeBrowser.as_dictionary`
     Returns a dictionary representation of the metadata tree.
-    
+
 :py:meth:`~.misc.utils.DictionaryTreeBrowser.export`
     Saves the metadata tree in pretty tree printing format in a text file.
     Takes ``filename`` as parameter.
@@ -653,7 +628,7 @@ Using the option ``full_path=False``, the functions
 :py:meth:`~.misc.utils.DictionaryTreeBrowser.has_item` and
 :py:meth:`~.misc.utils.DictionaryTreeBrowser.get_item` can also find items by
 their key in the metadata when the exact path is not known. By default, only
-an exact match of the search string with the item key counts. The additional 
+an exact match of the search string with the item key counts. The additional
 setting ``wild=True`` allows to search for a case-insensitive substring of the
 item key. The search functionality also accepts item keys preceded by one or
 several nodes of the path (separated by the usual full stop).

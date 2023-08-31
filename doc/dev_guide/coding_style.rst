@@ -51,15 +51,17 @@ alternative to be used.
 
 A deprecation decorator should be placed right above the object signature to be deprecated:
 
-@deprecated(since=1.7.0, removal=2.0.0, alternative="bar")
-def foo(self, n):
-    return n + 1
+.. code-block:: python
 
-@deprecated_argument(since=1.7.0, removal=2.0.0,name="x", alternative="y")
-def this_property(y):
-    return y
+    @deprecated(since=1.7.0, removal=2.0.0, alternative="bar")
+    def foo(self, n):
+        return n + 1
 
-This will update the docstring, and print a visible deprecation warning telling the user to user the
-alternative function or argument.
+    @deprecated_argument(since=1.7.0, removal=2.0.0,name="x", alternative="y")
+    def this_property(y):
+        return y
 
-These deprecation wrappers inspired by those in `kikuchipy`
+This will update the docstring, and print a visible deprecation warning telling
+the user to use the alternative function or argument.
+
+These deprecation wrappers are inspired by those in ``kikuchipy``

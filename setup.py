@@ -82,7 +82,7 @@ extras_require = {
         "pydata_sphinx_theme",
         "sphinx>=1.7",
         "sphinx-gallery",
-        "sphinx-toggleprompt",
+        "sphinx-copybutton",
         "sphinxcontrib-mermaid",
         "sphinxcontrib-towncrier>=0.3.0a0",
         "sphinx-design",

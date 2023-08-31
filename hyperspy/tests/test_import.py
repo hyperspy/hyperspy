@@ -156,6 +156,7 @@ def test_dir_datasets2():
         'get_low_loss_eels_line_scan_signal',
         'get_low_loss_eels_signal',
         'get_luminescence_signal',
+        'get_wave_image',
         ]
 
 
@@ -165,8 +166,6 @@ def test_dir_datasets3():
     assert d == [
     'EDS_SEM_Spectrum',
     'EDS_TEM_Spectrum',
-    'object_hologram',
-    'reference_hologram',
     ]
 
 
