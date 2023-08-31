@@ -61,7 +61,7 @@ A deprecation decorator should be placed right above the object signature to be 
     def this_property(y):
         return y
 
-This will update the docstring, and print a visible deprecation warning telling the user to user the
-alternative function or argument.
+This will update the docstring, and print a visible deprecation warning telling
+the user to use the alternative function or argument.
 
-These deprecation wrappers inspired by those in ``kikuchipy``
+These deprecation wrappers are inspired by those in ``kikuchipy``
