@@ -553,12 +553,12 @@ from the old axis to the new axis. Replacing multiple axes can be done iterative
     >>> s
     <Signal1D, title: , dimensions: (10|50)>
     >>> x_new = UniformDataAxis(offset=1.5, scale=0.8, size=7, name="X_NEW")
-    >>> e_new = DataAxis(axis=np.arange(23)**2, name="E_NEW")
+    >>> e_new = DataAxis(axis=np.arange(8))**2, name="E_NEW")
     >>> s2 = s.interpolate_on_axis(x_new, 0, inplace=False)
     >>> s2
     <Signal1D, title: , dimensions: (7|50)>
     >>> s2.interpolate_on_axis(e_new, 1, inplace=True)
-    <Signal1D, title: , dimensions: (7|23)>
+    <Signal1D, title: , dimensions: (7|8)>
 
 
 .. _squeeze-label:
