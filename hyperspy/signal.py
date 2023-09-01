@@ -3173,12 +3173,16 @@ class BaseSignal(FancySlicing,
             axis=set_axis_idx,
             k=degree,
         )
+        new_data = interpolator(new_axis.axis)
+
         if inplace:
-            self.data = interpolator(new_axis.axis)
-            self.axes_manager.set_axis(new_axis, set_axis_idx)
+            self.data = new_data
+            s = self
         else:
-            s = self._deepcopy_with_new_data(interpolator(new_axis.axis))
-            s.axes_manager.set_axis(new_axis, set_axis_idx)
+            s = self._deepcopy_with_new_data(new_data)
+
+        s.axes_manager.set_axis(new_axis, set_axis_idx)
+        if not inplace:
             return s
 
     def swap_axes(self, axis1, axis2, optimize=False):
