@@ -87,9 +87,9 @@ jobs:
           python -m pytest --pyargs pyxem
 
       - name: Run holospy Test Suite
-          if: ${{ always() }}
-          run: |
-            python -m pytest --pyargs holospy
+        if: ${{ always() }}
+        run: |
+          python -m pytest --pyargs holospy
 
       #  The currently released version of Atomap (0.3.1) does not work with this test
       #  environment. Thus, only the dev version is currently tested. If a newer version
