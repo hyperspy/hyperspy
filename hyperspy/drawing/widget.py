@@ -901,7 +901,9 @@ class ResizersMixin(object):
                     r.set_animated(self.blit)
             else:
                 for r in self._resizer_handles:
-                    r.remove()
+                    # check that the matplotlib patch is present before removing it
+                    if r in ax.get_children():
+                        r.remove()
             self._resizers_on = value
 
     def _get_resizer_size(self):
