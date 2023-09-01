@@ -1,0 +1,48 @@
+"""
+Interactive integration of one dimensional signal
+=================================================
+
+This example shows how to integrate a signal using a interactive ROI
+
+"""
+
+import hyperspy.api as hs
+
+#%%
+# Create a signal:
+s = hs.datasets.artificial_data.get_core_loss_eels_line_scan_signal(True, True)
+
+#%%
+# Create SpanROI
+roi = hs.roi.SpanROI(left=675, right=730)
+
+#%%
+# Slice signal with roi with the ROI. By using the `interactive` function, the
+# output signal ``s_roi`` will update automatically
+# The ROI will be added automatically on the signal figure
+s.plot()
+sliced_signal = roi.interactive(s, axes=s.axes_manager.signal_axes)
+
+#%%
+# Create a placeholder signal for the intregated signal and set metadata
+integrated_sliced_signal = sliced_signal.sum(axis=-1).T
+integrated_sliced_signal.metadata.General.title = "Integrated intensity"
+
+#%%
+# Create the interactive computation, which will update when the ROI ``roi`` is
+# changed, we use the ``out`` argument to place the results of the integration
+# in the placeholder signal defined in the previous step
+hs.interactive(
+    sliced_signal.sum,
+    axis=sliced_signal.axes_manager.signal_axes,
+    event=roi.events.changed,
+    recompute_out_event=None,
+    out=integrated_sliced_signal,
+)
+
+#%%
+# Plot the integrated sum signal
+integrated_sliced_signal.plot()
+
+#%%
+# sphinx_gallery_thumbnail_number = 2
