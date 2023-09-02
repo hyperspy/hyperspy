@@ -3,10 +3,10 @@
 Loading and saving data
 ***********************
 
-.. note::
+.. versionchanged:: 2.0
 
-    The IO plugins formerly developed within HyperSpy have now been moved to
-    the separate `RosettaSciIO repository <https://github.com/hyperspy/rosettasciio>`_
+    The IO plugins formerly developed within HyperSpy have been moved to
+    the separate package :external+rsciio:doc:`RosettaSciIO <index>`
     in order to facilitate a wider use also by other packages. Plugins supporting
     additional formats or corrections/enhancements to existing plugins should now
     be contributed to the `RosettaSciIO repository <https://github.com/hyperspy/rosettasciio>`_
@@ -30,8 +30,8 @@ image ``spam.jpg``, you can type:
     >>> s = hs.load("spam.jpg")
 
 If loading was successful, the variable ``s`` contains a HyperSpy signal or any
-type of signal defined in one of the :ref:`HyperSpy extensions <hyperspy_extensions-label>`, see 
-:ref:`load_specify_signal_type-label` for more details.
+type of signal defined in one of the :ref:`HyperSpy extensions <hyperspy_extensions-label>`, 
+see :ref:`load_specify_signal_type-label` for more details.
 
 .. note::
 
@@ -90,16 +90,17 @@ override this using the ``reader`` keyword:
 Specifying signal type
 ----------------------
 
-HyperSpy will attempt to infer the most suitable signal type for the data being loaded.
-Domain specific signal types are provided by other libraries and to list the signal types
+HyperSpy will attempt to infer the most suitable signal type for the data being
+loaded. Domain specific signal types are provided by :ref:`extension libraries
+<hyperspy_extensions-label>`. To list the signal types
 available on your local installation use:
 
 .. code-block:: python
 
     >>> hs.print_known_signal_types()
 
-When loading data, the signal type can be specified by providing the ``signal_type`` keyword,
-which has to correspond to one of the available subclasses of signal:
+When loading data, the signal type can be specified by providing the ``signal_type``
+keyword, which has to correspond to one of the available subclasses of signal:
 
 .. code-block:: python
 

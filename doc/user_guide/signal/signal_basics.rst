@@ -114,14 +114,10 @@ can be found in :ref:`signal.transpose`.
     modify HyperSpy's default choice.
 
 
-.. _transforming_signal-label:
+.. _signal-subclasses:
 
-Transforming between signal subclasses
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The :ref:`table below <signal_subclasses_table-label>` summarises all the
-specialised :py:class:`~.api.signals.BaseSignal` subclasses currently distributed
-with HyperSpy.
+Signal subclasses
+^^^^^^^^^^^^^^^^^
 
 The :py:mod:`~.api.signals` module, which contains all available signal subclasses,
 is imported in the user namespace when loading HyperSpy. In the following
@@ -133,70 +129,84 @@ example we create a Signal2D instance from a 2D numpy array:
     >>> im
     <Signal2D, title: , dimensions: (|64, 64)>
 
-The different subclasses are characterized by the `signal_type` metadata attribute,
-the data `dtype` and the signal dimension. See the table and diagram below.
-`signal_type` describes the nature of the signal. It can be any string, normally the
-acronym associated with a particular signal. In certain cases HyperSpy provides
-features that are only available for a particular signal type through
-:py:class:`~.api.signals.BaseSignal` subclasses. The :py:class:`~.api.signals.BaseSignal` method
-:py:meth:`~.api.signals.BaseSignal.set_signal_type` changes the signal_type in place, which
-may result in a :py:class:`~.api.signals.BaseSignal` subclass transformation.
+The :ref:`table below <signal_subclasses_table-label>` summarises all the
+:py:class:`~.api.signals.BaseSignal` subclasses currently distributed
+with HyperSpy. From HyperSpy 2.0, all domain specific signal
+subclasses, characterized by the ``signal_type`` metadata attribute, are
+provided by dedicated :ref:`extension packages <hyperspy_extensions-label>`.
 
+The generic subclasses provided by HyperSpy are characterized by the the data
+``dtype`` and the signal dimension. In particular, there are specialised signal
+subclasses to handle complex data. See the table and diagram below. Where
+appropriate, functionalities are restricted to certain
+:py:class:`~.api.signals.BaseSignal` subclasses.
 
-Furthermore, the `dtype` of the signal data also affects the subclass assignment. There are
-e.g. specialised signal subclasses to handle complex data (see the following diagram).
-
+.. _signal_overview_figure-label:
 
 .. figure::  ../images/HyperSpySignalOverview.png
   :align:   center
   :width:   500
 
-  Diagram showing the inheritance structure of the different subclasses
+  Diagram showing the inheritance structure of the different subclasses. The
+  upper part contains the generic classes shipped with HyperSpy. The lower
+  part contains examples of domain specific subclasses provided by some of the
+  :ref:`hyperspy_extensions-label`.
 
 .. _signal_subclasses_table-label:
 
+.. table:: BaseSignal subclass characteristics.
 
-.. table:: BaseSignal subclass :py:attr:`~.api.signals.BaseSignal.metadata` attributes.
+    +-------------------------------------------+------------------+-------------+---------+
+    | BaseSignal subclass                       | signal_dimension | signal_type |  dtype  |
+    +===========================================+==================+=============+=========+
+    | :py:class:`~.api.signals.BaseSignal`      |        -         |      -      |  real   |
+    +-------------------------------------------+------------------+-------------+---------+
+    | :py:class:`~.api.signals.Signal1D`        |        1         |      -      |  real   |
+    +-------------------------------------------+------------------+-------------+---------+
+    | :py:class:`~.api.signals.Signal2D`        |        2         |      -      |  real   |
+    +-------------------------------------------+------------------+-------------+---------+
+    | :py:class:`~.api.signals.ComplexSignal`   |        -         |      -      | complex |
+    +-------------------------------------------+------------------+-------------+---------+
+    | :py:class:`~.api.signals.ComplexSignal1D` |        1         |      -      | complex |
+    +-------------------------------------------+------------------+-------------+---------+
+    | :py:class:`~.api.signals.ComplexSignal2D` |        2         |      -      | complex |
+    +-------------------------------------------+------------------+-------------+---------+
 
-    +-----------------------------------------------------+------------------+-----------------------+----------+
-    |            BaseSignal subclass                      | signal_dimension |  signal_type          |  dtype   |
-    +=====================================================+==================+=======================+==========+
-    |      :py:class:`~.api.signals.BaseSignal`           |        -         |       -               |  real    |
-    +-----------------------------------------------------+------------------+-----------------------+----------+
-    |      :py:class:`~.api.signals.Signal1D`             |        1         |       -               |  real    |
-    +-----------------------------------------------------+------------------+-----------------------+----------+
-    |      :py:class:`~.api.signals.EELSSpectrum`         |        1         |     EELS              |  real    |
-    +-----------------------------------------------------+------------------+-----------------------+----------+
-    |      :py:class:`~.api.signals.EDSSEMSpectrum`       |        1         |    EDS_SEM            |  real    |
-    +-----------------------------------------------------+------------------+-----------------------+----------+
-    |      :py:class:`~.api.signals.EDSTEMSpectrum`       |        1         |    EDS_TEM            |  real    |
-    +-----------------------------------------------------+------------------+-----------------------+----------+
-    |      :py:class:`~.api.signals.Signal2D`             |        2         |       -               |  real    |
-    +-----------------------------------------------------+------------------+-----------------------+----------+
-    |      :py:class:`~.api.signals.HologramImage`        |        2         |      hologram         |  real    |
-    +-----------------------------------------------------+------------------+-----------------------+----------+
-    |      :py:class:`~.api.signals.DielectricFunction`   |        1         |  DielectricFunction   |  complex |
-    +-----------------------------------------------------+------------------+-----------------------+----------+
-    |      :py:class:`~.api.signals.ComplexSignal`        |        -         |       -               | complex  |
-    +-----------------------------------------------------+------------------+-----------------------+----------+
-    |      :py:class:`~.api.signals.ComplexSignal1D`      |        1         |       -               | complex  |
-    +-----------------------------------------------------+------------------+-----------------------+----------+
-    |      :py:class:`~.api.signals.ComplexSignal2D`      |        2         |       -               | complex  |
-    +-----------------------------------------------------+------------------+-----------------------+----------+
-
-.. versionchanged:: 1.0 ``Simulation``, ``SpectrumSimulation`` and ``ImageSimulation``
-   classes removed.
+.. versionchanged:: 1.0
+    The subclasses ``Simulation``, ``SpectrumSimulation`` and ``ImageSimulation``
+    were removed.
 
 .. versionadded:: 1.5
     External packages can register extra :py:class:`~.api.signals.BaseSignal`
     subclasses.
 
-Note that, if you have :ref:`packages that extend HyperSpy
-<hyperspy_extensions-label>` installed in your system, there may
-be more specialised signals available to you. To print all available specialised
-:py:class:`~.api.signals.BaseSignal` subclasses installed in your system call the
-:py:func:`~.api.print_known_signal_types`
-function as in the following example:
+.. versionchanged:: 2.0
+    The subclasses ``EELS``, ``EDS_SEM``, ``EDS_TEM`` and
+    ``DielectricFunction`` have been moved to the extension package
+    ``EleXSpy`` and the subclass ``hologram`` has been
+    moved to the extension package ``HoloSpy``.
+
+.. _hyperspy_extensions-label:
+
+HyperSpy extensions
+^^^^^^^^^^^^^^^^^^^
+
+Domain specific functionalities for specific types of data are provided through
+a number of dedicated python packages that qualify as `HyperSpy extensions`. These
+packages provide subclasses of the generic signal classes listed above, depending
+on the dimensionality and type of the data. Some examples are included in the
+:ref:`diagram above <signal_overview_figure-label>`.
+If an extension package is installed on your system, the provided signal
+subclasses are registered with HyperSpy and these classes are directly
+available when loading the ``hyperspy.api`` into the namespace. A `list of packages
+that extend HyperSpy <https://github.com/hyperspy/hyperspy-extensions-list>`_
+is curated in a dedicated repository.
+
+The metadata attribute ``signal_type`` describes the nature of the signal. It can
+be any string, normally the acronym associated with a particular signal. To print
+all :py:class:`~.api.signals.BaseSignal` subclasses available in your system call
+the function :py:func:`~.api.print_known_signal_types` as in the following
+example:
 
 .. code-block:: python
 
@@ -204,22 +214,46 @@ function as in the following example:
     +--------------------+---------------------+--------------------+----------+
     |    signal_type     |       aliases       |     class name     | package  |
     +--------------------+---------------------+--------------------+----------+
-    | DielectricFunction | dielectric function | DielectricFunction | hyperspy |
-    |      EDS_SEM       |                     |   EDSSEMSpectrum   | hyperspy |
-    |      EDS_TEM       |                     |   EDSTEMSpectrum   | hyperspy |
-    |        EELS        |       TEM EELS      |    EELSSpectrum    | hyperspy |
-    |      hologram      |                     |   HologramImage    | hyperspy |
-    |      MySignal      |                     |      MySignal      | hspy_ext |
+    | DielectricFunction | dielectric function | DielectricFunction | elexspy  |
+    |      EDS_SEM       |                     |   EDSSEMSpectrum   | elexspy  |
+    |      EDS_TEM       |                     |   EDSTEMSpectrum   | elexspy  |
+    |        EELS        |       TEM EELS      |    EELSSpectrum    | elexspy  |
+    |      hologram      |                     |   HologramImage    | holospy  |
     +--------------------+---------------------+--------------------+----------+
 
-.. warning::
-    From version 2.0 HyperSpy will no longer ship
-    :py:class:`~.api.signals.BaseSignal` subclasses that are specific to a
-    particular type of data (i.e. with non-empty ``signal_type``). All those
-    signals currently distributed with HyperSpy will be moved to new
-    packages.
+When :ref:`loading data <loading_files>`, the ``signal_type`` will be
+set automatically by the file reader, as defined in ``rosettasciio``. If the
+extension providing the corresponding signal subclass is installed,
+:py:func:`~.api.load` will return the subclass from the hyperspy extension,
+otherwise a warning will be raised to explain that
+no registered signal class can be assigned to the given ``signal_type``.
 
-The following example shows how to transform between different subclasses.
+Since the :py:func:`~.api.load` can return domain specific signal objects (e.g.
+``EDSSEMSpectrum`` from ``EleXSpy``) provided by extensions, the corresponding
+functionalities (so-called `method` of `object` in object-oriented programming,
+e.g. ``EDSSEMSpectrum.get_lines_intensity()``) implemented in signal classes of
+the extension can be accessed directly. To use additional functionalities
+implemented in extensions, but not as method of the signal class, the extensions
+need to be imported explicitly (e.g. ``import elexspy``). Check the user guides
+of the respective `HyperSpy extensions
+<https://github.com/hyperspy/hyperspy-extensions-list>`_ for details on the
+provided methods and functions.
+
+For details on how to write and register extensions see
+:ref:`writing_extensions-label`.
+
+.. _transforming_signal-label:
+
+Transforming between signal subclasses
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :py:class:`~.api.signals.BaseSignal` method
+:py:meth:`~.api.signals.BaseSignal.set_signal_type` changes the ``signal_type``
+in place, which may result in a :py:class:`~.api.signals.BaseSignal` subclass
+transformation.
+
+The following example shows how to change the signal dimensionality and how
+to transform between different subclasses:
 
    .. code-block:: python
 
@@ -227,17 +261,26 @@ The following example shows how to transform between different subclasses.
        >>> s
        <Signal1D, title: , dimensions: (20, 10|100)>
        >>> s.metadata
-       ├── signal_type =
-       └── title =
+       ├── General
+       │   └── title = 
+       └── Signal
+           └── signal_type = 
        >>> im = s.to_signal2D()
        >>> im
        <Signal2D, title: , dimensions: (100|20, 10)>
        >>> im.metadata
-       ├── signal_type =
-       └── title =
+       ├── General
+       │   └── title = 
+       └── Signal
+           └── signal_type = 
        >>> s.set_signal_type("EELS")
        >>> s
        <EELSSpectrum, title: , dimensions: (20, 10|100)>
+       >>> s.metadata
+       ├── General
+       │   └── title = 
+       └── Signal
+           └── signal_type = EELS
        >>> s.change_dtype("complex")
        >>> s
        <ComplexSignal1D, title: , dimensions: (20, 10|100)>
