@@ -4931,12 +4931,20 @@ class BaseSignal(FancySlicing,
         # If the function has an `axes` or `axis` argument
         # we suppose that it can operate on the full array and we don't
         # iterate over the coordinates.
-        if not ndkwargs and not lazy_output and (self.axes_manager.signal_dimension == 1 and
-                             "axis" in fargs):
+        # We use _map_all only when the user doesn't specify axis/axes
+        if (not ndkwargs
+            and not lazy_output
+            and self.axes_manager.signal_dimension == 1
+            and "axis" in fargs
+            and "axis" not in kwargs.keys()
+            ):
             kwargs['axis'] = self.axes_manager.signal_axes[-1].index_in_array
-
             result = self._map_all(function, inplace=inplace, **kwargs)
-        elif not ndkwargs and not lazy_output and "axes" in fargs:
+        elif (not ndkwargs
+              and not lazy_output
+              and "axes" in fargs
+              and "axes" not in kwargs.keys()
+              ):
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
             result = self._map_all(function, inplace=inplace, **kwargs)
@@ -4968,20 +4976,24 @@ class BaseSignal(FancySlicing,
     def _map_all(self, function, inplace=True, **kwargs):
         """
         The function has to have either 'axis' or 'axes' keyword argument,
-        and hence support operating on the full dataset efficiently.
+        and hence support operating on the full dataset efficiently and remove
+        the signal axes.
         """
+        old_shape = self.data.shape
         newdata = function(self.data, **kwargs)
         if inplace:
             self.data = newdata
+            if self.data.shape != old_shape:
+                self.axes_manager.remove(self.axes_manager.signal_axes)
             self._lazy = False
             self._assign_subclass()
-            self.get_dimensions_from_data()
             return None
         else:
             sig = self._deepcopy_with_new_data(newdata)
+            if sig.data.shape != old_shape:
+                sig.axes_manager.remove(sig.axes_manager.signal_axes)
             sig._lazy = False
             sig._assign_subclass()
-            sig.get_dimensions_from_data()
             return sig
 
     def _map_iterate(
