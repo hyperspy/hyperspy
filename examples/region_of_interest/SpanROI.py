@@ -25,11 +25,10 @@ roi = hs.roi.SpanROI(left=650, right=750)
 
 s.plot()
 sliced_signal = roi.interactive(s, axes=s.axes_manager.signal_axes)
+# Choose the second figure as gallery thumbnail:
+# sphinx_gallery_thumbnail_number = 2
 
 #%%
 # Plot the signal sliced by the ROI and use ``autoscale='xv'`` to update the
 # limits of the plot automatically:
 sliced_signal.plot(autoscale='xv')
-
-#%%
-# sphinx_gallery_thumbnail_number = 2

@@ -22,6 +22,8 @@ roi = hs.roi.SpanROI(left=675, right=730)
 # The ROI will be added automatically on the signal figure:
 s.plot()
 sliced_signal = roi.interactive(s, axes=s.axes_manager.signal_axes)
+# Choose the second figure as gallery thumbnail:
+# sphinx_gallery_thumbnail_number = 2
 
 #%%
 # Create a placeholder signal for the integrated signal and set metadata:
@@ -43,6 +45,3 @@ hs.interactive(
 #%%
 # Plot the integrated sum signal:
 integrated_sliced_signal.plot()
-
-#%%
-# sphinx_gallery_thumbnail_number = 2
