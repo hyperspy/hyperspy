@@ -1392,7 +1392,6 @@ def plot_spectra(
     **kwargs, optional
         Keywords arguments passed to :py:func:`matplotlib.pyplot.figure` or
         :py:func:`matplotlib.pyplot.subplots` if style='mosaic'.
-        Has no effect on 'heatmap' style.
 
     Example
     -------
