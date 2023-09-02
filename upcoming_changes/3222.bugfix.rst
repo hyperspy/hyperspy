@@ -1,1 +1,1 @@
-Fix harmless error message when using multiple RectangleROI: check if reziser patches are drawn before removing them. Don't display resizers when adding the widget to the figure (widget in unselected state) for consistency with unselected state
+Fix harmless error message when using multiple RectangleROI: check if resizer patches are drawn before removing them. Don't display resizers when adding the widget to the figure (widget in unselected state) for consistency with unselected state
