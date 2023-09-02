@@ -479,7 +479,7 @@ class TestSquareWidget:
         assert count_calls.counter == 5
         assert im.axes_manager.navigation_axes[0].index == 5
 
-    def test_drag_continuous_update1d(self):
+    def test_drag_continuous_update1d_no_change(self):
         # drag down and check that it doesn't change the index
         im = Signal2D(np.arange(10 * 10 * 10).reshape((10, 10, 10)))
         im.axes_manager[0].scale = 1
@@ -517,4 +517,3 @@ class TestSquareWidget:
         assert count_calls.counter == 0
         assert im.axes_manager.navigation_axes[0].index == 0
         # drag down and check that it doesn't change
-

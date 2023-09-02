@@ -125,7 +125,7 @@ def check_running_tests_in_CI():
 def mock_event(fig, canvas,
                button=None, key=None,
                xdata=None, ydata=None,
-               inaxes=True, artist=None):
+               inaxes=True, artist=None, mouseevent=None):
     event = mock.Mock()
     event.button = button
     event.key = key
@@ -136,4 +136,5 @@ def mock_event(fig, canvas,
     event.guiEvent = None
     event.name = 'MockEvent'
     event.artist = artist
+    event.mouseevent = mouseevent
     return event

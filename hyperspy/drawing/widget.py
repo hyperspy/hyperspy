@@ -323,7 +323,7 @@ class DraggableWidgetBase(WidgetBase):
 
     def __init__(self, axes_manager, **kwargs):
         super(DraggableWidgetBase, self).__init__(axes_manager, **kwargs)
-        self.is_pointer=False
+        self.is_pointer = False
         self.events.moved = Event(doc="""
             Event that triggers when the widget was moved.
 
@@ -831,7 +831,7 @@ class Widget2DBase(ResizableDraggableWidgetBase):
             self.draw_patch()
 
 
-class ResizersMixin(object):
+class ResizersMixin:
     """
     Widget mix-in for adding resizing manipulation handles.
 
@@ -901,7 +901,9 @@ class ResizersMixin(object):
                     r.set_animated(self.blit)
             else:
                 for r in self._resizer_handles:
-                    r.remove()
+                    # check that the matplotlib patch is present before removing it
+                    if r in ax.get_children():
+                        r.remove()
             self._resizers_on = value
 
     def _get_resizer_size(self):
@@ -977,7 +979,8 @@ class ResizersMixin(object):
             super(ResizersMixin, self).set_on(value)
 
     def onpick(self, event):
-        """Picking of main patch is same as for widget base, but this also
+        """
+        Picking of main patch is same as for widget base, but this also
         handles picking of the resize handles. If a resize handle is picked,
         `picked` is set to `True`, and `resizer_picked` is set to an integer
         indicating which handle was picked (0-3 for top left, top right, bottom
@@ -1009,7 +1012,7 @@ class ResizersMixin(object):
         """Same as widget base, but also adds resizers if 'resizers' property
         is True.
         """
-        if self.resizers:
+        if self.resizers and self._resizers_on:
             self._set_resizers(True, ax)
         if hasattr(super(ResizersMixin, self), '_add_patch_to'):
             super(ResizersMixin, self)._add_patch_to(ax)
