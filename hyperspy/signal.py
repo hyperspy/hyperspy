@@ -25,7 +25,6 @@ import inspect
 from itertools import product
 import logging
 import numbers
-from packaging.version import Version
 from pathlib import Path
 import warnings
 
@@ -80,7 +79,7 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order, check_random_state
-from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
+from hyperspy.exceptions import LazyCupyConversion
 
 
 _logger = logging.getLogger(__name__)
@@ -4777,6 +4776,11 @@ class BaseSignal(FancySlicing,
             Indicates if the results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If ``None``,
             the output signal will be ragged only if the original signal is ragged.
+        navigation_chunks : str, None, int or tuple of int, default ``None``
+            Set the navigation_chunks argument to a tuple of integers to split
+            the navigation axes into chunks. This can be useful to enable
+            using multiple cores with signals which are less that 100 MB.
+            This argument is passed to :py:meth:`~._signals.lazy.LazySignal.rechunk`.
         output_signal_size : None, tuple
             Since the size and dtype of the signal dimension of the output
             signal can be different from the input signal, this output signal

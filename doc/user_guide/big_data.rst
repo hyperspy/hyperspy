@@ -275,7 +275,7 @@ Lazy data processing on GPUs requires explicitly transferring the data to the
 GPU.
 
 On linux, it is recommended to use the
-`dask_cuda <https://docs.rapids.ai/api/dask-cuda/stable/index.html>`_ library 
+`dask_cuda <https://docs.rapids.ai/api/dask-cuda/stable/index.html>`_ library
 (not supported on windows) to manage the dask scheduler. As for CPU lazy
 processing, if the dask scheduler is not specified, the default scheduler
 will be used.
@@ -318,7 +318,7 @@ Most curve-fitting functionality will automatically work on models created from
 lazily loaded signals. HyperSpy extracts the relevant chunk from the signal and fits to that.
 
 The linear ``'lstsq'`` optimizer supports fitting the entire dataset in a vectorised manner
-using :py:func:`dask.array.linalg.lstsq`. This can give potentially enormous performance benefits over fitting 
+using :py:func:`dask.array.linalg.lstsq`. This can give potentially enormous performance benefits over fitting
 with a nonlinear optimizer, but comes with the restrictions explained in the :ref:`linear fitting<linear_fitting-label>` section.
 
 Practical tips
@@ -432,6 +432,35 @@ Therefore, in order to avoid such issues, it is reccomended to explicitly
 compute the result of all functions that are affected by the axes
 parameters. This is the reason why e.g. the result of
 :py:meth:`~._signals.signal1d.Signal1D.shift1D` is not lazy.
+
+.. _remote_cluster-label:
+
+Running on Remote Cluster
+-------------------------
+
+Running computation on remote cluster can be done easily using ``dask_jobqueue``
+
+.. code-block:: python
+
+    >>> from dask_jobqueue import SLURMCluster # or what ever scheduler you use
+    >>> from dask.distributed import Client
+    >>> cluster = SLURMCluster(cores=48,
+                               memory='120Gb',
+                               walltime="01:00:00",
+                               queue='research')
+    >>> cluster.scale(jobs=3) # get 3 nodes
+    >>> client = Client(cluster)
+    >>> client
+
+Any calculation will now use the distributed scheduler
+
+.. code-block:: python
+
+    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+    >>> repeated_data = da.repeat(da.array(s.data[np.newaxis, :]),10, axis=0)
+    >>> s = hs.signals.Signal1D(repeated_data).as_lazy()
+    >>> summed = s.map(np.sum, inplace=False)
+    >>> s.compute()
 
 
 Limitations
