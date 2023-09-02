@@ -13,22 +13,22 @@ import hyperspy.api as hs
 s = hs.datasets.artificial_data.get_core_loss_eels_line_scan_signal(True, True)
 
 #%%
-# Create the roi, here a :py:class:`~.api.roi.SpanROI` for one dimensional ROI
+# Create the roi, here a :py:class:`~.api.roi.SpanROI` for one dimensional ROI:
 roi = hs.roi.SpanROI(left=650, right=750)
 
 #%%
 # Slice signal with roi with the ROI. By using the `interactive` function, the
-# output signal ``s_roi`` will update automatically
-# The ROI will be added automatically on the signal figure
+# output signal ``s_roi`` will update automatically.
+# The ROI will be added automatically on the signal figure.
 #
-# Specify the ``axes`` to add the ROI on either the navigation or signal dimension
+# Specify the ``axes`` to add the ROI on either the navigation or signal dimension:
 
 s.plot()
 sliced_signal = roi.interactive(s, axes=s.axes_manager.signal_axes)
 
 #%%
 # Plot the signal sliced by the ROI and use ``autoscale='xv'`` to update the
-# limits of the plot automatically
+# limits of the plot automatically:
 sliced_signal.plot(autoscale='xv')
 
 #%%
