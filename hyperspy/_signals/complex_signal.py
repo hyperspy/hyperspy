@@ -31,7 +31,7 @@ from hyperspy.docstrings.plot import (
 )
 from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
-    MAX_WORKERS_ARG,
+    NUM_WORKERS_ARG,
     LAZYSIGNAL_DOC,
 )
 from hyperspy.misc.utils import parse_quantity
@@ -167,7 +167,7 @@ class ComplexSignal(BaseSignal):
                 'Complex data can only be converted into other complex dtypes!')
 
     def unwrapped_phase(self, wrap_around=False, seed=None,
-                        show_progressbar=None, max_workers=None):
+                        show_progressbar=None, num_workers=None):
         """Return the unwrapped phase as an appropriate HyperSpy signal.
 
         Parameters
@@ -202,11 +202,11 @@ class ComplexSignal(BaseSignal):
         phase = self.phase
         phase.map(unwrap_phase, wrap_around=wrap_around, seed=seed,
                   show_progressbar=show_progressbar, ragged=False,
-                  max_workers=max_workers)
+                  num_workers=num_workers)
         phase.metadata.General.title = f'unwrapped {phase.metadata.General.title}'
         return phase  # Now unwrapped!
 
-    unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, MAX_WORKERS_ARG)
+    unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG)
 
     def __call__(self, axes_manager=None, power_spectrum=False,
                  fft_shift=False, as_numpy=None):

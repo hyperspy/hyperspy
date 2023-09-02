@@ -67,12 +67,6 @@ SHOW_PROGRESSBAR_ARG = \
            If ``True``, display a progress bar. If ``None``, the default from
            the preferences settings is used."""
 
-PARALLEL_ARG = \
-    """parallel : None or bool
-           If ``True``, perform computation in parallel using multithreading. If
-           ``None``, the default from the preferences settings is used. The number
-           of threads is controlled by the ``max_workers`` argument."""
-
 LAZY_OUTPUT_ARG = \
     """lazy_output : None or bool
            If ``True``, the output will be returned as a lazy signal. This means
@@ -83,10 +77,10 @@ LAZY_OUTPUT_ARG = \
            If ``None`` the output will be lazy if the input signal is lazy, and
            non-lazy if the input signal is non-lazy."""
 
-MAX_WORKERS_ARG = \
-    """max_workers : None or int
-           Maximum number of threads used when ``parallel=True``. If None, defaults
-           to ``min(32, os.cpu_count())``."""
+NUM_WORKERS_ARG = \
+    """num_workers : None or int
+           Number of worker used by dask. If None, default
+           to dask default value."""
 
 CLUSTER_SIGNALS_ARG = \
     """signal : {"mean", "sum", "centroid"}, optional

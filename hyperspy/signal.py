@@ -69,7 +69,7 @@ from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import _get_block_pattern
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
-    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, MAX_WORKERS_ARG,
+    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG,
     CLUSTER_SIGNALS_ARG, HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS, LAZY_OUTPUT_ARG)
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
                                       BASE_PLOT_DOCSTRING_PARAMETERS,
@@ -4732,7 +4732,7 @@ class BaseSignal(FancySlicing,
         self,
         function,
         show_progressbar=None,
-        max_workers=None,
+        num_workers=None,
         inplace=True,
         ragged=None,
         navigation_chunks=None,
@@ -4960,7 +4960,7 @@ class BaseSignal(FancySlicing,
                 ragged=ragged,
                 inplace=inplace,
                 lazy_output=lazy_output,
-                max_workers=max_workers,
+                num_workers=num_workers,
                 output_dtype=output_dtype,
                 output_signal_size=output_signal_size,
                 navigation_chunks=navigation_chunks,
@@ -4971,7 +4971,7 @@ class BaseSignal(FancySlicing,
         else:
             self.events.data_changed.trigger(obj=self)
 
-    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, LAZY_OUTPUT_ARG, MAX_WORKERS_ARG)
+    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, LAZY_OUTPUT_ARG, NUM_WORKERS_ARG)
 
     def _map_all(self, function, inplace=True, **kwargs):
         """
@@ -5006,7 +5006,7 @@ class BaseSignal(FancySlicing,
         output_signal_size=None,
         output_dtype=None,
         lazy_output=None,
-        max_workers=None,
+        num_workers=None,
         navigation_chunks="auto",
         **kwargs,
     ):
@@ -5113,7 +5113,7 @@ class BaseSignal(FancySlicing,
                     self.data,
                     dtype=mapped.dtype,
                     compute=True,
-                    num_workers=max_workers,
+                    num_workers=num_workers,
                 )
                 data_stored = True
             else:
@@ -5142,7 +5142,7 @@ class BaseSignal(FancySlicing,
         sig._assign_subclass()
 
         if not lazy_output and not data_stored:
-            sig.data = sig.data.compute(num_workers=max_workers)
+            sig.data = sig.data.compute(num_workers=num_workers)
 
         if show_progressbar:
             pbar.unregister()
