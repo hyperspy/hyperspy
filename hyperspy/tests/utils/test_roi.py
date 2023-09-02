@@ -170,6 +170,12 @@ class TestROIs():
             with pytest.raises(IndexError):
                 r3.add_widget(s, axes=axes)
 
+    def test_roi_add_widget_plot_missing(self):
+        s = Signal1D(np.random.rand(60, 4))
+        r = SpanROI(0, 60)
+        with pytest.raises(RuntimeError):
+            r.interactive(s)
+
     def test_span_spectrum_nav_boundary_roi(self):
         s = Signal1D(np.random.rand(60, 4))
         r = SpanROI(0, 60)

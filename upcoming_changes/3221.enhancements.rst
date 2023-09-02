@@ -1,0 +1,1 @@
+Add examples to the gallery to show how to use SpanROI and slice signal interactively
