@@ -1389,10 +1389,12 @@ def plot_spectra(
         If True, the plot will update when the data are changed. Only supported
         with style='overlap' and a list of signal with navigation dimension 0.
         If None (default), update the plot only for style='overlap'.
-    **kwargs, optional
-        Keywords arguments passed to :py:func:`matplotlib.pyplot.figure` or
-        :py:func:`matplotlib.pyplot.subplots` if style='mosaic'.
-        Has no effect on 'heatmap' style.
+    **kwargs : dict, optional
+        Depending on the style used, the keyword arguments are passed to different functions
+
+        - ``"overlap"`` or ``"cascade"``: arguments passed to :py:func:`matplotlib.pyplot.figure`
+        - ``"mosiac"``: arguments passed to :py:func:`matplotlib.pyplot.subplots`
+        - ``"heatmap"``: arguments  passed to :py:meth:`~.api.signals.Signal2D.plot`.
 
     Example
     -------
@@ -1519,7 +1521,7 @@ def plot_spectra(
                        spectra]
             spectra = hyperspy.utils.stack(spectra)
         with spectra.unfolded():
-            ax = _make_heatmap_subplot(spectra)
+            ax = _make_heatmap_subplot(spectra, **kwargs)
             ax.set_ylabel('Spectra')
     ax = ax if style != "mosaic" else subplots
 
