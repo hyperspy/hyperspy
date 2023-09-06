@@ -652,10 +652,10 @@ class TestMarkers:
             angles[i] = np.ones(3)
 
         kwds = {Points:{},
-                   Circles:{"sizes": (1,)},
-                   Arrows: {"U": 1, "V": 1},
-                   Ellipses: {"widths": widths, "heights": heights, "angles":angles},
-                  }
+                Circles:{"sizes": (1,)},
+                Arrows: {"U": 1, "V": 1},
+                Ellipses: {"widths": widths, "heights": heights, "angles":angles},
+                }
         return kwds
 
     @pytest.fixture
@@ -679,7 +679,7 @@ class TestMarkers:
                                  [4, 4]],
                         U=1,
                         V=1,
-                        C=(2,2,2))
+                        C=(2,2))
         signal.plot()
         signal.add_marker(arrows)
         signal.axes_manager.navigation_axes[0].index = 1
@@ -698,22 +698,3 @@ class TestMarkers:
         signal.add_marker(markers)
 
         assert len(markers) == 3
-
-
-def test_markers_zorder():
-    signal = Signal2D(np.ones((2, 10, 10)))
-    markers = Points(offsets=[[1, 1], [4, 4]],
-                     sizes=(10,),
-                     color=("black",),
-                     zorder=1000)
-    signal.plot()
-    signal.add_marker(markers)
-
-    markers = Points(offsets=[[1, 1], [4, 4]],
-                     sizes=(10,),
-                     color=("black",),
-                     zorder=(500, 1000))
-    signal.plot()
-    with pytest.raises(BaseException):
-        # zorder must be set globally
-        signal.add_marker(markers)

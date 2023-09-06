@@ -35,7 +35,8 @@ class Arrows(Markers):
             scale_units="xy",
             **kwargs
         ):
-        """ Initialize the set of Arrows Markers.
+        """
+        Initialize the set of Arrows Markers.
 
         Parameters
         ----------
@@ -76,3 +77,18 @@ class Arrows(Markers):
 
         self.collection = self.collection_class(
             *args, offset_transform=self.ax.transData, **self._init_kwargs)
+
+    def update(self):
+        if not self._is_iterating:
+            return
+        else:
+            kwds = self.get_data_position(get_static_kwargs=False)
+            # in case 'U', 'V', 'C' are not position dependent
+            kwds.setdefault('U', self.kwargs['U'])
+            kwds.setdefault('V', self.kwargs['V'])
+            kwds.setdefault('C', self.kwargs['C'])
+            self.collection.set_offsets(kwds['offsets'])
+            # Need to use `set_UVC` and pass all 'U', 'V' and 'C' at once,
+            # because matplotlib expect same shape
+            UVC = {k:v for k, v in kwds.items() if k in ['U', 'V', 'C']}
+            self.collection.set_UVC(**UVC)

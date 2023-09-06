@@ -3,21 +3,74 @@ from matplotlib import transforms
 import matplotlib.artist as martist
 from matplotlib.quiver import _quiver_doc, _parse_args
 import hyperspy.external.matplotlib._docstring as _docstring
-from matplotlib import _api
+from matplotlib import _api, cbook
 import math
 
 import numpy as np
 from numpy import ma
 
 
+
+def _parse_args(*args, caller_name='function'):
+    """
+    Helper function to parse positional parameters for colored vector plots.
+
+    This is currently used for Quiver and Barbs.
+
+    Parameters
+    ----------
+    *args : list
+        list of 2-5 arguments. Depending on their number they are parsed to::
+
+            U, V
+            U, V, C
+            X, Y, U, V
+            X, Y, U, V, C
+
+    caller_name : str
+        Name of the calling method (used in error messages).
+    """
+    X = Y = C = None
+
+    nargs = len(args)
+    if nargs == 2:
+        # The use of atleast_1d allows for handling scalar arguments while also
+        # keeping masked arrays
+        U, V = np.atleast_1d(*args)
+    elif nargs == 3:
+        U, V, C = np.atleast_1d(*args)
+    elif nargs == 4:
+        X, Y, U, V = np.atleast_1d(*args)
+    elif nargs == 5:
+        X, Y, U, V, C = np.atleast_1d(*args)
+    else:
+        raise _api.nargs_error(caller_name, takes="from 2 to 5", given=nargs)
+
+    nr, nc = (1, U.shape[0]) if U.ndim == 1 else U.shape
+
+    if X is not None:
+        X = X.ravel()
+        Y = Y.ravel()
+        if len(X) == nc and len(Y) == nr:
+            X, Y = [a.ravel() for a in np.meshgrid(X, Y)]
+        elif len(X) != len(Y):
+            raise ValueError('X and Y must be the same size, but '
+                             f'X.size is {X.size} and Y.size is {Y.size}.')
+    else:
+        indexgrid = np.meshgrid(np.arange(nc), np.arange(nr))
+        X, Y = [np.ravel(a) for a in indexgrid]
+    # Size validation for U, V, C is left to the set_UVC method.
+    return X, Y, U, V, C
+
+
 class Quiver(mcollections.PolyCollection):
     """
     Specialized PolyCollection for arrows.
 
-    The only API method is set_UVC(), which can be used
-    to change the size, orientation, and color of the
+    The API methods are set_UVC(), set_U(), set_V() and set_C(), which
+    can be used to change the size, orientation, and color of the
     arrows; their locations are fixed when the class is
-    instantiated.  Possibly this method will be useful
+    instantiated.  Possibly these methods will be useful
     in animations.
 
     Much of the work in this class is done in the draw()
@@ -44,8 +97,6 @@ class Quiver(mcollections.PolyCollection):
         X, Y, U, V, C = _parse_args(*args, caller_name='quiver')
         self.X = X
         self.Y = Y
-        self.XY = np.column_stack((X, Y))
-        self.N = len(X)
         self.scale = scale
         self.headwidth = headwidth
         self.headlength = float(headlength)
@@ -91,6 +142,14 @@ class Quiver(mcollections.PolyCollection):
 
             self._dpi_at_last_init = self.axes.figure.dpi
 
+    @property
+    def N(self):
+        return len(self.X)
+
+    @property
+    def XY(self):
+        return np.column_stack((self.X, self.Y))
+
     def get_datalim(self, transData):
         trans = self.get_transform()
         offset_trf = self.get_offset_transform()
@@ -108,22 +167,44 @@ class Quiver(mcollections.PolyCollection):
         super().draw(renderer)
         self.stale = False
 
-    def set_U(self, s):
-        self.set_UVC(s, self.V, self.get_array())
+    def set_U(self, U):
+        """Set x direction components of the arrow vectors."""
+        self.set_UVC(U, None, None)
 
-    def set_V(self, s):
-        self.set_UVC(self.U, s, self.get_array())
+    def set_V(self, V):
+        """Set y direction components of the arrow vectors."""
+        self.set_UVC(None, V, None)
 
-    def set_C(self, s):
-        self.set_UVC(self.U, self.V, s)
+    def set_C(self, C):
+        """Set the arrow colors."""
+        self.set_UVC(None, None, C)
 
     def set_UVC(self, U, V, C=None):
+        """
+        Set the U, V (x and y direction components of the arrow vectors) and
+        C (arrow colors) values of the arrows.
+
+        Parameters
+        ----------
+        U : ArrayLike | None
+            The x direction components of the arrows. If None it is unchanged.
+        V : ArrayLike | None
+            The y direction components of the arrows. If None it is unchanged.
+        C : ArrayLike | None, optional
+            The arrow colors. The default is None.
+        """
         # We need to ensure we have a copy, not a reference
         # to an array that might change before draw().
-        U = ma.masked_invalid(U, copy=True).ravel()
-        V = ma.masked_invalid(V, copy=True).ravel()
+        U = self.U if U is None else ma.masked_invalid(U, copy=True).ravel()
+        V = self.V if V is None else ma.masked_invalid(V, copy=True).ravel()
         if C is not None:
             C = ma.masked_invalid(C, copy=True).ravel()
+        for name, var in zip(('U', 'V', 'C'), (U, V, C)):
+            if not (var is None or var.size == self.N or var.size == 1):
+                raise ValueError(f'Argument {name} has a size {var.size}'
+                                 f' which does not match {self.N},'
+                                 ' the number of arrow positions')
+
         mask = ma.mask_or(U.mask, V.mask, copy=False, shrink=True)
         if C is not None:
             mask = ma.mask_or(mask, C.mask, copy=False, shrink=True)
@@ -136,6 +217,19 @@ class Quiver(mcollections.PolyCollection):
         self.Umask = mask
         if C is not None:
             self.set_array(C)
+        self.stale = True
+
+    def set_offsets(self, xy):
+        """
+        Set the offsets for the arrows.  This saves the offsets passed
+        in and masks them as appropriate for the existing X/Y data.
+
+        Parameters
+        ----------
+        xy : sequence of pairs of floats
+        """
+        self.X, self.Y = xy[:, 0], xy[:, 1]
+        super().set_offsets(xy)
         self.stale = True
 
     def _dots_per_unit(self, units):
