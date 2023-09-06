@@ -1034,21 +1034,21 @@ be plotted interactively:
 
   Plotting profiles from different images interactively.
 
-Slicing Signals using a Span
-----------------------------
+Interactively viewing Slices of Signal in Navigator
+---------------------------------------------------
 
-:py:func:`~.drawing.utils.plot_span_map` is a function that allows you to clearly identify regions of a hyperspectral map where particular peaks are brightest.
+:py:func:`~.drawing.utils.plot_span_map` is a function that allows you to clearly identify regions of a 2D navigator map where particular signals are brightest.
 
 This is done through the use of interactive spans (see :py:class:`hyperspy.roi.SpanROI`). 
 
-Up to three spans can be used to select different spectral ranges to map out. Accompanying maps corresponding to each range are plotted and automatically updated.
+Up to three spans can be used to select different signal ranges to map out. Accompanying maps corresponding to each range are plotted and automatically updated.
 
 .. code-block:: python
 
     >>> import hyperpsy.api as hs
     >>> from hyperspy.utils.plot import plot_span_map
     >>> sig = hs.load('mydata.sur')
-    >>> plot_span_map(sig, nspans=2)
+    >>> plot_span_map(sig, spans=2)
 
 
 .. image:: images/plot_span_map_demo.gif
