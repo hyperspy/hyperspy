@@ -1,5 +1,7 @@
-This removes the parallel argument for the map function:
+Changes and improvement of the map function:
 
-- Removes the parallel argument
-- Adds more documentation on setting the dask backend
-- Adds navigation_chunk argument for setting the chunks with a non-lazy signal
+- Removes the ``parallel`` argument
+- Replace the ``max_workers`` with the ``num_workers`` argument to be consistent with ``dask``
+- Adds more documentation on setting the dask backend and how to use multiple core
+- Adds ``navigation_chunk`` argument for setting the chunks with a non-lazy signal
+- Fix axes handling when the function to be mapped can be applied to the whole dataset - typically when it has the ``axis`` or ``axes`` keyword argument.

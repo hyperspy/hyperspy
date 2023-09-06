@@ -69,7 +69,7 @@ added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
     the pick tolerance to 15 instead of 7.5 makes the widgets easier to manipulate.
 
 If instantiated without arguments, (i.e. ``rect = RectangularROI()`` the roi
-will automatically determine sensible values to center it when 
+will automatically determine sensible values to center it when
 interactively adding it to a signal. This provides a conventient starting point
 to further manipulate the ROI, either by hand or using the gui (i.e. ``rect.gui``).
 
@@ -152,18 +152,18 @@ parameters:
 .. code-block:: python
 
     >>> import scipy
-    >>> holo = hs.datasets.example_signals.object_hologram()
-    >>> roi = hs.roi.Line2DROI(x1=465.577, y1=445.15, x2=169.4, y2=387.731, linewidth=0)
-    >>> holo.plot()
-    >>> ss = roi.interactive(holo)
+    >>> ima = hs.signals.Signal2D(scipy.datasets.ascent())
+    >>> roi = hs.roi.Line2DROI(x1=144, y1=240, x2=306, y2=178, linewidth=0)
+    >>> ima.plot()
+    >>> roi.interactive(ima, color='red')
 
-.. figure::  images/roi_line2d_holo.png
+.. figure::  images/roi_line2d.png
   :align:   center
   :width:   500
 
 .. code-block:: python
 
-    >>> roi.angle(axis='y')
+    >>> roi.angle(axis='vertical')
     -100.97166759025453
 
 The default output of the method is in degrees, though radians can be selected
@@ -179,7 +179,7 @@ align selected features with respect to vertical or horizontal axis:
 
 .. code-block:: python
 
->>> holo.map(scipy.ndimage.rotate, angle=roi.angle(axis='horizontal'), inplace=False).plot()
+    >>> ima.map(scipy.ndimage.rotate, angle=roi.angle(axis='horizontal'), inplace=False).plot()
 
 .. figure::  images/roi_line2d_rotate.png
   :align:   center
@@ -198,7 +198,7 @@ ROIs can be used in place of slices when indexing. For example:
     >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
     >>> roi = hs.roi.SpanROI(left=5, right=15)
     >>> sc = s.isig[roi]
-    >>> im = hs.datasets.example_signals.object_hologram()
+    >>> im = hs.signals.Signal2D(scipy.datasets.ascent())
     >>> roi = hs.roi.RectangularROI(left=120, right=460., top=300, bottom=560)
     >>> imc = im.isig[roi]
 
@@ -223,6 +223,3 @@ Handily, we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
     >>> tuple(roi)
     (2.0, 10.0, 0.0, 5.0)
     >>> im.align2D(roi=roi)
-    
-
-

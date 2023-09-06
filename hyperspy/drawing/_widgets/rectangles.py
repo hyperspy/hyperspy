@@ -55,6 +55,10 @@ class SquareWidget(Widget2DBase):
             picker=True,)]
         super(SquareWidget, self)._set_patch()
 
+    def _onjumpclick(self, event):
+        if event.key == "shift" and event.inaxes and self.is_pointer:
+            self.position = (event.xdata, event.ydata)
+
     def _onmousemove(self, event):
         """on mouse motion move the patch if picked"""
         if self.picked is True and event.inaxes:

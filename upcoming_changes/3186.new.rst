@@ -1,0 +1,1 @@
+Added a plot_residual argument to model1d.plot. This argument will plot a residual signal (Signal - Model) to the signal plot.

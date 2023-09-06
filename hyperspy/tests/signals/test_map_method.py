@@ -1144,3 +1144,30 @@ def test_0d_numpy_array_input():
     im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
     sigmas = hs.signals.BaseSignal(np.linspace(2, 5, 10)).T
     im.map(gaussian_filter, sigma=sigmas)
+
+
+class TestMapAll():
+
+    def setup_method(self, method):
+        im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
+        self.im = im
+
+    @pytest.mark.parametrize('inplace', (True, False))
+    def test_map_reduce(self, inplace):
+        sig = self.im.map(np.sum, inplace=inplace)
+        if inplace:
+            sig = self.im
+
+        assert sig.axes_manager.signal_shape == ()
+        assert sig.axes_manager.navigation_shape == (10, )
+        assert sig.data.shape == (10, )
+
+    @pytest.mark.parametrize('inplace', (True, False))
+    def test_map(self, inplace):
+        sig = self.im.map(gaussian_filter, inplace=inplace, sigma=2)
+        if inplace:
+            sig = self.im
+
+        assert sig.axes_manager.signal_shape == (64, 64)
+        assert sig.axes_manager.navigation_shape == (10, )
+        assert sig.data.shape == (10, 64, 64)

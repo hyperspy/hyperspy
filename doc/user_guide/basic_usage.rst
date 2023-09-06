@@ -174,6 +174,7 @@ of the signal class:
             [8.27614860e-01, 1.51251334e-01, 7.36475054e-01, ...,
             8.43871814e-01, 9.41799821e-01, 6.11718569e-01]]])
 
+.. _navigation-signal-dimensions:
 
 The navigation and signal dimensions
 ------------------------------------

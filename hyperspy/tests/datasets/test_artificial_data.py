@@ -89,3 +89,10 @@ def test_get_luminescence_signal(navigation_dimension, uniform, add_baseline, ad
         #Verify that adding noise works
         noisedat = s.isig[:100].data
         assert (noisedat.std()>0.1)==add_noise
+
+
+@pytest.mark.parametrize("shape", ((128, 128), (256, 256)))
+@pytest.mark.parametrize("add_noise", (True, False))
+def test_get_wave_image(shape, add_noise):
+    s = ad.get_wave_image(shape=shape, add_noise=add_noise)
+    assert s.data.shape == shape

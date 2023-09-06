@@ -83,6 +83,10 @@ Hotkeys and modifier keys for navigating the plot can be set in the
 Note that some combinations will not work for all platforms, as some systems reserve them for
 other purposes.
 
+If you want to jump to some point in the dataset.  In that case you can hold the ``Shift`` key
+and click the point you are interested in.  That will automatically take you to that point in the
+data.  This also helps with lazy data as you don't have to load every chunk in between.
+
 .. figure::  images/second_pointer.png
    :align:   center
    :width:   500
@@ -284,7 +288,7 @@ The same example with the feature disabled:
 .. _plot.customize_navigator:
 
 .. versionadded:: 2.0.0
-   ``plot_style`` keyword argument to allow for "horizontal" or "vertical" alignment of subplots (e.g. navigator 
+   ``plot_style`` keyword argument to allow for "horizontal" or "vertical" alignment of subplots (e.g. navigator
    and signal) when using the `ipympl` or `widget` backends. A default value can also be set using the
    :ref:`HyperSpy plot preferences <configuring-hyperspy-label>`.
 
@@ -1011,8 +1015,9 @@ be plotted interactively:
 
 .. code-block:: python
 
-    >>> im0 = hs.datasets.example_signals.reference_hologram()
-    >>> im1 = hs.datasets.example_signals.object_hologram()
+    >>> import holospy as holo
+    >>> im0 = holo.datasets.Fe_needle_reference_hologram()
+    >>> im1 = holo.datasets.Fe_needle_hologram()
     >>> im0.plot()
     >>> im1.plot()
     >>> # Create the ROI

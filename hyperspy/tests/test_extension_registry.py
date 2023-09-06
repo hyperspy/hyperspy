@@ -30,7 +30,6 @@ hyperspy_signals = [
     'ComplexSignal',
     'ComplexSignal1D',
     'ComplexSignal2D',
-    'HologramImage',
     'EELSSpectrum',
     'EDSTEMSpectrum',
     'EDSSEMSpectrum',
@@ -40,6 +39,12 @@ hyperspy_signals = [
 
 for signal in hyperspy_signals:
     assert signal in signals.keys()
+
+try:
+    import holospy
+    assert 'HologramImage' in signals.keys()
+except:
+    pass
 
 try:
     import lumipsy

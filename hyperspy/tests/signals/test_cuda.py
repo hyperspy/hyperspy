@@ -61,15 +61,15 @@ class TestCupy:
         s = self.s
         _ = s.as_signal2D([0, 1])
 
-    @pytest.mark.parametrize('parallel', [True, False, None])
-    def test_map(self, parallel):
+    @pytest.mark.parametrize('num_workers', [1, 2, None])
+    def test_map(self, num_workers):
         s = self.s
         data_ref = s.data.copy()
 
         def dummy_function(data):
             return data * 10
 
-        s.map(dummy_function, parallel, inplace=True,
+        s.map(dummy_function, inplace=True, num_workers=num_workers,
               output_signal_size=s.axes_manager.signal_shape,
               output_dtype=s.data.dtype)
 

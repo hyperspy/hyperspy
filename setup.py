@@ -79,10 +79,11 @@ extras_require = {
     "coverage":["pytest-cov"],
     # required to build the docs
     "build-doc": [
+        "distributed", # requires for running scripts in the gallery
         "pydata_sphinx_theme",
         "sphinx>=1.7",
         "sphinx-gallery",
-        "sphinx-toggleprompt",
+        "sphinx-copybutton",
         "sphinxcontrib-mermaid",
         "sphinxcontrib-towncrier>=0.3.0a0",
         "sphinx-design",

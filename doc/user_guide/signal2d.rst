@@ -53,7 +53,7 @@ Sub-pixel accuracy can be achieved in two ways:
 If you have a large stack of images, the image alignment is automatically done in
 parallel.
 
-You can control the number of threads used with the ``max_workers`` argument. Or by adjusting
+You can control the number of threads used with the ``num_workers`` argument. Or by adjusting
 the scheduler of the :ref:`dask <dask-label>` backend.
 
 .. code-block:: python
@@ -62,7 +62,7 @@ the scheduler of the :ref:`dask <dask-label>` backend.
     >>> shifts = s.estimate_shift2D()
 
     # Align images in parallel using 4 threads
-    >>> s.align2D(shifts=shifts, max_workers=4)
+    >>> s.align2D(shifts=shifts, num_workers=4)
 
 .. _signal2D.crop:
 

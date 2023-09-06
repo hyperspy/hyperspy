@@ -46,7 +46,7 @@ from hyperspy.docstrings.plot import (
     PLOT2D_KWARGS_DOCSTRING)
 from hyperspy.docstrings.signal import (
     SHOW_PROGRESSBAR_ARG,
-    MAX_WORKERS_ARG,
+    NUM_WORKERS_ARG,
     LAZYSIGNAL_DOC,
 )
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
@@ -611,7 +611,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         expand=False,
         interpolation_order=1,
         show_progressbar=None,
-        max_workers=None,
+        num_workers=None,
         **kwargs,
     ):
         """Align the images in-place using :py:func:`scipy.ndimage.shift`.
@@ -738,7 +738,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             shift_image,
             shift=signal_shifts,
             show_progressbar=show_progressbar,
-            max_workers=max_workers,
+            num_workers=num_workers,
             ragged=False,
             inplace=True,
             fill_value=fill_value,
@@ -772,7 +772,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         if return_shifts:
             return shifts
 
-    align2D.__doc__ %= (SHOW_PROGRESSBAR_ARG, MAX_WORKERS_ARG)
+    align2D.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG)
 
     def calibrate(
         self,
@@ -923,7 +923,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
     def find_peaks(self, method='local_max', interactive=True,
                    current_index=False, show_progressbar=None,
-                   max_workers=None, display=True, toolkit=None,
+                   num_workers=None, display=True, toolkit=None,
                    get_intensity=False,
                    **kwargs):
         """Find peaks in a 2D signal.
@@ -960,7 +960,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                function.
              * 'difference_of_gaussian' - a blob finder using the difference
                of Gaussian matrices approach. See the
-               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_log`
+               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_dog`
                function.
              * 'template_matching' - A cross correlation peakfinder. This
                method requires providing a template with the ``template``
@@ -1042,12 +1042,12 @@ class Signal2D(BaseSignal, CommonSignal2D):
         else:
             peaks = self.map(method_func, show_progressbar=show_progressbar,
                              inplace=False, ragged=True,
-                             max_workers=max_workers, **kwargs)
+                             num_workers=num_workers, **kwargs)
             peaks.metadata.add_node("Peaks") # add information about the signal Axes
             peaks.metadata.Peaks.signal_axes = deepcopy(self.axes_manager.signal_axes)
         return peaks
 
-    find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, MAX_WORKERS_ARG,
+    find_peaks.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG,
                            DISPLAY_DT, TOOLKIT_DT)
 
 

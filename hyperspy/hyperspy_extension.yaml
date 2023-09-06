@@ -71,18 +71,6 @@ signals:
     dtype: complex
     lazy: True
     module: hyperspy._signals.complex_signal2d
-  HologramImage:
-    signal_type: hologram
-    signal_dimension: 2
-    dtype: real
-    lazy: False
-    module: hyperspy._signals.hologram_image
-  LazyHologramImage:
-    signal_type: hologram
-    signal_dimension: 2
-    dtype: real
-    lazy: True
-    module: hyperspy._signals.hologram_image
   EELSSpectrum:
     signal_type: EELS
     signal_type_aliases:
