@@ -1709,7 +1709,7 @@ def picker_kwargs(value, kwargs=None):
     return kwargs
 
 
-def plot_span_map(sig, nspans=1):
+def plot_span_map(sig, spans=1):
     """
     Plot a span map.
     
@@ -1723,23 +1723,21 @@ def plot_span_map(sig, nspans=1):
     ---------
     sig: hyperspy.signals.Signal1D
         hyperspectra to inspect. Should have 2 spatial dimensions and 1 signal dimension.
-    nspans: int
-        number of channels to plot. Maximum is 3, default is 1.
+    spans: int, [hyperspy.roi.SpanROI]
+        spans that represent colour channels in map. Can either pass a list of `SpanROI` objects, or an `int`, `N`, in which case `N` `SpanROI`s will be created.
+        Currently limited to a maximum of 3 spans.
 
     Returns
     -------
-    all_sum: hs.signals.BaseSignal
+    all_sum: hyperspy.signals.BaseSignal
         Sum over all positions of `sig`, the 'navigator' for `plot_span_map`
-    spans: hs.roi.SpanROI
+    spans: hyperspy.roi.SpanROI
         The span ROIs from the navigator
-    span_sigs: hs.signals.BaseSignal
+    span_sigs: hyperspy.signals.BaseSignal
         slices of `sig` according to each span roi
-    span_sums: hs.signals.BaseSignal
+    span_sums: hyperspy.signals.BaseSignal
         the summed `span_sigs`.
     """
-    if nspans > 3:
-        raise ValueError("Maximum number of spans allowed is 3")
-
     if (
         sig.axes_manager.signal_dimension != 1
         or sig.axes_manager.navigation_dimension != 2
@@ -1751,28 +1749,35 @@ def plot_span_map(sig, nspans=1):
         raise ValueError(
             f"This method is designed for data with 1 signal and 2 navigation dimensions, not {sig_dims} and {nav_dims} respectively"
         )
-
-    colors = ["red", "green", "blue"]
-
-    spans = []
-    span_sigs = []
-    span_sums = []
-
+    
     ax_sig = sig.axes_manager.signal_axes[0].axis
     ax_sig_range = ax_sig[-1] - ax_sig[0]
+        
+    if isinstance(spans, int):
+        span_width = ax_sig_range / (2 * spans)
 
-    span_width = ax_sig_range / (2 * nspans)
+        N = spans
+        spans = []
+        
+        for i in range(N):
+            # create a span that has a unique range
+            span = hs.roi.SpanROI(
+                i * span_width + ax_sig[0], (i + 1) * span_width + ax_sig[0]
+            )
+            
+            spans.append(span)
+
+    if len(spans) > 3:
+        raise ValueError("Maximum number of spans is 3")
+    
+    colors = ["red", "green", "blue"]
+    span_sigs = []
+    span_sums = []
 
     all_sum = sig.nansum()
     all_sum.plot()
 
-    for i in range(nspans):
-        # create a span that has a unique range
-        span = hs.roi.SpanROI(
-            i * span_width + ax_sig[0], (i + 1) * span_width + ax_sig[0]
-        )
-        spans.append(span)
-
+    for i, span in enumerate(spans):
         color = colors[i]
 
         # add it to the sum over all positions
