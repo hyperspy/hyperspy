@@ -433,10 +433,90 @@ compute the result of all functions that are affected by the axes
 parameters. This is the reason why e.g. the result of
 :py:meth:`~._signals.signal1d.Signal1D.shift1D` is not lazy.
 
-.. _remote_cluster-label:
+.. _dask_backends:
 
-Running on Remote Cluster
--------------------------
+Dask Backends
+-------------
+
+Dask is a flexible library for parallel computing in Python. All of the lazy operations in
+hyperspy run through dask. Dask can be used to run computations on a single machine or
+scaled to a cluster. The following example shows how to use dask to run computations on a
+variety of different hardware:
+
+Single Threaded Scheduler
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The single threaded scheduler in dask is useful for debugging and testing. It is not
+recommended for general use.
+
+.. code-block:: python
+
+    >>> import dask
+    >>> import hyperspy.api as hs
+    >>> import numpy as np
+    >>> import dask.array as da
+
+    >>> # setting the scheduler to single-threaded globally
+    >>> dask.config.set(scheduler='single-threaded')
+
+Alternatively, you can set the scheduler to single-threaded for a single function call by
+setting the ``scheduler`` keyword argument to ``'single-threaded'``.
+
+Or for something like plotting you can set the scheduler to single-threaded for the
+duration of the plotting call by using the ``with dask.config.set`` context manager.
+
+.. code-block:: python
+
+    >>> s.compute(scheduler="single-threaded")  # uses single-threaded scheduler
+
+    >>> with dask.config.set(scheduler='single-threaded'):
+    >>>     s.plot()  # uses single-threaded scheduler to compute each chunk and then passes one chunk the memory
+
+Single Machine Schedulers
+^^^^^^^^^^^^^^^^^^^^^^^^^
+Dask has three schedulers avilable for single machines.
+
+1. Threaded Scheduler:
+    Fastest to set up but only provides parallelism through threads so only non python functions will be parallelized.
+    This is good if you have largely numpy code and not too many cores.
+2. Processes Scheduler:
+    Each task (and all of the necessary dependencies) are shipped to different processes.  As such it has a larger set
+    up time. This preforms well for python dominated code.
+
+.. code-block:: python
+    >>> import dask
+    >>> dask.config.set(scheduler='processes')  # overwrite default with multiprocessing scheduler
+    >>> # Any hyperspy code will now use the multiprocessing scheduler
+    >>> s.compute()  # uses multiprocessing scheduler
+
+    >>> dask.config.set(scheduler='threads')  # overwrite default with threading scheduler
+    >>> # Any hyperspy code will now use the threading scheduler
+    >>> s.compute()  # uses threading scheduler
+
+Distributed Scheduler
+^^^^^^^^^^^^^^^^^^^^^
+
+The recommended way to use dask is with the distributed scheduler. This allows you to scale your computations
+to a cluster of machines. The distributed scheduler can be used on a single machine as well. ``dask-disributed``
+also gives you access to the dask dashboard which allows you to monitor your computations.
+
+Some operations such as the matrix decomposition algorithms in hyperspy don't currently work with
+the distributed scheduler.
+
+.. code-block:: python
+
+    >>> from dask.distributed import Client
+    >>> from dask.distributed import LocalCluster
+    >>> import dask.array as da
+    >>> import hyperspy.api as hs
+
+    >>> cluster = LocalCluster()
+    >>> client = Client(cluster)
+    >>> client
+    >>> # Any calculation will now use the distributed scheduler
+    >>> s # lazy signal
+    >>> s.plot()  # uses distributed scheduler to compute each chunk and then passes one chunk the memory
+    >>> s.compute()  # uses distributed scheduler
 
 Running computation on remote cluster can be done easily using ``dask_jobqueue``
 
