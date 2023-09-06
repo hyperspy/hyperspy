@@ -72,6 +72,12 @@ def test_plot_span_map_args(test_signal):
     with pytest.raises(ValueError):
         plot_span_map(test_signal, 4)
 
+    with pytest.raises(ValueError):
+        plot_span_map(test_signal, [hs.roi.SpanROI(0, 1),
+                                    hs.roi.SpanROI(1, 2),
+                                    hs.roi.SpanROI(2, 3),
+                                    hs.roi.SpanROI(3, 4)])
+
     line_spectra = test_signal.inav[0, :]
 
     with pytest.raises(
@@ -87,6 +93,21 @@ def test_plot_span_map_args(test_signal):
         match="This method is designed for data with 1 signal and 2 navigation dimensions, not 1 and 0 respectively",
     ):
         plot_span_map(single_spectra)
+
+
+def test_passing_spans(test_signal):
+    _, int_spans, int_span_sigs, int_span_sums = plot_span_map(test_signal, 3)
+
+    _, spans, span_sigs, span_sums = plot_span_map(test_signal, int_spans)
+
+    assert spans is int_spans
+
+    # passing the spans rather than generating own should yield same results
+    assert int_span_sigs is not span_sigs
+    assert int_span_sigs == span_sigs
+
+    assert int_span_sums is not span_sums
+    assert int_span_sums == span_sums
 
 
 def test_span_positioning(test_signal):

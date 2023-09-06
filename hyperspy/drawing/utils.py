@@ -1705,7 +1705,7 @@ def plot_span_map(sig, spans=1):
     """
     Plot a span map.
     
-    Plots a navigator consisting of the sum over all positions in sig, with `nspans` spans. 
+    Plots a navigator consisting of the sum over all positions in sig, with `spans` spans. 
 
     For each span a `BaseSignal` image is plotted consisting of integrated counts over the the range defined by the span.
 
@@ -1723,11 +1723,11 @@ def plot_span_map(sig, spans=1):
     -------
     all_sum: hyperspy.signals.BaseSignal
         Sum over all positions of `sig`, the 'navigator' for `plot_span_map`
-    spans: hyperspy.roi.SpanROI
+    spans: [hyperspy.roi.SpanROI]
         The span ROIs from the navigator
-    span_sigs: hyperspy.signals.BaseSignal
+    span_sigs: [hyperspy.signals.BaseSignal]
         slices of `sig` according to each span roi
-    span_sums: hyperspy.signals.BaseSignal
+    span_sums: [hyperspy.signals.BaseSignal]
         the summed `span_sigs`.
     """
     if (
