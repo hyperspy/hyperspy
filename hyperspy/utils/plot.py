@@ -28,6 +28,8 @@ plot_signals
     Plot multiple signals at the same time.
 plot_histograms
     Compute and plot the histograms of multiple signals in the same figure.
+plot_span_map
+    Plot a 2D map of intensity of signal over ranges defined by SpanROIs. 
 
 The :mod:`~.api.plot` module contains the following submodules:
 
@@ -40,7 +42,8 @@ from hyperspy.drawing.utils import (
     plot_histograms,
     plot_images,
     plot_signals,
-    plot_spectra
+    plot_spectra,
+    plot_span_map
     )
 from hyperspy.utils import markers
 
@@ -51,6 +54,7 @@ __all__ = [
     'plot_images',
     'plot_signals',
     'plot_spectra',
+    'plot_span_map'
     ]
 
 

@@ -247,7 +247,8 @@ def test_dir_utils_plot():
         'plot_histograms',
         'plot_images',
         'plot_signals',
-        'plot_spectra',
+        'plot_span_map',
+        'plot_spectra'
         ]
 
 
