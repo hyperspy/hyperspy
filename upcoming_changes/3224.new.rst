@@ -1,1 +1,3 @@
-Added ``hyperspy.utils.plot.plot_span_map``. Allows interactively slicing a signal of shape (x, y|I) using a set of spans along I, producing 2D x-y maps of the signal I within the span ranges.
+Added ``hyperspy.utils.plot.plot_span_map``. Allows interactively slicing a 
+signal of shape (x, y|I) using a set of spans along I, producing 2D x-y maps
+of the signal I within the span ranges.

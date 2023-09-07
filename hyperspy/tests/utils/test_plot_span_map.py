@@ -82,7 +82,8 @@ def test_plot_span_map_args(test_signal):
 
     with pytest.raises(
         ValueError,
-        match="This method is designed for data with 1 signal and 2 navigation dimensions, not 1 and 1 respectively",
+        match=("This method is designed for data with 1 signal and 2 "
+               "navigation dimensions, not 1 and 1 respectively"),
     ):
         plot_span_map(line_spectra)
 
@@ -90,7 +91,8 @@ def test_plot_span_map_args(test_signal):
 
     with pytest.raises(
         ValueError,
-        match="This method is designed for data with 1 signal and 2 navigation dimensions, not 1 and 0 respectively",
+        match=("This method is designed for data with 1 signal and 2 "
+               "navigation dimensions, not 1 and 0 respectively"),
     ):
         plot_span_map(single_spectra)
 

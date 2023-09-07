@@ -1037,11 +1037,16 @@ be plotted interactively:
 Interactively viewing Slices of Signal in Navigator
 ---------------------------------------------------
 
-:py:func:`~.drawing.utils.plot_span_map` is a function that allows you to clearly identify regions of a 2D navigator map where particular signals are brightest.
+:py:func:`~.drawing.utils.plot_span_map` is a function that allows you to 
+clearly identify regions of a 2D navigator map where particular signals 
+are brightest.
 
-This is done through the use of interactive spans (see :py:class:`hyperspy.roi.SpanROI`). 
+This is done through the use of interactive spans 
+(see :py:class:`hyperspy.roi.SpanROI`). 
 
-Up to three spans can be used to select different signal ranges to map out. Accompanying maps corresponding to each range are plotted and automatically updated.
+Up to three spans can be used to select different signal ranges to map out.
+Accompanying maps corresponding to each range are plotted and automatically 
+updated.
 
 .. code-block:: python
 
@@ -1055,9 +1060,11 @@ Up to three spans can be used to select different signal ranges to map out. Acco
   :width: 100%
   :alt: Demo of plot_span_map functionality.
 
-The lefthand plot is an integrated spectrum over all positions of the hyperspectral image.
+The lefthand plot is an integrated spectrum over all positions of the 
+hyperspectral image.
 
-The two righthand plots correpond to the spectral ranges dictated by the spans on the left.
+The two righthand plots correpond to the spectral ranges dictated by the spans
+on the left.
 
 .. _plot.signals:
 
