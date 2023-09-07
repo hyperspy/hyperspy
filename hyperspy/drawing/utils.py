@@ -1701,11 +1701,11 @@ def picker_kwargs(value, kwargs=None):
     return kwargs
 
 
-def plot_span_map(sig, spans=1):
+def plot_span_map(signal, spans=1):
     """
     Plot a span map.
 
-    Plots a navigator consisting of the sum over all positions in sig, with
+    Plots a navigator consisting of the sum over all positions in signal, with
     `spans` spans.
 
     For each span a `BaseSignal` image is plotted consisting of integrated
@@ -1716,7 +1716,7 @@ def plot_span_map(sig, spans=1):
 
     Arguments
     ---------
-    sig: hyperspy.signals.Signal1D
+    signal: hyperspy.signals.Signal1D
         Signal to inspect. Should have 2 navigation dimensions and 1 signal
         dimension.
     spans: int, [hyperspy.roi.SpanROI]
@@ -1730,29 +1730,29 @@ def plot_span_map(sig, spans=1):
         Sum over all positions of `sig`, the 'navigator' for `plot_span_map`
     spans: [hyperspy.roi.SpanROI]
         The span ROIs from the navigator
-    span_sigs: [hyperspy.signals.BaseSignal]
+    span_signals: [hyperspy.signals.BaseSignal]
         slices of `sig` according to each span roi
     span_sums: [hyperspy.signals.BaseSignal]
-        the summed `span_sigs`.
+        the summed `span_signals`.
     """
     if (
-        sig.axes_manager.signal_dimension != 1
-        or sig.axes_manager.navigation_dimension != 2
+        signal.axes_manager.signal_dimension != 1
+        or signal.axes_manager.navigation_dimension != 2
     ):
-        sig_dims, nav_dims = (
-            sig.axes_manager.signal_dimension,
-            sig.axes_manager.navigation_dimension,
+        signal_dims, nav_dims = (
+            signal.axes_manager.signal_dimension,
+            signal.axes_manager.navigation_dimension,
         )
         raise ValueError((
             "This method is designed for data with 1 signal and 2 navigation "
-            f"dimensions, not {sig_dims} and {nav_dims} respectively"
+            f"dimensions, not {signal_dims} and {nav_dims} respectively"
         ))
 
-    ax_sig = sig.axes_manager.signal_axes[0].axis
-    ax_sig_range = ax_sig[-1] - ax_sig[0]
+    ax_signal = signal.axes_manager.signal_axes[0].axis
+    ax_signal_range = ax_signal[-1] - ax_signal[0]
 
     if isinstance(spans, int):
-        span_width = ax_sig_range / (2 * spans)
+        span_width = ax_signal_range / (2 * spans)
 
         N = spans
         spans = []
@@ -1760,7 +1760,7 @@ def plot_span_map(sig, spans=1):
         for i in range(N):
             # create a span that has a unique range
             span = hs.roi.SpanROI(
-                i * span_width + ax_sig[0], (i + 1) * span_width + ax_sig[0]
+                i * span_width + ax_signal[0], (i + 1) * span_width + ax_signal[0]
             )
 
             spans.append(span)
@@ -1769,10 +1769,10 @@ def plot_span_map(sig, spans=1):
         raise ValueError("Maximum number of spans is 3")
 
     colors = ["red", "green", "blue"]
-    span_sigs = []
+    span_signals = []
     span_sums = []
 
-    all_sum = sig.nansum()
+    all_sum = signal.nansum()
     all_sum.plot()
 
     for i, span in enumerate(spans):
@@ -1782,16 +1782,16 @@ def plot_span_map(sig, spans=1):
         span.add_widget(all_sum, color=colors[i])
 
         # create a signal that is the spectral slice of sig
-        span_sig = hs.interactive(
+        span_signal = hs.interactive(
             span,
-            signal=sig,
+            signal=signal,
             event=span.events.changed,
-            axes=sig.axes_manager.signal_axes,
+            axes=signal.axes_manager.signal_axes,
         )
-        span_sigs.append(span_sig)
+        span_signals.append(span_signal)
 
         # create a signal that is the spectral integral of span_sig
-        span_sum = span_sig.nansum(-1).as_signal2D(
+        span_sum = span_signal.nansum(-1).as_signal2D(
             [0, 1]
         )  # convert to 2D signal, otherwise the navigator doesn't support updating...?
         span_sums.append(span_sum)
@@ -1800,11 +1800,11 @@ def plot_span_map(sig, spans=1):
 
         # connect the span signal changing range to the value of span_sum
         hs.interactive(
-            span_sig.nansum,
+            span_signal.nansum,
             axis=-1,
-            event=span_sig.axes_manager.events.any_axis_changed,
+            event=span_signal.axes_manager.events.any_axis_changed,
             out=span_sum,
         )
 
     # return all ya bits for future messing around.
-    return all_sum, spans, span_sigs, span_sums
+    return all_sum, spans, span_signals, span_sums
