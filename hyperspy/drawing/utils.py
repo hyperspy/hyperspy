@@ -1714,7 +1714,7 @@ def plot_span_map(sig, spans=1):
     Arguments
     ---------
     sig: hyperspy.signals.Signal1D
-        hyperspectra to inspect. Should have 2 spatial dimensions and 1 signal dimension.
+        Signal to inspect. Should have 2 navigation dimensions and 1 signal dimension.
     spans: int, [hyperspy.roi.SpanROI]
         spans that represent colour channels in map. Can either pass a list of `SpanROI` objects, or an `int`, `N`, in which case `N` `SpanROI`s will be created.
         Currently limited to a maximum of 3 spans.
