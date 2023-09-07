@@ -484,6 +484,7 @@ Dask has three schedulers avilable for single machines.
     up time. This preforms well for python dominated code.
 
 .. code-block:: python
+
     >>> import dask
     >>> dask.config.set(scheduler='processes')  # overwrite default with multiprocessing scheduler
     >>> # Any hyperspy code will now use the multiprocessing scheduler
@@ -497,7 +498,7 @@ Distributed Scheduler
 ^^^^^^^^^^^^^^^^^^^^^
 
 The recommended way to use dask is with the distributed scheduler. This allows you to scale your computations
-to a cluster of machines. The distributed scheduler can be used on a single machine as well. ``dask-disributed``
+to a cluster of machines. The distributed scheduler can be used on a single machine as well. ``dask-distributed``
 also gives you access to the dask dashboard which allows you to monitor your computations.
 
 Some operations such as the matrix decomposition algorithms in hyperspy don't currently work with
