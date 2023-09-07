@@ -275,7 +275,7 @@ Lazy data processing on GPUs requires explicitly transferring the data to the
 GPU.
 
 On linux, it is recommended to use the
-`dask_cuda <https://docs.rapids.ai/api/dask-cuda/stable/index.html>`_ library 
+`dask_cuda <https://docs.rapids.ai/api/dask-cuda/stable/index.html>`_ library
 (not supported on windows) to manage the dask scheduler. As for CPU lazy
 processing, if the dask scheduler is not specified, the default scheduler
 will be used.
@@ -318,7 +318,7 @@ Most curve-fitting functionality will automatically work on models created from
 lazily loaded signals. HyperSpy extracts the relevant chunk from the signal and fits to that.
 
 The linear ``'lstsq'`` optimizer supports fitting the entire dataset in a vectorised manner
-using :py:func:`dask.array.linalg.lstsq`. This can give potentially enormous performance benefits over fitting 
+using :py:func:`dask.array.linalg.lstsq`. This can give potentially enormous performance benefits over fitting
 with a nonlinear optimizer, but comes with the restrictions explained in the :ref:`linear fitting<linear_fitting-label>` section.
 
 Practical tips
@@ -432,6 +432,117 @@ Therefore, in order to avoid such issues, it is reccomended to explicitly
 compute the result of all functions that are affected by the axes
 parameters. This is the reason why e.g. the result of
 :py:meth:`~._signals.signal1d.Signal1D.shift1D` is not lazy.
+
+.. _dask_backends:
+
+Dask Backends
+-------------
+
+Dask is a flexible library for parallel computing in Python. All of the lazy operations in
+hyperspy run through dask. Dask can be used to run computations on a single machine or
+scaled to a cluster. The following example shows how to use dask to run computations on a
+variety of different hardware:
+
+Single Threaded Scheduler
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The single threaded scheduler in dask is useful for debugging and testing. It is not
+recommended for general use.
+
+.. code-block:: python
+
+    >>> import dask
+    >>> import hyperspy.api as hs
+    >>> import numpy as np
+    >>> import dask.array as da
+
+    >>> # setting the scheduler to single-threaded globally
+    >>> dask.config.set(scheduler='single-threaded')
+
+Alternatively, you can set the scheduler to single-threaded for a single function call by
+setting the ``scheduler`` keyword argument to ``'single-threaded'``.
+
+Or for something like plotting you can set the scheduler to single-threaded for the
+duration of the plotting call by using the ``with dask.config.set`` context manager.
+
+.. code-block:: python
+
+    >>> s.compute(scheduler="single-threaded")  # uses single-threaded scheduler
+
+    >>> with dask.config.set(scheduler='single-threaded'):
+    >>>     s.plot()  # uses single-threaded scheduler to compute each chunk and then passes one chunk the memory
+
+Single Machine Schedulers
+^^^^^^^^^^^^^^^^^^^^^^^^^
+Dask has two schedulers available for single machines.
+
+1. Threaded Scheduler:
+    Fastest to set up but only provides parallelism through threads so only non python functions will be parallelized.
+    This is good if you have largely numpy code and not too many cores.
+2. Processes Scheduler:
+    Each task (and all of the necessary dependencies) are shipped to different processes.  As such it has a larger set
+    up time. This preforms well for python dominated code.
+
+.. code-block:: python
+
+    >>> import dask
+    >>> dask.config.set(scheduler='processes')  # overwrite default with multiprocessing scheduler
+    >>> # Any hyperspy code will now use the multiprocessing scheduler
+    >>> s.compute()  # uses multiprocessing scheduler
+
+    >>> dask.config.set(scheduler='threads')  # overwrite default with threading scheduler
+    >>> #   Any hyperspy code will now use the threading scheduler
+    >>> s.compute()  # uses threading scheduler
+
+
+Distributed Scheduler
+^^^^^^^^^^^^^^^^^^^^^
+
+The recommended way to use dask is with the distributed scheduler. This allows you to scale your computations
+to a cluster of machines. The distributed scheduler can be used on a single machine as well. ``dask-distributed``
+also gives you access to the dask dashboard which allows you to monitor your computations.
+
+Some operations such as the matrix decomposition algorithms in hyperspy don't currently work with
+the distributed scheduler.
+
+.. code-block:: python
+
+    >>> from dask.distributed import Client
+    >>> from dask.distributed import LocalCluster
+    >>> import dask.array as da
+    >>> import hyperspy.api as hs
+
+    >>> cluster = LocalCluster()
+    >>> client = Client(cluster)
+    >>> client
+    >>> # Any calculation will now use the distributed scheduler
+    >>> s # lazy signal
+    >>> s.plot()  # uses distributed scheduler to compute each chunk and then passes one chunk the memory
+    >>> s.compute()  # uses distributed scheduler
+
+Running computation on remote cluster can be done easily using ``dask_jobqueue``
+
+.. code-block:: python
+
+    >>> from dask_jobqueue import SLURMCluster # or what ever scheduler you use
+    >>> from dask.distributed import Client
+    >>> cluster = SLURMCluster(cores=48,
+                               memory='120Gb',
+                               walltime="01:00:00",
+                               queue='research')
+    >>> cluster.scale(jobs=3) # get 3 nodes
+    >>> client = Client(cluster)
+    >>> client
+
+Any calculation will now use the distributed scheduler
+
+.. code-block:: python
+
+    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+    >>> repeated_data = da.repeat(da.array(s.data[np.newaxis, :]),10, axis=0)
+    >>> s = hs.signals.Signal1D(repeated_data).as_lazy()
+    >>> summed = s.map(np.sum, inplace=False)
+    >>> s.compute()
 
 
 Limitations

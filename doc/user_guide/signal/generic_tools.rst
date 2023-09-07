@@ -345,32 +345,6 @@ data (default, ``True``) or storing it to a new signal (``False``).
     (512, 512)
     (724, 724)
 
-.. _parallel-map-label:
-
-The execution can be sped up by passing ``parallel`` keyword to the
-:py:meth:`~.api.signals.BaseSignal.map` method:
-
-.. code-block:: python
-
-    >>> import time
-    >>> def slow_func(data):
-    ...     time.sleep(1.)
-    ...     return data + 1
-    >>> s = hs.signals.Signal1D(np.arange(40).reshape((20, 2)))
-    >>> s
-    <Signal1D, title: , dimensions: (20|2)>
-    >>> s.map(slow_func, parallel=False)
-    100%|██████████████████████████████████████| 20/20 [00:20<00:00,  1.00s/it]
-    >>> # some operations will be done in parallel:
-    >>> s.map(slow_func, parallel=True)
-    100%|██████████████████████████████████████| 20/20 [00:02<00:00,  6.73it/s]
-
-.. note::
-
-   HyperSpy implements *thread-based* parallelism for the :py:meth:`~.api.signals.BaseSignal.map`
-   method. You can control the number of threads that are created by passing an integer value
-   to the ``max_workers`` keyword argument. By default, it will use ``min(32, os.cpu_count())``.
-
 .. versionadded:: 1.4
     Iterating over signal using a parameter with no navigation dimension.
 

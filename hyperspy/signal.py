@@ -25,7 +25,6 @@ import inspect
 from itertools import product
 import logging
 import numbers
-from packaging.version import Version
 from pathlib import Path
 import warnings
 
@@ -70,7 +69,7 @@ from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import _get_block_pattern
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
-    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, MAX_WORKERS_ARG,
+    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG,
     CLUSTER_SIGNALS_ARG, HISTOGRAM_BIN_ARGS, HISTOGRAM_MAX_BIN_ARGS, LAZY_OUTPUT_ARG)
 from hyperspy.docstrings.plot import (BASE_PLOT_DOCSTRING, PLOT1D_DOCSTRING,
                                       BASE_PLOT_DOCSTRING_PARAMETERS,
@@ -80,7 +79,7 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import are_signals_aligned, broadcast_signals
 from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order, check_random_state
-from hyperspy.exceptions import VisibleDeprecationWarning, LazyCupyConversion
+from hyperspy.exceptions import LazyCupyConversion
 
 
 _logger = logging.getLogger(__name__)
@@ -4733,10 +4732,10 @@ class BaseSignal(FancySlicing,
         self,
         function,
         show_progressbar=None,
-        parallel=None,
-        max_workers=None,
+        num_workers=None,
         inplace=True,
         ragged=None,
+        navigation_chunks=None,
         output_signal_size=None,
         output_dtype=None,
         lazy_output=None,
@@ -4777,6 +4776,11 @@ class BaseSignal(FancySlicing,
             Indicates if the results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If ``None``,
             the output signal will be ragged only if the original signal is ragged.
+        navigation_chunks : str, None, int or tuple of int, default ``None``
+            Set the navigation_chunks argument to a tuple of integers to split
+            the navigation axes into chunks. This can be useful to enable
+            using multiple cores with signals which are less that 100 MB.
+            This argument is passed to :py:meth:`~._signals.lazy.LazySignal.rechunk`.
         output_signal_size : None, tuple
             Since the size and dtype of the signal dimension of the output
             signal can be different from the input signal, this output signal
@@ -4790,7 +4794,6 @@ class BaseSignal(FancySlicing,
         output_dtype : None, NumPy dtype
             See docstring for output_signal_size for more information.
             Default None.
-        %s
         %s
         **kwargs : dict
             All extra keyword arguments are passed to the provided function
@@ -4842,6 +4845,20 @@ class BaseSignal(FancySlicing,
         >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
         >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
         >>> s_rot = s.map(rotate, angle=s_angle, reshape=False, inplace=False)  # doctest: +SKIP
+
+        If you want some more control over computing a signal that isn't lazy
+        you can always set lazy_output to True and then compute the signal setting
+        the scheduler to 'threading', 'processes', 'single-threaded' or 'distributed'.
+
+        Additionally, you can set the navigation_chunks argument to a tuple of
+        integers to split the navigation axes into chunks. This can be useful if your
+        signal is less that 100 mb but you still want to use multiple cores.
+
+        >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
+        >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
+        >>> rotated = s.map(rotate, angle=s_angle, reshape=False, lazy_output=True, inplace=True
+        ...                 navigation_chunks=(2,2))
+        >>> rotated.compute(scheduler="single-threaded")
 
         Note
         ----
@@ -4914,12 +4931,20 @@ class BaseSignal(FancySlicing,
         # If the function has an `axes` or `axis` argument
         # we suppose that it can operate on the full array and we don't
         # iterate over the coordinates.
-        if not ndkwargs and not lazy_output and (self.axes_manager.signal_dimension == 1 and
-                             "axis" in fargs):
+        # We use _map_all only when the user doesn't specify axis/axes
+        if (not ndkwargs
+            and not lazy_output
+            and self.axes_manager.signal_dimension == 1
+            and "axis" in fargs
+            and "axis" not in kwargs.keys()
+            ):
             kwargs['axis'] = self.axes_manager.signal_axes[-1].index_in_array
-
             result = self._map_all(function, inplace=inplace, **kwargs)
-        elif not ndkwargs and not lazy_output and "axes" in fargs and not parallel:
+        elif (not ndkwargs
+              and not lazy_output
+              and "axes" in fargs
+              and "axes" not in kwargs.keys()
+              ):
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
             result = self._map_all(function, inplace=inplace, **kwargs)
@@ -4935,9 +4960,10 @@ class BaseSignal(FancySlicing,
                 ragged=ragged,
                 inplace=inplace,
                 lazy_output=lazy_output,
-                max_workers=max_workers,
+                num_workers=num_workers,
                 output_dtype=output_dtype,
                 output_signal_size=output_signal_size,
+                navigation_chunks=navigation_chunks,
                 **kwargs, # function argument(s) (non-iterating)
             )
         if not inplace:
@@ -4945,25 +4971,29 @@ class BaseSignal(FancySlicing,
         else:
             self.events.data_changed.trigger(obj=self)
 
-    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, LAZY_OUTPUT_ARG, MAX_WORKERS_ARG)
+    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, LAZY_OUTPUT_ARG, NUM_WORKERS_ARG)
 
     def _map_all(self, function, inplace=True, **kwargs):
         """
         The function has to have either 'axis' or 'axes' keyword argument,
-        and hence support operating on the full dataset efficiently.
+        and hence support operating on the full dataset efficiently and remove
+        the signal axes.
         """
+        old_shape = self.data.shape
         newdata = function(self.data, **kwargs)
         if inplace:
             self.data = newdata
+            if self.data.shape != old_shape:
+                self.axes_manager.remove(self.axes_manager.signal_axes)
             self._lazy = False
             self._assign_subclass()
-            self.get_dimensions_from_data()
             return None
         else:
             sig = self._deepcopy_with_new_data(newdata)
+            if sig.data.shape != old_shape:
+                sig.axes_manager.remove(sig.axes_manager.signal_axes)
             sig._lazy = False
             sig._assign_subclass()
-            sig.get_dimensions_from_data()
             return sig
 
     def _map_iterate(
@@ -4976,7 +5006,8 @@ class BaseSignal(FancySlicing,
         output_signal_size=None,
         output_dtype=None,
         lazy_output=None,
-        max_workers=None,
+        num_workers=None,
+        navigation_chunks="auto",
         **kwargs,
     ):
         if lazy_output is None:
@@ -4984,6 +5015,7 @@ class BaseSignal(FancySlicing,
 
         if not self._lazy:
             s_input = self.as_lazy()
+            s_input.rechunk(nav_chunks=navigation_chunks)
         else:
             s_input = self
 
@@ -5081,7 +5113,7 @@ class BaseSignal(FancySlicing,
                     self.data,
                     dtype=mapped.dtype,
                     compute=True,
-                    num_workers=max_workers,
+                    num_workers=num_workers,
                 )
                 data_stored = True
             else:
@@ -5110,7 +5142,7 @@ class BaseSignal(FancySlicing,
         sig._assign_subclass()
 
         if not lazy_output and not data_stored:
-            sig.data = sig.data.compute(num_workers=max_workers)
+            sig.data = sig.data.compute(num_workers=num_workers)
 
         if show_progressbar:
             pbar.unregister()

@@ -301,21 +301,11 @@ class TestEstimatePeakWidth:
         assert np.isnan(left.data).all()
         assert np.isnan(right.data).all()
 
-    @pytest.mark.parametrize("parallel", [None, True])
-    def test_warnings_on_windows(self, parallel, caplog):
+    def test_warnings_on_windows(self, caplog):
         import os
 
         if os.name not in ["nt", "dos"]:
             pytest.skip("Ignored on non-Windows OS")
-
-        with caplog.at_level(logging.WARNING):
-            _ = self.s.estimate_peak_width(
-                window=0.5,
-                return_interval=True,
-                parallel=parallel,
-            )
-
-        assert "Parallel operation is not supported on Windows" in caplog.text
 
     def test_two_peaks(self):
         if self.s._lazy:
@@ -347,9 +337,8 @@ class TestSmoothing:
         self.rtol = 1e-7
         self.atol = 0
 
-    @pytest.mark.parametrize('parallel', [True, False])
     @pytest.mark.parametrize('dtype', ['<f4', 'f4', '>f4'])
-    def test_lowess(self, parallel, dtype):
+    def test_lowess(self, dtype):
         from hyperspy.misc.lowess_smooth import lowess
         f = 0.5
         n_iter = 1
@@ -363,21 +352,18 @@ class TestSmoothing:
                 n_iter=n_iter,
                 )
         self.s.smooth_lowess(smoothing_parameter=f,
-                             number_of_iterations=n_iter,
-                             parallel=parallel)
+                             number_of_iterations=n_iter,)
         np.testing.assert_allclose(self.s.data, data,
                                    rtol=self.rtol, atol=self.atol)
 
-    @pytest.mark.parametrize('parallel', [True, False])
-    def test_tv(self, parallel):
+    def test_tv(self):
         weight = 1
         data = np.asanyarray(self.s.data, dtype='float')
         for i in range(data.shape[0]):
             data[i, :] = _tv_denoise_1d(
                 im=data[i, :],
                 weight=weight,)
-        self.s.smooth_tv(smoothing_parameter=weight,
-                         parallel=parallel)
+        self.s.smooth_tv(smoothing_parameter=weight,)
         np.testing.assert_allclose(data, self.s.data,
                                    rtol=self.rtol, atol=self.atol)
 
