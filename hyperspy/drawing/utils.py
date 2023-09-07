@@ -1720,7 +1720,7 @@ def plot_span_map(signal, spans=1):
         Signal to inspect. Should have 2 navigation dimensions and 1 signal
         dimension.
     spans: int, [hyperspy.roi.SpanROI]
-        spans that represent colour channels in map. Can either pass a list of
+        Spans that represent colour channels in map. Can either pass a list of
         `SpanROI` objects, or an `int`, `N`, in which case `N` `SpanROI`s will
         be created. Currently limited to a maximum of 3 spans.
 
@@ -1731,9 +1731,9 @@ def plot_span_map(signal, spans=1):
     spans: [hyperspy.roi.SpanROI]
         The span ROIs from the navigator
     span_signals: [hyperspy.signals.BaseSignal]
-        slices of `sig` according to each span roi
+        Slices of `sig` according to each span roi
     span_sums: [hyperspy.signals.BaseSignal]
-        the summed `span_signals`.
+        The summed `span_signals`.
     """
     if (
         signal.axes_manager.signal_dimension != 1
