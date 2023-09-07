@@ -1,0 +1,1 @@
+Replace deprecated scipy.misc by scipy.datasets in documentation

@@ -195,7 +195,7 @@ Colorbar, scalebar and contrast controls are HyperSpy-specific, however
 .. code-block:: python
 
     >>> import scipy
-    >>> img = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> img = hs.signals.Signal2D(scipy.datasets.ascent())
     >>> img.plot(colorbar=True, scalebar=False,
     ... 	 axes_ticks=True, cmap='RdYlBu_r')
 
@@ -308,7 +308,7 @@ the section :ref:`plot.customize_images` can be passed as a dictionary to the
 
     >>> import numpy as np
     >>> import scipy
-    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> im = hs.signals.Signal2D(scipy.datasets.ascent())
     >>> ims = hs.signals.BaseSignal(np.random.rand(15,13)).T * im
     >>> ims.metadata.General.title = 'My Images'
     >>> ims.plot(colorbar=False,
@@ -521,7 +521,7 @@ different slices of a multidimensional image (a *hyperimage*):
 .. code-block:: python
 
     >>> import scipy
-    >>> image = hs.signals.Signal2D([scipy.misc.ascent()]*6)
+    >>> image = hs.signals.Signal2D([scipy.datasets.ascent()]*6)
     >>> angles = hs.signals.BaseSignal(range(10,70,10))
     >>> image.map(scipy.ndimage.rotate, angle=angles.T, reshape=False)
     >>> hs.plot.plot_images(image, tight_layout=True)
@@ -544,7 +544,7 @@ axes labels and the ticks are also disabled with `axes_decor`:
 .. code-block:: python
 
     >>> import scipy
-    >>> image = hs.signals.Signal2D([scipy.misc.ascent()]*6)
+    >>> image = hs.signals.Signal2D([scipy.datasets.ascent()]*6)
     >>> angles = hs.signals.BaseSignal(range(10,70,10))
     >>> image.map(scipy.ndimage.rotate, angle=angles.T, reshape=False)
     >>> hs.plot.plot_images(
@@ -571,22 +571,22 @@ multiple individual ones:
     >>> import numpy as np
     >>>
     >>> # load red channel of raccoon as an image
-    >>> image0 = hs.signals.Signal2D(scipy.misc.face()[:,:,0])
+    >>> image0 = hs.signals.Signal2D(scipy.datasets.face()[:,:,0])
     >>> image0.metadata.General.title = 'Rocky Raccoon - R'
     >>>
     >>> # load ascent into a length 6 hyper-image
-    >>> image1 = hs.signals.Signal2D([scipy.misc.ascent()]*6)
+    >>> image1 = hs.signals.Signal2D([scipy.datasets.ascent()]*6)
     >>> angles = hs.signals.BaseSignal(np.arange(10,70,10)).T
     >>> image1.map(scipy.ndimage.rotate, angle=angles,
     ...            show_progressbar=False, reshape=False)
     >>> image1.data = np.clip(image1.data, 0, 255)  # clip data to int range
     >>>
     >>> # load green channel of raccoon as an image
-    >>> image2 = hs.signals.Signal2D(scipy.misc.face()[:,:,1])
+    >>> image2 = hs.signals.Signal2D(scipy.datasets.face()[:,:,1])
     >>> image2.metadata.General.title = 'Rocky Raccoon - G'
     >>>
     >>> # load rgb image of the raccoon
-    >>> rgb = hs.signals.Signal1D(scipy.misc.face())
+    >>> rgb = hs.signals.Signal1D(scipy.datasets.face())
     >>> rgb.change_dtype("rgb8")
     >>> rgb.metadata.General.title = 'Raccoon - RGB'
     >>>
@@ -819,8 +819,8 @@ a file:
 
 .. code-block:: python
 
-    >>> import scipy.misc
-    >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
+    >>> import scipy
+    >>> s = hs.signals.Signal1D(scipy.datasets.ascent()[100:160:10])
     >>> cascade_plot = hs.plot.plot_spectra(s, style='cascade')
     >>> cascade_plot.figure.savefig("cascade_plot.png")
 
@@ -841,8 +841,8 @@ and provide the legend labels:
 
 .. code-block:: python
 
-    >>> import scipy.misc
-    >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
+    >>> import scipy
+    >>> s = hs.signals.Signal1D(scipy.datasets.ascent()[100:160:10])
     >>> color_list = ['red', 'red', 'blue', 'blue', 'red', 'red']
     >>> linestyle_list = ['-', '--', '-.', ':', '-']
     >>> hs.plot.plot_spectra(s, style='cascade', color=color_list,
@@ -861,10 +861,10 @@ generate a list of colors that follows a certain colormap:
 
 .. code-block:: python
 
-    >>> import scipy.misc
+    >>> import scipy
     >>> fig, axarr = plt.subplots(1,2)
-    >>> s1 = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
-    >>> s2 = hs.signals.Signal1D(scipy.misc.ascent()[200:260:10])
+    >>> s1 = hs.signals.Signal1D(scipy.datasets.ascent()[100:160:10])
+    >>> s2 = hs.signals.Signal1D(scipy.datasets.ascent()[200:260:10])
     >>> hs.plot.plot_spectra(s1,
     ...                         style='cascade',
     ...                         color=[plt.cm.RdBu(i/float(len(s1)-1))
@@ -892,8 +892,8 @@ There are also two other styles, "heatmap" and "mosaic":
 
 .. code-block:: python
 
-    >>> import scipy.misc
-    >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
+    >>> import scipy
+    >>> s = hs.signals.Signal1D(scipy.datasets.ascent()[100:160:10])
     >>> hs.plot.plot_spectra(s, style='heatmap')
 
 .. figure::  images/plot_spectra_heatmap.png
@@ -905,8 +905,8 @@ There are also two other styles, "heatmap" and "mosaic":
 
 .. code-block:: python
 
-    >>> import scipy.misc
-    >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:120:10])
+    >>> import scipy
+    >>> s = hs.signals.Signal1D(scipy.datasets.ascent()[100:120:10])
     >>> hs.plot.plot_spectra(s, style='mosaic')
 
 .. figure::  images/plot_spectra_mosaic.png
@@ -923,8 +923,8 @@ can be used:
 .. code-block:: python
 
     >>> import matplotlib.cm
-    >>> import scipy.misc
-    >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:120:10])
+    >>> import scipy
+    >>> s = hs.signals.Signal1D(scipy.datasets.ascent()[100:120:10])
     >>> ax = hs.plot.plot_spectra(s, style="heatmap")
     >>> ax.images[0].set_cmap(matplotlib.cm.plasma)
 
@@ -943,8 +943,8 @@ directly to matplotlib.pyplot.figure as keyword arguments:
 
 .. code-block:: python
 
-    >>> import scipy.misc
-    >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
+    >>> import scipy
+    >>> s = hs.signals.Signal1D(scipy.datasets.ascent()[100:160:10])
     >>> legendtext = ['Plot 0', 'Plot 1', 'Plot 2', 'Plot 3',
     ...               'Plot 4', 'Plot 5']
     >>> cascade_plot = hs.plot.plot_spectra(
@@ -966,8 +966,8 @@ the figure:
 
 .. code-block:: python
 
-    >>> import scipy.misc
-    >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
+    >>> import scipy
+    >>> s = hs.signals.Signal1D(scipy.datasets.ascent()[100:160:10])
     >>> cascade_plot = hs.plot.plot_spectra(s)
     >>> cascade_plot.set_xlabel("An axis")
     >>> cascade_plot.set_ylabel("Another axis")
@@ -986,10 +986,10 @@ and "overlap" styles:
 
 .. code-block:: python
 
-    >>> import scipy.misc
+    >>> import scipy
     >>> fig, axarr = plt.subplots(1,2)
-    >>> s1 = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
-    >>> s2 = hs.signals.Signal1D(scipy.misc.ascent()[200:260:10])
+    >>> s1 = hs.signals.Signal1D(scipy.datasets.ascent()[100:160:10])
+    >>> s2 = hs.signals.Signal1D(scipy.datasets.ascent()[200:260:10])
     >>> hs.plot.plot_spectra(s1, style='cascade',
     ...                      color='blue', ax=axarr[0], fig=fig)
     >>> hs.plot.plot_spectra(s2, style='cascade',
@@ -1047,8 +1047,8 @@ same time:
 
 .. code-block:: python
 
-    >>> import scipy.misc
-    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0).inav[:,:3]
+    >>> import scipy
+    >>> s1 = hs.signals.Signal1D(scipy.datasets.face()).as_signal1D(0).inav[:,:3]
     >>> s2 = s1.deepcopy()*-1
     >>> hs.plot.plot_signals([s1, s2])
 
@@ -1067,8 +1067,8 @@ To specify the navigator:
 
 .. code-block:: python
 
-    >>> import scipy.misc
-    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0).inav[:,:3]
+    >>> import scipy
+    >>> s1 = hs.signals.Signal1D(scipy.datasets.face()).as_signal1D(0).inav[:,:3]
     >>> s2 = s1.deepcopy()*-1
     >>> hs.plot.plot_signals([s1, s2], navigator="slider")
 
@@ -1085,8 +1085,8 @@ For example:
 
 .. code-block:: python
 
-    >>> import scipy.misc
-    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0).inav[:,:3]
+    >>> import scipy
+    >>> s1 = hs.signals.Signal1D(scipy.datasets.face()).as_signal1D(0).inav[:,:3]
     >>> s2 = s1.deepcopy()*-1
     >>> s3 = hs.signals.Signal1D(np.linspace(0,9,9).reshape([3,3]))
     >>> hs.plot.plot_signals([s1, s2], navigator_list=["slider", s3])
@@ -1104,8 +1104,8 @@ each plot:
 
 .. code-block:: python
 
-    >>> import scipy.misc
-    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0)[:,:3]
+    >>> import scipy
+    >>> s1 = hs.signals.Signal1D(scipy.datasets.face()).as_signal1D(0)[:,:3]
     >>> s2 = s1.deepcopy()*-1
     >>> hs.plot.plot_signals([s1, s2], sync=False,
     ...                      navigator_list=["slider", "slider"])
@@ -1126,8 +1126,8 @@ can be used in a static way
 
 .. code-block:: python
 
-    >>> import scipy.misc
-    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> import scipy
+    >>> im = hs.signals.Signal2D(scipy.datasets.ascent())
     >>> m = hs.plot.markers.Rectangle(x1=150, y1=100, x2=400, y2=400, color='red')
     >>> im.add_marker(m)
 
@@ -1144,8 +1144,8 @@ for each R, G and B channel of a colour image.
 .. code-block:: python
 
     >>> from skimage.feature import peak_local_max
-    >>> import scipy.misc
-    >>> ims = hs.signals.BaseSignal(scipy.misc.face()).as_signal2D([1,2])
+    >>> import scipy
+    >>> ims = hs.signals.BaseSignal(scipy.datasets.face()).as_signal2D([1,2])
     >>> index = np.array([peak_local_max(im.data, min_distance=100,
     ...                                  num_peaks=4)
     ...                   for im in ims])
