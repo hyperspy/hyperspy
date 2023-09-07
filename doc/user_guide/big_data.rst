@@ -474,7 +474,7 @@ duration of the plotting call by using the ``with dask.config.set`` context mana
 
 Single Machine Schedulers
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-Dask has three schedulers avilable for single machines.
+Dask has two schedulers available for single machines.
 
 1. Threaded Scheduler:
     Fastest to set up but only provides parallelism through threads so only non python functions will be parallelized.
@@ -491,8 +491,9 @@ Dask has three schedulers avilable for single machines.
     >>> s.compute()  # uses multiprocessing scheduler
 
     >>> dask.config.set(scheduler='threads')  # overwrite default with threading scheduler
-    >>> # Any hyperspy code will now use the threading scheduler
+    >>> #   Any hyperspy code will now use the threading scheduler
     >>> s.compute()  # uses threading scheduler
+
 
 Distributed Scheduler
 ^^^^^^^^^^^^^^^^^^^^^
