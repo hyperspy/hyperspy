@@ -48,6 +48,7 @@ linkcheck_ignore = [
     "https://anaconda.org",  # 403 Client Error: Forbidden for url
     "https://doi.org/10.1021/acs.nanolett.5b00449",  # 403 Client Error: Forbidden for url
     "https://onlinelibrary.wiley.com",  # 403 Client Error: Forbidden for url
+    "https://www.jstor.org/stable/24307705",  # 403 Client Error: Forbidden for url
 ]
 
 linkcheck_exclude_documents = []
