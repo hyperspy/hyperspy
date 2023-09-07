@@ -36,7 +36,7 @@ added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
 
 .. code-block:: python
 
-    >>> import scipy.datasets
+    >>> import scipy
     >>> im = hs.signals.Signal2D(scipy.datasets.ascent())
     >>> rectangular_roi = hs.roi.RectangularROI(left=30, right=500,
     ...                                         top=200, bottom=400)
@@ -78,7 +78,7 @@ can be plotted on a different signal altogether.
 
 .. code-block:: python
 
-    >>> import scipy.datasets
+    >>> import scipy
     >>> im = hs.signals.Signal2D(scipy.datasets.ascent())
     >>> s = hs.signals.Signal1D(np.random.rand(512, 512, 512))
     >>> roi = hs.roi.RectangularROI(left=30, right=77, top=20, bottom=50)
@@ -110,7 +110,7 @@ order to increase responsiveness.
 
 .. code-block:: python
 
-   >>> import scipy.datasets
+   >>> import scipy
    >>> im = hs.signals.Signal2D(scipy.datasets.ascent())
    >>> im.plot()
    >>> roi = hs.roi.RectangularROI(left=30, right=500, top=200, bottom=400)
@@ -208,7 +208,7 @@ ROIs can be used in place of slices when indexing. For example:
 .. versionadded:: 1.6
     New :meth:`__getitem__` method for all ROIs.
 
-In addition the following all ROIs have a py:meth:`__getitem__` method that enables
+In addition, all ROIs have a py:meth:`__getitem__` method that enables
 using them in place of tuples.
 For example, the method :py:meth:`~._signals.Signal2D.align2D` takes a ``roi``
 argument with the left, right, top, bottom coordinates of the ROI.
