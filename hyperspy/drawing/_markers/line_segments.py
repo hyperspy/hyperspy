@@ -22,6 +22,7 @@ from matplotlib.collections import LineCollection
 
 class Lines(Markers):
     """A set of Line Segments Markers."""
+    marker_type = "Lines"
 
     def __init__(self,
                  segments,

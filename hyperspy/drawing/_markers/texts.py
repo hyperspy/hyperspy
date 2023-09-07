@@ -26,6 +26,8 @@ class Texts(Markers):
     """
     A set of text markers
     """
+    marker_type = "Texts"
+
 
     def __init__(self, offsets, **kwargs):
         """

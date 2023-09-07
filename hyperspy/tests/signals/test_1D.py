@@ -24,6 +24,7 @@ from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.signals import Signal1D
 from hyperspy.drawing.markers import Markers
+from hyperspy.drawing._markers.circles import Circles
 from matplotlib.collections import LineCollection
 
 
@@ -67,7 +68,7 @@ class Test1D:
             assert intensities.data.shape == (3,)
 
         if start is None:
-            markers = Markers.from_signal(intensities)
+            markers = Circles.from_signal(intensities)
             s.add_marker(markers)
         else:
             markers = Markers.from_signal(intensities,

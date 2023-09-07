@@ -27,6 +27,8 @@ class Squares(Markers):
     A Collection of square markers using
     :py:class`matplotlib.collections.RegularPolyCollection`.
     """
+    marker_type = "Squares"
+
     def __init__(self, offsets, sizes, **kwargs):
         """
         Initialize the set of square Markers.

@@ -1013,7 +1013,7 @@ class EDSSpectrum(Signal1D):
             plt.rcParams['axes.prop_cycle'].by_key()["color"]))
 
         for x, color in zip(position, colors):
-            line = VerticalLines(x=x,
+            line = VerticalLines(offsets=x,
                                  color=color,
                                  **kwargs)
             self.add_marker(line, render_figure=False)
@@ -1052,10 +1052,7 @@ class EDSSpectrum(Signal1D):
                                        reference="data",
                                        )
         text_markers = RelativeTextCollection(offsets=offsets,
-                                              s=line_names,
-                                              rotation=[90, ],
-                                              horizontalalignment=['center', ],
-                                              verticalalignment=["bottom", ],
+                                              texts=line_names,
                                               )
 
         self.add_marker(line_markers, render_figure=False)
@@ -1088,7 +1085,7 @@ class EDSSpectrum(Signal1D):
         """
         ind = np.where(np.isin(self._xray_markers["names"], xray_lines))
         self._xray_markers["lines"].delete_index("segments", ind)
-        self._xray_markers["text"].delete_index(["offsets", "s"],
+        self._xray_markers["text"].delete_index(["offsets", "texts"],
                                                 ind)
         self._xray_markers["names"] = np.delete(self._xray_markers["names"], ind)
         if render_figure:

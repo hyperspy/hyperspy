@@ -24,6 +24,9 @@ import numpy as np
 class HorizontalLines(Markers):
     """A set of HorizontalLines markers
     """
+    marker_type = "HorizontalLines"
+
+
     def __init__(self, offsets, **kwargs):
         """Initialize a set of HorizontalLines markers.
 

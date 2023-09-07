@@ -609,5 +609,5 @@ class Test_eds_markers:
         s.remove_xray_lines_markers(['Zn_La'], render_figure=True)
         assert sorted(s._xray_markers["names"]) == []
         assert len(s._xray_markers["text"].get_data_position()["offsets"]) == 0
-        assert len(s._xray_markers["text"].get_data_position()["s"]) == 0
+        assert len(s._xray_markers["text"].get_data_position()["texts"]) == 0
         assert len(s._xray_markers["lines"].get_data_position()["segments"]) == 0

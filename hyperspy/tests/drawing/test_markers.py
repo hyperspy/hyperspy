@@ -91,7 +91,7 @@ class TestCollections:
             StarPolygonCollection,
             PolyCollection,
             PatchCollection,
-            None,
+            CircleCollection,
         ]
         num_col = len(collections)
         offsets = [
@@ -348,7 +348,7 @@ class TestInitMarkerCollection:
     def test_to_dictionary(self, collection, request):
         col = request.getfixturevalue(collection)
         dict = col._to_dictionary()
-        assert dict["collection_class"] == LineCollection
+        assert dict["collection_class"] == "LineCollection"
         assert dict["plot_on_signal"] is True
 
     @pytest.mark.parametrize(
@@ -436,7 +436,7 @@ class TestInitMarkerCollection:
                     verts=3,
                     sizes=3,
                     collection_class=PolyCollection)
-        assert "PolyCollection" in m.__repr__()
+        assert "Custom" in m.__repr__()
 
     def test_update_static(self):
         m = Points(offsets=([[1, 1], [2, 2]]))
@@ -605,7 +605,8 @@ class TestLineCollections:
         s.plot(interpolation=None)
         s.add_marker(vert)
         kwargs = vert.get_data_position()
-        np.testing.assert_array_equal(kwargs["offsets"], [[[0.0, 2.5], [0.0, -.5]]])
+        # Offsets --> segments for vertical lines
+        np.testing.assert_array_equal(kwargs["segments"], [[[0.0, 2.5], [0.0, -.5]]])
 
     def test_horizontal_line_collection(self, offsets):
         hor = HorizontalLines(offsets=offsets)

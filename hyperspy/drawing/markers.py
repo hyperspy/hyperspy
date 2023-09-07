@@ -19,8 +19,10 @@
 import numpy as np
 import dask.array as da
 import logging
+import importlib
 
 from matplotlib.collections import Collection
+import matplotlib.collections as mpl_collections
 from matplotlib.patches import Patch
 
 from hyperspy.events import Event, Events
@@ -66,14 +68,17 @@ class Markers:
     method can be passed as an array with `dtype=object` and the same size as the navigation axes
     for a signal.
     """
+    marker_type = "Markers"
 
-    def __init__(self, collection_class, **kwargs):
+    def __init__(self,
+                 collection_class,
+                 **kwargs):
         """
         Initialize a Marker Collection.
 
         Parameters
         ----------
-        collection_class : matplotlib.collections
+        collection_class : matplotlib.collections or str
             A Matplotlib collection to be initialized.
         offsets : [n, 2]
             Positions of the markers
@@ -140,6 +145,14 @@ class Markers:
         >>>s.plot()
 
         """
+        if isinstance(collection_class, str):
+            try:
+                collection_class = getattr(mpl_collections, collection_class)
+            except ModuleNotFoundError:
+                raise ModuleNotFoundError("The argument `collection_class` must be a string or"
+                                          " a matplotlib.collections class. matplotlib.collections." +
+                                          collection_class + " is not a valid matplotlib.collections class.")
+
         if not issubclass(collection_class, Collection):
             raise ValueError(
                 "The argument `collection_class` must be a subclass of "
@@ -205,10 +218,13 @@ class Markers:
         )
         self._closing = False
 
+    @property
     def _is_iterating(self):
-        return np.any(
-            [is_iterating(value) for key, value in self.kwargs.items()]
-        )
+        if self._plot_on_signal:
+            return np.any(
+                [is_iterating(value) for key, value in self.kwargs.items()])
+        else:  # currently iterating navigation markers arenot supported
+            return False
 
     def __len__(self):
         """Return the number of markers in the collection."""
@@ -387,8 +403,8 @@ class Markers:
 
     def _to_dictionary(self):
         marker_dict = {
-            "marker_type": "MarkerCollection",
-            "collection_class": self.collection_class,
+            "marker_type": self.marker_type,
+            "collection_class": self.collection_class.__name__,
             "plot_on_signal": self._plot_on_signal,
             "kwargs": self.kwargs,
         }
@@ -555,6 +571,7 @@ def markers2collection(marker_dict):
     from hyperspy.utils.markers import (
         Arrows,
         Ellipses,
+        Circles,
         HorizontalLines,
         Lines,
         Points,
@@ -562,6 +579,11 @@ def markers2collection(marker_dict):
         Texts,
         VerticalLines,
     )
+    marker_mapping = {"Arrows": Arrows, "Ellipses": Ellipses, "Circles": Circles,
+                      "HorizontalLines": HorizontalLines, "Lines": Lines,
+                      "Points": Points, "Rectangles": Rectangles, "Texts": Texts,
+                      "VerticalLines": VerticalLines}
+
     from matplotlib.collections import PolyCollection
 
     if len(marker_dict) == 0:
@@ -632,7 +654,7 @@ def markers2collection(marker_dict):
             marker_dict["data"], keys=[["x1", "y1"]], return_size=False
         )
         texts = dict2vector(marker_dict["data"],
-                            keys=[["text"]],
+                            keys=["text"],
                             return_size=False,
                             dtype=str)
         marker = Texts(
@@ -642,7 +664,7 @@ def markers2collection(marker_dict):
         x = dict2vector(marker_dict["data"], keys=["x1"], return_size=False)
 
         marker = VerticalLines(
-            x=x, **marker_dict["marker_properties"]
+            offsets=x, **marker_dict["marker_properties"]
         )
     elif marker_type == "VerticalLineSegment":
         segments = dict2vector(
@@ -652,7 +674,9 @@ def markers2collection(marker_dict):
         marker = Lines(segments=segments,
                        **marker_dict["marker_properties"],
                        )
-    elif marker_type == "MarkerCollection":
+    elif marker_type in marker_mapping:
+        marker = marker_mapping[marker_type](**marker_dict["kwargs"])
+    elif marker_type == "Markers":
         marker = Markers(collection_class=marker_dict["collection_class"],
                          **marker_dict["kwargs"])
     else:

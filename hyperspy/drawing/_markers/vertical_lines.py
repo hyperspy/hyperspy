@@ -23,6 +23,8 @@ import numpy as np
 
 class VerticalLines(Markers):
     """A set of Vertical Line Markers"""
+    marker_type = "VerticalLines"
+
     def __init__(self,
                  offsets,
                  **kwargs):
