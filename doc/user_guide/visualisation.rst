@@ -1055,7 +1055,7 @@ Up to three spans can be used to select different signal ranges to map out. Acco
   :width: 100%
   :alt: Demo of plot_span_map functionality.
 
-The lefthand plot is an integrated spectra over all positions of the hyperspectra.
+The lefthand plot is an integrated spectrum over all positions of the hyperspectral image.
 
 The two righthand plots correpond to the spectral ranges dictated by the spans on the left.
 
