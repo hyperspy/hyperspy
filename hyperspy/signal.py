@@ -3154,6 +3154,13 @@ class BaseSignal(FancySlicing,
                 "The data will be extrapolated if not specified otherwise via fill_value/bounds_error"
             )
 
+        if old_axis.navigate != new_axis.navigate:
+            _logger.warning(
+                f"The navigate attribute of new_axis differs from the to be replaced axis. "
+                f"new_axis has priority, thus navigate will be set to {new_axis.navigate}. "
+                f"If that is not intended, please specify navigate for new_axis."
+            )
+
         interpolator = make_interp_spline(
             old_axis.axis,
             self.data,
