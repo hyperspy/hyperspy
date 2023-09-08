@@ -3114,32 +3114,28 @@ class BaseSignal(FancySlicing,
 
     def interpolate_on_axis(self,
                             new_axis,
-                            index_in_axes_manager=0,
+                            axis=0,
                             inplace=False,
-                            set_navigate=True,
                             degree=1):
-        """Replaces the axis specified by index_in_axes_manager with the provided new_axis
-        and interpolates data accordingly.
+        """Replaces the given `axis` with the provided `new_axis`
+        and interpolates data accordingly using :py:func:`scipy.interpolate.make_interp_spline`.
 
         Parameters
         ----------
         new_axis : UniformDataAxis, DataAxis or FunctionalDataAxis
-            Axis which replaces the axis specified with replace_index.
+            Axis which replaces the one specified by the `axis` argument.
             If this new axis exceeds the range of the old axis,
             a warning is raised that the data will be extrapolated.
 
-        index_in_axes_manager : int, default=0
+        axis : int or str, default=0
             Specifies the axis which will be replaced using the index of the
-            axis in the `axes_manager`.
+            axis in the `axes_manager`. The axis can be specified using the index of the
+            axis in `axes_manager` or the axis name.
 
         inplace : bool, default=False
             If ``True`` the data of `self` is replaced by the result and
             the axis is changed inplace. Otherwise `self` is not changed
             and a new signal with the changes incorporated is returned.
-
-        set_navigate : bool, default=True
-            If ``True``, sets the `navigate` attribute of `new_axis` to the value given
-            by the old axis.
 
         degree: int, default=1
             Specifies the B-Spline degree of the used interpolator.
@@ -3150,27 +3146,18 @@ class BaseSignal(FancySlicing,
             A copy of the object with the axis exchanged and the data interpolated.
             This only occurs when inplace is set to ``False``, otherwise nothing is returned.
         """
-        old_axis = self.axes_manager[index_in_axes_manager]
+        old_axis = self.axes_manager[axis]
+        axis_idx = old_axis.index_in_array
         if old_axis.low_value > new_axis.low_value or old_axis.high_value < new_axis.high_value:
             _logger.warning(
                 "The specified new axis exceeds the range of the to be replaced old axis. "
                 "The data will be extrapolated if not specified otherwise via fill_value/bounds_error"
             )
 
-        nav_dim = self.axes_manager.navigation_dimension
-        sig_dim = self.axes_manager.signal_dimension
-        if old_axis.navigate:
-            set_axis_idx = (nav_dim - 1) - index_in_axes_manager
-        else:
-            set_axis_idx = (2*nav_dim + sig_dim - 1) - index_in_axes_manager
-
-        if set_navigate:
-            new_axis.navigate = old_axis.navigate
-
         interpolator = make_interp_spline(
             old_axis.axis,
             self.data,
-            axis=set_axis_idx,
+            axis=axis_idx,
             k=degree,
         )
         new_data = interpolator(new_axis.axis)
@@ -3181,7 +3168,7 @@ class BaseSignal(FancySlicing,
         else:
             s = self._deepcopy_with_new_data(new_data)
 
-        s.axes_manager.set_axis(new_axis, set_axis_idx)
+        s.axes_manager.set_axis(new_axis, axis_idx)
         if not inplace:
             return s
 

@@ -82,6 +82,12 @@ class TestInterpolateAxis1D:
         _assert_axes_equality(s2.axes_manager[0], x_uniform, "uniform")
         np.testing.assert_almost_equal(s2.data, s1.data)
 
+        # test index by string
+        s3 = self.s0.interpolate_on_axis(x_uniform, "X", inplace=False)
+        _assert_equal_dimensions(s3, self.s0)
+        _assert_axes_equality(s3.axes_manager[0], x_uniform, "uniform")
+        np.testing.assert_almost_equal(s3.data, np.arange(10, 60, 5))
+
     def test_interpolate_functional_axis(self):
         x_functional = FunctionalDataAxis(
             expression="x^2", size=10, navigate=False, name="XF"
@@ -99,11 +105,12 @@ class TestInterpolateAxis1D:
         np.testing.assert_almost_equal(s2.data, np.arange(0, 10) ** 2)
 
     def test_extrapolation(self):
-        x_new = UniformDataAxis(offset=30, scale=30, size=10, name="X1", units="µm")
+        x_new = UniformDataAxis(
+            offset=30, scale=30, size=10, navigate=False, name="X1", units="µm"
+        )
         s2 = self.s0.interpolate_on_axis(x_new, inplace=False)
         _assert_equal_dimensions(s2, self.s0)
         _assert_axes_equality(s2.axes_manager[0], x_new, "uniform")
-        assert s2.axes_manager[0].navigate == False  # test if set_navigate works
         np.testing.assert_almost_equal(s2.data, np.arange(30, 330, 30))
 
 
@@ -233,11 +240,10 @@ def test_interpolate_on_axis_random_switch(dim):
     s = signals.BaseSignal(data, axes=axes_list)
     switch_idx = rng.integers(0, dim)
     navigate = s.axes_manager[switch_idx].navigate
-    new_ax = UniformDataAxis(offset=1, scale=2, size=2, name="NEW")
+    new_ax = UniformDataAxis(offset=1, scale=2, size=2, navigate=navigate, name="NEW")
     try:
         s.interpolate_on_axis(new_ax, switch_idx, inplace=True)
         _assert_axes_equality(s.axes_manager[switch_idx], new_ax, "uniform")
-        assert s.axes_manager[switch_idx].navigate == navigate
     except Exception as e:
         print(
             f"{e}\n\n seed: {seed}, nav_dim: {nav_dim}, dim: {dim}, switch_idx: {switch_idx}"
