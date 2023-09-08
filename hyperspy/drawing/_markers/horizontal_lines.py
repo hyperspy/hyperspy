@@ -43,7 +43,6 @@ class HorizontalLines(Markers):
                          collection_class=LineCollection,
                          offsets=offsets,
                          **kwargs)
-        self.name = self.__class__.__name__
 
     def get_data_position(self, get_static_kwargs=True):
         kwargs = super().get_data_position(get_static_kwargs=get_static_kwargs)

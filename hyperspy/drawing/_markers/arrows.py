@@ -58,7 +58,6 @@ class Arrows(Markers):
             C=C,
             **kwargs
         )
-        self.name = self.__class__.__name__
         self._init_kwargs = dict(scale=scale, angles=angles, scale_units=scale_units)
 
     __init__.__doc__ %= OFFSET_DOCSTRING

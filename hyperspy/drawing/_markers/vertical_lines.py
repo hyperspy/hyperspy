@@ -45,7 +45,6 @@ class VerticalLines(Markers):
                          offsets=offsets,
                          collection_class=LineCollection,
                          **kwargs)
-        self.name = self.__class__.__name__
 
     def get_data_position(self,
                           get_static_kwargs=True):

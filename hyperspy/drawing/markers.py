@@ -228,13 +228,7 @@ class Markers:
         self.offset_units = offset_units
         self.transform_units = transform_units
         self.size_units = size_units
-        self.shift= shift
-
-        try:
-            # Default to collection name but overwritten by subclass
-            self.name = collection_class().__class__.__name__
-        except:
-            self.name = "Custom"
+        self.shift = shift
         self.plot_marker = True
 
         # Events
@@ -366,7 +360,7 @@ class Markers:
         return out_kwargs
 
     def __repr__(self):
-        return f"<{self.name}| Iterating == {self._is_iterating}"
+        return f"<{self.marker_type}| Iterating == {self._is_iterating}>"
 
     @classmethod
     def from_signal(

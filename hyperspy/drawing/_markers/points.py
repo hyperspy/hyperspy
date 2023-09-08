@@ -39,6 +39,5 @@ class Points(Markers):
                          offsets=offsets,
                          sizes=sizes,
                          **kwargs)
-        self.name = self.__class__.__name__
 
     __init__.__doc__ %= OFFSET_DOCSTRING

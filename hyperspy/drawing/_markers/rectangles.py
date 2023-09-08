@@ -44,4 +44,3 @@ class Rectangles(Markers):
                          widths=widths,
                          heights=heights,
                          **kwargs)
-        self.name = "Rectangles"

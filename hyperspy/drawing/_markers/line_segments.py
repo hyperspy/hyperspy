@@ -39,4 +39,3 @@ class Lines(Markers):
         super().__init__(collection_class=LineCollection,
                          segments=segments,
                          **kwargs)
-        self.name = self.__class__.__name__

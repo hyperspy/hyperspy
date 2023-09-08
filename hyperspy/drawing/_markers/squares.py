@@ -45,6 +45,5 @@ class Squares(Markers):
                          sizes=sizes,
                          numsides=4,
                          **kwargs)
-        self.name = self.__class__.__name__
 
     __init__.__doc__ %= OFFSET_DOCSTRING
