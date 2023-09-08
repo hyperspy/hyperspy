@@ -19,10 +19,11 @@
 import numpy as np
 import dask.array as da
 import logging
-import importlib
+from copy import deepcopy
 
 from matplotlib.collections import Collection
 import matplotlib.collections as mpl_collections
+from matplotlib.transforms import Affine2D, IdentityTransform
 from matplotlib.patches import Patch
 
 from hyperspy.events import Event, Events
@@ -72,6 +73,10 @@ class Markers:
 
     def __init__(self,
                  collection_class,
+                 offset_units="data",
+                 transform_units=None,
+                 size_units=None,
+                 shift=None,
                  **kwargs):
         """
         Initialize a Marker Collection.
@@ -82,6 +87,30 @@ class Markers:
             A Matplotlib collection to be initialized.
         offsets : [n, 2]
             Positions of the markers
+        offset_units: str
+            The units of the offsets can be one of the following:
+            "data": the offsets are in data coordinates or real units
+            "identity": the offset is not transformed
+            "axes": the offsets are in axes coordinates (0-1) and 0, 0) is the bottom left of your axes
+             or subplot, (0.5, 0.5) is the center, and (1.0, 1.0) is the top right
+            "yaxis":The offsets are in data coordinates in y and axes coordinates in x
+            "xaxis": The offsets are in data coordinates in x and axes coordinates in y
+            "rel": The offsets are in data coordinates in x and coordinates in y relative to the
+            data plotted.
+        transform_units: str or None
+            The units of the transform can be one of the following:
+            "data": the transform is in data coordinates or real units
+            "axes": the transform is in axes coordinates (0-1) and 0, 0) is the bottom left of your axes
+            or subplot, (0.5, 0.5) is the center, and (1.0, 1.0) is the top right
+            "yaxis":The transform is in data coordinates in y and axes coordinates in x
+            "xaxis": The transform is in data coordinates in x and axes coordinates in y
+            "rel": The transform is in data coordinates in x and coordinates in y relative to the
+            data plotted.
+        size_units: str or None
+            The units of the size can be one of the following:
+            "yaxis": The size is based on the scale for the y axis
+            "xaxis": The size is based on the scale for the x axis
+
         **kwargs :
             Keyword arguments passed to the underlying marker collection. Any argument
             that is array-like and has `dtype=object` is assumed to be an iterating
@@ -196,6 +225,11 @@ class Markers:
         self.signal = None
         self.temp_signal = None
         self._plot_on_signal = True
+        self.offset_units = offset_units
+        self.transform_units = transform_units
+        self.size_units = size_units
+        self.shift= shift
+
         try:
             # Default to collection name but overwritten by subclass
             self.name = collection_class().__class__.__name__
@@ -433,7 +467,41 @@ class Markers:
                 current_keys.update(self._get_cache_dask_kwargs_chunk(indices))
         else:
             current_keys = self.kwargs
+        # Handling relative markers
+        if self.offset_units == "rel" or self.transform_units == "rel":  # scale based on current data
+            if "offsets" in current_keys:
+                current_keys = self._scale_kwarg(current_keys, "offsets")
+            if "segments" in current_keys:
+                current_keys = self._scale_kwarg(current_keys, "segments")
         return current_keys
+
+        return current_keys
+
+    def _scale_kwarg(self, kwds, key):
+        """
+        Scale the kwarg by the current data.  This is useful for scaling the
+        marker position by the current index or data value.
+
+        When self.reference is "data" the kwarg is scaled by the current data value of the
+        "offset" or "segments" key
+
+        When self.reference is "data_index" the kwarg is scaled by the current data value of the
+        "offset" or "segments" key and the given value of the index.  This is useful when you want
+        to scale things by some value in the data that is not the same value.
+        """
+        new_kwds = deepcopy(kwds)
+        current_data = self.temp_signal(as_numpy=True)
+        x_positions = new_kwds[key][..., 0]
+        ax = self.axes_manager.signal_axes[0]
+        indexes = np.round((x_positions - ax.offset)/ax.scale).astype(int)
+        y_positions = new_kwds[key][..., 1]
+        new_y_positions = current_data[indexes]*y_positions
+
+        if self.shift is not None:
+            yrange = np.max(current_data)-np.min(current_data)
+            new_y_positions = new_y_positions + self.shift*yrange
+        new_kwds[key][..., 1] = new_y_positions
+        return new_kwds
 
     def update(self):
         if not self._is_iterating:
@@ -443,10 +511,28 @@ class Markers:
             self.collection.set(**kwds)
 
     def _initialize_collection(self):
+        transforms = {"data": self.ax.transData,
+                      "axes": self.ax.transAxes,
+                      "identity": IdentityTransform(),
+                      "yaxis": self.ax.get_yaxis_transform(),
+                      "xaxis": self.ax.get_xaxis_transform(),
+                      "rel": self.ax.transData}
         self.collection = self.collection_class(
             **self.get_data_position(),
-            offset_transform=self.ax.transData,
+            offset_transform=transforms[self.offset_units],
         )
+        # handling the Transform
+        if self.size_units == "xaxis":  # scale based on current data
+            scale = self.ax.bbox.width / self.ax.viewLim.width
+            transform = Affine2D().scale(scale)
+        elif self.size_units == "yaxis":
+            scale = self.ax.bbox.height / self.ax.viewLim.height
+            transform = Affine2D().scale(scale)
+        elif self.transform_units is not None:
+            transform = transforms[self.transform_units]
+        else:
+            transform = IdentityTransform()
+        self.collection.set_transform(transform)
 
     def plot(self, render_figure=True):
         """
