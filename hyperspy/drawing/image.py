@@ -93,7 +93,6 @@ class ImagePlot(BlittedFigure):
         self.figure = None
         self.ax = None
         self.title = title
-        self.mesh = None
 
         # user provided numeric values
         self._vmin_numeric = None
@@ -378,10 +377,7 @@ class ImagePlot(BlittedFigure):
     def _add_colorbar(self):
         # Bug extend='min' or extend='both' and power law norm
         # Use it when it is fixed in matplotlib
-        if self.mesh:
-            ims = self.ax.collections
-        else:
-            ims = self.ax.images
+        ims = self.ax.images if len(self.ax.images) else self.ax.collections
         self._colorbar = plt.colorbar(ims[0], ax=self.ax)
         self.set_quantity_label()
         self._colorbar.set_label(
@@ -438,10 +434,7 @@ class ImagePlot(BlittedFigure):
             data = self._current_data = data
             self._is_rgb = True
 
-        if self.mesh:
-            ims = self.ax.collections
-        else:
-            ims = self.ax.images
+        ims = self.ax.images if len(self.ax.images) else self.ax.collections
 
         # Turn on centre_colormap if a diverging colormap is used.
         if not self._is_rgb and self.centre_colormap == "auto":
@@ -542,10 +535,10 @@ class ImagePlot(BlittedFigure):
             data = np.nan_to_num(data)
 
         if ims:  # the images have already been drawn previously
-            if self.mesh:
-                self.mesh.update({'array': data.ravel()})
-            else:
+            if len(self.ax.images): # imshow
                 ims[0].set_data(data)
+            else: # pcolormesh
+                ims[0].set_array(data.ravel())
             # update extent:
             if 'x' in self.autoscale:
                 self._extent[0] = self.xaxis.axis[0] - self.xaxis.scale / 2
@@ -585,12 +578,10 @@ class ImagePlot(BlittedFigure):
             if self.xaxis.is_uniform and self.yaxis.is_uniform:
                 # pcolormesh doesn't have extent and aspect as arguments
                 # aspect is set earlier via self.ax.set_aspect() anyways
-                # TODO: is there a way to use extent for pcolormesh?
-                # FIXME: axes ticks show in 1d-sig/nav plot, contrary to imshow, fix this?
                 new_args.update({"extent": self._extent, "aspect": self._aspect})
                 self.ax.imshow(data, **new_args)
             else:
-                self.mesh = self.ax.pcolormesh(
+                self.ax.pcolormesh(
                     self.xaxis.axis, self.yaxis.axis, data, **new_args
                 )
                 self.ax.invert_yaxis()
