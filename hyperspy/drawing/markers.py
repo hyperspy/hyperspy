@@ -29,6 +29,8 @@ from matplotlib.patches import Patch
 from hyperspy.events import Event, Events
 from hyperspy.misc.array_tools import _get_navigation_dimension_chunk_slice
 from hyperspy.misc.utils import isiterable
+import hyperspy.external.matplotlib.collections as hs_mpl_collections
+
 
 _logger = logging.getLogger(__name__)
 
@@ -83,33 +85,33 @@ class Markers:
 
         Parameters
         ----------
-        collection_class : matplotlib.collections or str
+        collection_class: matplotlib.collections or str
             A Matplotlib collection to be initialized.
         offsets : [n, 2]
             Positions of the markers
-        offset_units: str
-            The units of the offsets can be one of the following:
-            "data": the offsets are in data coordinates or real units
-            "identity": the offset is not transformed
-            "axes": the offsets are in axes coordinates (0-1) and 0, 0) is the bottom left of your axes
-             or subplot, (0.5, 0.5) is the center, and (1.0, 1.0) is the top right
-            "yaxis":The offsets are in data coordinates in y and axes coordinates in x
-            "xaxis": The offsets are in data coordinates in x and axes coordinates in y
-            "rel": The offsets are in data coordinates in x and coordinates in y relative to the
-            data plotted.
-        transform_units: str or None
-            The units of the transform can be one of the following:
-            "data": the transform is in data coordinates or real units
-            "axes": the transform is in axes coordinates (0-1) and 0, 0) is the bottom left of your axes
-            or subplot, (0.5, 0.5) is the center, and (1.0, 1.0) is the top right
-            "yaxis":The transform is in data coordinates in y and axes coordinates in x
-            "xaxis": The transform is in data coordinates in x and axes coordinates in y
-            "rel": The transform is in data coordinates in x and coordinates in y relative to the
-            data plotted.
-        size_units: str or None
-            The units of the size can be one of the following:
+
+        offsets_transform: str
+            Define the transformation used for the `offsets`. It can be one of the following:
+            - ``"data"``: the offsets are defined in data coordinates and the ``ax.transData`` transformation is used.
+            - ``"relative"``: The offsets are defined in data coordinates in x and coordinates in y relative to the
+              data plotted. Only for 1D figure.
+            - ``"axes"``: the offsets are defined in axes coordinates and the ``ax.transAxes`` transformation is used.
+              (0, 0) is bottom left of the axes, and (1, 1) is top right of the axes.
+            - ``"xaxis"``: The offsets are defined in data coordinates in x and axes coordinates in y direction; use
+              :py:meth:`matplotlib.axes.Axes.get_xaxis_transform` transformation.
+            - ``"yaxis"``: The offsets are defined in data coordinates in y and axes coordinates in x direction; use
+              :py:meth:`matplotlib.axes.Axes.get_xaxis_transform` transformation..
+            - ``"display"``: the offsets are not transformed, i.e. are defined in the display coordinate system.
+              (0, 0) is the bottom left of the window, and (width, height) is top right of the output in "display units"
+
+            transform: str or None
+            Define the transformation to be applied to each marker. It can be one of the following:
+
+        size_transform: str or None
+            Define the transformation to be applied to the size of each marker.
             "yaxis": The size is based on the scale for the y axis
             "xaxis": The size is based on the scale for the x axis
+            "points": The size is in points
 
         **kwargs :
             Keyword arguments passed to the underlying marker collection. Any argument
@@ -165,27 +167,28 @@ class Markers:
         >>>s.plot()
         >>>s.add_marker(m)
 
-        Adding a marker using scatter
-
-        >>>import hyperspy.api as hs
-        >>>import numpy as np
-        >>>m = hs.plot.markers.Markers(offsets=np.random.rand(10,2)*10, sizes=1,)
-        >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
-        >>>s.plot()
-
         """
         if isinstance(collection_class, str):
             try:
-                collection_class = getattr(mpl_collections, collection_class)
+                # Remove when external changes are merged
+                if collection_class in ["TextCollection",
+                                        "RegularPolyCollection",
+                                        "EllipseCollection",
+                                        "RectangleCollection"]:
+                    collection_class = getattr(hs_mpl_collections, collection_class)
+                elif collection_class is "Quiver":
+                    from matplotlib.quiver import Quiver as collection_class
+                else:
+                    collection_class = getattr(mpl_collections, collection_class)
             except ModuleNotFoundError:
                 raise ModuleNotFoundError("The argument `collection_class` must be a string or"
                                           " a matplotlib.collections class. matplotlib.collections." +
                                           collection_class + " is not a valid matplotlib.collections class.")
 
-        if not issubclass(collection_class, Collection):
+        if "matplotlib.collections" in str(collection_class) or "matplotlib.quiver" in str(collection_class):
             raise ValueError(
-                "The argument `collection_class` must be a subclass of "
-                "`matplotlib.collection.Collection."
+                "The argument `collection_class` must be a class in "
+                "`matplotlib.collection."
                 )
         # Data attributes
         self.kwargs = kwargs  # all keyword arguments.
