@@ -1701,7 +1701,58 @@ def picker_kwargs(value, kwargs=None):
     return kwargs
 
 
-def plot_span_map(signal, spans=1):
+def _create_span_roi_group(sig_ax, N):
+    """
+    Creates a set `N` of SpanROIs that sit along axis at sensible positions.
+    """
+    axis = sig_ax.axis
+    ax_range = axis[-1] - axis[0]
+
+    span_width = ax_range / (2 * N)
+
+    spans = []
+
+    for i in range(N):
+        # create a span that has a unique range
+        span = hs.roi.SpanROI(
+            i * span_width + axis[0], (i + 1) * span_width + axis[0]
+        )
+
+        spans.append(span)
+
+    return spans
+
+
+def _create_rect_roi_group(sig_wax, sig_hax, nrects):
+    """
+    Creates a set `N` of RectangularROI's that sit along `waxis` and `haxis` at sensible positions.
+    """
+    waxis = sig_wax.axis
+    haxis = sig_hax.axis
+    
+    w_range = waxis[-1] - waxis[0]
+    h_range = haxis[-1] - haxis[0]
+
+    span_w_width = w_range / (2 * nrects)
+    span_h_width = h_range / (2 * nrects)
+    
+    rects = []
+
+    for i in range(nrects):
+        # create a span that has a unique range
+        rect = hs.roi.RectangularROI(
+            left=i * span_w_width + waxis[0], 
+            top=i * span_h_width + haxis[0],
+            right=(i + 1) * span_w_width + waxis[0],
+            bottom=(i + 1) * span_h_width + haxis[0]
+        )
+
+        rects.append(rect)
+    
+    return rects
+
+
+def plot_span_map(signal, rois=1):
     """
     Plot a span map.
 
@@ -1735,6 +1786,8 @@ def plot_span_map(signal, spans=1):
     span_sums: [hyperspy.signals.BaseSignal]
         The summed `span_signals`.
     """
+
+    """
     if (
         signal.axes_manager.signal_dimension != 1
         or signal.axes_manager.navigation_dimension != 2
@@ -1748,63 +1801,62 @@ def plot_span_map(signal, spans=1):
             f"dimensions, not {signal_dims} and {nav_dims} respectively"
         ))
 
-    ax_signal = signal.axes_manager.signal_axes[0].axis
-    ax_signal_range = ax_signal[-1] - ax_signal[0]
+    """
+    sig_dims = signal.axes_manager.signal_dimension
+    nav_dims = signal.axes_manager.navigation_dimension
+  
+    if sig_dims not in [1, 2] or nav_dims not in [1, 2]:
+        warnings.warn(f"This function is only tested for signals with 1 or 2 signal and navigation dimensions, not {sig_dims} {nav_dims}")
+        
+    if isinstance(rois, int):
+        if sig_dims == 1:
+            rois = _create_span_roi_group(signal.axes_manager.signal_axes[0], rois)
+        elif sig_dims == 2:
+            rois = _create_rect_roi_group(*signal.axes_manager.signal_axes, rois)
+        else:
+            raise ValueError("???")
 
-    if isinstance(spans, int):
-        span_width = ax_signal_range / (2 * spans)
-
-        N = spans
-        spans = []
-
-        for i in range(N):
-            # create a span that has a unique range
-            span = hs.roi.SpanROI(
-                i * span_width + ax_signal[0], (i + 1) * span_width + ax_signal[0]
-            )
-
-            spans.append(span)
-
-    if len(spans) > 3:
+    if len(rois) > 3:
         raise ValueError("Maximum number of spans is 3")
 
     colors = ["red", "green", "blue"]
-    span_signals = []
-    span_sums = []
+    roi_signals = []
+    roi_sums = []
 
     all_sum = signal.nansum()
     all_sum.plot()
 
-    for i, span in enumerate(spans):
+    for i, roi in enumerate(rois):
         color = colors[i]
 
         # add it to the sum over all positions
-        span.add_widget(all_sum, color=colors[i])
+        roi.add_widget(all_sum, color=colors[i])
 
         # create a signal that is the spectral slice of sig
-        span_signal = hs.interactive(
-            span,
+        roi_signal = hs.interactive(
+            roi,
             signal=signal,
-            event=span.events.changed,
+            event=roi.events.changed,
             axes=signal.axes_manager.signal_axes,
         )
-        span_signals.append(span_signal)
+        roi_signals.append(roi_signal)
 
-        # create a signal that is the spectral integral of span_sig
-        span_sum = span_signal.nansum(-1).as_signal2D(
-            [0, 1]
-        )  # convert to 2D signal, otherwise the navigator doesn't support updating...?
-        span_sums.append(span_sum)
+        roi_sum = roi_signal.nansum(roi_signal.axes_manager.signal_axes)
+        roi_sum = roi_sum.transpose(
+            signal_axes=roi_sum.axes_manager.navigation_dimension
+        )
 
-        span_sum.plot(cmap=f"{color.capitalize()}s")
+        roi_sums.append(roi_sum)
+
+        roi_sum.plot(cmap=f"{color.capitalize()}s")
 
         # connect the span signal changing range to the value of span_sum
         hs.interactive(
-            span_signal.nansum,
-            axis=-1,
-            event=span_signal.axes_manager.events.any_axis_changed,
-            out=span_sum,
+            roi_signal.nansum,
+            event=roi_signal.axes_manager.events.any_axis_changed,
+            axis=roi_signal.axes_manager.signal_axes,
+            out=roi_sum,
         )
 
     # return all ya bits for future messing around.
-    return all_sum, spans, span_signals, span_sums
+    return all_sum, rois, roi_signals, roi_sums
