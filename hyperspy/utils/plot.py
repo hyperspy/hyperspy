@@ -43,7 +43,7 @@ from hyperspy.drawing.utils import (
     plot_images,
     plot_signals,
     plot_spectra,
-    plot_span_map
+    plot_roi_map
     )
 from hyperspy.utils import markers
 
@@ -54,7 +54,7 @@ __all__ = [
     'plot_images',
     'plot_signals',
     'plot_spectra',
-    'plot_span_map'
+    'plot_roi_map'
     ]
 
 

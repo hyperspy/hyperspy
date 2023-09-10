@@ -1752,26 +1752,24 @@ def _create_rect_roi_group(sig_wax, sig_hax, nrects):
     return rects
 
 
-def plot_span_map(signal, rois=1):
+def plot_roi_map(signal, rois=1):
     """
-    Plot a span map.
+    Plot a roi map of `signal`.
 
-    Plots a navigator consisting of the sum over all positions in signal, with
-    `spans` spans.
+    Uses rois to select a regions of `signal`'s signal axes.
 
-    For each span a `BaseSignal` image is plotted consisting of integrated
-    counts over the the range defined by the span.
+    For each roi, a plot is generated of the sum witin this signal roi
+    at each point in `signal`'s navigator.
 
-    The spans can be moved interactively and the corresponding images will
+    The rois can be moved interactively and the corresponding plots will
     update automatically.
 
     Arguments
     ---------
     signal: hyperspy.signals.Signal1D
-        Signal to inspect. Should have 2 navigation dimensions and 1 signal
-        dimension.
-    spans: int, [hyperspy.roi.SpanROI]
-        Spans that represent colour channels in map. Can either pass a list of
+        Signal to inspect.
+    rois: int, [hyperspy.roi.SpanROI], [hyperspy.roi.RectangularROI]
+        ROIs that represent colour channels in map. Can either pass a list of
         `SpanROI` objects, or an `int`, `N`, in which case `N` `SpanROI`s will
         be created. Currently limited to a maximum of 3 spans.
 
@@ -1779,28 +1777,34 @@ def plot_span_map(signal, rois=1):
     -------
     all_sum: hyperspy.signals.BaseSignal
         Sum over all positions of `sig`, the 'navigator' for `plot_span_map`
-    spans: [hyperspy.roi.SpanROI]
-        The span ROIs from the navigator
-    span_signals: [hyperspy.signals.BaseSignal]
-        Slices of `sig` according to each span roi
-    span_sums: [hyperspy.signals.BaseSignal]
-        The summed `span_signals`.
-    """
+    rois: [hyperspy.roi.SpanROI], [hyperspy.roi.RectangularROI]
+        The ROIs that slice signal
+    roi_signals: [hyperspy.signals.BaseSignal]
+        Slices of `signal` according to each roi
+    roi_sums: [hyperspy.signals.BaseSignal]
+        The summed `roi_signals`.
 
-    """
-    if (
-        signal.axes_manager.signal_dimension != 1
-        or signal.axes_manager.navigation_dimension != 2
-    ):
-        signal_dims, nav_dims = (
-            signal.axes_manager.signal_dimension,
-            signal.axes_manager.navigation_dimension,
-        )
-        raise ValueError((
-            "This method is designed for data with 1 signal and 2 navigation "
-            f"dimensions, not {signal_dims} and {nav_dims} respectively"
-        ))
+    Examples
+    --------
+    3D hyperspectral data
+    ~~~~~~~~~~~~~~~~~~~~~
+    For 3D hyperspectral data, the rois used will be `hs.roi.SpanROI`s. 
+    Therefore these rois can be used to select particular spectral ranges,
+    e.g. a particular peak.
 
+    The map generated for a given roi is therefore the sum of this spectral
+    region at each point in the hyperspectral map. Therefore regions of the 
+    sample where this peak is bright will be bright in this map.
+
+    4D STEM
+    ~~~~~~~
+    For 4D STEM data, the rois used will be `hs.roi.RectangularROI`s.
+    These rois can be used to select particular regions in reciprocal space,
+    e.g. a particular diffraction peak.
+
+    The map generated for a given roi is therefore the intensity of this
+    region at each point in the hyperspectral map. Therefore regions of the 
+    scan where a particular peak is intense will appear bright.
     """
     sig_dims = signal.axes_manager.signal_dimension
     nav_dims = signal.axes_manager.navigation_dimension
@@ -1841,7 +1845,10 @@ def plot_span_map(signal, rois=1):
         )
         roi_signals.append(roi_signal)
 
+        # add up the roi sliced signals to one point per nav position
         roi_sum = roi_signal.nansum(roi_signal.axes_manager.signal_axes)
+
+        # transpose shape to swap these points per nav into signal points
         roi_sum = roi_sum.transpose(
             signal_axes=roi_sum.axes_manager.navigation_dimension
         )
