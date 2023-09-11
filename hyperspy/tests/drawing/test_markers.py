@@ -31,7 +31,6 @@ from matplotlib.patches import RegularPolygon
 import matplotlib.pyplot as plt
 import dask.array as da
 
-from hyperspy.drawing._markers.relative_markers import RelativeMarkers
 from hyperspy.drawing.markers import markers2collection
 from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
 from hyperspy.axes import UniformDataAxis

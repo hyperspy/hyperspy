@@ -18,7 +18,6 @@
 
 from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 from hyperspy.drawing.markers import Markers
-from hyperspy.drawing._markers.relative_markers import RelativeMarkers
 from hyperspy.external.matplotlib.collections import TextCollection
 
 
@@ -59,8 +58,3 @@ class Texts(Markers):
 
     __init__.__doc__ %= OFFSET_DOCSTRING
 
-
-class RelativeTextCollection(RelativeMarkers, Texts):
-    """A set of text markers which are plotted relative to the current data value or index.
-    """
-    pass

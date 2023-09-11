@@ -26,7 +26,6 @@ class HorizontalLines(Markers):
     """
     marker_type = "HorizontalLines"
 
-
     def __init__(self,
                  offsets,
                  offsets_transform="display",
