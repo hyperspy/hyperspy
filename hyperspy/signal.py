@@ -3147,18 +3147,15 @@ class BaseSignal(FancySlicing,
             This only occurs when inplace is set to ``False``, otherwise nothing is returned.
         """
         old_axis = self.axes_manager[axis]
+        if old_axis.navigate != new_axis.navigate:
+            raise ValueError(
+                "The navigate attribute of new_axis differs from the to be replaced axis."
+            )
         axis_idx = old_axis.index_in_array
         if old_axis.low_value > new_axis.low_value or old_axis.high_value < new_axis.high_value:
             _logger.warning(
                 "The specified new axis exceeds the range of the to be replaced old axis. "
                 "The data will be extrapolated if not specified otherwise via fill_value/bounds_error"
-            )
-
-        if old_axis.navigate != new_axis.navigate:
-            _logger.warning(
-                f"The navigate attribute of new_axis differs from the to be replaced axis. "
-                f"new_axis has priority, thus navigate will be set to {new_axis.navigate}. "
-                f"If that is not intended, please specify navigate for new_axis."
             )
 
         interpolator = make_interp_spline(
