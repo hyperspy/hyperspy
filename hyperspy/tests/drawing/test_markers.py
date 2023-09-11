@@ -715,6 +715,25 @@ class TestRelativeMarkerCollection:
         assert segs[0][1][1] == 11
         assert offs[0][1] == 11
 
+    def test_relative_marker_collection_with_shifts(self):
+        signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
+        segments = np.zeros((10, 2, 2))
+        segments[:, 1, 1] = 1  # set y values end
+        segments[:, 0, 0] = np.arange(10).reshape(10)  # set x values
+        segments[:, 1, 0] = np.arange(10).reshape(10)  # set x values
+
+        markers = Lines(segments=segments,shift=1/9, transform="relative")
+        texts = Texts(offsets=segments[:, 1], shift=1/9, texts="a", offsets_transform="relative")
+        signal.plot()
+        signal.add_marker(markers)
+        signal.add_marker(texts)
+        signal.axes_manager.navigation_axes[0].index = 1
+        segs = markers.collection.get_segments()
+        offs = texts.collection.get_offsets()
+        assert segs[0][0][0] == 0
+        assert segs[0][1][1] == 12
+        assert offs[0][1] == 12
+
 class TestLineCollections:
     @pytest.fixture
     def offsets(self):
