@@ -27,13 +27,18 @@ class Squares(Markers):
     A Collection of square markers using
     :py:class`matplotlib.collections.RegularPolyCollection`.
     """
+
     marker_type = "Squares"
 
-    def __init__(self, offsets, sizes,
-                 offsets_transform="data",
-                 transform="xaxis_scale",
-                 rotation=0,
-                 **kwargs):
+    def __init__(
+        self,
+        offsets,
+        sizes,
+        offsets_transform="data",
+        transform="xaxis_scale",
+        rotation=0,
+        **kwargs
+    ):
         """
         Initialize the set of square Markers.
 
@@ -44,13 +49,15 @@ class Squares(Markers):
             The size of the squares.
         """
         kwargs["numsides"] = 4
-        kwargs["rotation"] = rotation + np.pi/4  # rotate by 45 degrees
+        kwargs["rotation"] = rotation + np.pi / 4  # rotate by 45 degrees
 
-        super().__init__(collection_class=RegularPolyCollection,
-                         offsets=offsets,
-                         sizes=sizes,
-                         offsets_transform=offsets_transform,
-                         transform=transform,
-                         **kwargs)
+        super().__init__(
+            collection_class=RegularPolyCollection,
+            offsets=offsets,
+            sizes=sizes,
+            offsets_transform=offsets_transform,
+            transform=transform,
+            **kwargs
+        )
 
     __init__.__doc__ %= OFFSET_DOCSTRING

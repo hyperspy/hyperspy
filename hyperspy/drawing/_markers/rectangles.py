@@ -21,18 +21,20 @@ from hyperspy.external.matplotlib.collections import RectangleCollection
 
 
 class Rectangles(Markers):
-    """A Collection of Rectangles Markers
-    """
+    """A Collection of Rectangles Markers"""
+
     marker_type = "Rectangles"
 
-    def __init__(self,
-                 offsets,
-                 widths,
-                 heights,
-                 offsets_transform="data",
-                 transform="display",
-                 **kwargs):
-        """ Initialize the set of Segments Markers.
+    def __init__(
+        self,
+        offsets,
+        widths,
+        heights,
+        offsets_transform="data",
+        transform="display",
+        **kwargs
+    ):
+        """Initialize the set of Segments Markers.
 
         Parameters
         ----------
@@ -41,10 +43,12 @@ class Rectangles(Markers):
         kwargs:
             Additional keyword arguments are passed to matplotlib.collections.PolyCollection.
         """
-        super().__init__(collection_class=RectangleCollection,
-                         offsets=offsets,
-                         widths=widths,
-                         heights=heights,
-                         offsets_transform=offsets_transform,
-                         transform=transform,
-                         **kwargs)
+        super().__init__(
+            collection_class=RectangleCollection,
+            offsets=offsets,
+            widths=widths,
+            heights=heights,
+            offsets_transform=offsets_transform,
+            transform=transform,
+            **kwargs
+        )

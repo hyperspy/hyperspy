@@ -20,21 +20,15 @@ from hyperspy.drawing.markers import Markers
 from hyperspy.external.matplotlib.quiver import Quiver
 from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 
+
 class Arrows(Markers):
-    """A set of Arrow markers based on the matplotlib.quiver.Quiver class.
-    """
+    """A set of Arrow markers based on the matplotlib.quiver.Quiver class."""
+
     marker_type = "Arrows"
+
     def __init__(
-            self,
-            offsets,
-            U,
-            V,
-            C=None,
-            scale=1,
-            angles="xy",
-            scale_units="xy",
-            **kwargs
-        ):
+        self, offsets, U, V, C=None, scale=1, angles="xy", scale_units="xy", **kwargs
+    ):
         """
         Initialize the set of Arrows Markers.
 
@@ -67,7 +61,7 @@ class Arrows(Markers):
         offsets = kwds["offsets"]
         X = offsets[:, 0]
         Y = offsets[:, 1]
-        U, V, C = kwds['U'], kwds['V'], kwds['C']
+        U, V, C = kwds["U"], kwds["V"], kwds["C"]
 
         if C is None:
             args = (X, Y, U, V)
@@ -75,7 +69,8 @@ class Arrows(Markers):
             args = (X, Y, U, V, C)
 
         self.collection = self.collection_class(
-            *args, offset_transform=self.ax.transData, **self._init_kwargs)
+            *args, offset_transform=self.ax.transData, **self._init_kwargs
+        )
 
     def update(self):
         if not self._is_iterating:
@@ -83,11 +78,11 @@ class Arrows(Markers):
         else:
             kwds = self.get_data_position(get_static_kwargs=False)
             # in case 'U', 'V', 'C' are not position dependent
-            kwds.setdefault('U', self.kwargs['U'])
-            kwds.setdefault('V', self.kwargs['V'])
-            kwds.setdefault('C', self.kwargs['C'])
-            self.collection.set_offsets(kwds['offsets'])
+            kwds.setdefault("U", self.kwargs["U"])
+            kwds.setdefault("V", self.kwargs["V"])
+            kwds.setdefault("C", self.kwargs["C"])
+            self.collection.set_offsets(kwds["offsets"])
             # Need to use `set_UVC` and pass all 'U', 'V' and 'C' at once,
             # because matplotlib expect same shape
-            UVC = {k:v for k, v in kwds.items() if k in ['U', 'V', 'C']}
+            UVC = {k: v for k, v in kwds.items() if k in ["U", "V", "C"]}
             self.collection.set_UVC(**UVC)

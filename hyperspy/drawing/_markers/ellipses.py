@@ -22,20 +22,22 @@ from hyperspy.external.matplotlib.collections import EllipseCollection
 
 
 class Ellipses(Markers):
-    """A set of Ellipse Markers
-    """
+    """A set of Ellipse Markers"""
+
     marker_type = "Ellipses"
 
-    def __init__(self,
-                 offsets,
-                 heights,
-                 widths,
-                 offsets_transform="data",
-                 transform="display",
-                 units="xy",
-                 angles=(0,),
-                 **kwargs):
-        """ Initialize the set of Ellipse Markers.
+    def __init__(
+        self,
+        offsets,
+        heights,
+        widths,
+        offsets_transform="data",
+        transform="display",
+        units="xy",
+        angles=(0,),
+        **kwargs
+    ):
+        """Initialize the set of Ellipse Markers.
 
         Parameters
         ----------
@@ -49,14 +51,16 @@ class Ellipses(Markers):
         kwargs:
             Additional keyword arguments are passed to :py:class:`matplotlib.collections.EllipseCollection`.
         """
-        super().__init__(collection_class=EllipseCollection,
-                         offsets=offsets,
-                         offsets_transform=offsets_transform,
-                         heights=heights,
-                         widths=widths,
-                         angles=angles,
-                         transform=transform,
-                         units=units,
-                         **kwargs)
+        super().__init__(
+            collection_class=EllipseCollection,
+            offsets=offsets,
+            offsets_transform=offsets_transform,
+            heights=heights,
+            widths=widths,
+            angles=angles,
+            transform=transform,
+            units=units,
+            **kwargs
+        )
 
     __init__.__doc__ %= OFFSET_DOCSTRING

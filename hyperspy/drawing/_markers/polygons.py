@@ -21,16 +21,12 @@ from matplotlib.collections import PolyCollection
 
 
 class Polygons(Markers):
-    """A Collection of Rectangles Markers
-    """
+    """A Collection of Rectangles Markers"""
+
     marker_type = "Polygons"
 
-    def __init__(self,
-                 verts,
-                 offsets_transform="display",
-                 transform="data",
-                 **kwargs):
-        """ Initialize the set of Segments Markers.
+    def __init__(self, verts, offsets_transform="display", transform="data", **kwargs):
+        """Initialize the set of Segments Markers.
 
         Parameters
         ----------
@@ -42,8 +38,10 @@ class Polygons(Markers):
         kwargs:
             Additional keyword arguments are passed to matplotlib.collections.PolyCollection.
         """
-        super().__init__(collection_class=PolyCollection,
-                         verts=verts,
-                         offsets_transform=offsets_transform,
-                         transform=transform,
-                         **kwargs)
+        super().__init__(
+            collection_class=PolyCollection,
+            verts=verts,
+            offsets_transform=offsets_transform,
+            transform=transform,
+            **kwargs
+        )

@@ -27,14 +27,15 @@ class Circles(Markers):
 
     marker_type = "Circles"
 
-
-    def __init__(self,
-                 offsets,
-                 sizes=2,
-                 offsets_transform="data",
-                 transform="xaxis_scale",
-                 facecolors='none',
-                 **kwargs):
+    def __init__(
+        self,
+        offsets,
+        sizes=2,
+        offsets_transform="data",
+        transform="xaxis_scale",
+        facecolors="none",
+        **kwargs
+    ):
         """
         Initialize the set of Circle Markers.
 
@@ -51,12 +52,14 @@ class Circles(Markers):
         kwargs : dict
             Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`.
         """
-        super().__init__(collection_class=CircleCollection,
-                         offsets=offsets,
-                         sizes=sizes,
-                         facecolors=facecolors,
-                         offsets_transform=offsets_transform,
-                         transform=transform,
-                         **kwargs)
+        super().__init__(
+            collection_class=CircleCollection,
+            offsets=offsets,
+            sizes=sizes,
+            facecolors=facecolors,
+            offsets_transform=offsets_transform,
+            transform=transform,
+            **kwargs
+        )
 
     __init__.__doc__ %= OFFSET_DOCSTRING

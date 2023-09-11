@@ -70,14 +70,17 @@ class Markers:
     method can be passed as an array with `dtype=object` and the same size as the navigation axes
     for a signal.
     """
+
     marker_type = "Markers"
 
-    def __init__(self,
-                 collection_class,
-                 offsets_transform="data",
-                 transform="display",
-                 shift=None,
-                 **kwargs):
+    def __init__(
+        self,
+        collection_class,
+        offsets_transform="data",
+        transform="display",
+        shift=None,
+        **kwargs,
+    ):
         """
         Initialize a Marker Collection.
 
@@ -170,25 +173,32 @@ class Markers:
         if isinstance(collection_class, str):
             try:
                 # Remove when external changes are merged
-                if collection_class in ["TextCollection",
-                                        "RegularPolyCollection",
-                                        "EllipseCollection",
-                                        "RectangleCollection"]:
+                if collection_class in [
+                    "TextCollection",
+                    "RegularPolyCollection",
+                    "EllipseCollection",
+                    "RectangleCollection",
+                ]:
                     collection_class = getattr(hs_mpl_collections, collection_class)
                 elif collection_class is "Quiver":
                     from matplotlib.quiver import Quiver as collection_class
                 else:
                     collection_class = getattr(mpl_collections, collection_class)
             except ModuleNotFoundError:
-                raise ModuleNotFoundError("The argument `collection_class` must be a string or"
-                                          " a matplotlib.collections class. matplotlib.collections." +
-                                          collection_class + " is not a valid matplotlib.collections class.")
+                raise ModuleNotFoundError(
+                    "The argument `collection_class` must be a string or"
+                    " a matplotlib.collections class. matplotlib.collections."
+                    + collection_class
+                    + " is not a valid matplotlib.collections class."
+                )
 
-        if "matplotlib.collections" not in str(collection_class) and "matplotlib.quiver" not in str(collection_class):
+        if "matplotlib.collections" not in str(
+            collection_class
+        ) and "matplotlib.quiver" not in str(collection_class):
             raise ValueError(
                 "The argument `collection_class` must be a class in "
                 "`matplotlib.collection."
-                )
+            )
         # Data attributes
         self.kwargs = kwargs  # all keyword arguments.
         self.axes_manager = None
@@ -196,7 +206,6 @@ class Markers:
         self.auto_update = True
         self._offsets_transform = None
         self._transform = None
-
 
         # Handling dask arrays
         self.dask_kwargs = {}
@@ -216,7 +225,9 @@ class Markers:
             elif isinstance(value, list) and len(value) == 0:
                 self.kwargs[key] = np.array(value)
 
-            if key in ["sizes", "color"] and (not hasattr(value, "__len__") or isinstance(value, str)):
+            if key in ["sizes", "color"] and (
+                not hasattr(value, "__len__") or isinstance(value, str)
+            ):
                 self.kwargs[key] = (value,)
             if key in ["s"] and isinstance(value, str):
                 self.kwargs[key] = (value,)
@@ -256,8 +267,7 @@ class Markers:
         if self._transform == "relative" or self._offsets_transform == "relative":
             return False
         elif self._plot_on_signal:
-            return np.any(
-                [is_iterating(value) for key, value in self.kwargs.items()])
+            return np.any([is_iterating(value) for key, value in self.kwargs.items()])
         else:  # currently iterating navigation markers arenot supported
             return False
 
@@ -275,26 +285,40 @@ class Markers:
 
     def _get_transform(self, attr="_transform"):
         if self.ax is not None:  # return the transform
-            transforms = {"data": self.ax.transData,
-                          "axes": self.ax.transAxes,
-                          "display": IdentityTransform(),
-                          "yaxis": self.ax.get_yaxis_transform(),
-                          "xaxis": self.ax.get_xaxis_transform(),
-                          "relative": self.ax.transData,
-                          }
+            transforms = {
+                "data": self.ax.transData,
+                "axes": self.ax.transAxes,
+                "display": IdentityTransform(),
+                "yaxis": self.ax.get_yaxis_transform(),
+                "xaxis": self.ax.get_xaxis_transform(),
+                "relative": self.ax.transData,
+            }
             if attr == "_transform":
-                transforms["xaxis_scale"] = Affine2D().scale(self.ax.bbox.width / self.ax.viewLim.width)
-                transforms["yaxis_scale"] = Affine2D().scale(self.ax.bbox.height / self.ax.viewLim.height)
+                transforms["xaxis_scale"] = Affine2D().scale(
+                    self.ax.bbox.width / self.ax.viewLim.width
+                )
+                transforms["yaxis_scale"] = Affine2D().scale(
+                    self.ax.bbox.height / self.ax.viewLim.height
+                )
             return transforms[getattr(self, attr)]
         else:  # return the string value
             return getattr(self, attr)
 
     def _set_transform(self, value, attr="_transform"):
-        if value not in ["data", "axes", "xaxis", "yaxis",
-                         "display", "relative", "xaxis_scale",
-                         "yaxis_scale"]:
-            raise ValueError("The offset transform must be one of 'data', 'axes',"
-                             " 'xaxis', 'yaxis', 'display', 'relative'")
+        if value not in [
+            "data",
+            "axes",
+            "xaxis",
+            "yaxis",
+            "display",
+            "relative",
+            "xaxis_scale",
+            "yaxis_scale",
+        ]:
+            raise ValueError(
+                "The offset transform must be one of 'data', 'axes',"
+                " 'xaxis', 'yaxis', 'display', 'relative'"
+            )
         setattr(self, attr, value)
 
     @property
@@ -464,7 +488,7 @@ class Markers:
                 inplace=False,
                 ragged=True,
                 output_dtype=object,
-                signal_axes=signal_axes
+                signal_axes=signal_axes,
             )
         else:
             raise ValueError(
@@ -485,7 +509,6 @@ class Markers:
         return new_marker
 
     def _to_dictionary(self):
-
         marker_dict = {
             "marker_type": self.marker_type,
             "collection_class": self.collection_class.__name__,
@@ -496,9 +519,10 @@ class Markers:
         }
         return marker_dict
 
-    def get_data_position(self,
-                          get_static_kwargs=True,
-                          ):
+    def get_data_position(
+        self,
+        get_static_kwargs=True,
+    ):
         """
         Return the current keyword arguments for updating the collection.
         """
@@ -522,7 +546,9 @@ class Markers:
         else:
             current_keys = self.kwargs
         # Handling relative markers
-        if self._offsets_transform == "relative" or self._transform == "relative":  # scale based on current data
+        if (
+            self._offsets_transform == "relative" or self._transform == "relative"
+        ):  # scale based on current data
             if "offsets" in current_keys:
                 current_keys = self._scale_kwarg(current_keys, "offsets")
             if "segments" in current_keys:
@@ -545,23 +571,26 @@ class Markers:
         current_data = self.temp_signal(as_numpy=True)
         x_positions = new_kwds[key][..., 0]
         ax = self.axes_manager.signal_axes[0]
-        indexes = np.round((x_positions - ax.offset)/ax.scale).astype(int)
+        indexes = np.round((x_positions - ax.offset) / ax.scale).astype(int)
         y_positions = new_kwds[key][..., 1]
-        new_y_positions = current_data[indexes]*y_positions
+        new_y_positions = current_data[indexes] * y_positions
 
         if self.shift is not None:
-            yrange = np.max(current_data)-np.min(current_data)
-            new_y_positions = new_y_positions + self.shift*yrange
+            yrange = np.max(current_data) - np.min(current_data)
+            new_y_positions = new_y_positions + self.shift * yrange
         new_kwds[key][..., 1] = new_y_positions
         return new_kwds
 
     def update(self):
-        if self._transform == "relative" or self._offsets_transform == "relative" or self._is_iterating:
+        if (
+            self._transform == "relative"
+            or self._offsets_transform == "relative"
+            or self._is_iterating
+        ):
             kwds = self.get_data_position(get_static_kwargs=False)
             self.collection.set(**kwds)
 
     def _initialize_collection(self):
-
         self.collection = self.collection_class(
             **self.get_data_position(),
             offset_transform=self.offsets_transform,
@@ -639,8 +668,10 @@ def dict2vector(data, keys=None, return_size=True, dtype=float):
     keys = np.array(keys)
     # check to see if the array should be ragged
     unique_keys = np.unique(keys)
-    is_key_iter = [isiterable(data[key]) and not isinstance(data[key], str) for key in unique_keys]
-    if not any(is_key_iter):# no iterable keys
+    is_key_iter = [
+        isiterable(data[key]) and not isinstance(data[key], str) for key in unique_keys
+    ]
+    if not any(is_key_iter):  # no iterable keys
         if dtype is str:
             dtype = object
         vector = np.empty(keys.shape, dtype=dtype)
@@ -701,11 +732,20 @@ def markers2collection(marker_dict):
         Texts,
         VerticalLines,
     )
-    marker_mapping = {"Arrows": Arrows, "Ellipses": Ellipses, "Circles": Circles,
-                      "HorizontalLines": HorizontalLines, "Lines": Lines,
-                      "Points": Points, "Polygons": Polygons, "Rectangles": Rectangles,
-                      "Squares": Squares, "Texts": Texts,
-                      "VerticalLines": VerticalLines}
+
+    marker_mapping = {
+        "Arrows": Arrows,
+        "Ellipses": Ellipses,
+        "Circles": Circles,
+        "HorizontalLines": HorizontalLines,
+        "Lines": Lines,
+        "Points": Points,
+        "Polygons": Polygons,
+        "Rectangles": Rectangles,
+        "Squares": Squares,
+        "Texts": Texts,
+        "VerticalLines": VerticalLines,
+    }
 
     from matplotlib.collections import PolyCollection
 
@@ -717,12 +757,8 @@ def markers2collection(marker_dict):
     transform = marker_dict.pop("transform", None)
 
     if marker_type == "Point":
-        offsets, size = dict2vector(
-            marker_dict["data"], keys=None, return_size=True
-        )
-        marker = Points(
-            offsets=offsets, sizes=size, **marker_dict["marker_properties"]
-        )
+        offsets, size = dict2vector(marker_dict["data"], keys=None, return_size=True)
+        marker = Points(offsets=offsets, sizes=size, **marker_dict["marker_properties"])
         marker
     elif marker_type == "HorizontalLine":
         offsets = dict2vector(marker_dict["data"], keys=["y1"], return_size=False)
@@ -741,74 +777,95 @@ def markers2collection(marker_dict):
         marker = Lines(segments=segments, **marker_dict["marker_properties"])
     elif marker_type == "Arrow":
         offsets = dict2vector(
-            marker_dict["data"], keys=[["x1", "y1"],], return_size=False
+            marker_dict["data"],
+            keys=[
+                ["x1", "y1"],
+            ],
+            return_size=False,
         )
 
         dx = dict2vector(
-            marker_dict["data"], keys=[["x2"],], return_size=False
+            marker_dict["data"],
+            keys=[
+                ["x2"],
+            ],
+            return_size=False,
         )
         dy = dict2vector(
-            marker_dict["data"], keys=[["y2"],], return_size=False
+            marker_dict["data"],
+            keys=[
+                ["y2"],
+            ],
+            return_size=False,
         )
 
-        marker = Arrows(offsets, dx,
-                        dy,
-                        **marker_dict["marker_properties"])
+        marker = Arrows(offsets, dx, dy, **marker_dict["marker_properties"])
 
     elif marker_type == "Rectangle":
         verts = dict2vector(
             marker_dict["data"],
-            keys=[[["x1", "y1"], ["x2", "y1"], ["x2", "y2"], ["x1", "y2"]],],
+            keys=[
+                [["x1", "y1"], ["x2", "y1"], ["x2", "y2"], ["x1", "y2"]],
+            ],
             return_size=False,
         )
-        marker = Markers(collection_class=PolyCollection,
-                         verts=verts, **marker_dict["marker_properties"],
+        marker = Markers(
+            collection_class=PolyCollection,
+            verts=verts,
+            **marker_dict["marker_properties"],
         )
     elif marker_type == "Ellipse":
-        offsets = dict2vector(marker_dict["data"], keys=[["x1", "y1"], ],
-                         return_size=False)
+        offsets = dict2vector(
+            marker_dict["data"],
+            keys=[
+                ["x1", "y1"],
+            ],
+            return_size=False,
+        )
 
         width = dict2vector(marker_dict["data"], keys=["x2"], return_size=False)
         height = dict2vector(marker_dict["data"], keys=["y2"], return_size=False)
-        marker = Ellipses(offsets=offsets,
-                          widths=width,
-                          heights=height,
-                          **marker_dict["marker_properties"])
+        marker = Ellipses(
+            offsets=offsets,
+            widths=width,
+            heights=height,
+            **marker_dict["marker_properties"],
+        )
     elif marker_type == "Text":
         offsets = dict2vector(
             marker_dict["data"], keys=[["x1", "y1"]], return_size=False
         )
-        texts = dict2vector(marker_dict["data"],
-                            keys=["text"],
-                            return_size=False,
-                            dtype=str)
-        marker = Texts(
-            offsets=offsets, texts=texts, **marker_dict["marker_properties"]
+        texts = dict2vector(
+            marker_dict["data"], keys=["text"], return_size=False, dtype=str
         )
+        marker = Texts(offsets=offsets, texts=texts, **marker_dict["marker_properties"])
     elif marker_type == "VerticalLine":
         x = dict2vector(marker_dict["data"], keys=["x1"], return_size=False)
 
-        marker = VerticalLines(
-            offsets=x, **marker_dict["marker_properties"]
-        )
+        marker = VerticalLines(offsets=x, **marker_dict["marker_properties"])
     elif marker_type == "VerticalLineSegment":
         segments = dict2vector(
             marker_dict["data"], keys=[[["x1", "y1"], ["x1", "y2"]]], return_size=False
         )
 
-        marker = Lines(segments=segments,
-                       **marker_dict["marker_properties"],
-                       )
+        marker = Lines(
+            segments=segments,
+            **marker_dict["marker_properties"],
+        )
     elif marker_type in marker_mapping:
-        marker = marker_mapping[marker_type](transform=transform,
-                                             offsets_transform=offsets_transform,
-                                             **marker_dict["kwargs"],)
+        marker = marker_mapping[marker_type](
+            transform=transform,
+            offsets_transform=offsets_transform,
+            **marker_dict["kwargs"],
+        )
 
     elif marker_type == "Markers":
-        marker = Markers(collection_class=marker_dict["collection_class"],
-                         transform=transform,
-                         offsets_transform=offsets_transform,
-                         **marker_dict["kwargs"])
+        marker = Markers(
+            collection_class=marker_dict["collection_class"],
+            transform=transform,
+            offsets_transform=offsets_transform,
+            **marker_dict["kwargs"],
+        )
     else:
         raise ValueError(
             f"The marker_type: {marker_type} is not a hyperspy.marker class "

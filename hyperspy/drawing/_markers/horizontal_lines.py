@@ -22,15 +22,13 @@ import numpy as np
 
 
 class HorizontalLines(Markers):
-    """A set of HorizontalLines markers
-    """
+    """A set of HorizontalLines markers"""
+
     marker_type = "HorizontalLines"
 
-    def __init__(self,
-                 offsets,
-                 offsets_transform="display",
-                 transform="yaxis",
-                 **kwargs):
+    def __init__(
+        self, offsets, offsets_transform="display", transform="yaxis", **kwargs
+    ):
         """Initialize a set of HorizontalLines markers.
 
         Parameters
@@ -42,12 +40,14 @@ class HorizontalLines(Markers):
             that is array-like and has `dtype=object` is assumed to be an iterating
             argument and is treated as such.
         """
-        Markers.__init__(self,
-                         collection_class=LineCollection,
-                         offsets=offsets,
-                         offsets_transform=offsets_transform,
-                         transform=transform,
-                         **kwargs)
+        Markers.__init__(
+            self,
+            collection_class=LineCollection,
+            offsets=offsets,
+            offsets_transform=offsets_transform,
+            transform=transform,
+            **kwargs
+        )
         self.name = self.__class__.__name__
 
     def get_data_position(self, get_static_kwargs=True):

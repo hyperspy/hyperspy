@@ -490,7 +490,7 @@ class TestInitMarkerCollection:
             (Lines, LineCollection, {"segments": [[0, 0], [1, 1]]}),
         ),
     )
-    def test_deepcopy(self,subclass):
+    def test_deepcopy(self, subclass):
         m = subclass[0](**subclass[2], transform="display", offsets_transform="display")
         m2 = deepcopy(m)
         assert m2 is not m
@@ -500,8 +500,6 @@ class TestInitMarkerCollection:
         assert m2.offsets_transform == m.offsets_transform
         assert "transform" not in m.kwargs
         assert "transform" not in m2.kwargs
-
-
 
 
 class TestMarkers2Collection:

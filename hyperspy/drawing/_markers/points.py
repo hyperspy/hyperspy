@@ -24,25 +24,32 @@ from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 
 class Points(Markers):
     """A set of Points Markers."""
+
     marker_type = "Points"
 
-    def __init__(self, offsets, sizes=2,
-                 offsets_transform="data",
-                 transform="xaxis_scale",
-                 **kwargs):
-        """ Initialize the set of points Markers.
+    def __init__(
+        self,
+        offsets,
+        sizes=2,
+        offsets_transform="data",
+        transform="xaxis_scale",
+        **kwargs
+    ):
+        """Initialize the set of points Markers.
 
         Parameters
         ----------
         %s
         kwargs : dict
-        	Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`
+                Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`
         """
-        super().__init__(collection_class=CircleCollection,
-                         offsets=offsets,
-                         sizes=sizes,
-                         offsets_transform=offsets_transform,
-                         transform=transform,
-                         **kwargs)
+        super().__init__(
+            collection_class=CircleCollection,
+            offsets=offsets,
+            sizes=sizes,
+            offsets_transform=offsets_transform,
+            transform=transform,
+            **kwargs
+        )
 
     __init__.__doc__ %= OFFSET_DOCSTRING

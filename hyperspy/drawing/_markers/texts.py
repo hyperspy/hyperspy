@@ -25,13 +25,12 @@ class Texts(Markers):
     """
     A set of text markers
     """
+
     marker_type = "Texts"
 
-
-    def __init__(self, offsets,
-                 offsets_transform="data",
-                 transform="display",
-                 **kwargs):
+    def __init__(
+        self, offsets, offsets_transform="data", transform="display", **kwargs
+    ):
         """
         Initialize the set of Circle Markers.
 
@@ -57,4 +56,3 @@ class Texts(Markers):
         )
 
     __init__.__doc__ %= OFFSET_DOCSTRING
-
