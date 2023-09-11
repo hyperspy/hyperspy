@@ -210,6 +210,7 @@ def test_dir_utils_markers():
                  'Lines',
                  'Markers',
                  'Points',
+                 'Polygons',
                  'Rectangles',
                  'Squares',
                  'Texts',
