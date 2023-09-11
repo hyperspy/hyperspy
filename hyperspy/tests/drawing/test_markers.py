@@ -684,6 +684,16 @@ class TestMarkersTransform:
         assert isinstance(markers.offsets_transform, CompositeGenericTransform)
         assert markers.collection.get_transform() == markers.transform
 
+    def test_unknown_tranform(self):
+        with pytest.raises(ValueError):
+            markers = Points(
+                offsets=[[1, 1], [4, 4]],
+                sizes=(10,),
+                color=("black",),
+                transform="test",
+                offsets_transform="test",
+            )
+
 
 class TestRelativeMarkerCollection:
     def test_relative_marker_collection(self):
@@ -704,29 +714,6 @@ class TestRelativeMarkerCollection:
         assert segs[0][0][0] == 0
         assert segs[0][1][1] == 11
         assert offs[0][1] == 11
-
-    def test_relative_marker_collection_fail(self):
-        with pytest.raises(ValueError):
-            segments = np.zeros((10, 2, 2))
-            segments[:, 1, 1] = 1  # set y values end
-            segments[:, 0, 0] = np.arange(10).reshape(10)  # set x values
-            segments[:, 1, 0] = np.arange(10).reshape(10)  # set x values
-            _ = RelativeMarkers(
-                collection_class=LineCollection,
-                segments=segments,
-                reference="data_index",
-            )
-
-    def test_relative_marker_collection_fail_ref(self):
-        with pytest.raises(ValueError):
-            segments = np.zeros((10, 2, 2))
-            segments[:, 1, 1] = 1  # set y values end
-            segments[:, 0, 0] = np.arange(10).reshape(10)  # set x values
-            segments[:, 1, 0] = np.arange(10).reshape(10)  # set x values
-            _ = RelativeMarkers(
-                collection_class=LineCollection, segments=segments, reference="data_in"
-            )
-
 
 class TestLineCollections:
     @pytest.fixture
