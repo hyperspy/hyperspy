@@ -485,10 +485,13 @@ class Markers:
         return new_marker
 
     def _to_dictionary(self):
+
         marker_dict = {
             "marker_type": self.marker_type,
             "collection_class": self.collection_class.__name__,
             "plot_on_signal": self._plot_on_signal,
+            "offsets_transform": self._offsets_transform,
+            "transform": self._transform,
             "kwargs": self.kwargs,
         }
         return marker_dict
@@ -692,6 +695,7 @@ def markers2collection(marker_dict):
         HorizontalLines,
         Lines,
         Points,
+        Polygons,
         Rectangles,
         Squares,
         Texts,
@@ -699,7 +703,7 @@ def markers2collection(marker_dict):
     )
     marker_mapping = {"Arrows": Arrows, "Ellipses": Ellipses, "Circles": Circles,
                       "HorizontalLines": HorizontalLines, "Lines": Lines,
-                      "Points": Points, "Rectangles": Rectangles,
+                      "Points": Points, "Polygons": Polygons, "Rectangles": Rectangles,
                       "Squares": Squares, "Texts": Texts,
                       "VerticalLines": VerticalLines}
 
@@ -709,6 +713,8 @@ def markers2collection(marker_dict):
         return {}
     marker_type = marker_dict.pop("marker_type")
     plot_on_signal = marker_dict.pop("plot_on_signal")
+    offsets_transform = marker_dict.pop("offsets_transform", None)
+    transform = marker_dict.pop("transform", None)
 
     if marker_type == "Point":
         offsets, size = dict2vector(
@@ -794,9 +800,14 @@ def markers2collection(marker_dict):
                        **marker_dict["marker_properties"],
                        )
     elif marker_type in marker_mapping:
-        marker = marker_mapping[marker_type](**marker_dict["kwargs"])
+        marker = marker_mapping[marker_type](transform=transform,
+                                             offsets_transform=offsets_transform,
+                                             **marker_dict["kwargs"],)
+
     elif marker_type == "Markers":
         marker = Markers(collection_class=marker_dict["collection_class"],
+                         transform=transform,
+                         offsets_transform=offsets_transform,
                          **marker_dict["kwargs"])
     else:
         raise ValueError(

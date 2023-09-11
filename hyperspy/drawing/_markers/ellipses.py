@@ -30,7 +30,7 @@ class Ellipses(Markers):
                  offsets,
                  heights,
                  widths,
-                 offset_transform="data",
+                 offsets_transform="data",
                  transform="display",
                  units="xy",
                  angles=(0,),
@@ -51,7 +51,7 @@ class Ellipses(Markers):
         """
         super().__init__(collection_class=EllipseCollection,
                          offsets=offsets,
-                         offsets_transform=offset_transform,
+                         offsets_transform=offsets_transform,
                          heights=heights,
                          widths=widths,
                          angles=angles,
