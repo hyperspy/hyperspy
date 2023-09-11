@@ -32,7 +32,7 @@ verts = [poylgon1, poylgon2]
 m = hs.plot.markers.Polygons(
     verts=verts,
     linewidth=3,
-    colors='g',
+    facecolors=('g',),
     )
 
 s.plot()

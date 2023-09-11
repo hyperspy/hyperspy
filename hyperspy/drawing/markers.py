@@ -270,7 +270,7 @@ class Markers:
         self._set_transform(value, attr="_offsets_transform")
         # setting live plot
         if self.collection is not None and self.ax is not None:
-            self.collection.set_offset_transforms(self.offsets_transform)
+            self.collection.set_offset_transform(self.offsets_transform)
             self.update()
 
     def _get_transform(self, attr="_transform"):
@@ -290,7 +290,9 @@ class Markers:
             return getattr(self, attr)
 
     def _set_transform(self, value, attr="_transform"):
-        if value not in ["data", "axes", "xaxis", "yaxis", "display", "relative", "xaxis_scale", "yaxis_scale"]:
+        if value not in ["data", "axes", "xaxis", "yaxis",
+                         "display", "relative", "xaxis_scale",
+                         "yaxis_scale"]:
             raise ValueError("The offset transform must be one of 'data', 'axes',"
                              " 'xaxis', 'yaxis', 'display', 'relative'")
         setattr(self, attr, value)

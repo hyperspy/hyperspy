@@ -27,6 +27,11 @@ from matplotlib.collections import (
     PolyCollection,
     PatchCollection,
 )
+from matplotlib.transforms import (
+    IdentityTransform,
+    Affine2D,CompositeGenericTransform,
+    BlendedGenericTransform,
+    BboxTransformTo,)
 from matplotlib.patches import RegularPolygon
 import matplotlib.pyplot as plt
 import dask.array as da
@@ -539,15 +544,67 @@ def test_marker_collection_close():
     return _test_marker_collection_close()
 
 class TestMarkersTransform:
-    def test_set_transform(self):
+    @pytest.mark.parametrize("transform", ("data",
+                                           "display",
+                                           "xaxis",
+                                           "yaxis",
+                                           "xaxis_scale",
+                                           "yaxis_scale",
+                                           "axes",
+                                           "relative",
+                                           ))
+    @pytest.mark.parametrize("offsets_transform", ("data",
+                                                   "display",
+                                                   "xaxis",
+                                                   "yaxis",
+                                                   "axes",
+                                                   "relative",)
+                             )
+    def test_set_transform(self, transform, offsets_transform):
+        markers = Points(offsets=[[1, 1], [4, 4]],
+                         sizes=(10,),
+                         color=("black",),
+                         transform=transform,
+                         offsets_transform=offsets_transform,
+                         )
+        assert markers.transform == transform
+        assert markers.offsets_transform == offsets_transform
+        signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
+
+        signal.plot()
+        signal.add_marker(markers)
+        mapping = {"data": CompositeGenericTransform,
+                   "display": IdentityTransform,
+                   "xaxis": BlendedGenericTransform,
+                   "yaxis": BlendedGenericTransform,
+                   "xaxis_scale": Affine2D,
+                   "yaxis_scale": Affine2D,
+                   "axes": BboxTransformTo,
+                   "relative": CompositeGenericTransform,}
+
+        assert isinstance(markers.transform, mapping[transform])
+        assert isinstance(markers.offsets_transform, mapping[offsets_transform])
+
+    def test_set_plotted_transform(self,):
         markers = Points(offsets=[[1, 1], [4, 4]],
                          sizes=(10,),
                          color=("black",),
                          transform="display",
-                         offsets_transform="data",
+                         offsets_transform="display",
                          )
         assert markers.transform == "display"
-        assert markers.offsets_transform == "data"
+        assert markers.offsets_transform == "display"
+        signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
+        signal.plot()
+        signal.add_marker(markers)
+        assert isinstance(markers.transform, IdentityTransform)
+        assert isinstance(markers.offsets_transform, IdentityTransform)
+        markers.transform = "data"
+        markers.offsets_transform = "data"
+        assert isinstance(markers.transform, CompositeGenericTransform)
+        assert isinstance(markers.offsets_transform, CompositeGenericTransform)
+        assert markers.collection.get_transform() == markers.transform
+
 
 class TestRelativeMarkerCollection:
     def test_relative_marker_collection(self):
