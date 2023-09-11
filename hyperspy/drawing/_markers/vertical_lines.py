@@ -27,6 +27,8 @@ class VerticalLines(Markers):
 
     def __init__(self,
                  offsets,
+                 offsets_transform="display",
+                 transform="xaxis",
                  **kwargs):
         """
         Initialize the set of Vertical Line Markers.
@@ -43,14 +45,15 @@ class VerticalLines(Markers):
         # Data attributes
         Markers.__init__(self,
                          offsets=offsets,
+                         offsets_transform=offsets_transform,
+                         transform=transform, # so that the markers span the whole y-axis
                          collection_class=LineCollection,
                          **kwargs)
 
     def get_data_position(self,
                           get_static_kwargs=True):
         kwargs = super().get_data_position(get_static_kwargs=get_static_kwargs)
-        y_extent = self.ax.get_ylim()
         x_pos = kwargs.pop("offsets")
-        new_segments = np.array([[[x, y_extent[0]], [x, y_extent[1]]] for x in x_pos])
+        new_segments = np.array([[[x, 0], [x, 1], ]for x in x_pos])
         kwargs["segments"] = new_segments
         return kwargs

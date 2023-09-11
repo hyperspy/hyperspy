@@ -30,6 +30,8 @@ class Ellipses(Markers):
                  offsets,
                  heights,
                  widths,
+                 offset_transform="data",
+                 units="xy",
                  angles=(0,),
                  **kwargs):
         """ Initialize the set of Ellipse Markers.
@@ -48,6 +50,7 @@ class Ellipses(Markers):
         """
         super().__init__(collection_class=EllipseCollection,
                          offsets=offsets,
+                         offsets_transform=offset_transform,
                          heights=heights,
                          widths=widths,
                          angles=angles,

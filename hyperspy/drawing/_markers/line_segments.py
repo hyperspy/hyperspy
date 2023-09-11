@@ -26,6 +26,8 @@ class Lines(Markers):
 
     def __init__(self,
                  segments,
+                 offsets_transform="display",
+                 transform="data",
                  **kwargs):
         """ Initialize the set of Segments Markers.
 
@@ -38,4 +40,6 @@ class Lines(Markers):
         """
         super().__init__(collection_class=LineCollection,
                          segments=segments,
+                         offsets_transform=offsets_transform,
+                         transform=transform,
                          **kwargs)

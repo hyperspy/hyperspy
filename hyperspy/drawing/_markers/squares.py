@@ -29,7 +29,10 @@ class Squares(Markers):
     """
     marker_type = "Squares"
 
-    def __init__(self, offsets, sizes, **kwargs):
+    def __init__(self, offsets, sizes,
+                 offsets_transform="data",
+                 transform="xaxis_scale",
+                 **kwargs):
         """
         Initialize the set of square Markers.
 
@@ -44,6 +47,8 @@ class Squares(Markers):
                          offsets=offsets,
                          sizes=sizes,
                          numsides=4,
+                         offsets_transform=offsets_transform,
+                         transform=transform,
                          **kwargs)
 
     __init__.__doc__ %= OFFSET_DOCSTRING

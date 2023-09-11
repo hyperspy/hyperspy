@@ -21,7 +21,6 @@ import dask.array as da
 import logging
 from copy import deepcopy
 
-from matplotlib.collections import Collection
 import matplotlib.collections as mpl_collections
 from matplotlib.transforms import Affine2D, IdentityTransform
 from matplotlib.patches import Patch
@@ -75,9 +74,8 @@ class Markers:
 
     def __init__(self,
                  collection_class,
-                 offset_units="data",
-                 transform_units=None,
-                 size_units=None,
+                 offsets_transform="data",
+                 transform="display",
                  shift=None,
                  **kwargs):
         """
@@ -103,6 +101,7 @@ class Markers:
               :py:meth:`matplotlib.axes.Axes.get_xaxis_transform` transformation..
             - ``"display"``: the offsets are not transformed, i.e. are defined in the display coordinate system.
               (0, 0) is the bottom left of the window, and (width, height) is top right of the output in "display units"
+              :py:class:`matplotlib.transforms.IndentityTransform`.
 
             transform: str or None
             Define the transformation to be applied to each marker. It can be one of the following:
@@ -185,7 +184,7 @@ class Markers:
                                           " a matplotlib.collections class. matplotlib.collections." +
                                           collection_class + " is not a valid matplotlib.collections class.")
 
-        if "matplotlib.collections" in str(collection_class) or "matplotlib.quiver" in str(collection_class):
+        if "matplotlib.collections" not in str(collection_class) and "matplotlib.quiver" not in str(collection_class):
             raise ValueError(
                 "The argument `collection_class` must be a class in "
                 "`matplotlib.collection."
@@ -195,6 +194,9 @@ class Markers:
         self.axes_manager = None
         self.ax = None
         self.auto_update = True
+        self._offsets_transform = None
+        self._transform = None
+
 
         # Handling dask arrays
         self.dask_kwargs = {}
@@ -222,17 +224,17 @@ class Markers:
         self._cache_dask_chunk_kwargs = {}
         self._cache_dask_chunk_kwargs_slice = {}
 
+        self.name = self.marker_type
         # Properties
         self.collection = None
         self.collection_class = collection_class
         self.signal = None
         self.temp_signal = None
         self._plot_on_signal = True
-        self.offset_units = offset_units
-        self.transform_units = transform_units
-        self.size_units = size_units
         self.shift = shift
         self.plot_marker = True
+        self.offsets_transform = offsets_transform
+        self.transform = transform
 
         # Events
         self.events = Events()
@@ -251,11 +253,59 @@ class Markers:
 
     @property
     def _is_iterating(self):
-        if self._plot_on_signal:
+        if self._transform == "relative" or self._offsets_transform == "relative":
+            return False
+        elif self._plot_on_signal:
             return np.any(
                 [is_iterating(value) for key, value in self.kwargs.items()])
         else:  # currently iterating navigation markers arenot supported
             return False
+
+    @property
+    def offsets_transform(self):
+        return self._get_transform(attr="_offsets_transform")
+
+    @offsets_transform.setter
+    def offsets_transform(self, value):
+        self._set_transform(value, attr="_offsets_transform")
+        # setting live plot
+        if self.collection is not None and self.ax is not None:
+            self.collection.set_offset_transforms(self.offsets_transform)
+            self.update()
+
+    def _get_transform(self, attr="_transform"):
+        if self.ax is not None:  # return the transform
+            transforms = {"data": self.ax.transData,
+                          "axes": self.ax.transAxes,
+                          "display": IdentityTransform(),
+                          "yaxis": self.ax.get_yaxis_transform(),
+                          "xaxis": self.ax.get_xaxis_transform(),
+                          "relative": self.ax.transData,
+                          }
+            if attr == "_transform":
+                transforms["xaxis_scale"] = Affine2D().scale(self.ax.bbox.width / self.ax.viewLim.width)
+                transforms["yaxis_scale"] = Affine2D().scale(self.ax.bbox.height / self.ax.viewLim.height)
+            return transforms[getattr(self, attr)]
+        else:  # return the string value
+            return getattr(self, attr)
+
+    def _set_transform(self, value, attr="_transform"):
+        if value not in ["data", "axes", "xaxis", "yaxis", "display", "relative", "xaxis_scale", "yaxis_scale"]:
+            raise ValueError("The offset transform must be one of 'data', 'axes',"
+                             " 'xaxis', 'yaxis', 'display', 'relative'")
+        setattr(self, attr, value)
+
+    @property
+    def transform(self):
+        return self._get_transform(attr="_transform")
+
+    @transform.setter
+    def transform(self, value):
+        self._set_transform(value, attr="_transform")
+        # setting live plot
+        if self.collection is not None and self.ax is not None:
+            self.collection.set_transform(self.transform)
+            self.update()
 
     def __len__(self):
         """Return the number of markers in the collection."""
@@ -441,7 +491,9 @@ class Markers:
         }
         return marker_dict
 
-    def get_data_position(self, get_static_kwargs=True):
+    def get_data_position(self,
+                          get_static_kwargs=True,
+                          ):
         """
         Return the current keyword arguments for updating the collection.
         """
@@ -465,13 +517,11 @@ class Markers:
         else:
             current_keys = self.kwargs
         # Handling relative markers
-        if self.offset_units == "rel" or self.transform_units == "rel":  # scale based on current data
+        if self._offsets_transform == "relative" or self._transform == "relative":  # scale based on current data
             if "offsets" in current_keys:
                 current_keys = self._scale_kwarg(current_keys, "offsets")
             if "segments" in current_keys:
                 current_keys = self._scale_kwarg(current_keys, "segments")
-        return current_keys
-
         return current_keys
 
     def _scale_kwarg(self, kwds, key):
@@ -501,35 +551,17 @@ class Markers:
         return new_kwds
 
     def update(self):
-        if not self._is_iterating:
-            return
-        else:
+        if self._transform == "relative" or self._offsets_transform == "relative" or self._is_iterating:
             kwds = self.get_data_position(get_static_kwargs=False)
             self.collection.set(**kwds)
 
     def _initialize_collection(self):
-        transforms = {"data": self.ax.transData,
-                      "axes": self.ax.transAxes,
-                      "identity": IdentityTransform(),
-                      "yaxis": self.ax.get_yaxis_transform(),
-                      "xaxis": self.ax.get_xaxis_transform(),
-                      "rel": self.ax.transData}
+
         self.collection = self.collection_class(
             **self.get_data_position(),
-            offset_transform=transforms[self.offset_units],
+            offset_transform=self.offsets_transform,
         )
-        # handling the Transform
-        if self.size_units == "xaxis":  # scale based on current data
-            scale = self.ax.bbox.width / self.ax.viewLim.width
-            transform = Affine2D().scale(scale)
-        elif self.size_units == "yaxis":
-            scale = self.ax.bbox.height / self.ax.viewLim.height
-            transform = Affine2D().scale(scale)
-        elif self.transform_units is not None:
-            transform = transforms[self.transform_units]
-        else:
-            transform = IdentityTransform()
-        self.collection.set_transform(transform)
+        self.collection.set_transform(self.transform)
 
     def plot(self, render_figure=True):
         """

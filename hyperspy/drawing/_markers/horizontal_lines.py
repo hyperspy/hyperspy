@@ -27,7 +27,11 @@ class HorizontalLines(Markers):
     marker_type = "HorizontalLines"
 
 
-    def __init__(self, offsets, **kwargs):
+    def __init__(self,
+                 offsets,
+                 offsets_transform="display",
+                 transform="yaxis",
+                 **kwargs):
         """Initialize a set of HorizontalLines markers.
 
         Parameters
@@ -42,7 +46,10 @@ class HorizontalLines(Markers):
         Markers.__init__(self,
                          collection_class=LineCollection,
                          offsets=offsets,
+                         offsets_transform=offsets_transform,
+                         transform=transform,
                          **kwargs)
+        self.name = self.__class__.__name__
 
     def get_data_position(self, get_static_kwargs=True):
         kwargs = super().get_data_position(get_static_kwargs=get_static_kwargs)
