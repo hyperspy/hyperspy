@@ -39,8 +39,7 @@ from hyperspy.misc.math_tools import optimal_fft_size
 from hyperspy.misc.eels.tools import get_edges_near_energy
 from hyperspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
-from hyperspy.utils.markers import RelativeMarkers
-from hyperspy.utils.markers import RelativeTextCollection
+from hyperspy.utils.markers import Texts, Lines
 from hyperspy.docstrings.signal1d import (
     CROP_PARAMETER_DOC,
     SPIKES_DIAGNOSIS_DOCSTRING,
@@ -1616,12 +1615,14 @@ class EELSSpectrum(Signal1D):
         line_shifts = np.zeros((len(offsets), 2))
         line_shifts[:, -1] = .15
         line_shifts[::2, -1] = .25
-        vertical_line_marker = RelativeMarkers(collection_class=LineCollection,
-                                               segments=segments,
-                                               shift=line_shifts)
-        text_marker = RelativeTextCollection(offsets=offsets,
-                                             texts=list(edges.keys()),
-                                             shift=line_shifts[:, 1]+0.05)
+
+        vertical_line_marker = Lines(segments=segments,
+                                     shift=line_shifts,
+                                     transform="relative")
+        text_marker = Texts(offsets=offsets,
+                            texts=list(edges.keys()),
+                            shift=line_shifts[:, 1]+0.05,
+                            offsets_transform="relative")
         return vertical_line_marker, text_marker
 
     def plot_edges_label(self,
@@ -1779,12 +1780,13 @@ class EELSSpectrum(Signal1D):
         offsets, segments = self._get_offsets_and_segments(edges)
         names = list(edges.keys())
         if self._edge_markers["lines"] is None:
-            self._edge_markers["lines"] = RelativeMarkers(collection_class=LineCollection,
-                                                          segments=np.empty((0, 2, 2)), )
+            self._edge_markers["lines"] = Lines(segments=np.empty((0, 2, 2)),
+                                                transform="relative")
         self._edge_markers["lines"].append_kwarg("segments", segments)
         if self._edge_markers["text"] is None:
-            self._edge_markers["text"] = RelativeTextCollection(offsets=np.empty((0, 2)),
-                                                                texts=np.empty((0,)))
+            self._edge_markers["text"] = Texts(offsets=np.empty((0, 2)),
+                                                texts=np.empty((0,)),
+                                                transform="relative")
         self._edge_markers["text"].append_kwarg("offsets", offsets)
         self._edge_markers["text"].append_kwarg("texts", np.array(names))
         self._edge_markers["names"] = np.append(self._edge_markers["names"], names)

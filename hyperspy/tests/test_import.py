@@ -211,8 +211,7 @@ def test_dir_utils_markers():
                  'Markers',
                  'Points',
                  'Rectangles',
-                 'RelativeMarkers',
-                 'RelativeTextCollection',
+                 'Squares',
                  'Texts',
                  'VerticalLines']
 

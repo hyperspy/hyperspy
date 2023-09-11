@@ -29,11 +29,7 @@ from hyperspy._signals.signal1d import Signal1D, LazySignal1D
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
-from hyperspy.drawing.markers import Markers
-from hyperspy.drawing._markers.relative_markers import RelativeMarkers
-from hyperspy.drawing._markers.texts import RelativeTextCollection
-from hyperspy.drawing._markers.vertical_lines import VerticalLines
-from matplotlib.collections import LineCollection
+from hyperspy.utils.markers import Texts, VerticalLines, Lines
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING_PARAMETERS,
     PLOT1D_DOCSTRING
@@ -1047,13 +1043,16 @@ class EDSSpectrum(Signal1D):
             offsets[i] = [eng, 1.2]
             line_names.append(r'$\mathrm{%s}_{\mathrm{%s}}$' % utils_eds._get_element_and_line(xray_line))
 
-        line_markers = RelativeMarkers(collection_class=LineCollection,
-                                       segments=segments,
-                                       reference="data",
-                                       )
-        text_markers = RelativeTextCollection(offsets=offsets,
-                                              texts=line_names,
-                                              )
+        line_markers = Lines(segments=segments,
+                             transform="relative",
+                             color='black',
+                             )
+        text_markers = Texts(offsets=offsets,
+                             texts=line_names,
+                             offsets_transform="relative",
+                             color='black',
+                             sizes=1,
+                             )
 
         self.add_marker(line_markers, render_figure=False)
         self.add_marker(text_markers, render_figure=False)
@@ -1130,8 +1129,7 @@ class EDSSpectrum(Signal1D):
             segments.append([[x1, y1[0]],
                              [x2, y2[0]]])
         segments = np.array(segments)
-        lines = Markers(segments=segments,
-                        collection_class=LineCollection,
+        lines = Lines(segments=segments,
                         color='black')
         self.add_marker(lines, render_figure=False)
         if render_figure:

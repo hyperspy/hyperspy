@@ -205,7 +205,7 @@ class Markers:
                 self.dask_kwargs[key] = self.kwargs[key]
             elif isinstance(value, da.Array):  # and value.dtype != object:
                 self.kwargs[key] = value.compute()
-            # Patches shouldn't be cast to array
+            # Patches or verts shouldn't be cast to array
             elif (
                 isinstance(value, list)
                 and len(value) > 0
@@ -691,12 +691,14 @@ def markers2collection(marker_dict):
         Lines,
         Points,
         Rectangles,
+        Squares,
         Texts,
         VerticalLines,
     )
     marker_mapping = {"Arrows": Arrows, "Ellipses": Ellipses, "Circles": Circles,
                       "HorizontalLines": HorizontalLines, "Lines": Lines,
-                      "Points": Points, "Rectangles": Rectangles, "Texts": Texts,
+                      "Points": Points, "Rectangles": Rectangles,
+                      "Squares": Squares, "Texts": Texts,
                       "VerticalLines": VerticalLines}
 
     from matplotlib.collections import PolyCollection

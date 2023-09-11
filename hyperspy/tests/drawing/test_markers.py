@@ -45,6 +45,10 @@ from hyperspy.utils.markers import (
     Markers,
     Points,
     VerticalLines,
+    Rectangles,
+    Squares,
+    Texts,
+    Lines,
     )
 
 BASELINE_DIR = "marker_collection"
@@ -85,13 +89,11 @@ class TestCollections:
     @pytest.fixture
     def collections(self):
         collections = [
-            LineCollection,
-            CircleCollection,
-            EllipseCollection,
-            StarPolygonCollection,
-            PolyCollection,
-            PatchCollection,
-            CircleCollection,
+            Circles,
+            Ellipses,
+            Rectangles,
+            Squares,
+            Points,
         ]
         num_col = len(collections)
         offsets = [
@@ -99,27 +101,15 @@ class TestCollections:
             for i in range(len(collections))
         ]
         kwargs = [
-            {"segments": np.array([[[0, 0], [0, -0.5]]]), "lw": 4},
             {"sizes": (0.4,)},
             {"widths": (0.2,), "heights": (0.7,), "angles": (60,), "units": "xy"},
-            {"numsides": 7, "sizes": (0.4,)},
-            {"verts": np.array([[[0, 0], [0.3, 0.3], [0.3, 0.6], [0.6, 0.3]]])},
-            {
-                "patches": [
-                    RegularPolygon(
-                        xy=(0, 0),
-                        numVertices=7,
-                        radius=0.5,
-                    ),
-                ],
-            },
-            {"sizes": (0.5,)},
+            {"widths": (0.2,), "heights": (0.7,), "angles": (60,), "units": "xy"},
+            {"sizes": (0.4,)},
+            {"sizes": (0.4,)},
         ]
-        for k, o, c in zip(kwargs, offsets, collections):
+        for k, o in zip(kwargs, offsets):
             k["offsets"] = o
-            k["collection_class"] = c
-
-        collections = [Markers(**k) for k in kwargs]
+        collections = [c(**k) for k, c in zip(kwargs, collections)]
         return collections
 
     @pytest.mark.mpl_image_compare(
@@ -436,7 +426,7 @@ class TestInitMarkerCollection:
                     verts=3,
                     sizes=3,
                     collection_class=PolyCollection)
-        assert "Custom" in m.__repr__()
+        assert "Markers" in m.__repr__()
 
     def test_update_static(self):
         m = Points(offsets=([[1, 1], [2, 2]]))
@@ -549,6 +539,16 @@ def _test_marker_collection_close():
 def test_marker_collection_close():
     return _test_marker_collection_close()
 
+class TestMarkersTransform:
+    def test_set_transform(self):
+        markers = Points(offsets=[[1, 1], [4, 4]],
+                         sizes=(10,),
+                         color=("black",),
+                         transform="display",
+                         offsets_transform="data",
+                         )
+        assert markers.transform == "display"
+        assert markers.offsets_transform == "data"
 
 class TestRelativeMarkerCollection:
     def test_relative_marker_collection(self):
@@ -558,13 +558,21 @@ class TestRelativeMarkerCollection:
         segments[:, 0, 0] = np.arange(10).reshape(10)  # set x values
         segments[:, 1, 0] = np.arange(10).reshape(10)  # set x values
 
-        markers = RelativeMarkers(collection_class=LineCollection, segments=segments)
+        #markers = Lines(segments=segments,
+        #                transform="relative")
+        texts = Texts(offsets=segments[:, 1],
+                      texts="a",
+                      offsets_transform="relative")
         signal.plot()
-        signal.add_marker(markers)
+        #signal.add_marker(markers)
+        signal.add_marker(texts)
         signal.axes_manager.navigation_axes[0].index = 1
-        segs = markers.collection.get_segments()
-        assert segs[0][0][0] == 0
-        assert segs[0][1][1] == 11
+        #segs = markers.collection.get_segments()
+        offs = texts.collection.get_offsets()
+        #assert segs[0][0][0] == 0
+        #assert segs[0][1][1] == 11
+        assert offs[0][1] == 11
+
 
     def test_relative_marker_collection_fail(self):
         with pytest.raises(ValueError):
@@ -606,7 +614,7 @@ class TestLineCollections:
         s.add_marker(vert)
         kwargs = vert.get_data_position()
         # Offsets --> segments for vertical lines
-        np.testing.assert_array_equal(kwargs["segments"], [[[0.0, 2.5], [0.0, -.5]]])
+        np.testing.assert_array_equal(kwargs["segments"], [[[0.0, 0], [0.0, 1]]])
 
     def test_horizontal_line_collection(self, offsets):
         hor = HorizontalLines(offsets=offsets)

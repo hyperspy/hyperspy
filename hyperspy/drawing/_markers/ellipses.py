@@ -31,6 +31,7 @@ class Ellipses(Markers):
                  heights,
                  widths,
                  offset_transform="data",
+                 transform="display",
                  units="xy",
                  angles=(0,),
                  **kwargs):
@@ -54,6 +55,8 @@ class Ellipses(Markers):
                          heights=heights,
                          widths=widths,
                          angles=angles,
+                         transform=transform,
+                         units=units,
                          **kwargs)
 
     __init__.__doc__ %= OFFSET_DOCSTRING

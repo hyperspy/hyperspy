@@ -31,7 +31,7 @@ class Texts(Markers):
 
     def __init__(self, offsets,
                  offsets_transform="data",
-                 transform="xaxis_scale",
+                 transform="display",
                  **kwargs):
         """
         Initialize the set of Circle Markers.

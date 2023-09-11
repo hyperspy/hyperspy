@@ -30,7 +30,7 @@ class Rectangles(Markers):
                  widths,
                  heights,
                  offsets_transform="data",
-                 transform="xaxis",
+                 transform="display",
                  **kwargs):
         """ Initialize the set of Segments Markers.
 

@@ -23,7 +23,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import dask.array as da
 
-from hyperspy.drawing._markers.texts import Texts, RelativeTextCollection
+from hyperspy.drawing._markers.texts import Texts
 from hyperspy._signals.signal2d import Signal2D, Signal1D
 from hyperspy.misc.test_utils import update_close_figure
 
@@ -83,48 +83,6 @@ class TestTextCollection:
         markers = Texts(offsets=[[2., 3.]], texts=("test", ), sizes=(20,))
         s.add_marker(markers, render_figure=True)
         return s._plot.signal_plot.figure
-
-
-class TestRelativeTextCollection:
-
-    def test_relative_text_collection(self):
-        s = Signal1D(np.arange(10).reshape(5, 2))
-        markers = RelativeTextCollection(offsets=[[0, 1], [1, 2]],
-                                         texts=("test",))
-        s.add_marker(markers)
-
-    @pytest.mark.mpl_image_compare(
-        baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
-    )
-    def test_relative_text_collection_with_reference(self):
-        s = Signal1D(np.arange(10).reshape(5, 2))
-        markers = RelativeTextCollection(offsets=[[0, 1], [1, 2]],
-                                         texts=("test",), reference="data_index",
-                                         indexes=[0, 0])
-        s.add_marker(markers)
-        s.axes_manager.navigation_axes[0].index = 1
-        return s._plot.signal_plot.figure
-
-    def test_plot_fail(self):
-        markers = Texts(offsets=[[1, 1],
-                                 [4, 4]], texts=("test",))
-        with pytest.raises(AttributeError):
-            markers.plot()
-    def test_plot_and_render(self):
-        markers = Texts(offsets=[[1, 1],
-                                 [4, 4]], texts=("test",))
-        s = Signal1D(np.arange(100).reshape((10,10)))
-        s.add_marker(markers)
-        markers.plot(render_figure=True)
-
-    def test_static_update(self):
-        markers = Texts(offsets=[[1, 1],
-                                 [4, 4]], texts=("test",))
-        s = Signal1D(np.arange(100).reshape((10, 10)))
-        s.plot()
-        s.add_marker(markers)
-        s.axes_manager.navigation_axes[0].index=2
-
 
 
 def _test_text_collection_close():
