@@ -23,7 +23,7 @@ import numpy as np
 
 import hyperspy.api as hs
 
-from hyperspy.utils.plot import plot_span_map
+from hyperspy.utils.plot import plot_roi_map
 
 
 @pytest.fixture
@@ -70,10 +70,10 @@ def sig_mpl_compare(type: set(["sig", "nav"])):
 
 def test_plot_span_map_args(test_signal):
     with pytest.raises(ValueError):
-        plot_span_map(test_signal, 4)
+        plot_roi_map(test_signal, 4)
 
     with pytest.raises(ValueError):
-        plot_span_map(test_signal, [hs.roi.SpanROI(0, 1),
+        plot_roi_map(test_signal, [hs.roi.SpanROI(0, 1),
                                     hs.roi.SpanROI(1, 2),
                                     hs.roi.SpanROI(2, 3),
                                     hs.roi.SpanROI(3, 4)])
@@ -85,7 +85,7 @@ def test_plot_span_map_args(test_signal):
         match=("This method is designed for data with 1 signal and 2 "
                "navigation dimensions, not 1 and 1 respectively"),
     ):
-        plot_span_map(line_spectra)
+        plot_roi_map(line_spectra)
 
     single_spectra = line_spectra.inav[0]
 
@@ -94,13 +94,13 @@ def test_plot_span_map_args(test_signal):
         match=("This method is designed for data with 1 signal and 2 "
                "navigation dimensions, not 1 and 0 respectively"),
     ):
-        plot_span_map(single_spectra)
+        plot_roi_map(single_spectra)
 
 
 def test_passing_spans(test_signal):
-    _, int_spans, int_span_sigs, int_span_sums = plot_span_map(test_signal, 3)
+    _, int_spans, int_span_sigs, int_span_sums = plot_roi_map(test_signal, 3)
 
-    _, spans, span_sigs, span_sums = plot_span_map(test_signal, int_spans)
+    _, spans, span_sigs, span_sums = plot_roi_map(test_signal, int_spans)
 
     assert spans is int_spans
 
@@ -113,14 +113,14 @@ def test_passing_spans(test_signal):
 
 
 def test_span_positioning(test_signal):
-    _, spans, *_ = plot_span_map(test_signal, 1)
+    _, spans, *_ = plot_roi_map(test_signal, 1)
 
     assert len(spans) == 1
 
     assert spans[0].left == pytest.approx(0)
     assert spans[0].right == pytest.approx(1023 / 2)
 
-    _, spans, *_ = plot_span_map(test_signal, 2)
+    _, spans, *_ = plot_roi_map(test_signal, 2)
 
     assert len(spans) == 2
     assert spans[0].left == pytest.approx(0)
@@ -131,7 +131,7 @@ def test_span_positioning(test_signal):
     # no overlap
     assert spans[0].right <= spans[1].left
 
-    _, spans, *_ = plot_span_map(test_signal, 3)
+    _, spans, *_ = plot_roi_map(test_signal, 3)
 
     assert len(spans) == 3
     assert spans[0].left == pytest.approx(0)
@@ -148,7 +148,7 @@ def test_span_positioning(test_signal):
 @sig_mpl_compare("sig")
 @pytest.mark.parametrize("nspans", [1, 2, 3])
 def test_navigator(test_signal, nspans):
-    all_sums, spans, span_sigs, span_sums = plot_span_map(test_signal, nspans)
+    all_sums, spans, span_sigs, span_sums = plot_roi_map(test_signal, nspans)
 
     assert np.all(all_sums.data == test_signal.sum().data)
 
@@ -159,7 +159,7 @@ def test_navigator(test_signal, nspans):
 @pytest.mark.parametrize("nspans", [1, 2, 3])
 @pytest.mark.parametrize("span_out", [1, 2, 3])
 def test_span_sums(test_signal, nspans, span_out):
-    all_sums, spans, span_sigs, span_sums = plot_span_map(test_signal, nspans)
+    all_sums, spans, span_sigs, span_sums = plot_roi_map(test_signal, nspans)
 
     if span_out > nspans:
         span_out = nspans
@@ -170,7 +170,7 @@ def test_span_sums(test_signal, nspans, span_out):
 @sig_mpl_compare("sig")
 @pytest.mark.parametrize("which_plot", ["all_sums", "span_sums"])
 def test_interaction(test_signal, which_plot):
-    all_sums, spans, span_sigs, span_sums = plot_span_map(test_signal, 1)
+    all_sums, spans, span_sigs, span_sums = plot_roi_map(test_signal, 1)
 
     spans[0].left = 200
     spans[0].right = 1000
