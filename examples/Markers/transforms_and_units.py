@@ -83,4 +83,5 @@ signal.add_marker(marker2text)
 signal.add_marker(marker3)
 signal.add_marker(marker3text)
 
+#%%
 #sphinx_gallery_thumbnail_number = 2

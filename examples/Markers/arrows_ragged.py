@@ -47,4 +47,5 @@ m = hs.plot.markers.Arrows(
 s.plot()
 s.add_marker(m)
 
+#%%
 # sphinx_gallery_thumbnail_number = 2
