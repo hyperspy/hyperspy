@@ -1703,7 +1703,14 @@ def picker_kwargs(value, kwargs=None):
 
 def _create_span_roi_group(sig_ax, N):
     """
-    Creates a set `N` of SpanROIs that sit along axis at sensible positions.
+    Creates a set of `N` of :py:class:`~.roi.SpanROI`\\ s that sit along axis at sensible positions.
+
+    Arguments
+    ---------
+    sig_ax: DataAxis
+        The axis over which the ROI will be placed
+    N: int
+        The number of ROIs
     """
     axis = sig_ax.axis
     ax_range = axis[-1] - axis[0]
@@ -1723,9 +1730,18 @@ def _create_span_roi_group(sig_ax, N):
     return spans
 
 
-def _create_rect_roi_group(sig_wax, sig_hax, nrects):
+def _create_rect_roi_group(sig_wax, sig_hax, N):
     """
-    Creates a set `N` of RectangularROI's that sit along `waxis` and `haxis` at sensible positions.
+    Creates a set of `N` :py:class:`~roi.RectangularROI`\\ s that sit along `waxis` and `haxis` at sensible positions.
+
+    Arguments
+    ---------
+    sig_wax: DataAxis
+        The width axis over which the ROI will be placed
+    sig_hax: DataAxis
+        The height axis over which the ROI will be placed
+    N: int
+        The number of ROIs
     """
     waxis = sig_wax.axis
     haxis = sig_hax.axis
@@ -1733,12 +1749,12 @@ def _create_rect_roi_group(sig_wax, sig_hax, nrects):
     w_range = waxis[-1] - waxis[0]
     h_range = haxis[-1] - haxis[0]
 
-    span_w_width = w_range / (2 * nrects)
-    span_h_width = h_range / (2 * nrects)
+    span_w_width = w_range / (2 * N)
+    span_h_width = h_range / (2 * N)
     
     rects = []
 
-    for i in range(nrects):
+    for i in range(N):
         # create a span that has a unique range
         rect = hs.roi.RectangularROI(
             left=i * span_w_width + waxis[0], 
@@ -1754,14 +1770,14 @@ def _create_rect_roi_group(sig_wax, sig_hax, nrects):
 
 def plot_roi_map(signal, rois=1):
     """
-    Plot a roi map of `signal`.
+    Plot a ROI map of `signal`.
 
-    Uses rois to select a regions of `signal`'s signal axes.
+    Uses ROIs to select a regions of `signal`'s signal axes.
 
-    For each roi, a plot is generated of the sum witin this signal roi
+    For each ROI, a plot is generated of the sum within this signal ROI
     at each point in `signal`'s navigator.
 
-    The rois can be moved interactively and the corresponding plots will
+    The ROI can be moved interactively and the corresponding plots will
     update automatically.
 
     Arguments
@@ -1770,7 +1786,7 @@ def plot_roi_map(signal, rois=1):
         Signal to inspect.
     rois: int, [hyperspy.roi.SpanROI], [hyperspy.roi.RectangularROI]
         ROIs that represent colour channels in map. Can either pass a list of
-        `SpanROI` objects, or an `int`, `N`, in which case `N` `SpanROI`s will
+        ROI objects, or an `int`, `N`, in which case `N` ROIs will
         be created. Currently limited to a maximum of 3 spans.
 
     Returns
@@ -1786,39 +1802,47 @@ def plot_roi_map(signal, rois=1):
 
     Examples
     --------
-    3D hyperspectral data
-    ~~~~~~~~~~~~~~~~~~~~~
-    For 3D hyperspectral data, the rois used will be `hs.roi.SpanROI`s. 
-    Therefore these rois can be used to select particular spectral ranges,
-    e.g. a particular peak.
+    3D hyperspectral data:
 
-    The map generated for a given roi is therefore the sum of this spectral
-    region at each point in the hyperspectral map. Therefore regions of the 
+    For 3D hyperspectral data, the rois used will be
+    :py:class:`~.roi.SpanROI`\\ s. Therefore these ROIs can be used to select
+    particular spectral ranges, e.g. a particular peak.
+
+    The map generated for a given ROI is therefore the sum of this spectral
+    region at each point in the hyperspectral map. Therefore regions of the
     sample where this peak is bright will be bright in this map.
 
-    4D STEM
-    ~~~~~~~
-    For 4D STEM data, the rois used will be `hs.roi.RectangularROI`s.
-    These rois can be used to select particular regions in reciprocal space,
-    e.g. a particular diffraction peak.
+    4D STEM:
 
-    The map generated for a given roi is therefore the intensity of this
-    region at each point in the hyperspectral map. Therefore regions of the 
-    scan where a particular peak is intense will appear bright.
+    For 4D STEM data, the ROIs used will be :py:class:`~.roi.RectangularROI`\\ s.
+    These ROIs can be used to select particular regions in reciprocal space,
+    e.g. a particular diffraction spot.
+
+    The map generated for a given ROI is therefore the intensity of this
+    region at each point in the scan. Therefore regions of the
+    scan where a particular spot is intense will appear bright.
     """
     sig_dims = signal.axes_manager.signal_dimension
     nav_dims = signal.axes_manager.navigation_dimension
-  
+
     if sig_dims not in [1, 2] or nav_dims not in [1, 2]:
-        warnings.warn(f"This function is only tested for signals with 1 or 2 signal and navigation dimensions, not {sig_dims} {nav_dims}")
-        
+        warnings.warn(("This function is only tested for signals with 1 or 2 "
+                       "signal and navigation dimensions, not"
+                       f" {sig_dims} signal and {nav_dims} navigation."))
+
     if isinstance(rois, int):
         if sig_dims == 1:
-            rois = _create_span_roi_group(signal.axes_manager.signal_axes[0], rois)
+            rois = _create_span_roi_group(
+                signal.axes_manager.signal_axes[0], rois
+            )
         elif sig_dims == 2:
-            rois = _create_rect_roi_group(*signal.axes_manager.signal_axes, rois)
+            rois = _create_rect_roi_group(
+                *signal.axes_manager.signal_axes, rois
+            )
         else:
-            raise ValueError("???")
+            raise ValueError(("Can only generate default ROIs for signals "
+                              f"with 1 or 2 signal dimensions, not {sig_dims}"
+                              ", try providing an explicit `rois` argument"))
 
     if len(rois) > 3:
         raise ValueError("Maximum number of spans is 3")
