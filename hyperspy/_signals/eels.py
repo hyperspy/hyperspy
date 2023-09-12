@@ -1621,7 +1621,10 @@ class EELSSpectrum(Signal1D):
                                      transform="relative")
         text_marker = Texts(offsets=offsets,
                             texts=list(edges.keys()),
-                            shift=line_shifts[:, 1]+0.05,
+                            shift=line_shifts[:, 1]+0.025,
+                            rotation=np.pi/2,
+                            horizontalalignment="left",
+                            verticalalignment="bottom",
                             offsets_transform="relative")
         return vertical_line_marker, text_marker
 
@@ -1785,8 +1788,9 @@ class EELSSpectrum(Signal1D):
         self._edge_markers["lines"].append_kwarg("segments", segments)
         if self._edge_markers["text"] is None:
             self._edge_markers["text"] = Texts(offsets=np.empty((0, 2)),
-                                                texts=np.empty((0,)),
-                                                transform="relative")
+                                               texts=np.empty((0,)),
+                                               rotation=np.pi/2,
+                                               transform="relative")
         self._edge_markers["text"].append_kwarg("offsets", offsets)
         self._edge_markers["text"].append_kwarg("texts", np.array(names))
         self._edge_markers["names"] = np.append(self._edge_markers["names"], names)

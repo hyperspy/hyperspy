@@ -274,7 +274,15 @@ class TextCollection(Collection):
             self.prop = prop
         self._set_texts(texts)
 
+    def set_horizontalalignment(self, horizontalalignment):
+        self._horizontalalignment = horizontalalignment
+        self.set_rotation_center_and_sizes(self.figure.dpi)
+        self.stale = True
 
+    def set_verticalalignment(self, verticalalignment):
+        self._verticalalignment = verticalalignment
+        self.set_rotation_center_and_sizes(self.figure.dpi)
+        self.stale = True
 
     def _set_texts(self, texts):
         self._texts = texts

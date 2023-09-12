@@ -1039,8 +1039,8 @@ class EDSSpectrum(Signal1D):
             relative_factor = elements_db[element][
                 'Atomic_properties']['Xray_lines'][line]['weight']
             eng = self._get_line_energy(f'{element}_{line}')
-            segments[i] = [[eng, 0], [eng, 0.8 * relative_factor]]
-            offsets[i] = [eng, 1.2]
+            segments[i] = [[eng, 0], [eng, 1]]
+            offsets[i] = [eng, 1]
             line_names.append(r'$\mathrm{%s}_{\mathrm{%s}}$' % utils_eds._get_element_and_line(xray_line))
 
         line_markers = Lines(segments=segments,
@@ -1050,8 +1050,11 @@ class EDSSpectrum(Signal1D):
         text_markers = Texts(offsets=offsets,
                              texts=line_names,
                              offsets_transform="relative",
+                             rotation=np.pi/2,
+                             horizontalalignment="left",
+                             verticalalignment="bottom",
                              color='black',
-                             sizes=1,
+                             shift=.005,
                              )
 
         self.add_marker(line_markers, render_figure=False)
