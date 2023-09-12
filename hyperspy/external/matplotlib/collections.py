@@ -1,7 +1,9 @@
 from matplotlib import artist, path as mpath, transforms
 from matplotlib.collections import Collection, _CollectionWithSizes
-from matplotlib.textpath import TextPath
+from matplotlib.textpath import TextPath, TextToPath
+from matplotlib.font_manager import FontProperties
 import numpy as np
+import math
 
 
 class RegularPolyCollection(_CollectionWithSizes):
@@ -236,9 +238,17 @@ class RectangleCollection(_CollectionWithWidthHeightAngle):
     _path_generator = mpath.Path.unit_rectangle
 
 
-class TextCollection(_CollectionWithSizes):
-
-    def __init__(self, texts, sizes=None, **kwargs):
+class TextCollection(Collection):
+    _factor = 1.0
+    def __init__(self,
+                 texts,
+                 sizes=None,
+                 rotation=0,
+                 horizontalalignment='center',
+                 verticalalignment='center',
+                 prop=None,
+                 usetex=False,
+                 **kwargs):
         """
         Parameters
         ----------
@@ -250,9 +260,21 @@ class TextCollection(_CollectionWithSizes):
             Forwarded to `Collection`.
         """
         super().__init__(**kwargs)
-        self.set_sizes(sizes)
+        if sizes is None:
+            sizes = [1]
+        self._sizes = sizes
+        self._horizontalalignment = horizontalalignment
+        self._verticalalignment = verticalalignment
+        self._transforms = np.empty((0, 3, 3))  # for rotating and shifting the text
+        self.rotation = rotation
+        self.usetex = usetex
+        if prop is None:
+            self.prop = FontProperties()
+        else:
+            self.prop = prop
         self._set_texts(texts)
-        self.set_transform(transforms.IdentityTransform())
+
+
 
     def _set_texts(self, texts):
         self._texts = texts
@@ -265,7 +287,75 @@ class TextCollection(_CollectionWithSizes):
     def get_texts(self, texts):
         return self._texts
 
+    def set_rotation_center_and_sizes(self, dpi=72.0):
+        """
+        Calculate transforms immediately before drawing.
+        """
+        self._transforms = np.zeros((len(self._texts), 3, 3))
+        scales = np.sqrt(self._sizes) * dpi / 72.0 * self._factor
+        scales = [scales[i % len(self._sizes)] for i in range(len(self._texts))]
+        self._transforms[:, 0, 0] = scales  # set the size of the text in x
+        self._transforms[:, 1, 1] = scales  # set the size of the text in y
+        self._transforms[:, 2, 2] = 1.0
+
+        text_to_path = TextToPath()
+        for i, t in enumerate(self._texts):
+            width, height, decent = text_to_path.get_text_width_height_descent(t,
+                                                                               prop=self.prop,
+                                                                               ismath=self.usetex)
+
+            translation_ = [0, 0]
+            if self._horizontalalignment == 'center':
+                translation_[0] = -width/2 * self._transforms[i][0, 0]
+            elif self._horizontalalignment == 'left':
+                translation_[0] = 0
+            elif self._horizontalalignment == 'right':
+                translation_[0] = -width * self._transforms[i][0, 0]
+            else:
+                raise ValueError(f'Unrecognized horizontalalignment: {self._horizontalalignment!r}')
+
+            if self._verticalalignment == 'center':
+                translation_[1] = -height/2 * self._transforms[i][0, 0]
+            elif self._verticalalignment == 'bottom':
+                translation_[1] = 0
+            elif self._verticalalignment == 'top':
+                translation_[1] = -height * self._transforms[i][0, 0]
+            else:
+                raise ValueError(f'Unrecognized verticalalignment: {self._verticalalignment!r}')
+            translation = [0, 0]
+            translation[1] = math.sin(self.rotation)*translation_[0] + math.cos(self.rotation)*translation_[1]
+            translation[0] = math.cos(self.rotation)*translation_[0] - math.sin(self.rotation)*translation_[1]
+            self._transforms[i] = translate_matrix(rotate_matrix(self._transforms[i], self.rotation),
+                                                   translation[0],
+                                                   translation[1])
+            self.stale = True
+
     def _generate_path_from_text(self):
         # For each TextPath, the position is at (0, 0) because the position
         # will be given by the offsets values
-        self._paths = [TextPath((0, 0), text) for text in self._texts]
+        self._paths = [TextPath((0, 0), text, prop=self.prop, usetex=self.usetex) for text in self._texts]
+
+    @artist.allow_rasterization
+    def draw(self, renderer):
+        self.set_rotation_center_and_sizes(self.figure.dpi)
+        super().draw(renderer)
+
+def rotate_matrix(mat, theta):
+    a = math.cos(theta)
+    b = math.sin(theta)
+    mtx = mat
+    # Operating and assigning one scalar at a time is much faster.
+    (xx, xy, x0), (yx, yy, y0), _ = mtx.tolist()
+    # mtx = [[a -b 0], [b a 0], [0 0 1]] * mtx
+    mtx[0, 0] = a * xx - b * yx
+    mtx[0, 1] = a * xy - b * yy
+    mtx[0, 2] = a * x0 - b * y0
+    mtx[1, 0] = b * xx + a * yx
+    mtx[1, 1] = b * xy + a * yy
+    mtx[1, 2] = b * x0 + a * y0
+    return mtx
+
+def translate_matrix(mat, tx, ty):
+    mat[0, 2] += tx
+    mat[1, 2] += ty
+    return mat
