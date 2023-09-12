@@ -25,6 +25,7 @@ m = hs.plot.markers.Texts(
     offsets=offsets,
     texts=texts,
     sizes=3,
+    facecolor="black",
     )
 s.plot()
 s.add_marker(m)
@@ -46,6 +47,7 @@ m2 = hs.plot.markers.Texts(
     offsets=offsets,
     texts=texts,
     sizes=3,
+    facecolor="black",
     )
 
 s2.plot()

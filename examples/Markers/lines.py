@@ -54,7 +54,7 @@ colors = list(plt.rcParams['axes.prop_cycle'].by_key()['color'])
 m = hs.plot.markers.Lines(
     segments=segments,
     colors=colors,
-    linewidth=3,
+    linewidth=5,
     )
 
 s.plot()

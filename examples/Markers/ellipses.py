@@ -21,10 +21,11 @@ s = hs.signals.Signal2D(data)
 offsets = rng.random((10, 2)) * 100
 
 m = hs.plot.markers.Ellipses(
-    widths=(4,),
-    heights=(2,),
+    widths=(8,),
+    heights=(10,),
     angles=(45,),
     offsets=offsets,
+    facecolor="red",
     )
 
 s.plot()
@@ -46,8 +47,8 @@ angles = np.empty(s.axes_manager.navigation_shape, dtype=object)
 offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
 
 for index in np.ndindex(offsets.shape):
-    widths[index] = rng.random((10, )) * 4
-    heights[index] = rng.random((10, )) * 2
+    widths[index] = rng.random((10, )) * 10
+    heights[index] = rng.random((10, )) * 7
     angles[index] = rng.random((10, )) * 180
     offsets[index] = rng.random((10, 2)) * 100
 
@@ -57,6 +58,7 @@ m = hs.plot.markers.Ellipses(
     heights=heights,
     angles=angles,
     offsets=offsets,
+    facecolor="red",
     )
 
 s2.plot()

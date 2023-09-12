@@ -23,9 +23,11 @@ angles = rng.random((10, )) * 180
 
 m = hs.plot.markers.Rectangles(
     offsets=offsets,
-    widths=(10,),
-    heights=(5,),
+    widths=(20,),
+    heights=(30,),
     angles=(45,),
+    color="red",
+
     )
 s.plot()
 s.add_marker(m)
