@@ -287,6 +287,16 @@ class TextCollection(Collection):
     def get_texts(self, texts):
         return self._texts
 
+    def set_sizes(self, sizes, dpi=72.0):
+        self._sizes = sizes
+        self.set_rotation_center_and_sizes(dpi)
+        self.stale = True
+
+    def set_rotation(self, rotation):
+        self.rotation = rotation
+        self.set_rotation_center_and_sizes(self.figure.dpi)
+        self.stale = True
+
     def set_rotation_center_and_sizes(self, dpi=72.0):
         """
         Calculate transforms immediately before drawing.
