@@ -28,8 +28,8 @@ plot_signals
     Plot multiple signals at the same time.
 plot_histograms
     Compute and plot the histograms of multiple signals in the same figure.
-plot_span_map
-    Plot a 2D map of intensity of signal over ranges defined by SpanROIs. 
+plot_roi_map
+    Plot a the spatial variation of a ROI within a `Signal`\ s signal axes.
 
 The :mod:`~.api.plot` module contains the following submodules:
 
