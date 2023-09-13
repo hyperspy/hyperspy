@@ -26,33 +26,63 @@ import hyperspy.api as hs
 from hyperspy.utils.plot import plot_roi_map
 
 
-@pytest.fixture
-def test_signal():
-    test_data = np.zeros((64, 64, 1024))
-    test_data[32:, :, 300:] = 1
-    test_data[48:, :, 500:] = 2
-    sig = hs.signals.Signal1D(
-        test_data,
-        axes=[
-            {"name": "x", "size": 64, "offset": 0, "scale": 1, "units": "um"},
-            {"name": "y", "size": 64, "offset": 0, "scale": 1, "units": "um"},
+# params different shapes of data, sig, nav dims
+@pytest.fixture(params=[
+    (1, 1),
+    (1, 2),
+    (2, 1),
+    (2, 2)
+], ids=lambda sn: f's{sn[0]}n{sn[1]}')
+def test_signal(request):
+    sig_dims, nav_dims = request.param
+
+    sig_size = 13
+    nav_size = 3
+
+    sig_shape = (sig_size,) * sig_dims
+    nav_shape = (nav_size,) * nav_dims
+    shape = (*nav_shape, *sig_shape)
+    test_data = np.zeros(shape)
+
+    axes = []
+
+    for _, name in zip(range(nav_dims), 'xyz'):
+        axes.append(
             {
-                "name": "Wavelength",
-                "size": 1024,
+                "name": name,
+                "size": nav_size,
+                "offset": 0,
+                "scale": 1,
+                "units": "um"
+            }
+        )
+
+    for _, name in zip(range(sig_dims), ['Ix', 'Iy', 'Iz']):
+        axes.append(
+            {
+                "name": name,
+                "size": sig_size,
                 "offset": 0,
                 "scale": 1,
                 "units": "nm",
-            },
-        ],
+            })
+    sig = hs.signals.BaseSignal(
+        test_data,
+        axes=axes,
     )
 
-    sig.set_signal_type("CLSEM")
+    sig = sig.transpose(sig_dims)
+
+    sig.inav[0, ...].isig[0, ...] = 1
+    sig.inav[1, ...].isig[2, ...] = 2
+    sig.inav[2, ...].isig[4, ...] = 3
+
     return sig
 
 
 def sig_mpl_compare(type: set(["sig", "nav"])):
     def wrapper(f):
-        @pytest.mark.mpl_image_compare(baseline_dir="plot_span_map")
+        @pytest.mark.mpl_image_compare(baseline_dir="plot_roi_map")
         @wraps(f)
         def wrapped(*args, **kwargs):
             sig = f(*args, **kwargs)
@@ -68,87 +98,96 @@ def sig_mpl_compare(type: set(["sig", "nav"])):
     return wrapper
 
 
-def test_plot_span_map_args(test_signal):
+def test_args_wrong_shape():
+    sig2 = hs.signals.BaseSignal(np.empty((1, 1)))
+
+    no_sig = sig2.transpose(0)
+    no_nav = sig2.transpose(2)
+
+    sig5 = hs.signals.BaseSignal(np.empty((1, 1, 1, 1, 1)))
+    three_sigs = sig5.transpose(3)
+    three_navs = sig5.transpose(2)
+
+    unsupported_sigs = [no_sig, no_nav, three_sigs, three_navs]
+
+    for sig in unsupported_sigs:
+        with pytest.raises(ValueError):
+            plot_roi_map(no_sig, 1)
+
+    for sig in unsupported_sigs:
+        # value error also raised because 1D ROI not right shape
+        with pytest.raises(ValueError):
+            with pytest.warns():
+                plot_roi_map(sig, [hs.roi.Point1DROI(0)])
+
+
+def test_too_many_rois(test_signal):
+    plot_roi_map(test_signal, 1)
+
     with pytest.raises(ValueError):
         plot_roi_map(test_signal, 4)
 
     with pytest.raises(ValueError):
         plot_roi_map(test_signal, [hs.roi.SpanROI(0, 1),
-                                    hs.roi.SpanROI(1, 2),
-                                    hs.roi.SpanROI(2, 3),
-                                    hs.roi.SpanROI(3, 4)])
-
-    line_spectra = test_signal.inav[0, :]
-
-    with pytest.raises(
-        ValueError,
-        match=("This method is designed for data with 1 signal and 2 "
-               "navigation dimensions, not 1 and 1 respectively"),
-    ):
-        plot_roi_map(line_spectra)
-
-    single_spectra = line_spectra.inav[0]
-
-    with pytest.raises(
-        ValueError,
-        match=("This method is designed for data with 1 signal and 2 "
-               "navigation dimensions, not 1 and 0 respectively"),
-    ):
-        plot_roi_map(single_spectra)
+                                   hs.roi.SpanROI(1, 2),
+                                   hs.roi.SpanROI(2, 3),
+                                   hs.roi.SpanROI(3, 4)])
 
 
-def test_passing_spans(test_signal):
-    _, int_spans, int_span_sigs, int_span_sums = plot_roi_map(test_signal, 3)
+def test_passing_rois(test_signal):
+    _, int_rois, int_roi_sigs, int_roi_sums = plot_roi_map(test_signal, 3)
 
-    _, spans, span_sigs, span_sums = plot_roi_map(test_signal, int_spans)
+    _, rois, roi_sigs, roi_sums = plot_roi_map(test_signal, int_rois)
 
-    assert spans is int_spans
+    assert rois is int_rois
 
-    # passing the spans rather than generating own should yield same results
-    assert int_span_sigs is not span_sigs
-    assert int_span_sigs == span_sigs
+    # passing the rois rather than generating own should yield same results
+    assert int_roi_sigs is not roi_sigs
+    assert int_roi_sigs == roi_sigs
 
-    assert int_span_sums is not span_sums
-    assert int_span_sums == span_sums
+    assert int_roi_sums is not roi_sums
+    assert int_roi_sums == roi_sums
 
 
-def test_span_positioning(test_signal):
-    _, spans, *_ = plot_roi_map(test_signal, 1)
+def test_roi_positioning(test_signal):
+    _, rois, *_ = plot_roi_map(test_signal, 1)
 
-    assert len(spans) == 1
+    sig_size = test_signal.axes_manager.signal_axes[0].size
 
-    assert spans[0].left == pytest.approx(0)
-    assert spans[0].right == pytest.approx(1023 / 2)
+    assert len(rois) == 1
 
-    _, spans, *_ = plot_roi_map(test_signal, 2)
+    assert rois[0].left == pytest.approx(0)
+    assert rois[0].right == pytest.approx(sig_size // 2)
 
-    assert len(spans) == 2
-    assert spans[0].left == pytest.approx(0)
-    assert spans[0].right == pytest.approx(1023 / 4)
-    assert spans[1].left == pytest.approx(1023 / 4)
-    assert spans[1].right == pytest.approx(1023 / 2)
+    _, rois, *_ = plot_roi_map(test_signal, 2)
+
+    assert len(rois) == 2
+    assert rois[0].left == pytest.approx(0)
+    assert rois[0].right == pytest.approx(sig_size // 4)
+    assert rois[1].left == pytest.approx(sig_size // 4)
+    assert rois[1].right == pytest.approx(sig_size // 2)
 
     # no overlap
-    assert spans[0].right <= spans[1].left
+    assert rois[0].right <= rois[1].left
 
-    _, spans, *_ = plot_roi_map(test_signal, 3)
+    _, rois, *_ = plot_roi_map(test_signal, 3)
 
-    assert len(spans) == 3
-    assert spans[0].left == pytest.approx(0)
-    assert spans[0].right == pytest.approx(1023 / 6)
-    assert spans[1].left == pytest.approx(1023 / 6)
-    assert spans[1].right == pytest.approx(1023 / 3)
-    assert spans[2].left == pytest.approx(1023 / 3)
-    assert spans[2].right == pytest.approx(1023 / 2)
+    assert len(rois) == 3
+    assert rois[0].left == pytest.approx(0)
+    assert rois[0].right == pytest.approx(sig_size // 6)
+    assert rois[1].left == pytest.approx(sig_size // 6)
+    assert rois[1].right == pytest.approx(sig_size // 3)
+    assert rois[2].left == pytest.approx(sig_size // 3)
+    assert rois[2].right == pytest.approx(sig_size // 2)
 
     # no overlap
-    assert spans[0].right <= spans[1].left and spans[1].right <= spans[2].left
+    assert rois[0].right <= rois[1].left and rois[1].right <= rois[2].left
 
 
 @sig_mpl_compare("sig")
-@pytest.mark.parametrize("nspans", [1, 2, 3])
-def test_navigator(test_signal, nspans):
-    all_sums, spans, span_sigs, span_sums = plot_roi_map(test_signal, nspans)
+@pytest.mark.parametrize("nrois", [1, 2, 3])
+def test_navigator(test_signal, nrois):
+    all_sums, rois, roi_sigs, roi_sums = plot_roi_map(test_signal, nrois)
 
     assert np.all(all_sums.data == test_signal.sum().data)
 
@@ -156,26 +195,63 @@ def test_navigator(test_signal, nspans):
 
 
 @sig_mpl_compare("sig")
-@pytest.mark.parametrize("nspans", [1, 2, 3])
-@pytest.mark.parametrize("span_out", [1, 2, 3])
-def test_span_sums(test_signal, nspans, span_out):
-    all_sums, spans, span_sigs, span_sums = plot_roi_map(test_signal, nspans)
+@pytest.mark.parametrize("nrois", [1, 2, 3], ids=lambda p: f'rois{p}')
+@pytest.mark.parametrize("roi_out", [1, 2, 3], ids=lambda p: f'out{p}')
+def test_roi_sums(test_signal, nrois, roi_out):
+    all_sums, rois, roi_sigs, roi_sums = plot_roi_map(test_signal, nrois)
 
-    if span_out > nspans:
-        span_out = nspans
+    if roi_out > nrois:
+        pytest.skip((f"skipping test with roi_out={roi_out} as only "
+                     f"nrois={nrois}"))
 
-    return span_sums[span_out - 1]
+    roi_sig = roi_sigs[roi_out - 1]
+    roi_sum = roi_sums[roi_out - 1]
+    roi = rois[roi_out - 1]
+
+    assert np.all(
+        np.isclose(roi_sig.nansum(roi_sig.axes_manager.signal_axes).data,
+                   roi_sum.data)
+    )
+
+    for i in range(3):
+        lo, hi = roi.left, roi.right
+        within_roi = (lo <= (i * 2) < hi)
+
+        if within_roi:
+            assert np.isin(i + 1, roi_sig.inav[i])
+            assert roi_sum.isig[i].data.mean() > 0.0
+        else:
+            assert not np.isin(i + 1, roi_sig.inav[i])
+            assert not (roi_sum.isig[i].data.mean() > 0.0)
+
+    return roi_sum
 
 
 @sig_mpl_compare("sig")
-@pytest.mark.parametrize("which_plot", ["all_sums", "span_sums"])
+@pytest.mark.parametrize("which_plot", ["all_sums", "roi_sums"])
 def test_interaction(test_signal, which_plot):
-    all_sums, spans, span_sigs, span_sums = plot_roi_map(test_signal, 1)
+    all_sums, rois, roi_sigs, roi_sums = plot_roi_map(test_signal, 1)
 
-    spans[0].left = 200
-    spans[0].right = 1000
+    roi_sig = roi_sigs[0]
+    roi = rois[0]
+
+    before_move = roi_sig.deepcopy()
+
+    for i in range(3):
+        assert np.isin(i + 1, roi_sig.data)
+
+    roi.left = 6.0
+    roi.right = 12.0
+    roi.left = 6.0
+    roi.right = 12.0
+
+    assert before_move.data.shape != roi_sig.data.shape or \
+        before_move != roi_sig
+
+    for i in range(3):
+        assert not np.isin(i + 1, roi_sig.data)
 
     if which_plot == "all_sums":
         return all_sums
-    elif which_plot == "span_sums":
-        return span_sums[0]
+    elif which_plot == "roi_sums":
+        return roi_sums[0]

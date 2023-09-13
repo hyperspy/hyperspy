@@ -1714,7 +1714,6 @@ def _create_span_roi_group(sig_ax, N):
     """
     axis = sig_ax.axis
     ax_range = axis[-1] - axis[0]
-
     span_width = ax_range / (2 * N)
 
     spans = []
@@ -1822,8 +1821,8 @@ def plot_roi_map(signal, rois=1):
     region at each point in the scan. Therefore regions of the
     scan where a particular spot is intense will appear bright.
     """
-    sig_dims = signal.axes_manager.signal_dimension
-    nav_dims = signal.axes_manager.navigation_dimension
+    sig_dims = len(signal.axes_manager.signal_axes)
+    nav_dims = len(signal.axes_manager.navigation_axes)
 
     if sig_dims not in [1, 2] or nav_dims not in [1, 2]:
         warnings.warn(("This function is only tested for signals with 1 or 2 "
