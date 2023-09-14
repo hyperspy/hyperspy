@@ -92,7 +92,8 @@ class Markers:
             Positions of the markers
 
         offsets_transform: str
-            Define the transformation used for the `offsets`. It can be one of the following:
+            Define the transformation used for the `offsets`. This only operates on the offset point so it won't
+            scale the size of the ``Path``.  It can be one of the following:
             - ``"data"``: the offsets are defined in data coordinates and the ``ax.transData`` transformation is used.
             - ``"relative"``: The offsets are defined in data coordinates in x and coordinates in y relative to the
               data plotted. Only for 1D figure.
@@ -106,14 +107,14 @@ class Markers:
               (0, 0) is the bottom left of the window, and (width, height) is top right of the output in "display units"
               :py:class:`matplotlib.transforms.IndentityTransform`.
 
-            transform: str or None
-            Define the transformation to be applied to each marker. It can be one of the following:
-
-        size_transform: str or None
-            Define the transformation to be applied to the size of each marker.
-            "yaxis": The size is based on the scale for the y axis
-            "xaxis": The size is based on the scale for the x axis
-            "points": The size is in points
+            transform: str
+            Define the transformation to be applied to each marker. This operates on the ``Path`` rather than
+            the position so can be used to scale as well as translate some marker.
+            It can be any of the transforms in offset_transform or one of the following:
+            - ``"xaxis_scale"``: The size of the marker is scaled by scale factor of the x axis.
+            - ``"yaxis_scale"``: The size of the marker is scaled by scale factor of the y axis.
+            For most cases having transform="data"/"axis" and offsets_transform="data" will result
+            in unexpected behavior as the position of the marker will be transformed twice.
 
         **kwargs :
             Keyword arguments passed to the underlying marker collection. Any argument
@@ -198,6 +199,12 @@ class Markers:
             raise ValueError(
                 "The argument `collection_class` must be a class in "
                 "`matplotlib.collection."
+            )
+
+        if offsets_transform is "data" and transform in ["axes","data"]:
+            raise ValueError(
+                "Weird behavior will occur when argument `offsets_transform` cannot be 'data' when "
+                "transform is 'axes' or 'data'."
             )
         # Data attributes
         self.kwargs = kwargs  # all keyword arguments.
