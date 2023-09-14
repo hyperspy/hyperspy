@@ -27,7 +27,7 @@ class HorizontalLines(Markers):
     marker_type = "HorizontalLines"
 
     def __init__(
-        self, offsets, offsets_transform="display", transform="yaxis", **kwargs
+        self, offsets, offsets_transform="display", **kwargs
     ):
         """Initialize a set of HorizontalLines markers.
 
@@ -40,6 +40,11 @@ class HorizontalLines(Markers):
             that is array-like and has `dtype=object` is assumed to be an iterating
             argument and is treated as such.
         """
+        if "transform" in kwargs and kwargs["transform"] != "yaxis":
+            raise ValueError(
+                "HorizontalLines markers must have transform='yaxis'."
+            )
+        transform = "yaxis"
         Markers.__init__(
             self,
             collection_class=LineCollection,

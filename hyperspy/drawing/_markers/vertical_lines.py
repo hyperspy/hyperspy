@@ -27,7 +27,7 @@ class VerticalLines(Markers):
     marker_type = "VerticalLines"
 
     def __init__(
-        self, offsets, offsets_transform="display", transform="xaxis", **kwargs
+        self, offsets, offsets_transform="display", **kwargs
     ):
         """
         Initialize the set of Vertical Line Markers.
@@ -41,6 +41,12 @@ class VerticalLines(Markers):
             that is array-like and has `dtype=object` is assumed to be an iterating
             argument and is treated as such.
         """
+        if "transform" in kwargs and kwargs["transform"] != "xaxis":
+            raise ValueError(
+                "VerticalLines markers must have transform='xaxis'."
+            )
+        transform = "xaxis"
+
         # Data attributes
         Markers.__init__(
             self,

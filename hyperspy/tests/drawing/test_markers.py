@@ -763,6 +763,11 @@ class TestLineCollections:
         kwargs = hor.get_data_position()
         np.testing.assert_array_equal(kwargs["segments"], [[[-0.5, 0], [2.5, 0]]])
 
+    def test_horizontal_vertical_line_error(self, offsets):
+        with pytest.raises(ValueError):
+            hor = HorizontalLines(offsets=offsets, transform="data")
+        with pytest.raises(ValueError):
+            vert = VerticalLines(offsets=offsets, transform="data")
 
 def test_marker_collection_close_render():
     signal = Signal2D(np.ones((2, 10, 10)))
