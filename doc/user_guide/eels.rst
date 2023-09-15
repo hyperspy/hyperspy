@@ -289,8 +289,7 @@ the following example download a previous version (1.0) of the GOS file from Zen
 Fitting model
 ^^^^^^^^^^^^^
 
-By default the fine structure features are disabled (although
-the default value can be configured (see :ref:`configuring-hyperspy-label`).
+By default the fine structure features are disabled.
 We must enable them to accurately fit this spectrum:
 
 .. code-block:: python
