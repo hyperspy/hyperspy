@@ -1618,14 +1618,18 @@ class EELSSpectrum(Signal1D):
 
         vertical_line_marker = Lines(segments=segments,
                                      shift=line_shifts,
-                                     transform="relative")
+                                     transform="relative",
+                                     color='black',
+                                     )
         text_marker = Texts(offsets=offsets,
                             texts=list(edges.keys()),
                             shift=line_shifts[:, 1]+0.025,
                             rotation=np.pi/2,
                             horizontalalignment="left",
                             verticalalignment="bottom",
-                            offsets_transform="relative")
+                            offsets_transform="relative",
+                            facecolor='black',
+                            )
         return vertical_line_marker, text_marker
 
     def plot_edges_label(self,

@@ -1053,7 +1053,7 @@ class EDSSpectrum(Signal1D):
                              rotation=np.pi/2,
                              horizontalalignment="left",
                              verticalalignment="bottom",
-                             color='black',
+                             facecolor='black',
                              shift=.005,
                              )
 
