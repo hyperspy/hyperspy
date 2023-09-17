@@ -38,7 +38,7 @@ class Lines(Markers):
             Additional keyword arguments are passed to matplotlib.collections.LineCollection.
         """
         super().__init__(
-            collection_class=LineCollection,
+            collection=LineCollection,
             segments=segments,
             offsets_transform=offsets_transform,
             transform=transform,

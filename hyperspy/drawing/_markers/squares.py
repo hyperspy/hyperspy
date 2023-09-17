@@ -52,7 +52,7 @@ class Squares(Markers):
         kwargs["rotation"] = rotation + np.pi / 4  # rotate by 45 degrees
 
         super().__init__(
-            collection_class=RegularPolyCollection,
+            collection=RegularPolyCollection,
             offsets=offsets,
             sizes=sizes,
             offsets_transform=offsets_transform,

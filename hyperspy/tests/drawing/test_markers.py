@@ -344,7 +344,7 @@ class TestInitMarkerCollection:
     def test_to_dictionary(self, collection, request):
         col = request.getfixturevalue(collection)
         dict = col._to_dictionary()
-        assert dict["collection_class"] == "LineCollection"
+        assert dict["collection"] == "LineCollection"
         assert dict["plot_on_signal"] is True
 
     @pytest.mark.parametrize(
@@ -429,7 +429,7 @@ class TestInitMarkerCollection:
 
     def test_rep(self):
         m = Markers(
-            offsets=[[1, 1], [2, 2]], verts=3, sizes=3, collection_class=PolyCollection
+            offsets=[[1, 1], [2, 2]], verts=3, sizes=3, collection=PolyCollection
         )
         assert "Markers" in m.__repr__()
 
@@ -465,7 +465,7 @@ class TestInitMarkerCollection:
     )
     def test_initialize_subclasses(self, subclass):
         m = subclass[0](**subclass[2])
-        assert m.collection_class is subclass[1]
+        assert m.collection is subclass[1]
 
     @pytest.mark.parametrize(
         "subclass",

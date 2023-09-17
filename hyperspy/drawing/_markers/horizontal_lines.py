@@ -47,7 +47,7 @@ class HorizontalLines(Markers):
         transform = "yaxis"
         Markers.__init__(
             self,
-            collection_class=LineCollection,
+            collection=LineCollection,
             offsets=offsets,
             offsets_transform=offsets_transform,
             transform=transform,

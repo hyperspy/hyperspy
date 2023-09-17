@@ -48,7 +48,7 @@ class Texts(Markers):
             Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`.
         """
         super().__init__(
-            collection_class=TextCollection,
+            collection=TextCollection,
             offsets=offsets,
             offsets_transform=offsets_transform,
             transform=transform,

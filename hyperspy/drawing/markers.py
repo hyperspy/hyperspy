@@ -86,7 +86,7 @@ class Markers:
 
         Parameters
         ----------
-        collection_class: matplotlib.collections or str
+        collection : matplotlib.collections or str
             A Matplotlib collection to be initialized.
         offsets : [n, 2]
             Positions of the markers
@@ -173,35 +173,29 @@ class Markers:
         """
         if isinstance(collection_class, str):
             try:
-                # Remove when external changes are merged
-                if collection_class in [
-                    "TextCollection",
-                    "RegularPolyCollection",
-                    "EllipseCollection",
-                    "RectangleCollection",
-                ]:
-                    collection_class = getattr(hs_mpl_collections, collection_class)
-                elif collection_class is "Quiver":
-                    from matplotlib.quiver import Quiver as collection_class
-                else:
-                    collection_class = getattr(mpl_collections, collection_class)
-            except ModuleNotFoundError:
-                raise ModuleNotFoundError(
-                    "The argument `collection_class` must be a string or"
-                    " a matplotlib.collections class. matplotlib.collections."
-                    + collection_class
-                    + " is not a valid matplotlib.collections class."
+                collection = getattr(mpl_collections, collection)
+            except AttributeError:
+                raise ValueError(
+                    f"'{collection}' is not the name of a matplotlib collection class."
+                 )
+
+        if not issubclass(collection, mpl_collections.Collection):
+            raise ValueError(
+                f"{collection} is not a subclass of `matplotlib.collection.Collection`."
                 )
 
-        if "matplotlib.collections" not in str(
-            collection_class
-        ) and "matplotlib.quiver" not in str(collection_class):
+        if ".".join(collection.__module__.split('.')[:2]) not in [
+            'matplotlib.collections', 'hyperspy.external'
+            ]:
+            # To be able to load a custom markers, we need to be able to instantiate
+            # the class and the safe way to do that is to import from
+            # `matplotlib.collections` or `hyperspy.external` (patched matplotlib collection)
             raise ValueError(
-                "The argument `collection_class` must be a class in "
-                "`matplotlib.collection."
+                "To support loading file saved with custom markers, the collection must be "
+                "implemented in matplotlib or hyperspy"
             )
 
-        if offsets_transform is "data" and transform in ["axes","data"]:
+        if offsets_transform == "data" and transform in ["axes", "data"]:
             raise ValueError(
                 "Weird behavior will occur when argument `offsets_transform` cannot be 'data' when "
                 "transform is 'axes' or 'data'."
@@ -245,7 +239,8 @@ class Markers:
         self.name = self.marker_type
         # Properties
         self.collection = None
-        self.collection_class = collection_class
+        # used in _initialize_collection
+        self._collection_class = collection
         self.signal = None
         self.temp_signal = None
         self._plot_on_signal = True
@@ -518,7 +513,7 @@ class Markers:
     def _to_dictionary(self):
         marker_dict = {
             "marker_type": self.marker_type,
-            "collection_class": self.collection_class.__name__,
+            "collection": self.collection.__name__,
             "plot_on_signal": self._plot_on_signal,
             "offsets_transform": self._offsets_transform,
             "transform": self._transform,

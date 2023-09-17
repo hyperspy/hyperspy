@@ -52,7 +52,7 @@ class Ellipses(Markers):
             Additional keyword arguments are passed to :py:class:`matplotlib.collections.EllipseCollection`.
         """
         super().__init__(
-            collection_class=EllipseCollection,
+            collection=EllipseCollection,
             offsets=offsets,
             offsets_transform=offsets_transform,
             heights=heights,

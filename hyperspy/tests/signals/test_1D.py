@@ -73,8 +73,6 @@ class Test1D:
         else:
             markers = Markers.from_signal(intensities,
                                           key="segments",
-                                          collection_class=LineCollection,
+                                          collection=LineCollection,
                                           )
             s.add_marker(markers)
-
-

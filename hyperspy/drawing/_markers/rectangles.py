@@ -44,7 +44,7 @@ class Rectangles(Markers):
             Additional keyword arguments are passed to matplotlib.collections.PolyCollection.
         """
         super().__init__(
-            collection_class=RectangleCollection,
+            collection=RectangleCollection,
             offsets=offsets,
             widths=widths,
             heights=heights,

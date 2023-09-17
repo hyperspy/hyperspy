@@ -44,7 +44,7 @@ class Points(Markers):
                 Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`
         """
         super().__init__(
-            collection_class=CircleCollection,
+            collection=CircleCollection,
             offsets=offsets,
             sizes=sizes,
             offsets_transform=offsets_transform,

@@ -44,7 +44,7 @@ class Arrows(Markers):
             Keyword arguments are passed to :py:class:`matplotlib.quiver.Quiver`.
         """
         super().__init__(
-            collection_class=Quiver,
+            collection=Quiver,
             # iterating arguments
             offsets=offsets,
             U=U,
@@ -68,7 +68,7 @@ class Arrows(Markers):
         else:
             args = (X, Y, U, V, C)
 
-        self.collection = self.collection_class(
+        self.collection = self._collection_class(
             *args, offset_transform=self.ax.transData, **self._init_kwargs
         )
 

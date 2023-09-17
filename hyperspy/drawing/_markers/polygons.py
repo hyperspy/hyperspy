@@ -39,7 +39,7 @@ class Polygons(Markers):
             Additional keyword arguments are passed to matplotlib.collections.PolyCollection.
         """
         super().__init__(
-            collection_class=PolyCollection,
+            collection=PolyCollection,
             verts=verts,
             offsets_transform=offsets_transform,
             transform=transform,

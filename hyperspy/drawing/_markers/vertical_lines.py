@@ -53,7 +53,7 @@ class VerticalLines(Markers):
             offsets=offsets,
             offsets_transform=offsets_transform,
             transform=transform,  # so that the markers span the whole y-axis
-            collection_class=LineCollection,
+            collection=LineCollection,
             **kwargs
         )
 
