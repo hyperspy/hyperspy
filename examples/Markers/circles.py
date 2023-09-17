@@ -17,8 +17,8 @@ s = hs.signals.Signal2D(data)
 #%%
 # This first example shows how to draw static circles
 
-# Define the position of the circles
-offsets = rng.random((10, 2)) * 100
+# Define the position of the circles (start at (0, 0) and increment by 10)
+offsets = np.array([np.arange(0, 100, 10)]*2).T
 
 m = hs.plot.markers.Circles(
     sizes=10,
@@ -45,17 +45,17 @@ sizes = np.empty(s.axes_manager.navigation_shape, dtype=object)
 
 for ind in np.ndindex(offsets.shape):
     offsets[ind] = rng.random((5, 2)) * 100
-    sizes[ind] = rng.random((5, )) * 20
+    sizes[ind] = rng.random((5, )) * 10
 
 m = hs.plot.markers.Circles(
     sizes=sizes,
     offsets=offsets,
     edgecolor='r',
-    linewidth=10,
+    linewidth=5,
     )
 
 s2.plot()
 s2.add_marker(m)
 
 #%%
-# sphinx_gallery_thumbnail_number = 2
+# sphinx_gallery_thumbnail_number = 4

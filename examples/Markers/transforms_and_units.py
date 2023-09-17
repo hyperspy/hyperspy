@@ -12,7 +12,9 @@ parameters for markers
 import hyperspy.api as hs
 import numpy as np
 
-signal = hs.signals.Signal1D((np.arange(100) + 1).reshape(10, 10))
+rng = np.random.default_rng()
+data = np.arange(1, 101).reshape(10, 10) + rng.random((10, 10))
+signal = hs.signals.Signal1D(data)
 
 #%%
 # The first example shows how to draw markers which are relative to some
@@ -50,15 +52,18 @@ signal.plot()
 signal.add_marker(markers)
 
 #%%
-# The third example shows how an offsets_transform of 'axes' can be used to annotate
-# a signal.
+# The third example shows how an ``offsets_transform`` of ``'axes'`` can be
+# used to annotate a signal.
+#
+# The size of the marker is specified in units defined by the ``transform``,
+# in this case ``"xaxis_scale"``, ``"yaxis_scale"`` or ``"display"``
 
 offsets = [[.1, .5], ]  # offsets for positions
 marker1text = hs.plot.markers.Texts(offsets=np.add(offsets,[[.1,0]]),
                       texts=["sizes=1: transform=`xaxis_scale`"],
-                      sizes=2, transform="display", offsets_transform="axes")
+                      sizes=2, transform="display", offsets_transform="data")
 marker = hs.plot.markers.Points(offsets=offsets,
-                      sizes=1, transform="xaxis_scale", offsets_transform="axes")
+                      sizes=1, transform="xaxis_scale", offsets_transform="data")
 
 offsets = [[.1, .1], ]  # offsets for positions
 marker2 = hs.plot.markers.Points(offsets=offsets,

@@ -1370,7 +1370,7 @@ The markers currently supported in HyperSpy are:
     +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
 
 Marker properties
-------------------
+-----------------
 
 The optional parameters (``**kwargs``, keyword arguments) can be used for extra parameters used for
 each matplotlib collection.  Any parameter which can be set using the :py:meth:`matplotlib.collections.set`
@@ -1384,12 +1384,12 @@ Additionally, if some `**kwarg` is shorter in length to some other parameter it 
 where i is the ith element of the collection.
 
 
-Extra information about  MarkerCollections
-------------------
+Extra information about Markers
+-------------------------------
 .. versionadded:: 2.0
    Marker Collections for faster plotting of many markers
 
-Hyperspy's `MarkerCollection` class extends the capabilities of the matplotlib `Collections` class and subclasses.
+Hyperspy's `Markers` class and its subclasses extends the capabilities of the matplotlib `Collections` class and subclasses.
 Primarily it allows dynamic markers to be initialized by passing key word arguments with `dtype=object`. Those
 attributes are then updated with the plot as you navigate through the plot.
 
@@ -1401,15 +1401,16 @@ define a plot of Ellipses using:
     >>> import numpy as np
     >>> import hyperspy.api as hs
     >>> hs.plot.markers.Ellipse(heights=(.4,), widths=(1,),
-    ...                         angles=(10,), offsets = np.array([[0,0],[1,1]]))
+    ...                         angles=(10,), offsets = np.array([[0,0], [1,1]]))
+
 Alternatively if we want to make ellipses with different heights and widths we can pass multiple values to
-heights, widths and angles.  In general these properties will be applied such that `prop[i % len(prop)]` so
-passing `heights=(.1,.2,.3)` will result in the ellipse at offsets[0] with a height of 0.1 the ellipse at
-offsets[1] with a height of 0.1, ellipse at offsets[2] has a height of 0.3 and the ellipse at offsets[3] has
+heights, widths and angles.  In general these properties will be applied such that ``prop[i % len(prop)]`` so
+passing ``heights=(.1,.2,.3)`` will result in the ellipse at ``offsets[0]`` with a height of 0.1 the ellipse at
+``offsets[1] ``with a height of 0.1, ellipse at ``offsets[2]`` has a height of 0.3 and the ellipse at ``offsets[3]`` has
 a height of 0.1 and so on.
 
-For attributes which we want to by dynamic and change with the navigation `index` we can pass those values as
-an array with `dtype=object`.  Each of those values will be set as the index changes.
+For attributes which we want to by dynamic and change with the navigation ``index`` we can pass those values as
+an array with ``dtype=object``.  Each of those values will be set as the index changes.
 
 .. NOTE::
     Only kwargs which can be passed to the :py:func:`matplotlib.collections.Collection.set` function or the

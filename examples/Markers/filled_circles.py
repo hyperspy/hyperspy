@@ -22,7 +22,7 @@ s = hs.signals.Signal2D(data)
 offsets = rng.random((10, 2)) * 100
 
 m = hs.plot.markers.Points(
-    sizes=150,
+    sizes=20,
     offsets=offsets,
     facecolors="red",
     )

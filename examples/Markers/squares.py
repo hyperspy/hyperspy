@@ -1,6 +1,6 @@
 """
-Rectangle Markers
-=================
+Square Markers
+==============
 
 """
 #%%
@@ -15,17 +15,16 @@ data = np.ones((25, 25, 100, 100))
 s = hs.signals.Signal2D(data)
 
 #%%
-# This first example shows how to draw static rectangle markers
+# This first example shows how to draw static square markers
 
-# Define the position of the rectangles
+# Define the position of the squares (start at (0, 0) and increment by 10)
 offsets = np.array([np.arange(0, 100, 10)]*2).T
 
-m = hs.plot.markers.Rectangles(
+m = hs.plot.markers.Squares(
     offsets=offsets,
     widths=(5,),
-    heights=(7,),
     angles=(0,),
-    color="red",
+    color="orange",
 
     )
 s.plot()
@@ -33,11 +32,11 @@ s.add_marker(m)
 
 #%%
 #
-# Dynamic Rectangle Markers
+# Dynamic Square Markers
 # #########################
 #
-# This first example shows how to draw dynamic rectangle markers, whose
-# position, widths, heights and angles depends on the navigation coordinates
+# This first example shows how to draw dynamic squres markers, whose
+# position, widths and angles depends on the navigation coordinates
 
 s2 = hs.signals.Signal2D(data)
 
@@ -52,12 +51,11 @@ for index in np.ndindex(offsets.shape):
     angles[index] = rng.random((10, )) * 180
     offsets[index] = rng.random((10, 2)) * 100
 
-m = hs.plot.markers.Rectangles(
+m = hs.plot.markers.Squares(
     offsets=offsets,
     widths=widths,
-    heights=heights,
     angles=angles,
-    color="red",
+    color="orange",
     facecolor="none",
     linewidth=3
     )

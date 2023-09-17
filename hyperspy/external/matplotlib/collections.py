@@ -6,6 +6,116 @@ import numpy as np
 import math
 
 
+class _CollectionWithSizes(Collection):
+    """
+    Base class for collections that have an array of sizes.
+    """
+    _factor = 1.0
+
+    def __init__(self, sizes, units='points', **kwargs):
+        """
+        Parameters
+        ----------
+        sizes : array-like
+            The lengths of the first axes (e.g., major axis lengths).
+        units : {'points', 'inches', 'dots', 'width', 'height', 'x', 'y', 'xy'}
+            The units in which majors and minors are given; 'width' and
+            'height' refer to the dimensions of the axes, while 'x' and 'y'
+            refer to the *offsets* data units. 'xy' differs from all others in
+            that the angle as plotted varies with the aspect ratio, and equals
+            the specified angle only when the aspect ratio is unity.  Hence
+            it behaves the same as the `~.patches.Ellipse` with
+            ``axes.transData`` as its transform.
+        **kwargs
+            Forwarded to `Collection`.
+        """
+        super().__init__(**kwargs)
+        self._set_sizes(sizes)
+        self._units = units
+        self.set_transform(transforms.IdentityTransform())
+        self._transforms = np.empty((0, 3, 3))
+        self._paths = [self._path_generator()]
+
+    def get_sizes(self):
+        """
+        Return the sizes ('areas') of the elements in the collection.
+
+        Returns
+        -------
+        array
+            The 'area' of each element.
+        """
+        return self._sizes
+
+    def _set_sizes(self, sizes):
+        self._sizes = self._factor * np.asarray(sizes).ravel()
+
+    def set_sizes(self, sizes):
+        """Set the sizes of the element in the collection."""
+        self._set_sizes(sizes)
+        self.stale = True
+
+    def _set_transforms(self):
+        """Calculate transforms immediately before drawing."""
+        # if sizes is None:
+        #     self._sizes = np.array([])
+        #     self._transforms = np.empty((0, 3, 3))
+        # else:
+        #     self._sizes = np.asarray(sizes)
+        #     self._transforms = np.zeros((len(self._sizes), 3, 3))
+        #     scale = np.sqrt(self._sizes) * dpi / 72.0 * self._factor
+        #     self._transforms[:, 0, 0] = scale
+        #     self._transforms[:, 1, 1] = scale
+        #     self._transforms[:, 2, 2] = 1.0
+        # self.stale = True
+
+        ax = self.axes
+        fig = self.figure
+
+        if self._units == 'xy':
+            sc = 1
+        elif self._units == 'x':
+            sc = ax.bbox.width / ax.viewLim.width
+        elif self._units == 'y':
+            sc = ax.bbox.height / ax.viewLim.height
+        elif self._units == 'inches':
+            sc = fig.dpi
+        elif self._units == 'points':
+            sc = fig.dpi / 72.0
+        elif self._units == 'width':
+            sc = ax.bbox.width
+        elif self._units == 'height':
+            sc = ax.bbox.height
+        elif self._units == 'dots':
+            sc = 1.0
+        else:
+            raise ValueError(f'Unrecognized units: {self._units!r}')
+
+        self._transforms = np.zeros((len(self._sizes), 3, 3))
+        sizes = self._sizes * sc
+        self._transforms[:, 0, 0] = sizes
+        self._transforms[:, 1, 1] = sizes
+        self._transforms[:, 2, 2] = 1.0
+
+        _affine = transforms.Affine2D
+        if self._units == 'xy':
+            m = ax.transData.get_affine().get_matrix().copy()
+            m[:2, 2:] = 0
+            self.set_transform(_affine(m))
+
+    @artist.allow_rasterization
+    def draw(self, renderer):
+        self._set_transforms()
+        super().draw(renderer)
+
+
+class CircleCollection(_CollectionWithSizes):
+    """A collection of circles, drawn using splines."""
+
+    _factor = 0.5
+    _path_generator = mpath.Path.unit_circle
+
+
 class _CollectionWithWidthAngle(Collection):
     """
     Base class for collections that have an array of widths and angles

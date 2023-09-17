@@ -32,13 +32,13 @@ from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
 from hyperspy.axes import UniformDataAxis
 from hyperspy.misc.test_utils import update_close_figure
 from matplotlib.collections import (
-    PolyCollection,
-    CircleCollection,
     LineCollection,
+    PolyCollection,
     RegularPolyCollection,
     StarPolygonCollection,
 )
 from hyperspy.external.matplotlib.collections import (
+    CircleCollection,
     EllipseCollection,
     RectangleCollection,
     SquareCollection,
@@ -113,7 +113,7 @@ class TestMarkers:
             {"widths": (0.2,), "heights": (0.7,), "angles": (60,), "units": "xy"},
             {"widths": (0.2,), "heights": (0.7,), "angles": (60,), "units": "xy"},
             {"widths": (0.4,)},
-            {"sizes": (0.4,)},
+            {"sizes": (20,)},
         ]
         for k, o in zip(kwargs, offsets):
             k["offsets"] = o
@@ -145,13 +145,14 @@ class TestMarkers:
         return s._plot.navigator_plot.figure
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL
+        baseline_dir=BASELINE_DIR, tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL,
+        filename='test_iterating_markers.png'
     )
     @pytest.mark.parametrize("iter_data", ("lazy_data", "data"))
-    def test_iterating_marker(self, request, iter_data):
+    def test_iterating_markers(self, request, iter_data):
         data = request.getfixturevalue(iter_data)
         s = Signal2D(np.ones((3, 5, 6)))
-        markers = Points(offsets=data, sizes=(0.2,))
+        markers = Points(offsets=data, sizes=(50,))
         s.add_marker(markers)
         s.axes_manager.navigation_axes[0].index = 2
         return s._plot.signal_plot.figure

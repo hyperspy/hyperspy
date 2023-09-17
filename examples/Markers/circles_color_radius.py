@@ -21,7 +21,7 @@ s = hs.signals.Signal2D(np.ones((25, 100, 100)))
 # This first example shows how to draw arrows
 
 # Define the size of the circles
-sizes = rng.random((10, )) * 100 + 20
+sizes = rng.random((10, )) * 10 + 20
 
 # Define the position of the circles
 offsets = rng.random((10, 2)) * 100
