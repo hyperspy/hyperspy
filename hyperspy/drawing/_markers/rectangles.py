@@ -41,7 +41,8 @@ class Rectangles(Markers):
         rectangles: [n, 4] array-like or ragged array with shape (n, 4) at every navigation position
             Defines the rectangle[[x1,y1,x2,y2], ...].
         kwargs:
-            Additional keyword arguments are passed to matplotlib.collections.PolyCollection.
+            Additional keyword arguments are passed to
+            :py:class:`hyperspy.external.matplotlib.collections.RectangleCollection`.
         """
         super().__init__(
             collection=RectangleCollection,

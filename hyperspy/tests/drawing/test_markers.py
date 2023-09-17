@@ -39,9 +39,10 @@ from matplotlib.collections import (
     StarPolygonCollection,
 )
 from hyperspy.external.matplotlib.collections import (
-    TextCollection,
-    RectangleCollection,
     EllipseCollection,
+    RectangleCollection,
+    SquareCollection,
+    TextCollection,
 )
 from hyperspy.external.matplotlib.quiver import Quiver
 from hyperspy.utils.markers import (
@@ -111,7 +112,7 @@ class TestMarkers:
             {"sizes": (0.4,)},
             {"widths": (0.2,), "heights": (0.7,), "angles": (60,), "units": "xy"},
             {"widths": (0.2,), "heights": (0.7,), "angles": (60,), "units": "xy"},
-            {"sizes": (0.4,)},
+            {"widths": (0.4,)},
             {"sizes": (0.4,)},
         ]
         for k, o in zip(kwargs, offsets):
@@ -270,7 +271,7 @@ class TestMarkers:
         assert len(new_s.metadata["Markers"]) == num_col
 
     def test_deepcopy_signal_with_muultiple_markers_same_class(self):
-        markers_list = [Points(offsets=np.array([1, 2])*i) for i in range(2)]
+        markers_list = [Points(offsets=np.array([1, 2])*i) for i in range(3)]
         num_markers = len(markers_list)
         s = Signal2D(np.zeros((2, 10, 10)))
         s.plot()
@@ -461,7 +462,7 @@ class TestInitMarkers:
                 RectangleCollection,
                 {"offsets": [[1, 1]], "widths": [1], "heights": [1]},
             ),
-            (Squares, RegularPolyCollection, {"offsets": [[1, 1]], "sizes": [1]}),
+            (Squares, SquareCollection, {"offsets": [[1, 1]], "widths": [1]}),
             (Texts, TextCollection, {"offsets": [[1, 1]], "texts": ["a"]}),
             (Lines, LineCollection, {"segments": [[0, 0], [1, 1]]}),
             (
@@ -484,7 +485,7 @@ class TestInitMarkers:
             (Points, {"offsets": [[1, 1]], "sizes": [1]}),
             (VerticalLines, {"offsets": [1, 2]}),
             (Rectangles, {"offsets": [[1, 1]], "widths": [1], "heights": [1]}),
-            (Squares, {"offsets": [[1, 1]], "sizes": [1]}),
+            (Squares, {"offsets": [[1, 1]], "widths": [1]}),
             (Texts, {"offsets": [[1, 1]], "texts": ["a"]}),
             (Lines, {"segments": [[0, 0], [1, 1]]}),
             (Markers, {"collection": "StarPolygonCollection", "offsets": [[1, 1]]}),
@@ -855,10 +856,11 @@ class TestMarkers2:
 
     @pytest.mark.parametrize("MarkerClass", [Points, Circles, Ellipses, Arrows])
     def test_markers_length_offsets(self, extra_kwargs, MarkerClass, offsets, signal):
-        markers = MarkerClass(offsets=offsets, **extra_kwargs[MarkerClass])
-        assert len(markers) == 3
+        m = MarkerClass(offsets=offsets, **extra_kwargs[MarkerClass])
+        # variable length markers: needs axes_manager, etc.
+        with pytest.raises(RuntimeError):
+            len(m)
 
-        signal.plot()
-        signal.add_marker(markers)
+        signal.add_marker(m)
 
-        assert len(markers) == 3
+        assert len(m) == 3

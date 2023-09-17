@@ -23,8 +23,8 @@ angles = rng.random((10, )) * 180
 
 m = hs.plot.markers.Rectangles(
     offsets=offsets,
-    widths=(20,),
-    heights=(30,),
+    widths=(10,),
+    heights=(20,),
     angles=(45,),
     color="red",
 

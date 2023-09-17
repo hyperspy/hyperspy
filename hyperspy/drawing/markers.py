@@ -325,6 +325,14 @@ class Markers:
         Return the number of markers in the collection at the current
         navigation coordinate.
         """
+        if self._is_iterating and self.axes_manager is None:
+            # with variable length markers, the axes_manager is needed to
+            # know the navigation coordinates of the signal
+            raise RuntimeError(
+                "Variable length markers must have been plotted to provide "
+                "the numbers of markers at the current navigation coordinates."
+                )
+
         return list(self.get_data_position().values())[0].shape[0]
 
     def delete_index(self, keys, index):
@@ -433,6 +441,7 @@ class Markers:
 
         text += ", length: "
         if self._is_iterating:
+            lentgh = getattr(self, "__len__ ", "not plotted")
             text += "variable (current: %s)" % len(self)
         else:
             text += "%s"% len(self)
@@ -530,10 +539,7 @@ class Markers:
 
         return marker_dict
 
-    def get_data_position(
-        self,
-        get_static_kwargs=True,
-    ):
+    def get_data_position(self, get_static_kwargs=True):
         """
         Return the current keyword arguments for updating the collection.
         """

@@ -16,25 +16,25 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 import numpy as np
-from matplotlib.collections import RegularPolyCollection
 
 from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 from hyperspy.drawing.markers import Markers
+from hyperspy.external.matplotlib.collections import SquareCollection
 
 
 class Squares(Markers):
     """
-    A Collection of square markers using
-    :py:class`matplotlib.collections.RegularPolyCollection`.
+    A Collection of square markers.
     """
 
     def __init__(
         self,
         offsets,
-        sizes,
+        widths,
+        angles=(0,),
         offsets_transform="data",
-        transform="xaxis_scale",
-        rotation=0,
+        transform="display",
+        units="xy",
         **kwargs
     ):
         """
@@ -45,16 +45,19 @@ class Squares(Markers):
         %s
         sizes : Array-like
             The size of the squares.
+        kwargs:
+            Additional keyword arguments are passed to
+            :py:class:`hyperspy.external.matplotlib.collections.SquareCollection`.
         """
-        kwargs["numsides"] = 4
-        kwargs["rotation"] = rotation + np.pi / 4  # rotate by 45 degrees
 
         super().__init__(
-            collection=RegularPolyCollection,
+            collection=SquareCollection,
             offsets=offsets,
-            sizes=sizes,
+            widths=widths,
+            angles=angles,
             offsets_transform=offsets_transform,
             transform=transform,
+            units=units,
             **kwargs
         )
 
