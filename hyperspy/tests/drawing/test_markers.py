@@ -194,7 +194,7 @@ class TestMarkers:
         ),
     )
     def test_from_signal(self, signal, data, signal_axes):
-        col = Points.from_signal(signal, sizes=(0.3,), signal_axes=signal_axes)
+        col = Points.from_signal(signal, sizes=(10,), signal_axes=signal_axes)
 
         s = Signal2D(np.ones((3, 5, 6)))
         s.add_marker(col)
@@ -209,7 +209,7 @@ class TestMarkers:
 
     def test_from_signal_fail(self, signal):
         with pytest.raises(ValueError):
-            _ = Points.from_signal(signal, sizes=(0.3,), signal_axes="test")
+            _ = Points.from_signal(signal, sizes=(10,), signal_axes="test")
 
     def test_find_peaks(self):
         from skimage.draw import disk
@@ -232,7 +232,7 @@ class TestMarkers:
             template=disk2(4),
         )
         col = Points.from_signal(
-            pks, sizes=(0.3,), signal_axes=s.axes_manager.signal_axes
+            pks, sizes=(10,), signal_axes=s.axes_manager.signal_axes
         )
         s.add_marker(col)
         np.testing.assert_array_equal(col.get_data_position()["offsets"], [[11, 19]])

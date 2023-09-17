@@ -23,6 +23,8 @@ from matplotlib.collections import LineCollection
 class Lines(Markers):
     """A set of Line Segments Markers."""
 
+    _key = "segments"
+
     def __init__(
         self, segments, offsets_transform="display", transform="data", **kwargs
     ):

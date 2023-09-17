@@ -2224,7 +2224,8 @@ class PeaksFinder2D(t.HasTraits):
             self.markers = Circles(offsets=offsets,
                                    edgecolor='red',
                                    facecolors="none",
-                                   size=20)
+                                   sizes=20,
+                                   units="points")
         else:
             self.markers.offsets = offsets
 

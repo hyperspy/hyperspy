@@ -23,6 +23,8 @@ from hyperspy.external.matplotlib.collections import RectangleCollection
 class Rectangles(Markers):
     """A Collection of Rectangles Markers"""
 
+    _key = "offsets"
+
     def __init__(
         self,
         offsets,

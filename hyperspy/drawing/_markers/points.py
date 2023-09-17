@@ -25,6 +25,8 @@ class Points(Markers):
     """
     A set of Points Markers."""
 
+    _key = "offsets"
+
     def __init__(
         self,
         offsets,

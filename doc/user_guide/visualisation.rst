@@ -1352,7 +1352,7 @@ The markers currently supported in HyperSpy are:
     +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
     | :py:class:`~.drawing._markers.horizontal_lines.HorizontalLines`              | ``y, **kwargs``                            |  :py:class:`matplotlib.collections.LineCollection`   |
     +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
-    | :py:class:`~.drawing._markers.line_segments.Lines`                           | ``segments, **kwargs``                     |  :py:class:`matplotlib.collections.LineCollection`   |
+    | :py:class:`~.drawing._markers.lines.Lines`                                   | ``segments, **kwargs``                     |  :py:class:`matplotlib.collections.LineCollection`   |
     +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+
     | :py:class:`~.drawing.markers.Markers`                                        | ``**kwargs``                               |  :py:class:`matplotlib.collections.Collection`       |
     +------------------------------------------------------------------------------+--------------------------------------------+------------------------------------------------------+

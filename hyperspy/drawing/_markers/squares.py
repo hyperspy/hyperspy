@@ -27,6 +27,8 @@ class Squares(Markers):
     A Collection of square markers.
     """
 
+    _key = "offsets"
+
     def __init__(
         self,
         offsets,

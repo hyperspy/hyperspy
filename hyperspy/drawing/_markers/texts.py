@@ -26,6 +26,8 @@ class Texts(Markers):
     A set of text markers
     """
 
+    _key = "offsets"
+
     def __init__(
         self, offsets, offsets_transform="data", transform="display", **kwargs
     ):

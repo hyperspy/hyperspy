@@ -44,6 +44,9 @@ def convert_positions(peaks, signal_axes):
 
 class Markers:
 
+    # The key defining the position - used in `from_signal`
+    _key = ""
+
     def __init__(
         self,
         collection,
@@ -453,7 +456,7 @@ class Markers:
     def from_signal(
         cls,
         signal,
-        key="offsets",
+        key=None,
         signal_axes="metadata",
         collection=None,
         **kwargs,
@@ -482,7 +485,7 @@ class Markers:
             # avoid dependence on data coordinates
             from hyperspy.utils.markers import Points
             cls = Points
-            kwargs.setdefault('sizes', 100)
+            kwargs.setdefault('sizes', 10)
         if signal_axes is None or (
             signal_axes == "metadata"
             and not signal.metadata.has_item("Peaks.signal_axes")
@@ -511,7 +514,11 @@ class Markers:
                 "The keyword argument `signal_axes` must be one of "
                 "'metadata', a tuple of `DataAxes` or None."
             )
+
+        if key is None:
+            key = cls._key
         kwargs[key] = new_signal.data
+
         return cls(**kwargs)
 
     def _get_data_shape(self):
