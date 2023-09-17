@@ -28,7 +28,6 @@ from matplotlib.patches import Patch
 from hyperspy.events import Event, Events
 from hyperspy.misc.array_tools import _get_navigation_dimension_chunk_slice
 from hyperspy.misc.utils import isiterable
-import hyperspy.external.matplotlib.collections as hs_mpl_collections
 
 
 _logger = logging.getLogger(__name__)
@@ -43,55 +42,31 @@ def convert_positions(peaks, signal_axes):
 
 
 class Markers:
-    """
-    A set of markers for faster plotting.
-
-    This is a generic class which is subclassed by other marker classes. Mostly
-    by defining the collection_class.
-
-    In most cases each marker is defined by some keyword argument and
-    a (n,2) array of offsets which define the position for each marker
-    in the plot.
-
-    For example if we wanted to define a set of ellipses with constant
-    height, width, and size we can do the following.
-
-    >>>from matplotlib.collections import EllipseCollection
-    >>>import hyperspy.api as hs
-    >>>import hyperspy.api as hs
-    >>>import numpy as np
-    >>>m = hs.plot.marker.Markers(collection_class=EllipseCollection, widths=(2,),
-    >>>                 heights=(1,), angles=(1,), units="xy", offsets=np.random.rand(10,2)*10)
-    >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
-    >>>s.plot()
-    >>>s.add_marker(m)
-
-    To define a non-static marker any kwarg that can be set with the `matplotlib.collections.set`
-    method can be passed as an array with `dtype=object` and the same size as the navigation axes
-    for a signal.
-    """
-
-    marker_type = "Markers"
 
     def __init__(
         self,
-        collection_class,
+        collection,
         offsets_transform="data",
         transform="display",
         shift=None,
         **kwargs,
     ):
         """
-        Initialize a Marker Collection.
+        Create a set of markers using Matplotlib collections.
+
+        The markers are defined by a set of arugment required by the collections,
+        typically, ``offsets`` and ``verts`` will define their positions.
+
+        To define a non-static marker any argument that can be set with the
+        :py:meth:`matplotlib.collections.Collection.set` method can be passed
+        as an array with `dtype=object` of the constructor and the same size as
+        the navigation axes of the a signal the markers will be added to.
 
         Parameters
         ----------
         collection : matplotlib.collections or str
             A Matplotlib collection to be initialized.
-        offsets : [n, 2]
-            Positions of the markers
-
-        offsets_transform: str
+        offsets_transform : str
             Define the transformation used for the `offsets`. This only operates on the offset point so it won't
             scale the size of the ``Path``.  It can be one of the following:
             - ``"data"``: the offsets are defined in data coordinates and the ``ax.transData`` transformation is used.
@@ -106,72 +81,77 @@ class Markers:
             - ``"display"``: the offsets are not transformed, i.e. are defined in the display coordinate system.
               (0, 0) is the bottom left of the window, and (width, height) is top right of the output in "display units"
               :py:class:`matplotlib.transforms.IndentityTransform`.
-
-            transform: str
+        transform : str
             Define the transformation to be applied to each marker. This operates on the ``Path`` rather than
             the position so can be used to scale as well as translate some marker.
-            It can be any of the transforms in offset_transform or one of the following:
+            It can be any of the transforms in ``offset_transform`` or one of the following:
             - ``"xaxis_scale"``: The size of the marker is scaled by scale factor of the x axis.
             - ``"yaxis_scale"``: The size of the marker is scaled by scale factor of the y axis.
             For most cases having transform="data"/"axis" and offsets_transform="data" will result
             in unexpected behavior as the position of the marker will be transformed twice.
-
-        **kwargs :
+        **kwargs : dict
             Keyword arguments passed to the underlying marker collection. Any argument
-            that is array-like and has `dtype=object` is assumed to be an iterating
+            that is array-like and has ``dtype=object`` is assumed to be an iterating
             argument and is treated as such.
 
         Examples
         --------
+        Add markers using a :py:class:`matplotlib.collections.PatchCollection`
+        which will display the specified subclass of :py:class:`matplotlib.patches.Patch`
+        at the position defined by the argument ``offsets`` .
 
-        Adding a marker using an EllipseCollection
+        >>> from matplotlib.collections import PatchCollection
+        >>> from matplotlib.patches import Circle
+        >>> import hyperspy.api as hs
+        >>> import numpy as np
+        >>> m = hs.plot.markers.Markers(
+        ...    collection=PatchCollection,
+        ...    patches=[Circle((0, 0), 1)],
+        ...    offsets=np.random.rand(10,2)*10,
+        ...    )
+        >>> s = hs.signals.Signal2D(np.ones((10,10,10,10)))
+        >>> s.plot()
+        >>> s.add_marker(m)
 
-        >>>from matplotlib.collections import EllipseCollection
-        >>>import hyperspy.api as hs
-        >>>import numpy as np
-        >>>m = hs.plot.markers.Markers(collection_class=EllipseCollection, widths=(2,),
-        ...                 heights=(1,), angles=(1,), units="xy", offsets=np.random.rand(10,2)*10)
-        >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
-        >>>s.plot()
-        >>>s.add_marker(m)
+        Adding star "iterating" markers using :py:meth:`matplotlib.collections.StarPolygonCollection`
 
-        Adding a marker using a PatchCollection (Making a circle)
+        >>> import hyperspy.api as hs
+        >>> from matplotlib.collections import StarPolygonCollection
+        >>> import numpy as np
+        >>> rng = np.random.default_rng(0)
+        >>> data = np.ones((25, 25, 100, 100))
+        >>> s = hs.signals.Signal2D(data)
+        >>> offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
+        >>> for ind in np.ndindex(offsets.shape):
+        ...    offsets[ind] = rng.random((10, 2)) * 100
+        >>> # every other star has a size of 50/100
+        >>> m = hs.plot.markers.Markers(
+        ...    collection=StarPolygonCollection,
+        ...    offsets=offsets,
+        ...    numsides=5,
+        ...    color="orange",
+        ...    sizes=(50, 100),
+        ...    )
+        >>> s.plot()
+        >>> s.add_marker(m)
 
-        >>>from matplotlib.collections import PatchCollection
-        >>>from matplotlib.patches import Circle
-        >>>import hyperspy.api as hs
-        >>>import numpy as np
-        >>>m = hs.plot.markers.Markers(collection_class=PatchCollection,
-        ...                                     patches=[Circle((0,0), 1)], offsets=np.random.rand(10,2)*10)
-        >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
-        >>>s.plot()
-        >>>s.add_marker(m)
+        Adding markers using PolyCollection using verts
 
-        Adding a series of lines using a MarkerCollection
-
-        >>>from matplotlib.collections import LineCollection
-        >>>import hyperspy.api as hs
-        >>>import numpy as np
-        >>>m = hs.plot.markers.Markers(collection_class=LineCollection,
-        ...                                     segments=np.random.rand(10,2,2)*10,)
-        >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
-        >>>s.plot()
-        >>>s.add_marker(m)
-
-        Adding a marker using PolyCollection (Making a square)
-
-        >>>from matplotlib.collections import PolyCollection
-        >>>import hyperspy.api as hs
-        >>>import numpy as np
-        >>>m = hs.plot.markers.Markers(collection_class=PolyCollection,
-        ...                                     offsets=np.random.rand(10,2)*10,
-        ...                                     verts=np.array([[[0,0],[0,1],[1,1],[1,0]]]),color="red")
+        >>> from matplotlib.collections import PolyCollection
+        >>> import hyperspy.api as hs
+        >>> import numpy as np
+        >>> m = hs.plot.markers.Markers(
+        ...    collection=PolyCollection,
+        ...    offsets=np.random.rand(10,2)*10,
+        ...    verts=np.array([[0,0], [0,1], [1,1], [1,0]]),
+        ...    color="red",
+        ...    )
         >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
         >>>s.plot()
         >>>s.add_marker(m)
 
         """
-        if isinstance(collection_class, str):
+        if isinstance(collection, str):
             try:
                 collection = getattr(mpl_collections, collection)
             except AttributeError:
@@ -236,7 +216,7 @@ class Markers:
         self._cache_dask_chunk_kwargs = {}
         self._cache_dask_chunk_kwargs_slice = {}
 
-        self.name = self.marker_type
+        self.name = self.__class__.__name__
         # Properties
         self.collection = None
         # used in _initialize_collection
@@ -441,7 +421,7 @@ class Markers:
         return out_kwargs
 
     def __repr__(self):
-        return f"<{self.marker_type}| Iterating == {self._is_iterating}>"
+        return f"<{self.name} | Iterating == {self._is_iterating}>"
 
     @classmethod
     def from_signal(
@@ -449,6 +429,7 @@ class Markers:
         signal,
         key="offsets",
         signal_axes="metadata",
+        collection=None,
         **kwargs,
     ):
         """
@@ -460,15 +441,22 @@ class Markers:
             A value passed to the Collection as {key:signal.data}
         key: str
             The key used to create a key value pair to
-            create the Collection. Passed as {key: signal.data}.
-        collection_class: None or matplotlib.collections
-            The collection which is initialized
+            create the subclass of :py:class:`matplotlib.collections.Collection.
+            Passed as {key: signal.data}.
+        collection: None, str or subclass of :py:class:`matplotlib.collections.Collection`
+            The collection which is initialized. If None, default to `Points` marker.
         signal_axes: str, tuple of UniformAxes or None
             If "metadata" look for signal_axes saved in metadata under .metadata.Peaks.signal_axes
             and convert from pixel positions to real units before creating the collection. If a tuple
             of signal axes those Axes will be used otherwise no transformation will
             happen.
         """
+        if collection is None:
+            # By default, use `Points` with "display" coordinate system to
+            # avoid dependence on data coordinates
+            from hyperspy.utils.markers import Points
+            cls = Points
+            kwargs.setdefault('sizes', 100)
         if signal_axes is None or (
             signal_axes == "metadata"
             and not signal.metadata.has_item("Peaks.signal_axes")
@@ -494,8 +482,8 @@ class Markers:
             )
         else:
             raise ValueError(
-                "The keyword argument `signal_axes` must be one of 'metadata' a"
-                "tuple of `DataAxes` or None"
+                "The keyword argument `signal_axes` must be one of "
+                "'metadata', a tuple of `DataAxes` or None."
             )
         kwargs[key] = new_signal.data
         return cls(**kwargs)
@@ -507,12 +495,13 @@ class Markers:
         return ()
 
     def __deepcopy__(self, memo):
-        new_marker = markers2collection(self._to_dictionary())
+        new_marker = markers_dict_to_markers(self._to_dictionary())
         return new_marker
 
     def _to_dictionary(self):
         marker_dict = {
-            "marker_type": self.marker_type,
+            "class": self.__class__.__name__,
+            "name": self.name,
             "collection": self.collection.__name__,
             "plot_on_signal": self._plot_on_signal,
             "offsets_transform": self._offsets_transform,
@@ -593,7 +582,7 @@ class Markers:
             self.collection.set(**kwds)
 
     def _initialize_collection(self):
-        self.collection = self.collection_class(
+        self.collection = self._collection_class(
             **self.get_data_position(),
             offset_transform=self.offsets_transform,
         )
@@ -714,8 +703,9 @@ def dict2vector(data, keys=None, return_size=True, dtype=float):
         return vector
 
 
-def markers2collection(marker_dict):
-    """This function maps a marker dict to a MarkerCollection class.
+def markers_dict_to_markers(marker_dict):
+    """
+    This function maps a marker dict to a Markers object.
 
     This provides continuity from markers saved with hyperspy 1.x.x and hyperspy 2.x.x.
 
@@ -728,150 +718,108 @@ def markers2collection(marker_dict):
         HorizontalLines,
         Lines,
         Points,
-        Polygons,
         Rectangles,
-        Squares,
         Texts,
         VerticalLines,
     )
+    # hyperspy 1.x markers uses `marker_type`, 2.x uses name
+    marker_class = marker_dict.get('class', marker_dict.get('marker_type'))
 
-    marker_mapping = {
-        "Arrows": Arrows,
-        "Ellipses": Ellipses,
-        "Circles": Circles,
-        "HorizontalLines": HorizontalLines,
-        "Lines": Lines,
-        "Points": Points,
-        "Polygons": Polygons,
-        "Rectangles": Rectangles,
-        "Squares": Squares,
-        "Texts": Texts,
-        "VerticalLines": VerticalLines,
-    }
+    if "Point" in marker_class:
+        offsets, size = dict2vector(
+            marker_dict["data"], keys=None, return_size=True
+        )
+        marker = Points(
+            offsets=offsets, sizes=size, **marker_dict["marker_properties"]
+        )
 
-    from matplotlib.collections import PolyCollection
-
-    if len(marker_dict) == 0:
-        return {}
-    marker_type = marker_dict.pop("marker_type")
-    plot_on_signal = marker_dict.pop("plot_on_signal")
-    offsets_transform = marker_dict.pop("offsets_transform", None)
-    transform = marker_dict.pop("transform", None)
-
-    if marker_type == "Point":
-        offsets, size = dict2vector(marker_dict["data"], keys=None, return_size=True)
-        marker = Points(offsets=offsets, sizes=size, **marker_dict["marker_properties"])
-        marker
-    elif marker_type == "HorizontalLine":
+    elif "HorizontalLine" in marker_class:
         offsets = dict2vector(marker_dict["data"], keys=["y1"], return_size=False)
         marker = HorizontalLines(offsets=offsets, **marker_dict["marker_properties"])
 
-    elif marker_type == "HorizontalLineSegment":
+    elif "HorizontalLineSegment" in marker_class:
         segments = dict2vector(
             marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y1"]]], return_size=False
         )
-
         marker = Lines(segments=segments, **marker_dict["marker_properties"])
-    elif marker_type == "LineSegment":
+
+    elif "LineSegment" in marker_class:
         segments = dict2vector(
             marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y2"]]], return_size=False
         )
         marker = Lines(segments=segments, **marker_dict["marker_properties"])
-    elif marker_type == "Arrow":
-        offsets = dict2vector(
-            marker_dict["data"],
-            keys=[
-                ["x1", "y1"],
-            ],
-            return_size=False,
-        )
 
+    elif "Arrow" in marker_class:
+        offsets = dict2vector(
+            marker_dict["data"], keys=[["x1", "y1"],], return_size=False
+        )
         dx = dict2vector(
-            marker_dict["data"],
-            keys=[
-                ["x2"],
-            ],
-            return_size=False,
+            marker_dict["data"], keys=[["x2"],], return_size=False
         )
         dy = dict2vector(
-            marker_dict["data"],
-            keys=[
-                ["y2"],
-            ],
-            return_size=False,
+            marker_dict["data"], keys=[["y2"],], return_size=False
         )
+        marker = Arrows(offsets, dx, dy,
+                        **marker_dict["marker_properties"])
 
-        marker = Arrows(offsets, dx, dy, **marker_dict["marker_properties"])
-
-    elif marker_type == "Rectangle":
-        verts = dict2vector(
-            marker_dict["data"],
-            keys=[
-                [["x1", "y1"], ["x2", "y1"], ["x2", "y2"], ["x1", "y2"]],
-            ],
-            return_size=False,
-        )
-        marker = Markers(
-            collection_class=PolyCollection,
-            verts=verts,
-            **marker_dict["marker_properties"],
-        )
-    elif marker_type == "Ellipse":
+    elif "Rectangle" in marker_class:
         offsets = dict2vector(
-            marker_dict["data"],
-            keys=[
-                ["x1", "y1"],
-            ],
-            return_size=False,
+            marker_dict["data"], keys=[["x1", "y1"], ], return_size=False
+        )
+        width = dict2vector(marker_dict["data"], keys=["x2"], return_size=False)
+        height = dict2vector(marker_dict["data"], keys=["y2"], return_size=False)
+        marker = Rectangles(
+            offsets=offsets,
+            widths=width,
+            heights=height,
+            **marker_dict["marker_properties"]
         )
 
+    elif "Ellipse" in marker_class:
+        offsets = dict2vector(
+            marker_dict["data"], keys=[["x1", "y1"], ], return_size=False
+        )
         width = dict2vector(marker_dict["data"], keys=["x2"], return_size=False)
         height = dict2vector(marker_dict["data"], keys=["y2"], return_size=False)
         marker = Ellipses(
             offsets=offsets,
             widths=width,
             heights=height,
-            **marker_dict["marker_properties"],
+            **marker_dict["marker_properties"]
         )
-    elif marker_type == "Text":
+
+    elif "Text" in marker_class:
         offsets = dict2vector(
             marker_dict["data"], keys=[["x1", "y1"]], return_size=False
         )
-        texts = dict2vector(
-            marker_dict["data"], keys=["text"], return_size=False, dtype=str
+        texts = dict2vector(marker_dict["data"],
+                            keys=["text"],
+                            return_size=False,
+                            dtype=str)
+        marker = Texts(
+            offsets=offsets, texts=texts, **marker_dict["marker_properties"]
         )
-        marker = Texts(offsets=offsets, texts=texts, **marker_dict["marker_properties"])
-    elif marker_type == "VerticalLine":
-        x = dict2vector(marker_dict["data"], keys=["x1"], return_size=False)
 
-        marker = VerticalLines(offsets=x, **marker_dict["marker_properties"])
-    elif marker_type == "VerticalLineSegment":
+    elif "VerticalLine" in marker_class:
+        x = dict2vector(marker_dict["data"], keys=["x1"], return_size=False)
+        marker = VerticalLines(
+            offsets=x, **marker_dict["marker_properties"]
+        )
+
+    elif "VerticalLineSegment" in marker_class:
         segments = dict2vector(
             marker_dict["data"], keys=[[["x1", "y1"], ["x1", "y2"]]], return_size=False
         )
+        marker = Lines(segments=segments,
+                       **marker_dict["marker_properties"],
+                       )
 
-        marker = Lines(
-            segments=segments,
-            **marker_dict["marker_properties"],
-        )
-    elif marker_type in marker_mapping:
-        marker = marker_mapping[marker_type](
-            transform=transform,
-            offsets_transform=offsets_transform,
-            **marker_dict["kwargs"],
-        )
-
-    elif marker_type == "Markers":
-        marker = Markers(
-            collection_class=marker_dict["collection_class"],
-            transform=transform,
-            offsets_transform=offsets_transform,
-            **marker_dict["kwargs"],
-        )
     else:
-        raise ValueError(
-            f"The marker_type: {marker_type} is not a hyperspy.marker class "
-            f"and cannot be converted to a MarkerCollection"
-        )
-    marker.plot_on_signal = plot_on_signal
+        # Custom marker type using
+        marker = Markers(
+            collection=marker_dict["collection"],
+            **marker_dict["kwargs"]
+            )
+
+    marker.plot_on_signal = marker_dict['plot_on_signal']
     return marker

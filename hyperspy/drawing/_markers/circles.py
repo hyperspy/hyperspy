@@ -25,12 +25,10 @@ from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 class Circles(Markers):
     """A set of Circle Markers."""
 
-    marker_type = "Circles"
-
     def __init__(
         self,
         offsets,
-        sizes=2,
+        sizes,
         offsets_transform="data",
         transform="xaxis_scale",
         facecolors="none",

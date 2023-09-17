@@ -23,9 +23,8 @@ from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 
 
 class Points(Markers):
-    """A set of Points Markers."""
-
-    marker_type = "Points"
+    """
+    A set of Points Markers."""
 
     def __init__(
         self,

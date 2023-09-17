@@ -24,11 +24,7 @@ import numpy as np
 class VerticalLines(Markers):
     """A set of Vertical Line Markers"""
 
-    marker_type = "VerticalLines"
-
-    def __init__(
-        self, offsets, offsets_transform="display", **kwargs
-    ):
+    def __init__(self, offsets, offsets_transform="display", **kwargs):
         """
         Initialize the set of Vertical Line Markers.
 
@@ -45,14 +41,13 @@ class VerticalLines(Markers):
             raise ValueError(
                 "VerticalLines markers must have transform='xaxis'."
             )
-        transform = "xaxis"
 
         # Data attributes
-        Markers.__init__(
+        super().__init__(
             self,
             offsets=offsets,
             offsets_transform=offsets_transform,
-            transform=transform,  # so that the markers span the whole y-axis
+            transform="xaxis",  # so that the markers span the whole y-axis
             collection=LineCollection,
             **kwargs
         )

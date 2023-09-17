@@ -33,7 +33,7 @@ from matplotlib.transforms import (
 import matplotlib.pyplot as plt
 import dask.array as da
 
-from hyperspy.drawing.markers import markers2collection
+from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
 from hyperspy.axes import UniformDataAxis
 from hyperspy.misc.test_utils import update_close_figure
@@ -502,7 +502,7 @@ class TestInitMarkerCollection:
         assert "transform" not in m2.kwargs
 
 
-class TestMarkers2Collection:
+class TestMarkersDictToMarkers:
     @pytest.fixture
     def iter_data(self):
         data = {
@@ -568,7 +568,7 @@ class TestMarkers2Collection:
         test_dict["marker_type"] = marker_type
         test_dict["marker_properties"] = {"color": "black"}
         test_dict["plot_on_signal"] = True
-        markers = markers2collection(test_dict)
+        markers = markers_dict_to_markers(test_dict)
 
         signal.add_marker(
             markers,
@@ -587,12 +587,12 @@ class TestMarkers2Collection:
         test_dict["marker_properties"] = {"color": "black"}
         test_dict["plot_on_signal"] = True
         with pytest.raises(ValueError):
-            markers2collection(test_dict)
+            markers_dict_to_markers(test_dict)
 
     def test_marker2collection_empty(
         self,
     ):
-        assert markers2collection({}) == {}
+        assert markers_dict_to_markers({}) == {}
 
 
 def _test_marker_collection_close():

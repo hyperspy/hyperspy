@@ -24,11 +24,7 @@ import numpy as np
 class HorizontalLines(Markers):
     """A set of HorizontalLines markers"""
 
-    marker_type = "HorizontalLines"
-
-    def __init__(
-        self, offsets, offsets_transform="display", **kwargs
-    ):
+    def __init__(self, offsets, offsets_transform="display", **kwargs):
         """Initialize a set of HorizontalLines markers.
 
         Parameters
@@ -44,13 +40,13 @@ class HorizontalLines(Markers):
             raise ValueError(
                 "HorizontalLines markers must have transform='yaxis'."
             )
-        transform = "yaxis"
-        Markers.__init__(
+
+        super().__init__(
             self,
             collection=LineCollection,
             offsets=offsets,
             offsets_transform=offsets_transform,
-            transform=transform,
+            transform="yaxis",
             **kwargs
         )
         self.name = self.__class__.__name__

@@ -33,7 +33,7 @@ from rsciio.utils.tools import overwrite as overwrite_method
 from rsciio import IO_PLUGINS
 
 from hyperspy import __version__ as hs_version
-from hyperspy.drawing.markers import markers2collection
+from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.utils import strlist2enumeration, get_object_package_info
 from hyperspy.misc.utils import stack as stack_method
@@ -58,7 +58,7 @@ def _format_name_to_reader(format_name):
             return reader
         elif reader.get("name_aliases"):
             aliases = [s.lower() for s in reader["name_aliases"]]
-            if format_name.lower() in aliases: 
+            if format_name.lower() in aliases:
                 return reader
     raise ValueError("The `format_name` given does not match any format available.")
 
@@ -814,7 +814,7 @@ def dict2signal(signal_dict, lazy=False):
                     signal.metadata.set_item(mpattr, value)
     if mp is not None and "Markers" in mp:
         for key in mp['Markers']:
-            signal.metadata.Markers[key] = markers2collection(mp['Markers'][key])
+            signal.metadata.Markers[key] = markers_dict_to_markers(mp['Markers'][key])
 
     return signal
 

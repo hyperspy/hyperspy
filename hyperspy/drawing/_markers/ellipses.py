@@ -24,8 +24,6 @@ from hyperspy.external.matplotlib.collections import EllipseCollection
 class Ellipses(Markers):
     """A set of Ellipse Markers"""
 
-    marker_type = "Ellipses"
-
     def __init__(
         self,
         offsets,

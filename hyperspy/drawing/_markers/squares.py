@@ -28,8 +28,6 @@ class Squares(Markers):
     :py:class`matplotlib.collections.RegularPolyCollection`.
     """
 
-    marker_type = "Squares"
-
     def __init__(
         self,
         offsets,

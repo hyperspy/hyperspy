@@ -64,7 +64,7 @@ from hyperspy.misc.utils import (
     )
 from hyperspy.misc.hist_tools import histogram
 from hyperspy.drawing.utils import animate_legend
-from hyperspy.drawing.markers import markers2collection
+from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import _get_block_pattern
 from hyperspy.docstrings.signal import (
@@ -5210,7 +5210,7 @@ class BaseSignal(FancySlicing,
             temp_marker_dict = dc.metadata.Markers.as_dictionary()
             markers_dict = {}
             for key in temp_marker_dict:
-                markers_dict[key] = markers2collection(temp_marker_dict[key],)
+                markers_dict[key] = markers_dict_to_markers(temp_marker_dict[key],)
             dc.metadata.Markers = markers_dict
         return dc
 
@@ -5524,7 +5524,7 @@ class BaseSignal(FancySlicing,
             temp_marker_dict = cs.metadata.Markers.as_dictionary()
             markers_dict = {}
             for key in temp_marker_dict:
-                markers_dict[key] = markers2collection(
+                markers_dict[key] = markers_dict_to_markers(
                     temp_marker_dict[key])
             cs.metadata.Markers = markers_dict
 

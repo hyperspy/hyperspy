@@ -24,8 +24,6 @@ from hyperspy.docstrings.markers import OFFSET_DOCSTRING
 class Arrows(Markers):
     """A set of Arrow markers based on the matplotlib.quiver.Quiver class."""
 
-    marker_type = "Arrows"
-
     def __init__(
         self, offsets, U, V, C=None, scale=1, angles="xy", scale_units="xy", **kwargs
     ):
