@@ -6019,22 +6019,30 @@ class BaseSignal(FancySlicing,
         >>> s.add_marker(marker_list, permanent=True)
 
         """
+        if not plot_marker and not permanent:
+            _logger.warning(
+                "plot_marker=False and permanent=False does nothing")
+            return
+
         if isiterable(marker):
             marker_list = marker
         else:
             marker_list = [marker]
         markers_dict = {}
+
         if permanent:
+            # Make a list of existing marker to check if this is not already
+            # added to the metadata.
             if not self.metadata.has_item('Markers'):
                 self.metadata.add_node('Markers')
             marker_object_list = []
             for marker_tuple in list(self.metadata.Markers):
                 marker_object_list.append(marker_tuple[1])
             name_list = self.metadata.Markers.keys()
+
         marker_name_suffix = 1
         for m in marker_list:
             marker_data_shape = m._get_data_shape()[::-1]
-            m._temp_signal = self
             if (not (len(marker_data_shape) == 0)) and (
                     marker_data_shape != self.axes_manager.navigation_shape):
                 raise ValueError(
@@ -6045,6 +6053,7 @@ class BaseSignal(FancySlicing,
             if (m.signal is not None) and (m.signal is not self):
                 raise ValueError("Markers can not be added to several signals")
             m._plot_on_signal = plot_on_signal
+
             if plot_marker:
                 if self._plot is None or not self._plot.is_active:
                     self.plot()
@@ -6057,12 +6066,14 @@ class BaseSignal(FancySlicing,
                     self._plot.navigator_plot.add_marker(m)
                 m.temp_signal = self
                 m.plot(render_figure=False)
+
             if permanent:
                 for marker_object in marker_object_list:
                     if m is marker_object:
                         raise ValueError("Marker already added to signal")
-                name = m.name
+                name = m.name if m.name != "" else m.__class__.__name__
                 temp_name = name
+                # If it already exists in the list, add a suffix
                 while temp_name in name_list:
                     temp_name = name + str(marker_name_suffix)
                     marker_name_suffix += 1
@@ -6071,11 +6082,10 @@ class BaseSignal(FancySlicing,
                 m.signal = self
                 marker_object_list.append(m)
                 name_list.append(m.name)
-            if not plot_marker and not permanent:
-                _logger.warning(
-                    "plot_marker=False and permanent=False does nothing")
+
         if permanent:
             self.metadata.Markers.add_dictionary(markers_dict)
+
         if plot_marker and render_figure:
             self._render_figure()
 

@@ -19,16 +19,10 @@ from copy import deepcopy
 
 
 import numpy as np
-from matplotlib.collections import (
-    LineCollection,
-    PolyCollection,
-)
 from matplotlib.transforms import (
     IdentityTransform,
     Affine2D,
     CompositeGenericTransform,
-    BlendedGenericTransform,
-    BboxTransformTo,
 )
 import matplotlib.pyplot as plt
 import dask.array as da
@@ -42,6 +36,7 @@ from matplotlib.collections import (
     CircleCollection,
     LineCollection,
     RegularPolyCollection,
+    StarPolygonCollection,
 )
 from hyperspy.external.matplotlib.collections import (
     TextCollection,
@@ -69,7 +64,7 @@ STYLE_PYTEST_MPL = "default"
 plt.style.use(STYLE_PYTEST_MPL)
 
 
-class TestCollections:
+class TestMarkers:
     @pytest.fixture
     def data(self):
         d = np.empty((3,), dtype=object)
@@ -266,22 +261,29 @@ class TestCollections:
         s.add_marker(col)
         np.testing.assert_array_equal(col.get_data_position()["offsets"], [[11, 19]])
 
-    def test_deepcopy_markers(self, collections):
+    def test_deepcopy_signal_with_markers(self, collections):
         num_col = len(collections)
         s = Signal2D(np.zeros((2, num_col, num_col)))
-        s.axes_manager.signal_axes[0].offset = 0
-        s.axes_manager.signal_axes[1].offset = 0
-        s.plot(interpolation=None)
+        s.plot()
         [s.add_marker(c, permanent=True) for c in collections]
         new_s = deepcopy(s)
         assert len(new_s.metadata["Markers"]) == num_col
 
+    def test_deepcopy_signal_with_muultiple_markers_same_class(self):
+        markers_list = [Points(offsets=np.array([1, 2])*i) for i in range(2)]
+        num_markers = len(markers_list)
+        s = Signal2D(np.zeros((2, 10, 10)))
+        s.plot()
+        [s.add_marker(m, permanent=True) for m in markers_list]
+        s2 = deepcopy(s)
+        assert len(s2.metadata["Markers"]) == num_markers
+        ref_name = ['Points', 'Points1', 'Points2']
+        assert s.metadata.Markers.keys() == s2.metadata.Markers.keys() == ref_name
+
     def test_get_current_signal(self, collections):
         num_col = len(collections)
         s = Signal2D(np.zeros((2, num_col, num_col)))
-        s.axes_manager.signal_axes[0].offset = 0
-        s.axes_manager.signal_axes[1].offset = 0
-        s.plot(interpolation=None)
+        s.plot()
         [s.add_marker(c, permanent=True) for c in collections]
         cs = s.get_current_signal()
         assert len(cs.metadata["Markers"]) == num_col
@@ -293,7 +295,7 @@ class TestCollections:
         markers.plot(render_figure=True)
 
 
-class TestInitMarkerCollection:
+class TestInitMarkers:
     @pytest.fixture
     def signal(self):
         signal = Signal2D(np.zeros((3, 10, 10)))
@@ -302,7 +304,7 @@ class TestInitMarkerCollection:
     @pytest.fixture
     def static_line_collection(self, signal):
         segments = np.ones((10, 2, 2))
-        markers = Markers(LineCollection, segments=segments)
+        markers = Lines(segments=segments)
         markers.axes_manager = signal.axes_manager
         return markers
 
@@ -311,7 +313,7 @@ class TestInitMarkerCollection:
         data = np.empty((3,), dtype=object)
         for i in np.ndindex(data.shape):
             data[i] = np.ones((10, 2, 2)) * i
-        markers = Markers(LineCollection, segments=data)
+        markers = Lines(segments=data)
         markers.axes_manager = signal.axes_manager
         return markers
 
@@ -344,7 +346,8 @@ class TestInitMarkerCollection:
     def test_to_dictionary(self, collection, request):
         col = request.getfixturevalue(collection)
         dict = col._to_dictionary()
-        assert dict["collection"] == "LineCollection"
+        assert dict["class"] == "Lines"
+        assert dict["name"] == ""
         assert dict["plot_on_signal"] is True
 
     @pytest.mark.parametrize(
@@ -461,43 +464,52 @@ class TestInitMarkerCollection:
             (Squares, RegularPolyCollection, {"offsets": [[1, 1]], "sizes": [1]}),
             (Texts, TextCollection, {"offsets": [[1, 1]], "texts": ["a"]}),
             (Lines, LineCollection, {"segments": [[0, 0], [1, 1]]}),
+            (
+                    Markers,
+                    StarPolygonCollection,
+                    {"collection": "StarPolygonCollection", "offsets": [[1, 1]]}),
         ),
     )
     def test_initialize_subclasses(self, subclass):
         m = subclass[0](**subclass[2])
-        assert m.collection is subclass[1]
+        assert m._collection_class is subclass[1]
 
     @pytest.mark.parametrize(
         "subclass",
         (
-            (Arrows, Quiver, {"offsets": [[1, 1]], "U": [1], "V": [1]}),
-            (Circles, CircleCollection, {"offsets": [[1, 1]], "sizes": [1]}),
-            (
-                Ellipses,
-                EllipseCollection,
-                {"offsets": [1, 2], "widths": [1], "heights": [1]},
-            ),
-            (HorizontalLines, LineCollection, {"offsets": [1, 2]}),
-            (Points, CircleCollection, {"offsets": [[1, 1]], "sizes": [1]}),
-            (VerticalLines, LineCollection, {"offsets": [1, 2]}),
-            (
-                Rectangles,
-                RectangleCollection,
-                {"offsets": [[1, 1]], "widths": [1], "heights": [1]},
-            ),
-            (Squares, RegularPolyCollection, {"offsets": [[1, 1]], "sizes": [1]}),
-            (Texts, TextCollection, {"offsets": [[1, 1]], "texts": ["a"]}),
-            (Lines, LineCollection, {"segments": [[0, 0], [1, 1]]}),
+            (Arrows, {"offsets": [[1, 1]], "U": [1], "V": [1]}),
+            (Circles, {"offsets": [[1, 1]], "sizes": [1]}),
+            (Ellipses, {"offsets": [1, 2], "widths": [1], "heights": [1]}),
+            (HorizontalLines, {"offsets": [1, 2]}),
+            (Points, {"offsets": [[1, 1]], "sizes": [1]}),
+            (VerticalLines, {"offsets": [1, 2]}),
+            (Rectangles, {"offsets": [[1, 1]], "widths": [1], "heights": [1]}),
+            (Squares, {"offsets": [[1, 1]], "sizes": [1]}),
+            (Texts, {"offsets": [[1, 1]], "texts": ["a"]}),
+            (Lines, {"segments": [[0, 0], [1, 1]]}),
+            (Markers, {"collection": "StarPolygonCollection", "offsets": [[1, 1]]}),
         ),
     )
     def test_deepcopy(self, subclass):
-        m = subclass[0](**subclass[2], transform="display", offsets_transform="display")
+        transforms_kwargs = {}
+        # only add transform for compatible mMrkers
+        if subclass[0] not in [HorizontalLines, VerticalLines]:
+            transforms_kwargs["transform"] = "display"
+            transforms_kwargs["offsets_transform"] = "display"
+
+        m = subclass[0](**subclass[1], **transforms_kwargs)
         m2 = deepcopy(m)
+
         assert m2 is not m
-        for key in subclass[2]:
-            assert np.all(m2.kwargs[key] == m.kwargs[key])
-        assert m2.transform == m.transform
-        assert m2.offsets_transform == m.offsets_transform
+        print(m.kwargs.keys())
+        for key, value in m.kwargs.items():
+            print(key, value, m2.kwargs[key])
+            assert np.all(m2.kwargs[key] == value)
+
+        assert m2.offsets_transform == m.offsets_transform == "display"
+        if subclass[0] not in [HorizontalLines, VerticalLines]:
+            assert m2.transform == "display"
+            assert m2.transform == m.transform == "display"
         assert "transform" not in m.kwargs
         assert "transform" not in m2.kwargs
 
@@ -578,7 +590,7 @@ class TestMarkersDictToMarkers:
     @pytest.mark.parametrize(
         "data", ("iter_data", "static_data", "static_and_iter_data")
     )
-    @pytest.mark.parametrize("marker_type", "Text")
+    @pytest.mark.parametrize("marker_type", ("NotAValidMarker", ))
     def test_marker2collectionfail(self, request, marker_type, data):
         d = request.getfixturevalue(data)
         test_dict = {}
@@ -586,19 +598,18 @@ class TestMarkersDictToMarkers:
         test_dict["marker_type"] = marker_type
         test_dict["marker_properties"] = {"color": "black"}
         test_dict["plot_on_signal"] = True
-        with pytest.raises(ValueError):
+        with pytest.raises(AttributeError):
             markers_dict_to_markers(test_dict)
 
-    def test_marker2collection_empty(
-        self,
-    ):
-        assert markers_dict_to_markers({}) == {}
+    def test_marker2collection_empty(self):
+        with pytest.raises(ValueError):
+            markers_dict_to_markers({})
 
 
 def _test_marker_collection_close():
     signal = Signal2D(np.ones((10, 10)))
     segments = np.ones((10, 2, 2))
-    markers = Markers(LineCollection, segments=segments)
+    markers = Lines(segments=segments)
     signal.add_marker(markers)
     return signal
 
@@ -634,32 +645,42 @@ class TestMarkersTransform:
         ),
     )
     def test_set_transform(self, transform, offsets_transform):
-        markers = Points(
-            offsets=[[1, 1], [4, 4]],
-            sizes=(10,),
-            color=("black",),
-            transform=transform,
-            offsets_transform=offsets_transform,
-        )
-        assert markers.transform == transform
-        assert markers.offsets_transform == offsets_transform
-        signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
+        if (transform, offsets_transform) in [("data", "data"), ("axes", "data")]:
+            with pytest.raises(ValueError):
+                m = Points(
+                    offsets=[[1, 1], [4, 4]],
+                    sizes=(10,),
+                    color=("black",),
+                    transform=transform,
+                    offsets_transform=offsets_transform,
+                )
+        else:
+            m = Points(
+                offsets=[[1, 1], [4, 4]],
+                sizes=(10,),
+                color=("black",),
+                transform=transform,
+                offsets_transform=offsets_transform,
+            )
+            assert m.transform == transform
+            assert m.offsets_transform == offsets_transform
+            signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
 
-        signal.plot()
-        signal.add_marker(markers)
-        mapping = {
-            "data": CompositeGenericTransform,
-            "display": IdentityTransform,
-            "xaxis": BlendedGenericTransform,
-            "yaxis": BlendedGenericTransform,
-            "xaxis_scale": Affine2D,
-            "yaxis_scale": Affine2D,
-            "axes": BboxTransformTo,
-            "relative": CompositeGenericTransform,
-        }
+            signal.plot()
+            signal.add_marker(m)
+            mapping = {
+                "data": m.ax.transData.__class__,
+                "display": IdentityTransform,
+                "xaxis": m.ax.get_yaxis_transform().__class__,
+                "yaxis": m.ax.get_xaxis_transform().__class__,
+                "xaxis_scale": Affine2D,
+                "yaxis_scale": Affine2D,
+                "axes": m.ax.transAxes.__class__,
+                "relative": CompositeGenericTransform,
+            }
 
-        assert isinstance(markers.transform, mapping[transform])
-        assert isinstance(markers.offsets_transform, mapping[offsets_transform])
+            assert isinstance(m.transform, mapping[transform])
+            assert isinstance(m.offsets_transform, mapping[offsets_transform])
 
     def test_set_plotted_transform(
         self,
@@ -695,7 +716,7 @@ class TestMarkersTransform:
             )
 
 
-class TestRelativeMarkerCollection:
+class TestRelativeMarkers:
     def test_relative_marker_collection(self):
         signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
         segments = np.zeros((10, 2, 2))
@@ -734,7 +755,7 @@ class TestRelativeMarkerCollection:
         assert segs[0][1][1] == 12
         assert offs[0][1] == 12
 
-class TestLineCollections:
+class TestLines:
     @pytest.fixture
     def offsets(self):
         d = np.empty((3,), dtype=object)
@@ -745,13 +766,22 @@ class TestLineCollections:
     def test_vertical_line_collection(self, offsets):
         vert = VerticalLines(offsets=offsets)
         s = Signal2D(np.zeros((3, 3, 3)))
-        s.axes_manager.signal_axes[0].offset = 0
-        s.axes_manager.signal_axes[1].offset = 0
-        s.plot(interpolation=None)
+        # s.axes_manager.signal_axes[0].offset = 0
+        # s.axes_manager.signal_axes[1].offset = 0
+        s.plot()
         s.add_marker(vert)
-        kwargs = vert.get_data_position()
+        segments = vert.get_data_position()["segments"]
         # Offsets --> segments for vertical lines
-        np.testing.assert_array_equal(kwargs["segments"], [[[0.0, 0], [0.0, 1]]])
+        assert segments.shape == (1, 2, 2) # one line
+        np.testing.assert_array_equal(segments, np.array([[[0, 0], [0, 1]]]))
+
+        # change position to navigation coordinate (1, )
+        s.axes_manager.indices = (1, )
+        segments = vert.get_data_position()["segments"]
+        assert segments.shape == (2, 2, 2) # two lines
+        np.testing.assert_array_equal(
+            segments, np.array([[[0, 0], [0, 1]], [[1, 0], [1, 1]]])
+            )
 
     def test_horizontal_line_collection(self, offsets):
         hor = HorizontalLines(offsets=offsets)
@@ -761,7 +791,7 @@ class TestLineCollections:
         s.plot(interpolation=None)
         s.add_marker(hor)
         kwargs = hor.get_data_position()
-        np.testing.assert_array_equal(kwargs["segments"], [[[-0.5, 0], [2.5, 0]]])
+        np.testing.assert_array_equal(kwargs["segments"], [[[0.0, 0], [1, 0]]])
 
     def test_horizontal_vertical_line_error(self, offsets):
         with pytest.raises(ValueError):
@@ -777,7 +807,7 @@ def test_marker_collection_close_render():
     markers.close(render_figure=True)
 
 
-class TestMarkers:
+class TestMarkers2:
     @pytest.fixture
     def offsets(self):
         d = np.empty((3,), dtype=object)

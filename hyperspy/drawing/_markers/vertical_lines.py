@@ -24,7 +24,7 @@ import numpy as np
 class VerticalLines(Markers):
     """A set of Vertical Line Markers"""
 
-    def __init__(self, offsets, offsets_transform="display", **kwargs):
+    def __init__(self, offsets, **kwargs):
         """
         Initialize the set of Vertical Line Markers.
 
@@ -36,33 +36,54 @@ class VerticalLines(Markers):
             Keyword arguments passed to the underlying marker collection. Any argument
             that is array-like and has `dtype=object` is assumed to be an iterating
             argument and is treated as such.
+
+        Examples
+        --------
+        >>> import hyperspy.api as hs
+        >>> import matplotlib.pyplot as plt
+        >>> import numpy as np
+
+        >>> # Create a Signal2D with 2 navigation dimensions
+        >>> rng = np.random.default_rng(0)
+        >>> data = rng.random((25, 25, 100))
+        >>> s = hs.signals.Signal1D(data)
+        >>> offsets = np.array([10, 20, 40])
+
+        >>> m = hs.plot.markers.VerticalLines(
+        ...     offsets=offsets,
+        ...     linewidth=3,
+        ...     colors=['r', 'g', 'b'],
+        ...     )
+
+        >>> s.plot()
+        >>> s.add_marker(m)
         """
-        if "transform" in kwargs and kwargs["transform"] != "xaxis":
+        if "transform" in kwargs or "offset_transform" in kwargs:
             raise ValueError(
-                "VerticalLines markers must have transform='xaxis'."
+                "Setting 'offset_transform' or 'transform' argument is not "
+                "supported with the VerticalLines markers."
             )
 
-        # Data attributes
         super().__init__(
-            self,
-            offsets=offsets,
-            offsets_transform=offsets_transform,
-            transform="xaxis",  # so that the markers span the whole y-axis
             collection=LineCollection,
+            offsets=offsets,
+            offsets_transform="display",
+            transform="xaxis",  # so that the markers span the whole y-axis
             **kwargs
         )
 
     def get_data_position(self, get_static_kwargs=True):
         kwargs = super().get_data_position(get_static_kwargs=get_static_kwargs)
         x_pos = kwargs.pop("offsets")
-        new_segments = np.array(
-            [
-                [
-                    [x, 0],
-                    [x, 1],
-                ]
-                for x in x_pos
-            ]
-        )
-        kwargs["segments"] = new_segments
+        kwargs["segments"] = np.array([[[x, 0], [x, 1]] for x in x_pos])
         return kwargs
+
+    def _to_dictionary(self):
+        class_name = self.__class__.__name__
+        marker_dict = {
+            "class": class_name,
+            "name": self.name,
+            "plot_on_signal": self._plot_on_signal,
+            "kwargs": self.kwargs,
+        }
+        return marker_dict

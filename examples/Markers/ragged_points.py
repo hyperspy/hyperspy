@@ -27,7 +27,6 @@ for ind in np.ndindex(offsets.shape):
     offsets[ind] = rng.random((num, 2)) * 100
 
 m = hs.plot.markers.Points(
-    sizes=50,
     offsets=offsets,
     facecolor='orange',
     )

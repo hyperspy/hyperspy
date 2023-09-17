@@ -28,8 +28,10 @@ class Rectangles(Markers):
         offsets,
         widths,
         heights,
+        angles=(0,),
         offsets_transform="data",
         transform="display",
+        units="xy",
         **kwargs
     ):
         """Initialize the set of Segments Markers.
@@ -46,7 +48,9 @@ class Rectangles(Markers):
             offsets=offsets,
             widths=widths,
             heights=heights,
+            angles=angles,
             offsets_transform=offsets_transform,
             transform=transform,
+            units=units,
             **kwargs
         )

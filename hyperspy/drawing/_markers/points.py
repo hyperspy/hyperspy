@@ -29,9 +29,9 @@ class Points(Markers):
     def __init__(
         self,
         offsets,
-        sizes=2,
+        sizes=50,
         offsets_transform="data",
-        transform="xaxis_scale",
+        transform="display",
         **kwargs
     ):
         """Initialize the set of points Markers.
@@ -39,6 +39,8 @@ class Points(Markers):
         Parameters
         ----------
         %s
+        sizes : int, float or array_like, optional
+            The size of the markers in display coordinate system.
         kwargs : dict
                 Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`
         """

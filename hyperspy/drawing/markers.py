@@ -25,6 +25,7 @@ import matplotlib.collections as mpl_collections
 from matplotlib.transforms import Affine2D, IdentityTransform
 from matplotlib.patches import Patch
 
+import hyperspy
 from hyperspy.events import Event, Events
 from hyperspy.misc.array_tools import _get_navigation_dimension_chunk_slice
 from hyperspy.misc.utils import isiterable
@@ -49,13 +50,16 @@ class Markers:
         offsets_transform="data",
         transform="display",
         shift=None,
+        plot_on_signal=True,
+        name="",
         **kwargs,
     ):
         """
         Create a set of markers using Matplotlib collections.
 
         The markers are defined by a set of arugment required by the collections,
-        typically, ``offsets`` and ``verts`` will define their positions.
+        typically, ``offsets``, ``verts`` or ``segments`` will define their
+        positions.
 
         To define a non-static marker any argument that can be set with the
         :py:meth:`matplotlib.collections.Collection.set` method can be passed
@@ -216,14 +220,15 @@ class Markers:
         self._cache_dask_chunk_kwargs = {}
         self._cache_dask_chunk_kwargs_slice = {}
 
-        self.name = self.__class__.__name__
+        self._class_name = self.__class__.__name__
+        self.name = name
         # Properties
         self.collection = None
         # used in _initialize_collection
         self._collection_class = collection
         self.signal = None
         self.temp_signal = None
-        self._plot_on_signal = True
+        self._plot_on_signal = plot_on_signal
         self.shift = shift
         self.plot_marker = True
         self.offsets_transform = offsets_transform
@@ -316,11 +321,11 @@ class Markers:
             self.update()
 
     def __len__(self):
-        """Return the number of markers in the collection."""
-
-        # LineSegments doesn't have "offsets" but "segments"
-        key = "offsets" if "offsets" in self.kwargs.keys() else "segments"
-        return self.kwargs[key].shape[0]
+        """
+        Return the number of markers in the collection at the current
+        navigation coordinate.
+        """
+        return list(self.get_data_position().values())[0].shape[0]
 
     def delete_index(self, keys, index):
         """
@@ -421,7 +426,19 @@ class Markers:
         return out_kwargs
 
     def __repr__(self):
-        return f"<{self.name} | Iterating == {self._is_iterating}>"
+        if self.name:
+            text = '<%s (%s)' % (self.name, self.__class__.__name__)
+        else:
+            text = '<%s' % self.__class__.__name__
+
+        text += ", length: "
+        if self._is_iterating:
+            text += "variable (current: %s)" % len(self)
+        else:
+            text += "%s"% len(self)
+        text += ">"
+
+        return text
 
     @classmethod
     def from_signal(
@@ -499,15 +516,18 @@ class Markers:
         return new_marker
 
     def _to_dictionary(self):
+        class_name = self.__class__.__name__
         marker_dict = {
-            "class": self.__class__.__name__,
+            "class": class_name,
             "name": self.name,
-            "collection": self.collection.__name__,
             "plot_on_signal": self._plot_on_signal,
             "offsets_transform": self._offsets_transform,
             "transform": self._transform,
             "kwargs": self.kwargs,
         }
+        if class_name == "Markers":
+            marker_dict['collection'] = self._collection_class.__name__
+
         return marker_dict
 
     def get_data_position(
@@ -705,121 +725,108 @@ def dict2vector(data, keys=None, return_size=True, dtype=float):
 
 def markers_dict_to_markers(marker_dict):
     """
-    This function maps a marker dict to a Markers object.
-
-    This provides continuity from markers saved with hyperspy 1.x.x and hyperspy 2.x.x.
-
-    Warning: This function is not complete and will transfer all of the marker properties.
+    This function maps a marker dict to a Markers object. It supports parsing
+    old markers API, typically for file saved with hyperspy < 2.0.
     """
-    from hyperspy.utils.markers import (
-        Arrows,
-        Ellipses,
-        Circles,
-        HorizontalLines,
-        Lines,
-        Points,
-        Rectangles,
-        Texts,
-        VerticalLines,
-    )
     # hyperspy 1.x markers uses `marker_type`, 2.x uses name
-    marker_class = marker_dict.get('class', marker_dict.get('marker_type'))
+    markers_class = marker_dict.pop('class', marker_dict.pop('marker_type', None))
+    if markers_class is None:
+        raise ValueError("Not a valid marker dictionary.")
 
-    if "Point" in marker_class:
-        offsets, size = dict2vector(
-            marker_dict["data"], keys=None, return_size=True
-        )
-        marker = Points(
-            offsets=offsets, sizes=size, **marker_dict["marker_properties"]
-        )
+    kwargs = {
+        # in hyperspy >= 2.0, all data and properties are in kwargs
+        **marker_dict.pop("kwargs", {}),
+        # in hyperspy < 2.0, "markers properties" are saved in `marker_properties`
+        **marker_dict.pop("marker_properties", {})
+        }
+    # Parse old markers API: add relevant "data" to kwargs
+    if "data" in marker_dict:
+        if "Point" in markers_class:
+            kwargs["offsets"], kwargs["sizes"] = dict2vector(
+                marker_dict["data"], keys=None, return_size=True
+                )
+            markers_class = "Points"
 
-    elif "HorizontalLine" in marker_class:
-        offsets = dict2vector(marker_dict["data"], keys=["y1"], return_size=False)
-        marker = HorizontalLines(offsets=offsets, **marker_dict["marker_properties"])
+        elif "HorizontalLine" in markers_class:
+            kwargs["offsets"] = dict2vector(
+                marker_dict["data"], keys=["y1"], return_size=False
+                )
+            markers_class = "HorizontalLines"
 
-    elif "HorizontalLineSegment" in marker_class:
-        segments = dict2vector(
-            marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y1"]]], return_size=False
-        )
-        marker = Lines(segments=segments, **marker_dict["marker_properties"])
+        elif "HorizontalLineSegment" in markers_class:
+            kwargs["offsets"] = dict2vector(
+                marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y1"]]], return_size=False
+                )
+            markers_class = "Lines"
 
-    elif "LineSegment" in marker_class:
-        segments = dict2vector(
-            marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y2"]]], return_size=False
-        )
-        marker = Lines(segments=segments, **marker_dict["marker_properties"])
+        elif "VerticalLine" in markers_class:
+            kwargs["offsets"] = dict2vector(
+                marker_dict["data"], keys=["x1"], return_size=False
+                )
+            markers_class = "VerticalLines"
 
-    elif "Arrow" in marker_class:
-        offsets = dict2vector(
-            marker_dict["data"], keys=[["x1", "y1"],], return_size=False
-        )
-        dx = dict2vector(
-            marker_dict["data"], keys=[["x2"],], return_size=False
-        )
-        dy = dict2vector(
-            marker_dict["data"], keys=[["y2"],], return_size=False
-        )
-        marker = Arrows(offsets, dx, dy,
-                        **marker_dict["marker_properties"])
+        elif "VerticalLineSegment" in markers_class:
+            kwargs["segments"] = dict2vector(
+                marker_dict["data"], keys=[[["x1", "y1"], ["x1", "y2"]]], return_size=False
+                )
+            markers_class = "Lines"
 
-    elif "Rectangle" in marker_class:
-        offsets = dict2vector(
-            marker_dict["data"], keys=[["x1", "y1"], ], return_size=False
-        )
-        width = dict2vector(marker_dict["data"], keys=["x2"], return_size=False)
-        height = dict2vector(marker_dict["data"], keys=["y2"], return_size=False)
-        marker = Rectangles(
-            offsets=offsets,
-            widths=width,
-            heights=height,
-            **marker_dict["marker_properties"]
-        )
+        elif "Line" in markers_class:
+            kwargs["segments"] = dict2vector(
+                marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y2"]]], return_size=False
+                )
+            markers_class = "Lines"
 
-    elif "Ellipse" in marker_class:
-        offsets = dict2vector(
-            marker_dict["data"], keys=[["x1", "y1"], ], return_size=False
-        )
-        width = dict2vector(marker_dict["data"], keys=["x2"], return_size=False)
-        height = dict2vector(marker_dict["data"], keys=["y2"], return_size=False)
-        marker = Ellipses(
-            offsets=offsets,
-            widths=width,
-            heights=height,
-            **marker_dict["marker_properties"]
-        )
+        elif "Arrow" in markers_class:
+            # check if dx == x2 or dx == x2 - x1, etc.
+            kwargs["offsets"] = dict2vector(
+                marker_dict["data"], keys=[["x1", "y1"],], return_size=False
+                )
+            kwargs["U"] = dict2vector(
+                marker_dict["data"], keys=[["x2"],], return_size=False
+                )
+            kwargs["V"] = dict2vector(
+                marker_dict["data"], keys=[["y2"],], return_size=False
+                )
+            markers_class = "Arrows"
 
-    elif "Text" in marker_class:
-        offsets = dict2vector(
-            marker_dict["data"], keys=[["x1", "y1"]], return_size=False
-        )
-        texts = dict2vector(marker_dict["data"],
-                            keys=["text"],
-                            return_size=False,
-                            dtype=str)
-        marker = Texts(
-            offsets=offsets, texts=texts, **marker_dict["marker_properties"]
-        )
+        elif "Rectangle" in markers_class:
+            # check if dx == x2 or dx == x2 - x1, etc.
+            kwargs["offsets"] = dict2vector(
+                marker_dict["data"], keys=[["x1", "y1"], ], return_size=False
+                )
+            kwargs["widths"] = dict2vector(
+                marker_dict["data"], keys=["x2"], return_size=False
+                )
+            kwargs["heights"] = dict2vector(
+                marker_dict["data"], keys=["y2"], return_size=False
+                )
+            markers_class = "Rectangles"
 
-    elif "VerticalLine" in marker_class:
-        x = dict2vector(marker_dict["data"], keys=["x1"], return_size=False)
-        marker = VerticalLines(
-            offsets=x, **marker_dict["marker_properties"]
-        )
+        elif "Ellipse" in markers_class:
+            kwargs["offsets"] = dict2vector(
+                marker_dict["data"], keys=[["x1", "y1"], ], return_size=False
+                )
+            kwargs["widths"] = dict2vector(
+                marker_dict["data"], keys=["x2"], return_size=False
+                )
+            kwargs["heights"] = dict2vector(
+                marker_dict["data"], keys=["y2"], return_size=False
+                )
+            markers_class = "Ellipses"
 
-    elif "VerticalLineSegment" in marker_class:
-        segments = dict2vector(
-            marker_dict["data"], keys=[[["x1", "y1"], ["x1", "y2"]]], return_size=False
-        )
-        marker = Lines(segments=segments,
-                       **marker_dict["marker_properties"],
-                       )
-
-    else:
-        # Custom marker type using
-        marker = Markers(
-            collection=marker_dict["collection"],
-            **marker_dict["kwargs"]
+        elif "Text" in markers_class:
+            kwargs["offsets"] = dict2vector(
+                marker_dict["data"], keys=[["x1", "y1"]], return_size=False
             )
+            kwargs["texts"] = dict2vector(
+                marker_dict["data"], keys=["text"], return_size=False, dtype=str
+                )
+            markers_class = "Texts"
 
-    marker.plot_on_signal = marker_dict['plot_on_signal']
-    return marker
+        # remove "data" key:value
+        del marker_dict["data"]
+
+    return getattr(hyperspy.utils.markers, markers_class)(
+        **marker_dict, **kwargs
+        )

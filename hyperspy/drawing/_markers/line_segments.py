@@ -30,10 +30,17 @@ class Lines(Markers):
 
         Parameters
         ----------
-        segments: [n, 2, 2] array-like or ragged array with shape (n, 2,3) at every navigation position
+        segments : [n, 2, 2] array-like or ragged array with shape (n, 2,3) at every navigation position
             Defines the lines[[[x1,y1],[x2,y2]], ...] of the center of the ellipse.
-        kwargs:
+        kwargs : dict
             Additional keyword arguments are passed to matplotlib.collections.LineCollection.
+
+        Notes
+        -----
+        Unlike markers using ``offsets`` argument, the positions of the segments
+        are defined by the ``segments`` argument and the tranform specifying the
+        coordinate system of the ``segments`` is ``transform``.
+
         """
         super().__init__(
             collection=LineCollection,
