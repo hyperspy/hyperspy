@@ -1,4 +1,5 @@
 from matplotlib import artist, path as mpath, transforms
+from hyperspy.external.matplotlib.path import Path
 from matplotlib.collections import Collection
 from matplotlib.textpath import TextPath, TextToPath
 from matplotlib.font_manager import FontProperties
@@ -307,8 +308,8 @@ class RectangleCollection(_CollectionWithWidthHeightAngle):
         Forwarded to `Collection`.
 
     """
-    _factor = 1.0
-    _path_generator = mpath.Path.unit_rectangle
+    _factor = 0.5
+    _path_generator = Path.unit_rectangle
 
 
 class SquareCollection(_CollectionWithWidthAngle):
@@ -333,8 +334,8 @@ class SquareCollection(_CollectionWithWidthAngle):
         Forwarded to `Collection`.
 
     """
-    _factor = 1.0
-    _path_generator = mpath.Path.unit_rectangle
+    _factor = 0.5
+    _path_generator = Path.unit_rectangle
 
 
 class TextCollection(Collection):
