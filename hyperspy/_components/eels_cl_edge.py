@@ -107,7 +107,7 @@ class EELSCLEdge(Component):
     fine_structure_width : float, default 30.
         The width of the energy region, from the ionization edge onset, where
         the model is a spline function and/or any component
-        in `fine_structure_components` instead of the EELS ionization
+        in ``fine_structure_components`` instead of the EELS ionization
         edges simulation.
     fine_structure_components : set, default ``set()``
         A set containing components to model the fine structure region
