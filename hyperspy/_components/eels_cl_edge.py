@@ -258,7 +258,7 @@ class EELSCLEdge(Component):
             # All the parameters may not be defined yet...
             pass
 
-    def _set_active_fine_structure_componentsponents(self, active, **kwargs):
+    def _set_active_fine_structure_components(self, active, **kwargs):
         if not self.fine_structure_active:
             return
         for comp in self.fine_structure_components:
