@@ -158,7 +158,6 @@ class EELSCLEdge(Component):
         self.onset_energy.events.value_changed.connect(
             self._calculate_knots, [])
         self._fine_structure_spline_onset = 0
-        self.where_ext_fine_structure_zero = True
         self.events.active_changed.connect(self._set_active_fine_structure_components)
 
     # Automatically fix the fine structure when the fine structure is
@@ -363,8 +362,9 @@ class EELSCLEdge(Component):
                 cts[bifs] = splev(
                     E[bifs],
                     (self.__knots, self.fine_structure_coeff.value + (0,) * 4, 3))
-            if self.where_ext_fine_structure_zero:
-                itab = (E < Emax) & (E >= ifsx2)
+            
+            # The cross-section is set to 0 in the fine structure region
+            itab = (E < Emax) & (E >= ifsx2)
             else:
                 itab = (E < Emax) & (E >= self.onset_energy.value)
                 if self.fine_structure_spline:
