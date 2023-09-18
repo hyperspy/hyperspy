@@ -55,13 +55,13 @@ class Squares(Markers):
             Additional keyword arguments are passed to
             :py:class:`hyperspy.external.matplotlib.collections.SquareCollection`.
         """
-        if "transform" in kwargs and kwargs["transform"] != "display":
+        if kwargs.setdefault("transform", "display") != "display":
             raise ValueError(
                 f"The transform argument is not supported for Squares Markers. Instead, "
                 "use the offset_transform argument to specify the transform of the "
                 "offsets and use the ``units`` argument to specify transform of the "
                 "sizes.")
-        kwargs["transform"] = "display"
+
         super().__init__(
             collection=SquareCollection,
             offsets=offsets,

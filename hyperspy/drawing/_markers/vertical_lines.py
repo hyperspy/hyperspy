@@ -60,8 +60,8 @@ class VerticalLines(Markers):
         >>> s.plot()
         >>> s.add_marker(m)
         """
-        if ("transform" in kwargs and kwargs["transform"] != "display") or \
-                ("offset_transform" in kwargs and kwargs["offset_transform"] != "xaxis"):
+        if (kwargs.setdefault("offset_transform", "display") != "display" or
+                kwargs.setdefault("transform", "xaxis") != "xaxis"):
             raise ValueError(
                 "Setting 'offset_transform' or 'transform' argument is not "
                 "supported with the VerticalLines markers."
@@ -70,8 +70,6 @@ class VerticalLines(Markers):
         super().__init__(
             collection=LineCollection,
             offsets=offsets,
-            offset_transform="display",
-            transform="xaxis",  # so that the markers span the whole y-axis
             **kwargs
         )
 
@@ -80,13 +78,3 @@ class VerticalLines(Markers):
         x_pos = kwargs.pop("offsets")
         kwargs["segments"] = np.array([[[x, 0], [x, 1]] for x in x_pos])
         return kwargs
-
-    def _to_dictionary(self):
-        class_name = self.__class__.__name__
-        marker_dict = {
-            "class": class_name,
-            "name": self.name,
-            "plot_on_signal": self._plot_on_signal,
-            "kwargs": self.kwargs,
-        }
-        return marker_dict

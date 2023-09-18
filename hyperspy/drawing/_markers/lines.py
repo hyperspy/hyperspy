@@ -25,9 +25,7 @@ class Lines(Markers):
 
     _position_key = "segments"
 
-    def __init__(
-        self, segments, transform="data", **kwargs
-    ):
+    def __init__(self, segments, transform="data", **kwargs):
         """Initialize the set of Segments Markers.
 
         Parameters
@@ -44,12 +42,13 @@ class Lines(Markers):
         coordinate system of the ``segments`` is ``transform``.
 
         """
-        if "offset_transform" in kwargs and kwargs["offset_transform"] != "display":
+
+        if kwargs.setdefault("offset_transform", "display") != "display":
             raise ValueError(
                  "The offset_transform argument is not supported for Lines Markers. Instead, "
                  "use the ``transform`` argument to specify the transform of the "
                  "markers.")
-        kwargs["offset_transform"] = "display"
+
         super().__init__(
             collection=LineCollection,
             segments=segments,

@@ -58,18 +58,6 @@ class _CollectionWithSizes(Collection):
 
     def _set_transforms(self):
         """Calculate transforms immediately before drawing."""
-        # if sizes is None:
-        #     self._sizes = np.array([])
-        #     self._transforms = np.empty((0, 3, 3))
-        # else:
-        #     self._sizes = np.asarray(sizes)
-        #     self._transforms = np.zeros((len(self._sizes), 3, 3))
-        #     scale = np.sqrt(self._sizes) * dpi / 72.0 * self._factor
-        #     self._transforms[:, 0, 0] = scale
-        #     self._transforms[:, 1, 1] = scale
-        #     self._transforms[:, 2, 2] = 1.0
-        # self.stale = True
-
         ax = self.axes
         fig = self.figure
 
@@ -460,6 +448,7 @@ class TextCollection(Collection):
         self.set_rotation_center_and_sizes(self.figure.dpi)
         super().draw(renderer)
 
+
 def rotate_matrix(mat, theta):
     a = math.cos(theta)
     b = math.sin(theta)
@@ -474,6 +463,7 @@ def rotate_matrix(mat, theta):
     mtx[1, 1] = b * xy + a * yy
     mtx[1, 2] = b * x0 + a * y0
     return mtx
+
 
 def translate_matrix(mat, tx, ty):
     mat[0, 2] += tx

@@ -27,7 +27,8 @@ class HorizontalLines(Markers):
     _position_key = "offsets"
 
     def __init__(self, offsets, **kwargs):
-        """Initialize a set of HorizontalLines markers.
+        """
+        Initialize a set of HorizontalLines markers.
 
         Parameters
         ----------
@@ -59,8 +60,9 @@ class HorizontalLines(Markers):
         >>> s.plot()
         >>> s.add_marker(m)
         """
-        if ("transform" in kwargs and kwargs["transform"] != "display") or \
-                ("offset_transform" in kwargs and kwargs["offset_transform"] != "yaxis"):
+
+        if (kwargs.setdefault("offset_transform", "display") != "display" or
+                kwargs.setdefault("transform", "yaxis") != "yaxis"):
             raise ValueError(
                 "Setting 'offset_transform' or 'transform' argument is not "
                 "supported with the HorizontalLines markers."
@@ -69,8 +71,6 @@ class HorizontalLines(Markers):
         super().__init__(
             collection=LineCollection,
             offsets=offsets,
-            offset_transform="display",
-            transform="yaxis",
             **kwargs
         )
 
@@ -79,13 +79,3 @@ class HorizontalLines(Markers):
         y_pos = kwargs.pop("offsets")
         kwargs["segments"] = np.array([[[0, y], [1, y]] for y in y_pos])
         return kwargs
-
-    def _to_dictionary(self):
-        class_name = self.__class__.__name__
-        marker_dict = {
-            "class": class_name,
-            "name": self.name,
-            "plot_on_signal": self._plot_on_signal,
-            "kwargs": self.kwargs,
-        }
-        return marker_dict
