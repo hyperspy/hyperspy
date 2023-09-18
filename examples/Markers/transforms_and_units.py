@@ -13,7 +13,7 @@ import hyperspy.api as hs
 import numpy as np
 
 rng = np.random.default_rng()
-data = np.arange(1, 101).reshape(10, 10) + rng.random((10, 10))
+data = np.arange(1, 101).reshape(10, 10)*2 + rng.random((10, 10))
 signal = hs.signals.Signal1D(data)
 
 #%%
@@ -48,6 +48,7 @@ signal.add_marker(texts)
 markers = hs.plot.markers.Lines(segments=segments,
                                 transform="xaxis")
 
+
 signal.plot()
 signal.add_marker(markers)
 
@@ -58,28 +59,74 @@ signal.add_marker(markers)
 # The size of the marker is specified in units defined by the ``transform``,
 # in this case ``"xaxis_scale"``, ``"yaxis_scale"`` or ``"display"``
 
-offsets = [[.1, .5], ]  # offsets for positions
-marker1text = hs.plot.markers.Texts(offsets=np.add(offsets,[[.1,0]]),
-                      texts=["sizes=1: transform=`xaxis_scale`"],
-                      sizes=2, transform="display", offset_transform="data")
+offsets = [[1, 13.5], ]  # offsets for positions
+sizes =1
+units = 'x'
+offset_transform = 'data'
+string = (f"       sizes={sizes}, offset_transform='{offset_transform}', units='{units}', offsets={offsets}",)
+
+marker1text = hs.plot.markers.Texts(offsets=offsets,
+                                    texts=string,
+                                    sizes=1,
+                                    horizontalalignment="left",
+                                    verticalalignment="baseline",
+                                    offset_transform=offset_transform)
+
 marker = hs.plot.markers.Points(offsets=offsets,
-                      sizes=1, transform="xaxis_scale", offset_transform="data")
+                      sizes=sizes, units=units, offset_transform=offset_transform)
+
 
 offsets = [[.1, .1], ]  # offsets for positions
-marker2 = hs.plot.markers.Points(offsets=offsets,
-                      sizes=1, transform="yaxis_scale", offset_transform="axes")
+sizes =10
+units = 'points'
+offset_transform = 'axes'
+string = (f"   sizes={sizes}, offset_transform='{offset_transform}', units='{units}', offsets={offsets}",)
 
-marker2text = hs.plot.markers.Texts(offsets=np.add(offsets,[[.1,0]]),
-                      texts=["sizes=1: transform=`yaxis_scale`"],
-                      sizes=2, transform="display", offset_transform="axes")
+marker2text = hs.plot.markers.Texts(offsets=offsets,
+                                    texts=string,
+                                    sizes=1,
+                                    horizontalalignment="left",
+                                    verticalalignment="baseline",
+                                    offset_transform=offset_transform)
+
+marker2 = hs.plot.markers.Points(offsets=offsets,
+                      sizes=sizes, units=units, offset_transform=offset_transform)
+
 
 offsets = [[.1, .8], ]  # offsets for positions
-marker3 = hs.plot.markers.Points(offsets=offsets,
-                      sizes=300, transform="display", offset_transform="axes")
+sizes =1
+units = 'y'
+offset_transform = 'axes'
+string = (f"   sizes={sizes}, offset_transform='{offset_transform}', units='{units}', offsets={offsets}",)
 
-marker3text = hs.plot.markers.Texts(offsets=np.add(offsets,[[.1,0]]),
-                      texts=["sizes=300: transform=`display`"],
-                      sizes=2, transform="display", offset_transform="axes")
+marker3text = hs.plot.markers.Texts(offsets=offsets,
+                                    texts=string,
+                                    sizes=1,
+                                    horizontalalignment="left",
+                                    verticalalignment="baseline",
+                                    offset_transform=offset_transform)
+
+marker3 = hs.plot.markers.Points(offsets=offsets,
+                      sizes=sizes, units=units, offset_transform=offset_transform)
+
+
+offsets = [[1, 7.5], ]  # offsets for positions
+sizes =1
+units = 'xy'
+offset_transform = 'data'
+string = (f"       sizes={sizes}, offset_transform='{offset_transform}', units='{units}', offsets={offsets}",)
+
+marker4text = hs.plot.markers.Texts(offsets=offsets,
+                                    texts=string,
+                                    sizes=1,
+                                    horizontalalignment="left",
+                                    verticalalignment="baseline",
+                                    offset_transform=offset_transform)
+
+marker4 = hs.plot.markers.Points(offsets=offsets,
+                      sizes=sizes, units=units, offset_transform=offset_transform)
+
+
 signal.plot()
 signal.add_marker(marker)
 signal.add_marker(marker1text)
@@ -87,6 +134,8 @@ signal.add_marker(marker2)
 signal.add_marker(marker2text)
 signal.add_marker(marker3)
 signal.add_marker(marker3text)
+signal.add_marker(marker4)
+signal.add_marker(marker4text)
 
 #%%
 #sphinx_gallery_thumbnail_number = 2

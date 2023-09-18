@@ -424,6 +424,10 @@ class TextCollection(Collection):
 
             if self._verticalalignment == 'center':
                 translation_[1] = -height/2 * self._transforms[i][0, 0]
+            elif self._verticalalignment == 'baseline':
+                translation_[1] = -decent * self._transforms[i][0, 0]
+            elif self._verticalalignment == 'center_baseline':
+                translation_[1] = -(height - decent)/2 * self._transforms[i][0, 0]
             elif self._verticalalignment == 'bottom':
                 translation_[1] = 0
             elif self._verticalalignment == 'top':
