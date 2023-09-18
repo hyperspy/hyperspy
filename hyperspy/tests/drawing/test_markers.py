@@ -623,19 +623,6 @@ def test_marker_collection_close():
 
 class TestMarkersTransform:
     @pytest.mark.parametrize(
-        "transform",
-        (
-            "data",
-            "display",
-            "xaxis",
-            "yaxis",
-            "xaxis_scale",
-            "yaxis_scale",
-            "axes",
-            "relative",
-        ),
-    )
-    @pytest.mark.parametrize(
         "offsets_transform",
         (
             "data",
@@ -646,43 +633,30 @@ class TestMarkersTransform:
             "relative",
         ),
     )
-    def test_set_transform(self, transform, offsets_transform):
-        if (transform, offsets_transform) in [("data", "data"), ("axes", "data")]:
-            with pytest.raises(ValueError):
-                m = Points(
-                    offsets=[[1, 1], [4, 4]],
-                    sizes=(10,),
-                    color=("black",),
-                    transform=transform,
-                    offsets_transform=offsets_transform,
-                )
-        else:
-            m = Points(
-                offsets=[[1, 1], [4, 4]],
-                sizes=(10,),
-                color=("black",),
-                transform=transform,
-                offsets_transform=offsets_transform,
-            )
-            assert m.transform == transform
-            assert m.offsets_transform == offsets_transform
-            signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
+    def test_set_offset_transform(self, offsets_transform):
+        m = Points(
+            offsets=[[1, 1], [4, 4]],
+            sizes=(10,),
+            color=("black",),
+            offsets_transform=offsets_transform,
+        )
+        assert m.offsets_transform == offsets_transform
+        signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
 
-            signal.plot()
-            signal.add_marker(m)
-            mapping = {
-                "data": m.ax.transData.__class__,
-                "display": IdentityTransform,
-                "xaxis": m.ax.get_yaxis_transform().__class__,
-                "yaxis": m.ax.get_xaxis_transform().__class__,
-                "xaxis_scale": Affine2D,
-                "yaxis_scale": Affine2D,
-                "axes": m.ax.transAxes.__class__,
-                "relative": CompositeGenericTransform,
-            }
+        signal.plot()
+        signal.add_marker(m)
+        mapping = {
+            "data": m.ax.transData.__class__,
+            "display": IdentityTransform,
+            "xaxis": m.ax.get_yaxis_transform().__class__,
+            "yaxis": m.ax.get_xaxis_transform().__class__,
+            "xaxis_scale": Affine2D,
+            "yaxis_scale": Affine2D,
+            "axes": m.ax.transAxes.__class__,
+            "relative": CompositeGenericTransform,
+        }
 
-            assert isinstance(m.transform, mapping[transform])
-            assert isinstance(m.offsets_transform, mapping[offsets_transform])
+        assert isinstance(m.offsets_transform, mapping[offsets_transform])
 
     def test_set_plotted_transform(
         self,
@@ -691,19 +665,15 @@ class TestMarkersTransform:
             offsets=[[1, 1], [4, 4]],
             sizes=(10,),
             color=("black",),
-            transform="display",
             offsets_transform="display",
         )
-        assert markers.transform == "display"
         assert markers.offsets_transform == "display"
         signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
         signal.plot()
         signal.add_marker(markers)
         assert isinstance(markers.transform, IdentityTransform)
         assert isinstance(markers.offsets_transform, IdentityTransform)
-        markers.transform = "data"
         markers.offsets_transform = "data"
-        assert isinstance(markers.transform, CompositeGenericTransform)
         assert isinstance(markers.offsets_transform, CompositeGenericTransform)
         assert markers.collection.get_transform() == markers.transform
 

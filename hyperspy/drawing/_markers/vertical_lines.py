@@ -60,7 +60,8 @@ class VerticalLines(Markers):
         >>> s.plot()
         >>> s.add_marker(m)
         """
-        if "transform" in kwargs or "offset_transform" in kwargs:
+        if ("transform" in kwargs and kwargs["transform"] != "display") or \
+                ("offset_transform" in kwargs and kwargs["offset_transform"] != "xaxis"):
             raise ValueError(
                 "Setting 'offset_transform' or 'transform' argument is not "
                 "supported with the VerticalLines markers."

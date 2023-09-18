@@ -31,8 +31,7 @@ class Circles(Markers):
         offsets,
         sizes,
         offsets_transform="data",
-        transform="display",
-        units="xy",
+        units="x",
         facecolors="none",
         **kwargs
     ):
@@ -52,13 +51,19 @@ class Circles(Markers):
         kwargs : dict
             Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`.
         """
+        if "transform" in kwargs and kwargs["transform"] != "display":
+            raise ValueError(
+                f"The transform argument is not supported for Squares Markers. Instead, "
+                "use the offsets_transform argument to specify the transform of the "
+                "offsets and use the ``units`` argument to specify transform of the "
+                "sizes.")
+        kwargs["transform"] = "display"
         super().__init__(
             collection=CircleCollection,
             offsets=offsets,
             sizes=sizes,
             facecolors=facecolors,
             offsets_transform=offsets_transform,
-            transform=transform,
             units=units,
             **kwargs
         )

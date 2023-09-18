@@ -43,6 +43,7 @@ class Arrows(Markers):
         kwargs : dict
             Keyword arguments are passed to :py:class:`matplotlib.quiver.Quiver`.
         """
+
         super().__init__(
             collection=Quiver,
             # iterating arguments

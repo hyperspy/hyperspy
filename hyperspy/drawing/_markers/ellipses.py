@@ -32,7 +32,6 @@ class Ellipses(Markers):
         heights,
         widths,
         offsets_transform="data",
-        transform="display",
         units="xy",
         angles=(0,),
         **kwargs
@@ -42,15 +41,20 @@ class Ellipses(Markers):
         Parameters
         ----------
         %s
-        widths: array-like
-            The lengths of the first axes (e.g., major axis lengths).
-        heights: array-like
-            The lengths of second axes.
-        angles : array-like
-            The angles of the first axes, degrees CCW from the x-axis.
+        %s
+        %s
+        %s
+        %s
         kwargs:
             Additional keyword arguments are passed to :py:class:`matplotlib.collections.EllipseCollection`.
         """
+        if "transform" in kwargs and kwargs["transform"] != "display":
+            raise ValueError(
+                f"The transform argument is not supported for Squares Markers. Instead, "
+                "use the offsets_transform argument to specify the transform of the "
+                "offsets and use the ``units`` argument to specify transform of the "
+                "sizes.")
+        kwargs["transform"] = "display"
         super().__init__(
             collection=EllipseCollection,
             offsets=offsets,
@@ -58,7 +62,6 @@ class Ellipses(Markers):
             heights=heights,
             widths=widths,
             angles=angles,
-            transform=transform,
             units=units,
             **kwargs
         )

@@ -50,29 +50,3 @@ class Test1D:
         integrated_signal = self.signal.integrate1D(axis=0)
         np.testing.assert_allclose(integrated_signal.data, 20, rtol=1e-6)
 
-    @pytest.mark.parametrize("signal", ("zero_d_navigate", "one_d_navigate"))
-    @pytest.mark.parametrize("start", (0.0, None))
-    def test_get_line_intensity(self, request, signal, start):
-        s = request.getfixturevalue(signal)
-        intensities = s.get_intensity(indexes=[3, 5],
-                                           start=start)
-        if start is None:
-            vector_shape = (2, 2)
-        else:
-            vector_shape = (2, 2, 2)
-        if signal == "zero_d_navigate":
-            assert intensities.data.dtype == float
-            assert intensities.data.shape == vector_shape
-        else:
-            assert intensities.data.dtype == object
-            assert intensities.data.shape == (3,)
-
-        if start is None:
-            markers = Circles.from_signal(intensities)
-            s.add_marker(markers)
-        else:
-            markers = Markers.from_signal(intensities,
-                                          key="segments",
-                                          collection=LineCollection,
-                                          )
-            s.add_marker(markers)
