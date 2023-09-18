@@ -396,9 +396,9 @@ loss probability caused by the interactions with the material's electronic struc
 It offers insights into the material's electronic properties, bonding, and local environments.
 Therefore, we cannot model them from first-principles because i) the material is usually unknown
 ii) HyperSpy only supports Hydrogenic and Hartree-Slater EELS core-loss models. Instead, the
-:py:class:`~._components.eels_cl_edge.EELSCLEdge` component include feature
+:py:class:`~._components.eels_cl_edge.EELSCLEdge` component includes features
 for EELS fine structure modelling and analysis using functions to mimic the fine structure
-features. The most basic consists on modelling
+features. The most basic consists in modelling
 the fine structure of ionization edges using a spline function. You can activate this feature
 by setting the :py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_active` attribute
 of a given :py:class:`~._components.eels_cl_edge.EELSCLEdge` component to `True`. For example:
@@ -407,7 +407,7 @@ of a given :py:class:`~._components.eels_cl_edge.EELSCLEdge` component to `True`
 
     >>> m.components.N_K.fine_structure_active = True
 
-To enable the fine structure component for all or a selection of ionization edges  you can use the
+To enable the fine structure component for all or a selection of ionization edges, you can use the
 :py:meth:`~.models.eelsmodel.EELSModel.enable_fine_structure` method:
 
 .. code-block:: python
@@ -431,8 +431,8 @@ contains a list of `float`s. Its length depends on the value of
 :py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_smoothing`, and it
 will be reset to `0` when any of those values change.
 
-If we zoom-in the fine structure region of Boron-K ionization edge of the the BN
-model above we notice that the fit is actually not very good:
+If we zoom-in the fine structure region of the Boron-K ionization edge of the BN
+model above, we notice that the fit is actually not very good:
 
 .. figure::  images/EELS_BN_zoomin.png
    :align:   center
@@ -457,13 +457,13 @@ we will work with only that region of the model:
     >>> m.components.N_K.fine_structure_width = 45
     >>> m.smart_fit()
 
-After executing the commands above the model of the fine structure of both
+After executing the commands above, the model of the fine structure of both
 edges is much better, and the B/N ratio gets closer to one. Indeed, when
-performing EELS quantification using the low-loss to account for
+performing EELS quantification using the low-loss region to account for
 multiple scattering, improving the model of the fine structure is essential
-for accurate parameter estimation.
+to obtain an accurate parameter estimation.
 
-When fitting edges with fine structure enabled it is often desirable that the
+When fitting edges with fine structure enabled, it is often desirable that the
 fine structure region of nearby ionization edges does not overlap. HyperSpy
 provides a method,
 :py:meth:`~.models.eelsmodel.EELSModel.resolve_fine_structure`, to
@@ -483,13 +483,13 @@ To resume it use
 Fine structure analysis
 """""""""""""""""""""""
 
-Fine structure analysis consists on measuring different features of the fine structure
-(e.g., peak position, area...) that can be related to the ionized atom environment.
+Fine structure analysis consists of measuring different features of the fine structure
+(e.g., peak position, area, ...) that can be related to the ionized atom environment.
 To perform fine structure analysis, we can use any HyperSpy :py:class:`~.component.Component`
-to fit the fine structure. For that we simply need to add them to the
+to fit the fine structure. For that, we simply need to add them to the
 :py:attr:`~._components.eels_cl_edge.EELSCLEdge.ext_fine_structure` `set`. To continue
 the example above, let's model the first three peaks of the Boron-K edge fine structure using three
-gaussian functions:
+Gaussian functions:
 
 
 .. code-block:: python
