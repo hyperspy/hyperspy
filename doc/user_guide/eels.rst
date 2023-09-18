@@ -500,11 +500,11 @@ Gaussian functions:
 
 Next we need to let HyperSpy know that these two gaussian functions are part
 of the fine structure of the Boron-K edge. For that, we simply add them to the
-:py:attr:`~._components.eels_cl_edge.EELSCLEdge.ext_fine_structure` `set`. 
+:py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_components` `set`. 
 
 .. code-block:: python
 
-    >>> m.components.B_K.ext_fine_structure.update((g1, g2)) 
+    >>> m.components.B_K.fine_structure_components.update((g1, g2)) 
 
 
 

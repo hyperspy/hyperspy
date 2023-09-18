@@ -150,8 +150,8 @@ class EELSCLEdge(Component):
         self._whitelist["fine_structure_width"] = None
         self._whitelist["fine_structure_smoothing"] = None
         self._whitelist["fine_structure_onset"] = None
-        self._whitelist["int_fine_structure"] = None
-        self._whitelist["where_ext_fine_structure_zero"] = None
+        self._whitelist["fine_structure_spline"] = None
+        self._whitelist["where_fine_structure_components_zero"] = None
         self.effective_angle.events.value_changed.connect(
             self._integrate_GOS, [])
         self.onset_energy.events.value_changed.connect(self._integrate_GOS, [])
@@ -159,7 +159,7 @@ class EELSCLEdge(Component):
             self._calculate_knots, [])
         self._fine_structure_onset = 0
         self.where_ext_fine_structure_zero = True
-        self.events.active_changed.connect(self._set_active_ext_fine_structure)
+        self.events.active_changed.connect(self._set_active_fine_structure_components)
 
     # Automatically fix the fine structure when the fine structure is
     # disable.
@@ -241,7 +241,7 @@ class EELSCLEdge(Component):
             # All the parameters may not be defined yet...
             pass
 
-    def _set_active_ext_fine_structure(self, active, **kwargs):
+    def _set_active_fine_structure_componentsponents(self, active, **kwargs):
         if not self.fine_structure_active:
             return
         for comp in self.fine_structure_components:
@@ -428,6 +428,6 @@ class EELSCLEdge(Component):
 
     def as_dictionary(self, fullcopy=True):
         dic = super().as_dictionary(fullcopy=fullcopy)
-        dic["ext_fine_structure"] = [t.name for t in self.fine_structure_components]
-        dic["_whitelist"]["ext_fine_structure"] = ""
+        dic["fine_structure_components"] = [t.name for t in self.fine_structure_components]
+        dic["_whitelist"]["fine_structure_components"] = ""
         return dic

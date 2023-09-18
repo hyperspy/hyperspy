@@ -66,10 +66,10 @@ class EELSModel(Model1D):
             auto_add_edges = False
             self._load_dictionary(dictionary)
             for edge in self.edges:
-                ext_fine_structure = set()
+                fine_structure_components = set()
                 for comp_name in edge.fine_structure_components:
-                    ext_fine_structure.add(self[comp_name])
-                edge.fine_structure_components = ext_fine_structure
+                    fine_structure_components.add(self[comp_name])
+                edge.fine_structure_components = fine_structure_components
 
         if auto_background is True:
             background = PowerLaw()
@@ -510,7 +510,7 @@ class EELSModel(Model1D):
         for edge_ in [edge, ] + twins:
             if (edge_.fine_structure_active is True and
                     edge_.fine_structure_coeff.free is True or
-                    edge_.ext_fine_structure):
+                    edge_.fine_structure_components):
                 to_activate_fs.append(edge_)
         self.disable_fine_structure(to_activate_fs)
 
