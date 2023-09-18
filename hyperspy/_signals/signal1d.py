@@ -1533,63 +1533,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
     estimate_peak_width.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG)
 
-    def get_intensity(self,
-                           indexes,
-                           start=None,
-                           stop=1.0,
-                           factor=1.0,
-                           norm=None,
-                           minimum_intensity=None,
-                           **kwargs):
-        """
-        A generic function for getting the intensity of a line at different positions in the Signal1D.
-
-        This function is used mostly for plotting markers and the output can be directly
-        passed to a `MarkerCollection` object using the `MarkerCollection.from_signal()` method.
-
-        Parameters
-        ----------
-        indexes : list of float
-            The indexes of the positions of the line in the signal..
-        factor : float or list of float
-            The factor to multiply the intensity by. If a list is passed, it must have the same
-            length as `indexes`.
-        str, optional
-            Normalization to apply to the intensities. Can be 'log' or None.
-        minimum_intensity : float, optional
-            Minimum intensity to use when norm is 'log'.
-        start : float, optional
-            Start value for scaling the vertical line
-        stop : float, optional
-            Stop value for scaling the vertical line or height of the point.
-        real_index : 1D numpy array
-            The real values for the indexes in calibrated units.
-        **kwargs:
-            Any other keyword arguments are passed to `self.map()`.
-        """
-        ax = self.axes_manager.signal_axes[0]
-        pixel_indexes = ax.value2index(indexes)
-        # Use the `map` function to get the intensity of each line at each navigator position
-        if self.axes_manager.navigation_shape == ():  # handle 0D navigation case
-            ragged = False
-            output_dtype = float
-        else:
-            ragged = True
-            output_dtype = object
-        values = self.map(get_value_at_index,
-                          indexes = pixel_indexes,
-                          real_index=indexes,
-                          start=start,
-                          stop=stop,
-                          factor=factor,
-                          norm=norm,
-                          minimum_intensity=minimum_intensity,
-                          inplace=False,
-                          ragged=ragged,
-                          output_dtype=output_dtype,
-                          **kwargs)
-        return values
-
     def plot(self,
              navigator="auto",
              plot_markers=True,
