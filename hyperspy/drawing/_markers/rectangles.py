@@ -29,7 +29,7 @@ from hyperspy.docstrings.markers import (OFFSET_DOCSTRING,
 class Rectangles(Markers):
     """A Collection of Rectangles Markers"""
 
-    _key = "offsets"
+    _position_key = "offsets"
 
     def __init__(
         self,

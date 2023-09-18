@@ -30,7 +30,7 @@ from hyperspy.external.matplotlib.collections import EllipseCollection
 class Ellipses(Markers):
     """A set of Ellipse Markers"""
 
-    _key = "offsets"
+    _position_key = "offsets"
 
     def __init__(
         self,

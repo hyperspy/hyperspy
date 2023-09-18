@@ -24,7 +24,7 @@ from hyperspy.external.matplotlib.collections import CircleCollection
 class Circles(Markers):
     """A set of Circle Markers."""
 
-    _key = "offsets"
+    _position_key = "offsets"
 
     def __init__(
         self,

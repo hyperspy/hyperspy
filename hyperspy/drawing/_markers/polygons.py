@@ -23,7 +23,7 @@ from matplotlib.collections import PolyCollection
 class Polygons(Markers):
     """A Collection of Rectangles Markers"""
 
-    _key = "verts"
+    _position_key = "verts"
 
     def __init__(self, verts,
                  offsets_transform="display", transform="data", **kwargs):

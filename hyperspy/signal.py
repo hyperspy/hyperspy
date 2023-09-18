@@ -6050,7 +6050,7 @@ class BaseSignal(FancySlicing,
                     "inverse navigation shape as this signal. If the "
                     "navigation dimensions for the signal is (2, 3), "
                     "the marker dimension must be (3, 2).")
-            if (m.signal is not None) and (m.signal is not self):
+            if (m._signal is not None) and (m._signal is not self):
                 raise ValueError("Markers can not be added to several signals")
             m._plot_on_signal = plot_on_signal
 
@@ -6064,7 +6064,7 @@ class BaseSignal(FancySlicing,
                         raise ValueError("Attempted to plot marker on navigator_plot when none is"
                                          "active.")
                     self._plot.navigator_plot.add_marker(m)
-                m.temp_signal = self
+                m._signal = self
                 m.plot(render_figure=False)
 
             if permanent:

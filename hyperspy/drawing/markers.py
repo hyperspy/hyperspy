@@ -44,8 +44,8 @@ def convert_positions(peaks, signal_axes):
 
 class Markers:
 
-    # The key defining the position - used in `from_signal`
-    _key = ""
+    # The key defining the position, typically: `offsets`, `segments` or `verts`
+    _position_key = "offsets"
 
     def __init__(
         self,
@@ -73,7 +73,7 @@ class Markers:
         ----------
         collection : matplotlib.collections or str
             A Matplotlib collection to be initialized.
-        offsets_transform : str
+        offsets_transform, transform : str
             Define the transformation used for the `offsets`. This only operates on the offset point so it won't
             scale the size of the ``Path``.  It can be one of the following:
             - ``"data"``: the offsets are defined in data coordinates and the ``ax.transData`` transformation is used.
@@ -88,14 +88,13 @@ class Markers:
             - ``"display"``: the offsets are not transformed, i.e. are defined in the display coordinate system.
               (0, 0) is the bottom left of the window, and (width, height) is top right of the output in "display units"
               :py:class:`matplotlib.transforms.IndentityTransform`.
-        transform : str
-            Define the transformation to be applied to each marker. This operates on the ``Path`` rather than
-            the position so can be used to scale as well as translate some marker.
-            It can be any of the transforms in ``offset_transform`` or one of the following:
-            - ``"xaxis_scale"``: The size of the marker is scaled by scale factor of the x axis.
-            - ``"yaxis_scale"``: The size of the marker is scaled by scale factor of the y axis.
-            For most cases having transform="data"/"axis" and offsets_transform="data" will result
-            in unexpected behavior as the position of the marker will be transformed twice.
+        shift : None or float
+            Shift in matplotlib ``"axes"`` coordinate system. Must be a value
+            between 0 and 1.
+        plot_on_signal : bool
+            If True, plot on signal figure, otherwise on navigator.
+        name : str
+            The name of the markers.
         **kwargs : dict
             Keyword arguments passed to the underlying marker collection. Any argument
             that is array-like and has ``dtype=object`` is assumed to be an iterating
@@ -182,11 +181,6 @@ class Markers:
                 "implemented in matplotlib or hyperspy"
             )
 
-        if offsets_transform == "data" and transform in ["axes", "data"]:
-            raise ValueError(
-                "Weird behavior will occur when argument `offsets_transform` cannot be 'data' when "
-                "transform is 'axes' or 'data'."
-            )
         # Data attributes
         self.kwargs = kwargs  # all keyword arguments.
         self.axes_manager = None
@@ -229,8 +223,7 @@ class Markers:
         self.collection = None
         # used in _initialize_collection
         self._collection_class = collection
-        self.signal = None
-        self.temp_signal = None
+        self._signal = None
         self._plot_on_signal = plot_on_signal
         self.shift = shift
         self.plot_marker = True
@@ -254,24 +247,10 @@ class Markers:
 
     @property
     def _is_iterating(self):
-        if self._transform == "relative" or self._offsets_transform == "relative":
-            return False
-        elif self._plot_on_signal:
+        if self._plot_on_signal:
             return np.any([is_iterating(value) for key, value in self.kwargs.items()])
         else:  # currently iterating navigation markers arenot supported
             return False
-
-    @property
-    def offsets_transform(self):
-        return self._get_transform(attr="_offsets_transform")
-
-    @offsets_transform.setter
-    def offsets_transform(self, value):
-        self._set_transform(value, attr="_offsets_transform")
-        # setting live plot
-        if self.collection is not None and self.ax is not None:
-            self.collection.set_offset_transform(self.offsets_transform)
-            self.update()
 
     def _get_transform(self, attr="_transform"):
         if self.ax is not None:  # return the transform
@@ -283,33 +262,30 @@ class Markers:
                 "xaxis": self.ax.get_xaxis_transform(),
                 "relative": self.ax.transData,
             }
-            if attr == "_transform":
-                transforms["xaxis_scale"] = Affine2D().scale(
-                    self.ax.bbox.width / self.ax.viewLim.width
-                )
-                transforms["yaxis_scale"] = Affine2D().scale(
-                    self.ax.bbox.height / self.ax.viewLim.height
-                )
             return transforms[getattr(self, attr)]
         else:  # return the string value
             return getattr(self, attr)
 
     def _set_transform(self, value, attr="_transform"):
-        if value not in [
-            "data",
-            "axes",
-            "xaxis",
-            "yaxis",
-            "display",
-            "relative",
-            "xaxis_scale",
-            "yaxis_scale",
-        ]:
+        arg_list = ["data", "axes", "xaxis", "yaxis", "display", "relative"]
+        if value not in arg_list:
+            str_ = ", ".join([f"`{v}`" for v in arg_list])
             raise ValueError(
-                "The offset transform must be one of 'data', 'axes',"
-                " 'xaxis', 'yaxis', 'display', 'relative'"
+                f"The transform must be one of {str_}."
             )
         setattr(self, attr, value)
+        if self.collection is not None and self.ax is not None:
+            getattr(self.collection, f"set{attr}")(getattr(self, attr[1:]))
+            # Update plot
+            self.update()
+
+    @property
+    def offsets_transform(self):
+        return self._get_transform(attr="_offsets_transform")
+
+    @offsets_transform.setter
+    def offsets_transform(self, value):
+        self._set_transform(value, attr="_offsets_transform")
 
     @property
     def transform(self):
@@ -318,10 +294,6 @@ class Markers:
     @transform.setter
     def transform(self, value):
         self._set_transform(value, attr="_transform")
-        # setting live plot
-        if self.collection is not None and self.ax is not None:
-            self.collection.set_transform(self.transform)
-            self.update()
 
     def __len__(self):
         """
@@ -516,7 +488,7 @@ class Markers:
             )
 
         if key is None:
-            key = cls._key
+            key = cls._position_key
         kwargs[key] = new_signal.data
 
         return cls(**kwargs)
@@ -569,17 +541,15 @@ class Markers:
                 current_keys.update(self._get_cache_dask_kwargs_chunk(indices))
         else:
             current_keys = self.kwargs
+
         # Handling relative markers
-        if (
-            self._offsets_transform == "relative" or self._transform == "relative"
-        ):  # scale based on current data
-            if "offsets" in current_keys:
-                current_keys = self._scale_kwarg(current_keys, "offsets")
-            if "segments" in current_keys:
-                current_keys = self._scale_kwarg(current_keys, "segments")
+        if "relative" in [self._offsets_transform, self._transform]:
+            # scale based on current data
+            current_keys = self._scale_kwarg(current_keys)
+
         return current_keys
 
-    def _scale_kwarg(self, kwds, key):
+    def _scale_kwarg(self, kwds, key=None):
         """
         Scale the kwarg by the current data.  This is useful for scaling the
         marker position by the current index or data value.
@@ -591,8 +561,11 @@ class Markers:
         "offset" or "segments" key and the given value of the index.  This is useful when you want
         to scale things by some value in the data that is not the same value.
         """
+        if key is None:
+            key = self._position_key
+
         new_kwds = deepcopy(kwds)
-        current_data = self.temp_signal(as_numpy=True)
+        current_data = self._signal(as_numpy=True)
         x_positions = new_kwds[key][..., 0]
         ax = self.axes_manager.signal_axes[0]
         indexes = np.round((x_positions - ax.offset) / ax.scale).astype(int)
@@ -602,15 +575,13 @@ class Markers:
         if self.shift is not None:
             yrange = np.max(current_data) - np.min(current_data)
             new_y_positions = new_y_positions + self.shift * yrange
+
         new_kwds[key][..., 1] = new_y_positions
+
         return new_kwds
 
     def update(self):
-        if (
-            self._transform == "relative"
-            or self._offsets_transform == "relative"
-            or self._is_iterating
-        ):
+        if self._is_iterating or "relative" in [self._offsets_transform, self._transform]:
             kwds = self.get_data_position(get_static_kwargs=False)
             self.collection.set(**kwds)
 
@@ -666,7 +637,7 @@ class Markers:
         self._closing = True
         self.collection.remove()
         self.events.closed.trigger(obj=self)
-        self.temp_signal = None
+        self._signal = None
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
         if render_figure:

@@ -650,8 +650,6 @@ class TestMarkersTransform:
             "display": IdentityTransform,
             "xaxis": m.ax.get_yaxis_transform().__class__,
             "yaxis": m.ax.get_xaxis_transform().__class__,
-            "xaxis_scale": Affine2D,
-            "yaxis_scale": Affine2D,
             "axes": m.ax.transAxes.__class__,
             "relative": CompositeGenericTransform,
         }

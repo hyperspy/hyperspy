@@ -24,7 +24,7 @@ import numpy as np
 class VerticalLines(Markers):
     """A set of Vertical Line Markers"""
 
-    _key = "offsets"
+    _position_key = "offsets"
 
     def __init__(self, offsets, **kwargs):
         """
