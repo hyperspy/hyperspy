@@ -93,7 +93,7 @@ class EELSCLEdge(Component):
     fine_structure_spline : bool, default True
         If True and `fine_structure_active` is True, the region from
         `fine_structure_spline_onset` until `fine_structure_width`
-        are modeled with a spline.
+        are modelled with a spline.
     fine_structure_coeff : Parameter
         The coefficients of the spline that fits the fine structure.
         Fix this parameter to fix the fine structure. It is a
@@ -103,7 +103,7 @@ class EELSCLEdge(Component):
         Decreasing the value increases the level of smoothing.
     fine_structure_spline_onset : float, default 0.
         The position, from the ionization edge onset, at which the region
-        modeled by the spline function starts.
+        modelled by the spline function starts.
     fine_structure_width : float, default 30.
         The width of the energy region, from the ionization edge onset, where
         the model is a spline function and/or any component
