@@ -70,7 +70,7 @@ class VerticalLines(Markers):
         super().__init__(
             collection=LineCollection,
             offsets=offsets,
-            offsets_transform="display",
+            offset_transform="display",
             transform="xaxis",  # so that the markers span the whole y-axis
             **kwargs
         )

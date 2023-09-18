@@ -2,7 +2,7 @@
 Transforms and Units
 ====================
 
-This example shows how to use both the ``offsets_transform`` and ```transforms``
+This example shows how to use both the ``offset_transform`` and ```transforms``
 parameters for markers
 """
 
@@ -35,7 +35,7 @@ markers = hs.plot.markers.Lines(segments=segments,transform="relative")
 texts = hs.plot.markers.Texts(offsets=offsets,
                               texts=["a", "b", "c", "d", "e", "f", "g", "h", "i"],
                               sizes=10,
-                              offsets_transform="relative",
+                              offset_transform="relative",
                               shift=0.005)  # shift in axes units for some constant displacement
 signal.plot()
 signal.add_marker(markers)
@@ -52,7 +52,7 @@ signal.plot()
 signal.add_marker(markers)
 
 #%%
-# The third example shows how an ``offsets_transform`` of ``'axes'`` can be
+# The third example shows how an ``offset_transform`` of ``'axes'`` can be
 # used to annotate a signal.
 #
 # The size of the marker is specified in units defined by the ``transform``,
@@ -61,25 +61,25 @@ signal.add_marker(markers)
 offsets = [[.1, .5], ]  # offsets for positions
 marker1text = hs.plot.markers.Texts(offsets=np.add(offsets,[[.1,0]]),
                       texts=["sizes=1: transform=`xaxis_scale`"],
-                      sizes=2, transform="display", offsets_transform="data")
+                      sizes=2, transform="display", offset_transform="data")
 marker = hs.plot.markers.Points(offsets=offsets,
-                      sizes=1, transform="xaxis_scale", offsets_transform="data")
+                      sizes=1, transform="xaxis_scale", offset_transform="data")
 
 offsets = [[.1, .1], ]  # offsets for positions
 marker2 = hs.plot.markers.Points(offsets=offsets,
-                      sizes=1, transform="yaxis_scale", offsets_transform="axes")
+                      sizes=1, transform="yaxis_scale", offset_transform="axes")
 
 marker2text = hs.plot.markers.Texts(offsets=np.add(offsets,[[.1,0]]),
                       texts=["sizes=1: transform=`yaxis_scale`"],
-                      sizes=2, transform="display", offsets_transform="axes")
+                      sizes=2, transform="display", offset_transform="axes")
 
 offsets = [[.1, .8], ]  # offsets for positions
 marker3 = hs.plot.markers.Points(offsets=offsets,
-                      sizes=300, transform="display", offsets_transform="axes")
+                      sizes=300, transform="display", offset_transform="axes")
 
 marker3text = hs.plot.markers.Texts(offsets=np.add(offsets,[[.1,0]]),
                       texts=["sizes=300: transform=`display`"],
-                      sizes=2, transform="display", offsets_transform="axes")
+                      sizes=2, transform="display", offset_transform="axes")
 signal.plot()
 signal.add_marker(marker)
 signal.add_marker(marker1text)

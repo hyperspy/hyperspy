@@ -37,7 +37,7 @@ class Rectangles(Markers):
         widths,
         heights,
         angles=(0,),
-        offsets_transform="data",
+        offset_transform="data",
         units="xy",
         **kwargs
     ):
@@ -57,7 +57,7 @@ class Rectangles(Markers):
         if "transform" in kwargs and kwargs["transform"] != "display":
             raise ValueError(
                 f"The transform argument is not supported for Rectangle Markers. Instead, "
-                "use the offsets_transform argument to specify the transform of the "
+                "use the offset_transform argument to specify the transform of the "
                 "offsets and use the ``units`` argument to specify transform of the "
                 "sizes.")
         kwargs["transform"] = "display"
@@ -67,7 +67,7 @@ class Rectangles(Markers):
             widths=widths,
             heights=heights,
             angles=angles,
-            offsets_transform=offsets_transform,
+            offset_transform=offset_transform,
             units=units,
             **kwargs
         )

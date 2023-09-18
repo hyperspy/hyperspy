@@ -50,7 +50,7 @@ class Markers:
     def __init__(
         self,
         collection,
-        offsets_transform="data",
+        offset_transform="data",
         transform="display",
         shift=None,
         plot_on_signal=True,
@@ -73,7 +73,7 @@ class Markers:
         ----------
         collection : matplotlib.collections or str
             A Matplotlib collection to be initialized.
-        offsets_transform, transform : str
+        offset_transform, transform : str
             Define the transformation used for the `offsets`. This only operates on the offset point so it won't
             scale the size of the ``Path``.  It can be one of the following:
             - ``"data"``: the offsets are defined in data coordinates and the ``ax.transData`` transformation is used.
@@ -186,7 +186,7 @@ class Markers:
         self.axes_manager = None
         self.ax = None
         self.auto_update = True
-        self._offsets_transform = None
+        self._offset_transform = None
         self._transform = None
 
         # Handling dask arrays
@@ -227,7 +227,7 @@ class Markers:
         self._plot_on_signal = plot_on_signal
         self.shift = shift
         self.plot_marker = True
-        self.offsets_transform = offsets_transform
+        self.offset_transform = offset_transform
         self.transform = transform
 
         # Events
@@ -280,12 +280,12 @@ class Markers:
             self.update()
 
     @property
-    def offsets_transform(self):
-        return self._get_transform(attr="_offsets_transform")
+    def offset_transform(self):
+        return self._get_transform(attr="_offset_transform")
 
-    @offsets_transform.setter
-    def offsets_transform(self, value):
-        self._set_transform(value, attr="_offsets_transform")
+    @offset_transform.setter
+    def offset_transform(self, value):
+        self._set_transform(value, attr="_offset_transform")
 
     @property
     def transform(self):
@@ -509,7 +509,7 @@ class Markers:
             "class": class_name,
             "name": self.name,
             "plot_on_signal": self._plot_on_signal,
-            "offsets_transform": self._offsets_transform,
+            "offset_transform": self._offset_transform,
             "transform": self._transform,
             "kwargs": self.kwargs,
         }
@@ -543,7 +543,7 @@ class Markers:
             current_keys = self.kwargs
 
         # Handling relative markers
-        if "relative" in [self._offsets_transform, self._transform]:
+        if "relative" in [self._offset_transform, self._transform]:
             # scale based on current data
             current_keys = self._scale_kwarg(current_keys)
 
@@ -581,14 +581,14 @@ class Markers:
         return new_kwds
 
     def update(self):
-        if self._is_iterating or "relative" in [self._offsets_transform, self._transform]:
+        if self._is_iterating or "relative" in [self._offset_transform, self._transform]:
             kwds = self.get_data_position(get_static_kwargs=False)
             self.collection.set(**kwds)
 
     def _initialize_collection(self):
         self.collection = self._collection_class(
             **self.get_data_position(),
-            offset_transform=self.offsets_transform,
+            offset_transform=self.offset_transform,
         )
         self.collection.set_transform(self.transform)
 

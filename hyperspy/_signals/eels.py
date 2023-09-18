@@ -1627,7 +1627,7 @@ class EELSSpectrum(Signal1D):
                             rotation=np.pi/2,
                             horizontalalignment="left",
                             verticalalignment="bottom",
-                            offsets_transform="relative",
+                            offset_transform="relative",
                             facecolor='black',
                             )
         return vertical_line_marker, text_marker

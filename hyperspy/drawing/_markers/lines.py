@@ -44,12 +44,12 @@ class Lines(Markers):
         coordinate system of the ``segments`` is ``transform``.
 
         """
-        if "offsets_transform" in kwargs and kwargs["offsets_transform"] != "display":
+        if "offset_transform" in kwargs and kwargs["offset_transform"] != "display":
             raise ValueError(
-                 "The offsets_transform argument is not supported for Lines Markers. Instead, "
+                 "The offset_transform argument is not supported for Lines Markers. Instead, "
                  "use the ``transform`` argument to specify the transform of the "
                  "markers.")
-        kwargs["offsets_transform"] = "display"
+        kwargs["offset_transform"] = "display"
         super().__init__(
             collection=LineCollection,
             segments=segments,

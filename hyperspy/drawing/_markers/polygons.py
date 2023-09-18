@@ -26,7 +26,7 @@ class Polygons(Markers):
     _position_key = "verts"
 
     def __init__(self, verts,
-                 offsets_transform="display", transform="data", **kwargs):
+                 offset_transform="display", transform="data", **kwargs):
         """
         Initialize the set of Segments Markers.
 
@@ -74,7 +74,7 @@ class Polygons(Markers):
         super().__init__(
             collection=PolyCollection,
             verts=verts,
-            offsets_transform=offsets_transform,
+            offset_transform=offset_transform,
             transform=transform,
             **kwargs
         )

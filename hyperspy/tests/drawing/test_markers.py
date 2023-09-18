@@ -497,7 +497,7 @@ class TestInitMarkers:
         # only add transform for compatible mMrkers
         if subclass[0] not in [HorizontalLines, VerticalLines]:
             transforms_kwargs["transform"] = "display"
-            transforms_kwargs["offsets_transform"] = "display"
+            transforms_kwargs["offset_transform"] = "display"
 
         m = subclass[0](**subclass[1], **transforms_kwargs)
         m2 = deepcopy(m)
@@ -508,7 +508,7 @@ class TestInitMarkers:
             print(key, value, m2.kwargs[key])
             assert np.all(m2.kwargs[key] == value)
 
-        assert m2.offsets_transform == m.offsets_transform == "display"
+        assert m2.offset_transform == m.offset_transform == "display"
         if subclass[0] not in [HorizontalLines, VerticalLines]:
             assert m2.transform == "display"
             assert m2.transform == m.transform == "display"
@@ -623,7 +623,7 @@ def test_marker_collection_close():
 
 class TestMarkersTransform:
     @pytest.mark.parametrize(
-        "offsets_transform",
+        "offset_transform",
         (
             "data",
             "display",
@@ -633,14 +633,14 @@ class TestMarkersTransform:
             "relative",
         ),
     )
-    def test_set_offset_transform(self, offsets_transform):
+    def test_set_offset_transform(self, offset_transform):
         m = Points(
             offsets=[[1, 1], [4, 4]],
             sizes=(10,),
             color=("black",),
-            offsets_transform=offsets_transform,
+            offset_transform=offset_transform,
         )
-        assert m.offsets_transform == offsets_transform
+        assert m.offset_transform == offset_transform
         signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
 
         signal.plot()
@@ -654,7 +654,7 @@ class TestMarkersTransform:
             "relative": CompositeGenericTransform,
         }
 
-        assert isinstance(m.offsets_transform, mapping[offsets_transform])
+        assert isinstance(m.offset_transform, mapping[offset_transform])
 
     def test_set_plotted_transform(
         self,
@@ -663,16 +663,16 @@ class TestMarkersTransform:
             offsets=[[1, 1], [4, 4]],
             sizes=(10,),
             color=("black",),
-            offsets_transform="display",
+            offset_transform="display",
         )
-        assert markers.offsets_transform == "display"
+        assert markers.offset_transform == "display"
         signal = Signal1D((np.arange(100) + 1).reshape(10, 10))
         signal.plot()
         signal.add_marker(markers)
         assert isinstance(markers.transform, IdentityTransform)
-        assert isinstance(markers.offsets_transform, IdentityTransform)
-        markers.offsets_transform = "data"
-        assert isinstance(markers.offsets_transform, CompositeGenericTransform)
+        assert isinstance(markers.offset_transform, IdentityTransform)
+        markers.offset_transform = "data"
+        assert isinstance(markers.offset_transform, CompositeGenericTransform)
         assert markers.collection.get_transform() == markers.transform
 
     def test_unknown_tranform(self):
@@ -682,7 +682,7 @@ class TestMarkersTransform:
                 sizes=(10,),
                 color=("black",),
                 transform="test",
-                offsets_transform="test",
+                offset_transform="test",
             )
 
 
@@ -695,7 +695,7 @@ class TestRelativeMarkers:
         segments[:, 1, 0] = np.arange(10).reshape(10)  # set x values
 
         markers = Lines(segments=segments, transform="relative")
-        texts = Texts(offsets=segments[:, 1], texts="a", offsets_transform="relative")
+        texts = Texts(offsets=segments[:, 1], texts="a", offset_transform="relative")
         signal.plot()
         signal.add_marker(markers)
         signal.add_marker(texts)
@@ -714,7 +714,7 @@ class TestRelativeMarkers:
         segments[:, 1, 0] = np.arange(10).reshape(10)  # set x values
 
         markers = Lines(segments=segments,shift=1/9, transform="relative")
-        texts = Texts(offsets=segments[:, 1], shift=1/9, texts="a", offsets_transform="relative")
+        texts = Texts(offsets=segments[:, 1], shift=1/9, texts="a", offset_transform="relative")
         signal.plot()
         signal.add_marker(markers)
         signal.add_marker(texts)

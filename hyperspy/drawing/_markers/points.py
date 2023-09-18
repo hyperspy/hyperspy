@@ -31,7 +31,7 @@ class Points(Markers):
         self,
         offsets,
         sizes=10,
-        offsets_transform="data",
+        offset_transform="data",
         units="points",
         **kwargs
     ):
@@ -49,7 +49,7 @@ class Points(Markers):
         if "transform" in kwargs and kwargs["transform"] != "display":
             raise ValueError(
                 f"The transform argument is not supported for Squares Markers. Instead, "
-                "use the offsets_transform argument to specify the transform of the "
+                "use the offset_transform argument to specify the transform of the "
                 "offsets and use the ``units`` argument to specify transform of the "
                 "sizes.")
         kwargs["transform"] = "display"
@@ -57,7 +57,7 @@ class Points(Markers):
             collection=CircleCollection,
             offsets=offsets,
             sizes=sizes,
-            offsets_transform=offsets_transform,
+            offset_transform=offset_transform,
             units=units,
             **kwargs
         )

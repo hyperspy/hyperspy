@@ -37,7 +37,7 @@ class Ellipses(Markers):
         offsets,
         heights,
         widths,
-        offsets_transform="data",
+        offset_transform="data",
         units="xy",
         angles=(0,),
         **kwargs
@@ -57,14 +57,14 @@ class Ellipses(Markers):
         if "transform" in kwargs and kwargs["transform"] != "display":
             raise ValueError(
                 f"The transform argument is not supported for Squares Markers. Instead, "
-                "use the offsets_transform argument to specify the transform of the "
+                "use the offset_transform argument to specify the transform of the "
                 "offsets and use the ``units`` argument to specify transform of the "
                 "sizes.")
         kwargs["transform"] = "display"
         super().__init__(
             collection=EllipseCollection,
             offsets=offsets,
-            offsets_transform=offsets_transform,
+            offset_transform=offset_transform,
             heights=heights,
             widths=widths,
             angles=angles,

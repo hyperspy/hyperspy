@@ -69,7 +69,7 @@ class HorizontalLines(Markers):
         super().__init__(
             collection=LineCollection,
             offsets=offsets,
-            offsets_transform="display",
+            offset_transform="display",
             transform="yaxis",
             **kwargs
         )

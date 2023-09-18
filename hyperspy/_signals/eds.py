@@ -1049,7 +1049,7 @@ class EDSSpectrum(Signal1D):
                              )
         text_markers = Texts(offsets=offsets,
                              texts=line_names,
-                             offsets_transform="relative",
+                             offset_transform="relative",
                              rotation=np.pi/2,
                              horizontalalignment="left",
                              verticalalignment="bottom",
