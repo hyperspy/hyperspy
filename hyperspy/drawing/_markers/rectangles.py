@@ -19,6 +19,12 @@
 from hyperspy.drawing.markers import Markers
 from hyperspy.external.matplotlib.collections import RectangleCollection
 
+from hyperspy.docstrings.markers import (OFFSET_DOCSTRING,
+                                         HEIGHTS_DOCSTRING,
+                                         WIDTHS_DOCSTRING,
+                                         ANGLES_DOCSTRING,
+                                         UNITS_DOCSTRING,
+                                         )
 
 class Rectangles(Markers):
     """A Collection of Rectangles Markers"""
@@ -39,8 +45,11 @@ class Rectangles(Markers):
 
         Parameters
         ----------
-        rectangles: [n, 4] array-like or ragged array with shape (n, 4) at every navigation position
-            Defines the rectangle[[x1,y1,x2,y2], ...].
+        %s
+        %s
+        %s
+        %s
+        %s
         kwargs:
             Additional keyword arguments are passed to
             :py:class:`hyperspy.external.matplotlib.collections.RectangleCollection`.
@@ -62,3 +71,9 @@ class Rectangles(Markers):
             units=units,
             **kwargs
         )
+    __init__.__doc__ %= (OFFSET_DOCSTRING,
+                        HEIGHTS_DOCSTRING,
+                        WIDTHS_DOCSTRING,
+                        ANGLES_DOCSTRING,
+                        UNITS_DOCSTRING,
+                        )

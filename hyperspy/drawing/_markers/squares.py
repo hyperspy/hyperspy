@@ -17,7 +17,11 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 import numpy as np
 
-from hyperspy.docstrings.markers import OFFSET_DOCSTRING
+from hyperspy.docstrings.markers import (OFFSET_DOCSTRING,
+                                         WIDTHS_DOCSTRING,
+                                         ANGLES_DOCSTRING,
+                                         UNITS_DOCSTRING,
+                                         )
 from hyperspy.drawing.markers import Markers
 from hyperspy.external.matplotlib.collections import SquareCollection
 
@@ -44,8 +48,9 @@ class Squares(Markers):
         Parameters
         ----------
         %s
-        sizes : Array-like
-            The size of the squares.
+        %s
+        %s
+        %s
         kwargs:
             Additional keyword arguments are passed to
             :py:class:`hyperspy.external.matplotlib.collections.SquareCollection`.
@@ -67,4 +72,8 @@ class Squares(Markers):
             **kwargs
         )
 
-    __init__.__doc__ %= OFFSET_DOCSTRING
+    __init__.__doc__ %= (OFFSET_DOCSTRING,
+                         WIDTHS_DOCSTRING,
+                         ANGLES_DOCSTRING,
+                         UNITS_DOCSTRING,
+                         )

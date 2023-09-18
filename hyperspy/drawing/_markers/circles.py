@@ -17,7 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.drawing.markers import Markers
-from hyperspy.docstrings.markers import OFFSET_DOCSTRING
+from hyperspy.docstrings.markers import (OFFSET_DOCSTRING, UNITS_DOCSTRING)
 from hyperspy.external.matplotlib.collections import CircleCollection
 
 
@@ -48,6 +48,7 @@ class Circles(Markers):
             (all patches have same color), or a sequence of colors;
             if it is a sequence the patches will cycle through the sequence.
             If c is 'none', the patch will not be filled.
+        %s
         kwargs : dict
             Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`.
         """
@@ -68,4 +69,4 @@ class Circles(Markers):
             **kwargs
         )
 
-    __init__.__doc__ %= OFFSET_DOCSTRING
+    __init__.__doc__ %= (OFFSET_DOCSTRING, UNITS_DOCSTRING)

@@ -17,7 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy.drawing.markers import Markers
-from hyperspy.docstrings.markers import OFFSET_DOCSTRING
+from hyperspy.docstrings.markers import OFFSET_DOCSTRING, UNITS_DOCSTRING
 from hyperspy.external.matplotlib.collections import CircleCollection
 
 
@@ -42,6 +42,7 @@ class Points(Markers):
         %s
         sizes : int, float or array_like, optional
             The size of the markers in display coordinate system.
+        %s
         kwargs : dict
                 Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`
         """
@@ -61,4 +62,4 @@ class Points(Markers):
             **kwargs
         )
 
-    __init__.__doc__ %= OFFSET_DOCSTRING
+    __init__.__doc__ %= (OFFSET_DOCSTRING,UNITS_DOCSTRING)
