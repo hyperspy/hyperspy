@@ -419,7 +419,7 @@ will model using a spline instead of the atomic simulation) can be defined using
 :py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_width` attribute. It
 defaults to 30 eV. Another important parameter is the
 :py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_smoothing`. It takes
-a value between 0 and 1, 0.3 by default. Increasing it makes the spline smoother, at the
+a value between 0 and 1, 0.3 by default. Decreasing it makes the spline smoother, at the
 expense of detail. The optimal value should reproduce well the fine structure features
 but not the noise.
 
@@ -445,8 +445,6 @@ Let's try to improve the fine structure model of the Boron-K and Nitrogen-K ioni
 * Adjusting the position of the B-K edge onset to match the experimental spectrum
 * Adjusting the width of the fine structure
 
-First, since in this section we will focus solely on the B-K ionization edge,
-we will work with only that region of the model:
 
 .. code-block:: python
 
@@ -455,6 +453,7 @@ we will work with only that region of the model:
     >>> m.components.N_K.onset_energy.value = 402.5
     >>> m.components.B_K.fine_structure_width = 40
     >>> m.components.N_K.fine_structure_width = 45
+    >>> m.components.B_K.fine_structure_smoothing = 0.4
     >>> m.smart_fit()
 
 After executing the commands above, the model of the fine structure of both
@@ -486,14 +485,26 @@ Fine structure analysis
 Fine structure analysis consists of measuring different features of the fine structure
 (e.g., peak position, area, ...) that can be related to the ionized atom environment.
 To perform fine structure analysis, we can use any HyperSpy :py:class:`~.component.Component`
-to fit the fine structure. For that, we simply need to add them to the
-:py:attr:`~._components.eels_cl_edge.EELSCLEdge.ext_fine_structure` `set`. To continue
-the example above, let's model the first three peaks of the Boron-K edge fine structure using three
+to fit the fine structure. To continue
+the example above, let's model the first two peaks of the Boron-K edge fine structure using two
 Gaussian functions:
 
 
 .. code-block:: python
 
-    >>> m.set_signal_range(160.)
+    >>> g1 = hs.model.components1D.GaussianHF(centre=194.7, fwhm=3., height=5)
+    >>> g1.name = "B_K_l1"
+    >>> g2 = hs.model.components1D.GaussianHF(centre=201.9, fwhm=5., height=5)
+    >>> g2.name = "B_K_l2"
+    >>> m.extend((g1, g2,)) 
+
+Next we need to let HyperSpy know that these two gaussian functions are part
+of the fine structure of the Boron-K edge. For that, we simply add them to the
+:py:attr:`~._components.eels_cl_edge.EELSCLEdge.ext_fine_structure` `set`. 
+
+.. code-block:: python
+
+    >>> m.components.B_K.ext_fine_structure.update((g1, g2)) 
+
 
 
