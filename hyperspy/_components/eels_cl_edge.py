@@ -157,7 +157,7 @@ class EELSCLEdge(Component):
         self.onset_energy.events.value_changed.connect(self._integrate_GOS, [])
         self.onset_energy.events.value_changed.connect(
             self._calculate_knots, [])
-        self._fine_structure_onset = 0
+        self._fine_structure_spline_onset = 0
         self.where_ext_fine_structure_zero = True
         self.events.active_changed.connect(self._set_active_fine_structure_components)
 
@@ -270,13 +270,13 @@ class EELSCLEdge(Component):
         return self.onset_energy.value
 
     @property
-    def fine_structure_onset(self):
-        return self._fine_structure_onset
+    def fine_structure_spline_onset(self):
+        return self._fine_structure_spline_onset
 
-    @fine_structure_onset.setter
-    def fine_structure_onset(self, value):
-        if not np.allclose(value, self._fine_structure_onset):
-            self._fine_structure_onset = value
+    @fine_structure_spline_onset.setter
+    def fine_structure_spline_onset(self, value):
+        if not np.allclose(value, self._fine_structure_spline_onset):
+            self._fine_structure_spline_onset = value
             self._set_fine_structure_coeff()
 
     def _set_fine_structure_coeff(self):
@@ -284,7 +284,7 @@ class EELSCLEdge(Component):
             return
         self.fine_structure_coeff._number_of_elements = int(
             round(self.fine_structure_smoothing *
-                  (self.fine_structure_width - self.fine_structure_onset) /
+                  (self.fine_structure_width - self.fine_structure_spline_onset) /
                   self.energy_scale)) + 4
         self.fine_structure_coeff.bmin = None
         self.fine_structure_coeff.bmax = None
@@ -356,7 +356,7 @@ class EELSCLEdge(Component):
         Emax = self.GOS.energy_axis[-1] + self.GOS.energy_shift
         cts = np.zeros_like(E, dtype="float")
         if self.fine_structure_active:
-            ifsx1 = self.onset_energy.value + self.fine_structure_onset
+            ifsx1 = self.onset_energy.value + self.fine_structure_spline_onset
             ifsx2 = self.onset_energy.value + self.fine_structure_width
             if self.fine_structure_spline:
                 bifs = (E >= ifsx1) & (E < ifsx2)
