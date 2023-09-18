@@ -1,9 +1,8 @@
 import matplotlib.collections as mcollections
 from matplotlib import transforms
 import matplotlib.artist as martist
-from matplotlib.quiver import _quiver_doc, _parse_args
-import hyperspy.external.matplotlib._docstring as _docstring
-from matplotlib import _api, cbook
+import hyperspy.external.matplotlib._api as _api
+from matplotlib import cbook
 import math
 
 import numpy as np
@@ -83,7 +82,6 @@ class Quiver(mcollections.PolyCollection):
 
     _PIVOT_VALS = ('tail', 'middle', 'tip')
 
-    @_docstring.Substitution(_quiver_doc)
     def __init__(self, *args,
                  scale=None, headwidth=3, headlength=5, headaxislength=4.5,
                  minshaft=1, minlength=1, units='width', scale_units=None,
@@ -383,5 +381,3 @@ class Quiver(mcollections.PolyCollection):
             np.copyto(Y, Y1, where=tooshort)
         # Mask handling is deferred to the caller, _make_verts.
         return X, Y
-
-    quiver_doc = _api.deprecated("3.7")(property(lambda self: _quiver_doc))
