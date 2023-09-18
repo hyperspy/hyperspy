@@ -82,7 +82,7 @@ class EELSCLEdge(Component):
         It is fixed by default.
     effective_angle : Parameter
         The effective collection semi-angle. It is automatically
-        calculated by set_microscope_parameters. It is a
+        calculated by ``set_microscope_parameters``. It is a
         component.Parameter instance. It is fixed by default.
     fine_structure_active : bool, default False
         Activates/deactivates the fine structure features. When active,
@@ -97,7 +97,7 @@ class EELSCLEdge(Component):
     fine_structure_coeff : Parameter
         The coefficients of the spline that fits the fine structure.
         Fix this parameter to fix the fine structure. It is a
-        component.Parameter instance.
+        ``component.Parameter`` instance.
     fine_structure_smoothing : float between 0 and 1, default 0.3
         Controls the level of smoothing of the fine structure model.
         Decreasing the value increases the level of smoothing.

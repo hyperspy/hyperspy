@@ -498,9 +498,9 @@ Gaussian functions:
     >>> g2.name = "B_K_l2"
     >>> m.extend((g1, g2,)) 
 
-Next we need to let HyperSpy know that these two gaussian functions are part
+Next we need to let HyperSpy know that these two Gaussian functions are part
 of the fine structure of the Boron-K edge. For that, we simply add them to the
-:py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_components` `set`. 
+:py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_components` `set`:
 
 .. code-block:: python
 
