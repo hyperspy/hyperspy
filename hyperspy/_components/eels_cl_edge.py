@@ -61,11 +61,11 @@ class EELSCLEdge(Component):
     Parameters
     ----------
     element_subshell : str or dict
-        Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
+        Usually a string, for example, ``'Ti_L3'`` for the GOS of the titanium L3
         subshell. If a dictionary is passed, it is assumed that Hartree Slater
         GOS was exported using `GOS.as_dictionary`, and will be reconstructed.
-    GOS : 'gosh', 'hydrogenic', 'Hartree-Slater' or str
-        The GOS to use. Default is 'gosh'. If str, it must the path to gosh
+    GOS : ``'gosh'``, ``'hydrogenic'``, ``'Hartree-Slater'`` or str
+        The GOS to use. Default is ``'gosh'``. If str, it must the path to gosh
         GOS file.
     gos_file_path : str, None
         Only with GOS='gosh'. Specify the file path of the gosh file
@@ -80,20 +80,38 @@ class EELSCLEdge(Component):
         favourable cases is proportional to the number of atoms of
         the element. It is a component.Parameter instance.
         It is fixed by default.
-    fine_structure_coeff : Parameter
-        The coefficients of the spline that fits the fine structure.
-        Fix this parameter to fix the fine structure. It is a
-        component.Parameter instance.
     effective_angle : Parameter
         The effective collection semi-angle. It is automatically
         calculated by set_microscope_parameters. It is a
         component.Parameter instance. It is fixed by default.
-    fine_structure_smoothing : float between 0 and 1
+    fine_structure_active : bool, default False
+        Activates/deactivates the fine structure features. When active,
+        the fine structure region
+        is not defined by the simulated
+        EELS core-loss edge, but by a spline (if ``fine_structure_spline``
+        is ``True``) and/or any component in ``fine_structure_components``.
+    fine_structure_spline : bool, default True
+        If True and `fine_structure_active` is True, the region from
+        `fine_structure_spline_onset` until `fine_structure_width`
+        are modeled with a spline.
+    fine_structure_coeff : Parameter
+        The coefficients of the spline that fits the fine structure.
+        Fix this parameter to fix the fine structure. It is a
+        component.Parameter instance.
+    fine_structure_smoothing : float between 0 and 1, default 0.3
         Controls the level of smoothing of the fine structure model.
         Decreasing the value increases the level of smoothing.
-    fine_structure_active : bool
-        Activates/deactivates the fine structure feature.
-
+    fine_structure_spline_onset : float, default 0.
+        The position, from the ionization edge onset, at which the region
+        modeled by the spline function starts.
+    fine_structure_width : float, default 30.
+        The width of the energy region, from the ionization edge onset, where
+        the model is a spline function and/or any component
+        in `fine_structure_components` instead of the EELS ionization
+        edges simulation.
+    fine_structure_components : set, default ``set()``
+        A set containing components to model the fine structure region
+        of the EELS ionization edge.
     """.format(_GOSH_DOI)
 
     _fine_structure_smoothing = 0.3
