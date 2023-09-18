@@ -482,12 +482,14 @@ To resume it use
 Fine structure analysis
 """""""""""""""""""""""
 
-Fine structure analysis consists of measuring different features of the fine structure
-(e.g., peak position, area, ...) that can be related to the ionized atom environment.
-To perform fine structure analysis, we can use any HyperSpy :py:class:`~.component.Component`
-to fit the fine structure. To continue
-the example above, let's model the first two peaks of the Boron-K edge fine structure using two
-Gaussian functions:
+Fine structure analysis consists on measuring different features of the fine structure
+(e.g., peak position, area, ...). Often, these features can be related to the ionized atom environment.
+For this purpose, we need to replace the spline function, that we
+have used so far to fit the fine structure, with other functions that accurately
+model the features that we want to measure. 
+
+As an example, lets model the first two peaks of the Boron-K edge fine structure using two
+Gaussian functions instead of the spline function:
 
 
 .. code-block:: python
@@ -498,13 +500,38 @@ Gaussian functions:
     >>> g2.name = "B_K_l2"
     >>> m.extend((g1, g2,)) 
 
-Next we need to let HyperSpy know that these two Gaussian functions are part
-of the fine structure of the Boron-K edge. For that, we simply add them to the
+Next, we need to let HyperSpy know that these two Gaussian functions are part
+of the fine structure of the Boron-K edge. Otherwise, the Gaussian functions
+would be added over the current spline fine structure, which is not what
+we want: we want to replace the spline function with the two Gaussian functions
+in the first 10 eV from the Boron-K ionization edge onset.
+For that, we simply add them to the
 :py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_components` `set`:
 
 .. code-block:: python
 
     >>> m.components.B_K.fine_structure_components.update((g1, g2)) 
 
+We still need to use the spline function to model the fine structure
+region that we are not modelling using the Gaussian functions. Therefore, we
+make sure that :py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_spline`
+is `True` and we set its onset to around the minimum between the 2nd and 3rd (~205 eV) fine
+structure peaks:
+
+.. code-block:: python
+
+    >>> m.components.B_K.fine_structure_spline = True
+    >>> m.components.B_K.fine_structure_spline_onset = 205. - m.components.B_K.onset_energy.value
+    >>> m.smart_fit()
+    >>> m.plot(plot_components=True)
 
 
+
+
+.. figure::  images/EELS_BN_B_zoomin_with_gaussians.png
+   :align:   center
+   :width:   500
+
+   Boron-K EELS ionization edge fine structure model using two Gaussian functions
+   for the first two white-lines, and a spline function for the rest of the
+   fine structure.
