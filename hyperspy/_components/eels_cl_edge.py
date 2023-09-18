@@ -100,7 +100,7 @@ class EELSCLEdge(Component):
 
     def __init__(self, element_subshell, GOS="gosh", gos_file_path=None):
         # Declare the parameters
-        self.int_fine_structure = True
+        self.fine_structure_spline = True
         self.fine_structure_components = set()
         Component.__init__(
             self,
@@ -170,7 +170,7 @@ class EELSCLEdge(Component):
         return self.__fine_structure_active
 
     def _set_fine_structure_active(self, arg):
-        if self.int_fine_structure and arg is False:
+        if self.fine_structure_spline and arg is False:
             self.fine_structure_coeff.free = False
         for comp in self.fine_structure_components:
             if isinstance(comp, str):
@@ -358,7 +358,7 @@ class EELSCLEdge(Component):
         if self.fine_structure_active:
             ifsx1 = self.onset_energy.value + self.fine_structure_onset
             ifsx2 = self.onset_energy.value + self.fine_structure_width
-            if self.int_fine_structure:
+            if self.fine_structure_spline:
                 bifs = (E >= ifsx1) & (E < ifsx2)
                 cts[bifs] = splev(
                     E[bifs],
@@ -367,7 +367,7 @@ class EELSCLEdge(Component):
                 itab = (E < Emax) & (E >= ifsx2)
             else:
                 itab = (E < Emax) & (E >= self.onset_energy.value)
-                if self.int_fine_structure:
+                if self.fine_structure_spline:
                     itab[bifs] = False
         else:
             itab = (E < Emax) & (E >= self.onset_energy.value)

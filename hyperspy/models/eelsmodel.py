@@ -707,7 +707,7 @@ class EELSModel(Model1D):
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.fine_structure_active = True
-                if edge.int_fine_structure:
+                if edge.fine_structure_spline:
                     edge.fine_structure_coeff.free = True
         self.resolve_fine_structure()
 
@@ -957,7 +957,7 @@ class EELSModel(Model1D):
             edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
-                if edge.int_fine_structure:
+                if edge.fine_structure_spline:
                     edge.fine_structure_coeff.free = True
                 for component in edge.fine_structure_components:
                     if hasattr(component, "_auto_free_parameters"):
