@@ -101,7 +101,7 @@ class EELSCLEdge(Component):
     def __init__(self, element_subshell, GOS="gosh", gos_file_path=None):
         # Declare the parameters
         self.int_fine_structure = True
-        self.ext_fine_structure = set()
+        self.fine_structure_components = set()
         Component.__init__(
             self,
             ["intensity", "fine_structure_coeff", "effective_angle", "onset_energy"],
@@ -172,7 +172,7 @@ class EELSCLEdge(Component):
     def _set_fine_structure_active(self, arg):
         if self.int_fine_structure and arg is False:
             self.fine_structure_coeff.free = False
-        for comp in self.ext_fine_structure:
+        for comp in self.fine_structure_components:
             if isinstance(comp, str):
                 # Loading from a dictionary and the
                 # external fine structure components
@@ -244,7 +244,7 @@ class EELSCLEdge(Component):
     def _set_active_ext_fine_structure(self, active, **kwargs):
         if not self.fine_structure_active:
             return
-        for comp in self.ext_fine_structure:
+        for comp in self.fine_structure_components:
             comp.active = active
 
     @property
@@ -428,6 +428,6 @@ class EELSCLEdge(Component):
 
     def as_dictionary(self, fullcopy=True):
         dic = super().as_dictionary(fullcopy=fullcopy)
-        dic["ext_fine_structure"] = [t.name for t in self.ext_fine_structure]
+        dic["ext_fine_structure"] = [t.name for t in self.fine_structure_components]
         dic["_whitelist"]["ext_fine_structure"] = ""
         return dic

@@ -67,9 +67,9 @@ class EELSModel(Model1D):
             self._load_dictionary(dictionary)
             for edge in self.edges:
                 ext_fine_structure = set()
-                for comp_name in edge.ext_fine_structure:
+                for comp_name in edge.fine_structure_components:
                     ext_fine_structure.add(self[comp_name])
-                edge.ext_fine_structure = ext_fine_structure
+                edge.fine_structure_components = ext_fine_structure
 
         if auto_background is True:
             background = PowerLaw()
@@ -925,7 +925,7 @@ class EELSModel(Model1D):
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.fine_structure_coeff.free = False
-                for component in edge.ext_fine_structure:
+                for component in edge.fine_structure_components:
                     component._auto_free_parameters = []
                     for parameter in component.free_parameters:
                         parameter.free = False
@@ -959,7 +959,7 @@ class EELSModel(Model1D):
             if edge.isbackground is False:
                 if edge.int_fine_structure:
                     edge.fine_structure_coeff.free = True
-                for component in edge.ext_fine_structure:
+                for component in edge.fine_structure_components:
                     if hasattr(component, "_auto_free_parameters"):
                         for parameter in component._auto_free_parameters:
                             parameter.free = True
