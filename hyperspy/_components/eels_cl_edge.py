@@ -380,13 +380,8 @@ class EELSCLEdge(Component):
                 cts[bifs] = splev(
                     E[bifs],
                     (self.__knots, self.fine_structure_coeff.value + (0,) * 4, 3))
-            
             # The cross-section is set to 0 in the fine structure region
             itab = (E < Emax) & (E >= ifsx2)
-            else:
-                itab = (E < Emax) & (E >= self.onset_energy.value)
-                if self.fine_structure_spline:
-                    itab[bifs] = False
         else:
             itab = (E < Emax) & (E >= self.onset_energy.value)
         if itab.any():
