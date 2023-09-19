@@ -13,7 +13,7 @@ import hyperspy.api as hs
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Create a Signal2D with 2 navigation dimensions
+# Create a Signal2D
 rng = np.random.default_rng(0)
 s = hs.signals.Signal2D(np.ones((25, 100, 100)))
 
@@ -35,6 +35,11 @@ m = hs.plot.markers.Circles(
 s.plot()
 s.add_marker(m)
 
+#%%
+# .. note::
+#     Any changes to the marker made by setting :py:class:`matplotlib.collections.Collection`
+#     attributes will not be saved when saving as ``hspy``/``zspy`` file.
+
 # Set the color of the circles
 m.collection.set_array(sizes.ravel() / 2)
 
@@ -48,4 +53,4 @@ cbar.ax.yaxis.set_animated(animated)
 cbar.solids.set_animated(animated)
 
 #%%
-# sphinx_gallery_thumbnail_number = 2
+# sphinx_gallery_thumbnail_number =
