@@ -498,7 +498,6 @@ Gaussian functions instead of the spline function:
     >>> g1.name = "B_K_l1"
     >>> g2 = hs.model.components1D.GaussianHF(centre=201.9, fwhm=5., height=5)
     >>> g2.name = "B_K_l2"
-    >>> m.extend((g1, g2,)) 
 
 Next, we need to let HyperSpy know that these two Gaussian functions are part
 of the fine structure of the Boron-K edge. Otherwise, the Gaussian functions
@@ -511,6 +510,21 @@ For that, we simply add them to the
 .. code-block:: python
 
     >>> m.components.B_K.fine_structure_components.update((g1, g2)) 
+
+
+Note that the Gaussian components are added to the model:
+
+.. code-block:: python
+
+    >>> m.components
+    # |      Attribute Name |      Component Name |      Component Type
+    ---- | ------------------- | ------------------- | -------------------
+    0 |            PowerLaw |            PowerLaw |            PowerLaw
+    1 |                 N_K |                 N_K |          EELSCLEdge
+    2 |                 B_K |                 B_K |          EELSCLEdge
+    3 |              B_K_l1 |              B_K_l1 |          GaussianHF
+    4 |              B_K_l2 |              B_K_l2 |          GaussianHF
+
 
 We still need to use the spline function to model the fine structure
 region that we are not modelling using the Gaussian functions. Therefore, we
