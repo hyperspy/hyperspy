@@ -17,12 +17,12 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
+import functools
 import logging
 import math
 
 import numpy as np
 from scipy.interpolate import splev
-
 
 from hyperspy.component import Component
 from hyperspy.misc.eels.gosh_gos import GoshGOS, _GOSH_DOI
@@ -33,6 +33,30 @@ from hyperspy.ui_registry import add_gui_method
 
 
 _logger = logging.getLogger(__name__)
+
+
+class FSet(set):
+    def __init__(self, component, *args, **kwargs):
+        """Creates a set that knows about the Component
+
+        Parameters:
+        -----------
+        component : Component
+            The component to which the FSet belongs.
+        """
+        self.component = component
+        super().__init__(*args, **kwargs)
+
+    @functools.wraps(set.add)
+    def add(self, item):
+        item.active = self.component.fine_structure_active
+        super().add(item)
+
+    @functools.wraps(set.update)
+    def update(self, iterable):
+        for item in iterable:
+            item.active = self.component.fine_structure_active
+        super().update(iterable)
 
 
 @add_gui_method(toolkey="hyperspy.EELSCLEdge_Component")
@@ -119,7 +143,7 @@ class EELSCLEdge(Component):
     def __init__(self, element_subshell, GOS="gosh", gos_file_path=None):
         # Declare the parameters
         self.fine_structure_spline = True
-        self.fine_structure_components = set()
+        self.fine_structure_components = FSet(component=self)
         Component.__init__(
             self,
             ["intensity", "fine_structure_coeff", "effective_angle", "onset_energy"],
