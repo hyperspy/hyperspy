@@ -175,10 +175,16 @@ class _CollectionWithWidthAngle(Collection):
         self._transforms[:, 1, 1] = heights * cos_angle
         self._transforms[:, 2, 2] = 1.0
 
+
         _affine = transforms.Affine2D
         if self._units == 'xy':
             m = ax.transData.get_affine().get_matrix().copy()
             m[:2, 2:] = 0
+            self.set_transform(_affine(m))
+        else:  # handle different origins
+            m = ax.transData.get_affine().get_matrix().copy()
+            m[:2, 2:] = 0
+            m = np.sign(m)
             self.set_transform(_affine(m))
 
     def _set_widths(self, widths):
