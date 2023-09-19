@@ -5523,9 +5523,8 @@ class BaseSignal(FancySlicing,
         if cs.metadata.has_item('Markers'):
             temp_marker_dict = cs.metadata.Markers.as_dictionary()
             markers_dict = {}
-            for key in temp_marker_dict:
-                markers_dict[key] = markers_dict_to_markers(
-                    temp_marker_dict[key])
+            for key, item in temp_marker_dict.items():
+                markers_dict[key] = markers_dict_to_markers(item)
             cs.metadata.Markers = markers_dict
 
         if auto_filename is True and self.tmp_parameters.has_item('filename'):
@@ -6020,8 +6019,7 @@ class BaseSignal(FancySlicing,
 
         """
         if not plot_marker and not permanent:
-            _logger.warning(
-                "plot_marker=False and permanent=False does nothing")
+            warnings.warn("`plot_marker=False` and `permanent=False` does nothing")
             return
 
         if isiterable(marker):

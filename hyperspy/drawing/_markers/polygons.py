@@ -25,8 +25,7 @@ class Polygons(Markers):
 
     _position_key = "verts"
 
-    def __init__(self, verts,
-                 offset_transform="display", transform="data", **kwargs):
+    def __init__(self, verts, transform="data", **kwargs):
         """
         Initialize the set of Segments Markers.
 
@@ -71,10 +70,16 @@ class Polygons(Markers):
         coordinate system of the ``verts`` is ``transform``.
 
         """
+        if kwargs.setdefault("offset_transform", "display") != "display":
+            raise ValueError(
+                 "The `offset_transform` argument is not supported for Polygons Markers. "
+                 "Instead, use the `transform` argument to specify the transform "
+                 "of the polygons."
+                 )
+
         super().__init__(
             collection=PolyCollection,
             verts=verts,
-            offset_transform=offset_transform,
             transform=transform,
             **kwargs
         )

@@ -52,6 +52,7 @@ from hyperspy.utils.markers import (
     HorizontalLines,
     Markers,
     Points,
+    Polygons,
     VerticalLines,
     Rectangles,
     Squares,
@@ -289,6 +290,7 @@ class TestMarkers:
         [s.add_marker(c, permanent=True) for c in collections]
         cs = s.get_current_signal()
         assert len(cs.metadata["Markers"]) == num_col
+        assert isinstance(cs.metadata.Markers.Circles, Circles)
 
     def test_plot_and_render(self):
         markers = Points(offsets=[[1, 1], [4, 4]])
@@ -514,6 +516,16 @@ class TestInitMarkers:
             assert m2.transform == m.transform == "display"
         assert "transform" not in m.kwargs
         assert "transform" not in m2.kwargs
+
+    def test_markers_errors_incorrect_transform(self):
+        with pytest.raises(ValueError):
+            Circles(offsets=[[1, 1]], sizes=1, transform="data")
+        with pytest.raises(ValueError):
+            Lines(segments=[[0, 0], [1, 1]], offset_transform="data")
+        with pytest.raises(ValueError):
+            Polygons(verts=[[0, 0], [1, 1]], offset_transform="data")
+        with pytest.raises(ValueError):
+            Rectangles(offsets=[[1, 1]], widths=1, heights=1, transform="data")
 
 
 class TestMarkersDictToMarkers:
@@ -769,6 +781,7 @@ class TestLines:
         with pytest.raises(ValueError):
             vert = VerticalLines(offsets=offsets, transform="data")
 
+
 def test_marker_collection_close_render():
     signal = Signal2D(np.ones((2, 10, 10)))
     markers = Points(offsets=[[1, 1], [4, 4]], sizes=(10,), color=("black",))
@@ -833,3 +846,21 @@ class TestMarkers2:
         signal.add_marker(m)
 
         assert len(m) == 3
+
+
+def test_polygons():
+    s = Signal2D(np.zeros((100, 100)))
+    poylgon1 = [[1, 1], [20, 20], [1, 20], [25, 5]]
+    poylgon2 = [[50, 60], [90, 40], [60, 40], [23, 60]]
+    verts = [poylgon1, poylgon2]
+    m = Polygons(verts=verts)
+    s.plot()
+    s.add_marker(m)
+
+
+def test_warning_logger():
+    s = Signal2D(np.ones((10, 10)))
+    m = Points(offsets=[[1, 1],], sizes=10)
+    s.plot()
+    with pytest.warns(UserWarning):
+        s.add_marker(m, plot_marker=False, permanent=False)
