@@ -50,12 +50,16 @@ class FSet(set):
     @functools.wraps(set.add)
     def add(self, item):
         item.active = self.component.fine_structure_active
+        if self.component.model and item not in self.component.model:
+            self.component.model.append(item)
         super().add(item)
 
     @functools.wraps(set.update)
     def update(self, iterable):
         for item in iterable:
             item.active = self.component.fine_structure_active
+            if self.component.model and item not in self.component.model:
+                self.component.model.append(item)
         super().update(iterable)
 
 
