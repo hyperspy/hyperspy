@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -51,9 +51,6 @@ The Signal class and its specialized subclasses:
     DielectricFunction
         For dielectric function data with signal_dimension equal 1. The signal
         is unbinned by default.
-    HolographyImage
-        For 2D-images taken via electron holography. Electron wave as
-        ComplexSignal2D can be reconstructed from them.
 """
 
 from hyperspy.extensions import EXTENSIONS as EXTENSIONS_

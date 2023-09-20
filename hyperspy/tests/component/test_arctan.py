@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -32,26 +32,3 @@ def test_function():
     np.testing.assert_allclose(g.function(1), 0)
     np.testing.assert_allclose(g.function(1e4), 10*np.pi/2,1e-4)
 
-# Legacy tests
-def test_function_legacyF():
-    g = Arctan(minimum_at_zero=False)
-    g.A.value = 10
-    g.k.value = 2
-    g.x0.value = 1
-    np.testing.assert_allclose(g.function(0), -11.07148718)
-    np.testing.assert_allclose(g.function(1), 0)
-    np.testing.assert_allclose(g.function(1e4), 10*np.pi/2,1e-4)
-
-def test_function_legacyT():
-    with pytest.warns(
-            VisibleDeprecationWarning,
-            match="component will change in v2.0.",
-        ):
-        g = Arctan(minimum_at_zero=True)
-
-    g.A.value = 10
-    g.k.value = 2
-    g.x0.value = 1
-    np.testing.assert_allclose(g.function(0), 4.63647609)
-    np.testing.assert_allclose(g.function(1), 10*np.pi/2)
-    np.testing.assert_allclose(g.function(1e4), 10*np.pi,1e-4)

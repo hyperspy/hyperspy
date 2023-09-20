@@ -1,4 +1,4 @@
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -22,7 +22,7 @@ import numpy.testing as npt
 import pytest
 try:
     # scipy >=1.10
-    from scipy.dataset import ascent, face
+    from scipy.datasets import ascent, face
 except ImportError:
     # scipy <1.10
     from scipy.misc import ascent, face

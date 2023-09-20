@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,17 +20,19 @@
 
 Functions:
 
-plot_spectra, plot_images
-    Plot multiple spectra/images in the same figure.
+plot_images
+    Plot multiple images in the same figure.
+plot_spectra
+    Plot multiple spectra in the same figure.
 plot_signals
     Plot multiple signals at the same time.
 plot_histograms
     Compute and plot the histograms of multiple signals in the same figure.
 
-The :mod:`~hyperspy.api.plot` module contains the following submodules:
+The :mod:`~.api.plot` module contains the following submodules:
 
-:mod:`~hyperspy.api.markers`
-        Markers that can be added to `Signal` plots.
+:mod:`~.api.markers`
+    Markers that can be added to :py:class:`~.signal.BaseSignal` figure.
 
 """
 
@@ -40,7 +42,6 @@ from hyperspy.drawing.utils import (
     plot_signals,
     plot_spectra
     )
-# This import is redundant with `hyperspy.utils.markers`
 from hyperspy.utils import markers
 
 

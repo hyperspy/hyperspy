@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -57,7 +57,8 @@ OPTIMIZE_ARG = \
 
 RECHUNK_ARG = \
     """rechunk: bool
-           Only has effect when operating on lazy signal. If ``True`` (default),
+           Only has effect when operating on lazy signal. Default ``False``,
+           which means the chunking structure will be retained. If ``True``,
            the data may be automatically rechunked before performing this
            operation."""
 
@@ -168,3 +169,13 @@ NAVIGATION_MASK_ARG = \
     """navigation_mask: bool array
             Restricts the operation to the navigation locations not marked
             as True (masked)."""
+
+LAZYSIGNAL_DOC = \
+    """
+    The computation is delayed until explicitly requested.
+
+    This class is not expected to be instantiated directly, instead use:
+
+    >>> data = da.ones((10, 10))
+    >>> s = hs.signals.__BASECLASS__(data).as_lazy()
+    """

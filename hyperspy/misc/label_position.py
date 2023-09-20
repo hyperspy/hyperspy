@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -97,7 +97,7 @@ class SpectrumLabelPosition():
         dummy_style = copy.deepcopy(self.edge_label_style)
         dummy_style['bbox']['alpha'] = 0
         dummy_style['alpha'] = 0
-        tx = markers.text(
+        tx = markers.Text(
             x=(self.axis.low_value+self.axis.high_value)/2,
             y=(self.smin+self.smax)/2,
             text=self._text_parser(dummy_text),
@@ -136,13 +136,13 @@ class SpectrumLabelPosition():
         vls = []
         txs = []
         for xyt in xytext:
-            vl = markers.vertical_line_segment(
+            vl = markers.VerticalLineSegment(
                 x=xyt[0],
                 y1=xyt[1],
                 y2=xyt[2],
                 color=xyt[4]
                 )
-            tx = markers.text(
+            tx = markers.Text(
                 x=xyt[0],
                 y=xyt[1],
                 text=self._text_parser(xyt[3]), color=xyt[4],

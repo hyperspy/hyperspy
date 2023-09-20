@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,16 +17,13 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
-import math
 from pathlib import Path
 
 import numpy as np
-from scipy import constants, integrate, interpolate
+from scipy import constants
 
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.eels.base_gos import GOSBase
-from hyperspy.misc.export_dictionary import (
-    export_to_dictionary, load_from_dictionary)
+from hyperspy.misc.eels.base_gos import TabulatedGOS
 
 
 _logger = logging.getLogger(__name__)
@@ -52,9 +49,9 @@ conventions = { 'K' : {'table': 'K1', 'factor': 1},
                         'O4,5': {'table':'O5', 'factor': 5/3}, 'O4': {'table':'O5', 'factor': 2/3}, 'O5': {'table':'O5', 'factor': 1}}
 
 
-class HartreeSlaterGOS(GOSBase):
+class HartreeSlaterGOS(TabulatedGOS):
 
-    """Read Hartree-Slater Generalized Oscillator Strenght parametrized
+    """Read Hartree-Slater Generalized Oscillator Strength parametrized
     from files.
 
     Parameters
@@ -87,48 +84,19 @@ class HartreeSlaterGOS(GOSBase):
     """
 
     _name = 'Hartree-Slater'
-
-    def __init__(self, element_subshell):
-        """
-        Parameters
-        ----------
-
-        element_subshell : str
-            For example, 'Ti_L3' for the GOS of the titanium L3 subshell
-
-        """
-        self._whitelist = {'gos_array': None,
-                           'rel_energy_axis': None,
-                           'qaxis': None,
-                           'element': None,
-                           'subshell': None
-                           }
-        if isinstance(element_subshell, dict):
-            self.element = element_subshell['element']
-            self.subshell = element_subshell['subshell']
-            self.read_elements()
-            self._load_dictionary(element_subshell)
-        else:
-            self.element, self.subshell = element_subshell.split('_')
-            self.read_elements()
-            self.readgosfile()
-
-    def _load_dictionary(self, dictionary):
-        load_from_dictionary(self, dictionary)
-        self.energy_axis = self.rel_energy_axis + self.onset_energy
-
-    def as_dictionary(self, fullcopy=True):
-        """Export the GOS as a dictionary.
-        """
-        dic = {}
-        export_to_dictionary(self, self._whitelist, dic, fullcopy)
-        return dic
+    _whitelist = {
+        'gos_array': None,
+        'rel_energy_axis': None,
+        'qaxis': None,
+        'element': None,
+        'subshell': None,
+        }
 
     def read_elements(self):
         super().read_elements()
         self.subshell_factor = conventions[self.subshell]['factor']
 
-    def readgosfile(self):
+    def read_gos_data(self):  # pragma: no cover
         _logger.info(
             "Hartree-Slater GOS\n"
             f"\tElement: {self.element} "
@@ -142,11 +110,7 @@ class HartreeSlaterGOS(GOSBase):
         # Check if the Peter Rez's Hartree Slater GOS distributed by
         # Gatan are available. Otherwise exit
         gos_root = Path(preferences.EELS.eels_gos_files_path)
-        gos_file = gos_root.joinpath(
-            (
-                "{}.{}".format(element,table)
-            )
-        )
+        gos_file = gos_root / f"{element}.{table}"
 
         if not gos_root.is_dir():
             raise FileNotFoundError(
@@ -178,33 +142,3 @@ class HartreeSlaterGOS(GOSBase):
         self.qaxis = self.get_parametrized_qaxis(
             info1_1, info1_2, ncol)
         self.energy_axis = self.rel_energy_axis + self.onset_energy
-
-    def integrateq(self, onset_energy, angle, E0):
-        energy_shift = onset_energy - self.onset_energy
-        self.energy_shift = energy_shift
-        qint = np.zeros((self.energy_axis.shape[0]))
-        # Calculate the cross section at each energy position of the
-        # tabulated GOS
-        gamma = 1 + E0 / 511.06
-        T = 511060 * (1 - 1 / gamma ** 2) / 2
-        for i in range(0, self.gos_array.shape[0]):
-            E = self.energy_axis[i] + energy_shift
-            # Calculate the limits of the q integral
-            qa0sqmin = (E ** 2) / (4 * R * T) + (E ** 3) / (
-                8 * gamma ** 3 * R * T ** 2)
-            p02 = T / (R * (1 - 2 * T / 511060))
-            pp2 = p02 - E / R * (gamma - E / 1022120)
-            qa0sqmax = qa0sqmin + 4 * np.sqrt(p02 * pp2) * \
-                (math.sin(angle / 2)) ** 2
-            qmin = math.sqrt(qa0sqmin) / a0
-            qmax = math.sqrt(qa0sqmax) / a0
-            # Perform the integration in a log grid
-            qaxis, gos = self.get_qaxis_and_gos(i, qmin, qmax)
-            logsqa0qaxis = np.log((a0 * qaxis) ** 2)
-            qint[i] = integrate.simps(gos, logsqa0qaxis)
-        E = self.energy_axis + energy_shift
-        # Energy differential cross section in (barn/eV/atom)
-        qint *= (4.0 * np.pi * a0 ** 2.0 * R ** 2 / E / T *
-                 self.subshell_factor) * 1e28
-        self.qint = qint
-        return interpolate.interp1d(E, qint, kind=3)

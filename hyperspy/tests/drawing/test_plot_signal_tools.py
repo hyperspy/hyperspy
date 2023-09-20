@@ -1,4 +1,4 @@
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,7 +19,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-from hyperspy.datasets.artificial_data import get_core_loss_eels_model
 from hyperspy import signals, components1d, datasets
 from hyperspy.signal_tools import (
     ImageContrastEditor,
@@ -82,7 +81,7 @@ def test_plot_BackgroundRemoval_change_background():
     br.background_type = 'Polynomial'
     assert isinstance(
         br.background_estimator,
-        type(components1d.Polynomial(legacy=False))
+        type(components1d.Polynomial())
         )
 
 
@@ -118,8 +117,8 @@ def test_plot_BackgroundRemoval_close_tool():
 @pytest.mark.parametrize("gamma", (0.7, 1.2))
 @pytest.mark.parametrize("percentile", (["0.15th", "99.85th"], ["0.25th", "99.75th"]))
 def test_plot_contrast_editor(gamma, percentile):
-    np.random.seed(1)
-    data = np.random.random(size=(10, 10, 100, 100))*1000
+    rng = np.random.default_rng(1)
+    data = rng.random(size=(10, 10, 100, 100))*1000
     data += np.arange(10*10*100*100).reshape((10, 10, 100, 100))
     s = signals.Signal2D(data)
     s.plot(gamma=gamma, vmin=percentile[0], vmax=percentile[1])
@@ -132,8 +131,8 @@ def test_plot_contrast_editor(gamma, percentile):
 
 @pytest.mark.parametrize("norm", ("linear", "log", "power", "symlog"))
 def test_plot_contrast_editor_norm(norm):
-    np.random.seed(1)
-    data = np.random.random(size=(100, 100))*1000
+    rng = np.random.default_rng(1)
+    data = rng.random(size=(100, 100))*1000
     data += np.arange(100*100).reshape((100, 100))
     s = signals.Signal2D(data)
     s.plot(norm=norm)
@@ -147,21 +146,22 @@ def test_plot_contrast_editor_norm(norm):
 
 
 def test_plot_contrast_editor_complex():
-    s = datasets.example_signals.object_hologram()
+    s = datasets.artificial_data.get_wave_image(random_state=0)
+
     fft = s.fft(True)
     fft.plot(True, vmin=None, vmax=None)
     ceditor = ImageContrastEditor(fft._plot.signal_plot)
     assert ceditor.bins == 250
     np.testing.assert_allclose(ceditor._vmin, fft._plot.signal_plot._vmin)
     np.testing.assert_allclose(ceditor._vmax, fft._plot.signal_plot._vmax)
-    np.testing.assert_allclose(ceditor._vmin, 1.495977361e+3)
-    np.testing.assert_allclose(ceditor._vmax, 3.568838458887e+17)
+    np.testing.assert_allclose(ceditor._vmin, 0.2002909426101699)
+    np.testing.assert_allclose(ceditor._vmax, 1074314272.3907123)
 
 
 def test_plot_constrast_editor_setting_changed():
     # Test that changing setting works
-    np.random.seed(1)
-    data = np.random.random(size=(100, 100))*1000
+    rng = np.random.default_rng(1)
+    data = rng.random(size=(100, 100))*1000
     data += np.arange(100*100).reshape((100, 100))
     s = signals.Signal2D(data)
     s.plot()
@@ -184,7 +184,7 @@ def test_plot_constrast_editor_setting_changed():
     ceditor.update_line()
     assert ceditor._is_selector_visible
     assert ceditor.line.line.get_visible()
-    
+
     assert ceditor.bins == 24
     assert ceditor.line.axis.shape == (ceditor.bins, )
     ceditor.bins = 50
@@ -196,12 +196,12 @@ def test_plot_constrast_editor_setting_changed():
     assert ceditor.image.linthresh == 0.1
 
     ceditor.linscale = 0.5
-    assert ceditor.image.linscale == 0.5   
+    assert ceditor.image.linscale == 0.5
 
 
 def test_plot_constrast_editor_auto_indices_changed():
-    np.random.seed(1)
-    data = np.random.random(size=(10, 10, 100, 100))*1000
+    rng = np.random.default_rng(1)
+    data = rng.random(size=(10, 10, 100, 100))*1000
     data += np.arange(10*10*100*100).reshape((10, 10, 100, 100))
     s = signals.Signal2D(data)
     s.plot()
@@ -212,9 +212,9 @@ def test_plot_constrast_editor_auto_indices_changed():
     # auto is None by default, the span selector need to be removed:
     assert not ceditor.span_selector.visible
     assert not ceditor._is_selector_visible
-    ref_value = (100045.29840954322, 110988.10581608873)
+    ref_value = (100020.046452, 110953.450532)
     np.testing.assert_allclose(ceditor._get_current_range(), ref_value)
-    
+
     # Change auto to False
     ceditor.auto = False
     s.axes_manager.indices = (0, 2)
@@ -223,19 +223,19 @@ def test_plot_constrast_editor_auto_indices_changed():
 
 
 def test_plot_constrast_editor_reset():
-    np.random.seed(1)
-    data = np.random.random(size=(100, 100))*1000
+    rng = np.random.default_rng(1)
+    data = rng.random(size=(100, 100))*1000
     data += np.arange(100*100).reshape((100, 100))
     s = signals.Signal2D(data)
     s.plot()
     ceditor = ImageContrastEditor(s._plot.signal_plot)
     ceditor.span_selector.extents = (3E3, 5E3)
     ceditor._update_image_contrast()
-    vmin, vmax = 2.1143748173448866, 10988.568946171192
+    vmin, vmax = 36.559113, 10960.787649
     np.testing.assert_allclose(ceditor._vmin, vmin)
     np.testing.assert_allclose(ceditor._vmax, vmax)
     np.testing.assert_allclose(ceditor._get_current_range(), (3E3, 5E3))
-    
+
     ceditor.reset()
     assert not ceditor.span_selector.visible
     assert not ceditor._is_selector_visible
@@ -245,8 +245,8 @@ def test_plot_constrast_editor_reset():
 
 
 def test_plot_constrast_editor_apply():
-    np.random.seed(1)
-    data = np.random.random(size=(100, 100))*1000
+    rng = np.random.default_rng(1)
+    data = rng.random(size=(100, 100))*1000
     data += np.arange(100*100).reshape((100, 100))
     s = signals.Signal2D(data)
     s.plot()
@@ -261,7 +261,7 @@ def test_plot_constrast_editor_apply():
         (ceditor.image._vmin, ceditor.image._vmax),
         image_vmin_vmax,
         )
-    
+
 
 def test_span_selector_in_signal1d():
     s = signals.Signal1D(np.arange(1000).reshape(10, 100))
@@ -273,7 +273,7 @@ def test_span_selector_in_signal1d():
 
 
 def test_span_selector_in_signal1d_model():
-    m = get_core_loss_eels_model()
+    m = datasets.artificial_data.get_core_loss_eels_model()
     calibration_tool = SpanSelectorInSignal1D(m)
     assert len(m.signal._plot.signal_plot.ax_lines) == 2
     assert m.signal is calibration_tool.signal
@@ -288,7 +288,7 @@ def test_signal1d_calibration():
     s.axes_manager[-1].scale = 0.1
     calibration_tool = Signal1DCalibration(s)
     np.testing.assert_allclose(
-        calibration_tool.span_selector.snap_values, 
+        calibration_tool.span_selector.snap_values,
         s.axes_manager.signal_axes[0].axis
         )
     calibration_tool.span_selector.extents = (2.0, 4.0)

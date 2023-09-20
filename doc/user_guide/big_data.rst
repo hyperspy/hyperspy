@@ -319,7 +319,7 @@ lazily loaded signals. HyperSpy extracts the relevant chunk from the signal and 
 
 The linear ``'lstsq'`` optimizer supports fitting the entire dataset in a vectorised manner
 using :py:func:`dask.array.linalg.lstsq`. This can give potentially enormous performance benefits over fitting 
-with a nonlinear fitter, but comes with the restrictions explained in the :ref:`linear fitting<linear_fitting-label>` section.
+with a nonlinear optimizer, but comes with the restrictions explained in the :ref:`linear fitting<linear_fitting-label>` section.
 
 Practical tips
 --------------
@@ -374,12 +374,12 @@ method can be used:
     >>> s.get_chunk_size(0) # The first navigation axis
     ((200,),)
 
-.. versionadded:: 1.3.2
+.. versionadded:: 2.0.0
 
-By default, HyperSpy tries to optimize the chunking for most operations. However,
-it is sometimes possible to manually set a more optimal chunking manually. Therefore,
-many operations take a ``rechunk`` or ``optimize`` keyword argument to disable
-automatic rechunking.
+Starting in version 2.0.0 HyperSpy does not automatically rechunk datasets as
+this can lead to reduced performance. The ``rechunk`` or ``optimize`` keyword argument
+can be set to ``True`` to let HyperSpy automatically change the chunking which
+could potentially speed up operations.
 
 .. versionadded:: 1.7.0
 
@@ -492,16 +492,17 @@ Other minor differences
 .. _big_data.saving:
 
 Saving Big Data
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^
 
-The most efficient format supported by HyperSpy to write data is the :ref:`zspy format <zspy-format>`,
-mainly because it supports writing currently from concurrently from multiple threads or processes.
+The most efficient format supported by HyperSpy to write data is the
+:external+rsciio:py:ref:`ZSpy format <zspy-format>`,
+mainly because it supports writing concurrently from multiple threads or processes.
 This also allows for smooth interaction with dask-distributed for efficient scaling.
 
 .. _lazy_details:
 
-Behind the scenes --technical details
--------------------------------------
+Behind the scenes -- technical details
+--------------------------------------
 
 Standard HyperSpy signals load the data into memory for fast access and
 processing. While this behaviour gives good performance in terms of speed, it

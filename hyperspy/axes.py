@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -30,7 +30,6 @@ from traits.trait_errors import TraitError
 
 from hyperspy.api_nogui import _ureg
 from hyperspy.events import Events, Event
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.array_tools import (
     numba_closest_index_round,
     numba_closest_index_floor,
@@ -121,8 +120,23 @@ def create_axis(**kwargs):
 
 
 class UnitConversion:
+    """
+    Parent class containing unit conversion functionalities of
+    Uniform Axis.
 
-    def __init__(self, units=t.Undefined, scale=1.0, offset=0.0):
+    Parameters
+    ----------
+    offset : float
+        The first value of the axis vector.
+    scale : float
+        The spacing between axis points.
+    size : int
+        The number of points in the axis.
+    """
+
+    def __init__(self, units=None, scale=1.0, offset=0.0):
+        if units is None:
+            units = t.Undefined
         self.units = units
         self.scale = scale
         self.offset = offset
@@ -140,12 +154,13 @@ class UnitConversion:
         return False
 
     def _convert_compact_units(self, factor=0.25, inplace=True):
-        """ Convert units to "human-readable" units, which means with a
-            convenient prefix.
+        """
+        Convert units to "human-readable" units, which means with a
+        convenient prefix.
 
-            Parameters
-            ----------
-            %s
+        Parameters
+        ----------
+        %s
         """
         if self._ignore_conversion(self.units):
             return
@@ -184,7 +199,8 @@ class UnitConversion:
             return scale, offset, units
 
     def convert_to_units(self, units=None, inplace=True, factor=0.25):
-        """ Convert the scale and the units of the current axis. If the unit
+        """
+        Convert the scale and the units of the current axis. If the unit
         of measure is not supported by the pint library, the scale and units
         are not modified.
 
@@ -276,18 +292,22 @@ class BaseDataAxis(t.HasTraits):
     high_index = t.Int()
     slice = t.Instance(slice)
     navigate = t.Bool(False)
-    is_binned = t.Bool(t.Undefined)
+    is_binned = t.Bool(False)
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
 
     def __init__(self,
                  index_in_array=None,
-                 name=t.Undefined,
-                 units=t.Undefined,
+                 name=None,
+                 units=None,
                  navigate=False,
                  is_binned=False,
                  **kwargs):
         super().__init__()
+        if name is None:
+            name = t.Undefined
+        if units is None:
+            units = t.Undefined
 
         self.events = Events()
         if '_type' in kwargs:
@@ -515,8 +535,8 @@ class BaseDataAxis(t.HasTraits):
 
     def get_axis_dictionary(self):
         return {'_type': self.__class__.__name__,
-                'name': self.name,
-                'units': self.units,
+                'name': _parse_axis_attribute(self.name),
+                'units': _parse_axis_attribute(self.units),
                 'navigate': self.navigate,
                 'is_binned': self.is_binned,
                 }
@@ -774,8 +794,8 @@ class DataAxis(BaseDataAxis):
 
     def __init__(self,
                  index_in_array=None,
-                 name=t.Undefined,
-                 units=t.Undefined,
+                 name=None,
+                 units=None,
                  navigate=False,
                  is_binned=False,
                  axis=[1],
@@ -927,10 +947,10 @@ class FunctionalDataAxis(BaseDataAxis):
                  expression,
                  x=None,
                  index_in_array=None,
-                 name=t.Undefined,
-                 units=t.Undefined,
+                 name=None,
+                 units=None,
                  navigate=False,
-                 size=t.Undefined,
+                 size=1,
                  is_binned=False,
                  **parameters):
         super().__init__(
@@ -1007,7 +1027,7 @@ class FunctionalDataAxis(BaseDataAxis):
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
         d['expression'] = self._expression
-        d.update({'size': self.size, })
+        d.update({'size': _parse_axis_attribute(self.size), })
         d.update({'x': self.x.get_axis_dictionary(), })
         for kwarg in self.parameters_list:
             d[kwarg] = getattr(self, kwarg)
@@ -1110,8 +1130,8 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
     """
     def __init__(self,
                  index_in_array=None,
-                 name=t.Undefined,
-                 units=t.Undefined,
+                 name=None,
+                 units=None,
                  navigate=False,
                  size=1,
                  scale=1.,
@@ -2108,34 +2128,14 @@ class AxesManager(t.HasTraits):
             # _update_attribute
             axis.navigate = tl.pop(0)
 
-    def set_signal_dimension(self, value):
-        """Set the dimension of the signal.
-
-        Attributes
-        ----------
-        value : int
-
-        Raises
-        ------
-        ValueError
-            If value if greater than the number of axes or is negative.
-
-        """
-        warnings.warn(("Using `set_signal_dimension` is deprecated, use "
-                       "`as_signal1D`, `as_signal2D` or `transpose` of the "
-                       "signal instance instead."),
-                      VisibleDeprecationWarning)
-        self._set_signal_dimension(value)
-
     def key_navigator(self, event):
-        'Set hotkeys for controlling the indices of the navigator plot'
+        """Set hotkeys for controlling the indices of the navigator plot"""
 
         if self.navigation_dimension == 0:
             # No hotkeys exist that do anything in this case
             return
 
         # keyDict values are (axis_index, direction)
-        # Using arrow keys without Ctrl will be deprecated in 2.0
         mod01 = preferences.Plot.modifier_dims_01
         mod23 = preferences.Plot.modifier_dims_23
         mod45 = preferences.Plot.modifier_dims_45
@@ -2155,10 +2155,10 @@ class AxesManager(t.HasTraits):
 
         keyDict = {
             # axes 0, 1
-            **dict.fromkeys(['left', dim0_decrease, '4'], (0, -1)),
-            **dict.fromkeys(['right', dim0_increase, '6'], (0, +1)),
-            **dict.fromkeys(['up', dim1_decrease, '8'], (1, -1)),
-            **dict.fromkeys(['down', dim1_increase, '2'], (1, +1)),
+            **dict.fromkeys([dim0_decrease, '4'], (0, -1)),
+            **dict.fromkeys([dim0_increase, '6'], (0, +1)),
+            **dict.fromkeys([dim1_decrease, '8'], (1, -1)),
+            **dict.fromkeys([dim1_increase, '2'], (1, +1)),
             # axes 2, 3
             **dict.fromkeys([dim2_decrease], (2, -1)),
             **dict.fromkeys([dim2_increase], (2, +1)),
@@ -2215,13 +2215,6 @@ class AxesManager(t.HasTraits):
     def _get_navigation_axes_dicts(self):
         return [axis.get_axis_dictionary() for axis in
                 self.navigation_axes[::-1]]
-
-    def show(self):
-        msg = (
-            "The `AxesManager.show` method is deprecated and will be removed "
-            "in v2.0. Use `gui` instead.")
-        warnings.warn(msg, VisibleDeprecationWarning)
-        self.gui()
 
     def _get_dimension_str(self):
         string = "("
@@ -2486,3 +2479,11 @@ class GeneratorLen:
 
     def __iter__(self):
         return self.gen
+
+
+def _parse_axis_attribute(value):
+    """Parse axis attribute"""
+    if value is t.Undefined:
+        return None
+    else:
+        return value

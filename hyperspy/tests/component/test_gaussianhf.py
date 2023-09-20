@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -50,8 +50,7 @@ def test_integral_as_signal():
     g2 = GaussianHF()
     m.append(g2)
     g2.estimate_parameters(s, 0, 100, True)
-    # HyperSpy 2.0: remove setting iterpath='serpentine'
-    m.multifit(iterpath='serpentine')
+    m.multifit()
     s_out = g2.integral_as_signal()
     ref = (h_ref * 3.33 * sqrt2pi / sigma2fwhm).reshape(s_out.data.shape)
     np.testing.assert_allclose(s_out.data, ref)

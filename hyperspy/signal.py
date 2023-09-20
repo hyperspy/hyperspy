@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -38,6 +38,8 @@ from scipy import integrate
 from scipy import signal as sp_signal
 import traits.api as t
 from tlz import concat
+from rsciio.utils import rgb_tools
+from rsciio.utils.tools import ensure_directory
 
 from hyperspy.axes import AxesManager
 from hyperspy.api_nogui import _ureg
@@ -47,14 +49,11 @@ from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.io import assign_signal_subclass
 from hyperspy.io import save as io_save
 from hyperspy.drawing import signal as sigdraw
-from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
-from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import (
     add_scalar_axis,
     DictionaryTreeBrowser,
     guess_output_signal_size,
-    is_binned,  # remove in v2.0
     is_cupy_array,
     isiterable,
     iterable_not_string,
@@ -91,6 +90,68 @@ try:
     CUPY_INSTALLED = True  # pragma: no cover
 except ImportError:
     CUPY_INSTALLED = False
+
+
+def _dic_get_hs_obj_paths(dic, axes_managers, signals, containers):
+    for key in dic:
+        if key.startswith('_sig_'):
+            signals.append((key, dic))
+        elif key.startswith('_hspy_AxesManager_'):
+            axes_managers.append((key, dic))
+        elif isinstance(dic[key], (list, tuple)):
+            signals = []
+            # Support storing signals in containers
+            for i, item in enumerate(dic[key]):
+                if isinstance(item, dict) and "_sig_" in item:
+                    signals.append(i)
+            if signals:
+                containers.append(((dic, key), signals))
+        elif isinstance(dic[key], dict):
+            _dic_get_hs_obj_paths(
+                dic[key],
+                axes_managers=axes_managers,
+                signals=signals,
+                containers=containers
+                )
+
+
+def _obj_in_dict2hspy(dic, lazy):
+    """
+    Recursively walk nested dicts substituting dicts with their hyperspy
+    object where relevant
+
+    Parameters
+    ----------
+    d: dictionary
+        The nested dictionary
+    lazy: bool
+
+    """
+    from hyperspy.io import dict2signal
+    axes_managers, signals, containers = [], [], []
+    _dic_get_hs_obj_paths(
+        dic,
+        axes_managers=axes_managers,
+        signals=signals,
+        containers=containers
+        )
+    for key, dic in axes_managers:
+        dic[key[len('_hspy_AxesManager_'):]] = AxesManager(dic[key])
+        del dic[key]
+    for key, dic in signals:
+        dic[key[len('_sig_'):]] = dict2signal(dic[key], lazy=lazy)
+        del dic[key]
+    for dickey, signals_idx in containers:
+        dic, key = dickey
+        container = dic[key]
+        to_tuple = False
+        if type(container) is tuple:
+            container = list(container)
+            to_tuple = True
+        for idx in signals_idx:
+            container[idx] = dict2signal(container[idx]["_sig_"], lazy=lazy)
+        if to_tuple:
+            dic[key] = tuple(container)
 
 
 class ModelManager(object):
@@ -811,7 +872,8 @@ class MVATools(object):
             If ``True``, plots each factor to the same window.  They are
             not scaled. Default is ``True``.
         title : str
-            Title of the plot.
+            Title of the matplotlib plot or label of the line in the legend
+            when the dimension of factors is 1 and ``same_window`` is ``True``.
         cmap : :py:class:`~matplotlib.colors.Colormap`
             The colormap used for the factor images, or for peak
             characteristics. Default is the matplotlib gray colormap
@@ -844,9 +906,7 @@ class MVATools(object):
             else:
                 raise ValueError(
                     "Please provide the number of components to plot via the "
-                    "`comp_ids` argument")
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
+                    "`comp_ids` argument.")
         if title is None:
             title = self._get_plot_title('Decomposition factors of',
                                          same_window=same_window)
@@ -889,7 +949,8 @@ class MVATools(object):
             if ``True``, plots each factor to the same window.  They are
             not scaled. Default is ``True``.
         title : str
-            Title of the plot.
+            Title of the matplotlib plot or label of the line in the legend
+            when the dimension of factors is 1 and ``same_window`` is ``True``.
         cmap : :py:class:`~matplotlib.colors.Colormap`
             The colormap used for the factor images, or for peak
             characteristics. Default is the matplotlib gray colormap
@@ -916,8 +977,6 @@ class MVATools(object):
         if same_window is None:
             same_window = True
         factors = self.learning_results.bss_factors
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('BSS factors of',
                                          same_window=same_window)
@@ -963,7 +1022,8 @@ class MVATools(object):
             if ``True``, plots each factor to the same window. They are
             not scaled. Default is ``True``.
         title : str
-            Title of the plot.
+            Title of the matplotlib plot or label of the line in the legend
+            when the dimension of loadings is 1 and ``same_window`` is ``True``.
         with_factors : bool
             If ``True``, also returns figure(s) with the factors for the
             given comp_ids.
@@ -1016,8 +1076,7 @@ class MVATools(object):
                 raise ValueError(
                     "Please provide the number of components to plot via the "
                     "`comp_ids` argument")
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
+
         if title is None:
             title = self._get_plot_title(
                 'Decomposition loadings of', same_window=same_window)
@@ -1064,10 +1123,9 @@ class MVATools(object):
         same_window : bool
             If ``True``, plots each factor to the same window. They are
             not scaled. Default is ``True``.
-        comp_label : str
-            Will be deprecated in 2.0, please use `title` instead
         title : str
-            Title of the plot.
+            Title of the matplotlib plot or label of the line in the legend
+            when the dimension of loadings is 1 and ``same_window`` is ``True``.
         with_factors : bool
             If `True`, also returns figure(s) with the factors for the
             given `comp_ids`.
@@ -1105,8 +1163,6 @@ class MVATools(object):
                                "performed first.")
         if same_window is None:
             same_window = True
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title(
                 'BSS loadings of', same_window=same_window)
@@ -1800,7 +1856,7 @@ class MVATools(object):
         cluster_ids=None,
         calibrate=True,
         same_window=True,
-        comp_label="Cluster centers",
+        title=None,
         per_row=3):
         """Plot centers from a cluster analysis.
 
@@ -1819,10 +1875,9 @@ class MVATools(object):
         same_window : bool
             if True, plots each center to the same window.  They are
             not scaled.
-        comp_label : string
-            the label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting
-            in the same window)
+        title : str
+            Title of the matplotlib plot or label of the line in the legend
+            when the dimension of loadings is 1 and ``same_window`` is ``True``.
         per_row : int
             the number of plots in each row, when the same_window parameter is
             True.
@@ -1839,14 +1894,19 @@ class MVATools(object):
         if same_window is None:
             same_window = True
         factors = cs.T
+
         if cluster_ids is None:
             cluster_ids = range(factors.shape[1])
+
+        if title is None:
+            title = self._get_plot_title(
+                'Cluster centers of', same_window=same_window)
 
         return self._plot_factors_or_pchars(factors,
                                             comp_ids=cluster_ids,
                                             calibrate=calibrate,
                                             same_window=same_window,
-                                            comp_label=comp_label,
+                                            comp_label=title,
                                             per_row=per_row)
     plot_cluster_signals.__doc__ %= (CLUSTER_SIGNALS_ARG)
 
@@ -1883,8 +1943,9 @@ class MVATools(object):
         same_window : bool
             if True, plots each factor to the same window.  They are
             not scaled. Default is True.
-        title : string
-            Title of the plot.
+        title : str
+            Title of the matplotlib plot or label of the line in the legend
+            when the dimension of labels is 1 and ``same_window`` is ``True``.
         with_centers : bool
             If True, also returns figure(s) with the cluster centers for the
             given cluster_ids.
@@ -1925,8 +1986,6 @@ class MVATools(object):
         if cluster_ids is None:
             cluster_ids = range(labels.shape[0])
 
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title(
                 'Cluster labels of', same_window=same_window)
@@ -1957,9 +2016,8 @@ class MVATools(object):
         **kwargs):
         """Plot the euclidian distances to the centroid of each cluster.
 
-        In case of 1D navigation axis,
-        each line can be toggled on and off by clicking on the legended
-        line.
+        In case of 1D navigation axis, each line can be toggled on and
+        off by clicking on the corresponding line in the legend.
 
         Parameters
         ----------
@@ -1977,8 +2035,9 @@ class MVATools(object):
         same_window : bool
             if True, plots each factor to the same window.  They are
             not scaled. Default is True.
-        title : string
-            Title of the plot.
+        title : str
+            Title of the matplotlib plot or label of the line in the legend
+            when the dimension of distance is 1 and ``same_window`` is ``True``.
         with_centers : bool
             If True, also returns figure(s) with the cluster centers for the
             given cluster_ids.
@@ -2019,8 +2078,6 @@ class MVATools(object):
         if cluster_ids is None:
             cluster_ids = range(distances.shape[0])
 
-        comp_label = kwargs.get("comp_label", None)
-        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title(
                 'Cluster distances of', same_window=same_window)
@@ -2106,21 +2163,6 @@ def _plot_x_results(factors, loadings, factors_navigator, loadings_navigator,
     factors.plot(navigator=factors_navigator)
 
 
-def _change_API_comp_label(title, comp_label):
-    if comp_label is not None:
-        if title is None:
-            title = comp_label
-            warnings.warn("The 'comp_label' argument will be deprecated "
-                          "in 2.0, please use 'title' instead",
-                          VisibleDeprecationWarning)
-        else:
-            warnings.warn("The 'comp_label' argument will be deprecated "
-                          "in 2.0, Since you are already using the 'title'",
-                          "argument, 'comp_label' is ignored.",
-                          VisibleDeprecationWarning)
-    return title
-
-
 class SpecialSlicersSignal(SpecialSlicers):
 
     def __setitem__(self, i, j):
@@ -2153,6 +2195,13 @@ class BaseSignal(FancySlicing,
                  MVA,
                  MVATools,):
 
+    """
+    General signal created from a numpy or cupy array.
+
+    >>> data = np.ones((10, 10))
+    >>> s = hs.signals.BaseSignal(data)
+    """
+
     _dtype = "real"
     # When _signal_dimension=-1, the signal dimension of BaseSignal is defined
     # by the dimension of the array, and this is implemented by the default
@@ -2166,7 +2215,8 @@ class BaseSignal(FancySlicing,
     ]
 
     def __init__(self, data, **kwds):
-        """Create a Signal from a numpy array.
+        """
+        Create a signal instance.
 
         Parameters
         ----------
@@ -2174,7 +2224,7 @@ class BaseSignal(FancySlicing,
            The signal data. It can be an array of any dimensions.
         axes : [dict/axes], optional
             List of either dictionaries or axes objects to define the axes (see
-            the documentation of the :py:class:`~hyperspy.axes.AxesManager`
+            the documentation of the :py:class:`~.axes.AxesManager`
             class for more details).
         attributes : dict, optional
             A dictionary whose items are stored as attributes.
@@ -2191,7 +2241,6 @@ class BaseSignal(FancySlicing,
             Define whether the signal is ragged or not. Overwrite the
             ``ragged`` value in the ``attributes`` dictionary. If None, it does
             nothing. Default is None.
-
         """
         # the 'full_initialisation' keyword is private API to be used by the
         # _assign_subclass method. Purposely not exposed as public API.
@@ -2258,8 +2307,7 @@ class BaseSignal(FancySlicing,
         return string
 
     def _binary_operator_ruler(self, other, op_name):
-        exception_message = (
-            "Invalid dimensions for this operation")
+        exception_message = ("Invalid dimensions for this operation.")
         if isinstance(other, BaseSignal):
             # Both objects are signals
             oam = other.axes_manager
@@ -2440,37 +2488,15 @@ class BaseSignal(FancySlicing,
             value = np.asanyarray(value)
         self._data = np.atleast_1d(value)
 
-
     @property
     def metadata(self):
         """The metadata of the signal."""
         return self._metadata
 
-    @metadata.setter
-    def metadata(self, d):
-        warnings.warn(
-            "Setting the `metadata` attribute is deprecated and will be removed "
-            "in HyperSpy 2.0. Use the `set_item` and `add_dictionary` methods "
-            "of the `metadata` attribute instead."
-            )
-        if isinstance(d, dict):
-            d = DictionaryTreeBrowser(d)
-        self._metadata = d
-
     @property
     def original_metadata(self):
         """The original metadata of the signal."""
         return self._original_metadata
-
-    @original_metadata.setter
-    def original_metadata(self, d):
-        warnings.warn(
-            "Setting the `original_metadata` attribute is deprecated and will be removed "
-            "removed in HyperSpy 2.0. Use the `set_item` and `add_dictionary` "
-            "methods of the `original_metadata` attribute instead.")
-        if isinstance(d, dict):
-            d = DictionaryTreeBrowser(d)
-        self._original_metadata = d
 
     @property
     def ragged(self):
@@ -2572,6 +2598,9 @@ class BaseSignal(FancySlicing,
             self.models._add_dictionary(file_data_dict['models'])
         if 'metadata' not in file_data_dict:
             file_data_dict['metadata'] = {}
+        else:
+            # Get all hspy object back from their dictionary representation
+            _obj_in_dict2hspy(file_data_dict["metadata"], lazy=self._lazy)
         if 'original_metadata' not in file_data_dict:
             file_data_dict['original_metadata'] = {}
 
@@ -2639,7 +2668,8 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> s = hs.signals.Signal2D(np.random.random((2,1,1,6,8,8)))
+        >>> s = hs.signals.Signal2D(np.random.random((2, 1, 1, 6, 8, 8)))
+        >>> s
         <Signal2D, title: , dimensions: (6, 1, 1, 2|8, 8)>
         >>> s = s.squeeze()
         >>> s
@@ -2784,6 +2814,13 @@ class BaseSignal(FancySlicing,
         elif self.tmp_parameters.has_item('filename'):
             self._plot.signal_title = self.tmp_parameters.filename
 
+        def sum_wrapper(s, axis):
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore", category=UserWarning, module='hyperspy'
+                    )
+                return s.sum(axis)
+
         def get_static_explorer_wrapper(*args, **kwargs):
             if np.issubdtype(navigator.data.dtype, np.complexfloating):
                 return abs(navigator(as_numpy=True))
@@ -2791,16 +2828,11 @@ class BaseSignal(FancySlicing,
                 return navigator(as_numpy=True)
 
         def get_1D_sum_explorer_wrapper(*args, **kwargs):
-            navigator = self
             # Sum over all but the first navigation axis.
-            am = navigator.axes_manager
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=UserWarning,
-                                        module='hyperspy'
-                                        )
-                navigator = navigator.sum(
-                    am.signal_axes + am.navigation_axes[1:]
-                    )
+            am = self.axes_manager
+            navigator = sum_wrapper(
+                self, am.signal_axes + am.navigation_axes[1:]
+                )
             return np.nan_to_num(to_numpy(navigator.data)).squeeze()
 
         def get_dynamic_explorer_wrapper(*args, **kwargs):
@@ -2831,21 +2863,26 @@ class BaseSignal(FancySlicing,
                     navigator = self.deepcopy()
                 else:
                     navigator = interactive(
-                        self.sum,
-                        self.events.data_changed,
-                        self.axes_manager.events.any_axis_changed,
-                        self.axes_manager.signal_axes)
+                        f=sum_wrapper,
+                        event=self.events.data_changed,
+                        recompute_out_event=self.axes_manager.events.any_axis_changed,
+                        s=self,
+                        axis=self.axes_manager.signal_axes,
+                        )
                 if navigator.axes_manager.navigation_dimension == 1:
                     navigator = interactive(
-                        navigator.as_signal1D,
-                        navigator.events.data_changed,
-                        navigator.axes_manager.events.any_axis_changed, 0)
+                        f=navigator.as_signal1D,
+                        event=navigator.events.data_changed,
+                        recompute_out_event=navigator.axes_manager.events.any_axis_changed,
+                        spectral_axis=0,
+                        )
                 else:
                     navigator = interactive(
-                        navigator.as_signal2D,
-                        navigator.events.data_changed,
-                        navigator.axes_manager.events.any_axis_changed,
-                        (0, 1))
+                        f=navigator.as_signal2D,
+                        event=navigator.events.data_changed,
+                        recompute_out_event=navigator.axes_manager.events.any_axis_changed,
+                        image_axes=(0, 1),
+                        )
             else:
                 navigator = None
         # Navigator properties
@@ -2910,7 +2947,7 @@ class BaseSignal(FancySlicing,
     plot.__doc__ %= (BASE_PLOT_DOCSTRING, BASE_PLOT_DOCSTRING_PARAMETERS,
                      PLOT1D_DOCSTRING, PLOT2D_KWARGS_DOCSTRING)
 
-    def save(self, filename=None, overwrite=None, extension=None, **kwds):
+    def save(self, filename=None, overwrite=None, extension=None, file_format=None, **kwds):
         """Saves the signal in the specified format.
 
         The function gets the format from the specified extension (see
@@ -2980,6 +3017,9 @@ class BaseSignal(FancySlicing,
         close_file : bool, optional
             Only for hdf5-based files and some zarr store. Close the file after
             writing. Default is True.
+        file_format: string
+            The file format of choice to save the file. If not given, it is inferred
+            from the file extension.
 
         """
         if filename is None:
@@ -3000,7 +3040,7 @@ class BaseSignal(FancySlicing,
             filename = Path(filename)
             if extension is not None:
                 filename = filename.with_suffix(f".{extension}")
-        io_save(filename, self, overwrite=overwrite, **kwds)
+        io_save(filename, self, overwrite=overwrite, file_format=file_format, **kwds)
 
     def _replot(self):
         if self._plot is not None:
@@ -3131,13 +3171,13 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> s = hs.signals.Signal1D(np.ones((5,4,3,6)))
+        >>> s = hs.signals.Signal1D(np.ones((5, 4, 3, 6)))
         >>> s
-        <Signal1D, title: , dimensions: (3, 4, 5, 6)>
+        <Signal1D, title: , dimensions: (3, 4, 5|6)>
         >>> s.rollaxis(3, 1)
-        <Signal1D, title: , dimensions: (3, 4, 5, 6)>
-        >>> s.rollaxis(2,0)
-        <Signal1D, title: , dimensions: (5, 3, 4, 6)>
+        <Signal1D, title: , dimensions: (3, 4, 5|6)>
+        >>> s.rollaxis(2, 0)
+        <Signal1D, title: , dimensions: (5, 3, 4|6)>
 
         """
         axis = self.axes_manager[axis].index_in_array
@@ -3233,18 +3273,18 @@ class BaseSignal(FancySlicing,
         >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
         >>> spectrum.data[1, 2, 9] = 5
         >>> print(spectrum)
-        <EDXTEMSpectrum, title: dimensions: (4, 4|10)>
-        >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
+        <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
+        >>> print ('Sum =', sum(sum(sum(spectrum.data))))
         Sum = 164.0
 
         >>> scale = [2, 2, 5]
         >>> test = spectrum.rebin(scale)
         >>> print(test)
-        <EDSTEMSpectrum, title: dimensions (2, 2|2)>
-        >>> print('Sum = ', sum(sum(sum(test.data))))
-        Sum =  164.0
+        <EDSTEMSpectrum, title: , dimensions: (2, 2|5)>
+        >>> print('Sum =', sum(sum(sum(test.data))))
+        Sum = 164.0
 
-        >>> s = hs.signals.Signal1D(np.ones((2, 5, 10), dtype=np.uint8)
+        >>> s = hs.signals.Signal1D(np.ones((2, 5, 10), dtype=np.uint8))
         >>> print(s)
         <Signal1D, title: , dimensions: (5, 2|10)>
         >>> print(s.data.dtype)
@@ -3341,20 +3381,15 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> s = hs.signals.Signal1D(random.random([4,3,2]))
+        >>> s = hs.signals.Signal1D(np.random.random([4, 3, 2]))
         >>> s
-            <Signal1D, title: , dimensions: (3, 4|2)>
+        <Signal1D, title: , dimensions: (3, 4|2)>
         >>> s.split()
-            [<Signal1D, title: , dimensions: (3 |2)>,
-            <Signal1D, title: , dimensions: (3 |2)>,
-            <Signal1D, title: , dimensions: (3 |2)>,
-            <Signal1D, title: , dimensions: (3 |2)>]
+        [<Signal1D, title: , dimensions: (3|2)>, <Signal1D, title: , dimensions: (3|2)>, <Signal1D, title: , dimensions: (3|2)>, <Signal1D, title: , dimensions: (3|2)>]
         >>> s.split(step_sizes=2)
-            [<Signal1D, title: , dimensions: (3, 2|2)>,
-            <Signal1D, title: , dimensions: (3, 2|2)>]
-        >>> s.split(step_sizes=[1,2])
-            [<Signal1D, title: , dimensions: (3, 1|2)>,
-            <Signal1D, title: , dimensions: (3, 2|2)>]
+        [<Signal1D, title: , dimensions: (3, 2|2)>, <Signal1D, title: , dimensions: (3, 2|2)>]
+        >>> s.split(step_sizes=[1, 2])
+        [<Signal1D, title: , dimensions: (3, 1|2)>, <Signal1D, title: , dimensions: (3, 2|2)>]
 
         Raises
         ------
@@ -3551,10 +3586,10 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
         >>> with s.unfolded():
-                # Do whatever needs doing while unfolded here
-                pass
+        ...     # Do whatever needs doing while unfolded here
+        ...     pass
 
         """
         unfolded = self.unfold(unfold_navigation, unfold_signal)
@@ -3640,11 +3675,7 @@ class BaseSignal(FancySlicing,
             _logger.info("{0!r} data is replaced by its optimized copy, see "
                          "optimize parameter of ``Basesignal.transpose`` "
                          "for more information.".format(self))
-            # `like` keyword is necessary to support cupy array (NEP-35)
-            kw = {}
-            if Version(np.__version__) >= Version("1.20"):
-                 kw['like'] = self.data
-            self.data = np.ascontiguousarray(self.data, **kw)
+            self.data = np.ascontiguousarray(self.data, like=self.data)
 
     def _iterate_signal(self, iterpath=None):
         """Iterates over the signal data. It is faster than using the signal
@@ -3661,9 +3692,6 @@ class BaseSignal(FancySlicing,
         numpy array when iterating over the navigation space
         """
         original_index = self.axes_manager.indices
-
-        if iterpath is None:
-            _logger.warning('The default iterpath will change in HyperSpy 2.0.')
 
         with self.axes_manager.switch_iterpath(iterpath):
             self.axes_manager.indices = tuple(
@@ -3804,7 +3832,7 @@ class BaseSignal(FancySlicing,
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
-    def sum(self, axis=None, out=None, rechunk=True):
+    def sum(self, axis=None, out=None, rechunk=False):
         """Sum the data over the given axes.
 
         Parameters
@@ -3833,11 +3861,11 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.sum(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.sum(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
 
@@ -3847,7 +3875,7 @@ class BaseSignal(FancySlicing,
         axes = self.axes_manager[axis]
         if not np.iterable(axes):
             axes = (axes,)
-        if any([not ax.is_uniform and not is_binned(self, ax) for ax in axes]):
+        if any([not ax.is_uniform and not ax.is_binned for ax in axes]):
             warnings.warn("You are summing over an unbinned, non-uniform axis. "
                           "The result can not be used as an approximation of "
                           "the integral of the signal. For this functionality, "
@@ -3857,7 +3885,7 @@ class BaseSignal(FancySlicing,
             np.sum, axis, out=out, rechunk=rechunk)
     sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def max(self, axis=None, out=None, rechunk=True):
+    def max(self, axis=None, out=None, rechunk=False):
         """Returns a signal with the maximum of the signal along at least one
         axis.
 
@@ -3880,11 +3908,11 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.max(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.max(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         if axis is None:
@@ -3893,7 +3921,7 @@ class BaseSignal(FancySlicing,
             np.max, axis, out=out, rechunk=rechunk)
     max.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def min(self, axis=None, out=None, rechunk=True):
+    def min(self, axis=None, out=None, rechunk=False):
         """Returns a signal with the minimum of the signal along at least one
         axis.
 
@@ -3916,11 +3944,11 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.min(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.min(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         if axis is None:
@@ -3929,7 +3957,7 @@ class BaseSignal(FancySlicing,
             np.min, axis, out=out, rechunk=rechunk)
     min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def mean(self, axis=None, out=None, rechunk=True):
+    def mean(self, axis=None, out=None, rechunk=False):
         """Returns a signal with the average of the signal along at least one
         axis.
 
@@ -3952,11 +3980,11 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.mean(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.mean(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         if axis is None:
@@ -3965,7 +3993,7 @@ class BaseSignal(FancySlicing,
             np.mean, axis, out=out, rechunk=rechunk)
     mean.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def std(self, axis=None, out=None, rechunk=True):
+    def std(self, axis=None, out=None, rechunk=False):
         """Returns a signal with the standard deviation of the signal along
         at least one axis.
 
@@ -3988,11 +4016,11 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.std(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.std(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         if axis is None:
@@ -4001,7 +4029,7 @@ class BaseSignal(FancySlicing,
             np.std, axis, out=out, rechunk=rechunk)
     std.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def var(self, axis=None, out=None, rechunk=True):
+    def var(self, axis=None, out=None, rechunk=False):
         """Returns a signal with the variances of the signal along at least one
         axis.
 
@@ -4024,11 +4052,11 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.var(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.var(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         if axis is None:
@@ -4037,7 +4065,7 @@ class BaseSignal(FancySlicing,
             np.var, axis, out=out, rechunk=rechunk)
     var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def nansum(self, axis=None, out=None, rechunk=True):
+    def nansum(self, axis=None, out=None, rechunk=False):
         """%s
         """
         if axis is None:
@@ -4054,7 +4082,7 @@ class BaseSignal(FancySlicing,
             np.nansum, axis, out=out, rechunk=rechunk)
     nansum.__doc__ %= (NAN_FUNC.format('sum'))
 
-    def nanmax(self, axis=None, out=None, rechunk=True):
+    def nanmax(self, axis=None, out=None, rechunk=False):
         """%s
         """
         if axis is None:
@@ -4063,7 +4091,7 @@ class BaseSignal(FancySlicing,
             np.nanmax, axis, out=out, rechunk=rechunk)
     nanmax.__doc__ %= (NAN_FUNC.format('max'))
 
-    def nanmin(self, axis=None, out=None, rechunk=True):
+    def nanmin(self, axis=None, out=None, rechunk=False):
         """%s"""
         if axis is None:
             axis = self.axes_manager.navigation_axes
@@ -4071,7 +4099,7 @@ class BaseSignal(FancySlicing,
             np.nanmin, axis, out=out, rechunk=rechunk)
     nanmin.__doc__ %= (NAN_FUNC.format('min'))
 
-    def nanmean(self, axis=None, out=None, rechunk=True):
+    def nanmean(self, axis=None, out=None, rechunk=False):
         """%s """
         if axis is None:
             axis = self.axes_manager.navigation_axes
@@ -4079,7 +4107,7 @@ class BaseSignal(FancySlicing,
             np.nanmean, axis, out=out, rechunk=rechunk)
     nanmean.__doc__ %= (NAN_FUNC.format('mean'))
 
-    def nanstd(self, axis=None, out=None, rechunk=True):
+    def nanstd(self, axis=None, out=None, rechunk=False):
         """%s"""
         if axis is None:
             axis = self.axes_manager.navigation_axes
@@ -4087,7 +4115,7 @@ class BaseSignal(FancySlicing,
             np.nanstd, axis, out=out, rechunk=rechunk)
     nanstd.__doc__ %= (NAN_FUNC.format('std'))
 
-    def nanvar(self, axis=None, out=None, rechunk=True):
+    def nanvar(self, axis=None, out=None, rechunk=False):
         """%s"""
         if axis is None:
             axis = self.axes_manager.navigation_axes
@@ -4095,7 +4123,7 @@ class BaseSignal(FancySlicing,
             np.nanvar, axis, out=out, rechunk=rechunk)
     nanvar.__doc__ %= (NAN_FUNC.format('var'))
 
-    def diff(self, axis, order=1, out=None, rechunk=True):
+    def diff(self, axis, order=1, out=None, rechunk=False):
         """Returns a signal with the `n`-th order discrete difference along
         given axis. `i.e.` it calculates the difference between consecutive
         values in the given axis: `out[n] = a[n+1] - a[n]`. See
@@ -4130,11 +4158,12 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.diff(-1).data.shape
-        (64,64,1023)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.diff(0)
+        <BaseSignal, title: , dimensions: (|1023, 64, 64)>
+
         """
         if not self.axes_manager[axis].is_uniform:
             raise NotImplementedError(
@@ -4212,13 +4241,14 @@ class BaseSignal(FancySlicing,
             return self._deepcopy_with_new_data(der_data)
     derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def integrate_simpson(self, axis, out=None):
+    def integrate_simpson(self, axis, out=None, rechunk=False):
         """Calculate the integral of a Signal along an axis using
         `Simpson's rule <https://en.wikipedia.org/wiki/Simpson%%27s_rule>`_.
 
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -4233,12 +4263,11 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.integrate_simpson(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.integrate_simpson(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         axis = self.axes_manager[axis]
@@ -4252,7 +4281,7 @@ class BaseSignal(FancySlicing,
             s.data = data
             s._remove_axis(axis.index_in_axes_manager)
             return s
-    integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def fft(self, shift=False, apodization=False, real_fft_only=False, **kwargs):
         """Compute the discrete Fourier Transform.
@@ -4435,7 +4464,7 @@ class BaseSignal(FancySlicing,
             axis.offset = 0.
         return im_ifft
 
-    def integrate1D(self, axis, out=None):
+    def integrate1D(self, axis, out=None, rechunk=False):
         """Integrate the signal over the given axis.
 
         The integration is performed using
@@ -4447,6 +4476,7 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -4461,24 +4491,21 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.integrate1D(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.integrate1D(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
-        if is_binned(self, axis=axis):
-        # in v2 replace by
-        # self.axes_manager[axis].is_binned
-            return self.sum(axis=axis, out=out)
+        if self.axes_manager[axis].is_binned:
+            return self.sum(axis=axis, out=out, rechunk=rechunk)
         else:
-            return self.integrate_simpson(axis=axis, out=out)
+            return self.integrate_simpson(axis=axis, out=out, rechunk=rechunk)
 
-    integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def indexmin(self, axis, out=None, rechunk=True):
+    def indexmin(self, axis, out=None, rechunk=False):
         """Returns a signal with the index of the minimum along an axis.
 
         Parameters
@@ -4499,19 +4526,18 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.indexmin(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.indexmin(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         return self._apply_function_on_data_and_remove_axis(
             np.argmin, axis, out=out, rechunk=rechunk)
     indexmin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def indexmax(self, axis, out=None, rechunk=True):
+    def indexmax(self, axis, out=None, rechunk=False):
         """Returns a signal with the index of the maximum along an axis.
 
         Parameters
@@ -4532,19 +4558,18 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> import numpy as np
         >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.indexmax(-1).data.shape
-        (64,64)
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.indexmax(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         return self._apply_function_on_data_and_remove_axis(
             np.argmax, axis, out=out, rechunk=rechunk)
     indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def valuemax(self, axis, out=None, rechunk=True):
+    def valuemax(self, axis, out=None, rechunk=False):
         """Returns a signal with the value of coordinates of the maximum along
         an axis.
 
@@ -4567,11 +4592,11 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.valuemax(-1).data.shape
-        (64,64)
+        >>> s = BaseSignal(np.random.random((64, 64, 1024)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|1024, 64, 64)>
+        >>> s.valuemax(0)
+        <Signal2D, title: , dimensions: (|64, 64)>
 
         """
         idx = self.indexmax(axis)
@@ -4584,7 +4609,7 @@ class BaseSignal(FancySlicing,
             out.events.data_changed.trigger(obj=out)
     valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def valuemin(self, axis, out=None, rechunk=True):
+    def valuemin(self, axis, out=None, rechunk=False):
         """Returns a signal with the value of coordinates of the minimum along
         an axis.
 
@@ -4791,14 +4816,14 @@ class BaseSignal(FancySlicing,
 
         >>> import scipy.ndimage
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
-        >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)
+        >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)  # doctest: +SKIP
 
         Apply a Gaussian filter to all the images in the dataset. The signal
         parameter is variable:
 
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
         >>> sigmas = hs.signals.BaseSignal(np.linspace(2, 5, 10)).T
-        >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
+        >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)  # doctest: +SKIP
 
         Rotate the two signal dimensions, with different amount as a function
         of navigation index. Delay the calculation by getting the output
@@ -4808,7 +4833,7 @@ class BaseSignal(FancySlicing,
         >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
         >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
         >>> s.map(rotate, angle=s_angle, reshape=False, lazy_output=True)
-        >>> s.compute()
+        >>> s.compute()  # doctest: +SKIP
 
         Rotate the two signal dimensions, with different amount as a function
         of navigation index. In addition, the output is returned as a new
@@ -4816,7 +4841,7 @@ class BaseSignal(FancySlicing,
 
         >>> s = hs.signals.Signal2D(np.random.random((5, 4, 40, 40)))
         >>> s_angle = hs.signals.BaseSignal(np.linspace(0, 90, 20).reshape(5, 4)).T
-        >>> s_rot = s.map(rotate, angle=s_angle, reshape=False, inplace=False)
+        >>> s_rot = s.map(rotate, angle=s_angle, reshape=False, inplace=False)  # doctest: +SKIP
 
         Note
         ----
@@ -4827,7 +4852,10 @@ class BaseSignal(FancySlicing,
             lazy_output = self._lazy
         if ragged is None:
             ragged = self.ragged
-        # Separate ndkwargs depending on if they are BaseSignals.
+
+        # Separate arguments to pass to the mapping function:
+        # ndkwargs dictionary contains iterating arguments which must be signals.
+        # kwargs dictionary contains non-iterating arguments
         self_nav_shape = self.axes_manager.navigation_shape
         ndkwargs = {}
         ndkeys = [key for key in kwargs if isinstance(kwargs[key], BaseSignal)]
@@ -4883,34 +4911,34 @@ class BaseSignal(FancySlicing,
             # inspect.
             _logger.warning(error)
 
+        # If the function has an `axes` or `axis` argument
+        # we suppose that it can operate on the full array and we don't
+        # iterate over the coordinates.
         if not ndkwargs and not lazy_output and (self.axes_manager.signal_dimension == 1 and
                              "axis" in fargs):
             kwargs['axis'] = self.axes_manager.signal_axes[-1].index_in_array
 
             result = self._map_all(function, inplace=inplace, **kwargs)
-        # If the function has an axes argument
-        # we suppose that it can operate on the full array and we don't
-        # iterate over the coordinates.
         elif not ndkwargs and not lazy_output and "axes" in fargs and not parallel:
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
             result = self._map_all(function, inplace=inplace, **kwargs)
         else:
-            kwargs["output_signal_size"] = output_signal_size
-            kwargs["output_dtype"] = output_dtype
             if show_progressbar is None:
                 from hyperspy.defaults_parser import preferences
                 show_progressbar = preferences.General.show_progressbar
             # Iteration over coordinates.
             result = self._map_iterate(
                 function,
-                iterating_kwargs=ndkwargs,
+                iterating_kwargs=ndkwargs, # function argument(s) (iterating)
                 show_progressbar=show_progressbar,
                 ragged=ragged,
                 inplace=inplace,
                 lazy_output=lazy_output,
                 max_workers=max_workers,
-                **kwargs,
+                output_dtype=output_dtype,
+                output_signal_size=output_signal_size,
+                **kwargs, # function argument(s) (non-iterating)
             )
         if not inplace:
             return result
@@ -5093,13 +5121,6 @@ class BaseSignal(FancySlicing,
         nav_chunks = self.get_chunk_size(self.axes_manager.navigation_axes)
         args, arg_keys = (), ()
         for key in iterating_kwargs:
-            if not isinstance(iterating_kwargs[key], BaseSignal):
-                iterating_kwargs[key] = BaseSignal(iterating_kwargs[key].T).T
-                _logger.warning(
-                    "Passing arrays as keyword arguments can be ambiguous. "
-                    "This is deprecated and will be removed in HyperSpy 2.0. "
-                    "Pass signal instances instead."
-                )
             if iterating_kwargs[key]._lazy:
                 axes = iterating_kwargs[key].axes_manager.navigation_axes
                 if iterating_kwargs[key].get_chunk_size(axes) != nav_chunks:
@@ -5173,7 +5194,7 @@ class BaseSignal(FancySlicing,
         """
         return copy.deepcopy(self)
 
-    def change_dtype(self, dtype, rechunk=True):
+    def change_dtype(self, dtype, rechunk=False):
         """Change the data type of a Signal.
 
         Parameters
@@ -5198,13 +5219,12 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> s = hs.signals.Signal1D([1,2,3,4,5])
+        >>> s = hs.signals.Signal1D([1, 2, 3, 4, 5])
         >>> s.data
         array([1, 2, 3, 4, 5])
         >>> s.change_dtype('float')
         >>> s.data
-        array([ 1.,  2.,  3.,  4.,  5.])
-
+        array([1., 2., 3., 4., 5.])
         """
         if not isinstance(dtype, np.dtype):
             if dtype in rgb_tools.rgb_dtypes:
@@ -5438,12 +5458,12 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> im = hs.signals.Signal2D(np.zeros((2,3, 32,32)))
+        >>> im = hs.signals.Signal2D(np.zeros((2, 3, 32, 32)))
         >>> im
-        <Signal2D, title: , dimensions: (3, 2, 32, 32)>
-        >>> im.axes_manager.indices = 2,1
+        <Signal2D, title: , dimensions: (3, 2|32, 32)>
+        >>> im.axes_manager.indices = (2, 1)
         >>> im.get_current_signal()
-        <Signal2D, title:  (2, 1), dimensions: (32, 32)>
+        <Signal2D, title:  (2, 1), dimensions: (|32, 32)>
 
         """
         metadata = self.metadata.deepcopy()
@@ -5671,15 +5691,14 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> s = hs.signals.Signal1D(np.ones((2,3,4,5)))
+        >>> s = hs.signals.Signal1D(np.ones((2, 3, 4, 5)))
         >>> s
-        <Signal1D, title: , dimensions: (4, 3, 2, 5)>
-        >>> s.as_signal2D((0,1))
-        <Signal2D, title: , dimensions: (5, 2, 4, 3)>
+        <Signal1D, title: , dimensions: (4, 3, 2|5)>
+        >>> s.as_signal2D((0, 1))
+        <Signal2D, title: , dimensions: (5, 2|4, 3)>
 
-        >>> s.to_signal2D((1,2))
-        <Signal2D, title: , dimensions: (4, 5, 3, 2)>
-
+        >>> s.to_signal2D((1, 2))
+        <Signal2D, title: , dimensions: (2, 5|4, 3)>
 
         """
         if self.data.ndim < 2:
@@ -5766,7 +5785,6 @@ class BaseSignal(FancySlicing,
         |      EDS_TEM       |                     |   EDSTEMSpectrum   | hyperspy |
         |        EELS        |       TEM EELS      |    EELSSpectrum    | hyperspy |
         |      hologram      |                     |   HologramImage    | hyperspy |
-        |      MySignal      |                     |      MySignal      | hspy_ext |
         +--------------------+---------------------+--------------------+----------+
 
         We can set the `signal_type` using the `signal_type`:
@@ -5792,11 +5810,9 @@ class BaseSignal(FancySlicing,
 
         """
         if signal_type is None:
-            warnings.warn(
-                "`s.set_signal_type(signal_type=None)` is deprecated. "
-                "Use `s.set_signal_type(signal_type='')` instead.",
-                VisibleDeprecationWarning
-            )
+            raise TypeError(
+                "The `signal_type` argument must be of string type."
+                )
 
         self.metadata.Signal.signal_type = signal_type
         # _assign_subclass takes care of matching aliases with their
@@ -5816,7 +5832,7 @@ class BaseSignal(FancySlicing,
         """
         self.metadata.Signal.signal_origin = origin
 
-    def print_summary_statistics(self, formatter="%.3g", rechunk=True):
+    def print_summary_statistics(self, formatter="%.3g", rechunk=False):
         """Prints the five-number summary statistics of the data, the mean, and
         the standard deviation.
 
@@ -5915,21 +5931,22 @@ class BaseSignal(FancySlicing,
         --------
         >>> import skimage
         >>> im = hs.signals.Signal2D(skimage.data.camera())
-        >>> m = hs.markers.rectangle(x1=150, y1=100, x2=400,
-        >>>                                  y2=400, color='red')
+        >>> m = hs.plot.markers.Rectangle(x1=150, y1=100, x2=400, y2=400, color='red')
         >>> im.add_marker(m)
 
         Adding to a 1D signal, where the point will change
         when the navigation index is changed:
 
-        >>> s = hs.signals.Signal1D(np.random.random((3, 100)))
-        >>> marker = hs.markers.point((19, 10, 60), (0.2, 0.5, 0.9))
+        >>> rng = np.random.default_rng(1)
+        >>> s = hs.signals.Signal1D(rng.random((3, 100)))
+        >>> marker = hs.plot.markers.Point((19, 10, 60), (0.2, 0.5, 0.9))
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
 
         Add permanent marker:
 
-        >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
-        >>> marker = hs.markers.point(50, 60, color='red')
+        >>> rng = np.random.default_rng(1)
+        >>> s = hs.signals.Signal2D(rng.random((100, 100)))
+        >>> marker = hs.plot.markers.Point(50, 60, color='red')
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
 
         Add permanent marker to signal with 2 navigation dimensions.
@@ -5939,34 +5956,37 @@ class BaseSignal(FancySlicing,
         indices, the list used to make the marker must be a nested list:
         2 lists with 3 elements each (2 x 3):
 
-        >>> s = hs.signals.Signal1D(np.random.random((2, 3, 10)))
-        >>> marker = hs.markers.vertical_line([[1, 3, 5], [2, 4, 6]])
+        >>> rng = np.random.default_rng(1)
+        >>> s = hs.signals.Signal1D(rng.random((2, 3, 10)))
+        >>> marker = hs.plot.markers.VerticalLine([[1, 3, 5], [2, 4, 6]])
         >>> s.add_marker(marker, permanent=True)
 
         Add permanent marker which changes with navigation position, and
         do not add it to a current plot:
 
-        >>> s = hs.signals.Signal2D(np.random.randint(10, size=(3, 100, 100)))
-        >>> marker = hs.markers.point((10, 30, 50), (30, 50, 60), color='red')
+        >>> rng = np.random.default_rng(1)
+        >>> s = hs.signals.Signal2D(rng.integers(10, size=(3, 100, 100)))
+        >>> marker = hs.plot.markers.Point((10, 30, 50), (30, 50, 60), color='red')
         >>> s.add_marker(marker, permanent=True, plot_marker=False)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Removing a permanent marker:
 
-        >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
-        >>> marker = hs.markers.point(10, 60, color='red')
+        >>> rng = np.random.default_rng(1)
+        >>> s = hs.signals.Signal2D(rng.integers(10, size=(100, 100)))
+        >>> marker = hs.plot.markers.Point(10, 60, color='red')
         >>> marker.name = "point_marker"
         >>> s.add_marker(marker, permanent=True)
         >>> del s.metadata.Markers.point_marker
 
         Adding many markers as a list:
 
-        >>> from numpy.random import random
-        >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
+        >>> rng = np.random.default_rng(1)
+        >>> s = hs.signals.Signal2D(rng.integers(10, size=(100, 100)))
         >>> marker_list = []
         >>> for i in range(100):
-        >>>     marker = hs.markers.point(random()*100, random()*100, color='red')
-        >>>     marker_list.append(marker)
+        ...     marker = hs.plot.markers.Point(random()*100, random()*100, color='red')
+        ...     marker_list.append(marker)
         >>> s.add_marker(marker_list, permanent=True)
 
         """
@@ -6023,7 +6043,7 @@ class BaseSignal(FancySlicing,
                 _logger.warning(
                     "plot_marker=False and permanent=False does nothing")
         if permanent:
-            self.metadata.Markers = markers_dict
+            self.metadata.Markers.add_dictionary(markers_dict)
         if plot_marker and render_figure:
             self._render_figure()
 
@@ -6060,7 +6080,7 @@ class BaseSignal(FancySlicing,
             example, if the data type was initially ``'float64'``, the result of
             the operation (usually ``'int64'``) will be converted to
             ``'float64'``.
-        random_state : None or int or RandomState instance, default None
+        random_state : None or int or Generator instance, default None
             Seed for the random generator.
 
         Note
@@ -6107,7 +6127,7 @@ class BaseSignal(FancySlicing,
         ----------
         std : float
             The standard deviation of the Gaussian noise.
-        random_state : None or int or RandomState instance, default None
+        random_state : None or int or Generator instance, default None
             Seed for the random generator.
 
         Note
@@ -6359,8 +6379,8 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import hyperspy.api as hs
-        >>> holo = hs.datasets.example_signals.object_hologram()
-        >>> holo.apply_apodization('tukey', tukey_alpha=0.1).plot()
+        >>> wave = hs.datasets.artificial_data.get_wave_image()
+        >>> wave.apply_apodization('tukey', tukey_alpha=0.1).plot()
         """
 
         if window == 'hanning' or window == 'hann':

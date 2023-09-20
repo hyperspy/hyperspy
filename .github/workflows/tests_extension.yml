@@ -27,7 +27,7 @@ jobs:
         shell: bash -l {0}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.3.0
 
       - uses: conda-incubator/setup-miniconda@v2
         with:
@@ -62,6 +62,7 @@ jobs:
           pip install https://github.com/pyxem/kikuchipy/archive/develop.zip
           pip install https://github.com/pyxem/pyxem/archive/master.zip
           pip install https://gitlab.com/atomap/atomap/-/archive/master/atomap-master.zip
+          pip install https://github.com/hyperspy/holospy/archive/refs/heads/main.zip
 
       - name: Install xvfb
         run: |
@@ -84,6 +85,11 @@ jobs:
         if: ${{ always() }}
         run: |
           python -m pytest --pyargs pyxem
+
+      - name: Run holospy Test Suite
+        if: ${{ always() }}
+        run: |
+          python -m pytest --pyargs holospy
 
       #  The currently released version of Atomap (0.3.1) does not work with this test
       #  environment. Thus, only the dev version is currently tested. If a newer version

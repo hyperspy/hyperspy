@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,11 +21,12 @@ import numpy as np
 from hyperspy.components1d import EELSArctan
 
 
-def test_function2():
+def test_function():
     g = EELSArctan()
     g.A.value = 10
     g.k.value = 2
     g.x0.value = 1
     np.testing.assert_allclose(g.function(0), 4.63647609)
     np.testing.assert_allclose(g.function(1), 10*np.pi/2)
-    np.testing.assert_allclose(g.function(1e4), 10*np.pi,1e-4)
+    np.testing.assert_allclose(g.function(1e4), 10*np.pi, 1e-4)
+

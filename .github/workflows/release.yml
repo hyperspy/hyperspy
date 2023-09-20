@@ -21,12 +21,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions
-        with:
-          draft: false
-          prerelease: false
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
 
   build_wheels:
     name: Wheels on ${{ matrix.os }}/py${{ matrix.python-version }}
@@ -36,7 +31,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
 
     steps:
       - uses: actions/checkout@v3
@@ -97,11 +92,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
-
-      - name: install twine
-        run: |
-          python -m pip install twine
+          python-version: '3.10'
 
       - name: Build source distribution
         run: |
@@ -109,9 +100,9 @@ jobs:
           python -m build --sdist
 
       - name: Build manylinux Python wheels
-        uses: RalfG/python-wheels-manylinux-build@c244013d850d8df62e9c7dd3ddab0cc581308de6
+        uses: RalfG/python-wheels-manylinux-build@ff8504699f7a33a08d3ff85b3c6d4e8f0e70462b
         with:
-          python-versions: 'cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310'
+          python-versions: 'cp38-cp38 cp39-cp39 cp310-cp310 cp311-cp311'
           build-requirements: 'cython'
 
       - name: Display content dist folder
@@ -126,6 +117,7 @@ jobs:
           pytest --pyargs hyperspy
 
       - uses: actions/upload-artifact@v3
+        if: always()
         with:
           path: |
             ./dist/*-manylinux*.whl
@@ -143,3 +135,13 @@ jobs:
           twine upload dist/*-manylinux*.whl --verbose 
           twine upload dist/*.tar.gz --verbose 
 
+      # Don't use the pypa publish action for now as we need to filter the `linux` wheels
+      # With hyperspy 2.0, it will be noarch and the release workflow will refactor
+      # - name: Publish wheels to PyPI
+      #   if: github.repository_owner == 'hyperspy'
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   with:
+      #     # Github secret set in the hyperspy/hyperspy repository
+      #     # Not available from fork or pull request
+      #     # Secrets are not passed to workflows that are triggered by a pull request from a fork
+      #     password: ${{ secrets.PYPI_API_TOKEN }}

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -23,8 +23,8 @@ import logging
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG
 from hyperspy.external.progressbar import progressbar
-from hyperspy.io_plugins.msa import parse_msa_string
 from hyperspy.io import dict2signal
+from rsciio.msa import parse_msa_string
 
 
 _logger = logging.getLogger(__name__)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -23,6 +23,7 @@ from time import strftime
 from pathlib import Path
 
 
+
 def get_ipython():
     """Get the global InteractiveShell instance.
 
@@ -30,14 +31,10 @@ def get_ipython():
     """
     if is_it_running_from_ipython is False:
         return None
+
     import IPython
-    if Version(IPython.__version__) < Version("0.11"):
-        ip = IPython.ipapi.get()
-    elif Version(IPython.__version__) < Version("1.0"):
-        ip = IPython.core.ipapi.get()
-    else:
-        ip = IPython.get_ipython()
-    return ip
+
+    return IPython.get_ipython()
 
 
 def is_it_running_from_ipython():

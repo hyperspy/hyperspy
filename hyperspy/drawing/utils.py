@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -33,6 +33,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.colors import LinearSegmentedColormap, BASE_COLORS, to_rgba
 import matplotlib.pyplot as plt
+from rsciio.utils import rgb_tools
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import to_numpy
@@ -69,12 +70,16 @@ def contrast_stretching(data, vmin=None, vmax=None):
         calculation (in case of string values).
 
     """
+    if np.issubdtype(data.dtype, bool):
+        # in case of boolean, simply return 0, 1
+        return 0, 1
+
     def _parse_value(value, value_name):
         if value is None:
             if value_name == "vmin":
-                value = f'{preferences.Plot.saturated_pixels / 2}th'
+                value = "0th"
             elif value_name == "vmax":
-                value = f'{100 -  preferences.Plot.saturated_pixels / 2}th'
+                value = "100th"
         if isinstance(value, str):
             value = float(value.split("th")[0])
         if not 0 <= value <= 100:
@@ -673,7 +678,6 @@ def plot_images(images,
                              'arguments.')
 
     from hyperspy.drawing.widgets import ScaleBar
-    from hyperspy.misc import rgb_tools
     from hyperspy.signal import BaseSignal
 
     # Check that we have a hyperspy signal
@@ -876,7 +880,7 @@ def plot_images(images,
     # Set overall figure size and define figure (if not pre-existing)
     if fig is None:
         w, h = plt.rcParams['figure.figsize']
-        dpi = plt.rcParams['figure.dpi']  
+        dpi = plt.rcParams['figure.dpi']
         if overlay and axes_decor == 'off':
             shape = images[0].axes_manager.signal_shape
             if pixel_size_factor is None:
@@ -971,7 +975,7 @@ def plot_images(images,
                 images[0].axes_manager[0].scale):
                 raise ValueError("Images are not the same scale and so should"
                                  "not be overlayed.")
-        
+
         if vmin is not None:
             _logger.warning('`vmin` is ignored when overlaying images.')
 
@@ -1003,7 +1007,7 @@ def plot_images(images,
             #Set vmin and vmax
             centre = next(centre_colormaps)   # get next value for centreing
             data = _parse_array(im)
-            
+
             _vmin = data.min()
             _vmax = vmax[idx] if isinstance(vmax, (tuple, list)) else vmax
             _vmin, _vmax = contrast_stretching(data, _vmin, _vmax)
@@ -1203,30 +1207,31 @@ def plot_images(images,
     # Replot: connect function
     def on_dblclick(event):
         # On the event of a double click, replot the selected subplot
-        if not event.inaxes:
+        if not event.inaxes or not event.dblclick:
             return
-        if not event.dblclick:
-            return
-        subplots = [axi for axi in f.axes if isinstance(axi, mpl.axes.Subplot)]
-        inx = list(subplots).index(event.inaxes)
-        im = replot_ims[inx]
+
+        idx_ = axes_list.index(event.inaxes)
+        ax_ = axes_list[idx_]
+        im_ = replot_ims[idx_]
 
         # Use some of the info in the subplot
-        cm = subplots[inx].images[0].get_cmap()
-        clim = subplots[inx].images[0].get_clim()
+        cm = ax_.images[0].get_cmap()
+        clim = ax_.images[0].get_clim()
 
         sbar = False
-        if (scalelist and inx in scalebar) or scalebar == 'all':
+        if (scalelist and idx_ in scalebar) or scalebar == 'all':
             sbar = True
 
-        im.plot(colorbar=bool(colorbar),
-                vmin=clim[0],
-                vmax=clim[1],
-                no_nans=no_nans,
-                aspect=asp,
-                scalebar=sbar,
-                scalebar_color=scalebar_color,
-                cmap=cm)
+        im_.plot(
+            colorbar=bool(colorbar),
+            vmin=clim[0],
+            vmax=clim[1],
+            no_nans=no_nans,
+            aspect=asp,
+            scalebar=sbar,
+            scalebar_color=scalebar_color,
+            cmap=cm,
+            )
 
     f.canvas.mpl_connect('button_press_event', on_dblclick)
 
@@ -1306,7 +1311,12 @@ def make_cmap(colors, name='my_colormap', position=None,
     cmap = mpl.colors.LinearSegmentedColormap(name, cdict, 256)
 
     if register:
-        mpl.cm.register_cmap(name, cmap)
+        try:
+            # Introduced in matplotlib 3.5
+            mpl.colormaps.register(cmap, name=name)
+        except AttributeError:
+            # Deprecated in matplotlib 3.5
+            mpl.cm.register_cmap(name, cmap)
     return cmap
 
 
@@ -1379,10 +1389,12 @@ def plot_spectra(
         If True, the plot will update when the data are changed. Only supported
         with style='overlap' and a list of signal with navigation dimension 0.
         If None (default), update the plot only for style='overlap'.
-    **kwargs, optional
-        Keywords arguments passed to :py:func:`matplotlib.pyplot.figure` or
-        :py:func:`matplotlib.pyplot.subplots` if style='mosaic'.
-        Has no effect on 'heatmap' style.
+    **kwargs : dict, optional
+        Depending on the style used, the keyword arguments are passed to different functions
+
+        - ``"overlap"`` or ``"cascade"``: arguments passed to :py:func:`matplotlib.pyplot.figure`
+        - ``"mosiac"``: arguments passed to :py:func:`matplotlib.pyplot.subplots`
+        - ``"heatmap"``: arguments  passed to :py:meth:`~.api.signals.Signal2D.plot`.
 
     Example
     -------
@@ -1400,16 +1412,6 @@ def plot_spectra(
 
     """
     from hyperspy.signal import BaseSignal
-    if 'line_style' in kwargs.keys():
-        from hyperspy.misc.utils import deprecation_warning
-        deprecation_warning("`line_style` has been renamed to `linestyle` and "
-                            "will be removed in HyperSpy 2.0.")
-        if linestyle is None:
-            linestyle = kwargs.pop('line_style')
-        else:
-            raise ValueError("Both argument `line_style` and `linestyle` have "
-                             "been provided and only one should be used: use "
-                             "`linestyle` only.")
 
     def _reverse_legend(ax_, legend_loc_):
         """
@@ -1427,8 +1429,13 @@ def plot_spectra(
         """
         l = ax_.get_legend()
         labels = [lb.get_text() for lb in list(l.get_texts())]
-        handles = l.legendHandles
-        ax_.legend(handles[::-1], labels[::-1], loc=legend_loc_)
+        # "legendHandles" is deprecated in matplotlib 3.7.0 in favour of
+        # "legend_handles".
+        if Version(mpl.__version__) >= Version("3.7"):
+            handles = l.legend_handles
+        else:
+            handles = l.legendHandles
+        ax_.legend(reversed(handles), reversed(labels), loc=legend_loc_)
 
     # Before v1.3 default would read the value from prefereces.
     if style == "default":
@@ -1481,7 +1488,7 @@ def plot_spectra(
         _make_cascade_subplot(spectra, ax, color, linestyle, padding=padding,
                               drawstyle=drawstyle)
         if legend is not None:
-            plt.legend(legend, loc=legend_loc)
+            ax.legend(legend, loc=legend_loc)
             _reverse_legend(ax, legend_loc)
             if legend_picking is True:
                 animate_legend(fig=fig, ax=ax)
@@ -1514,7 +1521,7 @@ def plot_spectra(
                        spectra]
             spectra = hyperspy.utils.stack(spectra)
         with spectra.unfolded():
-            ax = _make_heatmap_subplot(spectra)
+            ax = _make_heatmap_subplot(spectra, **kwargs)
             ax.set_ylabel('Spectra')
     ax = ax if style != "mosaic" else subplots
 

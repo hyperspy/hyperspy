@@ -109,6 +109,17 @@ that all tests in a file run in the same worker.
     `pytest-sugar <https://pypi.org/project/pytest-sugar/>`_ to produce
     nicer-looking output including an animated progressbar.
 
+To test docstring examples, assuming the current location is the HyperSpy root
+directory:
+
+.. code:: bash
+
+    # All
+    $ pytest --doctest-modules --ignore-glob=hyperspy/tests --pyargs hyperspy
+
+    # In a single file, like the signal.py file
+    $ pytest --doctest-modules hyperspy/signal.py
+
 
 Flaky tests
 ^^^^^^^^^^^

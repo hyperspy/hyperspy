@@ -1,4 +1,4 @@
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,8 +16,11 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import logging
+from packaging.version import Version
 
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.backend_bases import MouseEvent, MouseButton
 import numpy as np
 import pytest
 import scipy.ndimage
@@ -134,10 +137,11 @@ def test_plot_log_scale(percentile):
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_FFT(fft_shift):
-    s = hs.datasets.example_signals.object_hologram()
-    s2 = s.isig[:128, :128].fft()
-    s2.plot(fft_shift=fft_shift, axes_ticks=True, power_spectrum=True)
-    return s2._plot.signal_plot.figure
+    s = hs.datasets.artificial_data.get_wave_image(random_state=0)
+
+    s_fft = s.fft()
+    s_fft.plot(fft_shift=fft_shift, axes_ticks=True, power_spectrum=True)
+    return s_fft._plot.signal_plot.figure
 
 
 @pytest.mark.parametrize(("vmin", "vmax"), (_generate_parameter_plot_images(),
@@ -235,7 +239,7 @@ class _TestIteratedSignal:
         return axes_manager
 
 
-class TestPlotNonLinearAxis:
+class TestPlotNonUniformAxis:
 
     def setup_method(self):
         dict0 = {'axis': np.arange(10)**0.5, 'name':'Non uniform 0', 'units':'A',
@@ -374,6 +378,7 @@ def test_plot_images_cmap_multi_signal():
     test_plot1 = _TestIteratedSignal()
 
     test_plot2 = _TestIteratedSignal()
+    test_plot2.signal.change_dtype(float)
     test_plot2.signal *= 2  # change scale of second signal
     test_plot2.signal = test_plot2.signal.inav[::-1]
     test_plot2.signal.metadata.General.title = 'Descent'
@@ -391,6 +396,7 @@ def test_plot_images_cmap_multi_w_rgb():
     test_plot1 = _TestIteratedSignal()
 
     test_plot2 = _TestIteratedSignal()
+    test_plot2.signal.change_dtype(float)
     test_plot2.signal *= 2  # change scale of second signal
     test_plot2.signal.metadata.General.title = 'Ascent-2'
 
@@ -425,11 +431,12 @@ def test_plot_images_single_image_stack():
     return plt.gcf()
 
 
+@pytest.mark.skipif(Version(matplotlib.__version__) < Version("3.6.0"),
+                    reason="This test requires matplotlib >= 3.6.0")
 def test_plot_images_multi_signal_w_axes_replot():
-    imdata = np.random.rand(3, 5, 5)
+    imdata = np.random.rand(6, 5, 5)
     imgs = hs.signals.Signal2D(imdata)
-    img_list = [imgs, imgs.inav[:2], imgs.inav[0]]
-    subplots = hs.plot.plot_images(img_list, axes_decor=None)
+    subplots = hs.plot.plot_images(imgs, axes_decor=None)
     f = plt.gcf()
     f.canvas.draw()
     f.canvas.flush_events()
@@ -438,14 +445,17 @@ def test_plot_images_multi_signal_w_axes_replot():
     for axi in subplots:
         imi = axi.images[0].get_array()
         x, y = axi.transData.transform((2, 2))
-        # Calling base class method because of backends
-        plt.matplotlib.backends.backend_agg.FigureCanvasBase.button_press_event(
-            f.canvas, x, y, 'left', True)
+        MouseEvent(
+            "button_press_event",
+            f.canvas,
+            x, y,
+            MouseButton.LEFT,
+            dblclick=True
+            )._process()
         fn = plt.gcf()
         tests.append(np.allclose(imi, plt.gca().images[0].get_array().data))
         plt.close(fn)
     assert np.alltrue(tests)
-    return f
 
 
 @pytest.mark.parametrize("percentile", [("2.5th", "97.5th"),
@@ -574,7 +584,11 @@ def test_plot_autoscale(autoscale):
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
     # Because we are hacking the vmin, vmax with matplotlib, we need to update
     # colorbar too
-    imf._colorbar.draw_all()
+    if Version(matplotlib.__version__) <= Version("3.6.0"):
+        # `draw_all` is deprecated in matplotlib 3.6.0
+        imf._colorbar.draw_all()
+    else:
+        imf.figure.draw_without_rendering()
 
     return s._plot.signal_plot.figure
 
@@ -596,6 +610,24 @@ def test_plot_autoscale_data_changed(autoscale):
     else:
         np.testing.assert_allclose(imf._vmin, _vmin)
         np.testing.assert_allclose(imf._vmax, _vmax)
+
+
+def test_plot_vmin_vmax_error():
+    s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    with pytest.raises(TypeError):
+        s.plot(vmin=[0])
+
+    with pytest.raises(TypeError):
+        s.plot(vmin=np.array([0]))
+
+    with pytest.raises(TypeError):
+        s.plot(vmin=(0, ))
+
+    with pytest.raises(TypeError):
+        s.plot(vmax=[100])
+
+    with pytest.raises(TypeError):
+        s.plot(vmin=[0], vmax=[100])
 
 
 @pytest.mark.parametrize("axes_decor", ['all', 'off'])
@@ -698,3 +730,10 @@ def test_plot_scalebar_list():
     ax0, ax1 = hs.plot.plot_images([s, s], scalebar=[0])
     assert hasattr(ax0, 'scalebar')
     assert not hasattr(ax1, 'scalebar')
+
+
+def test_plot_images_bool():
+    data = np.arange(100).reshape((10, 10)) > 50
+    s = hs.signals.Signal2D(data)
+
+    hs.plot.plot_images(s)

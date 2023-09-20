@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,38 +17,6 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy._components.expression import Expression
-
-
-class Arctan(Expression):
-    # Legacy class to be removed in v2.0
-    r"""Legacy Arctan component dedicated to EELS measurements
-    that will renamed to `EELSArctan` in v2.0.
-
-    To use the new Arctan component
-    set `minimum_at_zero=False`. See the documentation of
-    :py:class:`~._components.arctan.Arctan` for details on
-    the usage.
-
-    The EELS version :py:class:`~._components.eels_arctan.EELSArctan`
-    (`minimum_at_zero=True`) shifts the function by A in the y direction
-
-    """
-
-    def __init__(self, minimum_at_zero=False, **kwargs):
-        if minimum_at_zero:
-            from hyperspy.misc.utils import deprecation_warning
-            msg = (
-                "The API of the `Arctan` component will change in v2.0. "
-                "This component will become `EELSArctan`."
-                "To use the new API, omit the `minimum_at_zero` option.")
-            deprecation_warning(msg)
-
-            self.__class__ = EELSArctan
-            self.__init__(**kwargs)
-        else:
-            from hyperspy._components.arctan import Arctan
-            self.__class__ = Arctan
-            self.__init__(**kwargs)
 
 
 class EELSArctan(Expression):
@@ -84,12 +52,12 @@ class EELSArctan(Expression):
     """
 
     def __init__(self, A=1., k=1., x0=1., module=["numpy", "scipy"], **kwargs):
-        # Not to break scripts once we remove the legacy Arctan
+        # To be able to still read old file versions that contain this argument
         if "minimum_at_zero" in kwargs:
             del kwargs["minimum_at_zero"]
         super().__init__(
             expression="A * (pi /2 + arctan(k * (x - x0)))",
-            name="Arctan",
+            name="EELSArctan",
             A=A,
             k=k,
             x0=x0,

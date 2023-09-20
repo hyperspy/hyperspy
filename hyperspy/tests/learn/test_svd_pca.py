@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,10 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-from packaging.version import Version
 import numpy as np
 import pytest
-import scipy
 
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
@@ -77,9 +75,6 @@ class TestSVDPCA:
         elif centre == "samples":
             np.testing.assert_allclose(mean, self.X_mean_0)
 
-    @pytest.mark.xfail(Version(scipy.__version__) < Version("1.4.0"),
-                       raises=ValueError,
-                       reason="This test requires Scipy >= 1.4.0")
     @pytest.mark.parametrize("output_dimension", [None, 3])
     @pytest.mark.parametrize("auto_transpose", [True, False])
     @pytest.mark.parametrize("centre", [None, "signal", "navigation"])

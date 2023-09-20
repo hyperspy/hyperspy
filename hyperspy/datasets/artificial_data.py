@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2023 The HyperSpy developers
+#
+# This file is part of HyperSpy.
+#
+# HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
+
 """Functions for generating artificial data.
 
 For use in things like docstrings or to test HyperSpy functionalities.
@@ -468,3 +486,62 @@ def get_luminescence_signal(navigation_dimension=0,
     return sig
 
 get_luminescence_signal.__doc__ %= (ADD_NOISE_DOCSTRING)
+
+
+def get_wave_image(angle=45, wavelength=10, shape=(256, 256), add_noise=True, random_state=None):
+    """
+    Returns a wave image generated using the sinus function.
+
+    Parameters
+    ----------
+    angle : float, optional
+        The angle in degree.
+    wavelength : float, optional
+        The wavelength the wave in pixel. The default is 10
+    shape : tuple of float, optional
+        The shape of the data. The default is (256, 256).
+    %s
+
+    Returns
+    -------
+    Signal2D
+
+    """
+
+    x = np.arange(0, shape[0], 1)
+    y = np.arange(0, shape[1], 1)
+    X, Y = np.meshgrid(x, y)
+
+    angle = np.deg2rad(angle)
+    grating = np.sin(
+        2*np.pi*(X*np.cos(angle) + Y*np.sin(angle)) / wavelength
+    )
+    if add_noise:
+        random_state = check_random_state(random_state)
+
+        grating += random_state.random(grating.shape)
+
+    s = signals.Signal2D(grating)
+    for axis in s.axes_manager.signal_axes:
+        axis.units = 'nm'
+        axis.scale = 0.01
+
+    return s
+
+get_wave_image.__doc__ %= (ADD_NOISE_DOCSTRING)
+
+
+__all__ = [
+    'get_low_loss_eels_signal',
+    'get_core_loss_eels_signal',
+    'get_low_loss_eels_line_scan_signal',
+    'get_core_loss_eels_line_scan_signal',
+    'get_core_loss_eels_model',
+    'get_atomic_resolution_tem_signal2d',
+    'get_luminescence_signal',
+    'get_wave_image',
+    ]
+
+
+def __dir__():
+    return sorted(__all__)

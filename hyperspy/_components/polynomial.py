@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,7 +21,7 @@ import logging
 
 from hyperspy._components.expression import Expression
 from hyperspy.misc.utils import ordinal
-from hyperspy.misc.utils import is_binned # remove in v2.0
+
 
 _logger = logging.getLogger(__name__)
 
@@ -52,9 +52,6 @@ class Polynomial(Expression):
     """
 
     def __init__(self, order=2, module="numexpr", **kwargs):
-        # Not to break scripts once we remove the legacy Polynomial
-        if "legacy" in kwargs:
-            del kwargs["legacy"]
         if order == 0:
             raise ValueError("Polynomial of order 0 is not supported.")
         coeff_list = ['{}'.format(o).zfill(len(list(str(order)))) for o in
@@ -64,7 +61,6 @@ class Polynomial(Expression):
         name = "{} order Polynomial".format(ordinal(order))
         super().__init__(expression=expr, name=name, module=module,
              autodoc=False, **kwargs)
-        self._id_name = "eab91275-88db-4855-917a-cdcbe7209592"
 
     def get_polynomial_order(self):
         return len(self.parameters) - 1
@@ -94,9 +90,7 @@ class Polynomial(Expression):
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
 
-        if is_binned(signal):
-        # in v2 replace by
-        #if axis.is_binned:
+        if axis.is_binned:
             # using the mean of the gradient for non-uniform axes is a best
             # guess to the scaling of binned signals for the estimation
             scaling_factor = axis.scale if axis.is_uniform \
@@ -106,9 +100,7 @@ class Polynomial(Expression):
             estimation = np.polyfit(axis.axis[i1:i2],
                                     signal()[i1:i2],
                                     self.get_polynomial_order())
-            if is_binned(signal):
-            # in v2 replace by
-            #if axis.is_binned:
+            if axis.is_binned:
                 for para, estim in zip(self.parameters[::-1], estimation):
                     para.value = estim / scaling_factor
             else:
@@ -133,9 +125,7 @@ class Polynomial(Expression):
                 cmap_shape = nav_shape + (self.get_polynomial_order() + 1, )
                 fit = fit.reshape(cmap_shape)
 
-                if is_binned(signal):
-                # in v2 replace by
-                #if axis.is_binned:
+                if axis.is_binned:
                     for i, para in enumerate(self.parameters[::-1]):
                         para.map['values'][:] = fit[..., i] / scaling_factor
                         para.map['is_set'][:] = True
@@ -151,14 +141,12 @@ def convert_to_polynomial(poly_dict):
     """
     Convert the dictionary from the old to the new polynomial definition
     """
-    _logger.info("Converting the polynomial to the new definition")
-    poly_order = poly_dict['order']
+    _logger.info("Converting the polynomial to the new definition.")
     coeff_list = ['{}'.format(o).zfill(len(list(str(poly_dict['order']))))
                   for o in range(poly_dict['order'], -1, -1)]
     poly2_dict = dict(poly_dict)
     coefficient_dict = poly_dict['parameters'][0]
     poly2_dict['parameters'] = []
-    poly2_dict['_id_name'] = "eab91275-88db-4855-917a-cdcbe7209592"
     for i, coeff in enumerate(coeff_list):
         param_dict = dict(coefficient_dict)
         param_dict['_id_name'] = 'a{}'.format(coeff)

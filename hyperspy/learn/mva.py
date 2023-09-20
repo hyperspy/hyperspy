@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,13 +20,13 @@
 import logging
 import types
 import warnings
+
 import dask.array as da
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import FuncFormatter, MaxNLocator
+import rsciio.utils.tools as io_tools
 
-import hyperspy.misc.io.tools as io_tools
-from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.learn.mlpca import mlpca
 from hyperspy.learn.ornmf import ornmf
 from hyperspy.learn.orthomax import orthomax
@@ -39,7 +39,6 @@ from hyperspy.misc.utils import (
     stack,
     is_hyperspy_signal,
     is_cupy_array,
-    get_numpy_kwargs,
     )
 from hyperspy.external.progressbar import progressbar
 
@@ -189,29 +188,27 @@ class MVA:
             In the case of sklearn.decomposition objects, this includes the
             values of all arguments of the chosen sklearn algorithm.
         svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
-            If auto:
-                The solver is selected by a default policy based on `data.shape` and
-                `output_dimension`: if the input data is larger than 500x500 and the
-                number of components to extract is lower than 80% of the smallest
-                dimension of the data, then the more efficient "randomized"
-                method is enabled. Otherwise the exact full SVD is computed and
-                optionally truncated afterwards.
-            If full:
-                run exact SVD, calling the standard LAPACK solver via
-                :py:func:`scipy.linalg.svd`, and select the components by postprocessing
-            If arpack:
-                use truncated SVD, calling ARPACK solver via
-                :py:func:`scipy.sparse.linalg.svds`. It requires strictly
-                `0 < output_dimension < min(data.shape)`
-            If randomized:
-                use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
-                to estimate a limited number of components
-             For cupy arrays, only "full" is supported.
+            * If ``"auto"``: the solver is selected by a default policy based on ``data.shape`` and
+              ``output_dimension``: if the input data is larger than 500x500 and the
+              number of components to extract is lower than 80% of the smallest
+              dimension of the data, then the more efficient ``"randomized"``
+              method is enabled. Otherwise the exact full SVD is computed and
+              optionally truncated afterwards.
+            * If ``"full"``: run exact SVD, calling the standard LAPACK solver via
+              :py:func:`scipy.linalg.svd`, and select the components by postprocessing
+            * If ``"arpack"``: use truncated SVD, calling ARPACK solver via
+              :py:func:`scipy.sparse.linalg.svds`. It strictly requires
+              ``0 < output_dimension < min(data.shape)``
+            * If ``"randomized"``: use truncated SVD, call
+              :py:func:`sklearn.utils.extmath.randomized_svd` to estimate a
+              limited number of components
+
+            For cupy arrays, only "full" is supported.
         copy : bool, default True
-            * If True, stores a copy of the data before any pre-treatments
+            * If ``True``, stores a copy of the data before any pre-treatments
               such as normalization in ``s._data_before_treatments``. The original
               data can then be restored by calling ``s.undo_treatments()``.
-            * If False, no copy is made. This can be beneficial for memory
+            * If ``False``, no copy is made. This can be beneficial for memory
               usage, but care must be taken since data will be overwritten.
         **kwargs : extra keyword arguments
             Any keyword arguments are passed to the decomposition algorithm.
@@ -233,11 +230,8 @@ class MVA:
 
         See Also
         --------
-        * :py:meth:`~.signal.MVATools.plot_decomposition_factors`
-        * :py:meth:`~.signal.MVATools.plot_decomposition_loadings`
-        * :py:meth:`~.signal.MVATools.plot_decomposition_results`
-        * :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`
-        * :py:meth:`~._signals.lazy.LazySignal.decomposition` for lazy signals
+        plot_decomposition_factors, plot_decomposition_loadings,
+        plot_decomposition_results, plot_explained_variance_ratio
 
         """
         if is_cupy_array(self.data):  # pragma: no cover
@@ -272,35 +266,6 @@ class MVA:
             raise AttributeError(
                 "It is not possible to decompose a dataset with navigation_size < 2"
             )
-
-        # Check for deprecated algorithm arguments
-        algorithms_deprecated = {
-            "fast_svd": "SVD",
-            "svd": "SVD",
-            "fast_mlpca": "MLPCA",
-            "mlpca": "MLPCA",
-            "nmf": "NMF",
-            "RPCA_GoDec": "RPCA",
-        }
-        new_algo = algorithms_deprecated.get(algorithm, None)
-        if new_algo:
-            if "fast" in algorithm:
-                warnings.warn(
-                    f"The algorithm name `{algorithm}` has been deprecated and will be "
-                    f"removed in HyperSpy 2.0. Please use `{new_algo}` along with the "
-                    "argument `svd_solver='randomized'` instead.",
-                    VisibleDeprecationWarning,
-                )
-                svd_solver = "randomized"
-            else:
-                warnings.warn(
-                    f"The algorithm name `{algorithm}` has been deprecated and will be "
-                    f"removed in HyperSpy 2.0. Please use `{new_algo}` instead.",
-                    VisibleDeprecationWarning,
-                )
-
-            # Update algorithm name
-            algorithm = new_algo
 
         # Check algorithms requiring output_dimension
         algorithms_require_dimension = [
@@ -350,16 +315,6 @@ class MVA:
             )
             normalize_poissonian_noise = False
 
-        # Check for deprecated polyfit
-        polyfit = kwargs.get("polyfit", False)
-        if polyfit:
-            warnings.warn(
-                "The `polyfit` argument has been deprecated and will be "
-                "removed in HyperSpy 2.0. Please use `var_func` instead.",
-                VisibleDeprecationWarning,
-            )
-            var_func = polyfit
-
         # Initialize return_info and print_info
         to_return = None
         to_print = [
@@ -369,8 +324,6 @@ class MVA:
             f"  output_dimension={output_dimension}",
             f"  centre={centre}",
         ]
-
-        from hyperspy.signal import BaseSignal
 
         self._check_navigation_mask(navigation_mask)
         self._check_signal_mask(signal_mask)
@@ -1335,7 +1288,7 @@ class MVA:
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.decomposition`
+        * decomposition
         * :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`
         * :py:meth:`~.learn.mva.MVA.get_decomposition_loadings`
         * :py:meth:`~.learn.mva.MVA.get_decomposition_factors`
@@ -2510,7 +2463,7 @@ class MVA:
                 for o_indx,k in enumerate(k_range):
                     # calculate the data metric
                     if(algorithm=="kmeans"):
-                        kwargs['n_init']=1
+                        kwargs['n_init'] = 1
                     cluster_algorithm = \
                         self._get_cluster_algorithm(algorithm,n_clusters=k,**kwargs)
                     alg = self._cluster_analysis(scaled_data,
@@ -2641,8 +2594,7 @@ class MVA:
             y1 = curve_values_adj[0]
             y2 = curve_values_adj[max_points]
 
-        kw = get_numpy_kwargs(self.data)
-        xs = np.arange(max_points, **kw)
+        xs = np.arange(max_points, like=self.data)
         if log:
             ys = np.log(curve_values_adj[:max_points])
         else:

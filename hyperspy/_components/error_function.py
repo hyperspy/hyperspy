@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2022 The HyperSpy developers
+# Copyright 2007-2023 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -17,8 +17,6 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from hyperspy._components.expression import Expression
-from packaging.version import Version
-import sympy
 
 
 class Erf(Expression):
@@ -54,9 +52,6 @@ class Erf(Expression):
 
     def __init__(self, A=1., sigma=1., origin=0., module=["numpy", "scipy"],
                  **kwargs):
-        if Version(sympy.__version__) < Version("1.3"):
-            raise ImportError("The `ErrorFunction` component requires "
-                              "SymPy >= 1.3")
         super().__init__(
             expression="A * erf((x - origin) / sqrt(2) / sigma) / 2",
             name="Erf",
