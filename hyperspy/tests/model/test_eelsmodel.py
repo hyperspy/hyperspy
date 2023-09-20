@@ -470,3 +470,61 @@ class TestFitBackground2D:
         self.m.fit_background(only_current=False)
         residual = self.s - self.m.as_signal()
         assert pytest.approx(residual.data) == 0
+
+@lazifyTestClass
+class TestEELSFineStructure:
+
+    def setup_method(self, method):
+        s = hs.signals.EELSSpectrum(np.zeros((1024)))
+        s.axes_manager[0].units = "eV"
+        s.axes_manager[0].scale = 0.1
+        s.axes_manager[0].offset = 690
+        s.add_elements(["Fe"])
+        s.set_microscope_parameters(100, 15, 30)
+
+        m = s.create_model(GOS="hydrogenic", auto_background=False)
+
+        self.g1 = hs.model.components1D.GaussianHF(centre=712, height=50, fwhm=3)
+        self.g2 = hs.model.components1D.GaussianHF(centre=725, height=30, fwhm=4)
+        self.m = m
+
+    def test_fs_components_in_model(self):
+        self.m.components.Fe_L3.fine_structure_components.update((self.g1, self.g2))
+        for component in self.m.components.Fe_L3.fine_structure_components:
+            assert component in self.m
+
+    @pytest.mark.parametrize("fine_structure_active", [True, False])
+    def test_fs_components_inherit_fs_active(self, fine_structure_active):
+        self.m.components.Fe_L3.fine_structure_active = fine_structure_active
+        self.m.components.Fe_L3.fine_structure_components.update((self.g1, self.g2))
+        for component in self.m.components.Fe_L3.fine_structure_components:
+            assert component.active == fine_structure_active
+            
+    def test_fine_structure_smoothing(self):
+        Fe = self.m.components.Fe_L3
+        Fe.fine_structure_active = True
+        Fe.fine_structure_smoothing = 0.3
+        len_coeff = len(Fe.fine_structure_coeff.value)
+        Fe.fine_structure_smoothing = 0.2
+        assert len(Fe.fine_structure_coeff) < len_coeff
+        Fe.fine_structure_smoothing = 0.4
+        assert len(Fe.fine_structure_coeff) > len_coeff
+
+    def test_fine_structure_spline(self):
+        v2i = self.m.signal1D.axes_manager[0].value2index
+        Fe = self.m.components.Fe_L3
+        Fe.fine_structure_active = True
+        Fe.fine_structure_spline = True
+        Fe.fine_structure_width = 30
+        onset = Fe.onset_energy.value
+        axis1 = np.linspace(Fe.onset_energy.value, Fe.onset_energy.value + Fe.fine_structure_width, endpoint=False) 
+        assert np.all(Fe.function(axis1) == 0)
+        Fe.fine_structure_coeff.value = np.arange(len(Fe.fine_structure_coeff.value)) + 1
+        assert np.all(Fe.function(axis1) != 0)
+        Fe.fine_structure_spline_onset = 10
+        Fe.fine_structure_coeff.value = np.arange(len(Fe.fine_structure_coeff.value)) + 1
+        axis2 = np.linspace(Fe.onset_energy.value, Fe.onset_energy.value + Fe.fine_structure_spline_onset, endpoint=False) 
+        axis3 = np.linspace(Fe.onset_energy.value + Fe.fine_structure_spline_onset,
+                            Fe.onset_energy.value + Fe.fine_structure_width, endpoint=False) 
+        assert np.all(Fe.function(axis2) == 0)
+        assert np.all(Fe.function(axis3) != 0)
