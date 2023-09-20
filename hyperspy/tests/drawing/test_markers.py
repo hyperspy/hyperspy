@@ -16,6 +16,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 import pytest
 from copy import deepcopy
+from pathlib import Path
 
 
 import numpy as np
@@ -27,6 +28,7 @@ from matplotlib.transforms import (
 import matplotlib.pyplot as plt
 import dask.array as da
 
+import hyperspy.api as hs
 from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy._signals.signal2d import Signal2D, BaseSignal, Signal1D
 from hyperspy.axes import UniformDataAxis
@@ -60,9 +62,13 @@ from hyperspy.utils.markers import (
     Lines,
 )
 
+
 BASELINE_DIR = "marker_collection"
 DEFAULT_TOL = 2.0
 STYLE_PYTEST_MPL = "default"
+FILE_PATH = Path(__file__).resolve().parent
+
+
 plt.style.use(STYLE_PYTEST_MPL)
 
 
@@ -587,13 +593,15 @@ class TestMarkersDictToMarkers:
             "Text",
         ),
     )
-    def test_marker2collection(self, request, marker_type, data, signal):
+    def test_marker_hs17_API(self, request, marker_type, data, signal):
         d = request.getfixturevalue(data)
         test_dict = {}
         test_dict["data"] = d
         test_dict["marker_type"] = marker_type
         test_dict["marker_properties"] = {"color": "black"}
         test_dict["plot_on_signal"] = True
+        if marker_type in ["Ellipse", "Rectangle"]:
+            test_dict["marker_properties"]["fill"] = None
         markers = markers_dict_to_markers(test_dict)
 
         signal.add_marker(
@@ -605,7 +613,7 @@ class TestMarkersDictToMarkers:
         "data", ("iter_data", "static_data", "static_and_iter_data")
     )
     @pytest.mark.parametrize("marker_type", ("NotAValidMarker", ))
-    def test_marker2collectionfail(self, request, marker_type, data):
+    def test_marker_hs17_API_fail(self, request, marker_type, data):
         d = request.getfixturevalue(data)
         test_dict = {}
         test_dict["data"] = d
@@ -864,3 +872,48 @@ def test_warning_logger():
     s.plot()
     with pytest.warns(UserWarning):
         s.add_marker(m, plot_marker=False, permanent=False)
+
+
+def test_load_old_markers():
+    """
+    File generated using
+
+    import hyperspy.api as hs
+    import numpy as np
+
+    s = hs.signals.Signal2D(np.ones((14, 14)))
+
+    m_point = hs.plot.markers.point(x=2, y=2, color='C0')
+    m_line = hs.plot.markers.line_segment(x1=4, x2=6, y1=2, y2=4, color='C1')
+    m_vline = hs.plot.markers.vertical_line(x=12, color='C1')
+    m_vline_segment = hs.plot.markers.vertical_line_segment(x=8, y1=0, y2=4, color='C1')
+    m_hline = hs.plot.markers.horizontal_line(y=5, color='C1')
+    m_hline_segment = hs.plot.markers.horizontal_line_segment(x1=1, x2=9, y=6, color='C1')
+    m_arrow = hs.plot.markers.arrow(x1=4, y1=7, x2=6, y2=8, arrowstyle='<->')
+    m_text = hs.plot.markers.text(x=1, y=4, text="test", color='C2')
+    m_rect = hs.plot.markers.rectangle(x1=1, x2=3, y1=7, y2=12, edgecolor='C3', fill=True, facecolor='C4')
+    m_ellipse = hs.plot.markers.ellipse(x=8, y=10, width=4, height=5, edgecolor='C5')
+
+    marker_list = [
+        m_point,
+        m_line,
+        m_vline,
+        m_vline_segment,
+        m_hline,
+        m_hline_segment,
+        m_rect,
+        m_text,
+        m_arrow,
+        m_ellipse
+        ]
+
+    s.add_marker(marker_list, permanent=True)
+    s.plot(axes_ticks=True)
+
+    import matplotlib.pyplot as plt
+    plt.savefig('test.png', dpi=300)
+    s.save("signal_markers_hs1_7_5.hspy")
+    """
+    # TODO: Use plot comparison to check results of parsing hyperspy 1.x markers
+    s = hs.load(FILE_PATH / "signal_markers_hs1_7_5.hspy")
+    s.plot()

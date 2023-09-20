@@ -36,13 +36,13 @@ class Circles(Markers):
         **kwargs
     ):
         """
-        Initialize the set of Circle Markers.
+        Create a set of Circle Markers.
 
         Parameters
         ----------
         %s
         sizes : array-like
-            The size of the circles in points.
+            The size of the circles in units defined by the argument units.
         facecolors : matplotlib color or list of colors
             Set the facecolor(s) of the markers. It can be a color
             (all patches have same color), or a sequence of colors;

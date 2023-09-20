@@ -733,8 +733,10 @@ def markers_dict_to_markers(marker_dict):
     if "data" in marker_dict:
         if "Point" in markers_class:
             kwargs["offsets"], kwargs["sizes"] = dict2vector(
-                marker_dict["data"], keys=None, return_size=True
+                marker_dict["data"], keys=["x1", "y1"], return_size=True
                 )
+            kwargs['facecolors'] = kwargs['color']
+            kwargs['units'] = 'points'
             markers_class = "Points"
 
         elif "HorizontalLine" in markers_class:
@@ -791,6 +793,9 @@ def markers_dict_to_markers(marker_dict):
             kwargs["heights"] = dict2vector(
                 marker_dict["data"], keys=["y2"], return_size=False
                 )
+            fill = kwargs.pop("fill")
+            if not fill:
+                kwargs['facecolor'] = 'none'
             markers_class = "Rectangles"
 
         elif "Ellipse" in markers_class:
@@ -803,6 +808,9 @@ def markers_dict_to_markers(marker_dict):
             kwargs["heights"] = dict2vector(
                 marker_dict["data"], keys=["y2"], return_size=False
                 )
+            fill = kwargs.pop("fill")
+            if not fill:
+                kwargs['facecolor'] = 'none'
             markers_class = "Ellipses"
 
         elif "Text" in markers_class:
