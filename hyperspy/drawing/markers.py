@@ -46,6 +46,9 @@ class Markers:
 
     # The key defining the position, typically: `offsets`, `segments` or `verts`
     _position_key = "offsets"
+    # For VerticalLines and HorizontalLines, the key to set is different from
+    # `_position_key`
+    _position_key_to_set = None
 
     def __init__(
         self,
@@ -188,6 +191,8 @@ class Markers:
         self.auto_update = True
         self._offset_transform = None
         self._transform = None
+        if self._position_key_to_set is None:
+            self._position_key_to_set = self._position_key
 
         # Handling dask arrays
         self.dask_kwargs = {}
@@ -308,7 +313,7 @@ class Markers:
                 "the numbers of markers at the current navigation coordinates."
                 )
 
-        return list(self.get_data_position().values())[0].shape[0]
+        return self.get_data_position()[self._position_key_to_set].shape[0]
 
     def delete_index(self, keys, index):
         """

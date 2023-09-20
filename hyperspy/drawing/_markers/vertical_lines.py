@@ -16,15 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import copy
+
+import numpy as np
+
 from hyperspy.drawing.markers import Markers
 from matplotlib.collections import LineCollection
-import numpy as np
 
 
 class VerticalLines(Markers):
     """A set of Vertical Line Markers"""
 
     _position_key = "offsets"
+    _position_key_to_set = "segments"
 
     def __init__(self, offsets, **kwargs):
         """
@@ -75,6 +79,9 @@ class VerticalLines(Markers):
 
     def get_data_position(self, get_static_kwargs=True):
         kwargs = super().get_data_position(get_static_kwargs=get_static_kwargs)
-        x_pos = kwargs.pop("offsets")
-        kwargs["segments"] = np.array([[[x, 0], [x, 1]] for x in x_pos])
-        return kwargs
+        # Need to take a deepcopy to avoid changing `self.kwargs`
+        kwds = copy.deepcopy(kwargs)
+        kwds[self._position_key_to_set] = np.array(
+            [[[x, 0], [x, 1]] for x in kwds.pop(self._position_key)]
+            )
+        return kwds

@@ -58,25 +58,24 @@ class Arrows(Markers):
     __init__.__doc__ %= OFFSET_DOCSTRING
 
     def _initialize_collection(self):
-        kwds = self.get_data_position()
-        offsets = kwds["offsets"]
-        X = offsets[:, 0]
-        Y = offsets[:, 1]
-        U, V, C = kwds["U"], kwds["V"], kwds["C"]
+        if self.collection is None:
+            kwds = self.get_data_position()
+            offsets = kwds["offsets"]
+            X = offsets[:, 0]
+            Y = offsets[:, 1]
+            U, V, C = kwds["U"], kwds["V"], kwds["C"]
 
-        if C is None:
-            args = (X, Y, U, V)
-        else:
-            args = (X, Y, U, V, C)
+            if C is None:
+                args = (X, Y, U, V)
+            else:
+                args = (X, Y, U, V, C)
 
-        self.collection = self._collection_class(
-            *args, offset_transform=self.ax.transData, **self._init_kwargs
-        )
+            self.collection = self._collection_class(
+                *args, offset_transform=self.ax.transData, **self._init_kwargs
+            )
 
     def update(self):
-        if not self._is_iterating:
-            return
-        else:
+        if self._is_iterating or "relative" in [self._offset_transform, self._transform]:
             kwds = self.get_data_position(get_static_kwargs=False)
             # in case 'U', 'V', 'C' are not position dependent
             kwds.setdefault("U", self.kwargs["U"])
