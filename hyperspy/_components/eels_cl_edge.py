@@ -198,6 +198,7 @@ class EELSCLEdge(Component):
         self._whitelist["fine_structure_smoothing"] = None
         self._whitelist["fine_structure_spline_onset"] = None
         self._whitelist["fine_structure_spline_active"] = None
+        self._whitelist["_fine_structure_coeff_free"] = None
         self.effective_angle.events.value_changed.connect(
             self._integrate_GOS, [])
         self.onset_energy.events.value_changed.connect(self._integrate_GOS, [])
