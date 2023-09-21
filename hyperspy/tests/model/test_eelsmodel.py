@@ -505,6 +505,10 @@ class TestEELSFineStructure:
         self.m.components.Fe_L3.fine_structure_components.update((self.g1, self.g2))
         for component in self.m.components.Fe_L3.fine_structure_components:
             assert component.active == fine_structure_active
+        self.m.components.Fe_L3.fine_structure_active = (not fine_structure_active)
+        for component in self.m.components.Fe_L3.fine_structure_components:
+            assert component.active == (not fine_structure_active)
+        
             
     def test_fine_structure_smoothing(self):
         Fe = self.m.components.Fe_L3
@@ -534,3 +538,16 @@ class TestEELSFineStructure:
                             Fe.onset_energy.value + Fe.fine_structure_width, endpoint=False) 
         assert np.all(Fe.function(axis2) == 0)
         assert np.all(Fe.function(axis3) != 0)
+
+    def test_model_store_restore(self):
+        Fe = self.m.components.Fe_L3
+        Fe.fine_structure_active = True
+        Fe.fine_structure_components.update((self.g1, self.g2))
+        Fe.fine_structure_spline_onset = 20
+        Fe.fine_structure_coeff.value = np.arange(len(Fe.fine_structure_coeff.value)) + 1
+        m = self.m
+        m.store()
+        mc = m.signal1D.models.a.restore()
+        assert np.array_equal(m(), mc())
+    
+
