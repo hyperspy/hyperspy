@@ -224,13 +224,11 @@ class EELSCLEdge(Component):
                 break
             comp.active = arg
         self.__fine_structure_active = arg
-        # Force replot
-        if self.int_fine_structure:
-        	self.intensity.value = self.intensity.value
-
-    fine_structure_active = property(
-        _get_fine_structure_active, _set_fine_structure_active
-    )
+        if self.fine_structure_spline:
+            if self.model:
+                self.model.update_plot()
+    fine_structure_active = property(_get_fine_structure_active,
+                                     _set_fine_structure_active)
 
     def _get_fine_structure_width(self):
         return self.__fine_structure_width
@@ -238,6 +236,8 @@ class EELSCLEdge(Component):
     def _set_fine_structure_width(self, arg):
         self.__fine_structure_width = arg
         self._set_fine_structure_coeff()
+        if self.fine_structure_active and  self.model:
+            self.model.update_plot()
 
     fine_structure_width = property(
         _get_fine_structure_width, _set_fine_structure_width
@@ -306,6 +306,8 @@ class EELSCLEdge(Component):
         if 0 <= value <= 1:
             self._fine_structure_smoothing = value
             self._set_fine_structure_coeff()
+            if self.fine_structure_active and  self.model:
+                self.model.update_plot()
         else:
             raise ValueError("The value must be a number between 0 and 1")
 
@@ -322,6 +324,8 @@ class EELSCLEdge(Component):
         if not np.allclose(value, self._fine_structure_spline_onset):
             self._fine_structure_spline_onset = value
             self._set_fine_structure_coeff()
+            if self.fine_structure_active and  self.model:
+                self.model.update_plot()
 
     def _set_fine_structure_coeff(self):
         if self.energy_scale is None:
