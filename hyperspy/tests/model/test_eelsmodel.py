@@ -488,9 +488,15 @@ class TestEELSFineStructure:
         self.g2 = hs.model.components1D.GaussianHF(centre=725, height=30, fwhm=4)
         self.m = m
 
-    def test_fs_components_in_model(self):
+    def test_fs_components_in_model_update(self):
         self.m.components.Fe_L3.fine_structure_components.update((self.g1, self.g2))
         for component in self.m.components.Fe_L3.fine_structure_components:
+            assert component in self.m
+
+    def test_fs_components_in_model_add(self):
+        self.m.components.Fe_L3.fine_structure_components.update((self.g1, self.g2))
+        for component in (self.g1, self.g2):
+            self.m.components.Fe_L3.fine_structure_components.add(component)
             assert component in self.m
 
     @pytest.mark.parametrize("fine_structure_active", [True, False])
