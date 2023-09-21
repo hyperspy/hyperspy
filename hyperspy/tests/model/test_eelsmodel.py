@@ -521,6 +521,34 @@ class TestEELSFineStructure:
         assert len(Fe.fine_structure_coeff) < len_coeff
         Fe.fine_structure_smoothing = 0.4
         assert len(Fe.fine_structure_coeff) > len_coeff
+        with pytest.raises(ValueError):
+            Fe.fine_structure_smoothing = 3
+        with pytest.raises(ValueError):
+            Fe.fine_structure_smoothing = -3
+
+    def test_free_fix_fine_structure(self):
+        Fe = self.m.components.Fe_L3
+        Fe.fine_structure_active = True
+        assert Fe.fine_structure_coeff.free
+        Fe.fix_fine_structure()
+        assert not Fe.fine_structure_coeff.free
+        Fe.free_fine_structure()
+        assert Fe.fine_structure_coeff.free
+        Fe.fine_structure_components.update((self.g1, self.g2))
+        self.g1.fwhm.free = False
+        self.g2.fwhm.free = False
+        Fe.fix_fine_structure()
+        for component in (self.g1, self.g2):
+            for parameter in component.parameters:
+                assert not parameter.free
+        Fe.free_fine_structure()
+        for component in (self.g1, self.g2):
+            for parameter in component.parameters:
+                if parameter.name != "fwhm":
+                    assert parameter.free
+                else:
+                    assert not parameter.free
+
 
     def test_fine_structure_active_frees_coeff(self):
         Fe = self.m.components.Fe_L3
