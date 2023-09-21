@@ -591,12 +591,11 @@ class Markers:
             self.collection.set(**kwds)
 
     def _initialize_collection(self):
-        if self.collection is None:
-            self.collection = self._collection_class(
-                **self.get_data_position(),
-                offset_transform=self.offset_transform,
+        self.collection = self._collection_class(
+            **self.get_data_position(),
+            offset_transform=self.offset_transform,
             )
-            self.collection.set_transform(self.transform)
+        self.collection.set_transform(self.transform)
 
     def plot(self, render_figure=True):
         """
