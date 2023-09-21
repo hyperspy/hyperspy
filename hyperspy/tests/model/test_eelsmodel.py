@@ -522,6 +522,16 @@ class TestEELSFineStructure:
         Fe.fine_structure_smoothing = 0.4
         assert len(Fe.fine_structure_coeff) > len_coeff
 
+    def test_fine_structure_active_frees_coeff(self):
+        Fe = self.m.components.Fe_L3
+        Fe.fine_structure_active = True
+        assert Fe.fine_structure_coeff.free
+        Fe.fine_structure_coeff.free = False
+        Fe.fine_structure_active = False
+        assert not Fe.fine_structure_coeff.free
+        Fe.fine_structure_active = True
+        assert not Fe.fine_structure_coeff.free
+
     def test_fine_structure_spline(self):
         v2i = self.m.signal1D.axes_manager[0].value2index
         Fe = self.m.components.Fe_L3

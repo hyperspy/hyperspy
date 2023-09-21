@@ -143,6 +143,7 @@ class EELSCLEdge(Component):
     """.format(_GOSH_DOI)
 
     _fine_structure_smoothing = 0.3
+    _fine_structure_coeff_free = True
 
     def __init__(self, element_subshell, GOS="gosh", gos_file_path=None):
         # Declare the parameters
@@ -214,8 +215,12 @@ class EELSCLEdge(Component):
         return self.__fine_structure_active
 
     def _set_fine_structure_active(self, arg):
-        if self.fine_structure_spline_active and arg is False:
-            self.fine_structure_coeff.free = False
+        if self.fine_structure_spline_active:
+            if arg:
+                self.fine_structure_coeff.free = self._fine_structure_coeff_free
+            else:
+                self._fine_structure_coeff_free = self.fine_structure_coeff.free
+                self.fine_structure_coeff.free = False
         for comp in self.fine_structure_components:
             if isinstance(comp, str):
                 # Loading from a dictionary and the

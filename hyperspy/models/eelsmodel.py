@@ -681,6 +681,7 @@ class EELSModel(Model1D):
 
     def enable_fine_structure(self, edges_list=None):
         """Enable the fine structure of the edges listed in edges_list.
+
         If edges_list is None (default) the fine structure of all the edges
         with onset in the spectrum energy region will be enabled.
 
@@ -707,8 +708,6 @@ class EELSModel(Model1D):
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.fine_structure_active = True
-                if edge.fine_structure_spline_active:
-                    edge.fine_structure_coeff.free = True
         self.resolve_fine_structure()
 
     def disable_fine_structure(self, edges_list=None):
@@ -739,7 +738,6 @@ class EELSModel(Model1D):
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.fine_structure_active = False
-                edge.fine_structure_coeff.free = False
         self.resolve_fine_structure()
 
     def set_all_edges_intensities_positive(self):
