@@ -144,10 +144,10 @@ class EELSCLEdge(Component):
 
     _fine_structure_smoothing = 0.3
     _fine_structure_coeff_free = True
+    _fine_structure_spline_active = True
 
     def __init__(self, element_subshell, GOS="gosh", gos_file_path=None):
         # Declare the parameters
-        self.fine_structure_spline_active = True
         self.fine_structure_components = FSet(component=self)
         Component.__init__(
             self,
@@ -324,6 +324,23 @@ class EELSCLEdge(Component):
             self._set_fine_structure_coeff()
             if self.fine_structure_active and  self.model:
                 self.model.update_plot()
+
+    @property
+    def fine_structure_spline_active(self):
+        return self._fine_structure_spline_active
+
+    @fine_structure_spline_active.setter
+    def fine_structure_spline_active(self, value):
+        if value:
+            if self.fine_structure_active:
+                self.fine_structure_coeff.free = self._fine_structure_coeff_free
+            self._fine_structure_spline_active = value
+        else:
+            self._fine_structure_coeff_free = self.fine_structure_coeff.free
+            self.fine_structure_coeff.free = False
+            self._fine_structure_spline_active = value
+        if self.fine_structure_active and  self.model:
+            self.model.update_plot()
 
     def _set_fine_structure_coeff(self):
         if self.energy_scale is None:
