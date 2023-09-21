@@ -385,19 +385,21 @@ class TestEELSModelFitting:
         s.add_elements(("B", ))
         self.m = s.create_model(auto_background=False)
 
-    def test_free_edges(self):
+    @pytest.mark.parametrize("kind", ["std", "smart"])
+    def test_free_edges(self, kind):
         m = self.m
         m.enable_fine_structure()
         intensity = m.components.B_K.intensity.value
         onset_energy = m.components.B_K.onset_energy.value
         fine_structure_coeff = m.components.B_K.fine_structure_coeff.value
         m.free_edges()
-        m.multifit()
+        m.multifit(kind=kind)
         assert intensity != m.components.B_K.intensity.value
         assert onset_energy != m.components.B_K.onset_energy.value
         assert fine_structure_coeff != m.components.B_K.fine_structure_coeff.value
 
-    def test_fix_edges(self):
+    @pytest.mark.parametrize("kind", ["std", "smart"])
+    def test_fix_edges(self, kind):
         m = self.m
         m.enable_fine_structure()
         intensity = m.components.B_K.intensity.value
@@ -405,7 +407,7 @@ class TestEELSModelFitting:
         fine_structure_coeff = m.components.B_K.fine_structure_coeff.value
         m.free_edges()
         m.fix_edges()
-        m.multifit()
+        m.multifit(kind=kind)
         assert intensity == m.components.B_K.intensity.value
         assert onset_energy == m.components.B_K.onset_energy.value
         assert fine_structure_coeff == m.components.B_K.fine_structure_coeff.value
