@@ -211,10 +211,12 @@ class EELSCLEdge(Component):
     # In this way we avoid a common source of problems when fitting
     # However the fine structure must be *manually* freed when we
     # reactivate the fine structure.
-    def _get_fine_structure_active(self):
+    @property
+    def fine_structure_active(self):
         return self.__fine_structure_active
 
-    def _set_fine_structure_active(self, arg):
+    @fine_structure_active.setter
+    def fine_structure_active(self, arg):
         if self.fine_structure_spline_active:
             if arg:
                 self.fine_structure_coeff.free = self._fine_structure_coeff_free
@@ -223,60 +225,51 @@ class EELSCLEdge(Component):
                 self.fine_structure_coeff.free = False
         for comp in self.fine_structure_components:
             if isinstance(comp, str):
-                # Loading from a dictionary and the
-                # external fine structure components
-                # are still strings
+                # Loading from a dictionary and the external fine structure components are still strings
                 break
             comp.active = arg
         self.__fine_structure_active = arg
-        if self.fine_structure_spline_active:
-            if self.model:
-                self.model.update_plot()
-    fine_structure_active = property(_get_fine_structure_active,
-                                     _set_fine_structure_active)
-
-    def _get_fine_structure_width(self):
-        return self.__fine_structure_width
-
-    def _set_fine_structure_width(self, arg):
-        self.__fine_structure_width = arg
-        self._set_fine_structure_coeff()
-        if self.fine_structure_active and  self.model:
+        if self.fine_structure_spline_active and self.model:
             self.model.update_plot()
 
-    fine_structure_width = property(
-        _get_fine_structure_width, _set_fine_structure_width
-    )
+    @property
+    def fine_structure_width(self):
+        return self.__fine_structure_width
+
+    @fine_structure_width.setter
+    def fine_structure_width(self, arg):
+        self.__fine_structure_width = arg
+        self._set_fine_structure_coeff()
+        if self.fine_structure_active and self.model:
+            self.model.update_plot()
 
     # E0
-    def _get_E0(self):
+    @property
+    def E0(self):
         return self.__E0
-
-    def _set_E0(self, arg):
+    
+    @E0.setter
+    def E0(self, arg):
         self.__E0 = arg
         self._calculate_effective_angle()
-
-    E0 = property(_get_E0, _set_E0)
-
-    # Collection semi-angle
-    def _get_collection_angle(self):
+    
+    @property
+    def collection_angle(self):
         return self.__collection_angle
-
-    def _set_collection_angle(self, arg):
+    
+    @collection_angle.setter
+    def collection_angle(self, arg):
         self.__collection_angle = arg
         self._calculate_effective_angle()
-
-    collection_angle = property(_get_collection_angle, _set_collection_angle)
-    # Convergence semi-angle
-
-    def _get_convergence_angle(self):
+    
+    @property
+    def convergence_angle(self):
         return self.__convergence_angle
-
-    def _set_convergence_angle(self, arg):
+    
+    @convergence_angle.setter
+    def convergence_angle(self, arg):
         self.__convergence_angle = arg
         self._calculate_effective_angle()
-
-    convergence_angle = property(_get_convergence_angle, _set_convergence_angle)
 
     def _calculate_effective_angle(self):
         try:
