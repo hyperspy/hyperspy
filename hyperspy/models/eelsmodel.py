@@ -924,12 +924,7 @@ class EELSModel(Model1D):
             edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
-                edge.fine_structure_coeff.free = False
-                for component in edge.fine_structure_components:
-                    component._auto_free_parameters = []
-                    for parameter in component.free_parameters:
-                        parameter.free = False
-                        component._auto_free_parameters.append(parameter)
+                edge.fix_fine_structure()
 
     def free_fine_structure(self, edges_list=None):
         """Frees the fine structure of the edges given in edges_list.
@@ -957,13 +952,7 @@ class EELSModel(Model1D):
             edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
-                if edge.fine_structure_spline_active:
-                    edge.fine_structure_coeff.free = True
-                for component in edge.fine_structure_components:
-                    if hasattr(component, "_auto_free_parameters"):
-                        for parameter in component._auto_free_parameters:
-                            parameter.free = True
-                        del component._auto_free_parameters
+                edge.free_fine_structure()
 
     def suspend_auto_fine_structure_width(self):
         """Disable the automatic adjustment of the core-loss edges fine

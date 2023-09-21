@@ -340,6 +340,45 @@ class EELSCLEdge(Component):
         if self.fine_structure_coeff.map is not None:
             self.fine_structure_coeff._create_array()
 
+    def fix_fine_structure(self):
+        """Fixes the fine structure spline and the parameters of the fine
+        structure components, if any.
+
+        See Also
+        --------
+        free_fine_structure
+
+        """
+        self.fine_structure_coeff.free = False
+        for component in self.fine_structure_components:
+            component._auto_free_parameters = []
+            for parameter in component.free_parameters:
+                parameter.free = False
+                component._auto_free_parameters.append(parameter)
+
+    def free_fine_structure(self):
+        """Frees the parameters of the fine structure
+
+        If there are fine structure components, only the 
+        parameters that have been previously fixed with
+        ``fix_fine_structure`` will be set free.
+        
+        The spline parameters set free only if
+        ``fine_structure_spline_active`` is ``True``.
+
+        See Also
+        --------
+        free_fine_structure
+
+        """
+        if self.fine_structure_spline_active:
+            self.fine_structure_coeff.free = True
+        for component in self.fine_structure_components:
+            if hasattr(component, "_auto_free_parameters"):
+                for parameter in component._auto_free_parameters:
+                    parameter.free = True
+                del component._auto_free_parameters
+
     def set_microscope_parameters(self, E0, alpha, beta, energy_scale):
         """
         Set the microscope parameters.
