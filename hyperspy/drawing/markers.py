@@ -660,9 +660,9 @@ def dict2vector(data, keys=None, return_size=True, dtype=float):
 
     Multiple keys can be passed as well. For example to define a rectangle:
 
-    >>> dict2offsets(data,keys= [['x1','y1'], ['x2','y1'], ['x2', 'y2'],['x1', 'y2']])
+    >>> dict2offsets(data,keys= [[["x1", "y1"], ["x2", "y2"]]])
 
-    In this example the keys will be unpacked to create a rectangle.
+    In this example the keys will be unpacked to create a line segment
     """
     if keys is None:
         keys = [["x1", "x2"]]
@@ -736,8 +736,16 @@ def markers_dict_to_markers(marker_dict):
                 marker_dict["data"], keys=["x1", "y1"], return_size=True
                 )
             kwargs['facecolors'] = kwargs['color']
-            kwargs['units'] = 'points'
+            kwargs['units'] = 'dots'
+            if "size" not in kwargs:
+                kwargs["size"] = 20
+            kwargs["size"] = kwargs["size"]/np.pi
             markers_class = "Points"
+        elif "HorizontalLineSegment" in markers_class:
+            kwargs["segments"] = dict2vector(
+                marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y1"]]], return_size=False
+                )
+            markers_class = "Lines"
 
         elif "HorizontalLine" in markers_class:
             kwargs["offsets"] = dict2vector(
@@ -745,24 +753,16 @@ def markers_dict_to_markers(marker_dict):
                 )
             markers_class = "HorizontalLines"
 
-        elif "HorizontalLineSegment" in markers_class:
-            kwargs["offsets"] = dict2vector(
-                marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y1"]]], return_size=False
-                )
-            markers_class = "Lines"
-
-        elif "VerticalLine" in markers_class:
-            kwargs["offsets"] = dict2vector(
-                marker_dict["data"], keys=["x1"], return_size=False
-                )
-            markers_class = "VerticalLines"
-
         elif "VerticalLineSegment" in markers_class:
             kwargs["segments"] = dict2vector(
                 marker_dict["data"], keys=[[["x1", "y1"], ["x1", "y2"]]], return_size=False
                 )
             markers_class = "Lines"
-
+        elif "VerticalLine" in markers_class:
+            kwargs["offsets"] = dict2vector(
+                marker_dict["data"], keys=["x1"], return_size=False
+                )
+            markers_class = "VerticalLines"
         elif "Line" in markers_class:
             kwargs["segments"] = dict2vector(
                 marker_dict["data"], keys=[[["x1", "y1"], ["x2", "y2"]]], return_size=False
@@ -771,28 +771,46 @@ def markers_dict_to_markers(marker_dict):
 
         elif "Arrow" in markers_class:
             # check if dx == x2 or dx == x2 - x1, etc.
-            kwargs["offsets"] = dict2vector(
-                marker_dict["data"], keys=[["x1", "y1"],], return_size=False
-                )
-            kwargs["U"] = dict2vector(
-                marker_dict["data"], keys=[["x2"],], return_size=False
-                )
-            kwargs["V"] = dict2vector(
-                marker_dict["data"], keys=[["y2"],], return_size=False
-                )
+            vectors = dict2vector(marker_dict["data"], keys=["x1", "y1", "x2", "y2"],
+                                 return_size=False)
+            if vectors.dtype == object:
+                offsets = np.empty(vectors.shape, dtype=object)
+                U = np.empty(vectors.shape, dtype=object)
+                V = np.empty(vectors.shape, dtype=object)
+                for i in np.ndindex(vectors.shape):
+                    offsets[i] = np.array([[vectors[i][0], vectors[i][1]], ])
+                    U[i] = np.array([vectors[i][0] - vectors[i][2]])
+                    V[i] = np.array([vectors[i][1] - vectors[i][3]])
+            else:
+                offsets = np.array([[vectors[0], vectors[1]],])
+                U = np.array([vectors[2] - vectors[0]])
+                V = np.array([vectors[3] - vectors[1]])
+
+            kwargs["offsets"] = offsets
+            kwargs["U"] = U
+            kwargs["V"] = V
             markers_class = "Arrows"
+
 
         elif "Rectangle" in markers_class:
             # check if dx == x2 or dx == x2 - x1, etc.
-            kwargs["offsets"] = dict2vector(
-                marker_dict["data"], keys=[["x1", "y1"], ], return_size=False
-                )
-            kwargs["widths"] = dict2vector(
-                marker_dict["data"], keys=["x2"], return_size=False
-                )
-            kwargs["heights"] = dict2vector(
-                marker_dict["data"], keys=["y2"], return_size=False
-                )
+            vectors = dict2vector(marker_dict["data"], keys=["x1", "y1", "x2", "y2"],
+                                 return_size=False)
+            if vectors.dtype == object:
+                offsets = np.empty(vectors.shape, dtype=object)
+                widths = np.empty(vectors.shape, dtype=object)
+                heights = np.empty(vectors.shape, dtype=object)
+                for i in np.ndindex(vectors.shape):
+                    offsets[i] = [[(vectors[i][0]+vectors[i][2])/2, (vectors[i][1]+vectors[i][3])/2],]
+                    widths[i] = [np.abs(vectors[i][0] - vectors[i][2]),]
+                    heights[i] = [np.abs(vectors[i][1] - vectors[i][3]),]
+            else:
+                offsets = [[((vectors[0]+vectors[2])/2), ((vectors[1] + vectors[3]) / 2)],]
+                widths = [np.abs(vectors[0] - vectors[2]),]
+                heights = [np.abs(vectors[1] - vectors[3]),]
+            kwargs["offsets"] = offsets
+            kwargs["widths"] = widths
+            kwargs["heights"] = heights
             fill = kwargs.pop("fill")
             if not fill:
                 kwargs['facecolor'] = 'none'
@@ -820,10 +838,15 @@ def markers_dict_to_markers(marker_dict):
             kwargs["texts"] = dict2vector(
                 marker_dict["data"], keys=["text"], return_size=False, dtype=str
                 )
+            kwargs["verticalalignment"] = "bottom"
+            kwargs["horizontalalignment"] = "left"
             markers_class = "Texts"
 
         # remove "data" key:value
         del marker_dict["data"]
+    if "size" in kwargs:
+        kwargs["sizes"] = kwargs.pop("size")
+
 
     return getattr(hyperspy.utils.markers, markers_class)(
         **marker_dict, **kwargs

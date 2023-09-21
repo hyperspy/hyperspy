@@ -873,7 +873,9 @@ def test_warning_logger():
     with pytest.warns(UserWarning):
         s.add_marker(m, plot_marker=False, permanent=False)
 
-
+@pytest.mark.mpl_image_compare(
+        baseline_dir=BASELINE_DIR, tolerance=5.0, style=STYLE_PYTEST_MPL
+    )
 def test_load_old_markers():
     """
     File generated using
@@ -916,4 +918,7 @@ def test_load_old_markers():
     """
     # TODO: Use plot comparison to check results of parsing hyperspy 1.x markers
     s = hs.load(FILE_PATH / "signal_markers_hs1_7_5.hspy")
-    s.plot()
+    s.metadata.General.original_filename = ""
+    s.tmp_parameters.filename = ""
+    s.plot(axes_ticks=True)
+    return s._plot.signal_plot.figure
