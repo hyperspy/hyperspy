@@ -1762,9 +1762,9 @@ class EELSSpectrum(Signal1D):
                                   render_figure=True):
         ind = np.where(np.isin(self._edge_markers["names"], EELS_edges))
         if self._edge_markers["lines"] is not None:
-            self._edge_markers["lines"].delete_index("segments", ind)
+            self._edge_markers["lines"].remove_item("segments", ind)
         if self._edge_markers["text"] is not None:
-            self._edge_markers["text"].delete_index(["offsets", "texts"], ind)
+            self._edge_markers["text"].remove_item(["offsets", "texts"], ind)
         if self._edge_markers["names"] is not []:
             self._edge_markers["names"] = np.delete(self._edge_markers["names"], ind)
         if render_figure:
@@ -1789,14 +1789,13 @@ class EELSSpectrum(Signal1D):
         if self._edge_markers["lines"] is None:
             self._edge_markers["lines"] = Lines(segments=np.empty((0, 2, 2)),
                                                 transform="relative")
-        self._edge_markers["lines"].append_kwarg("segments", segments)
+        self._edge_markers["lines"].add_item(["segments", ], [segments, ])
         if self._edge_markers["text"] is None:
             self._edge_markers["text"] = Texts(offsets=np.empty((0, 2)),
                                                texts=np.empty((0,)),
                                                rotation=np.pi/2,
                                                transform="relative")
-        self._edge_markers["text"].append_kwarg("offsets", offsets)
-        self._edge_markers["text"].append_kwarg("texts", np.array(names))
+        self._edge_markers["text"].add_item(("offsets", "texts"), (offsets, names))
         self._edge_markers["names"] = np.append(self._edge_markers["names"], names)
         if render_figure:
             self._render_figure(plot=['signal_plot'])
