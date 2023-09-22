@@ -434,7 +434,7 @@ will be reset to `0` when any of those values change.
 If we zoom-in the fine structure region of the Boron-K ionization edge of the BN
 model above, we notice that the fit is actually not very good:
 
-.. figure::  images/EELS_BN_zoomin.png
+.. figure::  images/EELS_BN_B_zoomin.png
    :align:   center
    :width:   500
 
