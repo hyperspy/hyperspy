@@ -65,6 +65,11 @@ class EELSModel(Model1D):
             auto_background = False
             auto_add_edges = False
             self._load_dictionary(dictionary)
+            for edge in self.edges:
+                fine_structure_components = set()
+                for comp_name in edge.fine_structure_components:
+                    fine_structure_components.add(self[comp_name])
+                edge.fine_structure_components = fine_structure_components
 
         if auto_background is True:
             background = PowerLaw()
@@ -504,7 +509,8 @@ class EELSModel(Model1D):
         to_activate_fs = []
         for edge_ in [edge, ] + twins:
             if (edge_.fine_structure_active is True and
-                    edge_.fine_structure_coeff.free is True):
+                    edge_.fine_structure_coeff.free is True or
+                    edge_.fine_structure_components):
                 to_activate_fs.append(edge_)
         self.disable_fine_structure(to_activate_fs)
 
@@ -675,6 +681,7 @@ class EELSModel(Model1D):
 
     def enable_fine_structure(self, edges_list=None):
         """Enable the fine structure of the edges listed in edges_list.
+
         If edges_list is None (default) the fine structure of all the edges
         with onset in the spectrum energy region will be enabled.
 
@@ -701,7 +708,6 @@ class EELSModel(Model1D):
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.fine_structure_active = True
-                edge.fine_structure_coeff.free = True
         self.resolve_fine_structure()
 
     def disable_fine_structure(self, edges_list=None):
@@ -732,7 +738,6 @@ class EELSModel(Model1D):
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.fine_structure_active = False
-                edge.fine_structure_coeff.free = False
         self.resolve_fine_structure()
 
     def set_all_edges_intensities_positive(self):
@@ -917,7 +922,7 @@ class EELSModel(Model1D):
             edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
-                edge.fine_structure_coeff.free = False
+                edge.fix_fine_structure()
 
     def free_fine_structure(self, edges_list=None):
         """Frees the fine structure of the edges given in edges_list.
@@ -945,7 +950,7 @@ class EELSModel(Model1D):
             edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
-                edge.fine_structure_coeff.free = True
+                edge.free_fine_structure()
 
     def suspend_auto_fine_structure_width(self):
         """Disable the automatic adjustment of the core-loss edges fine

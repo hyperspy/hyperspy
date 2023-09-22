@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
+import functools
 import logging
 import math
 
@@ -32,6 +33,34 @@ from hyperspy.ui_registry import add_gui_method
 
 
 _logger = logging.getLogger(__name__)
+
+
+class FSet(set):
+    def __init__(self, component, *args, **kwargs):
+        """Creates a set that knows about the Component
+
+        Parameters:
+        -----------
+        component : Component
+            The component to which the FSet belongs.
+        """
+        self.component = component
+        super().__init__(*args, **kwargs)
+
+    @functools.wraps(set.add)
+    def add(self, item):
+        item.active = self.component.fine_structure_active
+        if self.component.model and item not in self.component.model:
+            self.component.model.append(item)
+        super().add(item)
+
+    @functools.wraps(set.update)
+    def update(self, iterable):
+        for item in iterable:
+            item.active = self.component.fine_structure_active
+            if self.component.model and item not in self.component.model:
+                self.component.model.append(item)
+        super().update(iterable)
 
 
 @add_gui_method(toolkey="hyperspy.EELSCLEdge_Component")
@@ -60,11 +89,11 @@ class EELSCLEdge(Component):
     Parameters
     ----------
     element_subshell : str or dict
-        Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
+        Usually a string, for example, ``'Ti_L3'`` for the GOS of the titanium L3
         subshell. If a dictionary is passed, it is assumed that Hartree Slater
         GOS was exported using `GOS.as_dictionary`, and will be reconstructed.
-    GOS : 'gosh', 'hydrogenic', 'Hartree-Slater' or str
-        The GOS to use. Default is 'gosh'. If str, it must the path to gosh
+    GOS : ``'gosh'``, ``'hydrogenic'``, ``'Hartree-Slater'`` or str
+        The GOS to use. Default is ``'gosh'``. If str, it must the path to gosh
         GOS file.
     gos_file_path : str, None
         Only with GOS='gosh'. Specify the file path of the gosh file
@@ -79,26 +108,47 @@ class EELSCLEdge(Component):
         favourable cases is proportional to the number of atoms of
         the element. It is a component.Parameter instance.
         It is fixed by default.
+    effective_angle : Parameter
+        The effective collection semi-angle. It is automatically
+        calculated by ``set_microscope_parameters``. It is a
+        component.Parameter instance. It is fixed by default.
+    fine_structure_active : bool, default False
+        Activates/deactivates the fine structure features. When active,
+        the fine structure region
+        is not defined by the simulated
+        EELS core-loss edge, but by a spline (if ``fine_structure_spline_active``
+        is ``True``) and/or any component in ``fine_structure_components``.
+    fine_structure_spline_active : bool, default True
+        If True and ``fine_structure_active`` is True, the region from
+        ``fine_structure_spline_onset`` until ``fine_structure_width``
+        are modelled with a spline.
     fine_structure_coeff : Parameter
         The coefficients of the spline that fits the fine structure.
         Fix this parameter to fix the fine structure. It is a
-        component.Parameter instance.
-    effective_angle : Parameter
-        The effective collection semi-angle. It is automatically
-        calculated by set_microscope_parameters. It is a
-        component.Parameter instance. It is fixed by default.
-    fine_structure_smoothing : float between 0 and 1
+        ``component.Parameter`` instance.
+    fine_structure_smoothing : float between 0 and 1, default 0.3
         Controls the level of smoothing of the fine structure model.
         Decreasing the value increases the level of smoothing.
-    fine_structure_active : bool
-        Activates/deactivates the fine structure feature.
-
+    fine_structure_spline_onset : float, default 0.
+        The position, from the ionization edge onset, at which the region
+        modelled by the spline function starts.
+    fine_structure_width : float, default 30.
+        The width of the energy region, from the ionization edge onset, where
+        the model is a spline function and/or any component
+        in ``fine_structure_components`` instead of the EELS ionization
+        edges simulation.
+    fine_structure_components : set, default ``set()``
+        A set containing components to model the fine structure region
+        of the EELS ionization edge.
     """.format(_GOSH_DOI)
 
     _fine_structure_smoothing = 0.3
+    _fine_structure_coeff_free = True
+    _fine_structure_spline_active = True
 
     def __init__(self, element_subshell, GOS="gosh", gos_file_path=None):
         # Declare the parameters
+        self.fine_structure_components = FSet(component=self)
         Component.__init__(
             self,
             ["intensity", "fine_structure_coeff", "effective_angle", "onset_energy"],
@@ -146,69 +196,81 @@ class EELSCLEdge(Component):
         self._whitelist["fine_structure_active"] = None
         self._whitelist["fine_structure_width"] = None
         self._whitelist["fine_structure_smoothing"] = None
-        self.effective_angle.events.value_changed.connect(self._integrate_GOS, [])
+        self._whitelist["fine_structure_spline_onset"] = None
+        self._whitelist["fine_structure_spline_active"] = None
+        self._whitelist["_fine_structure_coeff_free"] = None
+        self.effective_angle.events.value_changed.connect(
+            self._integrate_GOS, [])
         self.onset_energy.events.value_changed.connect(self._integrate_GOS, [])
-        self.onset_energy.events.value_changed.connect(self._calculate_knots, [])
+        self.onset_energy.events.value_changed.connect(
+            self._calculate_knots, [])
+        self._fine_structure_spline_onset = 0
+        self.events.active_changed.connect(self._set_active_fine_structure_components)
 
     # Automatically fix the fine structure when the fine structure is
     # disable.
     # In this way we avoid a common source of problems when fitting
     # However the fine structure must be *manually* freed when we
     # reactivate the fine structure.
-    def _get_fine_structure_active(self):
+    @property
+    def fine_structure_active(self):
         return self.__fine_structure_active
 
-    def _set_fine_structure_active(self, arg):
-        if arg is False:
-            self.fine_structure_coeff.free = False
+    @fine_structure_active.setter
+    def fine_structure_active(self, arg):
+        if self.fine_structure_spline_active:
+            if arg:
+                self.fine_structure_coeff.free = self._fine_structure_coeff_free
+            else:
+                self._fine_structure_coeff_free = self.fine_structure_coeff.free
+                self.fine_structure_coeff.free = False
+        for comp in self.fine_structure_components:
+            if isinstance(comp, str):
+                # Loading from a dictionary and the external fine structure components are still strings
+                break
+            comp.active = arg
         self.__fine_structure_active = arg
-        # Force replot
-        self.intensity.value = self.intensity.value
+        if self.fine_structure_spline_active and self.model:
+            self.model.update_plot()
 
-    fine_structure_active = property(
-        _get_fine_structure_active, _set_fine_structure_active
-    )
-
-    def _get_fine_structure_width(self):
+    @property
+    def fine_structure_width(self):
         return self.__fine_structure_width
 
-    def _set_fine_structure_width(self, arg):
+    @fine_structure_width.setter
+    def fine_structure_width(self, arg):
         self.__fine_structure_width = arg
         self._set_fine_structure_coeff()
-
-    fine_structure_width = property(
-        _get_fine_structure_width, _set_fine_structure_width
-    )
+        if self.fine_structure_active and self.model:
+            self.model.update_plot()
 
     # E0
-    def _get_E0(self):
+    @property
+    def E0(self):
         return self.__E0
-
-    def _set_E0(self, arg):
+    
+    @E0.setter
+    def E0(self, arg):
         self.__E0 = arg
         self._calculate_effective_angle()
-
-    E0 = property(_get_E0, _set_E0)
-
-    # Collection semi-angle
-    def _get_collection_angle(self):
+    
+    @property
+    def collection_angle(self):
         return self.__collection_angle
-
-    def _set_collection_angle(self, arg):
+    
+    @collection_angle.setter
+    def collection_angle(self, arg):
         self.__collection_angle = arg
         self._calculate_effective_angle()
-
-    collection_angle = property(_get_collection_angle, _set_collection_angle)
-    # Convergence semi-angle
-
-    def _get_convergence_angle(self):
+    
+    @property
+    def convergence_angle(self):
         return self.__convergence_angle
-
-    def _set_convergence_angle(self, arg):
+    
+    @convergence_angle.setter
+    def convergence_angle(self, arg):
         self.__convergence_angle = arg
         self._calculate_effective_angle()
-
-    convergence_angle = property(_get_convergence_angle, _set_convergence_angle)
 
     def _calculate_effective_angle(self):
         try:
@@ -222,8 +284,20 @@ class EELSCLEdge(Component):
             # All the parameters may not be defined yet...
             pass
 
+    def _set_active_fine_structure_components(self, active, **kwargs):
+        if not self.fine_structure_active:
+            return
+        for comp in self.fine_structure_components:
+            comp.active = active
+
     @property
     def fine_structure_smoothing(self):
+        """Controls the level of the smoothing of the fine structure.
+
+        It must a real number between 0 and 1. The higher close to 0
+        the higher the smoothing.
+
+        """
         return self._fine_structure_smoothing
 
     @fine_structure_smoothing.setter
@@ -231,6 +305,8 @@ class EELSCLEdge(Component):
         if 0 <= value <= 1:
             self._fine_structure_smoothing = value
             self._set_fine_structure_coeff()
+            if self.fine_structure_active and  self.model:
+                self.model.update_plot()
         else:
             raise ValueError("The value must be a number between 0 and 1")
 
@@ -238,24 +314,86 @@ class EELSCLEdge(Component):
     def _onset_energy(self):
         return self.onset_energy.value
 
+    @property
+    def fine_structure_spline_onset(self):
+        return self._fine_structure_spline_onset
+
+    @fine_structure_spline_onset.setter
+    def fine_structure_spline_onset(self, value):
+        if not np.allclose(value, self._fine_structure_spline_onset):
+            self._fine_structure_spline_onset = value
+            self._set_fine_structure_coeff()
+            if self.fine_structure_active and  self.model:
+                self.model.update_plot()
+
+    @property
+    def fine_structure_spline_active(self):
+        return self._fine_structure_spline_active
+
+    @fine_structure_spline_active.setter
+    def fine_structure_spline_active(self, value):
+        if value:
+            if self.fine_structure_active:
+                self.fine_structure_coeff.free = self._fine_structure_coeff_free
+            self._fine_structure_spline_active = value
+        else:
+            self._fine_structure_coeff_free = self.fine_structure_coeff.free
+            self.fine_structure_coeff.free = False
+            self._fine_structure_spline_active = value
+        if self.fine_structure_active and  self.model:
+            self.model.update_plot()
+
     def _set_fine_structure_coeff(self):
         if self.energy_scale is None:
             return
-        self.fine_structure_coeff._number_of_elements = (
-            int(
-                round(
-                    self.fine_structure_smoothing
-                    * self.fine_structure_width
-                    / self.energy_scale
-                )
-            )
-            + 4
-        )
+        self.fine_structure_coeff._number_of_elements = int(
+            round(self.fine_structure_smoothing *
+                  (self.fine_structure_width - self.fine_structure_spline_onset) /
+                  self.energy_scale)) + 4
         self.fine_structure_coeff.bmin = None
         self.fine_structure_coeff.bmax = None
         self._calculate_knots()
         if self.fine_structure_coeff.map is not None:
             self.fine_structure_coeff._create_array()
+
+    def fix_fine_structure(self):
+        """Fixes the fine structure spline and the parameters of the fine
+        structure components, if any.
+
+        See Also
+        --------
+        free_fine_structure
+
+        """
+        self.fine_structure_coeff.free = False
+        for component in self.fine_structure_components:
+            component._auto_free_parameters = []
+            for parameter in component.free_parameters:
+                parameter.free = False
+                component._auto_free_parameters.append(parameter)
+
+    def free_fine_structure(self):
+        """Frees the parameters of the fine structure
+
+        If there are fine structure components, only the 
+        parameters that have been previously fixed with
+        ``fix_fine_structure`` will be set free.
+        
+        The spline parameters set free only if
+        ``fine_structure_spline_active`` is ``True``.
+
+        See Also
+        --------
+        free_fine_structure
+
+        """
+        if self.fine_structure_spline_active:
+            self.fine_structure_coeff.free = True
+        for component in self.fine_structure_components:
+            if hasattr(component, "_auto_free_parameters"):
+                for parameter in component._auto_free_parameters:
+                    parameter.free = True
+                del component._auto_free_parameters
 
     def set_microscope_parameters(self, E0, alpha, beta, energy_scale):
         """
@@ -319,18 +457,26 @@ class EELSCLEdge(Component):
             # unnecessarily.
             self._integrate_GOS()
         Emax = self.GOS.energy_axis[-1] + self.GOS.energy_shift
-        cts = np.zeros((len(E)))
-        bsignal = E >= self.onset_energy.value
-        if self.fine_structure_active is True:
-            bfs = bsignal * (E < (self.onset_energy.value + self.fine_structure_width))
-            cts[bfs] = splev(
-                E[bfs], (self.__knots, self.fine_structure_coeff.value + (0,) * 4, 3)
-            )
-            bsignal[bfs] = False
-        itab = bsignal * (E <= Emax)
-        cts[itab] = self.tab_xsection(E[itab])
-        bsignal[itab] = False
-        cts[bsignal] = self._power_law_A * E[bsignal] ** -self._power_law_r
+        cts = np.zeros_like(E, dtype="float")
+        if self.fine_structure_active:
+            ifsx1 = self.onset_energy.value + self.fine_structure_spline_onset
+            ifsx2 = self.onset_energy.value + self.fine_structure_width
+            if self.fine_structure_spline_active:
+                bifs = (E >= ifsx1) & (E < ifsx2)
+                # Only set the spline values if the spline is in the energy region
+                if np.any(bifs):
+                    cts[bifs] = splev(
+                        E[bifs],
+                        (self.__knots, self.fine_structure_coeff.value + (0,) * 4, 3))
+            # The cross-section is set to 0 in the fine structure region
+            itab = (E < Emax) & (E >= ifsx2)
+        else:
+            itab = (E < Emax) & (E >= self.onset_energy.value)
+        if itab.any():
+            cts[itab] = self.tab_xsection(E[itab])
+        bext = E >= Emax
+        if bext.any():
+            cts[bext] = self._power_law_A * E[bext] ** -self._power_law_r
         return cts * self.intensity.value
 
     def grad_intensity(self, E):
@@ -380,3 +526,9 @@ class EELSCLEdge(Component):
         s.metadata.General.title = self.name.replace("_", " ") + " fine structure"
 
         return s
+
+    def as_dictionary(self, fullcopy=True):
+        dic = super().as_dictionary(fullcopy=fullcopy)
+        dic["fine_structure_components"] = [t.name for t in self.fine_structure_components]
+        dic["_whitelist"]["fine_structure_components"] = ""
+        return dic
