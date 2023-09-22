@@ -1086,9 +1086,9 @@ class EDSSpectrum(Signal1D):
             If True, render the figure after removing the markers
         """
         ind = np.where(np.isin(self._xray_markers["names"], xray_lines))
-        self._xray_markers["lines"].delete_index("segments", ind)
-        self._xray_markers["text"].delete_index(["offsets", "texts"],
-                                                ind)
+        self._xray_markers["lines"].remove_item("segments", ind)
+        self._xray_markers["text"].remove_item(["offsets", "texts"],
+                                               ind)
         self._xray_markers["names"] = np.delete(self._xray_markers["names"], ind)
         if render_figure:
             self._render_figure(plot=['signal_plot'])

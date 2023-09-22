@@ -41,9 +41,7 @@ s.add_marker(m)
 
 
 # Set new texts and offsets parameters with one less item
-texts = texts[:-1]
-offsets = offsets[:-1]
-m.collection.set(texts=texts, offsets=offsets)
+m.remove_item(keys=("texts", "offsets"), index=-1)
 
 print(f'Number of markers is {len(m)} after removing one marker.')
 
@@ -55,10 +53,8 @@ s.add_marker(m)
 # ##################################
 
 # Define the position in the middle of the axes
-offsets = np.vstack((offsets, np.array([50, 50])))
-texts = np.hstack((texts, np.array(['new text'])))
 
-m.collection.set(texts=texts, offsets=offsets)
+m.add_item(keys=("texts", "offsets"), values=(["new text"], [[50, 50],]))
 
 print(f'Number of markers is {len(m)} after adding the text {texts[-1]}.')
 

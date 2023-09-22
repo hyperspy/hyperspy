@@ -315,7 +315,7 @@ class Markers:
 
         return self.get_data_position()[self._position_key_to_set].shape[0]
 
-    def delete_index(self, keys, index):
+    def remove_item(self, keys, index):
         """
         Delete the index from the kwargs.
 
@@ -337,7 +337,7 @@ class Markers:
             else:
                 self.kwargs[key] = np.delete(self.kwargs[key], index, axis=0)
 
-    def append_kwarg(self, keys, value):
+    def add_item(self, keys, values):
         """
         Add the index from the kwargs.
 
@@ -352,10 +352,11 @@ class Markers:
             keys = [
                 keys,
             ]
-        # skip if value is empty
-        if len(value) == 0:
-            return
-        for key in keys:
+        if not isiterable(values):
+            values = [
+                values,
+            ]
+        for key, value in zip(keys, values):
             if self.kwargs[key].dtype == object:
                 for i in np.ndindex(self.kwargs[key].shape):
                     self.kwargs[key][i] = np.append(self.kwargs[key][i], value, axis=0)

@@ -424,20 +424,20 @@ class TestInitMarkers:
         m = Points(offsets=da.array([[1, 1], [2, 2]]))
         assert not isinstance(m.kwargs["offsets"], da.Array)
 
-    def test_append_kwarg(self):
+    def test_add_item(self):
         offsets = np.empty(2, dtype=object)
         for i in range(2):
             offsets[i] = np.array([[1, 1], [2, 2]])
         m = Points(offsets=offsets)
-        m.append_kwarg(keys="offsets", value=[[0, 1]])
+        m.add_item(keys="offsets", values=[[[0, 1]],])
         assert len(m.kwargs["offsets"][0]) == 3
 
-    def test_delete_index(self):
+    def test_remove_item(self):
         offsets = np.empty(2, dtype=object)
         for i in range(2):
             offsets[i] = np.array([[1, 1], [2, 2]])
         m = Points(offsets=offsets)
-        m.delete_index(keys="offsets", index=1)
+        m.remove_item(keys="offsets", index=1)
         assert len(m.kwargs["offsets"][0]) == 1
 
     def test_rep(self):
