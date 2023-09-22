@@ -18,7 +18,6 @@ import pytest
 from copy import deepcopy
 from pathlib import Path
 
-
 import numpy as np
 from matplotlib.transforms import (
     IdentityTransform,
@@ -63,7 +62,7 @@ from hyperspy.utils.markers import (
 )
 
 
-BASELINE_DIR = "marker_collection"
+BASELINE_DIR = "markers"
 DEFAULT_TOL = 2.0
 STYLE_PYTEST_MPL = "default"
 FILE_PATH = Path(__file__).resolve().parent
@@ -697,7 +696,7 @@ class TestMarkersTransform:
         assert isinstance(markers.offset_transform, IdentityTransform)
         markers.offset_transform = "data"
         assert isinstance(markers.offset_transform, CompositeGenericTransform)
-        assert markers.collection.get_transform() == markers.transform
+        assert markers._collection.get_transform() == markers.transform
 
     def test_unknown_tranform(self):
         with pytest.raises(ValueError):
@@ -724,8 +723,8 @@ class TestRelativeMarkers:
         signal.add_marker(markers)
         signal.add_marker(texts)
         signal.axes_manager.navigation_axes[0].index = 1
-        segs = markers.collection.get_segments()
-        offs = texts.collection.get_offsets()
+        segs = markers._collection.get_segments()
+        offs = texts._collection.get_offsets()
         assert segs[0][0][0] == 0
         assert segs[0][1][1] == 11
         assert offs[0][1] == 11
@@ -743,8 +742,8 @@ class TestRelativeMarkers:
         signal.add_marker(markers)
         signal.add_marker(texts)
         signal.axes_manager.navigation_axes[0].index = 1
-        segs = markers.collection.get_segments()
-        offs = texts.collection.get_offsets()
+        segs = markers._collection.get_segments()
+        offs = texts._collection.get_offsets()
         assert segs[0][0][0] == 0
         assert segs[0][1][1] == 12
         assert offs[0][1] == 12
@@ -921,9 +920,33 @@ def test_load_old_markers():
     plt.savefig('test.png', dpi=300)
     s.save("signal_markers_hs1_7_5.hspy")
     """
-    # TODO: Use plot comparison to check results of parsing hyperspy 1.x markers
     s = hs.load(FILE_PATH / "signal_markers_hs1_7_5.hspy")
     s.metadata.General.original_filename = ""
     s.tmp_parameters.filename = ""
     s.plot(axes_ticks=True)
+    return s._plot.signal_plot.figure
+
+
+@pytest.mark.mpl_image_compare(
+        baseline_dir=BASELINE_DIR, tolerance=5.0, style=STYLE_PYTEST_MPL
+    )
+def test_colorbar_collection():
+    s = Signal2D(np.ones((100, 100)))
+    rng = np.random.default_rng(0)
+    sizes = rng.random((10, )) * 20 + 5
+    offsets = rng.random((10, 2)) * 100
+    m = hs.plot.markers.Circles(
+        sizes=sizes,
+        offsets=offsets,
+        linewidth=2,
+        )
+
+    with pytest.raises(RuntimeError):
+        m.plot_colorbar()
+
+    s.plot()
+    s.add_marker(m)
+    m.set_ScalarMappable_array(sizes.ravel() / 2)
+    cbar = m.plot_colorbar()
+    cbar.set_label('Circle radius')
     return s._plot.signal_plot.figure

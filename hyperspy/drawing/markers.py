@@ -58,6 +58,7 @@ class Markers:
         shift=None,
         plot_on_signal=True,
         name="",
+        ScalarMappable_array=None,
         **kwargs,
     ):
         """
@@ -98,6 +99,11 @@ class Markers:
             If True, plot on signal figure, otherwise on navigator.
         name : str
             The name of the markers.
+        ScalarMappable_array : Array-like
+            Set the array of the :py:class:`matplotlib.cm.ScalarMappable` of the
+            matplotlib collection.
+            The ``ScalarMappable`` array will overwrite ``facecolor` and
+            ``edgecolor``. Default is None.
         **kwargs : dict
             Keyword arguments passed to the underlying marker collection. Any argument
             that is array-like and has ``dtype=object`` is assumed to be an iterating
@@ -225,15 +231,15 @@ class Markers:
         self._class_name = self.__class__.__name__
         self.name = name
         # Properties
-        self.collection = None
+        self._collection = None
         # used in _initialize_collection
         self._collection_class = collection
         self._signal = None
         self._plot_on_signal = plot_on_signal
         self.shift = shift
-        self.plot_marker = True
         self.offset_transform = offset_transform
         self.transform = transform
+        self._ScalarMappable_array = ScalarMappable_array
 
         # Events
         self.events = Events()
@@ -279,8 +285,8 @@ class Markers:
                 f"The transform must be one of {str_}."
             )
         setattr(self, attr, value)
-        if self.collection is not None and self.ax is not None:
-            getattr(self.collection, f"set{attr}")(getattr(self, attr[1:]))
+        if self._collection is not None and self.ax is not None:
+            getattr(self._collection, f"set{attr}")(getattr(self, attr[1:]))
             # Update plot
             self.update()
 
@@ -518,6 +524,7 @@ class Markers:
             "offset_transform": self._offset_transform,
             "transform": self._transform,
             "kwargs": self.kwargs,
+            "ScalarMappable_array": self._ScalarMappable_array,
         }
         if class_name == "Markers":
             marker_dict['collection'] = self._collection_class.__name__
@@ -589,14 +596,14 @@ class Markers:
     def update(self):
         if self._is_iterating or "relative" in [self._offset_transform, self._transform]:
             kwds = self.get_data_position(get_static_kwargs=False)
-            self.collection.set(**kwds)
+            self._collection.set(**kwds)
 
     def _initialize_collection(self):
-        self.collection = self._collection_class(
+        self._collection = self._collection_class(
             **self.get_data_position(),
             offset_transform=self.offset_transform,
             )
-        self.collection.set_transform(self.transform)
+        self._collection.set_transform(self.transform)
 
     def plot(self, render_figure=True):
         """
@@ -618,8 +625,8 @@ class Markers:
                 + "`s._plot.navigator_plot.add_marker(m)`"
             )
         self._initialize_collection()
-        self.collection.set_animated(self.ax.figure.canvas.supports_blit)
-        self.ax.add_collection(self.collection)
+        self._collection.set_animated(self.ax.figure.canvas.supports_blit)
+        self.ax.add_collection(self._collection)
         if render_figure:
             self._render_figure()
 
@@ -627,7 +634,8 @@ class Markers:
         self.ax.hspy_fig.render_figure()
 
     def close(self, render_figure=True):
-        """Remove and disconnect the marker.
+        """
+        Remove and disconnect the marker.
 
         Parameters
         ----------
@@ -641,14 +649,73 @@ class Markers:
         if self._closing:
             return
         self._closing = True
-        self.collection.remove()
-        self.collection = None
+        self._collection.remove()
+        self._collection = None
         self.events.closed.trigger(obj=self)
         self._signal = None
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
         if render_figure:
             self._render_figure()
+
+    def set_ScalarMappable_array(self, array):
+        """
+        Set the array of the :py:class:`matplotlib.cm.ScalarMappable` of the
+        matplotlib collection.
+        The ``ScalarMappable`` array will overwrite ``facecolor` and
+        ``edgecolor``.
+
+        Parameters
+        ----------
+        array : array-like
+            The value that are mapped to the colors.
+
+        See Also
+        --------
+        plot_colorbar
+        """
+        self._ScalarMappable_array = array
+        if self._collection is not None:
+            self._collection.set_array(array)
+
+    def plot_colorbar(self):
+        """
+        Add a colorbar for the collection.
+
+        Returns
+        -------
+        cbar : :py:class:`matplotlib.
+            The colorbar of the collection.
+
+        See Also
+        --------
+        set_ScalarMappable_array
+
+        Example
+        -------
+        >>> rng = np.random.default_rng(0)
+        >>> s = hs.signals.Signal2D(np.ones((100, 100)))
+        >>> # Define the size of the circles
+        >>> sizes = rng.random((10, )) * 10 + 20
+        >>> # Define the position of the circles
+        >>> offsets = rng.random((10, 2)) * 100
+        >>> m = hs.plot.markers.Circles(
+        ...    sizes=sizes,
+        ...    offsets=offsets,
+        ...    linewidth=2,
+        ...    )
+        >>> s.plot()
+        >>> s.add_marker(m)
+        >>> m.set_ScalarMappable_array(sizes.ravel() / 2)
+        >>> cbar = m.plot_colorbar()
+        >>> cbar.set_label('Circle radius')
+        """
+        if self.ax is None:
+            raise RuntimeError("The markers needs to be plotted.")
+        self.set_ScalarMappable_array(self._ScalarMappable_array)
+        cbar = self.ax.figure.colorbar(self._collection)
+
+        return cbar
 
 
 def is_iterating(arg):

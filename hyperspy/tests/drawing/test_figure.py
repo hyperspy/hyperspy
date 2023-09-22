@@ -105,5 +105,5 @@ def test_remove_markers():
     s.add_marker(m)
     s._plot.signal_plot.remove_markers()
     assert len(s._plot.signal_plot.ax_markers) == 0
-    assert m.collection is None  # Check that the collection is set to None
+    assert m._collection is None  # Check that the collection is set to None
 

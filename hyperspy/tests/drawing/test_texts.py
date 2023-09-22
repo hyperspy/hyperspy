@@ -14,21 +14,18 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
-import pytest
 
-
-import numpy as np
-
-
-import matplotlib.pyplot as plt
 import dask.array as da
+import matplotlib.pyplot as plt
+import numpy as np
+import pytest
 
 from hyperspy.drawing._markers.texts import Texts
 from hyperspy._signals.signal2d import Signal2D, Signal1D
 from hyperspy.misc.test_utils import update_close_figure
 
 
-BASELINE_DIR = "marker_collection"
+BASELINE_DIR = "markers"
 DEFAULT_TOL = 2.0
 STYLE_PYTEST_MPL = "default"
 plt.style.use(STYLE_PYTEST_MPL)
@@ -91,6 +88,7 @@ def _test_text_collection_close():
                              [4, 4]], texts=("test",))
     signal.add_marker(markers)
     return signal
+
 
 @update_close_figure()
 def test_text_collection_close():

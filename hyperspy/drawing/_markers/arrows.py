@@ -58,7 +58,7 @@ class Arrows(Markers):
     __init__.__doc__ %= OFFSET_DOCSTRING
 
     def _initialize_collection(self):
-        if self.collection is None:
+        if self._collection is None:
             kwds = self.get_data_position()
             offsets = kwds["offsets"]
             X = offsets[:, 0]
@@ -70,7 +70,7 @@ class Arrows(Markers):
             else:
                 args = (X, Y, U, V, C)
 
-            self.collection = self._collection_class(
+            self._collection = self._collection_class(
                 *args, offset_transform=self.ax.transData, **self._init_kwargs
             )
 
@@ -81,8 +81,8 @@ class Arrows(Markers):
             kwds.setdefault("U", self.kwargs["U"])
             kwds.setdefault("V", self.kwargs["V"])
             kwds.setdefault("C", self.kwargs["C"])
-            self.collection.set_offsets(kwds["offsets"])
+            self._collection.set_offsets(kwds["offsets"])
             # Need to use `set_UVC` and pass all 'U', 'V' and 'C' at once,
             # because matplotlib expect same shape
             UVC = {k: v for k, v in kwds.items() if k in ["U", "V", "C"]}
-            self.collection.set_UVC(**UVC)
+            self._collection.set_UVC(**UVC)

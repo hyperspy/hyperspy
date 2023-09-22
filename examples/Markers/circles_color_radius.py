@@ -21,7 +21,7 @@ s = hs.signals.Signal2D(np.ones((25, 100, 100)))
 # This first example shows how to draw arrows
 
 # Define the size of the circles
-sizes = rng.random((10, )) * 10 + 20
+sizes = rng.random((10, )) * 20 + 5
 
 # Define the position of the circles
 offsets = rng.random((10, 2)) * 100
@@ -41,10 +41,10 @@ s.add_marker(m)
 #     attributes will not be saved when saving as ``hspy``/``zspy`` file.
 
 # Set the color of the circles
-m.collection.set_array(sizes.ravel() / 2)
+m.set_ScalarMappable_array(sizes.ravel() / 2)
 
 # Add corresponding colorbar
-cbar = plt.colorbar(m.collection)
+cbar = m.plot_colorbar()
 cbar.set_label('Circle radius')
 
 # Set animated state of colorbar to support blitting

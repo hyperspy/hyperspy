@@ -6098,12 +6098,11 @@ class BaseSignal(FancySlicing,
         markers_dict = self.metadata.Markers.__dict__
         for marker_name in marker_name_list:
             marker = markers_dict[marker_name]['_dtb_value_']
-            if marker.plot_marker:
-                if marker._plot_on_signal:
-                    self._plot.signal_plot.add_marker(marker)
-                else:
-                    self._plot.navigator_plot.add_marker(marker)
-                marker.plot(render_figure=False)
+            if marker._plot_on_signal:
+                self._plot.signal_plot.add_marker(marker)
+            else:
+                self._plot.navigator_plot.add_marker(marker)
+            marker.plot(render_figure=False)
         self._render_figure()
 
     def add_poissonian_noise(self, keep_dtype=True, random_state=None):
