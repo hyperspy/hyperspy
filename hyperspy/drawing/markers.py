@@ -642,6 +642,7 @@ class Markers:
             return
         self._closing = True
         self.collection.remove()
+        self.collection = None
         self.events.closed.trigger(obj=self)
         self._signal = None
         for f in self.events.closed.connected:

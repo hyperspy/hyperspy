@@ -23,6 +23,7 @@ from matplotlib.backend_bases import CloseEvent
 from hyperspy._components.polynomial import Polynomial
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.drawing._markers.points import Points
 from hyperspy.misc.test_utils import check_closing_plot
 from hyperspy.signals import Signal1D, Signal2D
 
@@ -95,3 +96,14 @@ def test_close_figure(navigator, nav_dim, sig_dim):
         # Close using matplotlib, similar to using gui
         _close_figure_matplotlib_event(m._plot.signal_plot.figure)
         m.extend([Polynomial(1)])
+
+
+def test_remove_markers():
+    s = Signal2D(np.arange(pow(10, 3)).reshape([10]*3))
+    s.plot()
+    m = Points(offsets=[[0, 0], ], color='red', sizes=100)
+    s.add_marker(m)
+    s._plot.signal_plot.remove_markers()
+    assert len(s._plot.signal_plot.ax_markers) == 0
+    assert m.collection is None  # Check that the collection is set to None
+
