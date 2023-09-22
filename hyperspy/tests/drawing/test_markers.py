@@ -532,6 +532,10 @@ class TestInitMarkers:
             Polygons(verts=[[0, 0], [1, 1]], offset_transform="data")
         with pytest.raises(ValueError):
             Rectangles(offsets=[[1, 1]], widths=1, heights=1, transform="data")
+        with pytest.raises(ValueError):
+            Squares(offsets=[[1, 1]], widths=1, transform="data")
+        with pytest.raises(ValueError):
+            Ellipses(offsets=[[1, 1]], widths=1, heights=1, transform="data")
 
 
 class TestMarkersDictToMarkers:
@@ -872,6 +876,7 @@ def test_warning_logger():
     s.plot()
     with pytest.warns(UserWarning):
         s.add_marker(m, plot_marker=False, permanent=False)
+
 
 @pytest.mark.mpl_image_compare(
         baseline_dir=BASELINE_DIR, tolerance=5.0, style=STYLE_PYTEST_MPL
