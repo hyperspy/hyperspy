@@ -16,22 +16,30 @@ navigation index resides or just pulls the value from the cached chunk.
 Interactive Markers
 ===================
 
+Interactive Markers
+===================
+
 :py:class`~.drawing.markers.Markers` operates in a similar way to signals when the data is
 retrieved. The current `index` for the signal is used to retrieve the current array of markers at that `index`.
 Additionally, lazy markers are treated similarly where the current chunk for a marker is cached.
 
-One special type of marker is the :py:class:`~.drawing._markers.relative_collection.RelativeCollection`.
+Adding new types of markers to hyperspy is relatively simple. Currently hyperspy supports any
+:py:class:`matplotlib.collections.Collection` object. For most common cases this should be sufficient
+as matplotlib has a large number of built in collections beyond what is available in hyperspy.
 
-This is used to add markers relative to the data in a 1-D Plot.  For example if you want to add lines which go from
-[0,y] where y is the value at x then you can
+In the event that you want a specific shape that isn't supported you can define a custom
+:py:class:`matplotlib.path.Path` object and then use the :py:class:`matplotlib.collections.PathCollection`
+to add the markers to the plot. Currently there is no support for saving Path based markers but that can
+be added if there are specific use cases.
+
+Many times when annotating 1-D Plots you want to add markers which are relative to the data.  For example
+you may want to add a line which goes from [0,y] where y is the value at x.  To do this you can set the
+``offset_transform`` to "relative" or the ``transfrom`` to relative.
 
 >>> s = hs.signals.Signal1D(np.random.rand(3, 15))
 >>> from matplotlib.collections import LineCollection
->>> m = hs.plot.markers.RelativeMarkers(segments = [[[2,0],[2,1.0]]], collection_class=LineCollection)
+>>> m = hs.plot.markers.Lines(segments = [[[2,0],[2,1.0]]], transform = "relative")
 >>> s.plot()
 >>> s.add_marker(m)
 
-This marker will create a line at index 2 which extends from 0 --> 1 and updates as the index changes.
-
-Unlike the case above with uses ragged or precomputed lazy markers RelativeMarkers are computed when the
-index is changed saving some extra computation as well as speeding up plotting.
+This marker will create a line at a value=2 which extends from 0 --> 1 and updates as the index changes.
