@@ -528,13 +528,13 @@ Note that the Gaussian components are added to the model:
 
 We still need to use the spline function to model the fine structure
 region that we are not modelling using the Gaussian functions. Therefore, we
-make sure that :py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_spline`
+make sure that :py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_spline_active`
 is `True` and we set its onset to around the minimum between the 2nd and 3rd (~205 eV) fine
 structure peaks:
 
 .. code-block:: python
 
-    >>> m.components.B_K.fine_structure_spline = True
+    >>> m.components.B_K.fine_structure_spline_active = True
     >>> m.components.B_K.fine_structure_spline_onset = 205. - m.components.B_K.onset_energy.value
     >>> m.smart_fit()
     >>> m.plot(plot_components=True)

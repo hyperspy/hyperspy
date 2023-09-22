@@ -514,7 +514,7 @@ class TestEELSFineStructure:
         v2i = self.m.signal1D.axes_manager[0].value2index
         Fe = self.m.components.Fe_L3
         Fe.fine_structure_active = True
-        Fe.fine_structure_spline = True
+        Fe.fine_structure_spline_active = True
         Fe.fine_structure_width = 30
         onset = Fe.onset_energy.value
         axis1 = np.linspace(Fe.onset_energy.value, Fe.onset_energy.value + Fe.fine_structure_width, endpoint=False) 

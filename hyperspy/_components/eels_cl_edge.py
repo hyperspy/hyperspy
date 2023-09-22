@@ -116,11 +116,11 @@ class EELSCLEdge(Component):
         Activates/deactivates the fine structure features. When active,
         the fine structure region
         is not defined by the simulated
-        EELS core-loss edge, but by a spline (if ``fine_structure_spline``
+        EELS core-loss edge, but by a spline (if ``fine_structure_spline_active``
         is ``True``) and/or any component in ``fine_structure_components``.
-    fine_structure_spline : bool, default True
-        If True and `fine_structure_active` is True, the region from
-        `fine_structure_spline_onset` until `fine_structure_width`
+    fine_structure_spline_active : bool, default True
+        If True and ``fine_structure_active`` is True, the region from
+        ``fine_structure_spline_onset`` until ``fine_structure_width``
         are modelled with a spline.
     fine_structure_coeff : Parameter
         The coefficients of the spline that fits the fine structure.
@@ -146,7 +146,7 @@ class EELSCLEdge(Component):
 
     def __init__(self, element_subshell, GOS="gosh", gos_file_path=None):
         # Declare the parameters
-        self.fine_structure_spline = True
+        self.fine_structure_spline_active = True
         self.fine_structure_components = FSet(component=self)
         Component.__init__(
             self,
@@ -195,8 +195,8 @@ class EELSCLEdge(Component):
         self._whitelist["fine_structure_active"] = None
         self._whitelist["fine_structure_width"] = None
         self._whitelist["fine_structure_smoothing"] = None
-        self._whitelist["fine_structure_onset"] = None
-        self._whitelist["fine_structure_spline"] = None
+        self._whitelist["fine_structure_spline_onset"] = None
+        self._whitelist["fine_structure_spline_active"] = None
         self.effective_angle.events.value_changed.connect(
             self._integrate_GOS, [])
         self.onset_energy.events.value_changed.connect(self._integrate_GOS, [])
@@ -214,7 +214,7 @@ class EELSCLEdge(Component):
         return self.__fine_structure_active
 
     def _set_fine_structure_active(self, arg):
-        if self.fine_structure_spline and arg is False:
+        if self.fine_structure_spline_active and arg is False:
             self.fine_structure_coeff.free = False
         for comp in self.fine_structure_components:
             if isinstance(comp, str):
@@ -224,7 +224,7 @@ class EELSCLEdge(Component):
                 break
             comp.active = arg
         self.__fine_structure_active = arg
-        if self.fine_structure_spline:
+        if self.fine_structure_spline_active:
             if self.model:
                 self.model.update_plot()
     fine_structure_active = property(_get_fine_structure_active,
@@ -406,7 +406,7 @@ class EELSCLEdge(Component):
         if self.fine_structure_active:
             ifsx1 = self.onset_energy.value + self.fine_structure_spline_onset
             ifsx2 = self.onset_energy.value + self.fine_structure_width
-            if self.fine_structure_spline:
+            if self.fine_structure_spline_active:
                 bifs = (E >= ifsx1) & (E < ifsx2)
                 # Only set the spline values if the spline is in the energy region
                 if np.any(bifs):
