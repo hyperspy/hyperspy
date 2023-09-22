@@ -16,11 +16,8 @@ navigation index resides or just pulls the value from the cached chunk.
 Interactive Markers
 ===================
 
-Interactive Markers
-===================
-
 :py:class`~.drawing.markers.Markers` operates in a similar way to signals when the data is
-retrieved. The current `index` for the signal is used to retrieve the current array of markers at that `index`.
+retrieved. The current ``index`` for the signal is used to retrieve the current array of markers at that ``index``.
 Additionally, lazy markers are treated similarly where the current chunk for a marker is cached.
 
 Adding new types of markers to hyperspy is relatively simple. Currently hyperspy supports any

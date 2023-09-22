@@ -331,7 +331,9 @@ graphviz_output_format = "svg"
 # -- Sphinx-copybutton -----------
 
 
-copybutton_prompt_text = ">>> "
+copybutton_prompt_text = r'>>> |\.\.\. '
+copybutton_prompt_is_regexp = True
+
 
 def setup(app):
     app.add_css_file("custom-styles.css")
