@@ -22,6 +22,9 @@ import platform
 from unittest import mock
 
 import numpy as np
+import dask.array as da
+from numpy.testing import assert_allclose
+import traits.api as t
 import pytest
 import traits.api as t
 from numpy.testing import assert_allclose
@@ -189,12 +192,10 @@ class TestDataAxis:
         assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
 
-    def test_convert_to_uniform_axis(self):
-        self.axis.name = "parrot"
-        self.axis.units = "plumage"
+    def test_convert_to_uniform_axis_no_axes_manager(self):
         uniform_axis = self.axis.convert_to_uniform_axis()
         assert isinstance(uniform_axis, UniformDataAxis)
-
+        assert uniform_axis.axes_manager is None
 
     def test_value2index(self):
         assert self.axis.value2index(10.15) == 3
@@ -207,6 +208,10 @@ class TestDataAxis:
         self.axis.axis = self.axis.axis - 2
         # test rounding on negative value
         assert self.axis.value2index(-1.5, rounding=round) == 1
+
+    def test_index2value_lazy(self):
+        values = self.axis.index2value(da.array([1, 2, 3]))
+        np.testing.assert_array_equal(values, [1, 4, 9])
 
     def test_value2index_error(self):
         with pytest.raises(ValueError):
@@ -403,6 +408,11 @@ class TestFunctionalDataAxis:
         assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
 
+    def test_convert_to_nonuniform_axis_no_axes_manager(self):
+        uniform_axis = self.axis.convert_to_non_uniform_axis()
+        assert isinstance(uniform_axis, DataAxis)
+        assert uniform_axis.axes_manager is None
+
     def test_convert_to_uniform_axis(self):
         axis = np.copy(self.axis.axis)
         is_binned = self.axis.is_binned
@@ -429,31 +439,11 @@ class TestFunctionalDataAxis:
         assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
 
+    def test_convert_to_uniform_axis_no_axes_manager(self):
+        uniform_axis = self.axis.convert_to_uniform_axis()
+        assert isinstance(uniform_axis, UniformDataAxis)
+        assert uniform_axis.axes_manager is None
 
-    def test_convert_to_uniform_axis(self):
-        axis = np.copy(self.axis.axis)
-        is_binned = self.axis.is_binned
-        navigate = self.axis.navigate
-        self.axis.name = "parrot"
-        self.axis.units = "plumage"
-        s = Signal1D(np.arange(10), axes=[self.axis])
-        index_in_array = s.axes_manager[0].index_in_array
-        s.axes_manager[0].convert_to_uniform_axis()
-        assert isinstance(s.axes_manager[0], DataAxis)
-        assert s.axes_manager[0].name == "parrot"
-        assert s.axes_manager[0].units == "plumage"
-        assert s.axes_manager[0].size == 10
-        assert s.axes_manager[0].low_value == 0
-        assert s.axes_manager[0].high_value == 81
-        with pytest.raises(AttributeError):
-            s.axes_manager[0]._expression
-        with pytest.raises(AttributeError):
-            s.axes_manager[0]._function
-        with pytest.raises(AttributeError):
-            s.axes_manager[0].x
-        assert index_in_array == s.axes_manager[0].index_in_array
-        assert is_binned == s.axes_manager[0].is_binned
-        assert navigate == s.axes_manager[0].navigate
 
     def test_update_from(self):
         ax2 = FunctionalDataAxis(size=2, units="nm", expression="x ** power", power=3)
@@ -727,6 +717,11 @@ class TestUniformDataAxis:
         assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
 
+    def test_convert_to_nonuniform_axis_no_axes_manager(self):
+        uniform_axis = self.axis.convert_to_non_uniform_axis()
+        assert isinstance(uniform_axis, DataAxis)
+        assert uniform_axis.axes_manager is None
+
     def test_convert_to_functional_data_axis(self):
         axis = np.copy(self.axis.axis)
         is_binned = self.axis.is_binned
@@ -752,6 +747,11 @@ class TestUniformDataAxis:
         assert index_in_array == s.axes_manager[0].index_in_array
         assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
+
+    def test_convert_to_functional_data_axis_no_axes_manager(self):
+        uniform_axis = self.axis.convert_to_functional_data_axis(expression='x**2')
+        assert isinstance(uniform_axis, FunctionalDataAxis)
+        assert uniform_axis.axes_manager is None
 
     @pytest.mark.parametrize("use_indices", (False, True))
     def test_crop(self, use_indices):

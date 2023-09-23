@@ -37,14 +37,16 @@ class TestUnitConversion:
         self.uc.size = size
 
     def test_units_setter(self):
-        self.uc.units = " m"
-        assert self.uc.units == " m"
-        self.uc.units = "um"
-        assert self.uc.units == "um"
-        self.uc.units = "µm"
-        assert self.uc.units == "µm"
-        self.uc.units = "km"
-        assert self.uc.units == "km"
+        self.uc.units = ' m'
+        assert self.uc.units == ' m'
+        self.uc.units = 'um'
+        assert self.uc.units == 'um'
+        self.uc.units = 'µm'
+        assert self.uc.units == 'µm'
+        self.uc.units = 'km'
+        assert self.uc.units == 'km'
+        self.uc.units = ''
+        assert self.uc.units is t.Undefined
 
     def test_ignore_conversion(self):
         assert self.uc._ignore_conversion(t.Undefined)
