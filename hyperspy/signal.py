@@ -6044,17 +6044,11 @@ class BaseSignal(FancySlicing,
 
         marker_name_suffix = 1
         for m in marker_list:
-            marker_data_shape = m._get_data_shape()[::-1]
-            if (not (len(marker_data_shape) == 0)) and (
-                    marker_data_shape != self.axes_manager.navigation_shape):
-                raise ValueError(
-                    "Navigation shape of the marker must be 0 or the "
-                    "inverse navigation shape as this signal. If the "
-                    "navigation dimensions for the signal is (2, 3), "
-                    "the marker dimension must be (3, 2).")
             if (m._signal is not None) and (m._signal is not self):
                 raise ValueError("Markers can not be added to several signals")
+
             m._plot_on_signal = plot_on_signal
+            m._signal = self
 
             if plot_marker:
                 if self._plot is None or not self._plot.is_active:
@@ -6066,7 +6060,6 @@ class BaseSignal(FancySlicing,
                         raise ValueError("Attempted to plot marker on navigator_plot when none is"
                                          "active.")
                     self._plot.navigator_plot.add_marker(m)
-                m._signal = self
                 m.plot(render_figure=False)
 
             if permanent:
@@ -6081,7 +6074,6 @@ class BaseSignal(FancySlicing,
                     marker_name_suffix += 1
                 m.name = temp_name
                 markers_dict[m.name] = m
-                m.signal = self
                 marker_object_list.append(m)
                 name_list.append(m.name)
 

@@ -263,8 +263,25 @@ class Markers:
     def _is_iterating(self):
         if self._plot_on_signal:
             return np.any([is_iterating(value) for key, value in self.kwargs.items()])
-        else:  # currently iterating navigation markers arenot supported
+        else:  # currently iterating navigation markers are not supported
             return False
+
+    @property
+    def _signal(self):
+        return self.__signal
+
+    @_signal.setter
+    def _signal(self, signal):
+        if signal is not None:
+            for key, value in self.kwargs.items():
+                nav_shape = value.shape if is_iterating(value) else ()
+                if (len(nav_shape) != 0 and
+                        nav_shape != signal.axes_manager.navigation_shape):
+                    raise ValueError(
+                        "The shape of the variable length argument must match "
+                        "the navigation shape of the signal."
+                        )
+        self.__signal = signal
 
     def _get_transform(self, attr="_transform"):
         if self.ax is not None:  # return the transform
@@ -487,12 +504,6 @@ class Markers:
         kwargs[key] = new_signal.data
 
         return cls(**kwargs)
-
-    def _get_data_shape(self):
-        for key, item in self.kwargs.items():
-            if is_iterating(item):
-                return item.shape
-        return ()
 
     def __deepcopy__(self, memo):
         new_marker = markers_dict_to_markers(self._to_dictionary())
