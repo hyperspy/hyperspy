@@ -430,6 +430,7 @@ class TestInitMarkers:
         m = Points(offsets=offsets)
         m.add_item(keys="offsets", values=[[[0, 1]],])
         assert len(m.kwargs["offsets"][0]) == 3
+        m.add_item(keys="offsets", values=[[[0, 1]],])
 
     def test_remove_item(self):
         offsets = np.empty(2, dtype=object)
@@ -950,3 +951,18 @@ def test_colorbar_collection():
     cbar = m.plot_colorbar()
     cbar.set_label('Circle radius')
     return s._plot.signal_plot.figure
+
+
+def test_collection_error():
+    with pytest.raises(ValueError):
+        Markers(offsets=[[1, 1], [2, 2]],
+                collection="NotACollection")
+
+    with pytest.raises(ValueError):
+        Markers(offsets=[[1, 1], [2, 2]],
+                collection=object)
+
+    m = Points(offsets=[[1, 1], [2, 2]])
+    with pytest.raises(ValueError):
+        m._set_transform(value="test")
+

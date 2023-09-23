@@ -220,9 +220,7 @@ class Markers:
             if key in ["sizes", "color"] and (
                 not hasattr(value, "__len__") or isinstance(value, str)
             ):
-                self.kwargs[key] = (value,)
-            if key in ["s"] and isinstance(value, str):
-                self.kwargs[key] = (value,)
+                self.kwargs[key] = (value, )
 
         self._cache_dask_chunk_kwargs = {}
         self._cache_dask_chunk_kwargs_slice = {}
@@ -357,16 +355,12 @@ class Markers:
         ----------
         keys: list
             List of keys to append.
-        value:
+        value: list of values
             The value to append to the kwarg.
         """
         if isinstance(keys, str):
             keys = [
                 keys,
-            ]
-        if not isiterable(values):
-            values = [
-                values,
             ]
         for key, value in zip(keys, values):
             if self.kwargs[key].dtype == object:
@@ -374,22 +368,6 @@ class Markers:
                     self.kwargs[key][i] = np.append(self.kwargs[key][i], value, axis=0)
             else:
                 self.kwargs[key] = np.append(self.kwargs[key], value, axis=0)
-
-    def _get_chunk_slice(self, key, index_slice):
-        """
-        Get the slice for a chunk of data.
-
-        Parameters
-        ----------
-        key: str
-            The key to get the slice for.
-        index_slice: slice, int or array of ints
-            Indicate indices of sub-arrays to remove along the specified axis.
-        """
-        if self.kwargs[key].dtype == object:
-            return index_slice
-        else:
-            return index_slice
 
     def _get_cache_dask_kwargs_chunk(self, indices):
         """
@@ -728,7 +706,7 @@ def is_iterating(arg):
     return isinstance(arg, (np.ndarray, da.Array)) and arg.dtype == object
 
 
-def dict2vector(data, keys=None, return_size=True, dtype=float):
+def dict2vector(data, keys, return_size=True, dtype=float):
     """Take some dictionary of values and create offsets based on the input keys.
     For instances like creating a horizontal or vertical line then some key is duplicated.
 
@@ -738,8 +716,6 @@ def dict2vector(data, keys=None, return_size=True, dtype=float):
 
     In this example the keys will be unpacked to create a line segment
     """
-    if keys is None:
-        keys = [["x1", "x2"]]
     keys = np.array(keys)
     # check to see if the array should be ragged
     unique_keys = np.unique(keys)
