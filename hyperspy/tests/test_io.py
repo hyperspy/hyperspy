@@ -333,4 +333,6 @@ def test_marker_save_load(tmp_path):
     s2 = hs.load(fname)
     print(s.metadata.Markers, s2.metadata.Markers)
     assert str(s.metadata.Markers) == str(s2.metadata.Markers)
+    assert s2.metadata.Markers["Points"]._signal is s2
+
     s2.plot()

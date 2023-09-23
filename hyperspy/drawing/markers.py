@@ -192,7 +192,6 @@ class Markers:
 
         # Data attributes
         self.kwargs = kwargs  # all keyword arguments.
-        self.axes_manager = None
         self.ax = None
         self.auto_update = True
         self._offset_transform = None
@@ -255,6 +254,13 @@ class Markers:
             arguments=["obj"],
         )
         self._closing = False
+
+    @property
+    def axes_manager(self):
+        if self._signal is not None:
+            return self._signal.axes_manager
+        else:
+            return None
 
     @property
     def _is_iterating(self):

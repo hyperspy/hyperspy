@@ -314,7 +314,7 @@ class TestInitMarkers:
     def static_line_collection(self, signal):
         segments = np.ones((10, 2, 2))
         markers = Lines(segments=segments)
-        markers.axes_manager = signal.axes_manager
+        markers._signal = signal
         return markers
 
     @pytest.fixture
@@ -323,7 +323,7 @@ class TestInitMarkers:
         for i in np.ndindex(data.shape):
             data[i] = np.ones((10, 2, 2)) * i
         markers = Lines(segments=data)
-        markers.axes_manager = signal.axes_manager
+        markers._signal = signal
         return markers
 
     def test_multiple_collections(

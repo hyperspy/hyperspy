@@ -815,6 +815,7 @@ def dict2signal(signal_dict, lazy=False):
     if mp is not None and "Markers" in mp:
         for key in mp['Markers']:
             signal.metadata.Markers[key] = markers_dict_to_markers(mp['Markers'][key])
+            signal.metadata.Markers[key]._signal = signal
 
     return signal
 
