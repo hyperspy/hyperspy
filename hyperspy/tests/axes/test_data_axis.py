@@ -189,6 +189,13 @@ class TestDataAxis:
         assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
 
+    def test_convert_to_uniform_axis(self):
+        self.axis.name = "parrot"
+        self.axis.units = "plumage"
+        uniform_axis = self.axis.convert_to_uniform_axis()
+        assert isinstance(uniform_axis, UniformDataAxis)
+
+
     def test_value2index(self):
         assert self.axis.value2index(10.15) == 3
         assert self.axis.value2index(60) == 8
@@ -269,7 +276,7 @@ class TestDataAxis:
             self.axis._get_array_slices(slice_=slice(225.1, 0, 1))
 
     @pytest.mark.parametrize("attributes", (("units", "name"), None))
-    def test_update_from(self,attributes):
+    def test_update_from(self, attributes):
         ax2 = DataAxis(units="plumage", name="parrot", axis=np.arange(16))
         self.axis.update_from(ax2, attributes=attributes)
         if attributes is None:
@@ -277,6 +284,11 @@ class TestDataAxis:
         else:
             assert ((ax2.units, ax2.name) ==
                     (self.axis.units, self.axis.name))
+
+    def test_update_from_all(self):
+        ax2 = DataAxis(units="plumage", name="parrot", axis=np.arange(16))
+        self.axis.update_from(ax2)
+        assert ax2.units == self.axis.units
 
     def test_calibrate(self):
         with pytest.raises(TypeError, match="only for uniform axes"):
@@ -397,6 +409,7 @@ class TestFunctionalDataAxis:
         navigate = self.axis.navigate
         self.axis.name = "parrot"
         self.axis.units = "plumage"
+
         s = Signal1D(np.arange(10), axes=[self.axis])
         index_in_array = s.axes_manager[0].index_in_array
         s.axes_manager[0].convert_to_uniform_axis()
@@ -415,6 +428,7 @@ class TestFunctionalDataAxis:
         assert index_in_array == s.axes_manager[0].index_in_array
         assert is_binned == s.axes_manager[0].is_binned
         assert navigate == s.axes_manager[0].navigate
+
 
     def test_convert_to_uniform_axis(self):
         axis = np.copy(self.axis.axis)
@@ -446,6 +460,11 @@ class TestFunctionalDataAxis:
         self.axis.update_from(ax2, attributes=("units", "parameters"))
         assert ((ax2.units, ax2.parameters["power"]) ==
                 (self.axis.units, self.axis.parameters["power"]))
+
+    def test_update_from_none(self):
+        ax2 = FunctionalDataAxis(size=2, units="nm", expression="x ** power", power=3)
+        self.axis.update_from(ax2)
+        assert ax2.parameters == self.axis.parameters
 
     def test_slice_me(self):
         assert self.axis._slice_me(slice(1, 5)) == slice(1, 5)

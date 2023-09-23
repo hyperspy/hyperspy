@@ -21,13 +21,8 @@ from unittest import mock
 import numpy as np
 import pytest
 
-from hyperspy.axes import (
-    AxesManager,
-    BaseDataAxis,
-    GeneratorLen,
-    _flyback_iter,
-    _serpentine_iter,
-)
+
+from hyperspy.axes import AxesManager, _serpentine_iter, _flyback_iter, GeneratorLen, BaseDataAxis,UniformDataAxis
 from hyperspy.defaults_parser import preferences
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 
@@ -135,6 +130,20 @@ class TestAxesManager:
         am.set_axis(axis, 2)
         assert am[-2].offset == am[-1].offset
         assert am[-2].scale == am[-1].scale
+
+    def test_setitem_axis(self):
+        am = self.am
+        am[("a", "b")] = (UniformDataAxis(scale=1,
+                                      offset=0,
+                                      size=10,
+                                      name="test1"),
+                           UniformDataAxis(scale=1,
+                                      offset=0,
+                                      size=10,
+                                      name="test2"))
+        assert am[3].name == "test1"
+        assert am[2].name == "test2"
+
 
     def test_all_uniform(self):
         assert self.am.all_uniform is True
