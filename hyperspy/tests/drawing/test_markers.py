@@ -441,10 +441,26 @@ class TestInitMarkers:
         assert len(m.kwargs["offsets"][0]) == 1
 
     def test_rep(self):
+        offsets = np.array([[1, 1], [2, 2]])
         m = Markers(
-            offsets=[[1, 1], [2, 2]], verts=3, sizes=3, collection=PolyCollection
+            offsets=offsets, verts=3, sizes=3, collection=PolyCollection
         )
-        assert "Markers" in m.__repr__()
+        assert m.__repr__() == "<Markers, length: 2>"
+
+        m = Points(offsets=offsets)
+        assert m.__repr__() == "<Points, length: 2>"
+
+    def test_rep_iterating(self, signal):
+        offsets = np.empty(3, dtype=object)
+        for i in range(3):
+            offsets[i] = np.array([[1, 1], [2, 2]])
+        m = Points(offsets=offsets)
+        with pytest.raises(RuntimeError):
+            print(m)
+
+        signal.plot()
+        signal.add_marker(m)
+        assert m.__repr__() == "<Points, length: variable (current: 2)>"
 
     def test_update_static(self):
         m = Points(offsets=([[1, 1], [2, 2]]))
@@ -965,4 +981,3 @@ def test_collection_error():
     m = Points(offsets=[[1, 1], [2, 2]])
     with pytest.raises(ValueError):
         m._set_transform(value="test")
-
