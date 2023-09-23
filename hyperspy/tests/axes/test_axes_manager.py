@@ -124,6 +124,12 @@ class TestAxesManager:
         assert am[-3].offset == am[-1].offset
         assert am[-3].scale == am[-1].scale
 
+    def test_axes_setter(self):
+        self.am.axes = [BaseDataAxis(name="test1"), BaseDataAxis(name="test2")]
+        assert len(self.am.axes) == 2
+        assert self.am.axes[0].name == "test1"
+        assert self.am.axes[1].name == "test2"
+
     def test_set_axis(self):
         am = self.am
         axis = am[-1].copy()
@@ -144,6 +150,9 @@ class TestAxesManager:
         assert am[3].name == "test1"
         assert am[2].name == "test2"
 
+    def test_getitem_axis_fail(self):
+        with pytest.raises(TypeError):
+            self.am[3.3]
 
     def test_all_uniform(self):
         assert self.am.all_uniform is True
