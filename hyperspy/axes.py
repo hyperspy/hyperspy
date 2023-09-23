@@ -1027,7 +1027,7 @@ class FunctionalDataAxis(DataAxis):
 
         """
         if attributes is None:
-            attributes = self.parameters_list
+            attributes = ["parameters", ]
         return super().update_from(axis, attributes)
 
     def calibrate(self, *args, **kwargs):
@@ -1564,7 +1564,7 @@ class AxesManager(t.HasTraits):
         else:
             axes = [self._axes_getter(ax) for ax in y]
             indices = [self.axes.index(ax) for ax in axes]
-            for ind, v in zip(axes, indices):
+            for ind, v in zip(indices, value):
                 self.axes[ind] = v
 
     @property
