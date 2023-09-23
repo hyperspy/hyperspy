@@ -151,8 +151,6 @@ class SpectrumLabelPosition():
 
             vl.events.closed.connect(self.signal._edge_marker_closed)
             tx.events.closed.connect(self.signal._edge_marker_closed)
-            vl.auto_update = True
-            tx.auto_update = True
 
             vls.append(vl)
             txs.append(tx)

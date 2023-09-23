@@ -193,7 +193,6 @@ class Markers:
         # Data attributes
         self.kwargs = kwargs  # all keyword arguments.
         self.ax = None
-        self.auto_update = True
         self._offset_transform = None
         self._transform = None
         if self._position_key_to_set is None:
