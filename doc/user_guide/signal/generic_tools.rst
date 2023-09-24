@@ -509,6 +509,32 @@ signal:
     uint64
 
 
+Interpolate to a different axis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :py:meth:`~.api.signals.BaseSignal.interpolate_on_axis` method makes it possible to
+exchange any existing axis of a signal with a new axis,
+regardless of the signals dimension or the axes types.
+This is achieved by interpolating the data using :py:meth:`scipy.interpolate.make_interp_spline`
+from the old axis to the new axis. Replacing multiple axes can be done iteratively.
+
+.. code-block:: python
+
+    >>> from hyperspy.axes import UniformDataAxis, DataAxis
+    >>> x = {"offset": 0, "scale": 1, "size": 10, "name": "X", "navigate": True}
+    >>> e = {"offset": 0, "scale": 1, "size": 50, "name": "E", "navigate": False}
+    >>> s = hs.signals.Signal1D(np.random.random((10, 50)), axes=[x, e])
+    >>> s
+    <Signal1D, title: , dimensions: (10|50)>
+    >>> x_new = UniformDataAxis(offset=1.5, scale=0.8, size=7, name="X_NEW", navigate=True)
+    >>> e_new = DataAxis(axis=np.arange(8)**2, name="E_NEW", navigate=False)
+    >>> s2 = s.interpolate_on_axis(x_new, 0, inplace=False)
+    >>> s2
+    <Signal1D, title: , dimensions: (7|50)>
+    >>> s2.interpolate_on_axis(e_new, "E", inplace=True)
+    <Signal1D, title: , dimensions: (7|8)>
+
+
 .. _squeeze-label:
 
 Squeezing
