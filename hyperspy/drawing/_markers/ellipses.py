@@ -37,9 +37,9 @@ class Ellipses(Markers):
         offsets,
         heights,
         widths,
+        angles=0,
         offset_transform="data",
         units="xy",
-        angles=(0,),
         **kwargs
     ):
         """Initialize the set of Ellipse Markers.

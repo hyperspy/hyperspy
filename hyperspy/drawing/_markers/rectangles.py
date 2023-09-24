@@ -36,7 +36,7 @@ class Rectangles(Markers):
         offsets,
         widths,
         heights,
-        angles=(0,),
+        angles=0,
         offset_transform="data",
         units="xy",
         **kwargs

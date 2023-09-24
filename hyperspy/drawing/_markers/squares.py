@@ -37,7 +37,7 @@ class Squares(Markers):
         self,
         offsets,
         widths,
-        angles=(0,),
+        angles=0,
         offset_transform="data",
         units="x",
         **kwargs

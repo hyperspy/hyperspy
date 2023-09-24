@@ -124,7 +124,7 @@ class Markers:
         ...    patches=[Circle((0, 0), 1)],
         ...    offsets=np.random.rand(10,2)*10,
         ...    )
-        >>> s = hs.signals.Signal2D(np.ones((10,10,10,10)))
+        >>> s = hs.signals.Signal2D(np.ones((10, 10, 10, 10)))
         >>> s.plot()
         >>> s.add_marker(m)
 
@@ -161,7 +161,7 @@ class Markers:
         ...    verts=np.array([[0,0], [0,1], [1,1], [1,0]]),
         ...    color="red",
         ...    )
-        >>>s = hs.signals.Signal2D(np.ones((10,10,10,10)))
+        >>>s = hs.signals.Signal2D(np.ones((10, 10, 10, 10)))
         >>>s.plot()
         >>>s.add_marker(m)
 
@@ -197,10 +197,17 @@ class Markers:
         self._transform = None
         if self._position_key_to_set is None:
             self._position_key_to_set = self._position_key
+        # The list of keys of iterable argument other than the "_position_key"
+        self._iterable_argument_keys = []
 
-        # Handling dask arrays
         self.dask_kwargs = {}
         for key, value in self.kwargs.items():
+            # Populate `_iterable_argument_keys`
+            if (isiterable(value) and not isinstance(value, str) and
+                    key != self._position_key):
+                self._iterable_argument_keys.append(key)
+
+            # Handling dask arrays
             if isinstance(value, da.Array) and value.dtype == object:
                 self.dask_kwargs[key] = self.kwargs[key]
             elif isinstance(value, da.Array):  # and value.dtype != object:
@@ -335,57 +342,149 @@ class Markers:
             # with variable length markers, the axes_manager is needed to
             # know the navigation coordinates of the signal
             raise RuntimeError(
-                "Variable length markers must have been plotted to provide "
+                "Variable length markers must be added to a signal to provide "
                 "the numbers of markers at the current navigation coordinates."
                 )
 
         return self.get_data_position()[self._position_key_to_set].shape[0]
 
-    def remove_item(self, keys, index):
+    def remove_items(self, indices, keys=None, navigation_indices=None):
         """
-        Delete the index from the kwargs.
+        Remove items from the markers.
 
         Parameters
         ----------
-        keys: list
-            List of keys to delete from.
-        index: slice, int or array of ints
+        indices : slice, int or array of ints
             Indicate indices of sub-arrays to remove along the specified axis.
+        keys : str, list of str or None
+            Specify the key of the ``Markers.kwargs`` to remove. If ``None``,
+            use all compatible keys. Default is ``None``.
+        navigation_indices : tuple
+            Only for variable-lenght markers. If ``None``, remove for all
+            navigation coordinates.
+
+        Examples
+        --------
+        Remove a single item:
+
+        >>> offsets = np.array([[1, 1], [2, 2]])
+        >>> m = hs.plot.markers.Points(offsets=offsets)
+        >>> print(m)
+        <Points, length: 2>
+        >>> m.remove_items(indices=(1, ))
+        >>> print(len(m)) # is 1
+
+        Remove a single item at specific navigation position for variable
+        length markers:
+
+        >>> offsets = np.empty(4, dtype=object)
+        >>> texts = np.empty(4, dtype=object)
+        >>> for i in range(len(offsets)):
+        ...    offsets[i] = np.array([[1, 1], [2, 2]])
+        ...    texts[i] = ['a' * (i+1)] * 2
+        >>> m = hs.plot.markers.Texts(offsets=offsets, texts=texts)
+        >>> m.remove_items(1, navigation_indices=(1, ))
+
+        Remove several items:
+
+        >>> offsets = np.stack([np.arange(0, 100, 10)]*2).T + np.array([5,]*2)
+        >>> texts = np.array(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'f', 'h', 'i'])
+        >>> m = hs.plot.markers.Texts(offsets=offsets, texts=texts)
+        >>> print(m)
+        <Texts, length: 10>
+        >>> m.remove_items(indices=[1, 2])
+        >>> print(m)
+        <Texts, length: 8>
         """
-        if isinstance(keys, str):
-            keys = [
-                keys,
-            ]
+        if keys is None:
+            keys = self._iterable_argument_keys + [self._position_key]
+            # keeps value actually in kwargs
+        elif isinstance(keys, str):
+            keys = [keys, ]
+
+        if navigation_indices and not self._is_iterating:
+            raise ValueError(
+                "`navigation_indices` is only for variable length markers."
+                )
+
         for key in keys:
-            if self.kwargs[key].dtype == object:
-                for i in np.ndindex(self.kwargs[key].shape):
-                    self.kwargs[key][i] = np.delete(self.kwargs[key][i], index, axis=0)
-            else:
-                self.kwargs[key] = np.delete(self.kwargs[key], index, axis=0)
+            value = self.kwargs[key]
+            # Don't remove when it doesn't have the same length as the
+            # position kwargs because it is a "cycling" argument
+            if (isiterable(value) and not isinstance(value, str) and
+                    len(value) == len(self.kwargs[self._position_key])):
+                if isinstance(value, np.ndarray) and value.dtype == object:
+                    # when navigation_indices is not provided
+                    nav_iterator = (
+                        navigation_indices
+                        or np.ndindex(self.kwargs[self._position_key].shape)
+                        )
+                    for nav_indices in nav_iterator:
+                        self.kwargs[key][nav_indices] = np.delete(
+                            value[nav_indices], indices, axis=0
+                            )
+                else:
+                    self.kwargs[key] = np.delete(value, indices, axis=0)
         self._update()
 
-    def add_item(self, keys, values):
+    def add_items(self, navigation_indices=None, **kwargs):
         """
-        Add the index from the kwargs.
+        Add items to the markers.
 
         Parameters
         ----------
-        keys: list
-            List of keys to append.
-        value: list of values
-            The value to append to the kwarg.
+        navigation_indices : tuple or None
+            Only for variable-lenght markers. If ``None``, all for all
+            navigation coordinates.
+
+        **kwargs : dict
+            Mapping of keys:values to add to the markers
+
+        Examples
+        --------
+        Add a single item:
+
+        >>> offsets = np.array([[1, 1], [2, 2]])
+        >>> texts = np.array(["a", "b"])
+        >>> m = hs.plot.markers.Texts(offsets=offsets, texts=texts)
+        >>> print(m)
+        <Texts, length: 2>
+        >>> m.add_items(offsets=np.array([[0, 1]]), texts=["c"])
+        >>> print(m)
+        <Texts, length: 3>
+
+        Add a single item at a defined navigation position of variable
+        length markers:
+
+        >>> offsets = np.empty(4, dtype=object)
+        >>> texts = np.empty(4, dtype=object)
+        >>> for i in range(len(offsets)):
+        ...    offsets[i] = np.array([[1, 1], [2, 2]])
+        ...    texts[i] = ['a' * (i+1)] * 2
+        >>> m = hs.plot.markers.Texts(offsets=offsets, texts=texts)
+        >>> m.add_items(
+        ...    offsets=np.array([[0, 1]]), texts=["new_text"],
+        ...    navigation_indices=(1, )
+        ...    )
         """
-        if isinstance(keys, str):
-            keys = [
-                keys,
-            ]
-        for key, value in zip(keys, values):
+
+        if navigation_indices and not self._is_iterating:
+            raise ValueError(
+                "`navigation_indices` is only for variable length markers."
+                )
+
+        for key, value in kwargs.items():
             if self.kwargs[key].dtype == object:
-                for i in np.ndindex(self.kwargs[key].shape):
-                    self.kwargs[key][i] = np.append(self.kwargs[key][i], value, axis=0)
+                nav_iterator = (
+                    navigation_indices
+                    or np.ndindex(self.kwargs[self._position_key].shape)
+                    )
+                for nav_indices in nav_iterator:
+                    self.kwargs[key][nav_indices] = np.append(
+                        self.kwargs[key][nav_indices], value, axis=0
+                        )
             else:
                 self.kwargs[key] = np.append(self.kwargs[key], value, axis=0)
-
         self._update()
 
     def _get_cache_dask_kwargs_chunk(self, indices):
@@ -653,7 +752,7 @@ class Markers:
             since rendering the figure after removing each marker will slow
             things down.
         """
-        if self._closing:
+        if self._closing:  # pragma: no cover
             return
         self._closing = True
         self._collection.remove()
@@ -664,6 +763,7 @@ class Markers:
             self.events.closed.disconnect(f)
         if render_figure:
             self._render_figure()
+        self._closing = False
 
     def set_ScalarMappable_array(self, array):
         """

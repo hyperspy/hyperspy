@@ -423,23 +423,6 @@ class TestInitMarkers:
         m = Points(offsets=da.array([[1, 1], [2, 2]]))
         assert not isinstance(m.kwargs["offsets"], da.Array)
 
-    def test_add_item(self):
-        offsets = np.empty(2, dtype=object)
-        for i in range(2):
-            offsets[i] = np.array([[1, 1], [2, 2]])
-        m = Points(offsets=offsets)
-        m.add_item(keys="offsets", values=[[[0, 1]],])
-        assert len(m.kwargs["offsets"][0]) == 3
-        m.add_item(keys="offsets", values=[[[0, 1]],])
-
-    def test_remove_item(self):
-        offsets = np.empty(2, dtype=object)
-        for i in range(2):
-            offsets[i] = np.array([[1, 1], [2, 2]])
-        m = Points(offsets=offsets)
-        m.remove_item(keys="offsets", index=1)
-        assert len(m.kwargs["offsets"][0]) == 1
-
     def test_rep(self):
         offsets = np.array([[1, 1], [2, 2]])
         m = Markers(
@@ -552,6 +535,159 @@ class TestInitMarkers:
             Squares(offsets=[[1, 1]], widths=1, transform="data")
         with pytest.raises(ValueError):
             Ellipses(offsets=[[1, 1]], widths=1, heights=1, transform="data")
+
+
+class TestsMarkersAddRemove:
+
+    def test_add_items_variable(self):
+        offsets = np.array([[1, 1], [2, 2]])
+        m = Points(offsets=offsets)
+        assert len(m) == 2
+        m.add_items(offsets=np.array([[0, 1]]))
+        assert len(m) == 3
+        assert not m._is_iterating
+
+    def test_add_items_variable_length(self):
+        offsets = np.empty(2, dtype=object)
+        for i in range(2):
+            offsets[i] = np.array([[1, 1], [2, 2]])
+        m = Points(offsets=offsets)
+        assert m._is_iterating
+        for offset in m.kwargs['offsets'].flat:
+            assert offset.shape == (2, 2)
+
+        m.add_items(offsets=np.array([[0, 1]]))
+        for offset in m.kwargs['offsets'].flat:
+            assert offset.shape == (3, 2)
+            np.testing.assert_allclose(offset[-1], [0, 1])
+        assert len(m.kwargs["offsets"][0]) == 3
+        assert m._is_iterating
+
+        m.add_items(offsets=np.array([[0, 2]]))
+        for offset in m.kwargs['offsets'].flat:
+            assert offset.shape == (4, 2)
+            np.testing.assert_allclose(offset[-1], [0, 2])
+
+    def test_remove_items_iterable_navigation_indices(self):
+        offsets = np.empty(4, dtype=object)
+        texts = np.empty(4, dtype=object)
+        for i in range(len(offsets)):
+            offsets[i] = np.array([[1, 1], [2, 2]])
+            texts[i] = ['a' * (i+1)] * 2
+        m = Texts(offsets=offsets, texts=texts)
+
+        assert m._is_iterating
+        for nav_position in range(4):
+            assert len(m.kwargs["offsets"][nav_position]) == 2
+            assert len(m.kwargs["texts"][nav_position]) == 2
+            assert m.kwargs["texts"][nav_position] == ['a' * (nav_position+1)]*2
+        m.add_items(
+            offsets=np.array([[0, 1]]), texts=["new_text"],
+            navigation_indices=(1, ),
+            )
+
+        # marker added only in nav coordinates (1, )
+        for nav_position in [0, 2, 3]:
+            assert len(m.kwargs["offsets"][nav_position]) == 2
+            assert len(m.kwargs["texts"][nav_position]) == 2
+            assert m.kwargs["texts"][nav_position] == ['a' * (nav_position+1)]*2
+
+        assert len(m.kwargs["offsets"][1]) == 3
+        assert len(m.kwargs["texts"][1]) == 3
+        assert m.kwargs["texts"][1][2] == "new_text"
+        assert m.kwargs["texts"][1][2] == "new_text"
+
+    def test_remove_items(self):
+        offsets = np.empty(2, dtype=object)
+        texts = np.empty(2, dtype=object)
+        for i in range(2):
+            offsets[i] = np.array([[1, 1], [2, 2]])
+            texts[i] = ['a' * i] * 2
+        m = Texts(offsets=offsets, texts=texts)
+        assert len(m.kwargs["offsets"][0]) == 2
+        assert len(m.kwargs["texts"][0]) == 2
+        m.remove_items(indices=1, keys="offsets")
+        assert len(m.kwargs["offsets"][0]) == 1
+        assert len(m.kwargs["texts"][0]) == 2
+
+    def test_remove_items_None(self):
+        offsets = np.empty(2, dtype=object)
+        texts = ['a']
+        for i in range(2):
+            offsets[i] = np.array([[1, 1], [2, 2]])
+        m = Texts(offsets=offsets, texts=texts)
+        assert len(m.kwargs["offsets"][0]) == 2
+        assert len(m.kwargs["texts"]) == 1
+        m.remove_items(indices=1)
+        assert len(m.kwargs["offsets"][0]) == 1
+        assert len(m.kwargs["texts"]) == 1
+
+    def test_remove_items_None_iterable(self):
+        nav_length = 4
+        offsets = np.empty(nav_length, dtype=object)
+        texts = np.empty(nav_length, dtype=object)
+        for i in range(len(offsets)):
+            # 3 markers
+            offsets[i] = np.array([[1, 1], [2, 2], [3, 3]])
+            texts[i] = ['a' * (i+1)] * 3
+        m = Texts(offsets=offsets, texts=texts)
+        for nav_indices in range(nav_length):
+            assert len(m.kwargs["offsets"][nav_indices]) == 3
+            assert len(m.kwargs["texts"][nav_indices]) == 3
+            np.testing.assert_allclose(m.kwargs['offsets'][nav_indices][0], [1, 1])
+            np.testing.assert_allclose(m.kwargs['offsets'][nav_indices][1], [2, 2])
+            np.testing.assert_allclose(m.kwargs['offsets'][nav_indices][2], [3, 3])
+        m.remove_items(indices=1)
+        for nav_indices in range(nav_length):
+            assert len(m.kwargs["offsets"][nav_indices]) == 2
+            assert len(m.kwargs["texts"][nav_indices]) == 2
+            np.testing.assert_allclose(m.kwargs['offsets'][nav_indices][0], [1, 1])
+            np.testing.assert_allclose(m.kwargs['offsets'][nav_indices][1], [3, 3])
+
+    def test_remove_items_slice(self):
+        offsets = np.stack([np.arange(0, 100, 10)]*2).T + np.array([5,]*2)
+        texts = np.array(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'f', 'h', 'i'])
+        m = Texts(offsets=offsets, texts=texts)
+
+        assert len(m.kwargs['offsets']) == 10
+        assert len(m.kwargs['texts']) == 10
+        m.remove_items(indices=[1, 2])
+        assert len(m.kwargs['offsets']) == 8
+        assert len(m.kwargs['texts']) == 8
+
+        np.testing.assert_allclose(m.kwargs['offsets'][0], [5, 5])
+        np.testing.assert_allclose(m.kwargs['offsets'][1], [35, 35])
+        assert m.kwargs['texts'][0] == "a"
+        assert m.kwargs['texts'][1] == "d"
+
+    def test_remove_items_navigation_indices(self):
+        offsets = np.array([[1, 1], [2, 2]])
+        m = Points(offsets=offsets)
+        assert not m._is_iterating
+        assert len(m) == 2
+        with pytest.raises(ValueError):
+            m.remove_items(1, navigation_indices=(1, ))
+
+    def test_remove_items_iterable_navigation_indices(self):
+        offsets = np.empty(4, dtype=object)
+        texts = np.empty(4, dtype=object)
+        for i in range(len(offsets)):
+            offsets[i] = np.array([[1, 1], [2, 2]])
+            texts[i] = ['a' * (i+1)] * 2
+        m = Texts(offsets=offsets, texts=texts)
+
+        assert m._is_iterating
+        for nav_position in range(4):
+            assert len(m.kwargs["offsets"][nav_position]) == 2
+            assert len(m.kwargs["texts"][nav_position]) == 2
+        m.remove_items(1, navigation_indices=(1, ))
+
+        # marker removed only in nav coordinates (1, )
+        for nav_position in [0, 2, 3]:
+            assert len(m.kwargs["offsets"][nav_position]) == 2
+            assert len(m.kwargs["texts"][nav_position]) == 2
+        assert len(m.kwargs["offsets"][1]) == 1
+        assert len(m.kwargs["texts"][1]) == 1
 
 
 class TestMarkersDictToMarkers:

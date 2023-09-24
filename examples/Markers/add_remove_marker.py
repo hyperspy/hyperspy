@@ -41,7 +41,7 @@ s.add_marker(m)
 
 
 # Set new texts and offsets parameters with one less item
-m.remove_item(keys=("texts", "offsets"), index=-1)
+m.remove_items(indices=-1)
 
 print(f'Number of markers is {len(m)} after removing one marker.')
 
@@ -54,7 +54,7 @@ s.add_marker(m)
 
 # Define the position in the middle of the axes
 
-m.add_item(keys=("texts", "offsets"), values=(["new text"], [[50, 50],]))
+m.add_items(offsets=np.array([[50, 50]]), texts=np.array(["new text"]))
 
 print(f'Number of markers is {len(m)} after adding the text {texts[-1]}.')
 

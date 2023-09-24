@@ -1753,9 +1753,9 @@ class EELSSpectrum(Signal1D):
         ind = np.where(np.isin(self._edge_markers["names"], edge_names))
 
         if self._edge_markers["lines"] is not None:
-            self._edge_markers["lines"].remove_item("segments", ind)
+            self._edge_markers["lines"].remove_items(ind)
         if self._edge_markers["texts"] is not None:
-            self._edge_markers["texts"].remove_item(["offsets", "texts"], ind)
+            self._edge_markers["texts"].remove_items(ind)
         if self._edge_markers["names"] is not []:
             self._edge_markers["names"] = np.delete(self._edge_markers["names"], ind)
 
@@ -1786,9 +1786,9 @@ class EELSSpectrum(Signal1D):
         offsets, segments = self._get_offsets_and_segments(edges)
         names = list(edges.keys())
 
-        self._edge_markers["lines"].add_item(["segments", ], [segments, ])
+        self._edge_markers["lines"].add_items(segments=segments)
         self._edge_markers["lines"].update()
-        self._edge_markers["texts"].add_item(("offsets", "texts"), (offsets, names))
+        self._edge_markers["texts"].add_items(offsets=offsets, texts=names)
         self._edge_markers["lines"].update()
         self._edge_markers["names"] = np.append(self._edge_markers["names"], names)
 
