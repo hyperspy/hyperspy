@@ -366,10 +366,10 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
-        with ignore_warning(message="invalid value encountered in sqrt",
-                            category=RuntimeWarning):
-            m.fit()
-        assert abs(fp.yscale.value - 100) <= 0.1
+        fp.xscale.free = False
+        fp.shift.free = False
+        m.fit()
+        np.testing.assert_allclose(fp.yscale.value, 100)
 
     @pytest.mark.parametrize(("uniform"), (True, False))
     def test_both_binned(self, uniform):
@@ -383,10 +383,10 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
-        with ignore_warning(message="invalid value encountered in sqrt",
-                            category=RuntimeWarning):
-            m.fit()
-        assert abs(fp.yscale.value - 100) <= 0.1
+        fp.xscale.free = False
+        fp.shift.free = False
+        m.fit()
+        np.testing.assert_allclose(fp.yscale.value, 100)
 
     def test_pattern_unbinned_signal_binned(self):
         s = self.s
@@ -396,10 +396,10 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
-        with ignore_warning(message="invalid value encountered in sqrt",
-                            category=RuntimeWarning):
-            m.fit()
-        assert abs(fp.yscale.value - 1000) <= 1
+        fp.xscale.free = False
+        fp.shift.free = False
+        m.fit()
+        np.testing.assert_allclose(fp.yscale.value, 1000)
 
     def test_pattern_binned_signal_unbinned(self):
         s = self.s
@@ -409,10 +409,10 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
-        with ignore_warning(message="invalid value encountered in sqrt",
-                            category=RuntimeWarning):
-            m.fit()
-        assert abs(fp.yscale.value - 10) <= .1
+        fp.xscale.free = False
+        fp.shift.free = False
+        m.fit()
+        np.testing.assert_allclose(fp.yscale.value, 10)
 
     def test_function(self):
         s = self.s

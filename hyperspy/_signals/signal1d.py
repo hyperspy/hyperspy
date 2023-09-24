@@ -22,6 +22,7 @@ import os
 import warnings
 
 import numpy as np
+import numpy.ma as ma
 import dask.array as da
 from scipy import interpolate
 from scipy.signal import savgol_filter, medfilt
@@ -226,7 +227,11 @@ def interpolate1D(number_of_interpolation_points, data):
     ch = len(data)
     old_ax = np.linspace(0, 100, ch)
     new_ax = np.linspace(0, 100, ch * ip - (ip - 1))
-    interpolator = interpolate.interp1d(old_ax, data)
+
+    data = ma.masked_invalid(data)
+    interpolator = interpolate.make_interp_spline(
+        old_ax, data, k=1, check_finite=False,
+        )
     return interpolator(new_ax)
 
 
@@ -256,9 +261,11 @@ def _shift1D(data, **kwargs):
     if np.isnan(shift) or shift == 0:
         return data
 
-    #This is the interpolant function
-    si = interpolate.interp1d(original_axis, data, bounds_error=False,
-                              fill_value=fill_value, kind=kind)
+    data = ma.masked_invalid(data)
+    # #This is the interpolant function
+    si = interpolate.make_interp_spline(
+        original_axis, data, k=1, check_finite=False
+        )
 
     #Evaluate interpolated data at shifted positions
     return si(original_axis-shift)

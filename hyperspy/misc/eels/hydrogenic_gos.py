@@ -144,7 +144,9 @@ class HydrogenicGOS(BaseGOS):
                     lambda x: self.gosfunc(E, np.exp(x)),
                     math.log(qa0sqmin), math.log(qa0sqmax))[0])
         self.qint = qint
-        return interpolate.interp1d(self.energy_axis + energy_shift, qint)
+        return interpolate.make_interp_spline(
+            self.energy_axis + energy_shift, qint, k=1,
+            )
 
     def gosfuncK(self, E, qa02):
         # gosfunc calculates (=DF/DE) which IS PER EV AND PER ATOM

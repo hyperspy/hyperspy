@@ -3112,32 +3112,30 @@ class BaseSignal(FancySlicing,
                             axis=0,
                             inplace=False,
                             degree=1):
-        """Replaces the given `axis` with the provided `new_axis`
-        and interpolates data accordingly using :py:func:`scipy.interpolate.make_interp_spline`.
+        """Replaces the given ``axis`` with the provided ``new_axis``
+        and interpolates data accordingly using
+        :py:func:`scipy.interpolate.make_interp_spline`.
 
         Parameters
         ----------
         new_axis : UniformDataAxis, DataAxis or FunctionalDataAxis
-            Axis which replaces the one specified by the `axis` argument.
+            Axis which replaces the one specified by the ``axis`` argument.
             If this new axis exceeds the range of the old axis,
             a warning is raised that the data will be extrapolated.
-
         axis : int or str, default=0
             Specifies the axis which will be replaced using the index of the
             axis in the `axes_manager`. The axis can be specified using the index of the
             axis in `axes_manager` or the axis name.
-
         inplace : bool, default=False
             If ``True`` the data of `self` is replaced by the result and
             the axis is changed inplace. Otherwise `self` is not changed
             and a new signal with the changes incorporated is returned.
-
         degree: int, default=1
             Specifies the B-Spline degree of the used interpolator.
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :py:class:`~.api.signals.BaseSignal` (or subclass)
             A copy of the object with the axis exchanged and the data interpolated.
             This only occurs when inplace is set to ``False``, otherwise nothing is returned.
         """
