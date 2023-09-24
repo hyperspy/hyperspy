@@ -59,7 +59,7 @@ class Arrows(Markers):
 
     def _initialize_collection(self):
         if self._collection is None:
-            kwds = self.get_data_position()
+            kwds = self.get_current_kwargs()
             offsets = kwds["offsets"]
             X = offsets[:, 0]
             Y = offsets[:, 1]
@@ -76,7 +76,7 @@ class Arrows(Markers):
 
     def update(self):
         if self._is_iterating or "relative" in [self._offset_transform, self._transform]:
-            kwds = self.get_data_position(get_static_kwargs=False)
+            kwds = self.get_current_kwargs(only_variable_length=True)
             # in case 'U', 'V', 'C' are not position dependent
             kwds.setdefault("U", self.kwargs["U"])
             kwds.setdefault("V", self.kwargs["V"])

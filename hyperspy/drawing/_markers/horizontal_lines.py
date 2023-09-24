@@ -78,8 +78,8 @@ class HorizontalLines(Markers):
             **kwargs
         )
 
-    def get_data_position(self, get_static_kwargs=True):
-        kwargs = super().get_data_position(get_static_kwargs=get_static_kwargs)
+    def get_current_kwargs(self, only_variable_length=False):
+        kwargs = super().get_current_kwargs(only_variable_length=only_variable_length)
         # Need to take a deepcopy to avoid changing `self.kwargs`
         kwds = copy.deepcopy(kwargs)
         kwds[self._position_key_to_set] = np.array(

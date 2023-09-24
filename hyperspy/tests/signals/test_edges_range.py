@@ -235,10 +235,10 @@ class Test_EdgesRange:
         er.ss_left_value = 500
         _ = er.update_table()
 
-        segments = deepcopy(self.signal._edge_markers["lines"].get_data_position())
+        segments = deepcopy(self.signal._edge_markers["lines"].get_current_kwargs())
         scaled = self.signal._edge_markers["lines"]._scale_kwarg(segments, "segments")
         self.signal._plot.pointer.indices = (10,)
         assert self.signal.axes_manager.navigation_axes[0].index == 10
-        segments2 = deepcopy(self.signal._edge_markers["lines"].get_data_position())
+        segments2 = deepcopy(self.signal._edge_markers["lines"].get_current_kwargs())
         scaled2 = self.signal._edge_markers["lines"]._scale_kwarg(segments2, "segments")
         assert not np.array_equal(scaled["segments"], scaled2["segments"])

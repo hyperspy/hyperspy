@@ -5508,7 +5508,7 @@ class BaseSignal(FancySlicing,
             for marker_name in marker_name_list:
                 marker = markers_dict[marker_name]
                 new_marker = new_markers_dict[marker_name]
-                kwargs = marker.get_data_position(get_static_kwargs=True)
+                kwargs = marker.get_current_kwargs(only_variable_length=False)
                 new_marker.kwargs = kwargs
 
         class_ = assign_signal_subclass(

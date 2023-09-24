@@ -357,7 +357,7 @@ class Markers:
                 "the numbers of markers at the current navigation coordinates."
                 )
 
-        return self.get_data_position()[self._position_key_to_set].shape[0]
+        return self.get_current_kwargs()[self._position_key_to_set].shape[0]
 
     def remove_items(self, indices, keys=None, navigation_indices=None):
         """
@@ -640,9 +640,20 @@ class Markers:
 
         return marker_dict
 
-    def get_data_position(self, get_static_kwargs=True):
+    def get_current_kwargs(self, only_variable_length=False):
         """
         Return the current keyword arguments for updating the collection.
+
+        Parameters
+        ----------
+        only_variable_length : bool
+            If ``True``, only returns the variable length kwargs. Default is
+            ``False``.
+
+        Returns
+        -------
+        kwargs : dict
+            The argument at the current navigation position.
         """
         current_keys = {}
         if self._is_iterating:
@@ -655,7 +666,7 @@ class Markers:
                         if key in ["sizes", "color"] and not hasattr(val, "__len__"):
                             val = (val,)
                         current_keys[key] = val
-                elif get_static_kwargs:
+                elif not only_variable_length:
                     current_keys[key] = value
                 else:  # key already set in init
                     pass
@@ -715,12 +726,12 @@ class Markers:
 
     def _update(self):
         if self._signal:
-            kwds = self.get_data_position(get_static_kwargs=False)
+            kwds = self.get_current_kwargs(only_variable_length=True)
             self._collection.set(**kwds)
 
     def _initialize_collection(self):
         self._collection = self._collection_class(
-            **self.get_data_position(),
+            **self.get_current_kwargs(),
             offset_transform=self.offset_transform,
             )
         self._collection.set_transform(self.transform)

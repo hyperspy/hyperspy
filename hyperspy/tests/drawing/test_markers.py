@@ -209,9 +209,9 @@ class TestMarkers:
             ans = np.zeros_like(data[1])
             ans[:, 1] = data[1][:, 0] * 2 - 2
             ans[:, 0] = data[1][:, 1] * 0.5 - 1
-            np.testing.assert_array_equal(col.get_data_position()["offsets"], ans)
+            np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], ans)
         else:
-            np.testing.assert_array_equal(col.get_data_position()["offsets"], data[1])
+            np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], data[1])
 
     def test_from_signal_fail(self, signal):
         with pytest.raises(ValueError):
@@ -241,7 +241,7 @@ class TestMarkers:
             pks, sizes=(10,), signal_axes=s.axes_manager.signal_axes
         )
         s.add_marker(col)
-        np.testing.assert_array_equal(col.get_data_position()["offsets"], [[11, 19]])
+        np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [[11, 19]])
 
     def test_find_peaks0d(self):
         from skimage.draw import disk
@@ -267,7 +267,7 @@ class TestMarkers:
             pks, sizes=(0.3,), signal_axes=s.axes_manager.signal_axes
         )
         s.add_marker(col)
-        np.testing.assert_array_equal(col.get_data_position()["offsets"], [[11, 19]])
+        np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [[11, 19]])
 
     def test_deepcopy_signal_with_markers(self, collections):
         num_col = len(collections)
@@ -345,7 +345,7 @@ class TestInitMarkers:
     )
     def test_get_data(self, collection, request):
         col = request.getfixturevalue(collection)
-        kwds = col.get_data_position()
+        kwds = col.get_current_kwargs()
         assert isinstance(kwds, dict)
         assert kwds["segments"].shape == (10, 2, 2)
 
@@ -368,13 +368,13 @@ class TestInitMarkers:
         signal.add_marker(col)
         signal.axes_manager.navigation_axes[0].index = 2
         if collection == "iterating_line_collection":
-            col.get_data_position()["segments"]
+            col.get_current_kwargs()["segments"]
             np.testing.assert_array_equal(
-                col.get_data_position()["segments"], np.ones((10, 2, 2)) * 2
+                col.get_current_kwargs()["segments"], np.ones((10, 2, 2)) * 2
             )
         else:
             np.testing.assert_array_equal(
-                col.get_data_position()["segments"], np.ones((10, 2, 2))
+                col.get_current_kwargs()["segments"], np.ones((10, 2, 2))
             )
 
     @pytest.mark.parametrize(
@@ -916,14 +916,14 @@ class TestLines:
         # s.axes_manager.signal_axes[1].offset = 0
         s.plot()
         s.add_marker(vert)
-        segments = vert.get_data_position()["segments"]
+        segments = vert.get_current_kwargs()["segments"]
         # Offsets --> segments for vertical lines
         assert segments.shape == (1, 2, 2) # one line
         np.testing.assert_array_equal(segments, np.array([[[0, 0], [0, 1]]]))
 
         # change position to navigation coordinate (1, )
         s.axes_manager.indices = (1, )
-        segments = vert.get_data_position()["segments"]
+        segments = vert.get_current_kwargs()["segments"]
         assert segments.shape == (2, 2, 2) # two lines
         np.testing.assert_array_equal(
             segments, np.array([[[0, 0], [0, 1]], [[1, 0], [1, 1]]])
@@ -936,7 +936,7 @@ class TestLines:
         s.axes_manager.signal_axes[1].offset = 0
         s.plot(interpolation=None)
         s.add_marker(hor)
-        kwargs = hor.get_data_position()
+        kwargs = hor.get_current_kwargs()
         np.testing.assert_array_equal(kwargs["segments"], [[[0.0, 0], [1, 0]]])
 
     def test_horizontal_vertical_line_error(self, offsets):
