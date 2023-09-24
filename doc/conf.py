@@ -183,7 +183,7 @@ html_theme_options = {
             "name": "Tutorial",
         },
     ],
-    "header_links_before_dropdown": 8,
+    "header_links_before_dropdown": 7,
     "switcher": {
         # Update when merged and released
         "json_url": "https://hyperspy.org/hyperspy-doc/dev/_static/switcher.json",
