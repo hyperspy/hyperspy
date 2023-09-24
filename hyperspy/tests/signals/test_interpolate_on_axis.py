@@ -113,6 +113,13 @@ class TestInterpolateAxis1D:
         _assert_axes_equality(s2.axes_manager[0], x_new, "uniform")
         np.testing.assert_almost_equal(s2.data, np.arange(30, 330, 30))
 
+    def test_interpolate_error_navigate(self):
+        x_uniform = UniformDataAxis(
+            offset=10, scale=5, size=10, navigate=True, name="XU"
+        )
+        with pytest.raises(ValueError):
+            self.s0.interpolate_on_axis(x_uniform, 0)
+
 
 def test_interpolate_on_axis_2D():
     d = np.arange(0, 140).reshape(7, 20)
