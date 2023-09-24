@@ -43,6 +43,7 @@ def convert_positions(peaks, signal_axes):
 
 
 class Markers:
+    """A set of markers using Matplotlib collections."""
 
     # The key defining the position, typically: `offsets`, `segments` or `verts`
     _position_key = "offsets"
@@ -62,8 +63,6 @@ class Markers:
         **kwargs,
     ):
         """
-        Create a set of markers using Matplotlib collections.
-
         The markers are defined by a set of arugment required by the collections,
         typically, ``offsets``, ``verts`` or ``segments`` will define their
         positions.
@@ -75,11 +74,14 @@ class Markers:
 
         Parameters
         ----------
-        collection : matplotlib.collections or str
+        collection : matplotlib.collections.Collection or str
             A Matplotlib collection to be initialized.
         offset_transform, transform : str
-            Define the transformation used for the `offsets`. This only operates on the offset point so it won't
-            scale the size of the ``Path``.  It can be one of the following:
+            ``offset_transform`` define the transformation used for the
+            `offsets`` value  and ``tranform`` define the transformation for
+            other arguments, typically to scale the size of the ``Path``.
+            It can be one of the following:
+
             - ``"data"``: the offsets are defined in data coordinates and the ``ax.transData`` transformation is used.
             - ``"relative"``: The offsets are defined in data coordinates in x and coordinates in y relative to the
               data plotted. Only for 1D figure.
@@ -91,10 +93,14 @@ class Markers:
               :py:meth:`matplotlib.axes.Axes.get_xaxis_transform` transformation..
             - ``"display"``: the offsets are not transformed, i.e. are defined in the display coordinate system.
               (0, 0) is the bottom left of the window, and (width, height) is top right of the output in "display units"
-              :py:class:`matplotlib.transforms.IndentityTransform`.
+              :py:class:`matplotlib.transforms.IdentityTransform`.
+
         shift : None or float
-            Shift in matplotlib ``"axes"`` coordinate system. Must be a value
-            between 0 and 1.
+            Only for ``offset_transform="relative"``. This applied a systematic
+            shift in the y component of the ``offsets`` values. The shift is
+            defined in the matplotlib ``"axes"`` coordinate system.
+            This provides a constant shift from the data for labeling
+            :py:class:`~.api.signals.Signal1D`.
         plot_on_signal : bool
             If True, plot on signal figure, otherwise on navigator.
         name : str
@@ -102,7 +108,7 @@ class Markers:
         ScalarMappable_array : Array-like
             Set the array of the :py:class:`matplotlib.cm.ScalarMappable` of the
             matplotlib collection.
-            The ``ScalarMappable`` array will overwrite ``facecolor` and
+            The ``ScalarMappable`` array will overwrite ``facecolor`` and
             ``edgecolor``. Default is None.
         **kwargs : dict
             Keyword arguments passed to the underlying marker collection. Any argument
@@ -128,7 +134,7 @@ class Markers:
         >>> s.plot()
         >>> s.add_marker(m)
 
-        Adding star "iterating" markers using :py:meth:`matplotlib.collections.StarPolygonCollection`
+        Adding star "iterating" markers using :py:class:`matplotlib.collections.StarPolygonCollection`
 
         >>> import hyperspy.api as hs
         >>> from matplotlib.collections import StarPolygonCollection
@@ -260,7 +266,7 @@ class Markers:
         self._closing = False
 
     @property
-    def axes_manager(self):
+    def _axes_manager(self):
         if self._signal is not None:
             return self._signal.axes_manager
         else:
@@ -319,6 +325,7 @@ class Markers:
 
     @property
     def offset_transform(self):
+        """The tranform being used for the ``offsets`` values."""
         return self._get_transform(attr="_offset_transform")
 
     @offset_transform.setter
@@ -327,6 +334,10 @@ class Markers:
 
     @property
     def transform(self):
+        """
+        The tranform being used for the values other than ``offsets``,
+        typically ``sizes``, etc.
+        """
         return self._get_transform(attr="_transform")
 
     @transform.setter
@@ -338,7 +349,7 @@ class Markers:
         Return the number of markers in the collection at the current
         navigation coordinate.
         """
-        if self._is_iterating and self.axes_manager is None:
+        if self._is_iterating and self._axes_manager is None:
             # with variable length markers, the axes_manager is needed to
             # know the navigation coordinates of the signal
             raise RuntimeError(
@@ -552,19 +563,21 @@ class Markers:
 
         Parameters
         ----------
-        signal: BaseSignal
-            A value passed to the Collection as {key:signal.data}
-        key: str
-            The key used to create a key value pair to
-            create the subclass of :py:class:`matplotlib.collections.Collection.
-            Passed as {key: signal.data}.
+        signal: :py:class:`~.api.signals.BaseSignal`
+            A value passed to the Collection as ``{key:signal.data}``
+        key: str or None
+            The key used to create a key value pair to create the subclass of
+            :py:class:`matplotlib.collections.Collection`. If ``None`` (default)
+            the key is set to ``"offsets"``.
         collection: None, str or subclass of :py:class:`matplotlib.collections.Collection`
-            The collection which is initialized. If None, default to `Points` marker.
-        signal_axes: str, tuple of UniformAxes or None
-            If "metadata" look for signal_axes saved in metadata under .metadata.Peaks.signal_axes
-            and convert from pixel positions to real units before creating the collection. If a tuple
-            of signal axes those Axes will be used otherwise no transformation will
-            happen.
+            The collection which is initialized. If ``None``, default to
+            :py:class:`~.api.plot.markers.Points` markers.
+        signal_axes: str, tuple of :py:class:`~.axes.UniformDataAxis` or None
+            If ``"metadata"`` look for signal_axes saved in metadata under
+            ``s.metadata.Peaks.signal_axes`` and convert from pixel positions
+            to real units before creating the collection. If a ``tuple`` of
+            signal axes, those axes will be used otherwise no transformation
+            will happen.
         """
         if collection is None:
             # By default, use `Points` with "display" coordinate system to
@@ -633,7 +646,7 @@ class Markers:
         """
         current_keys = {}
         if self._is_iterating:
-            indices = self.axes_manager.indices[::-1]
+            indices = self._axes_manager.indices[::-1]
             for key, value in self.kwargs.items():
                 if is_iterating(value):
                     if key not in self.dask_kwargs:
@@ -680,7 +693,7 @@ class Markers:
 
         new_kwds = deepcopy(kwds)
         current_data = self._signal(as_numpy=True)
-        axis = self.axes_manager.signal_axes[0]
+        axis = self._axes_manager.signal_axes[0]
         indexes = np.round((x_positions - axis.offset) / axis.scale).astype(int)
         y_positions = new_kwds[key][..., 1]
         new_y_positions = current_data[indexes] * y_positions
@@ -694,6 +707,7 @@ class Markers:
         return new_kwds
 
     def update(self):
+        """Update the markers on the plot."""
         if self._is_iterating or "relative" in [
                 self._offset_transform, self._transform
                 ]:
@@ -769,7 +783,7 @@ class Markers:
         """
         Set the array of the :py:class:`matplotlib.cm.ScalarMappable` of the
         matplotlib collection.
-        The ``ScalarMappable`` array will overwrite ``facecolor` and
+        The ``ScalarMappable`` array will overwrite ``facecolor`` and
         ``edgecolor``.
 
         Parameters
@@ -791,7 +805,7 @@ class Markers:
 
         Returns
         -------
-        cbar : :py:class:`matplotlib.
+        cbar : :py:class:`matplotlib.colorbar.Colorbar`
             The colorbar of the collection.
 
         See Also

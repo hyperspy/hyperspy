@@ -22,12 +22,12 @@ ANGLES_DOCSTRING = \
         """
 
 UNITS_DOCSTRING = \
-        """units : {'points', 'inches', 'dots', 'width', 'height', 'x', 'y', 'xy'}
-            The units in which majors and minors are given; 'width' and
-            'height' refer to the dimensions of the axes, while 'x' and 'y'
-            refer to the *offsets* data units. 'xy' differs from all others in
+        """units : {``"points"``, ``"inches"``, ``"dots"``, ``"width"``", ``"height"``, ``"x"``, ``"y"``, ``"xy"``}
+            The units in which majors and minors are given; ``"width"`` and
+            ``"height"`` refer to the dimensions of the axes, while ``"x"`` and ``"y"``
+            refer to the *offsets* data units. ``"xy"`` differs from all others in
             that the angle as plotted varies with the aspect ratio, and equals
             the specified angle only when the aspect ratio is unity.  Hence
-            it behaves the same as the `~.patches.Ellipse` with
+            it behaves the same as the :py:class:`matplotlib.patches.Ellipse` with
             ``axes.transData`` as its transform.
             """

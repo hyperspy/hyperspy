@@ -46,21 +46,19 @@ class VerticalLines(Markers):
         Examples
         --------
         >>> import hyperspy.api as hs
-        >>> import matplotlib.pyplot as plt
         >>> import numpy as np
-
         >>> # Create a Signal2D with 2 navigation dimensions
         >>> rng = np.random.default_rng(0)
         >>> data = rng.random((25, 25, 100))
         >>> s = hs.signals.Signal1D(data)
         >>> offsets = np.array([10, 20, 40])
-
+        >>> # Create the markers
         >>> m = hs.plot.markers.VerticalLines(
         ...     offsets=offsets,
         ...     linewidth=3,
         ...     colors=['r', 'g', 'b'],
         ...     )
-
+        >>> # Add the marker to the signal
         >>> s.plot()
         >>> s.add_marker(m)
         """

@@ -43,23 +43,20 @@ class Polygons(Markers):
         Examples
         --------
         >>> import hyperspy.api as hs
-        >>> import matplotlib.pyplot as plt
         >>> import numpy as np
-
         >>> # Create a Signal2D with 2 navigation dimensions
         >>> data = np.ones((25, 25, 100, 100))
         >>> s = hs.signals.Signal2D(data)
-
         >>> poylgon1 = [[1, 1], [20, 20], [1, 20], [25, 5]]
         >>> poylgon2 = [[50, 60], [90, 40], [60, 40], [23, 60]]
         >>> verts = [poylgon1, poylgon2]
-
+        >>> # Create the markers
         >>> m = hs.plot.markers.Polygons(
         ...     verts=verts,
         ...     linewidth=3,
         ...     facecolors=('g',),
         ...     )
-
+        >>> # Add the marker to the signal
         >>> s.plot()
         >>> s.add_marker(m)
 
