@@ -70,17 +70,26 @@ def set_log_level(level):
     logger.setLevel(level)
 
 class ColoredFormatter(logging.Formatter):
-    """Colored log formatter."""
+    """Colored log formatter.
+
+    This class is used to format the log output. The colors can be changed
+    by changing the ANSI escape codes in the class variables.
+
+    This is a modified version of both this
+    https://github.com/herzog0/best_python_logger
+    and this https://stackoverflow.com/questions/384076/how-can-i-color-python-logging-output/56944256#56944256
+    """
     grey = "\x1b[38;20m"
     yellow = "\x1b[33;20m"
     red = "\x1b[31;20m"
     bold_red = "\x1b[31;1m"
     reset = "\x1b[0m"
+    green = "\x1b[1;32m"
     format = "%(levelname)s | Hyperspy | %(message)s (%(name)s:%(lineno)d)"
 
     FORMATS = {
         logging.DEBUG: grey + format + reset,
-        logging.INFO: grey + format + reset,
+        logging.INFO: green + format + reset,
         logging.WARNING: yellow + format + reset,
         logging.ERROR: red + format + reset,
         logging.CRITICAL: bold_red + format + reset
@@ -104,6 +113,8 @@ def initialize_logger(*args):
     handler.setFormatter(formatter)
 
     _logger = logging.getLogger(*args)
-    _logger.handlers[:] = []
+    # Remove existing handler
+    while len(_logger.handlers):
+        _logger.removeHandler(_logger.handlers[0])
     _logger.addHandler(handler)
     return _logger
