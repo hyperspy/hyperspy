@@ -79,8 +79,7 @@ class BlittedFigure(object):
             artists = sorted(ax.get_children(), key=lambda x: x.zorder)
             for artist in artists:
                 if artist.get_animated():
-                    if artist.figure is not None:  # handle race condition
-                        ax.draw_artist(artist)
+                    ax.draw_artist(artist)
 
     def _update_animated(self):
         _logger.debug('Updating animated.')
