@@ -30,7 +30,6 @@ from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
 from hyperspy.signal_tools import EdgesRange
 from hyperspy.misc.elements import elements as elements_db
-from hyperspy.misc.label_position import SpectrumLabelPosition
 import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
@@ -96,7 +95,7 @@ class EELSSpectrum(Signal1D):
         self.axes_manager.signal_axes[0].is_binned = True
         self._edge_markers = {"names": [],
                               "lines": None,
-                              "text": None}
+                              "texts": None}
 
     def add_elements(self, elements, include_pre_edges=False):
         """Declare the elemental composition of the sample.
@@ -208,7 +207,7 @@ class EELSSpectrum(Signal1D):
         """
 
         if energy == 'interactive':
-            er = EdgesRange(self)
+            er = EdgesRange(self, interactive=True)
             return er.gui(display=display, toolkit=toolkit)
         else:
             self.print_edges_near_energy(energy, width, only_major, order)
@@ -1597,9 +1596,16 @@ class EELSSpectrum(Signal1D):
 
         super().plot(**kwargs)
 
-        if plot_edges is not False:
+        if plot_edges:
+            # edges is a mapping {edge_name:edge_energy}
             edges = self._get_edges_to_plot(plot_edges, only_edges)
-            self.plot_edges_label(edges)
+            self._plot_edge_labels(edges)
+
+        self._plot.signal_plot.events.closed.connect(
+            self._on_signal_plot_closing, [])
+
+    def _on_signal_plot_closing(self):
+        self._edge_markers = {"lines": None, "texts": None, "names": []}
 
     def _get_offsets_and_segments(self, edges):
         index = np.array([float(v) for v in edges.values()]) # dictionaries
@@ -1610,33 +1616,27 @@ class EELSSpectrum(Signal1D):
             offsets[i] = [ind, 1.1]
         return offsets, segments
 
-    def get_edge_markers(self, edges):
-        offsets, segments = self._get_offsets_and_segments(edges)
-        line_shifts = np.zeros((len(offsets), 2))
-        line_shifts[:, -1] = .15
-        line_shifts[::2, -1] = .25
+    def _initialise_markers(self):
+        self._edge_markers["lines"] = Lines(
+            segments=np.empty((0, 2, 2)), transform="relative",
+            color='black', shift=np.array([0., 0.19]),
+            )
+        self._edge_markers["texts"] = Texts(
+            offsets=np.empty((0, 2)),
+            texts=np.empty((0,)),
+            offset_transform="relative",
+            rotation=np.pi/2,
+            horizontalalignment="left",
+            verticalalignment="bottom",
+            facecolor='black',
+            shift=.2,
+            )
+        for key in ["lines", "texts"]:
+            self.add_marker(self._edge_markers[key], render_figure=False)
 
-        vertical_line_marker = Lines(segments=segments,
-                                     shift=line_shifts,
-                                     transform="relative",
-                                     color='black',
-                                     )
-        text_marker = Texts(offsets=offsets,
-                            texts=list(edges.keys()),
-                            shift=line_shifts[:, 1]+0.025,
-                            rotation=np.pi/2,
-                            horizontalalignment="left",
-                            verticalalignment="bottom",
-                            offset_transform="relative",
-                            facecolor='black',
-                            )
-        return vertical_line_marker, text_marker
-
-    def plot_edges_label(self,
-                         edges,
-                         vertical_line_marker=None,
-                         text_marker=None):
-        """Put the EELS edge label (vertical line segment and text box) on
+    def _plot_edge_labels(self, edges):
+        """
+        Plot the EELS edge label (vertical line segment and text box) on
         the signal
 
         Parameters
@@ -1644,35 +1644,12 @@ class EELSSpectrum(Signal1D):
         edges : dictionary
             A dictionary with the labels as keys and their energies as values.
             For example, {'Fe_L2': 721.0, 'O_K': 532.0}
-        vertical_line_marker :  list
-            A list contains HyperSpy's vertical line segment marker, if None,
-            determine from the given edges
-        text_marker :  list
-            A list contains HyperSpy's text box marker, if None,
-            determine from the given edges
 
-        Raises
-        ------
-        ValueError
-            If the size of edges, vertical_line_marker and text_marker do not
-            match.
         """
-
-        if vertical_line_marker is None or text_marker is None:
-            # get position of markers for edges if no marker is provided
-            # no marker provided, implies non-interactive mode
-            vertical_line_marker, text_marker = self.get_edge_markers(edges)
-
-            # the object is needed to connect replot method when axes_manager
-            # indices changed
-            _ = EdgesRange(self, active=list(edges.keys()))
-
-        # add the markers to the signal and store them
-        self.add_marker(vertical_line_marker, render_figure=False)
-        self.add_marker(text_marker, render_figure=False)
-        self._edge_markers["lines"] = vertical_line_marker
-        self._edge_markers["text"] = text_marker
-        self._edge_markers["names"] = list(edges.keys())
+        # the object is needed to connect replot method when axes_manager
+        # indices changed
+        _ = EdgesRange(self, interactive=False)
+        self._add_edge_labels(edges)
 
     def _get_edges_to_plot(self, plot_edges, only_edges):
         # get the dictionary of the edge to be shown
@@ -1690,6 +1667,7 @@ class EELSSpectrum(Signal1D):
                 elements = self.metadata.Sample.elements
             except:
                 elements = []
+
 
         element_edge_family = elements + extra_element_edge_family
         edges_dict = self._get_edges(element_edge_family, only_edges)
@@ -1752,56 +1730,74 @@ class EELSSpectrum(Signal1D):
 
         return names_and_energies
 
-    def _edge_marker_closed(self, obj):
-        self._edge_markers = {"lines": None,
-                              "text": None,
-                              "names": []}
-
-    def remove_EELS_edges_markers(self,
-                                  EELS_edges,
-                                  render_figure=True):
-        ind = np.where(np.isin(self._edge_markers["names"], EELS_edges))
-        if self._edge_markers["lines"] is not None:
-            self._edge_markers["lines"].remove_item("segments", ind)
-        if self._edge_markers["text"] is not None:
-            self._edge_markers["text"].remove_item(["offsets", "texts"], ind)
-        if self._edge_markers["names"] is not []:
-            self._edge_markers["names"] = np.delete(self._edge_markers["names"], ind)
-        if render_figure:
-            self._render_figure(plot=['signal_plot'])
-
-    def add_EELS_edges_markers(self,
-                               EELS_edges,
-                               render_figure=True):
-        """Add EELS edges markers to the signal
+    def _remove_edge_labels(self, edge_names=None, render_figure=True):
+        """
+        Remove EELS edges markers to the signal
 
         Parameters
         ----------
-        EELS_edges : dictionary
-            A dictionary with the labels as keys and their energies as values.
-            For example, {'Fe_L2': 721.0, 'O_K': 532.0}
+        edge_names : str, list of str or None
+            The string must be the name of edges, e. g. 'Fe_L2'.
+            If ``None`` (default), remove all edges.
         render_figure : bool
             If True, render the figure after adding the markers
         """
-        edges = self._get_edges(EELS_edges, only_edges=['major', 'minor'])
-        offsets, segments = self._get_offsets_and_segments(edges)
-        names = list(edges.keys())
-        if self._edge_markers["lines"] is None:
-            self._edge_markers["lines"] = Lines(segments=np.empty((0, 2, 2)),
-                                                transform="relative")
-        self._edge_markers["lines"].add_item(["segments", ], [segments, ])
-        if self._edge_markers["text"] is None:
-            self._edge_markers["text"] = Texts(offsets=np.empty((0, 2)),
-                                               texts=np.empty((0,)),
-                                               rotation=np.pi/2,
-                                               transform="relative")
-        self._edge_markers["text"].add_item(("offsets", "texts"), (offsets, names))
-        self._edge_markers["names"] = np.append(self._edge_markers["names"], names)
+        if edge_names is None:
+            edge_names = self._edge_markers["names"]
+        if isinstance(edge_names, set):
+            # convert to list to find the index
+            edge_names = list(edge_names)
+        if not isinstance(edge_names, (list, tuple, np.ndarray)):
+            edge_names = [edge_names]
+
+        ind = np.where(np.isin(self._edge_markers["names"], edge_names))
+
+        if self._edge_markers["lines"] is not None:
+            self._edge_markers["lines"].remove_item("segments", ind)
+        if self._edge_markers["texts"] is not None:
+            self._edge_markers["texts"].remove_item(["offsets", "texts"], ind)
+        if self._edge_markers["names"] is not []:
+            self._edge_markers["names"] = np.delete(self._edge_markers["names"], ind)
+
         if render_figure:
             self._render_figure(plot=['signal_plot'])
 
-    def get_complementary_edges(self, edges, only_major=False):
-        ''' Get other edges of the same element present within the energy
+    def _add_edge_labels(self, edges, render_figure=True):
+        """
+        Add EELS edges markers to the signal
+
+        Parameters
+        ----------
+        edge_name : dictionary or set
+            If dictionary must be the name of edge as key and energy as values,
+            e.g. {'Cr_L2': 584.0}. If list or set, must the name of the edge,
+            e.g. set('Cr_L2', )
+        render_figure : bool
+            If True, render the figure after adding the markers
+        """
+        if isinstance(edges, set):
+            edges_dict = {}
+            for edge in edges:
+                element, ss = edge.split("_")
+                Binding_energies = elements_db[element]["Atomic_properties"]["Binding_energies"]
+                edges_dict[edge] = Binding_energies[ss]["onset_energy (eV)"]
+            edges = edges_dict
+
+        offsets, segments = self._get_offsets_and_segments(edges)
+        names = list(edges.keys())
+
+        self._edge_markers["lines"].add_item(["segments", ], [segments, ])
+        self._edge_markers["lines"].update()
+        self._edge_markers["texts"].add_item(("offsets", "texts"), (offsets, names))
+        self._edge_markers["lines"].update()
+        self._edge_markers["names"] = np.append(self._edge_markers["names"], names)
+
+        if render_figure:
+            self._render_figure(plot=['signal_plot'])
+
+    def _get_complementary_edges(self, edges, only_major=False):
+        """
+        Get other edges of the same element present within the energy
         range of the axis
 
         Parameters
@@ -1817,7 +1813,7 @@ class EELSSpectrum(Signal1D):
         complmt_edges : list
             A list containing all the complementary edges of the same element
             present within the energy range of the axis
-        '''
+        """
 
         emin = self.axes_manager[-1].low_value
         emax = self.axes_manager[-1].high_value

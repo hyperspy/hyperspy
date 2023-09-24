@@ -1064,7 +1064,7 @@ class EDSSpectrum(Signal1D):
         line_markers.events.closed.connect(self._xray_marker_closed)
         text_markers.events.closed.connect(self._xray_marker_closed)
         self._xray_markers["lines"] = line_markers
-        self._xray_markers["text"] = text_markers
+        self._xray_markers["texts"] = text_markers
         self._xray_markers["names"] = xray_lines
 
         if render_figure:
@@ -1087,7 +1087,7 @@ class EDSSpectrum(Signal1D):
         """
         ind = np.where(np.isin(self._xray_markers["names"], xray_lines))
         self._xray_markers["lines"].remove_item("segments", ind)
-        self._xray_markers["text"].remove_item(["offsets", "texts"],
+        self._xray_markers["texts"].remove_item(["offsets", "texts"],
                                                ind)
         self._xray_markers["names"] = np.delete(self._xray_markers["names"], ind)
         if render_figure:

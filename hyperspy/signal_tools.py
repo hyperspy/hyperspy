@@ -39,7 +39,6 @@ from hyperspy.drawing._widgets.range import SpanSelector
 from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
-from hyperspy.misc.label_position import SpectrumLabelPosition
 from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
 from hyperspy.drawing.signal1d import Signal1DFigure
 from hyperspy.misc.array_tools import numba_histogram
@@ -458,32 +457,33 @@ class EdgesRange(SpanSelectorInSignal1D):
     order = t.Unicode('closest')
     complementary = t.Bool(True)
 
-    def __init__(self, signal, active=None):
+    def __init__(self, signal, interactive=True):
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
 
-        if active is None:
+        if interactive:
             super().__init__(signal)
-            self.active_edges = []
         else:
-            # if active is provided, it is non-interactive mode
-            # so fix the active_edges and don't initialise the span selector
+            # ins non-interactive mode, don't initialise the span selector
             self.signal = signal
             self.axis = self.signal.axes_manager.signal_axes[0]
-            self.active_edges = list(active)
 
+        self.active_edges = list(self.signal._edge_markers["names"])
         self.active_complementary_edges = []
         self.units = self.axis.units
         self.btns = []
 
+        if self.signal._edge_markers["lines"] is None:
+            self.signal._initialise_markers()
+
         self._get_edges_info_within_energy_axis()
 
         self.signal.axes_manager.events.indices_changed.connect(
-            self._on_figure_changed, [])
+            self._on_navigation_indices_changed, [])
         self.signal._plot.signal_plot.events.closed.connect(
             lambda: self.signal.axes_manager.events.indices_changed.disconnect(
-            self._on_figure_changed), [])
+            self._on_navigation_indices_changed), [])
 
     def _get_edges_info_within_energy_axis(self):
         mid_energy = (self.axis.low_value + self.axis.high_value) / 2
@@ -510,8 +510,7 @@ class EdgesRange(SpanSelectorInSignal1D):
         self.relevance_all = np.asarray(relevance_all)
         self.description_all = np.asarray(description_all)
 
-    def _on_figure_changed(self):
-        self._plot_labels()
+    def _on_navigation_indices_changed(self):
         self.signal._plot.signal_plot.update()
 
     def update_table(self):
@@ -544,12 +543,12 @@ class EdgesRange(SpanSelectorInSignal1D):
                     self.active_edges.remove(edge)
                 elif edge in self.active_complementary_edges:
                     self.active_complementary_edges.remove(edge)
-                self.signal.remove_EELS_edges_markers([edge])
+                self.signal._remove_edge_labels([edge], render_figure=False)
             elif (edge not in self.active_edges):
                 self.active_edges.append(edge)
 
-        self.on_complementary()
-        self._plot_labels()
+        self._on_complementary()
+        self._update_labels()
 
     def update_active_edge(self, change):
         state = change['new']
@@ -562,15 +561,14 @@ class EdgesRange(SpanSelectorInSignal1D):
                 self.active_edges.remove(edge)
             if edge in self.active_complementary_edges:
                 self.active_complementary_edges.remove(edge)
-            self.signal.remove_EELS_edges_markers([edge])
-        self._on_figure_changed()
-        self.on_complementary()
-        self._plot_labels()
+            self.signal._remove_edge_labels([edge], render_figure=False)
+        self._on_complementary()
+        self._update_labels()
 
-    def on_complementary(self):
+    def _on_complementary(self):
         if self.complementary:
             self.active_complementary_edges = \
-                self.signal.get_complementary_edges(self.active_edges,
+                self.signal._get_complementary_edges(self.active_edges,
                                                     self.only_major)
         else:
             self.active_complementary_edges = []
@@ -582,50 +580,46 @@ class EdgesRange(SpanSelectorInSignal1D):
             if btn.value is False:
                 if edge in self.active_edges:
                     self.active_edges.remove(edge)
-                    self.signal.remove_EELS_edges_markers([edge])
+                    self.signal._remove_edge_labels([edge])
                 if edge in self.active_complementary_edges:
                     btn.value = True
 
             if btn.value is True and self.complementary:
-                comp = self.signal.get_complementary_edges(self.active_edges,
+                comp = self.signal._get_complementary_edges(self.active_edges,
                                                            self.only_major)
                 for cedge in comp:
                     if cedge in edges:
                         pos = edges.index(cedge)
                         self.btns[pos].value = True
 
-    def _plot_labels(self, active=None, complementary=None):
-        # plot selected and/or complementary edges
+    def _update_labels(self, active=None, complementary=None):
+        # update selected and/or complementary edges
         if active is None:
             active = self.active_edges
         if complementary is None:
             complementary = self.active_complementary_edges
-        try:
-            edges_on_signal = set(self.signal._edge_markers["names"])
-        except KeyError:
-            edges_on_signal = set()
+
+        edges_on_signal = set(self.signal._edge_markers["names"])
         edges_to_show = set(set(active).union(complementary))
         edge_keep = edges_on_signal.intersection(edges_to_show)
         edge_remove = edges_on_signal.difference(edge_keep)
         edge_add = edges_to_show.difference(edge_keep)
 
-        # Remove edges out
-        self.signal.remove_EELS_edges_markers(edge_remove)
+        if edge_remove:
+            # Remove edges out
+            self.signal._remove_edge_labels(edge_remove, render_figure=False)
+        if edge_add:
+            # Add the new edges
+            self.signal._add_edge_labels(edge_add, render_figure=False)
+        if edge_remove or edge_add:
+            # Render figure only once
+            self.signal._render_figure(plot=['signal_plot'])
 
-        self.signal.add_EELS_edges_markers(edge_add)
-
-
-    def _clear_markers(self, edges=None):
-        if edges is None:
-            edges = list(self.signal._edge_markers["names"])
-
-        self.signal.remove_EELS_edges_markers(list(edges))
-
-        for edge in edges:
-            if edge in self.active_edges:
-                self.active_edges.remove(edge)
-            if edge in self.active_complementary_edges:
-                self.active_complementary_edges.remove(edge)
+    def _clear_markers(self):
+        # Used in hyperspy_gui_ipywidgets
+        self.signal._remove_edge_labels()
+        self.active_edges = []
+        self.active_complementary_edges = []
 
 
 class Signal1DRangeSelector(SpanSelectorInSignal1D):

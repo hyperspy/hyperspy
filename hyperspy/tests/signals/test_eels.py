@@ -507,13 +507,13 @@ class Test_Get_Complementary_Edges:
 
     def test_Fe_O(self):
         s = self.signal
-        complementary = s.get_complementary_edges(['Fe_L2', 'O_K'])
+        complementary = s._get_complementary_edges(['Fe_L2', 'O_K'])
 
         assert complementary == ['Fe_L1', 'Fe_L3', 'Fe_M3', 'Fe_M2']
 
     def test_Fe_O_only_major(self):
         s = self.signal
-        complementary = s.get_complementary_edges(['Fe_L2', 'O_K'],
+        complementary = s._get_complementary_edges(['Fe_L2', 'O_K'],
                                                   only_major=True)
 
         assert complementary == ['Fe_L3', 'Fe_M3', 'Fe_M2']
@@ -569,7 +569,7 @@ class Test_Plot_EELS:
     def test_remove_edge_labels(self):
         s = self.signal
         s.plot(plot_edges=['Cr_L', 'Fe_L2'])
-        s.remove_EELS_edges_markers(['Cr_L1', 'Fe_L2'])
+        s._remove_edge_labels(['Cr_L1', 'Fe_L2'])
 
         assert len(s._edge_markers["names"]) == 2
         assert set(s._edge_markers["names"]) == set(['Cr_L2', 'Cr_L3'])
@@ -578,7 +578,7 @@ class Test_Plot_EELS:
     def test_plot_edges_without_markers_provided(self):
         s = self.signal
         s.plot()
-        s.plot_edges_label({'Fe_L2': 721.0, 'O_K': 532.0})
+        s._plot_edge_labels({'Fe_L2': 721.0, 'O_K': 532.0})
 
         assert len(s._edge_markers["names"]) == 2
         assert set(s._edge_markers["names"]) == set(['Fe_L2', 'O_K'])

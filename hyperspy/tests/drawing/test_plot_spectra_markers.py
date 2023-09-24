@@ -1,13 +1,13 @@
 
 import logging
+import pytest
 
 from hyperspy.datasets.artificial_data import get_core_loss_eels_line_scan_signal
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
-
-import pytest
-
+from hyperspy.utils.markers import Lines, Texts
 from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.utils import stack
+
 
 default_tol = 2.0
 baseline_dir = 'plot_spectra_markers'
@@ -25,7 +25,6 @@ class TestEDSMarkers:
         s.axes_manager.navigation_axes[0].index = 1
         return s._plot.signal_plot.figure
 
-
     @pytest.mark.parametrize("norm", [None, "log", "auto", "linear"])
     def test_plot_eds_lines_norm(self, norm):
         a = EDS_TEM_Spectrum()
@@ -34,7 +33,6 @@ class TestEDSMarkers:
         # otherwise use specify value
         kwargs = {"norm":norm} if norm else {}
         s.plot(True, **kwargs)
-
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl,
@@ -48,7 +46,6 @@ class TestEDSMarkers:
         s.axes_manager.navigation_axes[0].index = 1
         return s._plot.signal_plot.figure
 
-
     def test_plot_eds_lines_not_in_range(self, caplog):
         s = EDS_TEM_Spectrum().isig[5.0:8.0]
         s.plot()
@@ -56,7 +53,6 @@ class TestEDSMarkers:
             s._plot_xray_lines(xray_lines=['Pt_Ka'])
 
         assert "Pt_Ka is not in the data energy range." in caplog.text
-
 
     def test_plot_eds_lines_background(self,):
         s = EDS_TEM_Spectrum().isig[5.0:8.0]
@@ -78,6 +74,7 @@ class TestEDSMarkers:
         del s.metadata.Acquisition_instrument.TEM.beam_energy
         s.plot(True)
 
+
 class TestEELSMarkers:
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
@@ -93,6 +90,22 @@ class TestEELSMarkers:
         s.plot(plot_edges=True)
         s.axes_manager.indices = (10,)
         s._plot.close()
+
+    def test_remove_edges(self):
+        s = get_core_loss_eels_line_scan_signal(True, add_noise=False)
+        s.plot(plot_edges=['Cr'])
+
+        lines = s._edge_markers["lines"]
+        texts = s._edge_markers["texts"]
+
+        assert isinstance(lines, Lines)
+        assert isinstance(texts, Texts)
+        assert len(lines) == 3
+        assert len(texts) == 3
+
+        s._remove_edge_labels()
+        assert len(lines) == 0
+        assert len(texts) == 0
 
 
 @update_close_figure()

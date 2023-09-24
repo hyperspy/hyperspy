@@ -362,6 +362,7 @@ class Markers:
                     self.kwargs[key][i] = np.delete(self.kwargs[key][i], index, axis=0)
             else:
                 self.kwargs[key] = np.delete(self.kwargs[key], index, axis=0)
+        self._update()
 
     def add_item(self, keys, values):
         """
@@ -384,6 +385,8 @@ class Markers:
                     self.kwargs[key][i] = np.append(self.kwargs[key][i], value, axis=0)
             else:
                 self.kwargs[key] = np.append(self.kwargs[key], value, axis=0)
+
+        self._update()
 
     def _get_cache_dask_kwargs_chunk(self, indices):
         """
@@ -571,11 +574,15 @@ class Markers:
         if key is None:
             key = self._position_key
 
+        x_positions = kwds[key][..., 0]
+        if len(x_positions) == 0:
+            # can't scale as there is no marker at this coordinate
+            return kwds
+
         new_kwds = deepcopy(kwds)
         current_data = self._signal(as_numpy=True)
-        x_positions = new_kwds[key][..., 0]
-        ax = self.axes_manager.signal_axes[0]
-        indexes = np.round((x_positions - ax.offset) / ax.scale).astype(int)
+        axis = self.axes_manager.signal_axes[0]
+        indexes = np.round((x_positions - axis.offset) / axis.scale).astype(int)
         y_positions = new_kwds[key][..., 1]
         new_y_positions = current_data[indexes] * y_positions
 
@@ -588,7 +595,13 @@ class Markers:
         return new_kwds
 
     def update(self):
-        if self._is_iterating or "relative" in [self._offset_transform, self._transform]:
+        if self._is_iterating or "relative" in [
+                self._offset_transform, self._transform
+                ]:
+            self._update()
+
+    def _update(self):
+        if self._signal:
             kwds = self.get_data_position(get_static_kwargs=False)
             self._collection.set(**kwds)
 
