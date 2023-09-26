@@ -21,12 +21,6 @@ Common Signals
 
    CommonSignal2D
 
-.. currentmodule:: hyperspy._signals.eds
-
-.. autosummary::
-   :nosignatures:
-
-   EDSSpectrum
 
 Lazy Signals
 """"""""""""
@@ -45,19 +39,8 @@ Lazy Signals
    LazyComplexSignal
    LazyComplexSignal1D
    LazyComplexSignal2D
-   LazyDielectricFunction
-   LazyEDSSEMSpectrum
-   LazyEDSTEMSpectrum
-   LazyEELSSpectrum
    LazySignal1D
    LazySignal2D
-
-.. currentmodule:: hyperspy._signals.eds
-
-.. autosummary::
-   :nosignatures:
-
-   LazyEDSSpectrum
 
 .. toctree::
    :maxdepth: 2
@@ -65,15 +48,9 @@ Lazy Signals
 
    CommonSignal1D
    CommonSignal2D
-   EDSSpectrum
    LazyComplexSignal
    LazyComplexSignal1D
    LazyComplexSignal2D
-   LazyDielectricFunction
-   LazyEDSSpectrum
-   LazyEDSSEMSpectrum
-   LazyEDSTEMSpectrum
-   LazyEELSSpectrum
    LazySignal
    LazySignal1D
    LazySignal2D

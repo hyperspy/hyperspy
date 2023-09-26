@@ -17,7 +17,6 @@ Reference
 
     api
     api.datasets/index
-    api.eds
     api.material
     api.model/index
     api.plot/index
