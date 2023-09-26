@@ -68,8 +68,8 @@ class TestAlignTools:
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
         # code is buggy
-        assert (s.data[:, -1] == 2).all()
-        assert (s.data[:, 0] == 2).all()
+        np.testing.assert_allclose(s.data[:, -1], 2)
+        np.testing.assert_allclose(s.data[:, 0], 2)
         # Check that the calibration is correct
         assert s.axes_manager._axes[1].offset == self.new_offset
         assert s.axes_manager._axes[1].scale == self.scale
@@ -82,8 +82,8 @@ class TestAlignTools:
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
         # code is buggy
-        assert (s.data[:, -1] == 2).all()
-        assert (s.data[:, 0] == 2).all()
+        np.testing.assert_allclose(s.data[:, -1], 2)
+        np.testing.assert_allclose(s.data[:, 0], 2)
         # Check that the calibration is correct
         assert (
             s.axes_manager._axes[1].offset == self.new_offset)

@@ -153,4 +153,4 @@ class TabulatedGOS(BaseGOS):
         qint *= (4.0 * np.pi * a0 ** 2.0 * R ** 2 / E / T *
                  self.subshell_factor) * 1e28
         self.qint = qint
-        return interpolate.interp1d(E, qint, kind=3)
+        return interpolate.make_interp_spline(E, qint, k=3)

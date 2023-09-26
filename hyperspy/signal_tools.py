@@ -1747,7 +1747,7 @@ class SpikesRemoval:
             _logger.info(f'Threshold value: {threshold}')
         self.argmax = None
         self.derivmax = None
-        self.kind = "linear"
+        self.spline_order = 1
         self._temp_mask = np.zeros(self.signal().shape, dtype='bool')
         self.index = 0
         self.threshold = threshold
@@ -1826,10 +1826,7 @@ class SpikesRemoval:
         data = self.signal().copy()
         axis = self.signal.axes_manager.signal_axes[0]
         left, right = self.get_interpolation_range()
-        if self.kind == 'linear':
-            pad = 1
-        else:
-            pad = self.spline_order
+        pad = self.spline_order
         ileft = left - pad
         iright = right + pad
         ileft = np.clip(ileft, 0, len(data))
@@ -1852,7 +1849,7 @@ class SpikesRemoval:
             # Interpolate
             x = np.hstack((axis.axis[ileft:left], axis.axis[right:iright]))
             y = np.hstack((data[ileft:left], data[right:iright]))
-            intp = interpolate.interp1d(x, y, kind=self.kind)
+            intp = interpolate.make_interp_spline(x, y, k=self.spline_order)
             data[left:right] = intp(axis.axis[left:right])
 
         # Add noise
@@ -1882,17 +1879,11 @@ class SpikesRemoval:
 
 @add_gui_method(toolkey="hyperspy.Signal1D.spikes_removal_tool")
 class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
-    interpolator_kind = t.Enum(
-        'Linear',
-        'Spline',
-        default='Linear',
-        desc="the type of interpolation to use when\n"
-             "replacing the signal where a spike has been replaced")
     threshold = t.Float(400, desc="the derivative magnitude threshold above\n"
                         "which to find spikes")
     click_to_show_instructions = t.Button()
     show_derivative_histogram = t.Button()
-    spline_order = t.Range(1, 10, 3,
+    spline_order = t.Range(1, 10, 1,
                            desc="the order of the spline used to\n"
                            "connect the reconstructed data")
     interpolator = None
@@ -2013,17 +2004,11 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
             self.interpolated_line = None
 
     def _spline_order_changed(self, old, new):
-        self.kind = self.spline_order
-        self.span_selector_changed()
+        if new != old:
+            self.spline_order = new
+            self.span_selector_changed()
 
     def _add_noise_changed(self, old, new):
-        self.span_selector_changed()
-
-    def _interpolator_kind_changed(self, old, new):
-        if new == 'linear':
-            self.kind = new
-        else:
-            self.kind = self.spline_order
         self.span_selector_changed()
 
     def create_interpolation_line(self):
