@@ -100,7 +100,6 @@ def test_dir_api():
         'get_configuration_directory_path',
         'interactive',
         'load',
-        'material',
         'model',
         'plot',
         'preferences',
@@ -123,7 +122,6 @@ def test_dir_api_nogui():
         'get_configuration_directory_path',
         'interactive',
         'load',
-        'material',
         'model',
         'plot',
         'preferences',
@@ -173,7 +171,6 @@ def test_dir_utils():
     assert d == [
         'interactive',
         'markers',
-        'material',
         'model',
         'plot',
         'print_known_signal_types',
@@ -198,20 +195,6 @@ def test_dir_utils_markers():
                  'Squares',
                  'Texts',
                  'VerticalLines']
-
-
-
-def test_dir_utils_materials():
-    import hyperspy.utils.material
-    d = dir(hyperspy.utils.material)
-    assert d == [
-        'atomic_to_weight',
-        'density_of_mixture',
-        'elements',
-        'mass_absorption_coefficient',
-        'mass_absorption_mixture',
-        'weight_to_atomic',
-        ]
 
 
 def test_dir_utils_model():
