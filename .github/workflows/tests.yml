@@ -61,11 +61,6 @@ jobs:
         run: |
           pip install ${{ env.PIP_ARGS }} .'${{ matrix.PIP_SELECTOR }}'
 
-      - name: Install holospy
-        shell: bash
-        run: |
-          pip install -e ./holospy
-
       - name: Install spectrospy
         shell: bash
         run: |
