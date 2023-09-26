@@ -1117,3 +1117,24 @@ def test_collection_error():
     m = Points(offsets=[[1, 1], [2, 2]])
     with pytest.raises(ValueError):
         m._set_transform(value="test")
+
+
+def test_permanent_markers_close_open_cycle():
+    s = Signal2D(np.ones((100, 100)))
+    rng = np.random.default_rng(0)
+    offsets = rng.random((10, 2)) * 100
+    m = hs.plot.markers.Points(offsets=offsets)
+    assert m._signal is None
+    assert m._axes_manager is None
+
+    s.add_marker(m, permanent=True)
+    assert m._signal is s
+    assert m._axes_manager is s.axes_manager
+
+    s._plot.close()
+    assert m._signal is None
+    assert m._axes_manager is None
+
+    s.plot()
+    assert m._signal is s
+    assert m._axes_manager is s.axes_manager
