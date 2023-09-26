@@ -131,6 +131,9 @@ def test_as_array_fail():
     with pytest.raises(ValueError):
         to_array('asd', chunks=None)
 
+def test_as_array_fail_not_array():
+    with pytest.raises(ValueError):
+        to_array([], chunks=1)
 
 def test_ma_lazify():
     s = hs.signals.BaseSignal(

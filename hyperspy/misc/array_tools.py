@@ -508,6 +508,56 @@ def round_half_towards_zero(array, decimals=0):  # pragma: no cover
                     )
 
 
+def get_value_at_index(array,
+                       indexes,
+                       real_index,
+                       factor=1.0,
+                       norm=None,
+                       minimum_intensity=None,
+                       start=None,
+                       stop=1.0,
+                       ):
+    """Get the value at the given index.
+
+    Parameters
+    ----------
+    array : 1D numpy array
+        Input array.
+    indexes : list of float
+        Indexes of the array to find the value at.
+    factor: float or 1D numpy array
+        Factor to multiply the value at the index with.
+    norm : str, optional
+        Normalization to apply to the intensities. Can be 'log' or None.
+    minimum_intensity : float, optional
+        Minimum intensity to use when norm is 'log'.
+    start : float, optional
+        Start value for scaling the vertical line
+    stop : float, optional
+        Stop value for scaling the vertical line or height of the point.
+    real_index : 1D numpy array
+        The real values for the indexes in calibrated units.
+    """
+    if norm == 'log' and minimum_intensity is None:
+        raise ValueError('minimum_intensity must be provided when norm is log')
+    factor = np.asarray(factor)
+    intensities = array[indexes] * factor
+    stop_intensities = intensities*stop
+    # set minimum_intensity so that zeros are not plotted causing errors
+    if norm == 'log':
+        stop_intensities[stop_intensities < minimum_intensity] = minimum_intensity
+    stop_ = np.stack((real_index, stop_intensities), axis=1)
+    if start is not None:  # make lines from start to stop
+        start_intensities = intensities*start
+        # set minimum_intensity so that zeros are not plotted causing errors
+        if norm == 'log':
+            start_intensities[start_intensities < minimum_intensity] = minimum_intensity
+        start_ = np.stack((real_index, start_intensities), axis=1)
+        return np.stack((start_, stop_), axis=1)
+    else:
+        return stop_
+
+
 @njit(cache=True)
 def round_half_away_from_zero(array, decimals=0):  # pragma: no cover
     """
@@ -532,3 +582,62 @@ def round_half_away_from_zero(array, decimals=0):  # pragma: no cover
                     np.floor(array * multiplier + 0.5) / multiplier,
                     np.ceil(array * multiplier - 0.5) / multiplier
                     )
+
+def _get_navigation_dimension_chunk_slice(navigation_indices, chunks):
+    """Get the slice necessary to get the dask data chunk containing the
+    navigation indices.
+
+    Parameters
+    ----------
+    navigation_indices : iterable
+    chunks : iterable
+
+    Returns
+    -------
+    chunk_slice : list of slices
+
+    Examples
+    --------
+    Making all the variables
+
+    >>> import dask.array as da
+    >>> from hyperspy._signals.lazy import _get_navigation_dimension_chunk_slice
+    >>> data = da.random.random((128, 128, 256, 256), chunks=(32, 32, 32, 32))
+    >>> s = hs.signals.Signal2D(data).as_lazy()
+    >>> sig_dim = s.axes_manager.signal_dimension
+    >>> nav_chunks = s.data.chunks[:-sig_dim]
+    >>> navigation_indices = s.axes_manager._getitem_tuple[:-sig_dim]
+
+    The navigation index here is (0, 0), giving us the slice which contains
+    this index.
+
+    >>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
+    >>> print(chunk_slice)
+    (slice(0, 32, None), slice(0, 32, None))
+    >>> data_chunk = data[chunk_slice]
+
+    Moving the navigator to a new position, by directly setting the indices.
+    Normally, this is done by moving the navigator while plotting the data.
+    Note the "inversion" of the axes here: the indices is given in (x, y),
+    while the chunk_slice is given in (y, x).
+
+    >>> s.axes_manager.indices = (128, 70)
+    >>> navigation_indices = s.axes_manager._getitem_tuple[:-sig_dim]
+    >>> chunk_slice = _get_navigation_dimension_chunk_slice(navigation_indices, nav_chunks)
+    >>> print(chunk_slice)
+    (slice(64, 96, None), slice(96, 128, None))
+    >>> data_chunk = data[chunk_slice]
+
+    """
+    chunk_slice_list = da.core.slices_from_chunks(chunks)
+    for chunk_slice in chunk_slice_list:
+        is_slice = True
+        for index_nav in range(len(navigation_indices)):
+            temp_slice = chunk_slice[index_nav]
+            nav = navigation_indices[index_nav]
+            if not (temp_slice.start <= nav < temp_slice.stop):
+                is_slice = False
+                break
+        if is_slice:
+            return chunk_slice
+    return False

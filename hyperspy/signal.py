@@ -65,7 +65,7 @@ from hyperspy.misc.utils import (
     )
 from hyperspy.misc.hist_tools import histogram
 from hyperspy.drawing.utils import animate_legend
-from hyperspy.drawing.marker import markers_metadata_dict_to_markers
+from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import _get_block_pattern
 from hyperspy.docstrings.signal import (
@@ -5267,9 +5267,9 @@ class BaseSignal(FancySlicing,
 
         if dc.metadata.has_item('Markers'):
             temp_marker_dict = dc.metadata.Markers.as_dictionary()
-            markers_dict = markers_metadata_dict_to_markers(
-                temp_marker_dict,
-                dc.axes_manager)
+            markers_dict = {}
+            for key in temp_marker_dict:
+                markers_dict[key] = markers_dict_to_markers(temp_marker_dict[key],)
             dc.metadata.Markers = markers_dict
         return dc
 
@@ -5560,17 +5560,15 @@ class BaseSignal(FancySlicing,
         metadata = self.metadata.deepcopy()
 
         # Check if marker update
-        if metadata.has_item('Markers'):
-            marker_name_list = metadata.Markers.keys()
-            markers_dict = metadata.Markers.__dict__
+        if self.metadata.has_item('Markers'):
+            markers_dict = self.metadata.Markers
+            marker_name_list = self.metadata.Markers.keys()
+            new_markers_dict = metadata.Markers
             for marker_name in marker_name_list:
-                marker = markers_dict[marker_name]['_dtb_value_']
-                if marker.auto_update:
-                    marker.axes_manager = self.axes_manager
-                    key_dict = {}
-                    for key in marker.data.dtype.names:
-                        key_dict[key] = marker.get_data_position(key)
-                    marker.set_data(**key_dict)
+                marker = markers_dict[marker_name]
+                new_marker = new_markers_dict[marker_name]
+                kwargs = marker.get_current_kwargs(only_variable_length=False)
+                new_marker.kwargs = kwargs
 
         class_ = assign_signal_subclass(
             dtype=self.data.dtype,
@@ -5583,11 +5581,13 @@ class BaseSignal(FancySlicing,
             axes=self.axes_manager._get_signal_axes_dicts(),
             metadata=metadata.as_dictionary())
 
+        # reinitialize the markers from dictionary
         if cs.metadata.has_item('Markers'):
             temp_marker_dict = cs.metadata.Markers.as_dictionary()
-            markers_dict = markers_metadata_dict_to_markers(
-                temp_marker_dict,
-                cs.axes_manager)
+            markers_dict = {}
+            for key, item in temp_marker_dict.items():
+                markers_dict[key] = markers_dict_to_markers(item)
+                markers_dict[key]._signal = cs
             cs.metadata.Markers = markers_dict
 
         if auto_filename is True and self.tmp_parameters.has_item('filename'):
@@ -6081,31 +6081,34 @@ class BaseSignal(FancySlicing,
         >>> s.add_marker(marker_list, permanent=True)
 
         """
+        if not plot_marker and not permanent:
+            warnings.warn("`plot_marker=False` and `permanent=False` does nothing")
+            return
+
         if isiterable(marker):
             marker_list = marker
         else:
             marker_list = [marker]
         markers_dict = {}
+
         if permanent:
+            # Make a list of existing marker to check if this is not already
+            # added to the metadata.
             if not self.metadata.has_item('Markers'):
                 self.metadata.add_node('Markers')
             marker_object_list = []
             for marker_tuple in list(self.metadata.Markers):
                 marker_object_list.append(marker_tuple[1])
             name_list = self.metadata.Markers.keys()
+
         marker_name_suffix = 1
         for m in marker_list:
-            marker_data_shape = m._get_data_shape()[::-1]
-            if (not (len(marker_data_shape) == 0)) and (
-                    marker_data_shape != self.axes_manager.navigation_shape):
-                raise ValueError(
-                    "Navigation shape of the marker must be 0 or the "
-                    "inverse navigation shape as this signal. If the "
-                    "navigation dimensions for the signal is (2, 3), "
-                    "the marker dimension must be (3, 2).")
-            if (m.signal is not None) and (m.signal is not self):
+            if (m._signal is not None) and (m._signal is not self):
                 raise ValueError("Markers can not be added to several signals")
+
             m._plot_on_signal = plot_on_signal
+            m._signal = self
+
             if plot_marker:
                 if self._plot is None or not self._plot.is_active:
                     self.plot()
@@ -6113,28 +6116,29 @@ class BaseSignal(FancySlicing,
                     self._plot.signal_plot.add_marker(m)
                 else:
                     if self._plot.navigator_plot is None:
-                        self.plot()
+                        raise ValueError("Attempted to plot marker on navigator_plot when none is"
+                                         "active.")
                     self._plot.navigator_plot.add_marker(m)
                 m.plot(render_figure=False)
+
             if permanent:
                 for marker_object in marker_object_list:
                     if m is marker_object:
                         raise ValueError("Marker already added to signal")
-                name = m.name
+                name = m.name if m.name != "" else m.__class__.__name__
                 temp_name = name
+                # If it already exists in the list, add a suffix
                 while temp_name in name_list:
                     temp_name = name + str(marker_name_suffix)
                     marker_name_suffix += 1
                 m.name = temp_name
                 markers_dict[m.name] = m
-                m.signal = self
                 marker_object_list.append(m)
                 name_list.append(m.name)
-            if not plot_marker and not permanent:
-                _logger.warning(
-                    "plot_marker=False and permanent=False does nothing")
+
         if permanent:
             self.metadata.Markers.add_dictionary(markers_dict)
+
         if plot_marker and render_figure:
             self._render_figure()
 
@@ -6149,12 +6153,11 @@ class BaseSignal(FancySlicing,
         markers_dict = self.metadata.Markers.__dict__
         for marker_name in marker_name_list:
             marker = markers_dict[marker_name]['_dtb_value_']
-            if marker.plot_marker:
-                if marker._plot_on_signal:
-                    self._plot.signal_plot.add_marker(marker)
-                else:
-                    self._plot.navigator_plot.add_marker(marker)
-                marker.plot(render_figure=False)
+            if marker._plot_on_signal:
+                self._plot.signal_plot.add_marker(marker)
+            else:
+                self._plot.navigator_plot.add_marker(marker)
+            marker.plot(render_figure=False)
         self._render_figure()
 
     def add_poissonian_noise(self, keep_dtype=True, random_state=None):

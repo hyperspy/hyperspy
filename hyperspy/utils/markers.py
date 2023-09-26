@@ -23,36 +23,43 @@ Example
 
 >>> import skimage
 >>> im = hs.signals.Signal2D(skimage.data.camera())
->>> m = hs.plot.markers.Rectangle(x1=150, y1=100, x2=400, y2=400, color='red')
+>>> m = hs.plot.markers.Rectangle(
+...    offsets=offsets,
+...    widths=(5,),
+...    heights=(7,),
+...    angles=(0,),
+...    color="red",
+...    )
 >>> im.add_marker(m)
 
 """
-from hyperspy.drawing._markers.arrow import Arrow
-from hyperspy.drawing._markers.ellipse import Ellipse
-from hyperspy.drawing._markers.horizontal_line import HorizontalLine
-from hyperspy.drawing._markers.horizontal_line_segment import (
-    HorizontalLineSegment,
-    )
-from hyperspy.drawing._markers.line_segment import LineSegment
-from hyperspy.drawing._markers.point import Point
-from hyperspy.drawing._markers.rectangle import Rectangle
-from hyperspy.drawing._markers.text import Text
-from hyperspy.drawing._markers.vertical_line import VerticalLine
-from hyperspy.drawing._markers.vertical_line_segment import VerticalLineSegment
+from hyperspy.drawing.markers import Markers
+from hyperspy.drawing._markers.texts import Texts
+from hyperspy.drawing._markers.horizontal_lines import HorizontalLines
+from hyperspy.drawing._markers.vertical_lines import VerticalLines
+from hyperspy.drawing._markers.circles import Circles
+from hyperspy.drawing._markers.ellipses import Ellipses
+from hyperspy.drawing._markers.squares import Squares
+from hyperspy.drawing._markers.arrows import Arrows
+from hyperspy.drawing._markers.points import Points
+from hyperspy.drawing._markers.lines import Lines
+from hyperspy.drawing._markers.rectangles import Rectangles
+from hyperspy.drawing._markers.polygons import Polygons
 
 
-__all__ = [
-    'Arrow',
-    'Ellipse',
-    'HorizontalLine',
-    'HorizontalLineSegment',
-    'LineSegment',
-    'Point',
-    'Rectangle',
-    'Text',
-    'VerticalLine',
-    'VerticalLineSegment',
-    ]
+__all__ = ['Arrows',
+           'Circles',
+           'Ellipses',
+           'HorizontalLines',
+           'Lines',
+           'Markers',
+           'Points',
+           'Polygons',
+           'Rectangles',
+           'Squares',
+           'Texts',
+           'VerticalLines',
+           ]
 
 
 def __dir__():

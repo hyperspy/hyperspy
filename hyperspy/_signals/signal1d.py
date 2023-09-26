@@ -45,6 +45,7 @@ from hyperspy.signal_tools import (
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.signal_tools import BackgroundRemoval
+from hyperspy.misc.array_tools import get_value_at_index
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.signal_tools import _get_background_estimator
 from hyperspy._signals.lazy import LazySignal

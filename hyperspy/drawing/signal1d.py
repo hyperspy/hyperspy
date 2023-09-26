@@ -209,7 +209,7 @@ class Signal1DFigure(BlittedFigure):
             return  # Already closed
         for line in self.ax_lines + self.right_ax_lines:
             line.close()
-        super(Signal1DFigure, self)._on_close()
+        super()._on_close()
         _logger.debug('Signal1DFigure Closed.')
 
     def update(self):

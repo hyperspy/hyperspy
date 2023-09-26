@@ -701,7 +701,6 @@ def test_non_uniform_binned():
     with pytest.raises(ValueError):
         m.fit(optimizer="lstsq")
 
-
 def test_navigation_shape_signal1D():
     rng = np.random.default_rng(1)
     s = hs.signals.Signal1D(np.zeros((2, 3, 200)))

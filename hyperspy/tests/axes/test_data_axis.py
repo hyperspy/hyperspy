@@ -529,7 +529,7 @@ class TestUniformDataAxis:
         with pytest.raises(ValueError):
             self.axis.value2index(arval)
         #One NaN in array in --> error out
-        if platform.machine() != 'aarch64':
+        if platform.machine() != 'aarch64' and platform.machine() != "arm64":
             # Skip aarch64 platform because it doesn't raise error
             arval[1, 1] = np.nan
             with pytest.raises(ValueError):
