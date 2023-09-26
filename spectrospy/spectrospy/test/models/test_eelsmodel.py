@@ -478,7 +478,7 @@ class TestFitBackground2D:
 class TestEELSFineStructure:
 
     def setup_method(self, method):
-        s = hs.signals.EELSSpectrum(np.zeros((1024)))
+        s = EELSSpectrum(np.zeros((1024)))
         s.axes_manager[0].units = "eV"
         s.axes_manager[0].scale = 0.1
         s.axes_manager[0].offset = 690

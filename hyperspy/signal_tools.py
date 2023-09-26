@@ -39,7 +39,7 @@ from hyperspy.drawing._widgets.range import SpanSelector
 from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
-from hyperspy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
+from spectrospy.misc.eels.tools import get_edges_near_energy, get_info_from_edges
 from hyperspy.drawing.signal1d import Signal1DFigure
 from hyperspy.misc.array_tools import numba_histogram
 from hyperspy.misc.math_tools import check_random_state
