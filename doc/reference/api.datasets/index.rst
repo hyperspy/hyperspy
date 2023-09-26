@@ -2,7 +2,6 @@
 ----------------------------
 
 .. autosummary::
-   hyperspy.api.datasets.eelsdb
    hyperspy.api.datasets.artificial_data
    hyperspy.api.datasets.example_signals
 
