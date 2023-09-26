@@ -24,3 +24,5 @@ python:
         path: .
         extra_requirements:
            - build-doc
+      - method: pip
+        path: ./spectrospy
