@@ -82,7 +82,6 @@ def print_known_signal_types():
 __all__ = [
     'interactive',
     'markers',
-    'material',
     'model',
     'plot',
     'print_known_signal_types',
