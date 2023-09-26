@@ -28,7 +28,7 @@ from matplotlib.collections import LineCollection
 
 from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
-from hyperspy.signal_tools import EdgesRange
+from spectrospy.signal_tools import EdgesRange
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.defaults_parser import preferences

@@ -1,5 +1,7 @@
-from ipywidgets import  FloatSlider, VBox, Checkbox,
+from ipywidgets import  FloatSlider, VBox, Checkbox
 from hyperspy_gui_ipywidgets.model import add_display_arg
+from link_traits import link
+
 
 @add_display_arg
 def get_eelscl_widget(obj, **kwargs):

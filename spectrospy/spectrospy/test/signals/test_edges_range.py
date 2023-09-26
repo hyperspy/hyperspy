@@ -21,7 +21,7 @@ import numpy as np
 
 from hyperspy.datasets.artificial_data import \
     get_core_loss_eels_line_scan_signal
-from hyperspy.signal_tools import EdgesRange
+from spectrospy.signal_tools import EdgesRange
 
 
 class Owner:

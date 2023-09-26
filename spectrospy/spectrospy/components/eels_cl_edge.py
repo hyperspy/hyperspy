@@ -64,7 +64,7 @@ class FSet(set):
         super().update(iterable)
 
 
-@add_gui_method(toolkey="hyperspy.EELSCLEdge_Component")
+@add_gui_method(toolkey="spectrospy.EELSCLEdge_Component")
 class EELSCLEdge(Component):
     """
     EELS core loss ionisation edge from hydrogenic or tabulated

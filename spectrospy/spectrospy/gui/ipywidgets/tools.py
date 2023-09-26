@@ -1,4 +1,6 @@
 import ipywidgets
+from hyperspy_gui_ipywidgets.utils import add_display_arg
+
 
 @add_display_arg
 def print_edges_table_ipy(obj, **kwargs):
