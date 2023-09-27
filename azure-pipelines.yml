@@ -63,6 +63,8 @@ steps:
 
 - bash: |
     source activate $ENV_NAME
+    pip install git+https://github.com/CSSFrancis/hyperspy_gui_ipywidgets.git@spectrospy_split    
+    pip install git+https://github.com/CSSFrancis/hyperspy_gui_traitsui.git@spectrospy_split
     pip install --no-deps -e .
     pip install --no-deps -e ./spectrospy
     conda list
