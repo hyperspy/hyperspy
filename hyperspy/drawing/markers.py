@@ -657,7 +657,7 @@ class Markers:
         """
         current_keys = {}
         if self._is_iterating:
-            indices = self._axes_manager.indices[::-1]
+            indices = self._axes_manager.indices
             for key, value in self.kwargs.items():
                 if is_iterating(value):
                     if key not in self.dask_kwargs:

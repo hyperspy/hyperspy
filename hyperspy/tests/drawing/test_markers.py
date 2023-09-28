@@ -1138,3 +1138,28 @@ def test_permanent_markers_close_open_cycle():
     s.plot()
     assert m._signal is s
     assert m._axes_manager is s.axes_manager
+
+
+def test_variable_length_markers_navigation_shape():
+    nav_dim = 2
+    rng = np.random.default_rng(0)
+
+    nav_shape = np.arange(10, 10*(nav_dim+1), step=10)
+    data = np.ones(tuple(nav_shape) + (100, 100))
+    s = hs.signals.Signal2D(data)
+
+    offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
+    for ind in np.ndindex(offsets.shape):
+        num = rng.integers(3, 10)
+        offsets[ind] = rng.random((num, 2)) * 100
+
+    m = hs.plot.markers.Points(
+        offsets=offsets,
+        color="orange",
+    )
+
+    s.plot()
+    s.add_marker(m, permanent=True)
+    # go to last indices to check that the shape of `offsets` and
+    # navigation are aligned and plotting/getting currnet kwargs works fine
+    s.axes_manager.indices = np.array(s.axes_manager.navigation_shape) - 1
