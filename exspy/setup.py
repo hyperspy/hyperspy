@@ -78,7 +78,10 @@ setup(
     packages=find_packages(),
     package_dir={"exspy": "exspy"},
     extras_require=extra_feature_requirements,
-    install_requires=[],
+    install_requires=[
+        "hyperspy_gui_ipywidgets @ git+https://github.com/ericpre/hyperspy_gui_ipywidgets.git@hyperspy2.0",
+        "hyperspy_gui_traitsui @ git+https://github.com/ericpre/hyperspy_gui_traitsui.git@hyperspy2.0",
+        ],
     python_requires=">=3.7",
     package_data={
         "": ["LICENSE", "README.rst"],
