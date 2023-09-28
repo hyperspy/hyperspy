@@ -25,18 +25,21 @@ import numpy as np
 from scipy import constants
 import pint
 
+import hyperspy.api as hs
 from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy import utils
-from exspy.misc import material
-from exspy.signals.eds import EDSSpectrum, LazyEDSSpectrum
-from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
-from exspy.misc.eds import utils as utils_eds
-from exspy.misc.elements import elements as elements_db
 from hyperspy.misc.utils import isiterable
 from hyperspy.external.progressbar import progressbar
 from hyperspy.axes import DataAxis
+
+from exspy.misc import material
+from exspy.signals.eds import EDSSpectrum, LazyEDSSpectrum
+from exspy.defaults_parser import preferences
+from exspy.misc.eds import utils as utils_eds
+from exspy.misc.elements import elements as elements_db
+
 
 _logger = logging.getLogger(__name__)
 
@@ -422,7 +425,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         it = 0
         if absorption_correction:
             if show_progressbar is None:  # pragma: no cover
-                show_progressbar = preferences.General.show_progressbar
+                show_progressbar = hs.preferences.General.show_progressbar
             if show_progressbar:
                 pbar = progressbar(total=None,
                                    desc='Absorption correction calculation')

@@ -22,7 +22,7 @@ import h5py
 import pooch
 import pytest
 
-from hyperspy.defaults_parser import preferences
+from exspy.defaults_parser import preferences
 from exspy.misc.eels.gosh_gos import GoshGOS
 from exspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
 from exspy.misc.eels import HydrogenicGOS

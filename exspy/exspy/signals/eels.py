@@ -26,17 +26,14 @@ from scipy import constants
 from prettytable import PrettyTable
 from matplotlib.collections import LineCollection
 
+import hyperspy.api as hs
 from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
-from exspy.signal_tools import EdgesRange
-from exspy  .misc.elements import elements as elements_db
 import hyperspy.axes
-from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import display, isiterable, underline
 from hyperspy.misc.math_tools import optimal_fft_size
-from exspy.misc.eels.tools import get_edges_near_energy
-from exspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
+
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.utils.markers import Texts, Lines
 from hyperspy.docstrings.signal1d import (
@@ -52,7 +49,12 @@ from hyperspy.docstrings.signal import (
     NAVIGATION_MASK_ARG,
     LAZYSIGNAL_DOC,
 )
+
 from exspy.docstrings.model import EELSMODEL_PARAMETERS
+from exspy.misc.elements import elements as elements_db
+from exspy.misc.eels.tools import get_edges_near_energy
+from exspy.misc.eels.electron_inelastic_mean_free_path import iMFP_Iakoubovskii, iMFP_angular_correction
+from exspy.signal_tools import EdgesRange
 
 
 _logger = logging.getLogger(__name__)
@@ -561,7 +563,7 @@ class EELSSpectrum(Signal1D):
         self._check_signal_dimension_equals_one()
 
         if show_progressbar is None:
-            show_progressbar = preferences.General.show_progressbar
+            show_progressbar = hs.preferences.General.show_progressbar
 
         if isinstance(threshold, numbers.Number):
             I0 = self.isig[:threshold].integrate1D(-1)
@@ -1067,7 +1069,7 @@ class EELSSpectrum(Signal1D):
             raise NotImplementedError(
                 "This operation is not yet implemented for non-uniform energy axes.")
         if show_progressbar is None:
-            show_progressbar = preferences.General.show_progressbar
+            show_progressbar = hs.preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         psf_size = psf.axes_manager.signal_axes[0].size
         maxval = self.axes_manager.navigation_size

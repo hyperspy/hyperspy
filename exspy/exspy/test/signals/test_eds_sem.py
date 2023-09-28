@@ -23,7 +23,7 @@ import numpy as np
 from hyperspy import utils
 from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.defaults_parser import preferences
+from exspy.defaults_parser import preferences
 from exspy.signals import EDSSEMSpectrum
 import exspy.misc.eds.utils as eds_utils
 
