@@ -66,8 +66,8 @@ the scheduler of the :ref:`dask backend <dask_backends>`.
 
 .. _signal2D.crop:
 
-Cropping an image
------------------
+Cropping a Signal2D
+-------------------
 
 The :py:meth:`~._signals.signal2d.Signal2D.crop_signal2D` method crops the
 image *in-place* e.g.:
@@ -75,7 +75,7 @@ image *in-place* e.g.:
 .. code-block:: python
 
     >>> im = hs.datasets.example_signals.object_hologram()
-    >>> imc = im.crop(left=120, top=300, bottom=560) # im is cropped in-place
+    >>> im.crop_signal2D(left=120, top=300, bottom=560) # im is cropped in-place
 
 
 Cropping in HyperSpy is performed using the :ref:`Signal indexing

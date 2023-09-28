@@ -1,1 +1,1 @@
-Renamed `Signal2D.crop_image` to `Signal2D.crop_signal2D`
+Renamed ``Signal2D.crop_image`` to :meth:`~.api.signals.Signal2D.crop_signal2D`
