@@ -85,5 +85,7 @@ setup(
     python_requires=">=3.7",
     package_data={
         "": ["LICENSE", "README.rst"],
-        "exspy": ["*.py", "hyperspy_extension.yaml"],
+        "exspy": [
+            "test/signals/data/*hspy",
+            "hyperspy_extension.yaml"],
     },)

@@ -74,6 +74,10 @@ jobs:
         run: |
           pytest ${{ env.PYTEST_ARGS }} --cov=. --cov-report=xml
 
+      - name: Run exSpy test suite
+        run: |
+          pytest --pyargs exspy
+
       - name: Upload coverage to Codecov
         if: ${{ always() }}
         uses: codecov/codecov-action@v3
