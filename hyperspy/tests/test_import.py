@@ -138,7 +138,7 @@ def test_dir_api_nogui():
 def test_dir_datasets():
     import hyperspy.datasets
     d = dir(hyperspy.datasets)
-    assert d == ['artificial_data', 'eelsdb', 'example_signals']
+    assert d == ['artificial_data', 'example_signals']
 
 
 def test_dir_datasets2():

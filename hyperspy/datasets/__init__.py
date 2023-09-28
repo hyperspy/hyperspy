@@ -37,13 +37,11 @@ The :mod:`hyperspy.datasets` module contains the following submodules:
 
 """
 
-from exspy.misc.eels.eelsdb import eelsdb
 from hyperspy.datasets import artificial_data, example_signals
 
 
 __all__ = [
     'artificial_data',
-    'eelsdb',
     'example_signals',
     ]
 
