@@ -22,7 +22,7 @@ import math
 import numpy as np
 from scipy import constants, integrate, interpolate
 
-from hyperspy.misc.elements import elements
+from exspy.misc.elements import elements
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary,
     load_from_dictionary,

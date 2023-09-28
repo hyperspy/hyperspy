@@ -29,7 +29,7 @@ from matplotlib.collections import LineCollection
 from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
 from exspy.signal_tools import EdgesRange
-from hyperspy.misc.elements import elements as elements_db
+from exspy  .misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import PowerLaw

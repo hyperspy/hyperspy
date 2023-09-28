@@ -106,7 +106,7 @@ class TestModelIndexingClass:
 
     def setup_method(self, method):
         pytest.importorskip("exspy")
-        from exspy import EELSSpectrum
+        from exspy.signals import EELSSpectrum
         s_eels = EELSSpectrum([list(range(10))] * 3)
         s_eels.metadata.set_item(
             'Acquisition_instrument.TEM.Detector.EELS.collection_angle',

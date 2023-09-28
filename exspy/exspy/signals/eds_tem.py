@@ -33,7 +33,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from exspy.misc.eds import utils as utils_eds
-from hyperspy.misc.elements import elements as elements_db
+from exspy.misc.elements import elements as elements_db
 from hyperspy.misc.utils import isiterable
 from hyperspy.external.progressbar import progressbar
 from hyperspy.axes import DataAxis

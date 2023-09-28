@@ -23,7 +23,7 @@ from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc import utils
 from exspy.misc.eds import utils as utils_eds
-from hyperspy.misc.elements import elements as elements_db
+from exspy.misc.elements import elements as elements_db
 
 
 # Create this outside the test class to

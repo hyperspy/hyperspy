@@ -21,7 +21,7 @@ import numpy as np
 import math
 from scipy import constants
 from hyperspy.misc.utils import stack
-from hyperspy.misc.elements import elements as elements_db
+from exspy.misc.elements import elements as elements_db
 from functools import reduce
 
 

@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 from scipy import constants
 
 from hyperspy.misc.array_tools import rebin
-from hyperspy.misc.elements import elements as elements_db
+from exspy.misc.elements import elements as elements_db
 import hyperspy.defaults_parser
 
 _logger = logging.getLogger(__name__)

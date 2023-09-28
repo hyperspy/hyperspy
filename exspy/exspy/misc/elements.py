@@ -10,7 +10,7 @@
 # The field 'threshold' and 'edge' are taken from Gatan EELS atlas
 # https://eels.info/atlas (retrieved in June 2020)
 
-from hyperspy.misc import utils
+from hyperspy.misc.utils import DictionaryTreeBrowser
 
 elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                    'Atomic_properties': {'Xray_lines': {'Lb1': {'weight': 0.33039,
@@ -4336,7 +4336,7 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                           'name': 'plutonium'}},
             }
 
-elements_db = utils.DictionaryTreeBrowser(elements)
+elements_db = DictionaryTreeBrowser(elements)
 
 # read dictionary of atomic numbers from HyperSpy, and add the elements that
 # do not currently exist in the database (in case anyone is doing EDS on

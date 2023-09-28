@@ -6,7 +6,7 @@ from .eels_double_power_law import DoublePowerLaw
 from .eels_vignetting import Vignetting
 
 __all__ = ["EELSArctan",
-            "EELSCLEdge",
-            "DoublePowerLaw",
-            "Vignetting",
+           "EELSCLEdge",
+           "DoublePowerLaw",
+           "Vignetting",
             ]

@@ -17,7 +17,7 @@
 # along with exspy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
-from exspy.exspy.misc.eds.utils import (
+from exspy.misc.eds.utils import (
     edx_cross_section_to_zeta,
     electron_range,
     get_xray_lines_near_energy,

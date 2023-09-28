@@ -27,7 +27,7 @@ from matplotlib import pyplot as plt
 from hyperspy import utils
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D, LazySignal1D
-from hyperspy.misc.elements import elements as elements_db
+from exspy.misc.elements import elements as elements_db
 from exspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 from hyperspy.utils.markers import Texts, VerticalLines, Lines
