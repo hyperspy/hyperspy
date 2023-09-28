@@ -55,6 +55,7 @@ jobs:
         if: ${{ matrix.OLDEST_SUPPORTED_VERSION }}
         run: |
           pip install ${{ matrix.DEPENDENCIES }} -v
+          pip instsall ./exspy
 
       - name: Install
         shell: bash
