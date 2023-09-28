@@ -86,7 +86,7 @@ def get_low_loss_eels_signal(add_noise=True, random_state=None):
     data += plasmon.function(x)
     if add_noise:
         data += random_state.uniform(size=len(x)) * 0.7
-    from spectrospy.signals import EELSSpectrum
+    from exspy.signals import EELSSpectrum
     s = EELSSpectrum(data)
     s.axes_manager[0].offset = x[0]
     s.axes_manager[0].scale = x[1] - x[0]
@@ -146,7 +146,7 @@ def get_core_loss_eels_signal(add_powerlaw=False, add_noise=True,
     random_state = check_random_state(random_state)
 
     x = np.arange(400, 800, 1)
-    from spectrospy.components import EELSArctan
+    from exspy.components import EELSArctan
     arctan = EELSArctan(A=1, k=0.2, x0=688)
     mn_l3_g = components1d.Gaussian(A=100, centre=695, sigma=4)
     mn_l2_g = components1d.Gaussian(A=20, centre=720, sigma=4)
@@ -160,7 +160,7 @@ def get_core_loss_eels_signal(add_powerlaw=False, add_noise=True,
     if add_powerlaw:
         powerlaw = components1d.PowerLaw(A=10e8, r=3, origin=0)
         data += powerlaw.function(x)
-    from spectrospy.signals import EELSSpectrum
+    from exspy.signals import EELSSpectrum
     s = EELSSpectrum(data)
     s.axes_manager[0].offset = x[0]
     s.metadata.General.title = 'Artifical core loss EEL spectrum'
@@ -211,7 +211,7 @@ def get_low_loss_eels_line_scan_signal(add_noise=True, random_state=None):
         data[i] += data_signal
         if add_noise:
             data[i] += random_state.uniform(size=len(x)) * 0.7
-    from spectrospy.signals import EELSSpectrum
+    from exspy.signals import EELSSpectrum
     s = EELSSpectrum(data)
     s.axes_manager.signal_axes[0].offset = x[0]
     s.axes_manager.signal_axes[0].scale = x[1] - x[0]
@@ -255,7 +255,7 @@ def get_core_loss_eels_line_scan_signal(add_powerlaw=False, add_noise=True,
     random_state = check_random_state(random_state)
 
     x = np.arange(400, 800, 1)
-    from spectrospy.components import EELSArctan
+    from exspy.components import EELSArctan
     arctan_mn = EELSArctan(A=1, k=0.2, x0=688)
     arctan_fe = EELSArctan(A=1, k=0.2, x0=612)
     mn_l3_g = components1d.Gaussian(A=100, centre=695, sigma=4)
@@ -283,7 +283,7 @@ def get_core_loss_eels_line_scan_signal(add_powerlaw=False, add_noise=True,
     if add_powerlaw:
         powerlaw = components1d.PowerLaw(A=10e8, r=3, origin=0)
         data += powerlaw.function(x)
-    from spectrospy.signals import EELSSpectrum
+    from exspy.signals import EELSSpectrum
     s = EELSSpectrum(data)
     s.axes_manager.signal_axes[0].offset = x[0]
     s.metadata.General.title = 'Artifical core loss EEL spectrum'

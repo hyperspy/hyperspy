@@ -1,0 +1,6 @@
+name = "exspy"
+version = "0.0.1"
+author = "exspy Developers"
+copyright = "Copyright 2016-2023, The exspy developers"
+license = "GPLv3+"
+status = "development"

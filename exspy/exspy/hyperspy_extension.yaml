@@ -1,0 +1,107 @@
+signals:
+  EELSSpectrum:
+    signal_type: EELS
+    signal_type_aliases:
+      - TEM EELS
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    module: exspy.signals.eels
+  LazyEELSSpectrum:
+    signal_type: EELS
+    signal_type_aliases:
+      - TEM EELS
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    module: exspy.signals.eels
+  EDSTEMSpectrum:
+    signal_type: EDS_TEM
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    module: exspy.signals.eds_tem
+  LazyEDSTEMSpectrum:
+    signal_type: EDS_TEM
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    module: exspy.signals.eds_tem
+  EDSSEMSpectrum:
+    signal_type: EDS_SEM
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    module: exspy.signals.eds_sem
+  LazyEDSSEMSpectrum:
+    signal_type: EDS_SEM
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    module: exspy.signals.eds_sem
+  DielectricFunction:
+    signal_type: DielectricFunction
+    signal_type_aliases:
+      - dielectric function
+    signal_dimension: 1
+    dtype: complex
+    lazy: False
+    module: exspy.signals.dielectric_function
+  LazyDielectricFunction:
+    signal_type: DielectricFunction
+    signal_type_aliases:
+      - dielectric function
+    signal_dimension: 1
+    dtype: complex
+    lazy: True
+    module: exspy.signals.dielectric_function
+
+components1D:
+  DoublePowerLaw:
+    module: exspy.components.eels_double_power_law
+    class: DoublePowerLaw
+  EELSArctan:
+    module: exspy.components.eels_arctan
+    class: EELSArctan
+  EELSCLEdge:
+    module: exspy.components.eels_cl_edge
+    class: EELSCLEdge
+  Vignetting:
+    module: exspy.components.eels_vignetting
+    class: Vignetting
+
+GUI:
+  toolkeys:
+    - exspy.EELSCLEdge_Component
+    - exspy.microscope_parameters_EELS
+    - exspy.microscope_parameters_EDS_TEM
+    - exspy.microscope_parameters_EDS_SEM
+    - exspy.EELSSpectrum.print_edges_table
+
+  widgets:
+    traitsui:
+      exspy.microscope_parameters_EELS:
+        module: exspy.gui.traits_ui.microscope_parameters
+        function: microscope_parameters_EELS
+      exspy.microscope_parameters_EDS_SEM:
+        module: exspy.gui.traits_ui.microscope_parameters
+        function: microscope_parameters_EDS_SEM
+      exspy.microscope_parameters_EDS_TEM:
+        module: exspy.gui.traits_ui.microscope_parameters
+        function: microscope_parameters_EDS_TEM
+    ipywidgets:
+      exspy.EELSCLEdge_Component:
+        module: exspy.gui.ipywidgets.model
+        function: get_eelscl_widget
+      exspy.EELSSpectrum.print_edges_table:
+        module: exspy.gui.ipywidgets.tools
+        function: print_edges_table_ipy
+      exspy.microscope_parameters_EELS:
+        module: exspy.gui.ipywidgets.microscope_parameters
+        function: eels_microscope_parameter_ipy
+      exspy.microscope_parameters_EDS_TEM:
+        module: spectroscpy.gui.ipywidgets.microscope_parameters
+        function: eds_tem_microscope_parameter_ipy
+      exspy.microscope_parameters_EDS_SEM:
+        module: exspy.gui.ipywidgets.microscope_parameters
+        function: eds_sem_microscope_parameter_ipy

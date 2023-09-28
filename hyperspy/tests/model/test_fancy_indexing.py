@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from spectrospy.signals.eels import EELSSpectrum
+from exspy.signals.eels import EELSSpectrum
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass

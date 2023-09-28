@@ -37,7 +37,7 @@ The :mod:`hyperspy.datasets` module contains the following submodules:
 
 """
 
-from spectrospy.misc.eels.eelsdb import eelsdb
+from exspy.misc.eels.eelsdb import eelsdb
 from hyperspy.datasets import artificial_data, example_signals
 
 

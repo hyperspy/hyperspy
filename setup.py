@@ -66,10 +66,10 @@ extras_require = {
 	"ipython": ["IPython>7.0, !=8.0", "ipyparallel"],
     "learning": ["scikit-learn>=1.0.1"],
     # UPDATE BEFORE RELEASE
-    "gui-jupyter": ["hyperspy_gui_ipywidgets @ git+https://github.com/CSSFrancis/hyperspy_gui_ipywidgets.git@spectrospy_split",
+    "gui-jupyter": ["hyperspy_gui_ipywidgets @ git+https://github.com/CSSFrancis/hyperspy_gui_ipywidgets.git@exspy_split",
                     "ipympl"],
     # UPDATE BEFORE RELEASE
-    "gui-traitsui": ["hyperspy_gui_traitsui @ git+https://github.com/CSSFrancis/hyperspy_gui_traitsui.git@spectrospy_split"],
+    "gui-traitsui": ["hyperspy_gui_traitsui @ git+https://github.com/CSSFrancis/hyperspy_gui_traitsui.git@exspy_split"],
     #"gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "tests": [
         "pytest>=3.6",

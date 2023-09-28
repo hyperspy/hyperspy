@@ -23,7 +23,7 @@ from pathlib import Path
 import hyperspy.api as hs
 from hyperspy.components1d import Gaussian
 from hyperspy.exceptions import VisibleDeprecationWarning
-from spectrospy.signals import EELSSpectrum
+from exspy.signals import EELSSpectrum
 from hyperspy.signals import Signal1D
 
 my_path = Path(__file__).resolve().parent

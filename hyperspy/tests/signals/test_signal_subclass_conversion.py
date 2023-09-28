@@ -44,10 +44,10 @@ class Test1d:
         s.set_signal_type("EELS")
         assert s.metadata.Signal.signal_type == "EELS"
         if s._lazy:
-            from spectrospy.signals import LazyEELSSpectrum
+            from exspy.signals import LazyEELSSpectrum
             _class = LazyEELSSpectrum
         else:
-            from spectrospy.signals import EELSSpectrum
+            from exspy.signals import EELSSpectrum
             _class = EELSSpectrum
         assert isinstance(s, _class)
 
@@ -82,10 +82,10 @@ class Test2d:
         s = im.as_signal1D(0)
         assert s.metadata.Signal.signal_type == "EELS"
         if s._lazy:
-            from spectrospy.signals import LazyEELSSpectrum
+            from exspy.signals import LazyEELSSpectrum
             _class = LazyEELSSpectrum
         else:
-            from spectrospy.signals import EELSSpectrum
+            from exspy.signals import EELSSpectrum
             _class = EELSSpectrum
         assert isinstance(s, _class)
 

@@ -32,7 +32,7 @@ def generate_bad_toy_data():
     which previously caused a MemoryError when
     using the Freedman-Diaconis rule.
     """
-    from spectrospy.signals import EELSSpectrum
+    from exspy.signals import EELSSpectrum
     ax1 = np.exp(-np.abs(np.arange(-30, 100, 0.05)))
     s1 = EELSSpectrum(ax1)
     s1 = hs.stack([s1] * 2)
