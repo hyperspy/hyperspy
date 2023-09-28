@@ -12,32 +12,33 @@ signals in the Signal1D class.
 Cropping
 --------
 
-The :py:meth:`~._signals.signal1d.Signal1D.crop_signal1D` crops the
-spectral energy range *in-place*. If no parameter is passed, a user interface
+The :py:meth:`~._signals.signal1d.Signal1D.crop_signal` crops the
+the signal object along the signal axis (e.g. the spectral energy range)
+*in-place*. If no parameter is passed, a user interface
 appears in which to crop the one dimensional signal. For example:
 
 .. code-block:: python
 
-    s = hs.datasets.two_gaussians()
-    s.crop_signal1D(5, 15) # s is cropped in place
+    >>> s = hs.datasets.two_gaussians()
+    >>> s.crop_signal(5, 15) # s is cropped in place
 
 Additionally, cropping in HyperSpy can be performed using the :ref:`Signal
-indexing <signal.indexing>` syntax. For example, the following crops a spectrum
-to the 5 keV-15 keV region:
+indexing <signal.indexing>` syntax. For example, the following crops a signal
+to the 5.0-15.0 region:
 
 .. code-block:: python
 
-    s = hs.datasets.two_gaussians()
-    sc = s.isig[5.:15.] # s is not cropped, sc is a "cropped view" of s
+    >>> s = hs.datasets.two_gaussians()
+    >>> sc = s.isig[5.:15.] # s is not cropped, sc is a "cropped view" of s
 
 It is possible to crop interactively using :ref:`roi-label`. For example:
 
 .. code-block:: python
 
-    s = hs.datasets.two_gaussians()
-    roi = hs.roi.SpanROI(left=5, right=15)
-    s.plot()
-    sc = roi.interactive(s)
+    >>> s = hs.datasets.two_gaussians()
+    >>> roi = hs.roi.SpanROI(left=5, right=15)
+    >>> s.plot()
+    >>> sc = roi.interactive(s)
 
 .. _interactive_signal1d_cropping_image:
 
@@ -60,7 +61,7 @@ The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method provides
 background removal capabilities through both a CLI and a GUI. The GUI displays
 an interactive preview of the remainder after background subtraction. Currently,
 the following background types are supported: Doniach, Exponential, Gaussian,
-Lorentzian, Polynomial, Power law (default), Offset, Skew normal, Split Voigt 
+Lorentzian, Polynomial, Power law (default), Offset, Skew normal, Split Voigt
 and Voigt. By default, the background parameters are estimated using analytical
 approximations (keyword argument ``fast=True``). The fast option is not accurate
 for most background types - except Gaussian, Offset and Power law -
@@ -72,8 +73,8 @@ Example of usage:
 
 .. code-block:: python
 
-    s = hs.datasets.artificial_data.get_core_loss_eels_signal(add_powerlaw=True)
-    s.remove_background(zero_fill=False)
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal(add_powerlaw=True)
+    >>> s.remove_background(zero_fill=False)
 
 .. figure::  images/signal_1d_remove_background.png
    :align:   center
@@ -177,7 +178,7 @@ For asymmetric peaks, `fitted functions <model.fitting>` may not provide
 an accurate description of the peak, in particular the peak width. The function
 :py:meth:`~._signals.signal1d.Signal1D.estimate_peak_width`
 determines the width of a peak at a certain fraction of its maximum value.
- 
+
 
 Other methods
 -------------
