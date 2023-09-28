@@ -17,8 +17,8 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
+import pytest
 
-from exspy.signals.eels import EELSSpectrum
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
@@ -105,6 +105,8 @@ class TestModelIndexing:
 class TestModelIndexingClass:
 
     def setup_method(self, method):
+        pytest.importorskip("exspy")
+        from exspy import EELSSpectrum
         s_eels = EELSSpectrum([list(range(10))] * 3)
         s_eels.metadata.set_item(
             'Acquisition_instrument.TEM.Detector.EELS.collection_angle',
@@ -125,6 +127,8 @@ class TestModelIndexingClass:
 class TestEELSModelSlicing:
 
     def setup_method(self, method):
+        pytest.importorskip("exspy")
+        from exspy.signals import EELSSpectrum
         data = np.random.random((10, 10, 600))
         s = EELSSpectrum(data)
         s.axes_manager[-1].offset = -150.

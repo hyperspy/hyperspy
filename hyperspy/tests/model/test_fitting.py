@@ -614,6 +614,7 @@ def test_missing_analytical_gradient():
     referenced in that issue.
 
     """
+    pytest.importorskip("exspy")
     metadata_dict = {
         "Acquisition_instrument": {
             "TEM": {
@@ -631,6 +632,7 @@ def test_missing_analytical_gradient():
     s.set_signal_type("EELS")
     s.add_gaussian_noise(10, random_state=1)
     m = s.create_model(auto_add_edges=False)
+
     from exspy.components import EELSCLEdge
     e1 = EELSCLEdge("Zr_L3")
     e1.intensity.bmin = 0

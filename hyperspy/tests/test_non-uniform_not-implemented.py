@@ -22,8 +22,6 @@ from hyperspy.signals import (
     Signal1D,
     Signal2D,
     )
-from exspy.components import EELSCLEdge
-from exspy.signals import EELSSpectrum, EDSSpectrum
 
 def test_signal():
     s = Signal1D([10, 10])
@@ -66,6 +64,9 @@ def test_signal2d():
 
 
 def test_eels():
+    pytest.importorskip("exspy")
+    from exspy.signals import EELSSpectrum
+    from exspy.components import EELSCLEdge
     s = EELSSpectrum(([0, 1]))
     s0 = s.deepcopy()
     s.axes_manager[0].convert_to_non_uniform_axis()
@@ -92,6 +93,7 @@ def test_eels():
 
 
 def test_eds():
+    pytest.importorskip("exspy")
     from exspy.signals import EDSSEMSpectrum, EDSTEMSpectrum
     s = EDSTEMSpectrum(([0, 1]))
     s2 = EDSSEMSpectrum(([0, 1]))
