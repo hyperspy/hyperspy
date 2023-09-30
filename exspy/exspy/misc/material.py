@@ -27,6 +27,19 @@ from exspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import stack
 
 
+__all__ = [
+    "atomic_to_weight",
+    "weight_to_atomic",
+    "density_of_mixture",
+    "mass_absorption_coefficient",
+    "mass_absorption_mixture",
+    ]
+
+
+def __dir__():
+    return sorted(__all__)
+
+
 def _weight_to_atomic(weight_percent, elements):
     """Convert weight percent (wt%) to atomic percent (at.%).
 

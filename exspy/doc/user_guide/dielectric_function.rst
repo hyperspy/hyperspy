@@ -4,20 +4,20 @@
 Dielectric function tools
 -------------------------
 
-The :py:class:`~._signals.dielectric_function.DielectricFunction` class
-inherits from :py:class:`~._signals.complex_signal.ComplexSignal` and can
+The :py:class:`~.signals.DielectricFunction` class
+inherits from :py:class:`hyperspy.api.signals.ComplexSignal` and can
 thus access complex properties. To convert a
-:py:class:`~._signals.complex_signal.ComplexSignal` to a
-:py:class:`~._signals.dielectric_function.DielectricFunction`,
+:py:class:`~hyperspy.api.signals.ComplexSignal` to a
+:py:class:`~.signals.DielectricFunction`,
 make sure that the signal dimension and signal type are properly set:
 
     .. code-block:: python
 
         >>> s.set_signal_type('DielectricFunction')
 
-Note that :py:class:`~._signals.dielectric_function.DielectricFunction` is
+Note that :py:class:`~.signals.DielectricFunction` is
 complex and therefore is a subclass of
-:py:class:`~._signals.complex_signal1d.ComplexSignal1D`.
+:py:class:`~.hyperspy.api.signals.ComplexSignal1D`.
 
 
 Number of effective electrons
@@ -44,7 +44,7 @@ Compute the electron energy-loss signal
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The
-:py:meth:`~._signals.dielectric_function.DielectricFunction.get_electron_energy_loss_spectrum`
+:py:meth:`~.signals.DielectricFunction.get_electron_energy_loss_spectrum`
 "naively" computes the single-scattering electron-energy loss spectrum from the
 dielectric function given the zero-loss peak (or its integral) and the sample
 thickness using:

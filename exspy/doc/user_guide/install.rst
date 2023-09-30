@@ -1,14 +1,14 @@
 
 .. _install-label:
 
-Installing SpectroSpy
-===================
+Installing exSpy
+================
 
-The easiest way to install SpectroSpy is to use the
+The easiest way to install exSpy is to use the
 :ref:`HyperSpy Bundle <hyperspy-bundle>`, which is available on Windows, MacOS
 and Linux.
 
-Alternatively, SpectroSpy can be installed in an existing python distribution,
+Alternatively, exSpy can be installed in an existing python distribution,
 read the :ref:`conda installation <anaconda-install>` and
 :ref:`pip installation<install-with-pip>` sections for instructions.
 
@@ -47,14 +47,14 @@ or the `HyperSpy-bundle <https://github.com/hyperspy/hyperspy-bundle>`__.
 Since HyperSpy is packaged in the `conda-forge <https://conda-forge.org/>`__ channel,
 it can easily be installed using conda.
 
-To install SpectroSpy run the following from the Anaconda Prompt on Windows or
+To install exSpy run the following from the Anaconda Prompt on Windows or
 from a Terminal on Linux and Mac.
 
 .. code-block:: bash
 
-    $ conda install spectrospy -c conda-forge
+    $ conda install exSpy -c conda-forge
 
-This will also install the optional GUI packages for spectrospy
+This will also install the optional GUI packages for exSpy
 
 .. code-block:: bash
 

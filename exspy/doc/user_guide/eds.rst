@@ -5,8 +5,8 @@ Energy-Dispersive X-ray Spectrometry (EDS)
 
 The methods described in this chapter are specific to the following signals:
 
-* :py:class:`~._signals.eds_tem.EDSTEM`
-* :py:class:`~._signals.eds_sem.EDSSEMSpectrum`
+* :py:class:`~.signals.EDSTEMSpectrum`
+* :py:class:`~.signals.EDSSEMSpectrum`
 
 This chapter describes step-by-step the analysis of an EDS
 spectrum (SEM or TEM).
@@ -122,7 +122,7 @@ You can also set these parameters directly:
     >>> s.metadata.Acquisition_instrument.SEM.beam_energy = 30
 
 or by using the
-:py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` method:
+:py:meth:`~.signals.EDSTEMSpectrum.set_microscope_parameters` method:
 
 .. code-block:: python
 
@@ -197,7 +197,7 @@ Copying spectrum calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 All of the above parameters can be copied from one spectrum to another
-with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.get_calibration_from`
+with the :py:meth:`~.signals.EDSTEMSpectrum.get_calibration_from`
 method.
 
 .. code-block:: python
@@ -535,7 +535,7 @@ set the beam energy:
     >>> s.set_microscope_parameters(beam_energy=10)
 
 Next, the model is created with
-:py:meth:`~._signals.eds_sem.EDSSEMSpectrum.create_model`. One Gaussian is
+:py:meth:`~.signals.EDSSEMSpectrum.create_model`. One Gaussian is
 automatically created per X-ray line, along with a polynomial for the
 background.
 
@@ -670,7 +670,7 @@ absorption correction:
 Quantification must be applied to the background-subtracted intensities, which
 can be found using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`.
 The quantification of these intensities can then be calculated using
-:py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`.
+:py:meth:`~.signals.EDSTEMSpectrum.quantification`.
 
 The quantification method needs be specified as either ``'CL'``, ``'zeta'``, or
 ``'cross_section'``. If no method is specified, the function will raise an
@@ -712,7 +712,7 @@ out as follows:
 
 By default, the obtained composition is in atomic percent. However, it can be
 transformed into weight percent either with the option
-:py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
+:py:meth:`~.signals.EDSTEMSpectrum.quantification`:
 
 .. code-block:: python
 

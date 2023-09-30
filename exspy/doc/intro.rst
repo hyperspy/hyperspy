@@ -1,11 +1,11 @@
 
-What is Spectrospy
-==================
+What is exSpy
+=============
 
-SpectroSpy is an open source Python library which provides tools to facilitate
+exSpy is an open source Python library which provides tools to facilitate
 the visualization and processing of EELS EDS and other spectroscopic data.
 
-SpectroSpy is built on top of HyperSpy, a Python library for multi-dimensional
+exSpy is built on top of HyperSpy, a Python library for multi-dimensional
 data analysis and extends it with tools for the analysis of spectroscopic data.
 
 Learning resources
@@ -72,14 +72,14 @@ Learning resources
     HyperSpy is a community project maintained for and by its users.
     There are many ways you can help!
 
-Citing SpectroSpy
+Citing exSpy
 =================
 
-If SpectroSpy has been significant to a project that leads to an academic
+If exSpy has been significant to a project that leads to an academic
 publication, please acknowledge that fact by citing it. The DOI in the
 badge below is the `Concept DOI <https://help.zenodo.org/#versioning>`_ of
 HyperSpy. It can be used to cite the project without referring to a specific
-version. If you are citing SpectroSpy because you have used it to process data,
+version. If you are citing exSpy because you have used it to process data,
 please use the DOI of the specific version that you have employed. You can
 find it by clicking on the DOI badge below.
 

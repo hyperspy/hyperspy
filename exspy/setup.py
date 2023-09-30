@@ -27,23 +27,20 @@ exec(open("exspy/release_info.py").read())  # grab version info
 
 extra_feature_requirements = {
     "doc": [
-        "furo",
-        "nbsphinx                   >= 0.7",
-        "sphinx                     >= 3.0.2",
-        "sphinx-copybutton          >= 0.2.5",
-        "sphinx-autodoc-typehints   >= 1.10.3",
-        "sphinx-gallery             >= 0.6",
-        "sphinxcontrib-bibtex       >= 1.0",
+        "numpydoc",
+        "pydata-sphinx-theme>=0.13",
+        "sphinx",
+        "sphinx-copybutton",
+        "sphinx-design",
+        "sphinx-favicon",
     ],
     "tests": [
         "pytest     >= 5.0",
         "pytest-cov >= 2.8.1",
-        "pytest-xdist",
-        "coveralls  >= 1.10",
-        "coverage   >= 5.0",
     ],
     "dev": ["black", "pre-commit >=1.16"],
 }
+
 
 
 setup(
