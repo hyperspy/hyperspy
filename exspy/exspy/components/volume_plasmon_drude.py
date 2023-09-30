@@ -18,12 +18,13 @@
 
 import numpy as np
 
-from hyperspy._components.expression import Expression
+import hyperspy.api as hs
 
 
-class VolumePlasmonDrude(Expression):
+class VolumePlasmonDrude(hs.model.components1D.Expression):
 
-    r"""Drude volume plasmon energy loss function component, the energy loss
+    r"""
+    Drude volume plasmon energy loss function component, the energy loss
     function is defined as:
 
     .. math::
@@ -45,7 +46,7 @@ class VolumePlasmonDrude(Expression):
     fwhm : float
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :py:class:`hyperspy._components.expression.Expression` component.
 
     Notes
     -----

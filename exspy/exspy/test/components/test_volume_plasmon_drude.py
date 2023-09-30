@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from hyperspy.components1d import VolumePlasmonDrude
+from exspy.components import VolumePlasmonDrude
 
 
 def test_function():

@@ -139,9 +139,6 @@ components1D:
   Voigt:
     module: hyperspy._components.voigt
     class: Voigt
-  VolumePlasmonDrude:
-    module: hyperspy._components.volume_plasmon_drude
-    class: VolumePlasmonDrude
 
 components2D:
   Expression:
@@ -181,4 +178,3 @@ GUI:
     - hyperspy.Line2DROI
     - hyperspy.Model
     - hyperspy.Model1D.fit_component
-

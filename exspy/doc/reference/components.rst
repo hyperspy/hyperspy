@@ -9,6 +9,7 @@
     EELSCLEdge
     DoublePowerLaw
     Vignetting
+    VolumePlasmonDrude
 
 .. automodule:: exspy.components
    :members:
