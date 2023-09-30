@@ -19,8 +19,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from hyperspy.datasets.artificial_data import \
-    get_core_loss_eels_line_scan_signal
+import exspy
 from exspy.signal_tools import EdgesRange
 
 
@@ -33,7 +32,7 @@ class Owner:
 
 class Test_EdgesRange:
     def setup_method(self, method):
-        s = get_core_loss_eels_line_scan_signal(True)
+        s = exspy.data.EELS_MnFe()
         er = EdgesRange(s)
         self.signal = s
         self.er = er
@@ -42,10 +41,10 @@ class Test_EdgesRange:
         edges_all = np.array([
             'Ag_M2', 'Ra_N5', 'Fr_N4', 'Cr_L2', 'Cd_M3', 'Te_M4', 'I_M5',
             'Fr_N5', 'Cr_L3', 'Te_M5', 'V_L1', 'Ag_M3', 'I_M4', 'Rn_N4',
-            'Ti_L1', 'Ra_N4', 'Pd_M2', 'Mn_L3', 'Cd_M2', 'Mn_L2', 'Tc_M1',
+            'Ti_L1', 'Ra_N4', 'Mn_L3', 'Pd_M2', 'Cd_M2', 'Mn_L2', 'Tc_M1',
             'Sb_M4', 'In_M3', 'At_N5', 'O_K', 'Pd_M3', 'Sb_M5', 'Xe_M5',
             'Ac_N4', 'Rh_M2', 'V_L2', 'F_K', 'Xe_M4', 'V_L3', 'Cr_L1', 'Sc_L1',
-            'In_M2', 'Rh_M3', 'Sn_M4', 'Pa_N5', 'Fe_L3', 'Sn_M5', 'Sn_M3',
+            'In_M2', 'Rh_M3', 'Sn_M4', 'Pa_N5', 'Fe_L3', 'Sn_M3', 'Sn_M5',
             'Ru_M2', 'Fe_L2', 'Cs_M5', 'Ti_L2', 'Ru_M3', 'Cs_M4', 'At_N3',
             'Pa_N4', 'Ti_L3', 'In_M4', 'Pu_N6', 'Tc_M2', 'Sn_M2', 'In_M5',
             'Ca_L1', 'Sb_M3', 'Pu_N7', 'Rn_N3', 'Mn_L1', 'Np_N5', 'Tc_M3',
@@ -55,9 +54,9 @@ class Test_EdgesRange:
         )
         energy_all = np.array([
             602., 603., 603., 584., 616., 582., 620., 577., 575., 572., 628.,
-            571., 631., 567., 564., 636., 559., 640., 651., 651., 544., 537.,
+            571., 631., 567., 564., 636., 640., 559., 651., 651., 544., 537.,
             664., 533., 532., 531., 528., 672., 675., 521., 521., 685., 685.,
-            513., 695., 500., 702., 496., 494., 708., 708., 485., 714., 483.,
+            513., 695., 500., 702., 496., 494., 708., 708., 714., 485., 483.,
             721., 726., 462., 461., 740., 740., 743., 456., 451., 446., 445.,
             756., 443., 438., 766., 432., 768., 769., 770., 425., 779., 781.,
             415., 411., 410., 407., 794., 404., 404., 796., 402., 401.
@@ -66,11 +65,11 @@ class Test_EdgesRange:
         relevance_all = np.array([
             'Minor', 'Minor', 'Minor', 'Major', 'Minor', 'Major', 'Major',
             'Minor', 'Major', 'Major', 'Minor', 'Minor', 'Major', 'Minor',
-            'Minor', 'Minor', 'Minor', 'Major', 'Minor', 'Major', 'Minor',
+            'Minor', 'Minor', 'Major', 'Minor', 'Minor', 'Major', 'Minor',
             'Major', 'Minor', 'Minor', 'Major', 'Minor', 'Major', 'Major',
             'Minor', 'Minor', 'Major', 'Major', 'Major', 'Major', 'Minor',
-            'Minor', 'Minor', 'Minor', 'Major', 'Minor', 'Major', 'Major',
-            'Minor', 'Minor', 'Major', 'Major', 'Major', 'Minor', 'Major',
+            'Minor', 'Minor', 'Minor', 'Major', 'Minor', 'Major', 'Minor',
+            'Major', 'Minor', 'Major', 'Major', 'Major', 'Minor', 'Major',
             'Minor', 'Minor', 'Major', 'Major', 'Major', 'Minor', 'Minor',
             'Major', 'Minor', 'Minor', 'Major', 'Minor', 'Minor', 'Minor',
             'Minor', 'Major', 'Major', 'Major', 'Major', 'Minor', 'Major',
@@ -81,17 +80,18 @@ class Test_EdgesRange:
             'Delayed maximum', '', '', 'Sharp peak. Delayed maximum',
             'Delayed maximum', 'Delayed maximum', 'Delayed maximum', '',
             'Sharp peak. Delayed maximum', 'Delayed maximum', 'Abrupt onset',
-            'Delayed maximum', 'Delayed maximum', '', 'Abrupt onset', '', '',
-            'Sharp peak. Delayed maximum', '', 'Sharp peak. Delayed maximum',
-            'Abrupt onset', 'Delayed maximum', 'Delayed maximum', '',
-            'Abrupt onset', '', 'Delayed maximum', 'Delayed maximum', '',
-            'Sharp peak', 'Sharp peak. Delayed maximum', 'Abrupt onset',
-            'Delayed maximum', 'Sharp peak. Delayed maximum', 'Abrupt onset',
-            'Abrupt onset', '', 'Sharp peak', 'Delayed maximum', '',
-            'Sharp peak. Delayed maximum', 'Delayed maximum',
-            'Delayed maximum', 'Sharp peak', 'Sharp peak. Delayed maximum',
+            'Delayed maximum', 'Delayed maximum', '', 'Abrupt onset', '',
+            'Sharp peak. Delayed maximum', '', '',
+            'Sharp peak. Delayed maximum', 'Abrupt onset', 'Delayed maximum',
+            'Delayed maximum', '', 'Abrupt onset', '', 'Delayed maximum',
+            'Delayed maximum', '', 'Sharp peak', 'Sharp peak. Delayed maximum',
+            'Abrupt onset', 'Delayed maximum', 'Sharp peak. Delayed maximum',
+            'Abrupt onset', 'Abrupt onset', '', 'Sharp peak',
+            'Delayed maximum', '', 'Sharp peak. Delayed maximum',
+            'Delayed maximum', 'Delayed maximum', 'Sharp peak',
             'Sharp peak. Delayed maximum', 'Sharp peak. Delayed maximum',
-            'Sharp peak', 'Sharp peak. Delayed maximum', '', '',
+            'Sharp peak. Delayed maximum', 'Sharp peak',
+            'Sharp peak. Delayed maximum', '', '',
             'Sharp peak. Delayed maximum', 'Delayed maximum', '',
             'Sharp peak. Delayed maximum', '', 'Delayed maximum',
             'Abrupt onset', 'Delayed maximum', '', '', 'Abrupt onset', '',
@@ -237,8 +237,8 @@ class Test_EdgesRange:
 
         segments = deepcopy(self.signal._edge_markers["lines"].get_current_kwargs())
         scaled = self.signal._edge_markers["lines"]._scale_kwarg(segments, "segments")
-        self.signal._plot.pointer.indices = (10,)
-        assert self.signal.axes_manager.navigation_axes[0].index == 10
+        self.signal._plot.pointer.indices = (9,)
+        assert self.signal.axes_manager.navigation_axes[0].index == 9
         segments2 = deepcopy(self.signal._edge_markers["lines"].get_current_kwargs())
         scaled2 = self.signal._edge_markers["lines"]._scale_kwarg(segments2, "segments")
         assert not np.array_equal(scaled["segments"], scaled2["segments"])

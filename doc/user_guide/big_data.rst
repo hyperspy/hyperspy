@@ -538,7 +538,7 @@ Any calculation will now use the distributed scheduler
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+    >>> s = hs.datasets.two_gaussians()
     >>> repeated_data = da.repeat(da.array(s.data[np.newaxis, :]),10, axis=0)
     >>> s = hs.signals.Signal1D(repeated_data).as_lazy()
     >>> summed = s.map(np.sum, inplace=False)

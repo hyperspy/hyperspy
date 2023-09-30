@@ -20,11 +20,12 @@ import logging
 
 import traits.api as t
 
-from exspy.signals.eds import EDSSpectrum, LazyEDSSpectrum
-from exspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import LAZYSIGNAL_DOC
-from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.signal import BaseSetMetadataItems
+from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
+
+from .eds import EDSSpectrum, LazyEDSSpectrum
+from exspy._defaults_parser import preferences
 
 
 _logger = logging.getLogger(__name__)
@@ -98,9 +99,8 @@ class EDSSEMSpectrum(EDSSpectrum):
 
         Examples
         --------
-        >>> ref = hs.datasets.example_signals.EDS_SEM_Spectrum()
-        >>> s = hs.signals.EDSSEMSpectrum(
-        >>>     hs.datasets.example_signals.EDS_SEM_Spectrum().data)
+        >>> ref = exspy.data.EDS_SEM_TM002()
+        >>> s = exspy.signals.EDSSEMSpectrum(ref.data)
         >>> print(s.axes_manager[0].scale)
         >>> s.get_calibration_from(ref)
         >>> print(s.axes_manager[0].scale)
@@ -244,7 +244,7 @@ class EDSSEMSpectrum(EDSSpectrum):
 
         Examples
         --------
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = exspy.data.EDS_TEM_FePt_nanoparticles()
         >>> print('Default value %s eV' %
         >>>       s.metadata.Acquisition_instrument.
         >>>       SEM.Detector.EDS.energy_resolution_MnKa)

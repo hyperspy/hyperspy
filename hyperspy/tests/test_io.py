@@ -33,7 +33,8 @@ from rsciio import IO_PLUGINS
 from hyperspy import __version__ as hs_version
 
 
-FULLFILENAME = Path(__file__).resolve().parent.joinpath("test_io_overwriting.hspy")
+PATH = Path(__file__).resolve()
+FULLFILENAME = PATH.parent.joinpath("test_io_overwriting.hspy")
 
 
 class TestIOOverwriting:
@@ -285,7 +286,8 @@ def test_load_save_filereader_metadata(tmp_path):
     # tests that original FileReader metadata is correctly persisted and
     # appended through a save and load cycle
 
-    s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+    fname = PATH.parent / "drawing" / "data" / "Cr_L_cl.hspy"
+    s = hs.load(fname)
     assert s.metadata.General.FileIO.Number_0.io_plugin == \
            'rsciio.hspy'
     assert s.metadata.General.FileIO.Number_0.operation == 'load'

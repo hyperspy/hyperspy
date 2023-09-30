@@ -18,7 +18,7 @@ appears in which to crop the one dimensional signal. For example:
 
 .. code-block:: python
 
-    s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+    s = hs.datasets.two_gaussians()
     s.crop_signal1D(5, 15) # s is cropped in place
 
 Additionally, cropping in HyperSpy can be performed using the :ref:`Signal
@@ -27,14 +27,14 @@ to the 5 keV-15 keV region:
 
 .. code-block:: python
 
-    s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+    s = hs.datasets.two_gaussians()
     sc = s.isig[5.:15.] # s is not cropped, sc is a "cropped view" of s
 
 It is possible to crop interactively using :ref:`roi-label`. For example:
 
 .. code-block:: python
 
-    s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+    s = hs.datasets.two_gaussians()
     roi = hs.roi.SpanROI(left=5, right=15)
     s.plot()
     sc = roi.interactive(s)

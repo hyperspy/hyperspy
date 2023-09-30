@@ -19,9 +19,10 @@
 import numpy as np
 import pytest
 
-from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc import utils
+
+import exspy
 from exspy.misc.eds import utils as utils_eds
 from exspy.misc.elements import elements as elements_db
 
@@ -226,26 +227,30 @@ class TestlineFit:
 def test_comparison_quantification():
     kfactors = [1.450226, 5.075602]  # For Fe Ka and Pt La
 
-    s = EDS_TEM_Spectrum()
+    s = exspy.data.EDS_TEM_FePt_nanoparticles()
     s.add_elements(['Cu'])  # to get good estimation of the background
     m = s.create_model(True)
     m.set_signal_range(5.5, 10.0)  # to get good fit
     m.fit()
-    intensities_m = m.get_lines_intensity(['Fe_Ka', "Pt_La"])
+    intensities_m = m.get_lines_intensity(xray_lines=['Fe_Ka', "Pt_La"])
     quant_model = s.quantification(intensities_m, method='CL',
                                    factors=kfactors)
 
     # Background substracted EDS quantification
-    s2 = EDS_TEM_Spectrum()
+    s2 = exspy.data.EDS_TEM_FePt_nanoparticles()
     s2.add_lines()
-    bw = s2.estimate_background_windows(line_width=[5.0, 2.0])
-    intensities = s2.get_lines_intensity(background_windows=bw)
+    bw = s2.estimate_background_windows(
+        xray_lines=['Fe_Ka', "Pt_La"], line_width=[5.0, 2.0]
+        )
+    intensities = s2.get_lines_intensity(
+        xray_lines=['Fe_Ka', "Pt_La"], background_windows=bw
+        )
     atomic_percent = s2.quantification(intensities, method='CL',
                                        factors=kfactors)
 
     np.testing.assert_allclose([q.data for q in quant_model],
                                [q.data for q in atomic_percent],
-                               rtol=0.5E-1)
+                               rtol=5E-2)
 
 
 @lazifyTestClass

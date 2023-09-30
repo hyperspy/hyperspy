@@ -475,7 +475,7 @@ can about half an hour on a decent workstation. With a linear optimizer, it take
 .. code-block:: python
 
     >>> nav = hs.signals.Signal2D(np.random.random((300, 300))).T
-    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum() * nav
+    >>> s = exspy.data.EDS_TEM_FePt_nanoparticles() * nav
     >>> m = s.create_model()
 
     >>> m.multifit(optimizer='lstsq')

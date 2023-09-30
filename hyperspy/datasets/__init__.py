@@ -32,17 +32,15 @@ The :mod:`hyperspy.datasets` module contains the following submodules:
     :mod:`hyperspy.datasets.artificial_data`
         Artificial datasets generated with HyperSpy.
 
-    :mod:`hyperspy.datasets.example_signals`
-        Example datasets distributed with HyperSpy.
-
 """
 
-from hyperspy.datasets import artificial_data, example_signals
+from hyperspy.datasets import artificial_data
+from hyperspy.datasets.two_gaussians import two_gaussians
 
 
 __all__ = [
     'artificial_data',
-    'example_signals',
+    "two_gaussians",
     ]
 
 

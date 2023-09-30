@@ -273,11 +273,11 @@ def test_span_selector_in_signal1d():
 
 
 def test_span_selector_in_signal1d_model():
-    m = datasets.artificial_data.get_core_loss_eels_model()
+    m = datasets.two_gaussians().create_model()
     calibration_tool = SpanSelectorInSignal1D(m)
     assert len(m.signal._plot.signal_plot.ax_lines) == 2
     assert m.signal is calibration_tool.signal
-    calibration_tool.span_selector.extents = (420, 460)
+    calibration_tool.span_selector.extents = (40, 60)
     calibration_tool.span_selector_changed()
     calibration_tool.span_selector_switch(False)
     assert calibration_tool.span_selector is None

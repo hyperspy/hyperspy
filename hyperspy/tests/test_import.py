@@ -138,31 +138,17 @@ def test_dir_api_nogui():
 def test_dir_datasets():
     import hyperspy.datasets
     d = dir(hyperspy.datasets)
-    assert d == ['artificial_data', 'example_signals']
+    assert d == ['artificial_data', 'two_gaussians']
 
 
-def test_dir_datasets2():
+def test_dir_datasets_artificial_data():
     import hyperspy.datasets.artificial_data
     d = dir(hyperspy.datasets.artificial_data)
     assert d == [
         'get_atomic_resolution_tem_signal2d',
-        'get_core_loss_eels_line_scan_signal',
-        'get_core_loss_eels_model',
-        'get_core_loss_eels_signal',
-        'get_low_loss_eels_line_scan_signal',
-        'get_low_loss_eels_signal',
         'get_luminescence_signal',
         'get_wave_image',
         ]
-
-
-def test_dir_datasets3():
-    import hyperspy.datasets.example_signals
-    d = dir(hyperspy.datasets.example_signals)
-    assert d == [
-    'EDS_SEM_Spectrum',
-    'EDS_TEM_Spectrum',
-    ]
 
 
 def test_dir_utils():

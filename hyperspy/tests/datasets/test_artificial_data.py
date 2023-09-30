@@ -21,49 +21,6 @@ import pytest
 import hyperspy.datasets.artificial_data as ad
 
 
-@pytest.mark.parametrize("add_noise", (True, False))
-def test_get_low_loss_eels_signal(add_noise):
-    s = ad.get_low_loss_eels_signal(add_noise=add_noise)
-    assert s.metadata.Signal.signal_type == 'EELS'
-
-
-def test_get_core_loss_eels_signal():
-    s = ad.get_core_loss_eels_signal(add_powerlaw=False)
-    assert s.metadata.Signal.signal_type == 'EELS'
-    s1 = ad.get_core_loss_eels_signal(add_powerlaw=True)
-    assert s1.metadata.Signal.signal_type == 'EELS'
-    assert s1.data.sum() > s.data.sum()
-
-    s2 = ad.get_core_loss_eels_signal(add_noise=True, random_state=10)
-    s3 = ad.get_core_loss_eels_signal(add_noise=True, random_state=10)
-    assert (s2.data == s3.data).all()
-
-@pytest.mark.parametrize("add_noise", (True, False))
-def test_get_core_loss_eels_model(add_noise):
-    m = ad.get_core_loss_eels_model(add_powerlaw=False, add_noise=add_noise)
-    assert m.signal.metadata.Signal.signal_type == 'EELS'
-    m1 = ad.get_core_loss_eels_model(add_powerlaw=True, add_noise=add_noise)
-    assert m1.signal.metadata.Signal.signal_type == 'EELS'
-    assert m1.signal.data.sum() > m.signal.data.sum()
-
-
-@pytest.mark.parametrize("add_noise", (True, False))
-def test_get_low_loss_eels_line_scan_signal(add_noise):
-    s = ad.get_low_loss_eels_line_scan_signal(add_noise=add_noise)
-    assert s.metadata.Signal.signal_type == 'EELS'
-
-
-@pytest.mark.parametrize("add_powerlaw", (True, False))
-@pytest.mark.parametrize("add_noise", (True, False))
-def test_get_core_loss_eels_line_scan_signal(add_powerlaw, add_noise):
-    s = ad.get_core_loss_eels_line_scan_signal(add_powerlaw, add_noise)
-    assert s.metadata.Signal.signal_type == 'EELS'
-
-
-def test_get_atomic_resolution_tem_signal2d():
-    s = ad.get_atomic_resolution_tem_signal2d()
-    assert s.axes_manager.signal_dimension == 2
-
 @pytest.mark.parametrize("navigation_dimension",(0,1,2,3))
 @pytest.mark.parametrize("uniform",(True,False))
 @pytest.mark.parametrize("add_baseline",(True,False))

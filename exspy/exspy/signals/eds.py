@@ -241,7 +241,7 @@ class EDSSpectrum(Signal1D):
 
         Examples
         --------
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> print(s.metadata.Sample.elements)
         >>> s.set_elements(['Al'])
         >>> print(s.metadata.Sample.elements)
@@ -266,7 +266,7 @@ class EDSSpectrum(Signal1D):
 
         Examples
         --------
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> print(s.metadata.Sample.elements)
         >>> s.add_elements(['Ar'])
         >>> print(s.metadata.Sample.elements)
@@ -337,7 +337,7 @@ class EDSSpectrum(Signal1D):
 
         Examples
         --------
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> s.add_lines()
         >>> print(s.metadata.Sample.xray_lines)
         >>> s.set_lines(['Cu_Ka'])
@@ -390,18 +390,18 @@ class EDSSpectrum(Signal1D):
 
         Examples
         --------
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> s.add_lines()
         >>> print(s.metadata.Sample.xray_lines)
         ['Al_Ka', 'C_Ka', 'Cu_La', 'Mn_La', 'Zr_La']
 
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> s.set_microscope_parameters(beam_energy=30)
         >>> s.add_lines()
         >>> print(s.metadata.Sample.xray_lines)
         ['Al_Ka', 'C_Ka', 'Cu_Ka', 'Mn_Ka', 'Zr_La']
 
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> s.add_lines()
         >>> print(s.metadata.Sample.xray_lines)
         >>> s.add_lines(['Cu_Ka'])
@@ -606,17 +606,17 @@ class EDSSpectrum(Signal1D):
 
         Examples
         --------
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> s.get_lines_intensity(['Mn_Ka'], plot_result=True)
         Mn_La at 0.63316 keV : Intensity = 96700.00
 
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> s.plot(['Mn_Ka'], integration_windows=2.1)
         >>> s.get_lines_intensity(['Mn_Ka'],
         >>>                       integration_windows=2.1, plot_result=True)
         Mn_Ka at 5.8987 keV : Intensity = 53597.00
 
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> s.set_elements(['Mn'])
         >>> s.set_lines(['Mn_Ka'])
         >>> bw = s.estimate_background_windows()
@@ -704,7 +704,7 @@ class EDSSpectrum(Signal1D):
 
         Examples
         --------
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> s.get_take_off_angle()
         37.0
         >>> s.set_microscope_parameters(tilt_stage=20.)
@@ -757,7 +757,7 @@ class EDSSpectrum(Signal1D):
 
         Examples
         --------
-        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> s.add_lines()
         >>> iw = s.estimate_integration_windows()
         >>> s.plot(integration_windows=iw)
@@ -811,7 +811,7 @@ class EDSSpectrum(Signal1D):
 
         Examples
         --------
-        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> s.add_lines()
         >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
         >>> s.plot(background_windows=bw)
@@ -905,21 +905,21 @@ class EDSSpectrum(Signal1D):
 
         Examples
         --------
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> s.plot()
 
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> s.plot(True)
 
-        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> s.add_lines()
         >>> bw = s.estimate_background_windows()
         >>> s.plot(background_windows=bw)
 
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> s.plot(['Mn_Ka'], integration_windows='auto')
 
-        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+        >>> s = exspy.data.EDS_SEM_TM002()
         >>> s.add_lines()
         >>> bw = s.estimate_background_windows()
         >>> s.plot(background_windows=bw, integration_windows=2.1)

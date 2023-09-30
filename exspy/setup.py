@@ -86,6 +86,7 @@ setup(
     package_data={
         "": ["LICENSE", "README.rst"],
         "exspy": [
+            "data/*hspy",
             "test/signals/data/*hspy",
             "hyperspy_extension.yaml"],
     },)

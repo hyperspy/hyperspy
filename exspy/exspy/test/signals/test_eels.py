@@ -22,10 +22,10 @@ import pytest
 from pathlib import Path
 
 import hyperspy.api as hs
-from exspy.signals import EELSSpectrum
-from hyperspy._components.gaussian import Gaussian
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.io import load
+
+import exspy
+
 
 MYPATH = Path(__file__).resolve().parent
 
@@ -35,16 +35,16 @@ class Test_Estimate_Elastic_Scattering_Threshold:
 
     def setup_method(self, method):
         # Create an empty spectrum
-        s = EELSSpectrum(np.zeros((3, 2, 1024)))
+        s = exspy.signals.EELSSpectrum(np.zeros((3, 2, 1024)))
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 0.02
         energy_axis.offset = -5
 
-        gauss = Gaussian()
+        gauss = hs.model.components1D.Gaussian()
         gauss.centre.value = 0
         gauss.A.value = 5000
         gauss.sigma.value = 0.5
-        gauss2 = Gaussian()
+        gauss2 = hs.model.components1D.Gaussian()
         gauss2.sigma.value = 0.5
         # Inflexion point 1.5
         gauss2.A.value = 5000
@@ -113,7 +113,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
 class TestEstimateZLPCentre:
 
     def setup_method(self, method):
-        s = EELSSpectrum(np.diag(np.arange(1, 11)))
+        s = exspy.signals.EELSSpectrum(np.diag(np.arange(1, 11)))
         s.axes_manager[-1].scale = 0.1
         s.axes_manager[-1].offset = 100
         self.signal = s
@@ -133,7 +133,7 @@ class TestEstimateZLPCentre:
 class TestAlignZLP:
 
     def setup_method(self, method):
-        s = EELSSpectrum(np.zeros((10, 100)))
+        s = exspy.signals.EELSSpectrum(np.zeros((10, 100)))
         self.scale = 0.1
         self.offset = -2
         eaxis = s.axes_manager.signal_axes[0]
@@ -217,12 +217,12 @@ class TestSpikesRemovalToolZLP:
 
     def setup_method(self, method):
         # Create an empty spectrum
-        s = EELSSpectrum(np.zeros((2, 3, 64)))
+        s = exspy.signals.EELSSpectrum(np.zeros((2, 3, 64)))
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 0.2
         energy_axis.offset = -5
 
-        gauss = Gaussian()
+        gauss = hs.model.components1D.Gaussian()
         gauss.centre.value = 0
         gauss.A.value = 5000
         gauss.sigma.value = 0.5
@@ -279,7 +279,7 @@ class TestSpikesRemovalToolZLP:
 
 
 def test_spikes_removal_tool_no_zlp():
-    s = hs.datasets.artificial_data.get_core_loss_eels_line_scan_signal()
+    s = exspy.data.EELS_MnFe()
     with pytest.raises(ValueError):
         # Zero not in energy range
         s.spikes_removal_tool(zero_loss_peak_mask_width=5.0)
@@ -306,7 +306,7 @@ def test_spikes_diagnosis_constant_derivative():
 class TestPowerLawExtrapolation:
 
     def setup_method(self, method):
-        s = EELSSpectrum(0.1 * np.arange(50, 250, 0.5) ** -3.)
+        s = exspy.signals.EELSSpectrum(0.1 * np.arange(50, 250, 0.5) ** -3.)
         s.axes_manager[-1].is_binned = False
         s.axes_manager[-1].offset = 50
         s.axes_manager[-1].scale = 0.5
@@ -330,12 +330,12 @@ class TestFourierRatioDeconvolution:
 
     @pytest.mark.parametrize(('extrapolate_lowloss'), [True, False])
     def test_running(self, extrapolate_lowloss):
-        s = EELSSpectrum(np.arange(200))
-        gaussian = Gaussian()
+        s = exspy.signals.EELSSpectrum(np.arange(200))
+        gaussian = hs.model.components1D.Gaussian()
         gaussian.A.value = 50
         gaussian.sigma.value = 10
         gaussian.centre.value = 20
-        s_ll = EELSSpectrum(gaussian.function(np.arange(0, 200, 1)))
+        s_ll = exspy.signals.EELSSpectrum(gaussian.function(np.arange(0, 200, 1)))
         s_ll.axes_manager[0].offset = -50
         s.fourier_ratio_deconvolution(s_ll,
                                       extrapolate_lowloss=extrapolate_lowloss)
@@ -345,7 +345,7 @@ class TestFourierRatioDeconvolution:
 class TestRebin:
     def setup_method(self, method):
         # Create an empty spectrum
-        s = EELSSpectrum(np.ones((4, 2, 1024)))
+        s = exspy.signals.EELSSpectrum(np.ones((4, 2, 1024)))
         self.signal = s
 
     def test_rebin_without_dwell_time(self):
@@ -385,10 +385,10 @@ class Test_Estimate_Thickness:
 
     def setup_method(self, method):
         # Create an empty spectrum
-        self.s = load(
+        self.s = hs.load(
             MYPATH.joinpath("data/EELS_LL_linescan_simulated_thickness_variation.hspy")
         )
-        self.zlp = load(
+        self.zlp = hs.load(
             MYPATH.joinpath("data/EELS_ZLP_linescan_simulated_thickness_variation.hspy")
         )
 
@@ -437,7 +437,7 @@ class Test_Estimate_Thickness:
 class TestPrintEdgesNearEnergy:
     def setup_method(self, method):
         # Create an empty spectrum
-        s = EELSSpectrum(np.ones((4, 2, 1024)))
+        s = exspy.signals.EELSSpectrum(np.ones((4, 2, 1024)))
         self.signal = s
 
     def test_at_532eV(self, capsys):
@@ -481,7 +481,7 @@ class TestPrintEdgesNearEnergy:
 class Test_Edges_At_Energy:
     def setup_method(self, method):
         # Create an empty spectrum
-        s = EELSSpectrum(np.ones((4, 2, 1024)))
+        s = exspy.signals.EELSSpectrum(np.ones((4, 2, 1024)))
         self.signal = s
 
     def test_at_532eV(self, capsys):
@@ -504,7 +504,7 @@ class Test_Edges_At_Energy:
 class Test_Get_Complementary_Edges:
     def setup_method(self, method):
         # Create an empty spectrum
-        s = EELSSpectrum(np.ones((4, 2, 1024)))
+        s = exspy.signals.EELSSpectrum(np.ones((4, 2, 1024)))
         self.signal = s
 
     def test_Fe_O(self):
@@ -523,7 +523,7 @@ class Test_Get_Complementary_Edges:
 
 class Test_Plot_EELS:
     def setup_method(self, method):
-        s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+        s = exspy.data.EELS_MnFe()
         self.signal = s
 
     def test_plot_no_markers(self):
@@ -538,11 +538,17 @@ class Test_Plot_EELS:
         s.add_elements(('Mn','Cr'))
         s.plot(plot_edges=True)
 
-        assert len(s._edge_markers["names"]) == 6
-        assert set(s._edge_markers["names"]) == {'Mn_L2', 'Mn_L3', 'Mn_L1', 'Cr_L2', 'Cr_L3', 'Cr_L1'}
+        print(s._edge_markers["names"])
+
+        assert len(s._edge_markers["names"]) == 8
+        assert set(s._edge_markers["names"]) == {
+            'Cr_L2', 'Cr_L3', 'Cr_L1', 'Fe_L2', 'Fe_L3', 'Mn_L2', 'Mn_L3', 'Mn_L1'
+            }
 
     def test_plot_edges_True_without_elements(self):
         s = self.signal
+        del s.metadata.Sample.elements
+        s.metadata
         with pytest.raises(ValueError):
             s.plot(plot_edges=True)
 
@@ -550,8 +556,12 @@ class Test_Plot_EELS:
         s = self.signal
         s.plot(plot_edges=['Mn', 'Ti_L', 'Cr_L3'], only_edges=('Major'))
 
-        assert len(s._edge_markers["names"]) == 5
-        assert set(s._edge_markers["names"]) == {'Cr_L3', 'Mn_L2', 'Mn_L3', 'Ti_L2', 'Ti_L3'}
+        print(s._edge_markers["names"])
+
+        assert len(s._edge_markers["names"]) == 7
+        assert set(s._edge_markers["names"]) == {
+            'Fe_L2', 'Fe_L3', 'Mn_L2', 'Mn_L3', 'Ti_L2', 'Ti_L3', 'Cr_L3'
+            }
 
     def test_unsupported_edge_family(self):
         s = self.signal
@@ -570,12 +580,12 @@ class Test_Plot_EELS:
 
     def test_remove_edge_labels(self):
         s = self.signal
+        del s.metadata.Sample.elements
         s.plot(plot_edges=['Cr_L', 'Fe_L2'])
         s._remove_edge_labels(['Cr_L1', 'Fe_L2'])
 
         assert len(s._edge_markers["names"]) == 2
         assert set(s._edge_markers["names"]) == set(['Cr_L2', 'Cr_L3'])
-
 
     def test_plot_edges_without_markers_provided(self):
         s = self.signal
@@ -590,7 +600,9 @@ class Test_Plot_EELS:
 class TestVacuumMask:
 
     def setup_method(self, method):
-        s = EELSSpectrum(np.array([np.linspace(0.001, 0.5, 20)] * 100).T)
+        s = exspy.signals.EELSSpectrum(
+            np.array([np.linspace(0.001, 0.5, 20)] * 100).T
+            )
         s.add_poissonian_noise(random_state=1)
         s.axes_manager[-1].scale = 0.25
         s.axes_manager[-1].units = 'eV'

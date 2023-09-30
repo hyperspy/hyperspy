@@ -16,15 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with exspy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import warnings
 
 import numpy as np
 import pytest
 
 from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
-from exspy.defaults_parser import preferences
+
+import exspy
+from exspy._defaults_parser import preferences
 from exspy.misc.eds import utils as utils_eds
-from hyperspy.misc.test_utils import ignore_warning
 from exspy.signals import EDSTEMSpectrum
 
 
@@ -443,8 +445,12 @@ class Test_quantification:
                            [0.5, 0.0, 0.5],
                            [0.5, 0.5, 0.0],
                            [0.5, 0.0, 0.0]]).T
-        with ignore_warning(message="divide by zero encountered",
-                            category=RuntimeWarning):
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="divide by zero encountered",
+                category=RuntimeWarning
+                )
             quant = utils_eds.quantification_cliff_lorimer(
                 intens, [1, 1, 3]).T
         np.testing.assert_allclose(
@@ -560,9 +566,7 @@ class Test_simple_model:
 
 
 def test_with_signals_examples():
-    from hyperspy.misc.example_signals_loading import \
-        load_1D_EDS_TEM_spectrum as EDS_TEM_Spectrum
-    sig = EDS_TEM_Spectrum()
+    sig = exspy.data.EDS_TEM_FePt_nanoparticles()
     for s in (sig, sig.as_lazy()):
         np.testing.assert_allclose(
             np.array([res.data[0] for res in s.get_lines_intensity()]),

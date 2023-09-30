@@ -23,9 +23,12 @@ import numpy as np
 from hyperspy import utils
 from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
-from exspy.defaults_parser import preferences
-from exspy.signals import EDSSEMSpectrum
+
+import exspy
+from exspy._defaults_parser import preferences
 import exspy.misc.eds.utils as eds_utils
+from exspy.signals import EDSSEMSpectrum
+
 
 @lazifyTestClass
 class Test_metadata:
@@ -325,9 +328,7 @@ class Test_get_lines_intensity:
             [[1.371, 1.601]], atol=1e-2)
 
     def test_with_signals_examples(self):
-        from hyperspy.misc.example_signals_loading import \
-            load_1D_EDS_SEM_spectrum as EDS_SEM_Spectrum
-        s = EDS_SEM_Spectrum()
+        s = exspy.data.EDS_SEM_TM002()
         np.testing.assert_allclose(
             utils.stack(s.get_lines_intensity()).data.squeeze(),
             np.array([84163, 89063, 96117, 96700, 99075]))

@@ -222,7 +222,7 @@ The description of the sample is also stored in the
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+    >>> s = exspy.data.EDS_TEM_FePt_nanoparticles()
     >>> s.add_lines()
     >>> s.metadata.Sample.thickness = 100
     >>> s.metadata.Sample
@@ -247,7 +247,7 @@ abbreviations are accepted:
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+    >>> s = exspy.data.EDS_TEM_FePt_nanoparticles()
     >>> s.set_elements(['Fe', 'Pt'])
     >>> s.add_elements(['Cu'])
     >>> s.metadata.Sample
@@ -264,7 +264,7 @@ Several lines per element can be defined at once.
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+    >>> s = exspy.data.EDS_TEM_FePt_nanoparticles()
     >>> s.set_elements(['Fe', 'Pt'])
     >>> s.set_lines(['Fe_Ka', 'Pt_La'])
     >>> s.add_lines(['Fe_La'])
@@ -476,7 +476,7 @@ Finally, the windows of integration can be visualised using
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum().isig[5.:13.]
+    >>> s = exspy.data.EDS_TEM_FePt_nanoparticles().isig[5.:13.]
     >>> s.add_lines()
     >>> s.plot(integration_windows='auto')
 
@@ -504,7 +504,7 @@ using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum().isig[5.:13.]
+    >>> s = exspy.data.EDS_TEM_FePt_nanoparticles().isig[5.:13.]
     >>> s.add_lines()
     >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
     >>> s.plot(background_windows=bw)
@@ -700,7 +700,7 @@ out as follows:
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+    >>> s = exspy.data.EDS_TEM_FePt_nanoparticles()
     >>> s.add_lines()
     >>> kfactors = [1.450226, 5.075602] #For Fe Ka and Pt La
     >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])

@@ -10,11 +10,11 @@ import hyperspy.api as hs
 
 #%%
 # Create a signal:
-s = hs.datasets.artificial_data.get_core_loss_eels_line_scan_signal(True, True)
+s = hs.datasets.two_gaussians()
 
 #%%
 # Create SpanROI:
-roi = hs.roi.SpanROI(left=675, right=730)
+roi = hs.roi.SpanROI(left=10, right=20)
 
 #%%
 # Slice signal with roi with the ROI. By using the `interactive` function, the

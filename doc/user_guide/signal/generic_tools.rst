@@ -433,18 +433,18 @@ lazily:
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum().as_lazy()
+    >>> s = hs.datasets.two_gaussians().as_lazy()
     >>> print(s)
-    <LazyEDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|1024)>
+    <LazySignal1D, title: Two Gaussians, dimensions: (|1024)>
     >>> print(s.rebin(scale=[2]))
-    <LazyEDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|512)>
+    <LazySignal1D, title: Two Gaussians, dimensions: (|512)>
 
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum().as_lazy()
+    >>> s = hs.datasets.two_gaussians().as_lazy()
     >>> print(s.rebin(new_shape=[512]))
-    <LazyEDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|512)>
+    <LazySignal1D, title: Two Gaussians, dimensions: (|512)>
 
 
 On the other hand, the following rebinning operation requires interpolation and
@@ -452,24 +452,24 @@ cannot be performed lazily:
 
 .. code-block:: python
 
-    >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
-    >>> spectrum.data[1, 2, 9] = 5
-    >>> print(spectrum)
-    <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
-    >>> print ('Sum = ', spectrum.data.sum())
+    >>> s = hs.signals.Signal1D(np.ones([4, 4, 10]))
+    >>> s.data[1, 2, 9] = 5
+    >>> print(s)
+    <Signal1D, title: , dimensions: (4, 4|10)>
+    >>> print ('Sum = ', s.data.sum())
     Sum =  164.0
     >>> scale = [0.5, 0.5, 5]
-    >>> test = spectrum.rebin(scale=scale)
-    >>> test2 = spectrum.rebin(new_shape=(8, 8, 2)) # Equivalent to the above
+    >>> test = s.rebin(scale=scale)
+    >>> test2 = s.rebin(new_shape=(8, 8, 2)) # Equivalent to the above
     >>> print(test)
-    <EDSTEMSpectrum, title: , dimensions: (8, 8|2)>
+    <Signal1D, title: , dimensions: (8, 8|2)>
     >>> print(test2)
-    <EDSTEMSpectrum, title: , dimensions: (8, 8|2)>
+    <Signal1D, title: , dimensions: (8, 8|2)>
     >>> print('Sum =', test.data.sum())
     Sum = 164.0
     >>> print('Sum =', test2.data.sum())
     Sum = 164.0
-    >>> spectrum.as_lazy().rebin(scale=scale)
+    >>> s.as_lazy().rebin(scale=scale)
     Traceback (most recent call last):
       File "<ipython-input-26-49bca19ebf34>", line 1, in <module>
         spectrum.as_lazy().rebin(scale=scale)

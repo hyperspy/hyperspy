@@ -34,9 +34,9 @@ from hyperspy.misc.utils import isiterable
 from hyperspy.external.progressbar import progressbar
 from hyperspy.axes import DataAxis
 
+from .eds import EDSSpectrum, LazyEDSSpectrum
+from exspy._defaults_parser import preferences
 from exspy.misc import material
-from exspy.signals.eds import EDSSpectrum, LazyEDSSpectrum
-from exspy.defaults_parser import preferences
 from exspy.misc.eds import utils as utils_eds
 from exspy.misc.elements import elements as elements_db
 
@@ -212,7 +212,7 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         Examples
         --------
-        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+        >>> s = exspy.data.EDS_TEM_FePt_nanoparticles()
         >>> print(s.metadata.Acquisition_instrument.
         >>>       TEM.Detector.EDS.energy_resolution_MnKa)
         >>> s.set_microscope_parameters(energy_resolution_MnKa=135.)
@@ -264,9 +264,8 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         Examples
         --------
-        >>> ref = hs.datasets.example_signals.EDS_TEM_Spectrum()
-        >>> s = hs.signals.EDSTEMSpectrum(
-        >>>     hs.datasets.example_signals.EDS_TEM_Spectrum().data)
+        >>> ref = exspy.data.EDS_TEM_FePt_nanoparticles()
+        >>> s = exspy.data.EDS_TEM_FePt_nanoparticles(ref.data)
         >>> print(s.axes_manager[0].scale)
         >>> s.get_calibration_from(ref)
         >>> print(s.axes_manager[0].scale)
@@ -391,7 +390,7 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         Examples
         --------
-        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+        >>> s = exspy.data.EDS_TEM_FePt_nanoparticles()
         >>> s.add_lines()
         >>> kfactors = [1.450226, 5.075602] #For Fe Ka and Pt La
         >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
@@ -616,7 +615,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         Examples
         --------
         >>> # Simulate a spectrum image with vacuum region
-        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+        >>> s = exspy.data.EDS_TEM_FePt_nanoparticles()
         >>> s_vac = hs.signals.BaseSignal(
                 np.ones_like(s.data, dtype=float))*0.005
         >>> s_vac.add_poissonian_noise()
@@ -733,7 +732,7 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         Examples
         --------
-        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+        >>> s = exspy.data.EDS_TEM_FePt_nanoparticles()
         >>> si = hs.stack([s]*3)
         >>> si.change_dtype(float)
         >>> si.decomposition()
@@ -805,7 +804,7 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         Examples
         --------
-        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+        >>> s = exspy.data.EDS_TEM_FePt_nanoparticles()
         >>> si = hs.stack([s]*3)
         >>> si.axes_manager.navigation_axes[0].scale = 0.01
         >>> si.axes_manager.navigation_axes[0].units = 'μm'
