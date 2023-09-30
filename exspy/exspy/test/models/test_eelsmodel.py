@@ -101,16 +101,17 @@ class TestCreateEELSModel:
         assert not "B_K" in cnames or "C_K" in cnames
 
     def test_low_loss(self):
-        ll = self.s.deepcopy()
-        ll.axes_manager[-1].offset = -20
-        m = self.s.create_model(ll=ll)
-        assert m.low_loss is ll
+        s = self.s
+        low_loss = s.deepcopy()
+        low_loss.axes_manager[-1].offset = -20
+        m = s.create_model(low_loss=low_loss)
+        assert m.convolve_signal is low_loss
         assert m.convolved
 
     def test_low_loss_bad_shape(self):
-        ll = hs.stack([self.s] * 2)
+        low_loss = hs.stack([self.s] * 2)
         with pytest.raises(ValueError):
-            _ = self.s.create_model(ll=ll)
+            _ = self.s.create_model(low_loss=low_loss)
 
 
 @lazifyTestClass
@@ -234,17 +235,17 @@ class TestEELSModel:
         assert not self.m.components.PowerLaw.active
 
     def test_signal1d_property(self):
-        assert self.s == self.m.signal1D
+        assert self.s == self.m.signal
         s_new = EELSSpectrum(np.ones(200))
         s_new.set_microscope_parameters(100, 10, 10)
-        self.m.signal1D = s_new
-        assert self.m.signal1D == s_new
+        self.m.signal = s_new
+        assert self.m.signal == s_new
 
     def test_signal1d_property_wrong_value_setter(self):
         m = self.m
         s = hs.signals.Signal1D(np.ones(200))
         with pytest.raises(ValueError):
-            self.m.signal1D = s
+            self.m.signal = s
 
     def test_remove(self):
         m = self.m
@@ -512,8 +513,8 @@ class TestEELSFineStructure:
         self.m.components.Fe_L3.fine_structure_active = (not fine_structure_active)
         for component in self.m.components.Fe_L3.fine_structure_components:
             assert component.active == (not fine_structure_active)
-        
-            
+
+
     def test_fine_structure_smoothing(self):
         Fe = self.m.components.Fe_L3
         Fe.fine_structure_active = True
@@ -577,21 +578,21 @@ class TestEELSFineStructure:
         assert not Fe.fine_structure_coeff.free
 
     def test_fine_structure_spline(self):
-        v2i = self.m.signal1D.axes_manager[0].value2index
+        v2i = self.m.signal.axes_manager[0].value2index
         Fe = self.m.components.Fe_L3
         Fe.fine_structure_active = True
         Fe.fine_structure_spline_active = True
         Fe.fine_structure_width = 30
         onset = Fe.onset_energy.value
-        axis1 = np.linspace(Fe.onset_energy.value, Fe.onset_energy.value + Fe.fine_structure_width, endpoint=False) 
+        axis1 = np.linspace(Fe.onset_energy.value, Fe.onset_energy.value + Fe.fine_structure_width, endpoint=False)
         assert np.all(Fe.function(axis1) == 0)
         Fe.fine_structure_coeff.value = np.arange(len(Fe.fine_structure_coeff.value)) + 1
         assert np.all(Fe.function(axis1) != 0)
         Fe.fine_structure_spline_onset = 10
         Fe.fine_structure_coeff.value = np.arange(len(Fe.fine_structure_coeff.value)) + 1
-        axis2 = np.linspace(Fe.onset_energy.value, Fe.onset_energy.value + Fe.fine_structure_spline_onset, endpoint=False) 
+        axis2 = np.linspace(Fe.onset_energy.value, Fe.onset_energy.value + Fe.fine_structure_spline_onset, endpoint=False)
         axis3 = np.linspace(Fe.onset_energy.value + Fe.fine_structure_spline_onset,
-                            Fe.onset_energy.value + Fe.fine_structure_width, endpoint=False) 
+                            Fe.onset_energy.value + Fe.fine_structure_width, endpoint=False)
         assert np.all(Fe.function(axis2) == 0)
         assert np.all(Fe.function(axis3) != 0)
 
@@ -603,7 +604,5 @@ class TestEELSFineStructure:
         Fe.fine_structure_coeff.value = np.arange(len(Fe.fine_structure_coeff.value)) + 1
         m = self.m
         m.store()
-        mc = m.signal1D.models.a.restore()
+        mc = m.signal.models.a.restore()
         assert np.array_equal(m(), mc())
-    
-

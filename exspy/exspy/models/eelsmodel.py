@@ -36,18 +36,18 @@ _logger = logging.getLogger(__name__)
 class EELSModel(Model1D):
 
     def __init__(self, signal1D, auto_background=True,
-                 auto_add_edges=True, ll=None,
+                 auto_add_edges=True, low_loss=None,
                  GOS="gosh", dictionary=None):
         """
         Build an EELS model.
 
         Parameters
         ----------
-        spectrum : a Signal1D (or any Signal1D subclass) instance
+        spectrum : a EELSSpectrum instance
         %s
 
         """
-        Model1D.__init__(self, signal1D)
+        super().__init__(signal1D)
 
         # When automatically setting the fine structure energy regions,
         # the fine structure of an EELS edge component is automatically
@@ -56,10 +56,8 @@ class EELSModel(Model1D):
         # the value of this parameter
         self._min_distance_between_edges_for_fine_structure = 0
         self._preedge_safe_window_width = 2
-        self.signal1D = signal1D
         self._suspend_auto_fine_structure_width = False
-        self.convolved = False
-        self.low_loss = ll
+        self.convolve_signal = low_loss
         self.GOS = GOS
         self.edges = []
         self._background_components = []
@@ -82,12 +80,13 @@ class EELSModel(Model1D):
 
     __init__.__doc__ %= EELSMODEL_PARAMETERS
 
+
     @property
-    def signal1D(self):
+    def signal(self):
         return self._signal
 
-    @signal1D.setter
-    def signal1D(self, value):
+    @signal.setter
+    def signal(self, value):
         if isinstance(value, EELSSpectrum):
             self._signal = value
         else:

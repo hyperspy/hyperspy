@@ -458,11 +458,11 @@ class Samfire:
                         dat = var.data[ind + (...,)]
                         value_dict['variance.data'] = dat.compute(
                         ) if var._lazy else dat
-                if hasattr(self.model,
-                           'low_loss') and self.model.low_loss is not None:
-                    dat = self.model.low_loss.data[ind + (...,)]
-                    value_dict['low_loss.data'] = dat.compute(
-                    ) if self.model.low_loss._lazy else dat
+                if (hasattr(self.model, 'convolve_signal')
+                        and self.model.convolve_signal is not None):
+                    dat = self.model.convolve_signal.data[ind + (...,)]
+                    value_dict['convolve_signal.data'] = dat.compute(
+                    ) if self.model.convolve_signal._lazy else dat
 
                 self.running_pixels.append(ind)
                 self.metadata.marker[ind] = 0.

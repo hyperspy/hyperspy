@@ -199,7 +199,7 @@ class TestModelDictionary:
     def setup_method(self, method):
         s = Signal1D(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
         m = s.create_model()
-        m.low_loss = (s + 3.0).deepcopy()
+        m.convolve_signal = (s + 3.0).deepcopy()
         self.model = m
         self.s = s
 
@@ -213,8 +213,7 @@ class TestModelDictionary:
         m = self.model
         d = m.as_dictionary()
 
-        print(d['low_loss'])
-        np.testing.assert_allclose(m.low_loss.data, d['low_loss']['data'])
+        np.testing.assert_allclose(m.convolve_signal.data, d['convolve_signal']['data'])
         np.testing.assert_allclose(m.chisq.data, d['chisq.data'])
         np.testing.assert_allclose(m.dof.data, d['dof.data'])
         np.testing.assert_equal(
@@ -241,7 +240,9 @@ class TestModelDictionary:
         np.testing.assert_allclose(mo.chisq.data, mn.chisq.data)
         np.testing.assert_allclose(mo.dof.data, mn.dof.data)
 
-        np.testing.assert_allclose(mn.low_loss.data, mo.low_loss.data)
+        np.testing.assert_allclose(
+            mn.convolve_signal.data, mo.convolve_signal.data
+            )
 
         np.testing.assert_equal(
             mn.free_parameters_boundaries,

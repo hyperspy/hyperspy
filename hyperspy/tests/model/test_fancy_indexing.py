@@ -105,55 +105,35 @@ class TestModelIndexing:
 class TestModelIndexingClass:
 
     def setup_method(self, method):
-        pytest.importorskip("exspy")
-        from exspy.signals import EELSSpectrum
-        s_eels = EELSSpectrum([list(range(10))] * 3)
-        s_eels.metadata.set_item(
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle',
-            3.0)
-        s_eels.metadata.set_item('Acquisition_instrument.TEM.beam_energy', 1.0)
-        s_eels.metadata.set_item(
-            'Acquisition_instrument.TEM.convergence_angle',
-            2.0)
-        self.eels_m = s_eels.create_model(auto_background=False)
+        s = Signal1D([list(range(10))] * 3)
+        m = s.create_model()
+        self.m = s.create_model()
 
     def test_model_class(self):
-        m_eels = self.eels_m
-        assert isinstance(m_eels, type(m_eels.isig[1:]))
-        assert isinstance(m_eels, type(m_eels.inav[1:]))
+        m = self.m
+        assert isinstance(m, type(m.isig[1:]))
+        assert isinstance(m, type(m.inav[1:]))
 
 
 @lazifyTestClass
-class TestEELSModelSlicing:
+class TestConvolveModelSlicing:
 
     def setup_method(self, method):
-        pytest.importorskip("exspy")
-        from exspy.signals import EELSSpectrum
-        data = np.random.random((10, 10, 600))
-        s = EELSSpectrum(data)
+        s = Signal1D(np.random.random((10, 10, 600)))
         s.axes_manager[-1].offset = -150.
         s.axes_manager[-1].scale = 0.5
-        s.metadata.set_item(
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle',
-            3.0)
-        s.metadata.set_item('Acquisition_instrument.TEM.beam_energy', 1.0)
-        s.metadata.set_item(
-            'Acquisition_instrument.TEM.convergence_angle',
-            2.0)
-        m = s.create_model(
-            ll=s + 1,
-            auto_background=False,
-            auto_add_edges=False)
+        m = s.create_model()
+        m.convolve_signal = s + 1
         g = Gaussian()
         m.append(g)
-        self.model = m
+        self.m = m
 
-    def test_slicing_low_loss_inav(self):
-        m = self.model
+    def test_slicing_convolve_signal_inav(self):
+        m = self.m
         m1 = m.inav[::2]
-        assert m1.signal.data.shape == m1.low_loss.data.shape
+        assert m1.signal.data.shape == m1.convolve_signal.data.shape
 
-    def test_slicing_low_loss_isig(self):
-        m = self.model
+    def test_slicing_convolve_signal_isig(self):
+        m = self.m
         m1 = m.isig[::2]
-        assert m.signal.data.shape == m1.low_loss.data.shape
+        assert m.signal.data.shape == m1.convolve_signal.data.shape

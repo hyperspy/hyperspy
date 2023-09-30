@@ -249,7 +249,7 @@ class Model1D(BaseModel):
     """
 
     def __init__(self, signal1D, dictionary=None):
-        super(Model1D, self).__init__()
+        super().__init__()
         self.signal = signal1D
         self.axes_manager = self.signal.axes_manager
         self._plot = None
@@ -273,8 +273,9 @@ class Model1D(BaseModel):
         self.dof.metadata.General.title = (
             self.signal.metadata.General.title + ' degrees of freedom')
         self.free_parameters_boundaries = None
-        self._low_loss = None
+        self._convolve_signal = None
         self.convolved = False
+        self.convolution_axis = None
         self.components = ModelComponents(self)
         if dictionary is not None:
             self._load_dictionary(dictionary)
@@ -284,12 +285,12 @@ class Model1D(BaseModel):
             'channel_switches': None,
             'convolved': None,
             'free_parameters_boundaries': None,
-            'low_loss': ('sig', None),
+            'convolve_signal': ('sig', None),
             'chisq.data': None,
             'dof.data': None}
         self._slicing_whitelist = {
             'channel_switches': 'isig',
-            'low_loss': 'inav',
+            'convolve_signal': 'inav',
             'chisq.data': 'inav',
             'dof.data': 'inav'}
 
@@ -306,24 +307,27 @@ class Model1D(BaseModel):
             raise WrongObjectError(str(type(value)), 'Signal1D')
 
     @property
-    def low_loss(self):
-        return self._low_loss
+    def convolve_signal(self):
+        return self._convolve_signal
 
-    @low_loss.setter
-    def low_loss(self, value):
+    @convolve_signal.setter
+    def convolve_signal(self, value):
         if value is not None:
             if (value.axes_manager.navigation_shape !=
                     self.signal.axes_manager.navigation_shape):
-                raise ValueError('The low-loss does not have the same '
-                                 'navigation dimension as the core-loss.')
+                raise ValueError(
+                    "The signal does not have the same navigation dimension "
+                    "as the signal it will be convolved with."
+                    )
             if not value.axes_manager.signal_axes[0].is_uniform:
-                raise ValueError('Low loss convolution is not supported with '
-                                 'non-uniform signal axes.')
-            self._low_loss = value
+                raise ValueError(
+                    "Convolution is not supported with non-uniform signal axes."
+                    )
+            self._convolve_signal = value
             self.set_convolution_axis()
             self.convolved = True
         else:
-            self._low_loss = value
+            self._convolve_signal = value
             self.convolution_axis = None
             self.convolved = False
 
@@ -332,10 +336,9 @@ class Model1D(BaseModel):
     def set_convolution_axis(self):
         """
         Creates an axis to use to generate the data of the model in the precise
-        scale to obtain the correct axis and origin after convolution with the
-        lowloss spectrum.
+        scale to obtain the correct axis and origin after convolution.
         """
-        ll_axis = self.low_loss.axes_manager.signal_axes[0]
+        ll_axis = self.convolve_signal.axes_manager.signal_axes[0]
         dimension = self.axis.size + ll_axis.size - 1
         step = self.axis.scale
         knot_position = ll_axis.size - ll_axis.value2index(0) - 1
@@ -343,7 +346,8 @@ class Model1D(BaseModel):
                                                      dimension, knot_position)
 
     def append(self, thing):
-        """Add component to Model.
+        """
+        Add component to Model.
 
         Parameters
         ----------
@@ -351,7 +355,7 @@ class Model1D(BaseModel):
         """
         cm = self.suspend_update if self._plot_active else dummy_context_manager
         with cm(update_on_resume=False):
-            super(Model1D, self).append(thing)
+            super().append(thing)
         if self._plot_components:
             self._plot_component(thing)
         if self._adjust_position_all:
@@ -372,15 +376,16 @@ class Model1D(BaseModel):
             if hasattr(thing, '_component_line'):
                 line = thing._component_line
                 line.close()
-        super(Model1D, self).remove(things)
+        super().remove(things)
         self._disconnect_parameters2update_plot(things)
 
     remove.__doc__ = BaseModel.remove.__doc__
 
     def __call__(self, non_convolved=False, onlyactive=False,
-                 component_list=None, binned=None, 
+                 component_list=None, binned=None,
                  ignore_channel_switches = False):
-        """Returns the corresponding model for the current coordinates
+        """
+        Returns the corresponding model for the current coordinates
 
         Parameters
         ----------
@@ -396,7 +401,7 @@ class Model1D(BaseModel):
             Specify whether the binned attribute of the signal axes needs to be
             taken into account.
         ignore_channel_switches: bool
-            If true, the entire signal axis are returned 
+            If true, the entire signal axis are returned
             without checking channel_switches.
 
         cursor: 1 or 2
@@ -425,6 +430,8 @@ class Model1D(BaseModel):
             to_return = sum_
 
         else:  # convolved
+            if self.convolution_axis is None:
+                raise RuntimeError("`convolve_signal` is not set.")
             sum_convolved = np.zeros(len(self.convolution_axis))
             sum_ = np.zeros(len(self.axis.axis))
             for component in component_list:
@@ -434,7 +441,7 @@ class Model1D(BaseModel):
                     sum_ += component.function(self.axis.axis)
 
             to_return = sum_ + np.convolve(
-                self.low_loss(self.axes_manager),
+                self.convolve_signal(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[self.channel_switches]
 
@@ -601,7 +608,7 @@ class Model1D(BaseModel):
                         for parameter in component.free_parameters:
                             par_grad = np.convolve(
                                 parameter.grad(self.convolution_axis),
-                                self.low_loss(self.axes_manager),
+                                self.convolve_signal(self.axes_manager),
                                 mode="valid")
 
                             if parameter._twins:
@@ -609,7 +616,7 @@ class Model1D(BaseModel):
                                     np.add(par_grad, np.convolve(
                                         par.grad(
                                             self.convolution_axis),
-                                        self.low_loss(self.axes_manager),
+                                        self.convolve_signal(self.axes_manager),
                                         mode="valid"), par_grad)
 
                             grad = np.vstack((grad, par_grad))
@@ -714,14 +721,14 @@ class Model1D(BaseModel):
             ns[np.where(self.channel_switches)] = s
             s = ns
         return s
-    
+
     def _residual_for_plot(self,**kwargs):
         """From an model1D object, the original signal is subtracted
         by the model signal then returns the residual
         """
 
         return self.signal.__call__() - self.__call__(ignore_channel_switches=True)
-    
+
     def plot(self, plot_components=False,plot_residual=False, **kwargs):
         """Plot the current spectrum to the screen and a map with a
         cursor to explore the SI.
@@ -755,7 +762,7 @@ class Model1D(BaseModel):
         self._model_line = l2
         self._plot = self.signal._plot
         self._connect_parameters2update_plot(self)
-        
+
         #Optional to plot the residual of (Signal - Model)
         if plot_residual:
             l3 = hyperspy.drawing.signal1d.Signal1DLine()
@@ -765,7 +772,7 @@ class Model1D(BaseModel):
             # Add the line to the figure
             _plot.signal_plot.add_line(l3)
             l3.plot()
-            # Quick access to _residual_line if needed 
+            # Quick access to _residual_line if needed
             self._residual_line = l3
 
 

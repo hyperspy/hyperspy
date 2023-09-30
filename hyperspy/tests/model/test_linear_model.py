@@ -25,7 +25,6 @@ import hyperspy.api as hs
 from hyperspy.component import Component
 from hyperspy.components1d import Gaussian, Expression, Offset
 from hyperspy.components2d import Gaussian2D
-from hyperspy.datasets.example_signals import EDS_SEM_Spectrum
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.utils import dummy_context_manager
 from hyperspy.signals import Signal1D, Signal2D
@@ -177,10 +176,17 @@ class TestMultiFitLinear:
 class TestLinearFitting:
 
     def setup_method(self, method):
-        s = EDS_SEM_Spectrum().isig[5.0:15.0]
-        m = s.create_model(auto_background=False)
+        s = hs.signals.Signal1D(np.arange(0, 100) + 20)
+        m = s.create_model()
+        g1 = hs.model.components1D.Gaussian(A=1000, centre=20, sigma=10)
+        g1.sigma.free = False
+        g1.centre.free = False
         c = Expression('a*x+b', 'line with offset')
-        m.append(c)
+        m.extend([g1, c])
+
+        axis = s.axes_manager[-1].axis
+        s.data = s.data + g1.function(axis)
+
         self.s = s
         self.m = m
         self.c = c
@@ -189,18 +195,13 @@ class TestLinearFitting:
         m = self.m
         c = self.c
         m.fit(optimizer='lstsq')
-        expected_values = np.array(
-            [933.23065365,
-             47822.97407409,
-             -5867.61623971,
-             56805.50459484]
-            )
+        expected_values = np.array([1000., 1.0, 20.0])
         np.testing.assert_allclose(m.p0, expected_values, rtol=5E-6)
 
         # Repeat test with offset fixed
         c.b.free = False
         m.fit(optimizer='lstsq')
-        np.testing.assert_allclose(m.p0, expected_values[:3], rtol=5E-6)
+        np.testing.assert_allclose(m.p0, expected_values[:2], rtol=5E-6)
 
     def test_fixed_offset_value(self):
         self.m.fit(optimizer='lstsq')
@@ -220,10 +221,13 @@ class TestLinearFitting:
 class TestFitAlgorithms:
 
     def setup_method(self, method):
-        s = EDS_SEM_Spectrum().isig[5.0:15.0]
-        m = s.create_model(auto_background=False)
+        s = hs.signals.Signal1D(np.arange(1, 100))
+        m = s.create_model()
+        g1 = hs.model.components1D.Gaussian()
+        g1.sigma.free = False
+        g1.centre.free = False
         c = Expression('a*x+b', 'line with offset')
-        m.append(c)
+        m.extend([g1, c])
         self.m = m
 
     def _post_setup_method(self, weighted):
@@ -241,9 +245,9 @@ class TestFitAlgorithms:
         m = self.m
         m.fit(optimizer='lstsq')
         lstsq_fit = m.as_signal()
-        np.testing.assert_allclose(self.nonlinear_fit_res, lstsq_fit(), rtol=5E-6)
+        np.testing.assert_allclose(self.nonlinear_fit_res, lstsq_fit(), atol=1E-8)
         linear_std = [para.std for para in m._free_parameters if para.std]
-        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, rtol=5E-6)
+        np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, atol=1E-8)
 
     def test_nonactive_component(self, weighted):
         self._post_setup_method(weighted)

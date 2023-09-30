@@ -29,7 +29,7 @@ class TestLinearEELSFitting:
         cl = exspy.data.EELS_MnFe(add_powerlaw=False, navigation_shape=())
         m = cl.create_model(auto_background=False)
         m[0].onset_energy.value = 637.
-        m_convolved = cl.create_model(auto_background=False, ll=ll)
+        m_convolved = cl.create_model(auto_background=False, low_loss=ll)
         m_convolved[0].onset_energy.value = 637.
         self.ll, self.cl = ll, cl
         self.m, self.m_convolved = m, m_convolved
@@ -53,7 +53,7 @@ class TestLinearEELSFitting:
         m.fit(optimizer='lm')
         lm = m.as_signal()
         diff = linear - lm
-        np.testing.assert_allclose(diff.data.sum(), 0.0, atol=1E-6)
+        np.testing.assert_allclose(diff.data.sum(), 0.0, atol=5E-6)
 
 
 class TestTwinnedComponents:

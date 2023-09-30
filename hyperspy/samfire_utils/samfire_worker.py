@@ -181,8 +181,8 @@ class Worker:
             if isinstance(var, BaseSignal):
                 var.data[:] = self.value_dict.pop('variance.data')
 
-        if 'low_loss.data' in self.value_dict:
-            self.model.low_loss.data[:] = self.value_dict.pop('low_loss.data')
+        if 'convolve_signal.data' in self.value_dict:
+            self.model.convolve_signal.data[:] = self.value_dict.pop('convolve_signal.data')
 
         for component_comb in self.generate_component_combinations():
             good_fit = self.fit(component_comb)

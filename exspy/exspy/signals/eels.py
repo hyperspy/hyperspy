@@ -1542,7 +1542,7 @@ class EELSSpectrum(Signal1D):
         else:
             return eps, output
 
-    def create_model(self, ll=None, auto_background=True, auto_add_edges=True,
+    def create_model(self, low_loss=None, auto_background=True, auto_add_edges=True,
                      GOS="gosh", gos_file_path=None, dictionary=None):
         """Create a model for the current EELS data.
 
@@ -1560,14 +1560,14 @@ class EELSSpectrum(Signal1D):
             If the signal axis is a non-uniform axis.
         """
         from exspy.models.eelsmodel import EELSModel
-        if ll is not None and not self.axes_manager.signal_axes[0].is_uniform:
+        if low_loss is not None and not self.axes_manager.signal_axes[0].is_uniform:
             raise NotImplementedError(
                 "Multiple scattering is not implemented for spectra with a "
                 "non-uniform energy axis. To create a model that does not "
                 "account for multiple-scattering do not set the `ll` keyword."
                 )
         model = EELSModel(self,
-                          ll=ll,
+                          low_loss=low_loss,
                           auto_background=auto_background,
                           auto_add_edges=auto_add_edges,
                           GOS=GOS,

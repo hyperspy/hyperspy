@@ -1315,7 +1315,7 @@ def convolve_component_values(component_values, model):
 
     sig = component_values * np.ones(model.convolution_axis.shape)
 
-    ll = model.low_loss(model.axes_manager)
+    ll = model.convolve_signal(model.axes_manager)
     convolved = np.convolve(sig, ll, mode="valid")
 
     return convolved

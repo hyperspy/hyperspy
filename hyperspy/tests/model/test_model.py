@@ -30,7 +30,7 @@ class TestModelJacobians:
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1))
         m = s.create_model()
-        self.low_loss = 7.0
+        self.convolve_signal = 7.0
         self.weights = 0.3
         m.axis.axis = np.array([1, 0])
         m.channel_switches = np.array([0, 1], dtype=bool)
@@ -38,8 +38,8 @@ class TestModelJacobians:
         m[0].A.value = 1
         m[0].centre.value = 2.0
         m[0].sigma.twin = m[0].centre
-        m._low_loss = mock.MagicMock()
-        m.low_loss.return_value = self.low_loss
+        m._convolve_signal = mock.MagicMock()
+        m.convolve_signal.return_value = self.convolve_signal
         self.model = m
         m.convolution_axis = np.zeros(2)
 
@@ -70,9 +70,9 @@ class TestModelJacobians:
                 [
                     m[0].A.grad(0),
                     m[0].sigma.grad(0) + m[0].centre.grad(0),
-                    m[1].A.grad(0) * self.low_loss,
-                    m[1].centre.grad(0) * self.low_loss,
-                    m[1].sigma.grad(0) * self.low_loss,
+                    m[1].A.grad(0) * self.convolve_signal,
+                    m[1].centre.grad(0) * self.convolve_signal,
+                    m[1].sigma.grad(0) * self.convolve_signal,
                 ]
             ),
         )
@@ -110,8 +110,8 @@ class TestModelCallMethod:
 
     def test_call_method_with_convolutions(self):
         m = self.model
-        m._low_loss = mock.MagicMock()
-        m.low_loss.return_value = 0.3
+        m._convolve_signal = mock.MagicMock()
+        m.convolve_signal.return_value = 0.3
         m.convolved = True
 
         m.append(hs.model.components1D.Gaussian())
@@ -317,8 +317,8 @@ class TestModel1D:
         ll_axis = mock.MagicMock()
         ll_axis.size = 7
         ll_axis.value2index.return_value = 3
-        m._low_loss = mock.MagicMock()
-        m.low_loss.axes_manager.signal_axes = [
+        m._convolve_signal = mock.MagicMock()
+        m.convolve_signal.axes_manager.signal_axes = [
             ll_axis,
         ]
 
