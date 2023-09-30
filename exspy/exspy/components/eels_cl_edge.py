@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2023 The exspy developers
+# Copyright 2007-2023 The exSpy developers
 #
-# This file is part of exspy.
+# This file is part of exSpy.
 #
-# HyperSpy is free software: you can redistribute it and/or modify
+# exSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# exspy is distributed in the hope that it will be useful,
+# exSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with exspy. If not, see <https://www.gnu.org/licenses/#GPL>.
+# along with exSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 
 
@@ -79,11 +79,11 @@ class EELSCLEdge(Component):
     https://zenodo.org/record/6599071 while information on the GOSH format
     are available at: https://gitlab.com/gguzzina/gosh .
 
-    HyperSpy also supports Peter Rez's Hartree Slater cross sections
+    exSpy also supports Peter Rez's Hartree Slater cross sections
     parametrised as distributed by Gatan in their Digital Micrograph (DM)
-    software. If Digital Micrograph is installed in the system HyperSpy in the
-    standard location HyperSpy should find the path to the HS GOS folder.
-    Otherwise, the location of the folder can be defined in HyperSpy
+    software. If Digital Micrograph is installed in the system exSpy in the
+    standard location exSpy should find the path to the HS GOS folder.
+    Otherwise, the location of the folder can be defined in exSpy
     preferences, which can be done through ~:func:`~.api.preferences.gui` or
     the :attr:`~api.preferences.EELS.eels_gos_files_path` variable.
 

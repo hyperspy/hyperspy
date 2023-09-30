@@ -4338,7 +4338,7 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
 
 elements_db = DictionaryTreeBrowser(elements)
 
-# read dictionary of atomic numbers from HyperSpy, and add the elements that
+# read dictionary of atomic numbers from exSpy, and add the elements that
 # do not currently exist in the database (in case anyone is doing EDS on
 # Ununpentium...)
 atomic_number2name = dict((p.General_properties.Z, e)

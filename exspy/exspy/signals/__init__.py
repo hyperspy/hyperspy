@@ -1,19 +1,20 @@
 
 """
-Signals to be operated on. The basic unit of data"
+Modules containing the exSpy signals and their lazy counterparts.
+
 EELSSpectrum
-    For electron energy-loss data with signal_dimension equal 1, i.e.
-    spectral data of n-dimensions. The signal is binned by default.
+    For electron energy-loss data with ``signal_dimension`` equal one, i.e.
+    spectral data of ``n`` dimensions. The signal is binned by default.
 EDSTEMSpectrum
-    For electron energy-dispersive X-rays data acquired in a transmission
-    electron microscopy with signal_dimension equal 1, i.e.
-    spectral data of n-dimensions. The signal is binned by default.
+    For electron energy-dispersive X-ray data acquired in a transmission
+    electron microscopy with ``signal_dimension`` equal one, i.e.
+    spectral data of ``n`` dimensions. The signal is binned by default.
 EDSSEMSpectrum
-    For electron energy-dispersive X-rays data acquired in a scanning
-    electron microscopy with signal_dimension equal 1, i.e.
-    spectral data of n-dimensions. The signal is binned by default.
+    For electron energy-dispersive X-ray data acquired in a scanning
+    electron microscope with ``signal_dimension`` equal one, i.e.
+    spectral data of ``n`` dimensions. The signal is binned by default.
 DielectricFunction
-    For dielectric function data with signal_dimension equal 1. The signal
+    For dielectric function data with ``signal_dimension`` equal one. The signal
     is unbinned by default.
 """
 from .dielectric_function import DielectricFunction, LazyDielectricFunction
@@ -39,4 +40,3 @@ __all__ = [
 
 def __dir__():
     return sorted(__all__)
-
