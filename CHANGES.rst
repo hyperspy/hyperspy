@@ -662,12 +662,12 @@ NEW
   that, if the `hyperspy-gui-ipywidgets package
   <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
   is installed, includes an
-  awesome interactive mode. See :ref:`eels_elemental_composition-label`.
+  awesome interactive mode. See :external+exspy:ref:`eels_elemental_composition-label`.
 * Model asymmetric line shape components:
 
   * :py:class:`~._components.doniach.Doniach`
   * :py:class:`~._components.split_voigt.SplitVoigt`
-* :ref:`EDS absorption correction <eds_absorption-label>`.
+* :external+exspy:ref:`EDS absorption correction <eds_absorption-label>`.
 * :ref:`Argand diagram for complex signals <complex.argand>`.
 * :ref:`Multiple peak finding algorithms for 2D signals <peak_finding-label>`.
 * :ref:`cluster_analysis-label`.
@@ -705,7 +705,7 @@ Enhancements
   See :ref:`ml-label` and the API changes section below.
 * Add option to calculate the absolute thickness to the EELS
   :meth:`~._signals.eels.EELSSpectrum.estimate_thickness` method.
-  See :ref:`eels_thickness-label`.
+  See :external+exspy:ref:`eels_thickness-label`.
 * Vastly improved performance and memory footprint of the
   :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D` method.
 * The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method can
@@ -858,7 +858,7 @@ Enhancements
   :py:func:`hyperspy.api.plot.plot_images`
   or :py:func:`hyperspy.api.plot.plot_spectra` respectively. This is
   specially relevant when plotting the result of EDS quantification. See
-  :ref:`eds-label` for examples.
+  :external+exspy:ref:`eds-label` for examples.
 * The following components have been rewritten using
   :py:class:`hyperspy._components.expression.Expression`, boosting their
   speeds among other benefits. Multiple issues have been fixed on the way.
@@ -1254,10 +1254,10 @@ Model
 
 EDS
 ^^^
-* :ref:`Z-factors quantification <eds_quantification-label>`.
-* :ref:`Cross section quantification <eds_quantification-label>`.
-* :ref:`EDS curve fitting <eds_fitting-label>`.
-* X-ray :ref:`absorption coefficient database <eds_absorption_db-label>`.
+* :external+exspy:ref:`Z-factors quantification <eds_quantification-label>`.
+* :external+exspy:ref:`Cross section quantification <eds_quantification-label>`.
+* :external+exspy:ref:`EDS curve fitting <eds_fitting-label>`.
+* X-ray :external+exspy:ref:`absorption coefficient database <eds_absorption_db-label>`.
 
 IO
 ^^
@@ -1282,7 +1282,7 @@ Documentation
 
   * :ref:`install-label`.
   * :ref:`ml-label`.
-  * :ref:`eds-label`.
+  * :external+exspy:ref:`eds-label`.
 * New :ref:`dev_guide`.
 
 
@@ -1458,10 +1458,10 @@ Plotting
 EDS
 ^^^
 
-* New method for quantifying EDS TEM spectra using Cliff-Lorimer method, :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`. See :ref:`eds_quantification-label`.
-* New method to estimate for background subtraction, :py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows`. See :ref:`eds_background_subtraction-label`.
+* New method for quantifying EDS TEM spectra using Cliff-Lorimer method, :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`. See :external+exspy:external+exspy:ref:`eds_quantification-label`.
+* New method to estimate for background subtraction, :py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows`. See :external+exspy:ref:`eds_background_subtraction-label`.
 * New method to estimate the windows of integration, :py:meth:`~._signals.eds.EDSSpectrum.estimate_integration_windows`.
-* New specific :py:meth:`~._signals.eds.EDSSpectrum.plot` method, with markers to indicate the X-ray lines, the window of integration or/and the windows for background subtraction. See :ref:`eds_plot_markers-label`.
+* New specific :py:meth:`~._signals.eds.EDSSpectrum.plot` method, with markers to indicate the X-ray lines, the window of integration or/and the windows for background subtraction. See :external+exspy:ref:`eds_plot_markers-label`.
 * New examples of signal in the ``hspy.utils.example_signals`` module.
 
   + :py:func:`~.misc.example_signals_loading.load_1D_EDS_SEM_spectrum`
@@ -1619,7 +1619,7 @@ EELS
 * New method,
   :meth:`~._signals.eels.EELSSpectrum.kramers_kronig_analysis` to calculate
   the dielectric function from low-loss electron energy-loss spectra based on
-  the Kramers-Kronig relations. See :ref:`eels.kk`.
+  the Kramers-Kronig relations. See :external+exspy:ref:`eels.kk`.
 * New method to align the zero-loss peak,
   :meth:`~._signals.eels.EELSSpectrum.align_zero_loss_peak`.
 
@@ -1628,17 +1628,17 @@ EDS
 
 * New signal, EDSSpectrum especialized in EDS data analysis, with subsignal
   for EDS with SEM and with TEM: EDSSEMSpectrum and EDSTEMSpectrum. See
-  :ref:`eds-label`.
+  :external+exspy:ref:`eds-label`.
 * New database of EDS lines available in the ``elements`` attribute of the
   ``hspy.utils.material`` module.
 * Adapted methods to calibrate the spectrum, the detector and the microscope.
-  See :ref:`eds_calibration-label`.
+  See :external+exspy:ref:`eds_calibration-label`.
 * Specific methods to describe the sample,
   :py:meth:`~._signals.eds.EDSSpectrum.add_elements` and
-  :py:meth:`~._signals.eds.EDSSpectrum.add_lines`. See :ref:`eds_sample-label`
+  :py:meth:`~._signals.eds.EDSSpectrum.add_lines`. See :external+exspy:ref:`eds_sample-label`
 * New method to get the intensity of specific X-ray lines:
   :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. See
-  :ref:`eds_plot-label`
+  :external+exspy:ref:`eds_plot-label`
 
 API changes
 -----------

@@ -35,10 +35,10 @@ and can be downloaded using:
 Loading data
 ^^^^^^^^^^^^
 
-All data are loaded with the :py:func:`~.io.load` function, as described in
-detail in :ref:`Loading files<loading_files>`. HyperSpy is able to import
-different formats, among them ".msa" and ".rpl" (the raw format of Oxford
-Instruments and Bruker).
+All data are loaded with the :py:func:`hyperspy.api.load` function, as described in
+detail in the :external+hyperspy:ref:`loading files<loading_files>` of the HyperSpy
+documentation. HyperSpy is able to import different formats, among them
+``msa`` and ``rpl`` (the raw format of Oxford Instruments and Bruker).
 
 Here are three examples of files exported by Oxford Instruments software
 (INCA). For a single spectrum:
@@ -50,7 +50,7 @@ Here are three examples of files exported by Oxford Instruments software
     <Signal1D, title: Signal1D, dimensions: (|1024)>
 
 For a spectrum image (The .rpl file is recorded as an image in this example,
-The method :py:meth:`~.signal.BaseSignal.as_signal1D` set it back to a one
+The method :py:meth:`hyperspy.api.signals.BaseSignal.as_signal1D` set it back to a one
 dimensional signal with the energy axis in first position):
 
 .. code-block:: python
@@ -74,7 +74,7 @@ Microscope and detector parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 First, the signal type ("EDS_TEM" or "EDS_SEM") needs to be set with the
-:py:meth:`~.signal.BaseSignal.set_signal_type` method. By assigning the
+:py:meth:`hyperspy.api.signals.BaseSignal.set_signal_type` method. By assigning the
 class of the object, specific EDS methods are made available.
 
 .. code-block:: python
@@ -85,7 +85,7 @@ class of the object, specific EDS methods are made available.
     <EDSSEMSpectrum, title: Signal1D, dimensions: (|1024)>
 
 You can also specify the signal type as an argument of
-the :py:func:`~.io.load` function:
+the :py:func:`hyperspy.api.load` function:
 
 .. code-block:: python
 
@@ -94,7 +94,7 @@ the :py:func:`~.io.load` function:
    <EDSSEMSpectrum, title: Signal1D, dimensions: (|1024)>
 
 HyperSpy will automatically load any existing  microscope parameters from the
-file, and store them in the :py:attr:`~.signal.BaseSignal.metadata`
+file, and store them in the :py:attr:`hyperspy.api.signals.BaseSignal.metadata`
 attribute (see :ref:`metadata_structure`). These parameters can be displayed
 as follows:
 
@@ -144,18 +144,18 @@ or through the GUI:
 
 Any microscope and detector parameters that are not found in the imported file
 will be set by default. These default values can be changed in the
-:py:class:`~.defaults_parser.Preferences` class (see :ref:`preferences
+:py:class:`~._defaults_parser.Preferences` class (see :external+hyperspy:ref:`preferences
 <configuring-hyperspy-label>`).
 
 .. code-block:: python
 
-    >>> hs.preferences.EDS.eds_detector_elevation = 37
+    >>> exspy.preferences.EDS.eds_detector_elevation = 37
 
 or through the GUI:
 
 .. code-block:: python
 
-    >>> hs.preferences.gui()
+    >>> exspy.preferences.gui()
 
 .. figure::  images/EDS_preferences_gui.png
    :align:   center
@@ -168,8 +168,8 @@ Energy axis
 
 The size, scale and units of the energy axis are automatically imported from
 the imported file, where they exist. These properties can also be set
-or adjusted manually with the :py:class:`~.axes.AxesManager`
-(see :ref:`Axis properties<Setting_axis_properties>` for more info):
+or adjusted manually with the :py:class:`hyperspy.axes.AxesManager`
+(see :external+hyperspy:ref:`Axis properties<Setting_axis_properties>` for more info):
 
 .. code-block:: python
 
@@ -218,7 +218,7 @@ Describing the sample
 ---------------------
 
 The description of the sample is also stored in the
-:py:attr:`~.signal.BaseSignal.metadata` attribute. It can be displayed using:
+:py:attr:`hyperspy.api.signals.BaseSignal.metadata` attribute. It can be displayed using:
 
 .. code-block:: python
 
@@ -241,8 +241,8 @@ Elements
 ^^^^^^^^
 
 The elements present in the sample can be defined using the
-:py:meth:`~._signals.eds.EDSSpectrum.set_elements`  and
-:py:meth:`~._signals.eds.EDSSpectrum.add_elements` methods.  Only element
+:py:meth:`~.signals.EDSSpectrum.set_elements`  and
+:py:meth:`~.signals.EDSSpectrum.add_elements` methods.  Only element
 abbreviations are accepted:
 
 .. code-block:: python
@@ -257,8 +257,8 @@ X-ray lines
 ^^^^^^^^^^^
 
 Similarly, the X-ray lines can be defined using the
-:py:meth:`~._signals.eds.EDSSpectrum.set_lines` and
-:py:meth:`~._signals.eds.EDSSpectrum.add_lines` methods. The corresponding
+:py:meth:`~.signals.EDSSpectrum.set_lines` and
+:py:meth:`~.signals.EDSSpectrum.add_lines` methods. The corresponding
 elements will be added automatically.
 Several lines per element can be defined at once.
 
@@ -364,7 +364,7 @@ Plotting
 --------
 
 You can visualize an EDS spectrum using the
-:py:meth:`~._signals.eds.EDSSpectrum.plot` method (see
+:py:meth:`~.signals.EDSSpectrum.plot` method (see
 :ref:`visualisation<visualization-label>`). For example:
 
 .. code-block:: python
@@ -379,7 +379,7 @@ You can visualize an EDS spectrum using the
    EDS spectrum
 
 An example of multi-dimensional EDS data (e.g. 3D SEM-EDS) is given in
-:ref:`visualisation multi-dimension<visualization_3D_EDS-label>`.
+:external+hyperspy:ref:`visualisation multi-dimension<visualization_3D_EDS-label>`.
 
 
 .. _eds_plot_markers-label:
@@ -388,9 +388,9 @@ Plotting X-ray lines
 ^^^^^^^^^^^^^^^^^^^^
 
 X-ray lines can be added as plot labels with
-:py:meth:`~._signals.eds.EDSSpectrum.plot`. The lines are either retrieved
+:py:meth:`~.signals.EDSSpectrum.plot`. The lines are either retrieved
 from ``metadata.Sample.Xray_lines``, or selected with the same method as
-:py:meth:`~._signals.eds.EDSSpectrum.add_lines` using the elements in
+:py:meth:`~.signals.EDSSpectrum.add_lines` using the elements in
 ``metadata.Sample.elements``.
 
 .. code-block:: python
@@ -454,8 +454,8 @@ Mn Ka to the peak energy (``energy_resolution_MnKa`` in the metadata):
    Iron map as computed and displayed by ``get_lines_intensity``
 
 The X-ray lines defined in ``metadata.Sample.Xray_lines`` are used by default.
-The EDS maps can be plotted using :py:func:`~.drawing.utils.plot_images`,
-see :ref:`plotting several images<plot.images>`
+The EDS maps can be plotted using :py:func:`hyperspy.api.plot.plot_images`,
+see :external+hyperspy:ref:`plotting several images<plot.images>`
 for more information in setting plotting parameters.
 
 .. code-block:: python
@@ -472,7 +472,7 @@ for more information in setting plotting parameters.
    :width:   500
 
 Finally, the windows of integration can be visualised using
-:py:meth:`~._signals.eds.EDSSpectrum.plot` method:
+:py:meth:`~.signals.EDSSpectrum.plot` method:
 
 .. code-block:: python
 
@@ -492,15 +492,15 @@ Background subtraction
 ^^^^^^^^^^^^^^^^^^^^^^
 
 The background can be subtracted from the X-ray intensities with
-:py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`.
+:py:meth:`~.signals.EDSSpectrum.get_lines_intensity`.
 The background value is obtained by averaging the intensity in two
 windows on each side of the X-ray line.
 The position of the windows can be estimated using
-:py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows`. 
+:py:meth:`~.signals.EDSSpectrum.estimate_background_windows`. 
 The factor ``line_width`` (left and right), multiplied by the calculated
 FWHM of the line, determines the distance of the two background windows
 from the center of the X-ray line. These windows can be visualized 
-using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
+using :py:meth:`~.signals.EDSSpectrum.plot`:
 
 .. code-block:: python
 
@@ -590,7 +590,7 @@ fitted:
     >>> m.fit()
 
 The background fitting can be improved with
-:py:meth:`~.models.edsmodel.EDSModel.fit_background` by enabling only energy
+:py:meth:`~.models.EDSModel.fit_background` by enabling only energy
 ranges containing no X-ray lines:
 
 .. code-block:: python
@@ -600,7 +600,7 @@ ranges containing no X-ray lines:
 The width of the X-ray lines is defined from the energy resolution (FWHM at
 Mn Ka) provided by ``energy_resolution_MnKa`` in ``metadata``. This parameter
 can be calibrated by fitting with
-:py:meth:`~.models.edsmodel.EDSModel.calibrate_energy_axis`:
+:py:meth:`~.models.EDSModel.calibrate_energy_axis`:
 
 .. code-block:: python
 
@@ -608,7 +608,7 @@ can be calibrated by fitting with
     Energy resolution (FWHM at Mn Ka) changed from 130.000000 to 131.927922 eV
 
 Fine-tuning of specific X-ray lines can be achieved using
-:py:meth:`~.models.edsmodel.EDSModel.calibrate_xray_lines`:
+:py:meth:`~.models.EDSModel.calibrate_xray_lines`:
 
 .. code-block:: python
 
@@ -617,7 +617,7 @@ Fine-tuning of specific X-ray lines can be achieved using
     >>> m.calibrate_xray_lines('sub_weight', ['Mn_La'], bound=10)
 
 The result of the fit is obtained with the
-:py:meth:`~.models.edsmodel.EDSModel.get_lines_intensity` method.
+:py:meth:`~.models.EDSModel.get_lines_intensity` method.
 
 .. code-block:: python
 
@@ -644,16 +644,16 @@ Finally, we visualize the result:
 The following methods can be used to enable/disable different
 functionalities of X-ray lines when fitting:
 
-* :py:meth:`~.models.edsmodel.EDSModel.free_background`
-* :py:meth:`~.models.edsmodel.EDSModel.fix_background`
-* :py:meth:`~.models.edsmodel.EDSModel.enable_xray_lines`
-* :py:meth:`~.models.edsmodel.EDSModel.disable_xray_lines`
-* :py:meth:`~.models.edsmodel.EDSModel.free_sub_xray_lines_weight`
-* :py:meth:`~.models.edsmodel.EDSModel.fix_sub_xray_lines_weight`
-* :py:meth:`~.models.edsmodel.EDSModel.free_xray_lines_energy`
-* :py:meth:`~.models.edsmodel.EDSModel.fix_xray_lines_energy`
-* :py:meth:`~.models.edsmodel.EDSModel.free_xray_lines_width`
-* :py:meth:`~.models.edsmodel.EDSModel.fix_xray_lines_width`
+* :py:meth:`~.models.EDSModel.free_background`
+* :py:meth:`~.models.EDSModel.fix_background`
+* :py:meth:`~.models.EDSModel.enable_xray_lines`
+* :py:meth:`~.models.EDSModel.disable_xray_lines`
+* :py:meth:`~.models.EDSModel.free_sub_xray_lines_weight`
+* :py:meth:`~.models.EDSModel.fix_sub_xray_lines_weight`
+* :py:meth:`~.models.EDSModel.free_xray_lines_energy`
+* :py:meth:`~.models.EDSModel.fix_xray_lines_energy`
+* :py:meth:`~.models.EDSModel.free_xray_lines_width`
+* :py:meth:`~.models.EDSModel.fix_xray_lines_width`
 
 .. _eds_quantification-label:
 
@@ -668,7 +668,7 @@ absorption correction:
 * Ionization cross sections
 
 Quantification must be applied to the background-subtracted intensities, which
-can be found using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`.
+can be found using :py:meth:`~.signals.EDSSpectrum.get_lines_intensity`.
 The quantification of these intensities can then be calculated using
 :py:meth:`~.signals.EDSTEMSpectrum.quantification`.
 
@@ -678,7 +678,7 @@ exception.
 
 A list of factors or cross sections should be supplied in the same order as
 the listed intensities (please note that HyperSpy intensities in
-:py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` are in alphabetical
+:py:meth:`~.signals.EDSSpectrum.get_lines_intensity` are in alphabetical
 order).
 
 A set of k-factors can be usually found in the EDS manufacturer software
@@ -765,7 +765,7 @@ then the illumination area becomes the pixel area of the spectrum image.
 This is a much more accurate approach for quantitative EDS and should be
 used where possible. The pixel width could either be added to the metadata
 by putting the pixel area in as the ``probe_area`` (above) or by calibrating
-the spectrum image (see :ref:`Setting_axis_properties`).
+the spectrum image (see :external+hyperspy:ref:`Setting_axis_properties`).
 
 Either approach will provide an illumination area for the cross section
 quantification. If the pixel width is not set, the code will still run with the

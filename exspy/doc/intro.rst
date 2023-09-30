@@ -54,7 +54,7 @@ Learning resources
     Short examples illustrating simple tasks.
 
   .. grid-item-card::
-    :link: https://github.com/hyperspy/hyperspy-demos
+    :link: https://github.com/hyperspy/exspy-demos
 
     :octicon:`workflow;2em;sd-text-info` Tutorials
     ^^^
@@ -63,7 +63,7 @@ Learning resources
     process multi-dimensional data using HyperSpy.
 
   .. grid-item-card::
-    :link: dev_guide/index
+    :link: contributing
     :link-type: doc
 
     :octicon:`people;2em;sd-text-info` Contributing

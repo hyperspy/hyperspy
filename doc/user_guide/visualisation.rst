@@ -347,8 +347,7 @@ Data files used in the following examples can be downloaded using
 .. NOTE::
 
     The sample and the data used in this chapter are described in
-    P. Burdet, `et al.`, Acta Materialia, 61, p. 3090-3098 (2013) (see
-    `abstract <https://infoscience.epfl.ch/record/185861/>`_).
+    :ref:`[Burdet2013] <[Burdet2013]>`.
 
 Stack of 2D images can be imported as an 3D image and plotted with a slider
 instead of the 2D navigator as in the previous example.
@@ -458,8 +457,8 @@ used for this purpose.
 
 In the following example we also use `scikit-image <https://scikit-image.org/>`_
 for noise reduction. More details about
-:py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` method can be
-found in :ref:`EDS lines intensity<get_lines_intensity>`.
+:py:meth:`exspy.signals.EDSSpectrum.get_lines_intensity` method can be
+found in :external+exspy:ref:`EDS lines intensity<get_lines_intensity>`.
 
 .. code-block:: python
 
@@ -492,16 +491,16 @@ Plotting multiple signals
 =========================
 
 HyperSpy provides three functions to plot multiple signals (spectra, images or
-other signals): :py:func:`~.drawing.utils.plot_images`,
-:py:func:`~.drawing.utils.plot_spectra`, and
-:py:func:`~.drawing.utils.plot_signals` in the ``utils.plot`` package.
+other signals): :py:func:`~.api.plot.plot_images`,
+:py:func:`~.api.plot.plot_spectra`, and
+:py:func:`~.api.plot.plot_signals` in the :py:mod:`~.api.plot`` package.
 
 .. _plot.images:
 
 Plotting several images
 -----------------------
 
-:py:func:`~.drawing.utils.plot_images` is used to plot several images in the
+:py:func:`~.api.plot.plot_images` is used to plot several images in the
 same figure. It supports many configurations and has many options available
 to customize the resulting output. The function returns a list of
 :py:class:`matplotlib.axes.Axes`,
@@ -512,10 +511,10 @@ font size globally, use the command ``matplotlib.rcParams.update({'font
 .size': 8})``.
 
 .. versionadded:: 1.5
-   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation
+   Add support for plotting :py:class:`~.api.signals.BaseSignal` with navigation
    dimension 2 and signal dimension 0.
 
-A common usage for :py:func:`~.drawing.utils.plot_images` is to view the
+A common usage for :py:func:`~.api.plot.plot_images` is to view the
 different slices of a multidimensional image (a *hyperimage*):
 
 .. code-block:: python
@@ -530,13 +529,13 @@ different slices of a multidimensional image (a *hyperimage*):
   :align:   center
   :width:   500
 
-  Figure generated with :py:func:`~.drawing.utils.plot_images` using the
+  Figure generated with :py:func:`~.api.plot.plot_images` using the
   default values.
 
 
 This example is explained in :ref:`Signal iterator<signal.iterator>`.
 
-By default, :py:func:`~.drawing.utils.plot_images` will attempt to auto-label
+By default, :py:func:`~.api.plot.plot_images` will attempt to auto-label
 the images based on the Signal titles. The labels (and title) can be
 customized with the `suptitle` and `label` arguments. In this example, the
 axes labels and the ticks are also disabled with `axes_decor`:
@@ -556,10 +555,10 @@ axes labels and the ticks are also disabled with `axes_decor`:
   :align:   center
   :width:   500
 
-  Figure generated with :py:func:`~.drawing.utils.plot_images` with customised
+  Figure generated with :py:func:`~.api.plot.plot_images` with customised
   labels.
 
-:py:func:`~.drawing.utils.plot_images` can also be used to easily plot a list
+:py:func:`~.api.plot.plot_images` can also be used to easily plot a list
 of `Images`, comparing different `Signals`, including RGB images. This
 example also demonstrates how to wrap labels using `labelwrap` (for preventing
 overlap) and using a single `colorbar` for all the Images, as opposed to
@@ -602,7 +601,7 @@ multiple individual ones:
   :align:   center
   :width:   500
 
-  Figure generated with :py:func:`~.drawing.utils.plot_images` from a list of
+  Figure generated with :py:func:`~.api.plot.plot_images` from a list of
   images.
 
 Data files used in the following example can be downloaded using (These data
@@ -620,7 +619,7 @@ are described in :ref:`[Rossouw2015] <Rossouw2015>`.
     >>>     z.extractall()
 
 Another example for this function is plotting EDS line intensities see
-:ref:`EDS chapter <get_lines_intensity>`. One can use the following commands
+:external+exspy:ref:`EDS chapter <get_lines_intensity>`. One can use the following commands
 to get a representative figure of the X-ray line intensities of an EDS
 spectrum image. This example also demonstrates changing the colormap (with
 `cmap`), adding scalebars to the plots (with `scalebar`), and changing the
@@ -642,7 +641,7 @@ which is passed to :py:meth:`matplotlib.figure.Figure.subplots_adjust`.
   :align:   center
   :width:   500
 
-  Using :py:func:`~.drawing.utils.plot_images` to plot the output of
+  Using :py:func:`~.api.plot.plot_images` to plot the output of
   :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`.
 
 .. |subplots_adjust| image:: images/plot_images_subplots.png
@@ -653,7 +652,7 @@ which is passed to :py:meth:`matplotlib.figure.Figure.subplots_adjust`.
     |subplots_adjust| button in the GUI (button may be different when using
     different graphical backends).
 
-Finally, the ``cmap`` option of :py:func:`~.drawing.utils.plot_images`
+Finally, the ``cmap`` option of :py:func:`~.api.plot.plot_images`
 supports iterable types, allowing the user to specify different colormaps
 for the different images that are plotted by providing a list or other
 generator:
@@ -671,8 +670,8 @@ generator:
   :align:   center
   :width:   500
 
-  Using :py:func:`~.drawing.utils.plot_images` to plot the output of
-  :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` using a unique
+  Using :py:func:`~.api.plot.plot_images` to plot the output of
+  :py:meth:`~.exspy.signals.EDSSpectrum.get_lines_intensity` using a unique
   colormap for each image.
 
 The ``cmap`` argument can also be given as ``'mpl_colors'``, and as a result,
@@ -680,7 +679,7 @@ the images will be plotted with colormaps generated from the default
 ``matplotlib`` colors, which is very helpful when plotting multiple spectral
 signals and their relative intensities (such as the results of a
 :py:func:`~.learn.mva.decomposition` analysis). This example uses
-:py:func:`~.drawing.utils.plot_spectra`, which is explained in the
+:py:func:`~.api.plot.plot_spectra`, which is explained in the
 `next section`__.
 
 __ plot.spectra_
@@ -724,8 +723,8 @@ __ plot.spectra_
   :align:   center
   :width:   500
 
-  Using :py:func:`~.drawing.utils.plot_images` with ``cmap='mpl_colors'``
-  together with :py:func:`~.drawing.utils.plot_spectra` to visualize the
+  Using :py:func:`~.api.plot.plot_images` with ``cmap='mpl_colors'``
+  together with :py:func:`~.api.plot.plot_spectra` to visualize the
   output of a non-negative matrix factorization of the EDS data.
 
 
@@ -746,7 +745,7 @@ __ plot.spectra_
 
 It is also possible to plot multiple images overlayed on the same figure by
 passing the argument ``overlay=True`` to the
-:py:func:`~.drawing.utils.plot_images` function. This should only be done when
+:py:func:`~.api.plot.plot_images` function. This should only be done when
 images have the same scale (eg. for elemental maps from the same dataset).
 Using the same data as above, the Fe and Pt signals can be plotted using
 different colours. Any color can be input via matplotlib color characters or
@@ -768,7 +767,7 @@ hex values.
 Plotting several spectra
 ------------------------
 
-:py:func:`~.drawing.utils.plot_spectra` is used to plot several spectra in the
+:py:func:`~.api.plot.plot_spectra` is used to plot several spectra in the
 same figure. It supports different styles, the default
 being "overlap".
 
@@ -778,7 +777,7 @@ being "overlap".
 
 In the following example we create a list of 9 single spectra (gaussian
 functions with different sigma values) and plot them in the same figure using
-:py:func:`~.drawing.utils.plot_spectra`. Note that, in this case, the legend
+:py:func:`~.api.plot.plot_spectra`. Note that, in this case, the legend
 labels are taken from the individual spectrum titles. By clicking on the
 legended line, a spectrum can be toggled on and off.
 
@@ -807,7 +806,7 @@ legended line, a spectrum can be toggled on and off.
   :align:   center
   :width:   500
 
-  Figure generated by :py:func:`~.drawing.utils.plot_spectra` using the
+  Figure generated by :py:func:`~.api.plot.plot_spectra` using the
   `overlap` style.
 
 
@@ -828,7 +827,7 @@ a file:
   :align:   center
   :width:   350
 
-  Figure generated by :py:func:`~.drawing.utils.plot_spectra` using the
+  Figure generated by :py:func:`~.api.plot.plot_spectra` using the
   `cascade` style.
 
 The "cascade" `style` has a `padding` option. The default value, 1, keeps the
@@ -852,7 +851,7 @@ and provide the legend labels:
   :align:   center
   :width:   350
 
-  Customising the line colors in :py:func:`~.drawing.utils.plot_spectra`.
+  Customising the line colors in :py:func:`~.api.plot.plot_spectra`.
 
 
 A simple extension of this functionality is to customize the colormap that
@@ -885,7 +884,7 @@ generate a list of colors that follows a certain colormap:
   :align:   center
   :width:   500
 
-  Customising the line colors in :py:func:`~.drawing.utils.plot_spectra` using
+  Customising the line colors in :py:func:`~.api.plot.plot_spectra` using
   a colormap.
 
 There are also two other styles, "heatmap" and "mosaic":
@@ -900,7 +899,7 @@ There are also two other styles, "heatmap" and "mosaic":
   :align:   center
   :width:   500
 
-  Figure generated by :py:func:`~.drawing.utils.plot_spectra` using the
+  Figure generated by :py:func:`~.api.plot.plot_spectra` using the
   `heatmap` style.
 
 .. code-block:: python
@@ -913,7 +912,7 @@ There are also two other styles, "heatmap" and "mosaic":
   :align:   center
   :width:   350
 
-  Figure generated by :py:func:`~.drawing.utils.plot_spectra` using the
+  Figure generated by :py:func:`~.api.plot.plot_spectra` using the
   `mosaic` style.
 
 For the "heatmap" style, different
@@ -932,7 +931,7 @@ can be used:
   :align:   center
   :width:   500
 
-  Figure generated by :py:func:`~.drawing.utils.plot_spectra` using the
+  Figure generated by :py:func:`~.api.plot.plot_spectra` using the
   `heatmap` style showing how to customise the color map.
 
 Any parameter that can be passed to matplotlib.pyplot.figure can also be used
@@ -1009,7 +1008,7 @@ Plotting profiles interactively
 -------------------------------
 
 Spectra or line profile can be plotted interactively on the same figure using
-the :py:func:`~.drawing.utils.plot_spectra` function. For example, profiles
+the :py:func:`~.api.plot.plot_spectra` function. For example, profiles
 obtained from different Signal2D using the :py:class:`~.roi.Line2DROI` ROI can
 be plotted interactively:
 
@@ -1040,7 +1039,7 @@ be plotted interactively:
 Plotting several signals
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-:py:func:`~.drawing.utils.plot_signals` is used to plot several signals at the
+:py:func:`~.api.plot.plot_signals` is used to plot several signals at the
 same time. By default the navigation position of the signals will be synced,
 and the signals must have the same dimensions. To plot two spectra at the
 same time:
@@ -1056,7 +1055,7 @@ same time:
   :align:   center
   :width:   500
 
-  The :py:func:`~.drawing.utils.plot_signals` plots several signals with
+  The :py:func:`~.api.plot.plot_signals` plots several signals with
   optional synchronized navigation.
 
 The navigator can be specified by using the navigator argument, where the
@@ -1076,7 +1075,7 @@ To specify the navigator:
   :align:   center
   :width:   500
 
-  Customising the navigator in :py:func:`~.drawing.utils.plot_signals`.
+  Customising the navigator in :py:func:`~.api.plot.plot_signals`.
 
 Navigators can also be set differently for different plots using the
 navigator_list argument. Where the navigator_list be the same length
@@ -1095,7 +1094,7 @@ For example:
   :align:   center
   :width:   500
 
-  Customising the navigator in :py:func:`~.drawing.utils.plot_signals` by
+  Customising the navigator in :py:func:`~.api.plot.plot_signals` by
   providing a navigator list.
 
 Several signals can also be plotted without syncing the navigation by using
@@ -1114,7 +1113,7 @@ each plot:
   :align:   center
   :width:   500
 
-  Disabling syncronised navigation in :py:func:`~.drawing.utils.plot_signals`.
+  Disabling syncronised navigation in :py:func:`~.api.plot.plot_signals`.
 
 .. _plot.markers:
 

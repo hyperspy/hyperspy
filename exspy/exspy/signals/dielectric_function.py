@@ -36,7 +36,8 @@ class DielectricFunction(ComplexSignal1D):
     _alias_signal_types = ["dielectric function"]
 
     def get_number_of_effective_electrons(self, nat, cumulative=False):
-        r"""Compute the number of effective electrons using the Bethe f-sum
+        r"""
+        Compute the number of effective electrons using the Bethe f-sum
         rule.
 
         The Bethe f-sum rule gives rise to two definitions of the effective
@@ -56,12 +57,12 @@ class DielectricFunction(ComplexSignal1D):
 
         Parameters
         ----------
-        nat: float
+        nat : float
             Number of atoms (or molecules) per unit volume of the sample.
 
         Returns
         -------
-        neff1, neff2: Signal1D
+        neff1, neff2 : :py:class:`hyperspy.api.signals.Signal1D`
             Signal1D instances containing neff1 and neff2. The signal and
             navigation dimensions are the same as the current signal if
             `cumulative` is True, otherwise the signal dimension is 0
@@ -117,6 +118,30 @@ class DielectricFunction(ComplexSignal1D):
         return neff1, neff2
 
     def get_electron_energy_loss_spectrum(self, zlp, t):
+        """
+        Compute single-scattering electron-energy loss spectrum from
+        the dielectric function.
+
+        Parameters
+        ----------
+        zlp: float or :py:class:`hyperspy.api.signals.BaseSignal`
+            If the ZLP is the same for all spectra, the intengral of the ZLP
+            can be provided as a number. Otherwise, if the ZLP intensity is not
+            the same for all spectra, it can be provided as i) a Signal
+            of the same dimensions as the current signal containing the ZLP
+            spectra for each location ii) a Signal of signal dimension 0
+            and navigation_dimension equal to the current signal containing the
+            integrated ZLP intensity.
+        t: None, float or :py:class:`hyperspy.api.signals.BaseSignal`
+            The sample thickness in nm. If the thickness is the same for all
+            spectra it can be given by a number. Otherwise, it can be provided
+            as a Signal with signal dimension 0 and navigation_dimension equal
+            to the current signal.
+
+        Returns
+        -------
+        :py:class:`hyperspy.api.signals.BaseSignal`
+        """
         for axis in self.axes_manager.signal_axes:
             if not axis.is_uniform:
                 raise NotImplementedError(

@@ -44,10 +44,12 @@ extensions = [
 
 intersphinx_mapping = {
     "dask": ("https://docs.dask.org/en/latest", None),
-    "hyperspy": ("https://hyperspy.org/hyperspy-doc/current/", None),
+    "hyperspy": ("https://hyperspy.org/hyperspy-doc/dev", None),
+    "kikuchipy": ("https://kikuchipy.org/en/latest/", None),
     "matplotlib": ("https://matplotlib.org/stable", None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "python": ("https://docs.python.org/3", None),
+    "rsciio": ("https://hyperspy.org/rosettasciio/", None),
 }
 
 # Add any paths that contain templates here, relative to this directory.
@@ -81,15 +83,18 @@ html_theme_options = {
         },
     ],
     "logo": {
-        "image_light": "_static/hyperspy_logo.png",
-        "image_dark": "_static/hyperspy_logo.png",
+        "text": "exSpy",
     },
     "header_links_before_dropdown": 6,
 }
 
+# The name of an image file (relative to this directory) to place at the top
+# of the sidebar.
+html_logo = '_static/hyperspy_logo.png'
+
 # -- Options for sphinx_favicon extension -----------------------------------
 
-favicons = {"rel": "icon", "href": "logo_sq.svg", "type": "image/svg+xml"}
+favicons = ["hyperspy.ico", ]
 
 # Check links to API when building documentation
 nitpicky = False

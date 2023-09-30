@@ -7,17 +7,17 @@ Dielectric function tools
 The :py:class:`~.signals.DielectricFunction` class
 inherits from :py:class:`hyperspy.api.signals.ComplexSignal` and can
 thus access complex properties. To convert a
-:py:class:`~hyperspy.api.signals.ComplexSignal` to a
+:py:class:`hyperspy.api.signals.ComplexSignal` to a
 :py:class:`~.signals.DielectricFunction`,
 make sure that the signal dimension and signal type are properly set:
 
-    .. code-block:: python
+.. code-block:: python
 
-        >>> s.set_signal_type('DielectricFunction')
+    >>> s.set_signal_type('DielectricFunction')
 
 Note that :py:class:`~.signals.DielectricFunction` is
 complex and therefore is a subclass of
-:py:class:`~.hyperspy.api.signals.ComplexSignal1D`.
+:py:class:`hyperspy.api.signals.ComplexSignal1D`.
 
 
 Number of effective electrons
@@ -37,7 +37,7 @@ sample, :math:`\epsilon_0` is the vacuum permittivity, :math:`m_0` is the
 electron mass and :math:`e` is the electron charge.
 
 The
-:py:meth:`~._signals.dielectric_function.DielectricFunction.get_number_of_effective_electrons`
+:py:meth:`~.signals.DielectricFunction.get_number_of_effective_electrons`
 method computes both.
 
 Compute the electron energy-loss signal

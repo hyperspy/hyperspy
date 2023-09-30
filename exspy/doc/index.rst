@@ -5,7 +5,7 @@ data analysis provided by the `HyperSpy <https://hyperspy.org/>`_ library. It is
 aimed at helping with the analysis of X-rays Energy Dispersive Spectroscopy (EDS)
 and Electron Energy Loss Spectroscopy (EELS).
 
-Check out the :ref:`installation` section for further information, including
+Check out the :ref:`installation <install-label>` section for further information, including
 how to start using this project.
 
 .. note::

@@ -89,6 +89,7 @@ extras_require = {
         "sphinxcontrib-mermaid",
         "sphinxcontrib-towncrier>=0.3.0a0",
         "sphinx-design",
+        "sphinx-favicon",
         "towncrier",
         ],
 }
