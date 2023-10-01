@@ -17,11 +17,13 @@
 # along with exspy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
-
 import hyperspy.api as hs
 
+import exspy
+
+
 def test_dielectric_function_binned_default():
-    s = hs.signals.DielectricFunction([0])
+    s = exspy.signals.DielectricFunction([0])
     assert not s.axes_manager[-1].is_binned
 
 
@@ -31,16 +33,16 @@ def test_signal_binned_default():
 
 
 def test_eels_spectrum_binned_default():
-    s = hs.signals.EELSSpectrum([0])
+    s = exspy.signals.EELSSpectrum([0])
     assert s.axes_manager[-1].is_binned
 
 
 def test_eds_tem_binned_default():
-    s = hs.signals.EDSTEMSpectrum([0])
+    s = exspy.signals.EDSTEMSpectrum([0])
     assert s.axes_manager[-1].is_binned
 
 
 def test_eds_sem_binned_default():
-    s = hs.signals.EDSSEMSpectrum([0])
+    s = exspy.signals.EDSSEMSpectrum([0])
     assert s.axes_manager[-1].is_binned
 

@@ -130,45 +130,6 @@ class TestConvertBaseSignal:
         # If real data is required use `real`, `imag`, `amplitude` or `phase`!
 
 
-class TestConvertSignal1D:
-
-    def setup_method(self, method):
-        self.s = hs.signals.Signal1D([0, 1])
-
-    def test_lazy_to_eels_and_back(self):
-        exspy = pytest.importorskip("exspy")
-        self.s = self.s.as_lazy()
-        self.s.set_signal_type("EELS")
-        assert isinstance(self.s, exspy.signals.LazyEELSSpectrum)
-        self.s.set_signal_type("")
-        assert isinstance(self.s, _lazy_signals.LazySignal1D)
-
-    def test_signal1d_to_eels(self):
-        exspy = pytest.importorskip("exspy")
-        self.s.set_signal_type("EELS")
-        assert isinstance(self.s, exspy.signals.EELSSpectrum)
-        self.s.set_signal_type("")
-        assert isinstance(self.s, hs.signals.Signal1D)
-
-    def test_signal1d_to_eds_tem(self):
-        exspy = pytest.importorskip("exspy")
-        self.s.set_signal_type("EDS_TEM")
-        assert isinstance(self.s, exspy.signals.EDSTEMSpectrum)
-        self.s.set_signal_type("")
-        assert isinstance(self.s, hs.signals.Signal1D)
-
-    def test_signal1d_to_eds_sem(self):
-        exspy = pytest.importorskip("exspy")
-        self.s.set_signal_type("EDS_SEM")
-        assert isinstance(self.s, exspy.signals.EDSSEMSpectrum)
-        self.s.set_signal_type("")
-        assert isinstance(self.s, hs.signals.Signal1D)
-
-    def test_error_None(self):
-        with pytest.raises(TypeError):
-            self.s.set_signal_type(None)
-
-
 class TestConvertComplexSignal:
 
     def setup_method(self, method):
@@ -183,19 +144,6 @@ class TestConvertComplexSignal:
         self.s.axes_manager._set_signal_dimension(2)
         self.s._assign_subclass()
         assert isinstance(self.s, hs.signals.ComplexSignal2D)
-
-
-class TestConvertComplexSignal1D:
-
-    def setup_method(self, method):
-        self.s = hs.signals.ComplexSignal1D([0, 1])
-
-    def test_complex_to_dielectric_function(self):
-        exspy = pytest.importorskip("exspy")
-        self.s.set_signal_type("DielectricFunction")
-        assert isinstance(self.s, exspy.signals.DielectricFunction)
-        self.s.set_signal_type("")
-        assert isinstance(self.s, hs.signals.ComplexSignal1D)
 
 
 def test_create_lazy_signal():

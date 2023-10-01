@@ -17,6 +17,9 @@
 # along with exspy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
+import pytest
+
+import hyperspy.api as hs
 
 from exspy.components import DoublePowerLaw
 
@@ -39,3 +42,38 @@ def test_function():
     assert g.grad_origin(2)  == -6
     assert g.grad_shift(2)  == -12
     assert g.grad_ratio(2)  == 3
+
+
+class TestDoublePowerLaw:
+
+    def setup_method(self, method):
+        s = hs.signals.Signal1D(np.zeros(1024))
+        s.axes_manager[0].offset = 100
+        s.axes_manager[0].scale = 0.1
+        m = s.create_model()
+        exspy = pytest.importorskip("exspy")
+        from exspy.components import DoublePowerLaw
+        m.append(DoublePowerLaw())
+        m[0].A.value = 1000
+        m[0].r.value = 4
+        m[0].ratio.value = 200
+        self.m = m
+
+    @pytest.mark.parametrize(("binned"), (True, False))
+    def test_fit(self, binned):
+        self.m.signal.axes_manager[-1].is_binned = binned
+        s = self.m.as_signal()
+        assert s.axes_manager[-1].is_binned == binned
+        exspy = pytest.importorskip("exspy")
+        g = exspy.components.DoublePowerLaw()
+        # Fix the ratio parameter to test the fit
+        g.ratio.free = False
+        g.shift.free = False
+        g.origin.free = False
+        g.ratio.value = 200
+        m = s.create_model()
+        m.append(g)
+        m.fit_component(g, signal_range=(None, None))
+        np.testing.assert_allclose(g.A.value, 1000.0)
+        np.testing.assert_allclose(g.r.value, 4.0)
+        np.testing.assert_allclose(g.ratio.value, 200.)
