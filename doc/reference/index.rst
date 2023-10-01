@@ -23,3 +23,4 @@ Reference
     api.samfire/index
     api.signals/index
     base_classes/index
+    utils/index

@@ -12,4 +12,5 @@ User Guide
    eds
    eels
    dielectric_function
+   metadata_structure
    bibliography
