@@ -19,6 +19,7 @@
 import pathlib
 import pytest
 
+from hyperspy.exceptions import VisibleDeprecationWarning
 import hyperspy.api as hs
 
 DIRPATH = pathlib.Path(__file__).parent / "data"
@@ -57,7 +58,10 @@ The reference files from hyperspy v1.4 have been created using:
 
 @pytest.mark.parametrize(("versionfile"), ("hs14_model.hspy", "hs15_model.hspy", "hs16_model.hspy"))
 def test_model_backcompatibility(versionfile):
-    s = hs.load(DIRPATH / versionfile)
+    with pytest.warns(VisibleDeprecationWarning):
+        # binned deprecated warning 
+        s = hs.load(DIRPATH / versionfile)
+    
     m = s.models.restore('a')
 
     assert len(m) == 5

@@ -66,6 +66,15 @@ components1D:
   EELSCLEdge:
     module: exspy.components.eels_cl_edge
     class: EELSCLEdge
+  PESCoreLineShape:
+    module: exspy.components.pes_core_line_shape
+    class: PESCoreLineShape
+  PESVoigt:
+    module: exspy.components.pes_voigt
+    class: PESVoigt
+  SEE:
+    module: exspy.components.pes_see
+    class: SEE
   Vignetting:
     module: exspy.components.eels_vignetting
     class: Vignetting

@@ -19,8 +19,10 @@
 import numpy as np
 
 import hyperspy.api as hs
-from hyperspy.components1d import SEE
 from hyperspy.misc.test_utils import ignore_warning
+
+from exspy.components import SEE
+
 
 
 def test_see():

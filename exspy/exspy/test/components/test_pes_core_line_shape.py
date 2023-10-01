@@ -20,7 +20,8 @@ import numpy as np
 import pytest
 
 import hyperspy.api as hs
-from hyperspy.components1d import PESCoreLineShape
+
+from exspy.components import PESCoreLineShape
 
 
 def test_PESCoreLineShape():

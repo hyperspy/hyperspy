@@ -22,9 +22,11 @@ import itertools
 import numpy as np
 import pytest
 
-from hyperspy.components1d import PESVoigt
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.signals import Signal1D
+
+from exspy.components import PESVoigt
+
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 

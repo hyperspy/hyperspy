@@ -109,12 +109,6 @@ components1D:
   Offset:
     module: hyperspy._components.offset
     class: Offset
-  PESCoreLineShape:
-    module: hyperspy._components.pes_core_line_shape
-    class: PESCoreLineShape
-  PESVoigt:
-    module: hyperspy._components.pes_voigt
-    class: PESVoigt
   Polynomial:
     module: hyperspy._components.polynomial
     class: Polynomial
@@ -124,9 +118,6 @@ components1D:
   RC:
     module: hyperspy._components.rc
     class: RC
-  SEE:
-    module: hyperspy._components.pes_see
-    class: SEE
   ScalableFixedPattern:
     module: hyperspy._components.scalable_fixed_pattern
     class: ScalableFixedPattern

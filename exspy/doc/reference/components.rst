@@ -5,9 +5,12 @@
 
 .. autosummary::
 
+    DoublePowerLaw
     EELSArctan
     EELSCLEdge
-    DoublePowerLaw
+    PESCoreLineShape
+    PESVoigt
+    SEE
     Vignetting
     VolumePlasmonDrude
 
