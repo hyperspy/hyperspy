@@ -138,7 +138,7 @@ class TestMultiFitLinear:
     def test_channel_switches(self, weighted):
         self._post_setup_method(weighted)
         m = self.m
-        m.channel_switches[5:-5] = False
+        m._channel_switches[5:-5] = False
         L = Gaussian(centre=15.)
         L.centre.free = L.sigma.free = False
         m.append(L)

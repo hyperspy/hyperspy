@@ -1055,7 +1055,7 @@ class Component(t.HasTraits):
         -------
         numpy array
         """
-        axis = self.model.axis.axis[self.model.channel_switches]
+        axis = self.model.axis.axis[self.model._channel_switches]
         component_array = self.function(axis)
         return component_array
 
@@ -1074,7 +1074,7 @@ class Component(t.HasTraits):
         if out_of_range2nans is True:
             ns = np.empty(self.model.axis.axis.shape)
             ns.fill(np.nan)
-            ns[self.model.channel_switches] = s
+            ns[self.model._channel_switches] = s
             s = ns
         if old_axes_manager is not None:
             self.model.axes_manager = old_axes_manager
@@ -1302,7 +1302,7 @@ class Component(t.HasTraits):
         else:
             signal_shape = model.axes_manager.signal_shape[::-1]
             data = self._constant_term * np.ones(signal_shape)
-        return data.T[np.where(model.channel_switches)[::-1]].T
+        return data.T[np.where(model._channel_switches)[::-1]].T
 
 
 def convolve_component_values(component_values, model):

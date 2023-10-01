@@ -1080,7 +1080,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 # Calculate the variance for each navigation position only when
                 # using fast, otherwise the chisq is already calculated when
                 # doing the multifit
-                d = result.data[..., np.where(model.channel_switches)[0]]
+                d = result.data[..., np.where(model._channel_switches)[0]]
                 variance = model._get_variance(only_current=False)
                 d *= d / (1. * variance)  # d = difference^2 / variance.
                 model.chisq.data = d.sum(-1)

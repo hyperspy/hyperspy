@@ -1355,7 +1355,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     def _fit(self):
         if not self._is_valid_range:
             return
-        # Set signal range here to set correctly the channel_switches for
+        # Set signal range here to set correctly the _channel_switches for
         # the chisq calculation when using fast
         self.model.set_signal_range(self.ss_left_value, self.ss_right_value)
         if self.fast:

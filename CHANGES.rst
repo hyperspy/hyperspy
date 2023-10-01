@@ -167,6 +167,11 @@ Model fitting
 - The deprecated ``twin_function`` and ``twin_inverse_function`` have been privatized.
 - Remove ``fancy`` argument of :meth:`~.model.BaseModel.print_current_values` and :meth:`~.component.Component.print_current_values`,
   which wasn't changing the output rendering.
+- The attribute ``channel_switches`` of :py:class:`~.model.BaseModel` have been privatized, instead
+  use the :py:meth:`~.model.BaseModel.set_signal_range_from_mask` or any other methods to 
+  set the signal range, such as :py:meth:`~.models.model1d.Model1D.set_signal_range`,
+  :py:meth:`~.models.model1d.Model1D.add_signal_range` or :py:meth:`~.models.model1d.Model1D.remove_signal_range`
+  and their :py:class:`~.models.model2d.Model2D` counterparts. 
 
 
 

@@ -115,8 +115,8 @@ class ComponentFit(SpanSelectorInSignal1D):
 
         # Restore the signal range
         if self.signal_range is not None:
-            self.model.channel_switches = (
-                self.model.backup_channel_switches.copy())
+            self.model._channel_switches = (
+                self.model._backup_channel_switches.copy())
 
         self.model.update_plot()
 
@@ -262,7 +262,7 @@ class Model1D(BaseModel):
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.events.indices_changed.connect(
             self._on_navigating, [])
-        self.channel_switches = np.array([True] * len(self.axis.axis))
+        self._channel_switches = np.array([True] * len(self.axis.axis))
         self.chisq = signal1D._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
@@ -282,14 +282,14 @@ class Model1D(BaseModel):
         self.inav = ModelSpecialSlicers(self, True)
         self.isig = ModelSpecialSlicers(self, False)
         self._whitelist = {
-            'channel_switches': None,
+            '_channel_switches': None,
             'convolved': None,
             'free_parameters_boundaries': None,
             'convolve_signal': ('sig', None),
             'chisq.data': None,
             'dof.data': None}
         self._slicing_whitelist = {
-            'channel_switches': 'isig',
+            '_channel_switches': 'isig',
             'convolve_signal': 'inav',
             'chisq.data': 'inav',
             'dof.data': 'inav'}
@@ -383,7 +383,7 @@ class Model1D(BaseModel):
 
     def __call__(self, non_convolved=False, onlyactive=False,
                  component_list=None, binned=None,
-                 ignore_channel_switches = False):
+                 ignore_channel_switches=False):
         """
         Returns the corresponding model for the current coordinates
 
@@ -402,7 +402,7 @@ class Model1D(BaseModel):
             taken into account.
         ignore_channel_switches: bool
             If true, the entire signal axis are returned
-            without checking channel_switches.
+            without checking _channel_switches.
 
         cursor: 1 or 2
 
@@ -422,7 +422,7 @@ class Model1D(BaseModel):
                 component for component in component_list if component.active]
 
         if self.convolved is False or non_convolved is True:
-            slice_ = slice(None) if ignore_channel_switches else self.channel_switches
+            slice_ = slice(None) if ignore_channel_switches else self._channel_switches
             axis = self.axis.axis[slice_]
             sum_ = np.zeros(len(axis))
             for component in component_list:
@@ -443,7 +443,7 @@ class Model1D(BaseModel):
             to_return = sum_ + np.convolve(
                 self.convolve_signal(self.axes_manager),
                 sum_convolved, mode="valid")
-            to_return = to_return[self.channel_switches]
+            to_return = to_return[self._channel_switches]
 
         if binned is None:
             # use self.axis instead of self.signal.axes_manager[-1]
@@ -465,7 +465,8 @@ class Model1D(BaseModel):
         return errfunc * weights
 
     def _set_signal_range_in_pixels(self, i1=None, i2=None):
-        """Use only the selected spectral range in the fitting routine.
+        """
+        Use only the selected spectral range in the fitting routine.
 
         Parameters
         ----------
@@ -477,16 +478,17 @@ class Model1D(BaseModel):
         To use the full energy range call the function without arguments.
         """
 
-        self.backup_channel_switches = copy.copy(self.channel_switches)
-        self.channel_switches[:] = False
+        self._backup_channel_switches = copy.copy(self._channel_switches)
+        self._channel_switches[:] = False
         if i2 is not None:
             i2 += 1
-        self.channel_switches[i1:i2] = True
+        self._channel_switches[i1:i2] = True
         self.update_plot(render_figure=True)
 
     def _parse_signal_range_values(self, x1=None, x2=None):
-        """Parse signal range values to be used by the `set_signal_range`,
-        `add_signal_range` and `remove_signal_range` and return sorted indices
+        """
+        Parse signal range values to be used by the `set_signal_range`,
+        `add_signal_range` and `remove_signal_range` and return sorted indices.
         """
         try:
             x1, x2 = x1
@@ -497,19 +499,26 @@ class Model1D(BaseModel):
 
     @interactive_range_selector
     def set_signal_range(self, x1=None, x2=None):
-        """Use only the selected spectral range defined in its own units in the
+        """
+        Use only the selected spectral range defined in its own units in the
         fitting routine.
 
         Parameters
         ----------
         x1, x2 : None or float
+
+        See Also
+        --------
+        add_signal_range, remove_signal_range,
+        reset_signal_range, set_signal_range_from_mask
         """
         indices = self._parse_signal_range_values(x1, x2)
         self._set_signal_range_in_pixels(*indices)
 
     def _remove_signal_range_in_pixels(self, i1=None, i2=None):
-        """Removes the data in the given range from the data range that
-        will be used by the fitting rountine
+        """
+        Removes the data in the given range from the data range that
+        will be used by the fitting rountine.
 
         Parameters
         ----------
@@ -517,28 +526,42 @@ class Model1D(BaseModel):
         """
         if i2 is not None:
             i2 += 1
-        self.channel_switches[i1:i2] = False
+        self._channel_switches[i1:i2] = False
         self.update_plot()
 
     @interactive_range_selector
     def remove_signal_range(self, x1=None, x2=None):
-        """Removes the data in the given range from the data range that
-        will be used by the fitting rountine
+        """
+        Removes the data in the given range from the data range that
+        will be used by the fitting rountine.
 
         Parameters
         ----------
         x1, x2 : None or float
+
+        See Also
+        --------
+        set_signal_range, add_signal_range,
+        reset_signal_range, set_signal_range_from_mask
         """
         indices = self._parse_signal_range_values(x1, x2)
         self._remove_signal_range_in_pixels(*indices)
 
     def reset_signal_range(self):
-        """Resets the data range"""
+        """
+        Resets the data range
+
+        See Also
+        --------
+        set_signal_range, add_signal_range, set_signal_range_from_mask,
+        remove_signal_range
+        """
         self._set_signal_range_in_pixels()
 
     def _add_signal_range_in_pixels(self, i1=None, i2=None):
-        """Adds the data in the given range from the data range that
-        will be used by the fitting rountine
+        """
+        Adds the data in the given range from the data range that
+        will be used by the fitting rountine.
 
         Parameters
         ----------
@@ -546,24 +569,26 @@ class Model1D(BaseModel):
         """
         if i2 is not None:
             i2 += 1
-        self.channel_switches[i1:i2] = True
+        self._channel_switches[i1:i2] = True
         self.update_plot()
 
     @interactive_range_selector
     def add_signal_range(self, x1=None, x2=None):
-        """Adds the data in the given range from the data range that
-        will be used by the fitting rountine
+        """
+        Adds the data in the given range from the data range that
+        will be used by the fitting rountine.
 
         Parameters
         ----------
         x1, x2 : None or float
+
+        See Also
+        --------
+        set_signal_range, set_signal_range_from_mask,
+        reset_signal_range, remove_signal_range
         """
         indices = self._parse_signal_range_values(x1, x2)
         self._add_signal_range_in_pixels(*indices)
-
-    def reset_the_signal_range(self):
-        self.channel_switches[:] = True
-        self.update_plot()
 
     def _check_analytical_jacobian(self):
         """Check all components have analytical gradients.
@@ -633,10 +658,10 @@ class Model1D(BaseModel):
 
                     counter += component._nfree_param
 
-            to_return = grad[1:, self.channel_switches] * weights
+            to_return = grad[1:, self._channel_switches] * weights
 
         else:
-            axis = self.axis.axis[self.channel_switches]
+            axis = self.axis.axis[self._channel_switches]
             counter = 0
             grad = axis
             for component in self:  # Cut the parameters list
@@ -718,7 +743,7 @@ class Model1D(BaseModel):
         if out_of_range2nans is True:
             ns = np.empty(self.axis.axis.shape)
             ns.fill(np.nan)
-            ns[np.where(self.channel_switches)] = s
+            ns[np.where(self._channel_switches)] = s
             s = ns
         return s
 

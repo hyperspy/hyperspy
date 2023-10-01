@@ -428,7 +428,7 @@ class Expression(Component):
             axes = [ax.axis for ax in model.axes_manager.signal_axes]
             mesh = np.meshgrid(*axes)
             data = function(*mesh, *parameters)
-            slice_ = np.where(model.channel_switches)
+            slice_ = np.where(model._channel_switches)
             if len(np.shape(data)) == 0:
                 # For calculation of constant term of the component
                 signal_shape = model.axes_manager._signal_shape_in_array

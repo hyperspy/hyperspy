@@ -65,10 +65,10 @@ class TestModelIndexing:
         np.testing.assert_array_almost_equal(m.chisq.data + m1.chisq.data,
                                              self.model.chisq.data)
 
-        self.model.channel_switches[0] = False
+        self.model._channel_switches[0] = False
         m = self.model.isig[:-100.]
-        assert not m.channel_switches[0]
-        assert np.all(m.channel_switches[1:])
+        assert not m._channel_switches[0]
+        assert np.all(m._channel_switches[1:])
 
     def test_model_navigation_indexer_slice(self):
         self.model.axes_manager.indices = (0, 0)

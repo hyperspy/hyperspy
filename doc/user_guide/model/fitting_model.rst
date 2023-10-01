@@ -635,13 +635,10 @@ The following :py:class:`~.model.BaseModel` methods can be used to exclude
 undesired spectral channels from the fitting process:
 
 * :py:meth:`~.models.model1d.Model1D.set_signal_range`
+* :py:meth:`~.models.model1d.Model1D.add_signal_range`
+* :py:meth:`~.model.BaseModel.set_signal_range_from_mask`
 * :py:meth:`~.models.model1d.Model1D.remove_signal_range`
 * :py:meth:`~.models.model1d.Model1D.reset_signal_range`
-
-In 2D models, those methods are not implemented and the
-``m.channel_switches`` attribute of a model can be set using boolean arrays of the
-same shape as the data's signal, where ``True`` means that the datapoint
-will be used in the fitting routine.
 
 The example below shows how a boolean array can be easily created from the
 signal and how the ``isig`` syntax can be used to define the signal range.
@@ -667,13 +664,14 @@ signal and how the ``isig`` syntax can be used to define the signal range.
     >>> gt = hs.model.components2D.Gaussian2D()
     >>> m.append(gt)
 
-    >>> # Create a boolean signal of the same shape as the signal space of im
-    >>> # and with all values set to `False`.
-    >>> signal_mask = hs.signals.Signal2D(np.zeros_like(im(), dtype=bool))
-    >>> # Specify the signal range using the isig syntax
-    >>> signal_mask.isig[-7.:-3.,-9.:-1.] = True
+    >>> m.set_signal_range(-7, -3, -9, -1) # Set signal range
+    >>> m.fit()
 
-    >>> m.channel_switches = signal_mask.data # Set channel switches
+    >>> # Alternatively create a boolean signal of the same shape
+    >>> # as the signal space of im
+    >>> signal_mask = im > 0.01
+
+    >>> m.set_signal_range_from_mask(signal_mask.data) # Set signal range
     >>> m.fit()
 
 .. _model.multidimensional-label:

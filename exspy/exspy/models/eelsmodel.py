@@ -149,7 +149,7 @@ class EELSModel(Model1D):
         for component in self:
             if isinstance(component, EELSCLEdge):
                 if component.onset_energy.value < \
-                        self.axis.axis[self.channel_switches][0]:
+                        self.axis.axis[self._channel_switches][0]:
                     component.isbackground = True
                 if component.isbackground is not True:
                     self.edges.append(component)
@@ -386,7 +386,7 @@ class EELSModel(Model1D):
         return iee
 
     def _get_start_energy(self, start_energy=None):
-        E0 = self.axis.axis[self.channel_switches][0]
+        E0 = self.axis.axis[self._channel_switches][0]
         if not start_energy or start_energy < E0:
             start_energy = E0
         return start_energy
@@ -425,7 +425,7 @@ class EELSModel(Model1D):
             self.fit(**kwargs)
         else:
             self.multifit(**kwargs)
-        self.channel_switches = copy.copy(self.backup_channel_switches)
+        self._channel_switches = copy.copy(self._backup_channel_switches)
         if iee is not None:
             self.enable_edges(to_disable)
 
@@ -457,7 +457,7 @@ class EELSModel(Model1D):
                 else:  # No power law component
                     return
 
-        ea = self.axis.axis[self.channel_switches]
+        ea = self.axis.axis[self._channel_switches]
         E1 = self._get_start_energy(E1)
         if E2 is None:
             E2 = self._get_first_ionization_edge_energy(start_energy=E1)
@@ -476,8 +476,8 @@ class EELSModel(Model1D):
             return
 
     def _fit_edge(self, edgenumber, start_energy=None, **kwargs):
-        backup_channel_switches = self.channel_switches.copy()
-        ea = self.axis.axis[self.channel_switches]
+        backup_channel_switches = self._channel_switches.copy()
+        ea = self.axis.axis[self._channel_switches]
         if start_energy is None:
             start_energy = ea[0]
         # Declare variables
@@ -544,8 +544,8 @@ class EELSModel(Model1D):
             self.fit(**kwargs)
 
         self.enable_edges(edges_to_activate)
-        # Recover the channel_switches. Remove it or make it smarter.
-        self.channel_switches = backup_channel_switches
+        # Recover the _channel_switches. Remove it or make it smarter.
+        self._channel_switches = backup_channel_switches
 
     def quantify(self):
         """Prints the value of the intensity of all the independent

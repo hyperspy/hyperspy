@@ -275,6 +275,32 @@ class BaseModel(list):
         """Evaluate the model numerically. Implementation requested in all sub-classes"""
         raise NotImplementedError
 
+    def set_signal_range_from_mask(self, mask):
+        """
+        Use the signal ranges as defined by the mask
+
+        Parameters
+        ----------
+        mask : numpy.ndarray of bool
+            A boolean array defining the signal range. Must be the same
+            shape as the ``signal_shape``. Where array values are ``True``,
+            signal will be fitted, otherwise not.
+
+        See Also
+        --------
+        set_signal_range, add_signal_range,
+        remove_signal_range, reset_signal_range
+        """
+        if mask.dtype != bool:
+            raise ValueError(
+                "`mask` argument must be an array with boolean dtype."
+                )
+        if mask.shape != self.axes_manager.signal_shape:
+            raise ValueError(
+                "`mask` argument must have the same shape as `signal_shape`."
+                )
+        self._channel_switches[:] = mask
+
     def store(self, name=None):
         """Stores current model in the original signal
 
@@ -346,6 +372,10 @@ class BaseModel(list):
                         id_dict[tw].twin = id_dict[par['self']]
 
         if '_whitelist' in dic:
+            channel_switches = dic["_whitelist"].pop("channel_switches", None)
+            if channel_switches:
+                # Before channel_switches was privatised
+                dic["_whitelist"]["_channel_switches"] = channel_switches
             load_from_dictionary(self, dic)
 
     def __repr__(self):
@@ -520,9 +550,9 @@ class BaseModel(list):
 
         if not out_of_range_to_nan:
             # we want the full signal range, including outside the fitted
-            # range, we need to set all the channel_switches to True
-            channel_switches_backup = copy.copy(self.channel_switches)
-            self.channel_switches[:] = True
+            # range, we need to set all the _channel_switches to True
+            channel_switches_backup = copy.copy(self._channel_switches)
+            self._channel_switches[:] = True
 
         self._as_signal_iter(
             component_list=component_list,
@@ -531,8 +561,8 @@ class BaseModel(list):
         )
 
         if not out_of_range_to_nan:
-            # Restore the channel_switches, previously set
-            self.channel_switches[:] = channel_switches_backup
+            # Restore the _channel_switches, previously set
+            self._channel_switches[:] = channel_switches_backup
 
         return signal
 
@@ -567,7 +597,7 @@ class BaseModel(list):
             for index in self.axes_manager:
                 self.fetch_stored_values(only_fixed=False)
                 data[self.axes_manager._getitem_tuple][
-                    np.where(self.channel_switches)] = self.__call__(
+                    np.where(self._channel_switches)] = self.__call__(
                     non_convolved=not self.convolved, onlyactive=True).ravel()
                 pbar.update(1)
 
@@ -902,7 +932,7 @@ class BaseModel(list):
         if out_of_range2nans is True:
             ns = np.empty(self.axis.axis.shape)
             ns.fill(np.nan)
-            ns[np.where(self.channel_switches)] = s
+            ns[np.where(self._channel_switches)] = s
             s = ns
         return s
 
@@ -997,7 +1027,7 @@ class BaseModel(list):
             if parameter._linear and parameter.free:
                 parameter.value = 1.0
 
-        channels_signal_shape = np.count_nonzero(self.channel_switches)
+        channels_signal_shape = np.count_nonzero(self._channel_switches)
         comp_values = np.zeros((n_parameters, channels_signal_shape))
         constant_term = np.zeros(channels_signal_shape)
 
@@ -1053,16 +1083,16 @@ class BaseModel(list):
 
         # Reshape what may potentially be Signal2D data into a long Signal1D
         # shape and an nD navigation shape to a 1D nav shape
-        channel_switches = np.where(self.channel_switches.ravel())[0]
+        _channel_switches = np.where(self._channel_switches.ravel())[0]
         if only_current:
-            target_signal = self.signal().ravel()[channel_switches]
+            target_signal = self.signal().ravel()[_channel_switches]
         else:
             sig_shape = self.axes_manager._signal_shape_in_array
             nav_shape = self.axes_manager._navigation_shape_in_array
             target_signal = self.signal.data.reshape(
                 (np.prod(nav_shape, dtype=int), ) +
                 (np.prod(sig_shape, dtype=int), )
-                )[:, channel_switches]
+                )[:, _channel_switches]
 
         if any([ax.is_binned for ax in signal_axes]):
             target_signal = target_signal / np.prod(
@@ -1161,7 +1191,7 @@ class BaseModel(list):
 
     def _get_variance(self, only_current=True):
         """
-        Return the variance taking into account the `channel_switches`.
+        Return the variance taking into account the `_channel_switches`.
         If only_current=True, the variance for the current navigation indices
         is returned, otherwise the variance for all navigation indices is
         returned.
@@ -1172,10 +1202,10 @@ class BaseModel(list):
                 if only_current:
                     variance = variance.data.__getitem__(
                         self.axes_manager._getitem_tuple
-                        )[np.where(self.channel_switches)]
+                        )[np.where(self._channel_switches)]
                 else:
                     variance = variance.data[..., np.where(
-                        self.channel_switches)[0]]
+                        self._channel_switches)[0]]
         else:
             variance = 1.0
         return variance
@@ -1183,7 +1213,7 @@ class BaseModel(list):
     def _calculate_chisq(self):
         variance = self._get_variance()
         d = self(onlyactive=True, binned=self._binned).ravel() - self.signal(as_numpy=True)[
-            np.where(self.channel_switches)]
+            np.where(self._channel_switches)]
         d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
 
@@ -1195,7 +1225,7 @@ class BaseModel(list):
         """:py:class:`~.signal.BaseSignal`: Reduced chi-squared.
         Calculated from ``self.chisq`` and ``self.dof``.
         """
-        tmp = self.chisq / (- self.dof + self.channel_switches.sum() - 1)
+        tmp = self.chisq / (- self.dof + self._channel_switches.sum() - 1)
         tmp.metadata.General.title = self.signal.metadata.General.title + \
             ' reduced chi-squared'
         return tmp
@@ -1435,7 +1465,7 @@ class BaseModel(list):
                 weights = None
 
             args = (
-                self.signal(as_numpy=True)[np.where(self.channel_switches)],
+                self.signal(as_numpy=True)[np.where(self._channel_switches)],
                 weights
                 )
 
@@ -1455,7 +1485,7 @@ class BaseModel(list):
                         self.p0[:],
                         parinfo=self.mpfit_parinfo,
                         functkw={
-                            "y": self.signal()[self.channel_switches],
+                            "y": self.signal()[self._channel_switches],
                             "weights": weights,
                         },
                         autoderivative=auto_deriv,
@@ -1554,8 +1584,8 @@ class BaseModel(list):
 
                 modelo = odr.Model(fcn=self._function4odr, fjacb=odr_jacobian)
                 mydata = odr.RealData(
-                    self.axis.axis[np.where(self.channel_switches)],
-                    self.signal()[np.where(self.channel_switches)],
+                    self.axis.axis[np.where(self._channel_switches)],
+                    self.signal()[np.where(self._channel_switches)],
                     sx=None,
                     sy=(1.0 / weights if weights is not None else None),
                 )
@@ -2428,11 +2458,11 @@ class ModelSpecialSlicers(object):
         dims = (self.model.axes_manager.navigation_dimension,
                 self.model.axes_manager.signal_dimension)
         if self.isNavigation:
-            _model.channel_switches[:] = self.model.channel_switches
+            _model._channel_switches[:] = self.model._channel_switches
         else:
-            _model.channel_switches[:] = \
+            _model._channel_switches[:] = \
                 np.atleast_1d(
-                    self.model.channel_switches[
+                    self.model._channel_switches[
                         tuple(array_slices[-dims[1]:])])
 
         twin_dict = {}

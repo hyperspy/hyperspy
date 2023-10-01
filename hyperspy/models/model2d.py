@@ -16,12 +16,31 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+import copy
+
 import numpy as np
 
 from hyperspy._signals.signal2d import Signal2D
-from hyperspy.decorators import interactive_range_selector
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
+
+
+_SIGNAL_RANGE_VALUES = """x1, x2 : None or float
+            Start and end of the range in the first axis (horizontal)
+            in units.
+        y1, y2 : None or float
+            Start and end of the range in the second axis (vertical)
+            in units.
+        """
+
+
+_SIGNAL_RANGE_PIXELS = """i1, i2 : None or float
+            Start and end of the range in the first axis (horizontal)
+            in pixels.
+        j1, j2 : None or float
+            Start and end of the range in the second axis (vertical)
+            in pixels.
+        """
 
 
 class Model2D(BaseModel):
@@ -100,7 +119,9 @@ class Model2D(BaseModel):
             self.axes_manager.signal_axes[1].axis)
         self.axes_manager.events.indices_changed.connect(
             self._on_navigating, [])
-        self.channel_switches = np.ones(self.xaxis.shape, dtype=bool)
+        self._channel_switches = np.ones(
+            self.axes_manager.signal_shape, dtype=bool
+            )
         self.chisq = signal2D._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
@@ -118,13 +139,13 @@ class Model2D(BaseModel):
         self.inav = ModelSpecialSlicers(self, True)
         self.isig = ModelSpecialSlicers(self, False)
         self._whitelist = {
-            'channel_switches': None,
+            '_channel_switches': None,
             'convolved': None,
             'free_parameters_boundaries': None,
             'chisq.data': None,
             'dof.data': None}
         self._slicing_whitelist = {
-            'channel_switches': 'isig',
+            '_channel_switches': 'isig',
             'chisq.data': 'inav',
             'dof.data': 'inav'}
 
@@ -182,7 +203,7 @@ class Model2D(BaseModel):
                 np.add(sum_, component.function(self.xaxis, self.yaxis),
                        sum_)
 
-        return sum_[self.channel_switches]
+        return sum_[self._channel_switches]
 
     def _errfunc(self, param, y, weights=None):
         if weights is None:
@@ -190,32 +211,145 @@ class Model2D(BaseModel):
         errfunc = self._model_function(param).ravel() - y
         return errfunc * weights
 
-    def _set_signal_range_in_pixels(self, i1=None, i2=None):
-        raise NotImplementedError
+    def _set_signal_range_in_pixels(
+            self, i1=None, i2=None, j1=None, j2=None,
+            ):
+        """
+        Use only the selected range defined in pixels in the
+        fitting routine.
 
-    @interactive_range_selector
-    def set_signal_range(self, x1=None, x2=None):
-        raise NotImplementedError
+        Parameters
+        ----------
+        %s    
+        """
+        self._backup_channel_switches = copy.copy(self._channel_switches)
 
-    def _remove_signal_range_in_pixels(self, i1=None, i2=None):
-        raise NotImplementedError
+        self._channel_switches[:, :] = False
+        if i2 is not None:
+            i2 += 1
+        if j2 is not None:
+            j2 += 1
+        self._channel_switches[slice(i1, i2), slice(j1, j2)] = True
+        self.update_plot(render_figure=True)
 
-    @interactive_range_selector
-    def remove_signal_range(self, x1=None, x2=None):
-        raise NotImplementedError
+    _set_signal_range_in_pixels.__doc__ %= _SIGNAL_RANGE_PIXELS
+
+    def set_signal_range(self, x1=None, x2=None, y1=None, y2=None):
+        """
+        Use only the selected range defined in its own units in the
+        fitting routine.
+
+        Parameters
+        ----------
+        %s
+
+        See Also
+        --------
+        add_signal_range, remove_signal_range,
+        reset_signal_range, set_signal_range_from_mask
+        """
+        xaxis = self.axes_manager.signal_axes[0]
+        yaxis = self.axes_manager.signal_axes[1]
+        i_indices = xaxis.value_range_to_indices(x1, x2)
+        j_indices = yaxis.value_range_to_indices(y1, y2)
+        self._set_signal_range_in_pixels(*(i_indices + j_indices))
+    
+    set_signal_range.__doc__ %= _SIGNAL_RANGE_VALUES
+
+    def _remove_signal_range_in_pixels(
+            self, i1=None, i2=None, j1=None, j2=None
+            ):
+        """
+        Removes the data in the given range (pixels) from the data
+        range that will be used by the fitting rountine
+
+        Parameters
+        ----------
+        %s
+        """
+        if i2 is not None:
+            i2 += 1
+        if j2 is not None:
+            j2 += 1
+        self._channel_switches[slice(i1, i2), slice(j1, j2)] = False
+        self.update_plot()
+
+    _remove_signal_range_in_pixels.__doc__ %= _SIGNAL_RANGE_PIXELS
+
+    def remove_signal_range(self, x1=None, x2=None, y1=None, y2=None):
+        """
+        Removes the data in the given range (calibrated values) from
+        the data range that will be used by the fitting rountine
+
+        Parameters
+        ----------
+        %s     
+
+        See Also
+        --------
+        set_signal_range, add_signal_range,
+        reset_signal_range, set_signal_range_from_mask
+        """
+        xaxis = self.axes_manager.signal_axes[0]
+        yaxis = self.axes_manager.signal_axes[1]
+        i_indices = xaxis.value_range_to_indices(x1, x2)
+        j_indices = yaxis.value_range_to_indices(y1, y2)
+        self._remove_signal_range_in_pixels(*i_indices, *j_indices)
+
+    remove_signal_range.__doc__ %= _SIGNAL_RANGE_VALUES
 
     def reset_signal_range(self):
-        raise NotImplementedError
+        """
+        Resets the data range.
 
-    def _add_signal_range_in_pixels(self, i1=None, i2=None):
-        raise NotImplementedError
+        See Also
+        --------
+        set_signal_range, add_signal_range, set_signal_range_from_mask,
+        remove_signal_range
+        """
+        self._set_signal_range_in_pixels()
 
-    @interactive_range_selector
-    def add_signal_range(self, x1=None, x2=None):
-        raise NotImplementedError
+    def _add_signal_range_in_pixels(
+            self, i1=None, i2=None, j1=None, j2=None
+            ):
+        """
+        Adds the data in the given range from the data range (pixels)
+        that will be used by the fitting rountine
 
-    def reset_the_signal_range(self):
-        raise NotImplementedError
+        Parameters
+        ----------
+        %s
+        """
+        if i2 is not None:
+            i2 += 1
+        if j2 is not None:
+            j2 += 1
+        self._channel_switches[slice(i1, i2), slice(j1, j2)] = True
+        self.update_plot()
+
+    _add_signal_range_in_pixels.__doc__ %= _SIGNAL_RANGE_PIXELS
+
+    def add_signal_range(self, x1=None, x2=None, y1=None, y2=None):
+        """
+        Adds the data in the given range from the data range
+        (calibrated values) that will be used by the fitting rountine.
+
+        Parameters
+        ----------
+        %s
+
+        See Also
+        --------
+        set_signal_range, set_signal_range_from_mask,
+        reset_signal_range, remove_signal_range
+        """
+        xaxis = self.axes_manager.signal_axes[0]
+        yaxis = self.axes_manager.signal_axes[1]
+        i_indices = xaxis.value_range_to_indices(x1, x2)
+        j_indices = yaxis.value_range_to_indices(y1, y2)
+        self._add_signal_range_in_pixels(*(i_indices + j_indices))
+
+    add_signal_range.__doc__ %= _SIGNAL_RANGE_VALUES
 
     def _check_analytical_jacobian(self):
         """Check all components have analytical gradients.
@@ -262,7 +396,7 @@ class Model2D(BaseModel):
         if out_of_range2nans is True:
             ns = np.empty(self.xaxis.shape)
             ns.fill(np.nan)
-            ns[np.where(self.channel_switches)] = s.ravel()
+            ns[np.where(self._channel_switches)] = s.ravel()
             s = ns
         return s
 

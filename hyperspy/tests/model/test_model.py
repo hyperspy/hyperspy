@@ -33,7 +33,7 @@ class TestModelJacobians:
         self.convolve_signal = 7.0
         self.weights = 0.3
         m.axis.axis = np.array([1, 0])
-        m.channel_switches = np.array([0, 1], dtype=bool)
+        m._channel_switches = np.array([0, 1], dtype=bool)
         m.append(hs.model.components1D.Gaussian())
         m[0].A.value = 1
         m[0].centre.value = 2.0
@@ -144,7 +144,7 @@ class TestModelPlotCall:
         m.__call__.return_value = np.array([0.5, 0.25])
         m.axis = mock.MagicMock()
         m.fetch_stored_values = mock.MagicMock()
-        m.channel_switches = np.array([0, 1, 1, 0, 0], dtype=bool)
+        m._channel_switches = np.array([0, 1, 1, 0, 0], dtype=bool)
         self.model = m
 
     def test_model2plot_own_am(self):
@@ -736,13 +736,13 @@ class TestAsSignal:
 
     def test_out_of_range_to_nan(self):
         index = 2
-        self.m.channel_switches[:index] = False
+        self.m._channel_switches[:index] = False
         s1 = self.m.as_signal(component_list=[0], out_of_range_to_nan=True)
 
         s2 = self.m.as_signal(component_list=[0], out_of_range_to_nan=False)
 
         np.testing.assert_allclose(
-            self.m.channel_switches, [False, False, True, True, True]
+            self.m._channel_switches, [False, False, True, True, True]
         )
 
         np.testing.assert_allclose(s2.data, np.ones_like(s2) * 2)
@@ -818,7 +818,7 @@ class TestAdjustPosition:
         assert len(self.m._position_widgets) == 0
 
 
-class TestSignalRange:
+class TestModel1DSetSignalRange:
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.random.rand(10, 10, 20))
         s.axes_manager[-1].offset = 100
@@ -845,3 +845,21 @@ class TestSignalRange:
         m = self.m
         roi = hs.roi.SpanROI(105, 110)
         assert m._parse_signal_range_values(roi) == (5, 10)
+
+    def test_set_signal_range_from_mask(self):
+        m = self.m
+        mask = np.ones(20, dtype=bool)
+        mask[:2] = False
+        mask[-4:] = False
+        m.set_signal_range_from_mask(mask)
+        np.testing.assert_allclose(m._channel_switches, mask)
+
+    def test_set_signal_range_from_mask_error(self):
+        m = self.m
+        mask = np.ones(30, dtype=bool)
+        with pytest.raises(ValueError):
+            m.set_signal_range_from_mask(mask)
+
+        mask = np.ones(30)
+        with pytest.raises(ValueError):
+            m.set_signal_range_from_mask(mask)
