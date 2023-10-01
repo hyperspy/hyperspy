@@ -4,9 +4,6 @@
 Reference
 #########
 
-.. autosummary::
-   :recursive:
-
 .. toctree::
    :caption: Reference
    :maxdepth: 2

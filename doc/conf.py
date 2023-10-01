@@ -324,6 +324,7 @@ sphinx_gallery_conf = {
 autodoc_default_options = {
     'show-inheritance': True,
 }
+toc_object_entries_show_parents = "hide"
 
 graphviz_output_format = "svg"
 

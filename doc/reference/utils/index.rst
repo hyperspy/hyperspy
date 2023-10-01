@@ -5,7 +5,7 @@ API of classes, which are not part of the :mod:`hyperspy.api` namespace but used
 signals.
 
 
-.. toctree::
-   :maxdepth: 1
+.. currentmodule:: hyperspy.misc.utils
 
-   dictionary_browser_tree
+.. autoclass:: DictionaryTreeBrowser
+   :members: 
