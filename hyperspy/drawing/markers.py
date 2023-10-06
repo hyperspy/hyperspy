@@ -576,8 +576,8 @@ class Markers:
             If ``"metadata"`` look for signal_axes saved in metadata under
             ``s.metadata.Peaks.signal_axes`` and convert from pixel positions
             to real units before creating the collection. If a ``tuple`` of
-            signal axes, those axes will be used otherwise no transformation
-            will happen.
+            signal axes, those axes will be used otherwise (``None``)
+            no transformation will happen.
         """
         if collection is None:
             # By default, use `Points` with "display" coordinate system to
@@ -616,7 +616,12 @@ class Markers:
 
         if key is None:
             key = cls._position_key
-        kwargs[key] = new_signal.data
+
+        # in case ragged array, we need to take the transpose to match the
+        # navigation shape of the signal, for static marker, there is no
+        # array dimention match the signal dimension and there is no
+        # navigation dimension, therefore it shouldn't be transposed
+        kwargs[key] = new_signal.data.T if new_signal.ragged else new_signal.data
 
         return cls(**kwargs)
 
