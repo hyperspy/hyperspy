@@ -84,7 +84,9 @@ def homogenize_ndim(*args):
 
 
 def _requires_linear_rebin(arr, scale):
-    """Returns True if linear_rebin is required.
+    """
+    Returns True if linear_rebin is required.
+
     Parameters
     ----------
     arr: array
@@ -97,7 +99,8 @@ def _requires_linear_rebin(arr, scale):
 
 
 def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
-    """Rebin data into a smaller or larger array based on a linear
+    """
+    Rebin data into a smaller or larger array based on a linear
     interpolation. Specify either a new_shape or a scale. Scale of 1 means no
     binning. Scale less than one results in up-sampling.
 
@@ -147,7 +150,7 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
         return _linear_bin(a, scale, crop, dtype=dtype)
     else:
         if dtype == 'same':
-            dtype = a.dtype
+            dtype = a.dtype.name
         _logger.debug("Using standard rebin with lazy support")
         # if interpolation is not needed run fast re_bin function.
         # Adapted from scipy cookbook.
