@@ -1238,7 +1238,7 @@ class BaseModel(list):
 
     def _calculate_chisq(self):
         variance = self._get_variance()
-        d = self(onlyactive=True, binned=self._binned).ravel() - self.signal._get_current_data(as_numpy=True)[
+        d = self._get_current_data(onlyactive=True, binned=self._binned).ravel() - self.signal._get_current_data(as_numpy=True)[
             np.where(self._channel_switches)]
         d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()

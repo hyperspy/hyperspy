@@ -506,7 +506,7 @@ class TestLinearFitTwins:
         np.testing.assert_allclose(gs[0].A.value, 20)
         np.testing.assert_allclose(gs[1].A.value, -10)
         np.testing.assert_allclose(gs[2].A.value, 5)
-        np.testing.assert_allclose(s.data,  m())
+        np.testing.assert_allclose(s.data,  m._get_current_data())
 
     def test_with_twins(self):
         gs = self.gs
@@ -522,7 +522,7 @@ class TestLinearFitTwins:
         np.testing.assert_allclose(gs[0].A.value, 20)
         np.testing.assert_allclose(gs[1].A.value, -10)
         np.testing.assert_allclose(gs[2].A.value, 5)
-        np.testing.assert_allclose(s.data, m())
+        np.testing.assert_allclose(s.data, m._get_current_data())
 
 
 def test_compute_constant_term():

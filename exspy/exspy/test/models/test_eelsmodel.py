@@ -611,7 +611,8 @@ class TestEELSFineStructure:
         m = self.m
         m.store()
         mc = m.signal.models.a.restore()
-        assert np.array_equal(m(), mc())
+        assert np.array_equal(m._get_current_data(), mc._get_current_data())
+
 
 class TestModelJacobians:
     def setup_method(self, method):
