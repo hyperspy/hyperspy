@@ -1053,17 +1053,6 @@ class Component(t.HasTraits):
                                                parameter.std,
                                                parameter.units))
 
-    def __call__(self):
-        """Returns the corresponding model for the current coordinates
-
-        Returns
-        -------
-        numpy array
-        """
-        axis = self.model.axis.axis[self.model._channel_switches]
-        component_array = self.function(axis)
-        return component_array
-
     def _component2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None
         if axes_manager is not self.model.axes_manager:

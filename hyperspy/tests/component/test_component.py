@@ -238,12 +238,6 @@ class TestCallMethods:
         c.model.signal.axes_manager.signal_axes = [mock.MagicMock(), ]
         c.model.signal.axes_manager.signal_axes[0].scale = 2.
 
-    def test_call(self):
-        c = self.c
-        assert 1.3 == c()
-        np.testing.assert_array_equal(c.function.call_args[0][0],
-                                      np.array([0.1, 0.3]))
-
     def test_plotting_not_active_component(self):
         c = self.c
         c.active = False
