@@ -6157,6 +6157,7 @@ class BaseSignal(FancySlicing,
                 self._plot.signal_plot.add_marker(marker)
             else:
                 self._plot.navigator_plot.add_marker(marker)
+            marker._signal = self
             marker.plot(render_figure=False)
         self._render_figure()
 

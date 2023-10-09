@@ -213,6 +213,15 @@ class TestMarkers:
         else:
             np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], data[1])
 
+    def test_from_signal_not_ragged(self):
+        s = hs.signals.Signal2D(np.ones((2, 3, 5, 6, 7)))
+
+        # not a ragged signal, navigation_dim must be zero
+        pos = hs.signals.BaseSignal(np.arange(10).reshape((5, 2)))
+        col = hs.plot.markers.Points.from_signal(pos)
+
+        s.add_marker(col)
+
     def test_from_signal_fail(self, signal):
         with pytest.raises(ValueError):
             _ = Points.from_signal(signal, sizes=(10,), signal_axes="test")
@@ -220,14 +229,17 @@ class TestMarkers:
     def test_find_peaks(self):
         from skimage.draw import disk
         from skimage.morphology import disk as disk2
+        import hyperspy.api as hs
 
         rr, cc = disk(
             center=(10, 8),
             radius=4,
         )
-        img = np.zeros((2, 20, 20))
-        img[:, rr, cc] = 1
-        s = Signal2D(img)
+        img = np.zeros((2, 3, 4, 20, 20))
+        img[:, :, :, rr, cc] = 1
+        img[:, 1 ,0] = 0
+        img[:, 0, 1] = 0
+        s = hs.signals.Signal2D(img)
         s.axes_manager.signal_axes[0].scale = 1.5
         s.axes_manager.signal_axes[1].scale = 2
         s.axes_manager.signal_axes[0].offset = -1
@@ -237,11 +249,26 @@ class TestMarkers:
             method="template_matching",
             template=disk2(4),
         )
-        col = Points.from_signal(
+        col = hs.plot.markers.Points.from_signal(
             pks, sizes=(10,), signal_axes=s.axes_manager.signal_axes
         )
         s.add_marker(col)
-        np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [[11, 19]])
+
+        marker_pos = [11, 19]
+        np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [marker_pos])
+        a = s.axes_manager.indices = (0, 1, 0)
+        np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [[np.nan, np.nan]])
+
+        a = s.axes_manager.indices = (1, 0, 0)
+        np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [[np.nan, np.nan]])
+
+        # Go to end with last navigation axis at 0
+        a = s.axes_manager.indices = (3, 2, 0)
+        np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [marker_pos])
+
+        # Go to end with last navigation axis at 1
+        a = s.axes_manager.indices = (3, 2, 1)
+        np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], [marker_pos])
 
     def test_find_peaks0d(self):
         from skimage.draw import disk
@@ -1117,3 +1144,49 @@ def test_collection_error():
     m = Points(offsets=[[1, 1], [2, 2]])
     with pytest.raises(ValueError):
         m._set_transform(value="test")
+
+
+def test_permanent_markers_close_open_cycle():
+    s = Signal2D(np.ones((100, 100)))
+    rng = np.random.default_rng(0)
+    offsets = rng.random((10, 2)) * 100
+    m = hs.plot.markers.Points(offsets=offsets)
+    assert m._signal is None
+    assert m._axes_manager is None
+
+    s.add_marker(m, permanent=True)
+    assert m._signal is s
+    assert m._axes_manager is s.axes_manager
+
+    s._plot.close()
+    assert m._signal is None
+    assert m._axes_manager is None
+
+    s.plot()
+    assert m._signal is s
+    assert m._axes_manager is s.axes_manager
+
+
+def test_variable_length_markers_navigation_shape():
+    nav_dim = 2
+    rng = np.random.default_rng(0)
+
+    nav_shape = np.arange(10, 10*(nav_dim+1), step=10)
+    data = np.ones(tuple(nav_shape) + (100, 100))
+    s = hs.signals.Signal2D(data)
+
+    offsets = np.empty(s.axes_manager.navigation_shape, dtype=object)
+    for ind in np.ndindex(offsets.shape):
+        num = rng.integers(3, 10)
+        offsets[ind] = rng.random((num, 2)) * 100
+
+    m = hs.plot.markers.Points(
+        offsets=offsets,
+        color="orange",
+    )
+
+    s.plot()
+    s.add_marker(m, permanent=True)
+    # go to last indices to check that the shape of `offsets` and
+    # navigation are aligned and plotting/getting currnet kwargs works fine
+    s.axes_manager.indices = np.array(s.axes_manager.navigation_shape) - 1
