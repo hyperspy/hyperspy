@@ -82,8 +82,8 @@ class TestModelPlotCall:
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
-        m._get_current_data = mock.MagicMock()
-        m._get_current_data.return_value = np.array([0.5, 0.25])
+        m.__call__ = mock.MagicMock()
+        m.__call__.return_value = np.array([0.5, 0.25])
         m.axis = mock.MagicMock()
         m.fetch_stored_values = mock.MagicMock()
         m._channel_switches = np.array([0, 1, 1, 0, 0], dtype=bool)
@@ -96,16 +96,16 @@ class TestModelPlotCall:
         np.testing.assert_array_equal(
             res, np.array([np.nan, 0.5, 0.25, np.nan, np.nan])
         )
-        assert m._get_current_data.called
-        assert m._get_current_data.call_args[1] == {"onlyactive": True}
+        assert m._call__.called
+        assert m.call_args[1] == {"onlyactive": True}
         assert not m.fetch_stored_values.called
 
     def test_model2plot_other_am(self):
         m = self.model
         res = m._model2plot(m.axes_manager.deepcopy(), out_of_range2nans=False)
         np.testing.assert_array_equal(res, np.array([0.5, 0.25]))
-        assert m._get_current_data.called
-        assert m._get_current_data.call_args[1] == {"onlyactive": True}
+        assert m._call__.called
+        assert m._call__.call_args[1] == {"onlyactive": True}
         assert 2 == m.fetch_stored_values.call_count
 
 

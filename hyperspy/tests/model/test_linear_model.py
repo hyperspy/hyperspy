@@ -245,7 +245,7 @@ class TestFitAlgorithms:
         m = self.m
         m.fit(optimizer='lstsq')
         lstsq_fit = m.as_signal()
-        np.testing.assert_allclose(self.nonlinear_fit_res, lstsq_fit(), atol=1E-8)
+        np.testing.assert_allclose(self.nonlinear_fit_res, lstsq_fit._get_current_data(), atol=1E-8)
         linear_std = [para.std for para in m._free_parameters if para.std]
         np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, atol=1E-8)
 
@@ -257,7 +257,7 @@ class TestFitAlgorithms:
         linear_fit = m.as_signal()
         m.fit()
         nonlinear_fit = m.as_signal()
-        np.testing.assert_allclose(nonlinear_fit(), linear_fit(), rtol=1E-5)
+        np.testing.assert_allclose(nonlinear_fit._get_current_data(), linear_fit._get_current_data(), rtol=1E-5)
 
     def test_compare_ridge(self, weighted):
         self._post_setup_method(weighted)

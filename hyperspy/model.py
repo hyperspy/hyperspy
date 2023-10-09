@@ -1111,7 +1111,7 @@ class BaseModel(list):
         # shape and an nD navigation shape to a 1D nav shape
         _channel_switches = np.where(self._channel_switches.ravel())[0]
         if only_current:
-            target_signal = self().ravel()[_channel_switches]
+            target_signal = self.signal._get_current_data().ravel()[_channel_switches]
         else:
             sig_shape = self.axes_manager._signal_shape_in_array
             nav_shape = self.axes_manager._navigation_shape_in_array
