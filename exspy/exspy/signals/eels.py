@@ -998,7 +998,7 @@ class EELSSpectrum(Signal1D):
 
         axis = ll.axes_manager.signal_axes[0]
         if fwhm is None:
-            fwhm = float(ll.get_current_signal().estimate_peak_width()())
+            fwhm = float(ll.get_current_signal().estimate_peak_width()._get_current_data())
             _logger.info("FWHM = %1.2f" % fwhm)
 
         I0 = ll.estimate_elastic_scattering_intensity(threshold=threshold)
