@@ -635,7 +635,7 @@ class SmoothingSavitzkyGolay(Smoothing):
         super()._differential_order_changed(old, new)
 
     def diff_model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self._get_current_data().copy()
+        self.single_spectrum.data = self.signal._get_current_data().copy()
         self.single_spectrum.smooth_savitzky_golay(
             polynomial_order=self.polynomial_order,
             window_length=self.window_length,
@@ -643,7 +643,7 @@ class SmoothingSavitzkyGolay(Smoothing):
         return self.single_spectrum.data
 
     def model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self._get_current_data().copy()
+        self.single_spectrum.data = self.signal._get_current_data().copy()
         self.single_spectrum.smooth_savitzky_golay(
             polynomial_order=self.polynomial_order,
             window_length=self.window_length,
@@ -680,7 +680,7 @@ class SmoothingLowess(Smoothing):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self._get_current_data().copy()
+        self.single_spectrum.data = self.signal._get_current_data().copy()
         self.single_spectrum.smooth_lowess(
             smoothing_parameter=self.smoothing_parameter,
             number_of_iterations=self.number_of_iterations,
@@ -703,7 +703,7 @@ class SmoothingTV(Smoothing):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self._get_current_data().copy()
+        self.single_spectrum.data = self.signal._get_current_data().copy()
         self.single_spectrum.smooth_tv(
             smoothing_parameter=self.smoothing_parameter,
             show_progressbar=False)
@@ -734,7 +734,7 @@ class ButterworthFilter(Smoothing):
     def model2plot(self, axes_manager=None):
         b, a = sp_signal.butter(self.order, self.cutoff_frequency_ratio,
                                 self.type)
-        smoothed = sp_signal.filtfilt(b, a, self._get_current_data())
+        smoothed = sp_signal.filtfilt(b, a, self.signal._get_current_data())
         return smoothed
 
     def apply(self):
@@ -1340,7 +1340,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         return to_return
 
     def rm_to_plot(self, axes_manager=None, fill_with=np.nan):
-        return self._get_current_data() - self.bg_line.line.get_ydata()
+        return self.signal._get_current_data() - self.bg_line.line.get_ydata()
 
     def span_selector_changed(self, *args, **kwargs):
         super().span_selector_changed()
@@ -1545,7 +1545,7 @@ class SpikesRemoval:
         self.argmax = None
         self.derivmax = None
         self.spline_order = 1
-        self._temp_mask = np.zeros(self._get_current_data().shape, dtype='bool')
+        self._temp_mask = np.zeros(self.signal._get_current_data().shape, dtype='bool')
         self.index = 0
         self.threshold = threshold
         md = self.signal.metadata
@@ -1566,7 +1566,7 @@ class SpikesRemoval:
 
     def detect_spike(self):
         axis = self.signal.axes_manager.signal_axes[-1].axis
-        derivative = np.gradient(self._get_current_data(), axis)
+        derivative = np.gradient(self.signal._get_current_data(), axis)
         if self.signal_mask is not None:
             derivative[self.signal_mask] = 0
         if self.argmax is not None:
@@ -1620,7 +1620,7 @@ class SpikesRemoval:
         return left, right
 
     def get_interpolated_spectrum(self, axes_manager=None):
-        data = self._get_current_data().copy()
+        data = self.signal._get_current_data().copy()
         axis = self.signal.axes_manager.signal_axes[0]
         left, right = self.get_interpolation_range()
         pad = self.spline_order
@@ -1670,7 +1670,7 @@ class SpikesRemoval:
     def remove_all_spikes(self):
         spike = self.find()
         while spike:
-            self._get_current_data()[:] = self.get_interpolated_spectrum()
+            self.signal._get_current_data()[:] = self.get_interpolated_spectrum()
             spike = self.find()
 
 
@@ -1750,7 +1750,7 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
             return
         else:
             minimum = max(0, self.argmax - 50)
-            maximum = min(len(self._get_current_data()) - 1, self.argmax + 50)
+            maximum = min(len(self.signal._get_current_data()) - 1, self.argmax + 50)
             thresh_label = DerivativeTextParameters(
                 text=r"$\mathsf{\delta}_\mathsf{max}=$",
                 color="black")
@@ -1784,7 +1784,7 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
             self.mask_filling.remove()
         if self.signal_mask is not None:
             self.mask_filling = self.ax.fill_between(self.axis.axis,
-                                                     self._get_current_data(), 0,
+                                                     self.signal._get_current_data(), 0,
                                                      where=self.signal_mask,
                                                      facecolor='blue',
                                                      alpha=0.5)
@@ -1829,7 +1829,7 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
     def apply(self):
         if not self.interpolated_line:  # No spike selected
             return
-        self._get_current_data()[:] = self.get_interpolated_spectrum()
+        self.signal._get_current_data()[:] = self.get_interpolated_spectrum()
         self.signal.events.data_changed.trigger(obj=self.signal)
         self.update_spectrum_line()
         self.interpolated_line.close()

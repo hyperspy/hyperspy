@@ -96,16 +96,16 @@ class TestModelPlotCall:
         np.testing.assert_array_equal(
             res, np.array([np.nan, 0.5, 0.25, np.nan, np.nan])
         )
-        assert m._call__.called
-        assert m.call_args[1] == {"onlyactive": True}
+        assert m.__call__.called
+        assert m.__call__.call_args[1] == {"onlyactive": True}
         assert not m.fetch_stored_values.called
 
     def test_model2plot_other_am(self):
         m = self.model
         res = m._model2plot(m.axes_manager.deepcopy(), out_of_range2nans=False)
         np.testing.assert_array_equal(res, np.array([0.5, 0.25]))
-        assert m._call__.called
-        assert m._call__.call_args[1] == {"onlyactive": True}
+        assert m.__call__.called
+        assert m.__call__.call_args[1] == {"onlyactive": True}
         assert 2 == m.fetch_stored_values.call_count
 
 

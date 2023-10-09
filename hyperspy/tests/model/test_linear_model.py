@@ -89,7 +89,7 @@ class TestMultiFitLinear:
             m.multifit(optimizer='lstsq')
         multi = m.as_signal()
 
-        np.testing.assert_allclose(single(), multi())
+        np.testing.assert_allclose(single._get_current_data(), multi._get_current_data())
 
     def test_map_values_std_isset(self, weighted):
         self._post_setup_method(weighted)
@@ -133,7 +133,7 @@ class TestMultiFitLinear:
             m.multifit(optimizer='lstsq')
         multi = m.as_signal()
         # compare fits from first pixel
-        np.testing.assert_allclose(single(), multi())
+        np.testing.assert_allclose(single._get_current_data(), multi._get_current_data())
 
     def test_channel_switches(self, weighted):
         self._post_setup_method(weighted)
@@ -152,11 +152,11 @@ class TestMultiFitLinear:
            m.multifit(optimizer='lstsq')
         multi = m.as_signal()
 
-        np.testing.assert_allclose(single(), multi())
+        np.testing.assert_allclose(single._get_current_data(), multi._get_current_data())
 
         m.fit()
         single_nonlinear = m.as_signal()
-        np.testing.assert_allclose(single(), single_nonlinear())
+        np.testing.assert_allclose(single._get_current_data(), single_nonlinear._get_current_data())
 
     def test_multifit_ridge(self, weighted):
         pytest.importorskip("sklearn")
