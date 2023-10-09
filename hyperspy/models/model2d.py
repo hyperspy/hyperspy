@@ -158,7 +158,7 @@ class Model2D(BaseModel):
         else:
             raise WrongObjectError(str(type(value)), 'Signal2D')
 
-    def __call__(self, onlyactive=False,
+    def _get_current_data(self, onlyactive=False,
                  component_list=None, binned=None):
         """Returns the corresponding 2D model for the current coordinates
 
@@ -385,7 +385,7 @@ class Model2D(BaseModel):
             old_axes_manager = self.axes_manager
             self.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.__call__(onlyactive=True)
+        s = self._get_current_data(onlyactive=True)
         if old_axes_manager is not None:
             self.axes_manager = old_axes_manager
             self.fetch_stored_values()

@@ -275,7 +275,7 @@ class BaseModel(list):
         # raise an exception when using windows.connect
         return id(self)
 
-    def __call__(self, onlyactive=False, component_list=None, binned=None):
+    def _get_current_data(self, onlyactive=False, component_list=None, binned=None):
         """Evaluate the model numerically. Implementation requested in all sub-classes"""
         raise NotImplementedError
 
@@ -614,7 +614,7 @@ class BaseModel(list):
             for index in self.axes_manager:
                 self.fetch_stored_values(only_fixed=False)
                 data[self.axes_manager._getitem_tuple][
-                    np.where(self._channel_switches)] = self.__call__(
+                    np.where(self._channel_switches)] = self._get_current_data(
                     onlyactive=True).ravel()
                 pbar.update(1)
 
@@ -942,7 +942,7 @@ class BaseModel(list):
             old_axes_manager = self.axes_manager
             self.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.__call__(onlyactive=True)
+        s = self._get_current_data(onlyactive=True)
         if old_axes_manager is not None:
             self.axes_manager = old_axes_manager
             self.fetch_stored_values()
@@ -956,7 +956,7 @@ class BaseModel(list):
     def _model_function(self, param):
         self.p0 = param
         self._fetch_values_from_p0()
-        to_return = self.__call__(onlyactive=True, binned=self._binned)
+        to_return = self._get_current_data(onlyactive=True, binned=self._binned)
         return to_return
 
     @property
@@ -1094,7 +1094,7 @@ class BaseModel(list):
                     p = twin_parameters_mapping[p]
 
                 index = parameters.index(p)
-                comp_value = self.__call__(
+                comp_value = self._get_current_data(
                     component_list=[component], binned=False
                     )
                 comp_constant_values = self._compute_constant_term(component=component)
@@ -1103,7 +1103,7 @@ class BaseModel(list):
 
             else:
                 # No free parameters, so component is fixed.
-                constant_term += self.__call__(
+                constant_term += self._get_current_data(
                     component_list=[component], binned=False
                     )
 
