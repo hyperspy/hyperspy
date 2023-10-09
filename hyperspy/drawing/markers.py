@@ -708,7 +708,7 @@ class Markers:
             return kwds
 
         new_kwds = deepcopy(kwds)
-        current_data = self._signal(as_numpy=True)
+        current_data = self._signal._get_current_data(as_numpy=True)
         axis = self._axes_manager.signal_axes[0]
         indexes = np.round((x_positions - axis.offset) / axis.scale).astype(int)
         y_positions = new_kwds[key][..., 1]

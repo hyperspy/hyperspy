@@ -98,7 +98,7 @@ class Polynomial(Expression):
 
         if only_current is True:
             estimation = np.polyfit(axis.axis[i1:i2],
-                                    signal()[i1:i2],
+                                    signal._get_current_data()[i1:i2],
                                     self.get_polynomial_order())
             if axis.is_binned:
                 for para, estim in zip(self.parameters[::-1], estimation):

@@ -1111,7 +1111,7 @@ class BaseModel(list):
         # shape and an nD navigation shape to a 1D nav shape
         _channel_switches = np.where(self._channel_switches.ravel())[0]
         if only_current:
-            target_signal = self.signal().ravel()[_channel_switches]
+            target_signal = self().ravel()[_channel_switches]
         else:
             sig_shape = self.axes_manager._signal_shape_in_array
             nav_shape = self.axes_manager._navigation_shape_in_array
@@ -1238,7 +1238,7 @@ class BaseModel(list):
 
     def _calculate_chisq(self):
         variance = self._get_variance()
-        d = self(onlyactive=True, binned=self._binned).ravel() - self.signal(as_numpy=True)[
+        d = self(onlyactive=True, binned=self._binned).ravel() - self.signal._get_current_data(as_numpy=True)[
             np.where(self._channel_switches)]
         d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
@@ -1491,7 +1491,7 @@ class BaseModel(list):
                 weights = None
 
             args = (
-                self.signal(as_numpy=True)[np.where(self._channel_switches)],
+                self.signal._get_current_data(as_numpy=True)[np.where(self._channel_switches)],
                 weights
                 )
 
@@ -1511,7 +1511,7 @@ class BaseModel(list):
                         self.p0[:],
                         parinfo=self.mpfit_parinfo,
                         functkw={
-                            "y": self.signal()[self._channel_switches],
+                            "y": self.signal._get_current_data()[self._channel_switches],
                             "weights": weights,
                         },
                         autoderivative=auto_deriv,
@@ -1611,7 +1611,7 @@ class BaseModel(list):
                 modelo = odr.Model(fcn=self._function4odr, fjacb=odr_jacobian)
                 mydata = odr.RealData(
                     self.axis.axis[np.where(self._channel_switches)],
-                    self.signal()[np.where(self._channel_switches)],
+                    self.signal._get_current_data()[np.where(self._channel_switches)],
                     sx=None,
                     sy=(1.0 / weights if weights is not None else None),
                 )

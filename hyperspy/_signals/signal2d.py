@@ -500,7 +500,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                         [yaxis._get_index(i) for i in roi[:2]])
 
         ref = None if reference == 'cascade' else \
-            self.__call__().copy()
+            self._get_current_data().copy()
         shifts = []
         nrows = None
         images_number = self.axes_manager._max_index + 1
@@ -1038,7 +1038,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             pf2D = PeaksFinder2D(self, method=method, peaks=peaks, **kwargs)
             pf2D.gui(display=display, toolkit=toolkit)
         elif current_index:
-            peaks = method_func(self.__call__(), **kwargs)
+            peaks = method_func(self._get_current_data(), **kwargs)
         else:
             peaks = self.map(method_func, show_progressbar=show_progressbar,
                              inplace=False, ragged=True,

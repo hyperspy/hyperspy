@@ -662,7 +662,7 @@ class Model1D(BaseModel):
         by the model signal then returns the residual
         """
 
-        return self.signal.__call__() - self.__call__(ignore_channel_switches=True)
+        return self.signal._get_current_data() - self.__call__(ignore_channel_switches=True)
 
     def plot(self, plot_components=False,plot_residual=False, **kwargs):
         """Plot the current spectrum to the screen and a map with a
