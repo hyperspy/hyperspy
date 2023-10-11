@@ -318,7 +318,10 @@ class BaseDataAxis(t.HasTraits):
             obj : The {} that the event belongs to.
             value : The new value
             """.format(_name, _name, _name), arguments=["obj", 'value'])
-
+        if name is None:
+            name = t.Undefined
+        if units is None:
+            units = t.Undefined
         self._suppress_value_changed_trigger = False
         self._suppress_update_value = False
         self.name = name

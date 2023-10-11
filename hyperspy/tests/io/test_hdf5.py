@@ -997,3 +997,18 @@ def test_more_recent_version_warning(tmp_path):
     with pytest.warns(UserWarning):
         s2 = load(filename)
     np.testing.assert_allclose(s.data, s2.data)
+
+
+def test_load_future():
+    """Code for creating future.hspy with hyperspy version 2.0.0
+
+    import hyperspy.api as hs
+    import numpy as np
+    s = hs.signals.Signal2D(np.ones((10,10,10,10)))
+    pos = np.array([[np.random.randint(0,10, (np.random.randint(1,10),2))  for i in range(10)]for j in range(10)], dtype=object)
+    p = hs.plot.markers.Points(offsets = pos)
+    s.add_marker(p, permanent=True)
+    s.save("future.hspy")
+    """
+    with pytest.warns(UserWarning):
+        future = load(filenames="hdf5_files/future.hspy")
