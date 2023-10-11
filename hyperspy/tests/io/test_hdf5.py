@@ -1011,4 +1011,4 @@ def test_load_future():
     s.save("future.hspy")
     """
     with pytest.warns(UserWarning):
-        future = load(filenames="hdf5_files/future.hspy")
+        future = load(filenames=my_path / "hdf5_files" / "future.hspy")

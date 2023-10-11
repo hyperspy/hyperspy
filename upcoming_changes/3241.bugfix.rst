@@ -1,0 +1,2 @@
+Allows for loading of ``.hspy`` files saved with version 2.0.0 and greater and no unit or name set
+for some axis.
