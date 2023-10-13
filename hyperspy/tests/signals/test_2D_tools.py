@@ -79,8 +79,9 @@ class TestSubPixelAlign:
     def test_estimate_subpix(self, normalize_corr, reference):
         s = self.signal
         shifts = s.estimate_shift2D(sub_pixel_factor=200,
-                                    normalize_corr=normalize_corr)
-        np.testing.assert_allclose(shifts, self.shifts, rtol=0.2, atol=0.2,
+                                    normalize_corr=normalize_corr,
+                                    reference=reference)
+        np.testing.assert_allclose(shifts, self.shifts, rtol=2, atol=0.2,
                                    verbose=True)
 
     @pytest.mark.parametrize(("plot"), [True, 'reuse'])

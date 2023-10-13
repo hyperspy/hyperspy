@@ -516,8 +516,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
                                                ('shift', np.int32,
                                                 (2,))]))
             nshift, max_value = estimate_image_shift(
-                self(),
-                self(),
+                self._get_current_data(),
+                self._get_current_data(),
                 roi=roi,
                 sobel=sobel,
                 medfilter=medfilter,
