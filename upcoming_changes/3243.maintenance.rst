@@ -1,0 +1,1 @@
+Backport of 3189: fix Numpy1.25 deprecation: implicite array to scalar conversion in :py:meth:`~._signals.signal2d.Signal2D.align2D`
