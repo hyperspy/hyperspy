@@ -106,7 +106,7 @@ def _twinned_parameter(parameter):
 
 def reconstruct_component(comp_dictionary, **init_args):
     # Restoring of Voigt and Arctan components saved with Hyperspy <v1.6
-    if (comp_dictionary['_id_name'] == "Voigt" and 
+    if (comp_dictionary['_id_name'] == "Voigt" and
             len(comp_dictionary['parameters']) > 4):
         # in HyperSpy 1.6 the old Voigt component was moved to PESVoigt
         if comp_dictionary['parameters'][4]['_id_name'] == "resolution":
@@ -790,15 +790,23 @@ class BaseModel(list):
                     else:
                         self.free_parameters_boundaries.extend((param._bounds))
 
-    def _bounds_as_tuple(self):
-        """Converts parameter bounds to tuples for least_squares()"""
+    def _bounds_as_tuple(self, transpose):
+        """
+        Converts parameter bounds to tuples for scipy optimizer. For scipy
+        least_squares, transpose=True needs to be used, as the order of the
+        bounds are different.
+        """
         if self.free_parameters_boundaries is None:
             return (-np.inf, np.inf)
 
-        return tuple(
+        bounds = tuple(
             (a if a is not None else -np.inf, b if b is not None else np.inf)
             for a, b in self.free_parameters_boundaries
         )
+        if transpose:
+            return tuple(zip(*bounds))
+        else:
+            return bounds
 
     def _set_mpfit_parameters_info(self, bounded=True):
         """Generate the boundary list for mpfit.
@@ -1395,6 +1403,12 @@ class BaseModel(list):
             "Dual Annealing",
             "SHGO",
         ]
+        # The bounds need to be tranposed for these optimizer
+        # ((min, max), (min, max)) versus ((min, min), (max, max))
+        _transpose_bounds = True if optimizer in [
+            "trf", # Use least_squares
+            "dogbox", # Use least_squares
+            ] else False
         _supported_deriv_free = [
             "Powell",
             "COBYLA",
@@ -1593,7 +1607,7 @@ class BaseModel(list):
                     self._errfunc,
                     self.p0[:],
                     args=args,
-                    bounds=self._bounds_as_tuple(),
+                    bounds=self._bounds_as_tuple(transpose=_transpose_bounds),
                     jac=grad,
                     method=optimizer,
                     **kwargs,
@@ -1694,7 +1708,7 @@ class BaseModel(list):
                 self._set_boundaries(bounded=bounded)
 
                 if optimizer in _supported_global:
-                    de_b = self._bounds_as_tuple()
+                    de_b = self._bounds_as_tuple(transpose=_transpose_bounds)
 
                     if np.any(~np.isfinite(de_b)):
                         raise ValueError(
