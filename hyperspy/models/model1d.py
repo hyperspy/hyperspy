@@ -571,71 +571,28 @@ class Model1D(BaseModel):
         if weights is None:
             weights = 1.
 
-        if self.convolved is True:
-            counter = 0
-            grad = np.zeros(len(self.axis.axis))
-            for component in self:  # Cut the parameters list
-                if component.active:
-                    component.fetch_values_from_array(
-                        param[
-                            counter:counter +
-                            component._nfree_param],
-                        onlyfree=True)
+        axis = self.axis.axis[self._channel_switches]
+        counter = 0
+        grad = axis
+        for component in self:  # Cut the parameters list
+            if component.active:
+                component.fetch_values_from_array(
+                    param[
+                        counter:counter +
+                        component._nfree_param],
+                    onlyfree=True)
 
-                    if component.convolved:
-                        for parameter in component.free_parameters:
-                            par_grad = np.convolve(
-                                parameter.grad(self.convolution_axis),
-                                self.convolve_signal(self.axes_manager),
-                                mode="valid")
+                for parameter in component.free_parameters:
+                    par_grad = parameter.grad(axis)
+                    if parameter._twins:
+                        for par in parameter._twins:
+                            np.add(par_grad, par.grad(axis), par_grad)
 
-                            if parameter._twins:
-                                for par in parameter._twins:
-                                    np.add(par_grad, np.convolve(
-                                        par.grad(
-                                            self.convolution_axis),
-                                        self.convolve_signal(self.axes_manager),
-                                        mode="valid"), par_grad)
+                    grad = np.vstack((grad, par_grad))
 
-                            grad = np.vstack((grad, par_grad))
+                counter += component._nfree_param
 
-                    else:
-                        for parameter in component.free_parameters:
-                            par_grad = parameter.grad(self.axis.axis)
-
-                            if parameter._twins:
-                                for par in parameter._twins:
-                                    np.add(par_grad, par.grad(self.axis.axis), par_grad)
-
-                            grad = np.vstack((grad, par_grad))
-
-                    counter += component._nfree_param
-
-            to_return = grad[1:, self._channel_switches] * weights
-
-        else:
-            axis = self.axis.axis[self._channel_switches]
-            counter = 0
-            grad = axis
-            for component in self:  # Cut the parameters list
-                if component.active:
-                    component.fetch_values_from_array(
-                        param[
-                            counter:counter +
-                            component._nfree_param],
-                        onlyfree=True)
-
-                    for parameter in component.free_parameters:
-                        par_grad = parameter.grad(axis)
-                        if parameter._twins:
-                            for par in parameter._twins:
-                                np.add(par_grad, par.grad(axis), par_grad)
-
-                        grad = np.vstack((grad, par_grad))
-
-                    counter += component._nfree_param
-
-            to_return = grad[1:, :] * weights
+        to_return = grad[1:, :] * weights
 
         if self.axis.is_binned:
             if self.axis.is_uniform:

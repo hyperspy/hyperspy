@@ -18,8 +18,9 @@
 
 import contextlib
 import io
-import numpy as np
+from unittest import mock
 
+import numpy as np
 import pooch
 import pytest
 
@@ -606,3 +607,98 @@ class TestEELSFineStructure:
         m.store()
         mc = m.signal.models.a.restore()
         assert np.array_equal(m(), mc())
+
+class TestModelJacobians:
+    def setup_method(self, method):
+        s = EELSSpectrum(np.zeros(1))
+        m = s.create_model(auto_add_edges=False, auto_background=False)
+        self.convolve_signal = 7.0
+        self.weights = 0.3
+        m.axis.axis = np.array([1, 0])
+        m._channel_switches = np.array([0, 1], dtype=bool)
+        m.append(hs.model.components1D.Gaussian())
+        m[0].A.value = 1
+        m[0].centre.value = 2.0
+        m[0].sigma.twin = m[0].centre
+        m._convolve_signal = mock.MagicMock()
+        m.convolve_signal.return_value = self.convolve_signal
+        self.model = m
+        m.convolution_axis = np.zeros(2)
+
+    def test_jacobian_convolved(self):
+        m = self.model
+        m.convolved = True
+        m.append(hs.model.components1D.Gaussian())
+        m[0].convolved = False
+        m[1].convolved = True
+        jac = m._jacobian((1, 2, 3, 4, 5), None, weights=self.weights)
+        np.testing.assert_array_almost_equal(
+            jac.squeeze(),
+            self.weights
+            * np.array(
+                [
+                    m[0].A.grad(0),
+                    m[0].sigma.grad(0) + m[0].centre.grad(0),
+                    m[1].A.grad(0) * self.convolve_signal,
+                    m[1].centre.grad(0) * self.convolve_signal,
+                    m[1].sigma.grad(0) * self.convolve_signal,
+                ]
+            ),
+        )
+        assert m[0].A.value == 1
+        assert m[0].centre.value == 2
+        assert m[0].sigma.value == 2
+        assert m[1].A.value == 3
+        assert m[1].centre.value == 4
+        assert m[1].sigma.value == 5
+
+class TestModelSettingPZero:
+    def setup_method(self, method):
+        s = EELSSpectrum(np.empty(1))
+        m = s.create_model(auto_add_edges=False, auto_background=False)
+        self.model = m
+
+    def test_calculating_convolution_axis(self):
+        m = self.model
+        # setup
+        m.axis.offset = 10
+        m.axis.size = 10
+        ll_axis = mock.MagicMock()
+        ll_axis.size = 7
+        ll_axis.value2index.return_value = 3
+        m._convolve_signal = mock.MagicMock()
+        m.convolve_signal.axes_manager.signal_axes = [
+            ll_axis,
+        ]
+
+        # calculation
+        m.set_convolution_axis()
+
+        # tests
+        np.testing.assert_array_equal(m.convolution_axis, np.arange(7, 23))
+        np.testing.assert_equal(ll_axis.value2index.call_args[0][0], 0)
+
+
+
+@lazifyTestClass
+class TestConvolveModelSlicing:
+
+    def setup_method(self, method):
+        s = EELSSpectrum(np.random.random((10, 10, 600)))
+        s.axes_manager[-1].offset = -150.
+        s.axes_manager[-1].scale = 0.5
+        m = s.create_model(auto_add_edges=False, auto_background=False)
+        m.convolve_signal = s + 1
+        g = hs.model.components1D.Gaussian()
+        m.append(g)
+        self.m = m
+
+    def test_slicing_convolve_signal_inav(self):
+        m = self.m
+        m1 = m.inav[::2]
+        assert m1.signal.data.shape == m1.convolve_signal.data.shape
+
+    def test_slicing_convolve_signal_isig(self):
+        m = self.m
+        m1 = m.isig[::2]
+        assert m.signal.data.shape == m1.convolve_signal.data.shape
