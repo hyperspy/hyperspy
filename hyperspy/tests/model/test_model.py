@@ -45,7 +45,6 @@ class TestModelJacobians:
 
     def test_jacobian_not_convolved(self):
         m = self.model
-        m.convolved = False
         jac = m._jacobian((1, 2, 3), None, weights=self.weights)
         np.testing.assert_array_almost_equal(
             jac.squeeze(),
@@ -92,9 +91,8 @@ class TestModelCallMethod:
         m.append(hs.model.components1D.Gaussian())
         self.model = m
 
-    def test_call_method_no_convolutions(self):
+    def test_call_method(self):
         m = self.model
-        m.convolved = False
 
         m[1].active = False
         r1 = m()
@@ -102,29 +100,6 @@ class TestModelCallMethod:
         np.testing.assert_allclose(m[0].function(0) * 2, r1)
         np.testing.assert_allclose(m[0].function(0), r2)
 
-        m.convolved = True
-        r1 = m(non_convolved=True)
-        r2 = m(non_convolved=True, onlyactive=True)
-        np.testing.assert_allclose(m[0].function(0) * 2, r1)
-        np.testing.assert_allclose(m[0].function(0), r2)
-
-    def test_call_method_with_convolutions(self):
-        m = self.model
-        m._convolve_signal = mock.MagicMock()
-        m.convolve_signal.return_value = 0.3
-        m.convolved = True
-
-        m.append(hs.model.components1D.Gaussian())
-        m[1].active = False
-        m[0].convolved = True
-        m[1].convolved = False
-        m[2].convolved = False
-        m.convolution_axis = np.array([0.0])
-
-        r1 = m()
-        r2 = m(onlyactive=True)
-        np.testing.assert_allclose(m[0].function(0) * 2.3, r1)
-        np.testing.assert_allclose(m[0].function(0) * 1.3, r2)
 
     def test_call_method_binned(self):
         m = self.model
@@ -155,7 +130,7 @@ class TestModelPlotCall:
             res, np.array([np.nan, 0.5, 0.25, np.nan, np.nan])
         )
         assert m.__call__.called
-        assert m.__call__.call_args[1] == {"non_convolved": False, "onlyactive": True}
+        assert m.__call__.call_args[1] == {"onlyactive": True}
         assert not m.fetch_stored_values.called
 
     def test_model2plot_other_am(self):
@@ -163,7 +138,7 @@ class TestModelPlotCall:
         res = m._model2plot(m.axes_manager.deepcopy(), out_of_range2nans=False)
         np.testing.assert_array_equal(res, np.array([0.5, 0.25]))
         assert m.__call__.called
-        assert m.__call__.call_args[1] == {"non_convolved": False, "onlyactive": True}
+        assert m.__call__.call_args[1] == {"onlyactive": True}
         assert 2 == m.fetch_stored_values.call_count
 
 

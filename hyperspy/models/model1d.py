@@ -23,7 +23,6 @@ from scipy.special import huber
 import traits.api as t
 
 import hyperspy.drawing.signal1d
-from hyperspy.axes import generate_uniform_axis
 from hyperspy.exceptions import WrongObjectError, SignalDimensionError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import LabelWidget, VerticalLineWidget
@@ -273,9 +272,6 @@ class Model1D(BaseModel):
         self.dof.metadata.General.title = (
             self.signal.metadata.General.title + ' degrees of freedom')
         self.free_parameters_boundaries = None
-        self._convolve_signal = None
-        self.convolved = False
-        self.convolution_axis = None
         self.components = ModelComponents(self)
         if dictionary is not None:
             self._load_dictionary(dictionary)
@@ -283,14 +279,11 @@ class Model1D(BaseModel):
         self.isig = ModelSpecialSlicers(self, False)
         self._whitelist = {
             '_channel_switches': None,
-            'convolved': None,
             'free_parameters_boundaries': None,
-            'convolve_signal': ('sig', None),
             'chisq.data': None,
             'dof.data': None}
         self._slicing_whitelist = {
             '_channel_switches': 'isig',
-            'convolve_signal': 'inav',
             'chisq.data': 'inav',
             'dof.data': 'inav'}
 
@@ -306,44 +299,6 @@ class Model1D(BaseModel):
         else:
             raise WrongObjectError(str(type(value)), 'Signal1D')
 
-    @property
-    def convolve_signal(self):
-        return self._convolve_signal
-
-    @convolve_signal.setter
-    def convolve_signal(self, value):
-        if value is not None:
-            if (value.axes_manager.navigation_shape !=
-                    self.signal.axes_manager.navigation_shape):
-                raise ValueError(
-                    "The signal does not have the same navigation dimension "
-                    "as the signal it will be convolved with."
-                    )
-            if not value.axes_manager.signal_axes[0].is_uniform:
-                raise ValueError(
-                    "Convolution is not supported with non-uniform signal axes."
-                    )
-            self._convolve_signal = value
-            self.set_convolution_axis()
-            self.convolved = True
-        else:
-            self._convolve_signal = value
-            self.convolution_axis = None
-            self.convolved = False
-
-    # Extend the list methods to call the _touch when the model is modified
-
-    def set_convolution_axis(self):
-        """
-        Creates an axis to use to generate the data of the model in the precise
-        scale to obtain the correct axis and origin after convolution.
-        """
-        ll_axis = self.convolve_signal.axes_manager.signal_axes[0]
-        dimension = self.axis.size + ll_axis.size - 1
-        step = self.axis.scale
-        knot_position = ll_axis.size - ll_axis.value2index(0) - 1
-        self.convolution_axis = generate_uniform_axis(self.axis.offset, step,
-                                                     dimension, knot_position)
 
     def append(self, thing):
         """
@@ -381,7 +336,29 @@ class Model1D(BaseModel):
 
     remove.__doc__ = BaseModel.remove.__doc__
 
-    def __call__(self, non_convolved=False, onlyactive=False,
+    def _get_model_data(self, component_list=None, ignore_channel_switches=False):
+        """Return the model data at the current position
+        Parameters
+        ----------
+        component_list : list or None
+            If None, the model is constructed with all active components. Otherwise,
+            the model is constructed with the components in component_list.
+        
+        Returns:
+        --------
+        model_data: `ndarray`
+        """
+        if component_list is None:
+            component_list = self
+        slice_ = slice(None) if ignore_channel_switches else self._channel_switches
+        axis = self.axis.axis[slice_]
+        model_data = np.zeros(len(axis))
+        for component in component_list:
+            model_data += component.function(axis)
+        return model_data
+
+
+    def __call__(self, onlyactive=False,
                  component_list=None, binned=None,
                  ignore_channel_switches=False):
         """
@@ -389,14 +366,12 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        non_convolved : bool
-            If True it will return the deconvolved model
         onlyactive : bool
             If True, only the active components will be used to build the
             model.
         component_list : list or None
-            If None, the sum of all the components is returned. If list, only
-            the provided components are returned
+            If None, the model is constructed with all active components. Otherwise,
+            the model is constructed with the components in component_list.
         binned : bool or None
             Specify whether the binned attribute of the signal axes needs to be
             taken into account.
@@ -420,31 +395,9 @@ class Model1D(BaseModel):
         if onlyactive:
             component_list = [
                 component for component in component_list if component.active]
-
-        if self.convolved is False or non_convolved is True:
-            slice_ = slice(None) if ignore_channel_switches else self._channel_switches
-            axis = self.axis.axis[slice_]
-            sum_ = np.zeros(len(axis))
-            for component in component_list:
-                sum_ += component.function(axis)
-            to_return = sum_
-
-        else:  # convolved
-            if self.convolution_axis is None:
-                raise RuntimeError("`convolve_signal` is not set.")
-            sum_convolved = np.zeros(len(self.convolution_axis))
-            sum_ = np.zeros(len(self.axis.axis))
-            for component in component_list:
-                if component.convolved:
-                    sum_convolved += component.function(self.convolution_axis)
-                else:
-                    sum_ += component.function(self.axis.axis)
-
-            to_return = sum_ + np.convolve(
-                self.convolve_signal(self.axes_manager),
-                sum_convolved, mode="valid")
-            to_return = to_return[self._channel_switches]
-
+        model_data = self._get_model_data(
+            component_list=component_list,
+            ignore_channel_switches=ignore_channel_switches)
         if binned is None:
             # use self.axis instead of self.signal.axes_manager[-1]
             # to avoid small overhead (~10 us) which isn't negligeable when
@@ -453,10 +406,10 @@ class Model1D(BaseModel):
 
         if binned:
             if self.axis.is_uniform:
-                to_return *= self.axis.scale
+                model_data *= self.axis.scale
             else:
-                to_return *= np.gradient(self.axis.axis)
-        return to_return
+                model_data *= np.gradient(self.axis.axis)
+        return model_data
 
     def _errfunc(self, param, y, weights=None):
         if weights is None:
@@ -736,7 +689,7 @@ class Model1D(BaseModel):
             old_axes_manager = self.axes_manager
             self.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.__call__(non_convolved=False, onlyactive=True)
+        s = self.__call__(onlyactive=True)
         if old_axes_manager is not None:
             self.axes_manager = old_axes_manager
             self.fetch_stored_values()

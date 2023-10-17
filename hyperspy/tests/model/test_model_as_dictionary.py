@@ -219,7 +219,6 @@ class TestModelDictionary:
         np.testing.assert_equal(
             d['free_parameters_boundaries'],
             m.free_parameters_boundaries)
-        assert d['convolved'] is m.convolved
 
         for num, c in enumerate(m):
             tmp = c.as_dictionary()
@@ -247,7 +246,6 @@ class TestModelDictionary:
         np.testing.assert_equal(
             mn.free_parameters_boundaries,
             mo.free_parameters_boundaries)
-        assert mn.convolved is mo.convolved
         for i in range(len(mn)):
             assert mn[i]._id_name == mo[i]._id_name
             for po, pn in zip(mo[i].parameters, mn[i].parameters):

@@ -271,7 +271,7 @@ class BaseModel(list):
         # raise an exception when using windows.connect
         return id(self)
 
-    def __call__(self, non_convolved=False, onlyactive=False, component_list=None, binned=None):
+    def __call__(self, onlyactive=False, component_list=None, binned=None):
         """Evaluate the model numerically. Implementation requested in all sub-classes"""
         raise NotImplementedError
 
@@ -598,7 +598,7 @@ class BaseModel(list):
                 self.fetch_stored_values(only_fixed=False)
                 data[self.axes_manager._getitem_tuple][
                     np.where(self._channel_switches)] = self.__call__(
-                    non_convolved=not self.convolved, onlyactive=True).ravel()
+                    onlyactive=True).ravel()
                 pbar.update(1)
 
     @property
@@ -925,7 +925,7 @@ class BaseModel(list):
             old_axes_manager = self.axes_manager
             self.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.__call__(non_convolved=False, onlyactive=True)
+        s = self.__call__(onlyactive=True)
         if old_axes_manager is not None:
             self.axes_manager = old_axes_manager
             self.fetch_stored_values()
@@ -939,7 +939,7 @@ class BaseModel(list):
     def _model_function(self, param):
         self.p0 = param
         self._fetch_values_from_p0()
-        to_return = self.__call__(non_convolved=False, onlyactive=True, binned=self._binned)
+        to_return = self.__call__(onlyactive=True, binned=self._binned)
         return to_return
 
     @property
