@@ -1294,31 +1294,8 @@ class Component(t.HasTraits):
         """
         return 0
 
-    def _compute_constant_term(self):
-        """Gets the value of any (non-free) constant term, with convolution"""
-        model = self.model
-        if model.convolved and self.convolved:
-            data = convolve_component_values(self._constant_term, model=model)
-        else:
-            signal_shape = model.axes_manager.signal_shape[::-1]
-            data = self._constant_term * np.ones(signal_shape)
-        return data.T[np.where(model._channel_switches)[::-1]].T
 
 
-def convolve_component_values(component_values, model):
-    """
-    Convolve component with model convolution axis.
-
-    Multiply by np.ones in order to handle case where component_values is a
-    single constant
-    """
-
-    sig = component_values * np.ones(model.convolution_axis.shape)
-
-    ll = model.convolve_signal(model.axes_manager)
-    convolved = np.convolve(sig, ll, mode="valid")
-
-    return convolved
 
 
 def _get_scaling_factor(signal, axis, parameter):

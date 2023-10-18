@@ -132,7 +132,6 @@ class Model2D(BaseModel):
         self.dof.metadata.General.title = (
             self.signal.metadata.General.title + ' degrees of freedom')
         self.free_parameters_boundaries = None
-        self.convolved = False
         self.components = ModelComponents(self)
         if dictionary is not None:
             self._load_dictionary(dictionary)
@@ -140,7 +139,6 @@ class Model2D(BaseModel):
         self.isig = ModelSpecialSlicers(self, False)
         self._whitelist = {
             '_channel_switches': None,
-            'convolved': None,
             'free_parameters_boundaries': None,
             'chisq.data': None,
             'dof.data': None}

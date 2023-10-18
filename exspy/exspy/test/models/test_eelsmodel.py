@@ -101,6 +101,11 @@ class TestCreateEELSModel:
         cnames = [component.name for component in m]
         assert not "B_K" in cnames or "C_K" in cnames
 
+    def test_convolved_ll_not_set(self):
+        m = self.m
+        with pytest.raises(RuntimeError, match="not set"):
+            m.convolved = True
+
     def test_low_loss(self):
         s = self.s
         low_loss = s.deepcopy()
@@ -702,3 +707,42 @@ class TestConvolveModelSlicing:
         m = self.m
         m1 = m.isig[::2]
         assert m.signal.data.shape == m1.convolve_signal.data.shape
+
+class TestModelDictionary:
+
+    def setup_method(self, method):
+        s = EELSSpectrum(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
+        m = s.create_model(auto_add_edges=False, auto_background=False)
+        m.convolve_signal = (s + 3.0).deepcopy()
+        self.model = m
+        self.s = s
+
+        m.append(hs.model.components1D.Gaussian())
+        m.append(hs.model.components1D.Gaussian())
+        m.append(hs.model.components1D.ScalableFixedPattern(s * 0.3))
+        m[0].A.twin = m[1].A
+        m.fit()
+
+    def test_to_dictionary(self):
+        m = self.model
+        d = m.as_dictionary()
+
+        np.testing.assert_allclose(m.convolve_signal.data, d['convolve_signal']['data'])
+
+    def test_load_dictionary(self):
+        d = self.model.as_dictionary()
+        mn = self.s.create_model()
+        mn.append(hs.model.components1D.Lorentzian())
+        mn._load_dictionary(d)
+        mo = self.model
+
+        np.testing.assert_allclose(
+            mn.convolve_signal.data, mo.convolve_signal.data
+            )
+        for i in range(len(mn)):
+            assert mn[i]._id_name == mo[i]._id_name
+            for po, pn in zip(mo[i].parameters, mn[i].parameters):
+                np.testing.assert_allclose(po.map['values'], pn.map['values'])
+                np.testing.assert_allclose(po.map['is_set'], pn.map['is_set'])
+
+        assert mn[0].A.twin is mn[1].A

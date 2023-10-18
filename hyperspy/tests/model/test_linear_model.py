@@ -207,7 +207,7 @@ class TestLinearFitting:
         self.m.fit(optimizer='lstsq')
         c = self.c
         c.b.free = False
-        constant = c._compute_constant_term()
+        constant = self.m._compute_constant_term(component=c)
         np.testing.assert_allclose(constant, c.b.value)
 
     def test_constant(self):
@@ -293,20 +293,6 @@ class TestWarningSlowMultifit:
         m.set_parameters_not_free(only_nonlinear=True)
 
         self.m = m
-
-    def test_convolved_not_set(self):
-        m = self.m
-        m.convolved = True
-        with pytest.raises(RuntimeError, match="not set"):
-            m.multifit(optimizer='lstsq')
-
-    def test_convolved(self):
-        m = self.m
-        m.convolved = True
-        s2 = hs.signals.Signal1D(np.ones(m.signal.data.shape))
-        m.convolve_signal = s2
-        with pytest.warns(UserWarning, match="convolution is not supported"):
-            m.multifit(optimizer='lstsq')
 
     def test_active_is_multidimensional_all_active(self):
         m = self.m
@@ -549,7 +535,7 @@ def test_compute_constant_term():
     lin.a.value = 2
     lin.b.value = 3
     lin.b.free = False
-    np.testing.assert_allclose(lin._compute_constant_term(), 3)
+    np.testing.assert_allclose(m._compute_constant_term(component=lin), 3)
 
 
 @lazifyTestClass
@@ -805,91 +791,29 @@ def test_lorentzian():
     np.testing.assert_allclose(m.as_signal().data, s.data)
 
 
-@pytest.mark.parametrize('multiple_free_parameters', (True, False))
-@pytest.mark.parametrize('nav_dim', (0, 1, 2))
-def test_expression_convolved(nav_dim, multiple_free_parameters):
-    s_ref = hs.signals.Signal1D(np.ones(100))
-
-    # Create signal to convolve
-    to_convolve_component = hs.model.components1D.Gaussian(A=100, sigma=5, centre=10)
-    to_convolve = hs.signals.Signal1D(to_convolve_component.function(np.arange(100)))
-    to_convolve.axes_manager[-1].offset = -to_convolve_component.centre.value
-
-    # Create reference signal from model with convolution
-    l_ref = hs.model.components1D.Lorentzian(A=100, centre=20, gamma=4)
-    m_ref = s_ref.create_model()
-    m_ref.append(l_ref)
-    m_ref.convolve_signal = to_convolve
-    s = m_ref.as_signal()
-
-    if nav_dim >= 1:
-        s = hs.stack([s]*2)
-        to_convolve = hs.stack([to_convolve]*2)
-    if nav_dim == 2:
-        s = hs.stack([s]*3)
-        to_convolve = hs.stack([to_convolve]*3)
-
-    m = s.create_model()
-    l = hs.model.components1D.Lorentzian(centre=20, gamma=4)
-    m.append(l)
-    assert not m.convolved
-    m.convolve_signal = to_convolve
-    assert m.convolved
-    m.set_parameters_not_free(only_nonlinear=True)
-    with pytest.warns(UserWarning):
-        m.multifit(optimizer='lstsq')
-
-    np.testing.assert_allclose(l_ref.A.value, l.A.value)
-    np.testing.assert_allclose(l_ref.centre.value, l.centre.value)
-    np.testing.assert_allclose(l_ref.gamma.value, l.gamma.value)
-    np.testing.assert_allclose(m.as_signal().data, s.data)
-    if nav_dim in (1, 2):
-        np.testing.assert_allclose(l.A.map['values'].mean(), l_ref.A.value)
-        np.testing.assert_allclose(l.centre.map['values'].mean(), l_ref.centre.value)
-        np.testing.assert_allclose(l.gamma.map['values'].mean(), l_ref.gamma.value)
-
-
 @pytest.mark.parametrize("nav_dim", (0, 1, 2))
-@pytest.mark.parametrize("convolve", (True, False))
-def test_expression_multiple_linear_parameter(nav_dim, convolve):
+def test_expression_multiple_linear_parameter(nav_dim):
     """
-    This test checks that linear fitting works with convolution with
+    This test checks that linear fitting works
      - single and multidimensional fit (warning raise)
      - multiple free parameters for the same component (different code path)
     """
     s_ref = hs.signals.Signal1D(np.ones(20))
     p_ref = hs.model.components1D.Polynomial(order=2, a0=25, a1=-50, a2=2.5)
 
-    # Create signal to convolve
-    to_convolve_component = hs.model.components1D.Gaussian(A=100, sigma=5, centre=10)
-    to_convolve = hs.signals.Signal1D(to_convolve_component.function(np.arange(1000)))
-    to_convolve.axes_manager[-1].offset = -to_convolve_component.centre.value
-
     m_ref = s_ref.create_model()
     m_ref.extend([p_ref])
-    if convolve:
-        m_ref.convolve_signal = to_convolve
     s = m_ref.as_signal()
 
     if nav_dim >= 1:
         s = hs.stack([s]*2)
-        if convolve:
-            to_convolve = hs.stack([to_convolve]*2)
     if nav_dim == 2:
         s = hs.stack([s]*3)
-        if convolve:
-            to_convolve = hs.stack([to_convolve]*3)
 
     m = s.create_model()
     p = hs.model.components1D.Polynomial(order=2)
     m.append(p)
-    assert not m.convolved
-    if convolve:
-        m.convolve_signal = to_convolve
-        with pytest.warns(UserWarning):
-            m.multifit(optimizer='lstsq')
-    else:
-        m.multifit(optimizer='lstsq')
+    m.multifit(optimizer='lstsq')
 
     np.testing.assert_allclose(p_ref.a0.value, p.a0.value)
     np.testing.assert_allclose(p_ref.a1.value, p.a1.value)
@@ -900,53 +824,3 @@ def test_expression_multiple_linear_parameter(nav_dim, convolve):
         np.testing.assert_allclose(p.a1.map['values'].mean(), p_ref.a1.value)
         np.testing.assert_allclose(p.a2.map['values'].mean(), p_ref.a2.value)
 
-
-@pytest.mark.parametrize('nav_dim', (0, 1, 2))
-def test_multiple_linear_parameters_convolution(nav_dim):
-    s_ref = hs.signals.Signal1D(np.ones(1000))
-
-    # Create signal to convolve
-    to_convolve_component = hs.model.components1D.Gaussian(A=1000, sigma=50, centre=100)
-    to_convolve = hs.signals.Signal1D(to_convolve_component.function(np.arange(1000)))
-    to_convolve.axes_manager[-1].offset = -to_convolve_component.centre.value
-
-    l_ref1 = hs.model.components1D.Lorentzian(A=100, centre=200, gamma=10)
-    l_ref2 = hs.model.components1D.Lorentzian(A=100, centre=600, gamma=20)
-
-    m_ref = s_ref.create_model()
-    m_ref.extend([l_ref1, l_ref2])
-    m_ref.convolve_signal = to_convolve
-    s = m_ref.as_signal()
-
-    if nav_dim >= 1:
-        s = hs.stack([s]*2)
-        to_convolve = hs.stack([to_convolve]*2)
-    if nav_dim == 2:
-        s = hs.stack([s]*3)
-        to_convolve = hs.stack([to_convolve]*3)
-
-    m = s.create_model()
-    l1 = hs.model.components1D.Lorentzian(centre=200, gamma=10)
-    l2 = hs.model.components1D.Lorentzian(centre=600, gamma=20)
-    m.extend([l1, l2])
-    assert not m.convolved
-    m.convolve_signal = to_convolve
-    assert m.convolved
-    m.set_parameters_not_free(only_nonlinear=True)
-    with pytest.warns(UserWarning):
-        m.multifit(optimizer='lstsq')
-
-    np.testing.assert_allclose(l_ref1.A.value, l1.A.value)
-    np.testing.assert_allclose(l_ref1.centre.value, l1.centre.value)
-    np.testing.assert_allclose(l_ref1.gamma.value, l1.gamma.value)
-    np.testing.assert_allclose(l_ref2.A.value, l2.A.value)
-    np.testing.assert_allclose(l_ref2.centre.value, l2.centre.value)
-    np.testing.assert_allclose(l_ref2.gamma.value, l2.gamma.value)
-    np.testing.assert_allclose(m.as_signal().data, s.data)
-    if nav_dim >= 1:
-        np.testing.assert_allclose(l1.A.map['values'].mean(), l_ref1.A.value)
-        np.testing.assert_allclose(l1.centre.map['values'].mean(), l_ref1.centre.value)
-        np.testing.assert_allclose(l1.gamma.map['values'].mean(), l_ref1.gamma.value)
-        np.testing.assert_allclose(l2.A.map['values'].mean(), l_ref2.A.value)
-        np.testing.assert_allclose(l2.centre.map['values'].mean(), l_ref2.centre.value)
-        np.testing.assert_allclose(l2.gamma.map['values'].mean(), l_ref2.gamma.value)

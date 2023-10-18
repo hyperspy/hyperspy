@@ -87,7 +87,7 @@ class EELSModel(Model1D):
         self._preedge_safe_window_width = 2
         self._suspend_auto_fine_structure_width = False
         self._convolve_signal = None
-        self.convolved = False
+        self._convolved = False
         self.convolution_axis = None
         self.convolve_signal = low_loss
         self.GOS = GOS
@@ -95,7 +95,7 @@ class EELSModel(Model1D):
         self._background_components = []
         self._whitelist.update(
             {
-                'convolved': None,
+                '_convolved': None,
                 'convolve_signal': ('sig', None),
                 }
             )
@@ -118,6 +118,29 @@ class EELSModel(Model1D):
             self._add_edges_from_subshells_names()
 
     __init__.__doc__ %= EELSMODEL_PARAMETERS
+
+    def _compute_constant_term(self, component):
+        """Gets the value of any (non-free) constant term, with convolution"""
+        if self.convolved and component.convolved:
+            data = self._convolve_component_values(component._constant_term)
+            return data.T[np.where(self._channel_switches)[::-1]].T
+        else:
+            return super()._compute_constant_term(component)
+
+    def _convolve_component_values(self, component_values):
+        """
+        Convolve component with model convolution axis.
+
+        Multiply by np.ones in order to handle case where component_values is a
+        single constant
+        """
+
+        sig = component_values * np.ones(self.convolution_axis.shape)
+
+        ll = self.convolve_signal(self.axes_manager)
+        convolved = np.convolve(sig, ll, mode="valid")
+
+        return convolved
 
     def _get_model_data(self, *args, **kwargs):
         if self.convolved is False:
@@ -212,6 +235,24 @@ class EELSModel(Model1D):
                 "This attribute can only contain an EELSSpectrum "
                 "but an object of type %s was provided" %
                 str(type(value)))
+
+    @property
+    def convolved(self):
+        return self._convolved
+
+    @convolved.setter
+    def convolved(self, value):
+        if isinstance(value, bool):
+            if value is not self._convolved:
+                if value and not self.convolve_signal:
+                    raise RuntimeError(
+                        "Cannot set `convolved` to True as `convolve_signal` "
+                        "is not set.")
+                else:
+                    self._convolved = value
+                    self.update_plot()
+        else:
+            raise ValueError("`convolved` must be a boolean.")
 
     @property
     def convolve_signal(self):
