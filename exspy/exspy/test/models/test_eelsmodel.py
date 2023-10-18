@@ -102,7 +102,7 @@ class TestCreateEELSModel:
         assert not "B_K" in cnames or "C_K" in cnames
 
     def test_convolved_ll_not_set(self):
-        m = self.m
+        m = self.s.create_model(auto_add_edges=False)
         with pytest.raises(RuntimeError, match="not set"):
             m.convolved = True
 
