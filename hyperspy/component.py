@@ -739,6 +739,11 @@ class Component(t.HasTraits):
                 The `Component` that the event belongs to
             active : bool
                 The new active state
+            convolved : bool
+                Whether the `Component` is convolved or not. This enables
+                not convolving individual `Component`s in models that
+                support convolution.
+
             """, arguments=["obj", 'active'])
         self.parameters = []
         self.init_parameters(parameter_name_list, linear_parameter_list)
