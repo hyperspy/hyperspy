@@ -278,6 +278,15 @@ class BaseModel(list):
     @property
     def convolved(self):
         raise NotImplementedError("This model does not support convolution.")
+    
+    @convolved.setter
+    def convolved(self, value):
+        # This is for compatibility with model saved with HyperSpy < 2.0
+        if value:
+            raise NotImplementedError("This model does not support convolution.")
+        else:
+            _logger.warning(
+                "The `convolved` attribute is deprecated. It is only available in models that implement convolution.")
 
     def set_signal_range_from_mask(self, mask):
         """
