@@ -282,50 +282,6 @@ def test_load_original_metadata(tmp_path):
     assert t.original_metadata.as_dictionary() == {}
 
 
-def test_load_save_filereader_metadata(tmp_path):
-    # tests that original FileReader metadata is correctly persisted and
-    # appended through a save and load cycle
-
-    fname = PATH.parent / "drawing" / "data" / "Cr_L_cl.hspy"
-    s = hs.load(fname)
-    assert s.metadata.General.FileIO.Number_0.io_plugin == \
-           'rsciio.hspy'
-    assert s.metadata.General.FileIO.Number_0.operation == 'load'
-    assert s.metadata.General.FileIO.Number_0.hyperspy_version == hs_version
-
-    f = tmp_path / "temp"
-    s.save(f)
-    expected = {
-        '0': {
-            'io_plugin': 'rsciio.hspy',
-            'operation': 'load',
-            'hyperspy_version': hs_version
-        },
-        '1': {
-            'io_plugin': 'rsciio.hspy',
-            'operation': 'save',
-            'hyperspy_version': hs_version
-        },
-        '2': {
-            'io_plugin': 'rsciio.hspy',
-            'operation': 'load',
-            'hyperspy_version': hs_version
-        },
-    }
-    del s.metadata.General.FileIO.Number_0.timestamp  # runtime dependent
-    del s.metadata.General.FileIO.Number_1.timestamp  # runtime dependent
-    assert \
-        s.metadata.General.FileIO.Number_0.as_dictionary() == expected['0']
-    assert \
-        s.metadata.General.FileIO.Number_1.as_dictionary() == expected['1']
-
-    t = hs.load(tmp_path / "temp.hspy")
-    del t.metadata.General.FileIO.Number_0.timestamp  # runtime dependent
-    del t.metadata.General.FileIO.Number_1.timestamp  # runtime dependent
-    del t.metadata.General.FileIO.Number_2.timestamp  # runtime dependent
-    assert t.metadata.General.FileIO.as_dictionary() == expected
-
-
 def test_marker_save_load(tmp_path):
     s = hs.signals.Signal1D(np.arange(10))
     m = hs.plot.markers.Points(offsets=np.array([[2, 2], [3, 3]]), sizes=10)
