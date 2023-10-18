@@ -86,20 +86,20 @@ class EELSModel(Model1D):
         self._min_distance_between_edges_for_fine_structure = 0
         self._preedge_safe_window_width = 2
         self._suspend_auto_fine_structure_width = False
-        self._convolve_signal = None
+        self._low_loss = None
         self._convolved = False
         self.convolution_axis = None
-        self.convolve_signal = low_loss
+        self.low_loss = low_loss
         self.GOS = GOS
         self.edges = []
         self._background_components = []
         self._whitelist.update(
             {
                 '_convolved': None,
-                'convolve_signal': ('sig', None),
+                'low_loss': ('sig', None),
                 }
             )
-        self._slicing_whitelist['convolve_signal'] = 'inav'
+        self._slicing_whitelist['low_loss'] = 'inav'
         if dictionary is not None:
             auto_background = False
             auto_add_edges = False
@@ -137,7 +137,7 @@ class EELSModel(Model1D):
 
         sig = component_values * np.ones(self.convolution_axis.shape)
 
-        ll = self.convolve_signal(self.axes_manager)
+        ll = self.low_loss(self.axes_manager)
         convolved = np.convolve(sig, ll, mode="valid")
 
         return convolved
@@ -150,7 +150,7 @@ class EELSModel(Model1D):
             ignore_channel_switches = kwargs.get('ignore_channel_switches', False)
             slice_ = slice(None) if ignore_channel_switches else self._channel_switches
             if self.convolution_axis is None:
-                raise RuntimeError("`convolve_signal` is not set.")
+                raise RuntimeError("`low_loss` is not set.")
             sum_convolved = np.zeros(len(self.convolution_axis))
             sum_ = np.zeros(len(self.axis.axis))
             for component in component_list:
@@ -159,7 +159,7 @@ class EELSModel(Model1D):
                 else:
                     sum_ += component.function(self.axis.axis)
             to_return = sum_ + np.convolve(
-                self.convolve_signal(self.axes_manager),
+                self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[slice_]
             return to_return
@@ -185,7 +185,7 @@ class EELSModel(Model1D):
                     for parameter in component.free_parameters:
                         par_grad = np.convolve(
                             parameter.grad(self.convolution_axis),
-                            self.convolve_signal(self.axes_manager),
+                            self.low_loss(self.axes_manager),
                             mode="valid")
 
                         if parameter._twins:
@@ -193,7 +193,7 @@ class EELSModel(Model1D):
                                 np.add(par_grad, np.convolve(
                                     par.grad(
                                         self.convolution_axis),
-                                    self.convolve_signal(self.axes_manager),
+                                    self.low_loss(self.axes_manager),
                                     mode="valid"), par_grad)
 
                         grad = np.vstack((grad, par_grad))
@@ -244,9 +244,10 @@ class EELSModel(Model1D):
     def convolved(self, value):
         if isinstance(value, bool):
             if value is not self._convolved:
-                if value and not self.convolve_signal:
+                if value and not self.low_loss:
                     raise RuntimeError(
-                        "Cannot set `convolved` to True as `convolve_signal` "
+                        "Cannot set `convolved` to True as the "
+                        "`low_loss` attribute"
                         "is not set.")
                 else:
                     self._convolved = value
@@ -255,11 +256,11 @@ class EELSModel(Model1D):
             raise ValueError("`convolved` must be a boolean.")
 
     @property
-    def convolve_signal(self):
-        return self._convolve_signal
+    def low_loss(self):
+        return self._low_loss
 
-    @convolve_signal.setter
-    def convolve_signal(self, value):
+    @low_loss.setter
+    def low_loss(self, value):
         if value is not None:
             if (value.axes_manager.navigation_shape !=
                     self.signal.axes_manager.navigation_shape):
@@ -271,11 +272,11 @@ class EELSModel(Model1D):
                 raise ValueError(
                     "Convolution is not supported with non-uniform signal axes."
                     )
-            self._convolve_signal = value
+            self._low_loss = value
             self.set_convolution_axis()
             self.convolved = True
         else:
-            self._convolve_signal = value
+            self._low_loss = value
             self.convolution_axis = None
             self.convolved = False
 
@@ -286,7 +287,7 @@ class EELSModel(Model1D):
         Creates an axis to use to generate the data of the model in the precise
         scale to obtain the correct axis and origin after convolution.
         """
-        ll_axis = self.convolve_signal.axes_manager.signal_axes[0]
+        ll_axis = self.low_loss.axes_manager.signal_axes[0]
         dimension = self.axis.size + ll_axis.size - 1
         step = self.axis.scale
         knot_position = ll_axis.size - ll_axis.value2index(0) - 1

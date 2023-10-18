@@ -89,7 +89,7 @@ def test_plot_gaussian_EELSSpectrum(convolved, plot_component, binned):
 
     s.axes_manager[-1].is_binned = binned
     m = s.create_model(auto_add_edges=False, auto_background=False)
-    m.convolve_signal = create_ll_signal(1000) if convolved else None
+    m.low_loss = create_ll_signal(1000) if convolved else None
 
     m.extend([Gaussian(), Gaussian(), Gaussian()])
 

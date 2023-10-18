@@ -121,7 +121,7 @@ class TestWarningSlowMultifit:
     def test_convolved(self):
         m = self.m
         s2 = hs.signals.Signal1D(np.ones(m.signal.data.shape))
-        m.convolve_signal = s2
+        m.low_loss = s2
         m.convolved = True
         with pytest.warns(UserWarning, match="convolution is not supported"):
             m.multifit(optimizer='lstsq')
@@ -141,7 +141,7 @@ def test_expression_convolved(nav_dim, multiple_free_parameters):
     l_ref = Lorentzian(A=100, centre=20, gamma=4)
     m_ref = s_ref.create_model(auto_add_edges=False, auto_background=False)
     m_ref.append(l_ref)
-    m_ref.convolve_signal = to_convolve
+    m_ref.low_loss = to_convolve
     s = m_ref.as_signal()
 
     if nav_dim >= 1:
@@ -155,7 +155,7 @@ def test_expression_convolved(nav_dim, multiple_free_parameters):
     l = Lorentzian(centre=20, gamma=4)
     m.append(l)
     assert not m.convolved
-    m.convolve_signal = to_convolve
+    m.low_loss = to_convolve
     assert m.convolved
     m.set_parameters_not_free(only_nonlinear=True)
     with pytest.warns(UserWarning):
@@ -190,7 +190,7 @@ def test_expression_multiple_linear_parameter(nav_dim, convolve):
     m_ref = s_ref.create_model(auto_add_edges=False, auto_background=False)
     m_ref.extend([p_ref])
     if convolve:
-        m_ref.convolve_signal = to_convolve
+        m_ref.low_loss = to_convolve
     s = m_ref.as_signal()
 
     if nav_dim >= 1:
@@ -207,7 +207,7 @@ def test_expression_multiple_linear_parameter(nav_dim, convolve):
     m.append(p)
     assert not m.convolved
     if convolve:
-        m.convolve_signal = to_convolve
+        m.low_loss = to_convolve
         with pytest.warns(UserWarning):
             m.multifit(optimizer='lstsq')
     else:
@@ -237,7 +237,7 @@ def test_multiple_linear_parameters_convolution(nav_dim):
 
     m_ref = s_ref.create_model(auto_add_edges=False, auto_background=False)
     m_ref.extend([l_ref1, l_ref2])
-    m_ref.convolve_signal = to_convolve
+    m_ref.low_loss = to_convolve
     s = m_ref.as_signal()
 
     if nav_dim >= 1:
@@ -252,7 +252,7 @@ def test_multiple_linear_parameters_convolution(nav_dim):
     l2 = Lorentzian(centre=600, gamma=20)
     m.extend([l1, l2])
     assert not m.convolved
-    m.convolve_signal = to_convolve
+    m.low_loss = to_convolve
     assert m.convolved
     m.set_parameters_not_free(only_nonlinear=True)
     with pytest.warns(UserWarning):
