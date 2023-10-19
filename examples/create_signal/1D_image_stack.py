@@ -1,8 +1,8 @@
 """
-Creates a 3D image and plots it
-===============================
+Creates a 3D image
+==================
 
-This example creates an image stack and plots it
+This example creates an image stack and plots it.
 """
 
 import numpy as np

@@ -2,7 +2,7 @@
 Creates a line spectrum
 =======================
 
-This example creates a line spectrum and plots it
+This example creates a line spectrum and plots it.
 """
 
 import numpy as np
