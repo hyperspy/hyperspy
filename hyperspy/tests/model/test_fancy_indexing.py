@@ -114,26 +114,3 @@ class TestModelIndexingClass:
         assert isinstance(m, type(m.isig[1:]))
         assert isinstance(m, type(m.inav[1:]))
 
-
-@lazifyTestClass
-class TestConvolveModelSlicing:
-
-    def setup_method(self, method):
-        s = Signal1D(np.random.random((10, 10, 600)))
-        s.axes_manager[-1].offset = -150.
-        s.axes_manager[-1].scale = 0.5
-        m = s.create_model()
-        m.convolve_signal = s + 1
-        g = Gaussian()
-        m.append(g)
-        self.m = m
-
-    def test_slicing_convolve_signal_inav(self):
-        m = self.m
-        m1 = m.inav[::2]
-        assert m1.signal.data.shape == m1.convolve_signal.data.shape
-
-    def test_slicing_convolve_signal_isig(self):
-        m = self.m
-        m1 = m.isig[::2]
-        assert m.signal.data.shape == m1.convolve_signal.data.shape

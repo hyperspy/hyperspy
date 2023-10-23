@@ -132,7 +132,6 @@ class Model2D(BaseModel):
         self.dof.metadata.General.title = (
             self.signal.metadata.General.title + ' degrees of freedom')
         self.free_parameters_boundaries = None
-        self.convolved = False
         self.components = ModelComponents(self)
         if dictionary is not None:
             self._load_dictionary(dictionary)
@@ -140,7 +139,6 @@ class Model2D(BaseModel):
         self.isig = ModelSpecialSlicers(self, False)
         self._whitelist = {
             '_channel_switches': None,
-            'convolved': None,
             'free_parameters_boundaries': None,
             'chisq.data': None,
             'dof.data': None}
@@ -160,14 +158,12 @@ class Model2D(BaseModel):
         else:
             raise WrongObjectError(str(type(value)), 'Signal2D')
 
-    def __call__(self, non_convolved=True, onlyactive=False,
+    def __call__(self, onlyactive=False,
                  component_list=None, binned=None):
         """Returns the corresponding 2D model for the current coordinates
 
         Parameters
         ----------
-        non_convolved : bool
-            Not Implemented for Model2D
         onlyactive : bool
             If True, only the active components will be used to build the
             model.
@@ -389,7 +385,7 @@ class Model2D(BaseModel):
             old_axes_manager = self.axes_manager
             self.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.__call__(non_convolved=False, onlyactive=True)
+        s = self.__call__(onlyactive=True)
         if old_axes_manager is not None:
             self.axes_manager = old_axes_manager
             self.fetch_stored_values()

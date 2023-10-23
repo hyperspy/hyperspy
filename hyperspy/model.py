@@ -271,9 +271,22 @@ class BaseModel(list):
         # raise an exception when using windows.connect
         return id(self)
 
-    def __call__(self, non_convolved=False, onlyactive=False, component_list=None, binned=None):
+    def __call__(self, onlyactive=False, component_list=None, binned=None):
         """Evaluate the model numerically. Implementation requested in all sub-classes"""
         raise NotImplementedError
+
+    @property
+    def convolved(self):
+        raise NotImplementedError("This model does not support convolution.")
+    
+    @convolved.setter
+    def convolved(self, value):
+        # This is for compatibility with model saved with HyperSpy < 2.0
+        if value:
+            raise NotImplementedError("This model does not support convolution.")
+        else:
+            _logger.warning(
+                "The `convolved` attribute is deprecated. It is only available in models that implement convolution.")
 
     def set_signal_range_from_mask(self, mask):
         """
@@ -598,7 +611,7 @@ class BaseModel(list):
                 self.fetch_stored_values(only_fixed=False)
                 data[self.axes_manager._getitem_tuple][
                     np.where(self._channel_switches)] = self.__call__(
-                    non_convolved=not self.convolved, onlyactive=True).ravel()
+                    onlyactive=True).ravel()
                 pbar.update(1)
 
     @property
@@ -925,7 +938,7 @@ class BaseModel(list):
             old_axes_manager = self.axes_manager
             self.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.__call__(non_convolved=False, onlyactive=True)
+        s = self.__call__(onlyactive=True)
         if old_axes_manager is not None:
             self.axes_manager = old_axes_manager
             self.fetch_stored_values()
@@ -939,13 +952,22 @@ class BaseModel(list):
     def _model_function(self, param):
         self.p0 = param
         self._fetch_values_from_p0()
-        to_return = self.__call__(non_convolved=False, onlyactive=True, binned=self._binned)
+        to_return = self.__call__(onlyactive=True, binned=self._binned)
         return to_return
 
     @property
     def active_components(self):
         """List all nonlinear parameters."""
         return tuple([c for c in self if c.active])
+
+    def _convolve_component_values(self, component_values):
+        raise NotImplementedError("This  model does not support convolution")
+
+    def _compute_constant_term(self, component):
+        """Gets the value of any (non-free) constant term"""
+        signal_shape = self.axes_manager.signal_shape[::-1]
+        data = component._constant_term * np.ones(signal_shape)
+        return data.T[np.where(self._channel_switches)[::-1]].T
 
     def _linear_fit(self, optimizer="lstsq", calculate_errors=False,
                     only_current=True, weights=None, **kwargs):
@@ -1071,7 +1093,7 @@ class BaseModel(list):
                 comp_value = self.__call__(
                     component_list=[component], binned=False
                     )
-                comp_constant_values = component._compute_constant_term()
+                comp_constant_values = self._compute_constant_term(component=component)
                 comp_values[index] += comp_value - comp_constant_values
                 constant_term += comp_constant_values
 
@@ -1813,6 +1835,11 @@ class BaseModel(list):
             # binning Not Implemented for Model2D
             self._binned = False
 
+        try:
+            convolved = self.convolved
+        except NotImplementedError:
+            convolved = False
+
         if linear_fitting:
             # Check that all non-free parameters don't change accross
             # the navigation dimension. If this is the case, we can fit the
@@ -1857,7 +1884,7 @@ class BaseModel(list):
                     "These components are:\n\t"
                     + "\n\t".join(str(c) for c in active_is_multidimensional)
                 )
-            elif self.convolved:
+            elif convolved:
                 warnings.warn(
                     "Using convolution is not supported when fitting the "
                     "dataset in a vectorized fashion. Fitting proceeds by "
@@ -1909,7 +1936,8 @@ class BaseModel(list):
                 # implementation, a more elegant implementation could be found
                 self._binned = None
                 return
-
+        # Fitting in a vectorized fashion is not supported. We iterate over the
+        # navigation indices and fit the dataset one by one.
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(
             self.fetch_stored_values

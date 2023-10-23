@@ -18,8 +18,9 @@
 
 import contextlib
 import io
-import numpy as np
+from unittest import mock
 
+import numpy as np
 import pooch
 import pytest
 
@@ -100,12 +101,17 @@ class TestCreateEELSModel:
         cnames = [component.name for component in m]
         assert not "B_K" in cnames or "C_K" in cnames
 
+    def test_convolved_ll_not_set(self):
+        m = self.s.create_model(auto_add_edges=False)
+        with pytest.raises(RuntimeError, match="not set"):
+            m.convolved = True
+
     def test_low_loss(self):
         s = self.s
         low_loss = s.deepcopy()
         low_loss.axes_manager[-1].offset = -20
         m = s.create_model(low_loss=low_loss)
-        assert m.convolve_signal is low_loss
+        assert m.low_loss is low_loss
         assert m.convolved
 
     def test_low_loss_bad_shape(self):
@@ -606,3 +612,137 @@ class TestEELSFineStructure:
         m.store()
         mc = m.signal.models.a.restore()
         assert np.array_equal(m(), mc())
+
+class TestModelJacobians:
+    def setup_method(self, method):
+        s = EELSSpectrum(np.zeros(1))
+        m = s.create_model(auto_add_edges=False, auto_background=False)
+        self.low_loss = 7.0
+        self.weights = 0.3
+        m.axis.axis = np.array([1, 0])
+        m._channel_switches = np.array([0, 1], dtype=bool)
+        m.append(hs.model.components1D.Gaussian())
+        m[0].A.value = 1
+        m[0].centre.value = 2.0
+        m[0].sigma.twin = m[0].centre
+        m._low_loss = mock.MagicMock()
+        m.low_loss.return_value = self.low_loss
+        self.model = m
+        m.convolution_axis = np.zeros(2)
+
+    def test_jacobian_convolved(self):
+        m = self.model
+        m.convolved = True
+        m.append(hs.model.components1D.Gaussian())
+        m[0].convolved = False
+        m[1].convolved = True
+        jac = m._jacobian((1, 2, 3, 4, 5), None, weights=self.weights)
+        np.testing.assert_array_almost_equal(
+            jac.squeeze(),
+            self.weights
+            * np.array(
+                [
+                    m[0].A.grad(0),
+                    m[0].sigma.grad(0) + m[0].centre.grad(0),
+                    m[1].A.grad(0) * self.low_loss,
+                    m[1].centre.grad(0) * self.low_loss,
+                    m[1].sigma.grad(0) * self.low_loss,
+                ]
+            ),
+        )
+        assert m[0].A.value == 1
+        assert m[0].centre.value == 2
+        assert m[0].sigma.value == 2
+        assert m[1].A.value == 3
+        assert m[1].centre.value == 4
+        assert m[1].sigma.value == 5
+
+class TestModelSettingPZero:
+    def setup_method(self, method):
+        s = EELSSpectrum(np.empty(1))
+        m = s.create_model(auto_add_edges=False, auto_background=False)
+        self.model = m
+
+    def test_calculating_convolution_axis(self):
+        m = self.model
+        # setup
+        m.axis.offset = 10
+        m.axis.size = 10
+        ll_axis = mock.MagicMock()
+        ll_axis.size = 7
+        ll_axis.value2index.return_value = 3
+        m._low_loss = mock.MagicMock()
+        m.low_loss.axes_manager.signal_axes = [
+            ll_axis,
+        ]
+
+        # calculation
+        m.set_convolution_axis()
+
+        # tests
+        np.testing.assert_array_equal(m.convolution_axis, np.arange(7, 23))
+        np.testing.assert_equal(ll_axis.value2index.call_args[0][0], 0)
+
+
+
+@lazifyTestClass
+class TestConvolveModelSlicing:
+
+    def setup_method(self, method):
+        s = EELSSpectrum(np.random.random((10, 10, 600)))
+        s.axes_manager[-1].offset = -150.
+        s.axes_manager[-1].scale = 0.5
+        m = s.create_model(auto_add_edges=False, auto_background=False)
+        m.low_loss = s + 1
+        g = hs.model.components1D.Gaussian()
+        m.append(g)
+        self.m = m
+
+    def test_slicing_low_loss_inav(self):
+        m = self.m
+        m1 = m.inav[::2]
+        assert m1.signal.data.shape == m1.low_loss.data.shape
+
+    def test_slicing_low_loss_isig(self):
+        m = self.m
+        m1 = m.isig[::2]
+        assert m.signal.data.shape == m1.low_loss.data.shape
+
+class TestModelDictionary:
+
+    def setup_method(self, method):
+        s = EELSSpectrum(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
+        m = s.create_model(auto_add_edges=False, auto_background=False)
+        m.low_loss = (s + 3.0).deepcopy()
+        self.model = m
+        self.s = s
+
+        m.append(hs.model.components1D.Gaussian())
+        m.append(hs.model.components1D.Gaussian())
+        m.append(hs.model.components1D.ScalableFixedPattern(s * 0.3))
+        m[0].A.twin = m[1].A
+        m.fit()
+
+    def test_to_dictionary(self):
+        m = self.model
+        d = m.as_dictionary()
+
+        np.testing.assert_allclose(m.low_loss.data, d['low_loss']['data'])
+
+    def test_load_dictionary(self):
+        d = self.model.as_dictionary()
+        mn = self.s.create_model()
+        mn.append(hs.model.components1D.Lorentzian())
+        mn._load_dictionary(d)
+        mo = self.model
+
+        np.testing.assert_allclose(
+            mn.low_loss.data, mo.low_loss.data
+            )
+        for i in range(len(mn)):
+            assert mn[i]._id_name == mo[i]._id_name
+            for po, pn in zip(mo[i].parameters, mn[i].parameters):
+                np.testing.assert_allclose(po.map['values'], pn.map['values'])
+                np.testing.assert_allclose(po.map['is_set'], pn.map['is_set'])
+
+        assert mn[0].A.twin is mn[1].A

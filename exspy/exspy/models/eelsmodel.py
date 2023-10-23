@@ -20,6 +20,8 @@ import copy
 import logging
 import warnings
 
+import numpy as np
+
 from hyperspy import components1d
 from exspy.signals.eels import EELSSpectrum
 from exspy.components import EELSCLEdge
@@ -31,6 +33,33 @@ from hyperspy.models.model1d import Model1D
 
 
 _logger = logging.getLogger(__name__)
+
+
+
+def generate_uniform_axis(offset, scale, size, offset_index=0):
+    """Creates a uniform axis vector given the offset, scale and number of
+    channels.
+
+    Alternatively, the offset_index of the offset channel can be specified.
+
+    Parameters
+    ----------
+    offset : float
+    scale : float
+    size : number of channels
+    offset_index : int
+        offset_index number of the offset
+
+    Returns
+    -------
+    Numpy array
+
+    """
+
+    return np.linspace(offset - offset_index * scale,
+                       offset + scale * (size - 1 - offset_index),
+                       size)
+
 
 
 class EELSModel(Model1D):
@@ -57,10 +86,20 @@ class EELSModel(Model1D):
         self._min_distance_between_edges_for_fine_structure = 0
         self._preedge_safe_window_width = 2
         self._suspend_auto_fine_structure_width = False
-        self.convolve_signal = low_loss
+        self._low_loss = None
+        self._convolved = False
+        self.convolution_axis = None
+        self.low_loss = low_loss
         self.GOS = GOS
         self.edges = []
         self._background_components = []
+        self._whitelist.update(
+            {
+                '_convolved': None,
+                'low_loss': ('sig', None),
+                }
+            )
+        self._slicing_whitelist['low_loss'] = 'inav'
         if dictionary is not None:
             auto_background = False
             auto_add_edges = False
@@ -80,6 +119,108 @@ class EELSModel(Model1D):
 
     __init__.__doc__ %= EELSMODEL_PARAMETERS
 
+    def _compute_constant_term(self, component):
+        """Gets the value of any (non-free) constant term, with convolution"""
+        if self.convolved and component.convolved:
+            data = self._convolve_component_values(component._constant_term)
+            return data.T[np.where(self._channel_switches)[::-1]].T
+        else:
+            return super()._compute_constant_term(component)
+
+    def _convolve_component_values(self, component_values):
+        """
+        Convolve component with model convolution axis.
+
+        Multiply by np.ones in order to handle case where component_values is a
+        single constant
+        """
+
+        sig = component_values * np.ones(self.convolution_axis.shape)
+
+        ll = self.low_loss(self.axes_manager)
+        convolved = np.convolve(sig, ll, mode="valid")
+
+        return convolved
+
+    def _get_model_data(self, *args, **kwargs):
+        if self.convolved is False:
+            return super()._get_model_data(*args, **kwargs)
+        else:  # convolved
+            component_list = kwargs.get('component_list')  
+            ignore_channel_switches = kwargs.get('ignore_channel_switches', False)
+            slice_ = slice(None) if ignore_channel_switches else self._channel_switches
+            if self.convolution_axis is None:
+                raise RuntimeError("`low_loss` is not set.")
+            sum_convolved = np.zeros(len(self.convolution_axis))
+            sum_ = np.zeros(len(self.axis.axis))
+            for component in component_list:
+                if component.convolved:
+                    sum_convolved += component.function(self.convolution_axis)
+                else:
+                    sum_ += component.function(self.axis.axis)
+            to_return = sum_ + np.convolve(
+                self.low_loss(self.axes_manager),
+                sum_convolved, mode="valid")
+            to_return = to_return[slice_]
+            return to_return
+
+    def _jacobian(self, param, y, weights=None):
+        if not self.convolved:
+            return super()._jacobian(param, y, weights)
+
+        if weights is None:
+            weights = 1.
+
+        counter = 0
+        grad = np.zeros(len(self.axis.axis))
+        for component in self:  # Cut the parameters list
+            if component.active:
+                component.fetch_values_from_array(
+                    param[
+                        counter:counter +
+                        component._nfree_param],
+                    onlyfree=True)
+
+                if component.convolved:
+                    for parameter in component.free_parameters:
+                        par_grad = np.convolve(
+                            parameter.grad(self.convolution_axis),
+                            self.low_loss(self.axes_manager),
+                            mode="valid")
+
+                        if parameter._twins:
+                            for par in parameter._twins:
+                                np.add(par_grad, np.convolve(
+                                    par.grad(
+                                        self.convolution_axis),
+                                    self.low_loss(self.axes_manager),
+                                    mode="valid"), par_grad)
+
+                        grad = np.vstack((grad, par_grad))
+
+                else:
+                    for parameter in component.free_parameters:
+                        par_grad = parameter.grad(self.axis.axis)
+
+                        if parameter._twins:
+                            for par in parameter._twins:
+                                np.add(par_grad, par.grad(self.axis.axis), par_grad)
+
+                        grad = np.vstack((grad, par_grad))
+
+                counter += component._nfree_param
+
+        to_return = grad[1:, self._channel_switches] * weights
+
+
+        if self.axis.is_binned:
+            if self.axis.is_uniform:
+                to_return *= self.axis.scale
+            else:
+                to_return *= np.gradient(self.axis.axis)
+
+        return to_return
+
 
     @property
     def signal(self):
@@ -94,6 +235,64 @@ class EELSModel(Model1D):
                 "This attribute can only contain an EELSSpectrum "
                 "but an object of type %s was provided" %
                 str(type(value)))
+
+    @property
+    def convolved(self):
+        return self._convolved
+
+    @convolved.setter
+    def convolved(self, value):
+        if isinstance(value, bool):
+            if value is not self._convolved:
+                if value and not self.low_loss:
+                    raise RuntimeError(
+                        "Cannot set `convolved` to True as the "
+                        "`low_loss` attribute"
+                        "is not set.")
+                else:
+                    self._convolved = value
+                    self.update_plot()
+        else:
+            raise ValueError("`convolved` must be a boolean.")
+
+    @property
+    def low_loss(self):
+        return self._low_loss
+
+    @low_loss.setter
+    def low_loss(self, value):
+        if value is not None:
+            if (value.axes_manager.navigation_shape !=
+                    self.signal.axes_manager.navigation_shape):
+                raise ValueError(
+                    "The signal does not have the same navigation dimension "
+                    "as the signal it will be convolved with."
+                    )
+            if not value.axes_manager.signal_axes[0].is_uniform:
+                raise ValueError(
+                    "Convolution is not supported with non-uniform signal axes."
+                    )
+            self._low_loss = value
+            self.set_convolution_axis()
+            self.convolved = True
+        else:
+            self._low_loss = value
+            self.convolution_axis = None
+            self.convolved = False
+
+    # Extend the list methods to call the _touch when the model is modified
+
+    def set_convolution_axis(self):
+        """
+        Creates an axis to use to generate the data of the model in the precise
+        scale to obtain the correct axis and origin after convolution.
+        """
+        ll_axis = self.low_loss.axes_manager.signal_axes[0]
+        dimension = self.axis.size + ll_axis.size - 1
+        step = self.axis.scale
+        knot_position = ll_axis.size - ll_axis.value2index(0) - 1
+        self.convolution_axis = generate_uniform_axis(self.axis.offset, step,
+                                                     dimension, knot_position)
 
     def append(self, component):
         """Append component to EELS model.

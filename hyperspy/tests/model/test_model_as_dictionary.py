@@ -199,7 +199,6 @@ class TestModelDictionary:
     def setup_method(self, method):
         s = Signal1D(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
         m = s.create_model()
-        m.convolve_signal = (s + 3.0).deepcopy()
         self.model = m
         self.s = s
 
@@ -213,13 +212,11 @@ class TestModelDictionary:
         m = self.model
         d = m.as_dictionary()
 
-        np.testing.assert_allclose(m.convolve_signal.data, d['convolve_signal']['data'])
         np.testing.assert_allclose(m.chisq.data, d['chisq.data'])
         np.testing.assert_allclose(m.dof.data, d['dof.data'])
         np.testing.assert_equal(
             d['free_parameters_boundaries'],
             m.free_parameters_boundaries)
-        assert d['convolved'] is m.convolved
 
         for num, c in enumerate(m):
             tmp = c.as_dictionary()
@@ -240,14 +237,9 @@ class TestModelDictionary:
         np.testing.assert_allclose(mo.chisq.data, mn.chisq.data)
         np.testing.assert_allclose(mo.dof.data, mn.dof.data)
 
-        np.testing.assert_allclose(
-            mn.convolve_signal.data, mo.convolve_signal.data
-            )
-
         np.testing.assert_equal(
             mn.free_parameters_boundaries,
             mo.free_parameters_boundaries)
-        assert mn.convolved is mo.convolved
         for i in range(len(mn)):
             assert mn[i]._id_name == mo[i]._id_name
             for po, pn in zip(mo[i].parameters, mn[i].parameters):

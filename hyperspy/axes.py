@@ -64,30 +64,6 @@ class ndindex_nat(np.ndindex):
         return super().__next__()[::-1]
 
 
-def generate_uniform_axis(offset, scale, size, offset_index=0):
-    """Creates a uniform axis vector given the offset, scale and number of
-    channels.
-
-    Alternatively, the offset_index of the offset channel can be specified.
-
-    Parameters
-    ----------
-    offset : float
-    scale : float
-    size : number of channels
-    offset_index : int
-        offset_index number of the offset
-
-    Returns
-    -------
-    Numpy array
-
-    """
-
-    return np.linspace(offset - offset_index * scale,
-                       offset + scale * (size - 1 - offset_index),
-                       size)
-
 
 def create_axis(**kwargs):
     """Creates a uniform, a non-uniform axis or a functional axis depending on
