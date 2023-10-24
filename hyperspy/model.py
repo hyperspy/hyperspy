@@ -126,11 +126,18 @@ def reconstruct_component(comp_dictionary, **init_args):
         # it is serialized using dill.
         _class = dill.loads(comp_dictionary['_class_dump'])
     else:
-        raise ImportError(
-            f'Loading the {comp_dictionary["class"]} component ' +
-            'failed because the component is provided by the ' +
-            f'{comp_dictionary["package"]} Python package, but ' +
-            f'{comp_dictionary["package"]} is not installed.')
+        try:
+            raise ImportError(
+                f'Loading the {comp_dictionary["class"]} component ' +
+                'failed because the component is provided by the ' +
+                f'{comp_dictionary["package"]} Python package, but ' +
+                f'{comp_dictionary["package"]} is not installed.')
+        except KeyError:
+            raise ImportError(
+                f'Loading the {comp_dictionary["_id_name"]} component ' +
+                'failed because the component is provided by a Python ' +
+                'package which is not installed. Most likely, the ' +
+                'exSpy package is needed but I cannot be sure!')
     return _class(**init_args)
 
 
