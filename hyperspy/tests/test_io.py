@@ -299,11 +299,14 @@ def test_load_save_filereader_metadata(tmp_path):
     # tests that original FileReader metadata is correctly persisted and
     # appended through a save and load cycle
 
-    fname = PATH.parent / "drawing" / "data" / "Cr_L_cl.hspy"
+    s = hs.signals.Signal1D(np.arange(10))
+    fname = tmp_path / "temp0.hspy"
+    s.save(fname)
     s = hs.load(fname)
     assert s.metadata.General.FileIO.Number_0.io_plugin == \
            'rsciio.hspy'
-    assert s.metadata.General.FileIO.Number_0.operation == 'load'
+    assert s.metadata.General.FileIO.Number_0.operation == 'save'
+    assert s.metadata.General.FileIO.Number_1.operation == 'load'
     assert s.metadata.General.FileIO.Number_0.hyperspy_version == hs_version
 
     f = tmp_path / "temp"
@@ -311,15 +314,20 @@ def test_load_save_filereader_metadata(tmp_path):
     expected = {
         '0': {
             'io_plugin': 'rsciio.hspy',
-            'operation': 'load',
+            'operation': 'save',
             'hyperspy_version': hs_version
         },
         '1': {
             'io_plugin': 'rsciio.hspy',
-            'operation': 'save',
+            'operation': 'load',
             'hyperspy_version': hs_version
         },
         '2': {
+            'io_plugin': 'rsciio.hspy',
+            'operation': 'save',
+            'hyperspy_version': hs_version
+        },
+        '3': {
             'io_plugin': 'rsciio.hspy',
             'operation': 'load',
             'hyperspy_version': hs_version
@@ -327,6 +335,8 @@ def test_load_save_filereader_metadata(tmp_path):
     }
     del s.metadata.General.FileIO.Number_0.timestamp  # runtime dependent
     del s.metadata.General.FileIO.Number_1.timestamp  # runtime dependent
+    del s.metadata.General.FileIO.Number_2.timestamp  # runtime dependent
+
     assert \
         s.metadata.General.FileIO.Number_0.as_dictionary() == expected['0']
     assert \
@@ -336,4 +346,6 @@ def test_load_save_filereader_metadata(tmp_path):
     del t.metadata.General.FileIO.Number_0.timestamp  # runtime dependent
     del t.metadata.General.FileIO.Number_1.timestamp  # runtime dependent
     del t.metadata.General.FileIO.Number_2.timestamp  # runtime dependent
+    del t.metadata.General.FileIO.Number_3.timestamp  # runtime dependent
+
     assert t.metadata.General.FileIO.as_dictionary() == expected
