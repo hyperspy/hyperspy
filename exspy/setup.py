@@ -84,6 +84,7 @@ setup(
         "": ["LICENSE", "README.rst"],
         "exspy": [
             "data/*hspy",
+            "test/drawing/data/*hspy",
             "test/signals/data/*hspy",
             "hyperspy_extension.yaml"],
     },)
