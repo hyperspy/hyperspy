@@ -71,6 +71,7 @@ _logger = logging.getLogger(__name__)
 
 _COMPONENTS = ALL_EXTENSIONS["components1D"]
 _COMPONENTS.update(ALL_EXTENSIONS["components1D"])
+EXSPY_HSPY_COMPONENTS = ("EELSArctan", "EELSCLEdge", "DoublePowerLaw", "Vignetting", "PESCoreLineShape", "SEE", "PESVoigt", "VolumePlasmonDrude")
 
 
 def _twinned_parameter(parameter):
@@ -126,18 +127,14 @@ def reconstruct_component(comp_dictionary, **init_args):
         # it is serialized using dill.
         _class = dill.loads(comp_dictionary['_class_dump'])
     else:
-        try:
-            raise ImportError(
-                f'Loading the {comp_dictionary["class"]} component ' +
-                'failed because the component is provided by the ' +
-                f'{comp_dictionary["package"]} Python package, but ' +
-                f'{comp_dictionary["package"]} is not installed.')
-        except KeyError:
-            raise ImportError(
-                f'Loading the {comp_dictionary["_id_name"]} component ' +
-                'failed because the component is provided by a Python ' +
-                'package which is not installed. Most likely, the ' +
-                'exSpy package is needed but I cannot be sure!')
+        if "class" not in comp_dictionary and comp_dictionary["_id_name"] in EXSPY_HSPY_COMPONENTS:
+            comp_dictionary["class"] = comp_dictionary["_id_name"]
+            comp_dictionary["package"] = "exspy"
+        raise ImportError(
+            f'Loading the {comp_dictionary["class"]} component ' +
+            'failed because the component is provided by the ' +
+            f'{comp_dictionary["package"]} Python package, but ' +
+            f'{comp_dictionary["package"]} is not installed.')
     return _class(**init_args)
 
 

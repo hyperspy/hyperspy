@@ -106,4 +106,5 @@ def test_model_backcompatibility(versionfile):
         with pytest.warns(VisibleDeprecationWarning):
             with pytest.raises(ImportError):
                 s = hs.load(DIRPATH / versionfile)
+                m = s.models.restore('a')
 
