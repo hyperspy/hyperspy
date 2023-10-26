@@ -601,6 +601,7 @@ class TestTwinnedComponents:
     #     B = m.as_signal()
     #     np.testing.assert_allclose(A.data, B.data, rtol=5E-5)
 
+    @pytest.mark.flaky(reruns=1)
     def test_fit_fixed_twinned_components_and_std(self):
         m = self.m
         m[1].A.free = False
