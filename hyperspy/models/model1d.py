@@ -336,6 +336,29 @@ class Model1D(BaseModel):
 
     remove.__doc__ = BaseModel.remove.__doc__
 
+    def _get_model_data(self, component_list=None, ignore_channel_switches=False):
+        """
+        Return the model data at the current position
+        
+        Parameters
+        ----------
+        component_list : list or None
+            If None, the model is constructed with all active components. Otherwise,
+            the model is constructed with the components in component_list.
+        
+        Returns:
+        --------
+        model_data: `ndarray`
+        """
+        if component_list is None:
+            component_list = self
+        slice_ = slice(None) if ignore_channel_switches else self._channel_switches
+        axis = self.axis.axis[slice_]
+        model_data = np.zeros(len(axis))
+        for component in component_list:
+            model_data += component.function(axis)
+        return model_data
+
     def _get_current_data(self, onlyactive=False,
                  component_list=None, binned=None,
                  ignore_channel_switches=False):

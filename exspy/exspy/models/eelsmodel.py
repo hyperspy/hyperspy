@@ -137,7 +137,7 @@ class EELSModel(Model1D):
 
         sig = component_values * np.ones(self.convolution_axis.shape)
 
-        ll = self.low_loss(self.axes_manager)
+        ll = self.low_loss._get_current_data(self.axes_manager)
         convolved = np.convolve(sig, ll, mode="valid")
 
         return convolved
@@ -159,7 +159,7 @@ class EELSModel(Model1D):
                 else:
                     sum_ += component.function(self.axis.axis)
             to_return = sum_ + np.convolve(
-                self.low_loss(self.axes_manager),
+                self.low_loss._get_current_data(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[slice_]
             return to_return
@@ -185,7 +185,7 @@ class EELSModel(Model1D):
                     for parameter in component.free_parameters:
                         par_grad = np.convolve(
                             parameter.grad(self.convolution_axis),
-                            self.low_loss(self.axes_manager),
+                            self.low_loss._get_current_data(self.axes_manager),
                             mode="valid")
 
                         if parameter._twins:
@@ -193,7 +193,7 @@ class EELSModel(Model1D):
                                 np.add(par_grad, np.convolve(
                                     par.grad(
                                         self.convolution_axis),
-                                    self.low_loss(self.axes_manager),
+                                    self.low_loss._get_current_data(self.axes_manager),
                                     mode="valid"), par_grad)
 
                         grad = np.vstack((grad, par_grad))

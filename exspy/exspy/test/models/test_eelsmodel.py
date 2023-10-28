@@ -627,7 +627,8 @@ class TestModelJacobians:
         m[0].centre.value = 2.0
         m[0].sigma.twin = m[0].centre
         m._low_loss = mock.MagicMock()
-        m.low_loss.return_value = self.low_loss
+        m._low_loss._get_current_data = mock.MagicMock()
+        m.low_loss._get_current_data.return_value = self.low_loss
         self.model = m
         m.convolution_axis = np.zeros(2)
 
@@ -637,6 +638,7 @@ class TestModelJacobians:
         m.append(hs.model.components1D.Gaussian())
         m[0].convolved = False
         m[1].convolved = True
+        assert m.low_loss._get_current_data() == 7
         jac = m._jacobian((1, 2, 3, 4, 5), None, weights=self.weights)
         np.testing.assert_array_almost_equal(
             jac.squeeze(),
