@@ -25,7 +25,6 @@ import pytest
 import hyperspy.api as hs
 from hyperspy import components1d
 from hyperspy.component import Component
-from hyperspy.misc.test_utils import ignore_warning
 from hyperspy.models.model1d import Model1D
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]

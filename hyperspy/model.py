@@ -127,13 +127,13 @@ def reconstruct_component(comp_dictionary, **init_args):
         # it is serialized using dill.
         _class = dill.loads(comp_dictionary['_class_dump'])
     else:
-        if "class" not in comp_dictionary and comp_dictionary["_id_name"] in EXSPY_HSPY_COMPONENTS:
-            comp_dictionary["class"] = comp_dictionary["_id_name"]
+        # For component saved with hyperspy <2.0 and moved to exspy
+        if comp_dictionary["_id_name"] in EXSPY_HSPY_COMPONENTS:
             comp_dictionary["package"] = "exspy"
         raise ImportError(
-            f'Loading the {comp_dictionary["class"]} component ' +
+            f'Loading the {comp_dictionary["_id_name"]} component ' +
             'failed because the component is provided by the ' +
-            f'{comp_dictionary["package"]} Python package, but ' +
+            f'`{comp_dictionary["package"]}` Python package, but ' +
             f'{comp_dictionary["package"]} is not installed.')
     return _class(**init_args)
 

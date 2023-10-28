@@ -108,3 +108,24 @@ def test_model_backcompatibility(versionfile):
                 s = hs.load(DIRPATH / versionfile)
                 m = s.models.restore('a')
 
+
+def test_loading_components_exspy_not_installed():
+    try:
+        from exspy import components
+        exspy_installed = True
+    except ImportError:
+        exspy_installed = False
+
+    with pytest.warns(VisibleDeprecationWarning):
+        # warning is for old binning API
+        s = hs.load(DIRPATH / "hs16_model.hspy")
+
+    if not exspy_installed:
+        # This should raise an ImportError with
+        # a suitable error message
+        with pytest.raises(ImportError) as err:
+            m = s.models.restore('a')
+            assert "exspy is not installed" in str(err.value)
+    else:
+        # This should work fine
+        m = s.models.restore('a')
