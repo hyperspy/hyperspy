@@ -18,27 +18,27 @@ following table:
 .. table:: Binned default values for the different subclasses.
 
 
-    +-------------------------------------------------+--------+
-    |           BaseSignal subclass                   | binned |
-    +=================================================+========+
-    |    :py:class:`~.api.signals.BaseSignal`         | False  |
-    +-------------------------------------------------+--------+
-    |    :py:class:`~.api.signals.Signal1D`           | False  |
-    +-------------------------------------------------+--------+
-    |    :py:class:`~.api.signals.EELSSpectrum`       | True   |
-    +-------------------------------------------------+--------+
-    |    :py:class:`~.api.signals.EDSSEMSpectrum`     | True   |
-    +-------------------------------------------------+--------+
-    |    :py:class:`~.api.signals.EDSTEMSpectrum`     | True   |
-    +-------------------------------------------------+--------+
-    |    :py:class:`~.api.signals.Signal2D`           | False  |
-    +-------------------------------------------------+--------+
-    |    :py:class:`~.api.signals.ComplexSignal`      | False  |
-    +-------------------------------------------------+--------+
-    |    :py:class:`~.api.signals.ComplexSignal1D`    | False  |
-    +-------------------------------------------------+--------+
-    |    :py:class:`~.api.signals.ComplexSignal2D`    | False  |
-    +-------------------------------------------------+--------+
+    +-------------------------------------------------+--------+----------+
+    |           BaseSignal subclass                   | binned | Library  |
+    +=================================================+========+==========+
+    |    :py:class:`~.api.signals.BaseSignal`         | False  | hyperspy |
+    +-------------------------------------------------+--------+----------+
+    |    :py:class:`~.api.signals.Signal1D`           | False  | hyperspy |
+    +-------------------------------------------------+--------+----------+
+    |    :py:class:`exspy.signals.EELSSpectrum`       | True   |  exSpy   |
+    +-------------------------------------------------+--------+----------+
+    |    :py:class:`exspy.signals.EDSSEMSpectrum`     | True   |  exSpy   |
+    +-------------------------------------------------+--------+----------+
+    |    :py:class:`exspy.signals.EDSTEMSpectrum`     | True   |  exSpy   |
+    +-------------------------------------------------+--------+----------+
+    |    :py:class:`~.api.signals.Signal2D`           | False  | hyperspy |
+    +-------------------------------------------------+--------+----------+
+    |    :py:class:`~.api.signals.ComplexSignal`      | False  | hyperspy |
+    +-------------------------------------------------+--------+----------+
+    |    :py:class:`~.api.signals.ComplexSignal1D`    | False  | hyperspy |
+    +-------------------------------------------------+--------+----------+
+    |    :py:class:`~.api.signals.ComplexSignal2D`    | False  | hyperspy |
+    +-------------------------------------------------+--------+----------+
 
 
 
@@ -59,4 +59,3 @@ the signal. Therefore, in this case, :py:meth:`~.api.signals.BaseSignal.integrat
 performs a simple summation along the given axis. In contrast, for unbinned
 axes, :py:meth:`~.api.signals.BaseSignal.integrate1D` calls the
 :py:meth:`~.api.signals.BaseSignal.integrate_simpson` method.
-

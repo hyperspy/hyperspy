@@ -31,29 +31,9 @@ def test_image_binned_default():
     assert not s.axes_manager[-1].is_binned
 
 
-def test_dielectric_function_binned_default():
-    s = hs.signals.DielectricFunction([0])
-    assert not s.axes_manager[-1].is_binned
-
-
 def test_signal_binned_default():
     s = hs.signals.BaseSignal([0])
     assert not s.axes_manager[-1].is_binned
-
-
-def test_eels_spectrum_binned_default():
-    s = hs.signals.EELSSpectrum([0])
-    assert s.axes_manager[-1].is_binned
-
-
-def test_eds_tem_binned_default():
-    s = hs.signals.EDSTEMSpectrum([0])
-    assert s.axes_manager[-1].is_binned
-
-
-def test_eds_sem_binned_default():
-    s = hs.signals.EDSSEMSpectrum([0])
-    assert s.axes_manager[-1].is_binned
 
 
 class TestModelBinned:

@@ -40,7 +40,7 @@ def AIC(model):
     lnL = model._poisson_likelihood_function(
         model.p0,
         model.axis.axis[
-            model.channel_switches])
+            model._channel_switches])
     k = len(model.p0) + 1  # +1 for the variance
     return 2 * k - 2 * lnL
 
@@ -71,7 +71,7 @@ def BIC(model):
     lnL = model._poisson_likelihood_function(
         model.p0,
         model.axis.axis[
-            model.channel_switches])
+            model._channel_switches])
     n = model.axes_manager.signal_size
     k = len(model.p0) + 1
     return k * np.log(n) - 2. * lnL

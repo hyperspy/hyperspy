@@ -65,9 +65,11 @@ install_req = [
 extras_require = {
 	"ipython": ["IPython>7.0, !=8.0", "ipyparallel"],
     "learning": ["scikit-learn>=1.0.1"],
-    "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0", "ipympl"],
     # UPDATE BEFORE RELEASE
-    "gui-traitsui": ["hyperspy_gui_traitsui @ git+https://github.com/hyperspy/hyperspy_gui_traitsui#egg=hyperspy_gui_traitsui"],
+    "gui-jupyter": ["hyperspy_gui_ipywidgets @ git+https://github.com/ericpre/hyperspy_gui_ipywidgets.git@hyperspy2.0",
+                    "ipympl"],
+    # UPDATE BEFORE RELEASE
+    "gui-traitsui": ["hyperspy_gui_traitsui @ git+https://github.com/ericpre/hyperspy_gui_traitsui.git@hyperspy2.0"],
     #"gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "tests": [
         "pytest>=3.6",
@@ -87,6 +89,7 @@ extras_require = {
         "sphinxcontrib-mermaid",
         "sphinxcontrib-towncrier>=0.3.0a0",
         "sphinx-design",
+        "sphinx-favicon",
         "towncrier",
         ],
 }
@@ -156,7 +159,6 @@ with update_version_when_dev() as version:
         packages=['hyperspy',
                   'hyperspy.datasets',
                   'hyperspy._components',
-                  'hyperspy.datasets',
                   'hyperspy.docstrings',
                   'hyperspy.drawing',
                   'hyperspy.drawing._markers',
@@ -177,8 +179,6 @@ with update_version_when_dev() as version:
                   'hyperspy.tests.misc',
                   'hyperspy.models',
                   'hyperspy.misc',
-                  'hyperspy.misc.eels',
-                  'hyperspy.misc.eds',
                   'hyperspy.misc.holography',
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
@@ -207,8 +207,6 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_model/*.png',
                 'tests/drawing/plot_roi/*.png',
                 'misc/dask_widgets/*.html.j2',
-                'misc/eds/example_signals/*.hspy',
-                'misc/holography/example_signals/*.hdf5',
                 'tests/drawing/plot_mva/*.png',
                 'tests/drawing/plot_widgets/*.png',
                 'tests/drawing/plot_signal_tools/*.png',

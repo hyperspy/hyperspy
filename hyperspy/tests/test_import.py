@@ -97,11 +97,9 @@ def test_dir_api():
     assert d == [
         '__version__',
         'datasets',
-        'eds',
         'get_configuration_directory_path',
         'interactive',
         'load',
-        'material',
         'model',
         'plot',
         'preferences',
@@ -121,11 +119,9 @@ def test_dir_api_nogui():
     assert d == [
         '__version__',
         'datasets',
-        'eds',
         'get_configuration_directory_path',
         'interactive',
         'load',
-        'material',
         'model',
         'plot',
         'preferences',
@@ -142,41 +138,25 @@ def test_dir_api_nogui():
 def test_dir_datasets():
     import hyperspy.datasets
     d = dir(hyperspy.datasets)
-    assert d == ['artificial_data', 'eelsdb', 'example_signals']
+    assert d == ['artificial_data', 'two_gaussians']
 
 
-def test_dir_datasets2():
+def test_dir_datasets_artificial_data():
     import hyperspy.datasets.artificial_data
     d = dir(hyperspy.datasets.artificial_data)
     assert d == [
         'get_atomic_resolution_tem_signal2d',
-        'get_core_loss_eels_line_scan_signal',
-        'get_core_loss_eels_model',
-        'get_core_loss_eels_signal',
-        'get_low_loss_eels_line_scan_signal',
-        'get_low_loss_eels_signal',
         'get_luminescence_signal',
         'get_wave_image',
         ]
-
-
-def test_dir_datasets3():
-    import hyperspy.datasets.example_signals
-    d = dir(hyperspy.datasets.example_signals)
-    assert d == [
-    'EDS_SEM_Spectrum',
-    'EDS_TEM_Spectrum',
-    ]
 
 
 def test_dir_utils():
     import hyperspy.utils
     d = dir(hyperspy.utils)
     assert d == [
-        'eds',
         'interactive',
         'markers',
-        'material',
         'model',
         'plot',
         'print_known_signal_types',
@@ -185,20 +165,6 @@ def test_dir_utils():
         'stack',
         'transpose',
         ]
-
-
-def test_dir_utils_eds():
-    import hyperspy.utils.eds
-    d = dir(hyperspy.utils.eds)
-    assert d == [
-        'edx_cross_section_to_zeta',
-        'electron_range',
-        'get_xray_lines_near_energy',
-        'take_off_angle',
-        'xray_range',
-        'zeta_to_edx_cross_section',
-        ]
-
 
 def test_dir_utils_markers():
     import hyperspy.utils.markers
@@ -215,20 +181,6 @@ def test_dir_utils_markers():
                  'Squares',
                  'Texts',
                  'VerticalLines']
-
-
-
-def test_dir_utils_materials():
-    import hyperspy.utils.material
-    d = dir(hyperspy.utils.material)
-    assert d == [
-        'atomic_to_weight',
-        'density_of_mixture',
-        'elements',
-        'mass_absorption_coefficient',
-        'mass_absorption_mixture',
-        'weight_to_atomic',
-        ]
 
 
 def test_dir_utils_model():

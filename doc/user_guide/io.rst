@@ -267,12 +267,12 @@ Loading example data and data from online databases
 ---------------------------------------------------
 
 HyperSpy is distributed with some example data that can be found in
-`hs.datasets.example_signals`. The following example plots one of the example
+:py:mod:`~api.datasets`. The following example plots one of the example
 signals:
 
 .. code-block:: python
 
-    >>> hs.datasets.example_signals.EDS_TEM_Spectrum().plot()
+    >>> hs.datasets.two_gaussians().plot()
 
 .. versionadded:: 1.4
     :py:mod:`~.datasets.artificial_data`

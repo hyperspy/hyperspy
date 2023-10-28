@@ -195,7 +195,7 @@ ROIs can be used in place of slices when indexing. For example:
 
 .. code-block:: python
 
-    >>> s = hs.datasets.ascent.example_signals.EDS_TEM_Spectrum()
+    >>> s = hs.datasets.two_gaussians()
     >>> roi = hs.roi.SpanROI(left=5, right=15)
     >>> sc = s.isig[roi]
     >>> im = hs.signals.Signal2D(scipy.datasets.ascent())

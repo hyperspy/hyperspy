@@ -17,8 +17,8 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 import numpy as np
+import pytest
 
-from hyperspy._signals.eels import EELSSpectrum
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components1d import Gaussian
 from hyperspy.decorators import lazifyTestClass
@@ -65,10 +65,10 @@ class TestModelIndexing:
         np.testing.assert_array_almost_equal(m.chisq.data + m1.chisq.data,
                                              self.model.chisq.data)
 
-        self.model.channel_switches[0] = False
+        self.model._channel_switches[0] = False
         m = self.model.isig[:-100.]
-        assert not m.channel_switches[0]
-        assert np.all(m.channel_switches[1:])
+        assert not m._channel_switches[0]
+        assert np.all(m._channel_switches[1:])
 
     def test_model_navigation_indexer_slice(self):
         self.model.axes_manager.indices = (0, 0)
@@ -105,51 +105,12 @@ class TestModelIndexing:
 class TestModelIndexingClass:
 
     def setup_method(self, method):
-        s_eels = EELSSpectrum([list(range(10))] * 3)
-        s_eels.metadata.set_item(
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle',
-            3.0)
-        s_eels.metadata.set_item('Acquisition_instrument.TEM.beam_energy', 1.0)
-        s_eels.metadata.set_item(
-            'Acquisition_instrument.TEM.convergence_angle',
-            2.0)
-        self.eels_m = s_eels.create_model(auto_background=False)
+        s = Signal1D([list(range(10))] * 3)
+        m = s.create_model()
+        self.m = s.create_model()
 
     def test_model_class(self):
-        m_eels = self.eels_m
-        assert isinstance(m_eels, type(m_eels.isig[1:]))
-        assert isinstance(m_eels, type(m_eels.inav[1:]))
+        m = self.m
+        assert isinstance(m, type(m.isig[1:]))
+        assert isinstance(m, type(m.inav[1:]))
 
-
-@lazifyTestClass
-class TestEELSModelSlicing:
-
-    def setup_method(self, method):
-        data = np.random.random((10, 10, 600))
-        s = EELSSpectrum(data)
-        s.axes_manager[-1].offset = -150.
-        s.axes_manager[-1].scale = 0.5
-        s.metadata.set_item(
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle',
-            3.0)
-        s.metadata.set_item('Acquisition_instrument.TEM.beam_energy', 1.0)
-        s.metadata.set_item(
-            'Acquisition_instrument.TEM.convergence_angle',
-            2.0)
-        m = s.create_model(
-            ll=s + 1,
-            auto_background=False,
-            auto_add_edges=False)
-        g = Gaussian()
-        m.append(g)
-        self.model = m
-
-    def test_slicing_low_loss_inav(self):
-        m = self.model
-        m1 = m.inav[::2]
-        assert m1.signal.data.shape == m1.low_loss.data.shape
-
-    def test_slicing_low_loss_isig(self):
-        m = self.model
-        m1 = m.isig[::2]
-        assert m.signal.data.shape == m1.low_loss.data.shape

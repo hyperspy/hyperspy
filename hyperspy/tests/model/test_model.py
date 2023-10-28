@@ -30,22 +30,17 @@ class TestModelJacobians:
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1))
         m = s.create_model()
-        self.low_loss = 7.0
         self.weights = 0.3
         m.axis.axis = np.array([1, 0])
-        m.channel_switches = np.array([0, 1], dtype=bool)
+        m._channel_switches = np.array([0, 1], dtype=bool)
         m.append(hs.model.components1D.Gaussian())
         m[0].A.value = 1
         m[0].centre.value = 2.0
         m[0].sigma.twin = m[0].centre
-        m._low_loss = mock.MagicMock()
-        m.low_loss.return_value = self.low_loss
         self.model = m
-        m.convolution_axis = np.zeros(2)
 
-    def test_jacobian_not_convolved(self):
+    def test_jacobian(self):
         m = self.model
-        m.convolved = False
         jac = m._jacobian((1, 2, 3), None, weights=self.weights)
         np.testing.assert_array_almost_equal(
             jac.squeeze(),
@@ -56,34 +51,6 @@ class TestModelJacobians:
         assert m[0].centre.value == 2
         assert m[0].sigma.value == 2
 
-    def test_jacobian_convolved(self):
-        m = self.model
-        m.convolved = True
-        m.append(hs.model.components1D.Gaussian())
-        m[0].convolved = False
-        m[1].convolved = True
-        jac = m._jacobian((1, 2, 3, 4, 5), None, weights=self.weights)
-        np.testing.assert_array_almost_equal(
-            jac.squeeze(),
-            self.weights
-            * np.array(
-                [
-                    m[0].A.grad(0),
-                    m[0].sigma.grad(0) + m[0].centre.grad(0),
-                    m[1].A.grad(0) * self.low_loss,
-                    m[1].centre.grad(0) * self.low_loss,
-                    m[1].sigma.grad(0) * self.low_loss,
-                ]
-            ),
-        )
-        assert m[0].A.value == 1
-        assert m[0].centre.value == 2
-        assert m[0].sigma.value == 2
-        assert m[1].A.value == 3
-        assert m[1].centre.value == 4
-        assert m[1].sigma.value == 5
-
-
 class TestModelCallMethod:
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.empty(1))
@@ -92,9 +59,8 @@ class TestModelCallMethod:
         m.append(hs.model.components1D.Gaussian())
         self.model = m
 
-    def test_call_method_no_convolutions(self):
+    def test_call_method(self):
         m = self.model
-        m.convolved = False
 
         m[1].active = False
         r1 = m()
@@ -102,33 +68,9 @@ class TestModelCallMethod:
         np.testing.assert_allclose(m[0].function(0) * 2, r1)
         np.testing.assert_allclose(m[0].function(0), r2)
 
-        m.convolved = True
-        r1 = m(non_convolved=True)
-        r2 = m(non_convolved=True, onlyactive=True)
-        np.testing.assert_allclose(m[0].function(0) * 2, r1)
-        np.testing.assert_allclose(m[0].function(0), r2)
-
-    def test_call_method_with_convolutions(self):
-        m = self.model
-        m._low_loss = mock.MagicMock()
-        m.low_loss.return_value = 0.3
-        m.convolved = True
-
-        m.append(hs.model.components1D.Gaussian())
-        m[1].active = False
-        m[0].convolved = True
-        m[1].convolved = False
-        m[2].convolved = False
-        m.convolution_axis = np.array([0.0])
-
-        r1 = m()
-        r2 = m(onlyactive=True)
-        np.testing.assert_allclose(m[0].function(0) * 2.3, r1)
-        np.testing.assert_allclose(m[0].function(0) * 1.3, r2)
 
     def test_call_method_binned(self):
         m = self.model
-        m.convolved = False
         m.remove(1)
         m.signal.axes_manager[-1].is_binned = True
         m.signal.axes_manager[-1].scale = 0.3
@@ -144,7 +86,7 @@ class TestModelPlotCall:
         m.__call__.return_value = np.array([0.5, 0.25])
         m.axis = mock.MagicMock()
         m.fetch_stored_values = mock.MagicMock()
-        m.channel_switches = np.array([0, 1, 1, 0, 0], dtype=bool)
+        m._channel_switches = np.array([0, 1, 1, 0, 0], dtype=bool)
         self.model = m
 
     def test_model2plot_own_am(self):
@@ -155,7 +97,7 @@ class TestModelPlotCall:
             res, np.array([np.nan, 0.5, 0.25, np.nan, np.nan])
         )
         assert m.__call__.called
-        assert m.__call__.call_args[1] == {"non_convolved": False, "onlyactive": True}
+        assert m.__call__.call_args[1] == {"onlyactive": True}
         assert not m.fetch_stored_values.called
 
     def test_model2plot_other_am(self):
@@ -163,7 +105,7 @@ class TestModelPlotCall:
         res = m._model2plot(m.axes_manager.deepcopy(), out_of_range2nans=False)
         np.testing.assert_array_equal(res, np.array([0.5, 0.25]))
         assert m.__call__.called
-        assert m.__call__.call_args[1] == {"non_convolved": False, "onlyactive": True}
+        assert m.__call__.call_args[1] == {"onlyactive": True}
         assert 2 == m.fetch_stored_values.call_count
 
 
@@ -309,25 +251,6 @@ class TestModel1D:
         assert g._axes_manager is m.axes_manager
         assert all([hasattr(p, "map") for p in g.parameters])
 
-    def test_calculating_convolution_axis(self):
-        m = self.model
-        # setup
-        m.axis.offset = 10
-        m.axis.size = 10
-        ll_axis = mock.MagicMock()
-        ll_axis.size = 7
-        ll_axis.value2index.return_value = 3
-        m._low_loss = mock.MagicMock()
-        m.low_loss.axes_manager.signal_axes = [
-            ll_axis,
-        ]
-
-        # calculation
-        m.set_convolution_axis()
-
-        # tests
-        np.testing.assert_array_equal(m.convolution_axis, np.arange(7, 23))
-        np.testing.assert_equal(ll_axis.value2index.call_args[0][0], 0)
 
     def test_access_component_by_name(self):
         m = self.model
@@ -736,13 +659,13 @@ class TestAsSignal:
 
     def test_out_of_range_to_nan(self):
         index = 2
-        self.m.channel_switches[:index] = False
+        self.m._channel_switches[:index] = False
         s1 = self.m.as_signal(component_list=[0], out_of_range_to_nan=True)
 
         s2 = self.m.as_signal(component_list=[0], out_of_range_to_nan=False)
 
         np.testing.assert_allclose(
-            self.m.channel_switches, [False, False, True, True, True]
+            self.m._channel_switches, [False, False, True, True, True]
         )
 
         np.testing.assert_allclose(s2.data, np.ones_like(s2) * 2)
@@ -818,7 +741,7 @@ class TestAdjustPosition:
         assert len(self.m._position_widgets) == 0
 
 
-class TestSignalRange:
+class TestModel1DSetSignalRange:
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.random.rand(10, 10, 20))
         s.axes_manager[-1].offset = 100
@@ -845,3 +768,21 @@ class TestSignalRange:
         m = self.m
         roi = hs.roi.SpanROI(105, 110)
         assert m._parse_signal_range_values(roi) == (5, 10)
+
+    def test_set_signal_range_from_mask(self):
+        m = self.m
+        mask = np.ones(20, dtype=bool)
+        mask[:2] = False
+        mask[-4:] = False
+        m.set_signal_range_from_mask(mask)
+        np.testing.assert_allclose(m._channel_switches, mask)
+
+    def test_set_signal_range_from_mask_error(self):
+        m = self.m
+        mask = np.ones(30, dtype=bool)
+        with pytest.raises(ValueError):
+            m.set_signal_range_from_mask(mask)
+
+        mask = np.ones(30)
+        with pytest.raises(ValueError):
+            m.set_signal_range_from_mask(mask)

@@ -5828,17 +5828,17 @@ class BaseSignal(FancySlicing,
         contains e.g. electron energy-loss spectroscopy data,
         photoemission spectroscopy data, etc.
 
-        When setting `signal_type` to a "known" type, HyperSpy converts the
+        When setting ``signal_type`` to a "known" type, HyperSpy converts the
         current signal to the most appropriate
-        :py:class:`hyperspy.signal.BaseSignal` subclass. Known signal types are
+        :py:class:`~.api.signals.BaseSignal` subclass. Known signal types are
         signal types that have a specialized
-        :py:class:`hyperspy.signal.BaseSignal` subclass associated, usually
+        :py:class:`~.api.signals.BaseSignal` subclass associated, usually
         providing specific features for the analysis of that type of signal.
 
         HyperSpy ships with a minimal set of known signal types. External
         packages can register extra signal types. To print a list of
         registered signal types in the current installation, call
-        :py:meth:`hyperspy.utils.print_known_signal_types`, and see
+        :py:func:`~.api.print_known_signal_types`, and see
         the developer guide for details on how to add new signal_types.
         A non-exhaustive list of HyperSpy extensions is also maintained
         here: https://github.com/hyperspy/hyperspy-extensions-list.
@@ -5857,7 +5857,7 @@ class BaseSignal(FancySlicing,
 
         See Also
         --------
-        * :py:meth:`hyperspy.utils.print_known_signal_types`
+        hyperspy.api.print_known_signal_types
 
         Examples
         --------
@@ -5871,14 +5871,14 @@ class BaseSignal(FancySlicing,
         +--------------------+---------------------+--------------------+----------+
         |    signal_type     |       aliases       |     class name     | package  |
         +--------------------+---------------------+--------------------+----------+
-        | DielectricFunction | dielectric function | DielectricFunction | hyperspy |
-        |      EDS_SEM       |                     |   EDSSEMSpectrum   | hyperspy |
-        |      EDS_TEM       |                     |   EDSTEMSpectrum   | hyperspy |
-        |        EELS        |       TEM EELS      |    EELSSpectrum    | hyperspy |
-        |      hologram      |                     |   HologramImage    | hyperspy |
+        | DielectricFunction | dielectric function | DielectricFunction |   exspy  |
+        |      EDS_SEM       |                     |   EDSSEMSpectrum   |   exspy  |
+        |      EDS_TEM       |                     |   EDSTEMSpectrum   |   exspy  |
+        |        EELS        |       TEM EELS      |    EELSSpectrum    |   exspy  |
+        |      hologram      |                     |   HologramImage    |  holospy |
         +--------------------+---------------------+--------------------+----------+
 
-        We can set the `signal_type` using the `signal_type`:
+        We can set the ``signal_type`` using the ``signal_type``:
 
         >>> s.set_signal_type("EELS")
         >>> s
@@ -5893,7 +5893,8 @@ class BaseSignal(FancySlicing,
         >>> s
         <EELSSpectrum, title: , dimensions: (|4)>
 
-        To set the `signal_type` to `undefined`, simply call the method without arguments:
+        To set the ``signal_type`` to "undefined", simply call the method without
+        arguments:
 
         >>> s.set_signal_type()
         >>> s

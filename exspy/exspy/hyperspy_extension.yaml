@@ -1,0 +1,92 @@
+signals:
+  EELSSpectrum:
+    signal_type: EELS
+    signal_type_aliases:
+      - TEM EELS
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    module: exspy.signals.eels
+  LazyEELSSpectrum:
+    signal_type: EELS
+    signal_type_aliases:
+      - TEM EELS
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    module: exspy.signals.eels
+  EDSTEMSpectrum:
+    signal_type: EDS_TEM
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    module: exspy.signals.eds_tem
+  LazyEDSTEMSpectrum:
+    signal_type: EDS_TEM
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    module: exspy.signals.eds_tem
+  EDSSEMSpectrum:
+    signal_type: EDS_SEM
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    module: exspy.signals.eds_sem
+  LazyEDSSEMSpectrum:
+    signal_type: EDS_SEM
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    module: exspy.signals.eds_sem
+  DielectricFunction:
+    signal_type: DielectricFunction
+    signal_type_aliases:
+      - dielectric function
+    signal_dimension: 1
+    dtype: complex
+    lazy: False
+    module: exspy.signals.dielectric_function
+  LazyDielectricFunction:
+    signal_type: DielectricFunction
+    signal_type_aliases:
+      - dielectric function
+    signal_dimension: 1
+    dtype: complex
+    lazy: True
+    module: exspy.signals.dielectric_function
+
+components1D:
+  DoublePowerLaw:
+    module: exspy.components.eels_double_power_law
+    class: DoublePowerLaw
+  EELSArctan:
+    module: exspy.components.eels_arctan
+    class: EELSArctan
+  EELSCLEdge:
+    module: exspy.components.eels_cl_edge
+    class: EELSCLEdge
+  PESCoreLineShape:
+    module: exspy.components.pes_core_line_shape
+    class: PESCoreLineShape
+  PESVoigt:
+    module: exspy.components.pes_voigt
+    class: PESVoigt
+  SEE:
+    module: exspy.components.pes_see
+    class: SEE
+  Vignetting:
+    module: exspy.components.eels_vignetting
+    class: Vignetting
+  VolumePlasmonDrude:
+    module: exspy.components.volume_plasmon_drude
+    class: VolumePlasmonDrude
+
+GUI:
+  toolkeys:
+    - exspy.Preferences
+    - exspy.EELSCLEdge_Component
+    - exspy.microscope_parameters_EELS
+    - exspy.microscope_parameters_EDS_TEM
+    - exspy.microscope_parameters_EDS_SEM
+    - exspy.EELSSpectrum.print_edges_table

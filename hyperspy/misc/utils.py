@@ -188,27 +188,16 @@ def slugify(value, valid_variable_name=False):
 
 class DictionaryTreeBrowser:
 
-    """A class to comfortably browse a dictionary using a CLI.
+    """
+    A class to comfortably browse a dictionary using a CLI.
 
     In addition to accessing the values using dictionary syntax
     the class enables navigating  a dictionary that constains
     nested dictionaries as attribures of nested classes.
     Also it is an iterator over the (key, value) items. The
-    `__repr__` method provides pretty tree printing. Private
+    ``__repr__`` method provides pretty tree printing. Private
     keys, i.e. keys that starts with an underscore, are not
     printed, counted when calling len nor iterated.
-
-    Methods
-    -------
-    export : saves the dictionary in pretty tree printing format in a text
-        file.
-    keys : returns a list of non-private keys.
-    as_dictionary : returns a dictionary representation of the object.
-    set_item : easily set items, creating any necessary nodes on the way.
-    has_item: given a path, or part of a path, checks if the item exists.
-    get_item  given a path, or part of a path, return the value of the item.
-    add_node : add all non existing nodes in a given path.
-    add_dictionary: add new items from dictionary.
 
     Examples
     --------
@@ -247,15 +236,13 @@ class DictionaryTreeBrowser:
     """
 
     def __init__(self, dictionary=None, double_lines=False, lazy=True):
-        """When creating a DictionaryTreeBrowser lazily, the dictionary is
-        added to the `_lazy_attributes` attribute. The first time a lazy
-        attribute is called or the DictionaryTreeBrowser is printed, the
-        DictionaryTreeBrowser processes the lazy attributes with the
-        `process_lazy_attributes` method.
-        DictionaryTreeBrowser is lazy by default, using non-lazy instances
-        can be useful for debugging purposes.
-
-        """
+        # When creating a DictionaryTreeBrowser lazily, the dictionary is
+        # added to the `_lazy_attributes` attribute. The first time a lazy
+        # attribute is called or the DictionaryTreeBrowser is printed, the
+        # DictionaryTreeBrowser processes the lazy attributes with the
+        # `process_lazy_attributes` method.
+        # DictionaryTreeBrowser is lazy by default, using non-lazy instances
+        # can be useful for debugging purposes.
         self._lazy_attributes = {}
         self._double_lines = double_lines
 
@@ -293,7 +280,8 @@ class DictionaryTreeBrowser:
             self._process_dictionary(dictionary, double_lines)
 
     def export(self, filename, encoding="utf8"):
-        """Export the dictionary to a text file
+        """
+        Export the dictionary to a text file
 
         Parameters
         ----------
@@ -603,7 +591,8 @@ class DictionaryTreeBrowser:
     def has_item(
         self, item_path, default=None, full_path=True, wild=False, return_path=False
     ):
-        """Given a path, return True if it exists. May also perform a search
+        """
+        Given a path, return True if it exists. May also perform a search
         whether an item exists and optionally returns the full path instead of
         boolean value.
 
@@ -678,7 +667,8 @@ class DictionaryTreeBrowser:
     def get_item(
         self, item_path, default=None, full_path=True, wild=False, return_path=False
     ):
-        """Given a path, return it's value if it exists, or default value if
+        """
+        Given a path, return it's value if it exists, or default value if
         missing. May also perform a search whether an item key exists and then
         returns the value or a list of values for multiple occurences of the
         key -- optionally returns the full path(s) in addition to its value(s).
@@ -755,13 +745,16 @@ class DictionaryTreeBrowser:
         return self.has_item(item_path=item)
 
     def copy(self):
+        """Returns a shallow copy using :py:func:`copy.copy`."""
         return copy.copy(self)
 
     def deepcopy(self):
+        """Returns a deep copy using :py:func:`copy.deepcopy`."""
         return copy.deepcopy(self)
 
     def set_item(self, item_path, value):
-        """Given the path and value, create the missing nodes in
+        """
+        iven the path and value, create the missing nodes in
         the path and assign the given value.
 
         Parameters

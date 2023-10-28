@@ -22,7 +22,7 @@ import sympy
 
 import warnings
 
-from hyperspy.component import Component, convolve_component_values
+from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 
 
@@ -420,15 +420,18 @@ class Expression(Component):
         model = self.model
         function = part['function']
         parameters = [para.value for para in part['parameters']]
-        
-        if model.convolved and self.convolved:
-            data = convolve_component_values(
-                function(model.convolution_axis, *parameters), model=model)
+        try:
+            model_convolved = model.convolved
+        except NotImplementedError:
+            model_convolved = False
+        if model_convolved and self.convolved:
+            data = model._convolve_component_values(
+                function(model.convolution_axis, *parameters))
         else:
             axes = [ax.axis for ax in model.axes_manager.signal_axes]
             mesh = np.meshgrid(*axes)
             data = function(*mesh, *parameters)
-            slice_ = np.where(model.channel_switches)
+            slice_ = np.where(model._channel_switches)
             if len(np.shape(data)) == 0:
                 # For calculation of constant term of the component
                 signal_shape = model.axes_manager._signal_shape_in_array

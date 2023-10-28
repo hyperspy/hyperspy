@@ -26,14 +26,6 @@ User guide
     big_data.rst
 
 .. toctree::
-    :caption: Domain-Specific Signals
-    :maxdepth: 2
-
-    eds.rst
-    eels.rst
-    dielectric_function.rst
-
-.. toctree::
     :caption: Advanced Usage
     :maxdepth: 2
     

@@ -32,7 +32,7 @@ from rsciio.utils.tools import ensure_directory
 from rsciio.utils.tools import overwrite as overwrite_method
 from rsciio import IO_PLUGINS
 
-from hyperspy import __version__ as hs_version
+from hyperspy.api import __version__ as hs_version
 from hyperspy.drawing.markers import markers_dict_to_markers
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.misc.utils import strlist2enumeration, get_object_package_info

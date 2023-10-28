@@ -739,6 +739,11 @@ class Component(t.HasTraits):
                 The `Component` that the event belongs to
             active : bool
                 The new active state
+            convolved : bool
+                Whether the `Component` is convolved or not. This enables
+                not convolving individual `Component`s in models that
+                support convolution.
+
             """, arguments=["obj", 'active'])
         self.parameters = []
         self.init_parameters(parameter_name_list, linear_parameter_list)
@@ -1055,7 +1060,7 @@ class Component(t.HasTraits):
         -------
         numpy array
         """
-        axis = self.model.axis.axis[self.model.channel_switches]
+        axis = self.model.axis.axis[self.model._channel_switches]
         component_array = self.function(axis)
         return component_array
 
@@ -1074,7 +1079,7 @@ class Component(t.HasTraits):
         if out_of_range2nans is True:
             ns = np.empty(self.model.axis.axis.shape)
             ns.fill(np.nan)
-            ns[self.model.channel_switches] = s
+            ns[self.model._channel_switches] = s
             s = ns
         if old_axes_manager is not None:
             self.model.axes_manager = old_axes_manager
@@ -1294,31 +1299,8 @@ class Component(t.HasTraits):
         """
         return 0
 
-    def _compute_constant_term(self):
-        """Gets the value of any (non-free) constant term, with convolution"""
-        model = self.model
-        if model.convolved and self.convolved:
-            data = convolve_component_values(self._constant_term, model=model)
-        else:
-            signal_shape = model.axes_manager.signal_shape[::-1]
-            data = self._constant_term * np.ones(signal_shape)
-        return data.T[np.where(model.channel_switches)[::-1]].T
 
 
-def convolve_component_values(component_values, model):
-    """
-    Convolve component with model convolution axis.
-
-    Multiply by np.ones in order to handle case where component_values is a
-    single constant
-    """
-
-    sig = component_values * np.ones(model.convolution_axis.shape)
-
-    ll = model.low_loss(model.axes_manager)
-    convolved = np.convolve(sig, ll, mode="valid")
-
-    return convolved
 
 
 def _get_scaling_factor(signal, axis, parameter):

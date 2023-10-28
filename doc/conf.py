@@ -42,6 +42,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx_gallery.gen_gallery',
     'sphinx_copybutton',
+    "sphinx_favicon",
 ]
 
 linkcheck_ignore = [
@@ -148,15 +149,12 @@ html_theme = 'pydata_sphinx_theme'
 # of the sidebar.
 html_logo = '_static/hyperspy_logo.png'
 
-# The name of an image file (within the static path) to use as favicon of the
-# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large.
-html_favicon = '_static/hyperspy.ico'
-
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+
+favicons = ["hyperspy.ico", ]
 
 html_theme_options = {
     "show_toc_level": 2,
@@ -299,6 +297,7 @@ towncrier_draft_working_directory = ".."
 intersphinx_mapping = {
     'cupy': ('https://docs.cupy.dev/en/stable', None),
     'dask': ('https://docs.dask.org/en/latest', None),
+    'exspy': ('https://exspy.readthedocs.io/en/latest', None),
     'h5py': ('https://docs.h5py.org/en/stable', None),
     'holospy': ('https://holospy.readthedocs.io/en/latest', None),
     'IPython': ('https://ipython.readthedocs.io/en/stable', None),
@@ -325,6 +324,7 @@ sphinx_gallery_conf = {
 autodoc_default_options = {
     'show-inheritance': True,
 }
+toc_object_entries_show_parents = "hide"
 
 graphviz_output_format = "svg"
 

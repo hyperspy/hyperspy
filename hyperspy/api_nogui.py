@@ -76,8 +76,6 @@ The :mod:`~hyperspy.api` package contains the following submodules/packages:
     :mod:`~.utils.model`
         Contains the :mod:`~utils.model` module with
         components that can be used to create a model for curve fitting.
-    :mod:`~.utils.eds`
-        Functions for energy dispersive X-rays data analysis.
     :mod:`~.utils.material`
         Useful functions for materials properties and elements database that
         includes physical properties and X-rays and EELS energies.
@@ -108,11 +106,9 @@ def get_configuration_directory_path():
 
 __all__ = [
     'datasets',
-    'eds',
     'get_configuration_directory_path',
     'interactive',
     'load',
-    'material',
     'model',
     'plot',
     'preferences',
@@ -129,11 +125,9 @@ __all__ = [
 
 # mapping following the pattern: from value import key
 _import_mapping = {
-    'eds':'.utils',
     'interactive': '.utils',
     'load': '.io',
     'markers': '.utils',
-    'material': '.utils',
     'model': '.utils',
     'plot': '.utils',
     'print_known_signal_types': '.utils',

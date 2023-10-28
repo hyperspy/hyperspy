@@ -231,7 +231,7 @@ class TestCallMethods:
         c = self.c
         c.model = mock.MagicMock()
         c.model.__call__ = mock.MagicMock()
-        c.model.channel_switches = np.array([True, False, True])
+        c.model._channel_switches = np.array([True, False, True])
         c.model.axis.axis = np.array([0.1, 0.2, 0.3])
         c.function = mock.MagicMock()
         c.function.return_value = np.array([1.3, ])
