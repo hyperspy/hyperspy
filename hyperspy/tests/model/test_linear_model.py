@@ -89,7 +89,7 @@ class TestMultiFitLinear:
             m.multifit(optimizer='lstsq')
         multi = m.as_signal()
 
-        np.testing.assert_allclose(single(), multi())
+        np.testing.assert_allclose(single._get_current_data(), multi._get_current_data())
 
     def test_map_values_std_isset(self, weighted):
         self._post_setup_method(weighted)
@@ -133,7 +133,7 @@ class TestMultiFitLinear:
             m.multifit(optimizer='lstsq')
         multi = m.as_signal()
         # compare fits from first pixel
-        np.testing.assert_allclose(single(), multi())
+        np.testing.assert_allclose(single._get_current_data(), multi._get_current_data())
 
     def test_channel_switches(self, weighted):
         self._post_setup_method(weighted)
@@ -152,11 +152,11 @@ class TestMultiFitLinear:
            m.multifit(optimizer='lstsq')
         multi = m.as_signal()
 
-        np.testing.assert_allclose(single(), multi())
+        np.testing.assert_allclose(single._get_current_data(), multi._get_current_data())
 
         m.fit()
         single_nonlinear = m.as_signal()
-        np.testing.assert_allclose(single(), single_nonlinear())
+        np.testing.assert_allclose(single._get_current_data(), single_nonlinear._get_current_data())
 
     def test_multifit_ridge(self, weighted):
         pytest.importorskip("sklearn")
@@ -245,7 +245,7 @@ class TestFitAlgorithms:
         m = self.m
         m.fit(optimizer='lstsq')
         lstsq_fit = m.as_signal()
-        np.testing.assert_allclose(self.nonlinear_fit_res, lstsq_fit(), atol=1E-8)
+        np.testing.assert_allclose(self.nonlinear_fit_res, lstsq_fit._get_current_data(), atol=1E-8)
         linear_std = [para.std for para in m._free_parameters if para.std]
         np.testing.assert_allclose(self.nonlinear_fit_std, linear_std, atol=1E-8)
 
@@ -257,7 +257,7 @@ class TestFitAlgorithms:
         linear_fit = m.as_signal()
         m.fit()
         nonlinear_fit = m.as_signal()
-        np.testing.assert_allclose(nonlinear_fit(), linear_fit(), rtol=1E-5)
+        np.testing.assert_allclose(nonlinear_fit._get_current_data(), linear_fit._get_current_data(), rtol=1E-5)
 
     def test_compare_ridge(self, weighted):
         self._post_setup_method(weighted)
@@ -506,7 +506,7 @@ class TestLinearFitTwins:
         np.testing.assert_allclose(gs[0].A.value, 20)
         np.testing.assert_allclose(gs[1].A.value, -10)
         np.testing.assert_allclose(gs[2].A.value, 5)
-        np.testing.assert_allclose(s.data,  m())
+        np.testing.assert_allclose(s.data,  m._get_current_data())
 
     def test_with_twins(self):
         gs = self.gs
@@ -522,7 +522,7 @@ class TestLinearFitTwins:
         np.testing.assert_allclose(gs[0].A.value, 20)
         np.testing.assert_allclose(gs[1].A.value, -10)
         np.testing.assert_allclose(gs[2].A.value, 5)
-        np.testing.assert_allclose(s.data, m())
+        np.testing.assert_allclose(s.data, m._get_current_data())
 
 
 def test_compute_constant_term():

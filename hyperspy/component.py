@@ -1053,24 +1053,13 @@ class Component(t.HasTraits):
                                                parameter.std,
                                                parameter.units))
 
-    def __call__(self):
-        """Returns the corresponding model for the current coordinates
-
-        Returns
-        -------
-        numpy array
-        """
-        axis = self.model.axis.axis[self.model._channel_switches]
-        component_array = self.function(axis)
-        return component_array
-
     def _component2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None
         if axes_manager is not self.model.axes_manager:
             old_axes_manager = self.model.axes_manager
             self.model.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.model.__call__(component_list=[self])
+        s = self.model._get_current_data(component_list=[self])
         if not self.active:
             s.fill(np.nan)
         if old_axes_manager is not None:
@@ -1298,9 +1287,6 @@ class Component(t.HasTraits):
         Returns 0 for most components.
         """
         return 0
-
-
-
 
 
 def _get_scaling_factor(signal, axis, parameter):

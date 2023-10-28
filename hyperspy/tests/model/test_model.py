@@ -63,8 +63,8 @@ class TestModelCallMethod:
         m = self.model
 
         m[1].active = False
-        r1 = m()
-        r2 = m(onlyactive=True)
+        r1 = m._get_current_data()
+        r2 = m._get_current_data(onlyactive=True)
         np.testing.assert_allclose(m[0].function(0) * 2, r1)
         np.testing.assert_allclose(m[0].function(0), r2)
 
@@ -74,7 +74,7 @@ class TestModelCallMethod:
         m.remove(1)
         m.signal.axes_manager[-1].is_binned = True
         m.signal.axes_manager[-1].scale = 0.3
-        r1 = m()
+        r1 = m._get_current_data()
         np.testing.assert_allclose(m[0].function(0) * 0.3, r1)
 
 
@@ -82,8 +82,8 @@ class TestModelPlotCall:
     def setup_method(self, method):
         s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
-        m.__call__ = mock.MagicMock()
-        m.__call__.return_value = np.array([0.5, 0.25])
+        m._get_current_data = mock.MagicMock()
+        m._get_current_data.return_value = np.array([0.5, 0.25])
         m.axis = mock.MagicMock()
         m.fetch_stored_values = mock.MagicMock()
         m._channel_switches = np.array([0, 1, 1, 0, 0], dtype=bool)
@@ -96,16 +96,16 @@ class TestModelPlotCall:
         np.testing.assert_array_equal(
             res, np.array([np.nan, 0.5, 0.25, np.nan, np.nan])
         )
-        assert m.__call__.called
-        assert m.__call__.call_args[1] == {"onlyactive": True}
+        assert m._get_current_data.called
+        assert m._get_current_data.call_args[1] == {"onlyactive": True}
         assert not m.fetch_stored_values.called
 
     def test_model2plot_other_am(self):
         m = self.model
         res = m._model2plot(m.axes_manager.deepcopy(), out_of_range2nans=False)
         np.testing.assert_array_equal(res, np.array([0.5, 0.25]))
-        assert m.__call__.called
-        assert m.__call__.call_args[1] == {"onlyactive": True}
+        assert m._get_current_data.called
+        assert m._get_current_data.call_args[1] == {"onlyactive": True}
         assert 2 == m.fetch_stored_values.call_count
 
 
@@ -547,7 +547,7 @@ class TestModelUniformBinned:
         m.signal.axes_manager[-1].scale = 0.3
         if uniform:
             m.signal.axes_manager[-1].convert_to_non_uniform_axis()
-        np.testing.assert_allclose(m[0].function(0) * 0.3, m())
+        np.testing.assert_allclose(m[0].function(0) * 0.3, m._get_current_data())
         self.m.print_current_values()
 
 

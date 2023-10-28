@@ -48,8 +48,8 @@ class TestModelBinned:
 
     def test_unbinned(self):
         self.m.signal.axes_manager[-1].is_binned = False
-        assert self.m() == 1
+        assert self.m._get_current_data() == 1
 
     def test_binned(self):
         self.m.signal.axes_manager[-1].is_binned = True
-        assert self.m() == 0.1
+        assert self.m._get_current_data() == 0.1

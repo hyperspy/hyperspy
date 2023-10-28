@@ -29,7 +29,7 @@ def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
     X = axis.axis[i1:i2]
 
     if only_current is True:
-        data = signal()[i1:i2]
+        data = signal._get_current_data()[i1:i2]
         i = 0
         centre_shape = (1,)
     else:

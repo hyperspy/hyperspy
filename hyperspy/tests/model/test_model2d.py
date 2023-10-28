@@ -104,7 +104,7 @@ class TestModel2D:
 
     def test_call(self):
         with pytest.raises(ValueError):
-            self.m(component_list=0)
+            self.m._get_current_data(component_list=0)
 
 
 def test_Model2D_NotImplementedError_fitting():

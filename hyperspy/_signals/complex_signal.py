@@ -208,10 +208,10 @@ class ComplexSignal(BaseSignal):
 
     unwrapped_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, NUM_WORKERS_ARG)
 
-    def __call__(self, axes_manager=None, power_spectrum=False,
-                 fft_shift=False, as_numpy=None):
-        value = super().__call__(axes_manager=axes_manager,
-                                 fft_shift=fft_shift, as_numpy=as_numpy)
+    def _get_current_data(self, axes_manager=None, power_spectrum=False,
+                          fft_shift=False, as_numpy=None):
+        value = super()._get_current_data(axes_manager=axes_manager,
+                                          fft_shift=fft_shift, as_numpy=as_numpy)
         if power_spectrum:
             value = abs(value)**2
         return value

@@ -31,7 +31,7 @@ def _estimate_skewnormal_parameters(signal, x1, x2, only_current):
     i1, i2 = axis.value_range_to_indices(x1, x2)
     X = axis.axis[i1:i2]
     if only_current is True:
-        data = signal()[i1:i2]
+        data = signal._get_current_data()[i1:i2]
         X_shape = (len(X),)
         i = 0
         x0_shape = (1,)

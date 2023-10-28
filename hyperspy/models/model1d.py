@@ -337,7 +337,9 @@ class Model1D(BaseModel):
     remove.__doc__ = BaseModel.remove.__doc__
 
     def _get_model_data(self, component_list=None, ignore_channel_switches=False):
-        """Return the model data at the current position
+        """
+        Return the model data at the current position
+        
         Parameters
         ----------
         component_list : list or None
@@ -357,8 +359,7 @@ class Model1D(BaseModel):
             model_data += component.function(axis)
         return model_data
 
-
-    def __call__(self, onlyactive=False,
+    def _get_current_data(self, onlyactive=False,
                  component_list=None, binned=None,
                  ignore_channel_switches=False):
         """
@@ -646,7 +647,7 @@ class Model1D(BaseModel):
             old_axes_manager = self.axes_manager
             self.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.__call__(onlyactive=True)
+        s = self._get_current_data(onlyactive=True)
         if old_axes_manager is not None:
             self.axes_manager = old_axes_manager
             self.fetch_stored_values()
@@ -662,7 +663,7 @@ class Model1D(BaseModel):
         by the model signal then returns the residual
         """
 
-        return self.signal.__call__() - self.__call__(ignore_channel_switches=True)
+        return self.signal._get_current_data() - self._get_current_data(ignore_channel_switches=True)
 
     def plot(self, plot_components=False,plot_residual=False, **kwargs):
         """Plot the current spectrum to the screen and a map with a

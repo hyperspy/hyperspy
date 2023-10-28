@@ -2738,7 +2738,7 @@ class BaseSignal(FancySlicing,
             axes = []
         return axes
 
-    def __call__(self, axes_manager=None, fft_shift=False, as_numpy=False):
+    def _get_current_data(self, axes_manager=None, fft_shift=False, as_numpy=False):
         if axes_manager is None:
             axes_manager = self.axes_manager
         indices = axes_manager._getitem_tuple
@@ -2804,7 +2804,7 @@ class BaseSignal(FancySlicing,
                 "for plotting as a 2D signal.")
 
         self._plot.axes_manager = axes_manager
-        self._plot.signal_data_function = partial(self.__call__, as_numpy=True)
+        self._plot.signal_data_function = partial(self._get_current_data, as_numpy=True)
 
         if self.metadata.has_item("Signal.quantity"):
             self._plot.quantity_label = self.metadata.Signal.quantity
@@ -2823,9 +2823,9 @@ class BaseSignal(FancySlicing,
 
         def get_static_explorer_wrapper(*args, **kwargs):
             if np.issubdtype(navigator.data.dtype, np.complexfloating):
-                return abs(navigator(as_numpy=True))
+                return abs(navigator._get_current_data(as_numpy=True))
             else:
-                return navigator(as_numpy=True)
+                return navigator._get_current_data(as_numpy=True)
 
         def get_1D_sum_explorer_wrapper(*args, **kwargs):
             # Sum over all but the first navigation axis.
@@ -2839,8 +2839,8 @@ class BaseSignal(FancySlicing,
             navigator.axes_manager.indices = self.axes_manager.indices[
                 navigator.axes_manager.signal_dimension:]
             navigator.axes_manager._update_attributes()
-            if np.issubdtype(navigator().dtype, np.complexfloating):
-                return abs(navigator(as_numpy=True))
+            if np.issubdtype(navigator._get_current_data().dtype, np.complexfloating):
+                return abs(navigator._get_current_data(as_numpy=True))
             else:
                 return navigator(as_numpy=True)
 
@@ -3756,7 +3756,7 @@ class BaseSignal(FancySlicing,
                 [0 for _ in self.axes_manager.navigation_axes]
                 )
             for _ in self.axes_manager:
-                yield self()
+                yield self._get_current_data()
             # restore original index
             self.axes_manager.indices = original_index
 
@@ -3770,7 +3770,7 @@ class BaseSignal(FancySlicing,
         """
         if self.axes_manager.navigation_size < 2:
             while True:
-                yield self()
+                yield self._get_current_data()
             return  # pragma: no cover
 
         self._make_sure_data_is_contiguous()
@@ -5577,7 +5577,7 @@ class BaseSignal(FancySlicing,
             lazy=False)
 
         cs = class_(
-            self(as_numpy=as_numpy),
+            self._get_current_data(as_numpy=as_numpy),
             axes=self.axes_manager._get_signal_axes_dicts(),
             metadata=metadata.as_dictionary())
 

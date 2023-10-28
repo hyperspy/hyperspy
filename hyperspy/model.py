@@ -275,7 +275,7 @@ class BaseModel(list):
         # raise an exception when using windows.connect
         return id(self)
 
-    def __call__(self, onlyactive=False, component_list=None, binned=None):
+    def _get_current_data(self, onlyactive=False, component_list=None, binned=None):
         """Evaluate the model numerically. Implementation requested in all sub-classes"""
         raise NotImplementedError
 
@@ -614,7 +614,7 @@ class BaseModel(list):
             for index in self.axes_manager:
                 self.fetch_stored_values(only_fixed=False)
                 data[self.axes_manager._getitem_tuple][
-                    np.where(self._channel_switches)] = self.__call__(
+                    np.where(self._channel_switches)] = self._get_current_data(
                     onlyactive=True).ravel()
                 pbar.update(1)
 
@@ -942,7 +942,7 @@ class BaseModel(list):
             old_axes_manager = self.axes_manager
             self.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.__call__(onlyactive=True)
+        s = self._get_current_data(onlyactive=True)
         if old_axes_manager is not None:
             self.axes_manager = old_axes_manager
             self.fetch_stored_values()
@@ -956,7 +956,7 @@ class BaseModel(list):
     def _model_function(self, param):
         self.p0 = param
         self._fetch_values_from_p0()
-        to_return = self.__call__(onlyactive=True, binned=self._binned)
+        to_return = self._get_current_data(onlyactive=True, binned=self._binned)
         return to_return
 
     @property
@@ -1094,7 +1094,7 @@ class BaseModel(list):
                     p = twin_parameters_mapping[p]
 
                 index = parameters.index(p)
-                comp_value = self.__call__(
+                comp_value = self._get_current_data(
                     component_list=[component], binned=False
                     )
                 comp_constant_values = self._compute_constant_term(component=component)
@@ -1103,7 +1103,7 @@ class BaseModel(list):
 
             else:
                 # No free parameters, so component is fixed.
-                constant_term += self.__call__(
+                constant_term += self._get_current_data(
                     component_list=[component], binned=False
                     )
 
@@ -1111,7 +1111,7 @@ class BaseModel(list):
         # shape and an nD navigation shape to a 1D nav shape
         _channel_switches = np.where(self._channel_switches.ravel())[0]
         if only_current:
-            target_signal = self.signal().ravel()[_channel_switches]
+            target_signal = self.signal._get_current_data().ravel()[_channel_switches]
         else:
             sig_shape = self.axes_manager._signal_shape_in_array
             nav_shape = self.axes_manager._navigation_shape_in_array
@@ -1238,7 +1238,7 @@ class BaseModel(list):
 
     def _calculate_chisq(self):
         variance = self._get_variance()
-        d = self(onlyactive=True, binned=self._binned).ravel() - self.signal(as_numpy=True)[
+        d = self._get_current_data(onlyactive=True, binned=self._binned).ravel() - self.signal._get_current_data(as_numpy=True)[
             np.where(self._channel_switches)]
         d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
@@ -1491,7 +1491,7 @@ class BaseModel(list):
                 weights = None
 
             args = (
-                self.signal(as_numpy=True)[np.where(self._channel_switches)],
+                self.signal._get_current_data(as_numpy=True)[np.where(self._channel_switches)],
                 weights
                 )
 
@@ -1511,7 +1511,7 @@ class BaseModel(list):
                         self.p0[:],
                         parinfo=self.mpfit_parinfo,
                         functkw={
-                            "y": self.signal()[self._channel_switches],
+                            "y": self.signal._get_current_data()[self._channel_switches],
                             "weights": weights,
                         },
                         autoderivative=auto_deriv,
@@ -1611,7 +1611,7 @@ class BaseModel(list):
                 modelo = odr.Model(fcn=self._function4odr, fjacb=odr_jacobian)
                 mydata = odr.RealData(
                     self.axis.axis[np.where(self._channel_switches)],
-                    self.signal()[np.where(self._channel_switches)],
+                    self.signal._get_current_data()[np.where(self._channel_switches)],
                     sx=None,
                     sy=(1.0 / weights if weights is not None else None),
                 )

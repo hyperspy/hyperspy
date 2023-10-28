@@ -95,7 +95,7 @@ class Offset(Component):
                              else np.mean(np.gradient(axis.axis), axis=-1)
 
         if only_current is True:
-            self.offset.value = signal()[i1:i2].mean()
+            self.offset.value = signal._get_current_data()[i1:i2].mean()
             if axis.is_binned:
                 self.offset.value /= scaling_factor
             return True
