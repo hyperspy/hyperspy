@@ -41,7 +41,7 @@ class TestCupy:
     @pytest.mark.parametrize('as_numpy', [True, False, None])
     def test_call_signal(self, as_numpy):
         s = self.s
-        s2 = s(as_numpy=as_numpy)
+        s2 = s._get_current_data(as_numpy=as_numpy)
         if not as_numpy:
             assert isinstance(s2, cp.ndarray)
             s2 = cp.asnumpy(s2)
