@@ -61,11 +61,6 @@ jobs:
         run: |
           pip install ${{ env.PIP_ARGS }} .'${{ matrix.PIP_SELECTOR }}'
 
-      - name: Install exspy
-        shell: bash
-        run: |
-          pip install ./exspy
-
       - name: Pip list
         run: |
           pip list
@@ -73,10 +68,6 @@ jobs:
       - name: Run test suite
         run: |
           pytest ${{ env.PYTEST_ARGS }} --cov=. --cov-report=xml
-
-      - name: Run exSpy test suite
-        run: |
-          pytest --pyargs exspy
 
       - name: Upload coverage to Codecov
         if: ${{ always() }}
