@@ -19,6 +19,7 @@ dependencies:
 - numexpr
 - numpy
 - pint
+- pillow <10.1
 - prettytable
 - python-dateutil
 - pyyaml

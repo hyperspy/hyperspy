@@ -69,6 +69,8 @@ install_req = ['scipy>=1.4.0',
                'numexpr',
                'sparse',
                'imageio<2.28',
+               # Remove when https://github.com/imageio/imageio/issues/1044 is fixed
+               'pillow<10.1',
                'pyyaml',
                # prettytable and ptable are API compatible
                # prettytable is maintained and ptable is an unmaintained fork
