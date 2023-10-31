@@ -19,6 +19,9 @@
 import logging
 import copy
 import yaml
+import json
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 from pathlib import Path
 import importlib_metadata as metadata
@@ -46,9 +49,20 @@ for _external_extension in _external_extensions:
     _files = [file for file in _external_extension.dist.files
               if "hyperspy_extension.yaml" in str(file)]
 
-    if _files:
-        _path = _files.pop()
-        with _path.locate().open() as stream:
+    if not _files:  # pragma: no cover
+        # Editable installs for pyproject.toml based builds
+        # https://peps.python.org/pep-0610/#example-pip-commands-and-their-effect-on-direct-url-json
+        # https://peps.python.org/pep-0660/#frontend-requirements
+        _files = [file for file in _external_extension.dist.files
+                  if "direct_url.json" in str(file)]
+        with _files[0].locate().open() as json_data:
+            _path = url2pathname(urlparse(json.load(json_data)['url']).path)
+            _path = Path(_path) / _external_extension.name / "hyperspy_extension.yaml"
+    else:
+        _path = _files.pop().locate()
+
+    if _path:
+        with open(str(_path)) as stream:
             _external_extension = yaml.safe_load(stream)
             if "signals" in _external_extension:
                 ALL_EXTENSIONS["signals"].update(_external_extension["signals"])
