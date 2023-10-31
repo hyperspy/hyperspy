@@ -16,7 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        EXTENSION_VERSION: ['release', 'dev']
+        #EXTENSION_VERSION: ['release', 'dev']
+        EXTENSION_VERSION: ['dev']
 
     env:
       MPLBACKEND: agg
@@ -60,9 +61,10 @@ jobs:
         run: |
           pip install https://github.com/lumispy/lumispy/archive/main.zip
           pip install https://github.com/pyxem/kikuchipy/archive/develop.zip
-          pip install https://github.com/pyxem/pyxem/archive/master.zip
+          pip install https://github.com/pyxem/pyxem/archive/main.zip
           pip install https://gitlab.com/atomap/atomap/-/archive/master/atomap-master.zip
-          pip install https://github.com/hyperspy/holospy/archive/refs/heads/main.zip
+          pip install https://github.com/hyperspy/holospy/archive/main.zip
+          pip install https://github.com/hyperspy/exspy/archive/main.zip
 
       - name: Install xvfb
         run: |
@@ -91,6 +93,11 @@ jobs:
         run: |
           python -m pytest --pyargs holospy
 
+      - name: Run exSpy Test Suite
+        if: ${{ always() }}
+        run: |
+          python -m pytest --pyargs exspy
+  
       #  The currently released version of Atomap (0.3.1) does not work with this test
       #  environment. Thus, only the dev version is currently tested. If a newer version
       #  of Atomap is released, the "if" can be changed to always().
