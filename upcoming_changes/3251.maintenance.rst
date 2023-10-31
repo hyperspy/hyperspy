@@ -1,0 +1,1 @@
+Pin pillow to <10.1 to avoid imageio error.
