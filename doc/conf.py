@@ -50,6 +50,7 @@ linkcheck_ignore = [
     "https://doi.org/10.1021/acs.nanolett.5b00449",  # 403 Client Error: Forbidden for url
     "https://onlinelibrary.wiley.com",  # 403 Client Error: Forbidden for url
     "https://www.jstor.org/stable/24307705",  # 403 Client Error: Forbidden for url
+    "https://software.opensuse.org", # 400 Client Error: Bad Request for url
 ]
 
 linkcheck_exclude_documents = []

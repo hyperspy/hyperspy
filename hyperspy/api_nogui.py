@@ -43,50 +43,50 @@ Functions:
     :py:func:`~.api_nogui.get_configuration_directory_path`
         Return the configuration directory path.
 
-    :py:func:`~.interactive.interactive`
+    :py:func:`~.api.interactive`
         Define operations that are automatically recomputed on event changes.
 
-    :py:func:`~.io.load`
+    :py:func:`~.api.load`
         Load data into BaseSignal instances from supported files.
 
-    :py:data:`~.defaults_parser.preferences`
+    :py:data:`~.api.preferences`
         Preferences class instance to configure the default value of different
         parameters. It has a CLI and a GUI that can be started by execting its
         `gui` method i.e. `preferences.gui()`.
 
-    :py:func:`~.utils.print_known_signal_types`
+    :py:func:`~.api.print_known_signal_types`
         Print all known `signal_type`.
 
-    :py:func:`~.logger.set_log_level`
+    :py:func:`~.api.set_log_level`
         Convenience function to set HyperSpy's the log level.
 
-    :py:func:`~.utils.stack`
+    :py:func:`~.api.stack`
         Stack several signals.
 
-    :py:func:`~.utils.transpose`
+    :py:func:`~.api.transpose`
         Transpose a signal.
 
-The :mod:`~hyperspy.api` package contains the following submodules/packages:
+The :mod:`~.api` package contains the following submodules/packages:
 
-    :mod:`~.signals`
+    :mod:`~.api.signals`
         `Signal` classes which are the core of HyperSpy. Use this modules to
         create `Signal` instances manually from numpy arrays. Note that to
         load data from supported file formats is more convenient to use the
         `load` function.
-    :mod:`~.utils.model`
+    :mod:`~.api.model`
         Contains the :mod:`~utils.model` module with
         components that can be used to create a model for curve fitting.
-    :mod:`~.utils.material`
+    :mod:`~.api.material`
         Useful functions for materials properties and elements database that
         includes physical properties and X-rays and EELS energies.
-    :mod:`~.utils.plot`
+    :mod:`~.api.plot`
         Plotting functions that operate on multiple signals.
-    :mod:`~.data`
+    :mod:`~.api.data`
         Synthetic datasets.
-    :mod:`~.utils.roi`
+    :mod:`~.api.roi`
         Region of interests (ROIs) that operate on `BaseSignal` instances and
         include widgets for interactive operation.
-    :mod:`~.utils.samfire`
+    :mod:`~.api.samfire`
         SAMFire utilities (strategies, Pool, fit convergence tests)
 
 
