@@ -64,7 +64,6 @@ steps:
 - bash: |
     source activate $ENV_NAME
     pip install --no-deps -e .
-    pip install -e ./exspy
     conda list
   displayName: Install package
 
@@ -79,13 +78,6 @@ steps:
     source activate $ENV_NAME
     pytest --mpl --pyargs hyperspy --reruns 3 --instafail --mpl-results-path $RESULT_IMAGES_FOLDER
   displayName: Run test suite
-
-# Note we must use `-n 2` argument for pytest-xdist due to
-# https://github.com/pytest-dev/pytest-xdist/issues/9.
-- bash: |
-    source activate $ENV_NAME
-    pytest --pyargs exspy
-  displayName: Run exSpy test suite
 
 - publish: $(System.DefaultWorkingDirectory)/$(RESULT_IMAGES_FOLDER)
   artifact: $(Agent.JobName)-result_images
