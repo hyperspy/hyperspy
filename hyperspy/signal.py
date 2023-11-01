@@ -6475,7 +6475,7 @@ class BaseSignal(FancySlicing,
         Examples
         --------
         >>> import hyperspy.api as hs
-        >>> wave = hs.datasets.artificial_data.get_wave_image()
+        >>> wave = hs.data.wave_image()
         >>> wave.apply_apodization('tukey', tukey_alpha=0.1).plot()
         """
 

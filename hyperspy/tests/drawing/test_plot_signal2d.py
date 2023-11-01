@@ -137,7 +137,7 @@ def test_plot_log_scale(percentile):
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_FFT(fft_shift):
-    s = hs.datasets.artificial_data.get_wave_image(random_state=0)
+    s = hs.data.wave_image(random_state=0)
 
     s_fft = s.fft()
     s_fft.plot(fft_shift=fft_shift, axes_ticks=True, power_spectrum=True)

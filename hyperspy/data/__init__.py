@@ -17,30 +17,22 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 """
-The :mod:`hyperspy.datasets` module includes access to local and remote
-datasets.
-
-Functions:
-
-    eelsdb
-        Download spectra from the EELS data base https://eelsdb.eu
-
-Submodules:
-
-The :mod:`hyperspy.datasets` module contains the following submodules:
-
-    :mod:`hyperspy.datasets.artificial_data`
-        Artificial datasets generated with HyperSpy.
-
+The :mod:`hyperspy.data` module includes synthetic data signal.
 """
 
-from hyperspy.datasets import artificial_data
-from hyperspy.datasets.two_gaussians import two_gaussians
+from .artificial_data import (
+    atomic_resolution_image,
+    luminescence_signal,
+    wave_image,
+)
+from .two_gaussians import two_gaussians
 
 
 __all__ = [
-    'artificial_data',
+    'atomic_resolution_image',
+    'luminescence_signal',
     "two_gaussians",
+    'wave_image',
     ]
 
 

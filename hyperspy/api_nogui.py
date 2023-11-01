@@ -81,8 +81,8 @@ The :mod:`~hyperspy.api` package contains the following submodules/packages:
         includes physical properties and X-rays and EELS energies.
     :mod:`~.utils.plot`
         Plotting functions that operate on multiple signals.
-    :mod:`~.datasets`
-        Example datasets.
+    :mod:`~.data`
+        Synthetic datasets.
     :mod:`~.utils.roi`
         Region of interests (ROIs) that operate on `BaseSignal` instances and
         include widgets for interactive operation.
@@ -105,7 +105,7 @@ def get_configuration_directory_path():
 
 
 __all__ = [
-    'datasets',
+    'data',
     'get_configuration_directory_path',
     'interactive',
     'load',
