@@ -764,7 +764,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 int(np.floor(_min1)) if _min1 < 0 else None,
                 int(np.ceil(_max1)) if _max1 > 0 else 0,
             )
-            self.crop_image(top, bottom, left, right)
+            self.crop_signal(top, bottom, left, right)
             shifts = -shifts
 
         self.events.data_changed.trigger(obj=self)
@@ -863,9 +863,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
         scale = length / old_length
         return scale
 
-    def crop_image(self, top=None, bottom=None,
-                   left=None, right=None, convert_units=False):
-        """Crops an image in place.
+    def crop_signal(self, top=None, bottom=None, left=None, right=None,
+                    convert_units=False):
+        """
+        Crops in signal space and in place.
 
         Parameters
         ----------

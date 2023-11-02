@@ -1215,8 +1215,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
     remove_background.__doc__ %= (SHOW_PROGRESSBAR_ARG, DISPLAY_DT, TOOLKIT_DT)
 
     @interactive_range_selector
-    def crop_signal1D(self, left_value=None, right_value=None,):
-        """Crop in place the spectral dimension.
+    def crop_signal(self, left_value=None, right_value=None,):
+        """Crop in place in the signal space.
 
         Parameters
         ----------
