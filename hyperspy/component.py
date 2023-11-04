@@ -1213,8 +1213,8 @@ class Component(t.HasTraits):
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
         from hyperspy.model import _COMPONENTS
         if self._id_name not in _COMPONENTS:
-            import dill
-            dic['_class_dump'] = dill.dumps(self.__class__)
+            import cloudpickle
+            dic['_class_dump'] = cloudpickle.dumps(self.__class__)
         return dic
 
     def _load_dictionary(self, dic):

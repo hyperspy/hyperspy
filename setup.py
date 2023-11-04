@@ -34,8 +34,8 @@ if v[0] != 3:
 
 
 install_req = [
+    'cloudpickle',
     'dask[array]>=2021.3.1',
-    'dill',
     # included in stdlib since v3.8, but this required version requires Python 3.10
     # We can remove this requirement when the minimum supported version becomes Python 3.10
     'importlib-metadata>=3.6',
