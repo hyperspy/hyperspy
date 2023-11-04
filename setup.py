@@ -42,7 +42,6 @@ install_req = [
     'jinja2',
     'matplotlib>=3.1.3',
     'natsort',
-    'numexpr',
     'numpy>=1.20.0',
     'packaging',
     'pint>=0.10',
@@ -63,7 +62,7 @@ install_req = [
 extras_require = {
 	"ipython": ["IPython>7.0, !=8.0", "ipyparallel"],
     "learning": ["scikit-learn>=1.0.1"],
-    "speed":["numba"],
+    "speed":["numba", "numexpr"],
     # UPDATE BEFORE RELEASE
     "gui-jupyter": ["hyperspy_gui_ipywidgets @ git+https://github.com/ericpre/hyperspy_gui_ipywidgets.git@hyperspy2.0",
                     "ipympl"],

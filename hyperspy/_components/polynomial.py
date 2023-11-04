@@ -51,7 +51,7 @@ class Polynomial(Expression):
 
     """
 
-    def __init__(self, order=2, module="numexpr", **kwargs):
+    def __init__(self, order=2, module=None, **kwargs):
         if order == 0:
             raise ValueError("Polynomial of order 0 is not supported.")
         coeff_list = ['{}'.format(o).zfill(len(list(str(order)))) for o in

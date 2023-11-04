@@ -54,6 +54,9 @@ def test_creation_components1d(component_name):
         kwargs['signal1D'] = s
     elif component_name == 'Expression':
         kwargs.update({'expression': "a*x+b", "name": "linear"})
+    elif component_name == 'Bleasdale':
+        # This component only works with numexpr.
+        pytest.importorskip("numexpr")
 
     component = getattr(components1d, component_name)(**kwargs)
     component.function(np.arange(1, 100))

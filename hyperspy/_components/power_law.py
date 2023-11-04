@@ -61,7 +61,7 @@ class PowerLaw(Expression):
     """
 
     def __init__(self, A=10e5, r=3., origin=0., left_cutoff=0.0,
-                 module="numexpr", compute_gradients=False, **kwargs):
+                 module=None, compute_gradients=False, **kwargs):
         super().__init__(
             expression="where(left_cutoff<x, A*(-origin + x)**-r, 0)",
             name="PowerLaw",

@@ -127,5 +127,7 @@ def test_loading_components_exspy_not_installed():
             m = s.models.restore('a')
             assert "exspy is not installed" in str(err.value)
     else:
+        # The model contains components using numexpr
+        pytest.importorskip("numexpr")
         # This should work fine
         m = s.models.restore('a')

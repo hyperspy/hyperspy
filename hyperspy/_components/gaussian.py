@@ -105,7 +105,7 @@ class Gaussian(Expression):
     ~._components.gaussianhf.GaussianHF
     """
 
-    def __init__(self, A=1., sigma=1., centre=0., module="numexpr", **kwargs):
+    def __init__(self, A=1., sigma=1., centre=0., module=None, **kwargs):
         super().__init__(
             expression="A * (1 / (sigma * sqrt(2*pi))) * exp(-(x - centre)**2 \
                         / (2 * sigma**2))",

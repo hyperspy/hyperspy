@@ -94,7 +94,7 @@ class Lorentzian(Expression):
     the full-with-half-maximum and height of the distribution, respectively.
     """
 
-    def __init__(self, A=1., gamma=1., centre=0., module="numexpr", **kwargs):
+    def __init__(self, A=1., gamma=1., centre=0., module=None, **kwargs):
         # We use `_gamma` internally to workaround the use of the `gamma`
         # function in sympy
         super().__init__(
