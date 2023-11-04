@@ -21,9 +21,8 @@ import logging
 
 import dask.array as da
 import numpy as np
-from numba import njit
 
-
+from hyperspy.decorators import jit_ifnumba
 from hyperspy.misc.math_tools import anyfloatin
 from hyperspy.docstrings.utils import REBIN_ARGS
 
@@ -193,7 +192,7 @@ def rebin(a, new_shape=None, scale=None, crop=True, dtype=None):
 rebin.__doc__ %= REBIN_ARGS.replace("        ", "    ")
 
 
-@njit(cache=True)
+@jit_ifnumba(cache=True)
 def _linear_bin_loop(result, data, scale):  # pragma: no cover
     for j in range(result.shape[0]):
         # Begin by determining the upper and lower limits of a given new pixel.
@@ -355,7 +354,7 @@ def numba_histogram(data, bins, ranges):
     return _numba_histogram(data, bins, ranges)
 
 
-@njit(cache=True)
+@jit_ifnumba(cache=True)
 def _numba_histogram(data, bins, ranges):
     """
     Numba histogram computation requiring native endian datatype.
@@ -408,7 +407,7 @@ def get_signal_chunk_slice(index, chunks):
     raise ValueError("Index out of signal range.")
 
 
-@njit(cache=True)
+@jit_ifnumba(cache=True)
 def numba_closest_index_round(axis_array, value_array):
     """For each value in value_array, find the closest value in axis_array and
     return the result as a numpy array of the same shape as value_array.
@@ -434,7 +433,7 @@ def numba_closest_index_round(axis_array, value_array):
     return index_array
 
 
-@njit(cache=True)
+@jit_ifnumba(cache=True)
 def numba_closest_index_floor(axis_array, value_array):  # pragma: no cover
     """For each value in value_array, find the closest smaller value in
     axis_array and return the result as a numpy array of the same shape
@@ -460,7 +459,7 @@ def numba_closest_index_floor(axis_array, value_array):  # pragma: no cover
     return index_array
 
 
-@njit(cache=True)
+@jit_ifnumba(cache=True)
 def numba_closest_index_ceil(axis_array, value_array):  # pragma: no cover
     """For each value in value_array, find the closest larger value in
     axis_array and return the result as a numpy array of the same shape
@@ -485,7 +484,7 @@ def numba_closest_index_ceil(axis_array, value_array):  # pragma: no cover
     return index_array
 
 
-@njit(cache=True)
+@jit_ifnumba(cache=True)
 def round_half_towards_zero(array, decimals=0):  # pragma: no cover
     """
     Round input array using "half towards zero" strategy.
@@ -561,7 +560,7 @@ def get_value_at_index(array,
         return stop_
 
 
-@njit(cache=True)
+@jit_ifnumba(cache=True)
 def round_half_away_from_zero(array, decimals=0):  # pragma: no cover
     """
     Round input array using "half away from zero" strategy.

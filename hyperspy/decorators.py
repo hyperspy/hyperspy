@@ -233,3 +233,21 @@ class deprecated_argument:
             return func(*args, **kwargs)
 
         return wrapped
+
+
+def jit_ifnumba(*args, **kwargs):
+    try:
+        import numba
+
+        if "nopython" not in kwargs:
+            kwargs["nopython"] = True
+        return numba.jit(*args, **kwargs)
+    except ImportError:
+
+        def wrap1(func):
+            def wrap2(*args2, **kwargs2):
+                return func(*args2, **kwargs2)
+
+            return wrap2
+
+        return wrap1

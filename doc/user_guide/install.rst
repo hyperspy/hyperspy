@@ -178,7 +178,7 @@ dependencies required by specific functionalities:
   GUI elements,
 * ``gui-traitsui`` to use the GUI elements based on `traitsui <https://docs.enthought.com/traitsui/>`_,
 * ``mrcz`` to read mrcz file,
-* ``speed`` to speed up some functionalities,
+* ``speed`` install numba to speed up some functionalities,
 * ``usid`` to read usid file,
 * ``tests`` to install required libraries to run HyperSpy's unit tests,
 * ``build-doc`` to install required libraries to build HyperSpy's documentation,
