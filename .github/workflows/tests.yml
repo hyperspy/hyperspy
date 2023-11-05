@@ -30,7 +30,11 @@ jobs:
             PYTHON_VERSION: '3.8'
             PIP_SELECTOR: '[tests, coverage]'
             LABEL: -minimum
-          # Run coverage
+          - os: ubuntu
+            PYTHON_VERSION: '3.12'
+            PIP_SELECTOR: '[tests, coverage]'
+            LABEL: -minimum
+            # Run coverage
           - os: ubuntu
             PYTHON_VERSION: '3.8'
             PIP_SELECTOR: '[all, tests, coverage]'
