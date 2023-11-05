@@ -73,6 +73,7 @@ def _matplotlib_pick_event(figure, click, artist):
 
 @pytest.fixture
 def setup_teardown(request, scope="class"):
+    plot_testing = request.config.getoption("--mpl")
     try:
         import pytest_mpl
         # This option is available only when pytest-mpl is installed
@@ -84,7 +85,7 @@ def setup_teardown(request, scope="class"):
     # duplicate baseline images to match the test_name when the
     # parametrized 'test_plot_spectra' are run. For a same 'style', the
     # expected images are the same.
-    if mpl_generate_path_cmdopt is None:
+    if mpl_generate_path_cmdopt is None and plot_testing:
         for filename in _generate_filename_list(style):
             copyfile(f"{str(filename)[:-5]}.png", filename)
     yield
@@ -94,9 +95,10 @@ def setup_teardown(request, scope="class"):
     if mpl_generate_path_cmdopt:
         for filename in _generate_filename_list(style):
             copyfile(filename, f"{str(filename)[:-5]}.png")
-    # Delete the images that have been created in 'setup_class'
-    for filename in _generate_filename_list(style):
-        os.remove(filename)
+    if plot_testing:
+        # Delete the images that have been created in 'setup_class'
+        for filename in _generate_filename_list(style):
+            os.remove(filename)
 
 
 @pytest.mark.usefixtures("setup_teardown")

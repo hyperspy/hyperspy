@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
+from pathlib import Path
+
 try:
     # Set traits toolkit to work in a headless system
     # Capture error when toolkit is already previously set which typically
@@ -73,3 +75,14 @@ except ImportError:
             "mpl_image_compare: dummy marker registration to allow running "
             "without the pytest-mpl plugin."
         )
+
+
+def pytest_configure(config):
+    # raise an error if the baseline images are not present
+    # which is the case when installing from a wheel
+    baseline_images_path = Path(__file__).parent / "tests" / "drawing" / "plot_signal"
+    if config.getoption("--mpl") and not baseline_images_path.exists():
+        raise ValueError(
+            "`--mpl` flag can't not be used because the "
+            "baseline images are not packaged."
+            )
