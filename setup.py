@@ -196,6 +196,7 @@ with update_version_when_dev() as version:
         package_data={
             'hyperspy':
             [
+                'tests/component/data/*.hspy',
                 'tests/drawing/*.png',
                 'tests/drawing/data/*.hspy',
                 'tests/drawing/plot_signal/*.png',

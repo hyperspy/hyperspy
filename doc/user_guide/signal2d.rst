@@ -5,15 +5,15 @@ Signal2D Tools
 **************
 
 The methods described in this section are only available for two-dimensional
-signals in the :py:class:`~._signals.signal2d.Signal2D`. class.
+signals in the :py:class:`~.api.signals.Signal2D`. class.
 
 .. _signal2D.align:
 
 Signal registration and alignment
 ---------------------------------
 
-The :py:meth:`~._signals.signal2d.Signal2D.align2D` and
-:py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D` methods provide
+The :py:meth:`~.api.signals.Signal2D.align2D` and
+:py:meth:`~.api.signals.Signal2D.estimate_shift2D` methods provide
 advanced image alignment functionality.
 
 .. code-block:: python
@@ -66,16 +66,16 @@ the scheduler of the :ref:`dask backend <dask_backends>`.
 
 .. _signal2D.crop:
 
-Cropping an image
------------------
+Cropping a Signal2D
+-------------------
 
-The :py:meth:`~._signals.signal2d.Signal2D.crop_image` method crops the
+The :py:meth:`~.api.signals.Signal2D.crop_signal` method crops the
 image *in-place* e.g.:
 
 .. code-block:: python
 
     >>> im = hs.datasets.example_signals.object_hologram()
-    >>> imc = im.crop(left=120, top=300, bottom=560) # im is cropped in-place
+    >>> im.crop_signal(left=120, top=300, bottom=560) # im is cropped in-place
 
 
 Cropping in HyperSpy is performed using the :ref:`Signal indexing
@@ -111,7 +111,7 @@ Interactive calibration
 -----------------------
 
 The scale can be calibrated interactively by using
-:py:meth:`~._signals.signal2d.Signal2D.calibrate`, which is used to
+:py:meth:`~.api.signals.Signal2D.calibrate`, which is used to
 set the scale by dragging a line across some feature of known size.
 
 .. code-block:: python
@@ -132,7 +132,7 @@ Add a linear ramp
 -----------------
 
 A linear ramp can be added to the signal via the
-:py:meth:`~._signals.signal2d.Signal2D.add_ramp` method. The parameters
+:py:meth:`~.api.signals.Signal2D.add_ramp` method. The parameters
 `ramp_x` and `ramp_y` dictate the slope of the ramp in `x`- and `y` direction,
 while the offset is determined by the `offset` parameter. The fulcrum of the
 linear ramp is at the origin and the slopes are given in units of the axis
@@ -146,7 +146,7 @@ Peak finding
 
 .. versionadded:: 1.6
 
-The :py:meth:`~._signals.signal2d.Signal2D.find_peaks` method provides access
+The :py:meth:`~.api.signals.Signal2D.find_peaks` method provides access
 to a number of algorithms for peak finding in two dimensional signals. The
 methods available are:
 

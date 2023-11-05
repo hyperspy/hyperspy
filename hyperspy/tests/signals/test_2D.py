@@ -211,7 +211,7 @@ class Test2D:
         s.axes_manager[1].name = "y"
         s.axes_manager[1].scale = 0.01
         s.axes_manager[1].units = "µm"
-        s.crop_image(0, 0.5, 0.0, 0.5)
+        s.crop_signal(0, 0.5, 0.0, 0.5)
         np.testing.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         np.testing.assert_almost_equal(s.axes_manager[1].scale, 0.01)
         assert s.axes_manager[0].units == "µm"
@@ -227,7 +227,7 @@ class Test2D:
         s.axes_manager[1].name = "y"
         s.axes_manager[1].scale = 0.01
         s.axes_manager[1].units = "µm"
-        s.crop_image(0, 0.5, 0.0, 0.5, convert_units=True)
+        s.crop_signal(0, 0.5, 0.0, 0.5, convert_units=True)
         np.testing.assert_almost_equal(s.axes_manager[0].scale, 10.0)
         np.testing.assert_almost_equal(s.axes_manager[1].scale, 10.0)
         assert s.axes_manager[0].units == "nm"
@@ -243,7 +243,7 @@ class Test2D:
         s.axes_manager[1].name = "y"
         s.axes_manager[1].scale = 0.01
         s.axes_manager[1].units = "µm"
-        s.crop_image(0, 5.0, 0.0, 5.0, convert_units=True)
+        s.crop_signal(0, 5.0, 0.0, 5.0, convert_units=True)
         np.testing.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         np.testing.assert_almost_equal(s.axes_manager[1].scale, 0.01)
         assert s.axes_manager[0].units == "µm"
