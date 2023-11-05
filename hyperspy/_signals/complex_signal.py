@@ -312,8 +312,8 @@ class ComplexSignal(BaseSignal):
         Examples
         --------
         >>> import holospy as holo
-        >>> hologram = data.datasets.Fe_needle_hologram()
-        >>> ref = hs.datasets.Fe_needle_reference_hologram()
+        >>> hologram = holo.data.Fe_needle_hologram()
+        >>> ref = holo.data.Fe_needle_reference_hologram()
         >>> w = hologram.reconstruct_phase(ref)
         >>> w.argand_diagram(range=[-3, 3]).plot()
 

@@ -39,10 +39,10 @@ def test_import_api_nogui():
         getattr(hyperspy.api_nogui, obj_name)
 
 
-def test_import_datasets():
-    import hyperspy.datasets
-    for obj_name in hyperspy.datasets.__all__:
-        getattr(hyperspy.datasets, obj_name)
+def test_import_data():
+    import hyperspy.data
+    for obj_name in hyperspy.data.__all__:
+        getattr(hyperspy.data, obj_name)
 
 
 def test_import_utils():
@@ -96,7 +96,7 @@ def test_dir_api():
     d = dir(hyperspy.api)
     assert d == [
         '__version__',
-        'datasets',
+        'data',
         'get_configuration_directory_path',
         'interactive',
         'load',
@@ -118,7 +118,7 @@ def test_dir_api_nogui():
     d = dir(hyperspy.api_nogui)
     assert d == [
         '__version__',
-        'datasets',
+        'data',
         'get_configuration_directory_path',
         'interactive',
         'load',
@@ -135,19 +135,14 @@ def test_dir_api_nogui():
         ]
 
 
-def test_dir_datasets():
-    import hyperspy.datasets
-    d = dir(hyperspy.datasets)
-    assert d == ['artificial_data', 'two_gaussians']
-
-
-def test_dir_datasets_artificial_data():
-    import hyperspy.datasets.artificial_data
-    d = dir(hyperspy.datasets.artificial_data)
+def test_dir_data():
+    import hyperspy.data
+    d = dir(hyperspy.data)
     assert d == [
-        'get_atomic_resolution_tem_signal2d',
-        'get_luminescence_signal',
-        'get_wave_image',
+            'atomic_resolution_image',
+            'luminescence_signal',
+            "two_gaussians",
+            'wave_image',
         ]
 
 
@@ -165,6 +160,7 @@ def test_dir_utils():
         'stack',
         'transpose',
         ]
+
 
 def test_dir_utils_markers():
     import hyperspy.utils.markers

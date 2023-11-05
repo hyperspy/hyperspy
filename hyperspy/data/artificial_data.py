@@ -39,22 +39,18 @@ ADD_NOISE_DOCSTRING = \
         Random seed used to generate the data.
     """
 
-RETURNS_DOCSTRING = \
-"""Returns
-    -------
-    :py:class:`~hyperspy._signals.eels.EELSSpectrum`
-    """
 
-def get_atomic_resolution_tem_signal2d():
-    """Get an artificial atomic resolution TEM Signal2D.
+def atomic_resolution_image():
+    """
+    Get an artificial atomic resolution image.
 
     Returns
     -------
-    :py:class:`~hyperspy._signals.signal2d.Signal2D`
+    Signal2D
 
     Example
     -------
-    >>> s = hs.datasets.artificial_data.get_atomic_resolution_tem_signal2d()
+    >>> s = hs.data.atomic_resolution_image()
     >>> s.plot()
 
     """
@@ -72,12 +68,13 @@ def get_atomic_resolution_tem_signal2d():
     return s
 
 
-def get_luminescence_signal(navigation_dimension=0,
-                            uniform=False,
-                            add_baseline=False,
-                            add_noise=True,
-                            random_state=None):
-    """Get an artificial luminescence signal in wavelength scale (nm, uniform) or
+def luminescence_signal(navigation_dimension=0,
+                        uniform=False,
+                        add_baseline=False,
+                        add_noise=True,
+                        random_state=None):
+    """
+    Get an artificial luminescence signal in wavelength scale (nm, uniform) or
     energy scale (eV, non-uniform), simulating luminescence data recorded with a
     diffracting spectrometer. Some random noise is also added to the spectrum,
     to simulate experimental noise.
@@ -97,32 +94,35 @@ def get_luminescence_signal(navigation_dimension=0,
 
     Example
     -------
-    >>> import hyperspy.datasets.artificial_data as ad
-    >>> s = ad.get_luminescence_signal()
+    >>> import hyperspy.api as hs
+    >>> s = hs.data.luminescence_signal()
     >>> s.plot()
 
     With constant baseline
 
-    >>> s = ad.get_luminescence_signal(uniform=True, add_baseline=True)
+    >>> s = hs.data.luminescence_signal(uniform=True, add_baseline=True)
     >>> s.plot()
 
     To make the noise the same for multiple spectra, which can
     be useful for testing fitting routines
 
-    >>> s1 = ad.get_luminescence_signal(random_state=10)
-    >>> s2 = ad.get_luminescence_signal(random_state=10)
+    >>> s1 = hs.data.luminescence_signal(random_state=10)
+    >>> s2 = hs.data.luminescence_signal(random_state=10)
     >>> (s1.data == s2.data).all()
     True
 
     2D map
 
-    >>> s = ad.get_luminescence_signal(navigation_dimension=2)
+    >>> s = hs.data.luminescence_signal(navigation_dimension=2)
     >>> s.plot()
 
     See also
     --------
-    get_atomic_resolution_tem_signal2d,
+    atomic_resolution_image
 
+    Returns
+    -------
+    Signal1D
     """
 
     #Initialisation of random number generator
@@ -188,10 +188,10 @@ def get_luminescence_signal(navigation_dimension=0,
         sig *= hc/Eax**2
     return sig
 
-get_luminescence_signal.__doc__ %= (ADD_NOISE_DOCSTRING)
+luminescence_signal.__doc__ %= (ADD_NOISE_DOCSTRING)
 
 
-def get_wave_image(angle=45, wavelength=10, shape=(256, 256), add_noise=True, random_state=None):
+def wave_image(angle=45, wavelength=10, shape=(256, 256), add_noise=True, random_state=None):
     """
     Returns a wave image generated using the sinus function.
 
@@ -208,7 +208,6 @@ def get_wave_image(angle=45, wavelength=10, shape=(256, 256), add_noise=True, ra
     Returns
     -------
     Signal2D
-
     """
 
     x = np.arange(0, shape[0], 1)
@@ -231,15 +230,4 @@ def get_wave_image(angle=45, wavelength=10, shape=(256, 256), add_noise=True, ra
 
     return s
 
-get_wave_image.__doc__ %= (ADD_NOISE_DOCSTRING)
-
-
-__all__ = [
-    'get_atomic_resolution_tem_signal2d',
-    'get_luminescence_signal',
-    'get_wave_image',
-    ]
-
-
-def __dir__():
-    return sorted(__all__)
+wave_image.__doc__ %= (ADD_NOISE_DOCSTRING)

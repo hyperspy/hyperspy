@@ -21,9 +21,9 @@ from packaging.version import Version
 import numpy as np
 import pytest
 
+import hyperspy.api as hs
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
-from hyperspy import datasets
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 from hyperspy.misc.machine_learning.tools import amari
@@ -127,21 +127,21 @@ def test_orthomax(whiten_method):
     assert amari(W, A) < 0.5
 
     # Verify that we can change gamma for orthomax method
-    s = datasets.two_gaussians()
+    s = hs.data.two_gaussians()
     s.change_dtype('float64')
     s.decomposition()
     s.blind_source_separation(2, algorithm="orthomax", gamma=2)
 
 
 def test_no_decomposition_error():
-    s = datasets.two_gaussians()
+    s = hs.data.two_gaussians()
 
     with pytest.raises(AttributeError, match="A decomposition must be performed"):
         s.blind_source_separation(2)
 
 
 def test_factors_error():
-    s = datasets.two_gaussians()
+    s = hs.data.two_gaussians()
     s.change_dtype('float64')
     s.decomposition()
 
@@ -159,7 +159,7 @@ def test_factors_error():
 @skip_sklearn
 @pytest.mark.parametrize("num_components", [None, 2])
 def test_num_components(num_components):
-    s = datasets.two_gaussians()
+    s = hs.data.two_gaussians()
     s.change_dtype('float64')
     s.decomposition(output_dimension=2)
     s.blind_source_separation(number_of_components=num_components)
@@ -167,7 +167,7 @@ def test_num_components(num_components):
 
 @skip_sklearn
 def test_components_list():
-    s = datasets.two_gaussians()
+    s = hs.data.two_gaussians()
     s.change_dtype('float64')
     s.decomposition(output_dimension=3)
     s.blind_source_separation(comp_list=[0, 2])
@@ -176,7 +176,7 @@ def test_components_list():
 
 @skip_sklearn
 def test_num_components_error():
-    s = datasets.two_gaussians()
+    s = hs.data.two_gaussians()
     s.change_dtype('float64')
     s.decomposition()
     s.learning_results.output_dimension = None
@@ -188,7 +188,7 @@ def test_num_components_error():
 
 
 def test_algorithm_error():
-    s = datasets.two_gaussians()
+    s = hs.data.two_gaussians()
     s.change_dtype('float64')
     s.decomposition()
 

@@ -278,7 +278,7 @@ class TestFitAlgorithms:
 class TestWarningSlowMultifit:
 
     def setup_method(self, method):
-        s = hs.datasets.two_gaussians().inav[0]
+        s = hs.data.two_gaussians().inav[0]
         m = s.create_model()
         g1 = hs.model.components1D.Gaussian(centre=40)
         g2 = hs.model.components1D.Gaussian(centre=55)
@@ -689,7 +689,7 @@ def test_fixed_free_offset():
 
 
 def test_non_uniform_binned():
-    s = hs.datasets.artificial_data.get_luminescence_signal()
+    s = hs.data.luminescence_signal()
     s.axes_manager[-1].is_binned = True
     m = s.create_model()
     with pytest.raises(ValueError):

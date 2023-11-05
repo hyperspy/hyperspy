@@ -18,7 +18,7 @@
 
 import pytest
 
-import hyperspy.datasets.artificial_data as ad
+import hyperspy.api as hs
 
 
 @pytest.mark.parametrize("navigation_dimension",(0,1,2,3))
@@ -27,10 +27,9 @@ import hyperspy.datasets.artificial_data as ad
 @pytest.mark.parametrize("add_noise",(True,False))
 def test_get_luminescence_signal(navigation_dimension, uniform, add_baseline, add_noise):
     #Creating signal
-    s = ad.get_luminescence_signal(navigation_dimension,
-                                                uniform,
-                                                add_baseline,
-                                                add_noise)
+    s = hs.data.luminescence_signal(
+        navigation_dimension, uniform, add_baseline, add_noise
+        )
     #Checking that dimension initialisation works
     assert tuple([10 for i in range(navigation_dimension)]+[1024]) == s.data.shape
     #Verifying that both functional and uniform data axis work
@@ -51,5 +50,5 @@ def test_get_luminescence_signal(navigation_dimension, uniform, add_baseline, ad
 @pytest.mark.parametrize("shape", ((128, 128), (256, 256)))
 @pytest.mark.parametrize("add_noise", (True, False))
 def test_get_wave_image(shape, add_noise):
-    s = ad.get_wave_image(shape=shape, add_noise=add_noise)
+    s = hs.data.wave_image(shape=shape, add_noise=add_noise)
     assert s.data.shape == shape

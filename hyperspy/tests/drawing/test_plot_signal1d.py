@@ -415,7 +415,7 @@ def test_plot_add_line_events(ax):
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_autoscale(autoscale):
-    s = hs.datasets.two_gaussians().inav[0, 0]
+    s = hs.data.two_gaussians().inav[0, 0]
     s.plot(autoscale=autoscale)
     ax = s._plot.signal_plot.ax
     ax.set_xlim(50.0, 70.0)

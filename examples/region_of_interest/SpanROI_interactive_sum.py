@@ -10,7 +10,7 @@ import hyperspy.api as hs
 
 #%%
 # Create a signal:
-s = hs.datasets.two_gaussians()
+s = hs.data.two_gaussians()
 
 #%%
 # Create SpanROI:
