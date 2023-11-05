@@ -1100,7 +1100,7 @@ def test_load_old_markers():
     plt.savefig('test.png', dpi=300)
     s.save("signal_markers_hs1_7_5.hspy")
     """
-    s = hs.load(FILE_PATH / "signal_markers_hs1_7_5.hspy")
+    s = hs.load(FILE_PATH / "data" / "signal_markers_hs1_7_5.hspy")
     s.metadata.General.original_filename = ""
     s.tmp_parameters.filename = ""
     s.plot(axes_ticks=True)

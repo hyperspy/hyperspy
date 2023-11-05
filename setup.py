@@ -194,11 +194,9 @@ with update_version_when_dev() as version:
             'hyperspy':
             [
                 'tests/component/data/*.hspy',
-                'tests/drawing/*.png',
                 'tests/drawing/data/*.hspy',
                 'misc/dask_widgets/*.html.j2',
-                'tests/signals/data/test_find_peaks1D_ohaver.hdf5',
-                'tests/signals/data/*.hspy',
+                'tests/signals/data/*.hdf5',
                 'hyperspy_extension.yaml',
             ],
         },
