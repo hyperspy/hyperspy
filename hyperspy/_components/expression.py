@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from functools import wraps
+import logging
 import numpy as np
 import sympy
 
@@ -24,6 +25,9 @@ import warnings
 
 from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+
+
+_logger = logging.getLogger(__name__)
 
 
 _CLASS_DOC = \
@@ -169,6 +173,10 @@ class Expression(Component):
                 module = "numexpr"
             except ImportError:
                 module = "numpy"
+                _logger.warning(
+                    "Numexpr is not installed, falling back to numpy, "
+                    "which is slower to calculate model."
+                )
 
         if linear_parameter_list is None:
             linear_parameter_list = []

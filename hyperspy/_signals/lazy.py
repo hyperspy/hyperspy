@@ -66,6 +66,10 @@ def _get():
     except AttributeError:  # pragma: no cover
         # For pyodide
         get = dask.get
+        _logger.warning(
+            "Dask scheduler with threads is not available in this environment. "
+            "Falling back to synchronous scheduler (single-threaded)."
+        )
     return get
 
 
