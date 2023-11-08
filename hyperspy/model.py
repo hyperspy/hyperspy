@@ -125,7 +125,13 @@ def reconstruct_component(comp_dictionary, **init_args):
     elif "_class_dump" in comp_dictionary:
         # When a component is not registered using the extension mechanism,
         # it is serialized using cloudpickle.
-        _class = cloudpickle.loads(comp_dictionary['_class_dump'])
+        try:
+            _class = cloudpickle.loads(comp_dictionary['_class_dump'])
+        except TypeError: # pragma: no cover
+            raise TypeError("Pickling is not (always) supported between python "
+                            "versions. As a result the custom class cannot be "
+                            "loaded. Consider adding a custom Component using the "
+                            "extension mechanism.")
     else:
         # For component saved with hyperspy <2.0 and moved to exspy
         if comp_dictionary["_id_name"] in EXSPY_HSPY_COMPONENTS:

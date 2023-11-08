@@ -317,48 +317,51 @@ def test_set_name_error():
         c.name = 1
 
 
-def test_loading_non_expression_custom_component():
+def test_loading_non_expression_custom_component(tmp_path):
     # non-expression based custom component uses serialisation
     # to save the components.
-    """
-    The file has been generated with hyperspy 2.0 using:
 
-        import hyperspy.api as hs
-        from hyperspy.component import Component
+    import hyperspy.api as hs
+    from hyperspy.component import Component
 
-        class CustomComponent(Component):
+    class CustomComponent(Component):
 
-            def __init__(self, p1=1, p2=2):
-                Component.__init__(self, ('p1', 'p2'))
+        def __init__(self, p1=1, p2=2):
+            Component.__init__(self, ('p1', 'p2'))
 
-                self.p1.value = p1
-                self.p2.value = p2
+            self.p1.value = p1
+            self.p2.value = p2
 
-                self.p1.grad = self.grad_p1
-                self.p2.grad = self.grad_p2
+            self.p1.grad = self.grad_p1
+            self.p2.grad = self.grad_p2
 
-            def function(self, x):
-                p1 = self.p1.value
-                p2 = self.p2.value
-                return p1 + x * p2
+        def function(self, x):
+            p1 = self.p1.value
+            p2 = self.p2.value
+            return p1 + x * p2
 
-            def grad_p1(self, x):
-                return 0
+        def grad_p1(self, x):
+            return 0
 
-            def grad_p2(self, x):
-                return x
+        def grad_p2(self, x):
+            return x
 
+    s = hs.signals.Signal1D(range(10))
+    m = s.create_model()
 
-        s = hs.signals.Signal1D(range(10))
-        m = s.create_model()
+    c = CustomComponent()
+    m.append(c)
+    m.store('a')
 
-        c = CustomComponent()
-        m.append(c)
-        m.store('a')
+    s.save(tmp_path / "hs2.0_custom_component.hspy")
 
-        s.save("hs2.0_custom_component.hspy")
-
-    """
-
-    s = hs.load(DIRPATH / "hs2.0_custom_component.hspy")
+    s = hs.load(tmp_path / "hs2.0_custom_component.hspy")
     _ = s.models.restore('a')
+
+
+def test_load_component_previous_python():
+    s = hs.load(DIRPATH / "hs2.0_custom_component.hspy")
+    import sys
+    if sys.version_info[0] < 3.11:
+        with pytest.raises(TypeError):
+            _ = s.models.restore('a')
