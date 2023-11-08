@@ -172,6 +172,7 @@ use:
 
 See the following list of selectors to select the installation of optional
 dependencies required by specific functionalities:
+
 * ``ipython`` for integration with the `ipython` terminal and parallel processing using `ipyparallel`,
 * ``learning`` for some machine learning features,
 * ``gui-jupyter`` to use the `Jupyter widgets <https://ipywidgets.readthedocs.io/en/stable/>`_

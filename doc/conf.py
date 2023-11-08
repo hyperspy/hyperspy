@@ -309,6 +309,7 @@ intersphinx_mapping = {
     'scipy': ('https://docs.scipy.org/doc/scipy', None),
     'skimage': ('https://scikit-image.org/docs/stable', None),
     'sklearn': ('https://scikit-learn.org/stable', None),
+    'traits': ('https://docs.enthought.com/traits/', None),
     'zarr': ('https://zarr.readthedocs.io/en/stable', None),
 }
 
