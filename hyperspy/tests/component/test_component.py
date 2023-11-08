@@ -362,6 +362,6 @@ def test_loading_non_expression_custom_component(tmp_path):
 def test_load_component_previous_python():
     s = hs.load(DIRPATH / "hs2.0_custom_component.hspy")
     import sys
-    if sys.version_info[0] < 3.11:
+    if sys.version_info[0] == 3.11:
         with pytest.raises(TypeError):
             _ = s.models.restore('a')

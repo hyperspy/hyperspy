@@ -127,7 +127,8 @@ def reconstruct_component(comp_dictionary, **init_args):
         # it is serialized using cloudpickle.
         try:
             _class = cloudpickle.loads(comp_dictionary['_class_dump'])
-        except TypeError: # pragma: no cover
+        except TypeError:  # pragma: no cover
+            # https://github.com/cloudpipe/cloudpickle/blob/master/README.md
             raise TypeError("Pickling is not (always) supported between python "
                             "versions. As a result the custom class cannot be "
                             "loaded. Consider adding a custom Component using the "
