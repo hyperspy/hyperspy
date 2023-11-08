@@ -298,3 +298,22 @@ def test_linear_parameter_initialisation():
     assert C.one._linear
     assert not C.two._linear
     assert not P._linear
+
+
+def test_set_name():
+    c = Component(['one', 'two'], ['one'])
+    c.name = 'test'
+    assert c.name == 'test'
+    assert c._name == 'test'
+
+
+def test_set_name_error():
+    c = Component(['one', 'two'], ['one'])
+    with pytest.raises(ValueError):
+        c.name = 1
+
+
+def test_set_active_error():
+    c = Component(['one', 'two'], ['one'])
+    with pytest.raises(ValueError):
+        c.active = 10

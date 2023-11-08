@@ -721,11 +721,12 @@ class Parameter(t.HasTraits):
 @add_gui_method(toolkey="hyperspy.Component")
 class Component(t.HasTraits):
     __axes_manager = None
-
+    # setting dtype for t.Property(t.Bool) causes serialization error with cloudpickle
     active = t.Property()
     name = t.Property()
 
-    def __init__(self, parameter_name_list, linear_parameter_list=None):
+    def __init__(self, parameter_name_list, linear_parameter_list=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.events = Events()
         self.events.active_changed = Event("""
             Event that triggers when the `Component.active` changes.
@@ -806,6 +807,8 @@ class Component(t.HasTraits):
         return self._name
 
     def _set_name(self, value):
+        if not isinstance(value, str):
+            raise ValueError('Only string values are permitted')
         old_value = self._name
         if old_value == value:
             return
@@ -852,6 +855,8 @@ class Component(t.HasTraits):
         self._active_array[self._axes_manager.indices[::-1]] = value
 
     def _set_active(self, arg):
+        if not isinstance(arg, bool):
+            raise ValueError('Only boolean values are permitted')
         if self._active == arg:
             return
         old_value = self._active
