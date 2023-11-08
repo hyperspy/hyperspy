@@ -1,1 +1,0 @@
-RosettaSciIO was split out of the `HyperSpy repository <https://github.com/hyperspy/hyperspy>`_ on July 23, 2022. The IO-plugins and related functions so far developed in HyperSpy were moved to the `RosettaSciIO repository <https://github.com/hyperspy/rosettasciio>`_.

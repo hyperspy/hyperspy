@@ -1,1 +1,0 @@
-Pin third party GitHub actions and add maintenance guidelines on how to update them

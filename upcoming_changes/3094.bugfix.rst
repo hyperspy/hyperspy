@@ -1,2 +1,0 @@
-Fix behaviour of  `DictionaryTreeBrowser` setter with value of dictionary type
-

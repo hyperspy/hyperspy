@@ -1,1 +1,0 @@
-Remove ``physics_tools`` since it is not used and doesn't fit in the scope of HyperSpy.
