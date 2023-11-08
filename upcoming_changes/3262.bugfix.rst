@@ -1,0 +1,2 @@
+Fix serialization error due to :py:class:`traits.api.Property` not being serializable if a dtype is specified.
+See #3261 for more details.
