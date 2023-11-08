@@ -924,8 +924,6 @@ def plot_images(images,
         colorbar = None
         warnings.warn("Sorry, colorbar is not implemented for RGB images.")
 
-
-
     def check_list_length(arg, arg_name):
         if isinstance(arg, (list, tuple)):
             if len(arg) != n:
@@ -1051,6 +1049,9 @@ def plot_images(images,
             axes_manager = ims.axes_manager
             if axes_manager.navigation_dimension > 0:
                 ims = ims._deepcopy_with_new_data(ims.data)
+                # Use flyback iterpath to get "natural",
+                # i.e. order the user would except
+                ims.axes_manager.iterpath = 'flyback'
             for j, im in enumerate(ims):
                 ax = f.add_subplot(rows, per_row, idx + 1)
                 axes_list.append(ax)

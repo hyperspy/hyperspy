@@ -710,7 +710,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 also_align=None,
                 mask=None,
                 show_progressbar=None,
-                iterpath="flyback"):
+                iterpath="serpentine"):
         """Estimate the shifts in the signal axis using
         cross-correlation and use the estimation to align the data in place.
         This method can only estimate the shift by comparing
