@@ -722,8 +722,8 @@ class Parameter(t.HasTraits):
 class Component(t.HasTraits):
     __axes_manager = None
 
-    active = t.Property(t.CBool(True))
-    name = t.Property(t.Str(''))
+    active = t.Property()
+    name = t.Property()
 
     def __init__(self, parameter_name_list, linear_parameter_list=None):
         self.events = Events()
