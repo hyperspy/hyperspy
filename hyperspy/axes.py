@@ -1489,7 +1489,7 @@ class AxesManager(t.HasTraits):
 
         self._update_attributes()
         self._update_trait_handlers()
-        self.iterpath = 'flyback'
+        self.iterpath = 'serpentine'
         self._ragged = False
 
     @property
