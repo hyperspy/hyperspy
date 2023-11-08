@@ -18,13 +18,17 @@
 
 import pytest
 from unittest import mock
+import pathlib
 
 import numpy as np
 
+import hyperspy.api as hs
 from hyperspy.axes import AxesManager
 from hyperspy.component import Component, Parameter, _get_scaling_factor
 from hyperspy._signals.signal1d import Signal1D
 
+
+DIRPATH = pathlib.Path(__file__).parent / "data"
 
 class TestMultidimensionalActive:
 
@@ -311,3 +315,50 @@ def test_set_name_error():
     c = Component(['one', 'two'], ['one'])
     with pytest.raises(ValueError):
         c.name = 1
+
+
+def test_loading_non_expression_custom_component():
+    # non-expression based custom component uses serialisation
+    # to save the components.
+    """
+    The file has been generated with hyperspy 2.0 using:
+
+        import hyperspy.api as hs
+        from hyperspy.component import Component
+
+        class CustomComponent(Component):
+
+            def __init__(self, p1=1, p2=2):
+                Component.__init__(self, ('p1', 'p2'))
+
+                self.p1.value = p1
+                self.p2.value = p2
+
+                self.p1.grad = self.grad_p1
+                self.p2.grad = self.grad_p2
+
+            def function(self, x):
+                p1 = self.p1.value
+                p2 = self.p2.value
+                return p1 + x * p2
+
+            def grad_p1(self, x):
+                return 0
+
+            def grad_p2(self, x):
+                return x
+
+
+        s = hs.signals.Signal1D(range(10))
+        m = s.create_model()
+
+        c = CustomComponent()
+        m.append(c)
+        m.store('a')
+
+        s.save("hs2.0_custom_component.hspy")
+
+    """
+
+    s = hs.load(DIRPATH / "hs2.0_custom_component.hspy")
+    _ = s.models.restore('a')
