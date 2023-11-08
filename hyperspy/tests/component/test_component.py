@@ -311,9 +311,3 @@ def test_set_name_error():
     c = Component(['one', 'two'], ['one'])
     with pytest.raises(ValueError):
         c.name = 1
-
-
-def test_set_active_error():
-    c = Component(['one', 'two'], ['one'])
-    with pytest.raises(ValueError):
-        c.active = 10

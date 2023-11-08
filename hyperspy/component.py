@@ -855,8 +855,6 @@ class Component(t.HasTraits):
         self._active_array[self._axes_manager.indices[::-1]] = value
 
     def _set_active(self, arg):
-        if not isinstance(arg, bool):
-            raise ValueError('Only boolean values are permitted')
         if self._active == arg:
             return
         old_value = self._active
