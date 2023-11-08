@@ -53,7 +53,7 @@ install_req = [
     'scikit-image>=0.18',
     'scipy>=1.5.0',
     'sympy>=1.6',
-    'rosettasciio',
+    'rosettasciio[hdf5]',
     'tqdm>=4.9.0',
     'traits>=4.5.0',
     ]
