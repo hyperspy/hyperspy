@@ -57,7 +57,7 @@ class Logistic(Expression):
         :py:class:`~._components.expression.Expression` component.
     """
 
-    def __init__(self, a=1., b=1., c=1., origin=0., module="numexpr", **kwargs):
+    def __init__(self, a=1., b=1., c=1., origin=0., module=None, **kwargs):
         super().__init__(
             expression="a / (1 + b * exp(-c * (x - origin)))",
             name="Logistic",

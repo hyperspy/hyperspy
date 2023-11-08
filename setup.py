@@ -34,17 +34,14 @@ if v[0] != 3:
 
 
 install_req = [
+    'cloudpickle',
     'dask[array]>=2021.3.1',
-    'dill',
     # included in stdlib since v3.8, but this required version requires Python 3.10
     # We can remove this requirement when the minimum supported version becomes Python 3.10
     'importlib-metadata>=3.6',
     'jinja2',
     'matplotlib>=3.1.3',
     'natsort',
-    # non-uniform axis requirement
-    'numba>=0.52',
-    'numexpr',
     'numpy>=1.20.0',
     'packaging',
     'pint>=0.10',
@@ -65,6 +62,7 @@ install_req = [
 extras_require = {
 	"ipython": ["IPython>7.0, !=8.0", "ipyparallel"],
     "learning": ["scikit-learn>=1.0.1"],
+    "speed":["numba", "numexpr"],
     # UPDATE BEFORE RELEASE
     "gui-jupyter": ["hyperspy_gui_ipywidgets @ git+https://github.com/ericpre/hyperspy_gui_ipywidgets.git@hyperspy2.0",
                     "ipympl"],
@@ -178,7 +176,6 @@ with update_version_when_dev() as version:
                   'hyperspy.tests.misc',
                   'hyperspy.models',
                   'hyperspy.misc',
-                  'hyperspy.misc.holography',
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
                   'hyperspy.external.astropy',
@@ -197,21 +194,9 @@ with update_version_when_dev() as version:
             'hyperspy':
             [
                 'tests/component/data/*.hspy',
-                'tests/drawing/*.png',
                 'tests/drawing/data/*.hspy',
-                'tests/drawing/plot_signal/*.png',
-                'tests/drawing/plot_signal1d/*.png',
-                'tests/drawing/plot_signal2d/*.png',
-                'tests/drawing/plot_markers/*.png',
-                'tests/drawing/plot_model1d/*.png',
-                'tests/drawing/plot_model/*.png',
-                'tests/drawing/plot_roi/*.png',
                 'misc/dask_widgets/*.html.j2',
-                'tests/drawing/plot_mva/*.png',
-                'tests/drawing/plot_widgets/*.png',
-                'tests/drawing/plot_signal_tools/*.png',
-                'tests/signals/data/test_find_peaks1D_ohaver.hdf5',
-                'tests/signals/data/*.hspy',
+                'tests/signals/data/*.hdf5',
                 'hyperspy_extension.yaml',
             ],
         },

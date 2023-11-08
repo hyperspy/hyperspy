@@ -172,15 +172,14 @@ use:
 
 See the following list of selectors to select the installation of optional
 dependencies required by specific functionalities:
-
+* ``ipython`` for integration with the `ipython` terminal and parallel processing using `ipyparallel`,
 * ``learning`` for some machine learning features,
 * ``gui-jupyter`` to use the `Jupyter widgets <https://ipywidgets.readthedocs.io/en/stable/>`_
   GUI elements,
 * ``gui-traitsui`` to use the GUI elements based on `traitsui <https://docs.enthought.com/traitsui/>`_,
-* ``mrcz`` to read mrcz file,
-* ``speed`` to speed up some functionalities,
-* ``usid`` to read usid file,
+* ``speed`` install numba and numexpr to speed up some functionalities,
 * ``tests`` to install required libraries to run HyperSpy's unit tests,
+* ``coverage`` to coverage statistics when running the tests,
 * ``build-doc`` to install required libraries to build HyperSpy's documentation,
 * ``dev`` to install all the above,
 * ``all`` to install all the above except the development requirements

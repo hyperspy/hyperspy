@@ -18,12 +18,13 @@
 
 import copy
 
-from numba import njit
 import numpy as np
 import scipy.ndimage as ndi
 from skimage.feature import blob_dog, blob_log, match_template, peak_local_max
 
+from hyperspy.decorators import jit_ifnumba
 from hyperspy.misc.machine_learning import import_sklearn
+
 
 NO_PEAKS = np.array([[np.nan, np.nan]])
 
@@ -59,7 +60,7 @@ def _get_peak_position_and_intensity(X, f, **kwargs):
         return np.concatenate([peaks, intensity[:, np.newaxis]], axis=1)
 
 
-@njit(cache=True)
+@jit_ifnumba(cache=True)
 def _fast_mean(X):  # pragma: no cover
     """JIT-compiled mean of array.
 
@@ -82,7 +83,7 @@ def _fast_mean(X):  # pragma: no cover
     return np.mean(X)
 
 
-@njit(cache=True)
+@jit_ifnumba(cache=True)
 def _fast_std(X):  # pragma: no cover
     """JIT-compiled standard deviation of array.
 

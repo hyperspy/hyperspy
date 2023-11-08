@@ -52,7 +52,7 @@ class Exponential(Expression):
         :py:class:`~._components.expression.Expression` component.
     """
 
-    def __init__(self, A=1., tau=1., module="numexpr", **kwargs):
+    def __init__(self, A=1., tau=1., module=None, **kwargs):
         super().__init__(
             expression="A * exp(-x / tau)",
             name="Exponential",

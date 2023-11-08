@@ -60,6 +60,19 @@ except ModuleNotFoundError:
     _logger.info("Dask widgets not loaded (dask >=2021.11.1 is required)")
 
 
+def _get():
+    try:
+        get = dask.threaded.get
+    except AttributeError:  # pragma: no cover
+        # For pyodide
+        get = dask.get
+        _logger.warning(
+            "Dask scheduler with threads is not available in this environment. "
+            "Falling back to synchronous scheduler (single-threaded)."
+        )
+    return get
+
+
 def to_array(thing, chunks=None):
     """Accepts BaseSignal, dask or numpy arrays and always produces either
     numpy or dask array.
@@ -769,7 +782,7 @@ class LazySignal(BaseSignal):
 
     def _block_iterator(self,
                         flat_signal=True,
-                        get=dask.threaded.get,
+                        get=None,
                         navigation_mask=None,
                         signal_mask=None):
         """A function that allows iterating lazy signal data by blocks,
@@ -783,9 +796,10 @@ class LazySignal(BaseSignal):
             optionally masked elements missing. If false, returns
             the equivalent of s.inav[{blocks}].data, where masked elements are
             set to np.nan or 0.
-        get : dask scheduler
-            the dask scheduler to use for computations;
-            default `dask.threaded.get`
+        get : dask scheduler or None
+            The dask scheduler to use for computations. If ``None``, 
+            ``dask.threaded.get` will be used if possible, otherwise
+            ``dask.get`` will be used, for example in pyodide interpreter.
         navigation_mask : {BaseSignal, numpy array, dask array}
             The navigation locations marked as True are not returned (flat) or
             set to NaN or 0.
@@ -794,6 +808,8 @@ class LazySignal(BaseSignal):
             to NaN or 0.
 
         """
+        if get is None:
+            get = _get()
         self._make_lazy()
         data = self._data_aligned_with_axes
         nav_chunks = data.chunks[:self.axes_manager.navigation_dimension]
@@ -853,7 +869,7 @@ class LazySignal(BaseSignal):
         output_dimension=None,
         signal_mask=None,
         navigation_mask=None,
-        get=dask.threaded.get,
+        get=None,
         num_chunks=None,
         reproject=True,
         print_info=True,
@@ -875,9 +891,10 @@ class LazySignal(BaseSignal):
         output_dimension : int or None, default None
             Number of components to keep/calculate. If None, keep all
             (only valid for 'SVD' algorithm)
-        get : dask scheduler
-            the dask scheduler to use for computations;
-            default `dask.threaded.get`
+        get : dask scheduler or None
+            The dask scheduler to use for computations. If ``None``, 
+            ``dask.threaded.get` will be used if possible, otherwise
+            ``dask.get`` will be used, for example in pyodide interpreter.
         num_chunks : int or None, default None
             the number of dask chunks to pass to the decomposition model.
             More chunks require more memory, but should run faster. Will be
@@ -912,6 +929,8 @@ class LazySignal(BaseSignal):
         * :py:class:`~.learn.ornmf.ORNMF`
 
         """
+        if get is None:
+            get = _get()
         # Check algorithms requiring output_dimension
         algorithms_require_dimension = ["PCA", "ORPCA", "ORNMF"]
         if algorithm in algorithms_require_dimension and output_dimension is None:

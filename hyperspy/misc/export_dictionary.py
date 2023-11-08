@@ -19,7 +19,7 @@
 from operator import attrgetter
 from hyperspy.misc.utils import attrsetter
 from copy import deepcopy
-import dill
+import cloudpickle
 from dask.array import Array
 
 
@@ -73,7 +73,7 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
         * 'fn': the targeted attribute is a function, and may be pickled. A
           tuple of (thing, value) will be exported to the dictionary,
           where thing is None if function is passed as-is, and True if
-          dill package is used to pickle the function, with the value as
+          cloudpickle package is used to pickle the function, with the value as
           the result of the pickle.
         * 'id': the id of the targeted attribute is exported (e.g. id(target.name))
         * 'sig': The targeted attribute is a signal, and will be converted to a
@@ -122,7 +122,7 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
                     value['data'] = deepcopy(value['data'])
         elif 'fn' in flags:
             if fullcopy:
-                value = (True, dill.dumps(value))
+                value = (True, cloudpickle.dumps(value))
             else:
                 value = (None, value)
         elif fullcopy:
@@ -156,7 +156,7 @@ def load_from_dictionary(target, dic):
         * 'init': object used for initialization of the target. Will be
           copied to the _whitelist after loading
         * 'fn': the targeted attribute is a function, and may have been
-          pickled (preferably with dill package).
+          pickled (preferably with cloudpickle package).
         * 'id': the id of the original object was exported and the
           attribute will not be set. The key has to be '_id_'
         * 'sig': The targeted attribute was a signal, and may have been
@@ -197,11 +197,11 @@ def reconstruct_object(flags, value):
             value._assign_subclass()
         return value
     if 'fn' in flags:
-        ifdill, thing = value
-        if ifdill is None:
+        ifcloudpickle, thing = value
+        if ifcloudpickle is None:
             return thing
-        if ifdill in [True, 'True', b'True']:
-            return dill.loads(thing)
+        if ifcloudpickle in [True, 'True', b'True']:
+            return cloudpickle.loads(thing)
         # should not be reached
         raise ValueError("The object format is not recognized")
     if isinstance(value, Array):

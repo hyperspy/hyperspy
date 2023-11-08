@@ -25,7 +25,7 @@ import warnings
 from contextlib import contextmanager
 from functools import partial
 
-import dill
+import cloudpickle
 import numpy as np
 import dask.array as da
 from dask.diagnostics import ProgressBar
@@ -124,8 +124,8 @@ def reconstruct_component(comp_dictionary, **init_args):
                 _COMPONENTS[_id]["module"]), _COMPONENTS[_id]["class"])
     elif "_class_dump" in comp_dictionary:
         # When a component is not registered using the extension mechanism,
-        # it is serialized using dill.
-        _class = dill.loads(comp_dictionary['_class_dump'])
+        # it is serialized using cloudpickle.
+        _class = cloudpickle.loads(comp_dictionary['_class_dump'])
     else:
         # For component saved with hyperspy <2.0 and moved to exspy
         if comp_dictionary["_id_name"] in EXSPY_HSPY_COMPONENTS:

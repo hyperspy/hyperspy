@@ -1,0 +1,6 @@
+Make HyperSpy to work on pyodide:
+- ``numba`` and ``numexpr`` optional dependencies.
+- Replace ``dill`` by ``cloudpickle``.
+- Fallback to dask synchronous scheduler on pyodide.
+- Reduce packaging size to less than 1MB.
+- Add packaging test on GitHub CI.

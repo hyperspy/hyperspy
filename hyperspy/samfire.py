@@ -20,7 +20,7 @@ import logging
 from multiprocessing import cpu_count
 import warnings
 
-import dill
+import cloudpickle
 import numpy as np
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
@@ -184,7 +184,7 @@ class Samfire:
         """Set up SAMFire - configure models, set up pool if necessary"""
         from hyperspy.samfire_utils.samfire_pool import SamfirePool
         self._figure = None
-        self.metadata._gt_dump = dill.dumps(self.metadata.goodness_test)
+        self.metadata._gt_dump = cloudpickle.dumps(self.metadata.goodness_test)
         self._enable_optional_components()
 
         if hasattr(self.model, '_suspend_auto_fine_structure_width'):
@@ -214,9 +214,9 @@ class Samfire:
         if self._workers and self.pool is not None:
             self.pool.update_parameters()
         if 'min_function' in kwargs:
-            kwargs['min_function'] = dill.dumps(kwargs['min_function'])
+            kwargs['min_function'] = cloudpickle.dumps(kwargs['min_function'])
         if 'min_function_grad' in kwargs:
-            kwargs['min_function_grad'] = dill.dumps(
+            kwargs['min_function_grad'] = cloudpickle.dumps(
                 kwargs['min_function_grad'])
         self._args = kwargs
         num_of_strat = len(self.strategies)

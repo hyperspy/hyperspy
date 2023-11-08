@@ -17,6 +17,7 @@
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
 from functools import wraps
+import logging
 import numpy as np
 import sympy
 
@@ -24,6 +25,9 @@ import warnings
 
 from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+
+
+_logger = logging.getLogger(__name__)
 
 
 _CLASS_DOC = \
@@ -87,9 +91,10 @@ class Expression(Component):
         applicable. It enables interative adjustment of the position of the
         component in the model. For 2D components, a tuple must be passed
         with the name of the two parameters e.g. `("x0", "y0")`.
-    module : {"numpy", "numexpr", "scipy"}, default "numpy"
+    module : {"numpy", "numexpr", "scipy", None}, default "numpy"
         Module used to evaluate the function. numexpr is often faster but
         it supports fewer functions and requires installing numexpr.
+        If None, the "numexpr" will be used if installed.
     add_rotation : bool, default False
         This is only relevant for 2D components. If `True` it automatically
         adds `rotation_angle` parameter.
@@ -114,10 +119,10 @@ class Expression(Component):
         parameters.
     check_parameter_linearity : bool
         If `True`, automatically check if each parameter is linear and set
-        its corresponding attribute accordingly. If `False`, the default is to 
+        its corresponding attribute accordingly. If `False`, the default is to
         set all parameters, except for those who are specified in
         ``linear_parameter_list``.
-        
+
     **kwargs
         Keyword arguments can be used to initialise the value of the
         parameters.
@@ -161,6 +166,17 @@ class Expression(Component):
                  rename_pars={}, compute_gradients=True,
                  linear_parameter_list=None, check_parameter_linearity=True,
                  **kwargs):
+
+        if module is None:
+            try:
+                import numexpr
+                module = "numexpr"
+            except ImportError:
+                module = "numpy"
+                _logger.warning(
+                    "Numexpr is not installed, falling back to numpy, "
+                    "which is slower to calculate model."
+                )
 
         if linear_parameter_list is None:
             linear_parameter_list = []
@@ -224,13 +240,13 @@ class Expression(Component):
                 if p.name not in linear_parameter_list:
                     # _parsed_expr used "non public" parameter name and we
                     # need to use the correct parameter name by using
-                    # _rename_pars_inv 
+                    # _rename_pars_inv
                     p._linear = _check_parameter_linearity(
                         self._parsed_expr,
                         self._rename_pars_inv.get(p.name, p.name)
                         )
 
-    def compile_function(self, module="numpy", position=False):
+    def compile_function(self, module, position=False):
         """
         Compile the function and calculate the gradient automatically when
         possible.
@@ -379,7 +395,7 @@ class Expression(Component):
         Separate an expression into a group of lambdified functions
         that can compute the free parts of the expression, and a single
         lambdified function that computes the fixed parts of the expression
-        
+
         Used by the _compute_expression_part method.
         """
         expr = self._str_expression
@@ -455,4 +471,3 @@ def _check_parameter_linearity(expr, name):
                       "determined automatically.", UserWarning)
         return False
     return True
-
