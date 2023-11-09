@@ -13,6 +13,30 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 Hyperspy 2.0rc0 (2023-11-10)
 ============================
 
+Release Highlights
+------------------
+- Hyperspy has split off some of it's functionality!
+  - `RosettaSciIO<https://hyperspy.org/rosettasciio/changes.html>`_: A package for reading
+     and writing scientific data files.
+  - `Exspy<https://exspy.readthedocs.io/en/latest/>`_: A package for EELS and EDS analysis.
+  - `HoloSpy<https://holospy.readthedocs.io/en/latest/>`_: A package for analysis of
+    (off-axis) electron holography data.
+- Support for Generalised Oscillator Strengths (GOS) implemented in
+  :external+exspy:ref:`eels.model` using the `GOSH <https://gitlab.com/gguzzina/gosh>`_ open file format.
+- The :py:mod:`~.api.plot.markers` API has been refactored
+  - Lazy markers are now supported
+  - Plotting many markers is now __much__ faster
+  - Support for :py:class:`~.api.plot.markers.Polygons` has been added
+- The documentation has been restructured and improved!
+  - Short example scripts are now included in the documentation
+  - Improved guides for lazy computing as well as an improved developer guide
+- Plotting is easier and more consistent
+  - Horizontal plotting is now supported in the ``ipympl`` and ``widget`` backends
+  - Changing navigation coordinates using keyboard ``Arrow`` have been removed, use
+  ``Crtl`` + ``Arrow`` instead.
+  - Jump to navigation position using ``shift`` + click in the navigator.
+- HyperSpy now works with Pyodide/ Jupyterlite!
+
 New features
 ------------
 
