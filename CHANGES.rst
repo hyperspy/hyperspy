@@ -140,24 +140,6 @@ API changes
   - ``hyperspy.api.datasets.artificial_data.get_wave_image`` is renamed to :func:`hyperspy.api.data.wave_image` (`#3253 <https://github.com/hyperspy/hyperspy/issues/3253>`_)
 
 
-Maintenance
------------
-
-- Pin third party GitHub actions and add maintenance guidelines on how to update them (`#3027 <https://github.com/hyperspy/hyperspy/issues/3027>`_)
-- Restructure documentation:
-
-  - Improve structure of the API reference
-  - Improve introduction and overall structure of documentation
-  - Add gallery of examples (`#3050 <https://github.com/hyperspy/hyperspy/issues/3050>`_)
-
-- Drop support for python 3.7, update oldest supported dependencies and simplify code accordingly (`#3144 <https://github.com/hyperspy/hyperspy/issues/3144>`_)
-- IPython and IParallel are now optional dependencies (`#3145 <https://github.com/hyperspy/hyperspy/issues/3145>`_)
-- Fix Numpy 1.25 deprecation: implicit array to scalar conversion in :py:meth:`~.signals.Signal2D.align2D` (`#3189 <https://github.com/hyperspy/hyperspy/issues/3189>`_)
-- Replace deprecated :mod:`scipy.misc` by :mod:`scipy.datasets` in documentation (`#3225 <https://github.com/hyperspy/hyperspy/issues/3225>`_)
-- Fix documentation version switcher (`#3228 <https://github.com/hyperspy/hyperspy/issues/3228>`_)
-- Replace deprecated :py:class:`scipy.interpolate.interp1d` with :py:func:`scipy.interpolate.make_interp_spline` (`#3233 <https://github.com/hyperspy/hyperspy/issues/3233>`_)
-
-
 API Removal
 -----------
 
@@ -366,6 +348,24 @@ Preferences
 
 - The ``warn_if_guis_are_missing`` HyperSpy preferences setting has been removed,
   as it is not necessary anymore.
+
+
+Maintenance
+-----------
+
+- Pin third party GitHub actions and add maintenance guidelines on how to update them (`#3027 <https://github.com/hyperspy/hyperspy/issues/3027>`_)
+- Restructure documentation:
+
+  - Improve structure of the API reference
+  - Improve introduction and overall structure of documentation
+  - Add gallery of examples (`#3050 <https://github.com/hyperspy/hyperspy/issues/3050>`_)
+
+- Drop support for python 3.7, update oldest supported dependencies and simplify code accordingly (`#3144 <https://github.com/hyperspy/hyperspy/issues/3144>`_)
+- IPython and IParallel are now optional dependencies (`#3145 <https://github.com/hyperspy/hyperspy/issues/3145>`_)
+- Fix Numpy 1.25 deprecation: implicit array to scalar conversion in :py:meth:`~.signals.Signal2D.align2D` (`#3189 <https://github.com/hyperspy/hyperspy/issues/3189>`_)
+- Replace deprecated :mod:`scipy.misc` by :mod:`scipy.datasets` in documentation (`#3225 <https://github.com/hyperspy/hyperspy/issues/3225>`_)
+- Fix documentation version switcher (`#3228 <https://github.com/hyperspy/hyperspy/issues/3228>`_)
+- Replace deprecated :py:class:`scipy.interpolate.interp1d` with :py:func:`scipy.interpolate.make_interp_spline` (`#3233 <https://github.com/hyperspy/hyperspy/issues/3233>`_)
 
 
 .. _changes_1.7.5:
