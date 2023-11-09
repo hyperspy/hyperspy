@@ -28,7 +28,7 @@ Release Highlights
 
 - The :py:mod:`~.api.plot.markers` API has been refactored
   - Lazy markers are now supported
-  - Plotting many markers is now __much__ faster
+  - Plotting many markers is now _much_ faster
   - Support for :py:class:`~.api.plot.markers.Polygons` has been added
 - The documentation has been restructured and improved!
   - Short example scripts are now included in the documentation
@@ -38,7 +38,7 @@ Release Highlights
   - Changing navigation coordinates using keyboard ``Arrow`` have been removed, use
   ``Crtl`` + ``Arrow`` instead.
   - Jump to navigation position using ``shift`` + click in the navigator.
-- HyperSpy now works with Pyodide/ Jupyterlite!
+- HyperSpy now works with Pyodide/Jupyterlite, checkout `hyperspy.org/jupyterlite-hyperspy <https://hyperspy.org/jupyterlite-hyperspy>`_!
 
 New features
 ------------
