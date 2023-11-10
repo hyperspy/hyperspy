@@ -29,46 +29,44 @@ Release Highlights
 - The :py:mod:`~.api.plot.markers` API has been refactored
   - Lazy markers are now supported
   - Plotting many markers is now _much_ faster
-  - Support for :py:class:`~.api.plot.markers.Polygons` has been added
+  - Added :py:class:`~.api.plot.markers.Polygons` marker
 - The documentation has been restructured and improved!
   - Short example scripts are now included in the documentation
-  - Improved guides for lazy computing as well as an improved developer guide
-- Plotting is easier and more consistent
-  - Horizontal plotting is now supported in the ``ipympl`` and ``widget`` backends
-  - Changing navigation coordinates using keyboard ``Arrow`` have been removed, use
+  - Improved the lazy computing documentation
+  - Improved Developer Guide
+- Plotting is easier and more consistent:
+  - Added horizontal figure layout choice when using the ``ipympl`` backend
+  - Changing navigation coordinates using the keyboard arrow-keys has been removed. Use
   ``Crtl`` + ``Arrow`` instead.
-  - Jump to navigation position using ``shift`` + click in the navigator.
+  - Jump to navigation position using ``shift`` + click in the navigator figure.
 - HyperSpy now works with Pyodide/Jupyterlite, checkout `hyperspy.org/jupyterlite-hyperspy <https://hyperspy.org/jupyterlite-hyperspy>`_!
 
 New features
 ------------
 
-- :py:meth:`~._signals.lazy.LazySignal.compute` will now pass keyword arguments to the dask :meth:`dask.array.Array.compute` method. This enables the scheduler and the number of computational workers to be set. (`#2971 <https://github.com/hyperspy/hyperspy/issues/2971>`_)
+- :py:meth:`~._signals.lazy.LazySignal.compute` will now pass keyword arguments to the dask :meth:`dask.array.Array.compute` method. This enables setting the scheduler and the number of computational workers. (`#2971 <https://github.com/hyperspy/hyperspy/issues/2971>`_)
 - Changes to :meth:`~.api.signals.BaseSignal.plot`:
   
-  - Allow Horizontal plotting using the ``ipympl`` or ``widget`` backends
-  - Add in gui preferences to set a default to horizontal or vertical plotting (`#3140 <https://github.com/hyperspy/hyperspy/issues/3140>`_)
+  - Added horizontal figure layout choice when using the ``ipympl`` backend. The default layour can be set in the plot section of the preferences GUI. (`#3140 <https://github.com/hyperspy/hyperspy/issues/3140>`_)
   
 - Changes to :meth:`~.api.signals.Signal2D.find_peaks`:
   
-  - Lazy signals return lazy peaks signals
+  - Lazy signals return lazy peak signals
   - ``get_intensity`` argument added to get the intensity of the peaks
-  - Signal axes saved in ``metadata.Peaks.signal_axes`` of the peaks signal. (`#3142 <https://github.com/hyperspy/hyperspy/issues/3142>`_)
+  - The signal axes are now stored in the ``metadata.Peaks.signal_axes`` attribute of the peaks' signal. (`#3142 <https://github.com/hyperspy/hyperspy/issues/3142>`_)
   
-- Change the logging output so that logging doesn't show up red and look like errors in the counsel. (`#3173 <https://github.com/hyperspy/hyperspy/issues/3173>`_)
+- Change the logging output so that logging messages are not displayed in red, to avoid confusion with errors. (`#3173 <https://github.com/hyperspy/hyperspy/issues/3173>`_)
 - Added :class:`~.decorators.deprecated` and :class:`~.decorators.deprecated_argument`:
 
   - Provide consistent and clean deprecation
   - Added a guide for deprecating code (`#3174 <https://github.com/hyperspy/hyperspy/issues/3174>`_)
   
-- Add functionality to select navigation position using ``shift`` + click in the navigator.
-  in the data. (`#3175 <https://github.com/hyperspy/hyperspy/issues/3175>`_)
-- Added a ``plot_residual`` argument to model1d.plot. This argument will plot a residual signal (Signal - Model) to the signal plot. (`#3186 <https://github.com/hyperspy/hyperspy/issues/3186>`_)
+- Add functionality to select navigation position using ``shift`` + click in the navigator. (`#3175 <https://github.com/hyperspy/hyperspy/issues/3175>`_)
+- Added a ``plot_residual`` to :py:meth:`~.models.model1d.Model1D.set_signal_range`. When `True`, a residual line (Signal - Model) appears in the model figure. (`#3186 <https://github.com/hyperspy/hyperspy/issues/3186>`_)
 - Switch to :class:`matplotlib.axes.Axes.pcolormesh`` for image plots involving non-uniform axes.
   The following cases are covered: 2D-signal with arbitrary navigation-dimension, 1D-navigation and 1D-signal (linescan).
   Not covered are 2D-navigation images (still uses sliders). (`#3192 <https://github.com/hyperspy/hyperspy/issues/3192>`_)
-- Adds the method ``interpolate_on_axis``, which can be used to switch one axis of a signal.
-  The data is interpolated in the process. (`#3214 <https://github.com/hyperspy/hyperspy/issues/3214>`_)
+- New ``interpolate_on_axis`` method to switch one axis of a signal. The data is interpolated in the process. (`#3214 <https://github.com/hyperspy/hyperspy/issues/3214>`_)
 
 
 Bug Fixes
@@ -96,14 +94,14 @@ Improved Documentation
 Enhancements
 ------------
 
-- Adding support for passing ``**kwargs`` to :py:meth:`~.api.signals.Signal2D.plot` when using heatmap style in :py:func:`~.api.plot.plot_spectra` . (`#3219 <https://github.com/hyperspy/hyperspy/issues/3219>`_)
+- Add support for passing ``**kwargs`` to :py:meth:`~.api.signals.Signal2D.plot` when using heatmap style in :py:func:`~.api.plot.plot_spectra` . (`#3219 <https://github.com/hyperspy/hyperspy/issues/3219>`_)
 - Add examples to the gallery to show how to use SpanROI and slice signal interactively (`#3221 <https://github.com/hyperspy/hyperspy/issues/3221>`_)
 - Add support for pep 660 on editable installs for pyproject.toml based builds of extension (`#3252 <https://github.com/hyperspy/hyperspy/issues/3252>`_)
-- Make HyperSpy to work on pyodide:
+- Make HyperSpy compatible with pyodide (hence JupyterLite):
   
-  - ``numba`` and ``numexpr`` optional dependencies.
+  - Set ``numba`` and ``numexpr`` as optional dependencies.
   - Replace ``dill`` by ``cloudpickle``.
-  - Fallback to dask synchronous scheduler on pyodide.
+  - Fallback to dask synchronous scheduler when running on pyodide.
   - Reduce packaging size to less than 1MB.
   - Add packaging test on GitHub CI. (`#3255 <https://github.com/hyperspy/hyperspy/issues/3255>`_)
 
@@ -143,7 +141,7 @@ API changes
 API Removal
 -----------
 
-As the HyperSpy API evolves, APIs are occasionally reorganized or upgraded.
+As the HyperSpy API evolves, some of its parts are occasionally reorganized or removed.
 When APIs evolve, the old API is deprecated and eventually removed in a major
 release. The functions and methods removed in HyperSpy 2.0 are listed below along
 with migration advises:
@@ -151,24 +149,24 @@ with migration advises:
 Axes
 ^^^^
 
-- :py:meth:`AxesManager.show` is removed, use :py:meth:`~.axes.AxesManager.gui` instead.
-- :py:meth:`AxesManager.set_signal_dimension` is removed, use :py:meth:`~.api.signals.BaseSignal.as_signal1D`,
+- :py:meth:`AxesManager.show` has been removed, use :py:meth:`~.axes.AxesManager.gui` instead.
+- :py:meth:`AxesManager.set_signal_dimension` has been removed, use :py:meth:`~.api.signals.BaseSignal.as_signal1D`,
   :py:meth:`~.api.signals.BaseSignal.as_signal2D` or :py:meth:`~.api.signals.BaseSignal.transpose` of the signal instance instead.
 
 Components
 ^^^^^^^^^^
 
-- The API of the :py:class:`~.api.model.components1D.Polynomial` has changed after it has been deprecated since hyperspy 1.5. The old API had a single parameters ``coefficients``, which has been replaced by ``a0``, ``a1``, etc.
-- The ``legacy`` option (introduced in HyperSpy 1.6) for :class:`~.api.model.components1D.Arctan` is removed, use :class:`exspy.components.EELSArctan` to use the old API.
-- The ``legacy`` option (introduced in HyperSpy 1.6) for :class:`~.api.model.components1D.Voigt` is removed, use :class:`exspy.components.PESVoigt` to use the old API.
+- The API of the :py:class:`~.api.model.components1D.Polynomial` has changed (it was deprecated in HyperSpy 1.5). The old API had a single parameters ``coefficients``, which has been replaced by ``a0``, ``a1``, etc.
+- The ``legacy`` option (introduced in HyperSpy 1.6) for :class:`~.api.model.components1D.Arctan` has been removed, use :class:`exspy.components.EELSArctan` to use the old API.
+- The ``legacy`` option (introduced in HyperSpy 1.6) for :class:`~.api.model.components1D.Voigt` has been removed, use :class:`exspy.components.PESVoigt` to use the old API.
 
 Data Visualization
 ^^^^^^^^^^^^^^^^^^
 
 - The ``saturated_pixels`` keyword argument of :py:meth:`~.api.signals.Signal2D.plot` have been removed, use ``vmin`` and/or ``vmax`` instead.
-- The ``get_complex`` property of :py:class:`~.drawing.signal1d.Signal1DLine` is removed.
-- The keyword argument ``line_style`` of :py:func:`~.api.plot.plot_spectra` have been renamed to ``linestyle``.
-- Changing navigation coordinates using keyboard ``Arrow`` have been removed, use
+- The ``get_complex`` property of :py:class:`~.drawing.signal1d.Signal1DLine` has been removed.
+- The keyword argument ``line_style`` of :py:func:`~.api.plot.plot_spectra` has been renamed to ``linestyle``.
+- Changing navigation coordinates using keyboard ``Arrow`` has been removed, use
   ``Crtl`` + ``Arrow`` instead.
 - The ``markers`` submodules can not be imported from the :py:mod:`~.api` anymore, use :py:mod:`hyperspy.api.plot.markers`
   directly, i.e. :class:`hyperspy.api.plot.markers.Arrows`, instead.
@@ -289,7 +287,7 @@ Model fitting
 
 - The arguments ``parallel`` and ``max_workers`` have been removed from the :py:meth:`~.model.BaseModel.as_signal` methods.
 
-- Setting the ``metadata``  attribute of a :py:class:`~.samfire.Samfire` is removed, use
+- Setting the ``metadata``  attribute of a :py:class:`~.samfire.Samfire` has been removed, use
   the :py:meth:`~.misc.utils.DictionaryTreeBrowser.set_item` and
   :py:meth:`~.misc.utils.DictionaryTreeBrowser.add_dictionary` methods of the
   ``metadata`` attribute instead.
@@ -323,7 +321,7 @@ Signal
      * - freedman
        - fd
 
-- The ``integrate_in_range`` method is removed, use :py:class:`~.roi.SpanROI`
+- The ``integrate_in_range`` method has been removed, use :py:class:`~.roi.SpanROI`
   followed by :py:meth:`~.signal.BaseSignal.integrate1D` instead.
 - The ``progressbar`` keyword argument of the :py:meth:`~._signals.lazy.LazySignal.compute` method
   has been removed, use ``show_progressbar`` instead.
