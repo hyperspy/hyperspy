@@ -17,29 +17,35 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 
 Release Highlights
 ------------------
-- Hyperspy has split off some of the reading/writing files and domain specific functionalities into separate libraries!
+- Hyperspy has split off some of the file reading/writing and domain specific functionalities into separate libraries!
   
   - `RosettaSciIO <https://hyperspy.org/rosettasciio>`_: A library for reading and writing scientific data files.
-    See `RosettaSciIO release notes <https://hyperspy.org/rosettasciio/changes.html>`_ for new features.
+    See `RosettaSciIO release notes <https://hyperspy.org/rosettasciio/changes.html>`_ for new features and supported formats.
   - `exSpy <https://exspy.readthedocs.io>`_: A library for EELS and EDS analysis.
     See `exSpy release notes <https://hyperspy.org/exspy/changes.html>`_ for new features.
   - `HoloSpy <https://holospy.readthedocs.io>`_: A library for analysis of (off-axis) electron holography data.
     See `HoloSpy release notes <https://holospy.readthedocs.io/en/latest/changes.html>`_ for new features.
 
 - The :py:mod:`~.api.plot.markers` API has been refactored
+
   - Lazy markers are now supported
-  - Plotting many markers is now _much_ faster
+  - Plotting many markers is now `much` faster
   - Added :py:class:`~.api.plot.markers.Polygons` marker
+
 - The documentation has been restructured and improved!
+
   - Short example scripts are now included in the documentation
-  - Improved the lazy computing documentation
-  - Improved Developer Guide
+  - Improved guides for lazy computing as well as an improved developer guide
+
 - Plotting is easier and more consistent:
+
   - Added horizontal figure layout choice when using the ``ipympl`` backend
-  - Changing navigation coordinates using the keyboard arrow-keys has been removed. Use
-  ``Crtl`` + ``Arrow`` instead.
+  - Changing navigation coordinates using the keyboard arrow-keys has been removed.
+    Use ``Crtl`` + ``Arrow`` instead.
   - Jump to navigation position using ``shift`` + click in the navigator figure.
+
 - HyperSpy now works with Pyodide/Jupyterlite, checkout `hyperspy.org/jupyterlite-hyperspy <https://hyperspy.org/jupyterlite-hyperspy>`_!
+- The deprecated API has removed: see the list of API changes and removal in the :ref:`sections below <hyperspy_2.0_api_changes>`.
 
 New features
 ------------
@@ -62,11 +68,11 @@ New features
   - Added a guide for deprecating code (`#3174 <https://github.com/hyperspy/hyperspy/issues/3174>`_)
   
 - Add functionality to select navigation position using ``shift`` + click in the navigator. (`#3175 <https://github.com/hyperspy/hyperspy/issues/3175>`_)
-- Added a ``plot_residual`` to :py:meth:`~.models.model1d.Model1D.set_signal_range`. When `True`, a residual line (Signal - Model) appears in the model figure. (`#3186 <https://github.com/hyperspy/hyperspy/issues/3186>`_)
-- Switch to :class:`matplotlib.axes.Axes.pcolormesh`` for image plots involving non-uniform axes.
+- Added a ``plot_residual`` to :py:meth:`~.models.model1d.Model1D.plot`. When ``True``, a residual line (Signal - Model) appears in the model figure. (`#3186 <https://github.com/hyperspy/hyperspy/issues/3186>`_)
+- Switch to :class:`matplotlib.axes.Axes.pcolormesh` for image plots involving non-uniform axes.
   The following cases are covered: 2D-signal with arbitrary navigation-dimension, 1D-navigation and 1D-signal (linescan).
   Not covered are 2D-navigation images (still uses sliders). (`#3192 <https://github.com/hyperspy/hyperspy/issues/3192>`_)
-- New ``interpolate_on_axis`` method to switch one axis of a signal. The data is interpolated in the process. (`#3214 <https://github.com/hyperspy/hyperspy/issues/3214>`_)
+- New :meth:`~.api.signals.BaseSignal.interpolate_on_axis` method to switch one axis of a signal. The data is interpolated in the process. (`#3214 <https://github.com/hyperspy/hyperspy/issues/3214>`_)
 
 
 Bug Fixes
@@ -84,6 +90,13 @@ Bug Fixes
 Improved Documentation
 ----------------------
 
+- Restructure documentation:
+
+  - Improve structure of the API reference
+  - Improve introduction and overall structure of documentation
+  - Add gallery of examples (`#3050 <https://github.com/hyperspy/hyperspy/issues/3050>`_)
+
+- Add examples to the gallery to show how to use SpanROI and slice signal interactively (`#3221 <https://github.com/hyperspy/hyperspy/issues/3221>`_)
 - Add a section on keeping a clean and sensible commit history to the developer guide. (`#3064 <https://github.com/hyperspy/hyperspy/issues/3064>`_)
 - Replace ``sphinx.ext.imgmath`` by ``sphinx.ext.mathjax`` to fix the math rendering in the *ReadTheDocs* build (`#3084 <https://github.com/hyperspy/hyperspy/issues/3084>`_)
 - Fix docstring examples in :class:`~.api.signals.BaseSignal` class.
@@ -95,7 +108,6 @@ Enhancements
 ------------
 
 - Add support for passing ``**kwargs`` to :py:meth:`~.api.signals.Signal2D.plot` when using heatmap style in :py:func:`~.api.plot.plot_spectra` . (`#3219 <https://github.com/hyperspy/hyperspy/issues/3219>`_)
-- Add examples to the gallery to show how to use SpanROI and slice signal interactively (`#3221 <https://github.com/hyperspy/hyperspy/issues/3221>`_)
 - Add support for pep 660 on editable installs for pyproject.toml based builds of extension (`#3252 <https://github.com/hyperspy/hyperspy/issues/3252>`_)
 - Make HyperSpy compatible with pyodide (hence JupyterLite):
   
@@ -105,6 +117,7 @@ Enhancements
   - Reduce packaging size to less than 1MB.
   - Add packaging test on GitHub CI. (`#3255 <https://github.com/hyperspy/hyperspy/issues/3255>`_)
 
+.. _hyperspy_2.0_api_changes:
 
 API changes
 -----------
@@ -120,12 +133,12 @@ API changes
 
   - Removes the ``parallel`` argument
   - Replace the ``max_workers`` with the ``num_workers`` argument to be consistent with ``dask``
-  - Adds more documentation on setting the dask backend and how to use multiple core
+  - Adds more documentation on setting the dask backend and how to use multiple cores
   - Adds ``navigation_chunk`` argument for setting the chunks with a non-lazy signal
   - Fix axes handling when the function to be mapped can be applied to the whole dataset - typically when it has the ``axis`` or ``axes`` keyword argument. (`#3198 <https://github.com/hyperspy/hyperspy/issues/3198>`_)
   
 - Remove ``physics_tools`` since it is not used and doesn't fit in the scope of HyperSpy. (`#3235 <https://github.com/hyperspy/hyperspy/issues/3235>`_)
-- Improve the readibility of the code by replacing the ``__call__`` method of some objects with the more explicit ``_get_current_data``.
+- Improve the readability of the code by replacing the ``__call__`` method of some objects with the more explicit ``_get_current_data``.
  
   - Rename ``__call__`` method of :py:class:`~.api.signals.BaseSignal` to ``_get_current_data``.
   - Rename ``__call__`` method of  :py:class:`hyperspy.model.BaseModel`  to ``_get_current_data``.
@@ -163,7 +176,7 @@ Components
 Data Visualization
 ^^^^^^^^^^^^^^^^^^
 
-- The ``saturated_pixels`` keyword argument of :py:meth:`~.api.signals.Signal2D.plot` have been removed, use ``vmin`` and/or ``vmax`` instead.
+- The ``saturated_pixels`` keyword argument of :py:meth:`~.api.signals.Signal2D.plot` has been removed, use ``vmin`` and/or ``vmax`` instead.
 - The ``get_complex`` property of :py:class:`~.drawing.signal1d.Signal1DLine` has been removed.
 - The keyword argument ``line_style`` of :py:func:`~.api.plot.plot_spectra` has been renamed to ``linestyle``.
 - Changing navigation coordinates using keyboard ``Arrow`` has been removed, use
@@ -243,7 +256,7 @@ Machine Learning
 Model fitting
 ^^^^^^^^^^^^^
 
-- The ``iterpath`` default value have changed from ``'flyback'`` to ``'serpentine'``.
+- The ``iterpath`` default value has changed from ``'flyback'`` to ``'serpentine'``.
 - Changes in the arguments of the :py:meth:`~.model.BaseModel.fit` and :py:meth:`~.model.BaseModel.multifit` methods:
 
   - The ``fitter`` argument has been renamed to ``optimizer``.
@@ -338,7 +351,7 @@ Signal
 Signal2D
 ^^^^^^^^
 
-- :meth:`~.api.signals.Signal2D.find_peaks` now return lazy signals in case of lazy input signal.
+- :meth:`~.api.signals.Signal2D.find_peaks` now returns lazy signals in case of lazy input signal.
 
 
 Preferences
@@ -352,12 +365,6 @@ Maintenance
 -----------
 
 - Pin third party GitHub actions and add maintenance guidelines on how to update them (`#3027 <https://github.com/hyperspy/hyperspy/issues/3027>`_)
-- Restructure documentation:
-
-  - Improve structure of the API reference
-  - Improve introduction and overall structure of documentation
-  - Add gallery of examples (`#3050 <https://github.com/hyperspy/hyperspy/issues/3050>`_)
-
 - Drop support for python 3.7, update oldest supported dependencies and simplify code accordingly (`#3144 <https://github.com/hyperspy/hyperspy/issues/3144>`_)
 - IPython and IParallel are now optional dependencies (`#3145 <https://github.com/hyperspy/hyperspy/issues/3145>`_)
 - Fix Numpy 1.25 deprecation: implicit array to scalar conversion in :py:meth:`~.signals.Signal2D.align2D` (`#3189 <https://github.com/hyperspy/hyperspy/issues/3189>`_)
@@ -374,7 +381,7 @@ Maintenance
 Bug Fixes
 ---------
 
-- Fix plotting boolean array with :py:func:`~.drawing.utils.plot_images` (`#3118 <https://github.com/hyperspy/hyperspy/issues/3118>`_)
+- Fix plotting boolean array with :py:func:`~.api.plot.plot_images` (`#3118 <https://github.com/hyperspy/hyperspy/issues/3118>`_)
 - Fix test with scipy1.11 and update deprecated ``scipy.interpolate.interp2d`` in the test suite (`#3124 <https://github.com/hyperspy/hyperspy/issues/3124>`_)
 - Use intersphinx links to fix links to scikit-image documentation (`#3125 <https://github.com/hyperspy/hyperspy/issues/3125>`_)
 
@@ -625,7 +632,7 @@ Bug Fixes
 - Suspend plotting during :py:meth:`~.models.eelsmodel.EELSModel.smart_fit` call (`#2796 <https://github.com/hyperspy/hyperspy/issues/2796>`_)
 - make :py:meth:`~.signal.BaseSignal.add_marker` also check if the plot is not active before plotting signal (`#2799 <https://github.com/hyperspy/hyperspy/issues/2799>`_)
 - Fix irresponsive ROI added to a signal plot with a right hand side axis (`#2809 <https://github.com/hyperspy/hyperspy/issues/2809>`_)
-- Fix :py:func:`~.drawing.utils.plot_histograms` drawstyle following matplotlib API change (`#2810 <https://github.com/hyperspy/hyperspy/issues/2810>`_)
+- Fix :py:func:`~.api.plot.plot_histograms` drawstyle following matplotlib API change (`#2810 <https://github.com/hyperspy/hyperspy/issues/2810>`_)
 - Fix incorrect :py:meth:`~.signal.BaseSignal.map` output size of lazy signal when input and output axes do not match (`#2837 <https://github.com/hyperspy/hyperspy/issues/2837>`_)
 - Add support for latest h5py release (3.5) (`#2843 <https://github.com/hyperspy/hyperspy/issues/2843>`_)
 
@@ -633,7 +640,7 @@ Bug Fixes
 Deprecations
 ------------
 
-- Rename ``line_style`` to ``linestyle`` in :py:func:`~.drawing.utils.plot_spectra` to match matplotlib argument name (`#2810 <https://github.com/hyperspy/hyperspy/issues/2810>`_)
+- Rename ``line_style`` to ``linestyle`` in :py:func:`~.api.plot.plot_spectra` to match matplotlib argument name (`#2810 <https://github.com/hyperspy/hyperspy/issues/2810>`_)
 
 
 Enhancements
@@ -845,7 +852,7 @@ Enhancements
   :ref:`model.fitting` and the API changes section below.
 * New serpentine iteration path for multi-dimensional fitting.
   See :ref:`model.multidimensional-label`.
-* The :py:func:`~.drawing.utils.plot_spectra`  function now listens to
+* The :py:func:`~.api.plot.plot_spectra`  function now listens to
   events to update the figure automatically.
   See :ref:`this example <plot_profiles_interactive-label>`.
 * Improve thread-based parallelism. Add ``max_workers`` argument to the
@@ -1100,9 +1107,9 @@ NEW
 Enhancements
 ------------
 
-* :py:func:`~.drawing.utils.plot_images` improvements (see :ref:`plot.images` for details):
+* :py:func:`~.api.plot.plot_images` improvements (see :ref:`plot.images` for details):
 
-    * The ``cmap`` option of :py:func:`~.drawing.utils.plot_images`
+    * The ``cmap`` option of :py:func:`~.api.plot.plot_images`
       supports iterable types, allowing the user to specify different colormaps
       for the different images that are plotted by providing a list or other
       generator.
@@ -1183,7 +1190,7 @@ Enhancements
   `hyperspy_gui_ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`__ package.
   See :ref:`importing_hyperspy-label`.
 * The ``vmin`` and ``vmax`` arguments of the
-  :py:func:`~.drawing.utils.plot_images` function now accept lists to enable
+  :py:func:`~.api.plot.plot_images` function now accept lists to enable
   setting these parameters for each plot individually.
 * The :py:meth:`~.signal.MVATools.plot_decomposition_results` and
   :py:meth:`~.signal.MVATools.plot_bss_results` methods now makes a better
@@ -1604,7 +1611,7 @@ Plotting
 ^^^^^^^^
 
 * New class,  :py:class:`~.drawing.marker.MarkerBase`, to plot markers with ``hspy.utils.plot.markers`` module.  See :ref:`plot.markers`.
-* New method to plot images with the :py:func:`~.drawing.utils.plot_images` function in  ``hspy.utils.plot.plot_images``. See :ref:`plot.images`.
+* New method to plot images with the :py:func:`~.api.plot.plot_images` function in  ``hspy.utils.plot.plot_images``. See :ref:`plot.images`.
 * Improved :py:meth:`~._signals.image.Signal2D.plot` method to customize the image. See :ref:`plot.customize_images`.
 
 EDS
@@ -1732,11 +1739,11 @@ Plotting
 * Added several extra options to the Signal :py:meth:`~.signal.Signal.plot`
   method to customize the navigator. See :ref:`visualization-label`.
 * Add compatibility with IPython's matplotlib inline plotting.
-* New function, :py:func:`~.drawing.utils.plot_spectra`, to plot several
+* New function, :py:func:`~.api.plot.plot_spectra`, to plot several
   spectra in the same figure. See :ref:`plot.spectra`.
-* New function, :py:func:`~.drawing.utils.plot_signals`, to plot several
+* New function, :py:func:`~.api.plot.plot_signals`, to plot several
   signals at the same time. See :ref:`plot.signals`.
-* New function, :py:func:`~.drawing.utils.plot_histograms`, to plot the histrograms
+* New function, :py:func:`~.api.plot.plot_histograms`, to plot the histrograms
   of several signals at the same time. See :ref:`plot.signals`.
 
 Curve fitting
