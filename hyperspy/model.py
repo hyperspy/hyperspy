@@ -319,7 +319,7 @@ class BaseModel(list):
             raise ValueError(
                 "`mask` argument must be an array with boolean dtype."
                 )
-        if mask.shape != self.axes_manager.signal_shape:
+        if mask.shape != self.axes_manager._signal_shape_in_array:
             raise ValueError(
                 "`mask` argument must have the same shape as `signal_shape`."
                 )

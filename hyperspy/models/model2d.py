@@ -120,7 +120,7 @@ class Model2D(BaseModel):
         self.axes_manager.events.indices_changed.connect(
             self._on_navigating, [])
         self._channel_switches = np.ones(
-            self.axes_manager.signal_shape[::-1], dtype=bool
+            self.axes_manager._signal_shape_in_array, dtype=bool
             )
         self.chisq = signal2D._get_navigation_signal()
         self.chisq.change_dtype("float")
