@@ -292,3 +292,9 @@ class TestModel2DSetSignalRange:
         m.remove_signal_range(2.5, 3, 0.5, 1.5)
         mask[slice(5, 7), slice(1, 4)] = False
         np.testing.assert_allclose(ch, mask)
+
+    def test_initial_mask(self):
+        m = self.m
+        assert m._channel_switches.shape == (10, 20)
+
+
