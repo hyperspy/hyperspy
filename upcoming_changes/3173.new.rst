@@ -1,1 +1,0 @@
-Change the logging output so that logging doesn't show up red and look like errors in the counsel.

@@ -1,1 +1,0 @@
-Add a section on keeping a clean and sensible commit history to the developer guide.

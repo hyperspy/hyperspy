@@ -1,1 +1,0 @@
-Fix keeping dtype in :py:meth:`~.api.signals.BaseSignal.rebin` when the endianess is specified in the dtype

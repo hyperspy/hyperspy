@@ -15,7 +15,7 @@ jobs:
 
       - uses: ericpre/sphinx-action@latest_sphinx
         with:
-          pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }} && pip install .[build-doc]"
+          pre-build-command: "apt-get update -y && apt-get install -y ${{ env.BUILD_DEPS }} ${{ env.LATEX_DEPS }} && pip install .[doc]"
           build-command: make html
           docs-folder: doc/
 
@@ -43,7 +43,7 @@ jobs:
       - name: Install build docs
         shell: bash -l {0}
         run: |
-          pip install .[build-doc]
+          pip install .[doc]
 
       - name: Check links
         shell: bash -l {0}

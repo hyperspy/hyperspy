@@ -78,8 +78,7 @@ extras_require = {
         ],
     "coverage":["pytest-cov"],
     # required to build the docs
-    "build-doc": [
-        "distributed", # requires for running scripts in the gallery
+    "doc": [
         "pydata_sphinx_theme",
         "sphinx>=1.7",
         "sphinx-gallery",
@@ -96,7 +95,7 @@ extras_require = {
 # Don't include "tests" and "docs" requirements since "all" is designed to be
 # used for user installation.
 runtime_extras_require = {x: extras_require[x] for x in extras_require.keys()
-                          if x not in ["tests", "coverage", "build-doc"]}
+                          if x not in ["tests", "coverage", "doc"]}
 extras_require["all"] = list(itertools.chain(*list(
     runtime_extras_require.values())))
 

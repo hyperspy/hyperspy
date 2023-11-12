@@ -1,4 +1,0 @@
-Rename ``hyperspy.api.datasets`` to ``hyperspy.api.data`` and simplify submodule structure:
-- ``hyperspy.api.datasets.artificial_data.get_atomic_resolution_tem_signal2d`` is renamed to ``hyperspy.api.data.atomic_resolution_image``
-- ``hyperspy.api.datasets.artificial_data.get_luminescence_signal`` is renamed to ``hyperspy.api.data.luminescence_signal``
-- ``hyperspy.api.datasets.artificial_data.get_wave_image`` is renamed to ``hyperspy.api.data.wave_image``

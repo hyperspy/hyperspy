@@ -1,1 +1,0 @@
-Add functionality to fit the EELS fine structure using components, e.g. :py:class:`~.api.model.components1D.Gaussian`.

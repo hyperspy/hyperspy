@@ -1,5 +1,0 @@
-Improve the readibility fo the code by replacing the ``__call__`` method of some objects with the more explicit ``_get_current_data``.
- 
- - Rename ``__call__`` method of :py:class:`hyperspy.signals.BaseSignal` to ``_get_current_data``.
- - Rename ``__call__`` method of  :py:class:`hyperspy.model.BaseModel`  to ``_get_current_data``.
- - Remove ``_call__`` method of the `:py:class:`hyperspy.component.Component` class.

@@ -172,6 +172,7 @@ use:
 
 See the following list of selectors to select the installation of optional
 dependencies required by specific functionalities:
+
 * ``ipython`` for integration with the `ipython` terminal and parallel processing using `ipyparallel`,
 * ``learning`` for some machine learning features,
 * ``gui-jupyter`` to use the `Jupyter widgets <https://ipywidgets.readthedocs.io/en/stable/>`_
@@ -180,10 +181,10 @@ dependencies required by specific functionalities:
 * ``speed`` install numba and numexpr to speed up some functionalities,
 * ``tests`` to install required libraries to run HyperSpy's unit tests,
 * ``coverage`` to coverage statistics when running the tests,
-* ``build-doc`` to install required libraries to build HyperSpy's documentation,
+* ``doc`` to install required libraries to build HyperSpy's documentation,
 * ``dev`` to install all the above,
 * ``all`` to install all the above except the development requirements
-  (``tests``, ``build-doc`` and ``dev``).
+  (``tests``, ``doc`` and ``dev``).
 
 For example:
 

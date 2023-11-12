@@ -218,6 +218,9 @@ def test_file_reader_warning(caplog, tmp_path):
 
 
 def test_file_reader_options(tmp_path):
+    # Remove when fixed in rosettasciio
+    # it should be possible to read emd file without having to install sparse
+    pytest.importorskip("sparse")
     s = Signal1D(np.arange(10))
 
     s.save(Path(tmp_path, "temp.hspy"))
