@@ -199,15 +199,15 @@ class TestModel2DSetSignalRange:
 
     def test_set_signal_range_from_mask(self):
         m = self.m
-        mask = np.ones((20, 10), dtype=bool)
-        mask[slice(1, 6),slice(15, 19)] = False
+        mask = np.ones((10, 20), dtype=bool)
+        mask[slice(1, 6), slice(15, 19)] = False
         m.set_signal_range_from_mask(mask)
         np.testing.assert_allclose(m._channel_switches, mask)
 
     def test_set_signal_range_from_mask_error(self):
         m = self.m
         shape = m.signal.axes_manager.signal_shape
-        mask = np.ones(shape[::-1], dtype=bool)
+        mask = np.ones(shape, dtype=bool)
         with pytest.raises(ValueError):
             m.set_signal_range_from_mask(mask)
 
@@ -217,7 +217,7 @@ class TestModel2DSetSignalRange:
 
     def test_set_signal_range(self):
         m = self.m
-        signal_shape = self.s.axes_manager.signal_shape
+        signal_shape = self.s.axes_manager._signal_shape_in_array
         ch = m._channel_switches
 
         m._set_signal_range_in_pixels(17, 19, 1, 3)
@@ -234,7 +234,7 @@ class TestModel2DSetSignalRange:
 
     def test_add_signal_range(self):
         m = self.m
-        signal_shape = self.s.axes_manager.signal_shape
+        signal_shape = self.s.axes_manager.signal_shape[::-1]
         ch = m._channel_switches
 
         # Set all channel to zeros
@@ -267,7 +267,7 @@ class TestModel2DSetSignalRange:
 
     def test_remove_signal_range(self):
         m = self.m
-        signal_shape = self.s.axes_manager.signal_shape
+        signal_shape = self.s.axes_manager.signal_shape[::-1]
         ch = m._channel_switches
 
         m._remove_signal_range_in_pixels(17, 19, 1, 3)
@@ -292,3 +292,9 @@ class TestModel2DSetSignalRange:
         m.remove_signal_range(2.5, 3, 0.5, 1.5)
         mask[slice(5, 7), slice(1, 4)] = False
         np.testing.assert_allclose(ch, mask)
+
+    def test_initial_mask(self):
+        m = self.m
+        assert m._channel_switches.shape == (10, 20)
+
+
