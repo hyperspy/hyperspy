@@ -307,13 +307,21 @@ class BaseModel(list):
         ----------
         mask : numpy.ndarray of bool
             A boolean array defining the signal range. Must be the same
-            shape as the ``signal_shape``. Where array values are ``True``,
-            signal will be fitted, otherwise not.
+            shape as the reversed ``signal_shape``, i.e. ``signal_shape[::-1]``.
+            Where array values are ``True``, signal will be fitted, otherwise not.
 
         See Also
         --------
         set_signal_range, add_signal_range,
         remove_signal_range, reset_signal_range
+
+        Examples
+        --------
+        >>> s = hs.signals.Signal2D(np.random.rand(10, 10, 20))
+        >>> mask = (s.sum() > 5)
+        >>> m = s.create_model()
+        >>> m.set_signal_range_from_mask(mask.data)
+
         """
         if mask.dtype != bool:
             raise ValueError(
