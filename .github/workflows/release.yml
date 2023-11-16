@@ -64,7 +64,7 @@ jobs:
         env:
           MPLBACKEND: agg
         run: |
-          pip install --pre --find-links dist hyperspy[tests]
+          pip install --pre --find-links dist hyperspy[tests]==1.7.6
           pytest --pyargs hyperspy
 
       - uses: actions/upload-artifact@v3
@@ -113,7 +113,7 @@ jobs:
         env:
           MPLBACKEND: agg
         run: |
-          pip install --pre --find-links dist hyperspy[tests]
+          pip install --pre --find-links dist hyperspy[tests]==1.7.6
           pytest --pyargs hyperspy
 
       - uses: actions/upload-artifact@v3
