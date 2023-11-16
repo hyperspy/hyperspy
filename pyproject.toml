@@ -182,6 +182,9 @@ xfail_strict = false
 include = ["hyperspy*"]
 where = ["."]
 
+[tool.setuptools.exclude-package-data]
+"*" = ["*.png"]
+
 [tool.setuptools_scm]
 # Presence enables setuptools_scm, the version will be determine at build time from git
 
