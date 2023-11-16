@@ -41,15 +41,6 @@ class ScalableFixedPattern(Component):
      :math:`x_0`  shift
     ============ =============
 
-
-    The fixed pattern is defined by a single spectrum which must be provided to
-    the ScalableFixedPattern constructor, e.g.:
-
-    .. code-block::
-
-        >>> s = load('my_spectrum.hspy')
-        >>> my_fixed_pattern = components.ScalableFixedPattern(s))
-
     Parameters
     ----------
     yscale : float
@@ -78,6 +69,15 @@ class ScalableFixedPattern(Component):
     -------
     prepare_interpolator
 
+    Examples
+    --------
+
+    The fixed pattern is defined by a Signal1D of navigation 0 which must be
+    provided to the ScalableFixedPattern constructor, e.g.:
+    
+    >>> s = hs.load('data.hspy')
+    >>> my_fixed_pattern = hs.model.components1D.ScalableFixedPattern(s)
+    
     """
 
     def __init__(self, signal1D, yscale=1.0, xscale=1.0,
