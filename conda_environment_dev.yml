@@ -12,3 +12,4 @@ dependencies:
 - pytest-rerunfailures
 - pytest-instafail
 - pooch
+- setuptools-scm

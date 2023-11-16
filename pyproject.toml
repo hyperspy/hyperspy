@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64", "wheel"]
+requires = ["setuptools>=64", "setuptools_scm>=8", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -106,6 +106,7 @@ dev = [
 doc = [
     "numpydoc",
     "pydata_sphinx_theme",
+    "setuptools_scm",
     "sphinx-copybutton",
     "sphinx-design",
     "sphinx-favicon",
@@ -139,6 +140,7 @@ tests = [
     "pytest-rerunfailures",
     "pytest-xdist",
     "pytest>=3.6",
+    "setuptools_scm"
 ]
 
 [project.urls]
@@ -177,12 +179,11 @@ xfail_strict = false
 ]
 
 [tool.setuptools.packages.find]
-include = [
-    "hyperspy*",
-]
-where = [
-    ".",
-]
+include = ["hyperspy*"]
+where = ["."]
+
+[tool.setuptools_scm]
+# Presence enables setuptools_scm, the version will be determine at build time from git
 
 [tool.towncrier]
 directory = "upcoming_changes/"
