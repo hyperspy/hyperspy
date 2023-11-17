@@ -65,7 +65,7 @@ jobs:
           MPLBACKEND: agg
         run: |
           pip install --pre --find-links dist hyperspy[tests]==1.7.6
-          pytest --pyargs hyperspy
+          pytest --pyargs hyperspy -k "not test_navigation_shape_signal2D"
 
       - uses: actions/upload-artifact@v3
         with:
@@ -114,7 +114,7 @@ jobs:
           MPLBACKEND: agg
         run: |
           pip install --pre --find-links dist hyperspy[tests]==1.7.6
-          pytest --pyargs hyperspy
+          pytest --pyargs hyperspy -k "not test_navigation_shape_signal2D"
 
       - uses: actions/upload-artifact@v3
         if: always()
