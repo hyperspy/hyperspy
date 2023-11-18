@@ -10,10 +10,11 @@ https://hyperspy.readthedocs.io/en/latest/user_guide/changes.html
 
 .. towncrier release notes start
 
+
 .. _changes_2.0:
 
-2.0rc0 (2023-11-10)
-===================
+v2.0rc0 (2023-11-10)
+====================
 
 Release Highlights
 ------------------
@@ -373,9 +374,28 @@ Maintenance
 - Replace deprecated :py:class:`scipy.interpolate.interp1d` with :py:func:`scipy.interpolate.make_interp_spline` (`#3233 <https://github.com/hyperspy/hyperspy/issues/3233>`_)
 
 
+.. _changes_1.7.6:
+
+v1.7.6 (2023-11-17)
+==================
+
+Bug Fixes
+---------
+
+- Allows for loading of ``.hspy`` files saved with version 2.0.0 and greater and no unit or name set
+  for some axis. (`#3241 <https://github.com/hyperspy/hyperspy/issues/3241>`_)
+
+
+Maintenance
+-----------
+
+- Backport of 3189: fix Numpy1.25 deprecation: implicite array to scalar conversion in :py:meth:`~._signals.signal2d.Signal2D.align2D` (`#3243 <https://github.com/hyperspy/hyperspy/issues/3243>`_)
+- Pin pillow to <10.1 to avoid imageio error. (`#3251 <https://github.com/hyperspy/hyperspy/issues/3251>`_)
+
+
 .. _changes_1.7.5:
 
-1.7.5 (2023-05-04)
+v1.7.5 (2023-05-04)
 ==================
 
 Bug Fixes
