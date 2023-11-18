@@ -9,3 +9,7 @@ signals.
 
 .. autoclass:: DictionaryTreeBrowser
    :members: 
+
+.. currentmodule:: hyperspy.misc.export_dictionary
+
+.. autofunction:: export_to_dictionary

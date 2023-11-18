@@ -224,8 +224,7 @@ class BaseModel(list):
 
     Methods
     -------
-    set_signal_range, remove_signal range, reset_signal_range,
-    add signal_range.
+    set_signal_range, remove_signal range, reset_signal_range, add signal_range.
         Customize the signal range to fit.
     fit, multifit
         Fit the model to the data at the current position or the
@@ -250,8 +249,7 @@ class BaseModel(list):
 
     See also
     --------
-    :py:class:`~hyperspy.models.model1d.Model1D`
-    :py:class:`~hyperspy.models.model2d.Model2D`
+    ~.models.model1d.Model1D, ~.models.model2d.Model2D
 
     """
 
@@ -1360,8 +1358,7 @@ class BaseModel(list):
 
         See Also
         --------
-        * :py:meth:`~hyperspy.model.BaseModel.multifit`
-        * :py:meth:`~hyperspy.model.EELSModel.fit`
+        multifit, fit
 
         """
         cm = (
@@ -1793,11 +1790,11 @@ class BaseModel(list):
             If True, update the plot for every position as they are processed.
             Note that this slows down the fitting by a lot, but it allows for
             interactive monitoring of the fitting (if in interactive mode).
-        iterpath : {None, "flyback", "serpentine"}, default None
-            If "flyback":
+        iterpath : {None, ``"flyback"``, ``"serpentine"``}, default None
+            If ``"flyback"``:
                 At each new row the index begins at the first column,
                 in accordance with the way :py:class:`numpy.ndindex` generates indices.
-            If "serpentine":
+            If ``"serpentine"``:
                 Iterate through the signal in a serpentine, "snake-game"-like
                 manner instead of beginning each new row at the first index.
                 Works for n-dimensional navigation space, not just 2D.
@@ -1814,7 +1811,7 @@ class BaseModel(list):
 
         See Also
         --------
-        * :py:meth:`~.model.BaseModel.fit`
+        fit
 
         """
         if show_progressbar is None:
@@ -2118,7 +2115,7 @@ class BaseModel(list):
             current folder is used by default.
         format : str
             The extension of the file format. It must be one of the
-            fileformats supported by HyperSpy. The default is "hspy".
+            fileformats supported by HyperSpy. The default is ``"hspy"``.
         save_std : bool
             If True, also the standard deviation will be saved.
         only_free : bool
