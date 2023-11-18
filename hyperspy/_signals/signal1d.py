@@ -605,7 +605,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         the signal axis. To decrease the memory usage, the time of
         computation and the accuracy of the results it is convenient to
         select the feature of interest providing sensible values for
-        `start` and `end`. By default interpolation is used to obtain
+        ``start`` and ``end``. By default interpolation is used to obtain
         subpixel precision.
 
         Parameters
@@ -625,7 +625,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         number_of_interpolation_points : int
             Number of interpolation points. Warning: making this number
             too big can saturate the memory
-        mask : `BaseSignal` of bool.
+        mask : :py:class:`~.api.signals.BaseSignal` of bool.
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
@@ -719,7 +719,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         To decrease memory usage, time of computation and improve
         accuracy it is convenient to select the feature of interest
-        setting the `start` and `end` keywords. By default interpolation is
+        setting the ``start`` and ``end`` keywords. By default interpolation is
         used to obtain subpixel precision.
 
         Parameters
@@ -747,7 +747,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         %s
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
-            Overrides `crop`.
+            Overrides ``crop`` argument.
         fill_value : float
             If crop is False fill the data outside of the original
             interval with the given value where needed.
@@ -755,7 +755,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             A list of BaseSignal instances that has exactly the same
             dimensions as this one and that will be aligned using the shift map
             estimated using the this signal.
-        mask : `BaseSignal` or bool data type.
+        mask : :py:class:`~.api.signals.BaseSignal` or bool data type.
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
