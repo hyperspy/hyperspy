@@ -31,12 +31,9 @@ class CommonSignal2D:
 
         See Also
         --------
-        as_signal1D : a method for the same purpose with more options.
-        signals.Signal1D.to_signal1D : performs the inverse operation on one
-        dimensional signals.
-
-        as_signal2D, transpose, hs.transpose
+        as_signal1D, to_signal1D, hyperspy.api.transpose
 
         """
         return self.as_signal1D(0 + 3j, optimize=optimize)
+
     to_signal1D.__doc__ %= (OPTIMIZE_ARG.replace('False', 'True'))

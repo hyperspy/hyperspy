@@ -922,11 +922,8 @@ class LazySignal(BaseSignal):
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.decomposition` for non-lazy signals
-        * :py:func:`dask.array.linalg.svd`
-        * :py:class:`sklearn.decomposition.IncrementalPCA`
-        * :py:class:`~.learn.rpca.ORPCA`
-        * :py:class:`~.learn.ornmf.ORNMF`
+        dask.array.linalg.svd, sklearn.decomposition.IncrementalPCA,
+        ~.learn.rpca.ORPCA, ~.learn.ornmf.ORNMF
 
         """
         if get is None:

@@ -2224,7 +2224,7 @@ class BaseSignal(FancySlicing,
            The signal data. It can be an array of any dimensions.
         axes : [dict/axes], optional
             List of either dictionaries or axes objects to define the axes (see
-            the documentation of the :py:class:`~.axes.AxesManager`
+            the documentation of the :py:class:`~hyperspy.axes.AxesManager`
             class for more details).
         attributes : dict, optional
             A dictionary whose items are stored as attributes.
@@ -3308,7 +3308,7 @@ class BaseSignal(FancySlicing,
               out=None):
         """
         Rebin the signal into a smaller or larger shape, based on linear
-        interpolation. Specify **either** `new_shape` or `scale`. Scale of 1
+        interpolation. Specify **either** ``new_shape`` or ``scale``. Scale of 1
         means no binning and scale less than one results in up-sampling.
 
         Parameters
@@ -3318,7 +3318,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        ~hyperspy.api.signals.BaseSignal
             The resulting cropped signal.
 
         Raises
@@ -3348,7 +3348,7 @@ class BaseSignal(FancySlicing,
         >>> print(s.data.dtype)
         uint8
 
-        Use dtype=np.unit16 to specify a dtype
+        Use ``dtype=np.unit16`` to specify a dtype
 
         >>> s2 = s.rebin(scale=(5, 2, 1), dtype=np.uint16)
         >>> print(s2.data.dtype)
@@ -3360,7 +3360,7 @@ class BaseSignal(FancySlicing,
         >>> print(s3.data.dtype)
         uint8
 
-        By default `dtype=None`, the dtype is determined by the behaviour of
+        By default ``dtype=None``, the dtype is determined by the behaviour of
         numpy.sum, in this case, unsigned integer of the same precision as
         the platform interger
 
@@ -4725,14 +4725,12 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        hist_spec : :py:class:`~hyperspy._signals.signal1d.Signal1D`
+        hist_spec : :py:class:`~.api.signals.Signal1D`
             A 1D spectrum instance containing the histogram.
 
         See also
         --------
-        * print_summary_statistics
-        * :py:func:`numpy.histogram`
-        * :py:func:`dask.histogram`
+        print_summary_statistics, numpy.histogram, dask.histogram
 
         Examples
         --------

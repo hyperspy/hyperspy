@@ -25,55 +25,55 @@ BASE_PLOT_DOCSTRING_PARAMETERS = \
     """navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass). \
        Allowed string values are ``'auto'``, ``'slider'``, and ``'spectrum'``.
 
-            If ``'auto'``:
+            - If ``'auto'``:
 
-                - If `navigation_dimension` > 0, a navigator is
-                  provided to explore the data.
-                - If `navigation_dimension` is 1 and the signal is an image
-                  the navigator is a sum spectrum obtained by integrating
-                  over the signal axes (the image).
-                - If `navigation_dimension` is 1 and the signal is a spectrum
-                  the navigator is an image obtained by stacking all the
-                  spectra in the dataset horizontally.
-                - If `navigation_dimension` is > 1, the navigator is a sum
-                  image obtained by integrating the data over the signal axes.
-                - Additionally, if `navigation_dimension` > 2, a window
-                  with one slider per axis is raised to navigate the data.
-                - For example, if the dataset consists of 3 navigation axes `X`,
-                  `Y`, `Z` and one signal axis, `E`, the default navigator will
-                  be an image obtained by integrating the data over `E` at the
-                  current `Z` index and a window with sliders for the `X`, `Y`,
-                  and `Z` axes will be raised. Notice that changing the `Z`-axis
-                  index changes the navigator in this case.
-                - For lazy signals, the navigator will be calculated using the
-                  :py:func:`~hyperspy._signals.lazy.LazySignal.compute_navigator`
-                  method.
+              - If ``navigation_dimension`` > 0, a navigator is
+                provided to explore the data.
+              - If ``navigation_dimension`` is 1 and the signal is an image
+                the navigator is a sum spectrum obtained by integrating
+                over the signal axes (the image).
+              - If ``navigation_dimension`` is 1 and the signal is a spectrum
+                the navigator is an image obtained by stacking all the
+                spectra in the dataset horizontally.
+              - If ``navigation_dimension`` is > 1, the navigator is a sum
+                image obtained by integrating the data over the signal axes.
+              - Additionally, if ``navigation_dimension`` > 2, a window
+                with one slider per axis is raised to navigate the data.
+              - For example, if the dataset consists of 3 navigation axes "X",
+                "Y", "Z" and one signal axis, "E", the default navigator will
+                be an image obtained by integrating the data over "E" at the
+                current "Z" index and a window with sliders for the "X", "Y",
+                and "Z" axes will be raised. Notice that changing the "Z"-axis
+                index changes the navigator in this case.
+              - For lazy signals, the navigator will be calculated using the
+                :py:func:`~hyperspy._signals.lazy.LazySignal.compute_navigator`
+                method.
 
-            If ``'slider'``:
+            - If ``'slider'``:
 
-                - If `navigation dimension` > 0 a window with one slider per
-                  axis is raised to navigate the data.
+              - If ``navigation dimension`` > 0 a window with one slider per
+                axis is raised to navigate the data.
 
-            If ``'spectrum'``:
+            - If ``'spectrum'``:
 
-                - If `navigation_dimension` > 0 the navigator is always a
-                  spectrum obtained by integrating the data over all other axes.
-                - Not supported for lazy signals, the ``'auto'`` option will
-                  be used instead.
+              - If ``navigation_dimension`` > 0 the navigator is always a
+                spectrum obtained by integrating the data over all other axes.
+              - Not supported for lazy signals, the ``'auto'`` option will
+                be used instead.
 
-            If ``None``, no navigator will be provided.
+            - If ``None``, no navigator will be provided.
 
-            Alternatively a :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+            Alternatively a :py:class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             instance can be provided. The navigation or signal shape must
             match the navigation shape of the signal to plot or the
-            `navigation_shape` + `signal_shape` must be equal to the
-            `navigator_shape` of the current object (for a dynamic navigator).
-            If the signal `dtype` is RGB or RGBA this parameter has no effect and
+            ``navigation_shape`` + ``signal_shape`` must be equal to the
+            ``navigator_shape`` of the current object (for a dynamic navigator).
+            If the signal ``dtype`` is RGB or RGBA this parameter has no effect and
             the value is always set to ``'slider'``.
         axes_manager : None or :py:class:`~hyperspy.axes.AxesManager`
-            If None, the signal's `axes_manager` attribute is used.
+            If None, the signal's ``axes_manager`` attribute is used.
         plot_markers : bool, default True
-            Plot markers added using s.add_marker(marker, permanent=True).
+            Plot markers added using `s.add_marker(marker, permanent=True)`.
             Note, a large number of markers might lead to very slow plotting.
         navigator_kwds : dict
             Only for image navigator, additional keyword arguments for
@@ -103,11 +103,11 @@ PLOT1D_DOCSTRING = \
             If ``'auto'``, intensity is plotted on a linear scale except when
             ``power_spectrum=True`` (only for complex signals).
         autoscale : str
-            The string must contain any combination of the 'x' and 'v'
-            characters. If 'x' or 'v' (for values) are in the string, the
+            The string must contain any combination of the ``'x'`` and ``'v'``
+            characters. If ``'x'`` or ``'v'`` (for values) are in the string, the
             corresponding horizontal or vertical axis limits are set to their
             maxima and the axis limits will reset when the data or the
-            navigation indices are changed. Default is 'v'.
+            navigation indices are changed. Default is ``'v'``.
         """
 
 
@@ -115,30 +115,30 @@ PLOT2D_DOCSTRING = \
     """colorbar : bool, optional
             If true, a colorbar is plotted for non-RGB images.
         autoscale : str
-            The string must contain any combination of the 'x', 'y' and 'v'
-            characters. If 'x' or 'y' are in the string, the corresponding
+            The string must contain any combination of the ``'x'``, ``'y'`` and ``'v'``
+            characters. If ``'x'`` or ``'y'`` are in the string, the corresponding
             axis limits are set to cover the full range of the data at a given
-            position. If 'v' (for values) is in the string, the contrast of the
-            image will be set automatically according to `vmin` and `vmax` when
-            the data or navigation indices change. Default is 'v'.
-        norm : {"auto", "linear", "power", "log", "symlog" or a subclass of :py:class:`matplotlib.colors.Normalise`}
-            Set the norm of the image to display. If "auto", a linear scale is
-            used except if when `power_spectrum=True` in case of complex data
-            type. "symlog" can be used to display negative value on a negative
+            position. If ``'v'`` (for values) is in the string, the contrast of the
+            image will be set automatically according to ``vmin` and ``vmax`` when
+            the data or navigation indices change. Default is ``'v'``.
+        norm : {``"auto"`, ``"linear"``, ``"power"``, ``"log"``, ``"symlog"`` or a subclass of :py:class:`matplotlib.colors.Normalise`}
+            Set the norm of the image to display. If ``"auto"``, a linear scale is
+            used except if when ``power_spectrum=True`` in case of complex data
+            type. ``"symlog"`` can be used to display negative value on a negative
             scale - read :py:class:`matplotlib.colors.SymLogNorm` and the
-            `linthresh` and `linscale` parameter for more details.
+            ``linthresh`` and ``linscale`` parameter for more details.
         vmin, vmax : {scalar, str}, optional
-            `vmin` and `vmax` are used to normalise the displayed data. It can
-            be a float or a string. If string, it should be formatted as 'xth',
-            where 'x' must be an float in the [0, 100] range. 'x' is used to
+            ``vmin`` and ``vmax`` are used to normalise the displayed data. It can
+            be a float or a string. If string, it should be formatted as ``'xth'``,
+            where ``'x'`` must be an float in the [0, 100] range. ``'x'`` is used to
             compute the x-th percentile of the data. See
             :py:func:`numpy.percentile` for more information.
         gamma : float
             Parameter used in the power-law normalisation when the parameter
-            norm="power". Read :py:class:`matplotlib.colors.PowerNorm` for more
+            ``norm="power"``. Read :py:class:`matplotlib.colors.PowerNorm` for more
             details. Default value is 1.0.
         linthresh : float
-            When used with norm="symlog", define the range within which the
+            When used with ``norm="symlog"``, define the range within which the
             plot is linear (to avoid having the plot go to infinity around
             zero). Default value is 0.01.
         linscale : float
@@ -160,7 +160,7 @@ PLOT2D_DOCSTRING = \
             Default is False.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
-        centre_colormap : {"auto", True, False}
+        centre_colormap : {``"auto"``, True, False}
             If True the centre of the color scheme is set to zero. This is
             specially useful when using diverging color schemes. If "auto"
             (default), diverging color schemes are automatically centred.
@@ -175,9 +175,9 @@ COMPLEX_DOCSTRING = \
     """power_spectrum : bool, default is False.
             If True, plot the power spectrum instead of the actual signal, if
             False, plot the real and imaginary parts of the complex signal.
-        representation : {'cartesian' or 'polar'}
-            Determines if the real and imaginary part of the complex data is plotted ('cartesian',
-            default), or if the amplitude and phase should be used ('polar').
+        representation : {``'cartesian'`` or ``'polar'``}
+            Determines if the real and imaginary part of the complex data is plotted (``'cartesian'``,
+            default), or if the amplitude and phase should be used (``'polar'``).
         same_axes : bool, default True
             If True (default) plot the real and
             imaginary parts (or amplitude and phase) in the same figure if

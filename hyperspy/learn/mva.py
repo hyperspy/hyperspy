@@ -671,7 +671,7 @@ class MVA:
         diff_order : int, default 1
             Sometimes it is convenient to perform the BSS on the derivative of
             the signal. If ``diff_order`` is 0, the signal is not differentiated.
-        diff_axes : None or list of ints or strings
+        diff_axes : None, list of int, list of str
             * If None and `on_loadings` is False, when `diff_order` is greater than 1
               and `signal_dimension` is greater than 1, the differences are calculated
               across all signal axes
@@ -722,9 +722,7 @@ class MVA:
 
         See Also
         --------
-        * :py:meth:`~.signal.MVATools.plot_bss_factors`
-        * :py:meth:`~.signal.MVATools.plot_bss_loadings`
-        * :py:meth:`~.signal.MVATools.plot_bss_results`
+        plot_bss_factors, plot_bss_loadings, plot_bss_results
 
         """
         from hyperspy.signal import BaseSignal
@@ -1288,10 +1286,8 @@ class MVA:
 
         See Also
         --------
-        * decomposition
-        * :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`
-        * :py:meth:`~.learn.mva.MVA.get_decomposition_loadings`
-        * :py:meth:`~.learn.mva.MVA.get_decomposition_factors`
+        decomposition, plot_explained_variance_ratio,
+        get_decomposition_loadings, get_decomposition_factors
 
         """
         from hyperspy._signals.signal1d import Signal1D
@@ -1408,10 +1404,8 @@ class MVA:
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.decomposition`
-        * :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`
-        * :py:meth:`~.signal.MVATools.get_decomposition_loadings`
-        * :py:meth:`~.signal.MVATools.get_decomposition_factors`
+        decomposition, get_explained_variance_ratio, get_decomposition_loadings,
+        get_decomposition_factors
 
         """
         s = self.get_explained_variance_ratio()
@@ -1570,7 +1564,7 @@ class MVA:
 
         See Also
         --------
-        :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
+        plot_explained_variance_ratio
 
         """
         target = self.learning_results
@@ -1713,18 +1707,11 @@ class MVA:
             Additional parameters passed to the cluster preprocessing algorithm.
             See sklearn.preprocessing preprocessing methods for further details
 
-
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.clusters_analysis`,
-        * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,
-        * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
-        * :py:meth:`~.signal.MVATools.plot_cluster_results`
-        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
-        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
-
+        clusters_analysis, estimate_number_of_clusters, get_cluster_labels,
+        get_cluster_signals, plot_cluster_metric, plot_cluster_results,
+        plot_cluster_signals, plot_cluster_labels
 
         Returns
         -------
@@ -1733,10 +1720,9 @@ class MVA:
 
         """
 
-
-        preprocessing_algorithm = self._get_cluster_preprocessing_algorithm(preprocessing,**preprocessing_kwargs)
-
-
+        preprocessing_algorithm = self._get_cluster_preprocessing_algorithm(
+            preprocessing, **preprocessing_kwargs
+            )
 
         if preprocessing_algorithm is None:
             return cluster_signal
@@ -1793,19 +1779,14 @@ class MVA:
         return algorithm
 
     def plot_cluster_metric(self):
-        """Plot the cluster metrics calculated
-           using evaluate_number_of_clusters method
+        """Plot the cluster metrics calculated using the 
+        :py:meth:`~.api.signal.BaseSignal.estimate_number_of_clusters` method
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
-        * :py:meth:`~.learn.mva.MVA.cluster_analysis`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,
-        * :py:meth:`~.signal.MVATools.plot_cluster_results`
-        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
-        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
-
+        estimate_number_of_clusters, cluster_analysis, get_cluster_labels,
+        get_cluster_signals, plot_cluster_results, plot_cluster_signals,
+        plot_cluster_labels
 
         """
         target = self.learning_results
@@ -1813,8 +1794,10 @@ class MVA:
         if target.cluster_metric_data is not None:
             ydata = target.cluster_metric_data
         else:
-            raise ValueError("Cluster metrics not evaluated "
-                             "please run evaluate_number_of_clusters first.")
+            raise ValueError(
+                "Cluster metrics not estaimted, please run "
+                "`estimate_number_of_clusters` first."
+                )
         if target.cluster_metric_index is not None:
             xdata = target.cluster_metric_index
         fig = plt.figure()
@@ -2032,19 +2015,13 @@ class MVA:
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.estimate_number_of_clusters`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_distances`,
-        * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
-        * :py:meth:`~.signal.MVATools.plot_cluster_results`
-        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
-        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
-
+        estimate_number_of_clusters, get_cluster_labels, get_cluster_signals,
+        get_cluster_distances, plot_cluster_metric, plot_cluster_results,
+        plot_cluster_signals, plot_cluster_labels
 
         Returns
         -------
-            If 'return_info' is True returns the Scikit-learn cluster object
+            If ``'return_info'`` is True returns the Scikit-learn cluster object
             used for clustering. Useful if you wish to
             examine inertia or other outputs.
 
@@ -2338,14 +2315,9 @@ class MVA:
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.cluster_analysis`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_labels`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_signals`,
-        * :py:meth:`~.learn.mva.MVA.get_cluster_distances`,
-        * :py:meth:`~.learn.mva.MVA.plot_cluster_metric`,
-        * :py:meth:`~.signal.MVATools.plot_cluster_results`
-        * :py:meth:`~.signal.MVATools.plot_cluster_signals`
-        * :py:meth:`~.signal.MVATools.plot_cluster_labels`
+        cluster_analysis, get_cluster_labels, get_cluster_signals,
+        get_cluster_distances, plot_cluster_metric, plot_cluster_results,
+        plot_cluster_signals, plot_cluster_labels
 
         """
 
@@ -2564,8 +2536,7 @@ class MVA:
 
         See Also
         --------
-        * :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`,
-        * :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio`,
+        get_explained_variance_ratio, plot_explained_variance_ratio
 
         """
         if explained_variance_ratio is None:

@@ -486,7 +486,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         See Also
         --------
-        * :py:meth:`~._signals.signal2d.Signal2D.align2D`
+        align2D
 
         """
         if show_progressbar is None:
@@ -619,7 +619,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         The images can be aligned using either user-provided shifts or
         by first estimating the shifts.
 
-        See :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`
+        See :py:meth:`~.api.signals.Signal2D.estimate_shift2D`
         for more details on estimating image shifts.
 
         Parameters
@@ -634,7 +634,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             The array of shifts must be in pixel units. The shape must be
             the navigation shape using numpy order convention. If `None`
             the shifts are estimated using
-            :py:meth:`~._signals.signal2D.estimate_shift2D`.
+            :py:meth:`~.api.signals.signal2D.estimate_shift2D`.
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
             Overrides `crop`.
@@ -644,7 +644,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         %s
         %s
         **kwargs :
-            Keyword arguments passed to :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`
+            Keyword arguments passed to :py:meth:`~.api.signals.Signal2D.estimate_shift2D`
 
         Returns
         -------
@@ -658,7 +658,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         See Also
         --------
-        * :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`
+        estimate_shift2D
 
         """
         self._check_signal_dimension_equals_two()
