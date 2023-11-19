@@ -923,7 +923,7 @@ class LazySignal(BaseSignal):
         See Also
         --------
         dask.array.linalg.svd, sklearn.decomposition.IncrementalPCA,
-        ~.learn.rpca.ORPCA, ~.learn.ornmf.ORNMF
+        hyperspy.learn.rpca.ORPCA, hyperspy.learn.ornmf.ORNMF
 
         """
         if get is None:

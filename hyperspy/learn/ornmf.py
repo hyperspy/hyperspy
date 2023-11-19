@@ -158,7 +158,7 @@ class ORNMF:
         subspace_momentum : float
             Momentum parameter for 'MomentumSGD' method, should be
             a float between 0 and 1.
-        random_state : None or int or RandomState instance, default None
+        random_state : None or int or RandomState, default None
             Used to initialize the subspace on the first iteration.
 
         """
@@ -227,7 +227,7 @@ class ORNMF:
 
         Parameters
         ----------
-        X : {numpy.ndarray, iterator}
+        X : array-like
             [n_samples x n_features] matrix of observations
             or an iterator that yields samples, each with n_features elements.
         batch_size : {None, int}
@@ -312,10 +312,10 @@ class ORNMF:
 
         Parameters
         ----------
-        X : {numpy.ndarray, iterator}
-            [n_samples x n_features] matrix of observations
+        X : array-like
+            The matrix of observations with shape (n_samples, n_features)
             or an iterator that yields n_samples, each with n_features elements.
-        return_error : bool
+        return_error : bool, default False
             If True, returns the sparse error matrix as well. Otherwise only
             the weights (loadings)
 
@@ -371,7 +371,7 @@ def ornmf(
 
     Parameters
     ----------
-    X : numpy array
+    X : numpy.ndarray
         The [n_samples, n_features] input data.
     rank : int
         The rank of the representation (number of components/factors)
@@ -379,38 +379,38 @@ def ornmf(
         If True, stores the sparse error matrix.
     project : bool, default False
         If True, project the data X onto the learnt model.
-    batch_size : {None, int}, default None
+    batch_size : None or int, default None
         If not None, learn the data in batches, each of batch_size samples
         or less.
-    lambda1 : float
+    lambda1 : float, default 1.0
         Nuclear norm regularization parameter.
-    kappa : float
+    kappa : float, default 1.0
         Step-size for projection solver.
     method : {'PGD', 'RobustPGD', 'MomentumSGD'}, default 'PGD'
-        * 'PGD' - Proximal gradient descent
-        * 'RobustPGD' - Robust proximal gradient descent
-        * 'MomentumSGD' - Stochastic gradient descent with momentum
-    subspace_learning_rate : float
+        * ``'PGD'`` - Proximal gradient descent
+        * ``'RobustPGD'`` - Robust proximal gradient descent
+        * ``'MomentumSGD'`` - Stochastic gradient descent with momentum
+    subspace_learning_rate : float, default 1.0
         Learning rate for the 'MomentumSGD' method. Should be a
         float > 0.0
-    subspace_momentum : float
+    subspace_momentum : float, default 0.5
         Momentum parameter for 'MomentumSGD' method, should be
         a float between 0 and 1.
-    random_state : None or int or RandomState instance, default None
+    random_state : None or int or RandomState, default None
         Used to initialize the subspace on the first iteration.
 
     Returns
     -------
-    Xhat : numpy array
-        is the [n_features x n_samples] non-negative matrix
+    Xhat : numpy.ndarray
+        The non-negative matrix with shape (n_features x n_samples)
         Only returned if store_error is True.
-    Ehat : numpy array
-        is the [n_features x n_samples] sparse error matrix
+    Ehat : numpy.ndarray
+        The sparse error matrix with shape (n_features x n_samples)
         Only returned if store_error is True.
-    W : numpy array, shape [n_features, rank]
-        is the non-negative factors matrix
-    H : numpy array, shape [rank, n_samples]
-        is the non-negative loadings matrix
+    W : numpy.ndarray
+        The non-negative factors matrix with shape (n_features, rank)
+    H : numpy.ndarray
+        The non-negative loadings matrix with shape (rank, n_samples)
 
     """
     X = X.T

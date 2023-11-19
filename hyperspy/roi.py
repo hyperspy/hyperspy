@@ -1316,29 +1316,28 @@ class Line2DROI(BaseInteractiveROI):
 
         Parameters
         ----------
-        img : numeric array, shape (M, N[, C])
+        img : numpy.ndarray
             The image, either grayscale (2D array) or multichannel
             (3D array, where the final axis contains the channel
             information).
-        src : 2-tuple of numeric scalar (float or int)
-            The start point of the scan line.
-        dst : 2-tuple of numeric scalar (float or int)
-            The end point of the scan line.
+        src : tuple of float, tuple of int
+            The start point of the scan line. Length of tuple is 2.
+        dst : tuple of float, tuple of int
+            The end point of the scan line. Length of tuple is 2.
         linewidth : int, optional
             Width of the scan, perpendicular to the line
-        order : int in {0, 1, 2, 3, 4, 5}, optional
+        order : {0, 1, 2, 3, 4, 5}, optional
             The order of the spline interpolation to compute image values at
             non-integer coordinates. 0 means nearest-neighbor interpolation.
-        mode : string, one of {'constant', 'nearest', 'reflect', 'wrap'},
-                optional
+        mode : {'constant', 'nearest', 'reflect', 'wrap'}, optional
             How to compute any values falling outside of the image.
         cval : float, optional
-            If `mode` is 'constant', what constant value to use outside the
+            If ``mode='constant'``, what constant value to use outside the
             image.
 
         Returns
         -------
-        return_value : array
+        numpy.ndarray
             The intensity profile along the scan line. The length of the
             profile is the ceil of the computed length of the scan line.
 

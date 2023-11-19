@@ -45,24 +45,21 @@ class ScalableFixedPattern(Component):
     The fixed pattern is defined by a single spectrum which must be provided to
     the ScalableFixedPattern constructor, e.g.:
 
-    .. code-block:: ipython
+    .. code-block::
 
-        In [1]: s = load('my_spectrum.hspy')
-        In [2]: my_fixed_pattern = components.ScalableFixedPattern(s))
+        >>> s = load('my_spectrum.hspy')
+        >>> my_fixed_pattern = components.ScalableFixedPattern(s))
 
     Parameters
     ----------
 
-    yscale : Float
-    xscale : Float
-    shift : Float
-    interpolate : Bool
+    yscale, xscale, shift : float
+    interpolate : bool
         If False no interpolation is performed and only a y-scaled spectrum is
         returned.
 
     Methods
     -------
-
     prepare_interpolator : method to fine tune the interpolation
 
     """
