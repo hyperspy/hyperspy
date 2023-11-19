@@ -315,7 +315,7 @@ intersphinx_mapping = {
 }
 
 # Check links to API when building documentation
-nitpicky = False
+nitpicky = True
 
 # -- Options for numpydoc extension -----------------------------------
 
