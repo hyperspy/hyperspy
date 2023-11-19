@@ -35,7 +35,7 @@ see :ref:`load_specify_signal_type-label` for more details.
 
 .. note::
 
-   When the file contains several datasets, the :py:func:`~.io.load` function
+   When the file contains several datasets, the :py:func:`~.api.load` function
    will return a list of HyperSpy signals, instead of a single HyperSpy signal.
    Each signal can then be accessed using list indexation.
 
@@ -106,7 +106,7 @@ keyword, which has to correspond to one of the available subclasses of signal:
 
     >>> s = hs.load("filename", signal_type="EELS")
 
-If the loaded file contains several datasets, the :py:func:`~.io.load`
+If the loaded file contains several datasets, the :py:func:`~.api.load`
 function will return a list of the corresponding signals:
 
 .. code-block:: python

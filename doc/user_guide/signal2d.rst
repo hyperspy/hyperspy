@@ -167,12 +167,12 @@ between the peaks.
   function (``distance`` and ``threshold`` parameters are mapped to
   ``min_distance`` and ``threshold_abs``, respectively).
 - the ``'max'`` method uses the
-  :py:func:`~.utils.peakfinders2D.find_peaks_max` function to search
+  :py:func:`~.hyperspy.utils.peakfinders2D.find_peaks_max` function to search
   for peaks higher than ``alpha * sigma``, where ``alpha`` is parameters and
   ``sigma`` is the standard deviation of the image. It also has a ``distance``
   parameters to set the minimum distance between peaks.
 - the ``'minmax'`` method uses the
-  :py:func:`~.utils.peakfinders2D.find_peaks_minmax` function to locate
+  :py:func:`~.hyperspy.utils.peakfinders2D.find_peaks_minmax` function to locate
   the positive peaks in an image by comparing maximum and minimum filtered
   images. Its ``threshold`` parameter defines the minimum difference between
   the maximum and minimum filtered images.
@@ -188,9 +188,9 @@ This algorithm was developed by Zaefferer :ref:`[Zaefferer2000] <Zaefferer2000>`
 It is based on a gradient threshold followed by a local maximum search within a square window,
 which is moved until it is centered on the brightest point, which is taken as a
 peak if it is within a certain distance of the starting point. It uses the
-:py:func:`~.utils.peakfinders2D.find_peaks_zaefferer` function, which can take
+:py:func:`~.hyperspy.utils.peakfinders2D.find_peaks_zaefferer` function, which can take
 ``grad_threshold``, ``window_size`` and ``distance_cutoff`` as parameters. See
-the :py:func:`~.utils.peakfinders2D.find_peaks_zaefferer` function documentation
+the :py:func:`~.hyperspy.utils.peakfinders2D.find_peaks_zaefferer` function documentation
 for more details.
 
 Ball statistical peak finder
@@ -204,9 +204,9 @@ Described by White :ref:`[White2009] <White2009>`, this method is based on findi
 have a statistically higher value than the surrounding areas, then iterating
 between smoothing and binarising until the number of peaks has converged. This
 method can be slower than the others, but is very robust to a variety of image types.
-It uses the :py:func:`~.utils.peakfinders2D.find_peaks_stat` function, which can take
+It uses the :py:func:`~.hyperspy.utils.peakfinders2D.find_peaks_stat` function, which can take
 ``alpha``, ``window_radius`` and ``convergence_ratio`` as parameters. See the
-:py:func:`~.utils.peakfinders2D.find_peaks_stat` function documentation for more
+:py:func:`~.hyperspy.utils.peakfinders2D.find_peaks_stat` function documentation for more
 details.
 
 Matrix based peak finding
@@ -234,8 +234,8 @@ Template matching
     >>> s.find_peaks(method='template_matching', template=template)
 
 This method locates peaks in the cross correlation between the image and a
-template using the :py:func:`~.utils.peakfinders2D.find_peaks_xc` function. See
-the :py:func:`~.utils.peakfinders2D.find_peaks_xc` function documentation for
+template using the :py:func:`~.hyperspy.utils.peakfinders2D.find_peaks_xc` function. See
+the :py:func:`~.hyperspy.utils.peakfinders2D.find_peaks_xc` function documentation for
 more details.
 
 Interactive parametrization

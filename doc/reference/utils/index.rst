@@ -13,3 +13,9 @@ signals.
 .. currentmodule:: hyperspy.misc.export_dictionary
 
 .. autofunction:: export_to_dictionary
+
+:mod:`~hyperspy.utils.peakfinders2D`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: hyperspy.utils.peakfinders2D
+   :members:

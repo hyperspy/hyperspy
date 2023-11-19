@@ -5,8 +5,8 @@
 Data visualization
 ******************
 
-The object returned by :py:func:`~.io.load`, a :py:class:`~.signal.BaseSignal`
-instance, has a :py:meth:`~.signal.BaseSignal.plot` method that is powerful and
+The object returned by :py:func:`~.api.load`, a :py:class:`~.api.signals.BaseSignal`
+instance, has a :py:meth:`~.api.signals.BaseSignal.plot` method that is powerful and
 flexible to visualize n-dimensional data. In this chapter, the
 visualisation of multidimensional data is exemplified with two experimental
 datasets: an EELS spectrum image and an EDX dataset consisting of a secondary
@@ -61,7 +61,7 @@ on and the spectrum or navigator figure is selected**. When using the numpad
 arrows the PageUp and PageDown keys change the size of the step.
 
 The current coordinates can be either set by navigating the
-:py:meth:`~.signal.BaseSignal.plot`, or specified by pixel indices
+:py:meth:`~.api.signals.BaseSignal.plot`, or specified by pixel indices
 in ``s.axes_manager.indices`` or as calibrated coordinates in
 ``s.axes_manager.coordinates``.
 
@@ -135,7 +135,7 @@ To close all the figures run the following command:
 
     Plotting ``float16`` images is currently not supported by matplotlib; however, it is
     possible to convert the type of the data by using the
-    :py:meth:`~.signal.BaseSignal.change_dtype` method, e.g. ``s.change_dtype('float32')``.
+    :py:meth:`~.api.signals.BaseSignal.change_dtype` method, e.g. ``s.change_dtype('float32')``.
 
 Multidimensional image data
 ===========================
@@ -493,7 +493,7 @@ Plotting multiple signals
 HyperSpy provides three functions to plot multiple signals (spectra, images or
 other signals): :py:func:`~.api.plot.plot_images`,
 :py:func:`~.api.plot.plot_spectra`, and
-:py:func:`~.api.plot.plot_signals` in the :py:mod:`~.api.plot`` package.
+:py:func:`~.api.plot.plot_signals` in the :py:mod:`~.api.plot` package.
 
 .. _plot.images:
 
@@ -642,7 +642,7 @@ which is passed to :py:meth:`matplotlib.figure.Figure.subplots_adjust`.
   :width:   500
 
   Using :py:func:`~.api.plot.plot_images` to plot the output of
-  :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`.
+  :py:meth:`~.exspy.signals.EDSSpectrum.get_lines_intensity`.
 
 .. |subplots_adjust| image:: images/plot_images_subplots.png
 
@@ -678,7 +678,7 @@ The ``cmap`` argument can also be given as ``'mpl_colors'``, and as a result,
 the images will be plotted with colormaps generated from the default
 ``matplotlib`` colors, which is very helpful when plotting multiple spectral
 signals and their relative intensities (such as the results of a
-:py:func:`~.learn.mva.decomposition` analysis). This example uses
+:py:meth:`~.api.signals.BaseSignal.decomposition` analysis). This example uses
 :py:func:`~.api.plot.plot_spectra`, which is explained in the
 `next section`__.
 
@@ -1437,11 +1437,11 @@ both the ``sizes`` and ``offsets`` kwargs are dynamic and change with each index
     >>> s.add_marker(m)
     >>>
 
-The :py:class:`~api.plot.markers.Markers` also has a class method :py:meth:`~api.plot.markers.Markers.from_signal` which can
+The :py:class:`~.api.plot.markers.Markers` also has a class method :py:meth:`~.api.plot.markers.Markers.from_signal` which can
 be used to create a set of markers from the output of some map function.  In this case ``signal.data`` is mapped
-to some ``key`` and used to initialize a :py:class:`~api.plot.markers.Markers` object. If the signal has the attribute
+to some ``key`` and used to initialize a :py:class:`~.api.plot.markers.Markers` object. If the signal has the attribute
 ``signal.metadata.Peaks.signal_axes`` and convert_units = True then the values will be converted to the proper units
-before creating the :py:class:`~api.plot.markers.Markers` object.
+before creating the :py:class:`~.api.plot.markers.Markers` object.
 
 .. NOTE::
     For kwargs like size, height, etc. the scale and the units of the x axis are used to plot.
