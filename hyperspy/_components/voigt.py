@@ -59,7 +59,7 @@ class Voigt(Expression):
 
 
     Parameters
-    -----------
+    ----------
     centre : float
         Location of the maximum of the peak.
     area : float

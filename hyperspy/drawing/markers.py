@@ -814,15 +814,15 @@ class Markers:
 
         Returns
         -------
-        cbar : :py:class:`matplotlib.colorbar.Colorbar`
+        matplotlib.colorbar.Colorbar
             The colorbar of the collection.
 
         See Also
         --------
         set_ScalarMappable_array
 
-        Example
-        -------
+        Examples
+        --------
         >>> rng = np.random.default_rng(0)
         >>> s = hs.signals.Signal2D(np.ones((100, 100)))
         >>> # Define the size of the circles

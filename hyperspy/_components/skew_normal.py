@@ -115,7 +115,7 @@ class SkewNormal(Expression):
 
 
     Parameters
-    -----------
+    ----------
     x0 : float
         Location of the peak position (not maximum, which is given by
         the `mode` property).

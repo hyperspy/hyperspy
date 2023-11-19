@@ -622,11 +622,11 @@ class Point1DROI(BasePointROI):
     """Selects a single point in a 1D space. The coordinate of the point in the
     1D space is stored in the 'value' trait.
 
-    `Point1DROI` can be used in place of a tuple containing the value of `value`.
+    ``Point1DROI`` can be used in place of a tuple containing the value of ``value``.
 
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> roi = hs.roi.Point1DROI(0.5)
     >>> value, = roi
@@ -679,14 +679,14 @@ class Point1DROI(BasePointROI):
 class Point2DROI(BasePointROI):
 
     """Selects a single point in a 2D space. The coordinates of the point in
-    the 2D space are stored in the traits 'x' and 'y'.
+    the 2D space are stored in the traits ``'x'`` and ``'y'``.
 
-    `Point2DROI` can be used in place of a tuple containing the coordinates
-    of the point `(x, y)`.
+    ``Point2DROI`` can be used in place of a tuple containing the coordinates
+    of the point (x, y).
 
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> roi = hs.roi.Point2DROI(3, 5)
     >>> x, y = roi
@@ -740,12 +740,12 @@ class Point2DROI(BasePointROI):
 class SpanROI(BaseInteractiveROI):
 
     """Selects a range in a 1D space. The coordinates of the range in
-    the 1D space are stored in the traits 'left' and 'right'.
+    the 1D space are stored in the traits ``'left'`` and ``'right'``.
 
-    `SpanROI` can be used in place of a tuple containing the left and right values.
+    ``SpanROI`` can be used in place of a tuple containing the left and right values.
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> roi = hs.roi.SpanROI(-3, 5)
     >>> left, right = roi
@@ -821,14 +821,14 @@ class SpanROI(BaseInteractiveROI):
 class RectangularROI(BaseInteractiveROI):
 
     """Selects a range in a 2D space. The coordinates of the range in
-    the 2D space are stored in the traits 'left', 'right', 'top' and 'bottom'.
-    Convenience properties 'x', 'y', 'width' and 'height' are also available,
+    the 2D space are stored in the traits ``'left'``, ``'right'``, ``'top'`` and ``'bottom'``.
+    Convenience properties ``'x'``, ``'y'``, ``'width'`` and ``'height'`` are also available,
     but cannot be used for initialization.
 
-    `RectangularROI` can be used in place of a tuple containing `(left, right, top, bottom)`.
+    ``RectangularROI`` can be used in place of a tuple containing (left, right, top, bottom).
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> roi = hs.roi.RectangularROI(left=0, right=10, top=20, bottom=20.5)
     >>> left, right, top, bottom = roi

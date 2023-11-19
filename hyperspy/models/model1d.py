@@ -800,7 +800,7 @@ class Model1D(BaseModel):
             If True, a label showing the component name is added to the
             plot next to the vertical line.
 
-        See also
+        See Also
         --------
         disable_adjust_position
 
@@ -877,7 +877,7 @@ class Model1D(BaseModel):
     def disable_adjust_position(self):
         """Disables the interactive adjust position feature
 
-        See also
+        See Also
         --------
         enable_adjust_position
 

@@ -30,6 +30,7 @@ sys.path.append('../')
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
+    'numpydoc',
     'sphinxcontrib.towncrier',
     'sphinx_design',
     'sphinx.ext.autodoc',
@@ -313,6 +314,35 @@ intersphinx_mapping = {
     'zarr': ('https://zarr.readthedocs.io/en/stable', None),
 }
 
+# Check links to API when building documentation
+nitpicky = False
+
+# -- Options for numpydoc extension -----------------------------------
+
+numpydoc_show_class_members = False
+numpydoc_xref_param_type = True
+numpydoc_xref_ignore = {
+    "type",
+    "optional",
+    "default",
+    "of",
+    "or",
+    "auto",
+    "from_elements",
+    "all_alpha",
+}
+
+# if Version(numpydoc.__version__) >= Version("1.6.0rc0"):
+#     numpydoc_validation_checks = {"all", "ES01", "EX01", "GL02", "GL03", "SA01", "SS06"}
+
+autoclass_content = "both"
+
+autodoc_default_options = {
+    'show-inheritance': True,
+}
+toc_object_entries_show_parents = "hide"
+numpydoc_show_class_members = False
+
 # -- Sphinx-Gallery---------------
 
 # https://sphinx-gallery.github.io
@@ -322,11 +352,6 @@ sphinx_gallery_conf = {
     'filename_pattern': '.py',        # pattern to define which will be executed
     'ignore_pattern': '_sgskip.py',   # pattern to define which will not be executed
 }
-
-autodoc_default_options = {
-    'show-inheritance': True,
-}
-toc_object_entries_show_parents = "hide"
 
 graphviz_output_format = "svg"
 

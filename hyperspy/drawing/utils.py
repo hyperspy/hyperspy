@@ -303,8 +303,8 @@ def plot_signals(signal_list, sync=True, navigator="auto",
     **kwargs
         Any extra keyword arguments are passed to each signal `plot` method.
 
-    Example
-    -------
+    Examples
+    --------
 
     >>> s_cl = hs.load("coreloss.dm3")
     >>> s_ll = hs.load("lowloss.dm3")
@@ -1397,8 +1397,8 @@ def plot_spectra(
         - ``"mosiac"``: arguments passed to :py:func:`matplotlib.pyplot.subplots`
         - ``"heatmap"``: arguments  passed to :py:meth:`~.api.signals.Signal2D.plot`.
 
-    Example
-    -------
+    Examples
+    --------
     >>> s = hs.load("some_spectra")
     >>> hs.plot.plot_spectra(s, style='cascade', color='red', padding=0.5)
 
@@ -1568,9 +1568,8 @@ def animate_legend(fig=None, ax=None, plot_type='spectra'):
     ax:  {None, matplotlib.axes}, optional
         If None (Default), pick the current axes using "plt.gca".
 
-    Note
-    ----
-
+    Notes
+    -----
     Code inspired from legend_picking.py in the matplotlib gallery.
 
     """
@@ -1665,8 +1664,8 @@ def plot_histograms(signal_list,
         other keyword arguments (weight and density) are described in
         :py:func:`numpy.histogram`.
 
-    Example
-    -------
+    Examples
+    --------
     Histograms of two random chi-square distributions.
 
     >>> img = hs.signals.Signal2D(np.random.chisquare(1,[10,10,100]))

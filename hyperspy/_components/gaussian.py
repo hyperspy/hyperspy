@@ -100,7 +100,7 @@ class Gaussian(Expression):
         Convenience attribute to get and set the height.
 
 
-    See also
+    See Also
     --------
     ~._components.gaussianhf.GaussianHF
     """

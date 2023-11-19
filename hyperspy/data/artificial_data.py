@@ -48,8 +48,8 @@ def atomic_resolution_image():
     -------
     Signal2D
 
-    Example
-    -------
+    Examples
+    --------
     >>> s = hs.data.atomic_resolution_image()
     >>> s.plot()
 
@@ -92,8 +92,8 @@ def luminescence_signal(navigation_dimension=0,
         powerlaw.
     %s
 
-    Example
-    -------
+    Examples
+    --------
     >>> import hyperspy.api as hs
     >>> s = hs.data.luminescence_signal()
     >>> s.plot()
@@ -116,7 +116,7 @@ def luminescence_signal(navigation_dimension=0,
     >>> s = hs.data.luminescence_signal(navigation_dimension=2)
     >>> s.plot()
 
-    See also
+    See Also
     --------
     atomic_resolution_image
 

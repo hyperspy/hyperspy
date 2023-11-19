@@ -49,14 +49,14 @@ def attrsetter(target, attrs, value):
 
     Parameters
     ----------
-        target : object
-        attrs : string
-            attributes, separated by periods (e.g.
-            'metadata.Signal.Noise_parameters.variance' )
-        value : object
+    target : object
+    attrs : string
+        attributes, separated by periods (e.g.
+        'metadata.Signal.Noise_parameters.variance' )
+    value : object
 
-    Example
-    -------
+    Examples
+    --------
     First create a signal and model pair:
 
     >>> s = hs.signals.Signal1D(np.arange(10))
@@ -71,7 +71,6 @@ def attrsetter(target, attrs, value):
 
     The behaviour is identical to
     >>> self.signal.data = np.arange(10) + 2
-
 
     """
     where = attrs.rfind(".")
@@ -900,10 +899,10 @@ def add_key_value(key, value):
 
 def swapelem(obj, i, j):
     """Swaps element having index i with element having index j in object obj
-    IN PLACE.
+    in place.
 
-    Example
-    -------
+    Examples
+    --------
     >>> L = ['a', 'b', 'c']
     >>> swapelem(L, 1, 2)
     >>> print(L)
@@ -932,7 +931,7 @@ def rollelem(a, index, to_index=0):
 
     Returns
     -------
-    res : list
+    list
         Output list.
 
     """
@@ -973,7 +972,8 @@ def find_subclasses(mod, cls):
 
     Returns
     -------
-    dictonary in which key, item = subclass name, subclass
+    dict
+        Dictionary in which key, item = subclass name, subclass
 
     """
     return dict(

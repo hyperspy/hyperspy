@@ -43,8 +43,8 @@ class Bleasdale(Expression):
         Extra keyword arguments are passed to
         :py:class:`~.api.model.components1D.Expression`.
 
-    Note
-    ----
+    Notes
+    -----
     For :math:`(a+b\cdot x)\leq0`, the component will be set to 0.
 
     """

@@ -569,16 +569,16 @@ class BaseDataAxis(t.HasTraits):
 
         Parameters
         ----------
-        value : number or numpy array
+        value : float or numpy.ndarray
         rounding : function
-                Handling of values intermediate between two axis points:
-                If `rounding=round`, use round-half-away-from-zero strategy to find closest value.
-                If `rounding=math.floor`, round to the next lower value.
-                If `round=math.ceil`, round to the next higher value.
+            Handling of values intermediate between two axis points:
+            If ``rounding=round``, use round-half-away-from-zero strategy to find closest value.
+            If ``rounding=math.floor``, round to the next lower value.
+            If ``rounding=math.ceil``, round to the next higher value.
 
         Returns
         -------
-        index : integer or numpy array
+        int or numpy array
 
         Raises
         ------
@@ -1170,18 +1170,18 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
         Parameters
         ----------
-        value : number or string, or numpy array of number or string
-                if string, should either be a calibrated unit like "20nm"
-                or a relative slicing like "rel0.2".
+        value : floa, str, numpy.ndarray
+            If string, should either be a calibrated unit like "20nm"
+            or a relative slicing like "rel0.2".
         rounding : function
-                Handling of values intermediate between two axis points:
-                If `rounding=round`, use python's standard round-half-to-even strategy to find closest value.
-                If `rounding=math.floor`, round to the next lower value.
-                If `round=math.ceil`, round to the next higher value.
+            Handling of values intermediate between two axis points:
+            If ``rounding=round``, use python's standard round-half-to-even strategy to find closest value.
+            If ``rounding=math.floor``, round to the next lower value.
+            If ``rounding=math.ceil``, round to the next higher value.
 
         Returns
         -------
-        index : integer or numpy array
+        int or numpy.ndarray
 
         Raises
         ------
@@ -1189,7 +1189,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
             If value is out of bounds or contains out of bounds values (array).
             If value is NaN or contains NaN values (array).
             If value is incorrectly formatted str or contains incorrectly
-                formatted str (array).
+            formatted str (array).
         """
 
         if value is None:
@@ -1668,7 +1668,7 @@ class AxesManager(t.HasTraits):
         for all axes. Otherwise, it is defined by their index in the
         list.
 
-        See also
+        See Also
         --------
         _append_axis
 
@@ -1695,7 +1695,7 @@ class AxesManager(t.HasTraits):
         index_in_axes_manager: index of the axis in current signal to remplace
             with axis passed in argument
 
-        See also
+        See Also
         --------
         _append_axis
 
@@ -1897,8 +1897,8 @@ class AxesManager(t.HasTraits):
             individually.
         %s
 
-        Note
-        ----
+        Notes
+        -----
         Requires a uniform axis.
         """
         convert_navigation = convert_signal = True

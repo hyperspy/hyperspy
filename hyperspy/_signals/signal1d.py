@@ -345,7 +345,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             Keyword arguments pass to
             :py:meth:`~hyperspy.signal.signal.BaseSignal.get_histogram`
 
-        See also
+        See Also
         --------
         spikes_removal_tool
 
@@ -770,7 +770,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         SignalDimensionError
             If the signal dimension is not 1.
 
-        See also
+        See Also
         --------
         estimate_shift1D
         """

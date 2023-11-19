@@ -16,10 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Markers that can be added to `Signal` plots.
+"""Markers that can be added to :py:class:~.api.signals.BaseSignal` plots.
 
-Example
--------
+Examples
+--------
 
 >>> import skimage
 >>> im = hs.signals.Signal2D(skimage.data.camera())

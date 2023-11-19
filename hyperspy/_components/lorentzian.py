@@ -76,7 +76,7 @@ class Lorentzian(Expression):
 
 
     Parameters
-    -----------
+    ----------
     A : float
         Area parameter, where :math:`A/(\gamma\pi)` is the maximum (height) of
         peak.

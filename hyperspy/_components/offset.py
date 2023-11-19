@@ -38,8 +38,9 @@ class Offset(Component):
     ============ =============
 
     Parameters
-    -----------
+    ----------
     offset : float
+        The offset to be fitted
 
     """
 

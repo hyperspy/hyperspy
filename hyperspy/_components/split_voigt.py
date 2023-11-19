@@ -56,11 +56,11 @@ class SplitVoigt(Component):
     :math:`centre`     centre
     ================= ===========
 
-    Note
+    Notes
     -----
     This is a voigt function in which the upstream and downstream variance or
     sigma is allowed to vary to create an asymmetric profile
-    In this case the voigt is a pseudo voigt- consisting of a
+    In this case the voigt is a pseudo voigt consisting of a
     mixed gaussian and lorentzian sum
 
     """

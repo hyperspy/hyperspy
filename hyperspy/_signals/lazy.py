@@ -1211,8 +1211,8 @@ class LazySignal(BaseSignal):
         -------
         None.
 
-        Note
-        ----
+        Notes
+        -----
         The number of chunks will affect where the sum is taken. If the sum
         needs to be taken in the centre of the signal space (for example, in
         the case of diffraction pattern), the number of chunk needs to be an

@@ -47,7 +47,7 @@ class HeavisideStep(Expression):
 
 
     Parameters
-    -----------
+    ----------
     n : float
         Location parameter defining the x position of the step.
     A : float

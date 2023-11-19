@@ -878,7 +878,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             If True, convert the signal units using the 'convert_to_units'
             method of the `axes_manager`. If False, does nothing.
 
-        See also
+        See Also
         --------
         crop
 

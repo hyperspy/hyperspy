@@ -238,7 +238,7 @@ class ModelManager(object):
         name : str or None
             The name for the model to be stored with
 
-        See also
+        See Also
         --------
         remove
         restore
@@ -274,7 +274,7 @@ class ModelManager(object):
         name : str
             The name of the model to remove
 
-        See also
+        See Also
         --------
         restore
         store
@@ -293,7 +293,7 @@ class ModelManager(object):
         name : str
             The name of the model to restore and remove
 
-        See also
+        See Also
         --------
         restore
         store
@@ -313,7 +313,7 @@ class ModelManager(object):
         name : str
             The name of the model to restore
 
-        See also
+        See Also
         --------
         remove
         store
@@ -882,7 +882,7 @@ class MVATools(object):
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
 
-        See also
+        See Also
         --------
         plot_decomposition_loadings, plot_decomposition_results
 
@@ -959,7 +959,7 @@ class MVATools(object):
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
 
-        See also
+        See Also
         --------
         plot_bss_loadings, plot_bss_results
 
@@ -1046,7 +1046,7 @@ class MVATools(object):
             If ``None``, no axis decorations will be shown, but ticks/frame
             will.
 
-        See also
+        See Also
         --------
         plot_decomposition_factors, plot_decomposition_results
 
@@ -1147,7 +1147,7 @@ class MVATools(object):
             If ``'off'``, all decorations and frame will be disabled
             If ``None``, no axis decorations will be shown, but ticks/frame will
 
-        See also
+        See Also
         --------
         plot_bss_factors, plot_bss_results
 
@@ -1207,8 +1207,7 @@ class MVATools(object):
                                      per_row=3,
                                      save_figures=False,
                                      save_figures_format='png'):
-        """Export results from a decomposition to any of the supported
-        formats.
+        """Export results from a decomposition to any of the supported formats.
 
         Parameters
         ----------
@@ -1234,14 +1233,14 @@ class MVATools(object):
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
 
-                * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
-                  plots are created using the plotting flags as below, and saved
-                  at 600 dpi. One plot is saved per loading.
-                * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
-                  are saved in single files.  All loadings are contained in the
-                  one file.
-                * For spectral formats (``'msa'``), each loading is saved to a
-                  separate file.
+            * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
+              plots are created using the plotting flags as below, and saved
+              at 600 dpi. One plot is saved per loading.
+            * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
+              are saved in single files.  All loadings are contained in the
+              one file.
+            * For spectral formats (``'msa'``), each loading is saved to a
+              separate file.
 
         multiple_files : bool
             If ``True``, one file will be created for each factor and loading.
@@ -1252,9 +1251,9 @@ class MVATools(object):
             If ``True`` the same figures that are obtained when using the plot
             methods will be saved with 600 dpi resolution
 
-        Note
-        ----
-        The following parameters are only used when ``save_figures = True``:
+        Notes
+        -----
+        The following parameters are only used when ``save_figures = True``
 
         Other Parameters
         ----------------
@@ -1276,7 +1275,7 @@ class MVATools(object):
         save_figures_format : :py:class:`str`
             The image format extension.
 
-        See also
+        See Also
         --------
         get_decomposition_factors, get_decomposition_loadings
         """
@@ -1374,8 +1373,10 @@ class MVATools(object):
             If True the same figures that are obtained when using the plot
             methods will be saved with 600 dpi resolution
 
-        Plotting options (for save_figures = True ONLY)
-        ----------------------------------------------
+        Other Parameters
+        ----------------
+        These parameters are plotting options and only used when
+        ``save_figures=True``.
 
         calibrate : bool
             if True, calibrates plots where calibration is available
@@ -1473,14 +1474,14 @@ class MVATools(object):
             The extension of the format that you wish to save to. default
             is ``'hspy'``. The format determines the kind of output:
 
-                * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
-                  plots are created using the plotting flags as below, and saved
-                  at 600 dpi. One plot is saved per loading.
-                * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
-                  are saved in single files.  All loadings are contained in the
-                  one file.
-                * For spectral formats (``'msa'``), each loading is saved to a
-                  separate file.
+            * For image formats (``'tif'``, ``'png'``, ``'jpg'``, etc.),
+              plots are created using the plotting flags as below, and saved
+              at 600 dpi. One plot is saved per loading.
+            * For multidimensional formats (``'rpl'``, ``'hspy'``), arrays
+              are saved in single files.  All loadings are contained in the
+              one file.
+            * For spectral formats (``'msa'``), each loading is saved to a
+              separate file.
 
         multiple_files : bool
             If ``True``, one file will be created for each factor and loading.
@@ -1491,9 +1492,9 @@ class MVATools(object):
             If ``True``, the same figures that are obtained when using the plot
             methods will be saved with 600 dpi resolution
 
-        Note
-        ----
-        The following parameters are only used when ``save_figures = True``:
+        Notes
+        -----
+        The following parameters are only used when ``save_figures = True``
 
         Other Parameters
         ----------------
@@ -1515,7 +1516,7 @@ class MVATools(object):
         save_figures_format : :py:class:`str`
             The image format extension.
 
-        See also
+        See Also
         --------
         get_bss_factors, get_bss_loadings
         """
@@ -1589,7 +1590,7 @@ class MVATools(object):
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
-        See also
+        See Also
         --------
         get_decomposition_factors, export_decomposition_results
 
@@ -1609,7 +1610,7 @@ class MVATools(object):
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
-        See also
+        See Also
         --------
         get_decomposition_loadings, export_decomposition_results
 
@@ -1629,7 +1630,7 @@ class MVATools(object):
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
-        See also
+        See Also
         --------
         get_bss_factors, export_bss_results
 
@@ -1648,7 +1649,7 @@ class MVATools(object):
         -------
         signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
-        See also
+        See Also
         --------
         get_bss_loadings, export_bss_results
 
@@ -1695,7 +1696,7 @@ class MVATools(object):
         loadings_dim : int
             See the ``factors_dim`` parameter
 
-        See also
+        See Also
         --------
         plot_bss_factors, plot_bss_loadings, plot_decomposition_results
 
@@ -1743,7 +1744,7 @@ class MVATools(object):
         loadings_dim : int
             See the ``factors_dim`` parameter
 
-        See also
+        See Also
         --------
         plot_decomposition_factors, plot_decomposition_loadings,
         plot_bss_results
@@ -3183,7 +3184,7 @@ class BaseSignal(FancySlicing,
         s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
             A copy of the object with the axes swapped.
 
-        See also
+        See Also
         --------
         rollaxis
         """
@@ -3223,7 +3224,7 @@ class BaseSignal(FancySlicing,
         s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
             Output signal.
 
-        See also
+        See Also
         --------
         :py:func:`numpy.roll`, swap_axes
 
@@ -3549,7 +3550,7 @@ class BaseSignal(FancySlicing,
             The index of the axis over which all the rest of the axes (except
             the steady axes) will be unfolded
 
-        See also
+        See Also
         --------
         fold
 
@@ -3617,8 +3618,8 @@ class BaseSignal(FancySlicing,
             Whether or not one of the axes needed unfolding (and that
             unfolding was performed)
 
-        Note
-        ----
+        Notes
+        -----
         It doesn't make sense to perform an unfolding when the total number
         of dimensions is < 2.
         """
@@ -3637,7 +3638,7 @@ class BaseSignal(FancySlicing,
         signal be unfolded for the scope of the `with` block, before
         automatically refolding when passing out of scope.
 
-        See also
+        See Also
         --------
         unfold, fold
 
@@ -3901,18 +3902,18 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
+        ~hyperspy.signal.BaseSignal
             A new Signal containing the sum of the provided Signal along the
             specified axes.
 
-        Note
-        ----
+        Notes
+        -----
         If you intend to calculate the numerical integral of an unbinned signal,
-        please use the :py:meth:`integrate1D` function instead. To avoid
-        erroneous misuse of the `sum` function as integral, it raises a warning
-        when working with an unbinned, non-uniform axis.
+        please use the :py:meth:`~.api.signals.BaseSignal.integrate1D` function
+        instead. To avoid erroneous misuse of the `sum` function as integral,
+        it raises a warning when working with an unbinned, non-uniform axis.
 
-        See also
+        See Also
         --------
         max, min, mean, std, var, indexmax, indexmin, valuemax, valuemin
 
@@ -3959,7 +3960,7 @@ class BaseSignal(FancySlicing,
             A new Signal containing the maximum of the provided Signal over the
             specified axes
 
-        See also
+        See Also
         --------
         min, sum, mean, std, var, indexmax, indexmin, valuemax, valuemin
 
@@ -3995,7 +3996,7 @@ class BaseSignal(FancySlicing,
             A new Signal containing the minimum of the provided Signal over the
             specified axes
 
-        See also
+        See Also
         --------
         max, sum, mean, std, var, indexmax, indexmin, valuemax, valuemin
 
@@ -4031,7 +4032,7 @@ class BaseSignal(FancySlicing,
             A new Signal containing the mean of the provided Signal over the
             specified axes
 
-        See also
+        See Also
         --------
         max, min, sum, std, var, indexmax, indexmin, valuemax, valuemin
 
@@ -4067,7 +4068,7 @@ class BaseSignal(FancySlicing,
             A new Signal containing the standard deviation of the provided
             Signal over the specified axes
 
-        See also
+        See Also
         --------
         max, min, sum, mean, var, indexmax, indexmin, valuemax, valuemin
 
@@ -4103,7 +4104,7 @@ class BaseSignal(FancySlicing,
             A new Signal containing the variance of the provided Signal over the
             specified axes
 
-        See also
+        See Also
         --------
         max, min, sum, mean, std, indexmax, indexmin, valuemax, valuemin
 
@@ -4197,19 +4198,19 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses) or None
+        ~hyperspy.signal.BaseSignal or None
             Note that the size of the data on the given ``axis`` decreases by
             the given ``order``. `i.e.` if ``axis`` is ``"x"`` and ``order`` is
             2, the `x` dimension is N, ``der``'s `x` dimension is N - 2.
 
-        Note
-        ----
+        Notes
+        -----
         If you intend to calculate the numerical derivative, please use the
         proper :py:meth:`derivative` function instead. To avoid erroneous
         misuse of the `diff` function as derivative, it raises an error when
         when working with a non-uniform axis.
 
-        See also
+        See Also
         --------
         derivative, integrate1D, integrate_simpson
 
@@ -4277,7 +4278,7 @@ class BaseSignal(FancySlicing,
         This function uses numpy.gradient to perform the derivative. See its
         documentation for implementation details.
 
-        See also
+        See Also
         --------
         integrate1D, integrate_simpson
 
@@ -4315,7 +4316,7 @@ class BaseSignal(FancySlicing,
             A new Signal containing the integral of the provided Signal along
             the specified axis.
 
-        See also
+        See Also
         --------
         derivative, integrate1D
 
@@ -4387,8 +4388,8 @@ class BaseSignal(FancySlicing,
         >>> # Use following to plot power spectrum of `im`:
         >>> im.fft(shift=True, apodization=True).plot(power_spectrum=True)
 
-        Note
-        ----
+        Notes
+        -----
         Requires a uniform axis. For further information see the documentation
         of :py:func:`numpy.fft.fftn`
         """
@@ -4463,8 +4464,8 @@ class BaseSignal(FancySlicing,
         **kwargs : dict
             other keyword arguments are described in :py:func:`numpy.fft.ifftn`
 
-        Return
-        ------
+        Returns
+        -------
         s : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses)
             A Signal containing the result of the inverse FFT algorithm
 
@@ -4481,8 +4482,8 @@ class BaseSignal(FancySlicing,
         >>> imfft.ifft()
         <Signal2D, title: real(iFFT of FFT of ), dimensions: (|512, 512)>
 
-        Note
-        ----
+        Notes
+        -----
         Requires a uniform axis. For further information see the documentation
         of :py:func:`numpy.fft.ifftn`
         """
@@ -4543,7 +4544,7 @@ class BaseSignal(FancySlicing,
             A new Signal containing the integral of the provided Signal along
             the specified axis.
 
-        See also
+        See Also
         --------
         integrate_simpson, derivative
 
@@ -4578,7 +4579,7 @@ class BaseSignal(FancySlicing,
             A new Signal containing the indices of the minimum along the
             specified axis. Note: the data `dtype` is always ``int``.
 
-        See also
+        See Also
         --------
         max, min, sum, mean, std, var, indexmax, valuemax, valuemin
 
@@ -4610,7 +4611,7 @@ class BaseSignal(FancySlicing,
             A new Signal containing the indices of the maximum along the
             specified axis. Note: the data `dtype` is always ``int``.
 
-        See also
+        See Also
         --------
         max, min, sum, mean, std, var, indexmin, valuemax, valuemin
 
@@ -4643,7 +4644,7 @@ class BaseSignal(FancySlicing,
             A new Signal containing the calibrated coordinate values of the
             maximum along the specified axis.
 
-        See also
+        See Also
         --------
         max, min, sum, mean, std, var, indexmax, indexmin, valuemin
 
@@ -4683,7 +4684,7 @@ class BaseSignal(FancySlicing,
             A new Signal containing the calibrated coordinate values of the
             minimum along the specified axis.
 
-        See also
+        See Also
         --------
         max, min, sum, mean, std, var, indexmax, indexmin, valuemax
 
@@ -4728,7 +4729,7 @@ class BaseSignal(FancySlicing,
         hist_spec : :py:class:`~.api.signals.Signal1D`
             A 1D spectrum instance containing the histogram.
 
-        See also
+        See Also
         --------
         print_summary_statistics, numpy.histogram, dask.histogram
 
@@ -4869,6 +4870,8 @@ class BaseSignal(FancySlicing,
         being faster because it iterates the underlying numpy data array
         instead of the :py:class:`~hyperspy.signal.BaseSignal`.
 
+        Currently requires a uniform axis.
+
         Examples
         --------
         Apply a Gaussian filter to all the images in the dataset. The sigma
@@ -4916,10 +4919,6 @@ class BaseSignal(FancySlicing,
         >>> rotated = s.map(rotate, angle=s_angle, reshape=False, lazy_output=True, inplace=True
         ...                 navigation_chunks=(2,2))
         >>> rotated.compute(scheduler="single-threaded")
-
-        Note
-        ----
-        Currently requires a uniform axis.
 
         """
         if lazy_output is None:
@@ -5725,7 +5724,7 @@ class BaseSignal(FancySlicing,
         %s
         %s
 
-        See also
+        See Also
         --------
         as_signal2D, transpose, :py:func:`hyperspy.misc.utils.transpose`
 
@@ -5773,7 +5772,7 @@ class BaseSignal(FancySlicing,
         DataDimensionError
             When `data.ndim` < 2
 
-        See also
+        See Also
         --------
         as_signal1D, transpose, :py:func:`hyperspy.misc.utils.transpose`
 
@@ -5936,7 +5935,7 @@ class BaseSignal(FancySlicing,
            The number formatter to use for the output
         %s
 
-        See also
+        See Also
         --------
         get_histogram
 
@@ -6177,8 +6176,8 @@ class BaseSignal(FancySlicing,
         random_state : None or int or Generator instance, default None
             Seed for the random generator.
 
-        Note
-        ----
+        Notes
+        -----
         This method uses :py:func:`numpy.random.poisson`
         (or :py:func:`dask.array.random.poisson` for lazy signals)
         to generate the Poissonian noise.
@@ -6224,8 +6223,8 @@ class BaseSignal(FancySlicing,
         random_state : None or int or Generator instance, default None
             Seed for the random generator.
 
-        Note
-        ----
+        Notes
+        -----
         This method uses :py:func:`numpy.random.normal` (or
         :py:func:`dask.array.random.normal` for lazy signals)
         to generate the noise.
@@ -6270,8 +6269,8 @@ class BaseSignal(FancySlicing,
             The number (or indices) of axes to convert to navigation axes
         %s
 
-        Note
-        ----
+        Notes
+        -----
         With the exception of both axes parameters (`signal_axes` and
         `navigation_axes` getting iterables, generally one has to be ``None``
         (i.e. "floating"). The other one specifies either the required number
@@ -6279,9 +6278,9 @@ class BaseSignal(FancySlicing,
         If both are iterables, full control is given as long as all axes
         are assigned to one space only.
 
-        See also
+        See Also
         --------
-        T, as_signal2D, as_signal1D, :py:func:`hyperspy.misc.utils.transpose`
+        T, as_signal2D, as_signal1D
 
         Examples
         --------

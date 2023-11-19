@@ -478,7 +478,7 @@ class Parameter(t.HasTraits):
     def store_current_value_in_array(self):
         """Store the value and std attributes.
 
-        See also
+        See Also
         --------
         fetch, assign_current_value_to_all
 
@@ -628,8 +628,8 @@ class Parameter(t.HasTraits):
         **kwargs
             Any extra keyword arguments are passed to the signal plot.
 
-        Example
-        -------
+        Examples
+        --------
         >>> parameter.plot() #doctest: +SKIP
 
         Set the minimum and maximum displayed values
@@ -1100,7 +1100,7 @@ class Component(t.HasTraits):
         >>> v1.set_parameters_free(parameter_name_list=['area','centre'])
         >>> v1.set_parameters_free(linear=True)
 
-        See also
+        See Also
         --------
         set_parameters_not_free
         hyperspy.model.BaseModel.set_parameters_free
@@ -1152,7 +1152,7 @@ class Component(t.HasTraits):
         >>> v1.set_parameters_not_free(only_linear=True)
 
 
-        See also
+        See Also
         --------
         set_parameters_free
         hyperspy.model.BaseModel.set_parameters_free

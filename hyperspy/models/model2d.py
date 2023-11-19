@@ -67,15 +67,15 @@ class Model2D(BaseModel):
     Attributes
     ----------
 
-    signal : Signal2D instance
+    signal : Signal2D
         It contains the data to fit.
-    chisq : A Signal of floats
+    chisq : Signal
         Chi-squared of the signal (or np.nan if not yet fit)
-    dof : A Signal of integers
+    dof : Signal
         Degrees of freedom of the signal (0 if not yet fit)
-    red_chisq : Signal instance
+    red_chisq : Signal
         Reduced chi-squared.
-    components : `ModelComponents` instance
+    components : `ModelComponents`
         The components of the model are attributes of this class. This provides
         a convinient way to access the model components when working in IPython
         as it enables tab completion.
@@ -92,15 +92,9 @@ class Model2D(BaseModel):
     fit, multifit
         Fit the model to the data at the current position or the full dataset.
 
-    See also
+    See Also
     --------
-    Base Model
-    Model1D
-
-    Example
-    -------
-
-
+    BaseModel, Model1D
 
     """
 

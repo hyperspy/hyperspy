@@ -21,6 +21,7 @@
 import logging
 import sys
 
+
 def set_log_level(level):
     """
     Convenience function to set the log level of all hyperspy modules.
@@ -40,8 +41,8 @@ def set_log_level(level):
         - 'DEBUG'
         - 'NOTSET'
 
-    Example
-    -------
+    Examples
+    --------
     For normal logging of hyperspy functions, you can set the log level like
     this:
 
@@ -68,6 +69,7 @@ def set_log_level(level):
     """
     logger = initialize_logger('hyperspy')
     logger.setLevel(level)
+
 
 class ColoredFormatter(logging.Formatter):
     """Colored log formatter.
@@ -99,6 +101,7 @@ class ColoredFormatter(logging.Formatter):
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
+
 
 def initialize_logger(*args):
     """ Creates a pretty logging instance where the colors can be changed

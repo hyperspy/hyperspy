@@ -52,8 +52,7 @@ standard error for each index. The last element shows whether the value has
 been set in a given index, either by a fitting procedure or manually.
 
 If a model contains several components with the same parameters, it is possible
-to change them all by using :py:meth:`~.model.BaseModel.set_parameters_value`.
-Example:
+to change them all by using :py:meth:`~.model.BaseModel.set_parameters_value`:
 
 .. code-block:: python
 

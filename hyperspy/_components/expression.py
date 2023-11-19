@@ -127,8 +127,8 @@ class Expression(Component):
         Keyword arguments can be used to initialise the value of the
         parameters.
 
-    Note
-    ----
+    Notes
+    -----
     As of version 1.4, Sympy's lambdify function, that the
     :py:class:`~._components.expression.Expression`
     components uses internally, does not support the differentiation of

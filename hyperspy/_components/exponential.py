@@ -42,7 +42,7 @@ class Exponential(Expression):
 
 
     Parameters
-    -----------
+    ----------
     A: float
         Maximum intensity
     tau: float

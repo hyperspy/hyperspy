@@ -77,7 +77,7 @@ class GaussianHF(Expression):
         Convenience attribute to get, set the width and defined for
         compatibility with `Gaussian` component.
 
-    See also
+    See Also
     --------
     ~._components.gaussian.Gaussian
 

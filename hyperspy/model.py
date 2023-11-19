@@ -247,9 +247,9 @@ class BaseModel(list):
     set_parameters_not_free, set_parameters_free
         Fit the `free` status of several components and parameters at once.
 
-    See also
+    See Also
     --------
-    ~.models.model1d.Model1D, ~.models.model2d.Model2D
+    Model1D, Model2D
 
     """
 
@@ -2015,8 +2015,9 @@ class BaseModel(list):
         Notes
         -----
         This method can be used to save the current state of the model in a way
-        that can be loaded back to recreate the it using `load_parameters_from
-        file`. Actually, as of HyperSpy 0.8 this is the only way to do so.
+        that can be loaded back to recreate the it using
+        :py:meth:`~hyperspy.model.Model1D.load_parameters_from_file`.
+        Actually, as of HyperSpy 0.8 this is the only way to do so.
         However, this is known to be brittle. For example see
         https://github.com/hyperspy/hyperspy/issues/341.
 
@@ -2032,11 +2033,11 @@ class BaseModel(list):
         np.savez(filename, **kwds)
 
     def load_parameters_from_file(self, filename):
-        """Loads the parameters array from  a binary file written with the
-        'save_parameters2file' function.
+        """Loads the parameters array from a binary file written with the
+        :py:meth:`~hyperspy.model.BaseModel.save_parameters2file` function.
 
         Parameters
-        ---------
+        ----------
         filename : str
 
         See Also
@@ -2045,10 +2046,10 @@ class BaseModel(list):
 
         Notes
         -----
-        In combination with `save_parameters2file`, this method can be used to
-        recreate a model stored in a file. Actually, before HyperSpy 0.8 this
-        is the only way to do so.  However, this is known to be brittle. For
-        example see https://github.com/hyperspy/hyperspy/issues/341.
+        In combination with :py:meth:`~hyperspy.model.BaseModel.save_parameters2file`,
+        this method can be used to recreate a model stored in a file. Actually,
+        before HyperSpy 0.8 this is the only way to do so.  However, this is known
+        to be brittle. For example see https://github.com/hyperspy/hyperspy/issues/341.
 
         """
         f = np.load(filename)
@@ -2072,7 +2073,7 @@ class BaseModel(list):
             only in the value of the parameters of the given components.
             The components can be specified by name, index or themselves.
             If ``None`` (default), the active components will be considered.
-        mask : boolean numpy array or None, optional
+        mask : numpy.ndarray of bool or None, optional
             The operation won't be performed where mask is True.
 
         """
@@ -2212,7 +2213,7 @@ class BaseModel(list):
         >>> m.set_parameters_not_free(only_linear=True)
 
 
-        See also
+        See Also
         --------
         set_parameters_free
         hyperspy.component.Component.set_parameters_free
@@ -2264,7 +2265,7 @@ class BaseModel(list):
                                   parameter_name_list=['area','centre'])
         >>> m.set_parameters_free(only_linear=True)
 
-        See also
+        See Also
         --------
         set_parameters_not_free
         hyperspy.component.Component.set_parameters_free

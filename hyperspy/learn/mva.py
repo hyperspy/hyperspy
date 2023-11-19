@@ -140,7 +140,7 @@ class MVA:
         ----------
         normalize_poissonian_noise : bool, default False
             If True, scale the signal to normalize Poissonian noise using
-            the approach described in [Keenan2004]_.
+            the approach described in [*].
         algorithm : {"SVD", "MLPCA", "sklearn_pca", "NMF", "sparse_pca", "mini_batch_sparse_pca", "RPCA", "ORPCA", "ORNMF", custom object}, default "SVD"
             The decomposition algorithm to use. If algorithm is an object,
             it must implement a ``fit_transform()`` method or ``fit()`` and
@@ -224,7 +224,7 @@ class MVA:
 
         References
         ----------
-        .. [Keenan2004] M. Keenan and P. Kotula, "Accounting for Poisson noise
+        .. [*] M. Keenan and P. Kotula, "Accounting for Poisson noise
             in the multivariate analysis of ToF-SIMS spectrum images", Surf.
             Interface Anal 36(3) (2004): 203-212.
 
@@ -1373,34 +1373,32 @@ class MVA:
         noise_fmt : dict
             Dictionary of matplotlib formatting values for the noise
             components
-        fig : matplotlib figure or None
+        fig : matplotlib.figure.Figure or None
             If None, a default figure will be created, otherwise will plot
             into fig
-        ax : matplotlib ax (subplot) or None
+        ax : matplotlib.axes.Axes or None
             If None, a default ax will be created, otherwise will plot into ax
         **kwargs
-            remaining keyword arguments are passed to ``matplotlib.figure()``
+            remaining keyword arguments are passed to :py:class:`matplotlib.figure.Figure`
 
         Returns
         -------
-        ax : matplotlib.axes
+        matplotlib.axes.Axes
             Axes object containing the scree plot
 
-        Example
-        -------
+        Examples
+        --------
         To generate a scree plot with customized symbols for signal vs.
         noise components and a modified cutoff threshold value:
 
         >>> s = hs.load("some_spectrum_image")
         >>> s.decomposition()
-        >>> s.plot_explained_variance_ratio(n=40,
-        >>>                                 threshold=0.005,
-        >>>                                 signal_fmt={'marker': 'v',
-        >>>                                             's': 150,
-        >>>                                             'c': 'pink'}
-        >>>                                 noise_fmt={'marker': '*',
-        >>>                                             's': 200,
-        >>>                                             'c': 'green'})
+        >>> s.plot_explained_variance_ratio(
+        ...    n=40,
+        ...    threshold=0.005,
+        ...    signal_fmt={'marker': 'v', 's': 150, 'c': 'pink'},
+        ...    noise_fmt={'marker': '*', 's': 200, 'c': 'green'}
+        ...    )
 
         See Also
         --------
@@ -1584,7 +1582,7 @@ class MVA:
         """Normalize the signal under the assumption of Poisson noise.
 
         Scales the signal using to "normalize" the Poisson data for
-        subsequent decomposition analysis [Keenan2004]_.
+        subsequent decomposition analysis [*].
 
         Parameters
         ----------
@@ -1593,6 +1591,12 @@ class MVA:
         signal_mask : {None, boolean numpy array}, default None
             Optional mask applied in the signal axis.
 
+        References
+        ----------
+        .. [*] M. Keenan and P. Kotula, "Accounting for Poisson noise
+            in the multivariate analysis of ToF-SIMS spectrum images", Surf.
+            Interface Anal 36(3) (2004): 203-212.
+            
         """
         _logger.info("preprocessing the data to normalize Poissonian noise")
         with self.unfolded():
@@ -2508,7 +2512,7 @@ class MVA:
         With a classic elbow scree plot, this line more or less
         defines a triangle. The elbow should be the point which
         is the furthest distance from this line. For more details,
-        see [Satopää2011]_.
+        see [1].
 
         Parameters
         ----------
@@ -2522,14 +2526,14 @@ class MVA:
 
         Returns
         -------
-        elbow position : int
-            Index of the elbow position in the input array. Due to
+        int
+            The index of the elbow position in the input array. Due to
             zero-based indexing, the number of significant components
             is `elbow_position + 1`.
 
         References
         ----------
-        .. [Satopää2011] V. Satopää, J. Albrecht, D. Irwin, and B. Raghavan.
+        .. [1] V. Satopää, J. Albrecht, D. Irwin, and B. Raghavan.
             "Finding a “Kneedle” in a Haystack: Detecting Knee Points in
             System Behavior,. 31st International Conference on Distributed
             Computing Systems Workshops, pp. 166-171, June 2011.

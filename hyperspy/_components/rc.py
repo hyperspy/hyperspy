@@ -40,7 +40,7 @@ class RC(Expression):
 
 
     Parameters
-    -----------
+    ----------
     Vmax : float
         maximum voltage, asymptote of the function for
         :math:`\mathrm{lim}_{x\to\infty}`

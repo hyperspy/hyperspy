@@ -41,7 +41,7 @@ SPIKES_DIAGNOSIS_DOCSTRING = \
             Keyword arguments pass to
             :py:meth:`~hyperspy.api.signals.BaseSignal.get_histogram`
 
-        See also
+        See Also
         --------
         spikes_removal_tool
 
@@ -75,7 +75,7 @@ SPIKES_REMOVAL_TOOL_DOCSTRING =\
             Keyword arguments pass to
                 :py:meth:`~api.signals._signal_tools.SpikesRemoval`
 
-        See also
+        See Also
         --------
         :py:meth:`~hyperspy.api.signals.Signal1D.spikes_diagnosis`
 

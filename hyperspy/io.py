@@ -163,8 +163,8 @@ def _escape_square_brackets(text):
     str
         The escaped string
 
-    Example
-    -------
+    Examples
+    --------
     >>> # Say there are two files like this:
     >>> # /home/data/afile[1x1].txt
     >>> # /home/data/afile[1x2].txt

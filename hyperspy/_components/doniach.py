@@ -58,7 +58,7 @@ class Doniach(Expression):
     =============== ===========
 
     Parameters
-    -----------
+    ----------
     A : float
         Height
     sigma : float
@@ -71,7 +71,7 @@ class Doniach(Expression):
         Extra keyword arguments are passed to the
         :py:class:`~._components.expression.Expression` component.
 
-    Note
+    Notes
     -----
     This is an asymmetric lineshape, originially design for xps but generally
     useful for fitting peaks with low side tails

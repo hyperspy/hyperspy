@@ -2,17 +2,17 @@ Model
 -----
 
 Models
-""""""
+^^^^^^
 
 .. autosummary::
    :nosignatures:
 
    hyperspy.models.model1d
    hyperspy.models.model2d
-   hyperspy.model
+   hyperspy.model.BaseModel
 
 Component
-"""""""""
+^^^^^^^^^
 
 .. currentmodule:: hyperspy.component
 
@@ -22,7 +22,7 @@ Component
    Component
 
 Parameter
-"""""""""
+^^^^^^^^^
 
 .. currentmodule:: hyperspy.component
 

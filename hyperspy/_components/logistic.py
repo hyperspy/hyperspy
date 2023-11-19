@@ -39,7 +39,7 @@ class Logistic(Expression):
 
 
     Parameters
-    -----------
+    ----------
     a : Float
         The curve's maximum y-value,
         :math:`\mathrm{lim}_{x\to\infty}\left(y\right) = a`
