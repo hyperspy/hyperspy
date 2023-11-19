@@ -2,5 +2,10 @@
 BaseModel
 """""""""
 
-.. automodule:: hyperspy.model
+.. currentmodule:: hyperspy.model
+
+.. autoclass:: BaseModel
+   :members:
+
+.. autoclass:: ModelComponents
    :members:

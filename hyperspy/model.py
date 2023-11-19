@@ -189,19 +189,18 @@ class BaseModel(list):
     dimensions.
 
     Models of one-dimensional signals should use the
-    :py:class:`~hyperspy.models.model1d` and models of two-dimensional signals
-    should use the :class:`~hyperspy.models.model2d`.
+    :py:class:`~hyperspy.models.model1d.Model1D` and models of two-dimensional signals
+    should use the :class:`~hyperspy.models.model2d.Model2D`.
 
     A model is constructed as a linear combination of
-    :py:mod:`~hyperspy._components` that are added to the model using the
-    :py:meth:`~hyperspy.model.BaseModel.append` or
-    :py:meth:`~hyperspy.model.BaseModel.extend`. There are many predefined
-    components available in the in the :py:mod:`~hyperspy._components`
-    module. If needed, new components can be created easily using the code of
-    existing components as a template.
+    :py:mod:`~.api.model.components1D` or :py:mod:`~.api.model.components2D`
+    that are added to the model using the :py:meth:`append` or :py:meth:`extend`.
+    If needed, new components can be created easily created using using
+    :py:class:`~.api.model.components1D.Expression` code of existing components
+    as a template.
 
     Once defined, the model can be fitted to the data using :meth:`fit` or
-    :py:meth:`~hyperspy.model.BaseModel.multifit`. Once the optimizer reaches
+    :py:meth:`multifit`. Once the optimizer reaches
     the convergence criteria or the maximum number of iterations the new value
     of the component parameters are stored in the components.
 
@@ -210,7 +209,6 @@ class BaseModel(list):
 
     Attributes
     ----------
-
     signal : ~hyperspy.api.signals.BaseSignal
         It contains the data to fit.
     chisq : ~hyperspy.api.signals.BaseSignal
@@ -219,7 +217,7 @@ class BaseModel(list):
         Reduced chi-squared.
     dof : ~hyperspy.api.signals.BaseSignal
         Degrees of freedom of the signal (0 if not yet fit)
-    components : ~hyperspy.component.ModelComponents
+    components : ~hyperspy.model.ModelComponents
         The components of the model are attributes of this class. This provides
         a convenient way to access the model components when working in IPython
         as it enables tab completion.
@@ -232,29 +230,28 @@ class BaseModel(list):
         Append multiple components to the model.
     remove
         Remove component from model.
-    set_signal_range, remove_signal range, reset_signal_range, add signal_range.
+    set_signal_range_from_mask
         Customize the signal range to fit.
-    fit, multifit
-        Fit the model to the data at the current position or the
-        full dataset.
+    fit
+        Fit the model to the data at the current position.
+    multifit
+        Fit the model to the data at all navigation position.
     store_current_values
         Store the value of the parameters at the current position.
     fetch_stored_values
         fetch stored values of the parameters.
-    save_parameters2file, load_parameters_from_file
-        Save/load the parameter values to/from a file.
-    plot
-        Plot the model and the data.
-    enable_plot_components, disable_plot_components
-        Plot each component separately. (Use after `plot`.)
-    enable_adjust_position, disable_adjust_position
-        Enable/disable interactive adjustment of the position of the components
-        that have a well defined position. (Use after `plot`).
-    fit_component
-        Fit just the given component in the given signal range, that can be
-        set interactively.
-    set_parameters_not_free, set_parameters_free
-        Fit the `free` status of several components and parameters at once.
+    save_parameters2file
+        Save the parameter values to a file.
+    load_parameters_from_file
+        Load the parameter values from a file.
+    enable_plot_components
+        Plot each component separately. Use after :meth`plot`.
+    disable_plot_components
+        Disable plotting each component separately. Use after :meth`plot`.
+    set_parameters_not_free
+        Fix some parameters.
+    set_parameters_free
+        Free some parameters.
     set_parameters_value
         Set the value of a parameter in components in a model to a specified
         value.
@@ -272,7 +269,7 @@ class BaseModel(list):
         
     See Also
     --------
-    Model1D, Model2D
+    hyperspy.models.model1d.Model1D, hyperspy.models.model2d.Model2D
 
     """
 
@@ -462,7 +459,8 @@ class BaseModel(list):
 
         Parameters
         ----------
-        thing: `Component` instance.
+        thing : :class:`~.component.Component`
+            The component to add to the model.
         """
         if not isinstance(thing, Component):
             raise ValueError(
@@ -750,6 +748,10 @@ class BaseModel(list):
         self._model_line = None
 
     def enable_plot_components(self):
+        """
+        Enable interactive adjustment of the position of the components
+        that have a well defined position. Use after :meth:`plot`.
+        """
         if self._plot is None or self._plot_components:
             return
         for component in self.active_components:
@@ -757,6 +759,10 @@ class BaseModel(list):
         self._plot_components = True
 
     def disable_plot_components(self):
+        """
+        Disable interactive adjustment of the position of the components
+        that have a well defined position. Use after :meth:`plot`.
+        """
         if self._plot is None:
             return
         if self._plot_components:

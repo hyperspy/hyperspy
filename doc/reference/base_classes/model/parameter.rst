@@ -1,3 +1,6 @@
+Parameter
+"""""""""
+
 .. currentmodule:: hyperspy.component
 
 .. autoclass:: Parameter

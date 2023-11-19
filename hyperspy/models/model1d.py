@@ -136,25 +136,44 @@ class Model1D(BaseModel):
 
     """Model and data fitting for one dimensional signals.
 
-    A model is constructed as a linear combination of :mod:`components` that
-    are added to the model using :meth:`append` or :meth:`extend`. There
-    are many predifined components available in the in the :mod:`components`
-    module. If needed, new components can be created easily using the code of
-    existing components as a template.
+    A model is constructed as a linear combination of
+    :mod:`~.hyperspy.model.components1D` that are added to the model using
+    :meth:`append` or :meth:`extend`. There are many predifined components
+    available in the in the :mod:`~.hyperspy.model.components1D` module.
+    If needed, new components can be created easily using the
+    :py:class:`~.api.model.components1D.Expression` component or by
+    using the code of existing components as a template.
 
-    Once defined, the model can be fitted to the data using :meth:`fit` or
-    :meth:`multifit`. Once the optimizer reaches the convergence criteria or
-    the maximum number of iterations the new value of the component parameters
-    are stored in the components.
+    Once defined, the model can be fitted to the data using
+    :py:meth:`~hyperspy.model.BaseModel.fit` or
+    :py:meth:`~hyperspy.model.BaseModel.multifit`. Once the optimizer reaches
+    the convergence criteria or the maximum number of iterations the new value
+    of the component parameters are stored in the components.
 
     It is possible to access the components in the model by their name or by
     the index in the model. An example is given at the end of this docstring.
 
+    Methods
+    -------
+    fit_component
+        Fit just the given component in the given signal range, that can be
+        set interactively.
+    enable_adjust_position
+        Enable interactive adjustment of the position of the components
+        that have a well defined position. Use after :meth`plot`.
+    disable_adjust_position
+        Disable interactive adjustment of the position of the components
+        that have a well defined position. Use after :meth`plot`.
+    plot
+        Plot the model and the data.
+    set_signal_range, remove_signal range, reset_signal_range, add signal_range.
+        Customize the signal range to fit.
+        
     Examples
     --------
     In the following example we create a histogram from a normal distribution
     and fit it with a gaussian component. It demonstrates how to create
-    a model from a :class:`~._signals.signal1d.Signal1D` instance, add
+    a model from a :class:`~.api.signals.Signal1D` instance, add
     components to it, adjust the value of the parameters of the components,
     fit the model to the data and access the components in the model.
 
@@ -185,6 +204,10 @@ class Model1D(BaseModel):
     1.9779042300856682
     >>> m["Gaussian"].centre.value
     -0.072121936813224569
+
+    See Also
+    --------
+    hyperspy.model.BaseModel, hyperspy.models.model2d.Model2D
 
     """
 
@@ -247,7 +270,8 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        thing: `Component` instance.
+        thing : :class:`~.component.Component`
+            The component to add to the model.
         """
         cm = self.suspend_update if self._plot_active else dummy_context_manager
         with cm(update_on_resume=False):
@@ -259,6 +283,8 @@ class Model1D(BaseModel):
                                          self._adjust_position_all[1])
         if self._plot_active:
             self.signal._plot.signal_plot.update()
+
+    append.__doc__ = BaseModel.append.__doc__
 
     def remove(self, things):
         things = self._get_component(things)
@@ -404,8 +430,8 @@ class Model1D(BaseModel):
 
         See Also
         --------
-        add_signal_range, remove_signal_range,
-        reset_signal_range, set_signal_range_from_mask
+        add_signal_range, remove_signal_range, reset_signal_range,
+        hyperspy.model.BaseModel.set_signal_range_from_mask
         """
         indices = self._parse_signal_range_values(x1, x2)
         self._set_signal_range_in_pixels(*indices)
@@ -436,8 +462,8 @@ class Model1D(BaseModel):
 
         See Also
         --------
-        set_signal_range, add_signal_range,
-        reset_signal_range, set_signal_range_from_mask
+        set_signal_range, add_signal_range, reset_signal_range,
+        hyperspy.model.BaseModel.set_signal_range_from_mask
         """
         indices = self._parse_signal_range_values(x1, x2)
         self._remove_signal_range_in_pixels(*indices)
@@ -448,8 +474,7 @@ class Model1D(BaseModel):
 
         See Also
         --------
-        set_signal_range, add_signal_range, set_signal_range_from_mask,
-        remove_signal_range
+        set_signal_range, add_signal_range, remove_signal_range
         """
         self._set_signal_range_in_pixels()
 
@@ -479,8 +504,7 @@ class Model1D(BaseModel):
 
         See Also
         --------
-        set_signal_range, set_signal_range_from_mask,
-        reset_signal_range, remove_signal_range
+        set_signal_range, reset_signal_range, remove_signal_range
         """
         indices = self._parse_signal_range_values(x1, x2)
         self._add_signal_range_in_pixels(*indices)
@@ -618,7 +642,7 @@ class Model1D(BaseModel):
             If True, add a residual line (Signal - Model) to the signal figure.
         **kwargs : dict
             All extra keyword arguements are passed to
-            :py:meth:`~._signals.signal1d.Signal1D.plot`
+            :py:meth:`~.api.signals.Signal1D.plot`
         """
 
         # If new coordinates are assigned
@@ -725,19 +749,19 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        components : {None, list of components}
+        components : None, list of :class:`~.component.Component`
             If None, the position of all the active components of the
             model that has a well defined *x* position with a value
             in the axis range will get a position adjustment line.
             Otherwise the feature is added only to the given components.
             The components can be specified by name, index or themselves.
-        fix_them : bool
+        fix_them : bool, default True
             If True the position parameter of the components will be
             temporarily fixed until adjust position is disable.
             This can
             be useful to iteratively adjust the component positions and
             fit the model.
-        show_label : bool, optional
+        show_label : bool, default True
             If True, a label showing the component name is added to the
             plot next to the vertical line.
 
@@ -857,15 +881,15 @@ class Model1D(BaseModel):
 
         Parameters
         ----------
-        component : component instance
+        component : :class:~hyperspy.component.Component` 
             The component must be in the model, otherwise an exception
             is raised. The component can be specified by name, index or itself.
-        signal_range : {'interactive', (left_value, right_value), None}
-            If 'interactive' the signal range is selected using the span
-             selector on the spectrum plot. The signal range can also
-             be manually specified by passing a tuple of floats. If None
-             the current signal range is used. Note that ROIs can be used
-             in place of a tuple.
+        signal_range : str, tuple of None
+            If ``'interactive'`` the signal range is selected using the span
+            selector on the spectrum plot. The signal range can also
+            be manually specified by passing a tuple of floats (left, right).
+            If None the current signal range is used. Note that ROIs can be used
+            in place of a tuple.
         estimate_parameters : bool, default True
             If True will check if the component has an
             estimate_parameters function, and use it to estimate the

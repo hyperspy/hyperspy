@@ -71,7 +71,7 @@ class Model2D(BaseModel):
 
     See Also
     --------
-    BaseModel, Model1D
+    hyperspy.model.BaseModel, hyperspy.models.model1d.Model1D
 
     """
 
@@ -212,8 +212,8 @@ class Model2D(BaseModel):
 
         See Also
         --------
-        add_signal_range, remove_signal_range,
-        reset_signal_range, set_signal_range_from_mask
+        add_signal_range, remove_signal_range, reset_signal_range,
+        hyperspy.model.BaseModel.set_signal_range_from_mask
         """
         xaxis = self.axes_manager.signal_axes[0]
         yaxis = self.axes_manager.signal_axes[1]
@@ -254,8 +254,8 @@ class Model2D(BaseModel):
 
         See Also
         --------
-        set_signal_range, add_signal_range,
-        reset_signal_range, set_signal_range_from_mask
+        set_signal_range, add_signal_range, reset_signal_range,
+        hyperspy.model.BaseModel.set_signal_range_from_mask
         """
         xaxis = self.axes_manager.signal_axes[0]
         yaxis = self.axes_manager.signal_axes[1]
@@ -271,8 +271,8 @@ class Model2D(BaseModel):
 
         See Also
         --------
-        set_signal_range, add_signal_range, set_signal_range_from_mask,
-        remove_signal_range
+        set_signal_range, add_signal_range, remove_signal_range,
+        hyperspy.model.BaseModel.set_signal_range_from_mask
         """
         self._set_signal_range_in_pixels()
 
@@ -307,8 +307,8 @@ class Model2D(BaseModel):
 
         See Also
         --------
-        set_signal_range, set_signal_range_from_mask,
-        reset_signal_range, remove_signal_range
+        set_signal_range, reset_signal_range, remove_signal_range,
+        hyperspy.model.BaseModel.set_signal_range_from_mask
         """
         xaxis = self.axes_manager.signal_axes[0]
         yaxis = self.axes_manager.signal_axes[1]

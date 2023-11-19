@@ -342,6 +342,7 @@ autodoc_default_options = {
 }
 toc_object_entries_show_parents = "hide"
 numpydoc_show_class_members = False
+numpydoc_class_members_toctree = False
 
 # -- Sphinx-Gallery---------------
 
