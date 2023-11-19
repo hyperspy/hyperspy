@@ -2192,7 +2192,7 @@ class BaseModel(list):
             If list of components, will apply the functions to the components
             in the list.  The components can be specified by name, index or
             themselves.
-        parameter_name_list : None or list of strings, optional
+        parameter_name_list : None or list of str, optional
             If None, will set all the parameters to not free.
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to not free.
