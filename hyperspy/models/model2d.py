@@ -48,49 +48,26 @@ class Model2D(BaseModel):
     """Model and data fitting for two dimensional signals.
 
     A model is constructed as a linear combination of :mod:`components2D` that
-    are added to the model using :meth:`append` or :meth:`extend`. There
-    are many predifined components available in the in the :mod:`components2D`
-    module. If needed, new components can be created easily using the code of
-    existing components as a template.
+    are added to the model using :meth:`~hyperspy.model.BaseModel.append` or
+    :meth:`~hyperspy.model.BaseModel.extend`. There are predifined components 
+    available in the in the :mod:`components2D` module and custom component can
+    made using the :class:`~.api.model.components2D.Expression`. If needed,
+    new components can be created easily using the code of existing components
+    as a template.
 
-    Once defined, the model can be fitted to the data using :meth:`fit` or
-    :meth:`multifit`. Once the optimizer reaches the convergence criteria or
-    the maximum number of iterations the new value of the component parameters
-    are stored in the components.
+    Once defined, the model can be fitted to the data using
+    :meth:`~hyperspy.model.BaseModel.fit` or :meth:`~hyperspy.model.BaseModel.multifit`.
+    Once the optimizer reaches the convergence criteria or the maximum number
+    of iterations the new value of the component parameters are stored in the
+    components.
 
     It is possible to access the components in the model by their name or by
     the index in the model. An example is given at the end of this docstring.
 
-    Note that methods are not yet defined for plotting 2D models or using
-    gradient based optimisation methods - these will be added soon.
-
-    Attributes
-    ----------
-
-    signal : Signal2D
-        It contains the data to fit.
-    chisq : Signal
-        Chi-squared of the signal (or np.nan if not yet fit)
-    dof : Signal
-        Degrees of freedom of the signal (0 if not yet fit)
-    red_chisq : Signal
-        Reduced chi-squared.
-    components : `ModelComponents`
-        The components of the model are attributes of this class. This provides
-        a convinient way to access the model components when working in IPython
-        as it enables tab completion.
-
-    Methods
-    -------
-
-    append
-        Append one component to the model.
-    extend
-        Append multiple components to the model.
-    remove
-        Remove component from model.
-    fit, multifit
-        Fit the model to the data at the current position or the full dataset.
+    Notes
+    -----
+    Methods are not yet defined for plotting 2D models or using
+    gradient based optimisation methods.
 
     See Also
     --------

@@ -66,7 +66,7 @@ class GaussianHF(Expression):
         Location of the gaussian maximum, also the mean position.
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :py:class:`~.api.model.components1D.Expression` component.
 
     Attributes
     ----------
@@ -79,7 +79,7 @@ class GaussianHF(Expression):
 
     See Also
     --------
-    ~._components.gaussian.Gaussian
+    Gaussian
 
     """
 

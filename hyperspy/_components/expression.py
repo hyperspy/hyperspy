@@ -130,7 +130,7 @@ class Expression(Component):
     Notes
     -----
     As of version 1.4, Sympy's lambdify function, that the
-    :py:class:`~._components.expression.Expression`
+    :py:class:`~.api.model.components1D.Expression`
     components uses internally, does not support the differentiation of
     some expressions, for example those containing a "where" condition.
     In such cases, the gradients can be set manually if required.

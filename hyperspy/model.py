@@ -211,33 +211,42 @@ class BaseModel(list):
     Attributes
     ----------
 
-    signal : BaseSignal instance
+    signal : ~hyperspy.api.signals.BaseSignal
         It contains the data to fit.
-    chisq : :py:class:`~.signal.BaseSignal` of float
+    chisq : ~hyperspy.api.signals.BaseSignal
         Chi-squared of the signal (or np.nan if not yet fit)
-    dof : :py:class:`~.signal.BaseSignal` of int
+    red_chisq : ~hyperspy.api.signals.BaseSignal
+        Reduced chi-squared.
+    dof : ~hyperspy.api.signals.BaseSignal
         Degrees of freedom of the signal (0 if not yet fit)
-    components : :py:class:`~.model.ModelComponents` instance
+    components : ~hyperspy.component.ModelComponents
         The components of the model are attributes of this class. This provides
         a convenient way to access the model components when working in IPython
         as it enables tab completion.
 
     Methods
     -------
+    append
+        Append one component to the model.
+    extend
+        Append multiple components to the model.
+    remove
+        Remove component from model.
     set_signal_range, remove_signal range, reset_signal_range, add signal_range.
         Customize the signal range to fit.
     fit, multifit
         Fit the model to the data at the current position or the
         full dataset.
+    store_current_values
+        Store the value of the parameters at the current position.
+    fetch_stored_values
+        fetch stored values of the parameters.
     save_parameters2file, load_parameters_from_file
         Save/load the parameter values to/from a file.
     plot
         Plot the model and the data.
     enable_plot_components, disable_plot_components
         Plot each component separately. (Use after `plot`.)
-    set_current_values_to
-        Set the current value of all the parameters of the given component as
-        the value for all the dataset.
     enable_adjust_position, disable_adjust_position
         Enable/disable interactive adjustment of the position of the components
         that have a well defined position. (Use after `plot`).
@@ -246,7 +255,21 @@ class BaseModel(list):
         set interactively.
     set_parameters_not_free, set_parameters_free
         Fit the `free` status of several components and parameters at once.
-
+    set_parameters_value
+        Set the value of a parameter in components in a model to a specified
+        value.
+    as_signal
+        Generate a Signal1D instance (possible multidimensional)
+        from the model.
+    export_results
+        Save the value of the parameters in separate files.
+    plot_results
+        Plot the value of all parameters at all positions.
+    print_current_values
+        Print the value of the parameters at the current position.
+    as_dictionary
+        Exports the model to a dictionary that can be saved in a file.
+        
     See Also
     --------
     Model1D, Model2D

@@ -130,7 +130,7 @@ class SkewNormal(Expression):
         left skewed if shape<0.
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :py:class:`~.api.model.components1D.Expression` component.
 
     Notes
     -----

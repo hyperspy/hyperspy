@@ -52,7 +52,7 @@ class PowerLaw(Expression):
         Location parameter.
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~._components.expression.Expression` component.
+        :py:class:`~.api.model.components1D.Expression` component.
 
     Attributes
     ----------
