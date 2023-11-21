@@ -28,11 +28,12 @@ from hyperspy.misc.utils import slugify
 
 class TestModelJacobians:
     def setup_method(self, method):
-        s = hs.signals.Signal1D(np.zeros(1))
+        s = hs.signals.Signal1D(np.zeros(2))
         m = s.create_model()
         self.weights = 0.3
-        m.axis.axis = np.array([1, 0])
-        m._channel_switches = np.array([0, 1], dtype=bool)
+        m.axis.scale = -1
+        m.axis.offset = 1
+        m.channel_switches = np.array([0, 1], dtype=bool)
         m.append(hs.model.components1D.Gaussian())
         m[0].A.value = 1
         m[0].centre.value = 2.0
@@ -43,8 +44,8 @@ class TestModelJacobians:
         m = self.model
         jac = m._jacobian((1, 2, 3), None, weights=self.weights)
         np.testing.assert_array_almost_equal(
-            jac.squeeze(),
-            self.weights
+            jac.squeeze()[:, 1],
+            self.weights,
             * np.array([m[0].A.grad(0), m[0].sigma.grad(0) + m[0].centre.grad(0)]),
         )
         assert m[0].A.value == 1
