@@ -238,6 +238,7 @@ class Model1D(BaseModel):
         self._suspend_update = False
         self._model_line = None
         self._residual_line = None
+        self._axis = None
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.events.indices_changed.connect(self._on_navigating, [])
         self._channel_switches = np.array([True] * len(self.axis.axis))
@@ -268,6 +269,29 @@ class Model1D(BaseModel):
             "chisq.data": "inav",
             "dof.data": "inav",
         }
+
+    @property
+    def signal(self):
+        return self._signal
+
+    @signal.setter
+    def signal(self, value):
+        from hyperspy._signals.signal1d import Signal1D
+        if isinstance(value, Signal1D):
+            self._signal = value
+        else:
+            raise WrongObjectError(str(type(value)), 'Signal1D')
+
+    @property
+    def axis(self):
+        return self._axis
+
+    @axis.setter
+    def axis(self, value):
+        if value._is_increasing_order is None:
+            raise ValueError(
+                "The axes must be DataAxis with an increasing or decreasing order")
+        self._axis = value
 
     def append(self, thing):
         """

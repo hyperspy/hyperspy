@@ -20,7 +20,11 @@ import copy
 
 import numpy as np
 
-from hyperspy.model import BaseModel, ModelComponents
+from hyperspy._signals.signal2d import Signal2D
+from hyperspy.exceptions import WrongObjectError
+from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
+from hyperspy.axes import DataAxis
+
 
 _SIGNAL_RANGE_VALUES = """x1, x2 : None or float
             Start and end of the range in the first axis (horizontal)
@@ -91,6 +95,11 @@ class Model2D(BaseModel):
         self._plot_components = False
         self._suspend_update = False
         self._model_line = None
+        if (self.signal.axes_manager.signal_axes[0]._is_increasing_order is None or
+            self.signal.axes_manager.signal_axes[1]._is_increasing_order is None):
+            raise ValueError(
+                "The axes must be DataAxis with an increasing or decreasing order")
+
         self.xaxis, self.yaxis = np.meshgrid(
             self.axes_manager.signal_axes[0].axis, self.axes_manager.signal_axes[1].axis
         )
