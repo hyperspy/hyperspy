@@ -267,7 +267,7 @@ Loading example data and data from online databases
 ---------------------------------------------------
 
 HyperSpy is distributed with some example data that can be found in
-:py:mod:`~api.datasets`. The following example plots one of the example
+:py:mod:`~.api.data`. The following example plots one of the example
 signals:
 
 .. code-block:: python
@@ -275,28 +275,15 @@ signals:
     >>> hs.datasets.two_gaussians().plot()
 
 .. versionadded:: 1.4
-    :py:mod:`~.datasets.artificial_data`
+    :py:mod:`~.api.data` (formelly :mod:`~.api.datasets.artificial_data`)
 
 There are also artificial datasets, which are made to resemble real
 experimental data.
 
 .. code-block:: python
 
-    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> s = hs.data.atomic_resolution_image()
     >>> s.plot()
-
-.. _eelsdb-label:
-
-The :py:func:`~.misc.eels.eelsdb.eelsdb` function in `hs.datasets` can
-directly load spectra from `The EELS Database <https://eelsdb.eu>`_. For
-example, the following loads all the boron trioxide spectra currently
-available in the database:
-
-.. code-block:: python
-
-    >>> hs.datasets.eelsdb(formula="B2O3")
-    [<EELSSpectrum, title: Boron oxide, dimensions: (|520)>,
-     <EELSSpectrum, title: Boron oxide, dimensions: (|520)>]
 
 .. _saving_files:
 
