@@ -186,6 +186,13 @@ class TestModel1D:
         m = s.create_model()
         self.model = m
 
+    def test_fail_to_set_axis(self):
+        s = hs.signals.Signal1D(np.empty(4))
+        s.axes_manager[0].convert_to_non_uniform_axis()
+        s.axes_manager[0].axis = [1, 2, 0, 3]
+        with pytest.raises(ValueError):
+            s.create_model()
+
     def test_errfunc(self):
         m = self.model
         m._model_function = mock.MagicMock()
