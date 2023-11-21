@@ -119,7 +119,7 @@ can be found in :ref:`signal.transpose`.
 Signal subclasses
 ^^^^^^^^^^^^^^^^^
 
-The :py:mod:`~.api.signals` module, which contains all available signal subclasses,
+The :mod:`hyperspy.api.signals` module, which contains all available signal subclasses,
 is imported in the user namespace when loading HyperSpy. In the following
 example we create a Signal2D instance from a 2D numpy array:
 

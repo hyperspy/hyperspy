@@ -190,9 +190,8 @@ The value of a parameter can be coupled to the value of another by setting the
             centre |  True |        0.0 |       None |       None |       None
 
 .. deprecated:: 1.2.0
-    Setting the :py:attr:`~.component.Parameter.twin_function` and
-    :py:attr:`~.component.Parameter.twin_inverse_function` attributes. Set the
-    :py:attr:`~.component.Parameter.twin_function_expr` and
+    Setting the ``twin_function`` and ``twin_inverse_function`` attributes,
+    set the :py:attr:`~.component.Parameter.twin_function_expr` and
     :py:attr:`~.component.Parameter.twin_inverse_function_expr` attributes
     instead.
 

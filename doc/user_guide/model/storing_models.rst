@@ -23,10 +23,10 @@ b, ..., z, aa, ab, ..., az, ba, ...).
 
 .. WARNING::
 
-    Modifying a signal in-place (e.g. :py:meth:`~.signal.BaseSignal.map`,
-    :py:meth:`~.signal.BaseSignal.crop`,
-    :py:meth:`~._signals.signal1d.Signal1D.align1D`,
-    :py:meth:`~._signals.signal2d.Signal2D.align2D` and similar)
+    Modifying a signal in-place (e.g. :py:meth:`~.api.signals.BaseSignal.map`,
+    :py:meth:`~.api.signals.BaseSignal.crop`,
+    :py:meth:`~.api.signals.Signal1D.align1D`,
+    :py:meth:`~.api.signals.Signal2D.align2D` and similar)
     will invalidate all stored models. This is done intentionally.
 
 Current stored models can be listed by calling ``s.models``:

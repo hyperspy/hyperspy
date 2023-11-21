@@ -52,15 +52,32 @@ class ScalableFixedPattern(Component):
 
     Parameters
     ----------
-
-    yscale, xscale, shift : float
+    yscale : float
+        The scaling factor in y (intensity axis).
+    xscale : float
+        The scaling factor in x.
+    shift : float
+        The shift of the component
     interpolate : bool
         If False no interpolation is performed and only a y-scaled spectrum is
         returned.
 
+    Attributes
+    ----------
+    yscale : :class:`~.component.Parameter`
+        The scaling factor in y (intensity axis).
+    xscale : :class:`~.component.Parameter`
+        The scaling factor in x.
+    shift : :class:`~.component.Parameter`
+        The shift of the component
+    interpolate : bool
+        If False no interpolation is performed and only a y-scaled spectrum is
+        returned.
+    
     Methods
     -------
-    prepare_interpolator : method to fine tune the interpolation
+    prepare_interpolator
+        method to fine tune the interpolation
 
     """
 

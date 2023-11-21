@@ -13,3 +13,4 @@ which are used by other classes, are documented here.
    machine_learning
    model/index
    signal/index
+   roi

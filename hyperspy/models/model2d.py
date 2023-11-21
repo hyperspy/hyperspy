@@ -74,9 +74,10 @@ class Model2D(BaseModel):
     hyperspy.model.BaseModel, hyperspy.models.model1d.Model1D
 
     """
+    _signal_dimension = 2
 
     def __init__(self, signal2D, dictionary=None):
-        super(Model2D, self).__init__()
+        super().__init__()
         self.signal = signal2D
         self.axes_manager = self.signal.axes_manager
         self._plot = None
@@ -93,21 +94,19 @@ class Model2D(BaseModel):
         self._channel_switches = np.ones(
             self.axes_manager._signal_shape_in_array, dtype=bool
             )
-        self.chisq = signal2D._get_navigation_signal()
+        self._chisq = signal2D._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
         self.chisq.metadata.General.title = (
             self.signal.metadata.General.title + ' chi-squared')
-        self.dof = self.chisq._deepcopy_with_new_data(
+        self._dof = self.chisq._deepcopy_with_new_data(
             np.zeros_like(self.chisq.data, dtype='int'))
         self.dof.metadata.General.title = (
             self.signal.metadata.General.title + ' degrees of freedom')
         self.free_parameters_boundaries = None
-        self.components = ModelComponents(self)
+        self._components = ModelComponents(self)
         if dictionary is not None:
             self._load_dictionary(dictionary)
-        self.inav = ModelSpecialSlicers(self, True)
-        self.isig = ModelSpecialSlicers(self, False)
         self._whitelist = {
             '_channel_switches': None,
             'free_parameters_boundaries': None,
@@ -117,17 +116,6 @@ class Model2D(BaseModel):
             '_channel_switches': 'isig',
             'chisq.data': 'inav',
             'dof.data': 'inav'}
-
-    @property
-    def signal(self):
-        return self._signal
-
-    @signal.setter
-    def signal(self, value):
-        if isinstance(value, Signal2D):
-            self._signal = value
-        else:
-            raise WrongObjectError(str(type(value)), 'Signal2D')
 
     def _get_current_data(self, onlyactive=False,
                  component_list=None, binned=None):

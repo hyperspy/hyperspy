@@ -2197,10 +2197,29 @@ class BaseSignal(FancySlicing,
                  MVATools,):
 
     """
+    
+    Attributes
+    ----------
+    ragged : bool
+        Whether the signal is ragged or not.
+    isig
+        Signal indexer/slicer.
+    inav
+        Navigation indexer/slicer.
+    metadata : hyperspy.misc.utils.DictionaryTreeBrowser
+        The metadata of the signal structured as documented in
+        :ref:`metadata_structure`.
+    original_metadata : hyperspy.misc.utils.DictionaryTreeBrowser
+        All metadata read when loading the data.
+
+        
+    Examples
+    --------
     General signal created from a numpy or cupy array.
 
     >>> data = np.ones((10, 10))
     >>> s = hs.signals.BaseSignal(data)
+
     """
 
     _dtype = "real"
@@ -2501,6 +2520,7 @@ class BaseSignal(FancySlicing,
 
     @property
     def ragged(self):
+        """Whether the signal is ragged or not."""
         return self.axes_manager._ragged
 
     @ragged.setter

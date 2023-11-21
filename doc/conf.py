@@ -303,6 +303,7 @@ intersphinx_mapping = {
     'h5py': ('https://docs.h5py.org/en/stable', None),
     'holospy': ('https://holospy.readthedocs.io/en/latest', None),
     'IPython': ('https://ipython.readthedocs.io/en/stable', None),
+    'mdp':('https://mdp-toolkit.github.io/', None),
     'matplotlib': ('https://matplotlib.org/stable', None),
     'numpy': ('https://numpy.org/doc/stable', None),
     'python': ('https://docs.python.org/3', None),
@@ -341,7 +342,6 @@ autodoc_default_options = {
     'show-inheritance': True,
 }
 toc_object_entries_show_parents = "hide"
-numpydoc_show_class_members = False
 numpydoc_class_members_toctree = False
 
 # -- Sphinx-Gallery---------------

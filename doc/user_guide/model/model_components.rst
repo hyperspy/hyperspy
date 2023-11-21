@@ -32,27 +32,14 @@ The following general components are currently available for one-dimensional mod
 * :py:class:`~.api.model.components1D.Offset`
 * :py:class:`~.api.model.components1D.Polynomial`
 * :py:class:`~.api.model.components1D.PowerLaw`
-* :py:class:`~.api.model.components1D.SEE`
 * :py:class:`~.api.model.components1D.ScalableFixedPattern`
 * :py:class:`~.api.model.components1D.SkewNormal`
 * :py:class:`~.api.model.components1D.Voigt`
 * :py:class:`~.api.model.components1D.SplitVoigt`
-* :py:class:`~.api.model.components1D.VolumePlasmonDrude`
-
-The following components developed with specific signal types in mind are
-currently available for one-dimensional models:
-
-* :py:class:`~.api.model.components1D.EELSArctan`
-* :py:class:`~.api.model.components1D.DoublePowerLaw`
-* :py:class:`~.api.model.components1D.EELSCLEdge`
-* :py:class:`~.api.model.components1D.PESCoreLineShape`
-* :py:class:`~.api.model.components1D.PESVoigt`
-* :py:class:`~.api.model.components1D.SEE`
-* :py:class:`~.api.model.components1D.Vignetting`
 
 The following components are currently available for two-dimensional models:
 
-* :py:class:`~.api.model.components1D.Expression`
+* :py:class:`~.api.model.components2D.Expression`
 * :py:class:`~.api.model.components2D.Gaussian2D`
 
 However, this doesn't mean that you have to limit yourself to this meagre
@@ -177,13 +164,13 @@ following template to suit your needs:
 Define components from a fixed-pattern
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
+The :py:class:`~.api.model.components1D.ScalableFixedPattern`
 component enables fitting a pattern (in the form of a
-:py:class:`~._signals.signal1d.Signal1D` instance) to data by shifting
-(:py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.shift`)
+:py:class:`~.api.signals.Signal1D` instance) to data by shifting
+(:py:attr:`~.api.model.components1D.ScalableFixedPattern.shift`)
 and
 scaling it in the x and y directions using the
-:py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.xscale`
+:py:attr:`~.api.model.components1D.ScalableFixedPattern.xscale`
 and
-:py:attr:`~._components.scalable_fixed_pattern.ScalableFixedPattern.yscale`
+:py:attr:`~.api.model.components1D.ScalableFixedPattern.yscale`
 parameters respectively.

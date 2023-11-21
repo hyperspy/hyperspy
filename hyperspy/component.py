@@ -55,49 +55,24 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
 @add_gui_method(toolkey="hyperspy.Parameter")
 class Parameter(t.HasTraits):
 
-    """Model parameter
+    """The parameter of a component.
 
     Attributes
     ----------
+    bmin : float
+        The lower bound of the parameter.
+    bmax : float
+        The upper bound of the parameter.
+    ext_force_positive : bool
+    ext_bounded : bool
+    free : bool
+    map : numpy.ndarray
+    twin : None or Parameter
+    twin_function_expr : str
+    twin_inverse_function_expr : str
     value : float or array
         The value of the parameter for the current location. The value
         for other locations is stored in map.
-    bmin, bmax: float
-        Lower and upper bounds of the parameter value.
-    twin : {None, Parameter}
-        If it is not None, the value of the current parameter is
-        a function of the given Parameter. The function is by default
-        the identity function, but it can be defined by twin_function
-    twin_function_expr: str
-        Expression of the function that enables setting a functional
-        relationship between the parameter and its twin. If ``twin`` is not
-        ``None``, the parameter value is calculated as the output of calling the
-        twin function with the value of the twin parameter. The string is
-        parsed using sympy, so permitted values are any valid sympy expressions
-        of one variable. If the function is invertible the twin inverse function
-        is set automatically.
-    twin_inverse_function_expr : str
-        Expression of the function that enables setting the
-        value of the twin parameter. If ``twin`` is not
-        ``None``, its value is set to the output of calling the
-        twin inverse function with the value provided. The string is
-        parsed using sympy, so permitted values are any valid sympy expressions
-        of one variable.
-    ext_force_positive : bool
-        If True, the parameter value is set to be the absolute value
-        of the input value i.e. if we set Parameter.value = -3, the
-        value stored is 3 instead. This is useful to bound a value
-        to be positive in an optimization without actually using an
-        optimizer that supports bounding.
-    ext_bounded : bool
-        Similar to ext_force_positive, but in this case the bounds are
-        defined by bmin and bmax. It is a better idea to use
-        an optimizer that supports bounding though.
-
-    Methods
-    -------
-    connect, disconnect(function)
-        Call the functions connected when the value attribute changes.
 
     """
     __number_of_elements = 1
@@ -118,8 +93,8 @@ class Parameter(t.HasTraits):
     units = t.Str('')
     free = t.Property(t.CBool(True))
 
-    bmin = t.Property(NoneFloat(), label="Lower bounds")
-    bmax = t.Property(NoneFloat(), label="Upper bounds")
+    bmin = t.Property(NoneFloat(), label="Lower bound")
+    bmax = t.Property(NoneFloat(), label="Upper bound")
     _twin_function_expr = ""
     _twin_inverse_function_expr = ""
     _twin_function = None
@@ -211,6 +186,15 @@ class Parameter(t.HasTraits):
 
     @property
     def twin_function_expr(self):
+        """
+        Expression of the function that enables setting a functional
+        relationship between the parameter and its twin. If ``twin`` is not
+        ``None``, the parameter value is calculated as the output of calling the
+        twin function with the value of the twin parameter. The string is
+        parsed using sympy, so permitted values are any valid sympy expressions
+        of one variable. If the function is invertible the twin inverse function
+        is set automatically.
+        """
         return self._twin_function_expr
 
     @twin_function_expr.setter
@@ -248,6 +232,14 @@ class Parameter(t.HasTraits):
 
     @property
     def twin_inverse_function_expr(self):
+        """
+        Expression of the function that enables setting the
+        value of the twin parameter. If ``twin`` is not
+        ``None``, its value is set to the output of calling the
+        twin inverse function with the value provided. The string is
+        parsed using sympy, so permitted values are any valid sympy expressions
+        of one variable.
+        """
         if self.twin:
             return self._twin_inverse_function_expr
         else:
@@ -347,6 +339,7 @@ class Parameter(t.HasTraits):
 
     # Fix the parameter when coupled
     def _get_free(self):
+        """Whether the parameter is free or not."""
         if self.twin is None:
             return self._free
         else:
@@ -396,10 +389,17 @@ class Parameter(t.HasTraits):
             self.component._update_free_parameters()
 
     def _get_twin(self):
+        """
+        If it is not None, the value of the current parameter is
+        a function of the given Parameter. The function is by default
+        the identity function, but it can be defined by
+        :attr:`twin_function_expr`
+        """
         return self.__twin
     twin = property(_get_twin, _set_twin)
 
     def _get_bmin(self):
+        """The lower value of the bounds."""
         if self._number_of_elements == 1:
             return self._bounds[0]
         else:
@@ -416,6 +416,7 @@ class Parameter(t.HasTraits):
         self.trait_property_changed('bmin', old_value, arg)
 
     def _get_bmax(self):
+        """The higher value of the bounds."""
         if self._number_of_elements == 1:
             return self._bounds[1]
         else:
@@ -455,6 +456,11 @@ class Parameter(t.HasTraits):
 
     @property
     def ext_bounded(self):
+        """
+        Similar to :attr:``ext_force_positive``, but in this case the bounds
+        are defined by bmin and bmax. It is a better idea to use
+        an optimizer that supports bounding though.
+        """
         return self.__ext_bounded
 
     @ext_bounded.setter
@@ -466,6 +472,13 @@ class Parameter(t.HasTraits):
 
     @property
     def ext_force_positive(self):
+        """
+        If True, the parameter value is set to be the absolute value
+        of the input value i.e. if we set Parameter.value = -3, the
+        value stored is 3 instead. This is useful to bound a value
+        to be positive in an optimization without actually using an
+        optimizer that supports bounding.
+        """
         return self.__ext_force_positive
 
     @ext_force_positive.setter
@@ -718,14 +731,35 @@ class Parameter(t.HasTraits):
         return view
 
 
+COMPONENT_PARAMETERS_DOCSTRING = """Parameters
+        ----------
+        parameter_name_list : list
+            The list of parameter names.
+        linear_parameter_list : list, optional
+            The list of linear parameter. The default is None.
+        """
+
+
 @add_gui_method(toolkey="hyperspy.Component")
 class Component(t.HasTraits):
+    """
+    The component of a model.
+
+    Attributes
+    ----------
+    free_parameters : list
+    parameters : list
+    """
     __axes_manager = None
     # setting dtype for t.Property(t.Bool) causes serialization error with cloudpickle
     active = t.Property()
     name = t.Property()
 
     def __init__(self, parameter_name_list, linear_parameter_list=None, *args, **kwargs):
+        """
+        %s
+
+        """
         super().__init__(*args, **kwargs)
         self.events = Events()
         self.events.active_changed = Event("""
@@ -746,14 +780,14 @@ class Component(t.HasTraits):
                 support convolution.
 
             """, arguments=["obj", 'active'])
-        self.parameters = []
+        self._parameters = []
+        self._free_parameters = []
         self.init_parameters(parameter_name_list, linear_parameter_list)
         self._update_free_parameters()
         self.active = True
         self._active_array = None # only if active_is_multidimensional is True
         self.isbackground = False
         self.convolved = True
-        self.parameters = tuple(self.parameters)
         self._id_name = self.__class__.__name__
         self._id_version = '1.0'
         self._position = None
@@ -769,6 +803,8 @@ class Component(t.HasTraits):
         self._slicing_order = ('active', 'active_is_multidimensional',
                                '_active_array',)
 
+    __init__.__doc__ %= COMPONENT_PARAMETERS_DOCSTRING
+
     _name = ''
     _active_is_multidimensional = False
     _active = True
@@ -780,6 +816,16 @@ class Component(t.HasTraits):
         index.
         """
         return self._active_is_multidimensional
+
+    @property
+    def free_parameters(self):
+        """The list of free parameters of the component."""
+        return tuple(self._free_parameters)
+
+    @property
+    def parameters(self):
+        """The list of parameters of the component."""
+        return tuple(self._parameters)
 
     @active_is_multidimensional.setter
     def active_is_multidimensional(self, value):
@@ -819,9 +865,9 @@ class Component(t.HasTraits):
                         "Another component already has "
                         "the name " + str(value))
             self._name = value
-            setattr(self.model.components, slugify(
+            setattr(self.model._components, slugify(
                 value, valid_variable_name=True), self)
-            self.model.components.__delattr__(
+            self.model._components.__delattr__(
                 slugify(old_value, valid_variable_name=True))
         else:
             self._name = value
@@ -868,16 +914,7 @@ class Component(t.HasTraits):
         """
         Initialise the parameters of the component.
 
-        Parameters
-        ----------
-        parameter_name_list : list
-            The list of parameter names.
-        linear_parameter_list : list, optional
-            The list of linear parameter. The default is None.
-
-        Returns
-        -------
-        None.
+        %s
 
         """
         if linear_parameter_list is None:
@@ -885,7 +922,7 @@ class Component(t.HasTraits):
 
         for name in parameter_name_list:
             parameter = Parameter()
-            self.parameters.append(parameter)
+            self._parameters.append(parameter)
             parameter.name = name
             if name in linear_parameter_list:
                 parameter._linear = True
@@ -895,6 +932,8 @@ class Component(t.HasTraits):
                 parameter.grad = getattr(self, 'grad_' + name)
             parameter.component = self
             self.add_trait(name, t.Instance(Parameter))
+    
+    init_parameters.__doc__ %= COMPONENT_PARAMETERS_DOCSTRING
 
     def _get_long_description(self):
         if self.name:
@@ -917,10 +956,12 @@ class Component(t.HasTraits):
         return text
 
     def _update_free_parameters(self):
-        self.free_parameters = sorted([par for par in self.parameters if
-                                       par.free], key=lambda x: x.name)
-        self._nfree_param = sum([par._number_of_elements for par in
-                                 self.free_parameters])
+        self._free_parameters = sorted(
+            [par for par in self.parameters if par.free], key=lambda x: x.name
+            )
+        self._nfree_param = sum(
+            [par._number_of_elements for par in self._free_parameters]
+            )
 
     def update_number_parameters(self):
         i = 0

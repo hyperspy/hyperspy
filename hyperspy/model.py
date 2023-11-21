@@ -209,18 +209,11 @@ class BaseModel(list):
 
     Attributes
     ----------
-    signal : ~hyperspy.api.signals.BaseSignal
-        It contains the data to fit.
-    chisq : ~hyperspy.api.signals.BaseSignal
-        Chi-squared of the signal (or np.nan if not yet fit)
-    red_chisq : ~hyperspy.api.signals.BaseSignal
-        Reduced chi-squared.
-    dof : ~hyperspy.api.signals.BaseSignal
-        Degrees of freedom of the signal (0 if not yet fit)
-    components : ~hyperspy.model.ModelComponents
-        The components of the model are attributes of this class. This provides
-        a convenient way to access the model components when working in IPython
-        as it enables tab completion.
+    signal : :class:`~.api.signals.BaseSignal`
+    chisq : :class:`~.api.signals.BaseSignal`
+    red_chisq : :class:`~.api.signals.BaseSignal`
+    dof : :class:`~.api.signals.BaseSignal`
+    components : :class:`~.model.ModelComponents`
 
     Methods
     -------
@@ -272,6 +265,8 @@ class BaseModel(list):
     hyperspy.models.model1d.Model1D, hyperspy.models.model2d.Model2D
 
     """
+    # Defined in subclass
+    _signal_dimension = None
 
     def __init__(self):
 
@@ -294,6 +289,8 @@ class BaseModel(list):
         # multifit(). Setting it to None ensures that the existing behaviour
         # is preserved.
         self._binned = None
+        self.inav = ModelSpecialSlicers(self, True)
+        self.isig = ModelSpecialSlicers(self, False)
 
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
@@ -305,9 +302,42 @@ class BaseModel(list):
         raise NotImplementedError
 
     @property
+    def signal(self):
+        """The signal data to fit."""
+        return self._signal
+
+    @signal.setter
+    def signal(self, value):
+        if value.axes_manager.signal_dimension == self._signal_dimension:
+            self._signal = value
+        else:
+            raise ValueError(
+                f"The signal must have a signal dimension of {self._signal_dimension}."
+                )
+
+    @property
+    def chisq(self):
+        """Chi-squared of the signal (or np.nan if not yet fit)."""
+        return self._chisq
+
+    @property
+    def dof(self):
+        """Degrees of freedom of the signal (0 if not yet fit)"""
+        return self._dof
+
+    @property
+    def components(self):
+        """The components of the model are attributes of this class.
+        
+        This provides a convenient way to access the model components
+        when working in IPython as it enables tab completion.
+        """
+        return self._components
+
+    @property
     def convolved(self):
         raise NotImplementedError("This model does not support convolution.")
-    
+
     @convolved.setter
     def convolved(self, value):
         # This is for compatibility with model saved with HyperSpy < 2.0
@@ -487,7 +517,7 @@ class BaseModel(list):
         thing._create_arrays()
         list.append(self, thing)
         thing.model = self
-        setattr(self.components, slugify(name_string,
+        setattr(self._components, slugify(name_string,
                                          valid_variable_name=True), thing)
         if self._plot_active:
             self._connect_parameters2update_plot(components=[thing])
@@ -1290,7 +1320,8 @@ class BaseModel(list):
 
     @property
     def red_chisq(self):
-        """:py:class:`~.signal.BaseSignal`: Reduced chi-squared.
+        """The Reduced chi-squared.
+        
         Calculated from ``self.chisq`` and ``self.dof``.
         """
         tmp = self.chisq / (- self.dof + self._channel_switches.sum() - 1)

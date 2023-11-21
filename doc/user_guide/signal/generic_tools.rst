@@ -233,7 +233,7 @@ files by iterating over the signal instance:
 The data of the signal instance that is returned at each iteration is a view of
 the original data, a property that we can use to perform operations on the
 data.  For example, the following code rotates the image at each coordinate  by
-a given angle and uses the :py:func:`~.utils.stack` function in combination
+a given angle and uses the :py:func:`~.api.stack` function in combination
 with `list comprehensions
 <https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions>`_
 to make a horizontal "collage" of the image stack:
@@ -515,7 +515,7 @@ Interpolate to a different axis
 The :py:meth:`~.api.signals.BaseSignal.interpolate_on_axis` method makes it possible to
 exchange any existing axis of a signal with a new axis,
 regardless of the signals dimension or the axes types.
-This is achieved by interpolating the data using :py:meth:`scipy.interpolate.make_interp_spline`
+This is achieved by interpolating the data using :py:func:`scipy.interpolate.make_interp_spline`
 from the old axis to the new axis. Replacing multiple axes can be done iteratively.
 
 .. code-block:: python
@@ -584,7 +584,7 @@ Splitting and stacking
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Several objects can be stacked together over an existing axis or over a
-new axis using the :py:func:`~.utils.stack` function, if they share axis
+new axis using the :py:func:`~.api.stack` function, if they share axis
 with same dimension.
 
 .. code-block:: python
@@ -609,7 +609,7 @@ with same dimension.
 
 An object can be split into several objects
 with the :py:meth:`~.api.signals.BaseSignal.split` method. This function can be used
-to reverse the :py:func:`~.utils.stack` function:
+to reverse the :py:func:`~.api.stack` function:
 
 .. code-block:: python
 
@@ -661,7 +661,7 @@ in the example above by using the ``power_spectum`` argument:
     >>> fft.plot(True)
 
 Where ``power_spectum`` is set to ``True`` since it is the first argument of the
-:py:meth:`~._signals.complex_signal.ComplexSignal.plot` method for complex signal.
+:py:meth:`~.api.signals.ComplexSignal.plot` method for complex signal.
 When ``power_spectrum=True``, the plot will be displayed on a log scale by default.
 
 
@@ -846,7 +846,7 @@ signal axes >`` wrap a circle. The example below should help clarifying this.
     >>> s.transpose(navigation_axes=[1, 2, 3, 4, 5, 8], signal_axes=[0, 6, 7])
     <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
 
-A convenience functions :py:func:`~.utils.transpose` is available to operate on
+A convenience functions :py:func:`~.api.transpose` is available to operate on
 many signals at once, for example enabling plotting any-dimension signals
 trivially:
 

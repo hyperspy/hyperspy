@@ -131,7 +131,7 @@ order to increase responsiveness.
     signal range in functions taken a ``signal_range`` argument.
 
 
-All ROIs have a :meth:`gui` method that displays an user interface if
+All ROIs have a ``gui`` method that displays an user interface if
 a hyperspy GUI is installed (currently only works with the
 ``hyperspy_gui_ipywidgets`` GUI), enabling precise control of the ROI
 parameters:
@@ -203,14 +203,14 @@ ROIs can be used in place of slices when indexing. For example:
     >>> imc = im.isig[roi]
 
 .. versionadded:: 1.3
-    :meth:`gui` method.
+    ``gui`` method added, for example :meth:`~.api.roi.Point1DROI.gui`.
 
 .. versionadded:: 1.6
-    New :meth:`__getitem__` method for all ROIs.
+    New ``__getitem__`` method for all ROIs.
 
-In addition, all ROIs have a py:meth:`__getitem__` method that enables
+In addition, all ROIs have a ``__getitem__`` method that enables
 using them in place of tuples.
-For example, the method :py:meth:`~._signals.Signal2D.align2D` takes a ``roi``
+For example, the method :py:meth:`~.api.signals.Signal2D.align2D` takes a ``roi``
 argument with the left, right, top, bottom coordinates of the ROI.
 Handily, we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
 

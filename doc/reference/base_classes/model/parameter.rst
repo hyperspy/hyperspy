@@ -5,3 +5,7 @@ Parameter
 
 .. autoclass:: Parameter
    :members:
+
+   .. autoattribute:: value
+   .. autoattribute:: free
+   .. autoattribute:: map

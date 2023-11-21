@@ -210,10 +210,11 @@ class Model1D(BaseModel):
     hyperspy.model.BaseModel, hyperspy.models.model2d.Model2D
 
     """
+    _signal_dimension = 1
 
     def __init__(self, signal1D, dictionary=None):
         super().__init__()
-        self.signal = signal1D
+        self._signal = signal1D
         self.axes_manager = self.signal.axes_manager
         self._plot = None
         self._position_widgets = {}
@@ -226,21 +227,19 @@ class Model1D(BaseModel):
         self.axes_manager.events.indices_changed.connect(
             self._on_navigating, [])
         self._channel_switches = np.array([True] * len(self.axis.axis))
-        self.chisq = signal1D._get_navigation_signal()
+        self._chisq = signal1D._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
         self.chisq.metadata.General.title = (
             self.signal.metadata.General.title + ' chi-squared')
-        self.dof = self.chisq._deepcopy_with_new_data(
+        self._dof = self.chisq._deepcopy_with_new_data(
             np.zeros_like(self.chisq.data, dtype='int'))
         self.dof.metadata.General.title = (
             self.signal.metadata.General.title + ' degrees of freedom')
         self.free_parameters_boundaries = None
-        self.components = ModelComponents(self)
+        self._components = ModelComponents(self)
         if dictionary is not None:
             self._load_dictionary(dictionary)
-        self.inav = ModelSpecialSlicers(self, True)
-        self.isig = ModelSpecialSlicers(self, False)
         self._whitelist = {
             '_channel_switches': None,
             'free_parameters_boundaries': None,
@@ -250,19 +249,6 @@ class Model1D(BaseModel):
             '_channel_switches': 'isig',
             'chisq.data': 'inav',
             'dof.data': 'inav'}
-
-    @property
-    def signal(self):
-        return self._signal
-
-    @signal.setter
-    def signal(self, value):
-        from hyperspy._signals.signal1d import Signal1D
-        if isinstance(value, Signal1D):
-            self._signal = value
-        else:
-            raise WrongObjectError(str(type(value)), 'Signal1D')
-
 
     def append(self, thing):
         """

@@ -16,7 +16,7 @@ class contains general functionality that is available to all the subclasses.
 The subclasses provide functionality that is normally specific to a particular
 type of data, e.g. the :py:class:`~.api.signals.Signal1D` class provides
 common functionality to deal with one-dimensional (e.g. spectral) data and
-:py:class:`~.api.signals.EELSSpectrum` (which is a subclass of
+:py:class:`exspy.signals.EELSSpectrum` (which is a subclass of
 :py:class:`~.api.signals.Signal1D`) adds extra functionality to the
 :py:class:`~.api.signals.Signal1D` class for electron energy-loss
 spectroscopy data analysis.

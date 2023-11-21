@@ -255,13 +255,13 @@ _Internal_parameters
 ====================
 
 This node is "private" and therefore is not displayed when printing the
-:attr:`~.signal.BaseSignal.metadata` attribute.
+:attr:`~.api.signals.BaseSignal.metadata` attribute.
 
 Stacking_history
 ----------------
 
-Generated when using :py:meth:`~.misc.utils.stack`. Used by
-:py:meth:`~.signal.BaseSignal.split`, to retrieve the former list of signal.
+Generated when using :py:meth:`~.api.stack`. Used by
+:py:meth:`~.api.signals.BaseSignal.split`, to retrieve the former list of signal.
 
 step_sizes
     type: list of int
