@@ -772,7 +772,7 @@ same figure. It supports different styles, the default
 being "overlap".
 
 .. versionadded:: 1.5
-   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation
+   Add support for plotting :py:class:`~.api.signals.BaseSignal` with navigation
    dimension 1 and signal dimension 0.
 
 In the following example we create a list of 9 single spectra (gaussian

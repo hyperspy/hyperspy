@@ -25,9 +25,9 @@ data.
 
 Models can also be provided by external packages, but don't need to
 be registered. Instead, they are returned by the ``create_model`` method of
-the relevant :py:class:`hyperspy.signal.BaseSignal` subclass, see for example,
-the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.create_model` of the
-:py:class:`~._signals.eds_tem.EDSTEMSpectrum`.
+the relevant :py:class:`~api.signals.BaseSignal` subclass, see for example,
+the :py:meth:`exspy.EDSTEMSpectrum.create_model` of the
+:py:class:`exspy.signals.EDSTEMSpectrum`.
 
 It is good practice to add all packages that extend HyperSpy
 `to the list of known extensions
@@ -75,11 +75,11 @@ When and where to create a new ``BaseSignal`` subclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 HyperSpy provides most of its functionality through the different
-:py:class:`hyperspy.signal.BaseSignal`
+:py:class:`~api.signals.BaseSignal`
 subclasses. A HyperSpy "signal" is a class that contains data for analysis
 and functions to perform the analysis in the form of class methods. Functions
 that are useful for the analysis of most datasets are in the
-:py:class:`hyperspy.signal.BaseSignal` class. All other functions are in
+:py:class:`~api.signals.BaseSignal` class. All other functions are in
 specialized subclasses.
 
 The flowchart below can help you decide where to add
@@ -146,7 +146,7 @@ for your function, you should consider creating your own.
 Registering a new BaseSignal subclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To register a new :py:class:`hyperspy.signal.BaseSignal` subclass you must add it to the
+To register a new :py:class:`~api.signals.BaseSignal` subclass you must add it to the
 ``hyperspy_extension.yaml`` file, as in the following example:
 
 .. code-block:: yaml
@@ -181,7 +181,7 @@ match for each sort of data.
 
 The optional ``signal_type_aliases`` are used to determine the most appropriate
 signal subclass when using
-:py:meth:`hyperspy.signal.BaseSignal.set_signal_type`.
+:py:meth:`~.api.signals.BaseSignal.set_signal_type`.
 For example, if the ``signal_type`` ``Electron Energy Loss Spectroscopy``
 has an ``EELS`` alias, setting the signal type to ``EELS`` will correctly assign
 the signal subclass with ``Electron Energy Loss Spectroscopy`` signal type.

@@ -56,7 +56,7 @@ Setting axis properties
 -----------------------
 
 The axes are managed and stored by the :py:class:`~.axes.AxesManager` class
-that is stored in the :py:attr:`~.signal.BaseSignal.axes_manager` attribute of
+that is stored in the :py:attr:`~.api.signals.BaseSignal.axes_manager` attribute of
 the signal class. The individual axes can be accessed by indexing the
 :py:class:`~.axes.AxesManager`, e.g.:
 

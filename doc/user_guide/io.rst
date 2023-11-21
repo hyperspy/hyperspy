@@ -120,7 +120,7 @@ function will return a list of the corresponding signals:
 .. note::
 
     Note for python programmers: the data is stored in a numpy array
-    in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
+    in the :py:attr:`~.api.signals.BaseSignal.data` attribute, but you will not
     normally need to access it there.
 
 Metadata
@@ -128,19 +128,19 @@ Metadata
 
 Most scientific file formats store some extra information about the data and the
 conditions under which it was acquired (metadata). HyperSpy reads most of them and
-stores them in the :py:attr:`~.signal.BaseSignal.original_metadata` attribute.
+stores them in the :py:attr:`~.api.signals.BaseSignal.original_metadata` attribute.
 Also, depending on the file format, a part of this information will be mapped by
-HyperSpy to the :py:attr:`~.signal.BaseSignal.metadata` attribute, where it can
+HyperSpy to the :py:attr:`~.api.signals.BaseSignal.metadata` attribute, where it can
 for example be used by routines operating on the signal. See the :ref:`metadata structure
 <metadata_structure>` for details.
 
 .. note::
 
     Extensive metadata can slow down loading and processing, and
-    loading the :py:attr:`~.signal.BaseSignal.original_metadata` can be disabled
+    loading the :py:attr:`~.api.signals.BaseSignal.original_metadata` can be disabled
     using the ``load_original_metadata`` argument of the :py:func:`~.load`
     function. If this argument is set to `False`, the
-    :py:attr:`~.signal.BaseSignal.metadata` will still be populated.
+    :py:attr:`~.api.signals.BaseSignal.metadata` will still be populated.
 
 To print the content of the attributes simply use:
 
@@ -149,8 +149,8 @@ To print the content of the attributes simply use:
     >>> s.original_metadata
     >>> s.metadata
 
-The :py:attr:`~.signal.BaseSignal.original_metadata` and
-:py:attr:`~.signal.BaseSignal.metadata` can be exported to text files
+The :py:attr:`~.api.signals.BaseSignal.original_metadata` and
+:py:attr:`~.api.signals.BaseSignal.metadata` can be exported to text files
 using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
 .. code-block:: python
@@ -303,11 +303,11 @@ available in the database:
 Saving
 ======
 
-To save data to a file use the :py:meth:`~.signal.BaseSignal.save` method. The
+To save data to a file use the :py:meth:`~.api.signals.BaseSignal.save` method. The
 first argument is the filename and the format is defined by the filename
 extension. If the filename does not contain the extension, the default format
 (:external+rsciio:ref:`HSpy-HDF5 <hspy-format>`) is used. For example, if the :py:const:`s` variable
-contains the :py:class:`~.signal.BaseSignal` that you want to write to a file,
+contains the :py:class:`~.api.signals.BaseSignal` that you want to write to a file,
 the following will write the data to a file called :file:`spectrum.hspy` in the
 default :external+rsciio:ref:`HSpy-HDF5 <hspy-format>` format:
 

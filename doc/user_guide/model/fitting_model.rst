@@ -187,7 +187,7 @@ in most cases where there are a sufficient number of counts per pixel.
     fit using the inverse of the noise variance as the weights.
     In this scenario, to then disable weighting, you will need to **unset**
     the attribute. You can achieve this with
-    :meth:`~.signal.BaseSignal.set_noise_variance`:
+    :meth:`~.api.signals.BaseSignal.set_noise_variance`:
 
     .. code-block:: python
 
@@ -554,7 +554,7 @@ computed automatically when fitting a (weighted) least-squares model
 Visualizing the model
 ^^^^^^^^^^^^^^^^^^^^^
 
-To visualise the result use the :py:meth:`~.model.BaseModel.plot` method:
+To visualise the result use the :py:meth:`~.models.Model1D.plot` method:
 
 .. code-block:: python
 
@@ -563,7 +563,7 @@ To visualise the result use the :py:meth:`~.model.BaseModel.plot` method:
 By default only the full model line is displayed in the plot. In addition, it
 is possible to display the individual components by calling
 :py:meth:`~.model.BaseModel.enable_plot_components` or directly using
-:py:meth:`~.model.BaseModel.plot`:
+:py:meth:`~.models.Model1D.plot`:
 
 .. code-block:: python
 
@@ -572,11 +572,11 @@ is possible to display the individual components by calling
 To disable this feature call
 :py:meth:`~.model.BaseModel.disable_plot_components`.
 
-.. versionadded:: 1.4 ``Signal1D.plot`` keyword arguments
+.. versionadded:: 1.4 :meth:`~.api.signals.Signal1D.plot` keyword arguments
 
-All extra keyword argments are passes to the :meth:`plot` method of the
-corresponing signal object. For example, the following plots the model signal
-figure but not its navigator:
+All extra keyword argments are passes to the :meth:`~.api.signals.Signal1D.plot`
+method of the corresponing signal object. For example, the following plots the
+model signal figure but not its navigator:
 
 .. code-block:: python
 
@@ -597,8 +597,8 @@ Non-linear optimization often requires setting sensible starting parameters.
 This can be done by plotting the model and adjusting the parameters by hand.
 
 .. versionchanged:: 1.3
-    All :meth:`notebook_interaction` methods renamed to :meth:`gui`. The
-    :meth:`notebook_interaction` methods will be removed in 2.0
+    All ``notebook_interaction`` methods renamed to :meth:`~.model.BaseModel.gui`.
+    The ``notebook_interaction`` methods was removed in 2.0.
 
 .. _notebook_interaction-label:
 

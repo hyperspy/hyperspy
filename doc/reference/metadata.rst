@@ -4,8 +4,8 @@
 Metadata structure
 ******************
 
-The :class:`~.signal.BaseSignal` class stores metadata in the
-:attr:`~.signal.BaseSignal.metadata` attribute that has a tree structure. By
+The :class:`~.api.signals.BaseSignal` class stores metadata in the
+:attr:`~.api.signals.BaseSignal.metadata` attribute that has a tree structure. By
 convention, the node labels are capitalized and the leaves are not
 capitalized.
 
@@ -227,9 +227,9 @@ variance
     type: float or BaseSignal instance.
 
     The variance of the data. It can be a float when the noise is Gaussian or a
-    :class:`~.signal.BaseSignal` instance if the noise is heteroscedastic,
+    :class:`~.api.signals.BaseSignal` instance if the noise is heteroscedastic,
     in which case it must have the same dimensions as
-    :attr:`~.signal.BaseSignal.data`.
+    :attr:`~.api.signals.BaseSignal.data`.
 
 Variance_linear_model
 ^^^^^^^^^^^^^^^^^^^^^

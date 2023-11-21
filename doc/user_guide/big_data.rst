@@ -106,7 +106,7 @@ Casting signals as lazy
 
 To convert a regular HyperSpy signal to a lazy one such that any future
 operations are only performed lazily, use the
-:py:meth:`~.signal.BaseSignal.as_lazy` method:
+:py:meth:`~.api.signals.BaseSignal.as_lazy` method:
 
 .. code-block:: python
 
