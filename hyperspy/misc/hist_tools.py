@@ -134,7 +134,7 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
 
     %s
     **kwargs :
-        Passed to :py:func:`dask.histogram`
+        Passed to :py:func:`dask.array.histogram`
 
     Returns
     -------
@@ -146,7 +146,7 @@ def histogram_dask(a, bins="fd", max_num_bins=250, **kwargs):
 
     See Also
     --------
-    * :py:func:`dask.histogram`
+    * :py:func:`dask.array.histogram`
     * :py:func:`numpy.histogram`
 
     """

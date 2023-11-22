@@ -320,7 +320,8 @@ nitpicky = True
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-nitpick_ignore
 nitpick_ignore_regex = (
 
-
+    ('py:obj', 'DataDimensionError'), # Need to add to API reference?
+    ('py:attr', 'api.signals.BaseSignal.learning_results'), # Need to make it a property
     ('py:attr', 'api.signals.BaseSignal.axes_manager'), # Need to make it a property
     ('py:attr', 'hyperspy._signals.lazy.LazySignal.navigator'), # Need to make it a property
     ('py:attr', 'axes.BaseDataAxis.is_binned.*'), # Skip for now
@@ -346,6 +347,12 @@ numpydoc_xref_ignore = {
     "from_elements",
     "all_alpha",
     "subclass",
+    "dask",
+    "scheduler",
+    "matplotlib",
+    "color",
+    "hyperspy",
+    "widget",
 }
 
 # if Version(numpydoc.__version__) >= Version("1.6.0rc0"):

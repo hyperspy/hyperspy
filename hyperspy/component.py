@@ -112,8 +112,8 @@ class Parameter(t.HasTraits):
             The event triggers after the internal state of the `Parameter` has
             been updated.
 
-            Arguments
-            ---------
+            Parameters
+            ----------
             obj : Parameter
                 The `Parameter` that the event belongs to
             value : {float | array}
@@ -768,8 +768,8 @@ class Component(t.HasTraits):
             The event triggers after the internal state of the `Component` has
             been updated.
 
-            Arguments
-            ---------
+            Parameters
+            ----------
             obj : Component
                 The `Component` that the event belongs to
             active : bool

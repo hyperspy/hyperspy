@@ -792,7 +792,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Parameters
         ----------
-        x0, y0, x1, y1 : scalars, optional
+        x0, y0, x1, y1 : float, int, optional
             If interactive is False, these must be set. If given in floats
             the input will be in scaled axis values. If given in integers,
             the input will be in non-scaled pixel values. Similar to how

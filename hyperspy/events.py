@@ -311,8 +311,8 @@ class Event:
         """
         Connects a function to the event.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         function : callable
             The function to call when the event triggers.
         kwargs : {tuple or list, dictionary, 'all', 'auto'}, default "all"

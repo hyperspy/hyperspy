@@ -26,7 +26,7 @@ ONE_AXIS_PARAMETER = \
             the axis in the Signal's `axes_manager` or the axis name."""
 
 MANY_AXIS_PARAMETER = \
-    """: :py:class:`int`, :py:class:`str`, :py:class:`~hyperspy.axes.DataAxis`, tuple (of DataAxis) or :py:data:`None`
+    """: :py:class:`int`, :py:class:`str`, :py:class:`~hyperspy.axes.DataAxis` or tuple
             Either one on its own, or many axes in a tuple can be passed. In
             both cases the axes can be passed directly, or specified using the
             index in `axes_manager` or the name of the axis. Any duplicates are
@@ -34,14 +34,14 @@ MANY_AXIS_PARAMETER = \
             axes (default)."""
 
 OUT_ARG = \
-    """out : :py:class:`~hyperspy.signal.BaseSignal` (or subclasses) or :py:data:`None`
+    """out : :py:class:`~hyperspy.api.signals.BaseSignal` (or subclass) or None
             If ``None``, a new Signal is created with the result of the
             operation and returned (default). If a Signal is passed,
             it is used to receive the output of the operation, and nothing is
             returned."""
 
 NAN_FUNC = \
-    """Identical to :py:meth:`~hyperspy.signal.BaseSignal.{0}`, except ignores
+    """Identical to :py:meth:`~hyperspy.api.signals.BaseSignal.{0}`, except ignores
     missing (NaN) values. See that method's documentation for details.
     """
 
@@ -56,7 +56,7 @@ OPTIMIZE_ARG = \
             the chunks are optimised for the new axes configuration."""
 
 RECHUNK_ARG = \
-    """rechunk: bool
+    """rechunk : bool
            Only has effect when operating on lazy signal. Default ``False``,
            which means the chunking structure will be retained. If ``True``,
            the data may be automatically rechunked before performing this
@@ -89,20 +89,20 @@ CLUSTER_SIGNALS_ARG = \
            to the centroid."""
 
 HISTOGRAM_BIN_ARGS = \
-    """bins : int or sequence of scalars or str, default "fd"
-           If `bins` is an int, it defines the number of equal-width
-           bins in the given range. If `bins` is a
+    """bins : int or sequence of float or str, default "fd"
+           If ``bins`` is an int, it defines the number of equal-width
+           bins in the given range. If ``bins`` is a
            sequence, it defines the bin edges, including the rightmost
            edge, allowing for non-uniform bin widths.
 
-           If `bins` is a string from the list below, will use
+           If ``bins`` is a string from the list below, will use
            the method chosen to calculate the optimal bin width and
-           consequently the number of bins (see `Notes` for more detail on
+           consequently the number of bins (see Notes for more detail on
            the estimators) from the data that falls within the requested
            range. While the bin width will be optimal for the actual data
            in the range, the number of bins will be computed to fill the
            entire range, including the empty portions. For visualisation,
-           using the 'auto' option is suggested. Weighted data is not
+           using the ``'auto'`` option is suggested. Weighted data is not
            supported for automated bin size selection.
 
            'auto'
@@ -155,12 +155,12 @@ HISTOGRAM_MAX_BIN_ARGS = \
            being raised by :py:func:`numpy.histogram`."""
 
 SIGNAL_MASK_ARG = \
-    """signal_mask: bool array
+    """signal_mask : numpy.ndarray of bool
             Restricts the operation to the signal locations not marked
             as True (masked)."""
 
 NAVIGATION_MASK_ARG = \
-    """navigation_mask: bool array
+    """navigation_mask : numpy.ndarray of bool
             Restricts the operation to the navigation locations not marked
             as True (masked)."""
 

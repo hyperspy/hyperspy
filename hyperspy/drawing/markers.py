@@ -256,8 +256,8 @@ class Markers:
             """
             Event triggered when a marker is closed.
 
-            Arguments
-            ---------
+            Parameters
+            ----------
             marker : Marker
                 The marker that was closed.
             """,

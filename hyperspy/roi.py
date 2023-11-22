@@ -65,15 +65,16 @@ not_set_error_msg = (
 
 
 PARSE_AXES_DOCSTRING = \
-"""axes : specification of axes to use, default is None
+"""axes : None, str, int or :py:class:`hyperspy.axes.DataAxis`, default is None
             The axes argument specifies which axes the ROI will be applied on.
             The axes in the collection can be either of the following:
 
             * Anything that can index the provided ``axes_manager``.
             * a tuple or list of:
 
-                - DataAxis
-                - anything that can index the provided ``axes_manager``
+              - :py:class:`hyperspy.axes.DataAxis`
+              - anything that can index the provided ``axes_manager``
+    
             * ``None``, it will check whether the widget can be added to the
               navigator, i.e. if dimensionality matches, and use it if
               possible, otherwise it will try the signal space. If none of the
@@ -100,10 +101,10 @@ class BaseROI(t.HasTraits):
             What constitues a change varies from ROI to ROI, but in general it
             should correspond to the region selected by the ROI being changed.
 
-            Arguments:
+            Parameters
             ----------
-                roi :
-                    The ROI that was changed.
+            roi :
+                The ROI that was changed.
             """, arguments=['roi'])
         self.signal_map = dict()
 
@@ -277,10 +278,10 @@ class BaseROI(t.HasTraits):
 
 def _get_mpl_ax(plot, axes):
     """
-    Returns MPL Axes that contains the `axes`.
+    Returns matplotlib Axes that contains the hyperspy axis.
 
     The space of the first DataAxis in axes will be used to determine which
-    plot's matplotlib Axes to return.
+    plot's :py:class:`matplotlib.axes.Axes` to return.
 
     Parameters
     ----------
@@ -379,36 +380,35 @@ class BaseInteractiveROI(BaseROI):
     def interactive(self, signal, navigation_signal="same", out=None,
                     color="green", snap=True, **kwargs):
         """Creates an interactively sliced Signal (sliced by this ROI) via
-        :py:func:`~.interactive.interactive`.
+        :py:func:`~hyperspy.api.interactive`.
 
         Parameters
         ----------
-        signal : Signal
+        signal : hyperspy.api.signals.BaseSignal (or subclass)
             The source signal to slice.
-        navigation_signal : Signal, None or "same" (default)
+        navigation_signal : hyperspy.api.signals.BaseSignal (or subclass), None or "same" (default)
             The signal the ROI will be added to, for navigation purposes
             only. Only the source signal will be sliced.
             If not None, it will automatically create a widget on
-            navigation_signal. Passing "same" is identical to passing the
-            same signal to 'signal' and 'navigation_signal', but is less
+            navigation_signal. Passing ``"same"`` is identical to passing the
+            same signal to ``"signal"`` and ``"navigation_signal"``, but is less
             ambigous, and allows "same" to be the default value.
-        out : Signal
+        out : hyperspy.api.signals.BaseSignal (or subclass)
             If not None, it will use 'out' as the output instead of
             returning a new Signal.
-        color : Matplotlib color specifier (default: 'green')
+        color : matplotlib color, default: ``'green'``
             The color for the widget. Any format that matplotlib uses should be
             ok. This will not change the color for any widget passed with the
             'widget' argument.
-        snap : bool, optional
-            If True, the ROI will be snapped to the axes values. Default is
-            True.
+        snap : bool, default True
+            If True, the ROI will be snapped to the axes values.
         **kwargs
-            All kwargs are passed to the roi __call__ method which is called
-            interactively on any roi parameter change.
+            All kwargs are passed to the roi ``__call__`` method which is
+            called interactively on any roi parameter change.
 
         Returns
         -------
-        :py:class:`~hyperspy.signal.BaseSignal` or one of its subclass
+        :py:class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             Signal updated with the current ROI selection
             when the ROI is changed.
 
@@ -468,27 +468,27 @@ class BaseInteractiveROI(BaseROI):
 
         Parameters
         ----------
-        signal : Signal
+        signal : hyperspy.api.signals.BaseSignal (or subclass)
             The signal to which the widget is added. This is used to determine
             which plot to add the widget to, and it supplies the axes_manager
             for the widget.
         %s
-        widget : Widget or None (default)
+        widget : hyperspy widget or None, default None
             If specified, this is the widget that will be added. If None, the
-            default widget will be used, as given by _get_widget_type().
-        color : Matplotlib color specifier (default: 'green')
+            default widget will be used.
+        color : matplotlib color, default ``'green'``
             The color for the widget. Any format that matplotlib uses should be
             ok. This will not change the color for any widget passed with the
-            'widget' argument.
-        snap : bool, optional
-            If True, the ROI will be snapped to the axes values. Default is
-            True.
-        kwargs:
+            ``'widget'`` argument.
+        snap : bool, default True
+            If True, the ROI will be snapped to the axes values.
+        **kwargs : dict 
             All keyword arguments are passed to the widget constructor.
 
         Returns
         -------
-        The widget of the ROI.
+        hyperspy widget
+            The widget of the ROI.
         """
 
         axes = self._parse_axes(axes, signal.axes_manager,)
@@ -555,22 +555,19 @@ class BaseInteractiveROI(BaseROI):
     def remove_widget(self, signal, render_figure=True):
         """
         Removing a widget from a signal consists of two tasks:
-            1. Disconnect the interactive operations associated with this ROI
-               and the specified signal `signal`.
-            2. Removing the widget from the plot.
+
+        1. Disconnect the interactive operations associated with this ROI
+           and the specified signal ``signal``.
+        2. Removing the widget from the plot.
 
         Parameters
         ----------
-        signal : BaseSignal
+        signal : hyperspy.api.signals.BaseSignal (or subclass)
             The signal from which the interactive operations will be
             disconnected.
-        render_figure : bool, optional
+        render_figure : bool, default True
             If False, the figure will not be rendered after removing the widget
-            in order to save redraw events. The default is True.
-
-        Returns
-        -------
-        None.
+            in order to save redraw events.
 
         """
         if signal in self.signal_map:
@@ -1410,8 +1407,8 @@ class Line2DROI(BaseInteractiveROI):
     def __call__(self, signal, out=None, axes=None, order=0):
         """Slice the signal according to the ROI, and return it.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         signal : Signal
             The signal to slice with the ROI.
         out : Signal, default = None

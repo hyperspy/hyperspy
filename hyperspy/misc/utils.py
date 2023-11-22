@@ -690,7 +690,7 @@ class DictionaryTreeBrowser:
         return_path : bool
             Only applies if ``full_path=False``. Default False. If True,
             returns an additional list of paths to the item(s) that match ``key``.
-        default : None or obj, default None
+        default : None or object, default None
             The value to return if the path or item does not exist.
 
         Examples

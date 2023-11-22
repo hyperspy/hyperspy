@@ -205,7 +205,7 @@ class LazySignal(BaseSignal):
             associated lazy signals inoperative.
         %s
         **kwargs : dict
-            Any other keyword arguments for :py:func:`dask.array.Array.compute`.
+            Any other keyword arguments for :py:meth:`dask.array.Array.compute`.
             For example `scheduler` or `num_workers`.
 
         Returns
@@ -445,7 +445,7 @@ class LazySignal(BaseSignal):
 
         Parameters
         ----------
-        axis: None, DataAxis or tuple of data axes
+        axis: None, :py:class:`~.axes.DataAxis` or tuple of data axes
             The data axis that must not be broken into chunks when `rechunk`
             is `True`. If None, it defaults to the current signal axes.
         rechunk: bool, "dask_auto"
@@ -675,7 +675,7 @@ class LazySignal(BaseSignal):
         if out:
             if out.data.shape == new_data.shape:
                 out.data = new_data
-                out.events.data_changed.trigger(obj=out)
+                out.events.data_changed.trigger(obj=out) 
             else:
                 raise ValueError(
                     "The output shape %s does not match  the shape of "
@@ -878,7 +878,7 @@ class LazySignal(BaseSignal):
         """Perform Incremental (Batch) decomposition on the data.
 
         The results are stored in the
-        :py:attr:`~hyperspy.api.signals.BaseSignal.learning_results`
+        :py:attr:`~.api.signals.BaseSignal.learning_results`
         attribute.
 
         Read more in the :ref:`User Guide <big_data.decomposition>`.
@@ -901,10 +901,10 @@ class LazySignal(BaseSignal):
             the number of dask chunks to pass to the decomposition model.
             More chunks require more memory, but should run faster. Will be
             increased to contain at least ``output_dimension`` signals.
-        navigation_mask : {BaseSignal, numpy array, dask array}
+        navigation_mask : :py:class:~.api.signals.BaseSignal, numpy.ndarray or dask.array.Array
             The navigation locations marked as True are not used in the
             decomposition. Not implemented for the 'SVD' algorithm.
-        signal_mask : {BaseSignal, numpy array, dask array}
+        signal_mask : :py:class:~.api.signals.BaseSignal, numpy.ndarray or dask.array.Array
             The signal locations marked as True are not used in the
             decomposition. Not implemented for the 'SVD' algorithm.
         reproject : bool, default True

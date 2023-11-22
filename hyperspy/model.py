@@ -277,8 +277,8 @@ class BaseModel(list):
             The event triggers after the fitting step was finished, and only of
             at least one of the parameters changed.
 
-            Arguments
-            ---------
+            Parameters
+            ----------
             obj : Model
                 The Model that the event belongs to
             """, arguments=['obj'])

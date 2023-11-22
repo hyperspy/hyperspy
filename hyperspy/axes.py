@@ -298,8 +298,8 @@ class BaseDataAxis(t.HasTraits):
             Triggers after the internal state of the `{}` has been
             updated.
 
-            Arguments:
-            ---------
+            Parameters
+            ----------
             obj : The {} that the event belongs to.
             index : The new index
             """.format(_name, _name, _name), arguments=["obj", 'index'])
@@ -309,8 +309,8 @@ class BaseDataAxis(t.HasTraits):
             Triggers after the internal state of the `{}` has been
             updated.
 
-            Arguments:
-            ---------
+            Parameters
+            ----------
             obj : The {} that the event belongs to.
             value : The new value
             """.format(_name, _name, _name), arguments=["obj", 'value'])
@@ -1466,7 +1466,7 @@ class AxesManager(t.HasTraits):
             Triggers after the internal state of the `AxesManager` has been
             updated.
 
-            Arguments:
+            Parameters
             ----------
             obj : The AxesManager that the event belongs to.
             """, arguments=['obj'])
@@ -1477,7 +1477,7 @@ class AxesManager(t.HasTraits):
             attributes changes on one or more of the axes:
                 `offset`, `size`, `scale`
 
-            Arguments:
+            Parameters
             ----------
             obj : The AxesManager that the event belongs to.
             """, arguments=['obj'])

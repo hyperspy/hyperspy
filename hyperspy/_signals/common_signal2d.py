@@ -31,7 +31,9 @@ class CommonSignal2D:
 
         See Also
         --------
-        as_signal1D, to_signal1D, hyperspy.api.transpose
+        hyperspy.api.signals.BaseSignal.as_signal1D,
+        hyperspy.api.signals.BaseSignal.transpose,
+        hyperspy.api.transpose
 
         """
         return self.as_signal1D(0 + 3j, optimize=optimize)
