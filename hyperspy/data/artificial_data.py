@@ -35,7 +35,7 @@ ADD_NOISE_DOCSTRING = \
 """add_noise : bool
         If True, add noise to the signal. See note to seed the noise to
         generate reproducible noise.
-    random_state : None or int or RandomState instance, default None
+    random_state : None, int or numpy.random.Generator, default None
         Random seed used to generate the data.
     """
 
@@ -46,7 +46,7 @@ def atomic_resolution_image():
 
     Returns
     -------
-    Signal2D
+    :class:`~.api.signals.Signal2D`
 
     Examples
     --------
@@ -81,10 +81,10 @@ def luminescence_signal(navigation_dimension=0,
 
     Parameters
     ----------
-    navigation_dimension: positive int.
+    navigation_dimension : int
         The navigation dimension(s) of the signal. 0 = single spectrum,
         1 = linescan, 2 = spectral map etc...
-    uniform: bool.
+    uniform : bool
         return uniform (wavelength) or non-uniform (energy) spectrum
     add_baseline : bool
         If true, adds a constant baseline to the spectrum. Conversion to
@@ -122,7 +122,7 @@ def luminescence_signal(navigation_dimension=0,
 
     Returns
     -------
-    Signal1D
+    :class:`~.api.signals.Signal1D`
     """
 
     #Initialisation of random number generator
@@ -207,7 +207,7 @@ def wave_image(angle=45, wavelength=10, shape=(256, 256), add_noise=True, random
 
     Returns
     -------
-    Signal2D
+    :class:`~.api.signals.Signal2D`
     """
 
     x = np.arange(0, shape[0], 1)

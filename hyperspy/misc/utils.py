@@ -1072,9 +1072,9 @@ def stack(
 
     Parameters
     ----------
-    signal_list : list of BaseSignal instances
+    signal_list : list of :class:`~.api.signals.BaseSignal`
         List of signals to stack.
-    axis : {None, int, str}
+    axis : None, int or str
         If None, the signals are stacked over a new axis. The data must
         have the same dimensions. Otherwise the signals are stacked over the
         axis given by its integer index or its name. The data must have the
@@ -1089,7 +1089,7 @@ def stack(
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
         until it finds a name that is not yet in use.
-    lazy : {bool, None}
+    lazy : bool or None
         Returns a LazySignal if True. If None, only returns lazy result if at
         least one is lazy.
     %s
@@ -1097,7 +1097,7 @@ def stack(
 
     Returns
     -------
-    signal : BaseSignal instance
+    :class:`~.api.signals.BaseSignal`
 
     Examples
     --------

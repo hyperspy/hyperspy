@@ -25,8 +25,8 @@ data.
 
 Models can also be provided by external packages, but don't need to
 be registered. Instead, they are returned by the ``create_model`` method of
-the relevant :py:class:`~api.signals.BaseSignal` subclass, see for example,
-the :py:meth:`exspy.EDSTEMSpectrum.create_model` of the
+the relevant :py:class:`~.api.signals.BaseSignal` subclass, see for example,
+the :py:meth:`exspy.signals.EDSTEMSpectrum.create_model` of the
 :py:class:`exspy.signals.EDSTEMSpectrum`.
 
 It is good practice to add all packages that extend HyperSpy
@@ -75,11 +75,11 @@ When and where to create a new ``BaseSignal`` subclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 HyperSpy provides most of its functionality through the different
-:py:class:`~api.signals.BaseSignal`
+:py:class:`~.api.signals.BaseSignal`
 subclasses. A HyperSpy "signal" is a class that contains data for analysis
 and functions to perform the analysis in the form of class methods. Functions
 that are useful for the analysis of most datasets are in the
-:py:class:`~api.signals.BaseSignal` class. All other functions are in
+:py:class:`~.api.signals.BaseSignal` class. All other functions are in
 specialized subclasses.
 
 The flowchart below can help you decide where to add
@@ -146,7 +146,7 @@ for your function, you should consider creating your own.
 Registering a new BaseSignal subclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To register a new :py:class:`~api.signals.BaseSignal` subclass you must add it to the
+To register a new :py:class:`~.api.signals.BaseSignal` subclass you must add it to the
 ``hyperspy_extension.yaml`` file, as in the following example:
 
 .. code-block:: yaml
@@ -335,7 +335,7 @@ Registering toolkeys
 ^^^^^^^^^^^^^^^^^^^^
 To register a new toolkey:
 
-1. Declare a new toolkey, *e. g.* by adding the :py:func:`~.ui_registry.add_gui_method`
+1. Declare a new toolkey, *e. g.* by adding the ``hyperspy.ui_registry.add_gui_method``
    decorator to the function you want to assign a widget to.
 2. Register a new toolkey that you have declared in your package by adding it to
    the ``hyperspy_extension.yaml`` file, as in the following example:

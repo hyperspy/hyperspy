@@ -40,7 +40,7 @@ All public packages, functions and classes are available in this module.
 
 Functions:
 
-    :py:func:`~.api_nogui.get_configuration_directory_path`
+    :py:func:`~.api.get_configuration_directory_path`
         Return the configuration directory path.
 
     :py:func:`~.api.interactive`
@@ -74,8 +74,7 @@ The :mod:`~.api` package contains the following submodules/packages:
         load data from supported file formats is more convenient to use the
         `load` function.
     :mod:`~.api.model`
-        Contains the :mod:`~utils.model` module with
-        components that can be used to create a model for curve fitting.
+        Components that can be used to create a model for curve fitting.
     :mod:`~.api.plot`
         Plotting functions that operate on multiple signals.
     :mod:`~.api.data`

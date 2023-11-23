@@ -1,7 +1,7 @@
 :mod:`hyperspy.api.model`
 -------------------------
 
-
+.. automodule:: hyperspy.api.model
 
 .. currentmodule:: hyperspy.api.model
 

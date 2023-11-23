@@ -91,19 +91,19 @@ class Expression(Component):
         applicable. It enables interative adjustment of the position of the
         component in the model. For 2D components, a tuple must be passed
         with the name of the two parameters e.g. `("x0", "y0")`.
-    module : {"numpy", "numexpr", "scipy", None}, default "numpy"
+    module : None or str {``"numpy"`` | ``"numexpr"`` | ``"scipy"``}, default "numpy"
         Module used to evaluate the function. numexpr is often faster but
         it supports fewer functions and requires installing numexpr.
         If None, the "numexpr" will be used if installed.
     add_rotation : bool, default False
         This is only relevant for 2D components. If `True` it automatically
         adds `rotation_angle` parameter.
-    rotation_center : {None, tuple}
+    rotation_center : None or tuple
         If None, the rotation center is the center i.e. (0, 0) if `position`
         is not defined, otherwise the center is the coordinates specified
         by `position`. Alternatively a tuple with the (x, y) coordinates
         of the center can be provided.
-    rename_pars : dictionary
+    rename_pars : dict
         The desired name of a parameter may sometimes coincide with e.g.
         the name of a scientific function, what prevents using it in the
         `expression`. `rename_parameters` is a dictionary to map the name
@@ -123,7 +123,7 @@ class Expression(Component):
         set all parameters, except for those who are specified in
         ``linear_parameter_list``.
 
-    **kwargs
+    **kwargs : dict
         Keyword arguments can be used to initialise the value of the
         parameters.
 

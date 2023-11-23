@@ -220,7 +220,7 @@ def load(filenames=None,
 
     Parameters
     ----------
-    filenames :  None, str, list(str), pathlib.Path, list(pathlib.Path)
+    filenames :  None, (list of) str or (list of) pathlib.Path, default None
         The filename to be loaded. If None, a window will open to select
         a file to load. If a valid filename is passed, that single
         file is loaded. If multiple file names are passed in
@@ -232,7 +232,7 @@ def load(filenames=None,
         by 'my_file' and have the '.msa' extension. Alternatively, regular
         expression type character classes can be used (e.g. ``[a-z]`` matches
         lowercase letters). See also the `escape_square_brackets` parameter.
-    signal_type : None, str, '', optional
+    signal_type : None, str, default None
         The acronym that identifies the signal type. May be any signal type
         provided by HyperSpy or by installed extensions as listed by
         `hs.print_known_signal_types()`. The value provided may determines the
@@ -242,13 +242,13 @@ def load(filenames=None,
         For example, for electron energy-loss spectroscopy use 'EELS'.
         If '' (empty string) the value is not read from the file and is
         considered undefined.
-    stack : bool, optional
+    stack : bool, default False
         Default False. If True and multiple filenames are passed, stacking all
         the data into a single object is attempted. All files must match
         in shape. If each file contains multiple (N) signals, N stacks will be
         created, with the requirement that each file contains the same number
         of signals.
-    stack_axis : None, int, str, optional
+    stack_axis : None, int or str, default None
         If None (default), the signals are stacked over a new axis. The data
         must have the same dimensions. Otherwise, the signals are stacked over
         the axis given by its integer index or its name. The data must have the
@@ -257,13 +257,12 @@ def load(filenames=None,
         The name of the new axis (default 'stack_element'), when `axis` is None.
         If an axis with this name already exists, it automatically appends '-i',
         where `i` are integers, until it finds a name that is not yet in use.
-    lazy : None, bool, optional
+    lazy : bool, default False
         Open the data lazily - i.e. without actually reading the data from the
-        disk until required. Allows opening arbitrary-sized datasets. The default
-        is False.
-    convert_units : bool, optional
+        disk until required. Allows opening arbitrary-sized datasets.
+    convert_units : bool, default False
         If True, convert the units using the `convert_to_units` method of
-        the `axes_manager`. If False (default), does nothing.
+        the `axes_manager`. If False, does nothing.
     escape_square_brackets : bool, default False
         If True, and ``filenames`` is a str containing square brackets,
         then square brackets are escaped before wildcard matching with
@@ -271,16 +270,16 @@ def load(filenames=None,
         character classes (e.g. ``[a-z]`` matches lowercase letters).
     %s
     %s Only used with ``stack=True``.
-    load_original_metadata : bool
+    load_original_metadata : bool, default True
         If ``True``, all metadata contained in the input file will be added
         to ``original_metadata``.
         This does not affect parsing the metadata to ``metadata``.
-    reader : None, str, custom file reader object, optional
+    reader : None, str, module, optional
         Specify the file reader to use when loading the file(s). If None
         (default), will use the file extension to infer the file type and
         appropriate reader. If str, will select the appropriate file reader
-        from the list of available readers in HyperSpy. If a custom reader
-        object, it should implement the ``file_reader`` function, which returns
+        from the list of available readers in HyperSpy. If module, it must
+        implement the ``file_reader`` function, which returns
         a dictionary containing the data and metadata for conversion to
         a HyperSpy signal.
     print_info: bool, optional
@@ -357,7 +356,7 @@ def load(filenames=None,
 
     Returns
     -------
-    Signal instance or list of signal instances
+    (list of) :class:`~.api.signals.BaseSignal` or subclass
 
     Examples
     --------

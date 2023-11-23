@@ -128,7 +128,7 @@ class Lorentzian(Expression):
 
         Parameters
         ----------
-        signal : Signal1D instance
+        signal : :class:`~.api.signals.Signal1D`
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.

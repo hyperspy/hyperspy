@@ -320,7 +320,6 @@ intersphinx_mapping = {
 nitpicky = True
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-nitpick_ignore
 nitpick_ignore_regex = (
-
     # No need to be added to the API: documented in subclass
     ('py:class', 'hyperspy.misc.slicing.FancySlicing'),
     ('py:class', 'hyperspy.learn.mva.MVA'),
@@ -372,6 +371,7 @@ numpydoc_xref_ignore = {
     "hyperspy",
     "widget",
     "strategy",
+    "module",
 }
 
 # if Version(numpydoc.__version__) >= Version("1.6.0rc0"):

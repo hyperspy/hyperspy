@@ -29,10 +29,10 @@ plot_signals
 plot_histograms
     Compute and plot the histograms of multiple signals in the same figure.
 
-The :mod:`~.api.plot` module contains the following submodules:
+The :mod:`hyperspy.api.plot` module contains the following submodules:
 
-:mod:`~.api.markers`
-    Markers that can be added to :py:class:`~.signal.BaseSignal` figure.
+:mod:`hyperspy.api.plot.markers`
+    Markers that can be added to :py:class:`~.api.signals.BaseSignal` figure.
 
 """
 
