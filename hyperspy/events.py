@@ -315,8 +315,8 @@ class Event:
         ----------
         function : callable
             The function to call when the event triggers.
-        kwargs : {tuple or list, dictionary, 'all', 'auto'}, default "all"
-            If "all", all the trigger keyword arguments are passed to the
+        kwargs : tuple or list, dict, str {``'all' | ``'auto'``}, default ``"all"``
+            If ``"all"``, all the trigger keyword arguments are passed to the
             function. If a list or tuple of strings, only those keyword
             arguments that are in the tuple or list are passed. If empty,
             no keyword argument is passed. If dictionary, the keyword arguments

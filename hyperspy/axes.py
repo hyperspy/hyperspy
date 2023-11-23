@@ -570,7 +570,7 @@ class BaseDataAxis(t.HasTraits):
         Parameters
         ----------
         value : float or numpy.ndarray
-        rounding : function
+        rounding : callable
             Handling of values intermediate between two axis points:
             If ``rounding=round``, use round-half-away-from-zero strategy to find closest value.
             If ``rounding=math.floor``, round to the next lower value.
@@ -684,16 +684,17 @@ class BaseDataAxis(t.HasTraits):
 
         Parameters
         ----------
-        axis : BaseDataAxis
-            The BaseDataAxis instance to use as a source for values.
-        attributes : iterable container of strings.
+        axis : :py:class:`~hyperspy.axes.BaseDataAxis`
+            The instance to use as a source for values.
+        attributes : iterable of str
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
             raised.
 
         Returns
         -------
-        A boolean indicating whether any changes were made.
+        bool
+            True if any changes were made, otherwise False.
 
         """
         any_changes = False
@@ -807,13 +808,10 @@ class DataAxis(BaseDataAxis):
     def update_axis(self):
         """Set the value of an axis. The axis values need to be ordered.
 
-        Parameters
-        ----------
-        axis : numpy array or list
-
         Raises
         ------
-        ValueError if the axis values are not ordered.
+        ValueError
+            If the axis values are not ordered.
 
         """
         if len(self.axis) > 1:
@@ -836,15 +834,17 @@ class DataAxis(BaseDataAxis):
 
         Parameters
         ----------
-        axis : DataAxis
-            The DataAxis instance to use as a source for values.
-        attributes : iterable container of strings.
+        axis : :py:class:`~hyperspy.axes.DataAxis`
+            The instance to use as a source for values.
+        attributes : iterable of str
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
-            raised. If `None`, `units` will be updated.
+            raised. If ``None``, ``units`` will be updated.
+        
         Returns
         -------
-        A boolean indicating whether any changes were made.
+        bool
+            True if any changes were made, otherwise False.
 
         """
         if attributes is None:
@@ -982,9 +982,9 @@ class FunctionalDataAxis(BaseDataAxis):
 
         Parameters
         ----------
-        axis : FunctionalDataAxis
-            The FunctionalDataAxis instance to use as a source for values.
-        attributes : iterable container of strings or None.
+        axis : :py:class:`~hyperspy.axes.FunctionalDataAxis`
+            The instance to use as a source for values.
+        attributes : iterable of str or None
             A list of the name of the attribute to update. If an attribute does not
             exist in either of the AxesManagers, an AttributeError will be
             raised. If None, the parameters of `expression` are updated.
@@ -1170,10 +1170,10 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
         Parameters
         ----------
-        value : floa, str, numpy.ndarray
+        value : float, str, numpy.ndarray
             If string, should either be a calibrated unit like "20nm"
             or a relative slicing like "rel0.2".
-        rounding : function
+        rounding : callable
             Handling of values intermediate between two axis points:
             If ``rounding=round``, use python's standard round-half-to-even strategy to find closest value.
             If ``rounding=math.floor``, round to the next lower value.
@@ -1249,9 +1249,9 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
         Parameters
         ----------
-        axis : UniformDataAxis
+        axis : :py:class:`~hyperspy.axes.UniformDataAxis`
             The UniformDataAxis instance to use as a source for values.
-        attributes : iterable container of strings or None
+        attributes : iterable of str or None
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
             raised. If `None`, `scale`, `offset` and `units` are updated.
@@ -1658,19 +1658,23 @@ class AxesManager(t.HasTraits):
         return tuple(cslice)
 
     def create_axes(self, axes_list):
-        """Given a list of either axes dictionaries or axes objects, these are
+        """Given a list of either axes dictionaries, these are
         added to the AxesManager. In case dictionaries defining the axes
-        properties are passed, the DataAxis/UniformDataAxis/FunctionalDataAxis
-        instances are first created.
+        properties are passed, the 
+        :py:class:`~hyperspy.axes.DataAxis`,
+        :py:class:`~hyperspy.axes.UniformDataAxis`,
+        :py:class:`~hyperspy.axes.FunctionalDataAxis` instances are first
+        created.
 
         The index of the axis in the array and in the `_axes` lists
         can be defined by the index_in_array keyword if given
         for all axes. Otherwise, it is defined by their index in the
         list.
 
-        See Also
-        --------
-        _append_axis
+        Parameters
+        ----------
+        axes_list : list of dict
+            The list of axes to create.
 
         """
         # Reorder axes_list using index_in_array if it is defined
@@ -1690,14 +1694,11 @@ class AxesManager(t.HasTraits):
 
         Parameters
         ----------
-        axis: BaseDataAxis axis to replace the current axis with
-
-        index_in_axes_manager: index of the axis in current signal to remplace
-            with axis passed in argument
-
-        See Also
-        --------
-        _append_axis
+        axis : :py:class:`~hyperspy.axes.BaseDataAxis`
+            The axis to replace the current axis with
+        index_in_axes_manager : int
+            The index of the axis in current signal to replace
+            with the axis passed in argument.
 
         """
         self._axes[index_in_axes_manager] = axis
@@ -1873,28 +1874,26 @@ class AxesManager(t.HasTraits):
 
         Parameters
         ----------
-        axes : {int | string | iterable of `DataAxis` | None}
-            Default = None
+        axes : int, str, iterable of :py:class:`~hyperspy.axes.DataAxis` or None, default None
             Convert to a convenient scale and units on the specified axis.
             If int, the axis can be specified using the index of the
-            axis in `axes_manager`.
-            If string, argument can be `navigation` or `signal` to select the
-            navigation or signal axes. The axis name can also be provided.
-            If `None`, convert all axes.
-        units : {list of string of the same length than axes | str | None}
-            Default = None
+            axis in ``axes_manager``.
+            If string, argument can be ``"navigation"`` or ``"signal"`` to
+            select the navigation or signal axes. The axis name can also be
+            provided. If ``None``, convert all axes.
+        units : list of str, str or None, default None
             If list, the selected axes will be converted to the provided units.
-            If str, the navigation or signal axes will be converted to the
+            If string, the navigation or signal axes will be converted to the
             provided units.
-            If `None`, the scale and the units are converted to the appropriate
+            If ``None``, the scale and the units are converted to the appropriate
             scale and units to avoid displaying scalebar with >3 digits or too
-            small number. This can be tweaked by the `factor` argument.
+            small number. This can be tweaked by the ``factor`` argument.
         same_units : bool
-            If `True`, force to keep the same units if the units of
+            If ``True``, force to keep the same units if the units of
             the axes differs. It only applies for the same kind of axis,
-            `navigation` or `signal`. By default the converted units of the
-            first axis is used for all axes. If `False`, convert all axes
-            individually.
+            ``"navigation"`` or ``"signal"``. By default the converted units
+            of the first axis is used for all axes. If `False`, convert all
+            axes individually.
         %s
 
         Notes
@@ -1982,7 +1981,7 @@ class AxesManager(t.HasTraits):
 
         Parameters
         ----------
-        axes: iterable of `DataAxis` instances.
+        axes: iterable of :py:class:`~hyperspy.axes.DataAxis`.
             The axes to copy the attributes from.
         attributes: iterable of strings.
             The attributes to copy.

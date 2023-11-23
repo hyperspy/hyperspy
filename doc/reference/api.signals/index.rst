@@ -1,6 +1,8 @@
 :mod:`hyperspy.api.signals`
 ---------------------------
 
+.. automodule:: hyperspy.api.signals
+
 .. currentmodule:: hyperspy.api.signals
 
 .. autosummary::
