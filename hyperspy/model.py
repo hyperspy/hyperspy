@@ -360,8 +360,10 @@ class BaseModel(list):
 
         See Also
         --------
-        set_signal_range, add_signal_range,
-        remove_signal_range, reset_signal_range
+        hyperspy.models.model1d.Model1D.set_signal_range,
+        hyperspy.models.model1d.Model1D.add_signal_range,
+        hyperspy.models.model1d.Model1D.remove_signal_range,
+        hyperspy.models.model1d.Model1D.reset_signal_range
 
         Examples
         --------
@@ -489,7 +491,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        thing : :class:`~.component.Component`
+        thing : :py:class:`~hyperspy.component.Component`
             The component to add to the model.
         """
         if not isinstance(thing, Component):
@@ -584,7 +586,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        component_list : list of HyperSpy components, optional
+        component_list : list of :py:class:`~hyperspy.component.Component`, optional
             If a list of components is given, only the components given in the
             list is used in making the returned spectrum. The components can
             be specified by name, index or themselves.
@@ -592,14 +594,15 @@ class BaseModel(list):
             If True the signal range outside of the fitted range is filled with
             nans. Default True.
         %s
-        out : {None, BaseSignal}
+        out : None or :py:class:`~hyperspy.api.signals.BaseSignal`
             The signal where to put the result into. Convenient for parallel
             processing. If None (default), creates a new one. If passed, it is
             assumed to be of correct shape and dtype and not checked.
 
         Returns
         -------
-        BaseSignal : An instance of the same class as `BaseSignal`.
+        :py:class:`~hyperspy.api.signals.BaseSignal`
+            The model as a signal.
 
         Examples
         --------
@@ -780,7 +783,8 @@ class BaseModel(list):
     def enable_plot_components(self):
         """
         Enable interactive adjustment of the position of the components
-        that have a well defined position. Use after :meth:`plot`.
+        that have a well defined position. Use after
+        :py:meth:`~hyperspy.models.model1d.Model1D.plot`.
         """
         if self._plot is None or self._plot_components:
             return
@@ -791,7 +795,8 @@ class BaseModel(list):
     def disable_plot_components(self):
         """
         Disable interactive adjustment of the position of the components
-        that have a well defined position. Use after :meth:`plot`.
+        that have a well defined position. Use after
+        :py:meth:`~hyperspy.models.model1d.Model1D.plot`.
         """
         if self._plot is None:
             return
@@ -1400,7 +1405,7 @@ class BaseModel(list):
         -----
         The chi-squared and reduced chi-squared statistics, and the
         degrees of freedom, are computed automatically when fitting,
-        only when `loss_function="ls"`. They are stored as signals:
+        only when ``loss_function="ls"``. They are stored as signals:
         ``chisq``, ``red_chisq`` and ``dof``.
 
         If the attribute ``metada.Signal.Noise_properties.variance``
@@ -1860,7 +1865,7 @@ class BaseModel(list):
                 Works for n-dimensional navigation space, not just 2D.
             If None:
                 Use the value of :py:attr:`~.axes.AxesManager.iterpath`.
-        **kwargs : keyword arguments
+        **kwargs : dict
             Any extra keyword argument will be passed to the fit method.
             See the documentation for :py:meth:`~.model.BaseModel.fit`
             for a list of valid arguments.
@@ -2076,7 +2081,7 @@ class BaseModel(list):
         -----
         This method can be used to save the current state of the model in a way
         that can be loaded back to recreate the it using
-        :py:meth:`~hyperspy.model.Model1D.load_parameters_from_file`.
+        :py:meth:`~hyperspy.model.BaseModel.load_parameters_from_file`.
         Actually, as of HyperSpy 0.8 this is the only way to do so.
         However, this is known to be brittle. For example see
         https://github.com/hyperspy/hyperspy/issues/341.
@@ -2128,7 +2133,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        component_list : list of components, optional
+        component_list : list of :py:class:`~hyperspy.component.Component`, optional
             If a list of components is given, the operation will be performed
             only in the value of the parameters of the given components.
             The components can be specified by name, index or themselves.
@@ -2202,7 +2207,6 @@ class BaseModel(list):
 
         Parameters
         ----------
-
         only_free : bool
             If True, only the value of the parameters that are free will be
             plotted.
@@ -2231,7 +2235,7 @@ class BaseModel(list):
             only parameters which are free will be printed.
         only_active : bool
             If True, only values of active components will be printed
-        component_list : None or list of components.
+        component_list : None or list of :py:class:`~hyperspy.component.Component`
             If None, print all components.
         """
         display(
@@ -2248,7 +2252,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        component_list : None, or list of hyperspy components, optional
+        component_list : None or list of :py:class:`~hyperspy.component.Component`, optional
             If None, will apply the function to all components in the model.
             If list of components, will apply the functions to the components
             in the list.  The components can be specified by name, index or
@@ -2268,8 +2272,9 @@ class BaseModel(list):
         >>> m.append(v1)
         >>> m.set_parameters_not_free()
 
-        >>> m.set_parameters_not_free(component_list=[v1],
-                                      parameter_name_list=['area','centre'])
+        >>> m.set_parameters_not_free(
+        ...     component_list=[v1], parameter_name_list=['area','centre']
+        ... )
         >>> m.set_parameters_not_free(only_linear=True)
 
 
@@ -2302,18 +2307,18 @@ class BaseModel(list):
 
         Parameters
         ----------
-        component_list : None, or list of hyperspy components, optional
+        component_list : None or list of :py:class:`~hyperspy.component.Component`, optional
             If None, will apply the function to all components in the model.
             If list of components, will apply the functions to the components
             in the list. The components can be specified by name, index or
             themselves.
-        parameter_name_list : None or list of strings, optional
+        parameter_name_list : None or list of str, optional
             If None, will set all the parameters to not free.
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to not free.
-        only_linear : Bool
+        only_linear : bool
             If True, will only set parameters that are linear to not free.
-        only_nonlinear : Bool
+        only_nonlinear : bool
             If True, will only set parameters that are nonlinear to not free.
 
         Examples
@@ -2358,13 +2363,14 @@ class BaseModel(list):
 
         Parameters
         ----------
-        parameter_name : string
+        parameter_name : str
             Name of the parameter whose value will be changed
-        value : number
+        value : float or int
             The new value of the parameter
-        component_list : list of hyperspy components, optional
+        component_list : None or list of :py:class:`~hyperspy.component.Component`, optional
             A list of components whose parameters will changed. The components
-            can be specified by name, index or themselves.
+            can be specified by name, index or themselves. If None, use all
+            components of the model.
         only_current : bool, default False
             If True, will only change the parameter value at the current
             position in the model.
@@ -2377,8 +2383,9 @@ class BaseModel(list):
         >>> m.extend([v1,v2])
         >>> m.set_parameters_value('area', 5)
         >>> m.set_parameters_value('area', 5, component_list=[v1])
-        >>> m.set_parameters_value('area', 5, component_list=[v1],
-                                   only_current=True)
+        >>> m.set_parameters_value(
+        ...    'area', 5, component_list=[v1], only_current=True
+        ... )
 
         """
 
@@ -2405,7 +2412,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        fullcopy : bool (optional, True)
+        fullcopy : bool, optional True
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
 
@@ -2457,16 +2464,15 @@ class BaseModel(list):
     def set_component_active_value(
             self, value, component_list=None, only_current=False):
         """
-        Sets the component 'active' parameter to a specified value
+        Sets the component ``'active'`` parameter to a specified value.
 
         Parameters
         ----------
         value : bool
-            The new value of the 'active' parameter
-        component_list : list of hyperspy components, optional
+            The new value of the ``'active'`` parameter
+        component_list : list of :py:class:`~hyperspy.component.Component`, optional
             A list of components whose parameters will changed. The components
             can be specified by name, index or themselves.
-
         only_current : bool, default False
             If True, will only change the parameter value at the current
             position in the model.
@@ -2526,7 +2532,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        workers : {None, int}
+        workers : None or int
             the number of workers to initialise.
             If zero, all computations will be done serially.
             If None (default), will attempt to use (number-of-cores - 1),

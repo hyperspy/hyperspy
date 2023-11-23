@@ -39,7 +39,7 @@ The following general components are currently available for one-dimensional mod
 
 The following components are currently available for two-dimensional models:
 
-* :py:class:`~.api.model.components2D.Expression`
+* :py:class:`~.api.model.components1D.Expression`
 * :py:class:`~.api.model.components2D.Gaussian2D`
 
 However, this doesn't mean that you have to limit yourself to this meagre

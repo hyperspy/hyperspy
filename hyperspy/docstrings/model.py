@@ -98,7 +98,7 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
             If ``grad='fd'``, selects the finite difference scheme to use.
             See :py:func:`scipy.optimize.minimize` for details. Ignored if
             ``optimizer`` is one of ``"lm"``, ``"trf"`` or ``"dogbox"``.
-        **kwargs : keyword arguments
+        **kwargs : dict
             Any extra keyword argument will be passed to the chosen
             optimizer. For more information, read the docstring of the
             optimizer of your choice in :py:mod:`scipy.optimize`.

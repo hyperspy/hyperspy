@@ -137,10 +137,11 @@ class Model1D(BaseModel):
     """Model and data fitting for one dimensional signals.
 
     A model is constructed as a linear combination of
-    :mod:`~.hyperspy.model.components1D` that are added to the model using
-    :meth:`append` or :meth:`extend`. There are many predifined components
-    available in the in the :mod:`~.hyperspy.model.components1D` module.
-    If needed, new components can be created easily using the
+    :mod:`~hyperspy.api.model.components1D` that are added to the model using
+    :meth:`~hyperspy.model.BaseModel.append` or :meth:`~hyperspy.model.BaseModel.extend`.
+    There are many predifined components available in the
+    :mod:`~hyperspy.api.model.components1D` module. If needed, new
+    components can be created easily using the
     :py:class:`~.api.model.components1D.Expression` component or by
     using the code of existing components as a template.
 
@@ -721,12 +722,16 @@ class Model1D(BaseModel):
                           component.active]:
             self._plot_component(component)
 
+    enable_plot_components.__doc__ = BaseModel.enable_plot_components.__doc__
+
     def disable_plot_components(self):
         self._plot_components = False
         if self._plot is None:  # pragma: no cover
             return
         for component in self:
             self._disable_plot_component(component)
+
+    disable_plot_components.__doc__ = BaseModel.disable_plot_components.__doc__
 
     def enable_adjust_position(
             self, components=None, fix_them=True, show_label=True):

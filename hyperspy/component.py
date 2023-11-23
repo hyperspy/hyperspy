@@ -597,16 +597,13 @@ class Parameter(t.HasTraits):
         field : {'values', 'std', 'is_set'}
             Field to return as signal.
 
-        Raises
-        ------
-        NavigationDimensionError
-            If the navigation dimension is 0
-
         """
         from hyperspy.signal import BaseSignal
 
-        s = BaseSignal(data=self.map[field],
-                       axes=self._axes_manager._get_navigation_axes_dicts())
+        s = BaseSignal(
+            data=self.map[field],
+            axes=self._axes_manager._get_navigation_axes_dicts()
+            )
         if self.component is not None and \
                 self.component.active_is_multidimensional:
             s.data[np.logical_not(self.component._active_array)] = np.nan
@@ -681,8 +678,9 @@ class Parameter(t.HasTraits):
             filename = Path(folder).joinpath(filename)
         self.as_signal().save(filename)
         if save_std is True:
-            self.as_signal(field='std').save(append2pathname(
-                filename, '_std'))
+            self.as_signal(field='std').save(
+                append2pathname(filename, '_std')
+                )
 
     def as_dictionary(self, fullcopy=True):
         """Returns parameter as a dictionary, saving all attributes from
@@ -691,16 +689,17 @@ class Parameter(t.HasTraits):
 
         Parameters
         ----------
-        fullcopy : Bool (optional, False)
+        fullcopy : bool, optional False
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
 
         Returns
         -------
-        A dictionary, containing at least the following fields:
+        dict
+            A dictionary, containing at least the following fields:
 
             * _id_name: _id_name of the original parameter, used to create the
-              dictionary. Has to match with the self._id_name
+              dictionary. Has to match with the ``self._id_name``
             * _twins: a list of ids of the twins of the parameter
             * _whitelist: a dictionary, which keys are used as keywords to match
               with the parameter attributes. For more information see
@@ -747,6 +746,8 @@ class Component(t.HasTraits):
 
     Attributes
     ----------
+    active : bool
+    name : str
     free_parameters : list
     parameters : list
     """
@@ -812,8 +813,7 @@ class Component(t.HasTraits):
     @property
     def active_is_multidimensional(self):
         """In multidimensional signals it is possible to store the value of the
-        :py:attr:`~.component.Component.active` attribute at each navigation
-        index.
+        ``active`` attribute at each navigation index.
         """
         return self._active_is_multidimensional
 
@@ -1230,11 +1230,11 @@ class Component(t.HasTraits):
         """
         Returns component as a dictionary. For more information on method
         and conventions, see
-        :py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`
+        :py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`.
 
         Parameters
         ----------
-        fullcopy : Bool (optional, False)
+        fullcopy : bool, optional False
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
 
@@ -1246,9 +1246,9 @@ class Component(t.HasTraits):
             * parameters: a list of dictionaries of the parameters, one per
               component.
             * _whitelist: a dictionary with keys used as references saved
-              attributes, for more information, see
-              :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
-            * any field from _whitelist.keys()
+              attributes, for more information, see :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`.
+            * any field from _whitelist.keys().
+
         """
         dic = {
             'parameters': [

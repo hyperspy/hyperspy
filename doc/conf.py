@@ -325,8 +325,6 @@ nitpick_ignore_regex = (
     ('py:attr', 'api.signals.BaseSignal.axes_manager'), # Need to make it a property
     ('py:attr', 'hyperspy._signals.lazy.LazySignal.navigator'), # Need to make it a property
     ('py:attr', 'axes.BaseDataAxis.is_binned.*'), # Skip for now
-    ('py:mod', 'api.model.components2D'), # Unclear why the link doesn't work
-    ('py:class', 'api.model.components2D.Expression'), # Unclear why the link de link doesn't work
     ('py:attr', 'api.model.components1D.ScalableFixedPattern.*'), # Skip for now
     ('py:attr', 'component.Parameter.*'), # Traits property not playing well
     ('py:.*', 'api.preferences.*'), # Adding to the API reference not useful

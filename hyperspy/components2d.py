@@ -41,10 +41,7 @@ _base_docstring = """
 
 Components that can be used to define a 2D model for e.g. curve fitting.
 
-There are some components that are only useful for one particular kind of signal
-and therefore their name are preceded by the signal name: eg. eels_cl_edge.
-
-Writing a new template is easy: see the user guide documentation on creating
+Writing a new template is easy, see the user guide documentation on creating
 components.
 
 For more details see each component docstring.
