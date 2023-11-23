@@ -856,10 +856,10 @@ class MVATools(object):
 
         Parameters
         ----------
-        comp_ids : None, int, or list (of ints)
+        comp_ids : None, int or list of int
             If `comp_ids` is ``None``, maps of all components will be
             returned if the `output_dimension` was defined when executing
-            :py:meth:`~hyperspy.learn.mva.MVA.decomposition`. Otherwise it
+            :py:meth:`~hyperspy.api.signals.BaseSignal.decomposition`. Otherwise it
             raises a :py:exc:`ValueError`.
             If `comp_ids` is an int, maps of components with ids from 0 to
             the given value will be returned. If `comp_ids` is a list of
@@ -884,7 +884,8 @@ class MVATools(object):
 
         See Also
         --------
-        plot_decomposition_loadings, plot_decomposition_results
+        hyperspy.api.signals.BaseSignal.plot_decomposition_loadings,
+        hyperspy.api.signals.BaseSignal.plot_decomposition_results
 
         """
         if self.axes_manager.signal_dimension > 2:
@@ -936,7 +937,7 @@ class MVATools(object):
         Parameters
         ----------
 
-        comp_ids : None, int, or list (of ints)
+        comp_ids : None, int, or list of int
             If `comp_ids` is ``None``, maps of all components will be
             returned. If it is an int, maps of components with ids from 0 to
             the given value will be returned. If `comp_ids` is a list of
@@ -1006,10 +1007,10 @@ class MVATools(object):
 
         Parameters
         ----------
-        comp_ids : None, int, or list (of ints)
+        comp_ids : None, int, or list of int
             If `comp_ids` is ``None``, maps of all components will be
             returned if the `output_dimension` was defined when executing
-            :py:meth:`~hyperspy.learn.mva.MVA.decomposition`.
+            :py:meth:`~hyperspy.api.signals.BaseSignal.decomposition`.
             Otherwise it raises a :py:exc:`ValueError`.
             If `comp_ids` is an int, maps of components with ids from 0 to
             the given value will be returned. If `comp_ids` is a list of
@@ -1048,7 +1049,8 @@ class MVATools(object):
 
         See Also
         --------
-        plot_decomposition_factors, plot_decomposition_results
+        hyperspy.api.signals.BaseSignal.plot_decomposition_factors,
+        hyperspy.api.signals.BaseSignal.plot_decomposition_results
 
         """
         if self.axes_manager.navigation_dimension > 2:
@@ -1111,8 +1113,8 @@ class MVATools(object):
 
         Parameters
         ----------
-        comp_ids : None, int, or list (of ints)
-            If `comp_ids` is ``None``, maps of all components will be
+        comp_ids : None, int or list of int
+            If ``comp_ids=None``, maps of all components will be
             returned. If it is an int, maps of components with ids from 0 to
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
@@ -1211,7 +1213,7 @@ class MVATools(object):
 
         Parameters
         ----------
-        comp_ids : None, int, or list (of ints)
+        comp_ids : None, int or list of int
             If None, returns all components/loadings.
             If an int, returns components/loadings with ids from 0 to the
             given value.
@@ -1399,7 +1401,7 @@ class MVATools(object):
         See Also
         --------
         get_cluster_signals,
-        get_cluster_labels.
+        get_cluster_labels
 
         """
 
@@ -1628,7 +1630,7 @@ class MVATools(object):
 
         Returns
         -------
-        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See Also
         --------
@@ -1647,7 +1649,7 @@ class MVATools(object):
 
         Returns
         -------
-        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See Also
         --------
@@ -1667,8 +1669,8 @@ class MVATools(object):
                          loadings_dim=2,):
         """Plot the blind source separation factors and loadings.
 
-        Unlike :py:meth:`~hyperspy.signal.MVATools.plot_bss_factors` and
-        :py:meth:`~hyperspy.signal.MVATools.plot_bss_loadings`,
+        Unlike :py:meth:`~hyperspy.api.signals.BaseSignal.plot_bss_factors` and
+        :py:meth:`~hyperspy.api.signals.BaseSignal.plot_bss_loadings`,
         this method displays one component at a time. Therefore it provides a
         more compact visualization than then other two methods.
         The loadings and factors are displayed in different windows and each
@@ -1678,14 +1680,14 @@ class MVATools(object):
 
         Parameters
         ----------
-        factors_navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        factors_navigator : str, None, or :py:class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             One of: ``'smart_auto'``, ``'auto'``, ``None``, ``'spectrum'`` or a
-            :py:class:`~hyperspy.signal.BaseSignal` object.
+            :py:class:`~hyperspy.api.signals.BaseSignal` object.
             ``'smart_auto'`` (default) displays sliders if the navigation
             dimension is less than 3. For a description of the other options
-            see the :py:meth:`~hyperspy.signal.BaseSignal.plot` documentation
+            see the :py:meth:`~hyperspy.api.signals.BaseSignal.plot` documentation
             for details.
-        loadings_navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        loadings_navigator : str, None, or :py:class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             See the `factors_navigator` parameter
         factors_dim : int
             Currently HyperSpy cannot plot a signal when the signal dimension is
@@ -1716,8 +1718,8 @@ class MVATools(object):
                                    loadings_dim=2):
         """Plot the decomposition factors and loadings.
 
-        Unlike :py:meth:`~hyperspy.signal.MVATools.plot_decomposition_factors`
-        and :py:meth:`~hyperspy.signal.MVATools.plot_decomposition_loadings`,
+        Unlike :py:meth:`~hyperspy.api.signals.BaseSignal.plot_decomposition_factors`
+        and :py:meth:`~hyperspy.api.signals.BaseSignal.plot_decomposition_loadings`,
         this method displays one component at a time. Therefore it provides a
         more compact visualization than then other two methods. The loadings
         and factors are displayed in different windows and each has its own
@@ -1726,14 +1728,14 @@ class MVATools(object):
 
         Parameters
         ----------
-        factors_navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        factors_navigator : str, None, or :py:class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             One of: ``'smart_auto'``, ``'auto'``, ``None``, ``'spectrum'`` or a
-            :py:class:`~hyperspy.signal.BaseSignal` object.
+            :py:class:`~hyperspy.api.signals.BaseSignal` object.
             ``'smart_auto'`` (default) displays sliders if the navigation
             dimension is less than 3. For a description of the other options
-            see the :py:meth:`~hyperspy.signal.BaseSignal.plot` documentation
+            see the :py:meth:`~hyperspy.api.signals.BaseSignal.plot` documentation
             for details.
-        loadings_navigator : str, None, or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        loadings_navigator : str, None, or :py:class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             See the `factors_navigator` parameter
         factors_dim : int
             Currently HyperSpy cannot plot a signal when the signal dimension is
@@ -1746,8 +1748,9 @@ class MVATools(object):
 
         See Also
         --------
-        plot_decomposition_factors, plot_decomposition_loadings,
-        plot_bss_results
+        hyperspy.api.signals.BaseSignal.plot_decomposition_factors,
+        hyperspy.api.signals.BaseSignal.plot_decomposition_loadings,
+        hyperspy.api.signals.BaseSignal.plot_bss_results
 
         """
 
@@ -1764,7 +1767,7 @@ class MVATools(object):
 
         Parameters
         ----------
-        merged : bool
+        merged : bool, default False
             If False the cluster label signal has a navigation axes of length
             number_of_clusters and the signal along the the navigation
             direction is binary - 0 the point is not in the cluster, 1 it is
@@ -1779,7 +1782,8 @@ class MVATools(object):
 
         Returns
         -------
-        signal Hyperspy signal of cluster labels
+        :py:class:`~hyperspy.api.signals.BaseSignal`
+            The cluster labels
         """
         if self.learning_results.cluster_labels is None:
             raise RuntimeError(
@@ -1864,28 +1868,28 @@ class MVATools(object):
         Parameters
         ----------
         %s
-        cluster_ids : None, int, or list of ints
-            if None, returns maps of all clusters.
-            if int, returns maps of clusters with ids from 0 to given
+        cluster_ids : None, int, or list of int
+            If None, returns maps of all clusters.
+            If int, returns maps of clusters with ids from 0 to given
             int.
-            if list of ints, returns maps of clusters with ids in
+            If list of ints, returns maps of clusters with ids in
             given list.
-        calibrate :
-            if True, calibrates plots where calibration is available
+        calibrate : bool, default True
+            If True, calibrates plots where calibration is available
             from the axes_manager. If False, plots are in pixels/channels.
-        same_window : bool
-            if True, plots each center to the same window.  They are
+        same_window : bool, default True
+            If True, plots each center to the same window.  They are
             not scaled.
-        title : str
+        title : None or str, default None
             Title of the matplotlib plot or label of the line in the legend
             when the dimension of loadings is 1 and ``same_window`` is ``True``.
-        per_row : int
-            the number of plots in each row, when the same_window parameter is
+        per_row : int, default 3
+            The number of plots in each row, when the same_window parameter is
             True.
 
         See Also
         --------
-        plot_cluster_labels
+        hyperspy.api.signals.BaseSignal.plot_cluster_labels
 
         """
         if self.axes_manager.signal_dimension > 2:
@@ -1930,7 +1934,7 @@ class MVATools(object):
         Parameters
         ----------
 
-        cluster_ids : None, int, or list of ints
+        cluster_ids : None, int, or list of int
             if None (default), returns maps of all components using the
             number_of_cluster was defined when
             executing ``cluster``. Otherwise it raises a ValueError.
@@ -1959,7 +1963,7 @@ class MVATools(object):
         per_row : int
             the number of plots in each row, when the same_window
             parameter is True.
-        axes_decor : {'all', 'ticks', 'off', None}, optional
+        axes_decor : None or str {``'all'``, ``'ticks'``, ``'off'``}, default ``'all'``
             Controls how the axes are displayed on each image; default is 'all'
             If 'all', both ticks and axis labels will be shown
             If 'ticks', no axis labels will be shown, but ticks/labels will
@@ -1968,7 +1972,8 @@ class MVATools(object):
 
         See Also
         --------
-        plot_cluster_signals, plot_cluster_results.
+        hyperspy.api.signals.BaseSignal.plot_cluster_signals,
+        hyperspy.api.signals.BaseSignal.plot_cluster_results
 
         """
         if self.axes_manager.navigation_dimension > 2:
@@ -2022,7 +2027,7 @@ class MVATools(object):
 
         Parameters
         ----------
-        cluster_ids : None, int, or list of ints
+        cluster_ids : None, int, or list of int
             if None (default), returns maps of all components using the
             number_of_cluster was defined when
             executing ``cluster``. Otherwise it raises a ValueError.
@@ -2042,7 +2047,7 @@ class MVATools(object):
         with_centers : bool
             If True, also returns figure(s) with the cluster centers for the
             given cluster_ids.
-        cmap : matplotlib colormap
+        cmap : matplotlib.colors.Colormap
             The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
@@ -2051,7 +2056,7 @@ class MVATools(object):
         per_row : int
             the number of plots in each row, when the same_window
             parameter is True.
-        axes_decor : {'all', 'ticks', 'off', None}, optional
+        axes_decor : None or str {'all', 'ticks', 'off'}, optional
             Controls how the axes are displayed on each image; default is 'all'
             If 'all', both ticks and axis labels will be shown
             If 'ticks', no axis labels will be shown, but ticks/labels will
@@ -2113,8 +2118,8 @@ class MVATools(object):
 
         Parameters
         ----------
-        centers_navigator, labels_navigator : {"smart_auto",
-        "auto", None, "spectrum", Signal}
+        centers_navigator, labels_navigator : None, {"smart_auto",
+        "auto", "spectrum"} or :py:class:`~hyperspy.api.signals.BaseSignal`
             "smart_auto" (default) displays sliders if the navigation
             dimension is less than 3. For a description of the other options
             see `plot` documentation for details.
@@ -2127,7 +2132,7 @@ class MVATools(object):
 
         See Also
         --------
-        plot_cluster_signals, plot_cluster_labels.
+        plot_cluster_signals, plot_cluster_labels
 
         """
         centers = self.get_cluster_signals()
@@ -3140,24 +3145,25 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        new_axis : UniformDataAxis, DataAxis or FunctionalDataAxis
+        new_axis : :py:class:`hyperspy.axes.UniformDataAxis`, 
+        :py:class:`hyperspy.axes.DataAxis` or :py:class:`hyperspy.axes.FunctionalDataAxis`
             Axis which replaces the one specified by the ``axis`` argument.
             If this new axis exceeds the range of the old axis,
             a warning is raised that the data will be extrapolated.
-        axis : int or str, default=0
+        axis : int or str, default 0
             Specifies the axis which will be replaced using the index of the
             axis in the `axes_manager`. The axis can be specified using the index of the
             axis in `axes_manager` or the axis name.
-        inplace : bool, default=False
+        inplace : bool, default False
             If ``True`` the data of `self` is replaced by the result and
             the axis is changed inplace. Otherwise `self` is not changed
             and a new signal with the changes incorporated is returned.
-        degree: int, default=1
+        degree: int, default 1
             Specifies the B-Spline degree of the used interpolator.
 
         Returns
         -------
-        s : :py:class:`~.api.signals.BaseSignal` (or subclass)
+        :py:class:`~.api.signals.BaseSignal` (or subclass)
             A copy of the object with the axis exchanged and the data interpolated.
             This only occurs when inplace is set to ``False``, otherwise nothing is returned.
         """
@@ -3428,24 +3434,21 @@ class BaseSignal(FancySlicing,
 
     rebin.__doc__ %= (REBIN_ARGS, OUT_ARG)
 
-    def split(self,
-              axis='auto',
-              number_of_parts='auto',
-              step_sizes='auto'):
+    def split(self, axis='auto', number_of_parts='auto', step_sizes='auto'):
         """Splits the data into several signals.
 
         The split can be defined by giving the `number_of_parts`, a homogeneous
         step size, or a list of customized step sizes. By default (``'auto'``),
-        the function is the reverse of :py:func:`~hyperspy.misc.utils.stack`.
+        the function is the reverse of :py:func:`~hyperspy.api.stack`.
 
         Parameters
         ----------
         axis %s
             If ``'auto'`` and if the object has been created with
-            :py:func:`~hyperspy.misc.utils.stack` (and ``stack_metadata=True``),
+            :py:func:`~hyperspy.api.stack` (and ``stack_metadata=True``),
             this method will return the former list of signals (information
             stored in `metadata._HyperSpy.Stacking_history`).
-            If it was not created with :py:func:`~hyperspy.misc.utils.stack`,
+            If it was not created with :py:func:`~hyperspy.api.stack`,
             the last navigation axis will be used.
         number_of_parts : str or int
             Number of parts in which the spectrum image will be split. The
@@ -3455,7 +3458,7 @@ class BaseSignal(FancySlicing,
             `number_of_parts` equals the length of the axis,
             `step_sizes` equals one, and the axis is suppressed from each
             sub-spectrum.
-        step_sizes : str, list (of ints), or int
+        step_sizes : str, list (of int), or int
             Size of the split parts. If ``'auto'``, the `step_sizes` equals one.
             If an int is given, the splitting is homogeneous.
 
@@ -3478,7 +3481,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        splitted : list
+        list of :py:class:`~hyperspy.api.signals.BaseSignal`
             A list of the split signals
 
         """
@@ -4883,7 +4886,7 @@ class BaseSignal(FancySlicing,
             The most common reason for this failing is due to the signal size
             being different for different navigation positions. If this is the
             case, use ragged=True. None is default.
-        output_dtype : None, NumPy dtype
+        output_dtype : None, numpy.dtype
             See docstring for output_signal_size for more information.
             Default None.
         %s

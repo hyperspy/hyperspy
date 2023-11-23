@@ -72,8 +72,7 @@ SPIKES_REMOVAL_TOOL_DOCSTRING =\
         %s
         %s
         **kwargs : dict
-            Keyword arguments pass to
-                :py:meth:`~api.signals._signal_tools.SpikesRemoval`
+            Keyword arguments pass to ``SpikesRemoval``.
 
         See Also
         --------

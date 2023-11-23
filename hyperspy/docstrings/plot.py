@@ -96,10 +96,9 @@ BASE_PLOT_DOCSTRING = \
 
 
 PLOT1D_DOCSTRING = \
-    """norm : str, optional
+    """norm : str, default ``'auto'``
             The function used to normalize the data prior to plotting.
             Allowable strings are: ``'auto'``, ``'linear'``, ``'log'``.
-            (default value is ``'auto'``).
             If ``'auto'``, intensity is plotted on a linear scale except when
             ``power_spectrum=True`` (only for complex signals).
         autoscale : str
@@ -114,14 +113,14 @@ PLOT1D_DOCSTRING = \
 PLOT2D_DOCSTRING = \
     """colorbar : bool, optional
             If true, a colorbar is plotted for non-RGB images.
-        autoscale : str
+        autoscale : str, optional
             The string must contain any combination of the ``'x'``, ``'y'`` and ``'v'``
             characters. If ``'x'`` or ``'y'`` are in the string, the corresponding
             axis limits are set to cover the full range of the data at a given
             position. If ``'v'`` (for values) is in the string, the contrast of the
             image will be set automatically according to ``vmin` and ``vmax`` when
             the data or navigation indices change. Default is ``'v'``.
-        norm : {``"auto"`, ``"linear"``, ``"power"``, ``"log"``, ``"symlog"`` or a subclass of :py:class:`matplotlib.colors.Normalise`}
+        norm : str {``"auto"` | ``"linear"`` | ``"power"`` | ``"log"`` | ``"symlog"``} or :py:class:`matplotlib.colors.Normalize`
             Set the norm of the image to display. If ``"auto"``, a linear scale is
             used except if when ``power_spectrum=True`` in case of complex data
             type. ``"symlog"`` can be used to display negative value on a negative
@@ -133,15 +132,15 @@ PLOT2D_DOCSTRING = \
             where ``'x'`` must be an float in the [0, 100] range. ``'x'`` is used to
             compute the x-th percentile of the data. See
             :py:func:`numpy.percentile` for more information.
-        gamma : float
+        gamma : float, optional
             Parameter used in the power-law normalisation when the parameter
             ``norm="power"``. Read :py:class:`matplotlib.colors.PowerNorm` for more
             details. Default value is 1.0.
-        linthresh : float
+        linthresh : float, optional
             When used with ``norm="symlog"``, define the range within which the
             plot is linear (to avoid having the plot go to infinity around
             zero). Default value is 0.01.
-        linscale : float
+        linscale : float, optional
             This allows the linear range (-linthresh to linthresh) to be
             stretched relative to the logarithmic range. Its value is the
             number of powers of base to use for each half of the linear range.
@@ -156,15 +155,14 @@ PLOT2D_DOCSTRING = \
             If True, plot the axes ticks. If None axes_ticks are only
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
-        axes_off : {bool}
-            Default is False.
+        axes_off : bool, default False
         no_nans : bool, optional
             If True, set nans to zero for plotting.
-        centre_colormap : {``"auto"``, True, False}
+        centre_colormap : bool or ``"auto"``
             If True the centre of the color scheme is set to zero. This is
             specially useful when using diverging color schemes. If "auto"
             (default), diverging color schemes are automatically centred.
-        min_aspect : float
+        min_aspect : float, optional
             Set the minimum aspect ratio of the image and the figure. To
             keep the image in the aspect limit the pixels are made
             rectangular.
@@ -172,10 +170,10 @@ PLOT2D_DOCSTRING = \
 
 
 COMPLEX_DOCSTRING = \
-    """power_spectrum : bool, default is False.
+    """power_spectrum : bool, default False.
             If True, plot the power spectrum instead of the actual signal, if
             False, plot the real and imaginary parts of the complex signal.
-        representation : {``'cartesian'`` or ``'polar'``}
+        representation : {``'cartesian'`` | ``'polar'``}
             Determines if the real and imaginary part of the complex data is plotted (``'cartesian'``,
             default), or if the amplitude and phase should be used (``'polar'``).
         same_axes : bool, default True

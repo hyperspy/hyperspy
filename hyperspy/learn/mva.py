@@ -1014,10 +1014,10 @@ class MVA:
         ----------
         target : {"factors", "loadings"}
             Normalize components based on the scale of either the factors or loadings.
-        function : numpy universal function, default np.sum
+        function : numpy callable, default numpy.sum
             Each target component is divided by the output of ``function(target)``.
             The function must return a scalar when operating on numpy arrays and
-            must have an `axis` argument.
+            must have an ``axis`` argument.
 
         """
         if target == "factors":
@@ -1041,10 +1041,10 @@ class MVA:
         ----------
         target : {"factors", "loadings"}
             Normalize components based on the scale of either the factors or loadings.
-        function : numpy universal function, default np.sum
+        function : numpy callable, default numpy.sum
             Each target component is divided by the output of ``function(target)``.
             The function must return a scalar when operating on numpy arrays and
-            must have an `axis` argument.
+            must have an ``axis`` argument.
 
         """
         if target == "factors":
@@ -1235,14 +1235,14 @@ class MVA:
 
         Parameters
         ----------
-        components : {None, int, list of ints}, default None
+        components : None, int or list of int, default None
             * If None, rebuilds signal instance from all components
             * If int, rebuilds signal instance from components in range 0-given int
             * If list of ints, rebuilds signal instance from only components in given list
 
         Returns
         -------
-        Signal instance
+        :py:class:`~hyperspy.api.signals.BaseSignal` or subclass
             A model built from the given components.
 
         """
@@ -1261,7 +1261,7 @@ class MVA:
 
         Returns
         -------
-        Signal instance
+        :py:class:`~hyperspy.api.signals.BaseSignal` or subclass
             A model built from the given components.
 
         """
@@ -1756,19 +1756,19 @@ class MVA:
         ----------
         n_clusters : int
             Number of clusters to find.
-        scaled_data : numpy array - (number_of_samples,number_of_features)
-        algorithm: scikit learn clustering object
-        **kwargs
+        scaled_data : numpy.ndarray
+            Array with shape (number_of_samples, number_of_features)
+        algorithm : object from :mod:`sklearn.cluster`
+            The algorithm used for clustering.
+        **kwargs : dict
             Additional parameters passed to the clustering algorithm.
             This may include `n_init`, the number of times the algorithm is
             restarted to optimize results.
 
-
         Returns
         -------
-        alg
+        object from :mod:`sklearn.cluster`
             return the sklearn.cluster object
-
         """
 
         algorithm.fit(scaled_data)
@@ -1784,13 +1784,17 @@ class MVA:
 
     def plot_cluster_metric(self):
         """Plot the cluster metrics calculated using the 
-        :py:meth:`~.api.signal.BaseSignal.estimate_number_of_clusters` method
+        :py:meth:`~hyperspy.api.signals.BaseSignal.estimate_number_of_clusters` method
 
         See Also
         --------
-        estimate_number_of_clusters, cluster_analysis, get_cluster_labels,
-        get_cluster_signals, plot_cluster_results, plot_cluster_signals,
-        plot_cluster_labels
+        hyperspy.api.signals.BaseSignal.estimate_number_of_clusters,
+        hyperspy.api.signals.BaseSignal.cluster_analysis,
+        hyperspy.api.signals.BaseSignal.get_cluster_labels,
+        hyperspy.api.signals.BaseSignal.get_cluster_signals,
+        hyperspy.api.signals.BaseSignal.plot_cluster_results,
+        hyperspy.api.signals.BaseSignal.plot_cluster_signals,
+        hyperspy.api.signals.BaseSignal.plot_cluster_labels
 
         """
         target = self.learning_results

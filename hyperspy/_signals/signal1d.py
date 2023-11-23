@@ -343,7 +343,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         %s
         **kwargs : dict
             Keyword arguments pass to
-            :py:meth:`~hyperspy.signal.signal.BaseSignal.get_histogram`
+            :py:meth:`~hyperspy.api.signals.BaseSignal.get_histogram`
 
         See Also
         --------
@@ -408,15 +408,15 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        shift_array : BaseSignal or np.array
+        shift_array : :py:class:`~hyperspy.api.signals.BaseSignal` or numpy.ndarray
             An array containing the shifting amount. It must have the same
-            `axes_manager._navigation_shape`
-            `axes_manager._navigation_shape_in_array` shape.
+            ``axes_manager.navigation_shape``
+            ``axes_manager._navigation_shape_in_array`` shape.
         interpolation_method : str or int
-            Specifies the kind of interpolation as a string ('linear',
-            'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an
-            integer specifying the order of the spline interpolator to
-            use.
+            Specifies the kind of interpolation as a string (``'linear'``,
+            ``'nearest'``, ``'zero'``, ``'slinear'``, ``'quadratic'``,
+            ``'cubic'``) or as an integer specifying the order of the spline
+            interpolator to use.
         %s
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
@@ -542,9 +542,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             units of the axis value.
         %s
         %s
-        **kwargs :
+        **kwargs : dict
             All extra keyword arguments are passed to
-            :py:func:`scipy.interpolate.interp1d`. See the function documentation
+            :py:class:`scipy.interpolate.interp1d`. See the function documentation
             for details.
 
         Raises
@@ -610,16 +610,16 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        start, end : int, float or None
+        start, end : int, float or None, default None
             The limits of the interval. If int they are taken as the
             axis index. If float they are taken as the axis value.
-        reference_indices : tuple of ints or None
+        reference_indices : tuple of int or None, default None
             Defines the coordinates of the spectrum that will be used
             as reference. If None the spectrum at the current
             coordinates is used for this purpose.
         max_shift : int
             "Saturation limit" for the shift.
-        interpolate : bool
+        interpolate : bool, default True
             If True, interpolation is used to provide sub-pixel
             accuracy.
         number_of_interpolation_points : int
@@ -634,10 +634,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        An array with the result of the estimation in the axis units.
-        Although the computation is performed in batches if the signal is
-        lazy, the result is computed in memory because it depends on the
-        current state of the axes that could change later on in the workflow.
+        numpy.ndarray
+            An array with the result of the estimation in the axis units.
+            Although the computation is performed in batches if the signal is
+            lazy, the result is computed in memory because it depends on the
+            current state of the axes that could change later on in the workflow.
 
         Raises
         ------
@@ -727,7 +728,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         start, end : int, float or None
             The limits of the interval. If int they are taken as the
             axis index. If float they are taken as the axis value.
-        reference_indices : tuple of ints or None
+        reference_indices : tuple of int or None
             Defines the coordinates of the spectrum that will be used
             as reference. If None the spectrum at the current
             coordinates is used for this purpose.
@@ -751,11 +752,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
         fill_value : float
             If crop is False fill the data outside of the original
             interval with the given value where needed.
-        also_align : list of signals, None
+        also_align : list of :py:class:`~.api.signals.BaseSignal`, None
             A list of BaseSignal instances that has exactly the same
             dimensions as this one and that will be aligned using the shift map
             estimated using the this signal.
-        mask : :py:class:`~.api.signals.BaseSignal` or bool data type.
+        mask : :py:class:`~.api.signals.BaseSignal` or bool
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
@@ -763,7 +764,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        An array with the result of the estimation.
+        numpy.ndarray
+            The result of the estimation.
 
         Raises
         ------
@@ -1108,7 +1110,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        signal_range : "interactive", tuple of ints or floats, optional
+        signal_range : "interactive", tuple of int or float, optional
             If this argument is not specified, the signal range has to be
             selected using a GUI. And the original spectrum will be replaced.
             If tuple is given, a spectrum will be returned.
@@ -1120,7 +1122,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
         fast : bool
-            If True, perform an approximative estimation of the parameters.
+            If True, perform an approximative estimaton of the parameters.
             If False, the signal is fitted using non-linear least squares
             afterwards. This is slower compared to the estimation but
             often more accurate.
@@ -1138,18 +1140,18 @@ class Signal1D(BaseSignal, CommonSignal1D):
         return_model : bool
             If True, the background model is returned. The chi² can be obtained
             from this model using
-            :py:meth:`~hyperspy.models.model1d.Model1D.chisqd`.
+            :py:meth:`~hyperspy.model.BaseModel.chisq`.
         %s
         %s
         %s
 
         Returns
         -------
-        {None, signal, background_model or (signal, background_model)}
-            If signal_range is not 'interactive', the signal with background
-            subtracted is returned. If return_model is True, returns the
+        None or (:py:class:`hyperspy.api.signals.BaseSignal`, :py:class:`hyperspy.models.model1d.Model1D`)
+            If ``signal_range`` is not ``'interactive'``, the signal with background
+            subtracted is returned. If ``return_model=True``, returns the
             background model, otherwise, the GUI widget dictionary is returned
-            if `display=False` - see the display parameter documentation.
+            if ``display=False`` - see the display parameter documentation.
 
         Examples
         --------
@@ -1278,7 +1280,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        side : 'left', 'right' or 'both'
+        side : { ``'left'`` | ``'right'`` | ``'both'`` }
             Specify which side to use.
         channels : None or int
             The number of channels to taper. If None 5% of the total
@@ -1287,7 +1289,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        channels
+        int
 
         Raises
         ------
@@ -1360,48 +1362,44 @@ class Signal1D(BaseSignal, CommonSignal1D):
                             num_workers=None):
         """Find positive peaks along a 1D Signal. It detects peaks by looking
         for downward zero-crossings in the first derivative that exceed
-        'slope_thresh'.
+        ``slope_thresh``.
 
-        'slope_thresh' and 'amp_thresh', control sensitivity: higher
+        ``slope_thresh`` and ``amp_thresh``, control sensitivity: higher
         values will neglect broad peaks (slope) and smaller features (amp),
         respectively.
 
-        `peakgroup` is the number of points around the top of the peak
-        that are taken to estimate the peak height. For spikes or very
-        narrow peaks, set `peakgroup` to 1 or 2; for broad or noisy peaks,
-        make `peakgroup` larger to reduce the effect of noise.
+        
 
         Parameters
         ----------
-        slope_thresh : float, optional
+        slope_thresh : float, default 0
             1st derivative threshold to count the peak;
-            higher values will neglect broader features;
-            default is set to 0.
+            higher values will neglect broader features.
         amp_thresh : float, optional
             intensity threshold below which peaks are ignored;
             higher values will neglect smaller features;
             default is set to 10%% of max(y).
-        medfilt_radius : int, optional
+        medfilt_radius : int, default 5
             median filter window to apply to smooth the data
             (see :py:func:`scipy.signal.medfilt`);
-            if 0, no filter will be applied;
-            default is set to 5.
-        peakgroup : int, optional
+            if 0, no filter will be applied.
+        peakgroup : int, default 10
             number of points around the "top part" of the peak
-            that are taken to estimate the peak height;
-            default is set to 10
-        maxpeakn : int, optional
-            number of maximum detectable peaks;
-            default is set to 5000.
+            that are taken to estimate the peak height.
+            For spikes or very narrow peaks, set `peakgroup` to 1 or 2;
+            for broad or noisy peaks, make ``peakgroup`` larger to
+            reduce the effect of noise.
+        maxpeakn : int, default 5000
+            number of maximum detectable peaks.
         subchannel : bool, default True
             default is set to True.
         %s
 
         Returns
         -------
-        structured array of shape (npeaks) containing fields: 'position',
-        'width', and 'height' for each peak.
-
+        numpy.ndarray
+            Structured array of shape (npeaks) containing fields:
+            'position', 'width', and 'height' for each peak.
 
         Raises
         ------
@@ -1444,8 +1442,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        factor : 0 < float < 1
-            The default, 0.5, estimates the FWHM.
+        factor : float, default 0.5
+            Value to estimate the FWHM. It must be  in interval [0, 1].
         window : None or float
             The size of the window centred at the peak maximum
             used to perform the estimation.
@@ -1453,7 +1451,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             than the width of the peak at some positions or if it is
             so wide that it includes other more intense peaks this
             method cannot compute the width and a NaN is stored instead.
-        return_interval: bool
+        return_interval : bool
             If True, returns 2 extra signals with the positions of the
             desired height fraction at the left and right of the
             peak.
@@ -1462,8 +1460,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Returns
         -------
-        width or [width, left, right], depending on the value of
-        `return_interval`.
+        float or list of float
+            width or [width, left, right], depending on the value of
+            `return_interval`.
 
         """
         if show_progressbar is None:
