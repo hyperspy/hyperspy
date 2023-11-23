@@ -51,16 +51,16 @@ def mlpca(
 
     Parameters
     ----------
-    X : numpy array, shape (m, n)
-        Matrix of observations.
-    varX : numpy array
+    X : numpy.ndarray
+        Matrix of observations with shape (m, n).
+    varX : numpy.ndarray
         Matrix of variances associated with X
         (zeros for missing measurements).
     output_dimension : int
         The model dimensionality.
-    svd_solver : {"auto", "full", "arpack", "randomized"}, default "auto"
+    svd_solver : {``"auto"``, ``"full"``, ``"arpack"``, ``"randomized"``}, default ``"auto"``
         If auto:
-            The solver is selected by a default policy based on `data.shape` and
+            The solver is selected by a default policy based on ``data.shape`` and
             `output_dimension`: if the input data is larger than 500x500 and the
             number of components to extract is lower than 80% of the smallest
             dimension of the data, then the more efficient "randomized"
@@ -83,9 +83,9 @@ def mlpca(
 
     Returns
     -------
-    U, S, V: numpy array
+    numpy.ndarray
         The pseudo-SVD parameters.
-    s_obj : float
+    float
         Value of the objective function.
 
     References

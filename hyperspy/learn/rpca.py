@@ -261,7 +261,7 @@ class ORPCA:
             * ``'qr'``   - QR-based initialization
             * ``'rand'`` - Random initialization
             * numpy.ndarray if the shape (n_features x rank)
-        training_samples : int, dafault 10
+        training_samples : int, default 10
             Specifies the number of training samples to use in
             the 'qr' initialization.
         subspace_learning_rate : float, default 1.0
@@ -537,7 +537,7 @@ def orpca(
 
     Returns
     -------
-    numpy arrays
+    numpy.ndarray
         * If project is True, returns the low-rank factors and loadings only
         * Otherwise, returns the low-rank and sparse error matrices, as well
           as the results of a singular value decomposition (SVD) applied to

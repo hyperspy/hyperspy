@@ -108,7 +108,7 @@ def svd_solve(
     svd_flip : bool, default True
         If True, adjusts the signs of the loadings and factors such that
         the loadings that are largest in absolute value are always positive.
-        See :py:func:`~.learn.svd_pca.svd_flip` for more details.
+        See :py:func:`~hyperspy.learn.svd_pca.svd_flip_signs` for more details.
     u_based_decision : bool, default True
         If True, and svd_flip is True, use the columns of u as the basis for sign-flipping.
         Otherwise, use the rows of v. The choice of which variable to base the
@@ -227,7 +227,7 @@ def svd_pca(
     svd_flip : bool, default True
         If True, adjusts the signs of the loadings and factors such that
         the loadings that are largest in absolute value are always positive.
-        See :py:func:`~.learn.svd_pca.svd_flip` for more details.
+        See :py:func:`~hyperspy.learn.svd_pca.svd_flip_signs` for more details.
 
     Returns
     -------
