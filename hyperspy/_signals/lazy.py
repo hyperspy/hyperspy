@@ -877,7 +877,9 @@ class LazySignal(BaseSignal):
     ):
         """Perform Incremental (Batch) decomposition on the data.
 
-        The results are stored in ``self.learning_results``.
+        The results are stored in the
+        :py:attr:`~hyperspy.api.signals.BaseSignal.learning_results`
+        attribute.
 
         Read more in the :ref:`User Guide <big_data.decomposition>`.
 

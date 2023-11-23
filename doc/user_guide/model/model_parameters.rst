@@ -33,7 +33,7 @@ The current values of a particular component can be printed using the
             centre | False |     1.4865 |       None |       None
 
 The current coordinates can be either set by navigating the
-:py:meth:`~.model.BaseModel.plot`, or specified by pixel indices in
+:py:meth:`~.models.model1d.Model1D.plot`, or specified by pixel indices in
 ``m.axes_manager.indices`` or as calibrated coordinates in
 ``m.axes_manager.coordinates``.
 

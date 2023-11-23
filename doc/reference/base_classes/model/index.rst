@@ -9,3 +9,4 @@ Model
    model2d
    component
    parameter
+   samfire

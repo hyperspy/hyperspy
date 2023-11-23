@@ -260,7 +260,7 @@ This node is "private" and therefore is not displayed when printing the
 Stacking_history
 ----------------
 
-Generated when using :py:meth:`~.api.stack`. Used by
+Generated when using :py:func:`~.api.stack`. Used by
 :py:meth:`~.api.signals.BaseSignal.split`, to retrieve the former list of signal.
 
 step_sizes

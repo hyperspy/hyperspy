@@ -554,7 +554,7 @@ computed automatically when fitting a (weighted) least-squares model
 Visualizing the model
 ^^^^^^^^^^^^^^^^^^^^^
 
-To visualise the result use the :py:meth:`~.models.Model1D.plot` method:
+To visualise the result use the :py:meth:`~.models.model1d.Model1D.plot` method:
 
 .. code-block:: python
 
@@ -563,7 +563,7 @@ To visualise the result use the :py:meth:`~.models.Model1D.plot` method:
 By default only the full model line is displayed in the plot. In addition, it
 is possible to display the individual components by calling
 :py:meth:`~.model.BaseModel.enable_plot_components` or directly using
-:py:meth:`~.models.Model1D.plot`:
+:py:meth:`~.models.model1d.Model1D.plot`:
 
 .. code-block:: python
 

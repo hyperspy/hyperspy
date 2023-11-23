@@ -76,9 +76,6 @@ The :mod:`~.api` package contains the following submodules/packages:
     :mod:`~.api.model`
         Contains the :mod:`~utils.model` module with
         components that can be used to create a model for curve fitting.
-    :mod:`~.api.material`
-        Useful functions for materials properties and elements database that
-        includes physical properties and X-rays and EELS energies.
     :mod:`~.api.plot`
         Plotting functions that operate on multiple signals.
     :mod:`~.api.data`

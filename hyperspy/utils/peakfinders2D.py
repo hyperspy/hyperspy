@@ -146,8 +146,8 @@ def find_local_max(z, **kwargs):
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Peak pixel coordinates.
+    :py:class:`numpy.ndarray`
+        Peak pixel coordinates with shape (n_peaks, 2).
 
     """
     peaks = peak_local_max(z, **kwargs)
@@ -169,8 +169,8 @@ def find_peaks_minmax(z, distance=5., threshold=10.):
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Peak pixel coordinates.
+    peaks : :py:class:`numpy.ndarray`
+        Peak pixel coordinates with shape (n_peaks, 2).
 
     """
     data_max = ndi.maximum_filter(z, distance)
@@ -200,8 +200,8 @@ def find_peaks_max(z, alpha=3., distance=10):
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Peak pixel coordinates.
+    peaks : :py:class:`numpy.ndarray`
+        Peak pixel coordinates with shape (n_peaks, 2).
 
     """
     # preallocate lots of peak storage
@@ -251,8 +251,8 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Peak pixel coordinates.
+    peaks : :py:class:`numpy.ndarray`
+        Peak pixel coordinates with shape (n_peaks, 2).
 
     Notes
     -----
@@ -353,8 +353,8 @@ def find_peaks_stat(z, alpha=1.0, window_radius=10, convergence_ratio=0.05):
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Peak pixel coordinates.
+    peaks : :py:class:`numpy.ndarray`
+        Peak pixel coordinates with with shape (n_peaks, 2).
 
     Notes
     -----
@@ -493,8 +493,8 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Peak pixel coordinates.
+    peaks : :py:class:`numpy.ndarray`
+        Peak pixel coordinates with shape (n_peaks, 2).
 
     Notes
     -----
@@ -537,8 +537,8 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Peak pixel coordinates.
+    peaks : :py:class:`numpy.ndarray`
+        Peak pixel coordinates with shape (n_peaks, 2).
 
     """
     z = z / np.max(z)
@@ -567,7 +567,7 @@ def find_peaks_xc(z, template, distance=5, threshold=0.5, **kwargs):
     ----------
     z : :py:class:`numpy.ndarray`
         Array of image intensities.
-    template : numpy.ndarray (square)
+    template : numpy.ndarray
         Array containing a single bright disc, similar to those to detect.
     distance : float
         Expected distance between peaks.
@@ -579,8 +579,8 @@ def find_peaks_xc(z, template, distance=5, threshold=0.5, **kwargs):
 
     Returns
     -------
-    peaks : :py:class:`numpy.ndarray` of shape (n_peaks, 2)
-        Array of peak coordinates.
+    peaks : :py:class:`numpy.ndarray`
+        Array of peak coordinates with shape (n_peaks, 2).
     """
     pad_input = kwargs.pop('pad_input', True)
     response_image = match_template(z, template, pad_input=pad_input, **kwargs)

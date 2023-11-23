@@ -150,7 +150,7 @@ offers the following online algorithms:
 
 .. seealso::
 
-  :py:meth:`~.learn.mva.MVA.decomposition` for more details on decomposition
+  :py:meth:`~.api.signals.BaseSignal.decomposition` for more details on decomposition
   with non-lazy signals.
 
 
@@ -431,7 +431,7 @@ axes parameters that *may have changed* before the computation is requested.
 Therefore, in order to avoid such issues, it is reccomended to explicitly
 compute the result of all functions that are affected by the axes
 parameters. This is the reason why e.g. the result of
-:py:meth:`~._signals.signal1d.Signal1D.shift1D` is not lazy.
+:py:meth:`~.api.signals.Signal1D.shift1D` is not lazy.
 
 .. _dask_backends:
 

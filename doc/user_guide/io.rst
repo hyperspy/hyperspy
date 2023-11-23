@@ -275,7 +275,7 @@ signals:
     >>> hs.datasets.two_gaussians().plot()
 
 .. versionadded:: 1.4
-    :py:mod:`~.api.data` (formelly :mod:`~.api.datasets.artificial_data`)
+    :py:mod:`~.api.data` (formelly ``hyperspy.api.datasets.artificial_data``)
 
 There are also artificial datasets, which are made to resemble real
 experimental data.
@@ -293,7 +293,7 @@ Saving
 To save data to a file use the :py:meth:`~.api.signals.BaseSignal.save` method. The
 first argument is the filename and the format is defined by the filename
 extension. If the filename does not contain the extension, the default format
-(:external+rsciio:ref:`HSpy-HDF5 <hspy-format>`) is used. For example, if the :py:const:`s` variable
+(:external+rsciio:ref:`HSpy-HDF5 <hspy-format>`) is used. For example, if the ``s`` variable
 contains the :py:class:`~.api.signals.BaseSignal` that you want to write to a file,
 the following will write the data to a file called :file:`spectrum.hspy` in the
 default :external+rsciio:ref:`HSpy-HDF5 <hspy-format>` format:

@@ -599,24 +599,24 @@ class DictionaryTreeBrowser:
 
         Parameters
         ----------
-        item_path : Str
+        item_path : str
             A string describing the path with each item separated by
             full stops (periods).
-        full_path : boolean
-            If `True` (default), the full path to the item has to be given. If
-            `False`, a search for the item key is performed (can include
+        full_path : bool, default True
+            If True, the full path to the item has to be given. If
+            False, a search for the item key is performed (can include
             additional nodes preceding they key separated by full stops).
-        wild : boolean
-            Only applies if `full_path=False`. If `True`, searches for any items
-            where `item` matches a substring of the item key (case insensitive).
-            Default is `False`.
-        return_path : boolean
-            Only applies if `full_path=False`. If `False` (default), a boolean
-            value is returned. If `True`, the full path to the item is returned,
+        wild : bool, default True
+            Only applies if ``full_path=False``. If True, searches for any items
+            where ``item`` matches a substring of the item key (case insensitive).
+            Default is ``False``.
+        return_path : bool, default False
+            Only applies if ``full_path=False``. If False, a boolean
+            value is returned. If True, the full path to the item is returned,
             a list of paths for multiple matches, or default value if it does
             not exist.
         default :
-            The value to return for path if the item does not exist (default is `None`).
+            The value to return for path if the item does not exist (default is ``None``).
 
         Examples
         --------
@@ -676,23 +676,22 @@ class DictionaryTreeBrowser:
 
         Parameters
         ----------
-        item_path : Str
+        item_path : str
             A string describing the path with each item separated by
             full stops (periods)
-        full_path : boolean
-            If `True` (default), the full path to the item has to be given. If
-            `False`, a search for the item key is performed (can include
+        full_path : bool, default True
+            If True, the full path to the item has to be given. If
+            False, a search for the item key is performed (can include
             additional nodes preceding they key separated by full stops).
-        wild : boolean
-            Only applies if `full_path=False`. If `True`, searches for any items
-            where `item` matches a substring of the item key (case insensitive).
-            Default is `False`.
-        return_path : boolean
-            Only applies if `full_path=False`. Default `False`. If `True`,
-            returns an additional list of paths to the item(s) that match `key`.
-        default :
+        wild : bool
+            Only applies if ``full_path=False``. If True, searches for any items
+            where ``item`` matches a substring of the item key (case insensitive).
+            Default is False.
+        return_path : bool
+            Only applies if ``full_path=False``. Default False. If True,
+            returns an additional list of paths to the item(s) that match ``key``.
+        default : None or obj, default None
             The value to return if the path or item does not exist.
-            (default is `None`).
 
         Examples
         --------

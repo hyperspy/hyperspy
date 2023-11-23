@@ -23,7 +23,7 @@ from functools import wraps   # Used in exec statement
 import re
 
 
-class Events(object):
+class Events:
 
     """
     Events container.
@@ -142,12 +142,15 @@ class Events(object):
         return "<hyperspy.events.Events: " + repr(self._events) + ">"
 
 
-class Event(object):
+class Event:
+
+    """
+    Events class
+
+    """
 
     def __init__(self, doc='', arguments=None):
         """
-        Create an Event object.
-
         Parameters
         ----------
         doc : str

@@ -6,7 +6,7 @@ Events
 
 Events are a mechanism to send notifications. HyperSpy events are
 decentralised, meaning that there is not a central events dispatcher.
-Instead, each object that can emit events has an :py:attr:`events`
+Instead, each object that can emit events has an ``events``
 attribute that is an instance of :py:class:`~.events.Events` and that contains
 instances of  :py:class:`~.events.Event` as attributes. When triggered the
 first keyword argument, `obj` contains the object that the events belongs to.
@@ -120,8 +120,8 @@ Triggering events
 Although usually there is no need to trigger events manually, there are
 cases where it is required. When triggering events manually it is important
 to pass the right keywords as specified in the event docstring. In the
-following example we change the :py:attr:`data` attribute of a
-:py:class:`~.api.signals.BaseSignal` manually and we then trigger the `data_changed`
+following example we change the :py:attr:`~.api.signals.BaseSignal.data` attribute of a
+:py:class:`~.api.signals.BaseSignal` manually and we then trigger the ``data_changed``
 event.
 
 .. code-block:: python
