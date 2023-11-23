@@ -85,16 +85,16 @@ class Samfire:
 
     Attributes
     ----------
-    model : Model instance
+    model : :py:class:`hyperspy.model.BaseModel` (or subclass)
         The complete model
     optional_components : list
         A list of components that can be switched off at some pixels if it
         returns a better Akaike's Information Criterion with correction (AICc)
     workers : int
         A number of processes that will perform the fitting parallely
-    pool : samfire_pool instance
+    pool : :py:class:`~.api.samfire.SamfirePool`
         A proxy object that manages either multiprocessing or ipyparallel pool
-    strategies : strategy list
+    strategies : list
         A list of strategies that will be used to select pixel fitting order
         and calculate required starting parameters. Strategies come in two
         "flavours" - local and global. Local strategies spread the starting
@@ -102,7 +102,7 @@ class Samfire:
         Global strategies look for clusters in parameter values, and suggests
         most frequent values. Global strategy do not depend on pixel fitting
         order, hence it is randomised.
-    metadata : dictionary
+    metadata : dict
         A dictionary for important samfire parameters
     active_strategy : strategy
         The currently active strategy from the strategies list
@@ -115,7 +115,7 @@ class Samfire:
     save_every : int
         When running, samfire saves results every time save_every good fits are
         found.
-    random_state : None or int or RandomState instance, default None
+    random_state : None or int or numpy.random.Generator, default None
         Random seed used to select the next pixels.
 
     """
@@ -244,7 +244,8 @@ class Samfire:
 
         Parameters
         ----------
-        strategy : strategy instance
+        strategy : strategy
+            The samfire strategy to use
         """
         self.strategies.append(strategy)
 
@@ -253,16 +254,17 @@ class Samfire:
 
         Parameters
         ----------
-        iterable : an iterable of strategy instances
+        iterable : iterable of strategy
+            The samfire strategies to use.
         """
         self.strategies.extend(iterable)
 
     def remove(self, thing):
-        """removes given strategy from the strategies list
+        """Remove given strategy from the strategies list
 
         Parameters
         ----------
-        thing : int or strategy instance
+        thing : int or strategy
             Strategy that is in current strategies list or its index.
         """
         self.strategies.remove(thing)
@@ -319,11 +321,11 @@ class Samfire:
 
         Parameters
         ----------
-        filename : {str, None}
+        filename : str, None, default None
             the filename. If None, a default value of ``backup_`` + signal_title
             is used.
-        on_count : bool
-            if True (default), only saves on the required count of steps
+        on_count : bool, default True
+            if True, only saves on the required count of steps
         """
         if filename is None:
             title = self.model.signal.metadata.General.title
@@ -342,12 +344,12 @@ class Samfire:
         ----------
         ind : tuple
             contains the index of the pixel of the results
-        results : {dict, None}
+        results : dict or None, default None
             dictionary of the results. If None, means we are updating in-place
-            (e.g. refreshing the marker or strategies)
-        isgood : {bool, None}
+            (e.g. refreshing the marker or strategies).
+        isgood : bool or None, default None
             if it is known if the results are good according to the
-            goodness-of-fit test. If None, the pixel is tested
+            goodness-of-fit test. If None, the pixel is tested.
         """
         if results is not None and (isgood is None or isgood):
             self._swap_dict_and_model(ind, results)
@@ -387,7 +389,7 @@ class Samfire:
 
         Parameters
         ----------
-        new_strat : {int | strategy}
+        new_strat : int or strategy
             index of the new strategy from the strategies list or the
             strategy object itself
         """
@@ -437,7 +439,7 @@ class Samfire:
 
         Parameters
         ----------
-        need_inds: int
+        need_inds : int
             the number of pixels to be returned in the generator
         """
         if need_inds:

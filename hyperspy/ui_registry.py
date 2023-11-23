@@ -172,7 +172,7 @@ DISPLAY_DT = """display : bool
             widgets container in a dictionary, usually for customisation or
             testing."""
 
-TOOLKIT_DT = """toolkit : str, iterable of strings or None
+TOOLKIT_DT = """toolkit : str, iterable of str or None
             If None (default), all available widgets are displayed or returned.
             If string, only the widgets of the selected toolkit are displayed
             if available. If an interable of toolkit strings, the widgets of

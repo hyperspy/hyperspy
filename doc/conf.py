@@ -353,6 +353,7 @@ numpydoc_xref_ignore = {
     "color",
     "hyperspy",
     "widget",
+    "strategy",
 }
 
 # if Version(numpydoc.__version__) >= Version("1.6.0rc0"):

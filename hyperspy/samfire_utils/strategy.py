@@ -86,7 +86,7 @@ def nearest_indices(shape, ind, radii):
     return par, center
 
 
-class SamfireStrategy(object):
+class SamfireStrategy:
     """A SAMFire strategy base class.
     """
 

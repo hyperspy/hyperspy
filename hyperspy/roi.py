@@ -65,7 +65,7 @@ not_set_error_msg = (
 
 
 PARSE_AXES_DOCSTRING = \
-"""axes : None, str, int or :py:class:`hyperspy.axes.DataAxis`, default is None
+"""axes : None, str, int or :py:class:`hyperspy.axes.DataAxis`, default None
             The axes argument specifies which axes the ROI will be applied on.
             The axes in the collection can be either of the following:
 
