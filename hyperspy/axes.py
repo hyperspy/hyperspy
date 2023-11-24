@@ -1595,6 +1595,7 @@ class AxesManager(t.HasTraits):
 
     @property
     def signal_extent(self):
+        """The low and high values of the signal axes."""
         signal_extent = []
         for signal_axis in self.signal_axes:
             signal_extent.append(signal_axis.low_value)
@@ -1603,6 +1604,7 @@ class AxesManager(t.HasTraits):
 
     @property
     def navigation_extent(self):
+        """The low and high values of the navigation axes."""
         navigation_extent = []
         for navigation_axis in self.navigation_axes:
             navigation_extent.append(navigation_axis.low_value)

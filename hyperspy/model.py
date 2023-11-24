@@ -1867,7 +1867,7 @@ class BaseModel(list):
                 Use the value of :py:attr:`~.axes.AxesManager.iterpath`.
         **kwargs : dict
             Any extra keyword argument will be passed to the fit method.
-            See the documentation for :py:meth:`~.model.BaseModel.fit`
+            See the documentation for :py:meth:`~hyperspy.model.BaseModel.fit`
             for a list of valid arguments.
 
         Returns
