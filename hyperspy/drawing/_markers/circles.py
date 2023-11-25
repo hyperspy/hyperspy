@@ -50,7 +50,7 @@ class Circles(Markers):
             If c is 'none', the patch will not be filled.
         %s
         kwargs : dict
-            Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`.
+            Keyword arguments are passed to :class:`matplotlib.collections.CircleCollection`.
         """
 
         if kwargs.setdefault("transform", "display") != "display":

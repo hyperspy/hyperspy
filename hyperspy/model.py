@@ -189,18 +189,18 @@ class BaseModel(list):
     dimensions.
 
     Models of one-dimensional signals should use the
-    :py:class:`~hyperspy.models.model1d.Model1D` and models of two-dimensional signals
+    :class:`~hyperspy.models.model1d.Model1D` and models of two-dimensional signals
     should use the :class:`~hyperspy.models.model2d.Model2D`.
 
     A model is constructed as a linear combination of
-    :py:mod:`~.api.model.components1D` or :py:mod:`~.api.model.components2D`
-    that are added to the model using the :py:meth:`append` or :py:meth:`extend`.
+    :mod:`~.api.model.components1D` or :mod:`~.api.model.components2D`
+    that are added to the model using the :meth:`append` or :meth:`extend`.
     If needed, new components can be created easily created using using
-    :py:class:`~.api.model.components1D.Expression` code of existing components
+    :class:`~.api.model.components1D.Expression` code of existing components
     as a template.
 
     Once defined, the model can be fitted to the data using :meth:`fit` or
-    :py:meth:`multifit`. Once the optimizer reaches
+    :meth:`multifit`. Once the optimizer reaches
     the convergence criteria or the maximum number of iterations the new value
     of the component parameters are stored in the components.
 
@@ -424,10 +424,10 @@ class BaseModel(list):
 
             * _whitelist: a dictionary with keys used as references of save
               attributes, for more information, see
-              :py:func:`~.misc.export_dictionary.load_from_dictionary`
+              :func:`~.misc.export_dictionary.load_from_dictionary`
             * components: a dictionary, with information about components of
               the model (see
-              :py:meth:`~.component.Parameter.as_dictionary`
+              :meth:`~.component.Parameter.as_dictionary`
               documentation for more details)
             * any field from _whitelist.keys()
         """
@@ -491,7 +491,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        thing : :py:class:`~hyperspy.component.Component`
+        thing : :class:`~hyperspy.component.Component`
             The component to add to the model.
         """
         if not isinstance(thing, Component):
@@ -586,7 +586,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        component_list : list of :py:class:`~hyperspy.component.Component`, optional
+        component_list : list of :class:`~hyperspy.component.Component`, optional
             If a list of components is given, only the components given in the
             list is used in making the returned spectrum. The components can
             be specified by name, index or themselves.
@@ -594,14 +594,14 @@ class BaseModel(list):
             If True the signal range outside of the fitted range is filled with
             nans. Default True.
         %s
-        out : None or :py:class:`~hyperspy.api.signals.BaseSignal`
+        out : None or :class:`~hyperspy.api.signals.BaseSignal`
             The signal where to put the result into. Convenient for parallel
             processing. If None (default), creates a new one. If passed, it is
             assumed to be of correct shape and dtype and not checked.
 
         Returns
         -------
-        :py:class:`~hyperspy.api.signals.BaseSignal`
+        :class:`~hyperspy.api.signals.BaseSignal`
             The model as a signal.
 
         Examples
@@ -784,7 +784,7 @@ class BaseModel(list):
         """
         Enable interactive adjustment of the position of the components
         that have a well defined position. Use after
-        :py:meth:`~hyperspy.models.model1d.Model1D.plot`.
+        :meth:`~hyperspy.models.model1d.Model1D.plot`.
         """
         if self._plot is None or self._plot_components:
             return
@@ -796,7 +796,7 @@ class BaseModel(list):
         """
         Disable interactive adjustment of the position of the components
         that have a well defined position. Use after
-        :py:meth:`~hyperspy.models.model1d.Model1D.plot`.
+        :meth:`~hyperspy.models.model1d.Model1D.plot`.
         """
         if self._plot is None:
             return
@@ -1067,17 +1067,17 @@ class BaseModel(list):
             Fit the current index only, instead of the whole navigation space.
         kwargs : dict, optional
             Keywords arguments are passed to
-            :py:func:`sklearn.linear_model.ridge_regression`.
+            :func:`sklearn.linear_model.ridge_regression`.
 
         Notes
         -----
         More linear optimizers can be added in the future, but note that in order
         to support simultaneous fitting across the dataset, the optimizer must
         support "two-dimensional y" - see the ``b`` parameter in
-        :py:func:`numpy.linalg.lstsq`.
+        :func:`numpy.linalg.lstsq`.
 
         Currently, the overhead in calculating the component data takes about
-        100 times longer than actually running :py:func:`np.linalg.lstsq`.
+        100 times longer than actually running :func:`np.linalg.lstsq`.
         That means that going pixel-by-pixel, calculating the component data
         each time is not faster than the normal nonlinear methods. Linear
         fitting is hence currently only useful for fitting a dataset in the
@@ -1858,16 +1858,16 @@ class BaseModel(list):
         iterpath : {None, ``"flyback"``, ``"serpentine"``}, default None
             If ``"flyback"``:
                 At each new row the index begins at the first column,
-                in accordance with the way :py:class:`numpy.ndindex` generates indices.
+                in accordance with the way :class:`numpy.ndindex` generates indices.
             If ``"serpentine"``:
                 Iterate through the signal in a serpentine, "snake-game"-like
                 manner instead of beginning each new row at the first index.
                 Works for n-dimensional navigation space, not just 2D.
             If None:
-                Use the value of :py:attr:`~.axes.AxesManager.iterpath`.
+                Use the value of :attr:`~.axes.AxesManager.iterpath`.
         **kwargs : dict
             Any extra keyword argument will be passed to the fit method.
-            See the documentation for :py:meth:`~hyperspy.model.BaseModel.fit`
+            See the documentation for :meth:`~hyperspy.model.BaseModel.fit`
             for a list of valid arguments.
 
         Returns
@@ -2081,7 +2081,7 @@ class BaseModel(list):
         -----
         This method can be used to save the current state of the model in a way
         that can be loaded back to recreate the it using
-        :py:meth:`~hyperspy.model.BaseModel.load_parameters_from_file`.
+        :meth:`~hyperspy.model.BaseModel.load_parameters_from_file`.
         Actually, as of HyperSpy 0.8 this is the only way to do so.
         However, this is known to be brittle. For example see
         https://github.com/hyperspy/hyperspy/issues/341.
@@ -2099,7 +2099,7 @@ class BaseModel(list):
 
     def load_parameters_from_file(self, filename):
         """Loads the parameters array from a binary file written with the
-        :py:meth:`~hyperspy.model.BaseModel.save_parameters2file` function.
+        :meth:`~hyperspy.model.BaseModel.save_parameters2file` function.
 
         Parameters
         ----------
@@ -2111,7 +2111,7 @@ class BaseModel(list):
 
         Notes
         -----
-        In combination with :py:meth:`~hyperspy.model.BaseModel.save_parameters2file`,
+        In combination with :meth:`~hyperspy.model.BaseModel.save_parameters2file`,
         this method can be used to recreate a model stored in a file. Actually,
         before HyperSpy 0.8 this is the only way to do so.  However, this is known
         to be brittle. For example see https://github.com/hyperspy/hyperspy/issues/341.
@@ -2133,7 +2133,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        component_list : list of :py:class:`~hyperspy.component.Component`, optional
+        component_list : list of :class:`~hyperspy.component.Component`, optional
             If a list of components is given, the operation will be performed
             only in the value of the parameters of the given components.
             The components can be specified by name, index or themselves.
@@ -2235,7 +2235,7 @@ class BaseModel(list):
             only parameters which are free will be printed.
         only_active : bool
             If True, only values of active components will be printed
-        component_list : None or list of :py:class:`~hyperspy.component.Component`
+        component_list : None or list of :class:`~hyperspy.component.Component`
             If None, print all components.
         """
         display(
@@ -2252,7 +2252,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        component_list : None or list of :py:class:`~hyperspy.component.Component`, optional
+        component_list : None or list of :class:`~hyperspy.component.Component`, optional
             If None, will apply the function to all components in the model.
             If list of components, will apply the functions to the components
             in the list.  The components can be specified by name, index or
@@ -2307,7 +2307,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        component_list : None or list of :py:class:`~hyperspy.component.Component`, optional
+        component_list : None or list of :class:`~hyperspy.component.Component`, optional
             If None, will apply the function to all components in the model.
             If list of components, will apply the functions to the components
             in the list. The components can be specified by name, index or
@@ -2367,7 +2367,7 @@ class BaseModel(list):
             Name of the parameter whose value will be changed
         value : float or int
             The new value of the parameter
-        component_list : None or list of :py:class:`~hyperspy.component.Component`, optional
+        component_list : None or list of :class:`~hyperspy.component.Component`, optional
             A list of components whose parameters will changed. The components
             can be specified by name, index or themselves. If None, use all
             components of the model.
@@ -2425,7 +2425,7 @@ class BaseModel(list):
               component
             * _whitelist: a dictionary with keys used as references for saved
               attributes, for more information, see
-              :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
+              :func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys()
 
         Examples
@@ -2470,7 +2470,7 @@ class BaseModel(list):
         ----------
         value : bool
             The new value of the ``'active'`` parameter
-        component_list : list of :py:class:`~hyperspy.component.Component`, optional
+        component_list : list of :class:`~hyperspy.component.Component`, optional
             A list of components whose parameters will changed. The components
             can be specified by name, index or themselves.
         only_current : bool, default False

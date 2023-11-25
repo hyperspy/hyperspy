@@ -87,7 +87,7 @@ class Lorentzian(Expression):
         Location of the peak maximum.
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~.api.model.components1D.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
 
     For convenience the `fwhm` and `height` attributes can be used to get and set

@@ -684,7 +684,7 @@ class BaseDataAxis(t.HasTraits):
 
         Parameters
         ----------
-        axis : :py:class:`~hyperspy.axes.BaseDataAxis`
+        axis : :class:`~hyperspy.axes.BaseDataAxis`
             The instance to use as a source for values.
         attributes : iterable of str
             The name of the attribute to update. If the attribute does not
@@ -834,7 +834,7 @@ class DataAxis(BaseDataAxis):
 
         Parameters
         ----------
-        axis : :py:class:`~hyperspy.axes.DataAxis`
+        axis : :class:`~hyperspy.axes.DataAxis`
             The instance to use as a source for values.
         attributes : iterable of str
             The name of the attribute to update. If the attribute does not
@@ -982,7 +982,7 @@ class FunctionalDataAxis(BaseDataAxis):
 
         Parameters
         ----------
-        axis : :py:class:`~hyperspy.axes.FunctionalDataAxis`
+        axis : :class:`~hyperspy.axes.FunctionalDataAxis`
             The instance to use as a source for values.
         attributes : iterable of str or None
             A list of the name of the attribute to update. If an attribute does not
@@ -1249,7 +1249,7 @@ class UniformDataAxis(BaseDataAxis, UnitConversion):
 
         Parameters
         ----------
-        axis : :py:class:`~hyperspy.axes.UniformDataAxis`
+        axis : :class:`~hyperspy.axes.UniformDataAxis`
             The UniformDataAxis instance to use as a source for values.
         attributes : iterable of str or None
             The name of the attribute to update. If the attribute does not
@@ -1663,9 +1663,9 @@ class AxesManager(t.HasTraits):
         """Given a list of either axes dictionaries, these are
         added to the AxesManager. In case dictionaries defining the axes
         properties are passed, the 
-        :py:class:`~hyperspy.axes.DataAxis`,
-        :py:class:`~hyperspy.axes.UniformDataAxis`,
-        :py:class:`~hyperspy.axes.FunctionalDataAxis` instances are first
+        :class:`~hyperspy.axes.DataAxis`,
+        :class:`~hyperspy.axes.UniformDataAxis`,
+        :class:`~hyperspy.axes.FunctionalDataAxis` instances are first
         created.
 
         The index of the axis in the array and in the `_axes` lists
@@ -1696,7 +1696,7 @@ class AxesManager(t.HasTraits):
 
         Parameters
         ----------
-        axis : :py:class:`~hyperspy.axes.BaseDataAxis`
+        axis : :class:`~hyperspy.axes.BaseDataAxis`
             The axis to replace the current axis with
         index_in_axes_manager : int
             The index of the axis in current signal to replace
@@ -1876,7 +1876,7 @@ class AxesManager(t.HasTraits):
 
         Parameters
         ----------
-        axes : int, str, iterable of :py:class:`~hyperspy.axes.DataAxis` or None, default None
+        axes : int, str, iterable of :class:`~hyperspy.axes.DataAxis` or None, default None
             Convert to a convenient scale and units on the specified axis.
             If int, the axis can be specified using the index of the
             axis in ``axes_manager``.
@@ -1983,7 +1983,7 @@ class AxesManager(t.HasTraits):
 
         Parameters
         ----------
-        axes: iterable of :py:class:`~hyperspy.axes.DataAxis`.
+        axes: iterable of :class:`~hyperspy.axes.DataAxis`.
             The axes to copy the attributes from.
         attributes: iterable of strings.
             The attributes to copy.

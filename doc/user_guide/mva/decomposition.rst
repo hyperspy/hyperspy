@@ -5,7 +5,7 @@ Decomposition
 
 Decomposition techniques are most commonly used as a means of noise
 reduction (or `denoising`) and dimensionality reduction. To apply a
-decomposition to your dataset, run the :py:meth:`~.api.signals.BaseSignal.decomposition`
+decomposition to your dataset, run the :meth:`~.api.signals.BaseSignal.decomposition`
 method, for example:
 
 .. code-block:: python
@@ -24,13 +24,13 @@ method, for example:
    The signal ``s`` must be multi-dimensional, *i.e.*
    ``s.axes_manager.navigation_size > 1``
 
-One of the most popular uses of :py:meth:`~.api.signals.BaseSignal.decomposition`
+One of the most popular uses of :meth:`~.api.signals.BaseSignal.decomposition`
 is data denoising. This is achieved by using a limited set of components
 to make a model of the original dataset, omitting the less significant components that
 ideally contain only noise.
 
 To reconstruct your denoised or reduced model, run the
-:py:meth:`~.api.signals.BaseSignal.get_decomposition_model` method. For example:
+:meth:`~.api.signals.BaseSignal.get_decomposition_model` method. For example:
 
 .. code-block:: python
 
@@ -45,7 +45,7 @@ To reconstruct your denoised or reduced model, run the
 
 Sometimes, it is useful to examine the residuals between your original data and
 the decomposition model. You can easily calculate and display the residuals,
-since :py:meth:`~.api.signals.BaseSignal.get_decomposition_model` returns a new
+since :meth:`~.api.signals.BaseSignal.get_decomposition_model` returns a new
 object, which in the example above we have called ``sc``:
 
 .. code-block:: python
@@ -90,23 +90,23 @@ links to the appropriate documentation for more information on each one.
    +--------------------------+----------------------------------------------------------------+
    | Algorithm                | Method                                                         |
    +==========================+================================================================+
-   | "SVD" (default)          | :py:func:`~.learn.svd_pca.svd_pca`                             |
+   | "SVD" (default)          | :func:`~.learn.svd_pca.svd_pca`                                |
    +--------------------------+----------------------------------------------------------------+
-   | "MLPCA"                  | :py:func:`~.learn.mlpca.mlpca`                                 |
+   | "MLPCA"                  | :func:`~.learn.mlpca.mlpca`                                    |
    +--------------------------+----------------------------------------------------------------+
-   | "sklearn_pca"            | :py:class:`sklearn.decomposition.PCA`                          |
+   | "sklearn_pca"            | :class:`sklearn.decomposition.PCA`                             |
    +--------------------------+----------------------------------------------------------------+
-   | "NMF"                    | :py:class:`sklearn.decomposition.NMF`                          |
+   | "NMF"                    | :class:`sklearn.decomposition.NMF`                             |
    +--------------------------+----------------------------------------------------------------+
-   | "sparse_pca"             | :py:class:`sklearn.decomposition.SparsePCA`                    |
+   | "sparse_pca"             | :class:`sklearn.decomposition.SparsePCA`                       |
    +--------------------------+----------------------------------------------------------------+
-   | "mini_batch_sparse_pca"  | :py:class:`sklearn.decomposition.MiniBatchSparsePCA`           |
+   | "mini_batch_sparse_pca"  | :class:`sklearn.decomposition.MiniBatchSparsePCA`              |
    +--------------------------+----------------------------------------------------------------+
-   | "RPCA"                   | :py:func:`~.learn.rpca.rpca_godec`                             |
+   | "RPCA"                   | :func:`~.learn.rpca.rpca_godec`                                |
    +--------------------------+----------------------------------------------------------------+
-   | "ORPCA"                  | :py:class:`~.learn.rpca.ORPCA`                                 |
+   | "ORPCA"                  | :class:`~.learn.rpca.ORPCA`                                    |
    +--------------------------+----------------------------------------------------------------+
-   | "ORNMF"                  | :py:class:`~.learn.ornmf.ORNMF`                                |
+   | "ORNMF"                  | :class:`~.learn.ornmf.ORNMF`                                   |
    +--------------------------+----------------------------------------------------------------+
    | custom object            | An object implementing  ``fit()`` and  ``transform()`` methods |
    +--------------------------+----------------------------------------------------------------+
@@ -120,7 +120,7 @@ The default algorithm in HyperSpy is ``"SVD"``, which uses an approach called
 "singular value decomposition" to decompose the data in the form
 :math:`X = U \Sigma V^T`. The factors are given by :math:`U \Sigma`, and the
 loadings are given by :math:`V^T`. For more information, please read the method
-documentation for :py:func:`~.learn.svd_pca.svd_pca`.
+documentation for :func:`~.learn.svd_pca.svd_pca`.
 
 .. code-block:: python
 
@@ -140,7 +140,7 @@ documentation for :py:func:`~.learn.svd_pca.svd_pca`.
    The ``"SVD"`` algorithm in HyperSpy **does not** apply this
    centering step by default. As a result, you may observe differences between
    the output of the ``"SVD"`` algorithm and, for example,
-   :py:class:`sklearn.decomposition.PCA`, which **does** apply centering.
+   :class:`sklearn.decomposition.PCA`, which **does** apply centering.
 
 .. _mva.pca:
 
@@ -149,7 +149,7 @@ Principal component analysis (PCA)
 
 One of the most popular decomposition methods is `principal component analysis
 <https://en.wikipedia.org/wiki/Principal_component_analysis>`_ (PCA).
-To perform PCA on your dataset, run the :py:meth:`~.api.signals.BaseSignal.decomposition`
+To perform PCA on your dataset, run the :meth:`~.api.signals.BaseSignal.decomposition`
 method with any of following arguments.
 
 If you have `scikit-learn <https://scikit-learn.org/>`_ installed:
@@ -169,7 +169,7 @@ the ``"centre"`` argument:
    # Subtract the mean along the signal axis
    >>> s.decomposition(algorithm="SVD", centre="signal")
 
-You can also use :py:class:`sklearn.decomposition.PCA` directly:
+You can also use :class:`sklearn.decomposition.PCA` directly:
 
 .. code-block:: python
 
@@ -216,7 +216,7 @@ robust statistical treatment of non-Gaussian "heteroskedastic noise".
 
    >>> s.decomposition(algorithm="MLPCA")
 
-For more information, please read the method documentation for :py:func:`~.learn.mlpca.mlpca`.
+For more information, please read the method documentation for :func:`~.learn.mlpca.mlpca`.
 
 .. note::
 
@@ -382,7 +382,7 @@ Custom decomposition algorithms
 HyperSpy supports passing a custom decomposition algorithm, provided it follows the form of a
 `scikit-learn estimator <https://scikit-learn.org/stable/developers/develop.html>`_.
 Any object that implements ``fit`` and ``transform`` methods is acceptable, including
-:py:class:`sklearn.pipeline.Pipeline` and :py:class:`sklearn.model_selection.GridSearchCV`.
+:class:`sklearn.pipeline.Pipeline` and :class:`sklearn.model_selection.GridSearchCV`.
 You can access the fitted estimator by passing ``return_info=True``.
 
 .. code-block:: python

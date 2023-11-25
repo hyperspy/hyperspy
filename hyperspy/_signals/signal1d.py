@@ -343,7 +343,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         %s
         **kwargs : dict
             Keyword arguments pass to
-            :py:meth:`~hyperspy.api.signals.BaseSignal.get_histogram`
+            :meth:`~hyperspy.api.signals.BaseSignal.get_histogram`
 
         See Also
         --------
@@ -408,7 +408,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        shift_array : :py:class:`~hyperspy.api.signals.BaseSignal` or numpy.ndarray
+        shift_array : :class:`~hyperspy.api.signals.BaseSignal` or numpy.ndarray
             An array containing the shifting amount. It must have the same
             ``axes_manager.navigation_shape``
             ``axes_manager._navigation_shape_in_array`` shape.
@@ -544,7 +544,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         %s
         **kwargs : dict
             All extra keyword arguments are passed to
-            :py:class:`scipy.interpolate.interp1d`. See the function documentation
+            :class:`scipy.interpolate.interp1d`. See the function documentation
             for details.
 
         Raises
@@ -625,7 +625,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         number_of_interpolation_points : int
             Number of interpolation points. Warning: making this number
             too big can saturate the memory
-        mask : :py:class:`~.api.signals.BaseSignal` of bool.
+        mask : :class:`~.api.signals.BaseSignal` of bool.
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
@@ -752,11 +752,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
         fill_value : float
             If crop is False fill the data outside of the original
             interval with the given value where needed.
-        also_align : list of :py:class:`~.api.signals.BaseSignal`, None
+        also_align : list of :class:`~.api.signals.BaseSignal`, None
             A list of BaseSignal instances that has exactly the same
             dimensions as this one and that will be aligned using the shift map
             estimated using the this signal.
-        mask : :py:class:`~.api.signals.BaseSignal` or bool
+        mask : :class:`~.api.signals.BaseSignal` or bool
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
@@ -1033,7 +1033,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             self, signal_range, background_estimator, fast=True,
             zero_fill=False, show_progressbar=None, model=None,
             return_model=False):
-        """ See :py:meth:`~hyperspy._signal1d.signal1D.remove_background`. """
+        """ See :meth:`~hyperspy._signal1d.signal1D.remove_background`. """
         if model is None:
             from hyperspy.models.model1d import Model1D
             model = Model1D(self)
@@ -1140,14 +1140,14 @@ class Signal1D(BaseSignal, CommonSignal1D):
         return_model : bool
             If True, the background model is returned. The chi² can be obtained
             from this model using
-            :py:meth:`~hyperspy.model.BaseModel.chisq`.
+            :meth:`~hyperspy.model.BaseModel.chisq`.
         %s
         %s
         %s
 
         Returns
         -------
-        None or (:py:class:`hyperspy.api.signals.BaseSignal`, :py:class:`hyperspy.models.model1d.Model1D`)
+        None or (:class:`hyperspy.api.signals.BaseSignal`, :class:`hyperspy.models.model1d.Model1D`)
             If ``signal_range`` is not ``'interactive'``, the signal with background
             subtracted is returned. If ``return_model=True``, returns the
             background model, otherwise, the GUI widget dictionary is returned
@@ -1381,7 +1381,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             default is set to 10%% of max(y).
         medfilt_radius : int, default 5
             median filter window to apply to smooth the data
-            (see :py:func:`scipy.signal.medfilt`);
+            (see :func:`scipy.signal.medfilt`);
             if 0, no filter will be applied.
         peakgroup : int, default 10
             number of points around the "top part" of the peak

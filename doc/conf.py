@@ -406,3 +406,5 @@ copybutton_prompt_is_regexp = True
 
 def setup(app):
     app.add_css_file("custom-styles.css")
+
+tls_verify = False

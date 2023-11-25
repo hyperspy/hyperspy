@@ -7,14 +7,14 @@ Obtain the results as BaseSignal instances
 ------------------------------------------
 
 The decomposition and BSS results are internally stored as numpy arrays in the
-:py:class:`~.api.signals.BaseSignal` class. Frequently it is useful to obtain the
+:class:`~.api.signals.BaseSignal` class. Frequently it is useful to obtain the
 decomposition/BSS factors and loadings as HyperSpy signals, and HyperSpy
 provides the following methods for that purpose:
 
-* :py:meth:`~.api.signals.BaseSignal.get_decomposition_loadings`
-* :py:meth:`~.api.signals.BaseSignal.get_decomposition_factors`
-* :py:meth:`~.api.signals.BaseSignal.get_bss_loadings`
-* :py:meth:`~.api.signals.BaseSignal.get_bss_factors`
+* :meth:`~.api.signals.BaseSignal.get_decomposition_loadings`
+* :meth:`~.api.signals.BaseSignal.get_decomposition_factors`
+* :meth:`~.api.signals.BaseSignal.get_bss_loadings`
+* :meth:`~.api.signals.BaseSignal.get_bss_factors`
 
 .. _mva.saving-label:
 
@@ -39,7 +39,7 @@ Save to an external file
 
 Alternatively, you can save the results of the current machine learning
 analysis to a separate file with the
-:py:meth:`~.learn.mva.LearningResults.save` method:
+:meth:`~.learn.mva.LearningResults.save` method:
 
 .. code-block:: python
 
@@ -55,8 +55,8 @@ Export in different formats
 You can also export the results of a machine learning analysis to any format
 supported by HyperSpy with the following methods:
 
-* :py:meth:`~.api.signals.BaseSignal.export_decomposition_results`
-* :py:meth:`~.api.signals.BaseSignal.export_bss_results`
+* :meth:`~.api.signals.BaseSignal.export_decomposition_results`
+* :meth:`~.api.signals.BaseSignal.export_bss_results`
 
 These methods accept many arguments to customise the way in which the
 data is exported, so please consult the method documentation. The options

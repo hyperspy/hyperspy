@@ -159,10 +159,10 @@ class MVA:
         auto_transpose : bool, default True
             If True, automatically transposes the data to boost performance.
             Only used by the "SVD" algorithm.
-        navigation_mask : numpy.ndarray or :py:class:`~hyperspy.api.signals.BaseSignal`
+        navigation_mask : numpy.ndarray or :class:`~hyperspy.api.signals.BaseSignal`
             The navigation locations marked as True are not used in the
             decomposition.
-        signal_mask : numpy.ndarray or :py:class:`~hyperspy.api.signals.BaseSignal`
+        signal_mask : numpy.ndarray or :class:`~hyperspy.api.signals.BaseSignal`
             The signal locations marked as True are not used in the
             decomposition.
         var_array : numpy.ndarray
@@ -196,12 +196,12 @@ class MVA:
               method is enabled. Otherwise the exact full SVD is computed and
               optionally truncated afterwards.
             * If ``"full"``: run exact SVD, calling the standard LAPACK solver via
-              :py:func:`scipy.linalg.svd`, and select the components by postprocessing
+              :func:`scipy.linalg.svd`, and select the components by postprocessing
             * If ``"arpack"``: use truncated SVD, calling ARPACK solver via
-              :py:func:`scipy.sparse.linalg.svds`. It strictly requires
+              :func:`scipy.sparse.linalg.svds`. It strictly requires
               ``0 < output_dimension < min(data.shape)``
             * If ``"randomized"``: use truncated SVD, call
-              :py:func:`sklearn.utils.extmath.randomized_svd` to estimate a
+              :func:`sklearn.utils.extmath.randomized_svd` to estimate a
               limited number of components
 
             For cupy arrays, only "full" is supported.
@@ -681,14 +681,14 @@ class MVA:
               and `navigation_dimension` is greater than 1, the differences are calculated
               across all navigation axes
             * Otherwise the axes can be specified in a list.
-        factors : :py:class:`~hyperspy.signal.BaseSignal` or numpy.ndarray
+        factors : :class:`~hyperspy.signal.BaseSignal` or numpy.ndarray
             Factors to decompose. If None, the BSS is performed on the
             factors of a previous decomposition. If a Signal instance, the
             navigation dimension must be 1 and the size greater than 1.
         comp_list : None or list or numpy.ndarray
             Choose the components to apply BSS to. Unlike ``number_of_components``,
             this argument permits non-contiguous components.
-        mask : :py:class:`~hyperspy.signal.BaseSignal` or subclass
+        mask : :class:`~hyperspy.signal.BaseSignal` or subclass
             If not None, the signal locations marked as True are masked. The
             mask shape must be equal to the signal shape
             (navigation shape) when `on_loadings` is False (True).
@@ -700,7 +700,7 @@ class MVA:
             component needs to be reversed.
         whiten_method : {``"PCA"`` | ``"ZCA"``} or None, default "PCA"
             How to whiten the data prior to blind source separation.
-            If None, no whitening is applied. See :py:func:`~.learn.whitening.whiten_data`
+            If None, no whitening is applied. See :func:`~.learn.whitening.whiten_data`
             for more details.
         return_info: bool, default False
             The result of the decomposition is stored internally. However,
@@ -1243,7 +1243,7 @@ class MVA:
 
         Returns
         -------
-        :py:class:`~hyperspy.api.signals.BaseSignal` or subclass
+        :class:`~hyperspy.api.signals.BaseSignal` or subclass
             A model built from the given components.
 
         """
@@ -1262,7 +1262,7 @@ class MVA:
 
         Returns
         -------
-        :py:class:`~hyperspy.api.signals.BaseSignal` or subclass
+        :class:`~hyperspy.api.signals.BaseSignal` or subclass
             A model built from the given components.
 
         """
@@ -1380,7 +1380,7 @@ class MVA:
         ax : matplotlib.axes.Axes or None
             If None, a default ax will be created, otherwise will plot into ax
         **kwargs
-            remaining keyword arguments are passed to :py:class:`matplotlib.figure.Figure`
+            remaining keyword arguments are passed to :class:`matplotlib.figure.Figure`
 
         Returns
         -------
@@ -1789,7 +1789,7 @@ class MVA:
 
     def plot_cluster_metric(self):
         """Plot the cluster metrics calculated using the 
-        :py:meth:`~hyperspy.api.signals.BaseSignal.estimate_number_of_clusters` method
+        :meth:`~hyperspy.api.signals.BaseSignal.estimate_number_of_clusters` method
 
         See Also
         --------
@@ -1963,7 +1963,7 @@ class MVA:
         Parameters
         ----------
         cluster_source : str {``"bss"`` | ``"decomposition"`` | ``"signal"``}
-        or :py:class:`~hyperspy.api.signals.BaseSignal`
+        or :class:`~hyperspy.api.signals.BaseSignal`
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used
             if "signal" the signal data is used
@@ -1971,7 +1971,7 @@ class MVA:
             and is only recommended if the Signal dimension is small
             BaseSignal must have the same navigation dimensions as the signal.
         source_for_centers : None, str {``"decomposition"`` | ``"bss"`` | ``"signal"``}
-        or :py:class:`~hyperspy.api.signals.BaseSignal`
+        or :class:`~hyperspy.api.signals.BaseSignal`
             default : None
             If None the cluster_source is used
             If "bss" the blind source separation results are used
@@ -2259,7 +2259,7 @@ class MVA:
         Parameters
         ----------
         cluster_source : str {"bss", "decomposition", "signal"}
-        or :py:class:`~hyperspy.api.signals.BaseSignal`
+        or :class:`~hyperspy.api.signals.BaseSignal`
             If "bss" the blind source separation results are used
             If "decomposition" the decomposition results are used
             if "signal" the signal data is used

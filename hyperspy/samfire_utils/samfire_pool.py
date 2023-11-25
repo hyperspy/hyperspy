@@ -116,7 +116,7 @@ class SamfirePool(ParallelPool):
 
         Parameters
         ----------
-        samfire : :py:class:`~hyperspy.samfire.Samfire`
+        samfire : :class:`~hyperspy.samfire.Samfire`
             The SAMFire object that will be using the pool.
         """
         _logger.debug('starting prepare_workers')

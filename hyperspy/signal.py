@@ -233,7 +233,7 @@ class ModelManager(object):
 
         Parameters
         ----------
-        model : :py:class:`~hyperspy.model.BaseModel` (or subclass)
+        model : :class:`~hyperspy.model.BaseModel` (or subclass)
             The model to store in the signal
         name : str or None
             The name for the model to be stored with
@@ -859,8 +859,8 @@ class MVATools(object):
         comp_ids : None, int or list of int
             If `comp_ids` is ``None``, maps of all components will be
             returned if the `output_dimension` was defined when executing
-            :py:meth:`~hyperspy.api.signals.BaseSignal.decomposition`. Otherwise it
-            raises a :py:exc:`ValueError`.
+            :meth:`~hyperspy.api.signals.BaseSignal.decomposition`. Otherwise it
+            raises a :exc:`ValueError`.
             If `comp_ids` is an int, maps of components with ids from 0 to
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
@@ -874,7 +874,7 @@ class MVATools(object):
         title : str
             Title of the matplotlib plot or label of the line in the legend
             when the dimension of factors is 1 and ``same_window`` is ``True``.
-        cmap : :py:class:`~matplotlib.colors.Colormap`
+        cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for the factor images, or for peak
             characteristics. Default is the matplotlib gray colormap
             (``plt.cm.gray``).
@@ -952,7 +952,7 @@ class MVATools(object):
         title : str
             Title of the matplotlib plot or label of the line in the legend
             when the dimension of factors is 1 and ``same_window`` is ``True``.
-        cmap : :py:class:`~matplotlib.colors.Colormap`
+        cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for the factor images, or for peak
             characteristics. Default is the matplotlib gray colormap
             (``plt.cm.gray``).
@@ -1010,8 +1010,8 @@ class MVATools(object):
         comp_ids : None, int, or list of int
             If `comp_ids` is ``None``, maps of all components will be
             returned if the `output_dimension` was defined when executing
-            :py:meth:`~hyperspy.api.signals.BaseSignal.decomposition`.
-            Otherwise it raises a :py:exc:`ValueError`.
+            :meth:`~hyperspy.api.signals.BaseSignal.decomposition`.
+            Otherwise it raises a :exc:`ValueError`.
             If `comp_ids` is an int, maps of components with ids from 0 to
             the given value will be returned. If `comp_ids` is a list of
             ints, maps of components with ids contained in the list will be
@@ -1028,7 +1028,7 @@ class MVATools(object):
         with_factors : bool
             If ``True``, also returns figure(s) with the factors for the
             given comp_ids.
-        cmap : :py:class:`~matplotlib.colors.Colormap`
+        cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for the loadings images, or for peak
             characteristics. Default is the matplotlib gray colormap
             (``plt.cm.gray``).
@@ -1131,7 +1131,7 @@ class MVATools(object):
         with_factors : bool
             If `True`, also returns figure(s) with the factors for the
             given `comp_ids`.
-        cmap : :py:class:`~matplotlib.colors.Colormap`
+        cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for the loading image, or for peak
             characteristics,. Default is the matplotlib gray colormap
             (``plt.cm.gray``).
@@ -1259,22 +1259,22 @@ class MVATools(object):
 
         Other Parameters
         ----------------
-        calibrate : :py:class:`bool`
+        calibrate : :class:`bool`
             If ``True``, calibrates plots where calibration is available
             from the axes_manager. If ``False``, plots are in pixels/channels.
-        same_window : :py:class:`bool`
+        same_window : :class:`bool`
             If ``True``, plots each factor to the same window.
-        comp_label : :py:class:`str`
+        comp_label : :class:`str`
             the label that is either the plot title (if plotting in separate
             windows) or the label in the legend (if plotting in the same window)
-        cmap : :py:class:`~matplotlib.colors.Colormap`
+        cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for images, such as factors, loadings, or for peak
             characteristics. Default is the matplotlib gray colormap
             (``plt.cm.gray``).
-        per_row : :py:class:`int`
+        per_row : :class:`int`
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
-        save_figures_format : :py:class:`str`
+        save_figures_format : :class:`str`
             The image format extension.
 
         See Also
@@ -1501,22 +1501,22 @@ class MVATools(object):
 
         Other Parameters
         ----------------
-        calibrate : :py:class:`bool`
+        calibrate : :class:`bool`
             If ``True``, calibrates plots where calibration is available
             from the axes_manager. If ``False``, plots are in pixels/channels.
-        same_window : :py:class:`bool`
+        same_window : :class:`bool`
             If ``True``, plots each factor to the same window.
-        comp_label : :py:class:`str`
+        comp_label : :class:`str`
             the label that is either the plot title (if plotting in separate
             windows) or the label in the legend (if plotting in the same window)
-        cmap : :py:class:`~matplotlib.colors.Colormap`
+        cmap : :class:`~matplotlib.colors.Colormap`
             The colormap used for images, such as factors, loadings, or
             for peak characteristics. Default is the matplotlib gray colormap
             (``plt.cm.gray``).
-        per_row : :py:class:`int`
+        per_row : :class:`int`
             The number of plots in each row, when the `same_window`
             parameter is ``True``.
-        save_figures_format : :py:class:`str`
+        save_figures_format : :class:`str`
             The image format extension.
 
         See Also
@@ -1591,7 +1591,7 @@ class MVATools(object):
 
         Returns
         -------
-        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        signal : :class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See Also
         --------
@@ -1611,7 +1611,7 @@ class MVATools(object):
 
         Returns
         -------
-        signal : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        signal : :class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See Also
         --------
@@ -1631,7 +1631,7 @@ class MVATools(object):
 
         Returns
         -------
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        :class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See Also
         --------
@@ -1650,7 +1650,7 @@ class MVATools(object):
 
         Returns
         -------
-        :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        :class:`~hyperspy.signal.BaseSignal` (or subclass)
 
         See Also
         --------
@@ -1670,8 +1670,8 @@ class MVATools(object):
                          loadings_dim=2,):
         """Plot the blind source separation factors and loadings.
 
-        Unlike :py:meth:`~hyperspy.api.signals.BaseSignal.plot_bss_factors` and
-        :py:meth:`~hyperspy.api.signals.BaseSignal.plot_bss_loadings`,
+        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_bss_factors` and
+        :meth:`~hyperspy.api.signals.BaseSignal.plot_bss_loadings`,
         this method displays one component at a time. Therefore it provides a
         more compact visualization than then other two methods.
         The loadings and factors are displayed in different windows and each
@@ -1681,14 +1681,14 @@ class MVATools(object):
 
         Parameters
         ----------
-        factors_navigator : str, None, or :py:class:`~hyperspy.api.signals.BaseSignal` (or subclass)
+        factors_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             One of: ``'smart_auto'``, ``'auto'``, ``None``, ``'spectrum'`` or a
-            :py:class:`~hyperspy.api.signals.BaseSignal` object.
+            :class:`~hyperspy.api.signals.BaseSignal` object.
             ``'smart_auto'`` (default) displays sliders if the navigation
             dimension is less than 3. For a description of the other options
-            see the :py:meth:`~hyperspy.api.signals.BaseSignal.plot` documentation
+            see the :meth:`~hyperspy.api.signals.BaseSignal.plot` documentation
             for details.
-        loadings_navigator : str, None, or :py:class:`~hyperspy.api.signals.BaseSignal` (or subclass)
+        loadings_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             See the `factors_navigator` parameter
         factors_dim : int
             Currently HyperSpy cannot plot a signal when the signal dimension is
@@ -1719,8 +1719,8 @@ class MVATools(object):
                                    loadings_dim=2):
         """Plot the decomposition factors and loadings.
 
-        Unlike :py:meth:`~hyperspy.api.signals.BaseSignal.plot_decomposition_factors`
-        and :py:meth:`~hyperspy.api.signals.BaseSignal.plot_decomposition_loadings`,
+        Unlike :meth:`~hyperspy.api.signals.BaseSignal.plot_decomposition_factors`
+        and :meth:`~hyperspy.api.signals.BaseSignal.plot_decomposition_loadings`,
         this method displays one component at a time. Therefore it provides a
         more compact visualization than then other two methods. The loadings
         and factors are displayed in different windows and each has its own
@@ -1729,14 +1729,14 @@ class MVATools(object):
 
         Parameters
         ----------
-        factors_navigator : str, None, or :py:class:`~hyperspy.api.signals.BaseSignal` (or subclass)
+        factors_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             One of: ``'smart_auto'``, ``'auto'``, ``None``, ``'spectrum'`` or a
-            :py:class:`~hyperspy.api.signals.BaseSignal` object.
+            :class:`~hyperspy.api.signals.BaseSignal` object.
             ``'smart_auto'`` (default) displays sliders if the navigation
             dimension is less than 3. For a description of the other options
-            see the :py:meth:`~hyperspy.api.signals.BaseSignal.plot` documentation
+            see the :meth:`~hyperspy.api.signals.BaseSignal.plot` documentation
             for details.
-        loadings_navigator : str, None, or :py:class:`~hyperspy.api.signals.BaseSignal` (or subclass)
+        loadings_navigator : str, None, or :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             See the `factors_navigator` parameter
         factors_dim : int
             Currently HyperSpy cannot plot a signal when the signal dimension is
@@ -1783,7 +1783,7 @@ class MVATools(object):
 
         Returns
         -------
-        :py:class:`~hyperspy.api.signals.BaseSignal`
+        :class:`~hyperspy.api.signals.BaseSignal`
             The cluster labels
         """
         if self.learning_results.cluster_labels is None:
@@ -2120,7 +2120,7 @@ class MVATools(object):
         Parameters
         ----------
         centers_navigator, labels_navigator : None, {"smart_auto",
-        "auto", "spectrum"} or :py:class:`~hyperspy.api.signals.BaseSignal`
+        "auto", "spectrum"} or :class:`~hyperspy.api.signals.BaseSignal`
             "smart_auto" (default) displays sliders if the navigation
             dimension is less than 3. For a description of the other options
             see `plot` documentation for details.
@@ -2250,7 +2250,7 @@ class BaseSignal(FancySlicing,
            The signal data. It can be an array of any dimensions.
         axes : [dict/axes], optional
             List of either dictionaries or axes objects to define the axes (see
-            the documentation of the :py:class:`~hyperspy.axes.AxesManager`
+            the documentation of the :class:`~hyperspy.axes.AxesManager`
             class for more details).
         attributes : dict, optional
             A dictionary whose items are stored as attributes.
@@ -2400,12 +2400,12 @@ class BaseSignal(FancySlicing,
                                 copy_learning_results=False):
         """Returns a deepcopy of itself replacing the data.
 
-        This method has an advantage over the default :py:func:`copy.deepcopy`
+        This method has an advantage over the default :func:`copy.deepcopy`
         in that it does not copy the data, which can save memory.
 
         Parameters
         ----------
-        data : None or :py:class:`numpy.ndarray`
+        data : None or :class:`numpy.ndarray`
         copy_variance : bool
             Whether to copy the variance of the signal to the new copy
         copy_navigator : bool
@@ -2415,7 +2415,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        ns : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        ns : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             The newly copied signal
 
         """
@@ -2456,7 +2456,7 @@ class BaseSignal(FancySlicing,
                 copy_learning_results=True):
         """
         Create a copy of the given Signal as a
-        :py:class:`~hyperspy._signals.lazy.LazySignal`.
+        :class:`~hyperspy._signals.lazy.LazySignal`.
 
         Parameters
         ----------
@@ -2472,7 +2472,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        res : :py:class:`~hyperspy._signals.lazy.LazySignal`
+        res : :class:`~hyperspy._signals.lazy.LazySignal`
             The same signal, converted to be lazy
         """
         res = self._deepcopy_with_new_data(
@@ -2502,8 +2502,8 @@ class BaseSignal(FancySlicing,
 
     @property
     def data(self):
-        """The underlying data structure as a :py:class:`numpy.ndarray` (or
-        :py:class:`dask.array.Array`, if the Signal is lazy)."""
+        """The underlying data structure as a :class:`numpy.ndarray` (or
+        :class:`dask.array.Array`, if the Signal is lazy)."""
         return self._data
 
     @data.setter
@@ -2590,7 +2590,7 @@ class BaseSignal(FancySlicing,
             * data: the signal data. It can be an array of any dimensions.
 
             * axes: a dictionary to define the axes (see the documentation of
-              the :py:class:`~hyperspy.axes.AxesManager` class for more details).
+              the :class:`~hyperspy.axes.AxesManager` class for more details).
             * attributes: a dictionary whose items are stored as attributes.
 
             * metadata: a dictionary containing a set of parameters that will
@@ -2687,7 +2687,7 @@ class BaseSignal(FancySlicing,
 
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array
-        and the axes. See :py:func:`numpy.squeeze` for more details.
+        and the axes. See :func:`numpy.squeeze` for more details.
 
         Returns
         -------
@@ -3112,8 +3112,8 @@ class BaseSignal(FancySlicing,
             ``None`` the method crops from/to the low/high end of the axis.
         convert_units : bool
             Default is ``False``. If ``True``, convert the units using the
-            :py:meth:`~hyperspy.axes.AxesManager.convert_units` method
-            of the :py:class:`~hyperspy.axes.AxesManager`. If ``False``,
+            :meth:`~hyperspy.axes.AxesManager.convert_units` method
+            of the :class:`~hyperspy.axes.AxesManager`. If ``False``,
             does nothing.
         """
         axis = self.axes_manager[axis]
@@ -3142,12 +3142,12 @@ class BaseSignal(FancySlicing,
                             degree=1):
         """Replaces the given ``axis`` with the provided ``new_axis``
         and interpolates data accordingly using
-        :py:func:`scipy.interpolate.make_interp_spline`.
+        :func:`scipy.interpolate.make_interp_spline`.
 
         Parameters
         ----------
-        new_axis : :py:class:`hyperspy.axes.UniformDataAxis`, 
-        :py:class:`hyperspy.axes.DataAxis` or :py:class:`hyperspy.axes.FunctionalDataAxis`
+        new_axis : :class:`hyperspy.axes.UniformDataAxis`, 
+        :class:`hyperspy.axes.DataAxis` or :class:`hyperspy.axes.FunctionalDataAxis`
             Axis which replaces the one specified by the ``axis`` argument.
             If this new axis exceeds the range of the old axis,
             a warning is raised that the data will be extrapolated.
@@ -3164,7 +3164,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        :py:class:`~.api.signals.BaseSignal` (or subclass)
+        :class:`~.api.signals.BaseSignal` (or subclass)
             A copy of the object with the axis exchanged and the data interpolated.
             This only occurs when inplace is set to ``False``, otherwise nothing is returned.
         """
@@ -3209,7 +3209,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A copy of the object with the axes swapped.
 
         See Also
@@ -3249,12 +3249,12 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             Output signal.
 
         See Also
         --------
-        :py:func:`numpy.roll`, swap_axes
+        :func:`numpy.roll`, swap_axes
 
         Examples
         --------
@@ -3440,16 +3440,16 @@ class BaseSignal(FancySlicing,
 
         The split can be defined by giving the `number_of_parts`, a homogeneous
         step size, or a list of customized step sizes. By default (``'auto'``),
-        the function is the reverse of :py:func:`~hyperspy.api.stack`.
+        the function is the reverse of :func:`~hyperspy.api.stack`.
 
         Parameters
         ----------
         axis %s
             If ``'auto'`` and if the object has been created with
-            :py:func:`~hyperspy.api.stack` (and ``stack_metadata=True``),
+            :func:`~hyperspy.api.stack` (and ``stack_metadata=True``),
             this method will return the former list of signals (information
             stored in `metadata._HyperSpy.Stacking_history`).
-            If it was not created with :py:func:`~hyperspy.api.stack`,
+            If it was not created with :func:`~hyperspy.api.stack`,
             the last navigation axis will be used.
         number_of_parts : str or int
             Number of parts in which the spectrum image will be split. The
@@ -3482,7 +3482,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        list of :py:class:`~hyperspy.api.signals.BaseSignal`
+        list of :class:`~hyperspy.api.signals.BaseSignal`
             A list of the split signals
 
         """
@@ -3583,9 +3583,9 @@ class BaseSignal(FancySlicing,
         -----
         WARNING: this private function does not modify the signal subclass
         and it is intended for internal use only. To unfold use the public
-        :py:meth:`~hyperspy.signal.BaseSignal.unfold`,
-        :py:meth:`~hyperspy.signal.BaseSignal.unfold_navigation_space`,
-        :py:meth:`~hyperspy.signal.BaseSignal.unfold_signal_space` instead.
+        :meth:`~hyperspy.signal.BaseSignal.unfold`,
+        :meth:`~hyperspy.signal.BaseSignal.unfold_navigation_space`,
+        :meth:`~hyperspy.signal.BaseSignal.unfold_signal_space` instead.
         It doesn't make sense to perform an unfolding when `dim` < 2
 
         """
@@ -3934,7 +3934,7 @@ class BaseSignal(FancySlicing,
         Notes
         -----
         If you intend to calculate the numerical integral of an unbinned signal,
-        please use the :py:meth:`~.api.signals.BaseSignal.integrate1D` function
+        please use the :meth:`~.api.signals.BaseSignal.integrate1D` function
         instead. To avoid erroneous misuse of the `sum` function as integral,
         it raises a warning when working with an unbinned, non-uniform axis.
 
@@ -3981,7 +3981,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the maximum of the provided Signal over the
             specified axes
 
@@ -4017,7 +4017,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the minimum of the provided Signal over the
             specified axes
 
@@ -4053,7 +4053,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the mean of the provided Signal over the
             specified axes
 
@@ -4089,7 +4089,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the standard deviation of the provided
             Signal over the specified axes
 
@@ -4125,7 +4125,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the variance of the provided Signal over the
             specified axes
 
@@ -4211,7 +4211,7 @@ class BaseSignal(FancySlicing,
         """Returns a signal with the ``n``-th order discrete difference along
         given axis. `i.e.` it calculates the difference between consecutive
         values in the given axis: ``out[n] = a[n+1] - a[n]``. See
-        :py:func:`numpy.diff` for more details.
+        :func:`numpy.diff` for more details.
 
         Parameters
         ----------
@@ -4231,7 +4231,7 @@ class BaseSignal(FancySlicing,
         Notes
         -----
         If you intend to calculate the numerical derivative, please use the
-        proper :py:meth:`~hyperspy.api.signals.BaseSignal.derivative` function
+        proper :meth:`~hyperspy.api.signals.BaseSignal.derivative` function
         instead. To avoid erroneous misuse of the ``diff`` function as derivative,
         it raises an error when when working with a non-uniform axis.
 
@@ -4291,11 +4291,11 @@ class BaseSignal(FancySlicing,
             The order of the derivative.
         %s
         **kwargs : dict
-            All extra keyword arguments are passed to :py:func:`numpy.gradient`
+            All extra keyword arguments are passed to :func:`numpy.gradient`
 
         Returns
         -------
-        :py:class:`~hyperspy.api.signals.BaseSignal`
+        :class:`~hyperspy.api.signals.BaseSignal`
             Note that the size of the data on the given ``axis`` decreases by
             the given ``order``. `i.e.` if ``axis`` is ``"x"`` and ``order`` is
             2, if the `x` dimension is N, then ``der``'s `x` dimension is N - 2.
@@ -4340,7 +4340,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the integral of the provided Signal along
             the specified axis.
 
@@ -4392,14 +4392,14 @@ class BaseSignal(FancySlicing,
             If ``'hamming'`` or ``'tukey'``, applies Hamming or Tukey
             windows, respectively (default is ``False``).
         real_fft_only : bool, default False
-            If ``True`` and data is real-valued, uses :py:func:`numpy.fft.rfftn`
-            instead of :py:func:`numpy.fft.fftn`
+            If ``True`` and data is real-valued, uses :func:`numpy.fft.rfftn`
+            instead of :func:`numpy.fft.fftn`
         **kwargs : dict
-            other keyword arguments are described in :py:func:`numpy.fft.fftn`
+            other keyword arguments are described in :func:`numpy.fft.fftn`
 
         Returns
         -------
-        s : :py:class:`~hyperspy._signals.complex_signal.ComplexSignal`
+        s : :class:`~hyperspy._signals.complex_signal.ComplexSignal`
             A Signal containing the result of the FFT algorithm
 
         Raises
@@ -4420,7 +4420,7 @@ class BaseSignal(FancySlicing,
         Notes
         -----
         Requires a uniform axis. For further information see the documentation
-        of :py:func:`numpy.fft.fftn`
+        of :func:`numpy.fft.fftn`
         """
 
         if self.axes_manager.signal_dimension == 0:
@@ -4491,11 +4491,11 @@ class BaseSignal(FancySlicing,
             If ``True``, returns only the real part of the inverse FFT.
             If ``False``, returns all parts.
         **kwargs : dict
-            other keyword arguments are described in :py:func:`numpy.fft.ifftn`
+            other keyword arguments are described in :func:`numpy.fft.ifftn`
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A Signal containing the result of the inverse FFT algorithm
 
         Raises
@@ -4514,7 +4514,7 @@ class BaseSignal(FancySlicing,
         Notes
         -----
         Requires a uniform axis. For further information see the documentation
-        of :py:func:`numpy.fft.ifftn`
+        of :func:`numpy.fft.ifftn`
         """
 
         if self.axes_manager.signal_dimension == 0:
@@ -4569,7 +4569,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the integral of the provided Signal along
             the specified axis.
 
@@ -4604,7 +4604,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the indices of the minimum along the
             specified axis. Note: the data `dtype` is always ``int``.
 
@@ -4636,7 +4636,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the indices of the maximum along the
             specified axis. Note: the data `dtype` is always ``int``.
 
@@ -4669,7 +4669,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        s : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        s : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             A new Signal containing the calibrated coordinate values of the
             maximum along the specified axis.
 
@@ -4713,7 +4713,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        :py:class:`~hyperspy.api.signals.BaseSignal` or subclass
+        :class:`~hyperspy.api.signals.BaseSignal` or subclass
             A new Signal containing the calibrated coordinate values of the
             minimum along the specified axis.
 
@@ -4743,7 +4743,7 @@ class BaseSignal(FancySlicing,
         More sophisticated algorithms for determining the bins can be used
         by passing a string as the ``bins`` argument. Other than the ``'blocks'``
         and ``'knuth'`` methods, the available algorithms are the same as
-        :py:func:`numpy.histogram`.
+        :func:`numpy.histogram`.
 
         Note: The lazy version of the algorithm only supports ``"scott"``
         and ``"fd"`` as a string argument for ``bins``.
@@ -4759,11 +4759,11 @@ class BaseSignal(FancySlicing,
         %s
         **kwargs
             other keyword arguments (weight and density) are described in
-            :py:func:`numpy.histogram`.
+            :func:`numpy.histogram`.
 
         Returns
         -------
-        hist_spec : :py:class:`~.api.signals.Signal1D`
+        hist_spec : :class:`~.api.signals.Signal1D`
             A 1D spectrum instance containing the histogram.
 
         See Also
@@ -4876,7 +4876,7 @@ class BaseSignal(FancySlicing,
             Set the navigation_chunks argument to a tuple of integers to split
             the navigation axes into chunks. This can be useful to enable
             using multiple cores with signals which are less that 100 MB.
-            This argument is passed to :py:meth:`~._signals.lazy.LazySignal.rechunk`.
+            This argument is passed to :meth:`~._signals.lazy.LazySignal.rechunk`.
         output_signal_size : None, tuple
             Since the size and dtype of the signal dimension of the output
             signal can be different from the input signal, this output signal
@@ -4902,11 +4902,11 @@ class BaseSignal(FancySlicing,
         such, most functions are not able to operate on the result and the data
         should be used directly.
 
-        This method is similar to Python's :py:func:`python:map` that can
-        also be utilized with a :py:class:`~hyperspy.signal.BaseSignal`
+        This method is similar to Python's :func:`python:map` that can
+        also be utilized with a :class:`~hyperspy.signal.BaseSignal`
         instance for similar purposes. However, this method has the advantage of
         being faster because it iterates the underlying numpy data array
-        instead of the :py:class:`~hyperspy.signal.BaseSignal`.
+        instead of the :class:`~hyperspy.signal.BaseSignal`.
 
         Currently requires a uniform axis.
 
@@ -5268,13 +5268,13 @@ class BaseSignal(FancySlicing,
     def copy(self):
         """
         Return a "shallow copy" of this Signal using the
-        standard library's :py:func:`~copy.copy` function. Note: this will
+        standard library's :func:`~copy.copy` function. Note: this will
         return a copy of the signal, but it will not duplicate the underlying
         data in memory, and both Signals will reference the same data.
 
         See Also
         --------
-        :py:meth:`~hyperspy.api.signals.BaseSignal.deepcopy`
+        :meth:`~hyperspy.api.signals.BaseSignal.deepcopy`
         """
         try:
             backup_plot = self._plot
@@ -5311,12 +5311,12 @@ class BaseSignal(FancySlicing,
     def deepcopy(self):
         """
         Return a "deep copy" of this Signal using the
-        standard library's :py:func:`~copy.deepcopy` function. Note: this means
+        standard library's :func:`~copy.deepcopy` function. Note: this means
         the underlying data structure will be duplicated in memory.
 
         See Also
         --------
-        :py:meth:`~hyperspy.api.signals.BaseSignal.copy`
+        :meth:`~hyperspy.api.signals.BaseSignal.copy`
         """
         return copy.deepcopy(self)
 
@@ -5325,7 +5325,7 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        dtype : str or :py:class:`numpy.dtype`
+        dtype : str or :class:`numpy.dtype`
             Typecode string or data-type to which the Signal's data array is
             cast. In addition to all the standard numpy :ref:`arrays.dtypes`,
             HyperSpy supports four extra dtypes for RGB images: ``'rgb8'``,
@@ -5424,7 +5424,7 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        expected_value : None or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        expected_value : None or :class:`~hyperspy.signal.BaseSignal` (or subclass)
             If ``None``, the signal data is taken as the expected value. Note
             that this may be inaccurate where the value of `data` is small.
         gain_factor : None or float
@@ -5503,7 +5503,7 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        variance : None or float or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        variance : None or float or :class:`~hyperspy.signal.BaseSignal` (or subclass)
             Value or values of the noise variance. A value of None is
             equivalent to clearing the variance.
 
@@ -5544,7 +5544,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        variance : None or float or :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        variance : None or float or :class:`~hyperspy.signal.BaseSignal` (or subclass)
             Noise variance of the signal, if set.
             Otherwise returns None.
 
@@ -5557,7 +5557,7 @@ class BaseSignal(FancySlicing,
     def get_current_signal(self, auto_title=True, auto_filename=True,
                            as_numpy=False):
         """Returns the data at the current coordinates as a
-        :py:class:`~hyperspy.signal.BaseSignal` subclass.
+        :class:`~hyperspy.signal.BaseSignal` subclass.
 
         The signal subclass is the same as that of the current object. All the
         axes navigation attributes are set to ``False``.
@@ -5579,7 +5579,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        cs : :py:class:`~hyperspy.signal.BaseSignal` (or subclass)
+        cs : :class:`~hyperspy.signal.BaseSignal` (or subclass)
             The data at the current coordinates as a Signal
 
         Examples
@@ -5642,12 +5642,12 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        data : None or :py:class:`numpy.ndarray`, optional
+        data : None or :class:`numpy.ndarray`, optional
             If ``None``, the resulting Signal data is an array of the same
             `dtype` as the current one filled with zeros. If a numpy array,
             the array must have the correct dimensions.
 
-        dtype : :py:class:`numpy.dtype`, optional
+        dtype : :class:`numpy.dtype`, optional
             The desired data-type for the data array when `data` is ``None``,
             e.g., ``numpy.int8``.  The default is the data type of the current
             signal data.
@@ -5694,12 +5694,12 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        data : None or :py:class:`numpy.ndarray`, optional
+        data : None or :class:`numpy.ndarray`, optional
             If ``None``, the resulting Signal data is an array of the same
             `dtype` as the current one filled with zeros. If a numpy array,
             the array must have the correct dimensions.
 
-        dtype : :py:class:`numpy.dtype`, optional
+        dtype : :class:`numpy.dtype`, optional
             The desired data-type for the data array when `data` is ``None``,
             e.g., ``numpy.int8``.  The default is the data type of the current
             signal data.
@@ -5753,7 +5753,7 @@ class BaseSignal(FancySlicing,
         array and the data is made contiguous for efficient iteration over
         spectra. By default, the method ensures the data is stored optimally,
         hence often making a copy of the data. See
-        :py:meth:`~hyperspy.api.signals.BaseSignal.transpose` for a more general
+        :meth:`~hyperspy.api.signals.BaseSignal.transpose` for a more general
         method with more options.
 
         Parameters
@@ -5792,7 +5792,7 @@ class BaseSignal(FancySlicing,
                             OPTIMIZE_ARG.replace('False', 'True'))
 
     def as_signal2D(self, image_axes, out=None, optimize=True):
-        """Convert a signal to a :py:class:`~hyperspy.api.signals.Signal2D`.
+        """Convert a signal to a :class:`~hyperspy.api.signals.Signal2D`.
 
         The chosen image axes are moved to the last indices in the
         array and the data is made contiguous for efficient
@@ -5800,7 +5800,7 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        image_axes : tuple (of int, str or :py:class:`~hyperspy.axes.DataAxis`)
+        image_axes : tuple (of int, str or :class:`~hyperspy.axes.DataAxis`)
             Select the image axes. Note that the order of the axes matters
             and it is given in the "natural" i.e. `X`, `Y`, `Z`... order.
         %s
@@ -5867,15 +5867,15 @@ class BaseSignal(FancySlicing,
 
         When setting ``signal_type`` to a "known" type, HyperSpy converts the
         current signal to the most appropriate
-        :py:class:`~.api.signals.BaseSignal` subclass. Known signal types are
+        :class:`~.api.signals.BaseSignal` subclass. Known signal types are
         signal types that have a specialized
-        :py:class:`~.api.signals.BaseSignal` subclass associated, usually
+        :class:`~.api.signals.BaseSignal` subclass associated, usually
         providing specific features for the analysis of that type of signal.
 
         HyperSpy ships with a minimal set of known signal types. External
         packages can register extra signal types. To print a list of
         registered signal types in the current installation, call
-        :py:func:`~.api.print_known_signal_types`, and see
+        :func:`~.api.print_known_signal_types`, and see
         the developer guide for details on how to add new signal_types.
         A non-exhaustive list of HyperSpy extensions is also maintained
         here: https://github.com/hyperspy/hyperspy-extensions-list.
@@ -6036,7 +6036,7 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        marker : :py:mod:`~hyperspy.api.plot.markers` object or iterable
+        marker : :mod:`~hyperspy.api.plot.markers` object or iterable
             The marker or iterable (list, tuple, ...) of markers to add.
             See the :ref:`plot.markers` section in the User Guide if you want
             to add a large number of markers as an iterable, since this will
@@ -6080,7 +6080,7 @@ class BaseSignal(FancySlicing,
 
         Add permanent marker to signal with 2 navigation dimensions.
         The signal has navigation dimensions (3, 2), as the dimensions
-        gets flipped compared to the output from :py:func:`numpy.random.random`.
+        gets flipped compared to the output from :func:`numpy.random.random`.
         To add a vertical line marker which changes for different navigation
         indices, the list used to make the marker must be a nested list:
         2 lists with 3 elements each (2 x 3):
@@ -6218,8 +6218,8 @@ class BaseSignal(FancySlicing,
 
         Notes
         -----
-        This method uses :py:func:`numpy.random.poisson`
-        (or :py:func:`dask.array.random.poisson` for lazy signals)
+        This method uses :func:`numpy.random.poisson`
+        (or :func:`dask.array.random.poisson` for lazy signals)
         to generate the Poissonian noise.
 
         """
@@ -6254,7 +6254,7 @@ class BaseSignal(FancySlicing,
 
         The operation is performed in-place (*i.e.* the data of the signal
         is modified). This method requires the signal to have a float data type,
-        otherwise it will raise a :py:exc:`TypeError`.
+        otherwise it will raise a :exc:`TypeError`.
 
         Parameters
         ----------
@@ -6265,8 +6265,8 @@ class BaseSignal(FancySlicing,
 
         Notes
         -----
-        This method uses :py:func:`numpy.random.normal` (or
-        :py:func:`dask.array.random.normal` for lazy signals)
+        This method uses :func:`numpy.random.normal` (or
+        :func:`dask.array.random.normal` for lazy signals)
         to generate the noise.
 
         """
@@ -6469,7 +6469,7 @@ class BaseSignal(FancySlicing,
     def T(self):
         """The transpose of the signal, with signal and navigation spaces
         swapped. Enables calling
-        :py:meth:`~hyperspy.api.signals.BaseSignal.transpose` with the default
+        :meth:`~hyperspy.api.signals.BaseSignal.transpose` with the default
         parameters as a property of a Signal.
         """
         return self.transpose()
@@ -6492,7 +6492,7 @@ class BaseSignal(FancySlicing,
         tukey_alpha : float, optional
             Only used if ``window='tukey'`` (default is 0.5). From the
             documentation of
-            :py:func:`scipy.signal.windows.tukey`:
+            :func:`scipy.signal.windows.tukey`:
 
                 - Shape parameter of the Tukey window, representing the
                   fraction of the window inside the cosine tapered region. If
@@ -6505,7 +6505,7 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        out : :py:class:`~hyperspy.signal.BaseSignal` (or subclass), optional
+        out : :class:`~hyperspy.signal.BaseSignal` (or subclass), optional
             If ``inplace=False``, returns the apodized signal of the same
             type as the provided Signal.
 

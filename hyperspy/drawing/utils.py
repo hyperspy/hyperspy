@@ -54,7 +54,7 @@ def contrast_stretching(data, vmin=None, vmax=None):
         For example, for a vmin of '1th', 1% of the lowest will be ignored to
         estimate the minimum value. Similarly, for a vmax value of '1th', 1%
         of the highest value will be ignored in the estimation of the maximum
-        value. See :py:func:`numpy.percentile` for more explanation.
+        value. See :func:`numpy.percentile` for more explanation.
         If None, use the percentiles value set in the preferences.
         If float of integer, keep this value as bounds.
 
@@ -525,7 +525,7 @@ def plot_images(images,
         also be provided, and the images will cycle through them. Optionally,
         the value ``'mpl_colors'`` will cause the cmap to loop through the
         default ``matplotlib`` colors (to match with the default output of the
-        :py:func:`~.api.plot.plot_spectra` method).
+        :func:`~.api.plot.plot_spectra` method).
         Note: if using more than one colormap, using the ``'single'``
         option for ``colorbar`` is disallowed.
     no_nans : bool, optional
@@ -587,7 +587,7 @@ def plot_images(images,
         Otherwise, supply a dictionary with the spacing options as
         keywords and desired values as values.
         Values should be supplied as used in
-        :py:func:`matplotlib.pyplot.subplots_adjust`,
+        :func:`matplotlib.pyplot.subplots_adjust`,
         and can be 'left', 'bottom', 'right', 'top', 'wspace' (width) and
         'hspace' (height).
     tight_layout : bool, optional
@@ -618,7 +618,7 @@ def plot_images(images,
         estimate the minimum value. Similarly, for a vmax value of '1th', 1%
         of the highest value will be ignored in the estimation of the maximum
         value. It must be in the range [0, 100].
-        See :py:func:`numpy.percentile` for more explanation.
+        See :func:`numpy.percentile` for more explanation.
         If None, use the percentiles value set in the preferences.
         If float or integer, keep this value as bounds.
         Note: vmin is ignored when overlaying images.
@@ -636,7 +636,7 @@ def plot_images(images,
         the legended line. For ``overlay=True`` only.
     legend_loc : str, int, optional
         This parameter controls where the legend is placed on the figure
-        see the :py:func:`matplotlib.pyplot.legend` docstring for valid values
+        see the :func:`matplotlib.pyplot.legend` docstring for valid values
     pixel_size_factor : None, int or float, optional
         If ``None`` (default), the size of the figure is taken from the
         matplotlib ``rcParams``. Otherwise sets the size of the figure when
@@ -644,7 +644,7 @@ def plot_images(images,
         and therefore a greater number of pixels are used. This value will be
         ignored if a Figure is provided.
     **kwargs, optional
-        Additional keyword arguments passed to :py:func:`matplotlib.pyplot.imshow`.
+        Additional keyword arguments passed to :func:`matplotlib.pyplot.imshow`.
 
     Returns
     -------
@@ -1364,7 +1364,7 @@ def plot_spectra(
         default 'default'
         The drawstyle determines how the points are connected, no action with
         ``style='heatmap'``. See
-        :py:meth:`matplotlib.lines.Line2D.set_drawstyle` for more information.
+        :meth:`matplotlib.lines.Line2D.set_drawstyle` for more information.
         The ``'default'`` value is defined by matplotlib.
     padding : float, default 1.0
         Option for "cascade". 1 guarantees that there is no overlapping.
@@ -1395,9 +1395,9 @@ def plot_spectra(
     **kwargs : dict
         Depending on the style used, the keyword arguments are passed to different functions
 
-        - ``"overlap"`` or ``"cascade"``: arguments passed to :py:func:`matplotlib.pyplot.figure`
-        - ``"mosiac"``: arguments passed to :py:func:`matplotlib.pyplot.subplots`
-        - ``"heatmap"``: arguments  passed to :py:meth:`~.api.signals.Signal2D.plot`.
+        - ``"overlap"`` or ``"cascade"``: arguments passed to :func:`matplotlib.pyplot.figure`
+        - ``"mosiac"``: arguments passed to :func:`matplotlib.pyplot.subplots`
+        - ``"heatmap"``: arguments  passed to :meth:`~.api.signals.Signal2D.plot`.
 
     Examples
     --------
@@ -1627,7 +1627,7 @@ def plot_histograms(signal_list,
     """Plot the histogram of every signal in the list in one figure.
 
     This function creates a histogram for each signal and plots the list with
-    the :py:func:`~.api.plot.plot_spectra` function.
+    the :func:`~.api.plot.plot_spectra` function.
 
     Parameters
     ----------
@@ -1663,7 +1663,7 @@ def plot_histograms(signal_list,
         If None (default), a default figure will be created.
     **kwargs
         other keyword arguments (weight and density) are described in
-        :py:func:`numpy.histogram`.
+        :func:`numpy.histogram`.
 
     Examples
     --------

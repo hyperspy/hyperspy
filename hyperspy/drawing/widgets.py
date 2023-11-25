@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <https://www.gnu.org/licenses/#GPL>.
 
-"""Interactive widgets that can be added to :py:class:`~.api.signals.BaseSignal` plots.
+"""Interactive widgets that can be added to :class:`~.api.signals.BaseSignal` plots.
 """
 
 

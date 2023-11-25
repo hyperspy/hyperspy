@@ -3,7 +3,7 @@ Generic tools
 
 Below we briefly introduce some of the most commonly used tools (methods). For
 more details about a particular method click on its name. For a detailed list
-of all the methods available see the :py:class:`~.api.signals.BaseSignal` documentation.
+of all the methods available see the :class:`~.api.signals.BaseSignal` documentation.
 
 The methods of this section are available to all the signals. In other chapters
 methods that are only available in specialized subclasses are listed.
@@ -14,24 +14,24 @@ Mathematical operations
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 A number of mathematical operations are available
-in :py:class:`~.api.signals.BaseSignal`. Most of them are just wrapped numpy
+in :class:`~.api.signals.BaseSignal`. Most of them are just wrapped numpy
 functions.
 
 The methods that perform mathematical operation over one or more axis at a
 time are:
 
-* :py:meth:`~.api.signals.BaseSignal.sum`
-* :py:meth:`~.api.signals.BaseSignal.max`
-* :py:meth:`~.api.signals.BaseSignal.min`
-* :py:meth:`~.api.signals.BaseSignal.mean`
-* :py:meth:`~.api.signals.BaseSignal.std`
-* :py:meth:`~.api.signals.BaseSignal.var`
-* :py:meth:`~.api.signals.BaseSignal.nansum`
-* :py:meth:`~.api.signals.BaseSignal.nanmax`
-* :py:meth:`~.api.signals.BaseSignal.nanmin`
-* :py:meth:`~.api.signals.BaseSignal.nanmean`
-* :py:meth:`~.api.signals.BaseSignal.nanstd`
-* :py:meth:`~.api.signals.BaseSignal.nanvar`
+* :meth:`~.api.signals.BaseSignal.sum`
+* :meth:`~.api.signals.BaseSignal.max`
+* :meth:`~.api.signals.BaseSignal.min`
+* :meth:`~.api.signals.BaseSignal.mean`
+* :meth:`~.api.signals.BaseSignal.std`
+* :meth:`~.api.signals.BaseSignal.var`
+* :meth:`~.api.signals.BaseSignal.nansum`
+* :meth:`~.api.signals.BaseSignal.nanmax`
+* :meth:`~.api.signals.BaseSignal.nanmin`
+* :meth:`~.api.signals.BaseSignal.nanmean`
+* :meth:`~.api.signals.BaseSignal.nanstd`
+* :meth:`~.api.signals.BaseSignal.nanvar`
 
 Note that by default all this methods perform the operation over *all*
 navigation axes.
@@ -59,18 +59,18 @@ Example:
 
 The following methods operate only on one axis at a time:
 
-* :py:meth:`~.api.signals.BaseSignal.diff`
-* :py:meth:`~.api.signals.BaseSignal.derivative`
-* :py:meth:`~.api.signals.BaseSignal.integrate_simpson`
-* :py:meth:`~.api.signals.BaseSignal.integrate1D`
-* :py:meth:`~.api.signals.BaseSignal.indexmin`
-* :py:meth:`~.api.signals.BaseSignal.indexmax`
-* :py:meth:`~.api.signals.BaseSignal.valuemin`
-* :py:meth:`~.api.signals.BaseSignal.valuemax`
+* :meth:`~.api.signals.BaseSignal.diff`
+* :meth:`~.api.signals.BaseSignal.derivative`
+* :meth:`~.api.signals.BaseSignal.integrate_simpson`
+* :meth:`~.api.signals.BaseSignal.integrate1D`
+* :meth:`~.api.signals.BaseSignal.indexmin`
+* :meth:`~.api.signals.BaseSignal.indexmax`
+* :meth:`~.api.signals.BaseSignal.valuemin`
+* :meth:`~.api.signals.BaseSignal.valuemax`
 
 .. _ufunc-label:
 
-All numpy ufunc can operate on :py:class:`~.api.signals.BaseSignal`
+All numpy ufunc can operate on :class:`~.api.signals.BaseSignal`
 instances, for example:
 
 .. code-block:: python
@@ -101,8 +101,8 @@ a new title is automatically generated:
 
 
 Functions (other than unfucs) that operate on numpy arrays can also operate
-on :py:class:`~.api.signals.BaseSignal` instances, however they return a numpy
-array instead of a :py:class:`~.api.signals.BaseSignal` instance e.g.:
+on :class:`~.api.signals.BaseSignal` instances, however they return a numpy
+array instead of a :class:`~.api.signals.BaseSignal` instance e.g.:
 
 .. code-block:: python
 
@@ -111,10 +111,10 @@ array instead of a :py:class:`~.api.signals.BaseSignal` instance e.g.:
 
 .. note::
     For numerical **differentiation** and **integration**, use the proper
-    methods :py:meth:`~.api.signals.BaseSignal.derivative` and
-    :py:meth:`~.api.signals.BaseSignal.integrate1D`. In certain cases, particularly
+    methods :meth:`~.api.signals.BaseSignal.derivative` and
+    :meth:`~.api.signals.BaseSignal.integrate1D`. In certain cases, particularly
     when operating on a non-uniform axis, the approximations using the
-    :py:meth:`~.api.signals.BaseSignal.diff` and :py:meth:`~.api.signals.BaseSignal.sum`
+    :meth:`~.api.signals.BaseSignal.diff` and :meth:`~.api.signals.BaseSignal.sum`
     methods will lead to erroneous results.
 
 .. _signal.operations:
@@ -122,7 +122,7 @@ array instead of a :py:class:`~.api.signals.BaseSignal` instance e.g.:
 Signal operations
 ^^^^^^^^^^^^^^^^^
 
-:py:class:`~.api.signals.BaseSignal` supports all the Python binary arithmetic
+:class:`~.api.signals.BaseSignal` supports all the Python binary arithmetic
 operations (+, -, \*, //, %, divmod(), pow(), \*\*, <<, >>, &, ^, \|),
 augmented binary assignments (+=, -=, \*=, /=, //=, %=, \*\*=, <<=, >>=, &=,
 ^=, \|=), unary operations (-, +, abs() and ~) and rich comparisons operations
@@ -233,7 +233,7 @@ files by iterating over the signal instance:
 The data of the signal instance that is returned at each iteration is a view of
 the original data, a property that we can use to perform operations on the
 data.  For example, the following code rotates the image at each coordinate  by
-a given angle and uses the :py:func:`~.api.stack` function in combination
+a given angle and uses the :func:`~.api.stack` function in combination
 with `list comprehensions
 <https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions>`_
 to make a horizontal "collage" of the image stack:
@@ -265,7 +265,7 @@ Iterating external functions with the map method
 
 Performing an operation on the data at each coordinate, as in the previous example,
 using an external function can be more easily accomplished using the
-:py:meth:`~.api.signals.BaseSignal.map` method:
+:meth:`~.api.signals.BaseSignal.map` method:
 
 .. code-block:: python
 
@@ -285,9 +285,9 @@ using an external function can be more easily accomplished using the
   :align:   center
   :width:   500
 
-  Rotation of images by the same amount using :py:meth:`~.api.signals.BaseSignal.map`.
+  Rotation of images by the same amount using :meth:`~.api.signals.BaseSignal.map`.
 
-The :py:meth:`~.api.signals.BaseSignal.map` method can also take variable
+The :meth:`~.api.signals.BaseSignal.map` method can also take variable
 arguments as in the following example.
 
 .. code-block:: python
@@ -305,7 +305,7 @@ arguments as in the following example.
   :align:   center
   :width:   500
 
-  Rotation of images using :py:meth:`~.api.signals.BaseSignal.map` with different
+  Rotation of images using :meth:`~.api.signals.BaseSignal.map` with different
   arguments for each image in the stack.
 
 .. versionadded:: 1.2.0
@@ -319,7 +319,7 @@ As such, most HyperSpy functions cannot operate on such signals, and the
 data should be accessed directly.
 
 The ``inplace`` keyword (by default ``True``) of the
-:py:meth:`~.api.signals.BaseSignal.map` method allows either overwriting the current
+:meth:`~.api.signals.BaseSignal.map` method allows either overwriting the current
 data (default, ``True``) or storing it to a new signal (``False``).
 
 .. code-block:: python
@@ -385,8 +385,8 @@ Alternatively, it can be computed and loaded into memory using `s_out.compute()`
     >>> s_out.save("gaussian_filter_file.hspy")
 
 Another advantage of using `lazy_output=True` is the ability to "chain" operations,
-by running :py:meth:`~.api.signals.BaseSignal.map` on the output from a previous
-:py:meth:`~.api.signals.BaseSignal.map` operation.
+by running :meth:`~.api.signals.BaseSignal.map` on the output from a previous
+:meth:`~.api.signals.BaseSignal.map` operation.
 For example, first running a Gaussian filter, followed by peak finding. This can
 improve the computation time, and reduce the memory need.
 
@@ -408,7 +408,7 @@ Cropping
 Cropping can be performed in a very compact and powerful way using
 :ref:`signal.indexing` . In addition it can be performed using the following
 method or GUIs if cropping :ref:`signal1D <signal1D.crop>` or :ref:`signal2D
-<signal2D.crop>`. There is also a general :py:meth:`~.api.signals.BaseSignal.crop`
+<signal2D.crop>`. There is also a general :meth:`~.api.signals.BaseSignal.crop`
 method that operates *in place*.
 
 
@@ -417,11 +417,11 @@ method that operates *in place*.
 Rebinning
 ^^^^^^^^^
 .. versionadded:: 1.3
-    :py:meth:`~.api.signals.BaseSignal.rebin` generalized to remove the constrain
+    :meth:`~.api.signals.BaseSignal.rebin` generalized to remove the constrain
     of the ``new_shape`` needing to be a divisor of ``data.shape``.
 
 
-The :py:meth:`~.api.signals.BaseSignal.rebin` methods supports rebinning the data to
+The :meth:`~.api.signals.BaseSignal.rebin` methods supports rebinning the data to
 arbitrary new shapes as long as the number of dimensions stays the same.
 However, internally, it uses two different algorithms to perform the task. Only
 when the new shape dimensions are divisors of the old shape's, the operation
@@ -512,10 +512,10 @@ signal:
 Interpolate to a different axis
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:meth:`~.api.signals.BaseSignal.interpolate_on_axis` method makes it possible to
+The :meth:`~.api.signals.BaseSignal.interpolate_on_axis` method makes it possible to
 exchange any existing axis of a signal with a new axis,
 regardless of the signals dimension or the axes types.
-This is achieved by interpolating the data using :py:func:`scipy.interpolate.make_interp_spline`
+This is achieved by interpolating the data using :func:`scipy.interpolate.make_interp_spline`
 from the old axis to the new axis. Replacing multiple axes can be done iteratively.
 
 .. code-block:: python
@@ -540,7 +540,7 @@ from the old axis to the new axis. Replacing multiple axes can be done iterative
 Squeezing
 ^^^^^^^^^
 
-The :py:meth:`~.api.signals.BaseSignal.squeeze` method removes any zero-dimensional
+The :meth:`~.api.signals.BaseSignal.squeeze` method removes any zero-dimensional
 axes, i.e. axes of ``size=1``, and the attributed data dimensions from a signal.
 The method returns a reduced copy of the signal and does not operate in place.
 
@@ -569,13 +569,13 @@ When dealing with multidimensional datasets it is sometimes useful to transform
 the data into a two dimensional dataset. This can be accomplished using the
 following two methods:
 
-* :py:meth:`~.api.signals.BaseSignal.fold`
-* :py:meth:`~.api.signals.BaseSignal.unfold`
+* :meth:`~.api.signals.BaseSignal.fold`
+* :meth:`~.api.signals.BaseSignal.unfold`
 
 It is also possible to unfold only the navigation or only the signal space:
 
-* :py:meth:`~.api.signals.BaseSignal.unfold_navigation_space`
-* :py:meth:`~.api.signals.BaseSignal.unfold_signal_space`
+* :meth:`~.api.signals.BaseSignal.unfold_navigation_space`
+* :meth:`~.api.signals.BaseSignal.unfold_signal_space`
 
 
 .. _signal.stack_split:
@@ -584,7 +584,7 @@ Splitting and stacking
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Several objects can be stacked together over an existing axis or over a
-new axis using the :py:func:`~.api.stack` function, if they share axis
+new axis using the :func:`~.api.stack` function, if they share axis
 with same dimension.
 
 .. code-block:: python
@@ -602,14 +602,14 @@ with same dimension.
 .. note::
 
     When stacking signals with large amount of
-    :py:attr:`~.api.signals.BaseSignal.original_metadata`, these metadata will be
+    :attr:`~.api.signals.BaseSignal.original_metadata`, these metadata will be
     stacked and this can lead to very large amount of metadata which can in
     turn slow down processing. The ``stack_original_metadata`` argument can be
-    used to disable stacking :py:attr:`~.api.signals.BaseSignal.original_metadata`.
+    used to disable stacking :attr:`~.api.signals.BaseSignal.original_metadata`.
 
 An object can be split into several objects
-with the :py:meth:`~.api.signals.BaseSignal.split` method. This function can be used
-to reverse the :py:func:`~.api.stack` function:
+with the :meth:`~.api.signals.BaseSignal.split` method. This function can be used
+to reverse the :func:`~.api.stack` function:
 
 .. code-block:: python
 
@@ -629,10 +629,10 @@ Fast Fourier Transform (FFT)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The `fast Fourier transform <https://en.wikipedia.org/wiki/Fast_Fourier_transform>`_
-of a signal can be computed using the :py:meth:`~.api.signals.BaseSignal.fft` method. By default,
+of a signal can be computed using the :meth:`~.api.signals.BaseSignal.fft` method. By default,
 the FFT is calculated with the origin at (0, 0), which will be displayed at the
 bottom left and not in the centre of the FFT. Conveniently, the ``shift`` argument of the
-the :py:meth:`~.api.signals.BaseSignal.fft` method can be used to center the output of the FFT.
+the :meth:`~.api.signals.BaseSignal.fft` method can be used to center the output of the FFT.
 In the following example, the FFT of a hologram is computed using ``shift=True`` and its
 output signal is displayed, which shows that the FFT results in a complex signal with a
 real and an imaginary parts:
@@ -661,7 +661,7 @@ in the example above by using the ``power_spectum`` argument:
     >>> fft.plot(True)
 
 Where ``power_spectum`` is set to ``True`` since it is the first argument of the
-:py:meth:`~.api.signals.ComplexSignal.plot` method for complex signal.
+:meth:`~.api.signals.ComplexSignal.plot` method for complex signal.
 When ``power_spectrum=True``, the plot will be displayed on a log scale by default.
 
 
@@ -685,7 +685,7 @@ percentile; this can be done by using ``vmin="30th"`` in the plot function:
 The streaks visible in the FFT come from the edge of the image and can be removed by
 applying an `apodization <https://en.wikipedia.org/wiki/Apodization>`_ function to the original
 signal before the computation of the FFT. This can be done using the ``apodization`` argument of
-the :py:meth:`~.api.signals.BaseSignal.fft` method and it is usually used for visualising FFT patterns
+the :meth:`~.api.signals.BaseSignal.fft` method and it is usually used for visualising FFT patterns
 rather than for quantitative analyses. By default, the so-called ``hann`` windows is
 used but different type of windows such as the ``hamming`` and ``tukey`` windows.
 
@@ -706,7 +706,7 @@ Inverse Fast Fourier Transform (iFFT)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Inverse fast Fourier transform can be calculated from a complex signal by using the
-:py:meth:`~.api.signals.BaseSignal.ifft` method. Similarly to the :py:meth:`~.api.signals.BaseSignal.fft` method,
+:meth:`~.api.signals.BaseSignal.ifft` method. Similarly to the :meth:`~.api.signals.BaseSignal.fft` method,
 the ``shift`` argument can be provided to shift the origin of the iFFT when necessary:
 
 .. code-block:: python
@@ -722,7 +722,7 @@ Changing the data type
 Even if the original data is recorded with a limited dynamic range, it is often
 desirable to perform the analysis operations with a higher precision.
 Conversely, if space is limited, storing in a shorter data type can decrease
-the file size. The :py:meth:`~.api.signals.BaseSignal.change_dtype` changes the data
+the file size. The :meth:`~.api.signals.BaseSignal.change_dtype` changes the data
 type in place, e.g.:
 
 .. code-block:: python
@@ -800,7 +800,7 @@ Transposing (changing signal spaces)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. versionadded:: 1.1
 
-:py:meth:`~.api.signals.BaseSignal.transpose` method changes how the dataset
+:meth:`~.api.signals.BaseSignal.transpose` method changes how the dataset
 dimensions are interpreted (as signal or navigation axes). By default is
 swaps the signal and navigation axes. For example:
 
@@ -813,7 +813,7 @@ swaps the signal and navigation axes. For example:
    >>> s.transpose()
    <Signal2D, title: , dimensions: (6|4, 5)>
 
-For :py:meth:`~.api.signals.BaseSignal.T` is a shortcut for the default behaviour:
+For :meth:`~.api.signals.BaseSignal.T` is a shortcut for the default behaviour:
 
 .. code-block:: python
 
@@ -846,7 +846,7 @@ signal axes >`` wrap a circle. The example below should help clarifying this.
     >>> s.transpose(navigation_axes=[1, 2, 3, 4, 5, 8], signal_axes=[0, 6, 7])
     <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
 
-A convenience functions :py:func:`~.api.transpose` is available to operate on
+A convenience functions :func:`~.api.transpose` is available to operate on
 many signals at once, for example enabling plotting any-dimension signals
 trivially:
 
@@ -859,7 +859,7 @@ trivially:
 
 .. _signal.transpose_optimize:
 
-The :py:meth:`~.api.signals.BaseSignal.transpose` method accepts keyword argument
+The :meth:`~.api.signals.BaseSignal.transpose` method accepts keyword argument
 ``optimize``, which is ``False`` by default, meaning modifying the output
 signal data **always modifies the original data** i.e. the data is just a view
 of the original data. If ``True``, the method ensures the data in memory is
@@ -867,13 +867,13 @@ stored in the most efficient manner for iterating by making a copy of the data
 if required, hence modifying the output signal data **not always modifies the
 original data**.
 
-The convenience methods :py:meth:`~.api.signals.BaseSignal.as_signal1D` and
-:py:meth:`~.api.signals.BaseSignal.as_signal2D` internally use
-:py:meth:`~.api.signals.BaseSignal.transpose`, but always optimize the data
+The convenience methods :meth:`~.api.signals.BaseSignal.as_signal1D` and
+:meth:`~.api.signals.BaseSignal.as_signal2D` internally use
+:meth:`~.api.signals.BaseSignal.transpose`, but always optimize the data
 for iteration over the navigation axes if required. Hence, these methods do not
 always return a view of the original data. If a copy of the data is required
 use
-:py:meth:`~.api.signals.BaseSignal.deepcopy` on the output of any of these
+:meth:`~.api.signals.BaseSignal.deepcopy` on the output of any of these
 methods e.g.:
 
 .. code-block:: python
@@ -886,7 +886,7 @@ Applying apodization window
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Apodization window (also known as apodization function) can be applied to a signal
-using :py:meth:`~.api.signals.BaseSignal.apply_apodization` method. By default standard
+using :meth:`~.api.signals.BaseSignal.apply_apodization` method. By default standard
 Hann window is used:
 
 .. code-block:: python

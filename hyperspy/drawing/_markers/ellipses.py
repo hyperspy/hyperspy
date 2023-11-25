@@ -52,7 +52,7 @@ class Ellipses(Markers):
         %s
         %s
         kwargs:
-            Additional keyword arguments are passed to :py:class:`matplotlib.collections.EllipseCollection`.
+            Additional keyword arguments are passed to :class:`matplotlib.collections.EllipseCollection`.
         """
         if kwargs.setdefault("transform", "display") != "display":
             raise ValueError(

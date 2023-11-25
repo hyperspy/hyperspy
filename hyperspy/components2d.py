@@ -56,7 +56,7 @@ def _generate_docstring(base_docstring):
         component = __getattr__(name)
         spec = _EXTENSIONS["components2D"][name]
         path = spec['module'].replace('hyperspy', '~')
-        line1 = f":py:class:`{path}.{name}`" + "\n"
+        line1 = f":class:`{path}.{name}`" + "\n"
         component_doc = component.__doc__ or "..."
         # Get the first line only
         component_doc = component_doc.split('\n')[0]

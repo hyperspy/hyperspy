@@ -49,7 +49,7 @@ class Exponential(Expression):
         Scale parameter (time constant)
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~.api.model.components1D.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
     """
 
     def __init__(self, A=1., tau=1., module=None, **kwargs):

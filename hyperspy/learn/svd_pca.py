@@ -97,18 +97,18 @@ def svd_solve(
           optionally truncated afterwards.
         - If ``"full"``:
           Run exact SVD, calling the standard LAPACK solver via
-          :py:func:`scipy.linalg.svd`, and select the components by postprocessing
+          :func:`scipy.linalg.svd`, and select the components by postprocessing
         - If ``"arpack"``:
           Use truncated SVD, calling ARPACK solver via
-          :py:func:`scipy.sparse.linalg.svds`. It requires strictly
+          :func:`scipy.sparse.linalg.svds`. It requires strictly
           `0 < output_dimension < min(data.shape)`
         - If ``"randomized"``:
-          Use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
+          Use truncated SVD, calling :func:`sklearn.utils.extmath.randomized_svd`
           to estimate a limited number of components
     svd_flip : bool, default True
         If True, adjusts the signs of the loadings and factors such that
         the loadings that are largest in absolute value are always positive.
-        See :py:func:`~hyperspy.learn.svd_pca.svd_flip_signs` for more details.
+        See :func:`~hyperspy.learn.svd_pca.svd_flip_signs` for more details.
     u_based_decision : bool, default True
         If True, and svd_flip is True, use the columns of u as the basis for sign-flipping.
         Otherwise, use the rows of v. The choice of which variable to base the
@@ -210,13 +210,13 @@ def svd_pca(
             optionally truncated afterwards.
         If full:
             run exact SVD, calling the standard LAPACK solver via
-            :py:func:`scipy.linalg.svd`, and select the components by postprocessing
+            :func:`scipy.linalg.svd`, and select the components by postprocessing
         If arpack:
             use truncated SVD, calling ARPACK solver via
-            :py:func:`scipy.sparse.linalg.svds`. It requires strictly
+            :func:`scipy.sparse.linalg.svds`. It requires strictly
             `0 < output_dimension < min(data.shape)`
         If randomized:
-            use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
+            use truncated SVD, calling :func:`sklearn.utils.extmath.randomized_svd`
             to estimate a limited number of components
     centre : {None, "navigation", "signal"}, default None
         * If None, the data is not centered prior to decomposition.
@@ -227,7 +227,7 @@ def svd_pca(
     svd_flip : bool, default True
         If True, adjusts the signs of the loadings and factors such that
         the loadings that are largest in absolute value are always positive.
-        See :py:func:`~hyperspy.learn.svd_pca.svd_flip_signs` for more details.
+        See :func:`~hyperspy.learn.svd_pca.svd_flip_signs` for more details.
 
     Returns
     -------

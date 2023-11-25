@@ -412,13 +412,13 @@ class LocalStrategy(SamfireStrategy):
 
         Parameters
         ----------
-        fig : :py:class:`hyperspy.api.signals.Signal2D` or numpy.ndarray
+        fig : :class:`hyperspy.api.signals.Signal2D` or numpy.ndarray
             if an already plotted image, then updates. Otherwise creates a new
             one.
 
         Returns
         -------
-        :py:class:`hyperspy.api.signals.Signal2D`
+        :class:`hyperspy.api.signals.Signal2D`
             The resulting 2D signal. If passed again, will be updated
             (computationally cheaper operation).
         """

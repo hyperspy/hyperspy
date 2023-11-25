@@ -52,7 +52,7 @@ class Rectangles(Markers):
         %s
         kwargs:
             Additional keyword arguments are passed to
-            :py:class:`hyperspy.external.matplotlib.collections.RectangleCollection`.
+            :class:`hyperspy.external.matplotlib.collections.RectangleCollection`.
         """
         if kwargs.setdefault("transform", "display") != "display":
             raise ValueError(

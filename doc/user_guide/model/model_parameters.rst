@@ -6,7 +6,7 @@ Getting and setting parameter values and attributes
 Getting parameter values
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-:py:meth:`~.model.BaseModel.print_current_values()` prints the properties of the
+:meth:`~.model.BaseModel.print_current_values()` prints the properties of the
 parameters of the components in the current coordinates. In the Jupyter Notebook,
 the default view is HTML-formatted, which allows for formatted copying
 into other software, such as Excel. One can also filter for only active
@@ -16,7 +16,7 @@ components and only showing component with free parameters with the arguments
 .. _Component.print_current_values:
 
 The current values of a particular component can be printed using the
-:py:attr:`~.component.Component.print_current_values()` method.
+:attr:`~.component.Component.print_current_values()` method.
 
 .. code-block:: python
 
@@ -33,26 +33,26 @@ The current values of a particular component can be printed using the
             centre | False |     1.4865 |       None |       None
 
 The current coordinates can be either set by navigating the
-:py:meth:`~.models.model1d.Model1D.plot`, or specified by pixel indices in
+:meth:`~.models.model1d.Model1D.plot`, or specified by pixel indices in
 ``m.axes_manager.indices`` or as calibrated coordinates in
 ``m.axes_manager.coordinates``.
 
-:py:attr:`~.component.Component.parameters` contains a list of the parameters
-of a component and :py:attr:`~.component.Component.free_parameters` lists only
+:attr:`~.component.Component.parameters` contains a list of the parameters
+of a component and :attr:`~.component.Component.free_parameters` lists only
 the free parameters.
 
 The value of a particular parameter in the current coordinates can be
-accessed by :py:attr:`component.Parameter.value` (e.g. ``Gaussian.A.value``).
+accessed by :attr:`component.Parameter.value` (e.g. ``Gaussian.A.value``).
 To access an array of the value of the parameter across all navigation
-pixels, :py:attr:`component.Parameter.map['values']` (e.g.
+pixels, :attr:`component.Parameter.map['values']` (e.g.
 ``Gaussian.A.map["values"]``) can be used. On its own,
-:py:attr:`component.Parameter.map` returns a NumPy array with three elements:
+:attr:`component.Parameter.map` returns a NumPy array with three elements:
 ``'values'``, ``'std'`` and ``'is_set'``. The first two give the value and
 standard error for each index. The last element shows whether the value has
 been set in a given index, either by a fitting procedure or manually.
 
 If a model contains several components with the same parameters, it is possible
-to change them all by using :py:meth:`~.model.BaseModel.set_parameters_value`:
+to change them all by using :meth:`~.model.BaseModel.set_parameters_value`:
 
 .. code-block:: python
 
@@ -79,10 +79,10 @@ Setting Parameters free / not free
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To set the ``free`` state of a parameter change the
-:py:attr:`~.component.Parameter.free` attribute. To change the ``free`` state
+:attr:`~.component.Parameter.free` attribute. To change the ``free`` state
 of all parameters in a component to `True` use
-:py:meth:`~.component.Component.set_parameters_free`, and
-:py:meth:`~.component.Component.set_parameters_not_free` for setting them to
+:meth:`~.component.Component.set_parameters_free`, and
+:meth:`~.component.Component.set_parameters_not_free` for setting them to
 ``False``. Specific parameter-names can also be specified by using
 ``parameter_name_list``, shown in the example:
 
@@ -99,9 +99,9 @@ of all parameters in a component to `True` use
     [<Parameter A of Gaussian component>,
     <Parameter centre of Gaussian component>]
 
-Similar functions exist for :py:class:`~.model.BaseModel`:
-:py:meth:`~.model.BaseModel.set_parameters_free` and
-:py:meth:`~.model.BaseModel.set_parameters_not_free`. Which sets the
+Similar functions exist for :class:`~.model.BaseModel`:
+:meth:`~.model.BaseModel.set_parameters_free` and
+:meth:`~.model.BaseModel.set_parameters_not_free`. Which sets the
 ``free`` states for the parameters in components in a model. Specific
 components and parameter-names can also be specified. For example:
 
@@ -131,7 +131,7 @@ Setting twin parameters
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 The value of a parameter can be coupled to the value of another by setting the
-:py:attr:`~.component.Parameter.twin` attribute:
+:attr:`~.component.Parameter.twin` attribute:
 
 .. code-block:: python
 
@@ -191,18 +191,18 @@ The value of a parameter can be coupled to the value of another by setting the
 
 .. deprecated:: 1.2.0
     Setting the ``twin_function`` and ``twin_inverse_function`` attributes,
-    set the :py:attr:`~.component.Parameter.twin_function_expr` and
-    :py:attr:`~.component.Parameter.twin_inverse_function_expr` attributes
+    set the :attr:`~.component.Parameter.twin_function_expr` and
+    :attr:`~.component.Parameter.twin_inverse_function_expr` attributes
     instead.
 
 .. versionadded:: 1.2.0
-    :py:attr:`~.component.Parameter.twin_function_expr` and
-    :py:attr:`~.component.Parameter.twin_inverse_function_expr`.
+    :attr:`~.component.Parameter.twin_function_expr` and
+    :attr:`~.component.Parameter.twin_inverse_function_expr`.
 
 By default the coupling function is the identity function. However it is
 possible to set a different coupling function by setting the
-:py:attr:`~.component.Parameter.twin_function_expr` and
-:py:attr:`~.component.Parameter.twin_inverse_function_expr` attributes.  For
+:attr:`~.component.Parameter.twin_function_expr` and
+:attr:`~.component.Parameter.twin_inverse_function_expr` attributes.  For
 example:
 
 .. code-block:: python
@@ -238,6 +238,6 @@ The following model methods can be used to ease the task of setting some importa
 parameter attributes. These can also be used on a per-component basis, by calling them
 on individual components.
 
-* :py:meth:`~.model.BaseModel.set_parameters_not_free`
-* :py:meth:`~.model.BaseModel.set_parameters_free`
-* :py:meth:`~.model.BaseModel.set_parameters_value`
+* :meth:`~.model.BaseModel.set_parameters_not_free`
+* :meth:`~.model.BaseModel.set_parameters_free`
+* :meth:`~.model.BaseModel.set_parameters_value`

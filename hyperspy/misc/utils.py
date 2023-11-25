@@ -743,11 +743,11 @@ class DictionaryTreeBrowser:
         return self.has_item(item_path=item)
 
     def copy(self):
-        """Returns a shallow copy using :py:func:`copy.copy`."""
+        """Returns a shallow copy using :func:`copy.copy`."""
         return copy.copy(self)
 
     def deepcopy(self):
-        """Returns a deep copy using :py:func:`copy.deepcopy`."""
+        """Returns a deep copy using :func:`copy.deepcopy`."""
         return copy.deepcopy(self)
 
     def set_item(self, item_path, value):

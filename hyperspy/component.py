@@ -156,7 +156,7 @@ class Parameter(t.HasTraits):
               the dictionary. Has to match with the ``self._id_name``.
             * _whitelist: a dictionary, which keys are used as keywords to
               match with the parameter attributes. For more information see
-              :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
+              :func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
             * any field from ``_whitelist.keys()``.
 
         Returns
@@ -703,7 +703,7 @@ class Parameter(t.HasTraits):
             * _twins: a list of ids of the twins of the parameter
             * _whitelist: a dictionary, which keys are used as keywords to match
               with the parameter attributes. For more information see
-              :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
+              :func:`~hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys()
 
         """
@@ -1230,7 +1230,7 @@ class Component(t.HasTraits):
         """
         Returns component as a dictionary. For more information on method
         and conventions, see
-        :py:meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`.
+        :meth:`~hyperspy.misc.export_dictionary.export_to_dictionary`.
 
         Parameters
         ----------
@@ -1246,7 +1246,7 @@ class Component(t.HasTraits):
             * parameters: a list of dictionaries of the parameters, one per
               component.
             * _whitelist: a dictionary with keys used as references saved
-              attributes, for more information, see :py:func:`~hyperspy.misc.export_dictionary.export_to_dictionary`.
+              attributes, for more information, see :func:`~hyperspy.misc.export_dictionary.export_to_dictionary`.
             * any field from _whitelist.keys().
 
         """
@@ -1274,11 +1274,11 @@ class Component(t.HasTraits):
               dictionary. Has to match with the self._id_name
             * parameters: a list of dictionaries, one per parameter of the
               component (see
-              :py:meth:`~hyperspy.component.Parameter.as_dictionary`
+              :meth:`~hyperspy.component.Parameter.as_dictionary`
               documentation for more details)
             * _whitelist: a dictionary, which keys are used as keywords to
               match with the parameter attributes. For more information see
-              :py:func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
+              :func:`~hyperspy.misc.export_dictionary.load_from_dictionary`
             * any field from _whitelist.keys()
 
         Returns

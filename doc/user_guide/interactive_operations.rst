@@ -3,7 +3,7 @@
 Interactive Operations
 **********************
 
-The function :py:func:`~.api.interactive` simplifies the definition of
+The function :func:`~.api.interactive` simplifies the definition of
 operations that are automatically updated when an event is triggered. By
 default the operation is recomputed when the data or the axes of the original
 signal is changed.

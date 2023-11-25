@@ -68,7 +68,7 @@ class Markers:
         positions.
 
         To define a non-static marker any argument that can be set with the
-        :py:meth:`matplotlib.collections.Collection.set` method can be passed
+        :meth:`matplotlib.collections.Collection.set` method can be passed
         as an array with `dtype=object` of the constructor and the same size as
         the navigation axes of the a signal the markers will be added to.
 
@@ -88,25 +88,25 @@ class Markers:
             - ``"axes"``: the offsets are defined in axes coordinates and the ``ax.transAxes`` transformation is used.
               (0, 0) is bottom left of the axes, and (1, 1) is top right of the axes.
             - ``"xaxis"``: The offsets are defined in data coordinates in x and axes coordinates in y direction; use
-              :py:meth:`matplotlib.axes.Axes.get_xaxis_transform` transformation.
+              :meth:`matplotlib.axes.Axes.get_xaxis_transform` transformation.
             - ``"yaxis"``: The offsets are defined in data coordinates in y and axes coordinates in x direction; use
-              :py:meth:`matplotlib.axes.Axes.get_xaxis_transform` transformation..
+              :meth:`matplotlib.axes.Axes.get_xaxis_transform` transformation..
             - ``"display"``: the offsets are not transformed, i.e. are defined in the display coordinate system.
               (0, 0) is the bottom left of the window, and (width, height) is top right of the output in "display units"
-              :py:class:`matplotlib.transforms.IdentityTransform`.
+              :class:`matplotlib.transforms.IdentityTransform`.
 
         shift : None or float
             Only for ``offset_transform="relative"``. This applied a systematic
             shift in the y component of the ``offsets`` values. The shift is
             defined in the matplotlib ``"axes"`` coordinate system.
             This provides a constant shift from the data for labeling
-            :py:class:`~.api.signals.Signal1D`.
+            :class:`~.api.signals.Signal1D`.
         plot_on_signal : bool
             If True, plot on signal figure, otherwise on navigator.
         name : str
             The name of the markers.
         ScalarMappable_array : Array-like
-            Set the array of the :py:class:`matplotlib.cm.ScalarMappable` of the
+            Set the array of the :class:`matplotlib.cm.ScalarMappable` of the
             matplotlib collection.
             The ``ScalarMappable`` array will overwrite ``facecolor`` and
             ``edgecolor``. Default is None.
@@ -117,8 +117,8 @@ class Markers:
 
         Examples
         --------
-        Add markers using a :py:class:`matplotlib.collections.PatchCollection`
-        which will display the specified subclass of :py:class:`matplotlib.patches.Patch`
+        Add markers using a :class:`matplotlib.collections.PatchCollection`
+        which will display the specified subclass of :class:`matplotlib.patches.Patch`
         at the position defined by the argument ``offsets`` .
 
         >>> from matplotlib.collections import PatchCollection
@@ -134,7 +134,7 @@ class Markers:
         >>> s.plot()
         >>> s.add_marker(m)
 
-        Adding star "iterating" markers using :py:class:`matplotlib.collections.StarPolygonCollection`
+        Adding star "iterating" markers using :class:`matplotlib.collections.StarPolygonCollection`
 
         >>> import hyperspy.api as hs
         >>> from matplotlib.collections import StarPolygonCollection
@@ -565,13 +565,13 @@ class Markers:
 
         Parameters
         ----------
-        signal: :py:class:`~.api.signals.BaseSignal`
+        signal: :class:`~.api.signals.BaseSignal`
             A value passed to the Collection as ``{key:signal.data}``
         key: str or None
             The key used to create a key value pair to create the subclass of
-            :py:class:`matplotlib.collections.Collection`. If ``None`` (default)
+            :class:`matplotlib.collections.Collection`. If ``None`` (default)
             the key is set to ``"offsets"``.
-        signal_axes: str, tuple of :py:class:`~.axes.UniformDataAxis` or None
+        signal_axes: str, tuple of :class:`~.axes.UniformDataAxis` or None
             If ``"metadata"`` look for signal_axes saved in metadata under
             ``s.metadata.Peaks.signal_axes`` and convert from pixel positions
             to real units before creating the collection. If a ``tuple`` of
@@ -790,7 +790,7 @@ class Markers:
 
     def set_ScalarMappable_array(self, array):
         """
-        Set the array of the :py:class:`matplotlib.cm.ScalarMappable` of the
+        Set the array of the :class:`matplotlib.cm.ScalarMappable` of the
         matplotlib collection.
         The ``ScalarMappable`` array will overwrite ``facecolor`` and
         ``edgecolor``.

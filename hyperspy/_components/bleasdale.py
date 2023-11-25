@@ -41,7 +41,7 @@ class Bleasdale(Expression):
         The value of Parameter c.        
     **kwargs
         Extra keyword arguments are passed to
-        :py:class:`~.api.model.components1D.Expression`.
+        :class:`~.api.model.components1D.Expression`.
 
     Notes
     -----

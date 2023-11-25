@@ -142,12 +142,12 @@ class Model1D(BaseModel):
     There are many predifined components available in the
     :mod:`~hyperspy.api.model.components1D` module. If needed, new
     components can be created easily using the
-    :py:class:`~.api.model.components1D.Expression` component or by
+    :class:`~.api.model.components1D.Expression` component or by
     using the code of existing components as a template.
 
     Once defined, the model can be fitted to the data using
-    :py:meth:`~hyperspy.model.BaseModel.fit` or
-    :py:meth:`~hyperspy.model.BaseModel.multifit`. Once the optimizer reaches
+    :meth:`~hyperspy.model.BaseModel.fit` or
+    :meth:`~hyperspy.model.BaseModel.multifit`. Once the optimizer reaches
     the convergence criteria or the maximum number of iterations the new value
     of the component parameters are stored in the components.
 
@@ -629,7 +629,7 @@ class Model1D(BaseModel):
             If True, add a residual line (Signal - Model) to the signal figure.
         **kwargs : dict
             All extra keyword arguements are passed to
-            :py:meth:`~.api.signals.Signal1D.plot`
+            :meth:`~.api.signals.Signal1D.plot`
         """
 
         # If new coordinates are assigned

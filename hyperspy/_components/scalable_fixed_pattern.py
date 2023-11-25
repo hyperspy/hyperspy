@@ -120,7 +120,7 @@ class ScalableFixedPattern(Component):
             The spectral axis of the fixed pattern
         **kwargs : dict
             Keywords argument are passed to
-            :py:func:`scipy.interpolate.make_interp_spline`
+            :func:`scipy.interpolate.make_interp_spline`
         """
 
         self.f = make_interp_spline(

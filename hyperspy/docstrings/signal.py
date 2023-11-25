@@ -21,12 +21,12 @@
 """
 
 ONE_AXIS_PARAMETER = \
-    """: :py:class:`int`, :py:class:`str`, or :py:class:`~hyperspy.axes.DataAxis`
+    """: :class:`int`, :class:`str`, or :class:`~hyperspy.axes.DataAxis`
             The axis can be passed directly, or specified using the index of
             the axis in the Signal's `axes_manager` or the axis name."""
 
 MANY_AXIS_PARAMETER = \
-    """: :py:class:`int`, :py:class:`str`, :py:class:`~hyperspy.axes.DataAxis` or tuple
+    """: :class:`int`, :class:`str`, :class:`~hyperspy.axes.DataAxis` or tuple
             Either one on its own, or many axes in a tuple can be passed. In
             both cases the axes can be passed directly, or specified using the
             index in `axes_manager` or the name of the axis. Any duplicates are
@@ -34,14 +34,14 @@ MANY_AXIS_PARAMETER = \
             axes (default)."""
 
 OUT_ARG = \
-    """out : :py:class:`~hyperspy.api.signals.BaseSignal` (or subclass) or None
+    """out : :class:`~hyperspy.api.signals.BaseSignal` (or subclass) or None
             If ``None``, a new Signal is created with the result of the
             operation and returned (default). If a Signal is passed,
             it is used to receive the output of the operation, and nothing is
             returned."""
 
 NAN_FUNC = \
-    """Identical to :py:meth:`~hyperspy.api.signals.BaseSignal.{0}`, except ignores
+    """Identical to :meth:`~hyperspy.api.signals.BaseSignal.{0}`, except ignores
     missing (NaN) values. See that method's documentation for details.
     """
 
@@ -152,7 +152,7 @@ HISTOGRAM_MAX_BIN_ARGS = \
     """max_num_bins : int, default 250
            When estimating the bins using one of the str methods, the
            number of bins is capped by this number to avoid a MemoryError
-           being raised by :py:func:`numpy.histogram`."""
+           being raised by :func:`numpy.histogram`."""
 
 SIGNAL_MASK_ARG = \
     """signal_mask : numpy.ndarray of bool

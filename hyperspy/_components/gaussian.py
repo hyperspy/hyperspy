@@ -90,7 +90,7 @@ class Gaussian(Expression):
         Location of the Gaussian maximum (peak position).
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~.api.model.components1D.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
     Attributes
     ----------

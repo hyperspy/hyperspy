@@ -132,7 +132,7 @@ def interactive(f, event="auto", recompute_out_event="auto", *args, **kwargs):
 
     Returns
     -------
-    :py:class:`~hyperspy.signal.BaseSignal` or subclass
+    :class:`~hyperspy.signal.BaseSignal` or subclass
         Signal updated with the operation result when a given event is
         triggered.
 

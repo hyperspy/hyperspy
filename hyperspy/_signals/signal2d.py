@@ -169,7 +169,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         apply a median filter for noise reduction
     hanning : bool
         Apply a 2d hanning filter
-    plot : bool or :py:class:`matplotlib.figure.Figure`
+    plot : bool or :class:`matplotlib.figure.Figure`
         If True, plots the images after applying the filters and the phase
         correlation. If a figure instance, the images will be plotted to the
         given figure.
@@ -614,12 +614,12 @@ class Signal2D(BaseSignal, CommonSignal2D):
         num_workers=None,
         **kwargs,
     ):
-        """Align the images in-place using :py:func:`scipy.ndimage.shift`.
+        """Align the images in-place using :func:`scipy.ndimage.shift`.
 
         The images can be aligned using either user-provided shifts or
         by first estimating the shifts.
 
-        See :py:meth:`~.api.signals.Signal2D.estimate_shift2D`
+        See :meth:`~.api.signals.Signal2D.estimate_shift2D`
         for more details on estimating image shifts.
 
         Parameters
@@ -643,7 +643,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         %s
         %s
         **kwargs : dict
-            Keyword arguments passed to :py:meth:`~.api.signals.Signal2D.estimate_shift2D`
+            Keyword arguments passed to :meth:`~.api.signals.Signal2D.estimate_shift2D`
 
         Returns
         -------
@@ -939,34 +939,34 @@ class Signal2D(BaseSignal, CommonSignal2D):
              are:
 
              * 'local_max' - simple local maximum search using the
-               :py:func:`skimage.feature.peak_local_max` function
+               :func:`skimage.feature.peak_local_max` function
              * 'max' - simple local maximum search using the
-               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_max`.
+               :func:`~hyperspy.utils.peakfinders2D.find_peaks_max`.
              * 'minmax' - finds peaks by comparing maximum filter results
                with minimum filter, calculates centers of mass. See the
-               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_minmax`
+               :func:`~hyperspy.utils.peakfinders2D.find_peaks_minmax`
                function.
              * 'zaefferer' - based on gradient thresholding and refinement
                by local region of interest optimisation. See the
-               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_zaefferer`
+               :func:`~hyperspy.utils.peakfinders2D.find_peaks_zaefferer`
                function.
              * 'stat' - based on statistical refinement and difference with
                respect to mean intensity. See the
-               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_stat`
+               :func:`~hyperspy.utils.peakfinders2D.find_peaks_stat`
                function.
              * 'laplacian_of_gaussian' - a blob finder using the laplacian of
                Gaussian matrices approach. See the
-               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_log`
+               :func:`~hyperspy.utils.peakfinders2D.find_peaks_log`
                function.
              * 'difference_of_gaussian' - a blob finder using the difference
                of Gaussian matrices approach. See the
-               :py:func:`~hyperspy.utils.peakfinders2D.find_peaks_dog`
+               :func:`~hyperspy.utils.peakfinders2D.find_peaks_dog`
                function.
              * 'template_matching' - A cross correlation peakfinder. This
                method requires providing a template with the ``template``
                parameter, which is used as reference pattern to perform the
                template matching to the signal. It uses the
-               :py:func:`skimage.feature.match_template` function and the peaks
+               :func:`skimage.feature.match_template` function and the peaks
                position are obtained by using `minmax` method on the
                template matching result.
 
@@ -991,12 +991,12 @@ class Signal2D(BaseSignal, CommonSignal2D):
         -----
         As a convenience, the 'local_max' method accepts the 'distance' and
         'threshold' argument, which will be map to the 'min_distance' and
-        'threshold_abs' of the :py:func:`skimage.feature.peak_local_max`
+        'threshold_abs' of the :func:`skimage.feature.peak_local_max`
         function.
 
         Returns
         -------
-        peaks : :py:class:`~hyperspy.signal.BaseSignal` or numpy.ndarray
+        peaks : :class:`~hyperspy.signal.BaseSignal` or numpy.ndarray
             numpy.ndarray if current_index=True.
             Ragged signal with shape (npeaks, 2) that contains the `x, y`
             pixel coordinates of peaks found in each image sorted

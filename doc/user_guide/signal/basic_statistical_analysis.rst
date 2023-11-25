@@ -3,13 +3,13 @@
 Basic statistical analysis
 --------------------------
 
-:py:meth:`~.api.signals.BaseSignal.get_histogram` computes the histogram and
+:meth:`~.api.signals.BaseSignal.get_histogram` computes the histogram and
 conveniently returns it as signal instance. It provides methods to
-calculate the bins. :py:meth:`~.api.signals.BaseSignal.print_summary_statistics`
+calculate the bins. :meth:`~.api.signals.BaseSignal.print_summary_statistics`
 prints the five-number summary statistics of the data.
 
 These two methods can be combined with
-:py:meth:`~.api.signals.BaseSignal.get_current_signal` to compute the histogram or
+:meth:`~.api.signals.BaseSignal.get_current_signal` to compute the histogram or
 print the summary statistics of the signal at the current coordinates, e.g:
 
 .. code-block:: python
@@ -38,7 +38,7 @@ print the summary statistics of the signal at the current coordinates, e.g:
     max:    1.992
 
 Histogram of different objects can be compared with the functions
-:py:func:`~.api.plot.plot_histograms` (see
+:func:`~.api.plot.plot_histograms` (see
 :ref:`visualisation <plot_spectra>` for the plotting options). For example,
 with histograms of several random chi-square distributions:
 

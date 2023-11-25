@@ -85,14 +85,14 @@ class Samfire:
 
     Attributes
     ----------
-    model : :py:class:`hyperspy.model.BaseModel` (or subclass)
+    model : :class:`hyperspy.model.BaseModel` (or subclass)
         The complete model
     optional_components : list
         A list of components that can be switched off at some pixels if it
         returns a better Akaike's Information Criterion with correction (AICc)
     workers : int
         A number of processes that will perform the fitting parallely
-    pool : :py:class:`~.api.samfire.SamfirePool`
+    pool : :class:`~.api.samfire.SamfirePool`
         A proxy object that manages either multiprocessing or ipyparallel pool
     strategies : list
         A list of strategies that will be used to select pixel fitting order
@@ -208,7 +208,7 @@ class Samfire:
         ----------
         **kwargs : dict
             Any keyword arguments to be passed to
-            :py:meth:`~.model.BaseModel.fit`
+            :meth:`~.model.BaseModel.fit`
         """
         self._setup()
         if self._workers and self.pool is not None:

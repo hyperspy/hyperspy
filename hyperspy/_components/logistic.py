@@ -54,7 +54,7 @@ class Logistic(Expression):
         Position of the sigmoid's midpoint
     **kwargs : dict
         Extra keyword arguments are passed to the
-        :py:class:`~.api.model.components1D.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
     """
 
     def __init__(self, a=1., b=1., c=1., origin=0., module=None, **kwargs):

@@ -53,7 +53,7 @@ class Squares(Markers):
         %s
         kwargs:
             Additional keyword arguments are passed to
-            :py:class:`hyperspy.external.matplotlib.collections.SquareCollection`.
+            :class:`hyperspy.external.matplotlib.collections.SquareCollection`.
         """
         if kwargs.setdefault("transform", "display") != "display":
             raise ValueError(

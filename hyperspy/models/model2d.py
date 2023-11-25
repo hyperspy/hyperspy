@@ -48,10 +48,10 @@ class Model2D(BaseModel):
     """Model and data fitting for two dimensional signals.
 
     A model is constructed as a linear combination of
-    :py:mod:`~hyperspy.api.model.components2D` that are added to the model using
-    :py:meth:`~hyperspy.model.BaseModel.append` or
+    :mod:`~hyperspy.api.model.components2D` that are added to the model using
+    :meth:`~hyperspy.model.BaseModel.append` or
     :meth:`~hyperspy.model.BaseModel.extend`. There are predifined components 
-    available in the in the :py:mod:`~hyperspy.api.model.components2D` module
+    available in the in the :mod:`~hyperspy.api.model.components2D` module
     and custom component can made using the :class:`~.api.model.components1D.Expression`.
     If needed, new components can be created easily using the code of existing
     components as a template.

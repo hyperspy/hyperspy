@@ -45,7 +45,7 @@ class Texts(Markers):
             if it is a sequence the patches will cycle through the sequence.
             If c is 'none', the patch will not be filled.
         kwargs : dict
-            Keyword arguments are passed to :py:class:`matplotlib.collections.CircleCollection`.
+            Keyword arguments are passed to :class:`matplotlib.collections.CircleCollection`.
         """
         super().__init__(
             collection=TextCollection,

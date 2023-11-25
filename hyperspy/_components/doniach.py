@@ -69,7 +69,7 @@ class Doniach(Expression):
         Location of the maximum (peak position).
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~.api.model.components1D.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
     Notes
     -----

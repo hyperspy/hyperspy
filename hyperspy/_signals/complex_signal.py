@@ -280,7 +280,7 @@ class ComplexSignal(BaseSignal):
 
         Returns
         -------
-        :py:class:`~hyperspy.api.signals.BaseSignal`
+        :class:`~hyperspy.api.signals.BaseSignal`
             The counterclockwise angle from the positive real axis on the complex plane,
             with dtype as numpy.float64.
 
@@ -305,7 +305,7 @@ class ComplexSignal(BaseSignal):
 
         Returns
         -------
-        :py:class:`~hyperspy.api.signals.Signal2D`
+        :class:`~hyperspy.api.signals.Signal2D`
             The argand diagram
 
         Examples

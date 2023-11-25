@@ -36,21 +36,21 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
               supports bounds on parameters.
             * ``"odr"`` performs the optimization using the orthogonal
               distance regression (ODR) algorithm. It does not support
-              bounds on parameters. See :py:mod:`scipy.odr` for more details.
-            * All of the available methods for :py:func:`scipy.optimize.minimize`
+              bounds on parameters. See :mod:`scipy.odr` for more details.
+            * All of the available methods for :func:`scipy.optimize.minimize`
               can be used here. See the :ref:`User Guide <model.fitting>`
               documentation for more details.
             * ``"Differential Evolution"`` is a global optimization method.
               It does support bounds on parameters. See
-              :py:func:`scipy.optimize.differential_evolution` for more
+              :func:`scipy.optimize.differential_evolution` for more
               details on available options.
             * ``"Dual Annealing"`` is a global optimization method.
               It does support bounds on parameters. See
-              :py:func:`scipy.optimize.dual_annealing` for more
+              :func:`scipy.optimize.dual_annealing` for more
               details on available options. Requires ``scipy >= 1.2.0``.
             * ``"SHGO"`` (simplicial homology global optimization" is a global
               optimization method. It does support bounds on parameters. See
-              :py:func:`scipy.optimize.shgo` for more details on available
+              :func:`scipy.optimize.shgo` for more details on available
               options. Requires ``scipy >= 1.2.0``.
 
         loss_function : {``"ls"``, ``"ML-poisson"``, ``"huber"``, callable}, default ``"ls"``
@@ -90,16 +90,16 @@ FIT_PARAMETERS_ARG = """optimizer : str or None, default None
         print_info : bool, default False
             If True, print information about the fitting results, which
             are also stored in ``model.fit_output`` in the form of
-            a :py:class:`scipy.optimize.OptimizeResult` object.
+            a :class:`scipy.optimize.OptimizeResult` object.
         return_info : bool, default True
             If True, returns the fitting results in the form of
-            a :py:class:`scipy.optimize.OptimizeResult` object.
+            a :class:`scipy.optimize.OptimizeResult` object.
         fd_scheme : str {``"2-point"``, ``"3-point"``, ``"cs"``}, default ``"2-point"``
             If ``grad='fd'``, selects the finite difference scheme to use.
-            See :py:func:`scipy.optimize.minimize` for details. Ignored if
+            See :func:`scipy.optimize.minimize` for details. Ignored if
             ``optimizer`` is one of ``"lm"``, ``"trf"`` or ``"dogbox"``.
         **kwargs : dict
             Any extra keyword argument will be passed to the chosen
             optimizer. For more information, read the docstring of the
-            optimizer of your choice in :py:mod:`scipy.optimize`.
+            optimizer of your choice in :mod:`scipy.optimize`.
         """

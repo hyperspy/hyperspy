@@ -38,7 +38,7 @@ class Polygons(Markers):
             In the form [[[x1,y1], [x2,y2], ... [xn, yn]],[[x1,y1], [x2,y2], ...[xm,ym]], ...].
         **kwargs : dict
             Additional keyword arguments are passed to
-            :py:class:`matplotlib.collections.PolyCollection`
+            :class:`matplotlib.collections.PolyCollection`
 
         Examples
         --------

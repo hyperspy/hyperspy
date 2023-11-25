@@ -41,7 +41,7 @@ class Arrows(Markers):
             The change in y (vertical) diraction for the arrows.
         C : array-like or None
         kwargs : dict
-            Keyword arguments are passed to :py:class:`matplotlib.quiver.Quiver`.
+            Keyword arguments are passed to :class:`matplotlib.quiver.Quiver`.
         """
 
         super().__init__(

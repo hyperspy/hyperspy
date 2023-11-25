@@ -5,8 +5,8 @@
 Data visualization
 ******************
 
-The object returned by :py:func:`~.api.load`, a :py:class:`~.api.signals.BaseSignal`
-instance, has a :py:meth:`~.api.signals.BaseSignal.plot` method that is powerful and
+The object returned by :func:`~.api.load`, a :class:`~.api.signals.BaseSignal`
+instance, has a :meth:`~.api.signals.BaseSignal.plot` method that is powerful and
 flexible to visualize n-dimensional data. In this chapter, the
 visualisation of multidimensional data is exemplified with two experimental
 datasets: an EELS spectrum image and an EDX dataset consisting of a secondary
@@ -61,7 +61,7 @@ on and the spectrum or navigator figure is selected**. When using the numpad
 arrows the PageUp and PageDown keys change the size of the step.
 
 The current coordinates can be either set by navigating the
-:py:meth:`~.api.signals.BaseSignal.plot`, or specified by pixel indices
+:meth:`~.api.signals.BaseSignal.plot`, or specified by pixel indices
 in ``s.axes_manager.indices`` or as calibrated coordinates in
 ``s.axes_manager.coordinates``.
 
@@ -135,7 +135,7 @@ To close all the figures run the following command:
 
     Plotting ``float16`` images is currently not supported by matplotlib; however, it is
     possible to convert the type of the data by using the
-    :py:meth:`~.api.signals.BaseSignal.change_dtype` method, e.g. ``s.change_dtype('float32')``.
+    :meth:`~.api.signals.BaseSignal.change_dtype` method, e.g. ``s.change_dtype('float32')``.
 
 Multidimensional image data
 ===========================
@@ -190,7 +190,7 @@ Customising image plot
 
 The image plot can be customised by passing additional arguments when plotting.
 Colorbar, scalebar and contrast controls are HyperSpy-specific, however
-:py:meth:`matplotlib.axes.Axes.imshow` arguments are supported as well:
+:meth:`matplotlib.axes.Axes.imshow` arguments are supported as well:
 
 .. code-block:: python
 
@@ -457,7 +457,7 @@ used for this purpose.
 
 In the following example we also use `scikit-image <https://scikit-image.org/>`_
 for noise reduction. More details about
-:py:meth:`exspy.signals.EDSSpectrum.get_lines_intensity` method can be
+:meth:`exspy.signals.EDSSpectrum.get_lines_intensity` method can be
 found in :external+exspy:ref:`EDS lines intensity<get_lines_intensity>`.
 
 .. code-block:: python
@@ -491,19 +491,19 @@ Plotting multiple signals
 =========================
 
 HyperSpy provides three functions to plot multiple signals (spectra, images or
-other signals): :py:func:`~.api.plot.plot_images`,
-:py:func:`~.api.plot.plot_spectra`, and
-:py:func:`~.api.plot.plot_signals` in the :py:mod:`~.api.plot` package.
+other signals): :func:`~.api.plot.plot_images`,
+:func:`~.api.plot.plot_spectra`, and
+:func:`~.api.plot.plot_signals` in the :mod:`~.api.plot` package.
 
 .. _plot.images:
 
 Plotting several images
 -----------------------
 
-:py:func:`~.api.plot.plot_images` is used to plot several images in the
+:func:`~.api.plot.plot_images` is used to plot several images in the
 same figure. It supports many configurations and has many options available
 to customize the resulting output. The function returns a list of
-:py:class:`matplotlib.axes.Axes`,
+:class:`matplotlib.axes.Axes`,
 which can be used to further customize the figure. Some examples are given
 below. Plots generated from another installation may look slightly different
 due to ``matplotlib`` GUI backends and default font sizes. To change the
@@ -511,10 +511,10 @@ font size globally, use the command ``matplotlib.rcParams.update({'font
 .size': 8})``.
 
 .. versionadded:: 1.5
-   Add support for plotting :py:class:`~.api.signals.BaseSignal` with navigation
+   Add support for plotting :class:`~.api.signals.BaseSignal` with navigation
    dimension 2 and signal dimension 0.
 
-A common usage for :py:func:`~.api.plot.plot_images` is to view the
+A common usage for :func:`~.api.plot.plot_images` is to view the
 different slices of a multidimensional image (a *hyperimage*):
 
 .. code-block:: python
@@ -529,13 +529,13 @@ different slices of a multidimensional image (a *hyperimage*):
   :align:   center
   :width:   500
 
-  Figure generated with :py:func:`~.api.plot.plot_images` using the
+  Figure generated with :func:`~.api.plot.plot_images` using the
   default values.
 
 
 This example is explained in :ref:`Signal iterator<signal.iterator>`.
 
-By default, :py:func:`~.api.plot.plot_images` will attempt to auto-label
+By default, :func:`~.api.plot.plot_images` will attempt to auto-label
 the images based on the Signal titles. The labels (and title) can be
 customized with the `suptitle` and `label` arguments. In this example, the
 axes labels and the ticks are also disabled with `axes_decor`:
@@ -555,10 +555,10 @@ axes labels and the ticks are also disabled with `axes_decor`:
   :align:   center
   :width:   500
 
-  Figure generated with :py:func:`~.api.plot.plot_images` with customised
+  Figure generated with :func:`~.api.plot.plot_images` with customised
   labels.
 
-:py:func:`~.api.plot.plot_images` can also be used to easily plot a list
+:func:`~.api.plot.plot_images` can also be used to easily plot a list
 of `Images`, comparing different `Signals`, including RGB images. This
 example also demonstrates how to wrap labels using `labelwrap` (for preventing
 overlap) and using a single `colorbar` for all the Images, as opposed to
@@ -601,7 +601,7 @@ multiple individual ones:
   :align:   center
   :width:   500
 
-  Figure generated with :py:func:`~.api.plot.plot_images` from a list of
+  Figure generated with :func:`~.api.plot.plot_images` from a list of
   images.
 
 Data files used in the following example can be downloaded using (These data
@@ -624,7 +624,7 @@ to get a representative figure of the X-ray line intensities of an EDS
 spectrum image. This example also demonstrates changing the colormap (with
 `cmap`), adding scalebars to the plots (with `scalebar`), and changing the
 `padding` between the images. The padding is specified as a dictionary,
-which is passed to :py:meth:`matplotlib.figure.Figure.subplots_adjust`.
+which is passed to :meth:`matplotlib.figure.Figure.subplots_adjust`.
 
 .. code-block:: python
 
@@ -641,8 +641,8 @@ which is passed to :py:meth:`matplotlib.figure.Figure.subplots_adjust`.
   :align:   center
   :width:   500
 
-  Using :py:func:`~.api.plot.plot_images` to plot the output of
-  :py:meth:`~.exspy.signals.EDSSpectrum.get_lines_intensity`.
+  Using :func:`~.api.plot.plot_images` to plot the output of
+  :meth:`~.exspy.signals.EDSSpectrum.get_lines_intensity`.
 
 .. |subplots_adjust| image:: images/plot_images_subplots.png
 
@@ -652,7 +652,7 @@ which is passed to :py:meth:`matplotlib.figure.Figure.subplots_adjust`.
     |subplots_adjust| button in the GUI (button may be different when using
     different graphical backends).
 
-Finally, the ``cmap`` option of :py:func:`~.api.plot.plot_images`
+Finally, the ``cmap`` option of :func:`~.api.plot.plot_images`
 supports iterable types, allowing the user to specify different colormaps
 for the different images that are plotted by providing a list or other
 generator:
@@ -670,16 +670,16 @@ generator:
   :align:   center
   :width:   500
 
-  Using :py:func:`~.api.plot.plot_images` to plot the output of
-  :py:meth:`~.exspy.signals.EDSSpectrum.get_lines_intensity` using a unique
+  Using :func:`~.api.plot.plot_images` to plot the output of
+  :meth:`~.exspy.signals.EDSSpectrum.get_lines_intensity` using a unique
   colormap for each image.
 
 The ``cmap`` argument can also be given as ``'mpl_colors'``, and as a result,
 the images will be plotted with colormaps generated from the default
 ``matplotlib`` colors, which is very helpful when plotting multiple spectral
 signals and their relative intensities (such as the results of a
-:py:meth:`~.api.signals.BaseSignal.decomposition` analysis). This example uses
-:py:func:`~.api.plot.plot_spectra`, which is explained in the
+:meth:`~.api.signals.BaseSignal.decomposition` analysis). This example uses
+:func:`~.api.plot.plot_spectra`, which is explained in the
 `next section`__.
 
 __ plot.spectra_
@@ -723,8 +723,8 @@ __ plot.spectra_
   :align:   center
   :width:   500
 
-  Using :py:func:`~.api.plot.plot_images` with ``cmap='mpl_colors'``
-  together with :py:func:`~.api.plot.plot_spectra` to visualize the
+  Using :func:`~.api.plot.plot_images` with ``cmap='mpl_colors'``
+  together with :func:`~.api.plot.plot_spectra` to visualize the
   output of a non-negative matrix factorization of the EDS data.
 
 
@@ -745,7 +745,7 @@ __ plot.spectra_
 
 It is also possible to plot multiple images overlayed on the same figure by
 passing the argument ``overlay=True`` to the
-:py:func:`~.api.plot.plot_images` function. This should only be done when
+:func:`~.api.plot.plot_images` function. This should only be done when
 images have the same scale (eg. for elemental maps from the same dataset).
 Using the same data as above, the Fe and Pt signals can be plotted using
 different colours. Any color can be input via matplotlib color characters or
@@ -767,17 +767,17 @@ hex values.
 Plotting several spectra
 ------------------------
 
-:py:func:`~.api.plot.plot_spectra` is used to plot several spectra in the
+:func:`~.api.plot.plot_spectra` is used to plot several spectra in the
 same figure. It supports different styles, the default
 being "overlap".
 
 .. versionadded:: 1.5
-   Add support for plotting :py:class:`~.api.signals.BaseSignal` with navigation
+   Add support for plotting :class:`~.api.signals.BaseSignal` with navigation
    dimension 1 and signal dimension 0.
 
 In the following example we create a list of 9 single spectra (gaussian
 functions with different sigma values) and plot them in the same figure using
-:py:func:`~.api.plot.plot_spectra`. Note that, in this case, the legend
+:func:`~.api.plot.plot_spectra`. Note that, in this case, the legend
 labels are taken from the individual spectrum titles. By clicking on the
 legended line, a spectrum can be toggled on and off.
 
@@ -806,7 +806,7 @@ legended line, a spectrum can be toggled on and off.
   :align:   center
   :width:   500
 
-  Figure generated by :py:func:`~.api.plot.plot_spectra` using the
+  Figure generated by :func:`~.api.plot.plot_spectra` using the
   `overlap` style.
 
 
@@ -827,7 +827,7 @@ a file:
   :align:   center
   :width:   350
 
-  Figure generated by :py:func:`~.api.plot.plot_spectra` using the
+  Figure generated by :func:`~.api.plot.plot_spectra` using the
   `cascade` style.
 
 The "cascade" `style` has a `padding` option. The default value, 1, keeps the
@@ -851,7 +851,7 @@ and provide the legend labels:
   :align:   center
   :width:   350
 
-  Customising the line colors in :py:func:`~.api.plot.plot_spectra`.
+  Customising the line colors in :func:`~.api.plot.plot_spectra`.
 
 
 A simple extension of this functionality is to customize the colormap that
@@ -884,7 +884,7 @@ generate a list of colors that follows a certain colormap:
   :align:   center
   :width:   500
 
-  Customising the line colors in :py:func:`~.api.plot.plot_spectra` using
+  Customising the line colors in :func:`~.api.plot.plot_spectra` using
   a colormap.
 
 There are also two other styles, "heatmap" and "mosaic":
@@ -899,7 +899,7 @@ There are also two other styles, "heatmap" and "mosaic":
   :align:   center
   :width:   500
 
-  Figure generated by :py:func:`~.api.plot.plot_spectra` using the
+  Figure generated by :func:`~.api.plot.plot_spectra` using the
   `heatmap` style.
 
 .. code-block:: python
@@ -912,7 +912,7 @@ There are also two other styles, "heatmap" and "mosaic":
   :align:   center
   :width:   350
 
-  Figure generated by :py:func:`~.api.plot.plot_spectra` using the
+  Figure generated by :func:`~.api.plot.plot_spectra` using the
   `mosaic` style.
 
 For the "heatmap" style, different
@@ -931,7 +931,7 @@ can be used:
   :align:   center
   :width:   500
 
-  Figure generated by :py:func:`~.api.plot.plot_spectra` using the
+  Figure generated by :func:`~.api.plot.plot_spectra` using the
   `heatmap` style showing how to customise the color map.
 
 Any parameter that can be passed to matplotlib.pyplot.figure can also be used
@@ -1008,8 +1008,8 @@ Plotting profiles interactively
 -------------------------------
 
 Spectra or line profile can be plotted interactively on the same figure using
-the :py:func:`~.api.plot.plot_spectra` function. For example, profiles
-obtained from different Signal2D using the :py:class:`~.roi.Line2DROI` ROI can
+the :func:`~.api.plot.plot_spectra` function. For example, profiles
+obtained from different Signal2D using the :class:`~.roi.Line2DROI` ROI can
 be plotted interactively:
 
 .. code-block:: python
@@ -1039,7 +1039,7 @@ be plotted interactively:
 Plotting several signals
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-:py:func:`~.api.plot.plot_signals` is used to plot several signals at the
+:func:`~.api.plot.plot_signals` is used to plot several signals at the
 same time. By default the navigation position of the signals will be synced,
 and the signals must have the same dimensions. To plot two spectra at the
 same time:
@@ -1055,7 +1055,7 @@ same time:
   :align:   center
   :width:   500
 
-  The :py:func:`~.api.plot.plot_signals` plots several signals with
+  The :func:`~.api.plot.plot_signals` plots several signals with
   optional synchronized navigation.
 
 The navigator can be specified by using the navigator argument, where the
@@ -1075,7 +1075,7 @@ To specify the navigator:
   :align:   center
   :width:   500
 
-  Customising the navigator in :py:func:`~.api.plot.plot_signals`.
+  Customising the navigator in :func:`~.api.plot.plot_signals`.
 
 Navigators can also be set differently for different plots using the
 navigator_list argument. Where the navigator_list be the same length
@@ -1094,7 +1094,7 @@ For example:
   :align:   center
   :width:   500
 
-  Customising the navigator in :py:func:`~.api.plot.plot_signals` by
+  Customising the navigator in :func:`~.api.plot.plot_signals` by
   providing a navigator list.
 
 Several signals can also be plotted without syncing the navigation by using
@@ -1113,7 +1113,7 @@ each plot:
   :align:   center
   :width:   500
 
-  Disabling syncronised navigation in :py:func:`~.api.plot.plot_signals`.
+  Disabling syncronised navigation in :func:`~.api.plot.plot_signals`.
 
 .. _plot.markers:
 
@@ -1344,39 +1344,39 @@ The markers currently supported in HyperSpy are:
 .. table:: List of supported markers, their signature and their corresponding matplotlib objects.
     :widths: 20 40 40
 
-    +------------------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+
-    | HyperSpy Markers                                                 | Signature                                              | Matplotlib Collection                                  |
-    +==================================================================+========================================================+========================================================+
-    | :py:class:`~.drawing._markers.arrows.Arrows`                     | ``offsets``, ``U``, ``V``, ``C``, ``**kwargs``         |  :py:class:`matplotlib.quiver.Quiver`                  |
-    +------------------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+
-    | :py:class:`~.drawing._markers.circles.Circles`                   | ``offsets``, ``sizes``, ``**kwargs``                   |  :py:class:`matplotlib.collections.CircleCollection`   |
-    +------------------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+
-    | :py:class:`~.drawing._markers.ellipses.Ellipses`                 | ``offsets``, ``widths``, ``heights``, ``**kwargs``     |  :py:class:`matplotlib.collections.EllipseCollection`  |
-    +------------------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+
-    | :py:class:`~.drawing._markers.horizontal_lines.HorizontalLines`  | ``offsets``, ``**kwargs``                              |  :py:class:`matplotlib.collections.LineCollection`     |
-    +------------------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+
-    | :py:class:`~.drawing._markers.lines.Lines`                       | ``segments``, ``**kwargs``                             |  :py:class:`matplotlib.collections.LineCollection`     |
-    +------------------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+
-    | :py:class:`~.drawing.markers.Markers`                            | ``offsets``, ``**kwargs``                              |                                                        |
-    +------------------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+
-    | :py:class:`~.drawing._markers.points.Points`                     | ``offsets``, ``**kwargs``                              |  :py:class:`matplotlib.collections.CircleCollection`   |
-    +------------------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+
-    | :py:class:`~.drawing._markers.polygons.Polygons`                 | ``verts``, ``**kwargs``                                |  :py:class:`matplotlib.collections.PolyCollection`     |
-    +------------------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+
-    | :py:class:`~.drawing._markers.rectangles.Rectangles`             | ``offsets``, ``widths``, ``heights``, ``**kwargs``     |  Custom ``RectangleCollection``                        |
-    +------------------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+
-    | :py:class:`~.drawing._markers.squares.Squares`                   | ``offsets``, ``widths``, ``**kwargs``                  |  Custom ``SquareCollection``                           |
-    +------------------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+
-    | :py:class:`~.drawing._markers.texts.Texts`                       | ``offsets``, ``texts``, ``**kwargs``                   |  Custom ``TextCollection``                             |
-    +------------------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+
-    | :py:class:`~.drawing._markers.vertical_lines.VerticalLines`      | ``offsets``, ``**kwargs``                              |  :py:class:`matplotlib.collections.LineCollection`     |
-    +------------------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+
+    +--------------------------------------------------------------+----------------------------------------------------+----------------------------------------------------+
+    | HyperSpy Markers                                             | Signature                                          |  Matplotlib Collection                             |
+    +==============================================================+====================================================+====================================================+
+    | :class:`~.drawing._markers.arrows.Arrows`                    | ``offsets``, ``U``, ``V``, ``C``, ``**kwargs``     |  :class:`matplotlib.quiver.Quiver`                 |
+    +--------------------------------------------------------------+----------------------------------------------------+----------------------------------------------------+
+    | :class:`~.drawing._markers.circles.Circles`                  | ``offsets``, ``sizes``, ``**kwargs``               |  :class:`matplotlib.collections.CircleCollection`  |
+    +--------------------------------------------------------------+----------------------------------------------------+----------------------------------------------------+
+    | :class:`~.drawing._markers.ellipses.Ellipses`                | ``offsets``, ``widths``, ``heights``, ``**kwargs`` |  :class:`matplotlib.collections.EllipseCollection` |
+    +--------------------------------------------------------------+----------------------------------------------------+----------------------------------------------------+
+    | :class:`~.drawing._markers.horizontal_lines.HorizontalLines` | ``offsets``, ``**kwargs``                          |  :class:`matplotlib.collections.LineCollection`    |
+    +--------------------------------------------------------------+----------------------------------------------------+----------------------------------------------------+
+    | :class:`~.drawing._markers.lines.Lines`                      | ``segments``, ``**kwargs``                         |  :class:`matplotlib.collections.LineCollection`    |
+    +--------------------------------------------------------------+----------------------------------------------------+----------------------------------------------------+
+    | :class:`~.drawing.markers.Markers`                           | ``offsets``, ``**kwargs``                          |                                                    |
+    +--------------------------------------------------------------+----------------------------------------------------+----------------------------------------------------+
+    | :class:`~.drawing._markers.points.Points`                    | ``offsets``, ``**kwargs``                          |  :class:`matplotlib.collections.CircleCollection`  |
+    +--------------------------------------------------------------+----------------------------------------------------+----------------------------------------------------+
+    | :class:`~.drawing._markers.polygons.Polygons`                | ``verts``, ``**kwargs``                            |  :class:`matplotlib.collections.PolyCollection`    |
+    +--------------------------------------------------------------+----------------------------------------------------+----------------------------------------------------+
+    | :class:`~.drawing._markers.rectangles.Rectangles`            | ``offsets``, ``widths``, ``heights``, ``**kwargs`` |  Custom ``RectangleCollection``                    |
+    +--------------------------------------------------------------+----------------------------------------------------+----------------------------------------------------+
+    | :class:`~.drawing._markers.squares.Squares`                  | ``offsets``, ``widths``, ``**kwargs``              |  Custom ``SquareCollection``                       |
+    +--------------------------------------------------------------+----------------------------------------------------+----------------------------------------------------+
+    | :class:`~.drawing._markers.texts.Texts`                      | ``offsets``, ``texts``, ``**kwargs``               |  Custom ``TextCollection``                         |
+    +--------------------------------------------------------------+----------------------------------------------------+----------------------------------------------------+
+    | :class:`~.drawing._markers.vertical_lines.VerticalLines`     | ``offsets``, ``**kwargs``                          |  :class:`matplotlib.collections.LineCollection`    |
+    +--------------------------------------------------------------+----------------------------------------------------+----------------------------------------------------+
 
 Marker properties
 -----------------
 
 The optional parameters (``**kwargs``, keyword arguments) can be used for extra parameters used for
-each matplotlib collection.  Any parameter which can be set using the :py:meth:`matplotlib.collections.Collection.set`
+each matplotlib collection.  Any parameter which can be set using the :meth:`matplotlib.collections.Collection.set`
 method can be used as an iterating parameter with respect to the navigation index by passing in a numpy array
 with ``dtype=object``. Otherwise to set the parameter globally the kwarg can directly be passed.
 
@@ -1393,7 +1393,7 @@ Extra information about Markers
    Marker Collections for faster plotting of many markers
 
 Hyperspy's `Markers` class and its subclasses extends the capabilities of the
-:py:class:`matplotlib.collections.Collection` class and subclasses.
+:class:`matplotlib.collections.Collection` class and subclasses.
 Primarily it allows dynamic markers to be initialized by passing key word arguments with ``dtype=object``. Those
 attributes are then updated with the plot as you navigate through the plot.
 
@@ -1417,7 +1417,7 @@ For attributes which we want to by dynamic and change with the navigation coordi
 an array with ``dtype=object``.  Each of those values will be set as the index changes.
 
 .. NOTE::
-    Only kwargs which can be passed to :py:meth:`matplotlib.collections.Collection.set` can be dynamic.
+    Only kwargs which can be passed to :meth:`matplotlib.collections.Collection.set` can be dynamic.
 
 If we want to plot a series of points, we can use the following code, in this case
 both the ``sizes`` and ``offsets`` kwargs are dynamic and change with each index.
@@ -1437,11 +1437,11 @@ both the ``sizes`` and ``offsets`` kwargs are dynamic and change with each index
     >>> s.add_marker(m)
     >>>
 
-The :py:class:`~.api.plot.markers.Markers` also has a class method :py:meth:`~.api.plot.markers.Markers.from_signal` which can
+The :class:`~.api.plot.markers.Markers` also has a class method :meth:`~.api.plot.markers.Markers.from_signal` which can
 be used to create a set of markers from the output of some map function.  In this case ``signal.data`` is mapped
-to some ``key`` and used to initialize a :py:class:`~.api.plot.markers.Markers` object. If the signal has the attribute
+to some ``key`` and used to initialize a :class:`~.api.plot.markers.Markers` object. If the signal has the attribute
 ``signal.metadata.Peaks.signal_axes`` and convert_units = True then the values will be converted to the proper units
-before creating the :py:class:`~.api.plot.markers.Markers` object.
+before creating the :class:`~.api.plot.markers.Markers` object.
 
 .. NOTE::
     For kwargs like size, height, etc. the scale and the units of the x axis are used to plot.

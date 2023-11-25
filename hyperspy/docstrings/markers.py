@@ -28,6 +28,6 @@ UNITS_DOCSTRING = \
             refer to the *offsets* data units. ``"xy"`` differs from all others in
             that the angle as plotted varies with the aspect ratio, and equals
             the specified angle only when the aspect ratio is unity.  Hence
-            it behaves the same as the :py:class:`matplotlib.patches.Ellipse` with
+            it behaves the same as the :class:`matplotlib.patches.Ellipse` with
             ``axes.transData`` as its transform.
             """

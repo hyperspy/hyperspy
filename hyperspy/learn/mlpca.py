@@ -68,13 +68,13 @@ def mlpca(
             optionally truncated afterwards.
         If full:
             run exact SVD, calling the standard LAPACK solver via
-            :py:func:`scipy.linalg.svd`, and select the components by postprocessing
+            :func:`scipy.linalg.svd`, and select the components by postprocessing
         If arpack:
             use truncated SVD, calling ARPACK solver via
-            :py:func:`scipy.sparse.linalg.svds`. It requires strictly
+            :func:`scipy.sparse.linalg.svds`. It requires strictly
             `0 < output_dimension < min(data.shape)`
         If randomized:
-            use truncated SVD, calling :py:func:`sklearn.utils.extmath.randomized_svd`
+            use truncated SVD, calling :func:`sklearn.utils.extmath.randomized_svd`
             to estimate a limited number of components
     tol : float
         Tolerance of the stopping condition.

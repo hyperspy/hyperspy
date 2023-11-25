@@ -65,14 +65,14 @@ not_set_error_msg = (
 
 
 PARSE_AXES_DOCSTRING = \
-"""axes : None, str, int or :py:class:`hyperspy.axes.DataAxis`, default None
+"""axes : None, str, int or :class:`hyperspy.axes.DataAxis`, default None
             The axes argument specifies which axes the ROI will be applied on.
             The axes in the collection can be either of the following:
 
             * Anything that can index the provided ``axes_manager``.
             * a tuple or list of:
 
-              - :py:class:`hyperspy.axes.DataAxis`
+              - :class:`hyperspy.axes.DataAxis`
               - anything that can index the provided ``axes_manager``
     
             * ``None``, it will check whether the widget can be added to the
@@ -151,7 +151,7 @@ class BaseROI(t.HasTraits):
 
         If the ROI is point base or is rectangluar in nature, these can be used
         to slice a signal. Extracted from
-        :py:meth:`~hyperspy.roi.BaseROI._make_slices` to ease implementation
+        :meth:`~hyperspy.roi.BaseROI._make_slices` to ease implementation
         in inherited ROIs.
         """
         raise NotImplementedError()
@@ -237,17 +237,17 @@ class BaseROI(t.HasTraits):
 
     def _parse_axes(self, axes, axes_manager):
         """Utility function to parse the 'axes' argument to a list of
-        :py:class:`~hyperspy.axes.DataAxis`.
+        :class:`~hyperspy.axes.DataAxis`.
 
         Parameters
         ----------
         %s
-        axes_manager : :py:class:`~hyperspy.axes.AxesManager`
+        axes_manager : :class:`~hyperspy.axes.AxesManager`
             The AxesManager to use for parsing axes
 
         Returns
         -------
-        tuple of :py:class:`~hyperspy.axes.DataAxis`
+        tuple of :class:`~hyperspy.axes.DataAxis`
         """
         nd = self.ndim
         if axes is None:
@@ -281,7 +281,7 @@ def _get_mpl_ax(plot, axes):
     Returns matplotlib Axes that contains the hyperspy axis.
 
     The space of the first DataAxis in axes will be used to determine which
-    plot's :py:class:`matplotlib.axes.Axes` to return.
+    plot's :class:`matplotlib.axes.Axes` to return.
 
     Parameters
     ----------
@@ -380,7 +380,7 @@ class BaseInteractiveROI(BaseROI):
     def interactive(self, signal, navigation_signal="same", out=None,
                     color="green", snap=True, **kwargs):
         """Creates an interactively sliced Signal (sliced by this ROI) via
-        :py:func:`~hyperspy.api.interactive`.
+        :func:`~hyperspy.api.interactive`.
 
         Parameters
         ----------
@@ -408,7 +408,7 @@ class BaseInteractiveROI(BaseROI):
 
         Returns
         -------
-        :py:class:`~hyperspy.api.signals.BaseSignal` (or subclass)
+        :class:`~hyperspy.api.signals.BaseSignal` (or subclass)
             Signal updated with the current ROI selection
             when the ROI is changed.
 

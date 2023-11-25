@@ -18,7 +18,7 @@ Working with big data
 HyperSpy makes it possible to analyse data larger than the available memory by
 providing "lazy" versions of most of its signals and functions. In most cases
 the syntax remains the same. This chapter describes how to work with data
-larger than memory using the :py:class:`~._signals.lazy.LazySignal` class and
+larger than memory using the :class:`~._signals.lazy.LazySignal` class and
 its derivatives.
 
 
@@ -69,12 +69,12 @@ almost 280GB of memory. However, with the lazy processing both of these steps
 are near-instantaneous and require very little computational resources.
 
 .. versionadded:: 1.4
-    :py:meth:`~._signals.lazy.LazySignal.close_file`
+    :meth:`~._signals.lazy.LazySignal.close_file`
 
 Currently when loading an hdf5 file lazily the file remains open at
 least while the signal exists. In order to close it explicitly, use the
-:py:meth:`~._signals.lazy.LazySignal.close_file` method. Alternatively,
-you could close it on calling :py:meth:`~._signals.lazy.LazySignal.compute`
+:meth:`~._signals.lazy.LazySignal.close_file` method. Alternatively,
+you could close it on calling :meth:`~._signals.lazy.LazySignal.compute`
 by passing the keyword argument ``close_file=True`` e.g.:
 
 .. code-block:: python
@@ -106,7 +106,7 @@ Casting signals as lazy
 
 To convert a regular HyperSpy signal to a lazy one such that any future
 operations are only performed lazily, use the
-:py:meth:`~.api.signals.BaseSignal.as_lazy` method:
+:meth:`~.api.signals.BaseSignal.as_lazy` method:
 
 .. code-block:: python
 
@@ -129,28 +129,28 @@ To perform decomposition operation lazily, HyperSpy provides access to several "
 algorithms  as well as `dask <https://dask.pydata.org/>`_'s lazy SVD algorithm.
 Online algorithms perform the decomposition by operating serially on chunks of
 data, enabling the lazy decomposition of large datasets. In line with the
-standard HyperSpy signals, lazy :py:meth:`~._signals.lazy.LazySignal.decomposition`
+standard HyperSpy signals, lazy :meth:`~._signals.lazy.LazySignal.decomposition`
 offers the following online algorithms:
 
 .. _lazy_decomposition-table:
 
 .. table:: Available lazy decomposition algorithms in HyperSpy
 
-   +--------------------------+----------------------------------------------------------------+
-   | Algorithm                | Method                                                         |
-   +==========================+================================================================+
-   | "SVD" (default)          | :py:func:`dask.array.linalg.svd`                               |
-   +--------------------------+----------------------------------------------------------------+
-   | "PCA"                    | :py:class:`sklearn.decomposition.IncrementalPCA`               |
-   +--------------------------+----------------------------------------------------------------+
-   | "ORPCA"                  | :py:class:`~.learn.rpca.ORPCA`                                 |
-   +--------------------------+----------------------------------------------------------------+
-   | "ORNMF"                  | :py:class:`~.learn.ornmf.ORNMF`                                |
-   +--------------------------+----------------------------------------------------------------+
+   +--------------------------+---------------------------------------------------+
+   | Algorithm                | Method                                            |
+   +==========================+===================================================+
+   | "SVD" (default)          | :func:`dask.array.linalg.svd`                     |
+   +--------------------------+---------------------------------------------------+
+   | "PCA"                    | :class:`sklearn.decomposition.IncrementalPCA`     |
+   +--------------------------+---------------------------------------------------+
+   | "ORPCA"                  | :class:`~.learn.rpca.ORPCA`                       |
+   +--------------------------+---------------------------------------------------+
+   | "ORNMF"                  | :class:`~.learn.ornmf.ORNMF`                      |
+   +--------------------------+---------------------------------------------------+
 
 .. seealso::
 
-  :py:meth:`~.api.signals.BaseSignal.decomposition` for more details on decomposition
+  :meth:`~.api.signals.BaseSignal.decomposition` for more details on decomposition
   with non-lazy signals.
 
 
@@ -192,10 +192,10 @@ harddrive when changing navigation indices:
     >>> s.plot()
 
 This approach depends heavily on the chunking of the data and may not be
-always suitable. The :py:meth:`~hyperspy._signals.lazy.LazySignal.compute_navigator`
+always suitable. The :meth:`~hyperspy._signals.lazy.LazySignal.compute_navigator`
 can be used to calculate the navigator efficient and store the navigator, so
 that it can be used when plotting and saved for the later loading of the dataset.
-The :py:meth:`~hyperspy._signals.lazy.LazySignal.compute_navigator` has optional
+The :meth:`~hyperspy._signals.lazy.LazySignal.compute_navigator` has optional
 argument to specify the index where the sum needs to be calculated and how to
 rechunk the dataset when calculating the navigator. This allows to
 efficiently calculate the navigator without changing the actual chunking of the
@@ -234,7 +234,7 @@ interger.
     └── sum_from = [slice(0, 200, None), slice(0, 200, None)]
 
 An alternative is to calculate the navigator separately and store it in the
-signal using the :py:attr:`~hyperspy._signals.lazy.LazySignal.navigator` setter.
+signal using the :attr:`~hyperspy._signals.lazy.LazySignal.navigator` setter.
 
 
 .. code-block:: python
@@ -318,7 +318,7 @@ Most curve-fitting functionality will automatically work on models created from
 lazily loaded signals. HyperSpy extracts the relevant chunk from the signal and fits to that.
 
 The linear ``'lstsq'`` optimizer supports fitting the entire dataset in a vectorised manner
-using :py:func:`dask.array.linalg.lstsq`. This can give potentially enormous performance benefits over fitting
+using :func:`dask.array.linalg.lstsq`. This can give potentially enormous performance benefits over fitting
 with a nonlinear optimizer, but comes with the restrictions explained in the :ref:`linear fitting<linear_fitting-label>` section.
 
 Practical tips
@@ -359,7 +359,7 @@ The following example shows how to chunk one of the two navigation dimensions in
     >>> s2.data.chunksize
     (10, 100, 300)
 
-To get the chunk size of given axes, the :py:meth:`~._signals.lazy.LazySignal.get_chunk_size`
+To get the chunk size of given axes, the :meth:`~._signals.lazy.LazySignal.get_chunk_size`
 method can be used:
 
 .. code-block:: python
@@ -407,7 +407,7 @@ Computing lazy signals
 Upon saving lazy signals, the result of computations is stored on disk.
 
 In order to store the lazy signal in memory (i.e. make it a normal HyperSpy
-signal) it has a :py:meth:`~._signals.lazy.LazySignal.compute` method:
+signal) it has a :meth:`~._signals.lazy.LazySignal.compute` method:
 
 .. code-block:: python
 
@@ -431,7 +431,7 @@ axes parameters that *may have changed* before the computation is requested.
 Therefore, in order to avoid such issues, it is reccomended to explicitly
 compute the result of all functions that are affected by the axes
 parameters. This is the reason why e.g. the result of
-:py:meth:`~.api.signals.Signal1D.shift1D` is not lazy.
+:meth:`~.api.signals.Signal1D.shift1D` is not lazy.
 
 .. _dask_backends:
 
@@ -606,7 +606,7 @@ Saving Big Data
 ^^^^^^^^^^^^^^^
 
 The most efficient format supported by HyperSpy to write data is the
-:external+rsciio:py:ref:`ZSpy format <zspy-format>`,
+:external+rsciio:ref:`ZSpy format <zspy-format>`,
 mainly because it supports writing concurrently from multiple threads or processes.
 This also allows for smooth interaction with dask-distributed for efficient scaling.
 
@@ -623,7 +623,7 @@ significant problem when processing very large datasets on consumer-oriented
 hardware.
 
 HyperSpy offers a solution for this problem by including
-:py:class:`~._signals.lazy.LazySignal` and its derivatives. The main idea of
+:class:`~._signals.lazy.LazySignal` and its derivatives. The main idea of
 these classes is to perform any operation (as the name suggests)
 `lazily <https://en.wikipedia.org/wiki/Lazy_evaluation>`_ (delaying the
 execution until the result is requested (e.g. saved, plotted)) and in a
@@ -648,7 +648,7 @@ offers a couple of advantages:
   not required for the final result, it will not be loaded at all, saving time
   and resources.
 * **Able to extend to a distributed computing environment (clusters)**.
-  :py:``dask.distributed`` (see
+  :``dask.distributed`` (see
   `the dask documentation <https://distributed.readthedocs.io/en/latest/>`_) offers
   a straightforward way to expand the effective memory for computations to that
   of a cluster, which allows performing the operations significantly faster

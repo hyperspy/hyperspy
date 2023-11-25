@@ -39,7 +39,7 @@ SPIKES_DIAGNOSIS_DOCSTRING = \
         %s
         **kwargs : dict
             Keyword arguments pass to
-            :py:meth:`~hyperspy.api.signals.BaseSignal.get_histogram`
+            :meth:`~hyperspy.api.signals.BaseSignal.get_histogram`
 
         See Also
         --------
@@ -60,7 +60,7 @@ SPIKES_REMOVAL_TOOL_DOCSTRING =\
             if ``int`` set the threshold value use for the detecting the spikes.
             If ``"auto"``, determine the threshold value as being the first zero
             value in the histogram obtained from the
-            :py:meth:`~hyperspy.api.signals.Signal1D.spikes_diagnosis`
+            :meth:`~hyperspy.api.signals.Signal1D.spikes_diagnosis`
             method.
         %s
         interactive : bool
@@ -76,7 +76,7 @@ SPIKES_REMOVAL_TOOL_DOCSTRING =\
 
         See Also
         --------
-        :py:meth:`~hyperspy.api.signals.Signal1D.spikes_diagnosis`
+        :meth:`~hyperspy.api.signals.Signal1D.spikes_diagnosis`
 
         """
 

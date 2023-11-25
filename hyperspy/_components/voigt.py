@@ -70,7 +70,7 @@ class Voigt(Expression):
         :math:`2 \sigma \sqrt{(2 \log(2))}` = FWHM of the Gaussian distribution.
     **kwargs
         Extra keyword arguments are passed to the
-        :py:class:`~.api.model.components1D.Expression` component.
+        :class:`~.api.model.components1D.Expression` component.
 
     Notes
     -----

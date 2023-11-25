@@ -58,5 +58,5 @@ REBIN_ARGS = \
             before and after binning.*
         dtype : {None, numpy.dtype, "same"}
             Specify the dtype of the output. If None, the dtype will be
-            determined by the behaviour of :py:func:`numpy.sum`, if ``"same"``,
+            determined by the behaviour of :func:`numpy.sum`, if ``"same"``,
             the dtype will be kept the same. Default is None."""

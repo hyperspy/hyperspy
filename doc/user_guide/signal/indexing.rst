@@ -3,9 +3,9 @@
 Indexing
 --------
 
-Indexing a :py:class:`~.api.signals.BaseSignal`  provides a powerful, convenient and
+Indexing a :class:`~.api.signals.BaseSignal`  provides a powerful, convenient and
 Pythonic way to access and modify its data. In HyperSpy indexing is achieved
-using :py:attr:`~.api.signals.BaseSignal.isig` and :py:attr:`~.api.signals.BaseSignal.inav`,
+using :attr:`~.api.signals.BaseSignal.isig` and :attr:`~.api.signals.BaseSignal.inav`,
 which allow the navigation and signal dimensions to be indexed independently.
 The idea is essentially to specify a subset of the data based on its position
 in the array and it is therefore essential to know the convention adopted for
@@ -38,7 +38,7 @@ features differ from numpy):
 The examples below illustrate a range of common indexing tasks.
 
 First consider indexing a single spectrum, which has only one signal dimension
-(and no navigation dimensions) so we use :py:attr:`~.api.signals.BaseSignal.isig`:
+(and no navigation dimensions) so we use :attr:`~.api.signals.BaseSignal.isig`:
 
 .. code-block:: python
 
@@ -96,7 +96,7 @@ middle of the axis.
     >>> s.isig[:'rel0.5'].data
     array([0, 1, 2, 3])
 
-Importantly the original :py:class:`~.api.signals.BaseSignal` and its "indexed self"
+Importantly the original :class:`~.api.signals.BaseSignal` and its "indexed self"
 share their data and, therefore, modifying the value of the data in one
 modifies the same value in the other. Note also that in the example below
 s.data is used to access the data as a numpy array directly and this array is
@@ -122,8 +122,8 @@ then indexed using numpy indexing.
     array([0, 0, 0, 0, 0])
 
 Of course it is also possible to use the same syntax to index multidimensional
-data treating navigation axes using :py:attr:`~.api.signals.BaseSignal.inav`
-and signal axes using :py:attr:`~.api.signals.BaseSignal.isig`.
+data treating navigation axes using :attr:`~.api.signals.BaseSignal.inav`
+and signal axes using :attr:`~.api.signals.BaseSignal.isig`.
 
 .. code-block:: python
 

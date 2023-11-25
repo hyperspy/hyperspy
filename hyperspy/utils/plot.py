@@ -32,7 +32,7 @@ plot_histograms
 The :mod:`hyperspy.api.plot` module contains the following submodules:
 
 :mod:`hyperspy.api.plot.markers`
-    Markers that can be added to :py:class:`~.api.signals.BaseSignal` figure.
+    Markers that can be added to :class:`~.api.signals.BaseSignal` figure.
 
 """
 
