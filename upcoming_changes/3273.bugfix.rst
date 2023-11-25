@@ -1,0 +1,5 @@
+Documentation fixes:
+
+- Fix cross-references in documentation and enable sphinx "nitpicky" when building documentation to check for broken links.
+- Fix using mutable objects as default argument.
+- Set some :class:`~.component.Component` attribute as properties to add to the API reference with their docstrings.
