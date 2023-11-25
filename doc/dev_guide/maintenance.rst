@@ -10,7 +10,7 @@ GitHub Workflows
 
  * run the test suite
  * build packages and upload to pypi and GitHub release
- * build the documentation and check the links
+ * build the documentation and check the links (external and cross-references)
 
 Some of these workflow need to access `GitHub "secrets" <https://docs.github.com/en/actions/security-guides/encrypted-secrets>`_,
 which are private to the HyperSpy repository, in order to be able to upload to pypi or the

@@ -49,7 +49,7 @@ how to use it with examples and links to the relevant code.
 
 When writing both the docstrings and user guide documentation, it is useful to
 have some data which the users can use themselves. Artificial
-datasets for this purpose can be found in `hyperspy.datasets.artificial_data`.
+datasets for this purpose can be found in :mod:`~.api.data`.
 
 Build the documentation
 ^^^^^^^^^^^^^^^^^^^^^^^
