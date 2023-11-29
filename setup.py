@@ -72,7 +72,7 @@ extras_require = {
     "tests": [
         "pytest>=3.6",
         "pytest-mpl",
-        "pytest-xdist",
+        "pytest-xdist<3.5",
         "pytest-rerunfailures",
         "pytest-instafail",
         ],
