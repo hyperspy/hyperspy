@@ -541,10 +541,13 @@ class Markers:
 
         text += ", length: "
         if self._is_iterating:
-            lentgh = getattr(self, "__len__ ", "not plotted")
-            text += "variable (current: %s)" % len(self)
+            try:
+                current = len(self)
+            except RuntimeError:
+                current = "not plotted"
+            text += "variable (current: %s)" % current
         else:
-            text += "%s"% len(self)
+            text += "%s" % len(self)
         text += ">"
 
         return text
@@ -555,7 +558,6 @@ class Markers:
         signal,
         key=None,
         signal_axes="metadata",
-        collection=None,
         **kwargs,
     ):
         """
@@ -569,9 +571,6 @@ class Markers:
             The key used to create a key value pair to create the subclass of
             :py:class:`matplotlib.collections.Collection`. If ``None`` (default)
             the key is set to ``"offsets"``.
-        collection: None, str or subclass of :py:class:`matplotlib.collections.Collection`
-            The collection which is initialized. If ``None``, default to
-            :py:class:`~.api.plot.markers.Points` markers.
         signal_axes: str, tuple of :py:class:`~.axes.UniformDataAxis` or None
             If ``"metadata"`` look for signal_axes saved in metadata under
             ``s.metadata.Peaks.signal_axes`` and convert from pixel positions
@@ -579,12 +578,6 @@ class Markers:
             signal axes, those axes will be used otherwise (``None``)
             no transformation will happen.
         """
-        if collection is None:
-            # By default, use `Points` with "display" coordinate system to
-            # avoid dependence on data coordinates
-            from hyperspy.utils.markers import Points
-            cls = Points
-            kwargs.setdefault('sizes', 10)
         if signal_axes is None or (
             signal_axes == "metadata"
             and not signal.metadata.has_item("Peaks.signal_axes")

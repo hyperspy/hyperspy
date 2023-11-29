@@ -213,6 +213,16 @@ class TestMarkers:
         else:
             np.testing.assert_array_equal(col.get_current_kwargs()["offsets"], data[1])
 
+    def test_from_signal_lines(self, signal, data):
+        data = np.empty((3,), dtype=object)
+        for i in np.ndindex(data.shape):
+            data[i] = np.ones((10, 2, 2)) * i
+
+        signal = BaseSignal(data, ragged=True)
+        lines = Lines.from_signal(signal,key="segments", signal_axes=None)
+        s = Signal2D(np.ones((3, 5, 6)))
+        s.add_marker(lines)
+
     def test_from_signal_not_ragged(self):
         s = hs.signals.Signal2D(np.ones((2, 3, 5, 6, 7)))
 
@@ -465,8 +475,7 @@ class TestInitMarkers:
         for i in range(3):
             offsets[i] = np.array([[1, 1], [2, 2]])
         m = Points(offsets=offsets)
-        with pytest.raises(RuntimeError):
-            print(m)
+        assert m.__repr__() == "<Points, length: variable (current: not plotted)>"
 
         signal.plot()
         signal.add_marker(m)
