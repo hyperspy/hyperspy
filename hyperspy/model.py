@@ -793,7 +793,7 @@ class BaseModel(list):
     def _bounds_as_tuple(self, transpose):
         """
         Converts parameter bounds to tuples for scipy optimizer. For scipy
-        least_squares, transpose=True needs to be used, as the order of the
+        ``least_squares``, ``transpose=True`` needs to be used, as the order of the
         bounds are different.
         """
         if self.free_parameters_boundaries is None:
