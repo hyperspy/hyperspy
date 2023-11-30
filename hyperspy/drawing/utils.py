@@ -1770,42 +1770,43 @@ def _create_rect_roi_group(sig_wax, sig_hax, N):
 
 def plot_roi_map(signal, rois=1):
     """
-    Plot a ROI map of `signal`.
+    Plot a ROI map of ``signal``.
 
-    Uses ROIs to select a regions of `signal`'s signal axes.
+    Uses ROIs to select a regions of ``signal``'s signal axes.
 
     For each ROI, a plot is generated of the sum within this signal ROI
-    at each point in `signal`'s navigator.
+    at each point in ``signal``'s navigator.
 
     The ROI can be moved interactively and the corresponding plots will
     update automatically.
 
     Arguments
     ---------
-    signal: hyperspy.signals.Signal1D
-        Signal to inspect.
-    rois: int, [hyperspy.roi.SpanROI], [hyperspy.roi.RectangularROI]
+    signal: :class:`~.api.signals.BaseSignal`
+        The signal to inspect.
+    rois: int, list of :class:`~.api.roi.SpanROI` or :class:`~.api.roi.RectangularROI`
         ROIs that represent colour channels in map. Can either pass a list of
-        ROI objects, or an `int`, `N`, in which case `N` ROIs will
-        be created. Currently limited to a maximum of 3 spans.
+        ROI objects, or an ``int``, ``N``, in which case ``N`` ROIs will
+        be created. Currently limited to a maximum of 3 ROIs.
 
     Returns
     -------
-    all_sum: hyperspy.signals.BaseSignal
-        Sum over all positions of `sig`, the 'navigator' for `plot_span_map`
-    rois: [hyperspy.roi.SpanROI], [hyperspy.roi.RectangularROI]
+    all_sum : :class:`~.api.signals.BaseSignal`
+        Sum over all positions of the signal, the 'navigator'on which the ROIs
+        are added.
+    rois : list of :class:`~.api.roi.SpanROI` or :class:`~.api.roi.RectangularROI`
         The ROIs that slice signal
-    roi_signals: [hyperspy.signals.BaseSignal]
-        Slices of `signal` according to each roi
-    roi_sums: [hyperspy.signals.BaseSignal]
-        The summed `roi_signals`.
+    roi_signals : :class:`~.api.signals.BaseSignal`
+        Slices of ``signal`` according to each roi
+    roi_sums : :class:`~.api.signals.BaseSignal`
+        The summed ``roi_signals``
 
     Examples
     --------
     3D hyperspectral data:
 
-    For 3D hyperspectral data, the rois used will be
-    :py:class:`~.roi.SpanROI`\\ s. Therefore these ROIs can be used to select
+    For 3D hyperspectral data, the rois used will be instances of
+    :class:`~.api.roi.SpanROI`. Therefore these ROIs can be used to select
     particular spectral ranges, e.g. a particular peak.
 
     The map generated for a given ROI is therefore the sum of this spectral
@@ -1814,9 +1815,9 @@ def plot_roi_map(signal, rois=1):
 
     4D STEM:
 
-    For 4D STEM data, the ROIs used will be :py:class:`~.roi.RectangularROI`\\ s.
-    These ROIs can be used to select particular regions in reciprocal space,
-    e.g. a particular diffraction spot.
+    For 4D STEM data, the ROIs used will be instances of
+    :class:`~.api.roi.RectangularROI`. These ROIs can be used to select particular
+    regions in reciprocal space, e.g. a particular diffraction spot.
 
     The map generated for a given ROI is therefore the intensity of this
     region at each point in the scan. Therefore regions of the

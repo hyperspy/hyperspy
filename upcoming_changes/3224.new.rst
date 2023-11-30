@@ -1,3 +1,1 @@
-Added ``hyperspy.utils.plot.plot_roi_map``. Allows interactively using a set of
-rois to select regions of the signal axes of a ``Signal`` and visualise how the 
-signal varies in this range spatially.
+Added :func:`~.api.plot.plot_roi_map`. Allows interactively using a set of rois to select regions of the signal axes of a signal and visualise how the signal varies in this range spatially.

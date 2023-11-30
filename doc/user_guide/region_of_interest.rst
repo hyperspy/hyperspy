@@ -228,24 +228,24 @@ Handily, we can pass a :py:class:`~.roi.RectangularROI` ROI instead.
 Interactively Slicing Signal Dimensions
 ---------------------------------------
 
-:py:func:`~.drawing.utils.plot_roi_map` is a function that allows you to 
+:func:`~.api.plot.plot_roi_map` is a function that allows you to
 interactively see the spatial variation of intensity in a Signal
 within a ROI of its signal axes.
 
-To allow selection of the signal ROIs, a plot of the mean signal over all 
+To allow selection of the signal ROIs, a plot of the mean signal over all
 spatial positions is generated. Interactive ROIs can then be adjusted to the
 desired regions within this plot.
 
-For each ROI, a plot reflecting how the intensity of signal within this ROI 
+For each ROI, a plot reflecting how the intensity of signal within this ROI
 varies over the spatial dimensions of the Signal object is also plotted.
 
 For Signal objects with 1 signal dimension :py:class:`~.roi.SpanROI`\ s are used
 and for 2 signal dimensions, :py:class:`~.roi.RectangularROI`\ s are used.
 
 For example, below, for a hyperspectral map with 2 navigation dimensions and
-1 signal dimension i.e. a spectrum at each position in a 2D map, 
-:py:class:`~.roi.SpanROI`\ s are used to select spectral regions of interest. 
-For each spectral region of interest a plot is generated displaying the 
+1 signal dimension i.e. a spectrum at each position in a 2D map,
+:py:class:`~.roi.SpanROI`\ s are used to select spectral regions of interest.
+For each spectral region of interest a plot is generated displaying the
 intensity within this region at each position in the map.
 
 .. code-block:: python
@@ -258,6 +258,6 @@ intensity within this region at each position in the map.
     >>> plot_roi_map(sig, rois=2)
 
 
-.. image:: images/plot_span_map_demo.gif
+.. image:: images/plot_roi_map_demo.gif
   :width: 100%
   :alt: Demo of plot_roi_map functionality.
