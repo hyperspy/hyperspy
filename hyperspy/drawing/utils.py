@@ -1745,26 +1745,26 @@ def _create_rect_roi_group(sig_wax, sig_hax, N):
     """
     waxis = sig_wax.axis
     haxis = sig_hax.axis
-    
+
     w_range = waxis[-1] - waxis[0]
     h_range = haxis[-1] - haxis[0]
 
     span_w_width = w_range / (2 * N)
     span_h_width = h_range / (2 * N)
-    
+
     rects = []
 
     for i in range(N):
         # create a span that has a unique range
         rect = hs.roi.RectangularROI(
-            left=i * span_w_width + waxis[0], 
+            left=i * span_w_width + waxis[0],
             top=i * span_h_width + haxis[0],
             right=(i + 1) * span_w_width + waxis[0],
             bottom=(i + 1) * span_h_width + haxis[0]
         )
 
         rects.append(rect)
-    
+
     return rects
 
 
@@ -1887,6 +1887,7 @@ def plot_roi_map(signal, rois=1):
             event=roi_signal.axes_manager.events.any_axis_changed,
             axis=roi_signal.axes_manager.signal_axes,
             out=roi_sum,
+            recompute_out_event=None,
         )
 
     # return all ya bits for future messing around.
