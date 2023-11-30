@@ -100,12 +100,27 @@ class TestModelFitBinnedLeastSquares:
         assert len(self.m.p_std) == 3
         assert np.all(~np.isnan(self.m.p_std))
 
+    @pytest.mark.parametrize("bounded", (True, None))
     @pytest.mark.parametrize(
         "grad, expected",
         [("fd", (250.66282746, 50.0, 5.0)), ("analytical", (250.66282746, 50.0, 5.0))],
     )
-    def test_fit_trf(self, grad, expected):
-        self.m.fit(optimizer="trf", grad=grad)
+    def test_fit_trf(self, grad, expected, bounded):
+        self.m.fit(optimizer="trf", grad=grad, bounded=bounded)
+        self._check_model_values(self.m[0], expected, rtol=TOL)
+
+        assert isinstance(self.m.fit_output, OptimizeResult)
+        assert self.m.p_std is not None
+        assert len(self.m.p_std) == 3
+        assert np.all(~np.isnan(self.m.p_std))
+
+    @pytest.mark.parametrize("bounded", (True, None))
+    @pytest.mark.parametrize(
+        "grad, expected",
+        [("fd", (250.66282746, 50.0, 5.0)), ("analytical", (250.66282746, 50.0, 5.0))],
+    )
+    def test_fit_dogbox(self, grad, expected, bounded):
+        self.m.fit(optimizer="dogbox", grad=grad, bounded=bounded)
         self._check_model_values(self.m[0], expected, rtol=TOL)
 
         assert isinstance(self.m.fit_output, OptimizeResult)
@@ -239,6 +254,25 @@ class TestModelFitBinnedScipyMinimize:
         assert "Maximum number of iterations has been exceeded" in caplog.text
         assert not self.m.fit_output.success
         assert self.m.fit_output.nit == 1
+
+
+def test_bounds_as_tuple():
+    m = _create_toy_1d_gaussian_model()
+    m[0].A.bmin = 200.0
+    m[0].A.bmax = 300.0
+    m[0].centre.bmin = 40.0
+    m[0].centre.bmax = 60.0
+    m[0].sigma.bmin = 4.5
+    m[0].sigma.bmax = 5.5
+    m._set_boundaries()
+
+    assert m._bounds_as_tuple(transpose=False) == (
+        (200.0, 300.0), (40.0, 60.0), (4.5, 5.5)
+        )
+
+    assert m._bounds_as_tuple(transpose=True) == (
+        (200.0, 40.0, 4.5), (300.0, 60.0, 5.5)
+        )
 
 
 class TestModelFitBinnedGlobal:
